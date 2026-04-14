@@ -99,6 +99,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     required String currency,
     required String notes,
     required bool isManualPrice,
+    String? subCategory,
+    String unitType = 'piece',
   }) async {
     final asset = Asset(
       id: _uuid.v4(),
@@ -110,6 +112,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       currency: currency,
       notes: notes,
       isManualPrice: isManualPrice,
+      subCategory: subCategory,
+      unitType: unitType,
     );
     await DatabaseService.instance.insert(asset);
     final s = state.requireValue;
@@ -144,7 +148,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   // ---- Price refresh -------------------------------------------------------
 
   Future<void> refreshPrices() async {
-    final s = state.requireValue;
+    final s = state.valueOrNull;
+    if (s == null) return;
     state = AsyncData(s.copyWith(isLoading: true, clearError: true));
 
     final symbols = <String>{'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'};
@@ -162,6 +167,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       final eur = quotes['EURTRY=X']?.regularMarketPrice ?? s.eurTry;
       final gbp = quotes['GBPTRY=X']?.regularMarketPrice ?? s.gbpTry;
 
+      final nextState = s.copyWith(usdTry: usd, eurTry: eur, gbpTry: gbp);
+
       final updated = s.assets.map((asset) {
         if (!asset.isManualPrice && asset.ticker.isNotEmpty) {
           final price =
@@ -175,14 +182,16 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         return asset;
       }).toList();
 
-      state = AsyncData(s.copyWith(
+      final finalState = nextState.copyWith(
         assets: updated,
         isLoading: false,
-        usdTry: usd,
-        eurTry: eur,
-        gbpTry: gbp,
         lastUpdated: DateTime.now(),
-      ));
+      );
+
+      state = AsyncData(finalState);
+
+      // Save portfolio snapshot for historical charts (await so charts see it immediately)
+      await _saveSnapshot(finalState);
     } catch (e) {
       state = AsyncData(s.copyWith(
         isLoading: false,
@@ -190,6 +199,26 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       ));
     }
   }
+
+  // ---- Snapshot / history --------------------------------------------------
+
+  Future<void> _saveSnapshot(PortfolioState s) async {
+    if (s.assets.isEmpty) return;
+    final categoryValues = <String, double>{};
+    for (final type in AssetType.values) {
+      final val = s.assets
+          .where((a) => a.type == type)
+          .fold<double>(0, (sum, a) => sum + s.toTRY(a.totalValue, a.currency));
+      if (val > 0) categoryValues[type.name] = val;
+    }
+    await DatabaseService.instance.insertSnapshot(categoryValues);
+  }
+
+  /// Returns snapshots for chart display.
+  /// [sinceMs]: epoch milliseconds cutoff (e.g. 30 days ago).
+  Future<List<({int ts, Map<String, double> values})>> fetchSnapshots(
+      int sinceMs) =>
+      DatabaseService.instance.fetchSnapshots(sinceMs);
 }
 
 // ---------------------------------------------------------------------------

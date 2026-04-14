@@ -2,9 +2,11 @@ import 'asset_type.dart';
 
 class Asset {
   final String id;
-  String name;
+  String name; // Artık opsiyonel olabilir, otomatik çekilecek
   String ticker;
   AssetType type;
+  String? subCategory; // Altın: gr22, çeyrek vb. | Fon: bankFund, bist100 vb. | Hisse: bist100, other
+  String unitType; // Birim: piece, gram, ounce, etc. (varsayılan: piece)
   double quantity;
   double purchasePrice;
   String currency;
@@ -23,6 +25,8 @@ class Asset {
     required this.purchasePrice,
     required this.currency,
     required this.notes,
+    this.subCategory,
+    this.unitType = 'piece',
     double? currentPrice,
     this.lastUpdated,
     DateTime? addedDate,
@@ -42,6 +46,8 @@ class Asset {
         'name': name,
         'ticker': ticker,
         'type': type.name,
+        'subCategory': subCategory,
+        'unitType': unitType,
         'quantity': quantity,
         'purchasePrice': purchasePrice,
         'currency': currency,
@@ -61,6 +67,8 @@ class Asset {
         purchasePrice: (m['purchasePrice'] as num).toDouble(),
         currency: m['currency'] as String,
         currentPrice: (m['currentPrice'] as num).toDouble(),
+        subCategory: m['subCategory'] as String?,
+        unitType: (m['unitType'] as String?) ?? 'piece',
         lastUpdated: m['lastUpdated'] != null
             ? DateTime.fromMillisecondsSinceEpoch(m['lastUpdated'] as int)
             : null,
