@@ -4,6 +4,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../services/database_service.dart';
 import '../services/price_service.dart';
+import 'auth_provider.dart';
 
 const _uuid = Uuid();
 
@@ -84,7 +85,12 @@ class PortfolioState {
 class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   @override
   Future<PortfolioState> build() async {
-    final assets = await DatabaseService.instance.fetchAll();
+    // Oturum açmış kullanıcıyı izle — değişince portfolio yeniden yüklenir
+    final user = ref.watch(authProvider).valueOrNull;
+    final userId = user?.id ?? '';
+    final assets = userId.isEmpty
+        ? await DatabaseService.instance.fetchAll()
+        : await DatabaseService.instance.fetchByUser(userId);
     return PortfolioState(assets: assets);
   }
 
@@ -102,8 +108,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     String? subCategory,
     String unitType = 'piece',
   }) async {
+    final user = ref.read(authProvider).valueOrNull;
     final asset = Asset(
       id: _uuid.v4(),
+      userId: user?.id ?? '',
       name: name,
       ticker: ticker,
       type: type,
@@ -191,7 +199,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       state = AsyncData(finalState);
 
       // Save portfolio snapshot for historical charts (await so charts see it immediately)
-      await _saveSnapshot(finalState);
+      final userId = ref.read(authProvider).valueOrNull?.id ?? '';
+      await _saveSnapshot(finalState, userId: userId);
     } catch (e) {
       state = AsyncData(s.copyWith(
         isLoading: false,
@@ -202,7 +211,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   // ---- Snapshot / history --------------------------------------------------
 
-  Future<void> _saveSnapshot(PortfolioState s) async {
+  Future<void> _saveSnapshot(PortfolioState s, {String userId = ''}) async {
     if (s.assets.isEmpty) return;
     final categoryValues = <String, double>{};
     for (final type in AssetType.values) {
@@ -211,7 +220,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           .fold<double>(0, (sum, a) => sum + s.toTRY(a.totalValue, a.currency));
       if (val > 0) categoryValues[type.name] = val;
     }
-    await DatabaseService.instance.insertSnapshot(categoryValues);
+    await DatabaseService.instance.insertSnapshot(categoryValues, userId: userId);
   }
 
   /// Returns snapshots for chart display.

@@ -92,54 +92,62 @@ class PriceService {
 
     final results = <String, YahooQuote>{};
 
-    // ── Step 1: Fetch truncgil ONCE for both FX and gold ───────────────────
-    if (fxList.isNotEmpty || goldList.isNotEmpty) {
-      Map<String, dynamic>? truncgilData;
+    // ── Tüm kaynakları paralel başlat ─────────────────────────────────────
+    final needTruncgil = fxList.isNotEmpty || goldList.isNotEmpty;
+
+    final truncgilFuture = needTruncgil
+        ? _fetchTruncgilData().catchError((_) => <String, dynamic>{})
+        : Future<Map<String, dynamic>>.value({});
+
+    final tefasFuture = tefasList.isNotEmpty
+        ? _fetchTefas(tefasList).catchError((_) => <String, YahooQuote>{})
+        : Future<Map<String, YahooQuote>>.value({});
+
+    final yahooFuture = yahooList.isNotEmpty
+        ? _fetchYahoo(yahooList).catchError((_) => <String, YahooQuote>{})
+        : Future<Map<String, YahooQuote>>.value({});
+
+    final parallel = await Future.wait([truncgilFuture, tefasFuture, yahooFuture]);
+
+    final truncgilData = parallel[0];
+    final tefasResult  = parallel[1] as Map<String, YahooQuote>;
+    final yahooResult  = parallel[2] as Map<String, YahooQuote>;
+
+    // ── FX from truncgil ──────────────────────────────────────────────────
+    if (fxList.isNotEmpty && truncgilData.isNotEmpty) {
       try {
-        truncgilData = await _fetchTruncgilData();
+        results.addAll(_extractFx(truncgilData));
       } catch (_) {}
+    }
 
-      // FX from truncgil
-      if (fxList.isNotEmpty && truncgilData != null) {
+    // FX fallback: open.er-api.com
+    if (fxList.isNotEmpty && !results.containsKey('USDTRY=X')) {
+      try {
+        results.addAll(await _fetchFxErApi());
+      } catch (_) {}
+    }
+
+    // ── Gold from truncgil ────────────────────────────────────────────────
+    if (goldList.isNotEmpty && truncgilData.isNotEmpty) {
+      try {
+        results.addAll(_extractGold(goldList, truncgilData));
+      } catch (_) {}
+    }
+
+    // Gold fallback: Yahoo GC=F + USD/TRY calculation
+    final missingGold = goldList.where((s) => !results.containsKey(s)).toList();
+    if (missingGold.isNotEmpty) {
+      final usdTry = results['USDTRY=X']?.regularMarketPrice ?? 0;
+      if (usdTry > 0) {
         try {
-          results.addAll(_extractFx(truncgilData));
+          results.addAll(await _fetchGoldFallback(missingGold, usdTry));
         } catch (_) {}
-      }
-
-      // FX fallback: open.er-api.com
-      if (fxList.isNotEmpty && !results.containsKey('USDTRY=X')) {
-        try {
-          results.addAll(await _fetchFxErApi());
-        } catch (_) {}
-      }
-
-      // Gold from truncgil
-      if (goldList.isNotEmpty && truncgilData != null) {
-        try {
-          results.addAll(_extractGold(goldList, truncgilData));
-        } catch (_) {}
-      }
-
-      // Gold fallback: Yahoo GC=F + USD/TRY calculation
-      final missingGold =
-          goldList.where((s) => !results.containsKey(s)).toList();
-      if (missingGold.isNotEmpty) {
-        final usdTry = results['USDTRY=X']?.regularMarketPrice ?? 0;
-        if (usdTry > 0) {
-          try {
-            results.addAll(await _fetchGoldFallback(missingGold, usdTry));
-          } catch (_) {}
-        }
       }
     }
 
-    // ── Step 2: TEFAS + Yahoo in parallel ─────────────────────────────────
-    await Future.wait([
-      if (tefasList.isNotEmpty)
-        _fetchTefas(tefasList).then(results.addAll).catchError((_) {}),
-      if (yahooList.isNotEmpty)
-        _fetchYahoo(yahooList).then(results.addAll).catchError((_) {}),
-    ]);
+    // ── TEFAS + Yahoo (zaten tamamlandı) ──────────────────────────────────
+    results.addAll(tefasResult);
+    results.addAll(yahooResult);
 
     return results;
   }

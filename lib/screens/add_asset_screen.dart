@@ -145,10 +145,17 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   String _getUnitLabel(String unitType) {
     try {
-      return UnitType.values.firstWhere((u) => u.name == unitType).label;
+      return UnitType.values
+          .firstWhere((u) => u.name == unitType || u.shortcode == unitType)
+          .label;
     } catch (_) {
       return 'Adet';
     }
+  }
+
+  String get _quantitySuffix {
+    if (_isDoviz) return _subCategory ?? 'Adet';
+    return _getUnitLabel(_unitType);
   }
 
   List<String> get _quantityPresets {
@@ -251,7 +258,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             _inputField(
               _quantity,
               hint: '0',
-              suffix: _getUnitLabel(_unitType),
+              suffix: _quantitySuffix,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [_DecimalFormatter()],

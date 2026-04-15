@@ -45,13 +45,19 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   }
 
   /// Refreshes prices (saves snapshot), then loads snapshots for current period.
+  /// Skips price refresh if data was updated within the last 2 minutes.
   Future<void> _refreshThenLoad() async {
     if (!mounted) return;
     setState(() => _loading = true);
     try {
       final pState = ref.read(portfolioProvider).valueOrNull;
       if (pState != null && pState.assets.isNotEmpty) {
-        await ref.read(portfolioProvider.notifier).refreshPrices();
+        final lastUpdated = pState.lastUpdated;
+        final isStale = lastUpdated == null ||
+            DateTime.now().difference(lastUpdated).inMinutes >= 2;
+        if (isStale) {
+          await ref.read(portfolioProvider.notifier).refreshPrices();
+        }
       }
     } catch (_) {}
     await _load();
@@ -65,11 +71,12 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           .subtract(Duration(days: _periods[_periodIdx].days))
           .millisecondsSinceEpoch;
       final snaps = await DatabaseService.instance.fetchSnapshots(since);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _snapshots = snaps;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -583,8 +590,9 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       totals[a.type] =
           (totals[a.type] ?? 0) + pState.toTRY(a.totalValue, a.currency);
     }
-    if (totals.isEmpty || pState.totalValue == 0)
+    if (totals.isEmpty || pState.totalValue == 0) {
       return const SizedBox.shrink();
+    }
 
     final sorted = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));

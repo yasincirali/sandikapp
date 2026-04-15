@@ -3,11 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/user_model.dart';
+import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/database_service.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import 'add_asset_screen.dart';
 import 'asset_detail_screen.dart';
 import 'charts_screen.dart';
+import 'profile_screen.dart';
+
+// Ortak portföy provider — seçilen partner'ın varlıklarını yükler
+final _partnerAssetsProvider =
+    FutureProvider.family<List<Asset>, String>((ref, partnerId) {
+  return DatabaseService.instance.fetchByUser(partnerId);
+});
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -21,10 +31,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   AssetType? _filter;
   final _searchCtrl = TextEditingController();
 
+  // Ortak görünüm — null = bireysel, dolu = seçili partner id
+  String? _selectedPartnerId;
+
   @override
   void initState() {
     super.initState();
-    // Uygulama açılışında fiyatları güncelle
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(portfolioProvider.notifier).refreshPrices();
     });
@@ -50,10 +62,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final asyncState = ref.watch(portfolioProvider);
     final cs = Theme.of(context).colorScheme;
 
+    final user = ref.watch(authProvider).valueOrNull;
+    final partners = ref.watch(partnersProvider).valueOrNull ?? [];
+    final hasPartners = partners.isNotEmpty;
+
+    // Ortak görünümde partner'ın varlıklarını yükle
+    final partnerAssetsAsync = _selectedPartnerId != null
+        ? ref.watch(_partnerAssetsProvider(_selectedPartnerId!))
+        : null;
+
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
-        title: const Text('Portföy'),
+        title: _selectedPartnerId == null
+            ? const Text('Portföy')
+            : Text(
+                '${partners.firstWhere((p) => p.id == _selectedPartnerId, orElse: () => AppUser(id: '', email: '', displayName: 'Ortak', passwordHash: '', createdAt: DateTime.now())).displayName} + Ben',
+              ),
         actions: [
           IconButton(
             tooltip: 'Performans Grafikleri',
@@ -81,29 +106,196 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ) ??
               const SizedBox.shrink(),
-          const SizedBox(width: 4),
+          // Profil butonu
+          if (user != null)
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 12, left: 4),
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: cs.primaryContainer,
+                  child: Text(
+                    user.displayName.isNotEmpty
+                        ? user.displayName[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onPrimaryContainer),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
-      body: asyncState.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: cs.primary),
-        ),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline_rounded,
-                  size: 48, color: cs.error.withValues(alpha: 0.6)),
-              const SizedBox(height: 12),
-              Text('Hata: $e', style: TextStyle(color: cs.onSurfaceVariant)),
-            ],
+      body: Column(
+        children: [
+          // Ortak seçici — sadece partner varsa göster
+          if (hasPartners)
+            _PartnerSelector(
+              partners: partners,
+              selectedPartnerId: _selectedPartnerId,
+              onChanged: (id) => setState(() => _selectedPartnerId = id),
+              cs: cs,
+            ),
+          Expanded(
+            child: asyncState.when(
+              loading: () => Center(
+                child: CircularProgressIndicator(color: cs.primary),
+              ),
+              error: (e, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline_rounded,
+                        size: 48, color: cs.error.withValues(alpha: 0.6)),
+                    const SizedBox(height: 12),
+                    Text('Hata: $e',
+                        style: TextStyle(color: cs.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+              data: (myState) {
+                if (_selectedPartnerId == null) return _buildBody(myState);
+                // Ortak görünümü
+                return partnerAssetsAsync!.when(
+                  loading: () =>
+                      Center(child: CircularProgressIndicator(color: cs.primary)),
+                  error: (e, _) => Center(child: Text(e.toString())),
+                  data: (partnerAssets) {
+                    final combined = PortfolioState(
+                      assets: [...myState.assets, ...partnerAssets],
+                      usdTry: myState.usdTry,
+                      eurTry: myState.eurTry,
+                      gbpTry: myState.gbpTry,
+                      lastUpdated: myState.lastUpdated,
+                    );
+                    return _buildCombinedBody(
+                      combined,
+                      myState,
+                      partnerAssets,
+                      partners.firstWhere(
+                        (p) => p.id == _selectedPartnerId,
+                        orElse: () => AppUser(
+                            id: '',
+                            email: '',
+                            displayName: 'Ortak',
+                            passwordHash: '',
+                            createdAt: DateTime.now()),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
-        ),
-        data: _buildBody,
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _pushAdd(context),
         child: const Icon(Icons.add_rounded),
+      ),
+    );
+  }
+
+  // ── Ortak görünümü ──────────────────────────────────────────────────────────
+
+  Widget _buildCombinedBody(
+    PortfolioState combined,
+    PortfolioState myState,
+    List<Asset> partnerAssets,
+    AppUser partner,
+  ) {
+    final cs = Theme.of(context).colorScheme;
+    final tryFmt =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+
+    return RefreshIndicator(
+      color: cs.primary,
+      onRefresh: () => ref.read(portfolioProvider.notifier).refreshPrices(),
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics()),
+        slivers: [
+          // Kombine özet
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: PortfolioSummaryWidget(state: combined),
+            ),
+          ),
+          // Ben
+          SliverToBoxAdapter(
+            child: _combinedUserHeader('Ben', myState.totalValue, cs, tryFmt),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (ctx, i) => _slidable(ctx, myState.assets[i], combined),
+              childCount: myState.assets.length,
+            ),
+          ),
+          // Ortak
+          SliverToBoxAdapter(
+            child: _combinedUserHeader(
+                partner.displayName,
+                partnerAssets.fold(
+                    0, (s, a) => s + combined.toTRY(a.totalValue, a.currency)),
+                cs,
+                tryFmt),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (ctx, i) => _slidable(ctx, partnerAssets[i], combined),
+              childCount: partnerAssets.length,
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      ),
+    );
+  }
+
+  Widget _combinedUserHeader(
+      String name, double total, ColorScheme cs, NumberFormat fmt) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 6),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 12,
+            backgroundColor: cs.primaryContainer,
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onPrimaryContainer),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            name.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            fmt.format(total),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -466,8 +658,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _slidable(BuildContext ctx, Asset asset, PortfolioState s) {
     final cs = Theme.of(context).colorScheme;
-    final assetsCount = s.assets.length;
-    final assetIdx = s.assets.indexOf(asset);
 
     return GestureDetector(
       onTap: () => _pushDetail(ctx, asset),
@@ -600,4 +790,78 @@ class _Item {
 
   factory _Item.asset(Asset asset, {bool isLast = false}) =>
       _Item._(isHeader: false, asset: asset, isLast: isLast);
+}
+
+// ---------------------------------------------------------------------------
+// Partner seçici şeridi
+// ---------------------------------------------------------------------------
+
+class _PartnerSelector extends StatelessWidget {
+  final List<AppUser> partners;
+  final String? selectedPartnerId;
+  final ValueChanged<String?> onChanged;
+  final ColorScheme cs;
+
+  const _PartnerSelector({
+    required this.partners,
+    required this.selectedPartnerId,
+    required this.onChanged,
+    required this.cs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _chip('Bireysel', null),
+            ...partners.map((p) => _chip(p.displayName, p.id)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String label, String? id) {
+    final selected = selectedPartnerId == id;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () => onChanged(id),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: selected ? cs.primary : cs.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? cs.primary : cs.outlineVariant,
+            ),
+          ),
+          child: Row(
+            children: [
+              if (id != null) ...[
+                Icon(Icons.people_rounded,
+                    size: 14,
+                    color: selected ? cs.onPrimary : cs.onSurfaceVariant),
+                const SizedBox(width: 5),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? cs.onPrimary : cs.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

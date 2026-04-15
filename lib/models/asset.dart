@@ -2,7 +2,8 @@ import 'asset_type.dart';
 
 class Asset {
   final String id;
-  String name; // Artık opsiyonel olabilir, otomatik çekilecek
+  final String userId;
+  String name;
   String ticker;
   AssetType type;
   String? subCategory; // Altın: gr22, çeyrek vb. | Fon: bankFund, bist100 vb. | Hisse: bist100, other
@@ -18,6 +19,7 @@ class Asset {
 
   Asset({
     required this.id,
+    required this.userId,
     required this.name,
     required this.ticker,
     required this.type,
@@ -43,6 +45,7 @@ class Asset {
 
   Map<String, dynamic> toMap() => {
         'id': id,
+        'userId': userId,
         'name': name,
         'ticker': ticker,
         'type': type.name,
@@ -60,6 +63,7 @@ class Asset {
 
   factory Asset.fromMap(Map<String, dynamic> m) => Asset(
         id: m['id'] as String,
+        userId: (m['userId'] as String?) ?? '',
         name: m['name'] as String,
         ticker: m['ticker'] as String,
         type: AssetType.fromString(m['type'] as String),

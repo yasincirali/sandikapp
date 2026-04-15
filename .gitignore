@@ -44,6 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Claude Code local memory — never commit
+.claude/
+
 # Secrets — never commit these
 .env
 .env.*
