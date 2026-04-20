@@ -268,13 +268,13 @@ class TefasService {
 
           // Wait before retrying
           if (attempt < 2) {
-            await Future.delayed(Duration(seconds: 2));
+            await Future.delayed(const Duration(seconds: 2));
           }
         } catch (e) {
           _debugLog(
               '❌ [Background] Fatal error attempt ${attempt + 1}: ${e.toString().substring(0, 40)}');
           if (attempt < 2) {
-            await Future.delayed(Duration(seconds: 2));
+            await Future.delayed(const Duration(seconds: 2));
           }
         }
       }

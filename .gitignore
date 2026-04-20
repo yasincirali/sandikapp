@@ -60,3 +60,20 @@ ios/GoogleService-Info.plist
 
 # Local Android SDK config
 android/local.properties
+
+# Database files — never commit (sensitive data)
+*.db
+db_*.db
+tmp_*.db
+*_device*.db
+backup_*.db
+verify_*.db
+sync_*.db
+inspect_*.db
+live_*.db
+final_*.db
+
+# Temporary/test files
+*.b64
+sandik-design-prompt.md
+skills.md

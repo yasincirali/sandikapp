@@ -74,7 +74,7 @@ class PortfolioState {
 
   double get gainLoss => totalValue - totalCost;
 
-  double get gainLossPercent =>
+  double get gainLossPercentage =>
       totalCost > 0 ? gainLoss / totalCost * 100 : 0;
 }
 
@@ -88,9 +88,13 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // Oturum açmış kullanıcıyı izle — değişince portfolio yeniden yüklenir
     final user = ref.watch(authProvider).valueOrNull;
     final userId = user?.id ?? '';
-    final assets = userId.isEmpty
-        ? await DatabaseService.instance.fetchAll()
-        : await DatabaseService.instance.fetchByUser(userId);
+
+    if (userId.isEmpty) {
+      final assets = await DatabaseService.instance.fetchAll();
+      return PortfolioState(assets: assets);
+    }
+
+    final assets = await DatabaseService.instance.fetchByUser(userId);
     return PortfolioState(assets: assets);
   }
 
@@ -124,23 +128,38 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       unitType: unitType,
     );
     await DatabaseService.instance.insert(asset);
-    final s = state.requireValue;
-    state = AsyncData(s.copyWith(assets: [asset, ...s.assets]));
+    // state.requireValue yerine güvenli erişim —
+    // portfolioProvider henüz yükleniyorsa DB'den yeniden çek.
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(assets: [asset, ...current.assets]));
+    } else {
+      final userId = user?.id ?? '';
+      final assets = userId.isEmpty
+          ? await DatabaseService.instance.fetchAll()
+          : await DatabaseService.instance.fetchByUser(userId);
+      state = AsyncData(PortfolioState(assets: assets));
+    }
   }
 
   Future<void> updateAsset(Asset asset) async {
     await DatabaseService.instance.update(asset);
-    final s = state.requireValue;
-    state = AsyncData(s.copyWith(
-      assets: s.assets.map((a) => a.id == asset.id ? asset : a).toList(),
-    ));
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(
+        assets:
+            current.assets.map((a) => a.id == asset.id ? asset : a).toList(),
+      ));
+    }
   }
 
   Future<void> deleteAsset(String id) async {
     await DatabaseService.instance.delete(id);
-    final s = state.requireValue;
-    state = AsyncData(
-        s.copyWith(assets: s.assets.where((a) => a.id != id).toList()));
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(
+          assets: current.assets.where((a) => a.id != id).toList()));
+    }
   }
 
   Future<void> updateManualPrice(Asset asset, double price) async {
@@ -160,6 +179,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     if (s == null) return;
     state = AsyncData(s.copyWith(isLoading: true, clearError: true));
 
+    // Kur sembolleri + kendi varlıklarımızın sembolleri
     final symbols = <String>{'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'};
     for (final a in s.assets) {
       if (a.ticker.isNotEmpty && !a.isManualPrice) {
@@ -167,9 +187,22 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       }
     }
 
+    // Aktif ortakların varlıklarını yükle ve sembollerini ekle
+    final activePartners = ref.read(activePartnersProvider);
+    final partnerAssetsMap = <String, List<Asset>>{};
+    for (final partner in activePartners) {
+      final assets = await DatabaseService.instance.fetchByUser(partner.id);
+      partnerAssetsMap[partner.id] = assets;
+      for (final a in assets) {
+        if (a.ticker.isNotEmpty && !a.isManualPrice) {
+          symbols.add(a.ticker.toUpperCase());
+        }
+      }
+    }
+
     try {
-      final quotes =
-          await PriceService.instance.fetchQuotes(symbols.toList());
+      // Tek seferde tüm sembolleri çek (kendi + ortak)
+      final quotes = await PriceService.instance.fetchQuotes(symbols.toList());
 
       final usd = quotes['USDTRY=X']?.regularMarketPrice ?? s.usdTry;
       final eur = quotes['EURTRY=X']?.regularMarketPrice ?? s.eurTry;
@@ -177,10 +210,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       final nextState = s.copyWith(usdTry: usd, eurTry: eur, gbpTry: gbp);
 
+      // Kendi varlıklarımızı güncelle
       final updated = s.assets.map((asset) {
         if (!asset.isManualPrice && asset.ticker.isNotEmpty) {
-          final price =
-              quotes[asset.ticker.toUpperCase()]?.regularMarketPrice;
+          final price = quotes[asset.ticker.toUpperCase()]?.regularMarketPrice;
           if (price != null) {
             asset.currentPrice = price;
             asset.lastUpdated = DateTime.now();
@@ -190,6 +223,21 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         return asset;
       }).toList();
 
+      // Ortak varlıklarını DB'de güncelle (artık stale snapshot değil, canlı fiyat)
+      for (final assets in partnerAssetsMap.values) {
+        for (final asset in assets) {
+          if (!asset.isManualPrice && asset.ticker.isNotEmpty) {
+            final price =
+                quotes[asset.ticker.toUpperCase()]?.regularMarketPrice;
+            if (price != null) {
+              asset.currentPrice = price;
+              asset.lastUpdated = DateTime.now();
+              await DatabaseService.instance.update(asset);
+            }
+          }
+        }
+      }
+
       final finalState = nextState.copyWith(
         assets: updated,
         isLoading: false,
@@ -198,7 +246,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       state = AsyncData(finalState);
 
-      // Save portfolio snapshot for historical charts (await so charts see it immediately)
+      // Ortak varlık provider'ını yenile (UI güncel fiyatları görsün)
+      if (activePartners.isNotEmpty) {
+        ref.invalidate(allPartnerAssetsProvider);
+      }
+
+      // Portföy anlık görüntüsünü kaydet
       final userId = ref.read(authProvider).valueOrNull?.id ?? '';
       await _saveSnapshot(finalState, userId: userId);
     } catch (e) {
@@ -220,14 +273,18 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           .fold<double>(0, (sum, a) => sum + s.toTRY(a.totalValue, a.currency));
       if (val > 0) categoryValues[type.name] = val;
     }
-    await DatabaseService.instance.insertSnapshot(categoryValues, userId: userId);
+    await DatabaseService.instance
+        .insertSnapshot(categoryValues, userId: userId);
   }
 
   /// Returns snapshots for chart display.
   /// [sinceMs]: epoch milliseconds cutoff (e.g. 30 days ago).
   Future<List<({int ts, Map<String, double> values})>> fetchSnapshots(
-      int sinceMs) =>
-      DatabaseService.instance.fetchSnapshots(sinceMs);
+          int sinceMs) =>
+      DatabaseService.instance.fetchSnapshots(
+        sinceMs,
+        userId: ref.read(authProvider).valueOrNull?.id,
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -238,3 +295,16 @@ final portfolioProvider =
     AsyncNotifierProvider<PortfolioNotifier, PortfolioState>(
   PortfolioNotifier.new,
 );
+
+final allPartnerAssetsProvider =
+    FutureProvider<Map<String, List<Asset>>>((ref) async {
+  final activePartners = ref.watch(activePartnersProvider);
+  final map = <String, List<Asset>>{};
+
+  for (final p in activePartners) {
+    final assets = await DatabaseService.instance.fetchByUser(p.id);
+    map[p.id] = assets;
+  }
+
+  return map;
+});

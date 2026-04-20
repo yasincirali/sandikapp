@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 enum AssetType {
-  hisse('Hisse', Icons.show_chart_rounded, Color(0xFF2196F3), 'TRY'),
-  fon('Fon', Icons.pie_chart_rounded, Color(0xFF9C27B0), 'TRY'),
-  doviz('Döviz', Icons.attach_money_rounded, Color(0xFF4CAF50), 'USD'),
-  altin('Altın', Icons.star_rounded, Color(0xFFCCA919), 'TRY'),
-  emtia('Emtia', Icons.inventory_2_rounded, Color(0xFFFF9800), 'USD'),
-  diger('Diğer', Icons.more_horiz_rounded, Color(0xFF9E9E9E), 'TRY');
+  hisse('Hisse', Icons.show_chart_rounded, Color(0xFFF5A623), 'TRY'),
+  fon('Fon', Icons.pie_chart_rounded, Color(0xFFF5C842), 'TRY'),
+  doviz('Döviz', Icons.attach_money_rounded, Color(0xFF2D9E6C), 'USD'),
+  altin('Altın', Icons.star_rounded, Color(0xFFF5C842), 'TRY'),
+  emtia('Emtia', Icons.inventory_2_rounded, Color(0xFF2D7A60), 'USD'),
+  diger('Diğer', Icons.more_horiz_rounded, Color(0xFF2D7A60), 'TRY');
 
   const AssetType(
       this.label, this.icon, this.color, this.defaultCurrency);

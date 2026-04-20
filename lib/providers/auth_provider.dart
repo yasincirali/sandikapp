@@ -43,17 +43,32 @@ final authProvider = AsyncNotifierProvider<AuthNotifier, AppUser?>(
 
 // ── Ortaklar ──────────────────────────────────────────────────────────────────
 
-class PartnersNotifier extends AsyncNotifier<List<AppUser>> {
+class PartnerAccount {
+  final AppUser user;
+  final bool isActive;
+  PartnerAccount({required this.user, required this.isActive});
+}
+
+class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>> {
   @override
-  Future<List<AppUser>> build() async {
+  Future<List<PartnerAccount>> build() async {
     final user = ref.watch(authProvider).valueOrNull;
     if (user == null) return [];
     return _loadPartners(user.id);
   }
 
-  Future<List<AppUser>> _loadPartners(String userId) async {
-    final ids = await DatabaseService.instance.getPartnerIds(userId);
-    return DatabaseService.instance.getUsersByIds(ids);
+  Future<List<PartnerAccount>> _loadPartners(String userId) async {
+    final statusList = await DatabaseService.instance.getPartnershipsWithStatus(userId);
+    if (statusList.isEmpty) return [];
+    
+    final ids = statusList.map((s) => s.id).toList();
+    final users = await DatabaseService.instance.getUsersByIds(ids);
+    
+    // DB sırası ile eşleştir
+    return statusList.map((status) {
+      final user = users.firstWhere((u) => u.id == status.id);
+      return PartnerAccount(user: user, isActive: status.active);
+    }).toList();
   }
 
   Future<void> refresh() async {
@@ -74,6 +89,13 @@ class PartnersNotifier extends AsyncNotifier<List<AppUser>> {
     return partnerName;
   }
 
+  Future<void> toggleActive(String partnerId, bool active) async {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+    await DatabaseService.instance.setPartnershipActive(user.id, partnerId, active);
+    await refresh();
+  }
+
   Future<void> removePartner(String partnerId) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -82,6 +104,11 @@ class PartnersNotifier extends AsyncNotifier<List<AppUser>> {
   }
 }
 
-final partnersProvider = AsyncNotifierProvider<PartnersNotifier, List<AppUser>>(
+final partnersProvider = AsyncNotifierProvider<PartnersNotifier, List<PartnerAccount>>(
   PartnersNotifier.new,
 );
+
+final activePartnersProvider = Provider<List<AppUser>>((ref) {
+  final partners = ref.watch(partnersProvider).valueOrNull ?? [];
+  return partners.where((p) => p.isActive).map((p) => p.user).toList();
+});

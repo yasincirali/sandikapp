@@ -19,7 +19,7 @@ class DatabaseService {
     final dbPath = join(await getDatabasesPath(), 'portfoy.db');
     return openDatabase(
       dbPath,
-      version: 4,
+      version: 6,
       onCreate: (db, _) async {
         await _createAllTables(db);
       },
@@ -41,7 +41,6 @@ class DatabaseService {
               'CREATE INDEX IF NOT EXISTS idx_snapshots_ts ON snapshots(ts)');
         }
         if (oldVersion < 4) {
-          // Kullanıcı tabloları
           await db.execute('''
             CREATE TABLE IF NOT EXISTS users (
               id            TEXT PRIMARY KEY,
@@ -68,9 +67,16 @@ class DatabaseService {
               created_at INTEGER NOT NULL
             )
           ''');
-          // assets tablosuna userId kolonu ekle
           await db.execute(
               'ALTER TABLE assets ADD COLUMN userId TEXT NOT NULL DEFAULT ""');
+        }
+        if (oldVersion < 6) {
+          try {
+            await db.execute(
+                'ALTER TABLE partnerships ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
+          } catch (e) {
+            // Sütun zaten eklenmiş olabilir
+          }
         }
       },
     );
@@ -127,7 +133,8 @@ class DatabaseService {
         id         TEXT PRIMARY KEY,
         user_id_1  TEXT NOT NULL,
         user_id_2  TEXT NOT NULL,
-        created_at INTEGER NOT NULL
+        created_at INTEGER NOT NULL,
+        active     INTEGER NOT NULL DEFAULT 1
       )
     ''');
   }
@@ -151,13 +158,78 @@ class DatabaseService {
     return rows.map(Asset.fromMap).toList();
   }
 
+  /// userId = '' olan yetim varlıkları verilen kullanıcıya atar.
+  /// Kullanıcı sistemi öncesinden kalan varlıkları migrate etmek için kullanılır.
+  Future<int> claimOrphanedAssets(String userId) async {
+    return (await _database).update(
+      'assets',
+      {'userId': userId},
+      where: "userId = '' OR userId IS NULL",
+    );
+  }
+
+  Future<int> countAssetsForUser(String userId) async {
+    final rows = await (await _database).rawQuery(
+      'SELECT COUNT(*) AS c FROM assets WHERE userId = ?',
+      [userId],
+    );
+    final value = rows.isEmpty ? null : rows.first['c'];
+    return value is int ? value : (value as num?)?.toInt() ?? 0;
+  }
+
+  Future<int> countOrphanedAssets() async {
+    final rows = await (await _database).rawQuery(
+      "SELECT COUNT(*) AS c FROM assets WHERE userId = '' OR userId IS NULL",
+    );
+    final value = rows.isEmpty ? null : rows.first['c'];
+    return value is int ? value : (value as num?)?.toInt() ?? 0;
+  }
+
+  Future<int> claimLegacySnapshots(String userId) async {
+    final db = await _database;
+    final rows = await db.query(
+      'snapshots',
+      orderBy: 'ts ASC',
+    );
+
+    var updatedCount = 0;
+    for (final row in rows) {
+      final id = row['id'] as int?;
+      final rawData = row['data'] as String?;
+      if (id == null || rawData == null) continue;
+
+      try {
+        final decoded = jsonDecode(rawData) as Map<String, dynamic>;
+        final snapshotUserId = (decoded['_userId'] as String?)?.trim() ?? '';
+        if (snapshotUserId.isNotEmpty) continue;
+
+        decoded['_userId'] = userId;
+        await db.update(
+          'snapshots',
+          {'data': jsonEncode(decoded)},
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+        updatedCount++;
+      } catch (_) {
+        // Bozuk snapshot varsa olduğu gibi bırak.
+      }
+    }
+
+    return updatedCount;
+  }
+
   Future<void> insert(Asset asset) async =>
       (await _database).insert('assets', asset.toMap(),
           conflictAlgorithm: ConflictAlgorithm.replace);
 
-  Future<void> update(Asset asset) async =>
-      (await _database).update('assets', asset.toMap(),
-          where: 'id = ?', whereArgs: [asset.id]);
+  /// Ortak kodundan gelen varlığı içe aktar — zaten varsa üzerine yaz (resync için).
+  Future<void> insertAssetSnapshot(Asset asset) async =>
+      (await _database).insert('assets', asset.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace);
+
+  Future<void> update(Asset asset) async => (await _database)
+      .update('assets', asset.toMap(), where: 'id = ?', whereArgs: [asset.id]);
 
   Future<void> delete(String id) async =>
       (await _database).delete('assets', where: 'id = ?', whereArgs: [id]);
@@ -179,7 +251,8 @@ class DatabaseService {
   }
 
   Future<List<({int ts, Map<String, double> values})>> fetchSnapshots(
-      int sinceMs, {String? userId}) async {
+      int sinceMs,
+      {String? userId}) async {
     final rows = await (await _database).query(
       'snapshots',
       where: 'ts >= ?',
@@ -187,15 +260,37 @@ class DatabaseService {
       orderBy: 'ts ASC',
     );
 
-    return rows.map((r) {
-      final raw =
-          (jsonDecode(r['data'] as String) as Map<String, dynamic>);
-      // _userId meta alanını çıkar, sadece varlık kategorilerini bırak
-      final data = raw
-          .map((k, v) => MapEntry(k, (v as num).toDouble()))
-        ..remove('_userId');
-      return (ts: r['ts'] as int, values: data);
-    }).toList();
+    return rows
+        .map((r) {
+          try {
+            final raw =
+                (jsonDecode(r['data'] as String) as Map<String, dynamic>);
+            final snapshotUserId = (raw['_userId'] as String?)?.trim() ?? '';
+
+            if (userId != null &&
+                userId.isNotEmpty &&
+                snapshotUserId != userId) {
+              return null;
+            }
+
+            // _userId meta alanını çıkar, sadece varlık kategorilerini bırak
+            final data = <String, double>{};
+            for (final entry in raw.entries) {
+              if (entry.key == '_userId') continue;
+              if (entry.value is num) {
+                data[entry.key] = (entry.value as num).toDouble();
+              }
+            }
+
+            return (ts: r['ts'] as int, values: data);
+          } catch (e) {
+            // Hatalı bir snapshot tüm grafik akışını bozmasın
+            return null;
+          }
+        })
+        .whereType<({int ts, Map<String, double> values})>()
+        .where((s) => s.values.isNotEmpty)
+        .toList();
   }
 
   // ── Users ────────────────────────────────────────────────────────────────
@@ -215,13 +310,27 @@ class DatabaseService {
   }
 
   Future<AppUser?> getUserById(String id) async {
-    final rows = await (await _database).query(
+    try {
+      final rows = await (await _database).query(
+        'users',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      if (rows.isEmpty) return null;
+      return AppUser.fromMap(rows.first);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> updateUser(AppUser user) async {
+    final db = await _database;
+    await db.update(
       'users',
+      user.toMap(),
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: [user.id],
     );
-    if (rows.isEmpty) return null;
-    return AppUser.fromMap(rows.first);
   }
 
   Future<List<AppUser>> getUsersByIds(List<String> ids) async {
@@ -234,6 +343,14 @@ class DatabaseService {
     return rows.map(AppUser.fromMap).toList();
   }
 
+  Future<List<AppUser>> getAllUsers() async {
+    final rows = await (await _database).query(
+      'users',
+      orderBy: 'created_at ASC',
+    );
+    return rows.map(AppUser.fromMap).toList();
+  }
+
   // ── Partner invites ──────────────────────────────────────────────────────
 
   Future<void> insertInvite({
@@ -242,13 +359,16 @@ class DatabaseService {
     required String code,
     required DateTime expiresAt,
   }) async {
-    await (await _database).insert('partner_invites', {
-      'id': id,
-      'from_user_id': fromUserId,
-      'code': code,
-      'expires_at': expiresAt.millisecondsSinceEpoch,
-      'used': 0,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await (await _database).insert(
+        'partner_invites',
+        {
+          'id': id,
+          'from_user_id': fromUserId,
+          'code': code,
+          'expires_at': expiresAt.millisecondsSinceEpoch,
+          'used': 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   /// Kodu geçerli, süresi dolmamış, kullanılmamış bir davet olarak arar.
@@ -262,13 +382,29 @@ class DatabaseService {
     return rows.isEmpty ? null : rows.first;
   }
 
-  Future<void> markInviteUsed(String id) async =>
-      (await _database).update(
+  Future<void> markInviteUsed(String id) async => (await _database).update(
         'partner_invites',
         {'used': 1},
         where: 'id = ?',
         whereArgs: [id],
       );
+
+  Future<int> countDistinctInviteSenders(List<String> userIds) async {
+    if (userIds.isEmpty) return 0;
+
+    final placeholders = userIds.map((_) => '?').join(',');
+    final rows = await (await _database).rawQuery(
+      '''
+      SELECT COUNT(DISTINCT from_user_id) AS sender_count
+      FROM partner_invites
+      WHERE from_user_id IN ($placeholders)
+      ''',
+      userIds,
+    );
+
+    final value = rows.isEmpty ? null : rows.first['sender_count'];
+    return value is int ? value : (value as num?)?.toInt() ?? 0;
+  }
 
   // ── Partnerships ─────────────────────────────────────────────────────────
 
@@ -277,19 +413,23 @@ class DatabaseService {
     required String userId1,
     required String userId2,
   }) async {
-    await (await _database).insert('partnerships', {
-      'id': id,
-      'user_id_1': userId1,
-      'user_id_2': userId2,
-      'created_at': DateTime.now().millisecondsSinceEpoch,
-    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    await (await _database).insert(
+        'partnerships',
+        {
+          'id': id,
+          'user_id_1': userId1,
+          'user_id_2': userId2,
+          'created_at': DateTime.now().millisecondsSinceEpoch,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
-  Future<List<String>> getPartnerIds(String userId) async {
+  Future<List<String>> getPartnerIds(String userId,
+      {bool onlyActive = true}) async {
     final db = await _database;
     final rows = await db.rawQuery(
       '''SELECT user_id_1, user_id_2 FROM partnerships
-         WHERE user_id_1 = ? OR user_id_2 = ?''',
+         WHERE (user_id_1 = ? OR user_id_2 = ?)${onlyActive ? ' AND active = 1' : ''}''',
       [userId, userId],
     );
     return rows.map((r) {
@@ -297,6 +437,33 @@ class DatabaseService {
       final u2 = r['user_id_2'] as String;
       return u1 == userId ? u2 : u1;
     }).toList();
+  }
+
+  Future<List<({String id, bool active})>> getPartnershipsWithStatus(
+      String userId) async {
+    final db = await _database;
+    final rows = await db.rawQuery(
+      '''SELECT user_id_1, user_id_2, active FROM partnerships
+         WHERE user_id_1 = ? OR user_id_2 = ?''',
+      [userId, userId],
+    );
+    return rows.map((r) {
+      final u1 = r['user_id_1'] as String;
+      final u2 = r['user_id_2'] as String;
+      final active = (r['active'] as int) == 1;
+      return (id: u1 == userId ? u2 : u1, active: active);
+    }).toList();
+  }
+
+  Future<void> setPartnershipActive(
+      String uid1, String uid2, bool active) async {
+    final db = await _database;
+    await db.rawUpdate(
+      '''UPDATE partnerships SET active = ? 
+         WHERE (user_id_1 = ? AND user_id_2 = ?) 
+            OR (user_id_1 = ? AND user_id_2 = ?)''',
+      [active ? 1 : 0, uid1, uid2, uid2, uid1],
+    );
   }
 
   Future<bool> partnershipExists(String uid1, String uid2) async {

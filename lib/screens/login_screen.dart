@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
+import '../services/auth_service.dart';
+import '../theme/sandik.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -15,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _obscure = true;
+  bool _isAdmin = false;
 
   @override
   void dispose() {
@@ -27,23 +31,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(
           email: _emailCtrl.text,
-          password: _passCtrl.text,
+          password: _isAdmin ? '' : _passCtrl.text,
         );
     final error = ref.read(authProvider).error;
     if (error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString()), backgroundColor: Colors.red),
+        SnackBar(content: Text(error.toString()), backgroundColor: Sandik.loss),
       );
     }
   }
 
+  void _onEmailChanged(String value) {
+    final admin = AuthService.instance.isAdmin(value);
+    if (admin != _isAdmin) setState(() => _isAdmin = admin);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isLoading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: Sandik.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -53,56 +61,79 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
-                  Icon(Icons.account_balance_wallet_rounded,
-                      size: 64, color: cs.primary),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Portföy Takip',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Hesabınıza giriş yapın',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: cs.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 56),
 
-                  // E-posta
+                  // ── Logo + wordmark ────────────────────────────────────────
+                  Center(
+                    child: Column(
+                      children: [
+                        const SandikLogo(size: 52, color: Sandik.amber),
+                        const SizedBox(height: 16),
+                        Text(
+                          'sandık',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.02 * 32,
+                            color: Sandik.gold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Hazineni birlikte büyüt.',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Sandik.text58,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+
+                  // ── E-posta ────────────────────────────────────────────────
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
+                    style: GoogleFonts.inter(color: Sandik.text90),
+                    decoration: InputDecoration(
                       labelText: 'E-posta',
-                      prefixIcon: Icon(Icons.email_outlined),
+                      prefixIcon: const Icon(Icons.email_outlined, color: Sandik.text36, size: 20),
+                      labelStyle: GoogleFonts.inter(color: Sandik.text36),
                     ),
                     validator: (v) =>
                         (v == null || !v.contains('@')) ? 'Geçerli e-posta girin' : null,
+                    onChanged: _onEmailChanged,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
-                  // Şifre
-                  TextFormField(
-                    controller: _passCtrl,
-                    obscureText: _obscure,
-                    decoration: InputDecoration(
-                      labelText: 'Şifre',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscure
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined),
-                        onPressed: () => setState(() => _obscure = !_obscure),
+                  // ── Şifre (admin için gizle) ───────────────────────────────
+                  if (!_isAdmin) ...[
+                    TextFormField(
+                      controller: _passCtrl,
+                      obscureText: _obscure,
+                      style: GoogleFonts.inter(color: Sandik.text90),
+                      decoration: InputDecoration(
+                        labelText: 'Şifre',
+                        prefixIcon: const Icon(Icons.lock_outline, color: Sandik.text36, size: 20),
+                        labelStyle: GoogleFonts.inter(color: Sandik.text36),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: Sandik.text36,
+                            size: 20,
+                          ),
+                          onPressed: () => setState(() => _obscure = !_obscure),
+                        ),
                       ),
+                      validator: (v) =>
+                          (v == null || v.length < 6) ? 'En az 6 karakter' : null,
                     ),
-                    validator: (v) =>
-                        (v == null || v.length < 6) ? 'En az 6 karakter' : null,
-                  ),
-                  const SizedBox(height: 28),
+                    const SizedBox(height: 28),
+                  ] else
+                    const SizedBox(height: 28),
 
-                  // Giriş butonu
+                  // ── Giriş butonu ───────────────────────────────────────────
                   FilledButton(
                     onPressed: isLoading ? null : _login,
                     child: isLoading
@@ -110,19 +141,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2, color: Sandik.dark),
                           )
-                        : const Text('Giriş Yap'),
+                        : Text(
+                            'Giriş Yap',
+                            style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
-                  // Kayıt ol
+                  // ── Kayıt ol ───────────────────────────────────────────────
                   TextButton(
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const RegisterScreen()),
                     ),
-                    child: const Text('Hesabınız yok mu? Kayıt olun'),
+                    child: Text(
+                      'Hesabınız yok mu? Kayıt olun',
+                      style: GoogleFonts.inter(color: Sandik.amber),
+                    ),
                   ),
                   const SizedBox(height: 32),
                 ],

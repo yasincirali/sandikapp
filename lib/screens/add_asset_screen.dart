@@ -116,8 +116,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   String _fmt(double v) =>
       v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
 
-  double? _parse(String text) =>
-      double.tryParse(text.trim().replaceAll(',', '.'));
+  double? _parse(String text) {
+    if (text.trim().isEmpty) return null;
+    final val = double.tryParse(text.trim().replaceAll(',', '.'));
+    if (val == null || !val.isFinite) return null;
+    // Aşırı büyük değerleri engelle (Simetrik UI için limit)
+    if (val > 1000000000000) return 999999999999;
+    return val;
+  }
 
   List<String> _getSubCategories() {
     switch (_type) {
@@ -966,6 +972,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           if (_selectedFund!.price > 0) price = _selectedFund!.price;
         } else {
           final quotes = await PriceService.instance.fetchQuotes([ticker]);
+          if (!mounted) return;
           final q = quotes[ticker.toUpperCase()];
           if (q?.regularMarketPrice != null && q!.regularMarketPrice! > 0) {
             price = q.regularMarketPrice!;
@@ -982,6 +989,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         !ticker.startsWith('TEFAS:')) {
       try {
         final quotes = await PriceService.instance.fetchQuotes([ticker]);
+        if (!mounted) return;
         final q = quotes[ticker.toUpperCase()];
         if (q != null) assetName = q.companyName;
       } catch (_) {}
@@ -991,33 +999,38 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       assetName = ticker.isNotEmpty ? ticker : 'Varlık';
     }
 
-    if (_isEditing) {
-      final a = widget.editingAsset!;
-      a
-        ..name = assetName
-        ..ticker = ticker
-        ..type = _type
-        ..subCategory = _subCategory
-        ..unitType = _unitType
-        ..quantity = qty
-        ..purchasePrice = price
-        ..currency = _currency
-        ..notes = _notes.text.trim()
-        ..isManualPrice = manual;
-      ref.read(portfolioProvider.notifier).updateAsset(a);
-    } else {
-      ref.read(portfolioProvider.notifier).addAsset(
-            name: assetName,
-            ticker: ticker,
-            type: _type,
-            quantity: qty,
-            purchasePrice: price,
-            currency: _currency,
-            notes: _notes.text.trim(),
-            isManualPrice: manual,
-            subCategory: _subCategory,
-            unitType: _unitType,
-          );
+    setState(() => _saving = true);
+    try {
+      if (_isEditing) {
+        final a = widget.editingAsset!;
+        a
+          ..name = assetName
+          ..ticker = ticker
+          ..type = _type
+          ..subCategory = _subCategory
+          ..unitType = _unitType
+          ..quantity = qty
+          ..purchasePrice = price
+          ..currency = _currency
+          ..notes = _notes.text.trim()
+          ..isManualPrice = manual;
+        await ref.read(portfolioProvider.notifier).updateAsset(a);
+      } else {
+        await ref.read(portfolioProvider.notifier).addAsset(
+              name: assetName,
+              ticker: ticker,
+              type: _type,
+              quantity: qty,
+              purchasePrice: price,
+              currency: _currency,
+              notes: _notes.text.trim(),
+              isManualPrice: manual,
+              subCategory: _subCategory,
+              unitType: _unitType,
+            );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
     if (mounted) Navigator.pop(context);
   }
