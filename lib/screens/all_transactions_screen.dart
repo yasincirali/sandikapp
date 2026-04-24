@@ -18,6 +18,7 @@ class AllTransactionsScreen extends ConsumerStatefulWidget {
   final double eurTry;
   final double gbpTry;
   final String? initialView;
+  final AssetType? initialTypeFilter;
 
   const AllTransactionsScreen({
     super.key,
@@ -28,6 +29,7 @@ class AllTransactionsScreen extends ConsumerStatefulWidget {
     required this.eurTry,
     required this.gbpTry,
     this.initialView,
+    this.initialTypeFilter,
   });
 
   @override
@@ -43,6 +45,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   void initState() {
     super.initState();
     _view = widget.initialView ?? '';
+    _typeFilter = widget.initialTypeFilter;
   }
 
   double _toTRY(double value, String currency) {

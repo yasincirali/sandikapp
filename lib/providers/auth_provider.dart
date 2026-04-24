@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
-import '../services/database_service.dart';
+import '../services/remote_push_service.dart';
+import '../services/supabase_service.dart';
 
 // ── Mevcut oturum kullanıcısı ─────────────────────────────────────────────────
 
@@ -11,9 +14,11 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
 
   Future<void> login({required String email, required String password}) async {
     state = const AsyncLoading();
+    debugPrint('AUTH: login başlıyor email=$email');
     state = await AsyncValue.guard(
       () => AuthService.instance.login(email: email, password: password),
     );
+    debugPrint('AUTH: login bitti state=${state.runtimeType} error=${state.error}');
   }
 
   Future<void> register({
@@ -32,6 +37,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   }
 
   Future<void> logout() async {
+    await RemotePushService.instance.stop();
     await AuthService.instance.logout();
     state = const AsyncData(null);
   }
@@ -50,23 +56,61 @@ class PartnerAccount {
 }
 
 class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>> {
+  Timer? _pollTimer;
+
   @override
   Future<List<PartnerAccount>> build() async {
     final user = ref.watch(authProvider).valueOrNull;
-    if (user == null) return [];
+    if (user == null) {
+      _pollTimer?.cancel();
+      return [];
+    }
+    // Karşı taraf ortaklığı kaldırınca anlık yansısın
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
+      final u = ref.read(authProvider).valueOrNull;
+      if (u == null) return;
+      final fresh = await _loadPartners(u.id);
+      // Sadece gerçekten değişiklik varsa state güncelle — gereksiz rebuild engellenir
+      final current = state.valueOrNull ?? [];
+      final changed = fresh.length != current.length ||
+          fresh.any((f) {
+            final c = current.where((c) => c.user.id == f.user.id).firstOrNull;
+            return c == null || c.isActive != f.isActive;
+          });
+      if (changed) state = AsyncData(fresh);
+    });
+    ref.onDispose(() => _pollTimer?.cancel());
     return _loadPartners(user.id);
   }
 
   Future<List<PartnerAccount>> _loadPartners(String userId) async {
-    final statusList = await DatabaseService.instance.getPartnershipsWithStatus(userId);
+    final statusList =
+        await SupabaseService.instance.getPartnershipsWithStatus(userId);
     if (statusList.isEmpty) return [];
-    
+
     final ids = statusList.map((s) => s.id).toList();
-    final users = await DatabaseService.instance.getUsersByIds(ids);
-    
-    // DB sırası ile eşleştir
+    final users = await SupabaseService.instance.getProfilesByIds(ids);
+
+    // Profili eksik olan ortaklar için partner_invites'tan isim çek
+    final missingIds =
+        ids.where((id) => !users.any((u) => u.id == id)).toList();
+    if (missingIds.isNotEmpty) {
+      final resolved = await SupabaseService.instance
+          .resolveNamesFromInvites(userId, missingIds);
+      users.addAll(resolved);
+    }
+
     return statusList.map((status) {
-      final user = users.firstWhere((u) => u.id == status.id);
+      final user = users.firstWhere(
+        (u) => u.id == status.id,
+        orElse: () => AppUser(
+          id: status.id,
+          email: '',
+          displayName: 'Ortak',
+          createdAt: DateTime.now(),
+        ),
+      );
       return PartnerAccount(user: user, isActive: status.active);
     }).toList();
   }
@@ -78,33 +122,57 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>> {
     state = await AsyncValue.guard(() => _loadPartners(user.id));
   }
 
-  Future<String> redeemCode(String code) async {
+  /// Kodu gönder — sadece invite'a to_user_id yazar, partnership kurmaz.
+  /// Döner: (inviteId, partnerName) — UI bunu polling için saklar.
+  Future<({String inviteId, String partnerName})> submitCode(
+      String code) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) throw Exception('Oturum açın.');
-    final partnerName = await AuthService.instance.redeemPartnerCode(
+    return AuthService.instance.submitPartnerCode(
       currentUserId: user.id,
       code: code,
     );
-    await refresh();
-    return partnerName;
   }
 
-  Future<void> toggleActive(String partnerId, bool active) async {
+  /// Kod sahibi onayladı → partnership kur, listeyi yenile
+  Future<void> acceptInvite(String inviteId) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
-    await DatabaseService.instance.setPartnershipActive(user.id, partnerId, active);
+    await AuthService.instance.acceptInvite(
+      inviteId: inviteId,
+      currentUserId: user.id,
+    );
+    await refresh();
+  }
+
+  /// Kod sahibi reddetti
+  Future<void> rejectInvite(String inviteId) async {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+    await AuthService.instance.rejectInvite(
+      inviteId: inviteId,
+      currentUserId: user.id,
+    );
+  }
+
+  Future<void> toggleHidden(String partnerId, bool hidden) async {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+    await SupabaseService.instance
+        .setPartnershipHidden(user.id, partnerId, hidden);
     await refresh();
   }
 
   Future<void> removePartner(String partnerId) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
-    await DatabaseService.instance.removePartnership(user.id, partnerId);
+    await SupabaseService.instance.removePartnership(user.id, partnerId);
     await refresh();
   }
 }
 
-final partnersProvider = AsyncNotifierProvider<PartnersNotifier, List<PartnerAccount>>(
+final partnersProvider =
+    AsyncNotifierProvider<PartnersNotifier, List<PartnerAccount>>(
   PartnersNotifier.new,
 );
 

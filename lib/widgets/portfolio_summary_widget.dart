@@ -13,58 +13,69 @@ class PortfolioSummaryWidget extends StatelessWidget {
     final isPos = state.gainLoss >= 0;
     final gainColor = isPos ? Sandik.gain : Sandik.loss;
     final tryFmt = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+    final w = MediaQuery.of(context).size.width;
+    final heroFontSize = w < 360 ? 28.0 : w < 400 ? 32.0 : 38.0;
+    final subFontSize = w < 360 ? 12.0 : 14.0;
+    final hPad = w < 360 ? 16.0 : 24.0;
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF14332B), // Koyu yeşil hero zemin
+        color: const Color(0xFF14332B),
         borderRadius: BorderRadius.circular(16),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'TOPLAM NET VARLIK',
             style: GoogleFonts.inter(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.2,
               color: const Color(0xFF2D9E6C).withValues(alpha: 0.8),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            tryFmt.format(state.totalValue),
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 38,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-              color: Sandik.gold,
+          const SizedBox(height: 6),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              tryFmt.format(state.totalValue),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: heroFontSize,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+                color: Sandik.gold,
+              ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           if (state.totalCost > 0)
             Row(
               children: [
                 Icon(
                   isPos ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
                   color: gainColor,
-                  size: 24,
+                  size: 20,
                 ),
-                Text(
-                  '${isPos ? '+' : ''}${tryFmt.format(state.gainLoss)}',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: gainColor,
+                Flexible(
+                  child: Text(
+                    '${isPos ? '+' : ''}${tryFmt.format(state.gainLoss)}',
+                    style: GoogleFonts.inter(
+                      fontSize: subFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: gainColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Text(
-                  '%${state.gainLossPercentage.toStringAsFixed(2)} bugün',
+                  '%${state.gainLossPercentage.toStringAsFixed(2)}',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: subFontSize,
                     fontWeight: FontWeight.w500,
                     color: gainColor,
                   ),

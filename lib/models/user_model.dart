@@ -2,14 +2,12 @@ class AppUser {
   final String id;
   final String email;
   final String displayName;
-  final String passwordHash;
   final DateTime createdAt;
 
   const AppUser({
     required this.id,
     required this.email,
     required this.displayName,
-    required this.passwordHash,
     required this.createdAt,
   });
 
@@ -17,7 +15,6 @@ class AppUser {
         'id': id,
         'email': email,
         'display_name': displayName,
-        'password_hash': passwordHash,
         'created_at': createdAt.millisecondsSinceEpoch,
       };
 
@@ -25,7 +22,15 @@ class AppUser {
         id: m['id'] as String,
         email: m['email'] as String,
         displayName: m['display_name'] as String,
-        passwordHash: m['password_hash'] as String,
         createdAt: DateTime.fromMillisecondsSinceEpoch(m['created_at'] as int),
+      );
+
+  factory AppUser.fromSupabase(Map<String, dynamic> m) => AppUser(
+        id: m['id'] as String,
+        email: m['email'] as String,
+        displayName: m['display_name'] as String,
+        createdAt: m['created_at'] != null
+            ? DateTime.parse(m['created_at'] as String)
+            : DateTime.now(),
       );
 }

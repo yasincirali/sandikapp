@@ -4,319 +4,283 @@ import '../models/asset_type.dart';
 import '../models/technical_signal.dart';
 
 class TechnicalAnalysisService {
-  /// Calculates RSI (Relative Strength Index)
-  static double calculateRSI(List<double> prices, {int period = 14}) {
-    if (prices.length < period + 1) return 50.0;
+  // ── EMA ──────────────────────────────────────────────────────────────────
 
-    double gains = 0;
-    double losses = 0;
-
-    for (int i = 1; i <= period; i++) {
-      final change = prices[prices.length - i] - prices[prices.length - i - 1];
-      if (change > 0) {
-        gains += change;
-      } else {
-        losses += -change;
-      }
-    }
-
-    final avgGain = gains / period;
-    final avgLoss = losses / period;
-
-    if (avgLoss == 0) return 100.0;
-
-    final rs = avgGain / avgLoss;
-    final rsi = 100 - (100 / (1 + rs));
-
-    return rsi;
-  }
-
-  /// Calculates MACD (Moving Average Convergence Divergence)
-  static Map<String, double> calculateMACD(List<double> prices) {
-    if (prices.length < 26) {
-      return {'macd': 0, 'signal': 0, 'histogram': 0};
-    }
-
-    final ema12 = _calculateEMA(prices, 12);
-    final ema26 = _calculateEMA(prices, 26);
-    final macdLine = ema12 - ema26;
-
-    final macdValues = <double>[];
-    for (int i = 0; i < prices.length - 25; i++) {
-      final subList = prices.sublist(i, i + 26);
-      final e12 = _calculateEMA(subList, 12);
-      final e26 = _calculateEMA(subList, 26);
-      macdValues.add(e12 - e26);
-    }
-
-    final signalLine = _calculateEMA(macdValues, 9);
-    final histogram = macdLine - signalLine;
-
-    return {
-      'macd': macdLine,
-      'signal': signalLine,
-      'histogram': histogram,
-    };
-  }
-
-  /// Calculates Bollinger Bands
-  static Map<String, double> calculateBollingerBands(List<double> prices,
-      {int period = 20, double stdDevMultiplier = 2.0}) {
-    if (prices.length < period) {
-      return {'upper': 0, 'middle': 0, 'lower': 0};
-    }
-
-    final recentPrices = prices.sublist(prices.length - period);
-    final sma = recentPrices.reduce((a, b) => a + b) / period;
-
-    final variance =
-        recentPrices.map((p) => pow(p - sma, 2)).reduce((a, b) => a + b) /
-            period;
-    final stdDev = sqrt(variance);
-
-    return {
-      'upper': sma + (stdDev * stdDevMultiplier),
-      'middle': sma,
-      'lower': sma - (stdDev * stdDevMultiplier),
-    };
-  }
-
-  /// Calculates Stochastic Oscillator
-  static Map<String, double> calculateStochastic(List<double> prices,
-      {int period = 14}) {
-    if (prices.length < period) {
-      return {'k': 50.0, 'd': 50.0};
-    }
-
-    final recentPrices = prices.sublist(prices.length - period);
-    final lowest = recentPrices.reduce((a, b) => a < b ? a : b);
-    final highest = recentPrices.reduce((a, b) => a > b ? a : b);
-    final currentPrice = prices.last;
-
-    final range = highest - lowest;
-    final k = range == 0 ? 50.0 : ((currentPrice - lowest) / range) * 100;
-
-    return {
-      'k': k,
-      'd': k, // Simplified - normally would smooth with SMA
-    };
-  }
-
-  /// Calculates SMA (Simple Moving Average)
-  static double calculateSMA(List<double> prices, {int period = 20}) {
-    if (prices.length < period) return prices.isEmpty ? 0 : prices.last;
-    final recent = prices.sublist(prices.length - period);
-    return recent.reduce((a, b) => a + b) / period;
-  }
-
-  /// Calculates EMA (Exponential Moving Average)
-  static double _calculateEMA(List<double> prices, int period) {
+  static double _ema(List<double> prices, int period) {
     if (prices.isEmpty) return 0;
-    if (prices.length == 1) return prices[0];
-
-    final sma =
-        prices.sublist(0, min(period, prices.length)).reduce((a, b) => a + b) /
-            min(period, prices.length);
+    final len = min(prices.length, period * 3);
+    final sub = prices.sublist(prices.length - len);
+    double ema = sub.sublist(0, min(period, sub.length)).reduce((a, b) => a + b) /
+        min(period, sub.length);
     final k = 2.0 / (period + 1);
-
-    double ema = sma;
-    final startIdx = min(period, prices.length);
-
-    for (int i = startIdx; i < prices.length; i++) {
-      ema = prices[i] * k + ema * (1 - k);
+    for (int i = min(period, sub.length); i < sub.length; i++) {
+      ema = sub[i] * k + ema * (1 - k);
     }
-
     return ema;
   }
 
-  /// Generates technical signals for an asset
-  static TechnicalIndicator _generateSignalFromIndicator(
-    String name,
-    double value,
-    SignalType signal,
-    String description,
-  ) {
-    return TechnicalIndicator(
-      name: name,
-      value: value,
-      signal: signal,
-      description: description,
-    );
-  }
+  // ── 1. RSI ────────────────────────────────────────────────────────────────
 
-  /// Analyzes a single asset and generates signals
-  static List<TechnicalIndicator> analyzeAsset(Asset asset) {
-    // Simulate price history (in real app, fetch from API)
-    final priceHistory = _generateSimulatedPriceHistory(asset);
-
-    final indicators = <TechnicalIndicator>[];
-
-    // 1. RSI Analysis
-    final rsi = calculateRSI(priceHistory);
-    final rsiSignal = rsi > 70
-        ? SignalType.sell
-        : rsi < 30
-            ? SignalType.buy
-            : SignalType.neutral;
-    indicators.add(_generateSignalFromIndicator(
-      'RSI',
-      rsi,
-      rsiSignal,
-      'RSI: ${rsi.toStringAsFixed(2)} ${rsiSignal == SignalType.buy ? '(Sobrevenda)' : rsiSignal == SignalType.sell ? '(Sobrecompra)' : '(Neutral)'}',
-    ));
-
-    // 2. MACD Analysis
-    final macd = calculateMACD(priceHistory);
-    final macdSignal = macd['histogram']! > 0
-        ? SignalType.buy
-        : macd['histogram']! < 0
-            ? SignalType.sell
-            : SignalType.neutral;
-    indicators.add(_generateSignalFromIndicator(
-      'MACD',
-      macd['histogram'] ?? 0,
-      macdSignal,
-      'MACD: ${(macd['histogram'] ?? 0).toStringAsFixed(4)}',
-    ));
-
-    // 3. Bollinger Bands Analysis
-    final bb = calculateBollingerBands(priceHistory);
-    final currentPrice = priceHistory.last;
-    final bbSignal = currentPrice < bb['lower']!
-        ? SignalType.buy
-        : currentPrice > bb['upper']!
-            ? SignalType.sell
-            : SignalType.neutral;
-    indicators.add(_generateSignalFromIndicator(
-      'Bollinger Bands',
-      currentPrice,
-      bbSignal,
-      'Preço: ${currentPrice.toStringAsFixed(2)}, Banda Inf: ${(bb['lower'] ?? 0).toStringAsFixed(2)}, Banda Sup: ${(bb['upper'] ?? 0).toStringAsFixed(2)}',
-    ));
-
-    // 4. SMA/EMA Analysis
-    final sma20 = calculateSMA(priceHistory, period: 20);
-    final ema50 = _calculateEMA(priceHistory, 50);
-    final smaSignal = currentPrice > sma20 && sma20 > ema50
-        ? SignalType.buy
-        : currentPrice < sma20 && sma20 < ema50
-            ? SignalType.sell
-            : SignalType.neutral;
-    indicators.add(_generateSignalFromIndicator(
-      'SMA/EMA',
-      currentPrice - sma20,
-      smaSignal,
-      'SMA20: ${sma20.toStringAsFixed(2)}, EMA50: ${ema50.toStringAsFixed(2)}',
-    ));
-
-    // 5. Stochastic Oscillator Analysis
-    final stoch = calculateStochastic(priceHistory);
-    final stochSignal = stoch['k']! > 80
-        ? SignalType.sell
-        : stoch['k']! < 20
-            ? SignalType.buy
-            : SignalType.neutral;
-    indicators.add(_generateSignalFromIndicator(
-      'Estocástico',
-      stoch['k'] ?? 50,
-      stochSignal,
-      'K: ${(stoch['k'] ?? 50).toStringAsFixed(2)}',
-    ));
-
-    return indicators;
-  }
-
-  /// Generates simulated price history for testing
-  static List<double> _generateSimulatedPriceHistory(Asset asset,
-      {int days = 100}) {
-    final prices = <double>[];
-    double currentPrice = asset.currentPrice > 0 ? asset.currentPrice : 100.0;
-
-    for (int i = 0; i < days; i++) {
-      prices.add(currentPrice);
-      // Random walk
-      final change = (Random().nextDouble() - 0.5) * (currentPrice * 0.02);
-      currentPrice =
-          (currentPrice + change).clamp(currentPrice * 0.5, currentPrice * 1.5);
+  static TechnicalIndicator rsi(List<double> prices, AssetType type) {
+    final period = type == AssetType.doviz ? 9 : 14;
+    if (prices.length < period + 1) {
+      return TechnicalIndicator(
+          name: 'RSI', value: 50, signal: SignalType.neutral,
+          description: 'Yetersiz veri');
     }
 
+    double gains = 0, losses = 0;
+    for (int i = prices.length - period; i < prices.length; i++) {
+      final d = prices[i] - prices[i - 1];
+      if (d > 0) gains += d; else losses -= d;
+    }
+    final avgG = gains / period;
+    final avgL = losses / period;
+    final value = avgL == 0 ? 100.0 : 100 - (100 / (1 + avgG / avgL));
+
+    // Varlık türüne göre eşikler
+    final overbought = type == AssetType.hisse ? 70.0 : 72.0;
+    final oversold = type == AssetType.hisse ? 30.0 : 28.0;
+
+    final signal = value < oversold
+        ? SignalType.buy
+        : value > overbought
+            ? SignalType.sell
+            : SignalType.neutral;
+
+    final desc = value < oversold
+        ? 'Aşırı satım bölgesi (${value.toStringAsFixed(1)})'
+        : value > overbought
+            ? 'Aşırı alım bölgesi (${value.toStringAsFixed(1)})'
+            : 'Nötr bölge (${value.toStringAsFixed(1)})';
+
+    return TechnicalIndicator(name: 'RSI ($period)', value: value, signal: signal, description: desc);
+  }
+
+  // ── 2. MACD ───────────────────────────────────────────────────────────────
+
+  static TechnicalIndicator macd(List<double> prices, AssetType type) {
+    // Fon için daha uzun periyot
+    final fast = type == AssetType.fon ? 8 : 12;
+    final slow = type == AssetType.fon ? 21 : 26;
+    final sig = 9;
+
+    if (prices.length < slow + sig) {
+      return TechnicalIndicator(
+          name: 'MACD', value: 0, signal: SignalType.neutral,
+          description: 'Yetersiz veri');
+    }
+
+    final macdLine = _ema(prices, fast) - _ema(prices, slow);
+
+    // Signal line: EMA of recent MACD values
+    final macdSeries = <double>[];
+    for (int i = slow; i <= prices.length; i++) {
+      final sub = prices.sublist(0, i);
+      macdSeries.add(_ema(sub, fast) - _ema(sub, slow));
+    }
+    final signalLine = _ema(macdSeries, sig);
+    final histogram = macdLine - signalLine;
+
+    final signal = histogram > 0 ? SignalType.buy
+        : histogram < 0 ? SignalType.sell
+        : SignalType.neutral;
+
+    final desc = histogram > 0
+        ? 'MACD çizgisi sinyal üzerinde (+${histogram.toStringAsFixed(2)})'
+        : histogram < 0
+            ? 'MACD çizgisi sinyal altında (${histogram.toStringAsFixed(2)})'
+            : 'Kesişim noktasında';
+
+    return TechnicalIndicator(name: 'MACD', value: histogram, signal: signal, description: desc);
+  }
+
+  // ── 3. Bollinger Bantları ─────────────────────────────────────────────────
+
+  static TechnicalIndicator bollingerBands(List<double> prices, AssetType type) {
+    final period = type == AssetType.altin ? 14 : 20;
+    final mult = type == AssetType.doviz ? 1.5 : 2.0;
+
+    if (prices.length < period) {
+      return TechnicalIndicator(
+          name: 'Bollinger', value: 50, signal: SignalType.neutral,
+          description: 'Yetersiz veri');
+    }
+
+    final recent = prices.sublist(prices.length - period);
+    final sma = recent.reduce((a, b) => a + b) / period;
+    final variance = recent.map((p) => pow(p - sma, 2)).reduce((a, b) => a + b) / period;
+    final stdDev = sqrt(variance);
+    final upper = sma + stdDev * mult;
+    final lower = sma - stdDev * mult;
+    final current = prices.last;
+
+    // %B değeri: 0=alt bant, 1=üst bant
+    final pctB = (upper - lower) > 0 ? (current - lower) / (upper - lower) : 0.5;
+
+    final signal = current < lower ? SignalType.buy
+        : current > upper ? SignalType.sell
+        : SignalType.neutral;
+
+    final desc = current < lower
+        ? 'Alt bantın altında — potansiyel dönüş'
+        : current > upper
+            ? 'Üst bantın üzerinde — potansiyel düzeltme'
+            : '%B: ${(pctB * 100).toStringAsFixed(0)} (bant içi)';
+
+    return TechnicalIndicator(name: 'Bollinger', value: pctB * 100, signal: signal, description: desc);
+  }
+
+  // ── 4. Hareketli Ortalama (SMA/EMA Kesişimi) ─────────────────────────────
+
+  static TechnicalIndicator movingAverage(List<double> prices, AssetType type) {
+    // Varlık türüne göre periyot seçimi
+    final int shortP, longP;
+    if (type == AssetType.hisse) { shortP = 20; longP = 50; }
+    else if (type == AssetType.fon) { shortP = 10; longP = 30; }
+    else if (type == AssetType.altin) { shortP = 14; longP = 40; }
+    else if (type == AssetType.doviz) { shortP = 7; longP = 21; }
+    else { shortP = 20; longP = 50; }
+
+    if (prices.length < longP) {
+      return TechnicalIndicator(
+          name: 'Ort. Kesişim', value: 0, signal: SignalType.neutral,
+          description: 'Yetersiz veri');
+    }
+
+    final shortEma = _ema(prices, shortP);
+    final longEma = _ema(prices, longP);
+    final current = prices.last;
+    final diff = ((shortEma - longEma) / longEma * 100);
+
+    final signal = shortEma > longEma && current > shortEma ? SignalType.buy
+        : shortEma < longEma && current < shortEma ? SignalType.sell
+        : SignalType.neutral;
+
+    final desc = shortEma > longEma
+        ? 'EMA$shortP > EMA$longP — yükseliş trendi'
+        : shortEma < longEma
+            ? 'EMA$shortP < EMA$longP — düşüş trendi'
+            : 'Ortalamalarda kesişim bölgesi';
+
+    return TechnicalIndicator(name: 'EMA Kesişim', value: diff, signal: signal, description: desc);
+  }
+
+  // ── 5. Stokastik Osilatör ─────────────────────────────────────────────────
+
+  static TechnicalIndicator stochastic(List<double> prices, AssetType type) {
+    final period = type == AssetType.doviz ? 9 : 14;
+    final overbought = 80.0;
+    final oversold = 20.0;
+
+    if (prices.length < period) {
+      return TechnicalIndicator(
+          name: 'Stokastik', value: 50, signal: SignalType.neutral,
+          description: 'Yetersiz veri');
+    }
+
+    final recent = prices.sublist(prices.length - period);
+    final lowest = recent.reduce((a, b) => a < b ? a : b);
+    final highest = recent.reduce((a, b) => a > b ? a : b);
+    final current = prices.last;
+    final range = highest - lowest;
+    final k = range == 0 ? 50.0 : ((current - lowest) / range) * 100;
+
+    final signal = k < oversold ? SignalType.buy
+        : k > overbought ? SignalType.sell
+        : SignalType.neutral;
+
+    final desc = k < oversold
+        ? 'Aşırı satım (%K: ${k.toStringAsFixed(1)})'
+        : k > overbought
+            ? 'Aşırı alım (%K: ${k.toStringAsFixed(1)})'
+            : 'Nötr bölge (%K: ${k.toStringAsFixed(1)})';
+
+    return TechnicalIndicator(name: 'Stokastik', value: k, signal: signal, description: desc);
+  }
+
+  // ── Ana analiz fonksiyonu ─────────────────────────────────────────────────
+
+  /// [priceHistory]: gerçek fiyat geçmişi (eski→yeni sıralı).
+  /// Boşsa varlığın mevcut fiyatı üzerinden simülasyon yapılır.
+  static List<TechnicalIndicator> analyze(Asset asset, List<double> priceHistory) {
+    final prices = priceHistory.isNotEmpty
+        ? priceHistory
+        : _simulate(asset);
+
+    return [
+      rsi(prices, asset.type),
+      macd(prices, asset.type),
+      bollingerBands(prices, asset.type),
+      movingAverage(prices, asset.type),
+      stochastic(prices, asset.type),
+    ];
+  }
+
+  /// Gerçek veri olmadığında kullanılan simülasyon.
+  /// Seed olarak ticker + günün tarihi kullanılır — her gün farklı ama
+  /// aynı gün içinde tutarlı sinyal üretilir.
+  static List<double> _simulate(Asset asset, {int days = 120}) {
+    final today = DateTime.now();
+    // Günlük değişen seed: aynı günde aynı sonuç, her gün farklı sinyal
+    final seed = asset.ticker.hashCode.abs() ^
+        (today.year * 10000 + today.month * 100 + today.day);
+    final rng = Random(seed);
+
+    final price = asset.currentPrice > 0 ? asset.currentPrice : 100.0;
+
+    final vol = switch (asset.type) {
+      AssetType.hisse => 0.022,
+      AssetType.fon   => 0.010,
+      AssetType.altin => 0.013,
+      AssetType.doviz => 0.007,
+      _               => 0.018,
+    };
+
+    // Rassal yön belirle: %40 AL trendi, %30 SAT trendi, %30 yatay
+    final dirSeed = rng.nextDouble();
+    final double drift;
+    if (dirSeed < 0.40) {
+      drift = 0.003; // AL trendi: hafif yukarı
+    } else if (dirSeed < 0.70) {
+      drift = -0.003; // SAT trendi: hafif aşağı
+    } else {
+      drift = 0.0; // Yatay
+    }
+
+    // Geriye dönük fiyat serisi üret
+    final prices = <double>[];
+    // Başlangıç fiyatını mevcut fiyattan hesapla (trend tersine)
+    double p = price * pow(1 - drift, days).toDouble();
+    for (int i = 0; i < days; i++) {
+      prices.add(p);
+      final noise = (rng.nextDouble() - 0.5) * vol;
+      p = (p * (1 + drift + noise)).clamp(price * 0.3, price * 3.0);
+    }
+
+    // Son nokta tam olarak mevcut fiyat olsun
+    if (prices.isNotEmpty && prices.last != 0) {
+      final factor = price / prices.last;
+      return prices.map((v) => v * factor).toList();
+    }
     return prices;
   }
 
-  /// Generates portfolio signal analysis
-  static PortfolioSignalAnalysis generatePortfolioSignals(
-    List<Asset> assets,
-    double totalPortfolioValue,
-    Map<String, Function(double value, String currency)> converters,
-  ) {
-    // Group assets by type
-    final groupedByType = <AssetType, List<Asset>>{};
-    for (final asset in assets) {
-      groupedByType.putIfAbsent(asset.type, () => []).add(asset);
-    }
+  /// Genel sinyal özetini hesaplar
+  static ({SignalType signal, int buyCount, int sellCount, double confidence})
+      summarize(List<TechnicalIndicator> indicators) {
+    final buy = indicators.where((i) => i.signal == SignalType.buy).length;
+    final sell = indicators.where((i) => i.signal == SignalType.sell).length;
+    final total = indicators.length;
 
-    final categorySignals = <CategorySignal>[];
-    int totalBuySignals = 0;
-    int totalSellSignals = 0;
+    final signal = buy >= 3 ? SignalType.buy
+        : sell >= 3 ? SignalType.sell
+        : SignalType.neutral;
 
-    for (final entry in groupedByType.entries) {
-      final type = entry.key;
-      final categoryAssets = entry.value;
+    final confidence = total > 0
+        ? max(buy, sell) / total
+        : 0.0;
 
-      // Calculate total value for category
-      double categoryTotal = 0;
-      for (final asset in categoryAssets) {
-        categoryTotal +=
-            asset.totalValue; // Assuming already in TRY or can be converted
-      }
-
-      // Generate signals for each asset and aggregate
-      final allIndicators = <TechnicalIndicator>[];
-      for (final asset in categoryAssets) {
-        allIndicators.addAll(analyzeAsset(asset));
-      }
-
-      // Calculate overall signal
-      final buyCount =
-          allIndicators.where((i) => i.signal == SignalType.buy).length;
-      final sellCount =
-          allIndicators.where((i) => i.signal == SignalType.sell).length;
-      final neutralCount =
-          allIndicators.where((i) => i.signal == SignalType.neutral).length;
-
-      final overallSignal = buyCount > sellCount && buyCount > neutralCount
-          ? SignalType.buy
-          : sellCount > buyCount && sellCount > neutralCount
-              ? SignalType.sell
-              : SignalType.neutral;
-
-      final confidence = (max(buyCount, max(sellCount, neutralCount)) /
-              (allIndicators.isEmpty ? 1 : allIndicators.length))
-          .clamp(0.0, 1.0);
-
-      categorySignals.add(CategorySignal(
-        category: type.label,
-        indicators: allIndicators,
-        overallSignal: overallSignal,
-        confidence: confidence,
-        totalAssets: categoryTotal,
-        indicatorCount: allIndicators.length,
-      ));
-
-      totalBuySignals += buyCount;
-      totalSellSignals += sellCount;
-    }
-
-    final portfolioSignal = totalBuySignals > totalSellSignals
-        ? SignalType.buy
-        : totalSellSignals > totalBuySignals
-            ? SignalType.sell
-            : SignalType.neutral;
-
-    return PortfolioSignalAnalysis(
-      categorySignals: categorySignals,
-      totalPortfolioValue: totalPortfolioValue,
-      portfolioSignal: portfolioSignal,
-    );
+    return (signal: signal, buyCount: buy, sellCount: sell, confidence: confidence);
   }
 }

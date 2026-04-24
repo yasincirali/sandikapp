@@ -15,11 +15,13 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
-  final _manualPriceCtrl = TextEditingController();
+  late final _manualPriceCtrl = TextEditingController();
+  late final _priceFocusNode = FocusNode();
 
   @override
   void dispose() {
     _manualPriceCtrl.dispose();
+    _priceFocusNode.dispose();
     super.dispose();
   }
 
@@ -35,8 +37,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     final isPriceKnown = asset.purchasePrice > 0;
     final isPositive = isPriceKnown ? asset.gainLoss >= 0 : false;
     final cs = Theme.of(context).colorScheme;
-    final green = const Color(0xFF10B981);
-    final red = const Color(0xFFEF4444);
+    const green = Color(0xFF10B981);
+    const red = Color(0xFFEF4444);
     final gainColor =
         isPriceKnown ? (isPositive ? green : red) : cs.onSurfaceVariant;
     final tryFmt =
@@ -336,8 +338,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   children: [
                     Expanded(
                       child: TextField(
+                        focusNode: _priceFocusNode,
                         controller: _manualPriceCtrl,
                         style: const TextStyle(fontSize: 14),
+                        cursorColor: cs.primary,
+                        enableInteractiveSelection: true,
                         decoration: InputDecoration(
                           hintText: 'Yeni fiyat girin',
                           hintStyle: TextStyle(
@@ -349,11 +354,30 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             fontSize: 13,
                             color: cs.onSurfaceVariant,
                           ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: cs.outlineVariant.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: cs.outlineVariant.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: cs.primary,
+                              width: 1.5,
+                            ),
+                          ),
                           isDense: true,
-                          contentPadding: EdgeInsets.zero,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),

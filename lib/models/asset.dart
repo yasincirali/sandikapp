@@ -43,6 +43,7 @@ class Asset {
   double get gainLossPercentage =>
       totalCost > 0 ? (gainLoss / totalCost) * 100 : 0;
 
+  /// SQLite uyumlu map (partner kod payload'ı için kullanılır)
   Map<String, dynamic> toMap() => {
         'id': id,
         'userId': userId,
@@ -76,9 +77,49 @@ class Asset {
         lastUpdated: m['lastUpdated'] != null
             ? DateTime.fromMillisecondsSinceEpoch(m['lastUpdated'] as int)
             : null,
-        addedDate:
-            DateTime.fromMillisecondsSinceEpoch(m['addedDate'] as int),
+        addedDate: DateTime.fromMillisecondsSinceEpoch(m['addedDate'] as int),
         notes: (m['notes'] as String?) ?? '',
         isManualPrice: (m['isManualPrice'] as int) == 1,
+      );
+
+  /// Supabase snake_case sütunlarına map
+  Map<String, dynamic> toSupabase() => {
+        'id': id,
+        'user_id': userId,
+        'name': name,
+        'ticker': ticker,
+        'type': type.name,
+        'sub_category': subCategory,
+        'unit_type': unitType,
+        'quantity': quantity,
+        'purchase_price': purchasePrice,
+        'currency': currency,
+        'current_price': currentPrice,
+        'last_updated': lastUpdated?.toUtc().toIso8601String(),
+        'added_date': addedDate.toUtc().toIso8601String(),
+        'notes': notes,
+        'is_manual_price': isManualPrice,
+      };
+
+  factory Asset.fromSupabase(Map<String, dynamic> m) => Asset(
+        id: m['id'] as String,
+        userId: (m['user_id'] as String?) ?? '',
+        name: m['name'] as String,
+        ticker: (m['ticker'] as String?) ?? '',
+        type: AssetType.fromString(m['type'] as String),
+        quantity: (m['quantity'] as num).toDouble(),
+        purchasePrice: (m['purchase_price'] as num).toDouble(),
+        currency: m['currency'] as String,
+        currentPrice: (m['current_price'] as num).toDouble(),
+        subCategory: m['sub_category'] as String?,
+        unitType: (m['unit_type'] as String?) ?? 'piece',
+        lastUpdated: m['last_updated'] != null
+            ? DateTime.parse(m['last_updated'] as String)
+            : null,
+        addedDate: m['added_date'] != null
+            ? DateTime.parse(m['added_date'] as String)
+            : DateTime.now(),
+        notes: (m['notes'] as String?) ?? '',
+        isManualPrice: m['is_manual_price'] as bool? ?? false,
       );
 }

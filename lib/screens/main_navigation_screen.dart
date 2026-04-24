@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import 'home_screen.dart';
+import 'login_screen.dart';
 import 'charts_screen.dart';
 import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
@@ -32,6 +33,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (index == 2) {
       _showAddAsset();
       return;
+    }
+    // Ana sayfaya her dönüşte fiyatları yenile
+    if (index == 0 && _currentIndex != 0) {
+      ref.read(portfolioProvider.notifier).refreshPrices();
     }
     setState(() {
       _currentIndex = index;
@@ -71,6 +76,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     );
     if (confirm == true && mounted) {
       await ref.read(authProvider.notifier).logout();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
     }
   }
 

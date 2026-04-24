@@ -52,6 +52,7 @@ app.*.map.json
 .env.*
 secrets.dart
 api_keys.dart
+lib/config/supabase_config.dart
 android/key.properties
 android/app/google-services.json
 ios/GoogleService-Info.plist

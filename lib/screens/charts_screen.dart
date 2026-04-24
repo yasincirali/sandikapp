@@ -5,13 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
-import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
-import '../services/database_service.dart';
-import '../services/history_service.dart';
 import '../widgets/modern_tab_selector.dart';
 import 'performance_screen.dart';
 import 'portfolio_performance_screen.dart';
@@ -57,7 +54,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (_) => const PortfolioPerformanceScreen()),
+                  builder: (_) => PortfolioPerformanceScreen(initialView: _view)),
             ),
           ),
           IconButton(

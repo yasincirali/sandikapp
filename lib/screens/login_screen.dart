@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
+import '../main.dart' show appNavigatorKey;
+import 'main_navigation_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -18,7 +20,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _obscure = true;
-  bool _isAdmin = false;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedEmail();
+  }
+
+  Future<void> _loadSavedEmail() async {
+    final saved = await AuthService.instance.getSavedEmail();
+    if (saved != null && mounted) {
+      _emailCtrl.text = saved;
+      // Şifre alanına odaklan
+      if (mounted) setState(() {});
+    }
+  }
 
   @override
   void dispose() {
@@ -28,27 +45,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).login(
-          email: _emailCtrl.text,
-          password: _isAdmin ? '' : _passCtrl.text,
-        );
-    final error = ref.read(authProvider).error;
-    if (error != null && mounted) {
+    final valid = _formKey.currentState!.validate();
+    if (!valid) return;
+    setState(() => _loading = true);
+    try {
+      await ref.read(authProvider.notifier).login(
+            email: _emailCtrl.text,
+            password: _passCtrl.text,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString()), backgroundColor: Sandik.loss),
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (!mounted) return;
+    final authState = ref.read(authProvider);
+    if (authState.hasError) {
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authState.error.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else if (authState.valueOrNull != null) {
+      // Login başarılı — stack'i temizle, AuthGate MainNavigationScreen'e geçer
+      appNavigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+        (_) => false,
       );
     }
   }
 
-  void _onEmailChanged(String value) {
-    final admin = AuthService.instance.isAdmin(value);
-    if (admin != _isAdmin) setState(() => _isAdmin = admin);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authProvider).isLoading;
+    ref.watch(authProvider);
 
     return Scaffold(
       backgroundColor: Sandik.background,
@@ -63,7 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   const SizedBox(height: 56),
 
-                  // ── Logo + wordmark ────────────────────────────────────────
+                  // ── Logo + wordmark ──────────────────────────────────────
                   Center(
                     child: Column(
                       children: [
@@ -91,52 +125,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 48),
 
-                  // ── E-posta ────────────────────────────────────────────────
+                  // ── E-posta ─────────────────────────────────────────────
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
                     style: GoogleFonts.inter(color: Sandik.text90),
                     decoration: InputDecoration(
                       labelText: 'E-posta',
-                      prefixIcon: const Icon(Icons.email_outlined, color: Sandik.text36, size: 20),
+                      prefixIcon: const Icon(Icons.email_outlined,
+                          color: Sandik.text36, size: 20),
                       labelStyle: GoogleFonts.inter(color: Sandik.text36),
                     ),
                     validator: (v) =>
-                        (v == null || !v.contains('@')) ? 'Geçerli e-posta girin' : null,
-                    onChanged: _onEmailChanged,
+                        (v == null || !v.contains('@'))
+                            ? 'Geçerli e-posta girin'
+                            : null,
                   ),
                   const SizedBox(height: 14),
 
-                  // ── Şifre (admin için gizle) ───────────────────────────────
-                  if (!_isAdmin) ...[
-                    TextFormField(
-                      controller: _passCtrl,
-                      obscureText: _obscure,
-                      style: GoogleFonts.inter(color: Sandik.text90),
-                      decoration: InputDecoration(
-                        labelText: 'Şifre',
-                        prefixIcon: const Icon(Icons.lock_outline, color: Sandik.text36, size: 20),
-                        labelStyle: GoogleFonts.inter(color: Sandik.text36),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: Sandik.text36,
-                            size: 20,
-                          ),
-                          onPressed: () => setState(() => _obscure = !_obscure),
+                  // ── Şifre ────────────────────────────────────────────────
+                  TextFormField(
+                    controller: _passCtrl,
+                    obscureText: _obscure,
+                    style: GoogleFonts.inter(color: Sandik.text90),
+                    decoration: InputDecoration(
+                      labelText: 'Şifre',
+                      prefixIcon: const Icon(Icons.lock_outline,
+                          color: Sandik.text36, size: 20),
+                      labelStyle: GoogleFonts.inter(color: Sandik.text36),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscure
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: Sandik.text36,
+                          size: 20,
                         ),
+                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
-                      validator: (v) =>
-                          (v == null || v.length < 6) ? 'En az 6 karakter' : null,
                     ),
-                    const SizedBox(height: 28),
-                  ] else
-                    const SizedBox(height: 28),
+                    validator: (v) =>
+                        (v == null || v.length < 6) ? 'En az 6 karakter' : null,
+                  ),
+                  const SizedBox(height: 28),
 
-                  // ── Giriş butonu ───────────────────────────────────────────
+                  // ── Giriş butonu ─────────────────────────────────────────
                   FilledButton(
-                    onPressed: isLoading ? null : _login,
-                    child: isLoading
+                    onPressed: _loading ? null : _login,
+                    child: _loading
                         ? const SizedBox(
                             width: 20,
                             height: 20,
@@ -151,11 +187,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // ── Kayıt ol ───────────────────────────────────────────────
+                  // ── Kayıt ol ─────────────────────────────────────────────
                   TextButton(
                     onPressed: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const RegisterScreen()),
                     ),
                     child: Text(
                       'Hesabınız yok mu? Kayıt olun',

@@ -1,17 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'config/supabase_config.dart';
+import 'models/user_model.dart';
 import 'providers/auth_provider.dart';
-import 'screens/home_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/notification_service.dart';
+import 'services/partner_invite_listener_service.dart';
+import 'services/remote_push_service.dart';
 import 'theme/sandik.dart';
+
+final appNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR');
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  try {
+    await Firebase.initializeApp();
+    await RemotePushService.instance.init();
+  } catch (_) {
+    // Firebase config dosyalari eklenene kadar uygulama remote push olmadan calisabilir.
+  }
+  await Supabase.initialize(
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+  );
+  await NotificationService.instance.init(navigatorKey: appNavigatorKey);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light, // koyu zemin = açık ikonlar
@@ -28,6 +49,7 @@ class SandikApp extends StatelessWidget {
     return MaterialApp(
       title: 'sandık',
       debugShowCheckedModeBanner: false,
+      navigatorKey: appNavigatorKey,
       theme: _buildTheme(),
       themeMode: ThemeMode.dark, // sandık dark-mode öncelikli
       home: const _AuthGate(),
@@ -62,9 +84,9 @@ class SandikApp extends StatelessWidget {
       surface: Sandik.surface1,
       onSurface: Sandik.text90,
       surfaceContainerLowest: Sandik.background,
-      surfaceContainerLow:    Sandik.background,
-      surfaceContainer:       Sandik.surface1,
-      surfaceContainerHigh:   Sandik.surface2,
+      surfaceContainerLow: Sandik.background,
+      surfaceContainer: Sandik.surface1,
+      surfaceContainerHigh: Sandik.surface2,
       surfaceContainerHighest: Color(0xFF1A3D2E),
       onSurfaceVariant: Sandik.text58,
       // Outline
@@ -84,29 +106,53 @@ class SandikApp extends StatelessWidget {
 
     TextStyle pjs(double size, FontWeight weight, double ls) =>
         GoogleFonts.plusJakartaSans(
-            fontSize: size, fontWeight: weight, letterSpacing: ls, color: Sandik.text90);
+            fontSize: size,
+            fontWeight: weight,
+            letterSpacing: ls,
+            color: Sandik.text90);
 
     final textTheme = baseText.copyWith(
       // Display — büyük sayılar (Plus Jakarta Sans)
-      displayLarge:  pjs(52, FontWeight.w700, -0.03 * 52).copyWith(color: Sandik.gold),
-      displayMedium: pjs(40, FontWeight.w700, -0.03 * 40).copyWith(color: Sandik.gold),
-      displaySmall:  pjs(32, FontWeight.w700, -0.02 * 32).copyWith(color: Sandik.gold),
+      displayLarge:
+          pjs(52, FontWeight.w700, -0.03 * 52).copyWith(color: Sandik.gold),
+      displayMedium:
+          pjs(40, FontWeight.w700, -0.03 * 40).copyWith(color: Sandik.gold),
+      displaySmall:
+          pjs(32, FontWeight.w700, -0.02 * 32).copyWith(color: Sandik.gold),
       // Headline — başlıklar (Plus Jakarta Sans)
-      headlineLarge:  pjs(24, FontWeight.w600, -0.01 * 24),
+      headlineLarge: pjs(24, FontWeight.w600, -0.01 * 24),
       headlineMedium: pjs(20, FontWeight.w600, -0.01 * 20),
-      headlineSmall:  pjs(18, FontWeight.w600, -0.01 * 18),
+      headlineSmall: pjs(18, FontWeight.w600, -0.01 * 18),
       // Title — navigasyon ve kart başlıkları
-      titleLarge:  GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w600, color: Sandik.text90),
-      titleMedium: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Sandik.text90),
-      titleSmall:  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Sandik.text90),
+      titleLarge: GoogleFonts.plusJakartaSans(
+          fontSize: 16, fontWeight: FontWeight.w600, color: Sandik.text90),
+      titleMedium: GoogleFonts.inter(
+          fontSize: 14, fontWeight: FontWeight.w500, color: Sandik.text90),
+      titleSmall: GoogleFonts.inter(
+          fontSize: 12, fontWeight: FontWeight.w500, color: Sandik.text90),
       // Body — gövde metin (Inter)
-      bodyLarge:   GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500, color: Sandik.text90),
-      bodyMedium:  GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w400, color: Sandik.text90),
-      bodySmall:   GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w400, color: Sandik.text58),
+      bodyLarge: GoogleFonts.inter(
+          fontSize: 15, fontWeight: FontWeight.w500, color: Sandik.text90),
+      bodyMedium: GoogleFonts.inter(
+          fontSize: 13, fontWeight: FontWeight.w400, color: Sandik.text90),
+      bodySmall: GoogleFonts.inter(
+          fontSize: 11, fontWeight: FontWeight.w400, color: Sandik.text58),
       // Label — etiket
-      labelLarge:  GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.08 * 11, color: Sandik.text90),
-      labelMedium: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 0.08 * 10, color: Sandik.text58),
-      labelSmall:  GoogleFonts.inter(fontSize: 9,  fontWeight: FontWeight.w500, letterSpacing: 0.08 * 9,  color: Sandik.text36),
+      labelLarge: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.08 * 11,
+          color: Sandik.text90),
+      labelMedium: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.08 * 10,
+          color: Sandik.text58),
+      labelSmall: GoogleFonts.inter(
+          fontSize: 9,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.08 * 9,
+          color: Sandik.text36),
     );
 
     return ThemeData(
@@ -166,7 +212,8 @@ class SandikApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Sandik.loss, width: 1),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         labelStyle: GoogleFonts.inter(color: Sandik.text58, fontSize: 14),
         hintStyle: GoogleFonts.inter(color: Sandik.text36, fontSize: 14),
       ),
@@ -178,7 +225,8 @@ class SandikApp extends StatelessWidget {
           foregroundColor: Sandik.dark,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.2),
+          textStyle: GoogleFonts.inter(
+              fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.2),
         ),
       ),
 
@@ -189,7 +237,8 @@ class SandikApp extends StatelessWidget {
           side: const BorderSide(color: Sandik.amber, width: 1.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+          textStyle:
+              GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
@@ -197,7 +246,8 @@ class SandikApp extends StatelessWidget {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: Sandik.amber,
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+          textStyle:
+              GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
@@ -213,7 +263,8 @@ class SandikApp extends StatelessWidget {
       chipTheme: ChipThemeData(
         backgroundColor: Colors.white.withOpacity(0.05),
         selectedColor: Sandik.amber,
-        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
+        labelStyle:
+            GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -238,9 +289,8 @@ class SandikApp extends StatelessWidget {
         backgroundColor: Sandik.surface1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titleTextStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 18, fontWeight: FontWeight.w700, color: Sandik.text90),
-        contentTextStyle: GoogleFonts.inter(
-          fontSize: 14, color: Sandik.text58),
+            fontSize: 18, fontWeight: FontWeight.w700, color: Sandik.text90),
+        contentTextStyle: GoogleFonts.inter(fontSize: 14, color: Sandik.text58),
       ),
 
       // SnackBar
@@ -254,14 +304,102 @@ class SandikApp extends StatelessWidget {
   }
 }
 
-// ── Auth Gate ─────────────────────────────────────────────────────────────────
+// ── Auth Gate + Session Timeout ───────────────────────────────────────────────
 
-class _AuthGate extends ConsumerWidget {
+class _AuthGate extends ConsumerStatefulWidget {
   const _AuthGate();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<_AuthGate>
+    with WidgetsBindingObserver {
+  late final ProviderSubscription<AsyncValue<AppUser?>> _authSubscription;
+  // Uygulamanın arka plana atıldığı an
+  DateTime? _backgroundedAt;
+
+  // Arka planda 10 dk geçince oturumu kapat
+  static const _sessionTimeout = Duration(minutes: 10);
+
+  AppUser? _previousUser;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _authSubscription = ref.listenManual(authProvider, (_, next) {
+      final user = next.valueOrNull;
+      // Oturum kapandıysa (user vardı, şimdi null) → LoginScreen'e yönlendir
+      if (_previousUser != null && user == null && !next.isLoading) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          appNavigatorKey.currentState?.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (_) => false,
+          );
+        });
+      }
+      _previousUser = user;
+      _syncInviteDelivery(user?.id);
+    }, fireImmediately: true);
+  }
+
+  @override
+  void dispose() {
+    _authSubscription.close();
+    PartnerInviteListenerService.instance.stop();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _syncInviteDelivery(String? userId) async {
+    try {
+      if (userId == null || userId.isEmpty) {
+        await RemotePushService.instance.stop();
+        await PartnerInviteListenerService.instance.stop();
+        return;
+      }
+
+      if (RemotePushService.instance.isAvailable) {
+        await PartnerInviteListenerService.instance.stop();
+        await RemotePushService.instance.start(userId);
+        return;
+      }
+
+      await RemotePushService.instance.stop();
+      await PartnerInviteListenerService.instance.start(userId);
+    } catch (_) {
+      // Firebase/push servisi hazır değilse auth akışını engelleme
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _backgroundedAt = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      final bg = _backgroundedAt;
+      if (bg != null && DateTime.now().difference(bg) >= _sessionTimeout) {
+        _backgroundedAt = null;
+        // Oturumu kapat — auth state değişince LoginScreen'e döner
+        ref.read(authProvider.notifier).logout();
+      } else {
+        _backgroundedAt = null;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
+    if (auth.isLoading && !auth.hasValue) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     final user = auth.valueOrNull;
     return user != null ? const MainNavigationScreen() : const LoginScreen();
   }

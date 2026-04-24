@@ -4,15 +4,24 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/technical_signal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/technical_analysis_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
-  const PortfolioPerformanceScreen({super.key});
+  final String? initialView;
+  final AssetType? initialTypeFilter;
+
+  const PortfolioPerformanceScreen({
+    super.key,
+    this.initialView = '',
+    this.initialTypeFilter,
+  });
 
   @override
   ConsumerState<PortfolioPerformanceScreen> createState() =>
@@ -22,8 +31,15 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
 class _PortfolioPerformanceScreenState
     extends ConsumerState<PortfolioPerformanceScreen> {
   int _selectedPeriodIdx = 4; // Yıllık
-  String? _view = ''; // null = Birlikte, '' = Ben, uuid = Ortak
-  AssetType? _typeFilter;
+  late String? _view;
+  late AssetType? _typeFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    _view = widget.initialView;
+    _typeFilter = widget.initialTypeFilter;
+  }
 
   static const List<({String label, int days})> _periods = [
     (label: '1H', days: 7),
@@ -191,6 +207,9 @@ class _PortfolioPerformanceScreenState
                     const SizedBox(height: 24),
                     _buildChartContainer(
                         segments, startDate, endDate, targetAssets),
+                    const SizedBox(height: 24),
+                    _PortfolioSignalPanel(assets: targetAssets),
+                    const SizedBox(height: 16),
                   ],
                 );
               },
@@ -465,6 +484,189 @@ class _PortfolioPerformanceScreenState
     );
   }
 }
+
+// ── Portfolio Sinyal Paneli ───────────────────────────────────────────────────
+
+class _PortfolioSignalPanel extends ConsumerWidget {
+  final List<Asset> assets;
+  const _PortfolioSignalPanel({required this.assets});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (assets.isEmpty) return const SizedBox.shrink();
+
+    // Her varlığı analiz et, sadece AL/SAT olanları göster
+    final results = assets.map((asset) {
+      final indicators = TechnicalAnalysisService.analyze(asset, []);
+      final summary = TechnicalAnalysisService.summarize(indicators);
+      return (asset: asset, indicators: indicators, summary: summary);
+    }).where((r) => r.summary.signal != SignalType.neutral).toList();
+
+    if (results.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Sandik.surface1,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_outline_rounded,
+                color: Sandik.gain, size: 20),
+            const SizedBox(width: 12),
+            Text('Güçlü sinyal yok — portföy nötr bölgede',
+                style: GoogleFonts.inter(fontSize: 13, color: Sandik.text58)),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('TEKNİK SİNYALLER',
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: Sandik.text36)),
+            const SizedBox(width: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                  color: Sandik.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8)),
+              child: Text('${results.length}',
+                  style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Sandik.amber)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...results.map((r) {
+          final isBuy = r.summary.signal == SignalType.buy;
+          final color = isBuy ? Sandik.gain : Sandik.loss;
+          final label = isBuy ? 'AL' : 'SAT';
+          final count = isBuy ? r.summary.buyCount : r.summary.sellCount;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: color.withValues(alpha: 0.22), width: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Başlık satırı
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                            isBuy
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
+                            color: color,
+                            size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(r.asset.name,
+                                style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white)),
+                            Text(r.asset.type.label,
+                                style: GoogleFonts.inter(
+                                    fontSize: 11, color: Sandik.text36)),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(label,
+                            style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: color,
+                                letterSpacing: 0.5)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Gösterge özeti
+                  Row(
+                    children: r.indicators.map((ind) {
+                      final c = ind.signal == SignalType.buy
+                          ? Sandik.gain
+                          : ind.signal == SignalType.sell
+                              ? Sandik.loss
+                              : Sandik.text36;
+                      return Expanded(
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: c,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              ind.name.split(' ').first,
+                              style: GoogleFonts.inter(
+                                  fontSize: 9,
+                                  color: c,
+                                  fontWeight: FontWeight.w600),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$count/5 gösterge $label diyor  ·  %${(r.summary.confidence * 100).toStringAsFixed(0)} güven',
+                    style: GoogleFonts.inter(
+                        fontSize: 11, color: Sandik.text58),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class TransactionSegment {
   final List<FlSpot> spots;
