@@ -63,8 +63,8 @@ class NotificationService {
     final isBuy = signal == SignalType.buy;
     final title = isBuy ? 'AL Sinyali: $assetName' : 'SAT Sinyali: $assetName';
     final body = isBuy
-        ? '$buyCount/5 gosterge AL diyor. Firsati degerlendirin.'
-        : '$sellCount/5 gosterge SAT diyor. Pozisyonu degerlendirin.';
+        ? '$buyCount/5 gösterge AL diyor. Bu bildirim yatırım tavsiyesi değildir.'
+        : '$sellCount/5 gösterge SAT diyor. Bu bildirim yatırım tavsiyesi değildir.';
 
     final androidDetails = AndroidNotificationDetails(
       'signal_channel',

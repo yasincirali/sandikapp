@@ -1,91 +1,33 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class TefasFund {
   final String code;
   final String name;
   final double price;
-  final String fundType;
+  final String fundType;       // YAT, EMK, BYF
+  final String managerName;    // Portföy yönetim şirketi (fonUnvan'dan parse)
+  final double? return1m;      // 1 aylık getiri
+  final double? return3m;
+  final double? return6m;
+  final double? return1y;
+  final double? returnYtd;
+  final int? riskLevel;        // 1-7
 
   const TefasFund({
     required this.code,
     required this.name,
     required this.price,
     required this.fundType,
+    required this.managerName,
+    this.return1m,
+    this.return3m,
+    this.return6m,
+    this.return1y,
+    this.returnYtd,
+    this.riskLevel,
   });
-}
-
-// ─── Fallback Fund Data ─────────────────────────────────────────────────────
-// Used when TEFAS API is unavailable - includes popular funds
-const _fallbackFunds = [
-  ('AKCYA', 'Akçaağaç Yatırım Fonu', 2.1450),
-  ('AKBNK', 'Akbank Portföy Yönetimi Borsa Yat. Fonu', 1.8920),
-  ('AKFEX', 'Akçaağaç Forex Yatırım Fonu', 2.3450),
-  ('ALFON', 'Alternatif Finans Yatırım Fonu', 1.5670),
-  ('AMAKU', 'Ama Koruma Amaçlı Yatırım Fonu', 1.2340),
-  ('AMANF', 'Amanfon Yatırım Fonu', 1.9870),
-  ('AMAON', 'AMA Onaylı Yatırım Fonu', 1.4560),
-  ('ANFON', 'Anfon Yatırım Fonu', 2.1230),
-  ('ASLFON', 'Asıl Fon Yatırım Fonu', 1.7890),
-  ('AXFON', 'Axion Yatırım Fonu', 2.3450),
-  ('AZFON', 'Az Riskli Yatırım Fonu', 1.1230),
-  ('BAFON', 'Bailey Yatırım Fonu', 2.0540),
-  ('BANTU', 'Bantam Yatırım Fonu', 1.6780),
-  ('BCNFN', 'Beacon Yatırım Fonu', 1.9890),
-  ('BEFON', 'Bereket Yatırım Fonu', 2.2340),
-  ('BIKFN', 'Bikfon Yatırım Fonu', 1.5430),
-  ('BNFON', 'Bonton Yatırım Fonu', 1.8560),
-  ('BORFO', 'Borsa Yatırım Fonu', 2.1890),
-  ('CAFON', 'Caner Yatırım Fonu', 1.7230),
-  ('CHFON', 'Chafon Yatırım Fonu', 1.9340),
-  ('CIFON', 'Citibank Yatırım Fonu', 2.0870),
-  ('CLAFN', 'Clarifon Yatırım Fonu', 1.6540),
-  ('CPFON', 'Coronelli Portföy Yatırım Fonu', 2.2670),
-  ('DALFN', 'Dalga Yatırım Fonu', 1.8230),
-  ('DEFON', 'Denge Yatırım Fonu', 1.5890),
-  ('DIAFN', 'Dian Yatırım Fonu', 2.0340),
-  ('DIFON', 'Dinar Yatırım Fonu', 1.9120),
-  ('DOMFN', 'Domestik Yatırım Fonu', 2.1450),
-  ('EAFON', 'Eağer Yatırım Fonu', 1.7560),
-  ('ECFON', 'Ekonomist Yatırım Fonu', 1.8890),
-  ('ESFON', 'Es Fonlar Yatırım Fonu', 2.3120),
-  ('EWFON', 'EW Yatırım Fonu', 1.6230),
-  ('FARFN', 'Farklı Yatırım Fonu', 1.9670),
-  ('FIFON', 'Fidus Yatırım Fonu', 2.0540),
-  ('FINFO', 'Fin Portföy Yatırım Fonu', 1.7890),
-  ('FOLLY', 'Follies Yatırım Fonu', 2.1780),
-  ('FOPTA', 'Forta Portföy Yatırım Fonu', 1.8450),
-  ('FSFON', 'Frost Yatırım Fonu', 1.5230),
-  ('FTFON', 'Futura Yatırım Fonu', 2.2340),
-  ('GDFON', 'Güvenli Yatırım Fonu', 1.1890),
-  ('GEFON', 'Geleceğin Yatırım Fonu', 2.0120),
-  ('GIFON', 'Girişim Yatırım Fonu', 1.9340),
-  ('GLFON', 'Global Yatırım Fonu', 2.3670),
-  ('GRFON', 'Gözde Riski Yatırım Fonu', 1.6780),
-  ('GSFON', 'Gümrük Sekiz Yatırım Fonu', 1.8120),
-  ('GYFON', 'Greystone Yatırım Fonu', 2.1230),
-  ('HAFON', 'Harita Yatırım Fonu', 1.7450),
-  ('HIFON', 'Hive Yatırım Fonu', 1.9890),
-  ('HOFON', 'Horizon Yatırım Fonu', 2.0670),
-  ('IBFON', 'Ibrahim Yatırım Fonu', 1.5540),
-  ('ICFON', 'İçgüdü Yatırım Fonu', 2.2120),
-  ('IEFON', 'İktisadi Yatırım Fonu', 1.8340),
-  ('ILFON', 'İlliyum Yatırım Fonu', 1.6890),
-  ('IMFON', 'İmage Yatırım Fonu', 2.1670),
-  ('INFON', 'İnsan Yatırım Fonu', 1.9230),
-];
-
-List<TefasFund> _getFallbackFunds() {
-  return _fallbackFunds
-      .map((f) => TefasFund(
-            code: f.$1,
-            name: f.$2,
-            price: f.$3,
-            fundType: 'FYF',
-          ))
-      .toList();
 }
 
 class TefasService {
@@ -97,439 +39,276 @@ class TefasService {
   List<TefasFund>? _cachedFunds;
   DateTime? _cacheTime;
 
-  // Session cookie for TEFAS (ASP.NET requires a session to be established first)
-  String? _sessionCookie;
-  DateTime? _sessionTime;
-
   static const _baseUrl = 'https://www.tefas.gov.tr';
+  static const _listEndpoint  = '/api/funds/fonGetiriBazliBilgiGetir';
+  static const _priceEndpoint = '/api/funds/fonFiyatBilgiGetir';
 
-  static const _ua =
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-      '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-
-  static const _apiHeaders = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Accept': 'application/json, text/javascript, */*; q=0.01',
-    'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+  static const _headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json, text/plain, */*',
     'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-            '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Referer': 'https://www.tefas.gov.tr/TarihselVeriler.aspx',
-    'Origin': 'https://www.tefas.gov.tr',
-    'X-Requested-With': 'XMLHttpRequest',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/124.0.0.0 Safari/537.36',
   };
 
+  // 1 saatlik cache — fiyatlar gün içinde çok değişmez
   bool get _cacheValid =>
       _cachedFunds != null &&
       _cacheTime != null &&
       DateTime.now().difference(_cacheTime!) < const Duration(hours: 1);
 
-  bool get _sessionValid =>
-      _sessionCookie != null &&
-      _sessionTime != null &&
-      DateTime.now().difference(_sessionTime!) < const Duration(minutes: 25);
+  // ── Tüm fonları çek ───────────────────────────────────────────────────────
 
-  /// Establishes an ASP.NET session by visiting the TEFAS page.
-  /// TEFAS AJAX APIs require a valid session cookie to return data.
-  /// Uses retry logic to handle transient failures.
-  Future<void> _ensureSession() async {
-    if (_sessionValid) {
-      _debugLog('Valid session exists, skipping setup');
-      return;
-    }
-
-    const maxRetries = 3;
-    int attemptCount = 0;
-
-    while (attemptCount < maxRetries) {
-      try {
-        attemptCount++;
-        _debugLog('Session setup attempt $attemptCount/$maxRetries');
-
-        final res = await _client.get(
-          Uri.parse('$_baseUrl/TarihselVeriler.aspx'),
-          headers: {
-            'User-Agent': _ua,
-            'Accept':
-                'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8',
-          },
-        ).timeout(const Duration(seconds: 10));
-
-        _debugLog(
-            'Session page response: HTTP ${res.statusCode}, headers: ${res.headers.keys.toList()}');
-
-        final setCookie = res.headers['set-cookie'] ?? '';
-        if (setCookie.isNotEmpty) {
-          _debugLog(
-              'Set-Cookie header found: ${setCookie.substring(0, 50)}...');
-
-          // Extract ASP.NET_SessionId specifically
-          final match =
-              RegExp(r'ASP\.NET_SessionId=[^;,]+').firstMatch(setCookie);
-          if (match != null) {
-            _sessionCookie = match.group(0);
-            _sessionTime = DateTime.now();
-            _debugLog('ASP.NET SessionId extracted: $_sessionCookie');
-            return;
-          }
-          // Fallback: take first name=value from Set-Cookie
-          final firstPair = setCookie.split(';').first.trim();
-          if (firstPair.contains('=')) {
-            _sessionCookie = firstPair;
-            _sessionTime = DateTime.now();
-            _debugLog('Fallback cookie set: $_sessionCookie');
-            return;
-          }
-        } else {
-          _debugLog('WARNING: No Set-Cookie header found in response!');
-        }
-      } on TimeoutException {
-        _debugLog('Session setup timeout attempt $attemptCount/$maxRetries');
-        if (attemptCount < maxRetries) {
-          await Future.delayed(Duration(milliseconds: 500 * attemptCount));
-        }
-      } catch (e) {
-        _debugLog('Session setup error attempt $attemptCount/$maxRetries: $e');
-        if (attemptCount < maxRetries) {
-          await Future.delayed(Duration(milliseconds: 500 * attemptCount));
-        }
-      }
-    }
-    _debugLog(
-        'Session establishment failed after $maxRetries attempts, continuing anyway');
-  }
-
-  /// Fetches the latest fund NAV list from TEFAS.
-  /// Returns fallback list immediately to ensure app never crashes.
-  /// Optionally fetches real data in background for next load.
-  Future<List<TefasFund>> fetchAllFunds() async {
-    // Always return cached or fallback funds immediately - never fail
-    if (_cacheValid) {
-      _debugLog('✓ Using cached funds (${_cachedFunds?.length ?? 0} funds)');
-      return _cachedFunds!;
-    }
-
-    _debugLog(
-        '→ Starting fund fetch (returning fallback first for instant UI)');
-
-    // Immediately return fallback to ensure UI works
-    final fallback = _getFallbackFunds();
-    _cachedFunds = fallback;
-    _cacheTime = DateTime.now();
-    _debugLog('✓ Fallback ready: ${fallback.length} funds');
-
-    // Try to fetch latest data in background (non-blocking)
-    _fetchLatestDataInBackground();
-
-    return fallback;
-  }
-
-  /// Non-blocking background fetch - tries aggressively to get real data
-  void _fetchLatestDataInBackground() {
-    // Start immediately, don't wait
-    Future.microtask(() async {
-      _debugLog('🔄 [Background] Starting aggressive TEFAS data fetch...');
-
-      for (int attempt = 0; attempt < 3; attempt++) {
-        try {
-          await _ensureSession();
-          List<TefasFund>? result;
-
-          // Try YAT type
-          try {
-            result = await _fetchFundInfoWithRetry('YAT', maxRetries: 2);
-            if (result != null && result.isNotEmpty) {
-              _debugLog(
-                  '✅ [Background] YAT fetch successful (attempt ${attempt + 1}): ${result.length} funds');
-              _cachedFunds = result;
-              _cacheTime = DateTime.now();
-              return;
-            }
-          } catch (e) {
-            _debugLog(
-                '⚠️ [Background] YAT fetch failed: ${e.toString().substring(0, 40)}');
-          }
-
-          // Try generic
-          try {
-            result = await _fetchFundInfoWithRetry('', maxRetries: 2);
-            if (result != null && result.isNotEmpty) {
-              _debugLog(
-                  '✅ [Background] Generic fetch successful (attempt ${attempt + 1}): ${result.length} funds');
-              _cachedFunds = result;
-              _cacheTime = DateTime.now();
-              return;
-            }
-          } catch (e) {
-            _debugLog(
-                '⚠️ [Background] Generic fetch failed: ${e.toString().substring(0, 40)}');
-          }
-
-          // Wait before retrying
-          if (attempt < 2) {
-            await Future.delayed(const Duration(seconds: 2));
-          }
-        } catch (e) {
-          _debugLog(
-              '❌ [Background] Fatal error attempt ${attempt + 1}: ${e.toString().substring(0, 40)}');
-          if (attempt < 2) {
-            await Future.delayed(const Duration(seconds: 2));
-          }
-        }
-      }
-
-      _debugLog(
-          '❌ [Background] Could not fetch live TEFAS data after 3 attempts, keeping fallback (${_cachedFunds?.length} funds)');
-    });
-  }
-
-  void _debugLog(String msg) {
-    // kkk aktivasyon kodu: print ı açmak için bu satırın önündeki // kaldırabilirsiniz
-    print('[TefasService] $msg');
-  }
-
-  /// Fetches fund info with automatic retry on transient failures
-  Future<List<TefasFund>?> _fetchFundInfoWithRetry(
-    String fundType, {
-    int maxRetries = 2,
-  }) async {
-    int attemptCount = 0;
-
-    while (attemptCount < maxRetries) {
-      try {
-        attemptCount++;
-        _debugLog('Fund fetch retry attempt $attemptCount/$maxRetries');
-        return await _fetchFundInfo(fundType);
-      } on TimeoutException {
-        _debugLog('Timeout on attempt $attemptCount/$maxRetries');
-        if (attemptCount < maxRetries) {
-          // Exponential backoff: 300ms, 600ms, etc.
-          await Future.delayed(Duration(milliseconds: 300 * attemptCount));
-        } else {
-          _debugLog('Timeout: Max retries exceeded');
-          rethrow;
-        }
-      } on SocketException {
-        _debugLog('SocketException on attempt $attemptCount/$maxRetries');
-        if (attemptCount < maxRetries) {
-          await Future.delayed(Duration(milliseconds: 300 * attemptCount));
-        } else {
-          _debugLog('SocketException: Max retries exceeded');
-          rethrow;
-        }
-      }
-    }
-    _debugLog('Retry loop exhausted');
-    return null;
-  }
-
-  Future<List<TefasFund>> _fetchFundInfo(String fundType) async {
-    _debugLog(
-        'Fetching fund info for type: "${fundType.isEmpty ? 'ALL' : fundType}"');
-
-    // Build headers — include session cookie if available
-    final headers = Map<String, String>.from(_apiHeaders);
-    if (_sessionCookie != null) {
-      headers['Cookie'] = _sessionCookie!;
-      _debugLog('Using session cookie: $_sessionCookie');
-    } else {
-      _debugLog('WARNING: No session cookie available!');
-    }
-
-    final body = fundType.isNotEmpty ? 'fontip=$fundType' : '';
-    _debugLog('Request body: "$body"');
+  /// 1007+ TEFAS fonunu portföy yönetim şirketi ve performans verileriyle döner.
+  /// İlk çağrıda cache boşsa ağdan çeker; sonrasında cache'ten döner.
+  Future<List<TefasFund>> fetchAllFunds({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cacheValid) return _cachedFunds!;
 
     try {
-      final res = await _client
-          .post(
-            Uri.parse('$_baseUrl/api/DB/BindFundInfo'),
-            headers: headers,
-            body: body,
-          )
-          .timeout(const Duration(seconds: 10));
-
-      _debugLog(
-          'API Response: HTTP ${res.statusCode}, Content-Length: ${res.body.length}');
-
-      if (res.statusCode != 200) {
-        _debugLog('ERROR: API returned HTTP ${res.statusCode}');
-        final bodyLen = res.body.length > 200 ? 200 : res.body.length;
-        _debugLog('Response body preview: ${res.body.substring(0, bodyLen)}');
-        throw Exception('TEFAS HTTP Error: ${res.statusCode}');
+      final funds = await _fetchFundList('YAT');
+      if (funds.isNotEmpty) {
+        _cachedFunds = funds;
+        _cacheTime = DateTime.now();
+        return funds;
       }
-
-      // Log response body for debugging
-      if (res.body.isEmpty) {
-        _debugLog('ERROR: API response body is empty!');
-        return [];
-      }
-
-      final bodyLen2 = res.body.length > 150 ? 150 : res.body.length;
-      _debugLog('Response preview: ${res.body.substring(0, bodyLen2)}...');
-
-      // Update session cookie from response if provided
-      final respCookie = res.headers['set-cookie'];
-      if (respCookie != null && respCookie.isNotEmpty) {
-        final match =
-            RegExp(r'ASP\.NET_SessionId=[^;,]+').firstMatch(respCookie);
-        if (match != null) {
-          _sessionCookie = match.group(0);
-          _sessionTime = DateTime.now();
-          _debugLog('Session updated from response');
-        }
-      }
-
-      final decoded = jsonDecode(res.body);
-      _debugLog('Decoded JSON type: ${decoded.runtimeType}');
-
-      List<dynamic> data;
-
-      if (decoded is Map<String, dynamic>) {
-        data = (decoded['data'] as List?) ?? [];
-        _debugLog('Data is Map, fund count: ${data.length}');
-      } else if (decoded is List) {
-        data = decoded;
-        _debugLog('Data is List, fund count: ${data.length}');
-      } else {
-        _debugLog('ERROR: Unexpected response type: ${decoded.runtimeType}');
-        return [];
-      }
-
-      final funds = data
-          .cast<Map<String, dynamic>>()
-          .map((d) => TefasFund(
-                code: (d['FONKODU'] as String? ?? '').trim(),
-                name: (d['FONUNVAN'] as String? ?? d['FONU'] as String? ?? '')
-                    .trim(),
-                price: _parsePrice(d),
-                fundType: (d['FONTIPI'] as String? ?? fundType).trim(),
-              ))
-          .where((f) => f.code.isNotEmpty && f.name.isNotEmpty)
-          .toList()
-        ..sort((a, b) => a.name.compareTo(b.name));
-
-      _debugLog('Successfully parsed ${funds.length} funds');
-      return funds;
     } catch (e) {
-      _debugLog('Exception in _fetchFundInfo: $e');
-      rethrow;
+      _log('fetchAllFunds error: $e');
     }
-  }
 
-  /// Tries multiple field names for the NAV price.
-  double _parsePrice(Map<String, dynamic> d) {
-    for (final key in [
-      'BIRIMPAYDEGERI',
-      'TEDPRICE',
-      'FIYAT',
-      'NAVFIYAT',
-      'GUNLUKFIYAT',
-      'SON_FIYAT',
-    ]) {
-      final raw = d[key];
-      if (raw == null) continue;
-      final price = double.tryParse(raw.toString().replaceAll(',', '.'));
-      if (price != null && price > 0) return price;
-    }
-    return 0.0;
-  }
-
-  /// Fetches current NAV for a list of fund codes.
-  Future<Map<String, double>> fetchPrices(List<String> codes) async {
-    if (codes.isEmpty) return {};
-    try {
-      final funds = await fetchAllFunds();
-      return {
-        for (final f in funds.where((f) => codes.contains(f.code)))
-          f.code: f.price,
-      };
-    } catch (_) {
-      // Return empty map on error; caller should handle gracefully
-      return {};
-    }
-  }
-
-  /// Fetches historical NAV for a single fund with retry capability.
-  Future<List<(int, double)>> fetchHistory(
-      String code, DateTime from, DateTime to) async {
-    await _ensureSession();
-
-    const maxRetries = 2;
-    int attemptCount = 0;
-
-    while (attemptCount < maxRetries) {
-      try {
-        attemptCount++;
-
-        final headers = Map<String, String>.from(_apiHeaders);
-        if (_sessionCookie != null) headers['Cookie'] = _sessionCookie!;
-
-        final fmt = _dateFmt;
-        final body =
-            'fontip=YAT&fonkod=$code&bastarih=${fmt(from)}&bittarih=${fmt(to)}';
-
-        final res = await _client
-            .post(
-              Uri.parse('$_baseUrl/api/DB/BindHistoryInfo'),
-              headers: headers,
-              body: body,
-            )
-            .timeout(const Duration(seconds: 10));
-
-        if (res.statusCode != 200) {
-          if (attemptCount < maxRetries) {
-            await Future.delayed(Duration(milliseconds: 300 * attemptCount));
-            continue;
-          }
-          return [];
-        }
-
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        final rows = (data['data'] as List?) ?? [];
-
-        final points = <(int, double)>[];
-        for (final row in rows.cast<Map<String, dynamic>>()) {
-          final dateStr = row['TARIH'] as String? ?? '';
-          final price = double.tryParse(row['FIYAT']?.toString() ?? '') ?? 0;
-          if (price <= 0) continue;
-          final dt = _parseTefasDate(dateStr);
-          if (dt != null) points.add((dt.millisecondsSinceEpoch, price));
-        }
-
-        points.sort((a, b) => a.$1.compareTo(b.$1));
-        return points;
-      } on TimeoutException {
-        if (attemptCount < maxRetries) {
-          await Future.delayed(Duration(milliseconds: 300 * attemptCount));
-        } else {
-          return [];
-        }
-      } catch (_) {
-        if (attemptCount >= maxRetries) {
-          return [];
-        }
-        await Future.delayed(Duration(milliseconds: 300 * attemptCount));
-      }
-    }
+    // Cache varsa eski veriyle devam et
+    if (_cachedFunds != null) return _cachedFunds!;
     return [];
   }
 
-  String Function(DateTime) get _dateFmt =>
-      (dt) => '${dt.day.toString().padLeft(2, '0')}.'
-          '${dt.month.toString().padLeft(2, '0')}.'
-          '${dt.year}';
+  /// Belirli fon kodları için güncel NAV fiyatlarını çeker.
+  /// [codes] listesindeki her kod için ayrı istek atmak yerine
+  /// önce cache'teki fiyatları kullanır; cache'te yoksa tek tek çeker.
+  Future<Map<String, double>> fetchPrices(List<String> codes) async {
+    if (codes.isEmpty) return {};
 
-  DateTime? _parseTefasDate(String s) {
-    final parts = s.split('.');
-    if (parts.length != 3) return null;
-    return DateTime.tryParse('${parts[2]}-${parts[1]}-${parts[0]}');
+    // Önce cache'ten doldur
+    final result = <String, double>{};
+    final missing = <String>[];
+
+    if (_cacheValid) {
+      final map = {for (final f in _cachedFunds!) f.code: f.price};
+      for (final c in codes) {
+        if (map.containsKey(c) && (map[c] ?? 0) > 0) {
+          result[c] = map[c]!;
+        } else {
+          missing.add(c);
+        }
+      }
+    } else {
+      missing.addAll(codes);
+    }
+
+    // Cache'te olmayan / eski cache için fon listesini yenile
+    if (missing.isNotEmpty) {
+      try {
+        final fresh = await fetchAllFunds(forceRefresh: !_cacheValid);
+        final map = {for (final f in fresh) f.code: f.price};
+        for (final c in missing) {
+          if (map.containsKey(c)) result[c] = map[c]!;
+        }
+
+        // Hâlâ bulunamayanlar veya fiyatı 0 olanlar için bireysel fiyat endpoint'ini dene
+        final stillMissing = missing.where((c) => !result.containsKey(c) || (result[c] ?? 0) <= 0).toList();
+        for (final c in stillMissing) {
+          final price = await _fetchSinglePrice(c);
+          if (price != null) result[c] = price;
+        }
+      } catch (e) {
+        _log('fetchPrices error: $e');
+      }
+    }
+
+    return result;
+  }
+
+  /// Tek fon için güncel fiyatı `fonFiyatBilgiGetir` endpoint'inden çeker.
+  Future<double?> _fetchSinglePrice(String code) async {
+    try {
+      final body = jsonEncode({'fonKodu': code, 'dil': 'TR', 'periyod': 1});
+      final res = await _client
+          .post(Uri.parse('$_baseUrl$_priceEndpoint'),
+              headers: _headers, body: body)
+          .timeout(const Duration(seconds: 12));
+
+      if (res.statusCode != 200) return null;
+      final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+      final items = (data['resultList'] as List?) ?? [];
+      if (items.isEmpty) return null;
+
+      // Son (en güncel) kaydı al
+      final latest = items.last as Map<String, dynamic>;
+      final raw = latest['fiyat'];
+      return raw != null ? double.tryParse(raw.toString()) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Tarihsel NAV verisi — performans grafikleri için.
+  /// [periyod]: 1, 3, 6, 12, 36, 60 (ay)
+  Future<List<(int, double)>> fetchHistory(
+    String code, {
+    int periyod = 3,
+  }) async {
+    try {
+      final body = jsonEncode({'fonKodu': code, 'dil': 'TR', 'periyod': periyod});
+      final res = await _client
+          .post(Uri.parse('$_baseUrl$_priceEndpoint'),
+              headers: _headers, body: body)
+          .timeout(const Duration(seconds: 12));
+
+      if (res.statusCode != 200) return [];
+      final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+      final items = (data['resultList'] as List?) ?? [];
+
+      final points = <(int, double)>[];
+      for (final row in items.cast<Map<String, dynamic>>()) {
+        final dateStr = row['tarih'] as String? ?? '';
+        final price = double.tryParse(row['fiyat']?.toString() ?? '');
+        if (price == null || price <= 0) continue;
+        final dt = DateTime.tryParse(dateStr);
+        if (dt != null) points.add((dt.millisecondsSinceEpoch, price));
+      }
+
+      points.sort((a, b) => a.$1.compareTo(b.$1));
+      return points;
+    } catch (e) {
+      _log('fetchHistory error: $e');
+      return [];
+    }
+  }
+
+  // ── Aracı kuruluş kırılımı ────────────────────────────────────────────────
+
+  /// Fonları portföy yönetim şirketine göre grupla.
+  /// Key: şirket adı, Value: o şirkete ait fonlar.
+  Future<Map<String, List<TefasFund>>> fetchByManager() async {
+    final funds = await fetchAllFunds();
+    final grouped = <String, List<TefasFund>>{};
+    for (final f in funds) {
+      grouped.putIfAbsent(f.managerName, () => []).add(f);
+    }
+    // Her grup içini fon adına göre sırala
+    for (final list in grouped.values) {
+      list.sort((a, b) => a.name.compareTo(b.name));
+    }
+    return Map.fromEntries(
+      grouped.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
   }
 
   void invalidateCache() {
     _cachedFunds = null;
     _cacheTime = null;
-    _sessionCookie = null;
-    _sessionTime = null;
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  Future<List<TefasFund>> _fetchFundList(String fonTipi) async {
+    final payload = {
+      'dil': 'TR',
+      'fonTipi': fonTipi,
+      'kurucuKodu': null,
+      'sfonTurKod': null,
+      'fonTurAciklama': null,
+      'islem': 1,
+      'fonTurKod': null,
+      'fonGrubu': null,
+      'donemGetiri1a': '1',
+      'donemGetiri3a': '1',
+      'donemGetiri6a': '1',
+      'donemGetiri1y': '1',
+      'donemGetiriyb': '1',
+      'donemGetiri3y': '1',
+      'donemGetiri5y': '1',
+      'basTarih': null,
+      'bitTarih': null,
+      'calismaTipi': 2,
+      'getiriOrani': '1',
+    };
+
+    final res = await _client
+        .post(
+          Uri.parse('$_baseUrl$_listEndpoint'),
+          headers: _headers,
+          body: jsonEncode(payload),
+        )
+        .timeout(const Duration(seconds: 20));
+
+    if (res.statusCode != 200) {
+      throw Exception('TEFAS list HTTP ${res.statusCode}');
+    }
+
+    final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    final items = (data['resultList'] as List?) ?? [];
+
+    if (items.isEmpty) {
+      throw Exception('TEFAS returned empty resultList');
+    }
+
+    return items
+        .cast<Map<String, dynamic>>()
+        .map((d) => TefasFund(
+              code: (d['fonKodu'] as String? ?? '').trim(),
+              name: _fixEncoding(d['fonUnvan'] as String? ?? '').trim(),
+              price: 0.0, // fon listesi endpoint'i fiyat vermiyor
+              fundType: fonTipi,
+              managerName: _parseManagerName(
+                  _fixEncoding(d['fonUnvan'] as String? ?? '')),
+              return1m: _toDouble(d['getiri1a']),
+              return3m: _toDouble(d['getiri3a']),
+              return6m: _toDouble(d['getiri6a']),
+              return1y: _toDouble(d['getiri1y']),
+              returnYtd: _toDouble(d['getiriyb']),
+              riskLevel: int.tryParse(d['riskDegeri']?.toString() ?? ''),
+            ))
+        .where((f) => f.code.isNotEmpty && f.name.isNotEmpty)
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  /// fonUnvan'dan portföy yönetim şirketini çıkar.
+  /// "GARANTI PORTFÖY ... FONU" → "GARANTİ PORTFÖY"
+  static String _parseManagerName(String unvan) {
+    final keywords = ['PORTFÖY', 'VARLIK', 'YATIRIM', 'MENKUL'];
+    final parts = unvan.split(RegExp(r'\s+'));
+    for (int i = 0; i < parts.length; i++) {
+      if (keywords.contains(parts[i].toUpperCase())) {
+        return parts.sublist(0, i + 1).join(' ').trim();
+      }
+    }
+    // Keyword bulunamadıysa ilk 2 kelimeyi kullan
+    return parts.take(2).join(' ').trim();
+  }
+
+  /// TEFAS bazen Latin-1 encoding ile yanıt veriyor,
+  /// utf8.decode yeterli olmayabilir — ham bytes'ı kontrol et.
+  static String _fixEncoding(String s) {
+    // Eğer bozuk karakter yoksa olduğu gibi dön
+    if (!s.contains('?') && !s.contains('\u00ef')) return s;
+    try {
+      return utf8.decode(latin1.encode(s), allowMalformed: true);
+    } catch (_) {
+      return s;
+    }
+  }
+
+  static double? _toDouble(dynamic v) {
+    if (v == null) return null;
+    return double.tryParse(v.toString());
+  }
+
+  void _log(String msg) {
+    assert(() {
+      // ignore: avoid_print
+      print('[TefasService] $msg');
+      return true;
+    }());
   }
 }

@@ -74,7 +74,7 @@ class _PartnershipRequestsScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Ortaklik kabul edildi.'),
+          content: Text('Ortaklık kabul edildi.'),
           backgroundColor: Sandik.gain,
         ),
       );
@@ -92,7 +92,7 @@ class _PartnershipRequestsScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Ortaklik istegi reddedildi.'),
+          content: Text('Ortaklık isteği reddedildi.'),
           backgroundColor: Sandik.loss,
         ),
       );
@@ -111,8 +111,8 @@ class _PartnershipRequestsScreenState
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Ortaklik Onayi',
-          style: GoogleFonts.plusJakartaSans(
+          'Ortaklık Onayı',
+          style: GoogleFonts.dmSans(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -126,8 +126,8 @@ class _PartnershipRequestsScreenState
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Ortaklik kodunuzu giren musterileri buradan gorup onaylayabilirsiniz.',
-              style: GoogleFonts.inter(
+              'Ortaklık kodunuzu giren müşterileri buradan görup onaylayabilirsiniz.',
+              style: GoogleFonts.dmSans(
                 fontSize: 14,
                 color: Sandik.text36,
               ),
@@ -156,8 +156,8 @@ class _PartnershipRequestsScreenState
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Bekleyen ortaklik istegi yok.',
-                      style: GoogleFonts.inter(
+                      'Bekleyen ortaklık isteği yok.',
+                      style: GoogleFonts.dmSans(
                         fontSize: 14,
                         color: Sandik.text36,
                       ),
@@ -199,7 +199,7 @@ class _ApprovalInviteCard extends StatelessWidget {
     final rawRequesterName =
         ((invite['requester_name'] as String?) ?? '').trim();
     final requesterName =
-        rawRequesterName.isEmpty ? 'Kullanici' : rawRequesterName;
+        rawRequesterName.isEmpty ? 'Kullanıcı' : rawRequesterName;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -227,7 +227,7 @@ class _ApprovalInviteCard extends StatelessWidget {
               ),
               child: Text(
                 'Yeni gelen istek',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.dmSans(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: Sandik.amber,
@@ -258,7 +258,7 @@ class _ApprovalInviteCard extends StatelessWidget {
                   children: [
                     Text(
                       requesterName,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.dmSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -266,8 +266,8 @@ class _ApprovalInviteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Ortaklik kodunuzu girdi ve onay bekliyor.',
-                      style: GoogleFonts.inter(
+                      'Ortaklık kodunuzu girdi ve onay bekliyor.',
+                      style: GoogleFonts.dmSans(
                         fontSize: 13,
                         color: Sandik.text36,
                       ),

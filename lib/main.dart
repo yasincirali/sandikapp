@@ -9,8 +9,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'models/user_model.dart';
 import 'providers/auth_provider.dart';
+import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/disclaimer_service.dart';
 import 'services/notification_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
@@ -101,57 +103,57 @@ class SandikApp extends StatelessWidget {
       shadow: Colors.black,
     );
 
-    // ── Typography (Plus Jakarta Sans + Inter + JetBrains Mono) ─────────────
-    final baseText = GoogleFonts.interTextTheme(ThemeData.dark().textTheme);
+    // ── Typography (DM Sans — tek font) ──────────────────────────────────────
+    final baseText = GoogleFonts.dmSansTextTheme(ThemeData.dark().textTheme);
 
-    TextStyle pjs(double size, FontWeight weight, double ls) =>
-        GoogleFonts.plusJakartaSans(
+    TextStyle dm(double size, FontWeight weight, double ls) =>
+        GoogleFonts.dmSans(
             fontSize: size,
             fontWeight: weight,
             letterSpacing: ls,
             color: Sandik.text90);
 
     final textTheme = baseText.copyWith(
-      // Display — büyük sayılar (Plus Jakarta Sans)
+      // Display — büyük sayılar
       displayLarge:
-          pjs(52, FontWeight.w700, -0.03 * 52).copyWith(color: Sandik.gold),
+          dm(52, FontWeight.w700, -0.03 * 52).copyWith(color: Sandik.gold),
       displayMedium:
-          pjs(40, FontWeight.w700, -0.03 * 40).copyWith(color: Sandik.gold),
+          dm(40, FontWeight.w700, -0.03 * 40).copyWith(color: Sandik.gold),
       displaySmall:
-          pjs(32, FontWeight.w700, -0.02 * 32).copyWith(color: Sandik.gold),
-      // Headline — başlıklar (Plus Jakarta Sans)
-      headlineLarge: pjs(24, FontWeight.w600, -0.01 * 24),
-      headlineMedium: pjs(20, FontWeight.w600, -0.01 * 20),
-      headlineSmall: pjs(18, FontWeight.w600, -0.01 * 18),
+          dm(32, FontWeight.w700, -0.02 * 32).copyWith(color: Sandik.gold),
+      // Headline — başlıklar
+      headlineLarge: dm(24, FontWeight.w700, -0.01 * 24),
+      headlineMedium: dm(20, FontWeight.w700, -0.01 * 20),
+      headlineSmall: dm(18, FontWeight.w600, -0.01 * 18),
       // Title — navigasyon ve kart başlıkları
-      titleLarge: GoogleFonts.plusJakartaSans(
+      titleLarge: GoogleFonts.dmSans(
           fontSize: 16, fontWeight: FontWeight.w600, color: Sandik.text90),
-      titleMedium: GoogleFonts.inter(
+      titleMedium: GoogleFonts.dmSans(
           fontSize: 14, fontWeight: FontWeight.w500, color: Sandik.text90),
-      titleSmall: GoogleFonts.inter(
+      titleSmall: GoogleFonts.dmSans(
           fontSize: 12, fontWeight: FontWeight.w500, color: Sandik.text90),
-      // Body — gövde metin (Inter)
-      bodyLarge: GoogleFonts.inter(
+      // Body — gövde metin
+      bodyLarge: GoogleFonts.dmSans(
           fontSize: 15, fontWeight: FontWeight.w500, color: Sandik.text90),
-      bodyMedium: GoogleFonts.inter(
+      bodyMedium: GoogleFonts.dmSans(
           fontSize: 13, fontWeight: FontWeight.w400, color: Sandik.text90),
-      bodySmall: GoogleFonts.inter(
+      bodySmall: GoogleFonts.dmSans(
           fontSize: 11, fontWeight: FontWeight.w400, color: Sandik.text58),
       // Label — etiket
-      labelLarge: GoogleFonts.inter(
+      labelLarge: GoogleFonts.dmSans(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          letterSpacing: 0.08 * 11,
+          letterSpacing: 0.06 * 11,
           color: Sandik.text90),
-      labelMedium: GoogleFonts.inter(
+      labelMedium: GoogleFonts.dmSans(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          letterSpacing: 0.08 * 10,
+          letterSpacing: 0.06 * 10,
           color: Sandik.text58),
-      labelSmall: GoogleFonts.inter(
+      labelSmall: GoogleFonts.dmSans(
           fontSize: 9,
           fontWeight: FontWeight.w500,
-          letterSpacing: 0.08 * 9,
+          letterSpacing: 0.06 * 9,
           color: Sandik.text36),
     );
 
@@ -169,7 +171,7 @@ class SandikApp extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: GoogleFonts.dmSans(
           fontSize: 22,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.02 * 22,
@@ -214,8 +216,8 @@ class SandikApp extends StatelessWidget {
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        labelStyle: GoogleFonts.inter(color: Sandik.text58, fontSize: 14),
-        hintStyle: GoogleFonts.inter(color: Sandik.text36, fontSize: 14),
+        labelStyle: GoogleFonts.dmSans(color: Sandik.text58, fontSize: 14),
+        hintStyle: GoogleFonts.dmSans(color: Sandik.text36, fontSize: 14),
       ),
 
       // Filled button — Amber CTA
@@ -225,7 +227,7 @@ class SandikApp extends StatelessWidget {
           foregroundColor: Sandik.dark,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.dmSans(
               fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.2),
         ),
       ),
@@ -238,7 +240,7 @@ class SandikApp extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle:
-              GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
@@ -247,7 +249,7 @@ class SandikApp extends StatelessWidget {
         style: TextButton.styleFrom(
           foregroundColor: Sandik.amber,
           textStyle:
-              GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
@@ -264,7 +266,7 @@ class SandikApp extends StatelessWidget {
         backgroundColor: Colors.white.withOpacity(0.05),
         selectedColor: Sandik.amber,
         labelStyle:
-            GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
+            GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -288,15 +290,15 @@ class SandikApp extends StatelessWidget {
       dialogTheme: DialogThemeData(
         backgroundColor: Sandik.surface1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: GoogleFonts.dmSans(
             fontSize: 18, fontWeight: FontWeight.w700, color: Sandik.text90),
-        contentTextStyle: GoogleFonts.inter(fontSize: 14, color: Sandik.text58),
+        contentTextStyle: GoogleFonts.dmSans(fontSize: 14, color: Sandik.text58),
       ),
 
       // SnackBar
       snackBarTheme: SnackBarThemeData(
         backgroundColor: Sandik.surface2,
-        contentTextStyle: GoogleFonts.inter(color: Sandik.text90, fontSize: 13),
+        contentTextStyle: GoogleFonts.dmSans(color: Sandik.text90, fontSize: 13),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
@@ -316,13 +318,14 @@ class _AuthGate extends ConsumerStatefulWidget {
 class _AuthGateState extends ConsumerState<_AuthGate>
     with WidgetsBindingObserver {
   late final ProviderSubscription<AsyncValue<AppUser?>> _authSubscription;
-  // Uygulamanın arka plana atıldığı an
   DateTime? _backgroundedAt;
-
-  // Arka planda 10 dk geçince oturumu kapat
   static const _sessionTimeout = Duration(minutes: 10);
 
   AppUser? _previousUser;
+
+  // null = henüz kontrol edilmedi, false = onaylanmamış, true = onaylandı
+  bool? _disclaimerChecked;
+  String? _checkedUserId;
 
   @override
   void initState() {
@@ -330,15 +333,49 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     WidgetsBinding.instance.addObserver(this);
     _authSubscription = ref.listenManual(authProvider, (_, next) {
       final user = next.valueOrNull;
-      // Oturum kapandıysa (user vardı, şimdi null) → LoginScreen'e yönlendir
+
       if (_previousUser != null && user == null && !next.isLoading) {
+        // Oturum kapandı — sıfırla ve login ekranına git
+        _disclaimerChecked = null;
+        _checkedUserId = null;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           appNavigatorKey.currentState?.pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const LoginScreen()),
             (_) => false,
           );
         });
+      } else if (user != null && user.id != _checkedUserId) {
+        // Yeni kullanıcı oturum açtı — disclaimer kontrol et
+        _disclaimerChecked = null;
+        _checkedUserId = user.id;
+        debugPrint('[DisclaimerCheck] Sorgu başlatılıyor: ${user.id}');
+        DisclaimerService.instance.hasAccepted(user.id).then((accepted) {
+          debugPrint('[DisclaimerCheck] Sonuç: $accepted');
+          if (!mounted) return;
+          if (!accepted) {
+            // Onaylanmamış — disclaimer ekranına yönlendir
+            appNavigatorKey.currentState?.pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => DisclaimerAcceptanceScreen(
+                  userId: user.id,
+                  onAccepted: () {
+                    setState(() => _disclaimerChecked = true);
+                    appNavigatorKey.currentState?.pushAndRemoveUntil(
+                      MaterialPageRoute(
+                          builder: (_) => const MainNavigationScreen()),
+                      (_) => false,
+                    );
+                  },
+                ),
+              ),
+              (_) => false,
+            );
+          } else {
+            setState(() => _disclaimerChecked = true);
+          }
+        });
       }
+
       _previousUser = user;
       _syncInviteDelivery(user?.id);
     }, fireImmediately: true);
@@ -401,6 +438,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       );
     }
     final user = auth.valueOrNull;
-    return user != null ? const MainNavigationScreen() : const LoginScreen();
+    if (user == null) return const LoginScreen();
+
+    // Disclaimer kontrol edilirken spinner göster
+    if (_disclaimerChecked == null) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return const MainNavigationScreen();
   }
 }

@@ -100,7 +100,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         ),
         title: Text(
           'Tüm İşlemler',
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.dmSans(
               fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
         ),
       ),
@@ -141,7 +141,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             size: 52, color: Sandik.text36),
                         const SizedBox(height: 12),
                         Text('İşlem bulunamadı',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.dmSans(
                                 fontSize: 14, color: Sandik.text36)),
                       ],
                     ),
@@ -177,7 +177,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           ),
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.dmSans(
               fontSize: 12,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               color: selected ? color : Sandik.text58,
@@ -207,35 +207,57 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           ),
           child: Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: asset.type.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Text(
-                    asset.name
-                        .substring(0, asset.name.length >= 2 ? 2 : 1)
-                        .toUpperCase(),
-                    style: TextStyle(
-                        color: asset.type.color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13),
-                  ),
-                ),
-              ),
+              asset.currencySymbol != null
+                  ? Container(
+                      width: 28, height: 28,
+                      decoration: BoxDecoration(
+                        color: asset.type.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Center(
+                        child: Text(
+                          asset.currencySymbol!,
+                          style: GoogleFonts.dmSans(
+                            fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
+                            fontWeight: FontWeight.w800,
+                            color: asset.type.color,
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Icon(asset.type.icon, color: asset.type.color, size: 22),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(asset.name,
-                        style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white)),
+                    Row(
+                      children: [
+                        if (asset.showTicker) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: asset.type.color.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(asset.displayTicker!,
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 11, fontWeight: FontWeight.w800, color: asset.type.color)),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Flexible(
+                          child: Text(asset.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 3),
                     Row(
                       children: [
@@ -256,7 +278,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                         Text(
                           DateFormat('d MMM yyyy', 'tr_TR')
                               .format(asset.addedDate),
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.dmSans(
                               fontSize: 11, color: Sandik.text36),
                         ),
                       ],
@@ -268,14 +290,14 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(tryFmt.format(totalTRY),
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.dmSans(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: Colors.white)),
                   const SizedBox(height: 3),
                   Text(
                     '${isPos ? '+' : ''}₺${NumberFormat('#,###').format(asset.gainLoss.abs().toInt())}',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.dmSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: isPos ? Sandik.gain : Sandik.loss),

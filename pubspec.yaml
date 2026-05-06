@@ -21,11 +21,25 @@ dependencies:
   flutter_local_notifications: ^18.0.0
   firebase_core: ^4.7.0
   firebase_messaging: ^16.2.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_svg: ^2.0.10+1
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
 
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/sandik_icon.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  background_color_ios: "#FCD35A"
+
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/

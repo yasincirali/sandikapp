@@ -100,7 +100,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       if (a.type == AssetType.fon && a.ticker.startsWith('TEFAS:')) {
         final code = a.ticker.replaceFirst('TEFAS:', '');
         _selectedFund = TefasFund(
-            code: code, name: a.name, price: a.currentPrice, fundType: '');
+            code: code, name: a.name, price: a.currentPrice, fundType: '', managerName: '');
       }
     }
   }
@@ -968,8 +968,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       setState(() => _saving = true);
       try {
         if (ticker.startsWith('TEFAS:') && _selectedFund != null) {
-          // TEFAS: fon fiyatı zaten biliniyor
-          if (_selectedFund!.price > 0) price = _selectedFund!.price;
+          // TEFAS fiyatı API'den çek
+          final code = ticker.replaceFirst('TEFAS:', '');
+          final prices = await TefasService.instance.fetchPrices([code]);
+          price = prices[code] ?? 0.0;
         } else {
           final quotes = await PriceService.instance.fetchQuotes([ticker]);
           if (!mounted) return;

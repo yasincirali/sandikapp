@@ -15,6 +15,7 @@ import '../services/history_service.dart';
 import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/disclaimer_widget.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
           children: [
             Text(
               'TEKNİK ANALİZ',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.dmSans(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
@@ -105,7 +106,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
             const SizedBox(width: 8),
             Text(
               '· ${widget.asset.type.label} özelinde',
-              style: GoogleFonts.inter(fontSize: 11, color: Sandik.text36),
+              style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
             ),
           ],
         ),
@@ -141,7 +142,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
                   children: [
                     Text(
                       signalLabel,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.dmSans(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
                         color: signalColor,
@@ -151,7 +152,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
                     const SizedBox(height: 2),
                     Text(
                       '${summary.buyCount} AL · ${summary.sellCount} SAT · ${5 - summary.buyCount - summary.sellCount} NÖTR',
-                      style: GoogleFonts.inter(fontSize: 12, color: Sandik.text58),
+                      style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58),
                     ),
                   ],
                 ),
@@ -162,7 +163,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
                 children: [
                   Text(
                     '%${(summary.confidence * 100).toStringAsFixed(0)}',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.dmSans(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: signalColor,
@@ -170,7 +171,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
                   ),
                   Text(
                     'güven',
-                    style: GoogleFonts.inter(fontSize: 11, color: Sandik.text36),
+                    style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
                   ),
                 ],
               ),
@@ -224,7 +225,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
                             children: [
                               Text(
                                 ind.name,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.dmSans(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
@@ -233,7 +234,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
                               const SizedBox(height: 2),
                               Text(
                                 ind.description,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.dmSans(
                                     fontSize: 11, color: Sandik.text36),
                               ),
                             ],
@@ -249,7 +250,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
                           ),
                           child: Text(
                             lbl,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.dmSans(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: c,
@@ -271,13 +272,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
           ),
         ),
         const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            '⚠ Teknik analiz yatırım tavsiyesi değildir. Simüle edilmiş fiyat verisi kullanılmaktadır.',
-            style: GoogleFonts.inter(fontSize: 10, color: Sandik.text36),
-          ),
-        ),
+        const DisclaimerWidget(),
       ],
     );
   }
@@ -536,7 +531,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 child: Center(
                   child: Text(
                     _periods[i].label,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.dmSans(
                       fontSize: 10,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -581,7 +576,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
         ),
         title: Text(
           'Performans: ${widget.asset.name}',
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.dmSans(
               fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
         ),
       ),
@@ -878,7 +873,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     children: [
                       Text(
                         'TOPLAM MİKTAR',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.dmSans(
                             color: Sandik.amber,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -886,7 +881,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                       ),
                       Text(
                         '${_currentQuantity.toStringAsFixed(2)} ${widget.asset.unitType}',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.dmSans(
                             color: Sandik.gold,
                             fontSize: 18,
                             fontWeight: FontWeight.w700),

@@ -126,7 +126,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('Detaylı Portföy Analizi',
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.dmSans(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.white)),
@@ -205,7 +205,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     borderRadius: BorderRadius.circular(8)),
                 child: Center(
                     child: Text(_periods[i].label,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.dmSans(
                             fontSize: 13,
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -409,7 +409,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           const SizedBox(width: 16),
           Expanded(
               child: Text(label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.dmSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: Colors.white))),
@@ -417,12 +417,12 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(fmt.format(val),
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.dmSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Colors.white)),
               Text('%$pct',
-                  style: GoogleFonts.inter(fontSize: 12, color: Sandik.text36)),
+                  style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text36)),
             ],
           ),
         ],
@@ -450,7 +450,7 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
   @override
   Widget build(BuildContext context) => Text(text,
-      style: GoogleFonts.inter(
+      style: GoogleFonts.dmSans(
           fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,

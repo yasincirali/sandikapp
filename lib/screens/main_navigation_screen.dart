@@ -1,3 +1,4 @@
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,7 +25,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const ChartsScreen(),
-    const SizedBox.shrink(), // FAB placeholder
+    const SizedBox.shrink(),
     const PortfolioPerformanceScreen(),
     const ProfileScreen(),
   ];
@@ -34,44 +35,48 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       _showAddAsset();
       return;
     }
-    // Ana sayfaya her dönüşte fiyatları yenile
     if (index == 0 && _currentIndex != 0) {
       ref.read(portfolioProvider.notifier).refreshPrices();
     }
-    setState(() {
-      _currentIndex = index;
-    });
+    setState(() => _currentIndex = index);
   }
 
   Future<void> _showAddAsset() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const AddAssetScreen()),
-    );
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAssetScreen()));
     if (mounted) ref.read(portfolioProvider.notifier).refreshPrices();
   }
 
   Future<void> _confirmExit() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Sandik.surface2,
-        title: const Text('Çıkış Yap', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Hesabınızdan çıkmak istiyor musunuz?',
-          style: TextStyle(color: Sandik.text58),
+      builder: (ctx) => ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: AlertDialog(
+            backgroundColor: Colors.white.withValues(alpha: 0.08),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+            ),
+            title: const Text('Çıkış Yap', style: TextStyle(color: Colors.white)),
+            content: Text(
+              'Hesabınızdan çıkmak istiyor musunuz?',
+              style: TextStyle(color: Sandik.text58),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Vazgeç', style: TextStyle(color: Sandik.text36)),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(backgroundColor: Sandik.loss),
+                child: const Text('Çıkış Yap'),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç', style: TextStyle(color: Sandik.text36)),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Sandik.loss),
-            child: const Text('Çıkış Yap'),
-          ),
-        ],
       ),
     );
     if (confirm == true && mounted) {
@@ -93,32 +98,36 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       },
       child: Scaffold(
         backgroundColor: Sandik.background,
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _screens,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _screens),
         bottomNavigationBar: _buildBottomBar(),
       ),
     );
   }
 
   Widget _buildBottomBar() {
-    return Container(
-      height: 84,
-      padding: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F2621), // Navbar background
-        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.05), width: 1)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _navItem(0, Icons.home_rounded, 'Ana'),
-          _navItem(1, Icons.business_center_rounded, 'Portföy'),
-          _buildFab(),
-          _navItem(3, Icons.show_chart_rounded, 'Performans'),
-          _navItem(4, Icons.person_rounded, 'Profil'),
-        ],
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 84,
+          padding: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.10), width: 1),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _navItem(0, Icons.home_rounded, 'Ana'),
+              _navItem(1, Icons.business_center_rounded, 'Portföy'),
+              _buildFab(),
+              _navItem(3, Icons.show_chart_rounded, 'Performans'),
+              _navItem(4, Icons.person_rounded, 'Profil'),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -137,7 +146,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.dmSans(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: color,
@@ -153,17 +162,24 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: _showAddAsset,
-        child: Container(
-          width: 52,
-          height: 52,
-          decoration: const BoxDecoration(
-            color: Sandik.amber,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4)),
-            ],
+        child: Center(
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Sandik.amber,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Sandik.amber.withValues(alpha: 0.45),
+                  blurRadius: 18,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.add_rounded, color: Sandik.dark, size: 36),
           ),
-          child: const Icon(Icons.add_rounded, color: Sandik.dark, size: 36),
         ),
       ),
     );

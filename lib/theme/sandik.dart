@@ -1,4 +1,7 @@
+import 'dart:ui' show ImageFilter;
+import 'package:flutter/cupertino.dart' show CupertinoButton;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Sandık (ex-Toka) marka renk paleti ve logo painter
 class Sandik {
@@ -24,10 +27,84 @@ class Sandik {
   static const Color text36    = Color(0x59FFFFFF); // 0.35 (Üçüncül yardımcı)
   static const Color text20    = Color(0x33FFFFFF); // 0.20 (Devre dışı)
 
-  static InputDecoration inputDecoration(String hint) {
+  // ── Liquid Glass helpers ────────────────────────────────────────────────────
+
+  /// Blur + translucent overlay — temel glass katmanı.
+  static BoxDecoration glassDecoration({
+    double radius = 18,
+    Color tint = Colors.white,
+    double tintOpacity = 0.07,
+    Color borderColor = Colors.white,
+    double borderOpacity = 0.14,
+    double borderWidth = 1.0,
+    List<BoxShadow>? shadows,
+  }) {
+    return BoxDecoration(
+      color: tint.withValues(alpha: tintOpacity),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: borderColor.withValues(alpha: borderOpacity),
+        width: borderWidth,
+      ),
+      boxShadow: shadows ??
+          [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 24,
+              spreadRadius: -4,
+              offset: const Offset(0, 8),
+            ),
+          ],
+    );
+  }
+
+  /// BackdropFilter + glass container. Clip gerektirir (ClipRRect ile kullan).
+  static Widget glassBox({
+    required Widget child,
+    double radius = 18,
+    double blur = 14,
+    Color tint = Colors.white,
+    double tintOpacity = 0.07,
+    Color borderColor = Colors.white,
+    double borderOpacity = 0.14,
+    EdgeInsetsGeometry? padding,
+    List<BoxShadow>? shadows,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: Container(
+          padding: padding,
+          decoration: glassDecoration(
+            radius: radius,
+            tint: tint,
+            tintOpacity: tintOpacity,
+            borderColor: borderColor,
+            borderOpacity: borderOpacity,
+            shadows: shadows,
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  static InputDecoration inputDecoration(
+    String hint, {
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    String? labelText,
+    String? errorText,
+  }) {
     return InputDecoration(
       hintText: hint,
+      labelText: labelText,
+      errorText: errorText,
       hintStyle: const TextStyle(color: text36, fontSize: 14),
+      labelStyle: const TextStyle(color: text36, fontSize: 14),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
       filled: true,
       fillColor: Colors.black.withOpacity(0.1),
       border: OutlineInputBorder(
@@ -42,83 +119,106 @@ class Sandik {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: amber, width: 1.5),
       ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: loss, width: 1.2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: loss, width: 1.5),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 }
 
-/// Sandık (ex-Toka) logosu — viewBox 80×50, geometrik kemer tokası
-class SandikLogoPainter extends CustomPainter {
-  final Color color;
-  const SandikLogoPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // viewBox 80x50 mapping
-    final sx = size.width / 80;
-    final sy = size.height / 50;
-
-    final paintStroke = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.8 * sx
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final paintFill = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    // 1. Dış çerçeve: Yuvarlatılmış dikdörtgen (rx=10)
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(2 * sx, 2 * sy, 76 * sx, 46 * sy),
-        Radius.circular(10 * sx),
-      ),
-      paintStroke,
-    );
-
-    // 2. İç slot: Daha küçük yuvarlatılmış dikdörtgen (rx=5)
-    final slotPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4 * sx;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(9 * sx, 10 * sy, 30 * sx, 30 * sy),
-        Radius.circular(5 * sx),
-      ),
-      slotPaint,
-    );
-
-    // 3. Pin/dil: Sağ tarafta yatay çizgi
-    final pinPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.5 * sx
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(48 * sx, 25 * sy), Offset(72 * sx, 25 * sy), pinPaint);
-
-    // 4. Pin başı: Sol ucu dolan küçük dolu daire
-    canvas.drawCircle(Offset(48 * sx, 25 * sy), 4.5 * sx, paintFill);
-  }
-
-  @override
-  bool shouldRepaint(SandikLogoPainter old) => old.color != color;
-}
-
-/// Sandık logo widget'ı
+/// Sandık logo widget'ı — SVG tabanlı, kare aspect ratio (launcher icon uyumlu)
+/// [withBackground] ve [color] parametreleri API uyumluluğu için korunmuştur;
+/// SVG kendi gradient/renk tanımlarını içerdiğinden [color] uygulanmaz.
 class SandikLogo extends StatelessWidget {
   final double size;
   final Color? color;
-  const SandikLogo({super.key, this.size = 32, this.color});
+  final bool withBackground;
+
+  const SandikLogo({
+    super.key,
+    this.size = 32,
+    this.color,
+    this.withBackground = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? Sandik.amber;
-    return CustomPaint(
-      size: Size(size * 80 / 50, size),
-      painter: SandikLogoPainter(c),
+    final svg = SvgPicture.asset(
+      'assets/images/sandik_logo.svg',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+    );
+
+    if (!withBackground) return svg;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Sandik.surface2,
+        borderRadius: BorderRadius.circular(size * 0.22),
+      ),
+      child: svg,
+    );
+  }
+}
+
+/// Uygulama launcher ikonunu önizlemek için — tam kare, rounded corner
+class SandikAppIcon extends StatelessWidget {
+  final double size;
+  const SandikAppIcon({super.key, this.size = 64});
+
+  @override
+  Widget build(BuildContext context) {
+    return SandikLogo(size: size, withBackground: false);
+  }
+}
+
+/// Tüm ekranlarda kullanılan standart logout butonu.
+/// Tasarım dili: kırmızı/loss tonu, 36×36 rounded icon box — ProfileScreen'deki
+/// _ActionIcon ile aynı görsel dil.
+class SandikLogoutButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool disabled;
+
+  const SandikLogoutButton({
+    super.key,
+    required this.onPressed,
+    this.disabled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = disabled
+        ? Sandik.loss.withValues(alpha: 0.35)
+        : Sandik.loss;
+    return CupertinoButton(
+      minimumSize: Size.zero,
+      padding: EdgeInsets.zero,
+      onPressed: disabled ? null : onPressed,
+      child: Semantics(
+        button: true,
+        label: 'Çıkış yap',
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.18)),
+          ),
+          child: Center(
+            child: Icon(Icons.logout_rounded, color: color, size: 18),
+          ),
+        ),
+      ),
     );
   }
 }

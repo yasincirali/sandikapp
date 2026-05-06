@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,9 +24,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String? _generatedCode;
   bool _generating = false;
   bool _submitting = false;
-  bool _busy = false; // genel işlem kilidi — tüm butonları disable eder
+  bool _busy = false;
 
-  // Kod girildikten sonra onay bekleme durumu
   String? _pendingInviteId;
   String? _pendingPartnerName;
   Timer? _pollTimer;
@@ -37,37 +37,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  // ── Kod üret ──────────────────────────────────────────────────────────────
+  Future<void> _showMsg(String msg, {bool isError = false}) async {
+    if (!mounted) return;
+    await showCupertinoDialog<void>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: Text(isError ? 'Hata' : 'Bilgi'),
+        content: Text(msg),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _generateCode() async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
-    setState(() { _generating = true; _busy = true; });
+    setState(() {
+      _generating = true;
+      _busy = true;
+    });
     try {
       final code = await AuthService.instance.generatePartnerCode(user.id);
       setState(() => _generatedCode = code);
       await Clipboard.setData(ClipboardData(text: code));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kod üretildi ve panoya kopyalandı')),
-        );
-      }
+      await _showMsg('Kod üretildi ve panoya kopyalandı');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      await _showMsg(e.toString(), isError: true);
     } finally {
-      if (mounted) setState(() { _generating = false; _busy = false; });
+      if (mounted)
+        setState(() {
+          _generating = false;
+          _busy = false;
+        });
     }
   }
-
-  // ── Kodu gönder (onay bekleme başlar) ──────────────────────────────────────
 
   Future<void> _submitCode() async {
     final code = _codeCtrl.text.trim();
     if (code.isEmpty) return;
-    setState(() { _submitting = true; _busy = true; });
+    setState(() {
+      _submitting = true;
+      _busy = true;
+    });
     try {
       final result = await ref.read(partnersProvider.notifier).submitCode(code);
       _codeCtrl.clear();
@@ -77,16 +93,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       });
       _startPolling(result.inviteId);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      await _showMsg(e.toString(), isError: true);
     } finally {
-      if (mounted) setState(() { _submitting = false; _busy = false; });
+      if (mounted)
+        setState(() {
+          _submitting = false;
+          _busy = false;
+        });
     }
   }
-
-  // ── Polling: onay verildi mi? ──────────────────────────────────────────────
 
   void _startPolling(String inviteId) {
     _pollTimer?.cancel();
@@ -95,20 +110,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       final status = await SupabaseService.instance.getInviteStatus(inviteId);
       if (status == 'accepted') {
         _pollTimer?.cancel();
-        // Partnership kuruldu — listeleri yenile
         await ref.read(partnersProvider.notifier).refresh();
         ref.read(allPartnerAssetsProvider.notifier).reload();
         if (mounted) {
+          final name = _pendingPartnerName;
           setState(() {
             _pendingInviteId = null;
             _pendingPartnerName = null;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$_pendingPartnerName ile ortaklık kuruldu!'),
-              backgroundColor: Sandik.gain,
-            ),
-          );
+          await _showMsg('$name ile ortaklık kuruldu!');
         }
       } else if (status == 'rejected') {
         _pollTimer?.cancel();
@@ -117,12 +127,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _pendingInviteId = null;
             _pendingPartnerName = null;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ortaklık isteği reddedildi.'),
-              backgroundColor: Sandik.loss,
-            ),
-          );
+          await _showMsg('Ortaklık isteği reddedildi.', isError: true);
         }
       }
     });
@@ -136,55 +141,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
-  // ── Logout ────────────────────────────────────────────────────────────────
-
   Future<void> _logout() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showCupertinoDialog<bool>(
       context: context,
-      builder: (ctx) {
-        bool loggingOut = false;
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) => AlertDialog(
-            backgroundColor: Sandik.surface2,
-            title: const Text('Çıkış Yap', style: TextStyle(color: Colors.white)),
-            content: const Text('Hesabınızdan çıkmak istediğinizden emin misiniz?',
-                style: TextStyle(color: Sandik.text58)),
-            actions: [
-              TextButton(
-                onPressed: loggingOut ? null : () => Navigator.pop(ctx, false),
-                child: const Text('Vazgeç', style: TextStyle(color: Sandik.text36)),
-              ),
-              FilledButton(
-                onPressed: loggingOut
-                    ? null
-                    : () async {
-                        setDialogState(() => loggingOut = true);
-                        await ref.read(authProvider.notifier).logout();
-                        if (ctx.mounted) Navigator.pop(ctx, true);
-                      },
-                style: FilledButton.styleFrom(backgroundColor: Sandik.loss),
-                child: loggingOut
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Çıkış Yap'),
-              ),
-            ],
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Çıkış Yap'),
+        content: const Text('Hesabınızdan çıkmak istediğinizden emin misiniz?'),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
           ),
-        );
-      },
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Çıkış Yap'),
+          ),
+        ],
+      ),
     );
     if (confirm == true && mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (_) => false,
-      );
+      await ref.read(authProvider.notifier).logout();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          CupertinoPageRoute(builder: (_) => const LoginScreen()),
+          (_) => false,
+        );
+      }
     }
   }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -193,54 +178,78 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Stack(
       children: [
-        Scaffold(
+        CupertinoPageScaffold(
           backgroundColor: Sandik.background,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: Text(
-              'Profil',
-              style: GoogleFonts.plusJakartaSans(
-                  fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
-            ),
-            actions: [
-              IconButton(
-                onPressed: _busy ? null : _logout,
-                icon: const Icon(Icons.logout_rounded, color: Sandik.loss),
-              ),
-            ],
-          ),
-          body: AbsorbPointer(
-            absorbing: _busy,
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: SafeArea(
+            child: Column(
               children: [
-                _buildUserHeader(user),
-                const SizedBox(height: 24),
-
-                // ── Bekleyen onay istekleri (kod sahibine gösterilir) ────────────
-                _PendingRequestsSection(userId: user?.id ?? ''),
-                const SizedBox(height: 8),
-
-                const _SectionTitle('ORTAKLIK İŞLEMLERİ'),
-                const SizedBox(height: 16),
-                _buildInviteSection(),
-                const SizedBox(height: 32),
-
-                const _SectionTitle('ORTAKLARIM'),
-                const SizedBox(height: 16),
-                partnersAsync.when(
-                  loading: () => const Center(
-                      child: CircularProgressIndicator(color: Sandik.amber)),
-                  error: (e, _) => Text(e.toString()),
-                  data: (partners) => partners.isEmpty
-                      ? _buildEmptyPartners()
-                      : Column(
-                          children:
-                              partners.map((p) => _buildPartnerTile(p)).toList(),
+                // Header
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Profil',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: CupertinoColors.white,
+                          ),
                         ),
+                      ),
+                      CupertinoButton(
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        onPressed: _busy ? null : _logout,
+                        child: _ActionIcon(
+                          icon: Icons.logout_rounded,
+                          color: Sandik.loss,
+                          disabled: _busy,
+                          semanticLabel: 'Çıkış yap',
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 40),
+                // Body
+                Expanded(
+                  child: AbsorbPointer(
+                    absorbing: _busy,
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 4),
+                      children: [
+                        _buildUserHeader(user),
+                        const SizedBox(height: 24),
+                        _PendingRequestsSection(userId: user?.id ?? ''),
+                        const SizedBox(height: 8),
+                        const _SectionTitle('ORTAKLIK İŞLEMLERİ'),
+                        const SizedBox(height: 16),
+                        _buildInviteSection(),
+                        const SizedBox(height: 32),
+                        const _SectionTitle('ORTAKLARIM'),
+                        const SizedBox(height: 16),
+                        partnersAsync.when(
+                          loading: () => const Center(
+                            child:
+                                CircularProgressIndicator(color: Sandik.amber),
+                          ),
+                          error: (e, _) => Text(e.toString()),
+                          data: (partners) => partners.isEmpty
+                              ? _buildEmptyPartners()
+                              : Column(
+                                  children: partners
+                                      .map((p) => _buildPartnerTile(p))
+                                      .toList(),
+                                ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -282,16 +291,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 Text(
                   user.displayName,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.dmSans(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  user.email,
-                  style: GoogleFonts.inter(fontSize: 14, color: Sandik.text36),
-                ),
+                Text(user.email,
+                    style:
+                        GoogleFonts.dmSans(fontSize: 14, color: Sandik.text36)),
               ],
             ),
           ),
@@ -307,23 +315,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Sandik.surface1,
-            borderRadius: BorderRadius.circular(16),
-          ),
+              color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Davet Kodu Üret',
-                style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white),
-              ),
+              Text('Davet Kodu Üret',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white)),
               const SizedBox(height: 8),
               Text(
                 'Kodu ortağınıza gönderin. Ortak kodu girince size onay isteği gelir.',
-                style: GoogleFonts.inter(fontSize: 13, color: Sandik.text36),
+                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36),
               ),
               const SizedBox(height: 20),
               if (_generatedCode != null) ...[
@@ -338,32 +342,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Expanded(
                         child: Text(
                           _generatedCode!.split(':')[0],
-                          style: GoogleFonts.jetBrainsMono(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Sandik.amber,
-                              letterSpacing: 4),
+                          style: GoogleFonts.dmSans(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Sandik.amber,
+                            letterSpacing: 4,
+                          ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.share_rounded,
-                            color: Sandik.amber),
+                      CupertinoButton(
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
                         onPressed: () => Share.share(_generatedCode!),
+                        child: const Icon(Icons.share_rounded,
+                            color: Sandik.amber),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
               ],
-              FilledButton(
+              CupertinoButton(
                 onPressed: _generating ? null : _generateCode,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Sandik.amber.withValues(alpha: 0.1),
-                  foregroundColor: Sandik.amber,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                padding: EdgeInsets.zero,
+                child: Container(
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: _generating
+                        ? Sandik.amber.withValues(alpha: 0.05)
+                        : Sandik.amber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _generating ? 'Üretiliyor...' : 'Kod Üret',
+                    style: GoogleFonts.dmSans(
+                        color: Sandik.amber, fontWeight: FontWeight.w600),
+                  ),
                 ),
-                child: Text(_generating ? 'Üretiliyor...' : 'Kod Üret'),
               ),
             ],
           ),
@@ -373,26 +389,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Sandik.surface1,
-            borderRadius: BorderRadius.circular(16),
-          ),
+              color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Ortak Kodunu Gir',
-                style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white),
-              ),
+              Text('Ortak Kodunu Gir',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white)),
               const SizedBox(height: 8),
               Text(
                 'Ortağınızın size gönderdiği kodu girin (örn: ABCDE-12345). Onay vermesi beklenir.',
-                style: GoogleFonts.inter(fontSize: 13, color: Sandik.text36),
+                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36),
               ),
               const SizedBox(height: 16),
-              // Onay bekleniyor göstergesi
               if (_pendingInviteId != null) ...[
                 _buildWaitingCard(),
               ] else ...[
@@ -403,16 +414,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   decoration: Sandik.inputDecoration('XXXXX-XXXXX'),
                 ),
                 const SizedBox(height: 16),
-                FilledButton(
+                CupertinoButton(
                   onPressed: _submitting ? null : _submitCode,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Sandik.gain.withValues(alpha: 0.1),
-                    foregroundColor: Sandik.gain,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                  padding: EdgeInsets.zero,
+                  child: Container(
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: _submitting
+                          ? Sandik.gain.withValues(alpha: 0.05)
+                          : Sandik.gain.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _submitting ? 'Gönderiliyor...' : 'Ortaklık İste',
+                      style: GoogleFonts.dmSans(
+                          color: Sandik.gain, fontWeight: FontWeight.w600),
+                    ),
                   ),
-                  child:
-                      Text(_submitting ? 'Gönderiliyor...' : 'Ortaklık İste'),
                 ),
               ],
             ],
@@ -445,7 +464,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Expanded(
                 child: Text(
                   '$_pendingPartnerName onayı bekleniyor...',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.dmSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.white),
@@ -454,16 +473,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          TextButton(
+          CupertinoButton(
             onPressed: _cancelPending,
-            style: TextButton.styleFrom(
-              foregroundColor: Sandik.text36,
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
             child: Text('İptal',
-                style: GoogleFonts.inter(fontSize: 13, color: Sandik.text36)),
+                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36)),
           ),
         ],
       ),
@@ -474,17 +489,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(16),
-      ),
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Icon(Icons.people_outline_rounded,
-              size: 48, color: Sandik.text36.withValues(alpha: 0.3)),
+          const Icon(Icons.people_outline_rounded,
+              size: 48, color: Sandik.text36),
           const SizedBox(height: 16),
           Text(
             'Henüz ortağınız yok',
-            style: GoogleFonts.inter(fontSize: 14, color: Sandik.text36),
+            style: GoogleFonts.dmSans(fontSize: 14, color: Sandik.text36),
             textAlign: TextAlign.center,
           ),
         ],
@@ -497,9 +510,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(16),
-      ),
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
           CircleAvatar(
@@ -519,42 +530,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(p.user.displayName,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.dmSans(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Colors.white)),
-                Text(p.isActive ? 'Görünür' : 'Gizlendi',
-                    style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: p.isActive ? Sandik.gain : Sandik.text36)),
+                Text(
+                  p.isActive ? 'Görünür' : 'Gizlendi',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      color: p.isActive ? Sandik.gain : Sandik.text36),
+                ),
               ],
             ),
           ),
-          IconButton(
-            tooltip: p.isActive ? 'Gizle' : 'Göster',
-            icon: Icon(
-                p.isActive
-                    ? Icons.visibility_rounded
-                    : Icons.visibility_off_rounded,
-                color: _busy
-                    ? Sandik.text36.withValues(alpha: 0.3)
-                    : (p.isActive ? Sandik.text58 : Sandik.text36)),
+          CupertinoButton(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
             onPressed: _busy
                 ? null
                 : () async {
                     setState(() => _busy = true);
                     await ref
                         .read(partnersProvider.notifier)
-                        .toggleHidden(p.user.id, p.isActive); // isActive=true → gizle
+                        .toggleHidden(p.user.id, p.isActive);
                     if (mounted) setState(() => _busy = false);
                   },
+            child: _ActionIcon(
+              icon: p.isActive
+                  ? Icons.visibility_off_rounded
+                  : Icons.visibility_rounded,
+              color: p.isActive ? Sandik.text58 : Sandik.gain,
+              disabled: _busy,
+              semanticLabel: p.isActive ? 'Ortağı gizle' : 'Ortağı göster',
+            ),
           ),
-          IconButton(
-            icon: Icon(Icons.close_rounded,
-                color: _busy ? Sandik.loss.withValues(alpha: 0.3) : Sandik.loss),
+          const SizedBox(width: 8),
+          CupertinoButton(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
             onPressed: _busy
                 ? null
                 : () => _confirmRemove(p.user.id, p.user.displayName),
+            child: _ActionIcon(
+              icon: Icons.delete_outline_rounded,
+              color: Sandik.loss,
+              disabled: _busy,
+              semanticLabel: 'Ortağı sil',
+            ),
           ),
         ],
       ),
@@ -562,51 +584,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _confirmRemove(String partnerId, String name) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showCupertinoDialog<bool>(
       context: context,
-      builder: (ctx) {
-        bool removing = false;
-        return StatefulBuilder(
-          builder: (ctx, setDialog) => AlertDialog(
-            backgroundColor: Sandik.surface2,
-            title: const Text('Ortaklığı Kaldır',
-                style: TextStyle(color: Colors.white)),
-            content: Text(
-                '$name ile ortaklığı kaldırmak istediğinizden emin misiniz?',
-                style: const TextStyle(color: Sandik.text58)),
-            actions: [
-              TextButton(
-                onPressed: removing ? null : () => Navigator.pop(ctx, false),
-                child: const Text('Vazgeç',
-                    style: TextStyle(color: Sandik.text36)),
-              ),
-              FilledButton(
-                onPressed: removing
-                    ? null
-                    : () async {
-                        setDialog(() => removing = true);
-                        await ref
-                            .read(partnersProvider.notifier)
-                            .removePartner(partnerId);
-                        if (ctx.mounted) Navigator.pop(ctx, true);
-                      },
-                style: FilledButton.styleFrom(backgroundColor: Sandik.loss),
-                child: removing
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Kaldır'),
-              ),
-            ],
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Ortaklığı Kaldır'),
+        content:
+            Text('$name ile ortaklığı kaldırmak istediğinizden emin misiniz?'),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
           ),
-        );
-      },
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Kaldır'),
+          ),
+        ],
+      ),
     );
     if (confirm == true && mounted) {
-      setState(() {});
+      setState(() => _busy = true);
+      await ref.read(partnersProvider.notifier).removePartner(partnerId);
+      if (mounted) setState(() => _busy = false);
     }
   }
 }
@@ -631,7 +631,6 @@ class _PendingRequestsSectionState
   void initState() {
     super.initState();
     _load();
-    // 5 saniyede bir yenile
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) => _load());
   }
 
@@ -648,6 +647,23 @@ class _PendingRequestsSectionState
     if (mounted) setState(() => _pendingInvites = invites);
   }
 
+  Future<void> _showMsg(String msg, {bool isError = false}) async {
+    if (!mounted) return;
+    await showCupertinoDialog<void>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: Text(isError ? 'Hata' : 'Bilgi'),
+        content: Text(msg),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _accept(Map<String, dynamic> invite) async {
     try {
       await ref
@@ -655,18 +671,9 @@ class _PendingRequestsSectionState
           .acceptInvite(invite['id'] as String);
       ref.read(allPartnerAssetsProvider.notifier).reload();
       await _load();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Ortaklık kabul edildi!'),
-              backgroundColor: Sandik.gain),
-        );
-      }
+      await _showMsg('Ortaklık kabul edildi!');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      await _showMsg(e.toString(), isError: true);
     }
   }
 
@@ -677,10 +684,7 @@ class _PendingRequestsSectionState
           .rejectInvite(invite['id'] as String);
       await _load();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      await _showMsg(e.toString(), isError: true);
     }
   }
 
@@ -739,9 +743,8 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
     } catch (_) {
       profile = null;
     }
-    if (mounted) {
+    if (mounted)
       setState(() => _requesterName = profile?.displayName ?? 'Kullanıcı');
-    }
   }
 
   @override
@@ -770,29 +773,30 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _requesterName,
-                  style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white),
-                ),
-                Text(
-                  'Ortaklık istiyor',
-                  style: GoogleFonts.inter(fontSize: 12, color: Sandik.text36),
-                ),
+                Text(_requesterName,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white)),
+                Text('Ortaklık istiyor',
+                    style:
+                        GoogleFonts.dmSans(fontSize: 12, color: Sandik.text36)),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, color: Sandik.loss, size: 22),
+          CupertinoButton(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
             onPressed: widget.onReject,
-            tooltip: 'Reddet',
+            child:
+                const Icon(Icons.close_rounded, color: Sandik.loss, size: 22),
           ),
-          IconButton(
-            icon: const Icon(Icons.check_rounded, color: Sandik.gain, size: 22),
+          CupertinoButton(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
             onPressed: widget.onAccept,
-            tooltip: 'Onayla',
+            child:
+                const Icon(Icons.check_rounded, color: Sandik.gain, size: 22),
           ),
         ],
       ),
@@ -807,11 +811,44 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.dmSans(
           fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,
           color: Sandik.text36,
         ),
       );
+}
+
+class _ActionIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final bool disabled;
+  final String semanticLabel;
+
+  const _ActionIcon({
+    required this.icon,
+    required this.color,
+    required this.disabled,
+    required this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = disabled ? color.withValues(alpha: 0.35) : color;
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: iconColor.withValues(alpha: 0.18)),
+        ),
+        child: Center(child: Icon(icon, color: iconColor, size: 18)),
+      ),
+    );
+  }
 }

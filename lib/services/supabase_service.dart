@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/asset.dart';
 import '../models/user_model.dart';
+import 'db_logger.dart';
 
 /// Tüm Supabase veri erişimi bu sınıf üzerinden geçer.
 /// RLS kuralları Supabase tarafında uygulandığı için burada
@@ -10,14 +11,33 @@ class SupabaseService {
   SupabaseService._();
 
   SupabaseClient get _db => Supabase.instance.client;
+  final _log = DbLogger.instance;
 
   String? get _uid => _db.auth.currentUser?.id;
+  bool? _hasPerSideHidden;
+
+  Future<bool> _supportsPerSideHidden() async {
+    final cached = _hasPerSideHidden;
+    if (cached != null) return cached;
+    try {
+      await _db.from('partnerships').select('hidden_for_1').limit(1);
+      _hasPerSideHidden = true;
+    } catch (_) {
+      _hasPerSideHidden = false;
+    }
+    return _hasPerSideHidden!;
+  }
 
   // ── Profiles ─────────────────────────────────────────────────────────────
 
   Future<AppUser?> getProfile(String userId) async {
-    final row =
-        await _db.from('profiles').select().eq('id', userId).maybeSingle();
+    final row = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.getProfile',
+      table: 'profiles',
+      op: 'SELECT',
+      request: {'id': userId},
+      call: () => _db.from('profiles').select().eq('id', userId).maybeSingle(),
+    );
     if (row == null) return null;
     return AppUser.fromSupabase(row);
   }
@@ -29,11 +49,18 @@ class SupabaseService {
   }
 
   Future<void> upsertProfile(AppUser user) async {
-    await _db.from('profiles').upsert({
+    final body = {
       'id': user.id,
       'email': user.email,
       'display_name': user.displayName,
-    });
+    };
+    await _log.log<void>(
+      source: 'SupabaseService.upsertProfile',
+      table: 'profiles',
+      op: 'UPSERT',
+      request: body,
+      call: () => _db.from('profiles').upsert(body),
+    );
   }
 
   Future<List<AppUser>> getProfilesByIds(List<String> ids) async {
@@ -46,33 +73,72 @@ class SupabaseService {
   // ── Assets ───────────────────────────────────────────────────────────────
 
   Future<List<Asset>> fetchByUser(String userId) async {
-    final rows = await _db
-        .from('assets')
-        .select()
-        .eq('user_id', userId)
-        .order('added_date', ascending: false);
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchByUser',
+      table: 'assets',
+      op: 'SELECT',
+      request: {'user_id': userId, 'order': 'added_date desc'},
+      call: () => _db
+          .from('assets')
+          .select()
+          .eq('user_id', userId)
+          .order('added_date', ascending: false),
+    );
     return rows.map<Asset>((r) => Asset.fromSupabase(r)).toList();
   }
 
   Future<void> insertAsset(Asset asset) async {
-    await _db.from('assets').insert(asset.toSupabase());
+    final body = asset.toSupabase();
+    await _log.log<void>(
+      source: 'SupabaseService.insertAsset',
+      table: 'assets',
+      op: 'INSERT',
+      request: {'id': body['id'], 'user_id': body['user_id'], 'ticker': body['ticker']},
+      call: () => _db.from('assets').insert(body),
+    );
   }
 
   /// Partner kodundan gelen varlığı içe aktar — zaten varsa güncelle (resync)
   Future<void> upsertAsset(Asset asset) async {
-    await _db.from('assets').upsert(asset.toSupabase());
+    final body = asset.toSupabase();
+    await _log.log<void>(
+      source: 'SupabaseService.upsertAsset',
+      table: 'assets',
+      op: 'UPSERT',
+      request: {'id': body['id'], 'user_id': body['user_id'], 'ticker': body['ticker']},
+      call: () => _db.from('assets').upsert(body),
+    );
   }
 
   Future<void> updateAsset(Asset asset) async {
-    await _db.from('assets').update(asset.toSupabase()).eq('id', asset.id);
+    final body = asset.toSupabase();
+    await _log.log<void>(
+      source: 'SupabaseService.updateAsset',
+      table: 'assets',
+      op: 'UPDATE',
+      request: {'id': asset.id, 'ticker': body['ticker']},
+      call: () => _db.from('assets').update(body).eq('id', asset.id),
+    );
   }
 
   Future<void> deleteAsset(String id) async {
-    await _db.from('assets').delete().eq('id', id);
+    await _log.log<void>(
+      source: 'SupabaseService.deleteAsset',
+      table: 'assets',
+      op: 'DELETE',
+      request: {'id': id},
+      call: () => _db.from('assets').delete().eq('id', id),
+    );
   }
 
   Future<int> countAssetsForUser(String userId) async {
-    final rows = await _db.from('assets').select('id').eq('user_id', userId);
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.countAssetsForUser',
+      table: 'assets',
+      op: 'SELECT',
+      request: {'user_id': userId, 'columns': 'id'},
+      call: () => _db.from('assets').select('id').eq('user_id', userId),
+    );
     return rows.length;
   }
 
@@ -83,17 +149,30 @@ class SupabaseService {
     final uid = userId.isNotEmpty ? userId : (_uid ?? '');
     if (uid.isEmpty) return;
 
-    await _db.from('snapshots').insert({
-      'user_id': uid,
-      'data': categoryValues,
-    });
+    await _log.log<void>(
+      source: 'SupabaseService.insertSnapshot',
+      table: 'snapshots',
+      op: 'INSERT',
+      request: {'user_id': uid, 'categories': categoryValues.keys.toList()},
+      call: () => _db.from('snapshots').insert({
+        'user_id': uid,
+        'data': categoryValues,
+      }),
+    );
 
     // 2 yıl retention
     final cutoff = DateTime.now()
         .subtract(const Duration(days: 730))
         .toUtc()
         .toIso8601String();
-    await _db.from('snapshots').delete().eq('user_id', uid).lt('ts', cutoff);
+    await _log.log<void>(
+      source: 'SupabaseService.insertSnapshot[retention]',
+      table: 'snapshots',
+      op: 'DELETE',
+      request: {'user_id': uid, 'lt_ts': cutoff},
+      call: () =>
+          _db.from('snapshots').delete().eq('user_id', uid).lt('ts', cutoff),
+    );
   }
 
   Future<List<({int ts, Map<String, double> values})>> fetchSnapshots(
@@ -105,12 +184,18 @@ class SupabaseService {
     final since =
         DateTime.fromMillisecondsSinceEpoch(sinceMs).toUtc().toIso8601String();
 
-    final rows = await _db
-        .from('snapshots')
-        .select()
-        .eq('user_id', uid)
-        .gte('ts', since)
-        .order('ts', ascending: true);
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchSnapshots',
+      table: 'snapshots',
+      op: 'SELECT',
+      request: {'user_id': uid, 'since': since},
+      call: () => _db
+          .from('snapshots')
+          .select()
+          .eq('user_id', uid)
+          .gte('ts', since)
+          .order('ts', ascending: true),
+    );
 
     return rows
         .map<({int ts, Map<String, double> values})>((r) {
@@ -135,7 +220,7 @@ class SupabaseService {
     String? requesterName,
     String status = 'pending',
   }) async {
-    await _db.from('partner_invites').upsert({
+    final body = {
       'id': id,
       'from_user_id': fromUserId,
       if (toUserId != null) 'to_user_id': toUserId,
@@ -145,22 +230,47 @@ class SupabaseService {
       'expires_at': expiresAt.toUtc().toIso8601String(),
       'used': false,
       'status': status,
-    });
+    };
+    await _log.log<void>(
+      source: 'SupabaseService.insertInvite',
+      table: 'partner_invites',
+      op: 'UPSERT',
+      request: {
+        'id': id,
+        'from_user_id': fromUserId,
+        'code': code,
+        'status': status,
+        'expires_at': expiresAt.toUtc().toIso8601String(),
+      },
+      call: () => _db.from('partner_invites').upsert(body),
+    );
   }
 
   Future<Map<String, dynamic>?> getValidInvite(String code) async {
-    final row = await _db
-        .from('partner_invites')
-        .select()
-        .eq('code', code)
-        .eq('used', false)
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String())
-        .maybeSingle();
-    return row;
+    return _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.getValidInvite',
+      table: 'partner_invites',
+      op: 'SELECT',
+      request: {'code': code, 'used': false},
+      call: () => _db
+          .from('partner_invites')
+          .select()
+          .eq('code', code)
+          .eq('used', false)
+          .gt('expires_at', DateTime.now().toUtc().toIso8601String())
+          .maybeSingle(),
+    );
   }
 
   Future<void> markInviteUsed(String id) async {
-    await _db.from('partner_invites').update({'used': true}).eq('id', id);
+    await _log.log<void>(
+      source: 'SupabaseService.markInviteUsed',
+      table: 'partner_invites',
+      op: 'UPDATE',
+      request: {'id': id, 'used': true},
+      call: () =>
+          _db.from('partner_invites').update({'used': true}).eq('id', id),
+    );
   }
 
   /// Kod girildiğinde davetiyeye to_user_id ve status=pending yaz
@@ -169,87 +279,148 @@ class SupabaseService {
     required String toUserId,
     required String requesterName,
   }) async {
-    await _db.from('partner_invites').update({
-      'to_user_id': toUserId,
-      'requester_name': requesterName,
-      'status': 'pending',
-    }).eq('id', inviteId);
+    await _log.log<void>(
+      source: 'SupabaseService.setInviteTarget',
+      table: 'partner_invites',
+      op: 'UPDATE',
+      request: {
+        'id': inviteId,
+        'to_user_id': toUserId,
+        'requester_name': requesterName,
+        'status': 'pending',
+      },
+      call: () => _db.from('partner_invites').update({
+        'to_user_id': toUserId,
+        'requester_name': requesterName,
+        'status': 'pending',
+      }).eq('id', inviteId),
+    );
   }
 
   /// Kod sahibi onayladığında
   Future<void> acceptInvite(String inviteId) async {
-    await _db.from('partner_invites').update({
-      'status': 'accepted',
-      'used': true,
-    }).eq('id', inviteId);
+    await _log.log<void>(
+      source: 'SupabaseService.acceptInvite',
+      table: 'partner_invites',
+      op: 'UPDATE',
+      request: {'id': inviteId, 'status': 'accepted', 'used': true},
+      call: () => _db.from('partner_invites').update({
+        'status': 'accepted',
+        'used': true,
+      }).eq('id', inviteId),
+    );
   }
 
   /// Kod sahibi reddetti
   Future<void> rejectInvite(String inviteId) async {
-    await _db.from('partner_invites').update({
-      'status': 'rejected',
-      'used': true,
-    }).eq('id', inviteId);
+    await _log.log<void>(
+      source: 'SupabaseService.rejectInvite',
+      table: 'partner_invites',
+      op: 'UPDATE',
+      request: {'id': inviteId, 'status': 'rejected', 'used': true},
+      call: () => _db.from('partner_invites').update({
+        'status': 'rejected',
+        'used': true,
+      }).eq('id', inviteId),
+    );
   }
 
   /// Mevcut kullanıcıya gelen onay bekleyen davetleri getir
   Future<List<Map<String, dynamic>>> getPendingInvitesForMe(
       String userId) async {
-    final rows = await _db
-        .from('partner_invites')
-        .select()
-        .eq('from_user_id', userId)
-        .eq('status', 'pending')
-        .eq('used', false)
-        .not('to_user_id', 'is', null) // sadece birisi kodu girdiyse göster
-        .gt('expires_at', DateTime.now().toUtc().toIso8601String());
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.getPendingInvitesForMe',
+      table: 'partner_invites',
+      op: 'SELECT',
+      request: {'from_user_id': userId, 'status': 'pending', 'used': false},
+      call: () => _db
+          .from('partner_invites')
+          .select()
+          .eq('from_user_id', userId)
+          .eq('status', 'pending')
+          .eq('used', false)
+          .not('to_user_id', 'is', null)
+          .gt('expires_at', DateTime.now().toUtc().toIso8601String()),
+    );
     return List<Map<String, dynamic>>.from(rows);
   }
 
   /// Kod giren kişi için sonucu polling ile kontrol et
   Future<String?> getInviteStatus(String inviteId) async {
-    final row = await _db
-        .from('partner_invites')
-        .select('status')
-        .eq('id', inviteId)
-        .maybeSingle();
+    final row = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.getInviteStatus',
+      table: 'partner_invites',
+      op: 'SELECT',
+      request: {'id': inviteId, 'columns': 'status'},
+      call: () => _db
+          .from('partner_invites')
+          .select('status')
+          .eq('id', inviteId)
+          .maybeSingle(),
+    );
     return row?['status'] as String?;
   }
 
   Future<Map<String, dynamic>?> getInviteById(String inviteId) async {
-    return await _db
-        .from('partner_invites')
-        .select()
-        .eq('id', inviteId)
-        .maybeSingle();
+    return _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.getInviteById',
+      table: 'partner_invites',
+      op: 'SELECT',
+      request: {'id': inviteId},
+      call: () => _db
+          .from('partner_invites')
+          .select()
+          .eq('id', inviteId)
+          .maybeSingle(),
+    );
   }
 
-  // ── Partnerships ──────────────────────────────────────────────────────────
+  // ── Push tokens ───────────────────────────────────────────────────────────
 
   Future<void> upsertPushToken({
     required String userId,
     required String token,
     required String platform,
   }) async {
-    await _db.from('user_push_tokens').upsert(
-      {
-        'user_id': userId,
-        'token': token,
-        'platform': platform,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      },
-      onConflict: 'token',
+    await _log.log<void>(
+      source: 'SupabaseService.upsertPushToken',
+      table: 'user_push_tokens',
+      op: 'UPSERT',
+      request: {'user_id': userId, 'platform': platform},
+      call: () => _db.from('user_push_tokens').upsert(
+        {
+          'user_id': userId,
+          'token': token,
+          'platform': platform,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict: 'token',
+      ),
     );
   }
 
   Future<void> deletePushToken(String token) async {
-    await _db.from('user_push_tokens').delete().eq('token', token);
+    await _log.log<void>(
+      source: 'SupabaseService.deletePushToken',
+      table: 'user_push_tokens',
+      op: 'DELETE',
+      request: {'token': '[redacted]'},
+      call: () => _db.from('user_push_tokens').delete().eq('token', token),
+    );
   }
 
+  // ── Edge Functions ────────────────────────────────────────────────────────
+
   Future<void> sendPartnerInvitePush(String inviteId) async {
-    final response = await _db.functions.invoke(
-      'send-partner-invite-push',
-      body: {'inviteId': inviteId},
+    final response = await _log.log(
+      source: 'SupabaseService.sendPartnerInvitePush',
+      table: 'functions/send-partner-invite-push',
+      op: 'FUNCTION',
+      request: {'inviteId': inviteId},
+      call: () => _db.functions.invoke(
+        'send-partner-invite-push',
+        body: {'inviteId': inviteId},
+      ),
     );
 
     if (response.status >= 400) {
@@ -257,42 +428,89 @@ class SupabaseService {
     }
   }
 
+  // ── Partnerships ──────────────────────────────────────────────────────────
+
   Future<void> insertPartnership({
     required String id,
     required String userId1,
     required String userId2,
   }) async {
-    // Önce aynı çiftle silinmiş/var olan kayıt var mı kontrol et
-    // Varsa güncelle, yoksa ekle — duplicate constraint'i önlemek için
-    final existing = await _db.from('partnerships').select('id').or(
-        'and(user_id_1.eq.$userId1,user_id_2.eq.$userId2),and(user_id_1.eq.$userId2,user_id_2.eq.$userId1)').maybeSingle();
+    final supportsHidden = await _supportsPerSideHidden();
+    final existing = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.insertPartnership[check]',
+      table: 'partnerships',
+      op: 'SELECT',
+      request: {'user_id_1': userId1, 'user_id_2': userId2},
+      call: () => _db
+          .from('partnerships')
+          .select('id')
+          .or('and(user_id_1.eq.$userId1,user_id_2.eq.$userId2),and(user_id_1.eq.$userId2,user_id_2.eq.$userId1)')
+          .maybeSingle(),
+    );
 
     if (existing != null) {
-      // Yeniden eklenince her iki taraf için gizlemeyi sıfırla
-      await _db.from('partnerships').update({
-        'hidden_for_1': false,
-        'hidden_for_2': false,
-      }).eq('id', existing['id'] as String);
+      await _log.log<void>(
+        source: 'SupabaseService.insertPartnership[reset-hidden]',
+        table: 'partnerships',
+        op: 'UPDATE',
+        request: supportsHidden
+            ? {'id': existing['id'], 'hidden_for_1': false, 'hidden_for_2': false}
+            : {'id': existing['id'], 'active': true},
+        call: () => _db
+            .from('partnerships')
+            .update(supportsHidden
+                ? {
+                    'hidden_for_1': false,
+                    'hidden_for_2': false,
+                  }
+                : {'active': true})
+            .eq('id', existing['id'] as String),
+      );
     } else {
-      await _db.from('partnerships').insert({
-        'id': id,
-        'user_id_1': userId1,
-        'user_id_2': userId2,
-        'hidden_for_1': false,
-        'hidden_for_2': false,
-      });
+      await _log.log<void>(
+        source: 'SupabaseService.insertPartnership',
+        table: 'partnerships',
+        op: 'INSERT',
+        request: {'id': id, 'user_id_1': userId1, 'user_id_2': userId2},
+        call: () => _db.from('partnerships').insert(supportsHidden
+            ? {
+                'id': id,
+                'user_id_1': userId1,
+                'user_id_2': userId2,
+                'hidden_for_1': false,
+                'hidden_for_2': false,
+              }
+            : {
+                'id': id,
+                'user_id_1': userId1,
+                'user_id_2': userId2,
+                'active': true,
+              }),
+      );
     }
   }
 
   Future<List<String>> getPartnerIds(String userId,
       {bool onlyActive = true}) async {
-    final rows = await _db
-        .from('partnerships')
-        .select('user_id_1, user_id_2, hidden_for_1, hidden_for_2')
-        .or('user_id_1.eq.$userId,user_id_2.eq.$userId');
+    final supportsHidden = await _supportsPerSideHidden();
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.getPartnerIds',
+      table: 'partnerships',
+      op: 'SELECT',
+      request: {'user_id': userId, 'only_active': onlyActive},
+      call: () => _db
+          .from('partnerships')
+          .select(supportsHidden
+              ? 'user_id_1, user_id_2, hidden_for_1, hidden_for_2'
+              : 'user_id_1, user_id_2, active')
+          .or('user_id_1.eq.$userId,user_id_2.eq.$userId'),
+    );
 
     return rows.where((r) {
       if (!onlyActive) return true;
+      if (!supportsHidden) {
+        return r['active'] as bool? ?? true;
+      }
       final isUser1 = (r['user_id_1'] as String) == userId;
       final hidden = isUser1
           ? (r['hidden_for_1'] as bool? ?? false)
@@ -307,16 +525,27 @@ class SupabaseService {
 
   Future<List<({String id, bool active})>> getPartnershipsWithStatus(
       String userId) async {
-    final rows = await _db
-        .from('partnerships')
-        .select('user_id_1, user_id_2, hidden_for_1, hidden_for_2')
-        .or('user_id_1.eq.$userId,user_id_2.eq.$userId');
+    final supportsHidden = await _supportsPerSideHidden();
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.getPartnershipsWithStatus',
+      table: 'partnerships',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('partnerships')
+          .select(supportsHidden
+              ? 'user_id_1, user_id_2, hidden_for_1, hidden_for_2'
+              : 'user_id_1, user_id_2, active')
+          .or('user_id_1.eq.$userId,user_id_2.eq.$userId'),
+    );
 
     return rows.map<({String id, bool active})>((r) {
       final u1 = r['user_id_1'] as String;
       final u2 = r['user_id_2'] as String;
       final isUser1 = u1 == userId;
-      // active = bu kullanıcı tarafından gizlenmemiş
+      if (!supportsHidden) {
+        return (id: isUser1 ? u2 : u1, active: r['active'] as bool? ?? true);
+      }
       final hidden = isUser1
           ? (r['hidden_for_1'] as bool? ?? false)
           : (r['hidden_for_2'] as bool? ?? false);
@@ -325,28 +554,50 @@ class SupabaseService {
   }
 
   Future<bool> partnershipExists(String uid1, String uid2) async {
-    final rows = await _db.from('partnerships').select('id').or(
-        'and(user_id_1.eq.$uid1,user_id_2.eq.$uid2),and(user_id_1.eq.$uid2,user_id_2.eq.$uid1)');
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.partnershipExists',
+      table: 'partnerships',
+      op: 'SELECT',
+      request: {'user_id_1': uid1, 'user_id_2': uid2},
+      call: () => _db
+          .from('partnerships')
+          .select('id')
+          .or('and(user_id_1.eq.$uid1,user_id_2.eq.$uid2),and(user_id_1.eq.$uid2,user_id_2.eq.$uid1)'),
+    );
     return rows.isNotEmpty;
   }
 
-  /// Sadece isteği yapan kullanıcının (uid1) tarafındaki gizleme durumunu günceller.
+  /// Sadece isteği yapan kullanıcının tarafındaki gizleme durumunu günceller.
   Future<void> setPartnershipHidden(
       String currentUserId, String partnerId, bool hidden) async {
-    // Hangi sırada kayıt var bul
-    final row = await _db
-        .from('partnerships')
-        .select('id, user_id_1, user_id_2')
-        .or('and(user_id_1.eq.$currentUserId,user_id_2.eq.$partnerId),and(user_id_1.eq.$partnerId,user_id_2.eq.$currentUserId)')
-        .maybeSingle();
+    final supportsHidden = await _supportsPerSideHidden();
+    final row = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.setPartnershipHidden[find]',
+      table: 'partnerships',
+      op: 'SELECT',
+      request: {'current_user': currentUserId, 'partner': partnerId},
+      call: () => _db
+          .from('partnerships')
+          .select('id, user_id_1, user_id_2')
+          .or('and(user_id_1.eq.$currentUserId,user_id_2.eq.$partnerId),and(user_id_1.eq.$partnerId,user_id_2.eq.$currentUserId)')
+          .maybeSingle(),
+    );
     if (row == null) return;
 
     final isUser1 = (row['user_id_1'] as String) == currentUserId;
     final field = isUser1 ? 'hidden_for_1' : 'hidden_for_2';
-    await _db
-        .from('partnerships')
-        .update({field: hidden})
-        .eq('id', row['id'] as String);
+    await _log.log<void>(
+      source: 'SupabaseService.setPartnershipHidden[update]',
+      table: 'partnerships',
+      op: 'UPDATE',
+      request: supportsHidden
+          ? {'id': row['id'], field: hidden}
+          : {'id': row['id'], 'active': !hidden},
+      call: () => _db
+          .from('partnerships')
+          .update(supportsHidden ? {field: hidden} : {'active': !hidden})
+          .eq('id', row['id'] as String),
+    );
   }
 
   // Eski imza — geriye dönük uyumluluk için yönlendir
@@ -356,13 +607,17 @@ class SupabaseService {
   }
 
   Future<void> removePartnership(String uid1, String uid2) async {
-    await _db.from('partnerships').delete().or(
-        'and(user_id_1.eq.$uid1,user_id_2.eq.$uid2),and(user_id_1.eq.$uid2,user_id_2.eq.$uid1)');
+    await _log.log<void>(
+      source: 'SupabaseService.removePartnership',
+      table: 'partnerships',
+      op: 'DELETE',
+      request: {'user_id_1': uid1, 'user_id_2': uid2},
+      call: () => _db.from('partnerships').delete().or(
+          'and(user_id_1.eq.$uid1,user_id_2.eq.$uid2),and(user_id_1.eq.$uid2,user_id_2.eq.$uid1)'),
+    );
   }
 
-  /// Profiles tablosunda kaydı olmayan ortaklar için partner_invites'tan
-  /// requester_name veya payload'dan isim çekip AppUser listesi döner.
-  /// Bulunan profiller profiles tablosuna da upsert edilir (sonraki çekişler hızlı olsun).
+  /// Profiles tablosunda kaydı olmayan ortaklar için partner_invites'tan isim çekip AppUser listesi döner.
   Future<List<AppUser>> resolveNamesFromInvites(
       String currentUserId, List<String> missingPartnerIds) async {
     if (missingPartnerIds.isEmpty) return [];
@@ -370,28 +625,29 @@ class SupabaseService {
     final result = <AppUser>[];
 
     for (final partnerId in missingPartnerIds) {
-      // 1) Ortak kod gönderen tarafsa: from_user_id = partnerId, to_user_id = currentUserId
-      // 2) Ortak kodu giren tarafsa: from_user_id = currentUserId, to_user_id = partnerId — requester_name dolmuş olur
       Map<String, dynamic>? row;
       try {
-        row = await _db
-            .from('partner_invites')
-            .select('requester_name, payload, from_user_id, to_user_id')
-            .or('from_user_id.eq.$partnerId,to_user_id.eq.$partnerId')
-            .order('expires_at', ascending: false)
-            .limit(1)
-            .maybeSingle();
+        row = await _log.log<Map<String, dynamic>?>(
+          source: 'SupabaseService.resolveNamesFromInvites',
+          table: 'partner_invites',
+          op: 'SELECT',
+          request: {'partner_id': partnerId},
+          call: () => _db
+              .from('partner_invites')
+              .select('requester_name, payload, from_user_id, to_user_id')
+              .or('from_user_id.eq.$partnerId,to_user_id.eq.$partnerId')
+              .order('expires_at', ascending: false)
+              .limit(1)
+              .maybeSingle(),
+        );
       } catch (_) {}
 
       if (row == null) continue;
 
       String? name;
-
-      // Eğer ortak kodu giren tarafsa requester_name dolu olabilir
       if ((row['to_user_id'] as String?) == partnerId) {
         name = (row['requester_name'] as String?)?.trim();
       }
-
       if (name == null || name.isEmpty) continue;
 
       final user = AppUser(
@@ -400,7 +656,6 @@ class SupabaseService {
         displayName: name,
         createdAt: DateTime.now(),
       );
-      // Sonraki sorgular için profiles'a yaz
       try {
         await upsertProfile(user);
       } catch (_) {}

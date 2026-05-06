@@ -182,6 +182,77 @@ CREATE POLICY "partnerships_update" ON public.partnerships
 CREATE POLICY "partnerships_delete" ON public.partnerships
   FOR DELETE USING (auth.uid() = user_id_1 OR auth.uid() = user_id_2);
 
+-- ── Disclaimer Acceptances ───────────────────────────────────────────────────
+-- Yasal uyarı onay kaydı. Hukuki delil niteliği taşıdığı için:
+--   • Satır güncelleme/silme yasak (RLS + tablo tasarımı)
+--   • Her disclaimer versiyonu ayrı kayıt oluşturur
+--   • Uygulama versiyonu, platform ve zaman dilimi saklanır
+
+CREATE TABLE IF NOT EXISTS public.disclaimer_acceptances (
+  id                  BIGSERIAL PRIMARY KEY,
+  user_id             UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  accepted_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  disclaimer_version  TEXT NOT NULL,          -- Örn: "1.0"
+  disclaimer_hash     TEXT NOT NULL,          -- SHA-256 (metin içeriği)
+  app_version         TEXT NOT NULL,          -- Örn: "1.0.0+1"
+  platform            TEXT NOT NULL,          -- "android" | "ios"
+  device_model        TEXT,                   -- Cihaz modeli (opsiyonel)
+  locale              TEXT,                   -- Kullanıcı dil ayarı
+  UNIQUE (user_id, disclaimer_version)        -- Aynı versiyon için çift kayıt engeli
+);
+
+-- Zaman bazlı sorgular için index
+CREATE INDEX IF NOT EXISTS disclaimer_acceptances_user_idx
+  ON public.disclaimer_acceptances(user_id, accepted_at DESC);
+
+ALTER TABLE public.disclaimer_acceptances ENABLE ROW LEVEL SECURITY;
+
+-- Kullanıcı kendi onayını ekleyebilir
+CREATE POLICY "disclaimer_insert_own" ON public.disclaimer_acceptances
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Kullanıcı kendi onaylarını görebilir
+CREATE POLICY "disclaimer_select_own" ON public.disclaimer_acceptances
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- UPDATE ve DELETE kesinlikle yasak — policy tanımlanmıyor (default deny)
+
+-- ── DB Logs ───────────────────────────────────────────────────────────────────
+-- Uygulama tarafındaki tüm Supabase/DB istekleri buraya yazılır.
+-- user_id nullable: oturum açılmadan gelen istekleri de yakalar (login, register).
+-- 30 gün retention: eski kayıtlar otomatik silinir.
+
+CREATE TABLE IF NOT EXISTS public.db_logs (
+  id            BIGSERIAL PRIMARY KEY,
+  user_id       UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  ts            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  sdk           TEXT NOT NULL,
+  source        TEXT NOT NULL,
+  table_name    TEXT NOT NULL,
+  op            TEXT NOT NULL,
+  request_json  JSONB,
+  response_json JSONB,
+  duration_ms   INTEGER NOT NULL,
+  is_error      BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS db_logs_user_ts_idx ON public.db_logs(user_id, ts DESC);
+CREATE INDEX IF NOT EXISTS db_logs_source_idx  ON public.db_logs(source);
+
+ALTER TABLE public.db_logs ENABLE ROW LEVEL SECURITY;
+
+-- Herhangi bir oturumlu kullanıcı log ekleyebilir
+CREATE POLICY "db_logs_insert" ON public.db_logs
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Sadece kendi loglarını okuyabilir
+CREATE POLICY "db_logs_select_own" ON public.db_logs
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- 30 gün retention: pg_cron varsa aktif edilebilir
+-- SELECT cron.schedule('delete-old-db-logs', '0 3 * * *',
+--   $$DELETE FROM public.db_logs WHERE ts < NOW() - INTERVAL '30 days'$$);
+
 DO $$
 BEGIN
   IF EXISTS (

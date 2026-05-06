@@ -32,9 +32,7 @@ class AssetRowWidget extends StatelessWidget {
         locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
     final priceFmt = NumberFormat('#,##0.##', 'tr_TR');
 
-    final ticker = asset.ticker.isNotEmpty
-        ? asset.ticker.replaceAll('.IS', '').replaceAll('=X', '')
-        : null;
+    final ticker = asset.showTicker ? asset.displayTicker : null;
 
     // Anlık birim fiyat
     final unitPrice = asset.currentPrice > 0
@@ -47,8 +45,26 @@ class AssetRowWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
         child: Row(
           children: [
-            // Sol renkli indikatör + ikon
-            _typeIndicator(context),
+            asset.currencySymbol != null
+                ? Container(
+                    width: 28, height: 28,
+                    decoration: BoxDecoration(
+                      color: asset.type.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Center(
+                      child: Text(
+                        asset.currencySymbol!,
+                        style: TextStyle(
+                          fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
+                          fontWeight: FontWeight.w800,
+                          color: asset.type.color,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  )
+                : Icon(asset.type.icon, color: asset.type.color, size: 22),
             const SizedBox(width: 14),
 
             // Orta — isim, kategori, fiyat
@@ -183,19 +199,4 @@ class AssetRowWidget extends StatelessWidget {
     );
   }
 
-  Widget _typeIndicator(BuildContext context) {
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        color: asset.type.color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(
-        asset.type.icon,
-        color: asset.type.color,
-        size: 20,
-      ),
-    );
-  }
 }

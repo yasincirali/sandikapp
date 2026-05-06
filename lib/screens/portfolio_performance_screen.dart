@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +13,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
+import '../widgets/disclaimer_widget.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   final String? initialView;
@@ -125,97 +127,125 @@ class _PortfolioPerformanceScreenState
     final startDate =
         endDate.subtract(Duration(days: _periods[_selectedPeriodIdx].days));
 
-    return Scaffold(
+    return DefaultTextStyle(
+      style: GoogleFonts.dmSans(
+          color: Colors.white, decoration: TextDecoration.none),
+      child: CupertinoPageScaffold(
       backgroundColor: Sandik.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Performans',
-          style: GoogleFonts.plusJakartaSans(
-              fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // ── Header ──────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Performans',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white),
+                    ),
+                  ),
+                  SandikLogoutButton(
+                    onPressed: () => confirmAndLogout(context, ref),
+                  ),
+                ],
+              ),
+            ),
+            // ── Body ────────────────────────────────────────────────────
+            Expanded(
+              child: pStateAsync.when(
+                loading: () => const Center(
+                    child: CircularProgressIndicator(color: Sandik.amber)),
+                error: (e, _) => Center(child: Text('Hata: $e')),
+                data: (pState) => partnerAssetsAsync.when(
+                  loading: () => const Center(
+                      child: CircularProgressIndicator(color: Sandik.amber)),
+                  error: (e, _) => Center(child: Text('Hata: $e')),
+                  data: (partnerMap) {
+                    // Filter assets based on view
+                    List<Asset> targetAssets = [];
+                    if (_view == '') {
+                      targetAssets = pState.assets;
+                    } else if (_view != null) {
+                      targetAssets = partnerMap[_view] ?? [];
+                    } else {
+                      targetAssets = [...pState.assets];
+                      for (final list in partnerMap.values) {
+                        targetAssets.addAll(list);
+                      }
+                    }
+                    // Apply asset type filter
+                    if (_typeFilter != null) {
+                      targetAssets = targetAssets
+                          .where((a) => a.type == _typeFilter)
+                          .toList();
+                    }
+
+                    return FutureBuilder<Map<int, double>>(
+                      future: HistoryService.instance.getPortfolioHistory(
+                          targetAssets, _periods[_selectedPeriodIdx].days),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const SizedBox(
+                              height: 300,
+                              child: Center(
+                                  child: CircularProgressIndicator(
+                                      color: Sandik.amber)));
+                        }
+
+                        final historyMap = snapshot.data ?? {};
+                        final segments = _convertHistoryToSegments(
+                            historyMap, targetAssets, startDate, endDate);
+
+                        return ListView(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          children: [
+                            if (activePartners.isNotEmpty) ...[
+                              ModernTabSelector(
+                                partners: activePartners,
+                                selectedId: _view,
+                                onChanged: (v) => setState(() => _view = v),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            // Asset type filter chips
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  _typeChip(null, 'Tümü'),
+                                  for (final t in AssetType.values)
+                                    _typeChip(t, t.label),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildPeriodToggle(),
+                            const SizedBox(height: 24),
+                            _buildChartContainer(
+                                segments, startDate, endDate, targetAssets),
+                            const SizedBox(height: 24),
+                            _PortfolioSignalPanel(assets: targetAssets),
+                            const SizedBox(height: 12),
+                            const DisclaimerWidget(),
+                            const SizedBox(height: 16),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      body: pStateAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: Sandik.amber)),
-        error: (e, _) => Center(child: Text('Hata: $e')),
-        data: (pState) => partnerAssetsAsync.when(
-          loading: () => const Center(
-              child: CircularProgressIndicator(color: Sandik.amber)),
-          error: (e, _) => Center(child: Text('Hata: $e')),
-          data: (partnerMap) {
-            // Filter assets based on view
-            List<Asset> targetAssets = [];
-            if (_view == '') {
-              targetAssets = pState.assets;
-            } else if (_view != null) {
-              targetAssets = partnerMap[_view] ?? [];
-            } else {
-              targetAssets = [...pState.assets];
-              for (final list in partnerMap.values) {
-                targetAssets.addAll(list);
-              }
-            }
-            // Apply asset type filter
-            if (_typeFilter != null) {
-              targetAssets =
-                  targetAssets.where((a) => a.type == _typeFilter).toList();
-            }
-
-            return FutureBuilder<Map<int, double>>(
-              future: HistoryService.instance.getPortfolioHistory(
-                  targetAssets, _periods[_selectedPeriodIdx].days),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                      height: 300,
-                      child: Center(
-                          child:
-                              CircularProgressIndicator(color: Sandik.amber)));
-                }
-
-                final historyMap = snapshot.data ?? {};
-                final segments = _convertHistoryToSegments(
-                    historyMap, targetAssets, startDate, endDate);
-
-                return ListView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  children: [
-                    if (activePartners.isNotEmpty) ...[
-                      ModernTabSelector(
-                        partners: activePartners,
-                        selectedId: _view,
-                        onChanged: (v) => setState(() => _view = v),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    // Asset type filter chips
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _typeChip(null, 'Tümü'),
-                          for (final t in AssetType.values)
-                            _typeChip(t, t.label),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildPeriodToggle(),
-                    const SizedBox(height: 24),
-                    _buildChartContainer(
-                        segments, startDate, endDate, targetAssets),
-                    const SizedBox(height: 24),
-                    _PortfolioSignalPanel(assets: targetAssets),
-                    const SizedBox(height: 16),
-                  ],
-                );
-              },
-            );
-          },
-        ),
       ),
     );
   }
@@ -225,8 +255,10 @@ class _PortfolioPerformanceScreenState
     final color = type?.color ?? Sandik.amber;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: () => setState(() => _typeFilter = type),
+      child: CupertinoButton(
+        minimumSize: Size.zero,
+        padding: EdgeInsets.zero,
+        onPressed: () => setState(() => _typeFilter = type),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -240,7 +272,7 @@ class _PortfolioPerformanceScreenState
           ),
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.dmSans(
               fontSize: 12,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               color: selected ? color : Sandik.text58,
@@ -261,8 +293,10 @@ class _PortfolioPerformanceScreenState
         children: List.generate(_periods.length, (i) {
           final isSelected = _selectedPeriodIdx == i;
           return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedPeriodIdx = i),
+            child: CupertinoButton(
+              minimumSize: Size.zero,
+              padding: EdgeInsets.zero,
+              onPressed: () => setState(() => _selectedPeriodIdx = i),
               child: Container(
                 decoration: BoxDecoration(
                   color:
@@ -272,7 +306,7 @@ class _PortfolioPerformanceScreenState
                 child: Center(
                   child: Text(
                     _periods[i].label,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.dmSans(
                       fontSize: 13,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -303,7 +337,8 @@ class _PortfolioPerformanceScreenState
         decoration: BoxDecoration(
             color: Sandik.surface1, borderRadius: BorderRadius.circular(24)),
         child: const Center(
-            child: Text('Veri yok', style: TextStyle(color: Sandik.text36))),
+            child: Text('Veri yok',
+                style: TextStyle(color: Sandik.text36))),
       );
     }
 
@@ -375,7 +410,7 @@ class _PortfolioPerformanceScreenState
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       DateFormat('d MMM', 'tr_TR').format(date),
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.dmSans(
                         color: Sandik.text58,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -399,7 +434,7 @@ class _PortfolioPerformanceScreenState
                     child: Text(
                       _fmtY(val),
                       textAlign: TextAlign.right,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.dmSans(
                         color: Sandik.text58,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -459,7 +494,7 @@ class _PortfolioPerformanceScreenState
                 final date = start.add(Duration(days: s.x.toInt()));
                 return LineTooltipItem(
                   '${DateFormat('d MMM yyyy', 'tr_TR').format(date)}\n',
-                  GoogleFonts.inter(
+                  GoogleFonts.dmSans(
                       color: Sandik.text58,
                       fontSize: 11,
                       fontWeight: FontWeight.w500),
@@ -468,7 +503,7 @@ class _PortfolioPerformanceScreenState
                       text: NumberFormat.currency(
                               symbol: '₺', locale: 'tr_TR', decimalDigits: 0)
                           .format(s.y),
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.dmSans(
                         color: Sandik.gold,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -516,7 +551,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                 color: Sandik.gain, size: 20),
             const SizedBox(width: 12),
             Text('Güçlü sinyal yok — portföy nötr bölgede',
-                style: GoogleFonts.inter(fontSize: 13, color: Sandik.text58)),
+                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text58)),
           ],
         ),
       );
@@ -528,20 +563,19 @@ class _PortfolioSignalPanel extends ConsumerWidget {
         Row(
           children: [
             Text('TEKNİK SİNYALLER',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.dmSans(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
                     color: Sandik.text36)),
             const SizedBox(width: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
                   color: Sandik.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8)),
               child: Text('${results.length}',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.dmSans(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: Sandik.amber)),
@@ -590,14 +624,36 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(r.asset.name,
-                                style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white)),
+                            Row(
+                              children: [
+                                if (r.asset.showTicker) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(alpha: 0.18),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: Text(r.asset.displayTicker!,
+                                        style: GoogleFonts.dmSans(
+                                            fontSize: 11, fontWeight: FontWeight.w800, color: color, decoration: TextDecoration.none)),
+                                  ),
+                                  const SizedBox(width: 6),
+                                ],
+                                Flexible(
+                                  child: Text(r.asset.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                          decoration: TextDecoration.none)),
+                                ),
+                              ],
+                            ),
                             Text(r.asset.type.label,
-                                style: GoogleFonts.inter(
-                                    fontSize: 11, color: Sandik.text36)),
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 11, color: Sandik.text36, decoration: TextDecoration.none)),
                           ],
                         ),
                       ),
@@ -609,7 +665,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(label,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.dmSans(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
                                 color: color,
@@ -639,10 +695,11 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                             const SizedBox(height: 4),
                             Text(
                               ind.name.split(' ').first,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.dmSans(
                                   fontSize: 9,
                                   color: c,
-                                  fontWeight: FontWeight.w600),
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.none),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -653,8 +710,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     '$count/5 gösterge $label diyor  ·  %${(r.summary.confidence * 100).toStringAsFixed(0)} güven',
-                    style: GoogleFonts.inter(
-                        fontSize: 11, color: Sandik.text58),
+                    style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text58),
                   ),
                 ],
               ),

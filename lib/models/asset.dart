@@ -43,6 +43,21 @@ class Asset {
   double get gainLossPercentage =>
       totalCost > 0 ? (gainLoss / totalCost) * 100 : 0;
 
+  /// Temizlenmiş ticker kodu — sadece fon ve hisse için anlamlı
+  String? get displayTicker {
+    if (ticker.trim().isEmpty) return null;
+    final t = ticker.replaceAll('.IS', '').replaceAll('=X', '').trim();
+    return t.isEmpty ? null : t;
+  }
+
+  /// Fon/Hisse için ticker gösterilmeli mi?
+  bool get showTicker =>
+      displayTicker != null && (type == AssetType.fon || type == AssetType.hisse);
+
+  /// Döviz varlığı için para sembolü ($ € £ vb.)
+  String? get currencySymbol =>
+      type == AssetType.doviz ? currencySymbolFor(ticker, currency) : null;
+
   /// SQLite uyumlu map (partner kod payload'ı için kullanılır)
   Map<String, dynamic> toMap() => {
         'id': id,

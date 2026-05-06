@@ -38,3 +38,34 @@ enum AssetType {
         orElse: () => AssetType.diger,
       );
 }
+
+// Döviz kodu → para sembolü
+const _currencySymbols = <String, String>{
+  'USD': '\$', 'EUR': '€', 'GBP': '£', 'JPY': '¥',
+  'CHF': '₣', 'CAD': 'C\$', 'AUD': 'A\$', 'CNY': '¥',
+  'RUB': '₽', 'SAR': '﷼', 'AED': 'د', 'TRY': '₺',
+  'SEK': 'kr', 'NOK': 'kr', 'DKK': 'kr', 'PLN': 'zł',
+  'HUF': 'Ft', 'CZK': 'Kč', 'RON': 'lei', 'INR': '₹',
+  'KRW': '₩', 'BRL': 'R\$', 'MXN': 'M\$', 'ZAR': 'R',
+  'SGD': 'S\$', 'HKD': 'HK\$', 'NZD': 'NZ\$',
+};
+
+/// Ticker'dan döviz kodunu çıkarır.
+/// "USDTRY=X" → "USD", "EURTRY=X" → "EUR"
+String? _extractCurrencyCode(String ticker, String currency) {
+  final clean = ticker.replaceAll('=X', '').replaceAll('.IS', '').trim().toUpperCase();
+  if (clean.length >= 3) {
+    final code = clean.substring(0, 3);
+    if (code != 'TRY' && _currencySymbols.containsKey(code)) return code;
+  }
+  final cur = currency.toUpperCase();
+  if (cur != 'TRY' && _currencySymbols.containsKey(cur)) return cur;
+  return null;
+}
+
+/// Döviz varlığı için para sembolü döndürür.
+/// Ticker öncelikli: "USDTRY=X" → "\$", "EURTRY=X" → "€"
+String? currencySymbolFor(String ticker, String currency) {
+  final code = _extractCurrencyCode(ticker, currency);
+  return code != null ? _currencySymbols[code] : null;
+}

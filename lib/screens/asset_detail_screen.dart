@@ -45,9 +45,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
     final numFmt = NumberFormat('#,##0.####', 'tr_TR');
 
-    final ticker = asset.ticker.isNotEmpty
-        ? asset.ticker.replaceAll('.IS', '').replaceAll('=X', '')
-        : null;
+    final ticker = asset.showTicker ? asset.displayTicker : null;
 
     return Scaffold(
       backgroundColor: cs.surface,

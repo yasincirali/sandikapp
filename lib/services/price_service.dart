@@ -358,6 +358,13 @@ class PriceService {
 
   Future<List<(int, double)>> fetchHistory(
       String symbol, String range) async {
+    // TEFAS fonları için TEFAS history endpoint'ini kullan
+    if (symbol.startsWith(_tefasPrefix)) {
+      final code = symbol.replaceFirst(_tefasPrefix, '');
+      final periyod = _tefasPeriyodFor(range);
+      return TefasService.instance.fetchHistory(code, periyod: periyod);
+    }
+
     final interval = _intervalFor(range);
 
     final uri = Uri.https(
@@ -399,5 +406,16 @@ class PriceService {
         '6mo' => '1wk',
         '1y' => '1wk',
         _ => '1d',
+      };
+
+  // Yahoo range → TEFAS periyod (ay cinsinden: 1,3,6,12,36,60)
+  int _tefasPeriyodFor(String range) => switch (range) {
+        '1d' || '5d' || '1mo' => 1,
+        '3mo' => 3,
+        '6mo' => 6,
+        '1y'  => 12,
+        '3y'  => 36,
+        '5y'  => 60,
+        _     => 3,
       };
 }

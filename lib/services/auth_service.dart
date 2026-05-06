@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../models/user_model.dart';
+import 'db_logger.dart';
 import 'supabase_service.dart';
 
 const _uuid = Uuid();
@@ -21,6 +22,7 @@ class AuthService {
   AuthService._();
 
   SupabaseClient get _client => Supabase.instance.client;
+  final _log = DbLogger.instance;
 
   // ── Mevcut oturum ──────────────────────────────────────────────────────────
 
@@ -61,10 +63,16 @@ class AuthService {
     }
 
     try {
-      final response = await _client.auth.signUp(
-        email: normalizedEmail,
-        password: password,
-        data: {'display_name': displayName.trim()},
+      final response = await _log.log(
+        source: 'AuthService.register',
+        table: 'auth/sign-up',
+        op: 'RPC',
+        request: {'email': normalizedEmail, 'display_name': displayName.trim()},
+        call: () => _client.auth.signUp(
+          email: normalizedEmail,
+          password: password,
+          data: {'display_name': displayName.trim()},
+        ),
       );
 
       if (response.user == null) {
@@ -110,9 +118,15 @@ class AuthService {
     final normalizedEmail = email.toLowerCase().trim();
 
     try {
-      final response = await _client.auth.signInWithPassword(
-        email: normalizedEmail,
-        password: password,
+      final response = await _log.log(
+        source: 'AuthService.login',
+        table: 'auth/sign-in-with-password',
+        op: 'RPC',
+        request: {'email': normalizedEmail},
+        call: () => _client.auth.signInWithPassword(
+          email: normalizedEmail,
+          password: password,
+        ),
       );
 
       if (response.user == null) {
@@ -155,7 +169,13 @@ class AuthService {
   // ── Logout ────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
-    await _client.auth.signOut();
+    await _log.log<void>(
+      source: 'AuthService.logout',
+      table: 'auth/sign-out',
+      op: 'RPC',
+      request: {},
+      call: () => _client.auth.signOut(),
+    );
     // Email'i cihazda bırak — sonraki girişte dolu gelsin
   }
 

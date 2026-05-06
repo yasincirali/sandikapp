@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
@@ -180,3 +180,31 @@ final activePartnersProvider = Provider<List<AppUser>>((ref) {
   final partners = ref.watch(partnersProvider).valueOrNull ?? [];
   return partners.where((p) => p.isActive).map((p) => p.user).toList();
 });
+
+// ── Ortak logout akışı — her ekrandan çağrılabilir ───────────────────────────
+// Onay dialogu gösterir, onaylanırsa logout yapar ve LoginScreen'e yönlendirir.
+
+/// Onay dialogu gösterir, onaylanırsa logout yapar.
+/// _AuthGate authProvider'ı dinlediği için LoginScreen yönlendirmesi otomatik olur.
+Future<void> confirmAndLogout(BuildContext context, WidgetRef ref) async {
+  final confirm = await showCupertinoDialog<bool>(
+    context: context,
+    builder: (ctx) => CupertinoAlertDialog(
+      title: const Text('Çıkış Yap'),
+      content: const Text('Hesabınızdan çıkmak istediğinizden emin misiniz?'),
+      actions: [
+        CupertinoDialogAction(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Vazgeç'),
+        ),
+        CupertinoDialogAction(
+          isDestructiveAction: true,
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Çıkış Yap'),
+        ),
+      ],
+    ),
+  );
+  if (confirm != true || !context.mounted) return;
+  await ref.read(authProvider.notifier).logout();
+}
