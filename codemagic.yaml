@@ -40,9 +40,15 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          # Generate a private key for the distribution certificate
-          if [ ! -f /tmp/cert_key ]; then
+          # Use persistent private key from env var (CERT_PRIVATE_KEY, base64-encoded PEM)
+          # If not set, generate ephemeral key (only works on first build after cert revoke)
+          if [ -n "$CERT_PRIVATE_KEY" ]; then
+            echo "$CERT_PRIVATE_KEY" | base64 --decode > /tmp/cert_key
+          else
             ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/cert_key -q -N ""
+            echo "=== Add this to CERT_PRIVATE_KEY env var (base64) ==="
+            base64 -i /tmp/cert_key
+            echo "=== End of key ==="
           fi
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
