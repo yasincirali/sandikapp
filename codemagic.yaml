@@ -6,9 +6,6 @@ workflows:
     integrations:
       app_store_connect: codemagic_app_store_key
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.sandik.app
       vars:
         APP_STORE_APPLE_ID: $APP_STORE_APPLE_ID
         BUNDLE_ID: com.sandik.app
