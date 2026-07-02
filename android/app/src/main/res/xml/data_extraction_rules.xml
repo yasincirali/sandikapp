@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  E4 fix: Android 12+ (API 31+) backup/transfer kuralları.
+
+  Yedekleme ve cihaz transferi sırasında HİÇBİR uygulama verisinin
+  yedeklenmesini engelliyoruz. Hassas veri (session token, saved email,
+  SQLite cache, SharedPreferences) Google Drive otomatik yedeğine
+  ya da yeni cihaza taşınmasın.
+
+  Veri sorumlusu: Supabase'deki kullanıcı hesabıdır. Yeni cihazda
+  kullanıcı sadece login olur, veri sunucudan gelir.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>

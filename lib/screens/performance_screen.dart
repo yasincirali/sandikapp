@@ -74,7 +74,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
   Widget build(BuildContext context) {
     final indicators = _indicators;
     if (indicators == null) {
-      return const Center(child: CircularProgressIndicator(color: Sandik.amber));
+      return const SandikLoadingScreen();
     }
 
     final summary = TechnicalAnalysisService.summarize(indicators);
@@ -554,8 +554,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final endDate = DateTime.now();
     final startDate =
         endDate.subtract(Duration(days: _periods[_selectedPeriodIdx].days));
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     // No longer generating segments here, moved to FutureBuilder
     final maxX = endDate.difference(startDate).inDays.toDouble();
 

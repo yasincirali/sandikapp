@@ -27,6 +27,13 @@ class DisclaimerService {
 
   final _client = Supabase.instance.client;
 
+  // userId → accepted — logout'ta temizlenmeli
+  final Map<String, bool> _cache = {};
+
+  void clearCache() => _cache.clear();
+
+  static const _timeout = Duration(seconds: 15);
+
   /// Kullanıcı kayıt sonrası onayını Supabase'e kaydeder.
   /// Hata olursa sessizce yutmaz — caller log'a yazabilir.
   Future<void> recordAcceptance({
@@ -36,31 +43,39 @@ class DisclaimerService {
     String? deviceModel,
     String? locale,
   }) async {
-    await _client.from('disclaimer_acceptances').upsert(
-      {
-        'user_id': userId,
-        'disclaimer_version': disclaimerVersion,
-        'disclaimer_hash': disclaimerHash,
-        'app_version': appVersion,
-        'platform': platform,
-        'device_model': deviceModel,
-        'locale': locale,
-      },
-      onConflict: 'user_id,disclaimer_version',
-      ignoreDuplicates: true,
-    );
+    await _client
+        .from('disclaimer_acceptances')
+        .upsert(
+          {
+            'user_id': userId,
+            'disclaimer_version': disclaimerVersion,
+            'disclaimer_hash': disclaimerHash,
+            'app_version': appVersion,
+            'platform': platform,
+            'device_model': deviceModel,
+            'locale': locale,
+          },
+          onConflict: 'user_id,disclaimer_version',
+          ignoreDuplicates: true,
+        )
+        .timeout(_timeout);
+    _cache[userId] = true;
   }
 
   /// Kullanıcının bu versiyon için onayı var mı?
   Future<bool> hasAccepted(String userId) async {
+    if (_cache.containsKey(userId)) return _cache[userId]!;
     try {
       final rows = await _client
           .from('disclaimer_acceptances')
           .select('id')
           .eq('user_id', userId)
           .eq('disclaimer_version', disclaimerVersion)
-          .limit(1);
-      return (rows as List).isNotEmpty;
+          .limit(1)
+          .timeout(_timeout);
+      final accepted = (rows as List).isNotEmpty;
+      _cache[userId] = accepted;
+      return accepted;
     } catch (e) {
       debugPrint('DisclaimerService.hasAccepted error: $e');
       return false;

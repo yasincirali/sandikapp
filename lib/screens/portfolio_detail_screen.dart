@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/history_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
+import '../widgets/sandik_error_view.dart';
 
 class PortfolioDetailScreen extends ConsumerStatefulWidget {
   final String? initialView;
@@ -39,71 +40,37 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
     _view = widget.initialView ?? '';
   }
 
-  // ── Logic (Same as PortfolioPerformanceScreen but refined) ─────────────────
+  // ── Logic ─────────────────────────────────────────────────────────────────
 
-  double _getSimulatedPrice(Asset asset, DateTime date) {
-    final endPrice = asset.currentPrice > 0 ? asset.currentPrice : 100.0;
-    final now = DateTime.now();
-    final differenceDays = now.difference(date).inDays.clamp(0, 3650);
-    double yearlyReturn = 0.40;
-    if (asset.type == AssetType.hisse) yearlyReturn = 0.70;
-    if (asset.type == AssetType.emtia) yearlyReturn = 0.45;
-    if (asset.type == AssetType.doviz) yearlyReturn = 0.20;
-    if (asset.type == AssetType.fon) yearlyReturn = 0.50;
-    double simulated =
-        endPrice / (1.0 + (yearlyReturn * (differenceDays / 365.0)));
-    final noise =
-        math.sin(date.millisecondsSinceEpoch / 86400000.0) * (simulated * 0.03);
-    return simulated + noise;
-  }
-
-  List<TransactionSegment> _generatePortfolioSegments(
-      List<Asset> allAssets, DateTime startDate, DateTime endDate) {
-    final segments = <TransactionSegment>[];
-    if (allAssets.isEmpty) return [];
-    final events = <DateTime>{startDate, endDate};
-    for (final a in allAssets) {
-      if (a.addedDate.isAfter(startDate) && a.addedDate.isBefore(endDate))
-        events.add(a.addedDate);
+  /// UK3 fix: Sahte simülasyon (`_getSimulatedPrice` ile %40-70 yıllık return
+  /// varsayan yapay grafik) kaldırıldı. Yatırım uygulamasında uydurma
+  /// performans verisi göstermek yanıltıcı ve yasal sorun yaratabilir.
+  /// Bunun yerine `HistoryService.getPortfolioHistory` ile gerçek snapshot
+  /// + canlı fiyat verisini kullanıyoruz. Yeterli veri yoksa empty state.
+  List<TransactionSegment> _buildSegmentsFromHistory(
+    Map<int, double> historyMap,
+    DateTime startDate,
+  ) {
+    if (historyMap.isEmpty) return [];
+    final entries = historyMap.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final spots = <FlSpot>[];
+    for (final entry in entries) {
+      final ts = DateTime.fromMillisecondsSinceEpoch(entry.key);
+      final x = ts.difference(startDate).inDays.toDouble();
+      if (x < 0) continue;
+      spots.add(FlSpot(x, entry.value));
     }
-    final sortedEvents = events.toList()..sort();
-    final firstAssetDate = allAssets
-        .map((a) => a.addedDate)
-        .reduce((a, b) => a.isBefore(b) ? a : b);
-
-    for (int i = 0; i < sortedEvents.length - 1; i++) {
-      final segStart = sortedEvents[i];
-      final segEnd = sortedEvents[i + 1];
-      final isPassive = segStart.isBefore(firstAssetDate);
-      final lineColor =
-          isPassive ? Colors.white.withValues(alpha: 0.15) : Sandik.amber;
-      final areaStart = isPassive
-          ? Colors.white.withValues(alpha: 0.05)
-          : Sandik.amber.withValues(alpha: 0.12);
-      final spots = <FlSpot>[];
-      DateTime current = segStart;
-      while (current.isBefore(segEnd) || current.isAtSameMomentAs(segEnd)) {
-        final double x = current.difference(startDate).inDays.toDouble();
-        double totalVal = 0;
-        for (final a in allAssets) {
-          if (current.isBefore(a.addedDate) && !isPassive) continue;
-          totalVal += _getSimulatedPrice(a, current) * a.quantity;
-        }
-        if (totalVal == 0 && !isPassive) totalVal = 1.0;
-        spots.add(FlSpot(x, totalVal));
-        if (current.isAtSameMomentAs(segEnd)) break;
-        current = current.add(const Duration(days: 1));
-      }
-      if (spots.isNotEmpty) {
-        segments.add(TransactionSegment(
-            spots: spots,
-            lineColor: lineColor,
-            areaGradientStart: areaStart,
-            areaGradientEnd: Colors.transparent,
-            thickness: isPassive ? 1.5 : 3.5));
-      }
-    }
-    return segments;
+    if (spots.length < 2) return [];
+    return [
+      TransactionSegment(
+        spots: spots,
+        lineColor: Sandik.amber,
+        areaGradientStart: Sandik.amber.withValues(alpha: 0.12),
+        areaGradientEnd: Colors.transparent,
+        thickness: 3.5,
+      ),
+    ];
   }
 
   @override
@@ -132,13 +99,11 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                 color: Colors.white)),
       ),
       body: pStateAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: Sandik.amber)),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        loading: () => const SandikLoadingScreen(),
+        error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
         data: (pState) => partnerAssetsAsync.when(
-          loading: () => const Center(
-              child: CircularProgressIndicator(color: Sandik.amber)),
-          error: (e, _) => Center(child: Text('Hata: $e')),
+          loading: () => const SandikLoadingScreen(),
+          error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
           data: (partnerMap) {
             List<Asset> targetAssets = [];
             if (_view == '')
@@ -150,36 +115,100 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
               for (final list in partnerMap.values) targetAssets.addAll(list);
             }
 
-            final segments =
-                _generatePortfolioSegments(targetAssets, startDate, endDate);
+            return FutureBuilder<Map<int, double>>(
+              future: HistoryService.instance.getPortfolioHistory(
+                  targetAssets, _periods[_selectedPeriodIdx].days),
+              builder: (context, snap) {
+                final historyMap = snap.data ?? const <int, double>{};
+                final segments =
+                    _buildSegmentsFromHistory(historyMap, startDate);
+                final loading =
+                    snap.connectionState == ConnectionState.waiting;
 
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-              children: [
-                if (activePartners.isNotEmpty) ...[
-                  ModernTabSelector(
-                    partners: activePartners,
-                    selectedId: _view,
-                    onChanged: (v) => setState(() => _view = v),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                _buildPeriodToggle(),
-                const SizedBox(height: 24),
-                _buildChartSection(segments, startDate, endDate, targetAssets),
-                const SizedBox(height: 32),
-                _SectionTitle('KATEGORİ DAĞILIMI'),
-                const SizedBox(height: 16),
-                _buildCategoryBreakdown(targetAssets, pState),
-                const SizedBox(height: 32),
-                if (_view == null && activePartners.isNotEmpty) ...[
-                  _SectionTitle('ORTAKLAR'),
-                  const SizedBox(height: 16),
-                  _buildPartnerBreakdown(pState, partnerMap, activePartners),
-                ],
-              ],
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+                  children: [
+                    if (activePartners.isNotEmpty) ...[
+                      ModernTabSelector(
+                        partners: activePartners,
+                        selectedId: _view,
+                        onChanged: (v) => setState(() => _view = v),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    _buildPeriodToggle(),
+                    const SizedBox(height: 24),
+                    if (loading)
+                      const SizedBox(
+                        height: 300,
+                        child: Center(
+                          child: CircularProgressIndicator(color: Sandik.amber),
+                        ),
+                      )
+                    else if (segments.isEmpty)
+                      _buildEmptyChartState(targetAssets.isEmpty)
+                    else
+                      _buildChartSection(
+                          segments, startDate, endDate, targetAssets),
+                    const SizedBox(height: 32),
+                    _SectionTitle('KATEGORİ DAĞILIMI'),
+                    const SizedBox(height: 16),
+                    _buildCategoryBreakdown(targetAssets, pState),
+                    const SizedBox(height: 32),
+                    if (_view == null && activePartners.isNotEmpty) ...[
+                      _SectionTitle('ORTAKLAR'),
+                      const SizedBox(height: 16),
+                      _buildPartnerBreakdown(
+                          pState, partnerMap, activePartners),
+                    ],
+                  ],
+                );
+              },
             );
           },
+        ),
+      ),
+    );
+  }
+
+  /// UK3 empty state: gerçek snapshot verisi yetersizse veya hiç varlık
+  /// yoksa kullanıcıya sahte trend gösterme — açıkça "yeterli veri yok" de.
+  Widget _buildEmptyChartState(bool noAssets) {
+    return Container(
+      height: 220,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Sandik.surface1,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.show_chart_rounded,
+                size: 36, color: Sandik.text36),
+            const SizedBox(height: 12),
+            Text(
+              noAssets ? 'Henüz varlığın yok' : 'Yeterli veri yok',
+              style: GoogleFonts.dmSans(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Sandik.text90,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              noAssets
+                  ? 'Varlık ekledikçe performans grafiğin oluşacak.'
+                  : 'Birkaç günlük veri biriktikten sonra grafiğin oluşacak.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.dmSans(
+                fontSize: 12,
+                color: Sandik.text58,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -233,10 +262,13 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
     }
     if (minY == double.infinity) minY = 0;
     if (maxY == -double.infinity) maxY = 1000;
-    double yPadding = (maxY - minY) * 0.2;
+    // Tek-nokta veride padding=0 → minY==maxY → fl_chart assert crash.
+    // En az 1.0 padding garanti ediyoruz.
+    double yPadding = ((maxY - minY) * 0.2).clamp(1.0, double.infinity);
     maxY += yPadding;
     minY = (minY - yPadding).clamp(0, double.infinity);
-    final maxX = end.difference(start).inDays.toDouble();
+    final maxX =
+        end.difference(start).inDays.toDouble().clamp(1.0, double.infinity);
 
     return Container(
       height: 300,
@@ -363,8 +395,6 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
 
   Widget _buildPartnerBreakdown(PortfolioState myState,
       Map<String, List<Asset>> partnerMap, List<AppUser> partners) {
-    final fmt =
-        NumberFormat.currency(symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
     double totalAll = myState.totalValue;
     for (final list in partnerMap.values)
       totalAll +=

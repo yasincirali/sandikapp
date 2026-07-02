@@ -13,6 +13,10 @@ class DbLogger {
 
   static const String _sdk = 'supabase_flutter';
 
+  /// Tüm Supabase çağrıları için varsayılan timeout.
+  /// Zayıf bağlantıda sonsuz spin yerine TimeoutException ile düşer.
+  static const Duration defaultTimeout = Duration(seconds: 15);
+
   SupabaseClient get _client => Supabase.instance.client;
 
   /// Tek giriş noktası — her DB çağrısı bu wrapper üzerinden geçer.
@@ -22,19 +26,21 @@ class DbLogger {
   /// [op]       : SELECT / INSERT / UPDATE / DELETE / UPSERT / RPC / FUNCTION
   /// [request]  : gönderilen filtreler veya body (hassas alan varsa maskelenir)
   /// [call]     : asıl Supabase işlemini yapan async lambda
+  /// [timeout]  : opsiyonel override (uzun işlemler için)
   Future<T> log<T>({
     required String source,
     required String table,
     required String op,
     required Map<String, dynamic> request,
     required Future<T> Function() call,
+    Duration? timeout,
   }) async {
     final requestedAt = DateTime.now();
     Object? error;
     late T result;
 
     try {
-      result = await call();
+      result = await call().timeout(timeout ?? defaultTimeout);
       return result;
     } catch (e) {
       error = e;
@@ -45,7 +51,7 @@ class DbLogger {
       final isError = error != null;
 
       final responseSummary = isError
-          ? {'error': error.toString()}
+          ? {'error': _sanitizeMessage(error.toString())}
           : _summarize(isError ? null : result);
 
       _printDebug(
@@ -86,7 +92,10 @@ class DbLogger {
     required int durationMs,
     required bool isError,
   }) {
-    // fire-and-forget — await yok, hata loglamayı bloklamasın
+    // Production'da DB log yazma kapalı (KVKK/PII riski).
+    // Sadece hatalar persist edilir; başarılı çağrılar sessiz geçer.
+    if (kReleaseMode && !isError) return;
+
     Future(() async {
       try {
         final uid = _client.auth.currentUser?.id;
@@ -97,16 +106,63 @@ class DbLogger {
           'source': source,
           'table_name': table,
           'op': op,
-          'request_json': request,
+          'request_json': _maskSensitive(request),
           'response_json': response,
           'duration_ms': durationMs,
           'is_error': isError,
         });
       } catch (e) {
-        // Loglama altyapısı düşse de uygulamayı etkilemesin
         debugPrint('DbLogger persist error: $e');
       }
     });
+  }
+
+  /// Hata mesajından PII'yi (email, UUID, JWT, IP) sök.
+  /// A5 fix: response_json içinde Supabase hata mesajları kullanıcı verisi
+  /// ifşa edebiliyordu.
+  static final _emailRx = RegExp(
+    r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b',
+  );
+  static final _uuidRx = RegExp(
+    r'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b',
+  );
+  static final _jwtRx = RegExp(r'\beyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\b');
+  static final _bearerRx = RegExp(r'Bearer\s+[A-Za-z0-9._\-]+', caseSensitive: false);
+  static final _ipv4Rx = RegExp(r'\b(?:\d{1,3}\.){3}\d{1,3}\b');
+
+  String _sanitizeMessage(String input) => sanitize(input);
+
+  /// PII regex maskesi — Crashlytics gibi harici servislerden önce çağır.
+  static String sanitize(String input) {
+    var out = input;
+    if (out.length > 500) out = '${out.substring(0, 500)}…';
+    out = out.replaceAll(_jwtRx, '***JWT***');
+    out = out.replaceAll(_bearerRx, 'Bearer ***');
+    out = out.replaceAll(_emailRx, '***@***');
+    out = out.replaceAll(_uuidRx, '***UUID***');
+    out = out.replaceAll(_ipv4Rx, '***.***.***.***');
+    return out;
+  }
+
+  /// KVKK kapsamındaki kişisel verileri loglamadan önce maskele.
+  static const _sensitiveKeys = {
+    'email', 'password', 'token', 'access_token', 'refresh_token',
+    'apikey', 'api_key', 'authorization', 'phone', 'tc', 'tcno',
+    'display_name', 'displayName',
+  };
+
+  Map<String, dynamic> _maskSensitive(Map<String, dynamic> input) {
+    final out = <String, dynamic>{};
+    input.forEach((k, v) {
+      if (_sensitiveKeys.contains(k.toLowerCase())) {
+        out[k] = '***';
+      } else if (v is Map<String, dynamic>) {
+        out[k] = _maskSensitive(v);
+      } else {
+        out[k] = v;
+      }
+    });
+    return out;
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

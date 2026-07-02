@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -12,6 +15,8 @@ import 'providers/auth_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'services/db_logger.dart';
 import 'services/disclaimer_service.dart';
 import 'services/notification_service.dart';
 import 'services/partner_invite_listener_service.dart';
@@ -21,39 +26,83 @@ import 'theme/sandik.dart';
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('tr_TR');
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  try {
-    await Firebase.initializeApp();
-    await RemotePushService.instance.init();
-  } catch (_) {
-    // Firebase config dosyalari eklenene kadar uygulama remote push olmadan calisabilir.
-  }
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
-  await NotificationService.instance.init(navigatorKey: appNavigatorKey);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light, // koyu zemin = açık ikonlar
-    statusBarBrightness: Brightness.dark,
-  ));
-  runApp(const ProviderScope(child: SandikApp()));
+  // Crashlytics + tüm async hatalar tek `runZonedGuarded` içinde toplanır
+  await runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting('tr_TR');
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    try {
+      await Firebase.initializeApp();
+
+      // Crashlytics — debug build'de gönderim kapalı (gürültü olmasın)
+      await FirebaseCrashlytics.instance
+          .setCrashlyticsCollectionEnabled(!kDebugMode);
+
+      // Senkron Flutter framework hataları
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        final sanitized = DbLogger.sanitize(details.exceptionAsString());
+        FirebaseCrashlytics.instance.recordError(
+          sanitized, details.stack, fatal: true,
+          reason: details.context?.toDescription(),
+        );
+      };
+
+      // Native platform hataları (engine seviyesi)
+      PlatformDispatcher.instance.onError = (error, stack) {
+        final sanitized = DbLogger.sanitize(error.toString());
+        FirebaseCrashlytics.instance
+            .recordError(sanitized, stack, fatal: true);
+        return true;
+      };
+
+      await RemotePushService.instance.init();
+    } catch (e, st) {
+      // Firebase config dosyalari yoksa veya init başarısızsa
+      // sessizce devam et; uygulama remote push + crashlytics olmadan çalışır.
+      if (kDebugMode) {
+        debugPrint('Firebase init failed: $e\n$st');
+      }
+    }
+
+    await Supabase.initialize(
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+    );
+    await NotificationService.instance.init(navigatorKey: appNavigatorKey);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+    ));
+    runApp(const ProviderScope(child: SandikApp()));
+  }, (error, stack) {
+    // Zone-level: yakalanmayan async hataları
+    try {
+      FirebaseCrashlytics.instance.recordError(
+        DbLogger.sanitize(error.toString()), stack, fatal: true);
+    } catch (_) {
+      // Crashlytics hazır değilse swallow
+    }
+  });
 }
 
-class SandikApp extends StatelessWidget {
+class SandikApp extends ConsumerWidget {
   const SandikApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // UH1 fix: Light theme implementasyonu yok — dark'a sabitliyoruz.
+    // themeModeProvider kalsa da kullanılmıyor; ileride light theme
+    // eklendiğinde geri bağlanabilir.
     return MaterialApp(
       title: 'sandık',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
       theme: _buildTheme(),
-      themeMode: ThemeMode.dark, // sandık dark-mode öncelikli
+      darkTheme: _buildTheme(),
+      themeMode: ThemeMode.dark,
       home: const _AuthGate(),
     );
   }
@@ -321,62 +370,37 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   DateTime? _backgroundedAt;
   static const _sessionTimeout = Duration(minutes: 10);
 
-  AppUser? _previousUser;
-
-  // null = henüz kontrol edilmedi, false = onaylanmamış, true = onaylandı
-  bool? _disclaimerChecked;
   String? _checkedUserId;
+  bool? _disclaimerAccepted; // null = kontrol bekleniyor
+  bool? _onboardingDone; // null = kontrol bekleniyor
+  bool _splashDone = false;
 
   @override
   void initState() {
     super.initState();
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (mounted) setState(() => _splashDone = true);
+    });
     WidgetsBinding.instance.addObserver(this);
     _authSubscription = ref.listenManual(authProvider, (_, next) {
       final user = next.valueOrNull;
 
-      if (_previousUser != null && user == null && !next.isLoading) {
-        // Oturum kapandı — sıfırla ve login ekranına git
-        _disclaimerChecked = null;
+      if (user == null && !next.isLoading) {
         _checkedUserId = null;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          appNavigatorKey.currentState?.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-            (_) => false,
-          );
-        });
+        _onboardingDone = null;
+        if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
-        // Yeni kullanıcı oturum açtı — disclaimer kontrol et
-        _disclaimerChecked = null;
         _checkedUserId = user.id;
-        debugPrint('[DisclaimerCheck] Sorgu başlatılıyor: ${user.id}');
         DisclaimerService.instance.hasAccepted(user.id).then((accepted) {
-          debugPrint('[DisclaimerCheck] Sonuç: $accepted');
           if (!mounted) return;
-          if (!accepted) {
-            // Onaylanmamış — disclaimer ekranına yönlendir
-            appNavigatorKey.currentState?.pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (_) => DisclaimerAcceptanceScreen(
-                  userId: user.id,
-                  onAccepted: () {
-                    setState(() => _disclaimerChecked = true);
-                    appNavigatorKey.currentState?.pushAndRemoveUntil(
-                      MaterialPageRoute(
-                          builder: (_) => const MainNavigationScreen()),
-                      (_) => false,
-                    );
-                  },
-                ),
-              ),
-              (_) => false,
-            );
-          } else {
-            setState(() => _disclaimerChecked = true);
-          }
+          setState(() => _disclaimerAccepted = accepted);
+        });
+        OnboardingScreen.isCompleted(user.id).then((done) {
+          if (!mounted) return;
+          setState(() => _onboardingDone = done);
         });
       }
 
-      _previousUser = user;
       _syncInviteDelivery(user?.id);
     }, fireImmediately: true);
   }
@@ -431,23 +455,33 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
-    if (auth.isLoading && !auth.hasValue) {
-      return const Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
     final user = auth.valueOrNull;
+
+    // Splash minimum süresi veya auth/disclaimer/onboarding yükleniyorsa loading göster
+    if (!_splashDone ||
+        (auth.isLoading && !auth.hasValue) ||
+        (user != null &&
+            (_disclaimerAccepted == null || _onboardingDone == null))) {
+      return const SandikLoadingScreen();
+    }
+
     if (user == null) return const LoginScreen();
 
-    // Disclaimer kontrol edilirken spinner göster
-    if (_disclaimerChecked == null) {
-      return const Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(child: CircularProgressIndicator()),
+    if (_disclaimerAccepted == false) {
+      return DisclaimerAcceptanceScreen(
+        userId: user.id,
+        onAccepted: () => setState(() => _disclaimerAccepted = true),
+      );
+    }
+
+    if (_onboardingDone == false) {
+      return OnboardingScreen(
+        userId: _checkedUserId!,
+        onComplete: () => setState(() => _onboardingDone = true),
       );
     }
 
     return const MainNavigationScreen();
   }
 }
+

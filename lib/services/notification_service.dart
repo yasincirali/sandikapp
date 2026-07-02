@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart'
     show Color, GlobalKey, MaterialPageRoute, NavigatorState;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/technical_signal.dart';
 import '../screens/partnership_requests_screen.dart';
+
+const _kSignalNotificationsKey = 'pref_signal_notifications';
+const _kPartnerNotificationsKey = 'pref_partner_notifications';
+
+Future<bool> _prefEnabled(String key) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(key) ?? true; // default açık
+  } catch (_) {
+    return true;
+  }
+}
 
 class NotificationService {
   static final NotificationService instance = NotificationService._();
@@ -39,16 +52,20 @@ class NotificationService {
 
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.requestNotificationsPermission();
-
     _initialized = true;
 
     final launchPayload = launchDetails?.notificationResponse?.payload;
     if (launchPayload != null) {
       Future<void>.microtask(() => _handleNotificationPayload(launchPayload));
     }
+  }
+
+  /// Bildirim iznini kullanıcıya sor. Onboarding tamamlandıktan sonra çağır.
+  Future<void> requestPermission() async {
+    if (!_initialized) await init();
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.requestNotificationsPermission();
   }
 
   Future<void> sendSignalNotification({
@@ -58,6 +75,7 @@ class NotificationService {
     required int buyCount,
     required int sellCount,
   }) async {
+    if (!await _prefEnabled(_kSignalNotificationsKey)) return;
     if (!_initialized) await init();
 
     final isBuy = signal == SignalType.buy;
@@ -89,6 +107,7 @@ class NotificationService {
     required String inviteId,
     required String requesterName,
   }) async {
+    if (!await _prefEnabled(_kPartnerNotificationsKey)) return;
     if (!_initialized) await init();
 
     final androidDetails = AndroidNotificationDetails(

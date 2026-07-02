@@ -30,7 +30,6 @@ class HistoryService {
 
     final groupedPoints = <int, double>{};
     final now = DateTime.now();
-    final todayNorm = normalizeTs(now.millisecondsSinceEpoch);
 
     // Her bir varlık için günlük fiyat eşleşmesi tutalım donmuş/gerçek fiyatlar
     final Map<String, Map<int, double>> tickerNormalizedDaily = {};

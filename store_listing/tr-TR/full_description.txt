@@ -1,0 +1,28 @@
+sandık, tüm yatırımlarını tek bir yerden yönetmeni sağlayan kişisel portföy takip uygulamasıdır.
+
+TEMEL ÖZELLİKLER
+
+• Hisse senedi, yatırım fonu, döviz ve altın varlıklarını ekle
+• Fiyatlar otomatik güncellenir; manuel fiyat da girebilirsin
+• Toplam değer, kâr/zarar ve dağılım grafiğini anlık gör
+• Geçmiş performansını günlük olarak takip et
+• Portföyünü aile üyeleri veya iş ortaklarınla güvenli paylaş
+• İstediğin zaman ortaklığı sonlandır
+
+GÜVENLİK
+
+• Tüm veriler şifreli bulut depolama ile korunur
+• Uygulama ekran görüntüsü ve görev yöneticisine karşı otomatik olarak gizlenir
+• KVKK ve GDPR uyumlu veri işleme
+
+KULLANIM KOLAYLIĞI
+
+• Hızlı varlık ekleme akışı
+• Bakiye gizleme özelliği
+• Karanlık tema, göz dostu arayüz
+• Çevrimdışı modda son verilerle çalışmaya devam eder
+
+Sandığını aç, yatırımlarını takip et.
+
+---
+Yatırım tavsiyeleri içermez. Gösterilen veriler bilgi amaçlıdır; yatırım kararlarınızda profesyonel danışmanlık alınız.

@@ -944,7 +944,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       ticker = goldTickerMap[_subCategory!] ?? '';
       if (assetName.isEmpty) assetName = _subCategory!;
     } else if (_isDoviz && _subCategory != null) {
-      final opt = _dovizOptions.firstWhere((o) => o.label == _subCategory);
+      final opt = _dovizOptions.firstWhere(
+        (o) => o.label == _subCategory,
+        orElse: () => _dovizOptions.first,
+      );
       ticker = opt.ticker;
       if (assetName.isEmpty) assetName = opt.name;
     } else if (_type != AssetType.altin &&

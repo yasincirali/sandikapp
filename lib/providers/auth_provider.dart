@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/disclaimer_service.dart';
 import '../services/remote_push_service.dart';
 import '../services/supabase_service.dart';
 
@@ -12,13 +13,15 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   @override
   Future<AppUser?> build() => AuthService.instance.getSessionUser();
 
-  Future<void> login({required String email, required String password}) async {
+  Future<void> login({
+    required String email,
+    required String password,
+    bool rememberMe = false,
+  }) async {
     state = const AsyncLoading();
-    debugPrint('AUTH: login başlıyor email=$email');
     state = await AsyncValue.guard(
-      () => AuthService.instance.login(email: email, password: password),
+      () => AuthService.instance.login(email: email, password: password, rememberMe: rememberMe),
     );
-    debugPrint('AUTH: login bitti state=${state.runtimeType} error=${state.error}');
   }
 
   Future<void> register({
@@ -39,6 +42,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   Future<void> logout() async {
     await RemotePushService.instance.stop();
     await AuthService.instance.logout();
+    DisclaimerService.instance.clearCache();
     state = const AsyncData(null);
   }
 }

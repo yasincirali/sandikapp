@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/cupertino.dart' show CupertinoButton;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Sandık (ex-Toka) marka renk paleti ve logo painter
 class Sandik {
@@ -217,6 +218,56 @@ class SandikLogoutButton extends StatelessWidget {
           child: Center(
             child: Icon(Icons.logout_rounded, color: color, size: 18),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tam ekran loading — gif + "sandık" yazısı. Ekran ilk açılışında kullan.
+class SandikLoadingScreen extends StatefulWidget {
+  const SandikLoadingScreen({super.key});
+
+  @override
+  State<SandikLoadingScreen> createState() => _SandikLoadingScreenState();
+}
+
+class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
+  bool _showGif = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Bir sonraki frame'de GIF'e geç — native splash ikon → Flutter ikon arası
+    // senkron, GIF frame'i hazır olunca yerini alır
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _showGif = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Sandik.background,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_showGif)
+              Image.asset('assets/images/loading.gif', width: 140, height: 140)
+            else
+              const SizedBox(width: 140, height: 140),
+            const SizedBox(height: 20),
+            Text(
+              'sandık',
+              style: GoogleFonts.dmSans(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: Sandik.gold,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
         ),
       ),
     );

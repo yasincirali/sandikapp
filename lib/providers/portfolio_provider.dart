@@ -157,7 +157,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     asset.currentPrice = price;
     asset.lastUpdated = DateTime.now();
     await SupabaseService.instance.updateAsset(asset);
-    final s = state.requireValue;
+    final s = state.valueOrNull;
+    if (s == null) return;
     state = AsyncData(s.copyWith(
       assets: s.assets.map((a) => a.id == asset.id ? asset : a).toList(),
     ));

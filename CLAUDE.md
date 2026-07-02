@@ -56,9 +56,22 @@
 
 ### Deployment Target
 - **Platform**: Android
-- **Emulator**: Google Pixel 8 (API 35)
-- **Device ID**: emulator-5554
+- **Emulators**: pixel7_1 (emulator-5554) ve pixel7_2 (emulator-5556) — her ikisine deploy edilir
 - **Development Mode**: Debug with hot reload/restart enabled
+
+### Emülatör Başlatma Prosedürü
+"Emülatörde ayağa kaldır" istendiğinde bu adımları izle:
+1. `flutter emulators --launch pixel7_1` ve `flutter emulators --launch pixel7_2`
+2. Her AVD config.ini dosyasında `hw.keyboard = yes` olduğunu doğrula (aksi halde klavye çalışmaz)
+   - Config yolu: `C:\Users\vasin\.android\avd\<name>.avd\config.ini`
+   - `no` ise: `adb -s <id> emu kill` → config düzelt → yeniden başlat
+3. `flutter build apk --debug`
+4. `flutter install --device-id emulator-5554 --debug`
+5. `flutter install --device-id emulator-5556 --debug`
+
+**adb yolu:** `C:\Users\vasin\Android\sdk\platform-tools\adb.exe`
+
+**Not:** pixel7_1 ve pixel7_2 AVD'lerinde `hw.keyboard = yes` 2026-05-09 tarihinde düzeltildi.
 
 ## Areas for Automated Improvements
 

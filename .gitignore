@@ -50,14 +50,18 @@ app.*.map.json
 # Secrets — never commit these
 .env
 .env.*
+.env.local
 secrets.dart
 api_keys.dart
 lib/config/supabase_config.dart
 android/key.properties
 android/app/google-services.json
-ios/GoogleService-Info.plist
+ios/Runner/GoogleService-Info.plist
+ios/ExportOptions.plist
 *.jks
 *.keystore
+*.p12
+*.p8
 
 # Local Android SDK config
 android/local.properties

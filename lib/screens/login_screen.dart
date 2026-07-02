@@ -1,3 +1,4 @@
+import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
@@ -15,11 +16,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
-import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
-import '../main.dart' show appNavigatorKey;
-import 'disclaimer_acceptance_screen.dart';
-import 'main_navigation_screen.dart';
+import '../utils/friendly_error.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -36,6 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passFocus = FocusNode();
   bool _obscure = true;
   bool _loading = false;
+  bool _rememberMe = false;
 
   @override
   void initState() {
@@ -47,7 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final saved = await AuthService.instance.getSavedEmail();
     if (saved != null && mounted) {
       _emailCtrl.text = saved;
-      setState(() {});
+      setState(() => _rememberMe = true);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _passFocus.requestFocus();
       });
@@ -62,23 +61,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _showError(String message) async {
-    if (!mounted) return;
-    await showCupertinoDialog<void>(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Hata'),
-        content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tamam'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _login() async {
     final valid = _formKey.currentState!.validate();
     if (!valid) return;
@@ -87,42 +69,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authProvider.notifier).login(
             email: _emailCtrl.text,
             password: _passCtrl.text,
+            rememberMe: _rememberMe,
           );
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      await _showError(e.toString());
+      showAppError(context, e);
       return;
     }
     if (!mounted) return;
     final authState = ref.read(authProvider);
     if (authState.hasError) {
       setState(() => _loading = false);
-      await _showError(authState.error.toString());
-    } else if (authState.valueOrNull != null) {
-      final userId = authState.valueOrNull!.id;
-      final accepted = await DisclaimerService.instance.hasAccepted(userId);
-      if (!mounted) return;
-      if (accepted) {
-        appNavigatorKey.currentState?.pushAndRemoveUntil(
-          CupertinoPageRoute(builder: (_) => const MainNavigationScreen()),
-          (_) => false,
-        );
-      } else {
-        appNavigatorKey.currentState?.pushAndRemoveUntil(
-          CupertinoPageRoute(
-            builder: (_) => DisclaimerAcceptanceScreen(
-              userId: userId,
-              onAccepted: () => appNavigatorKey.currentState?.pushAndRemoveUntil(
-                CupertinoPageRoute(builder: (_) => const MainNavigationScreen()),
-                (_) => false,
-              ),
-            ),
-          ),
-          (_) => false,
-        );
-      }
+      showAppError(context, authState.error);
+      return;
     }
+    // UA1 fix: Manuel yönlendirmeyi sildik. AuthGate (`lib/main.dart`)
+    // authProvider değişimini dinleyip disclaimer/onboarding/main
+    // akışını kendi başına yönetir. Burada elle pushAndRemoveUntil
+    // yapmak onboarding kontrolünü atlatıyordu.
   }
 
   @override
@@ -148,26 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Center(
                       child: Column(
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(22),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                              child: Container(
-                                width: 88,
-                                height: 88,
-                                decoration: Sandik.glassDecoration(
-                                  radius: 22,
-                                  tint: Colors.white,
-                                  tintOpacity: 0.07,
-                                  borderColor: Sandik.amber,
-                                  borderOpacity: 0.30,
-                                ),
-                                child: Center(
-                                  child: SandikLogo(size: 60),
-                                ),
-                              ),
-                            ),
-                          ),
+                          SandikLogo(size: 110),
                           const SizedBox(height: 16),
                           Text(
                             'sandık',
@@ -192,6 +138,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     TextFormField(
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       style: GoogleFonts.dmSans(color: Sandik.text90),
                       decoration: Sandik.inputDecoration(
                         '',
@@ -211,6 +158,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _passCtrl,
                       focusNode: _passFocus,
                       obscureText: _obscure,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _loading ? null : _login(),
                       style: GoogleFonts.dmSans(color: Sandik.text90),
                       decoration: Sandik.inputDecoration(
                         '',
@@ -234,7 +183,85 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       validator: (v) =>
                           (v == null || v.length < 6) ? 'En az 6 karakter' : null,
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 12),
+
+                    // Beni hatırla
+                    Row(
+                      children: [
+                        CustomAnimatedToggleSwitch<bool>(
+                          current: _rememberMe,
+                          values: const [false, true],
+                          onChanged: (v) => setState(() => _rememberMe = v),
+                          animationDuration: const Duration(milliseconds: 400),
+                          animationCurve: Curves.easeInOutCubic,
+                          height: 28,
+                          spacing: 4,
+                          indicatorSize: const Size(22, double.infinity),
+                          wrapperBuilder: (context, global, child) {
+                            final t = global.position.clamp(0.0, 1.0);
+                            return Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                color: Color.lerp(
+                                  Colors.white.withValues(alpha: 0.07),
+                                  Sandik.amber.withValues(alpha: 0.88),
+                                  t,
+                                ),
+                                border: Border.all(
+                                  color: Color.lerp(
+                                    Colors.white.withValues(alpha: 0.15),
+                                    Sandik.amber,
+                                    t,
+                                  )!,
+                                  width: 1.2,
+                                ),
+                                boxShadow: t > 0.05
+                                    ? [
+                                        BoxShadow(
+                                          color: Sandik.amber.withValues(alpha: t * 0.4),
+                                          blurRadius: 10,
+                                          spreadRadius: -2,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: child,
+                            );
+                          },
+                          foregroundIndicatorBuilder: (context, global) {
+                            final t = global.position.clamp(0.0, 1.0);
+                            return Container(
+                              margin: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color.lerp(
+                                  Colors.white.withValues(alpha: 0.55),
+                                  Sandik.dark,
+                                  t,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.28),
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 1.5),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          iconBuilder: (context, local, global) => const SizedBox.shrink(),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Beni hatırla',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 14,
+                            color: Sandik.text58,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
                     // Giriş butonu — amber glass
                     CupertinoButton(
@@ -267,10 +294,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             alignment: Alignment.center,
                             child: _loading
                                 ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
+                                    width: 22,
+                                    height: 22,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                                      strokeWidth: 2.5,
                                       color: Sandik.dark,
                                     ),
                                   )

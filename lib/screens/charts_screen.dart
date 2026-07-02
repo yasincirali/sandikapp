@@ -1,6 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, RefreshIndicator, TextStyle;
+import 'package:flutter/material.dart' show Colors, RefreshIndicator;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -8,10 +8,10 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
-import '../services/tefas_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
+import '../widgets/sandik_error_view.dart';
 import 'performance_screen.dart';
 import 'portfolio_performance_screen.dart';
 import 'portfolio_detail_screen.dart';
@@ -25,6 +25,7 @@ class ChartsScreen extends ConsumerStatefulWidget {
 
 class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   String? _view = ''; // null = Birlikte, '' = Ben, uuid = ortak
+  AssetType? _filteredType; // pie'dan seçilen kategori filtresi
 
   @override
   Widget build(BuildContext context) {
@@ -103,11 +104,8 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             // ── Body ──────────────────────────────────────────────────────
             Expanded(
               child: pStateAsync.when(
-                loading: () => const Center(
-                    child: CircularProgressIndicator(color: Sandik.amber)),
-                error: (e, _) => Center(
-                    child: Text('Hata: $e',
-                        style: const TextStyle(color: Colors.white))),
+                loading: () => const SandikLoadingScreen(),
+                error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                 data: (pState) => RefreshIndicator(
                   color: Sandik.amber,
                   onRefresh: () =>
@@ -121,16 +119,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                         ModernTabSelector(
                           partners: activePartners,
                           selectedId: _view,
-                          onChanged: (v) => setState(() => _view = v),
+                          onChanged: (v) => setState(() { _view = v; _filteredType = null; }),
                         ),
                       const SizedBox(height: 24),
 
                       // Verileri birleştir
                       partnerAssetsAsync.when(
-                        loading: () => const Center(
-                            child:
-                                CircularProgressIndicator(color: Sandik.amber)),
-                        error: (e, _) => Center(child: Text('Hata: $e')),
+                        loading: () => const SandikLoadingScreen(),
+                        error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                         data: (partnerMap) {
                           List<Asset> assets = [];
                           if (_view == '') {
@@ -149,12 +145,20 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                             return const _EmptyState();
                           }
 
+                          final filteredAssets = _filteredType != null
+                              ? assets.where((a) => a.type == _filteredType).toList()
+                              : assets;
+
                           return Column(
                             children: [
-                              _DonutSection(assets: assets, pState: pState),
+                              _AssetTypeDonut(
+                                assets: assets,
+                                pState: pState,
+                                onTypeSelected: (type) => setState(() => _filteredType = type),
+                              ),
                               const SizedBox(height: 32),
                               _AssetList(
-                                  assets: assets,
+                                  assets: filteredAssets,
                                   pState: pState,
                                   onTap: (a) => Navigator.push(
                                         context,
@@ -201,172 +205,120 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ── Donut Section (wrapper — varlık tipi + aracı kuruluş toggle) ─────────────
+// ── Donut Chart ───────────────────────────────────────────────────────────────
 
-class _DonutSection extends StatefulWidget {
+class _AssetTypeDonut extends StatefulWidget {
   final List<Asset> assets;
   final PortfolioState pState;
-
-  const _DonutSection({required this.assets, required this.pState});
-
-  @override
-  State<_DonutSection> createState() => _DonutSectionState();
-}
-
-class _DonutSectionState extends State<_DonutSection> {
-  bool _byManager = false; // false = varlık tipi, true = aracı kuruluş
+  final void Function(AssetType?) onTypeSelected;
+  const _AssetTypeDonut({required this.assets, required this.pState, required this.onTypeSelected});
 
   @override
-  Widget build(BuildContext context) {
-    final hasFunds = widget.assets.any((a) => a.type == AssetType.fon);
-
-    return Column(
-      children: [
-        if (hasFunds) ...[
-          _DonutToggle(
-            byManager: _byManager,
-            onChanged: (v) => setState(() => _byManager = v),
-          ),
-          const SizedBox(height: 20),
-        ],
-        if (_byManager && hasFunds)
-          _ManagerDonut(assets: widget.assets, pState: widget.pState)
-        else
-          _AssetTypeDonut(assets: widget.assets, pState: widget.pState),
-      ],
-    );
-  }
+  State<_AssetTypeDonut> createState() => _AssetTypeDonutState();
 }
 
-// ── Toggle ────────────────────────────────────────────────────────────────────
+class _AssetTypeDonutState extends State<_AssetTypeDonut> {
+  int? _touchedIndex;
 
-class _DonutToggle extends StatelessWidget {
-  final bool byManager;
-  final ValueChanged<bool> onChanged;
-  const _DonutToggle({required this.byManager, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _toggleItem('Varlık Tipi', !byManager, () => onChanged(false)),
-          _toggleItem('Aracı Kuruluş', byManager, () => onChanged(true)),
-        ],
-      ),
-    );
+  static String _formatTL(double val) {
+    if (val >= 1000000) {
+      return '${(val / 1000000).toStringAsFixed(2).replaceAll('.', ',')} mn ₺';
+    }
+    return NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0).format(val);
   }
-
-  Widget _toggleItem(String label, bool active, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        height: 36,
-        decoration: BoxDecoration(
-          color: active ? Sandik.amber.withValues(alpha: 0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(9),
-          border: active
-              ? Border.all(color: Sandik.amber.withValues(alpha: 0.4))
-              : null,
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: GoogleFonts.dmSans(
-              fontSize: 12,
-              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-              color: active ? Sandik.amber : Sandik.text36,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Varlık Tipi Donut ─────────────────────────────────────────────────────────
-
-class _AssetTypeDonut extends StatelessWidget {
-  final List<Asset> assets;
-  final PortfolioState pState;
-
-  const _AssetTypeDonut({required this.assets, required this.pState});
 
   @override
   Widget build(BuildContext context) {
     final totals = <AssetType, double>{};
     double totalVal = 0;
-    for (final a in assets) {
-      final val = pState.toTRY(a.totalValue, a.currency);
+    for (final a in widget.assets) {
+      final val = widget.pState.toTRY(a.totalValue, a.currency);
       totals[a.type] = (totals[a.type] ?? 0) + val;
       totalVal += val;
     }
     if (totals.isEmpty) return const SizedBox.shrink();
 
-    final sorted = totals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final sorted = totals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final touched = _touchedIndex != null && _touchedIndex! < sorted.length
+        ? sorted[_touchedIndex!]
+        : null;
 
-    // Formatlama: Milyon TL desteği için
-    String formattedTotal;
-    if (totalVal >= 1000000) {
-      formattedTotal =
-          '${(totalVal / 1000000).toStringAsFixed(2).replaceAll('.', ',')} mn ₺';
-    } else {
-      final fmt = NumberFormat.compactCurrency(
-          locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-      formattedTotal = fmt.format(totalVal).toLowerCase();
-    }
+    // Ortada gösterilecek metin
+    final centerLabel = touched != null ? touched.key.label : 'toplam';
+    final centerValue = touched != null
+        ? _formatTL(touched.value)
+        : _formatTL(totalVal);
+    final centerPct = touched != null
+        ? '%${(touched.value / (totalVal > 0 ? totalVal : 1) * 100).toStringAsFixed(1)}'
+        : null;
+    final centerColor = touched != null ? touched.key.color : Sandik.gold;
 
     return Column(
       children: [
         SizedBox(
-          width: 200,
-          height: 200,
+          width: 260,
+          height: 260,
           child: Stack(
             children: [
               PieChart(
                 PieChartData(
-                  sections: sorted.map((e) {
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, response) {
+                      if (event is FlTapUpEvent) {
+                        final idx = response?.touchedSection?.touchedSectionIndex;
+                        final newIdx = (idx != null && idx >= 0 && idx < sorted.length)
+                            ? (_touchedIndex == idx ? null : idx)
+                            : null;
+                        setState(() => _touchedIndex = newIdx);
+                        widget.onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
+                      }
+                    },
+                  ),
+                  sections: sorted.asMap().entries.map((e) {
+                    final isTouched = e.key == _touchedIndex;
                     return PieChartSectionData(
-                      color: e.key.color,
-                      value: e.value,
-                      radius: 20,
+                      color: e.value.key.color,
+                      value: e.value.value,
+                      radius: isTouched ? 42 : 34,
                       showTitle: false,
                     );
                   }).toList(),
-                  sectionsSpace: 4,
-                  centerSpaceRadius: 60,
+                  sectionsSpace: 3,
+                  centerSpaceRadius: 88,
                   startDegreeOffset: -90,
                 ),
               ),
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (centerPct != null) ...[
+                        Text(
+                          centerPct,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: centerColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                      ],
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          formattedTotal,
+                          centerValue,
                           style: GoogleFonts.dmSans(
-                            fontSize: 24,
+                            fontSize: centerPct != null ? 16 : 22,
                             fontWeight: FontWeight.w700,
-                            color: Sandik.gold,
+                            color: centerColor,
                           ),
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        'toplam',
+                        centerLabel,
                         style: GoogleFonts.dmSans(
                           fontSize: 12,
                           color: Sandik.text36,
@@ -380,203 +332,54 @@ class _AssetTypeDonut extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 28),
+        // Kategori legend
         Wrap(
-          spacing: 16,
-          runSpacing: 8,
+          spacing: 20,
+          runSpacing: 10,
           alignment: WrapAlignment.center,
-          children: sorted.map((e) {
-            final pct = (e.value / (totalVal > 0 ? totalVal : 1) * 100)
-                .toStringAsFixed(0);
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration:
-                      BoxDecoration(color: e.key.color, shape: BoxShape.circle),
+          children: sorted.asMap().entries.map((e) {
+            final isTouched = e.key == _touchedIndex;
+            final pct = (e.value.value / (totalVal > 0 ? totalVal : 1) * 100)
+                .toStringAsFixed(1);
+            return GestureDetector(
+              onTap: () {
+                final newIdx = _touchedIndex == e.key ? null : e.key;
+                setState(() => _touchedIndex = newIdx);
+                widget.onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
+              },
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: _touchedIndex == null || isTouched ? 1.0 : 0.45,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: isTouched ? 10 : 8,
+                      height: isTouched ? 10 : 8,
+                      decoration: BoxDecoration(
+                        color: e.value.key.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${e.value.key.label} %$pct',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: isTouched ? FontWeight.w700 : FontWeight.w500,
+                        color: isTouched ? e.value.key.color : Sandik.text58,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${e.key.label} %$pct',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13,
-                      color: Sandik.text58,
-                      fontWeight: FontWeight.w500),
-                ),
-              ],
+              ),
             );
           }).toList(),
         ),
       ],
     );
-  }
-}
-
-// ── Aracı Kuruluş Donut ───────────────────────────────────────────────────────
-
-class _ManagerDonut extends StatefulWidget {
-  final List<Asset> assets;
-  final PortfolioState pState;
-  const _ManagerDonut({required this.assets, required this.pState});
-
-  @override
-  State<_ManagerDonut> createState() => _ManagerDonutState();
-}
-
-class _ManagerDonutState extends State<_ManagerDonut> {
-  // fonKodu → managerName cache (TefasService'ten lazy yüklenir)
-  Map<String, String>? _managerCache;
-  bool _loading = true;
-
-  // Aracı kuruluş renklerini deterministik üret
-  static const _palette = [
-    Color(0xFFF5A623), Color(0xFF2D9E6C), Color(0xFF4A90D9),
-    Color(0xFFE8503A), Color(0xFFF5C842), Color(0xFF9B59B6),
-    Color(0xFF1ABC9C), Color(0xFFE67E22), Color(0xFF3498DB),
-    Color(0xFFE74C3C), Color(0xFF2ECC71), Color(0xFF8E44AD),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadManagers();
-  }
-
-  Future<void> _loadManagers() async {
-    final funds = await TefasService.instance.fetchAllFunds();
-    final map = <String, String>{
-      for (final f in funds) f.code: f.managerName,
-    };
-    if (mounted) setState(() { _managerCache = map; _loading = false; });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return const SizedBox(
-        height: 200,
-        child: Center(child: CircularProgressIndicator(color: Sandik.amber, strokeWidth: 2)),
-      );
-    }
-
-    // Sadece fon varlıklarını al
-    final fonAssets = widget.assets.where((a) => a.type == AssetType.fon).toList();
-    if (fonAssets.isEmpty) return const SizedBox.shrink();
-
-    // Aracı kuruluşa göre grupla
-    final totals = <String, double>{};
-    double totalVal = 0;
-    for (final a in fonAssets) {
-      final code = a.ticker.replaceFirst('TEFAS:', '');
-      final manager = _managerCache?[code] ?? _parseManagerFromName(a.name);
-      final val = widget.pState.toTRY(a.totalValue, a.currency);
-      totals[manager] = (totals[manager] ?? 0) + val;
-      totalVal += val;
-    }
-
-    if (totals.isEmpty) return const SizedBox.shrink();
-
-    final sorted = totals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    Color colorFor(int i) => _palette[i % _palette.length];
-
-    String formattedTotal;
-    if (totalVal >= 1000000) {
-      formattedTotal = '${(totalVal / 1000000).toStringAsFixed(2).replaceAll('.', ',')} mn ₺';
-    } else {
-      formattedTotal = NumberFormat.compactCurrency(
-              locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
-          .format(totalVal)
-          .toLowerCase();
-    }
-
-    return Column(
-      children: [
-        SizedBox(
-          width: 200,
-          height: 200,
-          child: Stack(
-            children: [
-              PieChart(
-                PieChartData(
-                  sections: sorted.asMap().entries.map((e) => PieChartSectionData(
-                        color: colorFor(e.key),
-                        value: e.value.value,
-                        radius: 20,
-                        showTitle: false,
-                      )).toList(),
-                  sectionsSpace: 4,
-                  centerSpaceRadius: 60,
-                  startDegreeOffset: -90,
-                ),
-              ),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          formattedTotal,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 24, fontWeight: FontWeight.w700, color: Sandik.gold),
-                        ),
-                      ),
-                      Text('fon toplam',
-                          style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text36, fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        // Aracı kuruluş listesi
-        ...sorted.asMap().entries.map((e) {
-          final pct = (e.value.value / (totalVal > 0 ? totalVal : 1) * 100);
-          final color = colorFor(e.key);
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    e.value.key,
-                    style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text58, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '%${pct.toStringAsFixed(1)}',
-                  style: GoogleFonts.dmSans(fontSize: 13, color: color, fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  // TEFAS cache'te yoksa fon adından şirketi tahmin et
-  static String _parseManagerFromName(String name) {
-    final keywords = ['PORTFÖY', 'VARLIK', 'YATIRIM', 'MENKUL'];
-    final parts = name.toUpperCase().split(RegExp(r'\s+'));
-    for (int i = 0; i < parts.length; i++) {
-      if (keywords.contains(parts[i])) return parts.sublist(0, i + 1).join(' ');
-    }
-    return parts.take(2).join(' ');
   }
 }
 

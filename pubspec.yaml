@@ -1,5 +1,5 @@
 name: portfoy_takip
-description: iOS & Android portfolio tracker — PortfoyTakip
+description: sandık — kişisel portföy takibi (hisse, fon, döviz, altın)
 version: 1.0.0+1
 
 environment:
@@ -24,6 +24,10 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_svg: ^2.0.10+1
   crypto: ^3.0.3
+  animated_toggle_switch: ^0.8.7
+  path_provider: ^2.1.5
+  firebase_crashlytics: ^5.2.1
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -34,9 +38,14 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/sandik_icon.png"
-  min_sdk_android: 21
+  min_sdk_android: 23
   remove_alpha_ios: true
   background_color_ios: "#FCD35A"
+  # Adaptive icon (Android 8.0+) — masking için %66 safe zone'lu foreground
+  adaptive_icon_background: "#0A1E15"
+  adaptive_icon_foreground: "assets/images/sandik_icon_fg.png"
+  # Themed icon (Android 13+) — system tint uygulanır
+  adaptive_icon_monochrome: "assets/images/sandik_icon_mono.png"
 
 flutter:
   uses-material-design: true

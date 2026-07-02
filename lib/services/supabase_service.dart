@@ -197,15 +197,26 @@ class SupabaseService {
           .order('ts', ascending: true),
     );
 
-    return rows
-        .map<({int ts, Map<String, double> values})>((r) {
-          final ts = DateTime.parse(r['ts'] as String).millisecondsSinceEpoch;
-          final raw = r['data'] as Map<String, dynamic>;
-          final data = raw.map((k, v) => MapEntry(k, (v as num).toDouble()));
-          return (ts: ts, values: data);
-        })
-        .where((s) => s.values.isNotEmpty)
-        .toList();
+    final out = <({int ts, Map<String, double> values})>[];
+    for (final r in rows) {
+      try {
+        final tsRaw = r['ts'];
+        if (tsRaw is! String) continue;
+        final ts = DateTime.parse(tsRaw).millisecondsSinceEpoch;
+        final raw = r['data'];
+        if (raw is! Map<String, dynamic>) continue;
+        final data = <String, double>{};
+        raw.forEach((k, v) {
+          if (v is num) data[k] = v.toDouble();
+          // Eski snapshot'larda v string olabilir — sessizce atla
+        });
+        if (data.isNotEmpty) out.add((ts: ts, values: data));
+      } catch (_) {
+        // Bozuk satır tüm fetch'i öldürmesin
+        continue;
+      }
+    }
+    return out;
   }
 
   // ── Partner invites ───────────────────────────────────────────────────────
@@ -584,7 +595,9 @@ class SupabaseService {
     );
     if (row == null) return;
 
-    final isUser1 = (row['user_id_1'] as String) == currentUserId;
+    final user1 = row['user_id_1'];
+    if (user1 is! String) return;
+    final isUser1 = user1 == currentUserId;
     final field = isUser1 ? 'hidden_for_1' : 'hidden_for_2';
     await _log.log<void>(
       source: 'SupabaseService.setPartnershipHidden[update]',

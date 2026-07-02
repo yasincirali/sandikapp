@@ -7,10 +7,11 @@ import 'package:share_plus/share_plus.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
 import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
-import 'login_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -141,35 +142,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
-  Future<void> _logout() async {
-    final confirm = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Çıkış Yap'),
-        content: const Text('Hesabınızdan çıkmak istediğinizden emin misiniz?'),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Çıkış Yap'),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true && mounted) {
-      await ref.read(authProvider.notifier).logout();
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          CupertinoPageRoute(builder: (_) => const LoginScreen()),
-          (_) => false,
-        );
-      }
-    }
-  }
+  Future<void> _logout() => confirmAndLogout(context, ref);
 
   @override
   Widget build(BuildContext context) {
@@ -199,6 +172,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                       ),
+                      CupertinoButton(
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        onPressed: _busy
+                            ? null
+                            : () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const SettingsScreen(),
+                                  ),
+                                ),
+                        child: _ActionIcon(
+                          icon: Icons.settings_outlined,
+                          color: Sandik.text90,
+                          disabled: _busy,
+                          semanticLabel: 'Ayarlar',
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       CupertinoButton(
                         minimumSize: Size.zero,
                         padding: EdgeInsets.zero,
@@ -236,7 +227,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             child:
                                 CircularProgressIndicator(color: Sandik.amber),
                           ),
-                          error: (e, _) => Text(e.toString()),
+                          error: (e, _) => SandikErrorView(error: e),
                           data: (partners) => partners.isEmpty
                               ? _buildEmptyPartners()
                               : Column(
@@ -353,7 +344,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       CupertinoButton(
                         minimumSize: Size.zero,
                         padding: EdgeInsets.zero,
-                        onPressed: () => Share.share(_generatedCode!),
+                        onPressed: () {
+                          final shortCode = _generatedCode!.split(':')[0];
+                          Clipboard.setData(ClipboardData(text: shortCode));
+                          Share.share('sandık ortak kodum: $shortCode');
+                        },
                         child: const Icon(Icons.share_rounded,
                             color: Sandik.amber),
                       ),
@@ -409,7 +404,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ] else ...[
                 TextField(
                   controller: _codeCtrl,
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.characters,
                   style: const TextStyle(color: Colors.white),
                   decoration: Sandik.inputDecoration('XXXXX-XXXXX'),
                 ),
@@ -518,7 +514,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ? Sandik.gain.withValues(alpha: 0.1)
                 : Sandik.text36.withValues(alpha: 0.1),
             child: Text(
-              p.user.displayName[0].toUpperCase(),
+              p.user.displayName.isNotEmpty
+                  ? p.user.displayName[0].toUpperCase()
+                  : '?',
               style: TextStyle(
                   color: p.isActive ? Sandik.gain : Sandik.text36,
                   fontWeight: FontWeight.bold),

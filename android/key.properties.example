@@ -1,0 +1,11 @@
+# Release keystore configuration template
+# Bu dosyayı `key.properties` olarak kopyala ve gerçek değerleri gir.
+# `key.properties` ve `*.jks` zaten .gitignore'da — asla commit etme.
+#
+# Keystore üretmek için:
+# keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+
+storePassword=KEYSTORE_PASSWORD_BURAYA
+keyPassword=KEY_PASSWORD_BURAYA
+keyAlias=upload
+storeFile=../upload-keystore.jks

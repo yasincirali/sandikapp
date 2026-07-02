@@ -7,7 +7,8 @@ import '../theme/sandik.dart';
 
 class PortfolioSummaryWidget extends StatelessWidget {
   final PortfolioState state;
-  const PortfolioSummaryWidget({super.key, required this.state});
+  final bool hideBalance;
+  const PortfolioSummaryWidget({super.key, required this.state, this.hideBalance = false});
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +60,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  tryFmt.format(state.totalValue),
+                  hideBalance ? '••••••' : tryFmt.format(state.totalValue),
                   style: GoogleFonts.dmSans(
                     fontSize: heroFontSize,
                     fontWeight: FontWeight.w700,
@@ -72,31 +73,41 @@ class PortfolioSummaryWidget extends StatelessWidget {
               if (state.totalCost > 0)
                 Row(
                   children: [
-                    Icon(
-                      isPos ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
-                      color: gainColor,
-                      size: 20,
-                    ),
-                    Flexible(
-                      child: Text(
-                        '${isPos ? '+' : ''}${tryFmt.format(state.gainLoss)}',
+                    if (!hideBalance) ...[
+                      Icon(
+                        isPos ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+                        color: gainColor,
+                        size: 20,
+                      ),
+                      Flexible(
+                        child: Text(
+                          '${isPos ? '+' : ''}${tryFmt.format(state.gainLoss)}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: subFontSize,
+                            fontWeight: FontWeight.w600,
+                            color: gainColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '%${state.gainLossPercentage.toStringAsFixed(2)}',
                         style: GoogleFonts.dmSans(
                           fontSize: subFontSize,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                           color: gainColor,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      '%${state.gainLossPercentage.toStringAsFixed(2)}',
-                      style: GoogleFonts.dmSans(
-                        fontSize: subFontSize,
-                        fontWeight: FontWeight.w500,
-                        color: gainColor,
+                    ] else
+                      Text(
+                        '•••• / ••••',
+                        style: GoogleFonts.dmSans(
+                          fontSize: subFontSize,
+                          fontWeight: FontWeight.w500,
+                          color: Sandik.text36,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               if (state.isLoading)

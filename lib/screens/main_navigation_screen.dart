@@ -4,13 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import 'home_screen.dart';
-import 'login_screen.dart';
 import 'charts_screen.dart';
 import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
 import 'add_asset_screen.dart';
-import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/notification_service.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -21,6 +20,15 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
 
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // UE1: Bildirim iznini onboarding sonrasına ertele — uygulama açılır açılmaz değil
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) NotificationService.instance.requestPermission();
+    });
+  }
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -59,9 +67,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               borderRadius: BorderRadius.circular(24),
               side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
             ),
-            title: const Text('Çıkış Yap', style: TextStyle(color: Colors.white)),
+            title: const Text('Uygulamadan Çık', style: TextStyle(color: Colors.white)),
             content: Text(
-              'Hesabınızdan çıkmak istiyor musunuz?',
+              'Uygulamadan çıkmak istiyor musunuz?',
               style: TextStyle(color: Sandik.text58),
             ),
             actions: [
@@ -72,20 +80,17 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 style: FilledButton.styleFrom(backgroundColor: Sandik.loss),
-                child: const Text('Çıkış Yap'),
+                child: const Text('Çık'),
               ),
             ],
           ),
         ),
       ),
     );
-    if (confirm == true && mounted) {
-      await ref.read(authProvider.notifier).logout();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (_) => false,
-      );
+    if (confirm == true) {
+      // Uygulamayı kapat
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pop();
     }
   }
 
@@ -121,7 +126,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(0, Icons.home_rounded, 'Ana'),
-              _navItem(1, Icons.business_center_rounded, 'Portföy'),
+              _navItem(1, Icons.donut_large_rounded, 'Dağılım'),
               _buildFab(),
               _navItem(3, Icons.show_chart_rounded, 'Performans'),
               _navItem(4, Icons.person_rounded, 'Profil'),

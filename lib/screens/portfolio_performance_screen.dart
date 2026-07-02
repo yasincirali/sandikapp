@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle;
+import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, Icons, TextStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +12,7 @@ import '../services/technical_analysis_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
+import '../widgets/sandik_error_view.dart';
 import '../services/history_service.dart';
 import '../widgets/disclaimer_widget.dart';
 
@@ -158,13 +159,11 @@ class _PortfolioPerformanceScreenState
             // ── Body ────────────────────────────────────────────────────
             Expanded(
               child: pStateAsync.when(
-                loading: () => const Center(
-                    child: CircularProgressIndicator(color: Sandik.amber)),
-                error: (e, _) => Center(child: Text('Hata: $e')),
+                loading: () => const SandikLoadingScreen(),
+                error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                 data: (pState) => partnerAssetsAsync.when(
-                  loading: () => const Center(
-                      child: CircularProgressIndicator(color: Sandik.amber)),
-                  error: (e, _) => Center(child: Text('Hata: $e')),
+                  loading: () => const SandikLoadingScreen(),
+                  error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                   data: (partnerMap) {
                     // Filter assets based on view
                     List<Asset> targetAssets = [];
@@ -361,7 +360,8 @@ class _PortfolioPerformanceScreenState
         end.difference(start).inDays.toDouble().clamp(1.0, double.infinity);
 
     // 4 eşit aralıklı Y etiketi (min ve max hariç)
-    final yInterval = (maxY - minY) / 4;
+    // fl_chart `assert(interval > 0)` — tek-nokta veride çökmemesi için clamp
+    final yInterval = ((maxY - minY) / 4).clamp(1.0, double.infinity);
     // X ekseni için uygun aralık (4 etiket)
     final xInterval = (maxX / 4).ceilToDouble().clamp(1.0, double.infinity);
 

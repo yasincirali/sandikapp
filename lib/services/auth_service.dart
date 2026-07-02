@@ -24,6 +24,24 @@ class AuthService {
   SupabaseClient get _client => Supabase.instance.client;
   final _log = DbLogger.instance;
 
+  // ── Şifre gücü ────────────────────────────────────────────────────────────
+
+  /// Şifrenin kabul edilebilir olup olmadığını döner.
+  /// Null = geçerli; aksi halde kullanıcıya gösterilecek hata mesajı.
+  /// B1 fix: min 8 karakter + en az bir harf + en az bir rakam.
+  static String? validatePassword(String password) {
+    if (password.length < 8) {
+      return 'Şifre en az 8 karakter olmalı.';
+    }
+    if (!RegExp(r'[A-Za-zğüşıöçĞÜŞİÖÇ]').hasMatch(password)) {
+      return 'Şifre en az bir harf içermeli.';
+    }
+    if (!RegExp(r'\d').hasMatch(password)) {
+      return 'Şifre en az bir rakam içermeli.';
+    }
+    return null;
+  }
+
   // ── Mevcut oturum ──────────────────────────────────────────────────────────
 
   Future<AppUser?> getSessionUser() async {
@@ -44,6 +62,11 @@ class AuthService {
     await prefs.setString(_savedEmailKey, email);
   }
 
+  Future<void> clearSavedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_savedEmailKey);
+  }
+
   // ── Register ──────────────────────────────────────────────────────────────
 
   Future<AppUser> register({
@@ -58,8 +81,9 @@ class AuthService {
     if (displayName.trim().isEmpty) {
       throw const AuthException('Ad soyad boş olamaz.');
     }
-    if (password.length < 6) {
-      throw const AuthException('Şifre en az 6 karakter olmalı.');
+    final passwordError = validatePassword(password);
+    if (passwordError != null) {
+      throw AuthException(passwordError);
     }
 
     try {
@@ -101,7 +125,12 @@ class AuthService {
     } on AuthApiException catch (e) {
       if (e.message.contains('already registered') ||
           e.message.contains('User already registered')) {
-        throw const AuthException('Bu e-posta zaten kayıtlı.');
+        // H2: Hesap tespitini (account enumeration) önlemek için
+        // "zaten kayıtlı" mesajı yerine generic yanıt — saldırgan
+        // hangi email'in sistemde olduğunu öğrenemez.
+        throw const AuthException(
+          'Kayıt işlemi tamamlandı. E-posta adresinizi kontrol edin.',
+        );
       }
       throw AuthException(e.message);
     } catch (e) {
@@ -114,6 +143,7 @@ class AuthService {
   Future<AppUser> login({
     required String email,
     required String password,
+    bool rememberMe = false,
   }) async {
     final normalizedEmail = email.toLowerCase().trim();
 
@@ -133,6 +163,15 @@ class AuthService {
         throw const AuthException('Giriş başarısız.');
       }
 
+      // B3: E-posta doğrulama server-side kontrolü
+      // emailConfirmedAt null ise kullanıcı doğrulama bağlantısına tıklamamış demektir.
+      if (response.user!.emailConfirmedAt == null) {
+        await _client.auth.signOut();
+        throw const AuthException(
+          'E-posta adresin doğrulanmamış. Gelen kutunu kontrol edip doğrulama bağlantısına tıkla.',
+        );
+      }
+
       var profile =
           await SupabaseService.instance.getProfile(response.user!.id);
       if (profile == null) {
@@ -147,7 +186,11 @@ class AuthService {
         await SupabaseService.instance.upsertProfile(profile);
       }
 
-      await _saveEmail(normalizedEmail);
+      if (rememberMe) {
+        await _saveEmail(normalizedEmail);
+      } else {
+        await clearSavedEmail();
+      }
       return profile;
     } on AuthException {
       rethrow;
@@ -179,6 +222,73 @@ class AuthService {
     // Email'i cihazda bırak — sonraki girişte dolu gelsin
   }
 
+  // ── Hesap silme (KVKK Madde 11 / Play 2024 / App Store 5.1.1(v)) ─────────
+
+  /// Kullanıcının hesabını ve tüm verisini kalıcı olarak siler.
+  ///
+  /// Akış:
+  /// 1. Şifre re-authentication (yetkisiz silmeyi engeller)
+  /// 2. Supabase Edge Function `delete-account` çağrılır
+  ///    → service-role ile auth.admin.deleteUser()
+  ///    → CASCADE ile assets/snapshots/partnerships silinir
+  ///    → account_deletion_log'a anonim kayıt (3 yıl saklanır)
+  /// 3. Yerel SharedPreferences temizlenir
+  /// 4. Session sonlandırılır
+  Future<void> deleteAccount({required String password}) async {
+    final user = _client.auth.currentUser;
+    if (user == null || user.email == null) {
+      throw const AuthException('Oturum açık değil.');
+    }
+
+    // B5 fix: Re-auth Edge Function tarafında yapılır. Mobil tarafta
+    // signInWithPassword çağırmayı bıraktık — client-side re-auth
+    // çalıntı cihaz senaryosunda bypass edilebilirdi (saldırgan
+    // doğrudan Edge Function'a istek atabilir). Artık şifre body'de
+    // server'a gider ve service-role'a admin.deleteUser çağrısı öncesi
+    // server password'ü doğrular.
+    try {
+      final response = await _client.functions
+          .invoke('delete-account', body: {'password': password})
+          .timeout(const Duration(seconds: 30));
+      if (response.status == 200) {
+        // başarılı
+      } else {
+        final data = response.data;
+        final errCode =
+            (data is Map && data['error'] is String) ? data['error'] as String : '';
+        if (errCode == 'invalid_password') {
+          throw const AuthException('Şifre hatalı.');
+        }
+        if (errCode == 'password_required') {
+          throw const AuthException('Şifre gerekli.');
+        }
+        throw AuthException(
+          'Hesap silinemedi (kod ${response.status}). '
+          'Sorun devam ederse destekle iletişime geçin.',
+        );
+      }
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('Hesap silme hatası: ${_safe(e)}');
+    }
+
+    // 3. Local cache temizle
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (_) {
+      // local cleanup hata verirse de devam et — sunucudan silindi
+    }
+
+    // 4. Sign out (token cleanup)
+    try {
+      await _client.auth.signOut();
+    } catch (_) {
+      // user zaten silindi, signOut hata verebilir; önemli değil
+    }
+  }
+
   // ── Ortak kodu üret ───────────────────────────────────────────────────────
 
   Future<String> generatePartnerCode(String fromUserId) async {
@@ -196,26 +306,23 @@ class AuthService {
     final expiresAt = DateTime.now().add(const Duration(hours: 24));
     final inviteId = _uuid.v4();
 
-    // Payload sadece kimlik bilgisi taşır — varlık verisi taşınmaz
+    // A7 fix: Payload artık PII taşımıyor — UUID, isim ve email kaldırıldı.
+    // Server, daveti `code` üzerinden kendi tablosundan bulur.
+    // Geriye kalan: yalnızca zaman damgaları (oluşturma, geçerlilik).
     final payloadJson = jsonEncode({
-      'i': fromUserId,
-      'n': profile.displayName,
       't': DateTime.now().millisecondsSinceEpoch,
       'x': expiresAt.millisecondsSinceEpoch,
     });
-    final encoded = base64Url
-        .encode(_obfuscate(utf8.encode(payloadJson)))
-        .replaceAll('=', '');
 
     await SupabaseService.instance.insertInvite(
       id: inviteId,
       fromUserId: fromUserId,
       code: shortCode,
-      payload: encoded,
+      payload: payloadJson,
       expiresAt: expiresAt,
     );
 
-    return '$shortCode:$encoded';
+    return shortCode;
   }
 
   // ── Ortak kodunu kullan (onay bekleme akışı) ─────────────────────────────
@@ -228,182 +335,170 @@ class AuthService {
     required String code,
   }) async {
     final trimmed = code.trim().toUpperCase();
-
-    // XXXXX-XXXXX formatı veya tam kod (XXXXX-XXXXX:payload)
-    String? shortCode;
-    final codePattern = RegExp(r'^([A-Z2-9]{5}-[A-Z2-9]{5})');
-    final match = codePattern.firstMatch(trimmed);
-    if (match != null) shortCode = match.group(1);
-
-    if (shortCode == null) {
-      throw const AuthException('Geçersiz kod formatı. XXXXX-XXXXX biçiminde girin.');
-    }
-
-    // Rate-limit: son 10 dakikada 5'ten fazla başarısız deneme → blokla
-    _checkRateLimit(currentUserId);
-
-    final invite = await SupabaseService.instance.getValidInvite(shortCode);
-    if (invite == null) {
-      _recordAttempt(currentUserId);
-      throw const AuthException('Kod bulunamadı veya süresi dolmuş.');
-    }
-
-    // Kod doğru — sayacı sıfırla
-    _failedAttempts.remove(currentUserId);
-
-    final fromUserId = invite['from_user_id'] as String;
-    if (fromUserId == currentUserId) {
-      throw const AuthException('Kendi kodunuzu kullanamazsınız.');
-    }
-
-    // Zaten pending bir istek var mı?
-    final existingStatus = invite['status'] as String?;
-    if (existingStatus == 'pending' && invite['to_user_id'] != null) {
+    final codePattern = RegExp(r'^([A-Z2-9]{5}-[A-Z2-9]{5})$');
+    if (!codePattern.hasMatch(trimmed)) {
       throw const AuthException(
-          'Bu kod zaten başka bir kullanıcı tarafından kullanılıyor.');
+          'Geçersiz kod formatı. XXXXX-XXXXX biçiminde girin.');
     }
 
-    final alreadyLinked = await SupabaseService.instance
-        .partnershipExists(currentUserId, fromUserId);
-    if (alreadyLinked) {
-      throw const AuthException('Bu kullanıcı zaten ortağınız.');
-    }
+    // Rate-limit: son 10 dakikada 5 başarısız deneme → blokla
+    await _checkRateLimit(currentUserId);
 
-    // Invite'a to_user_id yaz — partnership henüz kurulmadı
-    final requesterProfile =
-        await SupabaseService.instance.getProfile(currentUserId);
-    final requesterName =
-        requesterProfile?.displayName.trim().isNotEmpty == true
-            ? requesterProfile!.displayName.trim()
-            : 'Kullanici';
-
-    await SupabaseService.instance.setInviteTarget(
-      inviteId: invite['id'] as String,
-      toUserId: currentUserId,
-      requesterName: requesterName,
-    );
-
+    // A1+A2 fix: davet doğrulama service-role ile Edge Function'da yapılır.
+    // İstemci artık partner_invites tablosunu doğrudan okumaz/yazmaz.
     try {
-      await SupabaseService.instance
-          .sendPartnerInvitePush(invite['id'] as String);
-    } catch (_) {
-      // Push altyapisi henuz hazir degilse davet yine de olusturulsun.
+      final response = await _client.functions
+          .invoke('redeem-invite-code', body: {'code': trimmed})
+          .timeout(const Duration(seconds: 15));
+
+      final status = response.status;
+      final data = response.data;
+      if (status == 200 && data is Map) {
+        await _clearAttempts(currentUserId);
+        try {
+          await SupabaseService.instance
+              .sendPartnerInvitePush(data['invite_id'] as String);
+        } catch (_) {}
+        return (
+          inviteId: data['invite_id'] as String,
+          partnerName:
+              (data['partner_display_name'] as String?)?.trim().isNotEmpty == true
+                  ? data['partner_display_name'] as String
+                  : 'Kullanıcı',
+        );
+      }
+
+      // Edge function hata kodları
+      final errCode =
+          (data is Map && data['error'] is String) ? data['error'] as String : '';
+      await _recordAttempt(currentUserId);
+      throw AuthException(_translateInviteError(errCode));
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('Davet doğrulanamadı: ${_safe(e)}');
     }
-
-    // Payload'dan ortak profilini çek ve profiles tablosuna yaz
-    AppUser? partnerProfile;
-    try {
-      partnerProfile = await SupabaseService.instance.getProfile(fromUserId);
-    } catch (_) {}
-
-    if (partnerProfile == null) {
-      try {
-        final payload = invite['payload'] as String?;
-        if (payload != null) {
-          final decoded = _decodePayload(payload);
-          if (decoded != null) {
-            final name = decoded['n'] as String? ?? 'Kullanıcı';
-            final email = decoded['e'] as String? ?? '';
-            partnerProfile = AppUser(
-              id: fromUserId,
-              email: email,
-              displayName: name,
-              createdAt: DateTime.now(),
-            );
-            await SupabaseService.instance.upsertProfile(partnerProfile);
-          }
-        }
-      } catch (_) {}
-    }
-
-    return (
-      inviteId: invite['id'] as String,
-      partnerName: partnerProfile?.displayName ?? 'Kullanıcı',
-    );
   }
 
-  // ── Kod sahibi onayladı → partnership kur ────────────────────────────────
+  String _translateInviteError(String code) {
+    switch (code) {
+      case 'invalid_code_format':
+        return 'Geçersiz kod formatı.';
+      case 'invite_not_found_or_expired':
+        return 'Kod bulunamadı veya süresi dolmuş.';
+      case 'cannot_use_own_code':
+        return 'Kendi kodunuzu kullanamazsınız.';
+      case 'already_claimed':
+        return 'Bu kod zaten başka bir kullanıcı tarafından kullanılıyor.';
+      case 'already_partners':
+        return 'Bu kullanıcı zaten ortağınız.';
+      default:
+        return 'Davet doğrulanamadı.';
+    }
+  }
+
+  String _safe(Object e) {
+    final s = e.toString();
+    if (s.length > 100) return s.substring(0, 100);
+    return s;
+  }
+
+  // ── Kod sahibi onayladı → partnership kur (Edge Function) ────────────────
 
   Future<void> acceptInvite({
     required String inviteId,
     required String currentUserId,
   }) async {
-    final invite = await SupabaseService.instance.getInviteById(inviteId);
-    if (invite == null) throw const AuthException('Davet bulunamadı.');
-
-    final fromUserId = invite['from_user_id'] as String;
-    final toUserId = invite['to_user_id'] as String?;
-    if (toUserId == null) throw const AuthException('Davet hedefi yok.');
-
-    if (fromUserId != currentUserId) {
-      throw const AuthException('Bu daveti onaylama yetkiniz yok.');
-    }
-
-    await SupabaseService.instance.acceptInvite(inviteId);
-    await SupabaseService.instance.insertPartnership(
-      id: _uuid.v4(),
-      userId1: fromUserId,
-      userId2: toUserId,
-    );
+    await _invokeInviteAction(inviteId: inviteId, action: 'accept');
   }
 
-  // ── Kod sahibi reddetti ───────────────────────────────────────────────────
+  // ── Kod sahibi reddetti (Edge Function) ──────────────────────────────────
 
   Future<void> rejectInvite({
     required String inviteId,
     required String currentUserId,
   }) async {
-    final invite = await SupabaseService.instance.getInviteById(inviteId);
-    if (invite == null) throw const AuthException('Davet bulunamadı.');
-    if (invite['from_user_id'] != currentUserId) {
-      throw const AuthException('Bu daveti reddetme yetkiniz yok.');
-    }
-    await SupabaseService.instance.rejectInvite(inviteId);
+    await _invokeInviteAction(inviteId: inviteId, action: 'reject');
   }
 
-  // ── Rate limiting ─────────────────────────────────────────────────────────
+  Future<void> _invokeInviteAction({
+    required String inviteId,
+    required String action,
+  }) async {
+    try {
+      final response = await _client.functions
+          .invoke('accept-invite', body: {
+            'invite_id': inviteId,
+            'action': action,
+          })
+          .timeout(const Duration(seconds: 15));
+      if (response.status == 200) return;
 
-  // userId → başarısız deneme zamanları listesi
-  final Map<String, List<DateTime>> _failedAttempts = {};
+      final data = response.data;
+      final errCode =
+          (data is Map && data['error'] is String) ? data['error'] as String : '';
+      throw AuthException(_translateAcceptError(errCode));
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('İşlem tamamlanamadı: ${_safe(e)}');
+    }
+  }
+
+  String _translateAcceptError(String code) {
+    switch (code) {
+      case 'invite_not_found':
+        return 'Davet bulunamadı.';
+      case 'forbidden':
+        return 'Bu daveti işleme yetkiniz yok.';
+      case 'already_processed':
+        return 'Bu davet zaten işlenmiş.';
+      case 'expired':
+        return 'Davet süresi dolmuş.';
+      case 'no_target':
+        return 'Davet hedefi tanımlı değil.';
+      default:
+        return 'İşlem başarısız.';
+    }
+  }
+
+  // ── Rate limiting (SharedPreferences — uygulama yeniden başlayınca sıfırlanmaz) ──
+
   static const _maxAttempts = 5;
   static const _windowMinutes = 10;
+  static const _rlKeyPrefix = 'rl_attempts_';
 
-  void _recordAttempt(String userId) {
-    _failedAttempts.putIfAbsent(userId, () => []).add(DateTime.now());
+  Future<void> _recordAttempt(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final prefKey = '$_rlKeyPrefix${key.hashCode}';
+    final stored = prefs.getStringList(prefKey) ?? [];
+    stored.add(DateTime.now().millisecondsSinceEpoch.toString());
+    await prefs.setStringList(prefKey, stored);
   }
 
-  void _checkRateLimit(String userId) {
-    final attempts = _failedAttempts[userId];
-    if (attempts == null) return;
-    final cutoff = DateTime.now().subtract(const Duration(minutes: _windowMinutes));
-    // Eski denemeleri temizle
-    attempts.removeWhere((t) => t.isBefore(cutoff));
-    if (attempts.length >= _maxAttempts) {
+  Future<void> _checkRateLimit(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final prefKey = '$_rlKeyPrefix${key.hashCode}';
+    final stored = prefs.getStringList(prefKey) ?? [];
+    final cutoff = DateTime.now()
+        .subtract(const Duration(minutes: _windowMinutes))
+        .millisecondsSinceEpoch;
+    final recent = stored.where((s) {
+      final ms = int.tryParse(s);
+      return ms != null && ms >= cutoff;
+    }).toList();
+    await prefs.setStringList(prefKey, recent);
+    if (recent.length >= _maxAttempts) {
       throw const AuthException(
         'Çok fazla başarısız deneme. 10 dakika sonra tekrar deneyin.',
       );
     }
   }
 
-  // ── Obfuscation ───────────────────────────────────────────────────────────
-
-  List<int> _obfuscate(List<int> bytes) {
-    const key = [0x50, 0x54, 0x4B, 0x32, 0x30, 0x32, 0x34];
-    return List<int>.generate(
-        bytes.length, (i) => bytes[i] ^ key[i % key.length]);
+  Future<void> _clearAttempts(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_rlKeyPrefix${key.hashCode}');
   }
 
-  Map<String, dynamic>? _decodePayload(String encoded) {
-    try {
-      // Padding geri ekle
-      final padded = encoded.padRight(
-          encoded.length + (4 - encoded.length % 4) % 4, '=');
-      final bytes = base64Url.decode(padded);
-      final deobfuscated = _obfuscate(bytes);
-      final json = utf8.decode(deobfuscated);
-      return jsonDecode(json) as Map<String, dynamic>;
-    } catch (_) {
-      return null;
-    }
-  }
+  // A7 fix: payload artık PII içermediği için XOR obfuscation kaldırıldı.
 }

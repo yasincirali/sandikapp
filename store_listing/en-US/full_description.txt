@@ -1,0 +1,28 @@
+sandık is a personal portfolio tracking app that lets you manage all your investments in one place.
+
+KEY FEATURES
+
+• Add stocks, mutual funds, forex and gold assets
+• Prices update automatically; manual entry also supported
+• See total value, profit/loss and allocation chart in real time
+• Track your daily performance history
+• Securely share your portfolio with family or business partners
+• End the partnership at any time
+
+SECURITY
+
+• All data protected with encrypted cloud storage
+• App automatically hides from screenshots and task manager
+• GDPR-compliant data processing
+
+EASE OF USE
+
+• Fast asset-adding flow
+• Balance hiding feature
+• Dark theme, eye-friendly interface
+• Works offline with last known data
+
+Open your sandık and start tracking.
+
+---
+This app does not provide investment advice. Data shown is for informational purposes only. Please consult a professional financial adviser before making investment decisions.

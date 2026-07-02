@@ -8,6 +8,7 @@ import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
@@ -15,8 +16,9 @@ import '../theme/sandik.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/disclaimer_widget.dart';
+import '../widgets/sandik_error_view.dart';
+import 'add_asset_screen.dart';
 import 'performance_screen.dart';
-import 'portfolio_performance_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -82,13 +84,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       backgroundColor: Sandik.background,
       body: asyncState.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: Sandik.amber)),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        loading: () => const SandikLoadingScreen(),
+        error: (e, _) => SandikErrorView(error: e, onRetry: _reload),
         data: (myState) {
           if (partners.isEmpty) return _buildBody(myState, {}, []);
           return ref.watch(allPartnerAssetsProvider).when(
-            loading: () => const Center(child: CircularProgressIndicator(color: Sandik.amber)),
-            error: (e, _) => Center(child: Text(e.toString())),
+            loading: () => const SandikLoadingScreen(),
+            error: (e, _) => SandikErrorView(error: e, onRetry: _reload),
             data: (allPartnerAssets) => _buildBody(myState, allPartnerAssets, partners),
           );
         },
@@ -139,8 +141,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (showRightCard) {
       if (_view == null) {
-        rightLabel = partners.length == 1 ? partners[0].displayName.split(' ')[0] : 'Ortaklar';
-        rightInitial = partners.isNotEmpty ? partners[0].displayName[0].toUpperCase() : 'O';
+        if (partners.length == 1) {
+          final name = partners[0].displayName;
+          rightLabel = name.isEmpty ? 'Ortak' : name.split(' ').first;
+        } else {
+          rightLabel = 'Ortaklar';
+        }
+        rightInitial = partners.isNotEmpty && partners[0].displayName.isNotEmpty
+            ? partners[0].displayName[0].toUpperCase()
+            : 'O';
         for (final assets in allPartnerAssets.values) {
           for (final a in assets) {
             rightTotal += myState.toTRY(a.totalValue, a.currency);
@@ -151,8 +160,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           (p) => p.id == _view,
           orElse: () => AppUser(id: '', email: '', displayName: 'Ortak', createdAt: DateTime.now()),
         );
-        rightLabel = p.displayName.split(' ')[0];
-        rightInitial = p.displayName[0].toUpperCase();
+        final name = p.displayName.isEmpty ? 'Ortak' : p.displayName;
+        rightLabel = name.split(' ').first;
+        rightInitial = name[0].toUpperCase();
         for (final a in allPartnerAssets[_view!] ?? <Asset>[]) {
           rightTotal += myState.toTRY(a.totalValue, a.currency);
         }
@@ -231,17 +241,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     : const Icon(Icons.refresh_rounded, color: Sandik.text58, size: 22),
               ),
               const SizedBox(width: 8),
+              const _BalanceToggleButton(),
+              const SizedBox(width: 8),
               _SignalBadgeButton(onTap: _scrollToSignals),
               const SizedBox(width: 8),
               SandikLogoutButton(onPressed: () => confirmAndLogout(context, ref)),
               SizedBox(width: hp),
             ],
           ),
+          // Offline / price error banner
+          if (myState.errorMessage != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Sandik.amber.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Sandik.amber.withValues(alpha: 0.35)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.wifi_off_rounded, color: Sandik.amber, size: 16),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Fiyatlar güncellenemedi — eski veriler gösteriliyor.',
+                          style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.amber),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _reload,
+                        child: Text(
+                          'Tekrar Dene',
+                          style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w600, color: Sandik.amber),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           // Portfolio summary
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: hp),
-              child: PortfolioSummaryWidget(state: displayedState),
+              child: PortfolioSummaryWidget(
+                state: displayedState,
+                hideBalance: ref.watch(balanceHiddenProvider),
+              ),
             ),
           ),
           // Mini cards
@@ -257,12 +306,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Sandik.amber,
                       tryFmt,
                       user?.displayName.isNotEmpty == true ? user!.displayName[0].toUpperCase() : 'B',
+                      hideBalance: ref.watch(balanceHiddenProvider),
                     ),
                   ),
                   if (showRightCard && partners.isNotEmpty) ...[
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _personMiniCard(rightLabel, rightTotal, rightColor, tryFmt, rightInitial),
+                      child: _personMiniCard(
+                        rightLabel, rightTotal, rightColor, tryFmt, rightInitial,
+                        hideBalance: ref.watch(balanceHiddenProvider),
+                      ),
                     ),
                   ],
                 ],
@@ -352,11 +405,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           // Transactions list
           if (sortedAssets.isEmpty)
-            const SliverToBoxAdapter(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Text('Henüz işlem yok', style: TextStyle(color: Sandik.text36)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hp, 16, hp, 8),
+                child: Column(
+                  children: [
+                    const Icon(Icons.savings_outlined, color: Sandik.text36, size: 48),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Henüz varlık eklenmemiş',
+                      style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'İlk varlığını ekleyerek sandığını oluşturmaya başla.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36),
+                    ),
+                    const SizedBox(height: 24),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddAssetScreen()),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Sandik.amber.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Sandik.amber.withValues(alpha: 0.5)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.add_rounded, color: Sandik.amber, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'İlk Varlığını Ekle',
+                              style: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w600, color: Sandik.amber),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             )
@@ -448,7 +540,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _personMiniCard(String name, double total, Color color, NumberFormat fmt, String initial) {
+  Widget _personMiniCard(String name, double total, Color color, NumberFormat fmt, String initial, {bool hideBalance = false}) {
     final sw = MediaQuery.of(context).size.width;
     final cardFontSize = sw < 360 ? 14.0 : 18.0;
     return ClipRRect(
@@ -481,7 +573,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  fmt.format(total),
+                  hideBalance ? '••••••' : fmt.format(total),
                   style: GoogleFonts.dmSans(fontSize: cardFontSize, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
               ),
@@ -547,13 +639,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildTransactionItem(Asset asset) {
     final hp = MediaQuery.of(context).size.width < 360 ? 14.0 : 20.0;
+    final portfolioState = ref.watch(portfolioProvider).valueOrNull;
+    final hideBalance = ref.watch(balanceHiddenProvider);
+    final tryFmt = NumberFormat('#,###', 'tr_TR');
+
+    final bool isRemoved = asset.quantity <= 0;
+
+    // Miktar metni: birime göre formatla
+    String quantityText;
+    if (isRemoved) {
+      quantityText = 'Çıkarıldı';
+    } else if (asset.type == AssetType.doviz && asset.currencySymbol != null) {
+      final q = asset.quantity;
+      final sym = asset.currencySymbol!;
+      quantityText = q == q.truncateToDouble()
+          ? '$sym${NumberFormat('#,###', 'tr_TR').format(q.toInt())}'
+          : '$sym${q.toStringAsFixed(2)}';
+    } else if (asset.unitType == 'gram' || asset.unitType == 'gr') {
+      final q = asset.quantity;
+      quantityText = q == q.truncateToDouble()
+          ? '${NumberFormat('#,###', 'tr_TR').format(q.toInt())} gr'
+          : '${q.toStringAsFixed(2)} gr';
+    } else {
+      final q = asset.quantity;
+      quantityText = q == q.truncateToDouble()
+          ? '${NumberFormat('#,###', 'tr_TR').format(q.toInt())} adet'
+          : '${q.toStringAsFixed(4)} adet';
+    }
+
+    // TL karşılığı
+    final double tryValue = portfolioState != null
+        ? portfolioState.toTRY(asset.totalValue, asset.currency)
+        : asset.totalValue;
+
     return Padding(
       padding: EdgeInsets.fromLTRB(hp, 0, hp, 10),
       child: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset)),
-        ),
+        onTap: isRemoved
+            ? null
+            : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset)),
+                ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
@@ -561,32 +688,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: isRemoved
+                    ? Colors.white.withValues(alpha: 0.03)
+                    : Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
+                border: Border.all(
+                  color: isRemoved
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.white.withValues(alpha: 0.09),
+                ),
               ),
               child: Row(
                 children: [
-                  asset.currencySymbol != null
-                      ? Container(
-                          width: 28, height: 28,
-                          decoration: BoxDecoration(
-                            color: asset.type.color.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(7),
-                          ),
-                          child: Center(
-                            child: Text(
-                              asset.currencySymbol!,
-                              style: GoogleFonts.dmSans(
-                                fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
-                                fontWeight: FontWeight.w800,
-                                color: asset.type.color,
-                                height: 1,
+                  Opacity(
+                    opacity: isRemoved ? 0.4 : 1.0,
+                    child: asset.currencySymbol != null
+                        ? Container(
+                            width: 28, height: 28,
+                            decoration: BoxDecoration(
+                              color: asset.type.color.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            child: Center(
+                              child: Text(
+                                asset.currencySymbol!,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: asset.type.color,
+                                  height: 1,
+                                ),
                               ),
                             ),
-                          ),
-                        )
-                      : Icon(asset.type.icon, color: asset.type.color, size: 20),
+                          )
+                        : Icon(asset.type.icon,
+                            color: asset.type.color, size: 20),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -594,7 +731,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Row(
                           children: [
-                            if (asset.showTicker) ...[
+                            if (asset.showTicker && !isRemoved) ...[
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
@@ -604,7 +741,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 child: Text(
                                   asset.displayTicker!,
                                   style: GoogleFonts.dmSans(
-                                      fontSize: 11, fontWeight: FontWeight.w800, color: asset.type.color),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: asset.type.color),
                                 ),
                               ),
                               const SizedBox(width: 6),
@@ -614,7 +753,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 asset.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isRemoved ? Sandik.text36 : Colors.white,
+                                ),
                               ),
                             ),
                           ],
@@ -627,13 +770,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ],
                     ),
                   ),
-                  Text(
-                    '${asset.gainLoss >= 0 ? '+' : ''}₺${NumberFormat('#,###').format(asset.gainLoss.abs().toInt())}',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: asset.gainLoss >= 0 ? Sandik.gain : Sandik.loss,
-                    ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (isRemoved)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Sandik.loss.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Çıkarıldı',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Sandik.loss,
+                            ),
+                          ),
+                        )
+                      else ...[
+                        Text(
+                          hideBalance ? '₺••••' : '₺${tryFmt.format(tryValue.toInt())}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          quantityText,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Sandik.text36,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -825,7 +1001,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                                 ),
                               ),
                               IconButton(
-                                icon: Icon(Icons.close_rounded, size: 18, color: Sandik.text36),
+                                icon: const Icon(Icons.close_rounded, size: 18, color: Sandik.text36),
                                 onPressed: () => onDismiss(alert.assetId),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -842,6 +1018,49 @@ class _SignalsBottomSheet extends StatelessWidget {
                 child: DisclaimerWidget(),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Bakiye gizle/göster butonu ────────────────────────────────────────────────
+
+class _BalanceToggleButton extends ConsumerWidget {
+  const _BalanceToggleButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hidden = ref.watch(balanceHiddenProvider);
+    return GestureDetector(
+      onTap: () => ref.read(balanceHiddenProvider.notifier).set(!hidden),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: hidden
+                  ? Sandik.amber.withValues(alpha: 0.14)
+                  : Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: hidden
+                    ? Sandik.amber.withValues(alpha: 0.40)
+                    : Colors.white.withValues(alpha: 0.12),
+                width: 1,
+              ),
+            ),
+            child: Center(
+              child: Icon(
+                hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                color: hidden ? Sandik.amber : Sandik.text58,
+                size: 20,
+              ),
+            ),
           ),
         ),
       ),
