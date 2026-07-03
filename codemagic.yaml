@@ -92,6 +92,9 @@ workflows:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
       - name: Build Flutter iOS without codesign
         script: |
+          # --dart-define values here are baked into the Dart snapshot that
+          # Flutter produces. xcode-project build-ipa (next step) reuses this
+          # snapshot instead of rebuilding Dart, so the defines survive.
           flutter build ios --release --no-codesign \
             --build-number=$BUILD_NUMBER \
             --dart-define=SUPABASE_URL=$SUPABASE_URL \
@@ -99,6 +102,13 @@ workflows:
       - name: Xcode archive and export IPA
         script: |
           cd $CM_BUILD_DIR
+          # Also inject dart-defines into the Xcode build environment. Xcode's
+          # Flutter build phase re-runs `flutter assemble`, which reads
+          # DART_DEFINES from the environment. Without this, the snapshot
+          # produced above gets replaced by one built with empty defines,
+          # causing Supabase.initialize to receive empty url/anonKey at runtime.
+          encode() { printf '%s' "$1" | base64 | tr -d '\n='; }
+          export DART_DEFINES="$(encode "SUPABASE_URL=$SUPABASE_URL"),$(encode "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY")"
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
