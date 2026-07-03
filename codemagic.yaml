@@ -75,8 +75,19 @@ workflows:
           # get-latest-build-number checks all builds (TestFlight + App Store +
           # processing/invalid), avoiding "value already used" errors when the
           # TestFlight-only counter is stale (e.g. after a rejected upload).
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" || echo "0")
-          BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          set +e
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" 2>&1)
+          CLI_EXIT=$?
+          set -e
+          echo "get-latest-build-number output: $LATEST_BUILD_NUMBER"
+          echo "get-latest-build-number exit code: $CLI_EXIT"
+          # Sanitize: must be a positive integer, otherwise fall back to timestamp
+          if ! [[ "$LATEST_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Latest build number not a valid integer, using timestamp"
+            BUILD_NUMBER=$(date +%s)
+          else
+            BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          fi
           echo "Using build number: $BUILD_NUMBER"
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
       - name: Build Flutter iOS without codesign
