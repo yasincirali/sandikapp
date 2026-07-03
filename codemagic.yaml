@@ -120,6 +120,14 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
+        # Upload to TestFlight. Actual submission for external beta review is
+        # handled by assigning the build to a beta_group below — Apple triggers
+        # review automatically when a build reaches an external group.
         submit_to_testflight: true
-        beta_groups: []
+        # Name(s) of external beta groups created in App Store Connect →
+        # TestFlight → External Testing. Builds are distributed to these
+        # groups after review passes. Leave empty to skip external distribution
+        # (build is still available to internal testers automatically).
+        beta_groups:
+          - Sandik Beta Testers
         submit_to_app_store: false
