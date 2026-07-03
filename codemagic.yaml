@@ -50,6 +50,19 @@ workflows:
             base64 -i /tmp/cert_key
             echo "=== End of key ==="
           fi
+          # Delete existing App Store profiles so a fresh one is created with
+          # current App ID capabilities (Push Notifications was recently enabled).
+          # fetch-signing-files --create reuses existing profiles, which don't
+          # pick up newly-added capabilities on the App ID.
+          app-store-connect profiles list \
+            --type IOS_APP_STORE \
+            --json 2>/dev/null | \
+            jq -r '.[] | .id' | \
+            while read -r PROFILE_ID; do
+              echo "Deleting profile $PROFILE_ID"
+              app-store-connect profiles delete "$PROFILE_ID" --ignore-not-found || true
+            done
+
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --certificate-key=@file:/tmp/cert_key \
