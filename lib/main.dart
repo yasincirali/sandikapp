@@ -66,6 +66,13 @@ void main() async {
       }
     }
 
+    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+      runApp(_ConfigErrorApp(
+        urlEmpty: supabaseUrl.isEmpty,
+        keyEmpty: supabaseAnonKey.isEmpty,
+      ));
+      return;
+    }
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
@@ -86,6 +93,61 @@ void main() async {
       // Crashlytics hazır değilse swallow
     }
   });
+}
+
+/// Fail-fast screen shown when Supabase build-time constants are empty.
+/// Signals a broken CI configuration (--dart-define / DART_DEFINES not
+/// forwarded to the Dart compiler) instead of silently failing every
+/// network call at runtime.
+class _ConfigErrorApp extends StatelessWidget {
+  const _ConfigErrorApp({required this.urlEmpty, required this.keyEmpty});
+  final bool urlEmpty;
+  final bool keyEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: const Color(0xFF1A0000),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                const SizedBox(height: 16),
+                const Text(
+                  'Uygulama yapılandırma hatası',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Bu build eksik Supabase kimlik bilgileriyle derlenmiş. '
+                  'Sorun geliştirici tarafında; yeni bir sürüm bekleyin.',
+                  style: TextStyle(color: Colors.white70, fontSize: 15),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'SUPABASE_URL: ${urlEmpty ? "BOŞ" : "OK"}\n'
+                  'SUPABASE_ANON_KEY: ${keyEmpty ? "BOŞ" : "OK"}',
+                  style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 13,
+                      fontFamily: 'monospace'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class SandikApp extends ConsumerWidget {
