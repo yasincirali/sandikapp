@@ -72,7 +72,10 @@ workflows:
       - name: Increment build number
         script: |
           cd $CM_BUILD_DIR
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo "0")
+          # get-latest-build-number checks all builds (TestFlight + App Store +
+          # processing/invalid), avoiding "value already used" errors when the
+          # TestFlight-only counter is stale (e.g. after a rejected upload).
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" || echo "0")
           BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
           echo "Using build number: $BUILD_NUMBER"
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
