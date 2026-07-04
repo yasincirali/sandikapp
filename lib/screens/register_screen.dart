@@ -60,6 +60,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _termsAccepted &&
       _consentAccepted;
 
+  /// First missing requirement, in the order the user filled the form.
+  /// null → form is valid.
+  String? _firstMissingRequirement() {
+    if (_nameCtrl.text.trim().isEmpty) return 'Ad soyad girin.';
+    if (!_isValidEmail(_emailCtrl.text)) return 'Geçerli bir e-posta girin.';
+    final passError = AuthService.validatePassword(_passCtrl.text);
+    if (passError != null) return passError;
+    if (_passCtrl.text != _passConfirmCtrl.text) {
+      return 'Şifreler eşleşmiyor.';
+    }
+    if (!_termsAccepted) return 'Yasal koşulları kabul etmelisin.';
+    if (!_consentAccepted) {
+      return 'Yurt dışı veri aktarımına açık rıza vermelisin.';
+    }
+    return null;
+  }
+
   bool _isValidEmail(String v) {
     final parts = v.split('@');
     return parts.length == 2 && parts[0].isNotEmpty && parts[1].contains('.');
@@ -300,6 +317,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 style: GoogleFonts.dmSans(color: Sandik.text90),
                 decoration: Sandik.inputDecoration('',
                     labelText: 'Şifre',
+                    errorText: _passCtrl.text.isEmpty
+                        ? null
+                        : AuthService.validatePassword(_passCtrl.text),
                     prefixIcon: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.lock_outline,
@@ -329,6 +349,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 style: GoogleFonts.dmSans(color: Sandik.text90),
                 decoration: Sandik.inputDecoration('',
                     labelText: 'Şifre Tekrar',
+                    errorText: (_passConfirmCtrl.text.isNotEmpty &&
+                            _passConfirmCtrl.text != _passCtrl.text)
+                        ? 'Şifreler eşleşmiyor'
+                        : null,
                     prefixIcon: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.lock_outline,
@@ -401,16 +425,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               // Kayıt Ol butonu — GestureDetector(opaque) instead of
               // CupertinoButton: on iOS release the CupertinoButton was
               // losing the gesture arena to the enclosing Scrollable.
+              // Button stays tappable even when incomplete so we can tell
+              // the user WHICH requirement is missing.
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: isLoading
                     ? null
-                    : (!_canSubmit
-                        ? () => showAppError(
-                              context,
-                              const AuthException('Devam etmek için tüm yasal koşulları kabul etmelisin.'),
-                            )
-                        : _register),
+                    : () {
+                        final missing = _firstMissingRequirement();
+                        if (missing != null) {
+                          showAppError(context, AuthException(missing));
+                          return;
+                        }
+                        _register();
+                      },
                 child: Container(
                   height: 52,
                   decoration: BoxDecoration(
