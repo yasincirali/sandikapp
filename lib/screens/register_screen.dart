@@ -45,6 +45,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _consentAccepted = false;
   bool _consentError = false;
   bool _emailTouched = false; // focus kaybedince hata göster
+  bool _submitting = false; // register çağrısı + başarı dialog süresince
+
 
   // TODO: Production'da gerçek URL'ler.
   static const _privacyUrl = 'https://sandik.app/privacy';
@@ -190,62 +192,76 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
     if (!_formKey.currentState!.validate()) return;
 
-    await ref.read(authProvider.notifier).register(
-          email: _emailCtrl.text,
-          displayName: _nameCtrl.text,
-          password: _passCtrl.text,
-        );
+    setState(() => _submitting = true);
+    try {
+      await ref.read(authProvider.notifier).register(
+            email: _emailCtrl.text,
+            displayName: _nameCtrl.text,
+            password: _passCtrl.text,
+          );
 
-    final authState = ref.read(authProvider);
-    if (authState.hasError && mounted) {
-      final err = authState.error;
-      final msg = err?.toString() ?? '';
-      // AuthService "e-posta doğrulama gerekli" durumunu exception ile
-      // sinyalize ediyor — bu bir başarı akışı, hata değil. Success
-      // dialog gösterip LoginScreen'e email pre-filled dönüyoruz.
-      final isPendingConfirmation = msg.contains('doğrulama maili') ||
-          msg.contains('E-posta adresinize doğrulama') ||
-          msg.contains('Kayıt işlemi tamamlandı');
-      if (isPendingConfirmation) {
-        await showAppSuccess(
-          context,
-          title: 'Kayıt başarılı',
-          message: msg,
-        );
+      final authState = ref.read(authProvider);
+      if (authState.hasError) {
         if (!mounted) return;
-        await AuthService.instance.saveEmailForLogin(_emailCtrl.text.trim());
-        if (!mounted) return;
-        Navigator.pop(context);
+        final err = authState.error;
+        final msg = err?.toString() ?? '';
+        // Confirm-email açıksa AuthService "doğrulama maili gönderildi"
+        // exception'ı atar — bu bir başarı akışı, hata değil.
+        final isPendingConfirmation = msg.contains('doğrulama maili') ||
+            msg.contains('E-posta adresinize doğrulama');
+        if (isPendingConfirmation) {
+          await showAppSuccess(
+            context,
+            title: 'Kayıt başarılı',
+            message: msg,
+          );
+          if (!mounted) return;
+          await AuthService.instance.saveEmailForLogin(_emailCtrl.text.trim());
+          if (!mounted) return;
+          Navigator.pop(context);
+          return;
+        }
+        showAppError(context, err);
         return;
       }
-      showAppError(context, err);
-      return;
-    }
 
-    // Kayıt başarılı — disclaimer'ı Supabase'e yaz
-    final user = authState.valueOrNull;
-    if (user != null) {
-      try {
-        await DisclaimerService.instance.recordAcceptance(
-          userId: user.id,
-          appVersion: '1.0.0+1',
-          platform: Platform.isIOS ? 'ios' : 'android',
-          locale: 'tr_TR',
-        );
-      } catch (_) {
-        // Kayıt başarıysa bile devam et — disclaimer kaydı kritik değil
+      // Kayıt başarılı — disclaimer'ı Supabase'e yaz
+      final user = authState.valueOrNull;
+      if (user != null) {
+        try {
+          await DisclaimerService.instance.recordAcceptance(
+            userId: user.id,
+            appVersion: '1.0.0+1',
+            platform: Platform.isIOS ? 'ios' : 'android',
+            locale: 'tr_TR',
+          );
+        } catch (_) {
+          // Disclaimer kaydı fail olursa devam et
+        }
       }
-    }
 
-    // UA2 fix: popUntil ile LoginScreen'e dönmek AuthGate'in onboarding
-    // kontrolünü atlatıyordu (yeni kayıt → user var → AuthGate hemen
-    // Main'e gönderiyordu, OnboardingScreen.isCompleted() future'ı
-    // ile yarış). Şimdi popUntil yapmıyoruz; AuthGate akışı sürdürür.
+      if (!mounted) return;
+      // Kullanıcıya başarı bildir, sonra kök route'a dön — AuthGate
+      // artık user != null gördüğü için otomatik olarak
+      // Disclaimer/Onboarding/Main akışına devam eder. RegisterScreen
+      // ve LoginScreen stack'ten çıkar.
+      await showAppSuccess(
+        context,
+        title: 'Hoş geldin!',
+        message: 'Kaydın tamamlandı. Ana ekrana yönlendiriliyorsun.',
+      );
+      if (!mounted) return;
+      Navigator.of(context).popUntil((r) => r.isFirst);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(authProvider).isLoading;
+    // isLoading: register çağrısı devam ediyor VEYA başarı dialog süresince
+    // buton devre dışı kalsın.
+    final isLoading = ref.watch(authProvider).isLoading || _submitting;
 
     return CupertinoPageScaffold(
       backgroundColor: Sandik.background,
