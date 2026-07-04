@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -81,18 +82,27 @@ String _authMessage(String raw) {
   return 'Giriş işlemi başarısız oldu.';
 }
 
-/// Hata mesajını SnackBar olarak gösterir. Tüm ekranlarda standart pattern.
+/// Hata mesajını Cupertino alert dialog olarak gösterir.
+///
+/// SnackBar yerine dialog: SnackBar `ScaffoldMessenger` altında
+/// `Scaffold` gerektirir; login/register ekranlarımız
+/// `CupertinoPageScaffold` kullanıyor ve SnackBar sessizce yutuluyordu.
+/// Dialog her iki durumda da güvenilir şekilde açılır.
 void showAppError(BuildContext context, Object? error) {
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: Text(friendlyError(error)),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF2A1A1A),
-      ),
-    );
+  showCupertinoDialog<void>(
+    context: context,
+    builder: (ctx) => CupertinoAlertDialog(
+      title: const Text('Hata'),
+      content: Text(friendlyError(error)),
+      actions: [
+        CupertinoDialogAction(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Tamam'),
+        ),
+      ],
+    ),
+  );
 }
 
 String _humanize(String raw) {

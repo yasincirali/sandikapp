@@ -95,38 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return CupertinoPageScaffold(
       backgroundColor: Sandik.background,
-      child: Stack(
-        children: [
-          // DIAG: red circle top-right — proves gestures reach the login route
-          Positioned(
-            top: 60,
-            right: 20,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => showCupertinoDialog<void>(
-                context: context,
-                builder: (ctx) => CupertinoAlertDialog(
-                  title: const Text('DIAG'),
-                  content: const Text('Red circle tap fired'),
-                  actions: [
-                    CupertinoDialogAction(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-              ),
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
+      child: SafeArea(
         child: Center(
           child: Material(
             color: Colors.transparent,
@@ -360,8 +329,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-          ),
-        ],
       ),
     );
   }
