@@ -90,11 +90,17 @@ String _authMessage(String raw) {
 /// Dialog her iki durumda da güvenilir şekilde açılır.
 void showAppError(BuildContext context, Object? error) {
   if (!context.mounted) return;
+  // DIAG: TestFlight'ta jenerik "Bir şeyler ters gitti" mesajı gerçek
+  // hatayı gizliyor. Root cause'u anlayana kadar orijinal hatayı da
+  // dialog'da gösteriyoruz.
+  final friendly = friendlyError(error);
+  final raw = error?.toString() ?? 'null';
+  final type = error?.runtimeType.toString() ?? 'null';
   showCupertinoDialog<void>(
     context: context,
     builder: (ctx) => CupertinoAlertDialog(
       title: const Text('Hata'),
-      content: Text(friendlyError(error)),
+      content: Text('$friendly\n\n[DIAG]\n$type\n$raw'),
       actions: [
         CupertinoDialogAction(
           onPressed: () => Navigator.pop(ctx),
