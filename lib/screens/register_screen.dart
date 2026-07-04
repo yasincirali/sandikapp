@@ -198,7 +198,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     final authState = ref.read(authProvider);
     if (authState.hasError && mounted) {
-      showAppError(context, authState.error);
+      final err = authState.error;
+      final msg = err?.toString() ?? '';
+      // AuthService "e-posta doğrulama gerekli" durumunu exception ile
+      // sinyalize ediyor — bu bir başarı akışı, hata değil. Success
+      // dialog gösterip LoginScreen'e email pre-filled dönüyoruz.
+      final isPendingConfirmation = msg.contains('doğrulama maili') ||
+          msg.contains('E-posta adresinize doğrulama') ||
+          msg.contains('Kayıt işlemi tamamlandı');
+      if (isPendingConfirmation) {
+        await showCupertinoDialog<void>(
+          context: context,
+          builder: (ctx) => CupertinoAlertDialog(
+            title: const Text('Kayıt başarılı'),
+            content: Text(msg),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Tamam'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted) return;
+        await AuthService.instance.saveEmailForLogin(_emailCtrl.text.trim());
+        if (!mounted) return;
+        Navigator.pop(context);
+        return;
+      }
+      showAppError(context, err);
       return;
     }
 

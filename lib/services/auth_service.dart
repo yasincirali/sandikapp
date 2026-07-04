@@ -62,6 +62,10 @@ class AuthService {
     await prefs.setString(_savedEmailKey, email);
   }
 
+  /// Kayıt sonrası LoginScreen'in initState'te otomatik doldurması için
+  /// email'i SharedPreferences'a yazar.
+  Future<void> saveEmailForLogin(String email) => _saveEmail(email);
+
   Future<void> clearSavedEmail() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_savedEmailKey);
