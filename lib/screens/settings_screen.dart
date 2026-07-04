@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:url_launcher/url_launcher.dart';
+import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart';
-import '../services/auth_service.dart';
 import '../services/data_export_service.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
@@ -138,17 +138,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() => _deleting = true);
     try {
-      await AuthService.instance
+      // Provider üzerinden çağır — auth state'i null'a çekip AuthGate'in
+      // otomatik olarak LoginScreen'e dönmesini sağlar. Doğrudan
+      // AuthService.deleteAccount çağrılırsa state güncellenmez ve
+      // kullanıcı silinmiş olsa da ekranda kalır.
+      await ref
+          .read(authProvider.notifier)
           .deleteAccount(password: passwordCtrl.text);
       if (!mounted) return;
-      // Auth state değişimi AuthGate'i tetikler — LoginScreen'e geçer.
-      // Yine de açık olabilecek modal'ları kapatmak için root'a dön.
+      // Açık olabilecek modal'ları kapatıp root'a dön.
       Navigator.of(context).popUntil((r) => r.isFirst);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hesabın silindi. Görüşmek üzere.'),
-          duration: Duration(seconds: 4),
-        ),
+      if (!mounted) return;
+      await showAppSuccess(
+        context,
+        title: 'Hesabın silindi',
+        message: 'Görüşmek üzere.',
       );
     } catch (e) {
       if (!mounted) return;

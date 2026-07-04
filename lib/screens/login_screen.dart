@@ -17,6 +17,7 @@ import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -256,6 +257,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: GoogleFonts.dmSans(
                             fontSize: 14,
                             color: Sandik.text58,
+                          ),
+                        ),
+                        const Spacer(),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                              builder: (_) => ForgotPasswordScreen(
+                                initialEmail: _emailCtrl.text.trim().isEmpty
+                                    ? null
+                                    : _emailCtrl.text.trim(),
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            'Şifremi unuttum',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 13,
+                              color: Sandik.amber,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

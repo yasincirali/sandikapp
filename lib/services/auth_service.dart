@@ -219,6 +219,91 @@ class AuthService {
     }
   }
 
+  // ── Şifre Sıfırlama (OTP) ─────────────────────────────────────────────────
+
+  /// Kullanıcının e-posta adresine 6 haneli OTP kodu gönderir.
+  /// Kullanıcı kodu ve yeni şifreyi tek ekranda girer, sonra
+  /// [verifyPasswordResetOtp] çağrılır.
+  Future<void> sendPasswordResetOtp(String email) async {
+    final normalized = email.toLowerCase().trim();
+    if (normalized.isEmpty || !normalized.contains('@')) {
+      throw const AuthException('Geçerli bir e-posta girin.');
+    }
+    try {
+      await _log.log<void>(
+        source: 'AuthService.sendPasswordResetOtp',
+        table: 'auth/reset-password-for-email',
+        op: 'RPC',
+        request: {'email': normalized},
+        call: () => _client.auth.resetPasswordForEmail(normalized),
+      );
+    } on AuthApiException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('rate limit') || msg.contains('too many')) {
+        throw const AuthException(
+          'Çok fazla deneme. Birkaç dakika bekleyip tekrar dene.',
+        );
+      }
+      // H2: kullanıcı yok/var enumeration — genel mesaj
+      throw const AuthException(
+        'İstek alındı. E-posta adresine kod gönderdik.',
+      );
+    } catch (e) {
+      throw AuthException('Şifre sıfırlama isteği başarısız: ${_safe(e)}');
+    }
+  }
+
+  /// OTP kodu ile yeni şifreyi ayarlar. Başarılıysa kullanıcı otomatik
+  /// giriş yapmış olur (session döner).
+  Future<void> verifyPasswordResetOtp({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    final normalized = email.toLowerCase().trim();
+    final passError = validatePassword(newPassword);
+    if (passError != null) throw AuthException(passError);
+    if (otp.trim().isEmpty) {
+      throw const AuthException('Kod girin.');
+    }
+
+    try {
+      // 1) OTP'yi doğrula — başarılıysa geçici session açılır
+      await _log.log(
+        source: 'AuthService.verifyPasswordResetOtp',
+        table: 'auth/verify-otp',
+        op: 'RPC',
+        request: {'email': normalized, 'type': 'recovery'},
+        call: () => _client.auth.verifyOTP(
+          email: normalized,
+          token: otp.trim(),
+          type: OtpType.recovery,
+        ),
+      );
+      // 2) Yeni şifreyi ata
+      await _log.log(
+        source: 'AuthService.verifyPasswordResetOtp.updateUser',
+        table: 'auth/update-user',
+        op: 'RPC',
+        request: {},
+        call: () => _client.auth.updateUser(
+          UserAttributes(password: newPassword),
+        ),
+      );
+    } on AuthException {
+      rethrow;
+    } on AuthApiException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('invalid') || msg.contains('expired') ||
+          msg.contains('token')) {
+        throw const AuthException('Kod hatalı veya süresi doldu.');
+      }
+      throw AuthException(e.message);
+    } catch (e) {
+      throw AuthException('Şifre güncelleme hatası: ${_safe(e)}');
+    }
+  }
+
   // ── Logout ────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {

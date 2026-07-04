@@ -81,3 +81,6 @@ final_*.db
 *.b64
 sandik-design-prompt.md
 skills.md
+
+# Supabase CLI cache
+supabase/.temp/

@@ -45,6 +45,15 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     DisclaimerService.instance.clearCache();
     state = const AsyncData(null);
   }
+
+  /// Hesabı Edge Function üzerinden kalıcı olarak siler.
+  /// Başarılıysa state'i null'a çeker → AuthGate LoginScreen'e döner.
+  Future<void> deleteAccount({required String password}) async {
+    await RemotePushService.instance.stop();
+    await AuthService.instance.deleteAccount(password: password);
+    DisclaimerService.instance.clearCache();
+    state = const AsyncData(null);
+  }
 }
 
 final authProvider = AsyncNotifierProvider<AuthNotifier, AppUser?>(
