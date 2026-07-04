@@ -107,9 +107,20 @@ class AuthService {
         throw const AuthException('Kayıt başarısız. Lütfen tekrar deneyin.');
       }
 
+      // Supabase, confirm-email kapalı olsa bile duplicate signup'ı 400
+      // ile döndürmez (enumeration'a karşı koruma). Bunun yerine
+      // response.user.identities'i boş bırakır — resmi ayırt etme yolu.
+      // Ref: https://supabase.com/docs/guides/auth/auth-identity-linking
+      final identities = response.user!.identities ?? const [];
+      if (identities.isEmpty) {
+        throw const AuthException(
+          'Bu e-posta zaten kayıtlı. Giriş yapmayı deneyin.',
+        );
+      }
+
       // Confirm email KAPALIYKEN Supabase yine de session null döndürebilir
-      // (özellikle profile RLS/trigger'lar iş yaparken). Bu durumda otomatik
-      // signIn ile session yakalayıp devam et.
+      // (profile trigger'ları iş yaparken). Bu durumda otomatik signIn ile
+      // session yakala.
       if (response.session == null) {
         await _client.auth.signInWithPassword(
           email: normalizedEmail,

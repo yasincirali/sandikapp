@@ -207,18 +207,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           msg.contains('E-posta adresinize doğrulama') ||
           msg.contains('Kayıt işlemi tamamlandı');
       if (isPendingConfirmation) {
-        await showCupertinoDialog<void>(
-          context: context,
-          builder: (ctx) => CupertinoAlertDialog(
-            title: const Text('Kayıt başarılı'),
-            content: Text(msg),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Tamam'),
-              ),
-            ],
-          ),
+        await showAppSuccess(
+          context,
+          title: 'Kayıt başarılı',
+          message: msg,
         );
         if (!mounted) return;
         await AuthService.instance.saveEmailForLogin(_emailCtrl.text.trim());
