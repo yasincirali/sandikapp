@@ -1,5 +1,4 @@
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
@@ -264,53 +263,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 20),
 
                     // Giriş butonu — amber glass
-                    CupertinoButton(
-                      onPressed: _loading ? null : _login,
-                      padding: EdgeInsets.zero,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                          child: Container(
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: _loading
-                                  ? Sandik.amber.withValues(alpha: 0.45)
-                                  : Sandik.amber.withValues(alpha: 0.92),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: Sandik.amber.withValues(alpha: 0.60),
-                                width: 1.0,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Sandik.amber.withValues(alpha: 0.30),
-                                  blurRadius: 20,
-                                  spreadRadius: -4,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            alignment: Alignment.center,
-                            child: _loading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Sandik.dark,
-                                    ),
-                                  )
-                                : Text(
-                                    'Giriş Yap',
-                                    style: GoogleFonts.dmSans(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15,
-                                      color: Sandik.dark,
-                                    ),
-                                  ),
+                    // GestureDetector(opaque) instead of CupertinoButton: on
+                    // iOS release the CupertinoButton was losing the gesture
+                    // arena to the enclosing Scrollable and never firing.
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _loading ? null : _login,
+                      child: Container(
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: _loading
+                              ? Sandik.amber.withValues(alpha: 0.45)
+                              : Sandik.amber.withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Sandik.amber.withValues(alpha: 0.60),
+                            width: 1.0,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Sandik.amber.withValues(alpha: 0.30),
+                              blurRadius: 20,
+                              spreadRadius: -4,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
+                        alignment: Alignment.center,
+                        child: _loading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Sandik.dark,
+                                ),
+                              )
+                            : Text(
+                                'Giriş Yap',
+                                style: GoogleFonts.dmSans(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: Sandik.dark,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 14),

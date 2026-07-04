@@ -398,9 +398,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Kayıt Ol butonu
-              CupertinoButton(
-                onPressed: isLoading
+              // Kayıt Ol butonu — GestureDetector(opaque) instead of
+              // CupertinoButton: on iOS release the CupertinoButton was
+              // losing the gesture arena to the enclosing Scrollable.
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: isLoading
                     ? null
                     : (!_canSubmit
                         ? () => showAppError(
@@ -408,7 +411,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               const AuthException('Devam etmek için tüm yasal koşulları kabul etmelisin.'),
                             )
                         : _register),
-                padding: EdgeInsets.zero,
                 child: Container(
                   height: 52,
                   decoration: BoxDecoration(
