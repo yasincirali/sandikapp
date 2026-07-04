@@ -112,13 +112,18 @@ workflows:
           const supabaseAnonKey = '$SUPABASE_ANON_KEY';
           EOF
           echo "supabase_config.dart injected (SUPABASE_URL length: ${#SUPABASE_URL}, key length: ${#SUPABASE_ANON_KEY})"
+      - name: Build Flutter iOS without codesign
+        script: |
+          # Bakes the build number into the compiled Flutter output. The
+          # Supabase credentials are already injected into supabase_config.dart
+          # in the previous step, so no --dart-define is needed here.
+          flutter build ios --release --no-codesign --build-number=$BUILD_NUMBER
       - name: Xcode archive and export IPA
         script: |
           cd $CM_BUILD_DIR
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
-            --build-number "$BUILD_NUMBER" \
             --archive-flags="-destination 'generic/platform=iOS'"
     artifacts:
       - build/ios/ipa/*.ipa
