@@ -90,28 +90,35 @@ workflows:
           fi
           echo "Using build number: $BUILD_NUMBER"
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
-      - name: Build Flutter iOS without codesign
+      - name: Inject Supabase credentials into supabase_config.dart
         script: |
-          # --dart-define values here are baked into the Dart snapshot that
-          # Flutter produces. xcode-project build-ipa (next step) reuses this
-          # snapshot instead of rebuilding Dart, so the defines survive.
-          flutter build ios --release --no-codesign \
-            --build-number=$BUILD_NUMBER \
-            --dart-define=SUPABASE_URL=$SUPABASE_URL \
-            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          # Bake the Supabase credentials directly into the Dart source before
+          # building. Previous attempts with --dart-define and DART_DEFINES did
+          # not survive Codemagic's xcode-project build-ipa pipeline: Xcode's
+          # Flutter build phase re-invokes flutter assemble and drops the
+          # earlier CLI/env values. Overwriting the source file guarantees the
+          # values are compiled into the Dart snapshot no matter how many
+          # times flutter assemble runs.
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "ERROR: SUPABASE_URL and/or SUPABASE_ANON_KEY are not set."
+            echo "Add them to the sandik_secrets environment group in Codemagic."
+            exit 1
+          fi
+          cat > lib/config/supabase_config.dart <<EOF
+          /// GENERATED AT CI BUILD TIME — do not commit real values.
+          /// Local development uses the git-tracked version with
+          /// String.fromEnvironment fallbacks.
+          const supabaseUrl = '$SUPABASE_URL';
+          const supabaseAnonKey = '$SUPABASE_ANON_KEY';
+          EOF
+          echo "supabase_config.dart injected (SUPABASE_URL length: ${#SUPABASE_URL}, key length: ${#SUPABASE_ANON_KEY})"
       - name: Xcode archive and export IPA
         script: |
           cd $CM_BUILD_DIR
-          # Also inject dart-defines into the Xcode build environment. Xcode's
-          # Flutter build phase re-runs `flutter assemble`, which reads
-          # DART_DEFINES from the environment. Without this, the snapshot
-          # produced above gets replaced by one built with empty defines,
-          # causing Supabase.initialize to receive empty url/anonKey at runtime.
-          encode() { printf '%s' "$1" | base64 | tr -d '\n='; }
-          export DART_DEFINES="$(encode "SUPABASE_URL=$SUPABASE_URL"),$(encode "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY")"
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
+            --build-number "$BUILD_NUMBER" \
             --archive-flags="-destination 'generic/platform=iOS'"
     artifacts:
       - build/ios/ipa/*.ipa
