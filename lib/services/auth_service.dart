@@ -107,11 +107,14 @@ class AuthService {
         throw const AuthException('Kayıt başarısız. Lütfen tekrar deneyin.');
       }
 
-      // Email confirmation gerekiyorsa session olmayabilir — yine de profile oluştur
+      // Confirm email KAPALIYKEN Supabase yine de session null döndürebilir
+      // (özellikle profile RLS/trigger'lar iş yaparken). Bu durumda otomatik
+      // signIn ile session yakalayıp devam et.
       if (response.session == null) {
-        throw const AuthException(
-            'Kayıt başarılı! E-posta adresinize doğrulama maili gönderildi. '
-            'Lütfen mailinizi onaylayıp giriş yapın.');
+        await _client.auth.signInWithPassword(
+          email: normalizedEmail,
+          password: password,
+        );
       }
 
       final user = AppUser(
@@ -129,11 +132,8 @@ class AuthService {
     } on AuthApiException catch (e) {
       if (e.message.contains('already registered') ||
           e.message.contains('User already registered')) {
-        // H2: Hesap tespitini (account enumeration) önlemek için
-        // "zaten kayıtlı" mesajı yerine generic yanıt — saldırgan
-        // hangi email'in sistemde olduğunu öğrenemez.
         throw const AuthException(
-          'Kayıt işlemi tamamlandı. E-posta adresinizi kontrol edin.',
+          'Bu e-posta zaten kayıtlı. Giriş yapmayı deneyin.',
         );
       }
       throw AuthException(e.message);
@@ -167,14 +167,9 @@ class AuthService {
         throw const AuthException('Giriş başarısız.');
       }
 
-      // B3: E-posta doğrulama server-side kontrolü
-      // emailConfirmedAt null ise kullanıcı doğrulama bağlantısına tıklamamış demektir.
-      if (response.user!.emailConfirmedAt == null) {
-        await _client.auth.signOut();
-        throw const AuthException(
-          'E-posta adresin doğrulanmamış. Gelen kutunu kontrol edip doğrulama bağlantısına tıkla.',
-        );
-      }
+      // NOT: Supabase dashboard'da "Confirm email" kapalı olduğu için
+      // emailConfirmedAt kontrolü kaldırıldı. Prod'a çıkarken confirm
+      // email açılırsa bu blok geri getirilmeli.
 
       var profile =
           await SupabaseService.instance.getProfile(response.user!.id);
