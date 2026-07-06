@@ -82,20 +82,20 @@ class HistoryService {
       }
     }
 
-    // Hisse ve Emtia API Verileri
+    // Hisse, Emtia, Döviz ve TEFAS Fon API Verileri
     for (final a in assets) {
       if (a.quantity <= 0) continue;
-      if (a.type == AssetType.hisse ||
+      final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
-          (a.type == AssetType.doviz && a.ticker == 'USDTRY=X')) {
-        if (!tickerNormalizedDaily.containsKey(a.ticker)) {
-          final rawPts = await getHistorySafe(a.ticker);
-          final map = <int, double>{};
-          for (final p in rawPts) {
-            map[normalizeTs(p.$1)] = p.$2;
-          }
-          tickerNormalizedDaily[a.ticker] = map;
+          (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
+          (a.type == AssetType.fon && a.ticker.isNotEmpty);
+      if (fetchable && !tickerNormalizedDaily.containsKey(a.ticker)) {
+        final rawPts = await getHistorySafe(a.ticker);
+        final map = <int, double>{};
+        for (final p in rawPts) {
+          map[normalizeTs(p.$1)] = p.$2;
         }
+        tickerNormalizedDaily[a.ticker] = map;
       }
     }
 
@@ -110,9 +110,7 @@ class HistoryService {
       for (final a in assets) {
         try {
           double assetDayVal = 0.0;
-          double fallbackReturn = (a.type == AssetType.fon) ? 0.60 : 0.40;
 
-          // Fiyat arayışı
           if (a.type == AssetType.altin) {
             if (goldHistory.isNotEmpty) {
               double factor = (a.ticker == 'ALTIN_CEYREK')
@@ -126,16 +124,12 @@ class HistoryService {
               double price = _getClosestPrice(goldHistory, dayTs, null);
               assetDayVal = price * factor * a.quantity;
             } else {
-              assetDayVal = _getSimFallback(a, i, fallbackReturn);
+              assetDayVal = _flatFallback(a);
             }
-          } else if (a.type == AssetType.doviz && a.ticker == 'USDTRY=X') {
-            if (usdTryHistory.isNotEmpty) {
-              double price = _getClosestPrice(usdTryHistory, dayTs, null);
-              assetDayVal = price * a.quantity;
-            } else {
-              assetDayVal = _getSimFallback(a, i, fallbackReturn);
-            }
-          } else if (a.type == AssetType.hisse || a.type == AssetType.emtia) {
+          } else if (a.type == AssetType.hisse ||
+              a.type == AssetType.emtia ||
+              a.type == AssetType.fon ||
+              a.type == AssetType.doviz) {
             final map = tickerNormalizedDaily[a.ticker] ?? {};
             if (map.isNotEmpty) {
               double price = _getClosestPrice(map, dayTs, null);
@@ -147,15 +141,15 @@ class HistoryService {
               }
               assetDayVal = price * a.quantity;
             } else {
-              assetDayVal = _getSimFallback(a, i, fallbackReturn);
+              assetDayVal = _flatFallback(a);
             }
           } else {
-            assetDayVal = _getSimFallback(a, i, fallbackReturn);
+            assetDayVal = _flatFallback(a);
           }
 
           dayTotalValue += assetDayVal;
         } catch (e) {
-          dayTotalValue += _getSimFallback(a, i, 0.40);
+          dayTotalValue += _flatFallback(a);
         }
       }
 
@@ -177,10 +171,122 @@ class HistoryService {
     return fallbackValue ?? 0.0;
   }
 
-  double _getSimFallback(Asset asset, int diffDays, double yearlyReturn) {
-    final endPrice = asset.currentPrice > 0 ? asset.currentPrice : 100.0 * 35.0;
-    double simulated = endPrice / (1.0 + (yearlyReturn * (diffDays / 365.0)));
-    double TRYsim = asset.currency == 'USD' ? simulated * 35.0 : simulated;
-    return TRYsim * asset.quantity;
+  /// Gerçek geçmiş veri yoksa currentPrice'ı sabit kullan (simülasyon yok).
+  double _flatFallback(Asset asset) {
+    final price = asset.currentPrice > 0 ? asset.currentPrice : 0.0;
+    final tryPrice = asset.currency == 'USD' ? price * 35.0 : price;
+    return tryPrice * asset.quantity;
+  }
+
+  /// Intraday (gün-içi) çözünürlükte portföy değeri.
+  /// Yahoo `1d/5m` interval'i kullanılır → 5 dakikalık noktalar. Bugünün 00:00
+  /// ile 23:59 arasındaki her 5 dakikalık slot için toplam TRY değeri döner.
+  /// Anahtar: UNIX_MILLIS (5 dakikalık slota normalize).
+  ///
+  /// [hours] parametresi yalnızca X ekseni birim ölçeği (saat) için tutulur;
+  /// gerçek çözünürlük 5 dakikadır (12x saatlik). Veri kaynağı borsa saatleri
+  /// dışı slotlar için son bilinen fiyatı yayar (`_getClosestPrice`).
+  Future<Map<int, double>> getPortfolioHistoryHourly(
+      List<Asset> assets, int hours) async {
+    const range = '1d';
+    const slotMinutes = 5;
+
+    int normalizeSlot(int ms) {
+      final d = DateTime.fromMillisecondsSinceEpoch(ms);
+      final snappedMinute = (d.minute ~/ slotMinutes) * slotMinutes;
+      return DateTime(d.year, d.month, d.day, d.hour, snappedMinute)
+          .millisecondsSinceEpoch;
+    }
+
+    final now = DateTime.now();
+    final Map<String, Map<int, double>> tickerSlots = {};
+    Map<int, double> usdTrySlots = {};
+
+    Future<List<(int, double)>> getHistorySafe(String sym) async {
+      final cacheKey = '${sym}_$range';
+      if (_cache.containsKey(cacheKey)) return _cache[cacheKey]!;
+      try {
+        final pts = await PriceService.instance.fetchHistory(sym, range);
+        if (pts.isNotEmpty) _cache[cacheKey] = pts;
+        return pts;
+      } catch (_) {
+        return [];
+      }
+    }
+
+    bool needsUsd = assets
+        .any((a) => a.currency == 'USD' || a.type == AssetType.altin);
+
+    if (needsUsd) {
+      final usd = await getHistorySafe('USDTRY=X');
+      for (final p in usd) {
+        usdTrySlots[normalizeSlot(p.$1)] = p.$2;
+      }
+    }
+
+    for (final a in assets) {
+      if (a.quantity <= 0) continue;
+      if (a.type == AssetType.hisse ||
+          a.type == AssetType.emtia ||
+          (a.type == AssetType.doviz && a.ticker.isNotEmpty)) {
+        if (!tickerSlots.containsKey(a.ticker)) {
+          final raw = await getHistorySafe(a.ticker);
+          final map = <int, double>{};
+          for (final p in raw) {
+            map[normalizeSlot(p.$1)] = p.$2;
+          }
+          tickerSlots[a.ticker] = map;
+        }
+      }
+    }
+
+    final groupedPoints = <int, double>{};
+
+    // Bugünün 00:00'ından başlayarak 5 dakikalık grid üret.
+    final dayStart = DateTime(now.year, now.month, now.day);
+    final slotCount = hours * (60 ~/ slotMinutes); // 24h → 288 slot
+
+    for (int i = 0; i <= slotCount; i++) {
+      final hourDate = dayStart.add(Duration(minutes: i * slotMinutes));
+      final hourTs = normalizeSlot(hourDate.millisecondsSinceEpoch);
+
+      double total = 0.0;
+      for (final a in assets) {
+        try {
+          double v = 0.0;
+          if (a.type == AssetType.altin) {
+            // Saatlik altın verisi yok — currentPrice sabit
+            v = a.currentPrice * a.quantity;
+          } else if (a.type == AssetType.fon) {
+            v = a.currentPrice * a.quantity;
+          } else if (a.type == AssetType.hisse ||
+              a.type == AssetType.emtia ||
+              a.type == AssetType.doviz) {
+            final map = tickerSlots[a.ticker] ?? {};
+            if (map.isNotEmpty) {
+              double price = _getClosestPrice(map, hourTs, null);
+              if (a.currency == 'USD') {
+                double usdRate = usdTrySlots.isNotEmpty
+                    ? _getClosestPrice(usdTrySlots, hourTs, 35.0)
+                    : 35.0;
+                price *= usdRate;
+              }
+              v = price * a.quantity;
+            } else {
+              v = a.currentPrice * a.quantity *
+                  (a.currency == 'USD' ? 35.0 : 1.0);
+            }
+          } else {
+            v = a.currentPrice * a.quantity;
+          }
+          total += v;
+        } catch (_) {
+          total += a.currentPrice * a.quantity;
+        }
+      }
+      groupedPoints[hourTs] = total;
+    }
+
+    return groupedPoints;
   }
 }

@@ -16,6 +16,7 @@ import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/disclaimer_widget.dart';
+import '../providers/preferences_provider.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -33,57 +34,79 @@ class GoldTransaction {
 
 // ── Teknik Sinyal Paneli ─────────────────────────────────────────────────────
 
-class _TechnicalSignalPanel extends StatefulWidget {
+class _TechnicalSignalPanel extends ConsumerStatefulWidget {
   final Asset asset;
   const _TechnicalSignalPanel({required this.asset});
 
   @override
-  State<_TechnicalSignalPanel> createState() => _TechnicalSignalPanelState();
+  ConsumerState<_TechnicalSignalPanel> createState() =>
+      _TechnicalSignalPanelState();
 }
 
-class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
-  List<TechnicalIndicator>? _indicators;
+class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
   bool _notified = false;
 
   @override
-  void initState() {
-    super.initState();
-    _compute();
-  }
+  Widget build(BuildContext context) {
+    // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
+    final prefs = ref.watch(indicatorPrefsProvider);
+    final premium = ref.watch(premiumUnlockedProvider);
+    final enabledIds = prefs[widget.asset.type] ??
+        TechnicalAnalysisService.defaultEnabledFor(widget.asset.type);
 
-  void _compute() {
-    final indicators = TechnicalAnalysisService.analyze(widget.asset, []);
+    final indicators = TechnicalAnalysisService.analyze(
+      widget.asset,
+      const [],
+      enabledIds: enabledIds,
+      premiumUnlocked: premium,
+    );
+
     final summary = TechnicalAnalysisService.summarize(indicators);
 
-    setState(() => _indicators = indicators);
-
-    // Güçlü sinyal varsa (3+/5) bildirim gönder — sadece bir kez
-    if (!_notified && summary.signal != SignalType.neutral) {
+    // Güçlü sinyal — sadece bir kez bildirim gönder
+    if (!_notified && summary.signal != SignalType.neutral && indicators.isNotEmpty) {
       _notified = true;
-      NotificationService.instance.sendSignalNotification(
-        assetName: widget.asset.name,
-        ticker: widget.asset.ticker,
-        signal: summary.signal,
-        buyCount: summary.buyCount,
-        sellCount: summary.sellCount,
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        NotificationService.instance.sendSignalNotification(
+          assetName: widget.asset.name,
+          ticker: widget.asset.ticker,
+          signal: summary.signal,
+          buyCount: summary.buyCount,
+          sellCount: summary.sellCount,
+        );
+      });
+    }
+
+    if (indicators.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Sandik.surface1,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.tune_rounded, color: Sandik.text58, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Bu varlık türü için hiçbir gösterge seçilmemiş. '
+                'Profil → Sinyal Ayarları\'ndan aktifleştir.',
+                style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58),
+              ),
+            ),
+          ],
+        ),
       );
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final indicators = _indicators;
-    if (indicators == null) {
-      return const SandikLoadingScreen();
-    }
-
-    final summary = TechnicalAnalysisService.summarize(indicators);
     final isBuy = summary.signal == SignalType.buy;
     final isSell = summary.signal == SignalType.sell;
     final isNeutral = summary.signal == SignalType.neutral;
 
     final signalColor = isBuy ? Sandik.gain : isSell ? Sandik.loss : Sandik.text58;
-    final signalLabel = isBuy ? 'AL' : isSell ? 'SAT' : 'NÖTR';
+    // Yasal not: kesin "AL/SAT" ifadesi yerine trend yönü kullanıyoruz.
+    final signalLabel = isBuy ? 'YUKARI TREND' : isSell ? 'AŞAĞI TREND' : 'YATAY';
     final signalIcon = isBuy ? Icons.trending_up_rounded
         : isSell ? Icons.trending_down_rounded
         : Icons.remove_rounded;
@@ -110,6 +133,8 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        const DisclaimerWidget(),
         const SizedBox(height: 12),
 
         // ── Özet sinyal kartı ────────────────────────────────────────────────
@@ -151,7 +176,7 @@ class _TechnicalSignalPanelState extends State<_TechnicalSignalPanel> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${summary.buyCount} AL · ${summary.sellCount} SAT · ${5 - summary.buyCount - summary.sellCount} NÖTR',
+                      '${summary.buyCount} AL · ${summary.sellCount} SAT · ${indicators.length - summary.buyCount - summary.sellCount} NÖTR',
                       style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58),
                     ),
                   ],
@@ -311,8 +336,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   late int _selectedPeriodIdx;
   String? _view = ''; // '' = Ben (Default), null = Tümü, uuid = Ortak
 
+  /// Grafiğin gösterdiği zaman aralıkları. Intraday (saatlik) veri kaynağı
+  /// tüm varlık türleri için tutarlı sağlanamadığı için sadece günlük ve üzeri
+  /// çözünürlükler sunulur.
   static const List<({String label, int days})> _periods = [
-    (label: 'GÜNLÜK', days: 1),
     (label: 'HAFTALIK', days: 7),
     (label: 'AYLIK', days: 30),
     (label: '6 AYLIK', days: 180),
@@ -322,7 +349,50 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedPeriodIdx = 4;
+    _selectedPeriodIdx = 0;
+  }
+
+
+  void _confirmDelete(BuildContext ctx) {
+    showDialog<void>(
+      context: ctx,
+      builder: (dlg) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Varlığı Sil'),
+        content:
+            Text('"${widget.asset.name}" kalıcı olarak silinsin mi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlg),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444)),
+            onPressed: () async {
+              Navigator.pop(dlg);
+              try {
+                await ref
+                    .read(portfolioProvider.notifier)
+                    .deleteAsset(widget.asset.id);
+                if (!mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Varlık silindi')),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Silinemedi: $e')),
+                );
+              }
+            },
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
   }
 
   // Sadece ilgili varlığın kendi kayıt tarihine dayalı tek bir gerçek işlem üretiyoruz!
@@ -552,9 +622,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   @override
   Widget build(BuildContext context) {
     final endDate = DateTime.now();
-    final startDate =
-        endDate.subtract(Duration(days: _periods[_selectedPeriodIdx].days));
-    // No longer generating segments here, moved to FutureBuilder
+    final period = _periods[_selectedPeriodIdx];
+    final startDate = endDate.subtract(Duration(days: period.days));
     final maxX = endDate.difference(startDate).inDays.toDouble();
 
     // Logic moved inside FutureBuilder
@@ -562,21 +631,51 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final activePartners = ref.watch(activePartnersProvider);
     final allPartnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
 
+    final currentUserId = ref.watch(authProvider).valueOrNull?.id;
+    final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;
+
     return Scaffold(
       backgroundColor: Sandik.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 20, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                    size: 20, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: Text(
           'Performans: ${widget.asset.name}',
           style: GoogleFonts.dmSans(
               fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
         ),
+        actions: [
+          if (isOwnAsset && !Navigator.canPop(context))
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              onSelected: (v) {
+                if (v == 'delete') _confirmDelete(context);
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded,
+                          color: Color(0xFFEF4444), size: 20),
+                      SizedBox(width: 10),
+                      Text('Sil',
+                          style: TextStyle(color: Color(0xFFEF4444))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -619,7 +718,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 const SizedBox(height: 24),
                 FutureBuilder<Map<int, double>>(
                   future: HistoryService.instance.getPortfolioHistory(
-                      [widget.asset], _periods[_selectedPeriodIdx].days),
+                      [widget.asset], period.days),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const SizedBox(

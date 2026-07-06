@@ -184,6 +184,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       appBar: AppBar(
         title: Text(_isEditing ? 'Düzenle' : 'Varlık Ekle'),
         actions: [
+          if (!_isEditing)
+            IconButton(
+              tooltip: 'Sesli / Hızlı giriş',
+              icon: const Icon(Icons.mic_none_rounded),
+              onPressed: _showQuickEntrySheet,
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: FilledButton(
@@ -921,6 +927,150 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
       ),
     );
+  }
+
+  // ── Sesli / Hızlı giriş ────────────────────────────────────────────────────
+  //
+  // Cihazın kendi klavye mikrofonunu kullanmaya izin veriyoruz — böylece ek
+  // izin ve paket gerekmez. Kullanıcı doğal Türkçe cümle söyler ya da yazar,
+  // aşağıdaki basit parser miktar + fiyatı yakalar ve formu doldurur.
+  //
+  // Örnek girdiler:
+  //   "100 dolar 32 liradan"          → qty=100, price=32, doviz USD
+  //   "10 gram altın 4500 liradan"    → qty=10, price=4500, altın gr
+  //   "GARAN 500 adet 105 lira"       → ticker=GARAN, qty=500, price=105
+  //
+  // Amaç: taze bir MVP. Gelişmiş NLP ileride eklenebilir.
+  void _showQuickEntrySheet() {
+    final ctrl = TextEditingController();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.mic_none_rounded, color: cs.primary),
+                  const SizedBox(width: 10),
+                  Text('Sesli / Hızlı Giriş',
+                      style: Theme.of(ctx).textTheme.titleMedium),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Cümlenizi yazın veya klavye mikrofonuyla söyleyin. '
+                'Örn: "100 dolar 32 liradan" ya da "10 gram altın 4500 lira".',
+                style:
+                    TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  hintText: 'Örn: 100 dolar 32 liradan',
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    _applyQuickEntry(ctrl.text);
+                    Navigator.pop(ctx);
+                  },
+                  icon: const Icon(Icons.check_rounded),
+                  label: const Text('Formu doldur'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _applyQuickEntry(String raw) {
+    final text = raw.toLowerCase().trim();
+    if (text.isEmpty) return;
+
+    // Anahtar kelimelerden varlık türü tespiti
+    AssetType? detectedType;
+    String? detectedSub;
+    if (RegExp(r'dolar|usd').hasMatch(text)) {
+      detectedType = AssetType.doviz;
+      detectedSub = 'USD';
+    } else if (RegExp(r'euro|eur').hasMatch(text)) {
+      detectedType = AssetType.doviz;
+      detectedSub = 'EUR';
+    } else if (RegExp(r'sterlin|gbp|pound').hasMatch(text)) {
+      detectedType = AssetType.doviz;
+      detectedSub = 'GBP';
+    } else if (RegExp(r'gram\s*alt[ıi]n|alt[ıi]n').hasMatch(text)) {
+      detectedType = AssetType.altin;
+    } else if (RegExp(r'fon\b').hasMatch(text)) {
+      detectedType = AssetType.fon;
+    } else if (RegExp(r'hisse|adet').hasMatch(text)) {
+      detectedType = AssetType.hisse;
+    }
+
+    // Sayıları çek — "1.234,56" veya "1234.56" formatlarını normalize et
+    final normalized = text.replaceAll(RegExp(r'(?<=\d)\.(?=\d{3})'), '');
+    final numMatches = RegExp(r'(\d+([.,]\d+)?)').allMatches(normalized).toList();
+    double? qty;
+    double? price;
+
+    if (numMatches.isNotEmpty) {
+      qty = double.tryParse(numMatches.first.group(1)!.replaceAll(',', '.'));
+    }
+    // Fiyat ipucu: "lira", "tl", "₺" kelimesinden hemen önceki sayı
+    final priceHint = RegExp(r'(\d+([.,]\d+)?)\s*(lira|tl|₺)').firstMatch(normalized);
+    if (priceHint != null) {
+      price = double.tryParse(priceHint.group(1)!.replaceAll(',', '.'));
+    } else if (numMatches.length >= 2) {
+      price = double.tryParse(numMatches[1].group(1)!.replaceAll(',', '.'));
+    }
+
+    setState(() {
+      if (detectedType != null) {
+        _type = detectedType!;
+        _currency = _type.defaultCurrency;
+        if (detectedSub != null) {
+          _subCategory = detectedSub;
+          if (_type == AssetType.doviz) {
+            final opt = _dovizOptions.firstWhere(
+              (o) => o.label == detectedSub,
+              orElse: () => _dovizOptions.first,
+            );
+            _ticker.text = opt.ticker;
+            _name.text = opt.name;
+            _currency = 'TRY';
+          }
+        }
+      }
+      if (qty != null && qty! > 0) {
+        _quantity.text = _fmt(qty!);
+      }
+      if (price != null && price! > 0) {
+        _price.text = _fmt(price!);
+      }
+    });
   }
 
   // ── Save ───────────────────────────────────────────────────────────────────

@@ -1,8 +1,20 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, RefreshIndicator;
+import 'package:flutter/material.dart'
+    show
+        Colors,
+        RefreshIndicator,
+        ScaffoldMessenger,
+        SnackBar,
+        Material,
+        MaterialType,
+        AlertDialog,
+        TextButton,
+        FilledButton,
+        showDialog;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
@@ -12,9 +24,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
+import '../widgets/quick_adjust_dialog.dart';
 import 'performance_screen.dart';
 import 'portfolio_performance_screen.dart';
-import 'portfolio_detail_screen.dart';
 
 class ChartsScreen extends ConsumerStatefulWidget {
   const ChartsScreen({super.key});
@@ -27,15 +39,57 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   String? _view = ''; // null = Birlikte, '' = Ben, uuid = ortak
   AssetType? _filteredType; // pie'dan seçilen kategori filtresi
 
+  void _confirmDelete(BuildContext ctx, WidgetRef ref, Asset asset) {
+    showDialog<void>(
+      context: ctx,
+      builder: (dlg) => AlertDialog(
+        title: const Text('Varlığı Sil'),
+        content: Text('"${asset.name}" kalıcı olarak silinsin mi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlg),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444)),
+            onPressed: () async {
+              Navigator.pop(dlg);
+              try {
+                await ref
+                    .read(portfolioProvider.notifier)
+                    .deleteAsset(asset.id);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Varlık silindi')),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Silinemedi: $e')),
+                );
+              }
+            },
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pStateAsync = ref.watch(portfolioProvider);
     final partnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
     final activePartners = ref.watch(activePartnersProvider);
 
+    final currentUserId = ref.watch(authProvider).valueOrNull?.id;
+
     return CupertinoPageScaffold(
       backgroundColor: Sandik.background,
-      child: SafeArea(
+      child: Material(
+        type: MaterialType.transparency,
+        child: SafeArea(
         child: Column(
           children: [
             // ── Header ────────────────────────────────────────────────────
@@ -76,21 +130,6 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       padding: EdgeInsets.all(8),
                       child: Icon(Icons.show_chart_rounded,
                           color: Sandik.amber, size: 24),
-                    ),
-                  ),
-                  CupertinoButton(
-                    minimumSize: Size.zero,
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                          builder: (_) =>
-                              PortfolioDetailScreen(initialView: _view)),
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(Icons.analytics_outlined,
-                          color: Sandik.text36, size: 24),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -158,14 +197,26 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                               ),
                               const SizedBox(height: 32),
                               _AssetList(
-                                  assets: filteredAssets,
-                                  pState: pState,
-                                  onTap: (a) => Navigator.push(
-                                        context,
-                                        CupertinoPageRoute(
-                                            builder: (_) =>
-                                                PerformanceScreen(asset: a)),
-                                      )),
+                                assets: filteredAssets,
+                                pState: pState,
+                                currentUserId: currentUserId,
+                                onTap: (a) => Navigator.push(
+                                  context,
+                                  CupertinoPageRoute(
+                                      builder: (_) =>
+                                          PerformanceScreen(asset: a)),
+                                ),
+                                onDelete: (a) =>
+                                    _confirmDelete(context, ref, a),
+                                onAdd: (a) => showQuickAdjustDialog(
+                                    context, ref,
+                                    asset: a,
+                                    mode: QuickAdjustMode.add),
+                                onRemove: (a) => showQuickAdjustDialog(
+                                    context, ref,
+                                    asset: a,
+                                    mode: QuickAdjustMode.remove),
+                              ),
                             ],
                           );
                         },
@@ -177,6 +228,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -388,17 +440,39 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 class _AssetList extends StatelessWidget {
   final List<Asset> assets;
   final PortfolioState pState;
+  final String? currentUserId;
   final void Function(Asset) onTap;
+  final void Function(Asset) onDelete;
+  final void Function(Asset) onAdd;
+  final void Function(Asset) onRemove;
 
-  const _AssetList(
-      {required this.assets, required this.pState, required this.onTap});
+  const _AssetList({
+    required this.assets,
+    required this.pState,
+    required this.currentUserId,
+    required this.onTap,
+    required this.onDelete,
+    required this.onAdd,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: assets
-          .map((a) => _AssetCard(a: a, pState: pState, onTap: onTap))
-          .toList(),
+    return SlidableAutoCloseBehavior(
+      child: Column(
+        children: assets
+            .map((a) => _AssetCard(
+                  a: a,
+                  pState: pState,
+                  canEdit:
+                      currentUserId != null && a.userId == currentUserId,
+                  onTap: onTap,
+                  onDelete: onDelete,
+                  onAdd: onAdd,
+                  onRemove: onRemove,
+                ))
+            .toList(),
+      ),
     );
   }
 }
@@ -408,10 +482,21 @@ class _AssetList extends StatelessWidget {
 class _AssetCard extends StatelessWidget {
   final Asset a;
   final PortfolioState pState;
+  final bool canEdit;
   final void Function(Asset) onTap;
+  final void Function(Asset) onDelete;
+  final void Function(Asset) onAdd;
+  final void Function(Asset) onRemove;
 
-  const _AssetCard(
-      {required this.a, required this.pState, required this.onTap});
+  const _AssetCard({
+    required this.a,
+    required this.pState,
+    required this.canEdit,
+    required this.onTap,
+    required this.onDelete,
+    required this.onAdd,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -419,18 +504,16 @@ class _AssetCard extends StatelessWidget {
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
     final isPos = a.gainLossPercentage >= 0;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: CupertinoButton(
-        minimumSize: Size.zero,
-        padding: EdgeInsets.zero,
-        onPressed: () => onTap(a),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Sandik.surface1,
-            borderRadius: BorderRadius.circular(16),
-          ),
+    Widget card = CupertinoButton(
+      minimumSize: Size.zero,
+      padding: EdgeInsets.zero,
+      onPressed: () => onTap(a),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Sandik.surface1,
+          borderRadius: BorderRadius.circular(canEdit ? 0 : 16),
+        ),
           child: Row(
             children: [
               a.currencySymbol != null
@@ -490,7 +573,9 @@ class _AssetCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${a.quantity.toStringAsFixed(0)} lot · ${a.type.label}',
+                      a.unitIsPrefix
+                          ? '${a.unitLabel}${a.quantity.toStringAsFixed(a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
+                          : '${a.quantity.toStringAsFixed(a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
                       style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text36),
                     ),
                   ],
@@ -506,33 +591,82 @@ class _AssetCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: Colors.white),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        isPos
-                            ? Icons.arrow_drop_up_rounded
-                            : Icons.arrow_drop_down_rounded,
-                        color: isPos ? Sandik.gain : Sandik.loss,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '%${a.gainLossPercentage.abs().toStringAsFixed(1)}',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                  if (a.purchasePrice > 0 && a.gainLoss != 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          isPos
+                              ? Icons.arrow_drop_up_rounded
+                              : Icons.arrow_drop_down_rounded,
                           color: isPos ? Sandik.gain : Sandik.loss,
+                          size: 14,
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${tryFmt.format(pState.toTRY(a.gainLoss, a.currency).abs())} · %${a.gainLossPercentage.abs().toStringAsFixed(1)}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isPos ? Sandik.gain : Sandik.loss,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ],
           ),
         ),
-      ),
+      );
+
+    if (canEdit) {
+      card = ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Slidable(
+          key: ValueKey('asset-${a.id}'),
+          startActionPane: ActionPane(
+            motion: const DrawerMotion(),
+            extentRatio: 0.5,
+            children: [
+              SlidableAction(
+                onPressed: (_) => onAdd(a),
+                backgroundColor: Sandik.gain,
+                foregroundColor: Colors.white,
+                icon: Icons.add_rounded,
+                label: 'Ekle',
+              ),
+              SlidableAction(
+                onPressed: (_) => onRemove(a),
+                backgroundColor: Sandik.loss.withValues(alpha: 0.85),
+                foregroundColor: Colors.white,
+                icon: Icons.remove_rounded,
+                label: 'Çıkar',
+              ),
+            ],
+          ),
+          endActionPane: ActionPane(
+            motion: const DrawerMotion(),
+            extentRatio: 0.28,
+            children: [
+              SlidableAction(
+                onPressed: (_) => onDelete(a),
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                icon: Icons.delete_outline_rounded,
+                label: 'Sil',
+              ),
+            ],
+          ),
+          child: card,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: card,
     );
   }
 }

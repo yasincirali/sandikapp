@@ -58,6 +58,44 @@ class Asset {
   String? get currencySymbol =>
       type == AssetType.doviz ? currencySymbolFor(ticker, currency) : null;
 
+  /// Miktar için kullanılacak birim etiketi (adet/lot/gr/oz/₺-$ vb.).
+  /// Ekranlarda "1 lot", "2,5 gr", "$100" gibi göstermek için kullanılır.
+  String get unitLabel {
+    switch (type) {
+      case AssetType.doviz:
+        return currencySymbol ?? currency.toUpperCase();
+      case AssetType.hisse:
+      case AssetType.fon:
+        return 'lot';
+      case AssetType.altin:
+      case AssetType.emtia:
+        switch (unitType) {
+          case 'gram':
+          case 'gr':
+            return 'gr';
+          case 'ounce':
+          case 'oz':
+            return 'oz';
+          case 'kilogram':
+          case 'kg':
+            return 'kg';
+          case 'liter':
+          case 'lt':
+            return 'lt';
+          case 'barrel':
+          case 'bbl':
+            return 'bbl';
+          default:
+            return 'adet';
+        }
+      case AssetType.diger:
+        return 'adet';
+    }
+  }
+
+  /// Birim para birimden önce mi gelmeli? (Döviz sembolleri prefix, diğerleri suffix.)
+  bool get unitIsPrefix => type == AssetType.doviz;
+
   /// SQLite uyumlu map (partner kod payload'ı için kullanılır)
   Map<String, dynamic> toMap() => {
         'id': id,

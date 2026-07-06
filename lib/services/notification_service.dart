@@ -79,10 +79,16 @@ class NotificationService {
     if (!_initialized) await init();
 
     final isBuy = signal == SignalType.buy;
-    final title = isBuy ? 'AL Sinyali: $assetName' : 'SAT Sinyali: $assetName';
+    final total = buyCount + sellCount;
+    // Yasal not: "AL/SAT sinyali" yerine trend yönü ifadesi kullanılıyor.
+    final title = isBuy
+        ? 'Yukarı trend: $assetName'
+        : 'Aşağı trend: $assetName';
     final body = isBuy
-        ? '$buyCount/5 gösterge AL diyor. Bu bildirim yatırım tavsiyesi değildir.'
-        : '$sellCount/5 gösterge SAT diyor. Bu bildirim yatırım tavsiyesi değildir.';
+        ? 'Göstergelerin çoğunluğu yukarı yönlü ($buyCount/$total). '
+            'Yatırım tavsiyesi değildir.'
+        : 'Göstergelerin çoğunluğu aşağı yönlü ($sellCount/$total). '
+            'Yatırım tavsiyesi değildir.';
 
     final androidDetails = AndroidNotificationDetails(
       'signal_channel',

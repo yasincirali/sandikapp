@@ -4,6 +4,7 @@ import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
 import '../services/notification_service.dart';
+import 'preferences_provider.dart';
 
 // Aktif sinyal listesi — sadece AL veya SAT olanlar
 class SignalNotifier extends Notifier<List<SignalAlert>> {
@@ -17,8 +18,20 @@ class SignalNotifier extends Notifier<List<SignalAlert>> {
 
     final newAlerts = <SignalAlert>[];
 
+    final prefs = ref.read(indicatorPrefsProvider.notifier);
+    final premium = ref.read(premiumUnlockedProvider);
+
     for (final asset in assets) {
-      final indicators = TechnicalAnalysisService.analyze(asset, []);
+      final enabledIds = prefs.forType(asset.type);
+      // Kullanıcı bu tür için hiç gösterge seçmediyse sinyal üretme
+      if (enabledIds.isEmpty) continue;
+
+      final indicators = TechnicalAnalysisService.analyze(
+        asset,
+        const [],
+        enabledIds: enabledIds,
+        premiumUnlocked: premium,
+      );
       final summary = TechnicalAnalysisService.summarize(indicators);
       if (summary.signal == SignalType.neutral) continue;
 

@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/data_export_service.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import 'legal_doc_screen.dart';
+import 'signal_settings_screen.dart';
 
 /// Profil → Ayarlar ekranı.
 ///
@@ -29,10 +30,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _deleting = false;
   bool _exporting = false;
 
-  // TODO: Production'da gerçek URL'ler. Yayın öncesi doldurulacak.
-  static const _privacyUrl = 'https://sandik.app/privacy';
-  static const _termsUrl = 'https://sandik.app/terms';
-  static const _kvkkUrl = 'https://sandik.app/legal/kvkk';
   static const _supportEmail = 'destek@sandik.app';
 
   Future<void> _confirmDeleteAccount() async {
@@ -224,12 +221,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Future<void> _showLegalDoc(String title, String url) async {
-    final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (!mounted) return;
-      showAppError(context, 'Tarayıcı açılamadı: $url');
-    }
+  void _showLegalDoc(String title, List<LegalBlock> blocks, IconData icon) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LegalDocScreen(title: title, blocks: blocks, icon: icon),
+      ),
+    );
   }
 
   @override
@@ -283,25 +281,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   .set(v),
             ),
             const SizedBox(height: 28),
+            const _SectionTitle('SİNYALLER'),
+            const SizedBox(height: 12),
+            _SettingsTile(
+              icon: Icons.tune_rounded,
+              title: 'Sinyal Ayarları',
+              subtitle: 'Her varlık türü için gösterge seçimi + Premium',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const SignalSettingsScreen()),
+              ),
+            ),
+            const SizedBox(height: 28),
             const _SectionTitle('YASAL'),
             const SizedBox(height: 12),
             _SettingsTile(
               icon: Icons.privacy_tip_outlined,
               title: 'Gizlilik Politikası',
               subtitle: 'Verilerin nasıl işleniyor',
-              onTap: () => _showLegalDoc('Gizlilik Politikası', _privacyUrl),
+              onTap: () => _showLegalDoc('Gizlilik Politikası', LegalDocs.privacy, Icons.privacy_tip_outlined),
             ),
             _SettingsTile(
               icon: Icons.gavel_outlined,
               title: 'Kullanım Koşulları',
               subtitle: 'Hizmet sözleşmesi',
-              onTap: () => _showLegalDoc('Kullanım Koşulları', _termsUrl),
+              onTap: () => _showLegalDoc('Kullanım Koşulları', LegalDocs.terms, Icons.gavel_outlined),
             ),
             _SettingsTile(
               icon: Icons.shield_outlined,
               title: 'KVKK Aydınlatma Metni',
               subtitle: 'Kişisel veri işleme aydınlatması',
-              onTap: () => _showLegalDoc('KVKK Aydınlatma Metni', _kvkkUrl),
+              onTap: () => _showLegalDoc('KVKK Aydınlatma Metni', LegalDocs.kvkk, Icons.shield_outlined),
             ),
             _SettingsTile(
               icon: Icons.gavel_rounded,

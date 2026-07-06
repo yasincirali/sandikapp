@@ -172,7 +172,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     ],
                     const Spacer(),
                     Text(
-                      '${numFmt.format(asset.quantity)} ${_unitLabel(asset.unitType)}',
+                      asset.unitIsPrefix
+                          ? '${asset.unitLabel}${numFmt.format(asset.quantity)}'
+                          : '${numFmt.format(asset.quantity)} ${asset.unitLabel}',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -533,23 +535,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       height: 1,
       color: cs.outlineVariant.withValues(alpha: 0.25),
     );
-  }
-
-  String _unitLabel(String unitType) {
-    switch (unitType) {
-      case 'gram':
-        return 'gr';
-      case 'ounce':
-        return 'oz';
-      case 'kilogram':
-        return 'kg';
-      case 'liter':
-        return 'lt';
-      case 'barrel':
-        return 'bbl';
-      default:
-        return 'Adet';
-    }
   }
 
   void _confirmDelete(BuildContext ctx) => showDialog(

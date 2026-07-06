@@ -185,7 +185,9 @@ class AssetRowWidget extends StatelessWidget {
                   )
                 else
                   Text(
-                    '${asset.quantity} adet',
+                    asset.unitIsPrefix
+                        ? '${asset.unitLabel}${asset.quantity}'
+                        : '${asset.quantity} ${asset.unitLabel}',
                     style: TextStyle(
                       fontSize: 11,
                       color: cs.onSurfaceVariant,

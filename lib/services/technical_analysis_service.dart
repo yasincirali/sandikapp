@@ -3,6 +3,55 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/technical_signal.dart';
 
+/// Gösterge kimlikleri — per-category seçim ve premium gating için stable key.
+class IndicatorId {
+  static const rsi = 'rsi';
+  static const macd = 'macd';
+  static const bollinger = 'bollinger';
+  static const ema = 'ema';
+  static const stochastic = 'stochastic';
+
+  // Premium göstergeler
+  static const adx = 'adx';
+  static const williamsR = 'williams_r';
+  static const cci = 'cci';
+
+  static const all = <String>[
+    rsi,
+    macd,
+    bollinger,
+    ema,
+    stochastic,
+    adx,
+    williamsR,
+    cci,
+  ];
+
+  static const premium = <String>{adx, williamsR, cci};
+
+  static String labelOf(String id) {
+    switch (id) {
+      case rsi:
+        return 'RSI (Göreceli Güç Endeksi)';
+      case macd:
+        return 'MACD (Hareketli Ortalama Yakınsaması)';
+      case bollinger:
+        return 'Bollinger Bantları';
+      case ema:
+        return 'EMA Kesişim';
+      case stochastic:
+        return 'Stokastik Osilatör';
+      case adx:
+        return 'ADX (Yön Endeksi)';
+      case williamsR:
+        return 'Williams %R';
+      case cci:
+        return 'CCI (Commodity Channel Index)';
+    }
+    return id;
+  }
+}
+
 class TechnicalAnalysisService {
   // ── EMA ──────────────────────────────────────────────────────────────────
 
@@ -23,9 +72,10 @@ class TechnicalAnalysisService {
 
   static TechnicalIndicator rsi(List<double> prices, AssetType type) {
     final period = type == AssetType.doviz ? 9 : 14;
+    final label = 'RSI ($period)';
     if (prices.length < period + 1) {
       return TechnicalIndicator(
-          name: 'RSI', value: 50, signal: SignalType.neutral,
+          name: label, value: 50, signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -38,7 +88,6 @@ class TechnicalAnalysisService {
     final avgL = losses / period;
     final value = avgL == 0 ? 100.0 : 100 - (100 / (1 + avgG / avgL));
 
-    // Varlık türüne göre eşikler
     final overbought = type == AssetType.hisse ? 70.0 : 72.0;
     final oversold = type == AssetType.hisse ? 30.0 : 28.0;
 
@@ -54,26 +103,25 @@ class TechnicalAnalysisService {
             ? 'Aşırı alım bölgesi (${value.toStringAsFixed(1)})'
             : 'Nötr bölge (${value.toStringAsFixed(1)})';
 
-    return TechnicalIndicator(name: 'RSI ($period)', value: value, signal: signal, description: desc);
+    return TechnicalIndicator(name: label, value: value, signal: signal, description: desc);
   }
 
   // ── 2. MACD ───────────────────────────────────────────────────────────────
 
   static TechnicalIndicator macd(List<double> prices, AssetType type) {
-    // Fon için daha uzun periyot
     final fast = type == AssetType.fon ? 8 : 12;
     final slow = type == AssetType.fon ? 21 : 26;
     final sig = 9;
+    final label = 'MACD ($fast,$slow,$sig)';
 
     if (prices.length < slow + sig) {
       return TechnicalIndicator(
-          name: 'MACD', value: 0, signal: SignalType.neutral,
+          name: label, value: 0, signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
     final macdLine = _ema(prices, fast) - _ema(prices, slow);
 
-    // Signal line: EMA of recent MACD values
     final macdSeries = <double>[];
     for (int i = slow; i <= prices.length; i++) {
       final sub = prices.sublist(0, i);
@@ -92,7 +140,7 @@ class TechnicalAnalysisService {
             ? 'MACD çizgisi sinyal altında (${histogram.toStringAsFixed(2)})'
             : 'Kesişim noktasında';
 
-    return TechnicalIndicator(name: 'MACD', value: histogram, signal: signal, description: desc);
+    return TechnicalIndicator(name: label, value: histogram, signal: signal, description: desc);
   }
 
   // ── 3. Bollinger Bantları ─────────────────────────────────────────────────
@@ -100,10 +148,11 @@ class TechnicalAnalysisService {
   static TechnicalIndicator bollingerBands(List<double> prices, AssetType type) {
     final period = type == AssetType.altin ? 14 : 20;
     final mult = type == AssetType.doviz ? 1.5 : 2.0;
+    final label = 'Bollinger ($period, ${mult}σ)';
 
     if (prices.length < period) {
       return TechnicalIndicator(
-          name: 'Bollinger', value: 50, signal: SignalType.neutral,
+          name: label, value: 50, signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -115,7 +164,6 @@ class TechnicalAnalysisService {
     final lower = sma - stdDev * mult;
     final current = prices.last;
 
-    // %B değeri: 0=alt bant, 1=üst bant
     final pctB = (upper - lower) > 0 ? (current - lower) / (upper - lower) : 0.5;
 
     final signal = current < lower ? SignalType.buy
@@ -128,23 +176,23 @@ class TechnicalAnalysisService {
             ? 'Üst bantın üzerinde — potansiyel düzeltme'
             : '%B: ${(pctB * 100).toStringAsFixed(0)} (bant içi)';
 
-    return TechnicalIndicator(name: 'Bollinger', value: pctB * 100, signal: signal, description: desc);
+    return TechnicalIndicator(name: label, value: pctB * 100, signal: signal, description: desc);
   }
 
-  // ── 4. Hareketli Ortalama (SMA/EMA Kesişimi) ─────────────────────────────
+  // ── 4. Hareketli Ortalama (EMA Kesişimi) ─────────────────────────────────
 
   static TechnicalIndicator movingAverage(List<double> prices, AssetType type) {
-    // Varlık türüne göre periyot seçimi
     final int shortP, longP;
     if (type == AssetType.hisse) { shortP = 20; longP = 50; }
     else if (type == AssetType.fon) { shortP = 10; longP = 30; }
     else if (type == AssetType.altin) { shortP = 14; longP = 40; }
     else if (type == AssetType.doviz) { shortP = 7; longP = 21; }
     else { shortP = 20; longP = 50; }
+    final label = 'EMA Kesişim ($shortP/$longP)';
 
     if (prices.length < longP) {
       return TechnicalIndicator(
-          name: 'Ort. Kesişim', value: 0, signal: SignalType.neutral,
+          name: label, value: 0, signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -163,7 +211,7 @@ class TechnicalAnalysisService {
             ? 'EMA$shortP < EMA$longP — düşüş trendi'
             : 'Ortalamalarda kesişim bölgesi';
 
-    return TechnicalIndicator(name: 'EMA Kesişim', value: diff, signal: signal, description: desc);
+    return TechnicalIndicator(name: label, value: diff, signal: signal, description: desc);
   }
 
   // ── 5. Stokastik Osilatör ─────────────────────────────────────────────────
@@ -172,10 +220,11 @@ class TechnicalAnalysisService {
     final period = type == AssetType.doviz ? 9 : 14;
     final overbought = 80.0;
     final oversold = 20.0;
+    final label = 'Stokastik %K ($period)';
 
     if (prices.length < period) {
       return TechnicalIndicator(
-          name: 'Stokastik', value: 50, signal: SignalType.neutral,
+          name: label, value: 50, signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -196,33 +245,176 @@ class TechnicalAnalysisService {
             ? 'Aşırı alım (%K: ${k.toStringAsFixed(1)})'
             : 'Nötr bölge (%K: ${k.toStringAsFixed(1)})';
 
-    return TechnicalIndicator(name: 'Stokastik', value: k, signal: signal, description: desc);
+    return TechnicalIndicator(name: label, value: k, signal: signal, description: desc);
+  }
+
+  // ── 6. ADX — trend gücü (PREMIUM) ─────────────────────────────────────────
+  //
+  // Basitleştirilmiş ADX: |ΔP| ortalamasının fiyat range'ine oranı. Klasik ADX
+  // için OHLC gerekli; bizde sadece close var — proxy hesap kullanılır.
+
+  static TechnicalIndicator adx(List<double> prices, AssetType type) {
+    final period = 14;
+    final label = 'ADX ($period)';
+
+    if (prices.length < period + 1) {
+      return TechnicalIndicator(
+          name: label, value: 0, signal: SignalType.neutral,
+          description: 'Yetersiz veri');
+    }
+
+    final recent = prices.sublist(prices.length - period - 1);
+    double sumUp = 0, sumDown = 0, sumRange = 0;
+    for (int i = 1; i < recent.length; i++) {
+      final d = recent[i] - recent[i - 1];
+      if (d > 0) sumUp += d; else sumDown -= d;
+      sumRange += d.abs();
+    }
+    if (sumRange == 0) {
+      return TechnicalIndicator(
+          name: label, value: 0, signal: SignalType.neutral,
+          description: 'Yatay (trend yok)');
+    }
+    final directional = ((sumUp - sumDown).abs() / sumRange) * 100;
+
+    final signal = directional > 25
+        ? (sumUp > sumDown ? SignalType.buy : SignalType.sell)
+        : SignalType.neutral;
+
+    final desc = directional > 40
+        ? 'Güçlü trend (${directional.toStringAsFixed(0)})'
+        : directional > 25
+            ? 'Trend başlıyor (${directional.toStringAsFixed(0)})'
+            : 'Zayıf trend (${directional.toStringAsFixed(0)})';
+
+    return TechnicalIndicator(name: label, value: directional, signal: signal, description: desc);
+  }
+
+  // ── 7. Williams %R — aşırı alım/satım osilatörü (PREMIUM) ─────────────────
+
+  static TechnicalIndicator williamsR(List<double> prices, AssetType type) {
+    final period = 14;
+    final label = 'Williams %R ($period)';
+
+    if (prices.length < period) {
+      return TechnicalIndicator(
+          name: label, value: -50, signal: SignalType.neutral,
+          description: 'Yetersiz veri');
+    }
+
+    final recent = prices.sublist(prices.length - period);
+    final highest = recent.reduce((a, b) => a > b ? a : b);
+    final lowest = recent.reduce((a, b) => a < b ? a : b);
+    final current = prices.last;
+    final range = highest - lowest;
+    final wr = range == 0 ? -50.0 : ((highest - current) / range) * -100;
+
+    final signal = wr < -80 ? SignalType.buy
+        : wr > -20 ? SignalType.sell
+        : SignalType.neutral;
+
+    final desc = wr < -80
+        ? 'Aşırı satım (${wr.toStringAsFixed(0)})'
+        : wr > -20
+            ? 'Aşırı alım (${wr.toStringAsFixed(0)})'
+            : 'Nötr bölge (${wr.toStringAsFixed(0)})';
+
+    return TechnicalIndicator(name: label, value: wr, signal: signal, description: desc);
+  }
+
+  // ── 8. CCI (Commodity Channel Index) (PREMIUM) ────────────────────────────
+
+  static TechnicalIndicator cci(List<double> prices, AssetType type) {
+    final period = 20;
+    final label = 'CCI ($period)';
+
+    if (prices.length < period) {
+      return TechnicalIndicator(
+          name: label, value: 0, signal: SignalType.neutral,
+          description: 'Yetersiz veri');
+    }
+
+    final recent = prices.sublist(prices.length - period);
+    final sma = recent.reduce((a, b) => a + b) / period;
+    final meanDev = recent.map((p) => (p - sma).abs()).reduce((a, b) => a + b) / period;
+    final current = prices.last;
+    final value = meanDev == 0 ? 0.0 : (current - sma) / (0.015 * meanDev);
+
+    final signal = value < -100 ? SignalType.buy
+        : value > 100 ? SignalType.sell
+        : SignalType.neutral;
+
+    final desc = value < -100
+        ? 'Aşırı satım (${value.toStringAsFixed(0)})'
+        : value > 100
+            ? 'Aşırı alım (${value.toStringAsFixed(0)})'
+            : 'Nötr bölge (${value.toStringAsFixed(0)})';
+
+    return TechnicalIndicator(name: label, value: value, signal: signal, description: desc);
   }
 
   // ── Ana analiz fonksiyonu ─────────────────────────────────────────────────
 
-  /// [priceHistory]: gerçek fiyat geçmişi (eski→yeni sıralı).
-  /// Boşsa varlığın mevcut fiyatı üzerinden simülasyon yapılır.
-  static List<TechnicalIndicator> analyze(Asset asset, List<double> priceHistory) {
-    final prices = priceHistory.isNotEmpty
-        ? priceHistory
-        : _simulate(asset);
+  /// [priceHistory]: gerçek fiyat geçmişi (eski→yeni sıralı). Boşsa simülasyon.
+  /// [enabledIds]: null ise varsayılan set (temel 5). Aksi halde bu set'teki
+  /// göstergeler hesaplanır. Premium olmayanlar için premium ID'ler
+  /// [premiumUnlocked=false] ise atlanır.
+  static List<TechnicalIndicator> analyze(
+    Asset asset,
+    List<double> priceHistory, {
+    Set<String>? enabledIds,
+    bool premiumUnlocked = false,
+  }) {
+    final prices = priceHistory.isNotEmpty ? priceHistory : _simulate(asset);
+    final ids = enabledIds ?? defaultEnabledFor(asset.type);
 
-    return [
-      rsi(prices, asset.type),
-      macd(prices, asset.type),
-      bollingerBands(prices, asset.type),
-      movingAverage(prices, asset.type),
-      stochastic(prices, asset.type),
-    ];
+    final result = <TechnicalIndicator>[];
+    for (final id in ids) {
+      if (IndicatorId.premium.contains(id) && !premiumUnlocked) continue;
+      final ind = _computeById(id, prices, asset.type);
+      if (ind != null) result.add(ind);
+    }
+    return result;
   }
 
-  /// Gerçek veri olmadığında kullanılan simülasyon.
-  /// Seed olarak ticker + günün tarihi kullanılır — her gün farklı ama
-  /// aynı gün içinde tutarlı sinyal üretilir.
+  static TechnicalIndicator? _computeById(
+      String id, List<double> prices, AssetType type) {
+    switch (id) {
+      case IndicatorId.rsi:
+        return rsi(prices, type);
+      case IndicatorId.macd:
+        return macd(prices, type);
+      case IndicatorId.bollinger:
+        return bollingerBands(prices, type);
+      case IndicatorId.ema:
+        return movingAverage(prices, type);
+      case IndicatorId.stochastic:
+        return stochastic(prices, type);
+      case IndicatorId.adx:
+        return adx(prices, type);
+      case IndicatorId.williamsR:
+        return williamsR(prices, type);
+      case IndicatorId.cci:
+        return cci(prices, type);
+    }
+    return null;
+  }
+
+  /// Her varlık türü için varsayılan aktif göstergeler.
+  static Set<String> defaultEnabledFor(AssetType type) {
+    return <String>{
+      IndicatorId.rsi,
+      IndicatorId.macd,
+      IndicatorId.bollinger,
+      IndicatorId.ema,
+      IndicatorId.stochastic,
+    };
+  }
+
+  // ── Simülasyon (fiyat geçmişi yoksa) ──────────────────────────────────────
+
   static List<double> _simulate(Asset asset, {int days = 120}) {
     final today = DateTime.now();
-    // Günlük değişen seed: aynı günde aynı sonuç, her gün farklı sinyal
     final seed = asset.ticker.hashCode.abs() ^
         (today.year * 10000 + today.month * 100 + today.day);
     final rng = Random(seed);
@@ -237,20 +429,17 @@ class TechnicalAnalysisService {
       _               => 0.018,
     };
 
-    // Rassal yön belirle: %40 AL trendi, %30 SAT trendi, %30 yatay
     final dirSeed = rng.nextDouble();
     final double drift;
     if (dirSeed < 0.40) {
-      drift = 0.003; // AL trendi: hafif yukarı
+      drift = 0.003;
     } else if (dirSeed < 0.70) {
-      drift = -0.003; // SAT trendi: hafif aşağı
+      drift = -0.003;
     } else {
-      drift = 0.0; // Yatay
+      drift = 0.0;
     }
 
-    // Geriye dönük fiyat serisi üret
     final prices = <double>[];
-    // Başlangıç fiyatını mevcut fiyattan hesapla (trend tersine)
     double p = price * pow(1 - drift, days).toDouble();
     for (int i = 0; i < days; i++) {
       prices.add(p);
@@ -258,7 +447,6 @@ class TechnicalAnalysisService {
       p = (p * (1 + drift + noise)).clamp(price * 0.3, price * 3.0);
     }
 
-    // Son nokta tam olarak mevcut fiyat olsun
     if (prices.isNotEmpty && prices.last != 0) {
       final factor = price / prices.last;
       return prices.map((v) => v * factor).toList();
@@ -266,20 +454,25 @@ class TechnicalAnalysisService {
     return prices;
   }
 
-  /// Genel sinyal özetini hesaplar
+  /// Genel sinyal özeti. Toplam gösterge sayısı değişken olduğundan eşik
+  /// oransal hesaplanır (%60+ buy → BUY).
   static ({SignalType signal, int buyCount, int sellCount, double confidence})
       summarize(List<TechnicalIndicator> indicators) {
     final buy = indicators.where((i) => i.signal == SignalType.buy).length;
     final sell = indicators.where((i) => i.signal == SignalType.sell).length;
     final total = indicators.length;
 
-    final signal = buy >= 3 ? SignalType.buy
-        : sell >= 3 ? SignalType.sell
+    if (total == 0) {
+      return (signal: SignalType.neutral, buyCount: 0, sellCount: 0, confidence: 0.0);
+    }
+    final buyRatio = buy / total;
+    final sellRatio = sell / total;
+
+    final signal = buyRatio >= 0.6 ? SignalType.buy
+        : sellRatio >= 0.6 ? SignalType.sell
         : SignalType.neutral;
 
-    final confidence = total > 0
-        ? max(buy, sell) / total
-        : 0.0;
+    final confidence = max(buyRatio, sellRatio);
 
     return (signal: signal, buyCount: buy, sellCount: sell, confidence: confidence);
   }

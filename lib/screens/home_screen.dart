@@ -649,22 +649,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String quantityText;
     if (isRemoved) {
       quantityText = 'Çıkarıldı';
-    } else if (asset.type == AssetType.doviz && asset.currencySymbol != null) {
-      final q = asset.quantity;
-      final sym = asset.currencySymbol!;
-      quantityText = q == q.truncateToDouble()
-          ? '$sym${NumberFormat('#,###', 'tr_TR').format(q.toInt())}'
-          : '$sym${q.toStringAsFixed(2)}';
-    } else if (asset.unitType == 'gram' || asset.unitType == 'gr') {
-      final q = asset.quantity;
-      quantityText = q == q.truncateToDouble()
-          ? '${NumberFormat('#,###', 'tr_TR').format(q.toInt())} gr'
-          : '${q.toStringAsFixed(2)} gr';
     } else {
       final q = asset.quantity;
-      quantityText = q == q.truncateToDouble()
-          ? '${NumberFormat('#,###', 'tr_TR').format(q.toInt())} adet'
-          : '${q.toStringAsFixed(4)} adet';
+      final unit = asset.unitLabel;
+      final isInt = q == q.truncateToDouble();
+      final fractionDigits = asset.type == AssetType.doviz
+          ? 2
+          : (unit == 'gr' || unit == 'oz' || unit == 'kg' ? 2 : 4);
+      final qStr = isInt
+          ? NumberFormat('#,###', 'tr_TR').format(q.toInt())
+          : q.toStringAsFixed(fractionDigits);
+      quantityText = asset.unitIsPrefix ? '$unit$qStr' : '$qStr $unit';
     }
 
     // TL karşılığı

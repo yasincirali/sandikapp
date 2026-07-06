@@ -68,10 +68,18 @@ class PortfolioState {
   double get totalValue =>
       assets.fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
 
-  double get totalCost =>
-      assets.fold(0, (s, a) => s + toTRY(a.totalCost, a.currency));
+  /// Yalnızca alım fiyatı girilmiş (purchasePrice > 0) varlıkların maliyeti.
+  /// Fiyat girilmemiş varlıklar gainLoss hesabını bozmaz.
+  double get totalCost => assets
+      .where((a) => a.purchasePrice > 0)
+      .fold(0, (s, a) => s + toTRY(a.totalCost, a.currency));
 
-  double get gainLoss => totalValue - totalCost;
+  /// Alım fiyatı girilmiş varlıkların güncel değeri (gainLoss denkleminin sol tarafı).
+  double get _trackedValue => assets
+      .where((a) => a.purchasePrice > 0)
+      .fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
+
+  double get gainLoss => _trackedValue - totalCost;
 
   double get gainLossPercentage =>
       totalCost > 0 ? gainLoss / totalCost * 100 : 0;
@@ -108,6 +116,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
+    // currentPrice henüz 0 ama ticker varsa refreshPrices'tan önce gelmiş olabilir.
+    // purchasePrice boş bırakıldıysa asset'in o anki currentPrice'ını kullan.
     final asset = Asset(
       id: _uuid.v4(),
       userId: user.id,
@@ -122,6 +132,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       subCategory: subCategory,
       unitType: unitType,
     );
+    // Alım fiyatı girilmemişse ve güncel fiyat biliniyorsa, onu alım fiyatı yap.
+    if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
+      asset.purchasePrice = asset.currentPrice;
+    }
 
     await SupabaseService.instance.insertAsset(asset);
 
