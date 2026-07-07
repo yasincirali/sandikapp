@@ -1,224 +1,225 @@
-# Kullanım Koşulları — sandık
+﻿# KullanÄ±m KoÅŸullarÄ± â€” sandÄ±k
 
-**Yürürlük tarihi:** 11 Mayıs 2026
-**Son güncelleme:** 11 Mayıs 2026
-**Sürüm:** 1.0
+**YÃ¼rÃ¼rlÃ¼k tarihi:** 11 MayÄ±s 2026
+**Son gÃ¼ncelleme:** 11 MayÄ±s 2026
+**SÃ¼rÃ¼m:** 1.0
 
-> **TODO:** `[ŞİRKET ADI]`, `[ADRES]`, `[İLETİŞİM E-POSTA]`, `[YETKİLİ MAHKEME]` alanlarını doldurun.
+> **TODO:** `[ÅÄ°RKET ADI]`, `Türkiye`, `[Ä°LETÄ°ÅÄ°M E-POSTA]`, `[YETKÄ°LÄ° MAHKEME]` alanlarÄ±nÄ± doldurun.
 
 ---
 
 ## 1. Taraflar ve Kabul
 
-Bu Kullanım Koşulları ("Koşullar"), `[ŞİRKET ADI]` ("Şirket", "biz") tarafından sunulan **sandık** mobil uygulaması ("Uygulama", "Hizmet") ile uygulamayı kullanan gerçek kişi ("Kullanıcı", "siz") arasındaki sözleşmedir.
+Bu KullanÄ±m KoÅŸullarÄ± ("KoÅŸullar"), `[ÅÄ°RKET ADI]` ("Åirket", "biz") tarafÄ±ndan sunulan **sandÄ±k** mobil uygulamasÄ± ("Uygulama", "Hizmet") ile uygulamayÄ± kullanan gerÃ§ek kiÅŸi ("KullanÄ±cÄ±", "siz") arasÄ±ndaki sÃ¶zleÅŸmedir.
 
-Uygulamayı indirip hesap oluşturarak bu Koşulları, **Gizlilik Politikası**'nı ve **KVKK Aydınlatma Metni**'ni okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.
+UygulamayÄ± indirip hesap oluÅŸturarak bu KoÅŸullarÄ±, **Gizlilik PolitikasÄ±**'nÄ± ve **KVKK AydÄ±nlatma Metni**'ni okuduÄŸunuzu, anladÄ±ÄŸÄ±nÄ±zÄ± ve kabul ettiÄŸinizi beyan edersiniz.
 
 ---
 
-## 2. Hizmetin Tanımı
+## 2. Hizmetin TanÄ±mÄ±
 
-sandık, kullanıcıların aşağıdaki varlık türlerini takip edebileceği bir kişisel portföy izleme aracıdır:
+sandÄ±k, kullanÄ±cÄ±larÄ±n aÅŸaÄŸÄ±daki varlÄ±k tÃ¼rlerini takip edebileceÄŸi bir kiÅŸisel portfÃ¶y izleme aracÄ±dÄ±r:
 
 - BIST hisse senetleri
-- TEFAS yatırım fonları
-- Döviz (USD, EUR, GBP, vb.)
-- Kıymetli madenler (altın, gümüş)
+- TEFAS yatÄ±rÄ±m fonlarÄ±
+- DÃ¶viz (USD, EUR, GBP, vb.)
+- KÄ±ymetli madenler (altÄ±n, gÃ¼mÃ¼ÅŸ)
 - Kripto para (varsa)
 
-Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz sinyallerini gösterir. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.
+Uygulama; portfÃ¶y deÄŸerini, daÄŸÄ±lÄ±mÄ±nÄ±, performansÄ±nÄ± ve isteÄŸe baÄŸlÄ± olarak teknik analiz sinyallerini gÃ¶sterir. Ã‡oklu kullanÄ±cÄ± ortaklÄ±ÄŸÄ± Ã¶zelliÄŸiyle iki kullanÄ±cÄ± portfÃ¶ylerini paylaÅŸabilir.
 
 ---
 
-## 3. ÖNEMLİ UYARI — Yatırım Tavsiyesi Reddi
+## 3. Ã–NEMLÄ° UYARI â€” YatÄ±rÄ±m Tavsiyesi Reddi
 
-**sandık BİR YATIRIM DANIŞMANI, ARACI KURUM VEYA PORTFÖY YÖNETİM ŞİRKETİ DEĞİLDİR.**
+**sandÄ±k BÄ°R YATIRIM DANIÅMANI, ARACI KURUM VEYA PORTFÃ–Y YÃ–NETÄ°M ÅÄ°RKETÄ° DEÄÄ°LDÄ°R.**
 
-- Şirket, Sermaye Piyasası Kurulu (SPK) tarafından lisanslı bir kurum değildir.
-- Uygulamada gösterilen fiyatlar, performans rakamları, sinyal ve grafikler **yalnızca bilgilendirme** amaçlıdır.
-- Hiçbir içerik **yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık** niteliği taşımaz.
-- Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf veri sağlayıcılarının (Yahoo Finance, TEFAS, vb.) verileri olduğu gibi sunulur.
-- Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
-- Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
+- Åirket, Sermaye PiyasasÄ± Kurulu (SPK) tarafÄ±ndan lisanslÄ± bir kurum deÄŸildir.
+- Uygulamada gÃ¶sterilen fiyatlar, performans rakamlarÄ±, sinyal ve grafikler **yalnÄ±zca bilgilendirme** amaÃ§lÄ±dÄ±r.
+- HiÃ§bir iÃ§erik **yatÄ±rÄ±m tavsiyesi, alÄ±m-satÄ±m Ã¶nerisi veya finansal danÄ±ÅŸmanlÄ±k** niteliÄŸi taÅŸÄ±maz.
+- Verilerin doÄŸruluÄŸu, gÃ¼ncelliÄŸi ve eksiksizliÄŸi iÃ§in garanti vermiyoruz; Ã¼Ã§Ã¼ncÃ¼ taraf veri saÄŸlayÄ±cÄ±larÄ±nÄ±n (Yahoo Finance, TEFAS, vb.) verileri olduÄŸu gibi sunulur.
+- YatÄ±rÄ±m kararlarÄ±nÄ±zÄ± **SPK lisanslÄ± bir aracÄ± kurum veya yatÄ±rÄ±m danÄ±ÅŸmanÄ±na danÄ±ÅŸarak** veriniz.
+- Uygulamada gÃ¶rÃ¼ntÃ¼lenen verilere dayanarak verdiÄŸiniz yatÄ±rÄ±m kararlarÄ±ndan doÄŸan **hiÃ§bir kÃ¢r/zarardan Åirket sorumlu tutulamaz**.
 
-Bu uyarı, uygulamayı ilk açtığınızda ayrı bir disclaimer ekranında onaylatılır ve onay kaydı yasal kanıt olarak saklanır.
+Bu uyarÄ±, uygulamayÄ± ilk aÃ§tÄ±ÄŸÄ±nÄ±zda ayrÄ± bir disclaimer ekranÄ±nda onaylatÄ±lÄ±r ve onay kaydÄ± yasal kanÄ±t olarak saklanÄ±r.
 
 ---
 
 ## 4. Hesap
 
-### 4.1 Hesap Açma
-- 18 yaşından büyük olmalısınız.
-- Geçerli bir e-posta adresi sağlamalısınız.
-- Doğru ve güncel bilgi vermelisiniz.
+### 4.1 Hesap AÃ§ma
+- 18 yaÅŸÄ±ndan bÃ¼yÃ¼k olmalÄ±sÄ±nÄ±z.
+- GeÃ§erli bir e-posta adresi saÄŸlamalÄ±sÄ±nÄ±z.
+- DoÄŸru ve gÃ¼ncel bilgi vermelisiniz.
 
-### 4.2 Hesap Güvenliği
-- Şifrenizi kimseyle paylaşmayın.
-- Şifrenizin güvenliğinden siz sorumlusunuz.
-- Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi `[İLETİŞİM E-POSTA]` adresinden bilgilendirin.
-- Hesap üzerinden gerçekleştirilen tüm işlemler size ait sayılır.
+### 4.2 Hesap GÃ¼venliÄŸi
+- Åifrenizi kimseyle paylaÅŸmayÄ±n.
+- Åifrenizin gÃ¼venliÄŸinden siz sorumlusunuz.
+- Yetkisiz eriÅŸim ÅŸÃ¼phesinde derhal ÅŸifrenizi deÄŸiÅŸtirin ve bizi `[Ä°LETÄ°ÅÄ°M E-POSTA]` adresinden bilgilendirin.
+- Hesap Ã¼zerinden gerÃ§ekleÅŸtirilen tÃ¼m iÅŸlemler size ait sayÄ±lÄ±r.
 
 ### 4.3 Tek Hesap
-- Bir kişi yalnızca bir hesap oluşturabilir.
-- Hesabınızı başkalarına devredemez veya satamazsınız.
+- Bir kiÅŸi yalnÄ±zca bir hesap oluÅŸturabilir.
+- HesabÄ±nÄ±zÄ± baÅŸkalarÄ±na devredemez veya satamazsÄ±nÄ±z.
 
 ---
 
-## 5. Ortaklık Özelliği
+## 5. OrtaklÄ±k Ã–zelliÄŸi
 
-Uygulamada bir başka kullanıcıyı "ortak" olarak ekleyebilirsiniz. Bu özellik aktive edildiğinde:
+Uygulamada bir baÅŸka kullanÄ±cÄ±yÄ± "ortak" olarak ekleyebilirsiniz. Bu Ã¶zellik aktive edildiÄŸinde:
 
-- Ortağınız sizin portföyünüzdeki varlıkları, miktarları ve performansı görebilir.
-- Siz de ortağınızın portföyünü görebilirsiniz.
-- Bu paylaşım **iki tarafın da onayıyla** başlar (davet kodu sistemi).
-- İstediğiniz zaman ortaklığı sonlandırabilirsiniz.
+- OrtaÄŸÄ±nÄ±z sizin portfÃ¶yÃ¼nÃ¼zdeki varlÄ±klarÄ±, miktarlarÄ± ve performansÄ± gÃ¶rebilir.
+- Siz de ortaÄŸÄ±nÄ±zÄ±n portfÃ¶yÃ¼nÃ¼ gÃ¶rebilirsiniz.
+- Bu paylaÅŸÄ±m **iki tarafÄ±n da onayÄ±yla** baÅŸlar (davet kodu sistemi).
+- Ä°stediÄŸiniz zaman ortaklÄ±ÄŸÄ± sonlandÄ±rabilirsiniz.
 
 **Sorumluluk:**
-- Davet kodunuzu yalnızca güvendiğiniz kişiyle paylaşın.
-- Ortaklık aktifken paylaşılan veriden Şirket sorumlu değildir.
-- Ortaklığı sonlandırdığınızda karşı tarafın daha önce gördüğü veri kendisinde kalmış olabilir.
+- Davet kodunuzu yalnÄ±zca gÃ¼vendiÄŸiniz kiÅŸiyle paylaÅŸÄ±n.
+- OrtaklÄ±k aktifken paylaÅŸÄ±lan veriden Åirket sorumlu deÄŸildir.
+- OrtaklÄ±ÄŸÄ± sonlandÄ±rdÄ±ÄŸÄ±nÄ±zda karÅŸÄ± tarafÄ±n daha Ã¶nce gÃ¶rdÃ¼ÄŸÃ¼ veri kendisinde kalmÄ±ÅŸ olabilir.
 
 ---
 
-## 6. Kabul Edilebilir Kullanım
+## 6. Kabul Edilebilir KullanÄ±m
 
-Uygulamayı kullanırken **YAPMAYACAĞINIZ** şeyler:
+UygulamayÄ± kullanÄ±rken **YAPMAYACAÄINIZ** ÅŸeyler:
 
-1. Yasalara aykırı amaçlarla kullanmak
-2. Başkasının hesabına yetkisiz erişim sağlamaya çalışmak
-3. Uygulamayı tersine mühendislik, decompile veya hack etmek
-4. Otomatik scraping, bot veya zararlı yazılım kullanmak
-5. Şirketin altyapısına aşırı yük bindiren talepler göndermek (DoS)
-6. Sahte veya yanıltıcı bilgi girmek
-7. Diğer kullanıcılara taciz, tehdit veya spam göndermek
-8. Uygulamayı kara para aklama veya terör finansmanı amacıyla kullanmak
-9. Uygulamayı modifiye edilmiş APK / jailbreak'li cihaz / emülatör tespit edilmemesi için yamayla kullanmak
-10. Telif hakkı veya marka ihlali yapmak
+1. Yasalara aykÄ±rÄ± amaÃ§larla kullanmak
+2. BaÅŸkasÄ±nÄ±n hesabÄ±na yetkisiz eriÅŸim saÄŸlamaya Ã§alÄ±ÅŸmak
+3. UygulamayÄ± tersine mÃ¼hendislik, decompile veya hack etmek
+4. Otomatik scraping, bot veya zararlÄ± yazÄ±lÄ±m kullanmak
+5. Åirketin altyapÄ±sÄ±na aÅŸÄ±rÄ± yÃ¼k bindiren talepler gÃ¶ndermek (DoS)
+6. Sahte veya yanÄ±ltÄ±cÄ± bilgi girmek
+7. DiÄŸer kullanÄ±cÄ±lara taciz, tehdit veya spam gÃ¶ndermek
+8. UygulamayÄ± kara para aklama veya terÃ¶r finansmanÄ± amacÄ±yla kullanmak
+9. UygulamayÄ± modifiye edilmiÅŸ APK / jailbreak'li cihaz / emÃ¼latÃ¶r tespit edilmemesi iÃ§in yamayla kullanmak
+10. Telif hakkÄ± veya marka ihlali yapmak
 
-Bu kuralların ihlali halinde **hesabınız bildirimsiz kapatılabilir**.
-
----
-
-## 7. Üçüncü Taraf Servisleri
-
-Uygulama; Supabase (backend), Firebase (bildirim), Yahoo Finance / TEFAS (fiyat verisi) gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri, gecikmeleri veya hataları nedeniyle oluşacak sorunlardan **Şirket sorumlu değildir**.
-
-Yahoo Finance, TEFAS gibi veri kaynaklarının sağladığı bilgiler dahil olmak üzere üçüncü taraf veri sağlayıcılarının kendi kullanım koşulları geçerlidir. Veri çekiminin geçici olarak engellenmesi durumunda, alternatif kaynaklar veya manuel veri girişi seçenekleri sunulabilir.
+Bu kurallarÄ±n ihlali halinde **hesabÄ±nÄ±z bildirimsiz kapatÄ±labilir**.
 
 ---
 
-## 8. Fikri Mülkiyet
+## 7. ÃœÃ§Ã¼ncÃ¼ Taraf Servisleri
 
-- Uygulamanın tasarımı, kodu, logosu, marka ismi ve içeriği `[ŞİRKET ADI]`'na aittir.
-- "sandık" markası, logo ve görsel kimliği telif hakkı ve marka koruması altındadır.
-- Uygulamayı kişisel kullanım için indirme ve kullanma haklarınız vardır; bu haklar **devredilemez, alt-lisanslanamaz, münhasır olmayan** bir lisans niteliğindedir.
-- Kendi girdiğiniz veriler (varlık kayıtlarınız) size aittir; Şirket bu veriler üzerinde yalnızca size hizmet sunmak için işleme yetkisine sahiptir.
+Uygulama; Supabase (backend), Firebase (bildirim), Yahoo Finance / TEFAS (fiyat verisi) gibi Ã¼Ã§Ã¼ncÃ¼ taraf servisleri kullanÄ±r. Bu servislerin kesintileri, gecikmeleri veya hatalarÄ± nedeniyle oluÅŸacak sorunlardan **Åirket sorumlu deÄŸildir**.
 
----
-
-## 9. Hizmet Değişiklikleri ve Sona Erdirme
-
-### 9.1 Şirketin Hakları
-- Uygulamayı önceden bildirimde bulunarak veya bulunmayarak güncelleyebiliriz.
-- Belirli özellikleri kaldırabilir veya yenilerini ekleyebiliriz.
-- Hizmeti tamamen sonlandırma kararı alırsak en az **30 gün önceden** bildirim yaparız ve verilerinizi indirme imkanı sunarız.
-
-### 9.2 Kullanıcının Hakları
-- İstediğiniz zaman hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
-- Hesap silme talebi 30 gün içinde işleme alınır; tüm verileriniz kalıcı olarak silinir (yasal saklama yükümlülükleri hariç — bkz. Gizlilik Politikası §7).
-
-### 9.3 Şirketin Sona Erdirme Hakkı
-Bu Koşulları ihlal ettiğiniz tespit edilirse hesabınızı bildirimsiz askıya alabilir veya silebiliriz. Yasal mevzuat gereği zorunlu durumlarda yetkili mercilere bildirim yaparız.
+Yahoo Finance, TEFAS gibi veri kaynaklarÄ±nÄ±n saÄŸladÄ±ÄŸÄ± bilgiler dahil olmak Ã¼zere Ã¼Ã§Ã¼ncÃ¼ taraf veri saÄŸlayÄ±cÄ±larÄ±nÄ±n kendi kullanÄ±m koÅŸullarÄ± geÃ§erlidir. Veri Ã§ekiminin geÃ§ici olarak engellenmesi durumunda, alternatif kaynaklar veya manuel veri giriÅŸi seÃ§enekleri sunulabilir.
 
 ---
 
-## 10. Sorumluluğun Sınırlandırılması
+## 8. Fikri MÃ¼lkiyet
 
-Yürürlükteki kanunların izin verdiği azami ölçüde:
+- UygulamanÄ±n tasarÄ±mÄ±, kodu, logosu, marka ismi ve iÃ§eriÄŸi `[ÅÄ°RKET ADI]`'na aittir.
+- "sandÄ±k" markasÄ±, logo ve gÃ¶rsel kimliÄŸi telif hakkÄ± ve marka korumasÄ± altÄ±ndadÄ±r.
+- UygulamayÄ± kiÅŸisel kullanÄ±m iÃ§in indirme ve kullanma haklarÄ±nÄ±z vardÄ±r; bu haklar **devredilemez, alt-lisanslanamaz, mÃ¼nhasÄ±r olmayan** bir lisans niteliÄŸindedir.
+- Kendi girdiÄŸiniz veriler (varlÄ±k kayÄ±tlarÄ±nÄ±z) size aittir; Åirket bu veriler Ã¼zerinde yalnÄ±zca size hizmet sunmak iÃ§in iÅŸleme yetkisine sahiptir.
 
-- Uygulama "olduğu gibi" (as-is) sunulur; her türlü açık veya zımni garanti reddedilir.
-- Şirket, uygulamanın kesintisiz, hatasız veya güvenli çalışacağını garanti etmez.
-- Şirketin toplam sorumluluğu, sizin son 12 ayda Şirket'e ödediğiniz toplam tutarla sınırlıdır (ücretsiz kullanımda **sıfır TL**).
-- Dolaylı, arızi, özel veya cezai zararlardan (kâr kaybı, veri kaybı, iş kesintisi) sorumlu tutulamayız.
+---
 
-**İstisnalar:** Şirketin kasıtlı kusurundan veya ağır ihmalinden doğan zararlar; tüketici hukuku kapsamındaki devredilemez haklar bu sınırlamadan etkilenmez.
+## 9. Hizmet DeÄŸiÅŸiklikleri ve Sona Erdirme
+
+### 9.1 Åirketin HaklarÄ±
+- UygulamayÄ± Ã¶nceden bildirimde bulunarak veya bulunmayarak gÃ¼ncelleyebiliriz.
+- Belirli Ã¶zellikleri kaldÄ±rabilir veya yenilerini ekleyebiliriz.
+- Hizmeti tamamen sonlandÄ±rma kararÄ± alÄ±rsak en az **30 gÃ¼n Ã¶nceden** bildirim yaparÄ±z ve verilerinizi indirme imkanÄ± sunarÄ±z.
+
+### 9.2 KullanÄ±cÄ±nÄ±n HaklarÄ±
+- Ä°stediÄŸiniz zaman hesabÄ±nÄ±zÄ± silebilirsiniz (Profil â†’ Ayarlar â†’ HesabÄ±mÄ± Sil).
+- Hesap silme talebi 30 gÃ¼n iÃ§inde iÅŸleme alÄ±nÄ±r; tÃ¼m verileriniz kalÄ±cÄ± olarak silinir (yasal saklama yÃ¼kÃ¼mlÃ¼lÃ¼kleri hariÃ§ â€” bkz. Gizlilik PolitikasÄ± Â§7).
+
+### 9.3 Åirketin Sona Erdirme HakkÄ±
+Bu KoÅŸullarÄ± ihlal ettiÄŸiniz tespit edilirse hesabÄ±nÄ±zÄ± bildirimsiz askÄ±ya alabilir veya silebiliriz. Yasal mevzuat gereÄŸi zorunlu durumlarda yetkili mercilere bildirim yaparÄ±z.
+
+---
+
+## 10. SorumluluÄŸun SÄ±nÄ±rlandÄ±rÄ±lmasÄ±
+
+YÃ¼rÃ¼rlÃ¼kteki kanunlarÄ±n izin verdiÄŸi azami Ã¶lÃ§Ã¼de:
+
+- Uygulama "olduÄŸu gibi" (as-is) sunulur; her tÃ¼rlÃ¼ aÃ§Ä±k veya zÄ±mni garanti reddedilir.
+- Åirket, uygulamanÄ±n kesintisiz, hatasÄ±z veya gÃ¼venli Ã§alÄ±ÅŸacaÄŸÄ±nÄ± garanti etmez.
+- Åirketin toplam sorumluluÄŸu, sizin son 12 ayda Åirket'e Ã¶dediÄŸiniz toplam tutarla sÄ±nÄ±rlÄ±dÄ±r (Ã¼cretsiz kullanÄ±mda **sÄ±fÄ±r TL**).
+- DolaylÄ±, arÄ±zi, Ã¶zel veya cezai zararlardan (kÃ¢r kaybÄ±, veri kaybÄ±, iÅŸ kesintisi) sorumlu tutulamayÄ±z.
+
+**Ä°stisnalar:** Åirketin kasÄ±tlÄ± kusurundan veya aÄŸÄ±r ihmalinden doÄŸan zararlar; tÃ¼ketici hukuku kapsamÄ±ndaki devredilemez haklar bu sÄ±nÄ±rlamadan etkilenmez.
 
 ---
 
 ## 11. Tazminat
 
-Uygulamayı ihlal ederek (Madde 6) Şirkete veya üçüncü taraflara verdiğiniz zararlardan, açılan davaların masraf ve avukat ücretleri dahil tüm sonuçlardan **siz sorumlusunuz** ve Şirketi tazmin etmeyi kabul edersiniz.
+UygulamayÄ± ihlal ederek (Madde 6) Åirkete veya Ã¼Ã§Ã¼ncÃ¼ taraflara verdiÄŸiniz zararlardan, aÃ§Ä±lan davalarÄ±n masraf ve avukat Ã¼cretleri dahil tÃ¼m sonuÃ§lardan **siz sorumlusunuz** ve Åirketi tazmin etmeyi kabul edersiniz.
 
 ---
 
-## 12. Tüketici Hakları
+## 12. TÃ¼ketici HaklarÄ±
 
-6502 sayılı Tüketicinin Korunması Hakkında Kanun (TKHK) kapsamındaki devredilemez haklarınız bu Koşullarla sınırlandırılamaz. Tüketici Hakem Heyeti veya Tüketici Mahkemesi'ne başvuru hakkınız saklıdır.
+6502 sayÄ±lÄ± TÃ¼keticinin KorunmasÄ± HakkÄ±nda Kanun (TKHK) kapsamÄ±ndaki devredilemez haklarÄ±nÄ±z bu KoÅŸullarla sÄ±nÄ±rlandÄ±rÄ±lamaz. TÃ¼ketici Hakem Heyeti veya TÃ¼ketici Mahkemesi'ne baÅŸvuru hakkÄ±nÄ±z saklÄ±dÄ±r.
 
-AB üyesi tüketicileri için: GDPR ve EU tüketici mevzuatından doğan haklar saklıdır. Online uyuşmazlık çözüm platformu: https://ec.europa.eu/consumers/odr
+AB Ã¼yesi tÃ¼keticileri iÃ§in: GDPR ve EU tÃ¼ketici mevzuatÄ±ndan doÄŸan haklar saklÄ±dÄ±r. Online uyuÅŸmazlÄ±k Ã§Ã¶zÃ¼m platformu: https://ec.europa.eu/consumers/odr
 
 ---
 
-## 13. Mücbir Sebep
+## 13. MÃ¼cbir Sebep
 
-Doğal afet, savaş, terör, salgın hastalık, hükümet kararı, internet altyapısı kesintisi, üçüncü taraf servis kesintisi gibi Şirketin kontrolü dışındaki sebeplerden doğan hizmet aksaklıklarından sorumlu değiliz.
+DoÄŸal afet, savaÅŸ, terÃ¶r, salgÄ±n hastalÄ±k, hÃ¼kÃ¼met kararÄ±, internet altyapÄ±sÄ± kesintisi, Ã¼Ã§Ã¼ncÃ¼ taraf servis kesintisi gibi Åirketin kontrolÃ¼ dÄ±ÅŸÄ±ndaki sebeplerden doÄŸan hizmet aksaklÄ±klarÄ±ndan sorumlu deÄŸiliz.
 
 ---
 
 ## 14. Bildirimler
 
-Bize yapılacak tüm bildirimler `[İLETİŞİM E-POSTA]` adresine gönderilmelidir.
+Bize yapÄ±lacak tÃ¼m bildirimler `[Ä°LETÄ°ÅÄ°M E-POSTA]` adresine gÃ¶nderilmelidir.
 
-Size yapılacak bildirimler:
-- Uygulama içi bildirim
-- Hesap e-postanıza e-posta
+Size yapÄ±lacak bildirimler:
+- Uygulama iÃ§i bildirim
+- Hesap e-postanÄ±za e-posta
 - Push bildirimi (izin verdiyseniz)
 
-ile gönderilebilir ve gönderim tarihinde tebliğ edilmiş sayılır.
+ile gÃ¶nderilebilir ve gÃ¶nderim tarihinde tebliÄŸ edilmiÅŸ sayÄ±lÄ±r.
 
 ---
 
 ## 15. Devir
 
-- Siz haklarınızı/yükümlülüklerinizi başkasına devredemezsiniz.
-- Şirket, birleşme, devralma veya yeniden yapılanma durumunda haklarını ve yükümlülüklerini halefine devredebilir; bu durumda 30 gün önceden bildirim yapılır.
+- Siz haklarÄ±nÄ±zÄ±/yÃ¼kÃ¼mlÃ¼lÃ¼klerinizi baÅŸkasÄ±na devredemezsiniz.
+- Åirket, birleÅŸme, devralma veya yeniden yapÄ±lanma durumunda haklarÄ±nÄ± ve yÃ¼kÃ¼mlÃ¼lÃ¼klerini halefine devredebilir; bu durumda 30 gÃ¼n Ã¶nceden bildirim yapÄ±lÄ±r.
 
 ---
 
-## 16. Bölünebilirlik
+## 16. BÃ¶lÃ¼nebilirlik
 
-Bu Koşulların herhangi bir maddesi geçersiz sayılırsa, geri kalan maddeler yürürlükte kalmaya devam eder.
+Bu KoÅŸullarÄ±n herhangi bir maddesi geÃ§ersiz sayÄ±lÄ±rsa, geri kalan maddeler yÃ¼rÃ¼rlÃ¼kte kalmaya devam eder.
 
 ---
 
 ## 17. Uygulanacak Hukuk ve Yetkili Mahkeme
 
-- **Uygulanacak hukuk:** Türkiye Cumhuriyeti hukuku
-- **Yetkili mahkeme:** `[YETKİLİ MAHKEME — örn. İstanbul Anadolu Tüketici Mahkemeleri ve İcra Daireleri]`
+- **Uygulanacak hukuk:** TÃ¼rkiye Cumhuriyeti hukuku
+- **Yetkili mahkeme:** `[YETKÄ°LÄ° MAHKEME â€” Ã¶rn. Ä°stanbul Anadolu TÃ¼ketici Mahkemeleri ve Ä°cra Daireleri]`
 
-Tüketici sıfatı taşıyan kullanıcılar için TKHK uyarınca yerleşim yeri mahkemeleri de yetkilidir.
+TÃ¼ketici sÄ±fatÄ± taÅŸÄ±yan kullanÄ±cÄ±lar iÃ§in TKHK uyarÄ±nca yerleÅŸim yeri mahkemeleri de yetkilidir.
 
-AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesinin zorunlu tüketici koruma hükümleri saklıdır.
-
----
-
-## 18. Koşullarda Değişiklik
-
-Bu Koşullarda değişiklik yaparsak:
-- En az **30 gün önceden** uygulama içi bildirim ve e-posta ile haber veririz.
-- Önemli değişiklikler için tekrar onay isteyebiliriz.
-- Değişikliği kabul etmiyorsanız hesabınızı silme hakkınız vardır.
-- 30 gün içinde itiraz etmezseniz değişikliği kabul etmiş sayılırsınız.
+AB Ã¼yesi tÃ¼keticiler iÃ§in Roma I TÃ¼zÃ¼ÄŸÃ¼ uyarÄ±nca yerleÅŸim yeri Ã¼lkesinin zorunlu tÃ¼ketici koruma hÃ¼kÃ¼mleri saklÄ±dÄ±r.
 
 ---
 
-## 19. İletişim
+## 18. KoÅŸullarda DeÄŸiÅŸiklik
 
-`[ŞİRKET ADI]`
-`[AÇIK ADRES]`
-E-posta: `[İLETİŞİM E-POSTA]`
-Web: `[WEB SİTESİ]`
+Bu KoÅŸullarda deÄŸiÅŸiklik yaparsak:
+- En az **30 gÃ¼n Ã¶nceden** uygulama iÃ§i bildirim ve e-posta ile haber veririz.
+- Ã–nemli deÄŸiÅŸiklikler iÃ§in tekrar onay isteyebiliriz.
+- DeÄŸiÅŸikliÄŸi kabul etmiyorsanÄ±z hesabÄ±nÄ±zÄ± silme hakkÄ±nÄ±z vardÄ±r.
+- 30 gÃ¼n iÃ§inde itiraz etmezseniz deÄŸiÅŸikliÄŸi kabul etmiÅŸ sayÄ±lÄ±rsÄ±nÄ±z.
 
 ---
 
-*Bu Koşullar [Türkçe] ve [İngilizce] olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*
+## 19. Ä°letiÅŸim
+
+`[ÅÄ°RKET ADI]`
+`[AÃ‡IK ADRES]`
+E-posta: `[Ä°LETÄ°ÅÄ°M E-POSTA]`
+Web: `[WEB SÄ°TESÄ°]`
+
+---
+
+*Bu KoÅŸullar [TÃ¼rkÃ§e] ve [Ä°ngilizce] olarak sunulmaktadÄ±r. Yorum farklÄ±lÄ±ÄŸÄ± durumunda TÃ¼rkÃ§e versiyon esas alÄ±nÄ±r.*
+

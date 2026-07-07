@@ -23,9 +23,9 @@ class LegalBlock {
 // ─── Belgeler ─────────────────────────────────────────────────────────────────
 
 class LegalDocs {
-  static const _company = 'Yasın Cıralı (Bireysel Geliştirici)';
-  static const _email = 'destek@sandik.app';
-  static const _web = 'sandik.app';
+  static const _company = 'Yasin Cirali (Bireysel Geliştirici)';
+  static const _email = 'sandikapp.destek@gmail.com';
+  static const _web = 'yasincirali.github.io/sandikapp';
   static const _address = 'Türkiye';
 
   // ── Gizlilik Politikası ──────────────────────────────────────────────────

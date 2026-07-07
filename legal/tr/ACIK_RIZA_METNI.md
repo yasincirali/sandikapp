@@ -1,106 +1,107 @@
-# Açık Rıza Metni — sandık
+﻿# AÃ§Ä±k RÄ±za Metni â€” sandÄ±k
 
-**Yürürlük tarihi:** 11 Mayıs 2026
-**Sürüm:** 1.0
+**YÃ¼rÃ¼rlÃ¼k tarihi:** 11 MayÄ±s 2026
+**SÃ¼rÃ¼m:** 1.0
 
-> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metni dikkatle okuyup, devamındaki onay kutularını bilinçli iradenizle işaretlemeniz beklenmektedir.
+> Bu metin, 6698 sayÄ±lÄ± KiÅŸisel Verilerin KorunmasÄ± Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarÄ±nca **aÃ§Ä±k rÄ±zanÄ±zÄ±** almak iÃ§in hazÄ±rlanmÄ±ÅŸtÄ±r. Bu metni dikkatle okuyup, devamÄ±ndaki onay kutularÄ±nÄ± bilinÃ§li iradenizle iÅŸaretlemeniz beklenmektedir.
 
 ---
 
-## 1. Açık Rıza Veriyorum
+## 1. AÃ§Ä±k RÄ±za Veriyorum
 
-`[ŞİRKET ADI]` ("Şirket") tarafından sunulan **sandık** mobil uygulamasını kullanmak amacıyla:
+`[ÅÄ°RKET ADI]` ("Åirket") tarafÄ±ndan sunulan **sandÄ±k** mobil uygulamasÄ±nÄ± kullanmak amacÄ±yla:
 
-### A) Yurt Dışına Veri Aktarımı
+### A) Yurt DÄ±ÅŸÄ±na Veri AktarÄ±mÄ±
 
-KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin **Amerika Birleşik Devletleri'nde (ABD)** sunucuları bulunan **Supabase Inc.** ve **Google LLC (Firebase)** servislerine aktarılmasına;
+KVKK Madde 9(1) uyarÄ±nca aÅŸaÄŸÄ±daki kiÅŸisel verilerimin **Amerika BirleÅŸik Devletleri'nde (ABD)** sunucularÄ± bulunan **Supabase Inc.** ve **Google LLC (Firebase)** servislerine aktarÄ±lmasÄ±na;
 
 - E-posta adresim
-- Görünen adım (display name)
-- Şifremin hash hâli
-- Portföy varlık kayıtlarım (sembol, miktar, alış fiyatı, tarih, not)
-- Performans snapshot geçmişim
-- Ortaklık bağlantı kayıtlarım
-- Push bildirim token'ım
-- Oturum açma anındaki IP adresim, cihaz modelim, OS sürümüm
-- Disclaimer onayımın metadatası (zaman, sürüm, platform, IP)
+- GÃ¶rÃ¼nen adÄ±m (display name)
+- Åifremin hash hÃ¢li
+- PortfÃ¶y varlÄ±k kayÄ±tlarÄ±m (sembol, miktar, alÄ±ÅŸ fiyatÄ±, tarih, not)
+- Performans snapshot geÃ§miÅŸim
+- OrtaklÄ±k baÄŸlantÄ± kayÄ±tlarÄ±m
+- Push bildirim token'Ä±m
+- Oturum aÃ§ma anÄ±ndaki IP adresim, cihaz modelim, OS sÃ¼rÃ¼mÃ¼m
+- Disclaimer onayÄ±mÄ±n metadatasÄ± (zaman, sÃ¼rÃ¼m, platform, IP)
 
-amacıyla aktarılmasına; ABD'nin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
+amacÄ±yla aktarÄ±lmasÄ±na; ABD'nin KVK Kurulu'nun ilan ettiÄŸi "yeterli korumaya sahip Ã¼lkeler" listesinde **bulunmadÄ±ÄŸÄ±nÄ±** bildiÄŸimi beyan ederek **AÃ‡IK RIZA VERÄ°YORUM**.
 
-☐ **Onaylıyorum** *(zorunlu — kayıt için gerekli)*
+â˜ **OnaylÄ±yorum** *(zorunlu â€” kayÄ±t iÃ§in gerekli)*
 
 ---
 
 ### B) Push Bildirim Servisi
 
-Aşağıdaki bildirim türlerinin tarafıma gönderilmesi için cihaz bildirim token'ımın işlenmesine ve yukarıdaki Firebase servisi üzerinden iletilmesine **AÇIK RIZA VERİYORUM**:
+AÅŸaÄŸÄ±daki bildirim tÃ¼rlerinin tarafÄ±ma gÃ¶nderilmesi iÃ§in cihaz bildirim token'Ä±mÄ±n iÅŸlenmesine ve yukarÄ±daki Firebase servisi Ã¼zerinden iletilmesine **AÃ‡IK RIZA VERÄ°YORUM**:
 
-- Ortaklık daveti bildirimleri
-- Servis duyuruları (önemli güvenlik uyarıları, politika değişiklikleri)
+- OrtaklÄ±k daveti bildirimleri
+- Servis duyurularÄ± (Ã¶nemli gÃ¼venlik uyarÄ±larÄ±, politika deÄŸiÅŸiklikleri)
 - (Opsiyonel) Teknik analiz sinyal bildirimleri
 
-☐ **Bildirimleri kabul ediyorum** *(opsiyonel — istediğiniz zaman uygulama ayarlarından geri alabilirsiniz)*
+â˜ **Bildirimleri kabul ediyorum** *(opsiyonel â€” istediÄŸiniz zaman uygulama ayarlarÄ±ndan geri alabilirsiniz)*
 
 ---
 
-### C) (Opsiyonel — Eklenirse) Hata Raporu Toplama
+### C) (Opsiyonel â€” Eklenirse) Hata Raporu Toplama
 
-Uygulamada teknik bir çökme yaşanması durumunda, çökme nedenini teşhis edebilmek için cihaz modeli, OS sürümü, uygulama sürümü ve hata stack trace bilgisinin **Firebase Crashlytics** üzerinden tarafımıza gönderilmesine **AÇIK RIZA VERİYORUM**.
+Uygulamada teknik bir Ã§Ã¶kme yaÅŸanmasÄ± durumunda, Ã§Ã¶kme nedenini teÅŸhis edebilmek iÃ§in cihaz modeli, OS sÃ¼rÃ¼mÃ¼, uygulama sÃ¼rÃ¼mÃ¼ ve hata stack trace bilgisinin **Firebase Crashlytics** Ã¼zerinden tarafÄ±mÄ±za gÃ¶nderilmesine **AÃ‡IK RIZA VERÄ°YORUM**.
 
-Bu rapor **e-posta, parola, portföy değeri** gibi kişisel veri içermez; cihaz tanımlayıcı (anonymous device id) ve teknik hata bilgisi içerir.
+Bu rapor **e-posta, parola, portfÃ¶y deÄŸeri** gibi kiÅŸisel veri iÃ§ermez; cihaz tanÄ±mlayÄ±cÄ± (anonymous device id) ve teknik hata bilgisi iÃ§erir.
 
-☐ **Hata raporlarını paylaşmayı kabul ediyorum** *(opsiyonel)*
-
----
-
-### D) (Opsiyonel — Eklenirse) Pazarlama İletişimi
-
-Yeni özellik duyuruları, kampanyalar ve kullanım ipuçlarının e-posta adresime gönderilmesine **AÇIK RIZA VERİYORUM**.
-
-☐ **E-posta pazarlamasını kabul ediyorum** *(opsiyonel — her e-postada "abonelikten çık" linki bulunur)*
+â˜ **Hata raporlarÄ±nÄ± paylaÅŸmayÄ± kabul ediyorum** *(opsiyonel)*
 
 ---
 
-## 2. Açık Rızamın Geri Alınması
+### D) (Opsiyonel â€” Eklenirse) Pazarlama Ä°letiÅŸimi
 
-Vermiş olduğum açık rızayı, KVKK Madde 7 ve 11 uyarınca **istediğim zaman geri alabileceğimi** biliyorum:
+Yeni Ã¶zellik duyurularÄ±, kampanyalar ve kullanÄ±m ipuÃ§larÄ±nÄ±n e-posta adresime gÃ¶nderilmesine **AÃ‡IK RIZA VERÄ°YORUM**.
 
-- **Push bildirimi rızası:** Uygulama → Profil → Ayarlar → Bildirimler → Kapat
-- **Hata raporu rızası:** Uygulama → Profil → Ayarlar → Hata raporları → Kapat
-- **Pazarlama rızası:** Her e-postanın altındaki "abonelikten çık" linki veya Profil → Ayarlar → İletişim tercihi
-- **Yurt dışı aktarım rızası:** Açık rızamın geri çekilmesi, hizmetin sunulamaması anlamına gelir; bu durumda hesabımı silmem gerekir (Profil → Ayarlar → Hesabımı Sil).
-
-Rızamı geri çektiğim tarihten önceki işleme faaliyetleri hukuka uygun sayılmaya devam eder.
+â˜ **E-posta pazarlamasÄ±nÄ± kabul ediyorum** *(opsiyonel â€” her e-postada "abonelikten Ã§Ä±k" linki bulunur)*
 
 ---
 
-## 3. Açık Rızanın Geri Alınmasının Sonuçları
+## 2. AÃ§Ä±k RÄ±zamÄ±n Geri AlÄ±nmasÄ±
 
-| Geri çekilen rıza | Sonuç |
+VermiÅŸ olduÄŸum aÃ§Ä±k rÄ±zayÄ±, KVKK Madde 7 ve 11 uyarÄ±nca **istediÄŸim zaman geri alabileceÄŸimi** biliyorum:
+
+- **Push bildirimi rÄ±zasÄ±:** Uygulama â†’ Profil â†’ Ayarlar â†’ Bildirimler â†’ Kapat
+- **Hata raporu rÄ±zasÄ±:** Uygulama â†’ Profil â†’ Ayarlar â†’ Hata raporlarÄ± â†’ Kapat
+- **Pazarlama rÄ±zasÄ±:** Her e-postanÄ±n altÄ±ndaki "abonelikten Ã§Ä±k" linki veya Profil â†’ Ayarlar â†’ Ä°letiÅŸim tercihi
+- **Yurt dÄ±ÅŸÄ± aktarÄ±m rÄ±zasÄ±:** AÃ§Ä±k rÄ±zamÄ±n geri Ã§ekilmesi, hizmetin sunulamamasÄ± anlamÄ±na gelir; bu durumda hesabÄ±mÄ± silmem gerekir (Profil â†’ Ayarlar â†’ HesabÄ±mÄ± Sil).
+
+RÄ±zamÄ± geri Ã§ektiÄŸim tarihten Ã¶nceki iÅŸleme faaliyetleri hukuka uygun sayÄ±lmaya devam eder.
+
+---
+
+## 3. AÃ§Ä±k RÄ±zanÄ±n Geri AlÄ±nmasÄ±nÄ±n SonuÃ§larÄ±
+
+| Geri Ã§ekilen rÄ±za | SonuÃ§ |
 |---|---|
-| Yurt dışı aktarım (A) | Hizmet sunulamaz, hesap silinir |
-| Push bildirimi (B) | Bildirim alamazsınız; ortaklık davetlerini uygulama içinden manuel kontrol edersiniz |
-| Hata raporu (C) | Çökme yaşadığınızda otomatik teşhis yapamayız; destek talebine yanıt süremiz uzar |
-| Pazarlama (D) | Promosyon e-postası alamazsınız; servis e-postaları (güvenlik, fatura) gönderilmeye devam eder |
+| Yurt dÄ±ÅŸÄ± aktarÄ±m (A) | Hizmet sunulamaz, hesap silinir |
+| Push bildirimi (B) | Bildirim alamazsÄ±nÄ±z; ortaklÄ±k davetlerini uygulama iÃ§inden manuel kontrol edersiniz |
+| Hata raporu (C) | Ã‡Ã¶kme yaÅŸadÄ±ÄŸÄ±nÄ±zda otomatik teÅŸhis yapamayÄ±z; destek talebine yanÄ±t sÃ¼remiz uzar |
+| Pazarlama (D) | Promosyon e-postasÄ± alamazsÄ±nÄ±z; servis e-postalarÄ± (gÃ¼venlik, fatura) gÃ¶nderilmeye devam eder |
 
 ---
 
 ## 4. Beyan
 
-- Bu Açık Rıza Metni'ni okuduğumu,
-- Kişisel verilerimin nasıl işleneceğini, hangi amaçlarla kullanılacağını, kimlere aktarılacağını ve haklarımı **KVKK Aydınlatma Metni**'nden ayrıntılı olarak öğrendiğimi,
-- Verdiğim açık rızanın **özgür iradem ile, belirli ve bilgilendirilmiş** şekilde verildiğini,
-- 18 yaşından büyük olduğumu ve bu rızayı verme ehliyetinin bulunduğunu
+- Bu AÃ§Ä±k RÄ±za Metni'ni okuduÄŸumu,
+- KiÅŸisel verilerimin nasÄ±l iÅŸleneceÄŸini, hangi amaÃ§larla kullanÄ±lacaÄŸÄ±nÄ±, kimlere aktarÄ±lacaÄŸÄ±nÄ± ve haklarÄ±mÄ± **KVKK AydÄ±nlatma Metni**'nden ayrÄ±ntÄ±lÄ± olarak Ã¶ÄŸrendiÄŸimi,
+- VerdiÄŸim aÃ§Ä±k rÄ±zanÄ±n **Ã¶zgÃ¼r iradem ile, belirli ve bilgilendirilmiÅŸ** ÅŸekilde verildiÄŸini,
+- 18 yaÅŸÄ±ndan bÃ¼yÃ¼k olduÄŸumu ve bu rÄ±zayÄ± verme ehliyetinin bulunduÄŸunu
 
 beyan ve kabul ederim.
 
 ---
 
-**Tarih:** [Onay anında otomatik kaydedilir]
-**Sürüm:** 1.0
-**IP:** [Onay anında otomatik kaydedilir]
-**Platform:** [Android / iOS — otomatik kaydedilir]
+**Tarih:** [Onay anÄ±nda otomatik kaydedilir]
+**SÃ¼rÃ¼m:** 1.0
+**IP:** [Onay anÄ±nda otomatik kaydedilir]
+**Platform:** [Android / iOS â€” otomatik kaydedilir]
 
 ---
 
-*Açık rıza onayınız, KVKK Madde 12 uyarınca hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır.*
+*AÃ§Ä±k rÄ±za onayÄ±nÄ±z, KVKK Madde 12 uyarÄ±nca hesabÄ±nÄ±z silinene kadar Åirket tarafÄ±ndan kanÄ±t olarak saklanÄ±r. SildiÄŸiniz hesabÄ±n aÃ§Ä±k rÄ±za kayÄ±tlarÄ±, TBK Madde 146 zamanaÅŸÄ±mÄ± sÃ¼resi olan **3 yÄ±l** boyunca saklanÄ±r.*
+

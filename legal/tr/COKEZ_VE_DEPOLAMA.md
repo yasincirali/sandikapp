@@ -1,101 +1,102 @@
-# Çerez ve Yerel Depolama Politikası — sandık
+﻿# Ã‡erez ve Yerel Depolama PolitikasÄ± â€” sandÄ±k
 
-**Yürürlük tarihi:** 11 Mayıs 2026
-**Sürüm:** 1.0
+**YÃ¼rÃ¼rlÃ¼k tarihi:** 11 MayÄ±s 2026
+**SÃ¼rÃ¼m:** 1.0
 
 ---
 
 ## 1. Genel
 
-**sandık** mobil bir uygulamadır ve geleneksel web çerezleri (HTTP cookies) **kullanmaz**. Bu politika, uygulamanın cihazınızda kullandığı yerel depolama mekanizmalarını açıklar ve KVKK + GDPR + ePrivacy Direktifi (2002/58/EC) uyumluluğunu sağlar.
+**sandÄ±k** mobil bir uygulamadÄ±r ve geleneksel web Ã§erezleri (HTTP cookies) **kullanmaz**. Bu politika, uygulamanÄ±n cihazÄ±nÄ±zda kullandÄ±ÄŸÄ± yerel depolama mekanizmalarÄ±nÄ± aÃ§Ä±klar ve KVKK + GDPR + ePrivacy Direktifi (2002/58/EC) uyumluluÄŸunu saÄŸlar.
 
 ---
 
-## 2. Kullanılan Yerel Depolama Türleri
+## 2. KullanÄ±lan Yerel Depolama TÃ¼rleri
 
 ### 2.1 SharedPreferences (Android) / NSUserDefaults (iOS)
 
-İşletim sisteminin sağladığı küçük key-value deposu. İçinde tutulan veriler:
+Ä°ÅŸletim sisteminin saÄŸladÄ±ÄŸÄ± kÃ¼Ã§Ã¼k key-value deposu. Ä°Ã§inde tutulan veriler:
 
-| Anahtar | İçerik | Amaç | Saklama süresi |
+| Anahtar | Ä°Ã§erik | AmaÃ§ | Saklama sÃ¼resi |
 |---|---|---|---|
-| `last_login_email` | Kullanıcı isterse kayıtlı e-posta | "Beni hatırla" özelliği | Kullanıcı silene kadar |
-| `theme_mode` | Tema tercihi (dark/light/system) | UI ayarı | Uninstall'a kadar |
-| `disclaimer_accepted_v1.0` | Disclaimer onay durumu | Tekrar göstermemek | Disclaimer sürümü değişene kadar |
-| `notification_enabled` | Bildirim açık/kapalı | Kullanıcı tercihi | Uninstall'a kadar |
+| `last_login_email` | KullanÄ±cÄ± isterse kayÄ±tlÄ± e-posta | "Beni hatÄ±rla" Ã¶zelliÄŸi | KullanÄ±cÄ± silene kadar |
+| `theme_mode` | Tema tercihi (dark/light/system) | UI ayarÄ± | Uninstall'a kadar |
+| `disclaimer_accepted_v1.0` | Disclaimer onay durumu | Tekrar gÃ¶stermemek | Disclaimer sÃ¼rÃ¼mÃ¼ deÄŸiÅŸene kadar |
+| `notification_enabled` | Bildirim aÃ§Ä±k/kapalÄ± | KullanÄ±cÄ± tercihi | Uninstall'a kadar |
 
-**Kişisel veri içermez** veya yalnızca kullanıcının açıkça izin verdiği e-posta'yı içerir.
+**KiÅŸisel veri iÃ§ermez** veya yalnÄ±zca kullanÄ±cÄ±nÄ±n aÃ§Ä±kÃ§a izin verdiÄŸi e-posta'yÄ± iÃ§erir.
 
 ### 2.2 Supabase Auth Session Token
 
-Supabase SDK, oturum tokenlarını otomatik olarak güvenli bir şekilde saklar:
+Supabase SDK, oturum tokenlarÄ±nÄ± otomatik olarak gÃ¼venli bir ÅŸekilde saklar:
 
-- **JWT access token:** 1 saat geçerli
-- **Refresh token:** 7 gün geçerli, otomatik yenilenir
+- **JWT access token:** 1 saat geÃ§erli
+- **Refresh token:** 7 gÃ¼n geÃ§erli, otomatik yenilenir
 - **Saklama yeri:** Android'de `EncryptedSharedPreferences`, iOS'ta Keychain
 
-Bu token'lar oturum açma için **zorunludur** (sözleşmenin ifası — KVKK 5(2)(c) / GDPR 6(1)(b)). Kullanıcı izni gerektirmez.
+Bu token'lar oturum aÃ§ma iÃ§in **zorunludur** (sÃ¶zleÅŸmenin ifasÄ± â€” KVKK 5(2)(c) / GDPR 6(1)(b)). KullanÄ±cÄ± izni gerektirmez.
 
-### 2.3 SQLite Yerel Veritabanı (sqflite cache)
+### 2.3 SQLite Yerel VeritabanÄ± (sqflite cache)
 
-Performans için bazı veriler cihaz üzerinde önbelleğe alınır:
+Performans iÃ§in bazÄ± veriler cihaz Ã¼zerinde Ã¶nbelleÄŸe alÄ±nÄ±r:
 
-- Son fiyat bilgileri (geçici cache)
-- Görsel asset'ler
+- Son fiyat bilgileri (geÃ§ici cache)
+- GÃ¶rsel asset'ler
 
-**Hiçbir kişisel veri** SQLite'da kalıcı saklanmaz; tüm asıl veri Supabase'dedir.
+**HiÃ§bir kiÅŸisel veri** SQLite'da kalÄ±cÄ± saklanmaz; tÃ¼m asÄ±l veri Supabase'dedir.
 
 ### 2.4 Push Notification Token (FCM)
 
-Firebase Cloud Messaging, cihazınıza özel bir token üretir. Bu token:
+Firebase Cloud Messaging, cihazÄ±nÄ±za Ã¶zel bir token Ã¼retir. Bu token:
 
-- Yalnızca bildirim göndermek için kullanılır
-- Kullanıcının **açık rıza** vermesiyle Supabase'e kaydedilir
+- YalnÄ±zca bildirim gÃ¶ndermek iÃ§in kullanÄ±lÄ±r
+- KullanÄ±cÄ±nÄ±n **aÃ§Ä±k rÄ±za** vermesiyle Supabase'e kaydedilir
 - Logout veya uninstall'da silinir
 
 ---
 
-## 3. Kullanılmayan Mekanizmalar
+## 3. KullanÄ±lmayan Mekanizmalar
 
-Aşağıdakileri **kullanmıyoruz**:
+AÅŸaÄŸÄ±dakileri **kullanmÄ±yoruz**:
 
-- ❌ HTTP çerezleri (cookies)
-- ❌ Web tracking pixel'leri
-- ❌ Üçüncü taraf reklam SDK'ları (Google AdMob, Facebook Audience, AppLovin, vb. — yok)
-- ❌ Üçüncü taraf analitik SDK'ları (Mixpanel, Amplitude, Segment, Adjust, AppsFlyer, vb. — yok)
-- ❌ Cross-app tracking (IDFA, GAID kullanımı yok)
-- ❌ Web view içinde third-party content
+- âŒ HTTP Ã§erezleri (cookies)
+- âŒ Web tracking pixel'leri
+- âŒ ÃœÃ§Ã¼ncÃ¼ taraf reklam SDK'larÄ± (Google AdMob, Facebook Audience, AppLovin, vb. â€” yok)
+- âŒ ÃœÃ§Ã¼ncÃ¼ taraf analitik SDK'larÄ± (Mixpanel, Amplitude, Segment, Adjust, AppsFlyer, vb. â€” yok)
+- âŒ Cross-app tracking (IDFA, GAID kullanÄ±mÄ± yok)
+- âŒ Web view iÃ§inde third-party content
 
 ---
 
-## 4. ePrivacy Direktifi ("Cookie Yasası")
+## 4. ePrivacy Direktifi ("Cookie YasasÄ±")
 
-ePrivacy Direktifi (2002/58/EC) ve Türkiye Elektronik Haberleşme Kanunu Madde 51 kapsamında, "kesinlikle gerekli olmayan" izleme/depolama için **kullanıcı rızası** gerekir.
+ePrivacy Direktifi (2002/58/EC) ve TÃ¼rkiye Elektronik HaberleÅŸme Kanunu Madde 51 kapsamÄ±nda, "kesinlikle gerekli olmayan" izleme/depolama iÃ§in **kullanÄ±cÄ± rÄ±zasÄ±** gerekir.
 
-sandık'ın kullandığı tüm yerel depolama mekanizmaları **hizmetin sağlanması için kesinlikle gereklidir** veya kullanıcının açık tercihiyle (theme, "Beni hatırla", notification) etkinleştirilir. Bu nedenle ek bir "çerez bildirimi banner'ı" gerekmez.
+sandÄ±k'Ä±n kullandÄ±ÄŸÄ± tÃ¼m yerel depolama mekanizmalarÄ± **hizmetin saÄŸlanmasÄ± iÃ§in kesinlikle gereklidir** veya kullanÄ±cÄ±nÄ±n aÃ§Ä±k tercihiyle (theme, "Beni hatÄ±rla", notification) etkinleÅŸtirilir. Bu nedenle ek bir "Ã§erez bildirimi banner'Ä±" gerekmez.
 
 ---
 
 ## 5. Verilerinizi Cihazdan Silme
 
-### 5.1 Uygulama İçinden
-- **Logout:** Profile → Çıkış Yap (oturum tokenı silinir; yerel cache temizlenir)
-- **Hesap silme:** Profile → Ayarlar → Hesabımı Sil (tüm yerel + sunucu verisi silinir)
+### 5.1 Uygulama Ä°Ã§inden
+- **Logout:** Profile â†’ Ã‡Ä±kÄ±ÅŸ Yap (oturum tokenÄ± silinir; yerel cache temizlenir)
+- **Hesap silme:** Profile â†’ Ayarlar â†’ HesabÄ±mÄ± Sil (tÃ¼m yerel + sunucu verisi silinir)
 
-### 5.2 İşletim Sistemi Üzerinden
-- **Android:** Ayarlar → Uygulamalar → sandık → Depolama → Verileri Temizle
-- **iOS:** Ayarlar → Genel → iPhone Depolama → sandık → Uygulamayı Sil
+### 5.2 Ä°ÅŸletim Sistemi Ãœzerinden
+- **Android:** Ayarlar â†’ Uygulamalar â†’ sandÄ±k â†’ Depolama â†’ Verileri Temizle
+- **iOS:** Ayarlar â†’ Genel â†’ iPhone Depolama â†’ sandÄ±k â†’ UygulamayÄ± Sil
 
-Uninstall, cihaz üzerindeki **tüm yerel depolamayı siler**. Ancak Supabase'deki sunucu verisi durur — onu silmek için ayrıca hesap silme akışını kullanın.
-
----
-
-## 6. Değişiklikler
-
-Bu politikada değişiklik yapılırsa "Sürüm" numarası artırılır ve uygulama içi bildirim gösterilir.
+Uninstall, cihaz Ã¼zerindeki **tÃ¼m yerel depolamayÄ± siler**. Ancak Supabase'deki sunucu verisi durur â€” onu silmek iÃ§in ayrÄ±ca hesap silme akÄ±ÅŸÄ±nÄ± kullanÄ±n.
 
 ---
 
-## 7. İletişim
+## 6. DeÄŸiÅŸiklikler
 
-Yerel depolamayla ilgili sorular için: `[İLETİŞİM E-POSTA]`
+Bu politikada deÄŸiÅŸiklik yapÄ±lÄ±rsa "SÃ¼rÃ¼m" numarasÄ± artÄ±rÄ±lÄ±r ve uygulama iÃ§i bildirim gÃ¶sterilir.
+
+---
+
+## 7. Ä°letiÅŸim
+
+Yerel depolamayla ilgili sorular iÃ§in: `[Ä°LETÄ°ÅÄ°M E-POSTA]`
+

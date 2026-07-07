@@ -49,10 +49,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
 
   // TODO: Production'da gerçek URL'ler.
-  static const _privacyUrl = 'https://sandik.app/privacy';
-  static const _termsUrl = 'https://sandik.app/terms';
-  static const _kvkkUrl = 'https://sandik.app/legal/kvkk';
-  static const _consentUrl = 'https://sandik.app/legal/acik-riza';
+  static const _privacyUrl = 'https://yasincirali.github.io/sandikapp/privacy.html';
+  static const _termsUrl = 'https://yasincirali.github.io/sandikapp/terms.html';
+  static const _kvkkUrl = 'https://yasincirali.github.io/sandikapp/privacy.html';
+  static const _consentUrl = 'https://yasincirali.github.io/sandikapp/privacy.html';
 
   bool get _canSubmit =>
       _nameCtrl.text.trim().isNotEmpty &&

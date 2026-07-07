@@ -30,7 +30,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _deleting = false;
   bool _exporting = false;
 
-  static const _supportEmail = 'destek@sandik.app';
+  static const _supportEmail = 'sandikapp.destek@gmail.com';
 
   Future<void> _confirmDeleteAccount() async {
     // 1. Kademe — uyarı
