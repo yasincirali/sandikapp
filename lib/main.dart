@@ -18,6 +18,7 @@ import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/db_logger.dart';
 import 'services/disclaimer_service.dart';
+import 'services/fx_rate_migration_service.dart';
 import 'services/notification_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
@@ -461,6 +462,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           if (!mounted) return;
           setState(() => _onboardingDone = done);
         });
+        // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
+        FxRateMigrationService.instance.runFor(user.id);
       }
 
       _syncInviteDelivery(user?.id);

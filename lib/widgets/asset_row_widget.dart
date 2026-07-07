@@ -73,43 +73,36 @@ class AssetRowWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // İsim + ticker
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          asset.name,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface,
-                            letterSpacing: -0.2,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  if (ticker != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: asset.type.color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        ticker,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                          color: asset.type.color,
                         ),
                       ),
-                      if (ticker != null) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: asset.type.color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            ticker,
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
-                              color: asset.type.color,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
+                    const SizedBox(height: 3),
+                  ],
+                  Text(
+                    asset.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                      letterSpacing: -0.2,
+                      height: 1.25,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 3),
                   // Alt bilgi: kategori • anlık fiyat
@@ -174,7 +167,7 @@ class AssetRowWidget extends StatelessWidget {
                       ),
                       const SizedBox(width: 1),
                       Text(
-                        '%${asset.gainLossPercentage.toStringAsFixed(2)}',
+                        '%${asset.gainLossPercentage.toStringAsFixed(3)}',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,

@@ -8,6 +8,7 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
+import '../widgets/h_scroll_with_fade.dart';
 import 'performance_screen.dart';
 
 class AllTransactionsScreen extends ConsumerStatefulWidget {
@@ -119,8 +120,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           // ── Asset type filter chips ────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+            child: HScrollWithFade(
               child: Row(
                 children: [
                   _typeChip(null, 'Tümü'),
@@ -190,7 +190,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
   Widget _buildTile(Asset asset, NumberFormat tryFmt) {
     final totalTRY = _toTRY(asset.totalValue, asset.currency);
-    final isPos = asset.gainLoss >= 0;
+    final hasPnl = asset.purchasePrice > 0 && asset.currentPrice > 0;
+    final gainLossTRY = hasPnl ? totalTRY - asset.totalCostTRY : 0.0;
+    final isPos = gainLossTRY >= 0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -232,32 +234,27 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        if (asset.showTicker) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: asset.type.color.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(asset.displayTicker!,
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 11, fontWeight: FontWeight.w800, color: asset.type.color)),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        Flexible(
-                          child: Text(asset.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white)),
+                    if (asset.showTicker) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: asset.type.color.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(5),
                         ),
-                      ],
-                    ),
+                        child: Text(asset.displayTicker!,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 10, fontWeight: FontWeight.w800, color: asset.type.color)),
+                      ),
+                      const SizedBox(height: 3),
+                    ],
+                    Text(asset.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.25,
+                            color: Colors.white)),
                     const SizedBox(height: 3),
                     Row(
                       children: [
@@ -294,14 +291,16 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: Colors.white)),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${isPos ? '+' : ''}₺${NumberFormat('#,###').format(asset.gainLoss.abs().toInt())}',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isPos ? Sandik.gain : Sandik.loss),
-                  ),
+                  if (hasPnl) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      '${isPos ? '+' : ''}₺${NumberFormat('#,###').format(gainLossTRY.abs().toInt())}',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isPos ? Sandik.gain : Sandik.loss),
+                    ),
+                  ],
                 ],
               ),
             ],

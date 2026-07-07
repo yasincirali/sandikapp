@@ -92,7 +92,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        '%${state.gainLossPercentage.toStringAsFixed(2)}',
+                        '%${state.gainLossPercentage.toStringAsFixed(3)}',
                         style: GoogleFonts.dmSans(
                           fontSize: subFontSize,
                           fontWeight: FontWeight.w500,

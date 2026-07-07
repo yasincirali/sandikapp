@@ -15,6 +15,7 @@ import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../services/history_service.dart';
 import '../widgets/disclaimer_widget.dart';
+import '../widgets/h_scroll_with_fade.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   final String? initialView;
@@ -138,7 +139,7 @@ class _PortfolioPerformanceScreenState
           children: [
             // ── Header ──────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
               child: Row(
                 children: [
                   Expanded(
@@ -214,8 +215,7 @@ class _PortfolioPerformanceScreenState
                               const SizedBox(height: 12),
                             ],
                             // Asset type filter chips
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
+                            HScrollWithFade(
                               child: Row(
                                 children: [
                                   _typeChip(null, 'Tümü'),

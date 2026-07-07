@@ -354,6 +354,49 @@ class PriceService {
     }
   }
 
+  // ── Historical FX rate for a specific date ────────────────────────────────
+
+  /// Verilen tarih için günlük kapanış FX kurunu döndürür.
+  /// Bulunamazsa null döner — çağıran 1.0 fallback kullanır.
+  Future<double?> fetchHistoricalFxRate(String fxSymbol, DateTime date) async {
+    // Yahoo Finance UNIX timestamp: gün başı ve gün sonu (UTC)
+    final dayStart = DateTime.utc(date.year, date.month, date.day);
+    final dayEnd = dayStart.add(const Duration(days: 3)); // hafta sonu toleransı
+    final p1 = (dayStart.millisecondsSinceEpoch / 1000).round();
+    final p2 = (dayEnd.millisecondsSinceEpoch / 1000).round();
+
+    try {
+      final uri = Uri.https(
+        'query1.finance.yahoo.com',
+        '/v8/finance/chart/$fxSymbol',
+        {'interval': '1d', 'period1': '$p1', 'period2': '$p2'},
+      );
+      final res = await _client
+          .get(uri, headers: {'User-Agent': _ua, 'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode != 200) return null;
+
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final result = (body['chart']?['result'] as List?)?.firstOrNull
+          as Map<String, dynamic>?;
+      if (result == null) return null;
+
+      final closes = ((result['indicators']?['quote'] as List?)?.firstOrNull
+              as Map<String, dynamic>?)?['close']
+          ?.cast<dynamic>();
+      if (closes == null || closes.isEmpty) return null;
+
+      // İlk geçerli kapanış fiyatını al
+      for (final c in closes) {
+        final v = (c as num?)?.toDouble();
+        if (v != null && v > 0) return v;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ── Historical data for charts ─────────────────────────────────────────────
 
   Future<List<(int, double)>> fetchHistory(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
@@ -8,10 +9,22 @@ import '../models/asset_categories.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
+import '../theme/sandik.dart';
+import '../widgets/h_scroll_with_fade.dart';
 
 // ─── Döviz sabitleri ───────────────────────────────────────────────────────────
 
 typedef _DovizOpt = ({String label, String ticker, String name, String symbol});
+
+// ─── Hızlı giriş veri modeli ──────────────────────────────────────────────────
+
+typedef _ParsedEntry = ({
+  AssetType type,
+  String? subCategory,
+  double qty,
+  double price,
+  String raw,
+});
 
 const _dovizOptions = <_DovizOpt>[
   (label: 'USD', ticker: 'USDTRY=X', name: 'ABD Doları', symbol: '\$'),
@@ -358,8 +371,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   // ── Varlık türü seçici ─────────────────────────────────────────────────────
 
   Widget _typeSelector(ColorScheme cs) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return HScrollWithFade(
+      fadeColor: cs.surface,
       child: Row(
         children: AssetType.values.map((t) {
           final selected = _type == t;
@@ -573,8 +586,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   Widget _quantityPresetsRow(ColorScheme cs) {
     final presets = _quantityPresets;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return HScrollWithFade(
+      fadeColor: cs.surface,
       child: Row(
         children: presets.map((v) {
           final selected = _quantity.text == v;
@@ -929,90 +942,25 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  // ── Sesli / Hızlı giriş ────────────────────────────────────────────────────
+  // ── Hızlı / Toplu Giriş ───────────────────────────────────────────────────
   //
-  // Cihazın kendi klavye mikrofonunu kullanmaya izin veriyoruz — böylece ek
-  // izin ve paket gerekmez. Kullanıcı doğal Türkçe cümle söyler ya da yazar,
-  // aşağıdaki basit parser miktar + fiyatı yakalar ve formu doldurur.
+  // Her satır bir varlık. Fiyat opsiyonel — girilmezse güncel fiyat çekilir.
+  // Her satır parse edilir, önizleme gösterilir, onaylanınca toplu kaydedilir.
   //
-  // Örnek girdiler:
-  //   "100 dolar 32 liradan"          → qty=100, price=32, doviz USD
-  //   "10 gram altın 4500 liradan"    → qty=10, price=4500, altın gr
+  // Desteklenen formatlar:
+  //   "100 dolar"                     → 100 USD (fiyatsız)
+  //   "100 dolar 32 liradan"          → qty=100, price=32, USD
+  //   "10 gram altın 4500 liradan"    → qty=10, price=4500
   //   "GARAN 500 adet 105 lira"       → ticker=GARAN, qty=500, price=105
-  //
-  // Amaç: taze bir MVP. Gelişmiş NLP ileride eklenebilir.
-  void _showQuickEntrySheet() {
-    final ctrl = TextEditingController();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) {
-        final cs = Theme.of(ctx).colorScheme;
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.mic_none_rounded, color: cs.primary),
-                  const SizedBox(width: 10),
-                  Text('Sesli / Hızlı Giriş',
-                      style: Theme.of(ctx).textTheme.titleMedium),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Cümlenizi yazın veya klavye mikrofonuyla söyleyin. '
-                'Örn: "100 dolar 32 liradan" ya da "10 gram altın 4500 lira".',
-                style:
-                    TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: ctrl,
-                autofocus: true,
-                maxLines: 2,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'Örn: 100 dolar 32 liradan',
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    _applyQuickEntry(ctrl.text);
-                    Navigator.pop(ctx);
-                  },
-                  icon: const Icon(Icons.check_rounded),
-                  label: const Text('Formu doldur'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  //   "10 gram altın"                 → qty=10, fiyat otomatik
 
-  void _applyQuickEntry(String raw) {
+  _ParsedEntry? _parseLine(String raw) {
     final text = raw.toLowerCase().trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty) return null;
 
-    // Anahtar kelimelerden varlık türü tespiti
-    AssetType? detectedType;
+    AssetType detectedType = AssetType.hisse;
     String? detectedSub;
+
     if (RegExp(r'dolar|usd').hasMatch(text)) {
       detectedType = AssetType.doviz;
       detectedSub = 'USD';
@@ -1030,47 +978,124 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       detectedType = AssetType.hisse;
     }
 
-    // Sayıları çek — "1.234,56" veya "1234.56" formatlarını normalize et
     final normalized = text.replaceAll(RegExp(r'(?<=\d)\.(?=\d{3})'), '');
     final numMatches = RegExp(r'(\d+([.,]\d+)?)').allMatches(normalized).toList();
-    double? qty;
-    double? price;
+    double qty = 0;
+    double price = 0;
 
     if (numMatches.isNotEmpty) {
-      qty = double.tryParse(numMatches.first.group(1)!.replaceAll(',', '.'));
+      qty = double.tryParse(numMatches.first.group(1)!.replaceAll(',', '.')) ?? 0;
     }
-    // Fiyat ipucu: "lira", "tl", "₺" kelimesinden hemen önceki sayı
     final priceHint = RegExp(r'(\d+([.,]\d+)?)\s*(lira|tl|₺)').firstMatch(normalized);
     if (priceHint != null) {
-      price = double.tryParse(priceHint.group(1)!.replaceAll(',', '.'));
+      price = double.tryParse(priceHint.group(1)!.replaceAll(',', '.')) ?? 0;
     } else if (numMatches.length >= 2) {
-      price = double.tryParse(numMatches[1].group(1)!.replaceAll(',', '.'));
+      price = double.tryParse(numMatches[1].group(1)!.replaceAll(',', '.')) ?? 0;
     }
 
+    if (qty <= 0) return null;
+    return (type: detectedType, subCategory: detectedSub, qty: qty, price: price, raw: raw.trim());
+  }
+
+  void _showQuickEntrySheet() {
+    final ctrl = TextEditingController();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Sandik.surface1,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => _QuickEntrySheet(
+        ctrl: ctrl,
+        parseLine: _parseLine,
+        onConfirmSingle: (entry) {
+          Navigator.pop(ctx);
+          _applyParsedEntry(entry);
+        },
+        onSaveBatch: (entries) async {
+          Navigator.pop(ctx);
+          await _saveBatch(entries);
+        },
+      ),
+    );
+  }
+
+  void _applyParsedEntry(_ParsedEntry entry) {
     setState(() {
-      if (detectedType != null) {
-        _type = detectedType!;
-        _currency = _type.defaultCurrency;
-        if (detectedSub != null) {
-          _subCategory = detectedSub;
-          if (_type == AssetType.doviz) {
-            final opt = _dovizOptions.firstWhere(
-              (o) => o.label == detectedSub,
-              orElse: () => _dovizOptions.first,
-            );
-            _ticker.text = opt.ticker;
-            _name.text = opt.name;
-            _currency = 'TRY';
-          }
+      _type = entry.type;
+      _currency = _type.defaultCurrency;
+      if (entry.subCategory != null) {
+        _subCategory = entry.subCategory;
+        if (_type == AssetType.doviz) {
+          final opt = _dovizOptions.firstWhere(
+            (o) => o.label == entry.subCategory,
+            orElse: () => _dovizOptions.first,
+          );
+          _ticker.text = opt.ticker;
+          _name.text = opt.name;
+          _currency = 'TRY';
         }
       }
-      if (qty != null && qty! > 0) {
-        _quantity.text = _fmt(qty!);
-      }
-      if (price != null && price! > 0) {
-        _price.text = _fmt(price!);
-      }
+      _quantity.text = _fmt(entry.qty);
+      if (entry.price > 0) _price.text = _fmt(entry.price);
     });
+  }
+
+  Future<void> _saveBatch(List<_ParsedEntry> entries) async {
+    if (entries.isEmpty) return;
+    if (entries.length == 1) {
+      _applyParsedEntry(entries.first);
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      for (final entry in entries) {
+        String ticker = '';
+        String assetName = '';
+        String currency = entry.type.defaultCurrency;
+
+        if (entry.type == AssetType.doviz && entry.subCategory != null) {
+          final opt = _dovizOptions.firstWhere(
+            (o) => o.label == entry.subCategory,
+            orElse: () => _dovizOptions.first,
+          );
+          ticker = opt.ticker;
+          assetName = opt.name;
+          currency = 'TRY';
+        } else if (entry.type == AssetType.altin) {
+          assetName = entry.subCategory ?? 'Altın';
+        }
+
+        double price = entry.price;
+        if (price == 0 && ticker.isNotEmpty) {
+          try {
+            final quotes = await PriceService.instance.fetchQuotes([ticker]);
+            final q = quotes[ticker.toUpperCase()];
+            if (q?.regularMarketPrice != null && q!.regularMarketPrice! > 0) {
+              price = q.regularMarketPrice!;
+            }
+          } catch (_) {}
+        }
+
+        if (assetName.isEmpty) assetName = entry.subCategory ?? entry.type.label;
+
+        await ref.read(portfolioProvider.notifier).addAsset(
+              name: assetName,
+              ticker: ticker,
+              type: entry.type,
+              quantity: entry.qty,
+              purchasePrice: price,
+              currency: currency,
+              notes: '',
+              isManualPrice: price > 0 && ticker.isEmpty,
+              subCategory: entry.subCategory,
+              unitType: entry.type == AssetType.altin ? 'gram' : 'piece',
+            );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+    if (mounted) Navigator.pop(context);
   }
 
   // ── Save ───────────────────────────────────────────────────────────────────
@@ -1188,6 +1213,157 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       if (mounted) setState(() => _saving = false);
     }
     if (mounted) Navigator.pop(context);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hızlı / Toplu Giriş Sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _QuickEntrySheet extends StatefulWidget {
+  final TextEditingController ctrl;
+  final _ParsedEntry? Function(String) parseLine;
+  final void Function(_ParsedEntry) onConfirmSingle;
+  final Future<void> Function(List<_ParsedEntry>) onSaveBatch;
+
+  const _QuickEntrySheet({
+    required this.ctrl,
+    required this.parseLine,
+    required this.onConfirmSingle,
+    required this.onSaveBatch,
+  });
+
+  @override
+  State<_QuickEntrySheet> createState() => _QuickEntrySheetState();
+}
+
+class _QuickEntrySheetState extends State<_QuickEntrySheet> {
+  List<_ParsedEntry> _previews = [];
+  bool _saving = false;
+
+  void _updatePreviews(String text) {
+    final lines = text.split('\n').where((l) => l.trim().isNotEmpty);
+    setState(() {
+      _previews = lines
+          .map(widget.parseLine)
+          .whereType<_ParsedEntry>()
+          .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMulti = _previews.length > 1;
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20, right: 20, top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bolt_rounded, color: Sandik.amber, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                'Hızlı Giriş',
+                style: GoogleFonts.dmSans(
+                  fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Her satıra bir varlık yazın. Fiyat opsiyonel — boş bırakırsanız güncel fiyat otomatik çekilir.\n'
+            'Örn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet',
+            style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58, height: 1.5),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: widget.ctrl,
+            autofocus: true,
+            maxLines: 5,
+            minLines: 2,
+            textCapitalization: TextCapitalization.sentences,
+            style: GoogleFonts.dmSans(fontSize: 14, color: Colors.white),
+            decoration: InputDecoration(
+              hintText: '100 dolar\n10 gram altın 4500 lira\nGARAN 500 adet 105 lira',
+              hintStyle: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36),
+              filled: true,
+              fillColor: Colors.white.withValues(alpha: 0.05),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Sandik.amber.withValues(alpha: 0.6)),
+              ),
+            ),
+            onChanged: _updatePreviews,
+          ),
+          if (_previews.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...(_previews.map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6, height: 6,
+                    decoration: BoxDecoration(
+                      color: e.type.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${e.type.label}  ·  ${e.qty % 1 == 0 ? e.qty.toInt() : e.qty}'
+                      '${e.subCategory != null ? '  ${e.subCategory}' : ''}'
+                      '${e.price > 0 ? '  @ ${e.price % 1 == 0 ? e.price.toInt() : e.price} ₺' : '  (fiyat otomatik)'}',
+                      style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58),
+                    ),
+                  ),
+                ],
+              ),
+            ))),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: _saving
+                ? const Center(child: CircularProgressIndicator(color: Sandik.amber, strokeWidth: 2))
+                : isMulti
+                    ? FilledButton.icon(
+                        onPressed: () async {
+                          setState(() => _saving = true);
+                          await widget.onSaveBatch(_previews);
+                        },
+                        style: FilledButton.styleFrom(backgroundColor: Sandik.amber, foregroundColor: Sandik.dark),
+                        icon: const Icon(Icons.playlist_add_check_rounded),
+                        label: Text('${_previews.length} varlığı kaydet',
+                            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+                      )
+                    : FilledButton.icon(
+                        onPressed: _previews.isEmpty
+                            ? null
+                            : () => widget.onConfirmSingle(_previews.first),
+                        style: FilledButton.styleFrom(backgroundColor: Sandik.amber, foregroundColor: Sandik.dark),
+                        icon: const Icon(Icons.check_rounded),
+                        label: Text('Formu doldur',
+                            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+                      ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

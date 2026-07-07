@@ -32,10 +32,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     final valueTRY = s != null
         ? s.toTRY(asset.totalValue, asset.currency)
         : asset.totalValue;
-    final costTRY =
-        s != null ? s.toTRY(asset.totalCost, asset.currency) : asset.totalCost;
-    final isPriceKnown = asset.purchasePrice > 0;
-    final isPositive = isPriceKnown ? asset.gainLoss >= 0 : false;
+    final costTRY = asset.totalCostTRY;
+    final isPriceKnown = asset.purchasePrice > 0 && asset.currentPrice > 0;
+    final gainLossTRY = valueTRY - costTRY;
+    final isPositive = isPriceKnown ? gainLossTRY >= 0 : false;
     final cs = Theme.of(context).colorScheme;
     const green = Color(0xFF10B981);
     const red = Color(0xFFEF4444);
@@ -225,7 +225,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '${isPositive ? '+' : ''}${tryFmt.format(s != null ? s.toTRY(asset.gainLoss, asset.currency) : asset.gainLoss)}',
+                          '${isPositive ? '+' : ''}${tryFmt.format(gainLossTRY)}',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -241,7 +241,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '${isPositive ? '+' : ''}%${asset.gainLossPercentage.toStringAsFixed(2)}',
+                            '${isPositive ? '+' : ''}%${asset.gainLossPercentage.toStringAsFixed(3)}',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,

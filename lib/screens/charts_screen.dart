@@ -11,7 +11,10 @@ import 'package:flutter/material.dart'
         AlertDialog,
         TextButton,
         FilledButton,
-        showDialog;
+        ListTile,
+        Divider,
+        showDialog,
+        showModalBottomSheet;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -28,6 +31,15 @@ import '../widgets/quick_adjust_dialog.dart';
 import 'performance_screen.dart';
 import 'portfolio_performance_screen.dart';
 
+enum _SortOrder {
+  valueDesc,
+  valueAsc,
+  gainDesc,
+  gainAsc,
+  gainPctDesc,
+  gainPctAsc,
+}
+
 class ChartsScreen extends ConsumerStatefulWidget {
   const ChartsScreen({super.key});
 
@@ -36,8 +48,42 @@ class ChartsScreen extends ConsumerStatefulWidget {
 }
 
 class _ChartsScreenState extends ConsumerState<ChartsScreen> {
-  String? _view = ''; // null = Birlikte, '' = Ben, uuid = ortak
-  AssetType? _filteredType; // pie'dan seçilen kategori filtresi
+  String? _view = '';
+  AssetType? _filteredType;
+  _SortOrder _sortOrder = _SortOrder.valueDesc;
+
+  List<Asset> _applySortOrder(List<Asset> list, PortfolioState pState) {
+    switch (_sortOrder) {
+      case _SortOrder.valueDesc:
+        return list..sort((a, b) => pState.toTRY(b.totalValue, b.currency).compareTo(pState.toTRY(a.totalValue, a.currency)));
+      case _SortOrder.valueAsc:
+        return list..sort((a, b) => pState.toTRY(a.totalValue, a.currency).compareTo(pState.toTRY(b.totalValue, b.currency)));
+      case _SortOrder.gainDesc:
+        return list..sort((a, b) {
+          final ga = (a.purchasePrice > 0 && a.currentPrice > 0) ? pState.toTRY(a.totalValue, a.currency) - a.totalCostTRY : double.negativeInfinity;
+          final gb = (b.purchasePrice > 0 && b.currentPrice > 0) ? pState.toTRY(b.totalValue, b.currency) - b.totalCostTRY : double.negativeInfinity;
+          return gb.compareTo(ga);
+        });
+      case _SortOrder.gainAsc:
+        return list..sort((a, b) {
+          final ga = (a.purchasePrice > 0 && a.currentPrice > 0) ? pState.toTRY(a.totalValue, a.currency) - a.totalCostTRY : double.infinity;
+          final gb = (b.purchasePrice > 0 && b.currentPrice > 0) ? pState.toTRY(b.totalValue, b.currency) - b.totalCostTRY : double.infinity;
+          return ga.compareTo(gb);
+        });
+      case _SortOrder.gainPctDesc:
+        return list..sort((a, b) {
+          final pa = (a.purchasePrice > 0 && a.currentPrice > 0) ? a.gainLossPercentage : double.negativeInfinity;
+          final pb = (b.purchasePrice > 0 && b.currentPrice > 0) ? b.gainLossPercentage : double.negativeInfinity;
+          return pb.compareTo(pa);
+        });
+      case _SortOrder.gainPctAsc:
+        return list..sort((a, b) {
+          final pa = (a.purchasePrice > 0 && a.currentPrice > 0) ? a.gainLossPercentage : double.infinity;
+          final pb = (b.purchasePrice > 0 && b.currentPrice > 0) ? b.gainLossPercentage : double.infinity;
+          return pa.compareTo(pb);
+        });
+    }
+  }
 
   void _confirmDelete(BuildContext ctx, WidgetRef ref, Asset asset) {
     showDialog<void>(
@@ -94,19 +140,9 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           children: [
             // ── Header ────────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
               child: Row(
                 children: [
-                  CupertinoButton(
-                    minimumSize: Size.zero,
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.pop(context),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(Icons.arrow_back_ios_new_rounded,
-                          size: 20, color: Colors.white),
-                    ),
-                  ),
                   Expanded(
                     child: Text(
                       'Portföy',
@@ -117,6 +153,11 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       ),
                     ),
                   ),
+                  _SortButton(
+                    current: _sortOrder,
+                    onChanged: (o) => setState(() => _sortOrder = o),
+                  ),
+                  const SizedBox(width: 8),
                   CupertinoButton(
                     minimumSize: Size.zero,
                     padding: EdgeInsets.zero,
@@ -126,17 +167,23 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                           builder: (_) =>
                               PortfolioPerformanceScreen(initialView: _view)),
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(Icons.show_chart_rounded,
-                          color: Sandik.amber, size: 24),
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.show_chart_rounded, color: Sandik.amber, size: 22),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 4),
                   SandikLogoutButton(
                     onPressed: () => confirmAndLogout(context, ref),
                   ),
-                  const SizedBox(width: 8),
                 ],
               ),
             ),
@@ -184,9 +231,12 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                             return const _EmptyState();
                           }
 
-                          final filteredAssets = _filteredType != null
-                              ? assets.where((a) => a.type == _filteredType).toList()
-                              : assets;
+                          final filteredAssets = _applySortOrder(
+                            _filteredType != null
+                                ? assets.where((a) => a.type == _filteredType).toList()
+                                : List<Asset>.from(assets),
+                            pState,
+                          );
 
                           return Column(
                             children: [
@@ -541,42 +591,37 @@ class _AssetCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        if (a.showTicker) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: a.type.color.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              a.displayTicker!,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 11, fontWeight: FontWeight.w800, color: a.type.color),
-                            ),
-                          ),
-                          const SizedBox(width: 7),
-                        ],
-                        Flexible(
-                          child: Text(
-                            a.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white),
-                          ),
+                    if (a.showTicker) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: a.type.color.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(5),
                         ),
-                      ],
+                        child: Text(
+                          a.displayTicker!,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 10, fontWeight: FontWeight.w800, color: a.type.color),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                    ],
+                    Text(
+                      a.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          height: 1.25),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       a.unitIsPrefix
                           ? '${a.unitLabel}${a.quantity.toStringAsFixed(a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
                           : '${a.quantity.toStringAsFixed(a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
-                      style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text36),
+                      style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
                     ),
                   ],
                 ),
@@ -591,7 +636,7 @@ class _AssetCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: Colors.white),
                   ),
-                  if (a.purchasePrice > 0 && a.gainLoss != 0) ...[
+                  if (a.purchasePrice > 0 && a.currentPrice > 0 && a.gainLoss != 0) ...[
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -604,7 +649,7 @@ class _AssetCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          '${tryFmt.format(pState.toTRY(a.gainLoss, a.currency).abs())} · %${a.gainLossPercentage.abs().toStringAsFixed(1)}',
+                          '${tryFmt.format((pState.toTRY(a.totalValue, a.currency) - a.totalCostTRY).abs())} · %${a.gainLossPercentage.abs().toStringAsFixed(3)}',
                           style: GoogleFonts.dmSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -669,4 +714,132 @@ class _AssetCard extends StatelessWidget {
       child: card,
     );
   }
+}
+
+// ── Sort Button ───────────────────────────────────────────────────────────────
+
+class _SortButton extends StatelessWidget {
+  final _SortOrder current;
+  final void Function(_SortOrder) onChanged;
+
+  const _SortButton({required this.current, required this.onChanged});
+
+  static const _options = <(_SortOrder, String, String)>[
+    (_SortOrder.valueDesc,   'Piyasa Değeri',     'Büyükten Küçüğe'),
+    (_SortOrder.valueAsc,    'Piyasa Değeri',     'Küçükten Büyüğe'),
+    (_SortOrder.gainDesc,    'Kazanç (TL)',        'En Yüksek Önce'),
+    (_SortOrder.gainAsc,     'Kazanç (TL)',        'En Düşük Önce'),
+    (_SortOrder.gainPctDesc, 'Kazanç (%)',         'En Yüksek Önce'),
+    (_SortOrder.gainPctAsc,  'Kazanç (%)',         'En Düşük Önce'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoButton(
+      minimumSize: Size.zero,
+      padding: EdgeInsets.zero,
+      onPressed: () => showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Sandik.surface1,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => _SortSheet(current: current, onChanged: (o) {
+          onChanged(o);
+          Navigator.pop(context);
+        }),
+      ),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: current != _SortOrder.valueDesc
+              ? Sandik.amber.withValues(alpha: 0.15)
+              : Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: current != _SortOrder.valueDesc
+                ? Sandik.amber.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.12),
+          ),
+        ),
+        child: Icon(
+          Icons.sort_rounded,
+          size: 20,
+          color: current != _SortOrder.valueDesc ? Sandik.amber : Sandik.text58,
+        ),
+      ),
+    );
+  }
+}
+
+class _SortSheet extends StatelessWidget {
+  final _SortOrder current;
+  final void Function(_SortOrder) onChanged;
+
+  const _SortSheet({required this.current, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+            child: Text(
+              'SIRALAMA KRİTERİ',
+              style: GoogleFonts.dmSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+                color: Sandik.text36,
+              ),
+            ),
+          ),
+          const Divider(color: Colors.white12, height: 1),
+          ..._SortButton._options.map((opt) {
+            final (order, group, label) = opt;
+            final selected = current == order;
+            return ListTile(
+              dense: true,
+              leading: Icon(
+                _iconFor(order),
+                size: 18,
+                color: selected ? Sandik.amber : Sandik.text58,
+              ),
+              title: Text(
+                group,
+                style: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Sandik.amber : Colors.white,
+                ),
+              ),
+              subtitle: Text(
+                label,
+                style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
+              ),
+              trailing: selected
+                  ? const Icon(Icons.check_rounded, color: Sandik.amber, size: 18)
+                  : null,
+              tileColor: selected ? Sandik.amber.withValues(alpha: 0.07) : null,
+              onTap: () => onChanged(order),
+            );
+          }),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  IconData _iconFor(_SortOrder o) => switch (o) {
+    _SortOrder.valueDesc  => Icons.arrow_downward_rounded,
+    _SortOrder.valueAsc   => Icons.arrow_upward_rounded,
+    _SortOrder.gainDesc   => Icons.trending_up_rounded,
+    _SortOrder.gainAsc    => Icons.trending_down_rounded,
+    _SortOrder.gainPctDesc => Icons.percent_rounded,
+    _SortOrder.gainPctAsc  => Icons.percent_rounded,
+  };
 }

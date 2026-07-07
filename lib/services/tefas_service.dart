@@ -66,7 +66,12 @@ class TefasService {
     if (!forceRefresh && _cacheValid) return _cachedFunds!;
 
     try {
-      final funds = await _fetchFundList('YAT');
+      // Hem YAT (yatırım) hem EMK (emeklilik) fonlarını çek
+      final results = await Future.wait([
+        _fetchFundList('YAT').catchError((_) => <TefasFund>[]),
+        _fetchFundList('EMK').catchError((_) => <TefasFund>[]),
+      ]);
+      final funds = [...results[0], ...results[1]];
       if (funds.isNotEmpty) {
         _cachedFunds = funds;
         _cacheTime = DateTime.now();
@@ -141,10 +146,15 @@ class TefasService {
       final items = (data['resultList'] as List?) ?? [];
       if (items.isEmpty) return null;
 
-      // Son (en güncel) kaydı al
-      final latest = items.last as Map<String, dynamic>;
-      final raw = latest['fiyat'];
-      return raw != null ? double.tryParse(raw.toString()) : null;
+      // En güncel kaydı al — liste tarih sıralı, son eleman en yeni
+      for (int i = items.length - 1; i >= 0; i--) {
+        final row = items[i] as Map<String, dynamic>;
+        // TEFAS bazı fonlarda 'fiyat', bazılarında 'birimPayDegeri' kullanır
+        final raw = row['fiyat'] ?? row['birimPayDegeri'];
+        final price = raw != null ? double.tryParse(raw.toString()) : null;
+        if (price != null && price > 0) return price;
+      }
+      return null;
     } catch (_) {
       return null;
     }

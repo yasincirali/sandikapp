@@ -190,16 +190,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      CupertinoButton(
-                        minimumSize: Size.zero,
-                        padding: EdgeInsets.zero,
-                        onPressed: _busy ? null : _logout,
-                        child: _ActionIcon(
-                          icon: Icons.logout_rounded,
-                          color: Sandik.loss,
-                          disabled: _busy,
-                          semanticLabel: 'Çıkış yap',
-                        ),
+                      SandikLogoutButton(
+                        onPressed: _logout,
+                        disabled: _busy,
                       ),
                     ],
                   ),
@@ -344,10 +337,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       CupertinoButton(
                         minimumSize: Size.zero,
                         padding: EdgeInsets.zero,
-                        onPressed: () {
+                        onPressed: () async {
                           final shortCode = _generatedCode!.split(':')[0];
-                          Clipboard.setData(ClipboardData(text: shortCode));
-                          Share.share('sandık ortak kodum: $shortCode');
+                          final msg =
+                              'Merhaba! Sandık portföy uygulamasında seninle ortak olmak istiyorum.\n\n'
+                              'Ortak kodun: $shortCode\n\n'
+                              'Uygulamayı aç → Profil → "Ortak Kodu Gir" bölümünden bu kodu gir.';
+                          await Share.share(msg, subject: 'Sandık Ortak Daveti');
                         },
                         child: const Icon(Icons.share_rounded,
                             color: Sandik.amber),
@@ -838,14 +834,14 @@ class _ActionIcon extends StatelessWidget {
       button: true,
       label: semanticLabel,
       child: Container(
-        width: 36,
-        height: 36,
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
           color: iconColor.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: iconColor.withValues(alpha: 0.18)),
         ),
-        child: Center(child: Icon(icon, color: iconColor, size: 18)),
+        child: Center(child: Icon(icon, color: iconColor, size: 20)),
       ),
     );
   }

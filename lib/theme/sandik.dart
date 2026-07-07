@@ -208,15 +208,15 @@ class SandikLogoutButton extends StatelessWidget {
         button: true,
         label: 'Çıkış yap',
         child: Container(
-          width: 36,
-          height: 36,
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: color.withValues(alpha: 0.18)),
           ),
           child: Center(
-            child: Icon(Icons.logout_rounded, color: color, size: 18),
+            child: Icon(Icons.logout_rounded, color: color, size: 20),
           ),
         ),
       ),

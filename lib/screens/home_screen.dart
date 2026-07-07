@@ -17,6 +17,7 @@ import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_error_view.dart';
+import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
 import 'performance_screen.dart';
 
@@ -133,6 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       lastUpdated: myState.lastUpdated,
     );
 
+
     final bool showRightCard = _view != '';
     String rightLabel = '';
     double rightTotal = 0;
@@ -189,65 +191,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             backgroundColor: Sandik.background,
             surfaceTintColor: Colors.transparent,
             elevation: 0,
-            toolbarHeight: 64,
-            titleSpacing: hp,
-            title: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+            toolbarHeight: 66,
+            titleSpacing: 0,
+            title: Padding(
+              padding: EdgeInsets.fromLTRB(hp, 0, hp, 0),
+              child: Row(
+                children: [
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Sandik.amber.withValues(alpha: 0.28), width: 1.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.18),
-                        blurRadius: 20,
-                        spreadRadius: -4,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SandikLogo(size: 20, color: Sandik.amber),
-                      const SizedBox(width: 7),
-                      Text(
-                        'sandık',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Sandik.gold,
-                          letterSpacing: -0.5,
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Sandik.amber.withValues(alpha: 0.28), width: 1.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.18),
+                              blurRadius: 20,
+                              spreadRadius: -4,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SandikLogo(size: 20, color: Sandik.amber),
+                            const SizedBox(width: 7),
+                            Text(
+                              'sandık',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Sandik.gold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  const Spacer(),
+                  _HeaderIconButton(
+                    onTap: _reload,
+                    child: _reloading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Sandik.amber),
+                          )
+                        : const Icon(Icons.refresh_rounded, color: Sandik.text58, size: 22),
+                  ),
+                  const SizedBox(width: 8),
+                  const _BalanceToggleButton(),
+                  const SizedBox(width: 8),
+                  _SignalBadgeButton(onTap: _scrollToSignals),
+                  const SizedBox(width: 8),
+                  SandikLogoutButton(onPressed: () => confirmAndLogout(context, ref)),
+                ],
               ),
             ),
-            actions: [
-              _HeaderIconButton(
-                onTap: _reload,
-                child: _reloading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Sandik.amber),
-                      )
-                    : const Icon(Icons.refresh_rounded, color: Sandik.text58, size: 22),
-              ),
-              const SizedBox(width: 8),
-              const _BalanceToggleButton(),
-              const SizedBox(width: 8),
-              _SignalBadgeButton(onTap: _scrollToSignals),
-              const SizedBox(width: 8),
-              SandikLogoutButton(onPressed: () => confirmAndLogout(context, ref)),
-              SizedBox(width: hp),
-            ],
           ),
           // Offline / price error banner
           if (myState.errorMessage != null)
@@ -338,8 +345,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(hp, 0, hp, 0),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+              child: HScrollWithFade(
                 child: Row(
                   children: [
                     _typeChip(null, 'Tümü'),

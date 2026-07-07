@@ -24,6 +24,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
+    // İlk açılışta fiyatları yükle
+    Future.microtask(() {
+      if (mounted) ref.read(portfolioProvider.notifier).refreshPrices();
+    });
     // UE1: Bildirim iznini onboarding sonrasına ertele — uygulama açılır açılmaz değil
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) NotificationService.instance.requestPermission();
@@ -126,7 +130,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(0, Icons.home_rounded, 'Ana'),
-              _navItem(1, Icons.donut_large_rounded, 'Dağılım'),
+              _navItem(1, Icons.donut_large_rounded, 'Portföy'),
               _buildFab(),
               _navItem(3, Icons.show_chart_rounded, 'Performans'),
               _navItem(4, Icons.person_rounded, 'Profil'),

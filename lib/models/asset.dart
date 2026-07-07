@@ -16,6 +16,7 @@ class Asset {
   final DateTime addedDate;
   String notes;
   bool isManualPrice;
+  double purchaseFxRate;
 
   Asset({
     required this.id,
@@ -29,6 +30,7 @@ class Asset {
     required this.notes,
     this.subCategory,
     this.unitType = 'piece',
+    this.purchaseFxRate = 1.0,
     double? currentPrice,
     this.lastUpdated,
     DateTime? addedDate,
@@ -39,6 +41,8 @@ class Asset {
 
   double get totalCost => quantity * purchasePrice;
   double get totalValue => quantity * currentPrice;
+  /// Maliyet TRY cinsinden — alım anındaki kur sabit tutulur (bankacılık standardı).
+  double get totalCostTRY => quantity * purchasePrice * purchaseFxRate;
   double get gainLoss => totalValue - totalCost;
   double get gainLossPercentage =>
       totalCost > 0 ? (gainLoss / totalCost) * 100 : 0;
@@ -152,6 +156,7 @@ class Asset {
         'added_date': addedDate.toUtc().toIso8601String(),
         'notes': notes,
         'is_manual_price': isManualPrice,
+        'purchase_fx_rate': purchaseFxRate,
       };
 
   factory Asset.fromSupabase(Map<String, dynamic> m) => Asset(
@@ -174,5 +179,6 @@ class Asset {
             : DateTime.now(),
         notes: (m['notes'] as String?) ?? '',
         isManualPrice: m['is_manual_price'] as bool? ?? false,
+        purchaseFxRate: (m['purchase_fx_rate'] as num?)?.toDouble() ?? 1.0,
       );
 }

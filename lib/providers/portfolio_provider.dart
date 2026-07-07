@@ -68,15 +68,15 @@ class PortfolioState {
   double get totalValue =>
       assets.fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
 
-  /// Yalnızca alım fiyatı girilmiş (purchasePrice > 0) varlıkların maliyeti.
-  /// Fiyat girilmemiş varlıklar gainLoss hesabını bozmaz.
+  /// Hem alım fiyatı hem güncel fiyatı bilinen varlıkların TRY maliyeti.
+  /// currentPrice=0 olan varlıklar henüz fiyat çekilememiş demektir — dahil etme.
   double get totalCost => assets
-      .where((a) => a.purchasePrice > 0)
-      .fold(0, (s, a) => s + toTRY(a.totalCost, a.currency));
+      .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
+      .fold(0, (s, a) => s + a.totalCostTRY);
 
-  /// Alım fiyatı girilmiş varlıkların güncel değeri (gainLoss denkleminin sol tarafı).
+  /// Aynı filtre: güncel değer hesabı da sadece fiyatı bilinen varlıkları kapsar.
   double get _trackedValue => assets
-      .where((a) => a.purchasePrice > 0)
+      .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
       .fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
 
   double get gainLoss => _trackedValue - totalCost;
@@ -101,6 +101,15 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   // ---- CRUD ----------------------------------------------------------------
 
+  double _fxRateForCurrency(String currency, PortfolioState s) {
+    switch (currency.toUpperCase()) {
+      case 'USD': return s.usdTry > 1.0 ? s.usdTry : 1.0;
+      case 'EUR': return s.eurTry > 1.0 ? s.eurTry : 1.0;
+      case 'GBP': return s.gbpTry > 1.0 ? s.gbpTry : 1.0;
+      default: return 1.0;
+    }
+  }
+
   Future<void> addAsset({
     required String name,
     required String ticker,
@@ -116,8 +125,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
-    // currentPrice henüz 0 ama ticker varsa refreshPrices'tan önce gelmiş olabilir.
-    // purchasePrice boş bırakıldıysa asset'in o anki currentPrice'ını kullan.
+    final currentState = state.valueOrNull ?? const PortfolioState();
+    final fxRate = _fxRateForCurrency(currency, currentState);
+
     final asset = Asset(
       id: _uuid.v4(),
       userId: user.id,
@@ -131,6 +141,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       isManualPrice: isManualPrice,
       subCategory: subCategory,
       unitType: unitType,
+      purchaseFxRate: fxRate,
     );
     // Alım fiyatı girilmemişse ve güncel fiyat biliniyorsa, onu alım fiyatı yap.
     if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
@@ -221,6 +232,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           if (price != null) {
             asset.currentPrice = price;
             asset.lastUpdated = DateTime.now();
+            // Alım fiyatı girilmemişse güncel fiyatı maliyet olarak kilitle
+            if (asset.purchasePrice == 0) {
+              asset.purchasePrice = price;
+            }
             SupabaseService.instance.updateAsset(asset);
           }
         }
