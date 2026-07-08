@@ -1,4 +1,4 @@
-# Play Store Listing Materyalleri
+# Store Listing Materyalleri (Play Store + App Store)
 
 ## Dosya Yapısı
 
@@ -18,7 +18,31 @@ store_listing/
       phone/
   feature_graphic.png      ← 1024x500px, zorunlu
   icon.png                 ← 512x512px, 32-bit PNG, zorunlu
+  app_store/                       ← App Store Connect metadata (iOS)
+    tr-TR/
+      promotional_text.txt (max 170 karakter, review olmadan güncellenebilir)
+      description.txt      (max 4000 karakter)
+      keywords.txt          (max 100 karakter, virgülle ayrılmış)
+    en-US/
+      (aynı yapı)
+    support_url.txt         (app geneli, zorunlu)
+    marketing_url.txt       (app geneli, opsiyonel)
+    copyright.txt           (app geneli, örn. "© 2026 Yasin Cirali")
 ```
+
+## App Store Connect'e Girilecekler
+
+`store_listing/app_store/` altındaki dosyaların içeriğini App Store Connect →
+App Bilgileri / Sürüm sayfasındaki ilgili alanlara olduğu gibi yapıştır:
+
+- **Promotional Text / Keywords / Description:** dile göre `tr-TR/` veya
+  `en-US/` klasöründen, App Store Connect'te o dilin lokalizasyon sekmesine.
+- **Support URL, Marketing URL, Copyright:** app geneli (lokalize değil),
+  kök `app_store/` klasöründen.
+- Support URL şu an `legal_doc_screen.dart` ve `register_screen.dart`
+  içinde kullanılan aynı GitHub Pages sitesini (`yasincirali.github.io/sandikapp`)
+  gösteriyor; destek e-postası (`sandikapp.destek@gmail.com`) o sayfada yer
+  almıyorsa siteye bir iletişim/destek bölümü eklenmesi önerilir.
 
 ## Yapılacaklar
 
