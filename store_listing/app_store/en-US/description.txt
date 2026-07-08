@@ -1,26 +1,30 @@
-sandık is a personal portfolio tracking app that lets you manage all your investments in one place.
+sandık is a personal portfolio tracking app that lets you manage stocks, TEFAS mutual funds, forex, gold and commodities in one place.
 
 KEY FEATURES
 
-• Add stocks, mutual funds, forex and gold assets
+• Track BIST stocks, TEFAS funds (1000+ funds with live return data), forex (USD/EUR/GBP) and gold (gram, quarter, half, Ata, Reşat, Republic coins, ounce)
 • Prices update automatically; manual entry also supported
 • See total value, profit/loss and allocation chart in real time
-• Track your daily performance history
-• Securely share your portfolio with family or business partners
+• Daily portfolio performance chart based on real historical data
+• Fast, natural-language bulk entry (type "10 grams of gold at 4500 lira" and it's added automatically)
+
+TECHNICAL SIGNALS
+
+• Directional analysis using RSI, MACD, Bollinger Bands, EMA crossover and Stochastic indicators
+• Get notified when a strong signal appears
+• Not investment advice — for informational purposes only
+
+PORTFOLIO SHARING
+
+• Share your portfolio with a partner or family member via invite code
+• They can only view — they can't edit your assets
 • End the partnership at any time
 
-SECURITY
+SECURITY & PRIVACY
 
-• All data protected with encrypted cloud storage
-• App automatically hides from screenshots and task manager
-• GDPR-compliant data processing
-
-EASE OF USE
-
-• Fast asset-adding flow
-• Balance hiding feature
-• Dark theme, eye-friendly interface
-• Works offline with last known data
+• Data is protected with encrypted cloud storage
+• Hide your balance with one tap
+• GDPR-compliant data processing; delete your account anytime
 
 Open your sandık and start tracking.
 

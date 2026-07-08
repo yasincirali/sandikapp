@@ -1,1 +1,1 @@
-portfolio,stocks,mutual fund,tefas,forex,gold,bist,investing,finance,tracker,profit loss,net worth
+stocks,tefas,mutual fund,forex,gold,bist,technical analysis,rsi,macd,investing,net worth,finance

@@ -43,6 +43,13 @@ App Bilgileri / Sürüm sayfasındaki ilgili alanlara olduğu gibi yapıştır:
   içinde kullanılan aynı GitHub Pages sitesini (`yasincirali.github.io/sandikapp`)
   gösteriyor; destek e-postası (`sandikapp.destek@gmail.com`) o sayfada yer
   almıyorsa siteye bir iletişim/destek bölümü eklenmesi önerilir.
+- `app_store/*/description.txt` metinleri, Play Store'daki `full_description.txt`'ten
+  kasıtlı olarak farklı: kod incelemesiyle doğrulanan gerçek özellikler (TEFAS
+  entegrasyonu, altın alt türleri — gram/çeyrek/yarım/ata/reşat/cumhuriyet/ons,
+  emtia takibi, teknik sinyal bildirimleri, ortaklıkta salt-okunur erişim) eklendi.
+  "Ekran görüntüsü gizleme" iddiası App Store metninden çıkarıldı çünkü bu özellik
+  yalnızca Android'de (`MainActivity.kt` → `FLAG_SECURE`) var; iOS tarafında
+  karşılığı yok, App Store'da yanlış iddia olurdu.
 
 ## Yapılacaklar
 

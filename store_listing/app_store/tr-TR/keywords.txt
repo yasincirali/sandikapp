@@ -1,1 +1,1 @@
-portföy,hisse senedi,borsa,yatırım,fon,tefas,döviz,altın,bist,finans,kar zarar,varlık takip
+hisse senedi,tefas,fon,döviz,altın,çeyrek altın,bist,teknik analiz,rsi,macd,yatırım,finans

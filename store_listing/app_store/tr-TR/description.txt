@@ -1,28 +1,32 @@
-sandık, tüm yatırımlarını tek bir yerden yönetmeni sağlayan kişisel portföy takip uygulamasıdır.
+sandık; hisse senedi, TEFAS yatırım fonu, döviz, altın ve emtia yatırımlarını tek yerden yönetmeni sağlayan kişisel portföy takip uygulamasıdır.
 
 TEMEL ÖZELLİKLER
 
-• Hisse senedi, yatırım fonu, döviz ve altın varlıklarını ekle
-• Fiyatlar otomatik güncellenir; manuel fiyat da girebilirsin
-• Toplam değer, kâr/zarar ve dağılım grafiğini anlık gör
-• Geçmiş performansını günlük olarak takip et
-• Portföyünü aile üyeleri veya iş ortaklarınla güvenli paylaş
-• İstediğin zaman ortaklığı sonlandır
+• BIST hisseleri, TEFAS fonları (1000+ fon, güncel getiri verileriyle), döviz (USD/EUR/GBP) ve altın (gram, çeyrek, yarım, ata, reşat, cumhuriyet, ons) takibi
+• Fiyatlar otomatik güncellenir; istersen manuel fiyat da girebilirsin
+• Toplam değer, kâr/zarar ve varlık dağılım grafiğini anlık gör
+• Gerçek geçmiş verilerle günlük portföy performans grafiği
+• Doğal dilde hızlı ve toplu varlık ekleme (ör. "10 gram altın 4500 lira" yaz, otomatik eklensin)
 
-GÜVENLİK
+TEKNİK SİNYALLER
 
-• Tüm veriler şifreli bulut depolama ile korunur
-• Uygulama ekran görüntüsü ve görev yöneticisine karşı otomatik olarak gizlenir
-• KVKK ve GDPR uyumlu veri işleme
+• RSI, MACD, Bollinger Bantları, EMA kesişimi ve Stokastik gibi göstergelerle yön analizi
+• Güçlü sinyal oluştuğunda bildirim al
+• Yatırım tavsiyesi değildir, yalnızca bilgi amaçlıdır
 
-KULLANIM KOLAYLIĞI
+PORTFÖY PAYLAŞIMI
 
-• Hızlı varlık ekleme akışı
-• Bakiye gizleme özelliği
-• Karanlık tema, göz dostu arayüz
-• Çevrimdışı modda son verilerle çalışmaya devam eder
+• Davet koduyla eşinle, ailenle veya iş ortağınla portföyünü paylaş
+• Paylaştığın kişi yalnızca görüntüler; senin varlıklarını değiştiremez
+• İstediğin an ortaklığı sonlandır
+
+GÜVENLİK VE GİZLİLİK
+
+• Veriler şifreli bulut depolamada saklanır
+• Bakiyeni tek dokunuşla gizle
+• KVKK ve GDPR uyumlu veri işleme; hesabını istediğin an sil
 
 Sandığını aç, yatırımlarını takip et.
 
 ---
-Yatırım tavsiyeleri içermez. Gösterilen veriler bilgi amaçlıdır; yatırım kararlarınızda profesyonel danışmanlık alınız.
+Yatırım tavsiyesi içermez. Gösterilen veriler bilgi amaçlıdır; yatırım kararlarınızda profesyonel danışmanlık alınız.
