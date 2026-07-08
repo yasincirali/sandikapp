@@ -254,7 +254,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                                   context,
                                   CupertinoPageRoute(
                                       builder: (_) =>
-                                          PerformanceScreen(asset: a)),
+                                          PerformanceScreen(asset: a, showBackButton: true)),
                                 ),
                                 onDelete: (a) =>
                                     _confirmDelete(context, ref, a),

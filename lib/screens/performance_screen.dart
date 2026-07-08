@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
 import '../models/asset.dart';
-import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -17,6 +15,7 @@ import '../services/technical_analysis_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../providers/preferences_provider.dart';
+import 'signal_settings_screen.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -128,8 +127,30 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
             ),
             const SizedBox(width: 8),
             Text(
-              '· ${widget.asset.type.label} özelinde',
+              '· ${enabledIds.length}/${IndicatorId.all.length} gösterge',
               style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const SignalSettingsScreen()),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.tune_rounded, size: 14, color: Sandik.amber),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Göstergeleri Ayarla',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Sandik.amber,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -325,8 +346,9 @@ class TransactionSegment {
 
 class PerformanceScreen extends ConsumerStatefulWidget {
   final Asset asset;
+  final bool showBackButton;
 
-  const PerformanceScreen({super.key, required this.asset});
+  const PerformanceScreen({super.key, required this.asset, this.showBackButton = false});
 
   @override
   ConsumerState<PerformanceScreen> createState() => _PerformanceScreenState();
@@ -335,10 +357,8 @@ class PerformanceScreen extends ConsumerStatefulWidget {
 class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   late int _selectedPeriodIdx;
   String? _view = ''; // '' = Ben (Default), null = Tümü, uuid = Ortak
+  late Future<Map<int, double>> _historyFuture;
 
-  /// Grafiğin gösterdiği zaman aralıkları. Intraday (saatlik) veri kaynağı
-  /// tüm varlık türleri için tutarlı sağlanamadığı için sadece günlük ve üzeri
-  /// çözünürlükler sunulur.
   static const List<({String label, int days})> _periods = [
     (label: 'HAFTALIK', days: 7),
     (label: 'AYLIK', days: 30),
@@ -350,6 +370,16 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   void initState() {
     super.initState();
     _selectedPeriodIdx = 0;
+    _historyFuture = HistoryService.instance
+        .getPortfolioHistory([widget.asset], _periods[0].days);
+  }
+
+  void _selectPeriod(int idx) {
+    setState(() {
+      _selectedPeriodIdx = idx;
+      _historyFuture = HistoryService.instance
+          .getPortfolioHistory([widget.asset], _periods[idx].days);
+    });
   }
 
 
@@ -451,68 +481,12 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     return total;
   }
 
-  /// Asset'in güncel fiyatına göre geriye dönük fiktif geçmiş simülasyonu
-  double _getSimulatedPrice(DateTime date) {
-    final asset = widget.asset;
-    final endPrice = asset.currentPrice > 0 ? asset.currentPrice : 100.0;
-
-    final now = DateTime.now();
-    final differenceDays = now.difference(date).inDays.clamp(0, 3650);
-
-    // Varlık türüne göre tahmini yıllık getiri faktörü
-    double yearlyReturn = 0.40;
-    if (asset.type == AssetType.hisse) yearlyReturn = 0.70;
-    if (asset.type == AssetType.emtia) yearlyReturn = 0.45;
-    if (asset.type == AssetType.doviz) yearlyReturn = 0.20;
-    if (asset.type == AssetType.fon) yearlyReturn = 0.50;
-
-    // Geçmişteki fiyatı kabaca hesapla
-    double simulated =
-        endPrice / (1.0 + (yearlyReturn * (differenceDays / 365.0)));
-
-    final noise =
-        math.sin(date.millisecondsSinceEpoch / 86400000.0) * (simulated * 0.03);
-
-    return simulated + noise;
-  }
-
-  double _getClosestPrice(Map<int, double> history, int targetTs) {
-    if (history.isEmpty) return 0;
-    if (history.containsKey(targetTs)) return history[targetTs]!;
-
-    final keys = history.keys.toList()..sort();
-    if (targetTs < keys.first) return history[keys.first]!;
-    if (targetTs > keys.last) return history[keys.last]!;
-
-    // Binary search for closest key
-    int low = 0;
-    int high = keys.length - 1;
-    while (low <= high) {
-      int mid = (low + high) ~/ 2;
-      if (keys[mid] == targetTs) return history[keys[mid]]!;
-      if (keys[mid] < targetTs) {
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-
-    // Check which one is closer: keys[high] or keys[low]
-    if (low >= keys.length) return history[keys.last]!;
-    if (high < 0) return history[keys.first]!;
-
-    if ((keys[low] - targetTs).abs() < (keys[high] - targetTs).abs()) {
-      return history[keys[low]]!;
-    } else {
-      return history[keys[high]]!;
-    }
-  }
-
   List<TransactionSegment> _convertHistoryToSegments(
     Map<int, double> history,
     DateTime startDate,
-    DateTime endDate,
-  ) {
+    DateTime endDate, {
+    bool useHours = false,
+  }) {
     if (history.isEmpty) return [];
 
     final segments = <TransactionSegment>[];
@@ -526,7 +500,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
     for (final ts in sortedTs) {
       final date = DateTime.fromMillisecondsSinceEpoch(ts);
-      final x = date.difference(startDate).inDays.toDouble();
+      final x = useHours
+          ? date.difference(startDate).inHours.toDouble()
+          : date.difference(startDate).inDays.toDouble();
       final y = history[ts]!;
 
       if (date.isBefore(firstAssetMidnight)) {
@@ -590,7 +566,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
           final isSelected = _selectedPeriodIdx == i;
           return Expanded(
             child: GestureDetector(
-              onTap: () => setState(() => _selectedPeriodIdx = i),
+              onTap: () => _selectPeriod(i),
               behavior: HitTestBehavior.opaque,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -624,7 +600,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final startDate = endDate.subtract(Duration(days: period.days));
-    final maxX = endDate.difference(startDate).inDays.toDouble();
+    final useHours = period.days <= 7;
+    final maxX = useHours
+        ? endDate.difference(startDate).inHours.toDouble()
+        : endDate.difference(startDate).inDays.toDouble();
 
     // Logic moved inside FutureBuilder
 
@@ -639,7 +618,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Navigator.canPop(context)
+        leading: widget.showBackButton
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
                     size: 20, color: Colors.white),
@@ -652,7 +631,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
               fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
         ),
         actions: [
-          if (isOwnAsset && !Navigator.canPop(context))
+          if (isOwnAsset && !widget.showBackButton)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
               shape: RoundedRectangleBorder(
@@ -717,8 +696,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 _buildPeriodToggle(),
                 const SizedBox(height: 24),
                 FutureBuilder<Map<int, double>>(
-                  future: HistoryService.instance.getPortfolioHistory(
-                      [widget.asset], period.days),
+                  future: _historyFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const SizedBox(
@@ -730,7 +708,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
                     final historyMap = snapshot.data ?? {};
                     final segments = _convertHistoryToSegments(
-                        historyMap, startDate, endDate);
+                        historyMap, startDate, endDate,
+                        useHours: useHours);
 
                     // Determine Min/Max Y safely
                     double minY = double.infinity;
@@ -748,43 +727,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     if (yPadding == 0) yPadding = 10;
                     maxY = maxY + yPadding;
                     minY = (minY - yPadding).clamp(0, double.infinity);
-
-                    // Build Vertical Lines (Transactions)
-                    final verticalLines = <VerticalLine>[];
-                    for (final tx in _transactions) {
-                      if (tx.date.isBefore(startDate) ||
-                          tx.date.isAfter(endDate)) continue;
-                      final x = tx.date.difference(startDate).inDays.toDouble();
-                      final monetaryChange = tx.gramChange.abs() *
-                          (historyMap.isNotEmpty
-                              ? _getClosestPrice(
-                                  historyMap, tx.date.millisecondsSinceEpoch)
-                              : _getSimulatedPrice(tx.date));
-                      final sign = tx.gramChange > 0
-                          ? '+'
-                          : (tx.gramChange < 0 ? '-' : '');
-
-                      verticalLines.add(
-                        VerticalLine(
-                          x: x,
-                          color: Colors.white30,
-                          strokeWidth: 2,
-                          dashArray: [5, 5],
-                          label: VerticalLineLabel(
-                            show: true,
-                            alignment: Alignment.topRight,
-                            padding: const EdgeInsets.only(left: 6, bottom: 0),
-                            labelResolver: (_) =>
-                                '${tx.label}\n$sign${tx.gramChange.abs().toStringAsFixed(2)} ${widget.asset.unitType}\n($sign${_formatKiloTLLabel(monetaryChange)})',
-                            style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                height: 1.3),
-                          ),
-                        ),
-                      );
-                    }
 
                     return Container(
                       height: 400,
@@ -813,10 +755,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               strokeWidth: 1,
                             ),
                           ),
-                          extraLinesData: ExtraLinesData(
-                            extraLinesOnTop: true,
-                            verticalLines: verticalLines,
-                          ),
                           borderData: FlBorderData(show: false),
                           titlesData: FlTitlesData(
                             show: true,
@@ -831,12 +769,15 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     maxX > 0 ? (maxX / 4).ceilToDouble() : 1,
                                 reservedSize: 28,
                                 getTitlesWidget: (value, meta) {
-                                  final date = startDate
-                                      .add(Duration(days: value.toInt()));
+                                  final date = useHours
+                                      ? startDate.add(Duration(hours: value.toInt()))
+                                      : startDate.add(Duration(days: value.toInt()));
                                   return Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: Text(
-                                      DateFormat('d MMM', 'en_US').format(date),
+                                      useHours
+                                          ? DateFormat('E HH:mm', 'tr_TR').format(date)
+                                          : DateFormat('d MMM', 'en_US').format(date),
                                       style: const TextStyle(
                                         color: Colors.white54,
                                         fontSize: 11,
@@ -892,8 +833,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         if (seg.thickness <= 1.5) return false;
 
                                         // Show dots at transaction points
-                                        final dateAtSpot = startDate.add(
-                                            Duration(days: spot.x.toInt()));
+                                        final dateAtSpot = useHours
+                                            ? startDate.add(Duration(hours: spot.x.toInt()))
+                                            : startDate.add(Duration(days: spot.x.toInt()));
                                         final hasTransaction =
                                             _transactions.any((tx) =>
                                                 tx.date.year ==
@@ -938,10 +880,14 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               getTooltipColor: (_) => Colors.black87,
                               getTooltipItems: (touchedSpots) {
                                 return touchedSpots.map((spot) {
-                                  final date = startDate
-                                      .add(Duration(days: spot.x.toInt()));
+                                  final date = useHours
+                                      ? startDate.add(Duration(hours: spot.x.toInt()))
+                                      : startDate.add(Duration(days: spot.x.toInt()));
+                                  final dateLabel = useHours
+                                      ? DateFormat('E HH:mm', 'tr_TR').format(date)
+                                      : DateFormat('d MMM').format(date);
                                   return LineTooltipItem(
-                                    '${DateFormat('d MMM').format(date)}\n${_formatKiloTLLabel(spot.y)}',
+                                    '$dateLabel\n${_formatKiloTLLabel(spot.y)}',
                                     const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,

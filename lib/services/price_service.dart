@@ -408,12 +408,21 @@ class PriceService {
       return TefasService.instance.fetchHistory(code, periyod: periyod);
     }
 
-    final interval = _intervalFor(range);
+    // '5d_1h' → Yahoo'ya range=5d interval=1h (~80 saatlik nokta)
+    final String yahooRange;
+    final String interval;
+    if (range == '5d_1h') {
+      yahooRange = '5d';
+      interval = '1h';
+    } else {
+      yahooRange = range;
+      interval = _intervalFor(range);
+    }
 
     final uri = Uri.https(
         'query1.finance.yahoo.com',
         '/v8/finance/chart/$symbol',
-        {'interval': interval, 'range': range, 'includePrePost': 'false'});
+        {'interval': interval, 'range': yahooRange, 'includePrePost': 'false'});
 
     final res = await _client
         .get(uri, headers: {'User-Agent': _ua, 'Accept': 'application/json'})

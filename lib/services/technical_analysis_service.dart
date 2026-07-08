@@ -29,6 +29,15 @@ class IndicatorId {
 
   static const premium = <String>{adx, williamsR, cci};
 
+  static Set<String> recommendedFor(AssetType type) => switch (type) {
+        AssetType.hisse  => {rsi, macd, bollinger, stochastic, adx},
+        AssetType.fon    => {ema, rsi, macd},
+        AssetType.altin  => {rsi, bollinger, ema, cci},
+        AssetType.doviz  => {ema, rsi, williamsR, stochastic},
+        AssetType.emtia  => {rsi, macd, bollinger, cci, adx},
+        _                => {},
+      };
+
   static String labelOf(String id) {
     switch (id) {
       case rsi:

@@ -199,7 +199,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset)),
+          MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset, showBackButton: true)),
         ),
         child: Container(
           padding: const EdgeInsets.all(14),

@@ -69,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (asset != null) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset)),
+              MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset, showBackButton: true)),
             );
           }
         },
@@ -680,7 +680,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ? null
             : () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset)),
+                  MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset, showBackButton: true)),
                 ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),

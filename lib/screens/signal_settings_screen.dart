@@ -203,6 +203,7 @@ class _CategorySection extends StatelessWidget {
               id: id,
               checked: selected.contains(id),
               locked: IndicatorId.premium.contains(id) && !premiumUnlocked,
+              recommended: IndicatorId.recommendedFor(type).contains(id),
               onTap: () {
                 if (IndicatorId.premium.contains(id) && !premiumUnlocked) {
                   return;
@@ -220,12 +221,14 @@ class _IndicatorRow extends StatelessWidget {
   final String id;
   final bool checked;
   final bool locked;
+  final bool recommended;
   final VoidCallback onTap;
 
   const _IndicatorRow({
     required this.id,
     required this.checked,
     required this.locked,
+    required this.recommended,
     required this.onTap,
   });
 
@@ -259,10 +262,45 @@ class _IndicatorRow extends StatelessWidget {
                 ),
               ),
             ),
-            if (IndicatorId.premium.contains(id))
+            if (recommended && !IndicatorId.premium.contains(id))
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'ÖNERİLEN',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.green,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            if (IndicatorId.premium.contains(id)) ...[
+              if (recommended) const SizedBox(width: 6),
+              if (recommended)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'ÖNERİLEN',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.green,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              if (recommended) const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Sandik.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
@@ -277,6 +315,7 @@ class _IndicatorRow extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),

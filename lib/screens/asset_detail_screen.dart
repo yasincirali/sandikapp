@@ -267,7 +267,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => PerformanceScreen(asset: asset),
+                    builder: (_) => PerformanceScreen(asset: asset, showBackButton: true),
                   ),
                 );
               },
