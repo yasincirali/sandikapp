@@ -132,14 +132,105 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        # Upload to TestFlight. Actual submission for external beta review is
-        # handled by assigning the build to a beta_group below — Apple triggers
-        # review automatically when a build reaches an external group.
         submit_to_testflight: true
-        # Name(s) of external beta groups created in App Store Connect →
-        # TestFlight → External Testing. Builds are distributed to these
-        # groups after review passes. Leave empty to skip external distribution
-        # (build is still available to internal testers automatically).
         beta_groups:
           - Sandik Beta Testers
         submit_to_app_store: false
+
+  ios-appstore:
+    name: iOS App Store Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: codemagic_app_store_key
+    environment:
+      vars:
+        APP_STORE_APPLE_ID: $APP_STORE_APPLE_ID
+        BUNDLE_ID: com.sandik.app
+        XCODE_WORKSPACE: "ios/Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+      groups:
+        - sandik_secrets
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'release-*'
+          include: true
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $HOME/Library/Caches/CocoaPods
+    scripts:
+      - name: Decode GoogleService-Info.plist
+        script: |
+          echo $GOOGLE_SERVICE_INFO_PLIST | base64 --decode > $CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist
+      - name: Install Flutter dependencies
+        script: flutter pub get
+      - name: Install CocoaPods dependencies
+        script: find . -name "Podfile" -execdir pod install \;
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          if [ -n "$CERT_PRIVATE_KEY" ]; then
+            echo "$CERT_PRIVATE_KEY" | base64 --decode > /tmp/cert_key
+          else
+            ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/cert_key -q -N ""
+            base64 -i /tmp/cert_key
+          fi
+          app-store-connect profiles list \
+            --type IOS_APP_STORE \
+            --json 2>/dev/null | \
+            jq -r '.[] | .id' | \
+            while read -r PROFILE_ID; do
+              app-store-connect profiles delete "$PROFILE_ID" --ignore-not-found || true
+            done
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key=@file:/tmp/cert_key \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Increment build number
+        script: |
+          cd $CM_BUILD_DIR
+          set +e
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" 2>&1)
+          CLI_EXIT=$?
+          set -e
+          if ! [[ "$LATEST_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            BUILD_NUMBER=$(date +%s)
+          else
+            BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          fi
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
+      - name: Inject Supabase credentials
+        script: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "ERROR: SUPABASE_URL and/or SUPABASE_ANON_KEY are not set."
+            exit 1
+          fi
+          cat > lib/config/supabase_config.dart <<EOF
+          const supabaseUrl = '$SUPABASE_URL';
+          const supabaseAnonKey = '$SUPABASE_ANON_KEY';
+          EOF
+      - name: Build Flutter iOS without codesign
+        script: flutter build ios --release --no-codesign --build-number=$BUILD_NUMBER
+      - name: Xcode archive and export IPA
+        script: |
+          cd $CM_BUILD_DIR
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --archive-flags="-destination 'generic/platform=iOS'"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: true
