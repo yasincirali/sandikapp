@@ -105,7 +105,18 @@ class RemotePushService {
       return;
     }
 
-    final token = await _messaging.getToken();
+    // iOS: APNs token hazır olmadan FCM token null dönebilir.
+    // Kısa retry ile APNs'in register olmasını bekle.
+    String? token;
+    if (Platform.isIOS) {
+      for (int i = 0; i < 5; i++) {
+        token = await _messaging.getToken();
+        if (token != null && token.isNotEmpty) break;
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    } else {
+      token = await _messaging.getToken();
+    }
     if (token == null || token.isEmpty) return;
 
     await _syncToken(userId, token);
