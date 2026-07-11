@@ -53,6 +53,7 @@ class SupabaseService {
       'id': user.id,
       'email': user.email,
       'display_name': user.displayName,
+      'onboarding_completed': user.onboardingCompleted,
     };
     await _log.log<void>(
       source: 'SupabaseService.upsertProfile',
@@ -60,6 +61,18 @@ class SupabaseService {
       op: 'UPSERT',
       request: body,
       call: () => _db.from('profiles').upsert(body),
+    );
+  }
+
+  Future<void> markOnboardingCompleted(String userId) async {
+    await _log.log<void>(
+      source: 'SupabaseService.markOnboardingCompleted',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'onboarding_completed': true},
+      call: () => _db
+          .from('profiles')
+          .update({'onboarding_completed': true}).eq('id', userId),
     );
   }
 

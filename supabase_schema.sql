@@ -6,11 +6,15 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id            UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email         TEXT NOT NULL,
-  display_name  TEXT NOT NULL,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                    UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email                 TEXT NOT NULL,
+  display_name          TEXT NOT NULL,
+  onboarding_completed  BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Var olan profiles tablolarına idempotent kolon eklemesi (mevcut deploy için).
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS public.assets (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -27,7 +31,8 @@ CREATE TABLE IF NOT EXISTS public.assets (
   last_updated    TIMESTAMPTZ,
   added_date      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   notes           TEXT NOT NULL DEFAULT '',
-  is_manual_price BOOLEAN NOT NULL DEFAULT FALSE
+  is_manual_price BOOLEAN NOT NULL DEFAULT FALSE,
+  purchase_fx_rate DOUBLE PRECISION NOT NULL DEFAULT 1.0
 );
 
 CREATE INDEX IF NOT EXISTS assets_user_id_idx ON public.assets(user_id);

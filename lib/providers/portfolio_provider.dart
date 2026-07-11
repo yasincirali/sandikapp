@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../services/price_service.dart';
 import 'auth_provider.dart';
@@ -149,6 +150,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
 
     await SupabaseService.instance.insertAsset(asset);
+
+    AnalyticsService.instance.logAssetAdded(
+      type: type.name,
+      subCategory: subCategory,
+    );
 
     final current = state.valueOrNull;
     if (current != null) {

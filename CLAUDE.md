@@ -65,7 +65,7 @@
 2. Her AVD config.ini dosyasında `hw.keyboard = yes` olduğunu doğrula (aksi halde klavye çalışmaz)
    - Config yolu: `C:\Users\vasin\.android\avd\<name>.avd\config.ini`
    - `no` ise: `adb -s <id> emu kill` → config düzelt → yeniden başlat
-3. `flutter build apk --debug`
+3. `flutter build apk --debug --dart-define-from-file=.env.local`
 4. `flutter install --device-id emulator-5554 --debug`
 5. `flutter install --device-id emulator-5556 --debug`
 

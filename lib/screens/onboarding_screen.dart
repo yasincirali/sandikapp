@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/analytics_service.dart';
+import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 
 /// Yeni kullanıcılara gösterilen interaktif demo.
@@ -13,12 +14,13 @@ class OnboardingScreen extends StatefulWidget {
 
   const OnboardingScreen({super.key, required this.onComplete, required this.userId});
 
-  static String _key(String userId) => 'onboarding_done_v1_$userId';
-
+  /// Onboarding'in tamamlanıp tamamlanmadığını Supabase profil'inden okur.
+  /// Böylece kullanıcı uygulamayı silip yeniden yüklese bile durum kaybolmaz.
+  /// Sorgu başarısız olursa "gösterildi" say (agresif yeniden-göstermeyi önle).
   static Future<bool> isCompleted(String userId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_key(userId)) ?? false;
+      final profile = await SupabaseService.instance.getProfile(userId);
+      return profile?.onboardingCompleted ?? false;
     } catch (_) {
       return true;
     }
@@ -26,8 +28,7 @@ class OnboardingScreen extends StatefulWidget {
 
   static Future<void> markCompleted(String userId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_key(userId), true);
+      await SupabaseService.instance.markOnboardingCompleted(userId);
     } catch (_) {}
   }
 
@@ -98,6 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Future<void> _next() async {
     if (_isLast) {
+      AnalyticsService.instance.logOnboardingCompleted();
       await OnboardingScreen.markCompleted(widget.userId);
       if (mounted) widget.onComplete();
       return;
@@ -110,6 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Future<void> _skip() async {
+    AnalyticsService.instance.logOnboardingSkipped(_step);
     await OnboardingScreen.markCompleted(widget.userId);
     if (mounted) widget.onComplete();
   }

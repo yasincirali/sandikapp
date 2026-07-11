@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_push_service.dart';
@@ -22,6 +23,9 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     state = await AsyncValue.guard(
       () => AuthService.instance.login(email: email, password: password, rememberMe: rememberMe),
     );
+    if (state.hasValue && state.valueOrNull != null) {
+      AnalyticsService.instance.logLogin(method: 'email');
+    }
   }
 
   Future<void> register({
@@ -37,9 +41,13 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
         password: password,
       ),
     );
+    if (state.hasValue && state.valueOrNull != null) {
+      AnalyticsService.instance.logSignup(method: 'email');
+    }
   }
 
   Future<void> logout() async {
+    AnalyticsService.instance.logLogout();
     await RemotePushService.instance.stop();
     await AuthService.instance.logout();
     DisclaimerService.instance.clearCache();

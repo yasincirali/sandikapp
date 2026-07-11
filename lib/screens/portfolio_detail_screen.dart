@@ -24,7 +24,7 @@ class PortfolioDetailScreen extends ConsumerStatefulWidget {
 
 class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
   late String? _view;
-  int _selectedPeriodIdx = 4; // 1Y
+  int _selectedPeriodIdx = 0; // 1H
 
   static const List<({String label, int days})> _periods = [
     (label: '1H', days: 7),

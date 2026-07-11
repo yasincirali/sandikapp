@@ -38,7 +38,8 @@ CREATE TABLE public.assets (
   last_updated    TIMESTAMPTZ,
   added_date      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   notes           TEXT NOT NULL DEFAULT '',
-  is_manual_price BOOLEAN NOT NULL DEFAULT FALSE
+  is_manual_price BOOLEAN NOT NULL DEFAULT FALSE,
+  purchase_fx_rate DOUBLE PRECISION NOT NULL DEFAULT 1.0
 );
 
 CREATE INDEX assets_user_id_idx ON public.assets(user_id);

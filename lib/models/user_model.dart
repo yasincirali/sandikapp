@@ -3,18 +3,29 @@ class AppUser {
   final String email;
   final String displayName;
   final DateTime createdAt;
+  final bool onboardingCompleted;
 
   const AppUser({
     required this.id,
     required this.email,
     required this.displayName,
     required this.createdAt,
+    this.onboardingCompleted = false,
   });
+
+  AppUser copyWith({bool? onboardingCompleted}) => AppUser(
+        id: id,
+        email: email,
+        displayName: displayName,
+        createdAt: createdAt,
+        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      );
 
   Map<String, dynamic> toMap() => {
         'id': id,
         'email': email,
         'display_name': displayName,
+        'onboarding_completed': onboardingCompleted,
         'created_at': createdAt.millisecondsSinceEpoch,
       };
 
@@ -22,6 +33,7 @@ class AppUser {
         id: m['id'] as String,
         email: m['email'] as String,
         displayName: m['display_name'] as String,
+        onboardingCompleted: (m['onboarding_completed'] as bool?) ?? false,
         createdAt: DateTime.fromMillisecondsSinceEpoch(m['created_at'] as int),
       );
 
@@ -29,6 +41,7 @@ class AppUser {
         id: m['id'] as String,
         email: m['email'] as String,
         displayName: m['display_name'] as String,
+        onboardingCompleted: (m['onboarding_completed'] as bool?) ?? false,
         createdAt: m['created_at'] != null
             ? DateTime.parse(m['created_at'] as String)
             : DateTime.now(),

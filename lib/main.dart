@@ -16,6 +16,7 @@ import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'services/analytics_service.dart';
 import 'services/db_logger.dart';
 import 'services/disclaimer_service.dart';
 import 'services/fx_rate_migration_service.dart';
@@ -59,6 +60,7 @@ void main() async {
       };
 
       await RemotePushService.instance.init();
+      await AnalyticsService.instance.init();
     } catch (e, st) {
       // Firebase config dosyalari yoksa veya init başarısızsa
       // sessizce devam et; uygulama remote push + crashlytics olmadan çalışır.
@@ -451,9 +453,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (user == null && !next.isLoading) {
         _checkedUserId = null;
         _onboardingDone = null;
+        AnalyticsService.instance.setUserId(null);
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
         _checkedUserId = user.id;
+        AnalyticsService.instance.setUserId(user.id);
+        AnalyticsService.instance.setUserProperty(
+          name: 'user_type',
+          value: 'free',
+        );
         DisclaimerService.instance.hasAccepted(user.id).then((accepted) {
           if (!mounted) return;
           setState(() => _disclaimerAccepted = accepted);

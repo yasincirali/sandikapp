@@ -9,6 +9,7 @@ import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
 import 'settings_screen.dart';
@@ -344,6 +345,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               'Ortak kodun: $shortCode\n\n'
                               'Uygulamayı aç → Profil → "Ortak Kodu Gir" bölümünden bu kodu gir.';
                           await Share.share(msg, subject: 'Sandık Ortak Daveti');
+                          AnalyticsService.instance.logPartnerInviteSent();
                         },
                         child: const Icon(Icons.share_rounded,
                             color: Sandik.amber),

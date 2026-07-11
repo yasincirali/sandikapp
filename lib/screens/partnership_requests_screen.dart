@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 
@@ -69,6 +70,7 @@ class _PartnershipRequestsScreenState
   Future<void> _accept(String inviteId) async {
     try {
       await ref.read(partnersProvider.notifier).acceptInvite(inviteId);
+      AnalyticsService.instance.logPartnerInviteAccepted();
       ref.read(allPartnerAssetsProvider.notifier).reload();
       await _load();
       if (!mounted) return;

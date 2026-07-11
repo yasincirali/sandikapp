@@ -12,11 +12,9 @@ class HistoryService {
   /// gün-den-güne hesaplar. Dönen map: { UNIX_MILLIS: TOPLAM_PORTFOY_DEGERI_TRY }
   Future<Map<int, double>> getPortfolioHistory(
       List<Asset> assets, int periodDays) async {
-    // Haftalık periyot için saatlik çözünürlük (~80 nokta)
-    if (periodDays <= 7) {
-      return _getPortfolioHistoryHourly7d(assets);
-    }
-
+    // Haftalık için de günlük çözünürlük kullan — saatlik veri (Yahoo 1h)
+    // bazı hisse/emtia sembollerinde çok az nokta döndürüp grafiği bozuyor.
+    // Trading uygulamaları da 1H sekmesinde günlük 7 nokta gösterir.
     final range = periodDays > 100
         ? '1y'
         : periodDays > 60
@@ -158,171 +156,42 @@ class HistoryService {
       groupedPoints[dayTs] = dayTotalValue;
     }
 
-    return groupedPoints;
-  }
-
-  /// Haftalık görünüm için saatlik çözünürlük. Yahoo `5d/1h` → ~80 nokta.
-  /// Altın ve USD dönüşümü günlük yaklaşımla yapılır (intraday kur verisi yok).
-  Future<Map<int, double>> _getPortfolioHistoryHourly7d(
-      List<Asset> assets) async {
-    const range = '5d';
-    const hourlyRange = '5d_1h';
-
-    int normalizeHour(int ms) {
-      final d = DateTime.fromMillisecondsSinceEpoch(ms);
-      return DateTime(d.year, d.month, d.day, d.hour).millisecondsSinceEpoch;
-    }
-
-    int normalizeDay(int ms) {
-      final d = DateTime.fromMillisecondsSinceEpoch(ms);
-      return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
-    }
-
-    Future<List<(int, double)>> getHistorySafe(String sym,
-        {String? cacheKey, String? overrideRange}) async {
-      final key = cacheKey ?? '${sym}_$range';
-      if (_cache.containsKey(key)) return _cache[key]!;
-      try {
-        final pts = await PriceService.instance
-            .fetchHistory(sym, overrideRange ?? range);
-        if (pts.isNotEmpty) _cache[key] = pts;
-        return pts;
-      } catch (e) {
-        return [];
-      }
-    }
-
-    bool needsGold = assets.any((a) => a.type == AssetType.altin);
-    bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
-
-    // USD/TRY ve altın günlük (5d/1d) — intraday kur verisi güvenilmez
-    Map<int, double> usdTryDaily = {};
-    Map<int, double> goldDaily = {};
-
-    if (needsUsd) {
-      final pts = await getHistorySafe('USDTRY=X');
-      for (final p in pts) {
-        usdTryDaily[normalizeDay(p.$1)] = p.$2;
-      }
-    }
-
-    if (needsGold) {
-      final xauPts = await getHistorySafe('GC=F');
-      for (final p in xauPts) {
-        final dTs = normalizeDay(p.$1);
-        double usdRate = usdTryDaily[dTs] ??
-            (usdTryDaily.isNotEmpty
-                ? _getClosestPrice(usdTryDaily, dTs, 35.0)
-                : 35.0);
-        final gram22k = p.$2 * usdRate / 31.1035 * (22 / 24);
-        goldDaily[dTs] = gram22k;
-      }
-    }
-
-    // Saatlik fiyat haritası: ticker → { saatlik_ts: fiyat }
-    final Map<String, Map<int, double>> tickerHourly = {};
-
-    for (final a in assets) {
-      if (a.quantity <= 0) continue;
-      final fetchable = a.type == AssetType.hisse ||
-          a.type == AssetType.emtia ||
-          (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
-          (a.type == AssetType.fon && a.ticker.isNotEmpty);
-      if (!fetchable || tickerHourly.containsKey(a.ticker)) continue;
-
-      // TEFAS fonları için günlük veri kullan (saatlik desteklenmiyor)
-      final isTefas = a.ticker.startsWith('TEFAS_');
-      final pts = isTefas
-          ? await getHistorySafe(a.ticker)
-          : await getHistorySafe(a.ticker,
-              cacheKey: '${a.ticker}_$hourlyRange',
-              overrideRange: '5d_1h');
-
-      final map = <int, double>{};
-      for (final p in pts) {
-        final ts = isTefas ? normalizeDay(p.$1) : normalizeHour(p.$1);
-        map[ts] = p.$2;
-      }
-      tickerHourly[a.ticker] = map;
-    }
-
-    // Ham saatlik timestamp'leri topla (tüm tickerlardan)
-    final allHourTs = <int>{};
-    for (final map in tickerHourly.values) {
-      allHourTs.addAll(map.keys);
-    }
-
-    // Altın/nakit gibi tickerHourly'e girmeyen varlıklar varsa
-    // goldDaily veya usdTryDaily'den saatlik grid üret (her gün 8 slot: 09-17)
-    if (allHourTs.isEmpty) {
-      final baseDays = goldDaily.isNotEmpty
-          ? goldDaily.keys
-          : usdTryDaily.isNotEmpty
-              ? usdTryDaily.keys
-              : <int>[];
-      for (final dayTs in baseDays) {
-        for (int h = 9; h <= 17; h++) {
-          allHourTs.add(dayTs + h * 3600 * 1000);
-        }
-      }
-    }
-
-    // Hâlâ boşsa günlük fallback
-    if (allHourTs.isEmpty) {
-      return getPortfolioHistory(assets, 7);
-    }
-
-    final cutoff =
-        DateTime.now().subtract(const Duration(days: 7)).millisecondsSinceEpoch;
-    final sortedTs =
-        allHourTs.where((t) => t >= cutoff).toList()..sort();
-
-    final result = <int, double>{};
-    for (final ts in sortedTs) {
-      final dayTs = normalizeDay(ts);
-      double total = 0.0;
-
+    // Bugünün noktasını anlık portföy değerine sabitle (Yahoo API'sindeki
+    // son gün datası bazen geç güncellenir; ana ekranla tutarlılık için).
+    final todayTs = normalizeTs(now.millisecondsSinceEpoch);
+    if (groupedPoints.containsKey(todayTs)) {
+      double liveTotal = 0.0;
       for (final a in assets) {
-        try {
-          double val = 0.0;
-          if (a.type == AssetType.altin) {
-            double factor = (a.ticker == 'ALTIN_CEYREK')
-                ? 1.75
-                : (a.ticker == 'ALTIN_YARIM')
-                    ? 3.5
-                    : (a.ticker == 'ALTIN_CUMHURIYET' ||
-                            a.ticker == 'ALTIN_ATA')
-                        ? 7.216
-                        : 1.0;
-            val = _getClosestPrice(goldDaily, dayTs, null) * factor * a.quantity;
-          } else if (a.type == AssetType.hisse ||
-              a.type == AssetType.emtia ||
-              a.type == AssetType.fon ||
-              a.type == AssetType.doviz) {
-            final map = tickerHourly[a.ticker] ?? {};
-            if (map.isNotEmpty) {
-              double price = _getClosestPrice(map, ts, null);
-              if (a.currency == 'USD') {
-                double usdRate = _getClosestPrice(usdTryDaily, dayTs, 35.0);
-                price *= usdRate;
-              }
-              val = price * a.quantity;
-            } else {
-              val = _flatFallback(a);
-            }
-          } else {
-            val = _flatFallback(a);
-          }
-          total += val;
-        } catch (_) {
-          total += _flatFallback(a);
+        final price = a.currentPrice > 0 ? a.currentPrice : 0.0;
+        double liveUsd = 40.0;
+        if (usdTryHistory.isNotEmpty) {
+          liveUsd = usdTryHistory.values.last;
         }
+        final tryPrice = a.currency == 'USD' ? price * liveUsd : price;
+        liveTotal += tryPrice * a.quantity;
       }
-
-      result[ts] = total;
+      if (liveTotal > 0) groupedPoints[todayTs] = liveTotal;
     }
 
-    return result;
+    // Outlier smoothing: bir gün önceki ve sonraki noktaya göre >%1.5 sapan ama
+    // önceki-sonraki arası fark %1'den az olan tek-gün spike'ları temizle. Bu,
+    // Yahoo'nun bazı sembollerdeki tek-gün eksik/geç verisinden gelen V-dip
+    // artefaktlarını (gerçek trend olmadan) yumuşatır.
+    final sortedKeys = groupedPoints.keys.toList()..sort();
+    for (int i = 1; i < sortedKeys.length - 1; i++) {
+      final prev = groupedPoints[sortedKeys[i - 1]]!;
+      final cur = groupedPoints[sortedKeys[i]]!;
+      final next = groupedPoints[sortedKeys[i + 1]]!;
+      if (prev <= 0 || next <= 0) continue;
+      final devPrev = ((cur - prev) / prev).abs();
+      final devNext = ((cur - next) / next).abs();
+      final prevNextGap = ((next - prev) / prev).abs();
+      if (devPrev > 0.015 && devNext > 0.015 && prevNextGap < 0.01) {
+        groupedPoints[sortedKeys[i]] = (prev + next) / 2;
+      }
+    }
+
+    return groupedPoints;
   }
 
   double _getClosestPrice(
@@ -340,7 +209,10 @@ class HistoryService {
   /// Gerçek geçmiş veri yoksa currentPrice'ı sabit kullan (simülasyon yok).
   double _flatFallback(Asset asset) {
     final price = asset.currentPrice > 0 ? asset.currentPrice : 0.0;
-    final tryPrice = asset.currency == 'USD' ? price * 35.0 : price;
+    // USD için sabit 35.0 yerine bir tahmin — history'de gerçek kur yoksa
+    // en azından güncel kura yakın bir değer (~40) kullan; sabit 35 grafikte
+    // %12 dip yaratıyordu.
+    final tryPrice = asset.currency == 'USD' ? price * 40.0 : price;
     return tryPrice * asset.quantity;
   }
 

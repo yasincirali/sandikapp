@@ -34,7 +34,7 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
 
 class _PortfolioPerformanceScreenState
     extends ConsumerState<PortfolioPerformanceScreen> {
-  int _selectedPeriodIdx = 4; // Yıllık
+  int _selectedPeriodIdx = 0; // Haftalık (1H)
   late String? _view;
   late AssetType? _typeFilter;
 
@@ -72,11 +72,23 @@ class _PortfolioPerformanceScreenState
     final firstAssetMidnight =
         DateTime(firstAssetDate.year, firstAssetDate.month, firstAssetDate.day);
 
+    // Alım maliyeti (sabit) — active segmentin başlangıç noktası olarak kullanılır.
+    // Böylece grafik kullanıcının gerçekten harcadığı tutardan başlayıp o günkü
+    // piyasa değerine yükselir/düşer.
+    double totalCostTRY = 0.0;
+    for (final a in allAssets) {
+      totalCostTRY += a.totalCostTRY;
+    }
+
     final sortedTs = history.keys.toList()..sort();
 
     // Split into two segments: before first asset (passive) and after (active)
     final passiveSpots = <FlSpot>[];
     final activeSpots = <FlSpot>[];
+
+    // Active segmentin ilk history noktasını alım maliyetiyle değiştir — aynı
+    // X'te iki nokta (anchor + history) zigzag üretiyordu.
+    bool firstActiveReplaced = false;
 
     for (final ts in sortedTs) {
       final date = DateTime.fromMillisecondsSinceEpoch(ts);
@@ -86,11 +98,17 @@ class _PortfolioPerformanceScreenState
       if (date.isBefore(firstAssetMidnight)) {
         passiveSpots.add(FlSpot(x, y));
       } else {
-        // To make segments continuous, add the last passive spot to active if active starts
-        if (activeSpots.isEmpty && passiveSpots.isNotEmpty) {
-          activeSpots.add(passiveSpots.last);
+        if (!firstActiveReplaced && totalCostTRY > 0) {
+          // Görsel süreklilik: passive'in son noktasını active'in başına ekle
+          // (silik → kalın geçişi arasında boşluk kalmasın).
+          if (passiveSpots.isNotEmpty) {
+            activeSpots.add(passiveSpots.last);
+          }
+          activeSpots.add(FlSpot(x, totalCostTRY));
+          firstActiveReplaced = true;
+        } else {
+          activeSpots.add(FlSpot(x, y));
         }
-        activeSpots.add(FlSpot(x, y));
       }
     }
 
@@ -323,7 +341,7 @@ class _PortfolioPerformanceScreenState
 
   /// TRY değeri için okunabilir kısa etiket (₺1.2M / ₺450K / ₺900)
   String _fmtY(double val) {
-    if (val >= 1000000) return '₺${(val / 1000000).toStringAsFixed(1)}M';
+    if (val >= 1000000) return '₺${(val / 1000000).toStringAsFixed(2)}M';
     if (val >= 1000) return '₺${(val / 1000).toStringAsFixed(0)}K';
     return '₺${val.toStringAsFixed(0)}';
   }
@@ -343,18 +361,28 @@ class _PortfolioPerformanceScreenState
 
     double minY = double.infinity;
     double maxY = -double.infinity;
+    double sumY = 0;
+    int countY = 0;
     for (final seg in segments) {
       for (final spot in seg.spots) {
         if (spot.y > maxY) maxY = spot.y;
         if (spot.y < minY) minY = spot.y;
+        sumY += spot.y;
+        countY++;
       }
     }
     if (minY == double.infinity) minY = 0;
     if (maxY == -double.infinity) maxY = 1000;
-    final yRange = (maxY - minY).clamp(1.0, double.infinity);
-    final yPadding = yRange * 0.18;
-    maxY += yPadding;
-    minY = (minY - yPadding * 0.5).clamp(0, double.infinity);
+    final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
+    final dataRange = (maxY - minY).clamp(1.0, double.infinity);
+    // Küçük gerçek değişimlerin dramatik görünmesini önlemek için Y ekseni
+    // aralığını ortalamanın en az %8'i kadar tut (yani %4 dip ~yarı ekran).
+    final minSpread = (avgY * 0.08).clamp(1.0, double.infinity);
+    final effectiveRange =
+        dataRange < minSpread ? minSpread : dataRange;
+    final yPadding = effectiveRange * 0.1;
+    maxY = (avgY + effectiveRange / 2) + yPadding;
+    minY = (avgY - effectiveRange / 2 - yPadding).clamp(0, double.infinity);
 
     final maxX =
         end.difference(start).inDays.toDouble().clamp(1.0, double.infinity);
@@ -449,7 +477,7 @@ class _PortfolioPerformanceScreenState
             final isActive = seg.thickness > 2.0;
             return LineChartBarData(
               spots: seg.spots,
-              isCurved: true,
+              isCurved: false,
               color: seg.lineColor,
               barWidth: seg.thickness,
               dotData: FlDotData(

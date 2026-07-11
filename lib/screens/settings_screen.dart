@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart';
@@ -230,6 +231,138 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _sendMail({
+    required String subject,
+    String body = '',
+  }) async {
+    final userEmail = ref.read(authProvider).valueOrNull?.email ?? '';
+    final signature = userEmail.isNotEmpty
+        ? '\n\n---\nKullanıcı: $userEmail'
+        : '';
+    final uri = Uri(
+      scheme: 'mailto',
+      path: _supportEmail,
+      query: _encodeMailtoQuery({
+        'subject': subject,
+        'body': '$body$signature',
+      }),
+    );
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Mail uygulaması açılamadı. Lütfen $_supportEmail adresine yazın.'),
+        ),
+      );
+    }
+  }
+
+  String _encodeMailtoQuery(Map<String, String> params) {
+    return params.entries
+        .map((e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+  }
+
+  Future<void> _openFeedbackSheet() async {
+    String type = 'Şikayet';
+    final controller = TextEditingController();
+    final result = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Sandik.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setLocal) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Şikayet & Tavsiye',
+                  style: GoogleFonts.dmSans(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    for (final t in const ['Şikayet', 'Tavsiye', 'Diğer'])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(t),
+                          selected: type == t,
+                          onSelected: (_) => setLocal(() => type = t),
+                          selectedColor: Sandik.amber.withValues(alpha: 0.25),
+                          backgroundColor: Sandik.surface1,
+                          labelStyle: TextStyle(
+                            color: type == t ? Sandik.amber : Sandik.text58,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  maxLines: 6,
+                  minLines: 4,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Mesajınızı yazın…',
+                    hintStyle: const TextStyle(color: Sandik.text36),
+                    filled: true,
+                    fillColor: Sandik.surface1,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Sandik.amber,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: controller.text.trim().isEmpty
+                      ? null
+                      : () => Navigator.pop(
+                            ctx,
+                            {'type': type, 'body': controller.text.trim()},
+                          ),
+                  child: const Text('Gönder',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (result != null) {
+      await _sendMail(
+        subject: '[${result['type']}] Sandık uygulama geri bildirim',
+        body: result['body'] ?? '',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -327,7 +460,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.mail_outline_rounded,
               title: 'Bize Ulaş',
               subtitle: _supportEmail,
-              onTap: () {},
+              onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
+            ),
+            _SettingsTile(
+              icon: Icons.rate_review_outlined,
+              title: 'Şikayet & Tavsiye',
+              subtitle: 'Görüşünü bize ilet',
+              onTap: _openFeedbackSheet,
             ),
             const SizedBox(height: 28),
             const _SectionTitle('HESAP'),

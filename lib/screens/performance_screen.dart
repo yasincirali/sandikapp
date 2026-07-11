@@ -332,6 +332,7 @@ class TransactionSegment {
   final Color areaGradientStart;
   final Color areaGradientEnd;
   final double thickness;
+  final bool dashed;
 
   TransactionSegment({
     required this.spots,
@@ -339,6 +340,7 @@ class TransactionSegment {
     required this.areaGradientStart,
     required this.areaGradientEnd,
     required this.thickness,
+    this.dashed = false,
   });
 }
 
@@ -484,9 +486,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   List<TransactionSegment> _convertHistoryToSegments(
     Map<int, double> history,
     DateTime startDate,
-    DateTime endDate, {
-    bool useHours = false,
-  }) {
+    DateTime endDate,
+  ) {
     if (history.isEmpty) return [];
 
     final segments = <TransactionSegment>[];
@@ -494,34 +495,42 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final firstAssetMidnight =
         DateTime(firstAssetDate.year, firstAssetDate.month, firstAssetDate.day);
 
+    // Aktif segmentin ilk history noktasını alım maliyetiyle değiştir.
+    final anchorCost = widget.asset.totalCostTRY;
+
     final sortedTs = history.keys.toList()..sort();
     final passiveSpots = <FlSpot>[];
     final activeSpots = <FlSpot>[];
+    bool firstActiveReplaced = false;
 
     for (final ts in sortedTs) {
       final date = DateTime.fromMillisecondsSinceEpoch(ts);
-      final x = useHours
-          ? date.difference(startDate).inHours.toDouble()
-          : date.difference(startDate).inDays.toDouble();
+      final x = date.difference(startDate).inDays.toDouble();
       final y = history[ts]!;
 
       if (date.isBefore(firstAssetMidnight)) {
         passiveSpots.add(FlSpot(x, y));
       } else {
-        if (activeSpots.isEmpty && passiveSpots.isNotEmpty) {
-          activeSpots.add(passiveSpots.last);
+        if (!firstActiveReplaced && anchorCost > 0) {
+          if (passiveSpots.isNotEmpty) {
+            activeSpots.add(passiveSpots.last);
+          }
+          activeSpots.add(FlSpot(x, anchorCost));
+          firstActiveReplaced = true;
+        } else {
+          activeSpots.add(FlSpot(x, y));
         }
-        activeSpots.add(FlSpot(x, y));
       }
     }
 
     if (passiveSpots.isNotEmpty) {
       segments.add(TransactionSegment(
         spots: passiveSpots,
-        lineColor: Colors.white.withValues(alpha: 0.15),
-        areaGradientStart: Colors.white.withValues(alpha: 0.05),
+        lineColor: Colors.white.withValues(alpha: 0.10),
+        areaGradientStart: Colors.white.withValues(alpha: 0.02),
         areaGradientEnd: Colors.transparent,
-        thickness: 1.5,
+        thickness: 1.2,
+        dashed: true,
       ));
     }
 
@@ -600,10 +609,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final startDate = endDate.subtract(Duration(days: period.days));
-    final useHours = period.days <= 7;
-    final maxX = useHours
-        ? endDate.difference(startDate).inHours.toDouble()
-        : endDate.difference(startDate).inDays.toDouble();
+    final maxX = endDate.difference(startDate).inDays.toDouble();
 
     // Logic moved inside FutureBuilder
 
@@ -708,25 +714,31 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
                     final historyMap = snapshot.data ?? {};
                     final segments = _convertHistoryToSegments(
-                        historyMap, startDate, endDate,
-                        useHours: useHours);
+                        historyMap, startDate, endDate);
 
                     // Determine Min/Max Y safely
                     double minY = double.infinity;
                     double maxY = -double.infinity;
+                    double sumY = 0;
+                    int countY = 0;
                     for (final seg in segments) {
                       for (final spot in seg.spots) {
                         if (spot.y > maxY) maxY = spot.y;
                         if (spot.y < minY) minY = spot.y;
+                        sumY += spot.y;
+                        countY++;
                       }
                     }
                     if (minY == double.infinity) minY = 0;
                     if (maxY == -double.infinity) maxY = 1000;
-                    double yPadding = (maxY - minY) * 0.2;
-                    if (yPadding == 0) yPadding = maxY * 0.1;
-                    if (yPadding == 0) yPadding = 10;
-                    maxY = maxY + yPadding;
-                    minY = (minY - yPadding).clamp(0, double.infinity);
+                    final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
+                    final dataRange = (maxY - minY).clamp(1.0, double.infinity);
+                    final minSpread = (avgY * 0.08).clamp(1.0, double.infinity);
+                    final effectiveRange =
+                        dataRange < minSpread ? minSpread : dataRange;
+                    final yPad = effectiveRange * 0.1;
+                    maxY = (avgY + effectiveRange / 2) + yPad;
+                    minY = (avgY - effectiveRange / 2 - yPad).clamp(0, double.infinity);
 
                     return Container(
                       height: 400,
@@ -769,15 +781,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     maxX > 0 ? (maxX / 4).ceilToDouble() : 1,
                                 reservedSize: 28,
                                 getTitlesWidget: (value, meta) {
-                                  final date = useHours
-                                      ? startDate.add(Duration(hours: value.toInt()))
-                                      : startDate.add(Duration(days: value.toInt()));
+                                  final date = startDate.add(Duration(days: value.toInt()));
                                   return Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: Text(
-                                      useHours
-                                          ? DateFormat('E HH:mm', 'tr_TR').format(date)
-                                          : DateFormat('d MMM', 'en_US').format(date),
+                                      DateFormat('d MMM', 'en_US').format(date),
                                       style: const TextStyle(
                                         color: Colors.white54,
                                         fontSize: 11,
@@ -819,45 +827,26 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     color: seg.lineColor,
                                     barWidth: seg.thickness,
                                     isStrokeCapRound: true,
+                                    dashArray: seg.dashed ? const [4, 4] : null,
                                     dotData: FlDotData(
-                                      show: true,
+                                      show: !seg.dashed,
                                       checkToShowDot: (spot, barData) {
-                                        // Show dots at the beginning of each segment (which are transaction points)
-                                        // and also check against _transactions dates for safety.
-                                        final isFirstInSegment =
-                                            spot.x == seg.spots.first.x;
-                                        final isLastInSegment =
-                                            spot.x == seg.spots.last.x;
-
-                                        // Only show dots on the 'active' line (thickness > 1.5)
-                                        if (seg.thickness <= 1.5) return false;
-
-                                        // Show dots at transaction points
-                                        final dateAtSpot = useHours
-                                            ? startDate.add(Duration(hours: spot.x.toInt()))
-                                            : startDate.add(Duration(days: spot.x.toInt()));
-                                        final hasTransaction =
-                                            _transactions.any((tx) =>
-                                                tx.date.year ==
-                                                    dateAtSpot.year &&
-                                                tx.date.month ==
-                                                    dateAtSpot.month &&
-                                                tx.date.day == dateAtSpot.day);
-
-                                        return hasTransaction ||
-                                            isFirstInSegment ||
-                                            isLastInSegment;
+                                        // Pasif (silik) segmentte hiç nokta yok.
+                                        if (seg.dashed) return false;
+                                        // Sadece gerçek alım tarihine denk gelen noktada göster.
+                                        final dateAtSpot = startDate.add(Duration(days: spot.x.toInt()));
+                                        return _transactions.any((tx) =>
+                                            tx.date.year == dateAtSpot.year &&
+                                            tx.date.month == dateAtSpot.month &&
+                                            tx.date.day == dateAtSpot.day);
                                       },
                                       getDotPainter:
                                           (spot, percent, barData, index) {
-                                        final isActive = seg.thickness > 1.5;
                                         return FlDotCirclePainter(
-                                          radius: isActive ? 4 : 2,
-                                          color: isActive
-                                              ? Sandik.amber
-                                              : Colors.white24,
+                                          radius: 2.5,
+                                          color: Sandik.amber,
                                           strokeColor: Sandik.background,
-                                          strokeWidth: 2,
+                                          strokeWidth: 1.5,
                                         );
                                       },
                                     ),
@@ -880,12 +869,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               getTooltipColor: (_) => Colors.black87,
                               getTooltipItems: (touchedSpots) {
                                 return touchedSpots.map((spot) {
-                                  final date = useHours
-                                      ? startDate.add(Duration(hours: spot.x.toInt()))
-                                      : startDate.add(Duration(days: spot.x.toInt()));
-                                  final dateLabel = useHours
-                                      ? DateFormat('E HH:mm', 'tr_TR').format(date)
-                                      : DateFormat('d MMM').format(date);
+                                  final date = startDate.add(Duration(days: spot.x.toInt()));
+                                  final dateLabel = DateFormat('d MMM').format(date);
                                   return LineTooltipItem(
                                     '$dateLabel\n${_formatKiloTLLabel(spot.y)}',
                                     const TextStyle(
