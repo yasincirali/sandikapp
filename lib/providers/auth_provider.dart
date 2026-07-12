@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_push_service.dart';
 import '../services/supabase_service.dart';
+import 'bulk_cart_provider.dart';
 
 // ── Mevcut oturum kullanıcısı ─────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     await RemotePushService.instance.stop();
     await AuthService.instance.logout();
     DisclaimerService.instance.clearCache();
+    ref.read(bulkCartProvider.notifier).clear();
     state = const AsyncData(null);
   }
 
@@ -60,6 +62,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     await RemotePushService.instance.stop();
     await AuthService.instance.deleteAccount(password: password);
     DisclaimerService.instance.clearCache();
+    ref.read(bulkCartProvider.notifier).clear();
     state = const AsyncData(null);
   }
 }

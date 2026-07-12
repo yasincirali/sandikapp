@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
@@ -19,6 +20,14 @@ class AssetRowWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Debug: print price/cost details to help investigate 0₺ / %0 issue
+    if (kDebugMode) {
+      final valueTRY = state.toTRY(asset.totalValue, asset.currency);
+      final costTRY = asset.totalCostTRY;
+      final pnlTRY = valueTRY - costTRY;
+      debugPrint(
+          'ASSET_DEBUG ${asset.id} ${asset.name} | purchasePrice=${asset.purchasePrice} currentPrice=${asset.currentPrice} purchaseFxRate=${asset.purchaseFxRate} quantity=${asset.quantity} valueTRY=$valueTRY costTRY=$costTRY pnlTRY=$pnlTRY gainPct=${asset.gainLossPercentage}');
+    }
     final cs = Theme.of(context).colorScheme;
     final isPriceKnown = asset.purchasePrice > 0;
     final isPositive = isPriceKnown ? asset.gainLoss >= 0 : null;
@@ -28,8 +37,8 @@ class AssetRowWidget extends StatelessWidget {
             ? const Color(0xFF10B981)
             : const Color(0xFFEF4444);
 
-    final tryFmt = NumberFormat.currency(
-        locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
+    final tryFmt =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
     final priceFmt = NumberFormat('#,##0.##', 'tr_TR');
 
     final ticker = asset.showTicker ? asset.displayTicker : null;
@@ -47,7 +56,8 @@ class AssetRowWidget extends StatelessWidget {
           children: [
             asset.currencySymbol != null
                 ? Container(
-                    width: 28, height: 28,
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: asset.type.color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(7),
@@ -75,7 +85,8 @@ class AssetRowWidget extends StatelessWidget {
                 children: [
                   if (ticker != null) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(
                         color: asset.type.color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(4),
@@ -119,8 +130,8 @@ class AssetRowWidget extends StatelessWidget {
                       if (unitPrice != null) ...[
                         Text(
                           '  ·  ',
-                          style: TextStyle(
-                              color: cs.outlineVariant, fontSize: 11),
+                          style:
+                              TextStyle(color: cs.outlineVariant, fontSize: 11),
                         ),
                         Text(
                           unitPrice,
@@ -133,6 +144,15 @@ class AssetRowWidget extends StatelessWidget {
                       ],
                     ],
                   ),
+                  if (kDebugMode)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6.0),
+                      child: Text(
+                        'DBG p:${asset.purchasePrice} c:${asset.currentPrice} fx:${asset.purchaseFxRate} valTRY:${state.toTRY(asset.totalValue, asset.currency).toStringAsFixed(2)} costTRY:${asset.totalCostTRY.toStringAsFixed(2)}',
+                        style:
+                            TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -193,5 +213,4 @@ class AssetRowWidget extends StatelessWidget {
       ),
     );
   }
-
 }

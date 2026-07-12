@@ -104,10 +104,14 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   double _fxRateForCurrency(String currency, PortfolioState s) {
     switch (currency.toUpperCase()) {
-      case 'USD': return s.usdTry > 1.0 ? s.usdTry : 1.0;
-      case 'EUR': return s.eurTry > 1.0 ? s.eurTry : 1.0;
-      case 'GBP': return s.gbpTry > 1.0 ? s.gbpTry : 1.0;
-      default: return 1.0;
+      case 'USD':
+        return s.usdTry > 1.0 ? s.usdTry : 1.0;
+      case 'EUR':
+        return s.eurTry > 1.0 ? s.eurTry : 1.0;
+      case 'GBP':
+        return s.gbpTry > 1.0 ? s.gbpTry : 1.0;
+      default:
+        return 1.0;
     }
   }
 
@@ -129,39 +133,75 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final currentState = state.valueOrNull ?? const PortfolioState();
     final fxRate = _fxRateForCurrency(currency, currentState);
 
-    final asset = Asset(
-      id: _uuid.v4(),
-      userId: user.id,
-      name: name,
-      ticker: ticker,
-      type: type,
-      quantity: quantity,
-      purchasePrice: purchasePrice,
-      currency: currency,
-      notes: notes,
-      isManualPrice: isManualPrice,
-      subCategory: subCategory,
-      unitType: unitType,
-      purchaseFxRate: fxRate,
-    );
-    // Alım fiyatı girilmemişse ve güncel fiyat biliniyorsa, onu alım fiyatı yap.
-    if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
-      asset.purchasePrice = asset.currentPrice;
-    }
-
-    await SupabaseService.instance.insertAsset(asset);
-
-    AnalyticsService.instance.logAssetAdded(
-      type: type.name,
-      subCategory: subCategory,
+    // ── Aynı ticker ile mevcut bir varlık var mı kontrol et ──────────────────
+    final existingAssetIndex = currentState.assets.indexWhere(
+      (a) => a.ticker == ticker && a.type == type,
     );
 
-    final current = state.valueOrNull;
-    if (current != null) {
-      state = AsyncData(current.copyWith(assets: [asset, ...current.assets]));
+    if (existingAssetIndex >= 0) {
+      // ── Mevcut varlığı güncelle: Miktar ve ortalama maliyet ────────────────
+      final existingAsset = currentState.assets[existingAssetIndex];
+      final oldTotalCost = existingAsset.quantity * existingAsset.purchasePrice;
+      final newTotalCost = quantity * purchasePrice;
+      final totalQuantity = existingAsset.quantity + quantity;
+      final newAvgPrice = totalQuantity > 0
+          ? (oldTotalCost + newTotalCost) / totalQuantity
+          : existingAsset.purchasePrice;
+
+      existingAsset.quantity = totalQuantity;
+      existingAsset.purchasePrice = newAvgPrice;
+
+      await SupabaseService.instance.updateAsset(existingAsset);
+
+      AnalyticsService.instance.logAssetAdded(
+        type: type.name,
+        subCategory: subCategory,
+      );
+
+      final current = state.valueOrNull;
+      if (current != null) {
+        state = AsyncData(current.copyWith(
+          assets: current.assets
+              .map((a) => a.id == existingAsset.id ? existingAsset : a)
+              .toList(),
+        ));
+      }
     } else {
-      final assets = await SupabaseService.instance.fetchByUser(user.id);
-      state = AsyncData(PortfolioState(assets: assets));
+      // ── Yeni varlık oluştur ────────────────────────────────────────────────
+      final asset = Asset(
+        id: _uuid.v4(),
+        userId: user.id,
+        name: name,
+        ticker: ticker,
+        type: type,
+        quantity: quantity,
+        purchasePrice: purchasePrice,
+        currency: currency,
+        notes: notes,
+        isManualPrice: isManualPrice,
+        subCategory: subCategory,
+        unitType: unitType,
+        purchaseFxRate: fxRate,
+      );
+      // Alım fiyatı girilmemişse ve güncel fiyat biliniyorsa, onu alım fiyatı yap.
+      if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
+        asset.purchasePrice = asset.currentPrice;
+      }
+
+      await SupabaseService.instance.insertAsset(asset);
+
+      AnalyticsService.instance.logAssetAdded(
+        type: type.name,
+        subCategory: subCategory,
+      );
+
+      final current = state.valueOrNull;
+      if (current != null) {
+        state = AsyncData(current.copyWith(assets: [asset, ...current.assets]));
+      } else {
+        final assets = await SupabaseService.instance.fetchByUser(user.id);
+        state = AsyncData(PortfolioState(assets: assets));
+      }
     }
   }
 
@@ -170,7 +210,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final current = state.valueOrNull;
     if (current != null) {
       state = AsyncData(current.copyWith(
-        assets: current.assets.map((a) => a.id == asset.id ? asset : a).toList(),
+        assets:
+            current.assets.map((a) => a.id == asset.id ? asset : a).toList(),
       ));
     }
   }
@@ -304,7 +345,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           .fold<double>(0, (sum, a) => sum + s.toTRY(a.totalValue, a.currency));
       if (val > 0) categoryValues[type.name] = val;
     }
-    await SupabaseService.instance.insertSnapshot(categoryValues, userId: userId);
+    await SupabaseService.instance
+        .insertSnapshot(categoryValues, userId: userId);
   }
 
   Future<List<({int ts, Map<String, double> values})>> fetchSnapshots(
@@ -329,8 +371,7 @@ final allPartnerAssetsProvider =
   _PartnerAssetsNotifier.new,
 );
 
-class _PartnerAssetsNotifier
-    extends AsyncNotifier<Map<String, List<Asset>>> {
+class _PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
   @override
   Future<Map<String, List<Asset>>> build() async {
     final activePartners = ref.watch(activePartnersProvider);

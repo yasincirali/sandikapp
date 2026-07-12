@@ -74,8 +74,15 @@ Deno.serve(async (req: Request) => {
     }
     if (!invite) return json({ error: 'invite_not_found' }, 404)
 
-    // Yalnızca davet sahibi onaylayabilir/reddedebilir
-    if (invite.from_user_id !== user.id) {
+    // Yetki:
+    //  - accept: sadece davet sahibi (from_user_id)
+    //  - reject: davet sahibi (reddet) VEYA hedef kullanıcı (vazgeç/geri çek)
+    const isOwner = invite.from_user_id === user.id
+    const isTarget = invite.to_user_id === user.id
+    if (action === 'accept' && !isOwner) {
+      return json({ error: 'forbidden' }, 403)
+    }
+    if (action === 'reject' && !isOwner && !isTarget) {
       return json({ error: 'forbidden' }, 403)
     }
 

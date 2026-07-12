@@ -1,5 +1,40 @@
 import 'asset_type.dart';
 
+/// İşlem türü — audit trail için.
+/// - buy: alım (default, geriye dönük uyumluluk)
+/// - sell: satım (refAssetId ile ilgili buy lot'una bağlı; net miktarda düşer)
+/// - delete_log: silinen bir buy lot'unun mezar taşı (portföyden çıkar, işlem
+///   defterinde "SILDI" olarak kalır)
+enum AssetKind {
+  buy,
+  sell,
+  deleteLog;
+
+  String get dbValue {
+    switch (this) {
+      case AssetKind.buy:
+        return 'buy';
+      case AssetKind.sell:
+        return 'sell';
+      case AssetKind.deleteLog:
+        return 'delete_log';
+    }
+  }
+
+  static AssetKind fromDb(String? v) {
+    switch (v) {
+      case 'sell':
+        return AssetKind.sell;
+      case 'delete_log':
+        return AssetKind.deleteLog;
+      case 'buy':
+      case null:
+      default:
+        return AssetKind.buy;
+    }
+  }
+}
+
 class Asset {
   final String id;
   final String userId;
@@ -18,6 +53,16 @@ class Asset {
   bool isManualPrice;
   double purchaseFxRate;
 
+  /// İşlem türü — buy (default) / sell / delete_log
+  final AssetKind kind;
+
+  /// Sell veya delete_log satırlarının hangi buy lot'una referans verdiği.
+  /// null → bağımsız kayıt (buy için normal)
+  final String? refAssetId;
+
+  /// Sell işleminde gerçekleşen birim satış fiyatı (raporlama/kar-zarar için).
+  final double? sellPrice;
+
   Asset({
     required this.id,
     required this.userId,
@@ -35,9 +80,20 @@ class Asset {
     this.lastUpdated,
     DateTime? addedDate,
     bool? isManualPrice,
+    this.kind = AssetKind.buy,
+    this.refAssetId,
+    this.sellPrice,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
+
+  bool get isBuy => kind == AssetKind.buy;
+  bool get isSell => kind == AssetKind.sell;
+  bool get isDeleteLog => kind == AssetKind.deleteLog;
+
+  /// Portföy net pozisyonuna katkı gösteren tek satırlar buy'lar. Sell'ler
+  /// (negatif) ve delete_log'lar aggregator'da özel işlenir.
+  bool get affectsPosition => kind == AssetKind.buy;
 
   double get totalCost => quantity * purchasePrice;
   double get totalValue => quantity * currentPrice;
@@ -117,6 +173,9 @@ class Asset {
         'addedDate': addedDate.millisecondsSinceEpoch,
         'notes': notes,
         'isManualPrice': isManualPrice ? 1 : 0,
+        'kind': kind.dbValue,
+        'refAssetId': refAssetId,
+        'sellPrice': sellPrice,
       };
 
   factory Asset.fromMap(Map<String, dynamic> m) => Asset(
@@ -137,6 +196,9 @@ class Asset {
         addedDate: DateTime.fromMillisecondsSinceEpoch(m['addedDate'] as int),
         notes: (m['notes'] as String?) ?? '',
         isManualPrice: (m['isManualPrice'] as int) == 1,
+        kind: AssetKind.fromDb(m['kind'] as String?),
+        refAssetId: m['refAssetId'] as String?,
+        sellPrice: (m['sellPrice'] as num?)?.toDouble(),
       );
 
   /// Supabase snake_case sütunlarına map
@@ -157,6 +219,9 @@ class Asset {
         'notes': notes,
         'is_manual_price': isManualPrice,
         'purchase_fx_rate': purchaseFxRate,
+        'kind': kind.dbValue,
+        'ref_asset_id': refAssetId,
+        'sell_price': sellPrice,
       };
 
   factory Asset.fromSupabase(Map<String, dynamic> m) => Asset(
@@ -180,5 +245,8 @@ class Asset {
         notes: (m['notes'] as String?) ?? '',
         isManualPrice: m['is_manual_price'] as bool? ?? false,
         purchaseFxRate: (m['purchase_fx_rate'] as num?)?.toDouble() ?? 1.0,
+        kind: AssetKind.fromDb(m['kind'] as String?),
+        refAssetId: m['ref_asset_id'] as String?,
+        sellPrice: (m['sell_price'] as num?)?.toDouble(),
       );
 }

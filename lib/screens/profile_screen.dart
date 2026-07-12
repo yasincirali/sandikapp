@@ -12,6 +12,7 @@ import '../theme/sandik.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
+import '../utils/friendly_error.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -19,6 +20,43 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+/// Ortaklık akışına özel markaya uygun mesaj gösterimi.
+/// Sunucudan gelen kod-bazlı Türkçe mesajları tanır ve bağlama göre
+/// bilgi/hata rozeti seçer (raw exception göstermez).
+Future<void> _showPartnerMsg(
+  BuildContext context,
+  String rawMessage, {
+  required bool isError,
+}) async {
+  if (!context.mounted) return;
+  final msg = rawMessage.replaceFirst(RegExp(r'^Exception:\s*'), '');
+
+  if (!isError) {
+    await showAppSuccess(context, title: 'Tamamlandı', message: msg);
+    return;
+  }
+
+  // Belirli senaryolar için bilgi rozeti (hata değil bilgilendirme):
+  if (msg.contains('zaten ortağın')) {
+    await showAppInfo(context, title: 'Zaten Ortaksınız', message: msg);
+    return;
+  }
+  if (msg.contains('Kendi ürettiğin')) {
+    await showAppInfo(context, title: 'Kendi Kodun', message: msg);
+    return;
+  }
+  if (msg.contains('süresi dolmuş')) {
+    await showAppInfo(context, title: 'Süresi Doldu', message: msg);
+    return;
+  }
+  await showSandikDialog(
+    context: context,
+    kind: SandikDialogKind.error,
+    title: 'Bir sorun oluştu',
+    message: msg,
+  );
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
@@ -39,22 +77,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _showMsg(String msg, {bool isError = false}) async {
-    if (!mounted) return;
-    await showCupertinoDialog<void>(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: Text(isError ? 'Hata' : 'Bilgi'),
-        content: Text(msg),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tamam'),
-          ),
-        ],
-      ),
-    );
-  }
+  Future<void> _showMsg(String msg, {bool isError = false}) =>
+      _showPartnerMsg(context, msg, isError: isError);
 
   Future<void> _generateCode() async {
     final user = ref.read(authProvider).valueOrNull;
@@ -135,12 +159,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
-  void _cancelPending() {
+  Future<void> _cancelPending() async {
+    final inviteId = _pendingInviteId;
+    if (inviteId == null) return;
+
+    final confirm = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Ortaklık İsteğini İptal Et'),
+        content: const Text(
+            'Gönderdiğiniz ortaklık isteğini iptal etmek istediğinize emin misiniz?'),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Evet, iptal et'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
     _pollTimer?.cancel();
-    setState(() {
-      _pendingInviteId = null;
-      _pendingPartnerName = null;
-    });
+    setState(() => _busy = true);
+    try {
+      await ref.read(partnersProvider.notifier).rejectInvite(inviteId);
+      if (mounted) {
+        setState(() {
+          _pendingInviteId = null;
+          _pendingPartnerName = null;
+        });
+        await _showMsg('Ortaklık isteği iptal edildi.');
+      }
+    } catch (e) {
+      if (mounted) {
+        _startPolling(inviteId);
+        await _showMsg(e.toString(), isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _logout() => confirmAndLogout(context, ref);
@@ -150,7 +212,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = ref.watch(authProvider).valueOrNull;
     final partnersAsync = ref.watch(partnersProvider);
 
-    return Stack(
+    return PopScope(
+      canPop: !_busy,
+      child: Stack(
       children: [
         CupertinoPageScaffold(
           backgroundColor: Sandik.background,
@@ -239,9 +303,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
         ),
-        if (_busy)
-          const ModalBarrier(dismissible: false, color: Colors.transparent),
+        if (_busy) ...[
+          const ModalBarrier(
+              dismissible: false, color: Color(0xCC000000)),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 24, vertical: 20),
+              decoration: BoxDecoration(
+                color: Sandik.surface1,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.5, color: Sandik.amber),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    _submitting
+                        ? 'Ortaklık isteği gönderiliyor...'
+                        : _generating
+                            ? 'Kod üretiliyor...'
+                            : 'İşleniyor...',
+                    style: GoogleFonts.dmSans(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
+      ),
     );
   }
 
@@ -643,22 +745,8 @@ class _PendingRequestsSectionState
     if (mounted) setState(() => _pendingInvites = invites);
   }
 
-  Future<void> _showMsg(String msg, {bool isError = false}) async {
-    if (!mounted) return;
-    await showCupertinoDialog<void>(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: Text(isError ? 'Hata' : 'Bilgi'),
-        content: Text(msg),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Tamam'),
-          ),
-        ],
-      ),
-    );
-  }
+  Future<void> _showMsg(String msg, {bool isError = false}) =>
+      _showPartnerMsg(context, msg, isError: isError);
 
   Future<void> _accept(Map<String, dynamic> invite) async {
     try {

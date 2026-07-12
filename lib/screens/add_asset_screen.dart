@@ -3,14 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/h_scroll_with_fade.dart';
+import 'bulk_add_asset_screen.dart';
+
+const _addAssetUuid = Uuid();
 
 // ─── Döviz sabitleri ───────────────────────────────────────────────────────────
 
@@ -55,7 +60,19 @@ class _DecimalFormatter extends TextInputFormatter {
 
 class AddAssetScreen extends ConsumerStatefulWidget {
   final Asset? editingAsset;
-  const AddAssetScreen({super.key, this.editingAsset});
+
+  /// Sepete ekleme modu: kaydetmek yerine bulkCartProvider'a push edilir.
+  final bool cartMode;
+
+  /// Sepetten düzenleme: mevcut sepet öğesinin değerlerini prefill için.
+  final BulkCartItem? cartInitial;
+
+  const AddAssetScreen({
+    super.key,
+    this.editingAsset,
+    this.cartMode = false,
+    this.cartInitial,
+  });
 
   @override
   ConsumerState<AddAssetScreen> createState() => _AddAssetScreenState();
@@ -92,29 +109,46 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   void initState() {
     super.initState();
     final a = widget.editingAsset;
-    _name = TextEditingController(text: a?.name ?? '');
-    _ticker = TextEditingController(text: a?.ticker ?? '');
-    _quantity = TextEditingController(text: a != null ? _fmt(a.quantity) : '');
-    _price = TextEditingController(
-        text: a != null && a.purchasePrice > 0 ? _fmt(a.purchasePrice) : '');
-    _notes = TextEditingController(text: a?.notes ?? '');
-    _type = a?.type ?? AssetType.hisse;
-    _subCategory = a?.subCategory;
-    _unitType = a?.unitType ?? 'piece';
-    _currency = a?.currency ?? AssetType.hisse.defaultCurrency;
-    _isManualPrice = a?.isManualPrice ?? false;
+    final c = widget.cartInitial;
 
-    if (a != null) {
-      if (a.type == AssetType.hisse &&
-          a.subCategory == StockSubCategory.bist100.label &&
-          a.ticker.isNotEmpty) {
-        _bist100SelectedTicker = a.ticker;
-      }
-      if (a.type == AssetType.fon && a.ticker.startsWith('TEFAS:')) {
-        final code = a.ticker.replaceFirst('TEFAS:', '');
-        _selectedFund = TefasFund(
-            code: code, name: a.name, price: a.currentPrice, fundType: '', managerName: '');
-      }
+    final initName = a?.name ?? c?.name ?? '';
+    final initTicker = a?.ticker ?? c?.ticker ?? '';
+    final initQty = a?.quantity ?? c?.quantity ?? 0;
+    final initPrice = a?.purchasePrice ?? c?.price ?? 0;
+    final initType = a?.type ?? c?.type ?? AssetType.hisse;
+    final initSubCat = a?.subCategory ?? c?.subCategory;
+    final initUnit = a?.unitType ?? c?.unitType ?? 'piece';
+    final initCurrency =
+        a?.currency ?? c?.currency ?? initType.defaultCurrency;
+
+    _name = TextEditingController(text: initName);
+    _ticker = TextEditingController(text: initTicker);
+    _quantity =
+        TextEditingController(text: initQty > 0 ? _fmt(initQty) : '');
+    _price = TextEditingController(
+        text: initPrice > 0 ? _fmt(initPrice) : '');
+    _notes = TextEditingController(text: a?.notes ?? '');
+    _type = initType;
+    _subCategory = initSubCat;
+    _unitType = initUnit;
+    _currency = initCurrency;
+    _isManualPrice = a?.isManualPrice ?? (c != null && c.ticker.isEmpty);
+
+    // BIST100 seçili hisse prefill
+    if (initType == AssetType.hisse &&
+        initSubCat == StockSubCategory.bist100.label &&
+        initTicker.isNotEmpty) {
+      _bist100SelectedTicker = initTicker;
+    }
+    // TEFAS fon prefill
+    if (initType == AssetType.fon && initTicker.startsWith('TEFAS:')) {
+      final code = initTicker.replaceFirst('TEFAS:', '');
+      _selectedFund = TefasFund(
+          code: code,
+          name: initName,
+          price: a?.currentPrice ?? 0,
+          fundType: '',
+          managerName: '');
     }
   }
 
@@ -136,30 +170,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // Aşırı büyük değerleri engelle (Simetrik UI için limit)
     if (val > 1000000000000) return 999999999999;
     return val;
-  }
-
-  List<String> _getSubCategories() {
-    switch (_type) {
-      case AssetType.altin:
-        return GoldSubCategory.values.map((g) => g.label).toList();
-      case AssetType.doviz:
-        return _dovizOptions.map((o) => o.label).toList();
-      case AssetType.hisse:
-        return StockSubCategory.values.map((s) => s.label).toList();
-      default:
-        return [];
-    }
-  }
-
-  String _getUnitTypeForSubCategory(String subCat) {
-    if (_type == AssetType.altin) {
-      final gold = GoldSubCategory.values.firstWhere(
-        (g) => g.label == subCat,
-        orElse: () => GoldSubCategory.gr22,
-      );
-      return gold.unitType;
-    }
-    return 'piece';
   }
 
   String _getUnitLabel(String unitType) {
@@ -187,192 +197,642 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
+  bool _notesExpanded = false;
+
+  Widget _sectionLabel(String text) => Text(
+        text.toUpperCase(),
+        style: GoogleFonts.dmSans(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          color: Sandik.text58,
+        ),
+      );
+
+  Widget _fieldLabel(String text) => Text(
+        text,
+        style: GoogleFonts.dmSans(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Sandik.text90,
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final subCategories = _getSubCategories();
+
+    final saveLabel = widget.cartMode
+        ? (widget.cartInitial != null ? 'Kaydet' : 'Sepete Ekle')
+        : (_isEditing ? 'Güncelle' : 'Ekle');
+    final title = widget.cartMode
+        ? (widget.cartInitial != null ? 'Sepette Düzenle' : 'Sepete Ekle')
+        : (_isEditing ? 'Düzenle' : 'Varlık Ekle');
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: Sandik.background,
       appBar: AppBar(
-        title: Text(_isEditing ? 'Düzenle' : 'Varlık Ekle'),
+        backgroundColor: Sandik.background,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          title,
+          style: GoogleFonts.dmSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Sandik.text90),
+        ),
         actions: [
-          if (!_isEditing)
+          if (!_isEditing && !widget.cartMode) ...[
+            IconButton(
+              tooltip: 'Toplu ekle',
+              icon: const Icon(Icons.playlist_add_rounded,
+                  color: Sandik.text58),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BulkAddAssetScreen()),
+              ),
+            ),
             IconButton(
               tooltip: 'Sesli / Hızlı giriş',
-              icon: const Icon(Icons.mic_none_rounded),
+              icon: const Icon(Icons.mic_none_rounded,
+                  color: Sandik.text58),
               onPressed: _showQuickEntrySheet,
             ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: FilledButton(
-              onPressed: _saving ? null : _save,
-              style: FilledButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-                minimumSize: const Size(0, 36),
-              ),
-              child: _saving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(_isEditing ? 'Güncelle' : 'Ekle'),
-            ),
-          ),
+          ],
         ],
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        child: Column(
           children: [
-            // Varlık Türü
-            _label('Varlık Türü'),
-            const SizedBox(height: 8),
-            _typeSelector(cs),
-            const SizedBox(height: 20),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                children: [
+                  _sectionLabel('Varlık Türü'),
+                  const SizedBox(height: 10),
+                  _typeSelector(cs),
+                  const SizedBox(height: 22),
 
-            // Alt kategori (hisse / altın / döviz)
-            if (subCategories.isNotEmpty) ...[
-              _label(_type == AssetType.doviz ? 'Para Birimi' : 'Alt Kategori'),
-              const SizedBox(height: 8),
-              _subCategoryWidget(cs),
-              const SizedBox(height: 20),
-            ],
+                  // ── Kimlik: Bağlama göre TEK giriş alanı ──────────────
+                  _sectionLabel(_identityLabel()),
+                  const SizedBox(height: 10),
+                  _identitySection(cs),
+                  const SizedBox(height: 22),
 
-            // BIST100 seçici
-            if (_isBist100) ...[
-              _label('Hisse Seç'),
-              const SizedBox(height: 8),
-              _bist100SelectorField(cs),
-              const SizedBox(height: 20),
-            ]
-            // TEFAS fon seçici
-            else if (_isFon) ...[
-              _label('Fon Seç'),
-              const SizedBox(height: 8),
-              _tefasSelectorField(cs),
-              const SizedBox(height: 20),
-            ] else ...[
-              if (_type != AssetType.altin && !_isDoviz) ...[
-                _label('Varlık Adı'),
-                const SizedBox(height: 8),
-                _inputField(_name,
-                    hint: 'Örn: Apple Inc.',
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Ad zorunludur'
-                        : null),
-                const SizedBox(height: 20),
-              ],
-              if (_type == AssetType.hisse) ...[
-                _label('Sembol (opsiyonel)'),
-                const SizedBox(height: 8),
-                _tickerInputField(cs),
-                const SizedBox(height: 8),
-                _manualSwitch(cs),
-                const SizedBox(height: 20),
-              ],
-            ],
-
-            // Miktar
-            _label('Miktar'),
-            const SizedBox(height: 8),
-            _inputField(
-              _quantity,
-              hint: '0',
-              suffix: _quantitySuffix,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [_DecimalFormatter()],
-              validator: (v) =>
-                  (_parse(v ?? '') == null || (_parse(v ?? '') ?? 0) <= 0)
-                      ? 'Geçerli miktar girin'
-                      : null,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 8),
-            _quantityPresetsRow(cs),
-            const SizedBox(height: 16),
-
-            // Alış fiyatı + para birimi
-            _label('Alış Fiyatı (opsiyonel)'),
-            const SizedBox(height: 4),
-            Text(
-              'Boş bırakılırsa güncel piyasa fiyatı kullanılır',
-              style: TextStyle(
-                  fontSize: 11,
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.65)),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _inputField(
-                    _price,
-                    hint: '0.00',
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [_DecimalFormatter()],
-                    validator: (v) =>
-                        v != null && v.trim().isNotEmpty && _parse(v) == null
-                            ? 'Geçerli fiyat girin'
-                            : null,
-                    onChanged: (_) => setState(() {}),
+                  // ── Miktar + Fiyat yan yana ───────────────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _quantityBlock(cs)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _priceBlock(cs)),
+                    ],
                   ),
-                ),
-                if (!_isDoviz) ...[
-                  const SizedBox(width: 10),
-                  SizedBox(width: 100, child: _currencySelector(cs)),
+                  const SizedBox(height: 10),
+                  _quantityPresetsRow(cs),
+                  const SizedBox(height: 20),
+
+                  // ── Toplam maliyet hero card ─────────────────────────
+                  _totalHero(cs),
+                  const SizedBox(height: 16),
+
+                  // ── Notlar (collapsible) ─────────────────────────────
+                  _notesCollapsible(cs),
                 ],
-              ],
-            ),
-
-            _totalPreview(cs),
-            const SizedBox(height: 20),
-
-            // Notlar
-            _label('Notlar (opsiyonel)'),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _notes,
-              style: const TextStyle(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Notlarınız...',
-                hintStyle: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withValues(alpha: 0.6)),
               ),
-              maxLines: 3,
             ),
+            _stickyBottomBar(saveLabel),
           ],
         ),
       ),
     );
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ── Bağlama göre "kimlik" alanının etiketi ─────────────────────────────────
+  String _identityLabel() {
+    if (_isBist100 || _type == AssetType.hisse) return 'Hisse';
+    if (_isFon) return 'Fon';
+    if (_type == AssetType.altin) return 'Altın Türü';
+    if (_isDoviz) return 'Para Birimi';
+    if (_type == AssetType.emtia) return 'Emtia';
+    return 'Varlık';
+  }
 
-  Widget _label(String text) => Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.6,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+  // ── Kimlik bölümü: hisse/fon → picker; altın → chip grid; döviz → 4 kart
+  Widget _identitySection(ColorScheme cs) {
+    if (_type == AssetType.hisse) return _stockIdentityBlock(cs);
+    if (_isFon) return _tefasSelectorField(cs);
+    if (_type == AssetType.altin) return _goldChipGrid(cs);
+    if (_isDoviz) return _dovizSelector(cs);
+    // Emtia / Diğer — manuel ad + opsiyonel sembol
+    return Column(
+      children: [
+        _brandInput(
+          controller: _name,
+          hint: _type == AssetType.emtia
+              ? 'Örn: Petrol (Brent)'
+              : 'Varlık adı',
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? 'Ad zorunlu'
+              : null,
+        ),
+        const SizedBox(height: 8),
+        _brandInput(
+          controller: _ticker,
+          hint: _type.tickerHint,
+          textCapitalization: TextCapitalization.characters,
+          autocorrect: false,
+          onChanged: (v) {
+            if (v.isEmpty) setState(() => _isManualPrice = true);
+          },
+        ),
+      ],
+    );
+  }
+
+  // ── Hisse: birleşik "BIST100'den seç veya sembol yaz" bloğu ────────────────
+  //
+  // BIST100 seçilirse subCategory = "BIST 100 Hisseleri" yazılır (data korunur).
+  // Manuel sembol → subCategory = "Diğer Hisseler".
+  Widget _stockIdentityBlock(ColorScheme cs) {
+    return Column(
+      children: [
+        _bist100SelectorField(cs),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                  height: 1,
+                  color: Sandik.text36.withValues(alpha: 0.3)),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text('veya listede yok',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 11, color: Sandik.text36)),
+            ),
+            Expanded(
+              child: Container(
+                  height: 1,
+                  color: Sandik.text36.withValues(alpha: 0.3)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _brandInput(
+          controller: _ticker,
+          hint: 'Sembol yaz (örn: AAPL, THYAO.IS)',
+          textCapitalization: TextCapitalization.characters,
+          autocorrect: false,
+          onChanged: (v) {
+            setState(() {
+              if (v.isNotEmpty) {
+                _bist100SelectedTicker = null;
+                _subCategory = StockSubCategory.other.label;
+                _isManualPrice = false;
+              } else {
+                _isManualPrice = true;
+              }
+            });
+          },
+        ),
+        const SizedBox(height: 8),
+        _brandInput(
+          controller: _name,
+          hint: 'Şirket adı (opsiyonel — semboldan otomatik çekilir)',
+        ),
+      ],
+    );
+  }
+
+  // ── Altın: 7 türü tek büyük chip grid (dropdown yok) ───────────────────────
+  Widget _goldChipGrid(ColorScheme cs) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: GoldSubCategory.values.map((g) {
+        final selected = _subCategory == g.label;
+        return GestureDetector(
+          onTap: () => setState(() {
+            _subCategory = g.label;
+            _unitType = g.unitType;
+            _name.text = g.label;
+          }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? AssetType.altin.color.withValues(alpha: 0.18)
+                  : Sandik.surface1,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selected
+                    ? AssetType.altin.color
+                    : Colors.white.withValues(alpha: 0.06),
+                width: selected ? 1.4 : 1,
+              ),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color:
+                            AssetType.altin.color.withValues(alpha: 0.25),
+                        blurRadius: 14,
+                        spreadRadius: -6,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star_rounded,
+                    size: 14,
+                    color: selected
+                        ? AssetType.altin.color
+                        : Sandik.text58),
+                const SizedBox(width: 6),
+                Text(g.label,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            selected ? Sandik.text90 : Sandik.text58)),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ── Miktar bloğu ───────────────────────────────────────────────────────────
+  Widget _quantityBlock(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldLabel('Miktar'),
+        const SizedBox(height: 8),
+        _brandInput(
+          controller: _quantity,
+          hint: '0',
+          suffixText: _quantitySuffix,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [_DecimalFormatter()],
+          validator: (v) =>
+              (_parse(v ?? '') == null || (_parse(v ?? '') ?? 0) <= 0)
+                  ? 'Geçerli miktar'
+                  : null,
+          onChanged: (_) => setState(() {}),
+        ),
+      ],
+    );
+  }
+
+  // ── Fiyat bloğu (para birimi dropdown right-side) ──────────────────────────
+  Widget _priceBlock(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _fieldLabel('Alış Fiyatı'),
+            const SizedBox(width: 6),
+            Text('· opsiyonel',
+                style: GoogleFonts.dmSans(
+                    fontSize: 11, color: Sandik.text36)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _brandInput(
+          controller: _price,
+          hint: 'Otomatik',
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [_DecimalFormatter()],
+          validator: (v) =>
+              v != null && v.trim().isNotEmpty && _parse(v) == null
+                  ? 'Geçersiz'
+                  : null,
+          onChanged: (_) => setState(() {}),
+          suffix: _isDoviz ? null : _inlineCurrencyPicker(),
+        ),
+      ],
+    );
+  }
+
+  Widget _inlineCurrencyPicker() {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: _currency,
+        isDense: true,
+        dropdownColor: Sandik.surface2,
+        style: GoogleFonts.dmSans(
+            color: Sandik.amber, fontWeight: FontWeight.w700, fontSize: 12),
+        icon: const Icon(Icons.arrow_drop_down,
+            color: Sandik.amber, size: 18),
+        items: _currencies
+            .map((c) => DropdownMenuItem(
+                  value: c,
+                  child: Text(c),
+                ))
+            .toList(),
+        onChanged: (v) => setState(() => _currency = v ?? _currency),
+      ),
+    );
+  }
+
+  // ── Toplam maliyet hero card ───────────────────────────────────────────────
+  Widget _totalHero(ColorScheme cs) {
+    final qty = _parse(_quantity.text);
+    final price = _parse(_price.text);
+    final isPriceEmpty =
+        _price.text.trim().isEmpty || (price != null && price == 0);
+
+    // Miktar yoksa hiçbir şey gösterme
+    if (qty == null || qty <= 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Sandik.surface1,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calculate_outlined,
+                color: Sandik.text36, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Miktar girince toplam maliyet burada görünecek.',
+                style: GoogleFonts.dmSans(
+                    fontSize: 12, color: Sandik.text58),
+              ),
+            ),
+          ],
         ),
       );
+    }
 
-  // ── Varlık türü seçici ─────────────────────────────────────────────────────
+    if (isPriceEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Sandik.amber.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: Sandik.amber.withValues(alpha: 0.3), width: 1),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.auto_awesome_rounded,
+                color: Sandik.amber, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Alış fiyatı boş — kaydederken güncel piyasa fiyatı otomatik atanacak.',
+                style: GoogleFonts.dmSans(
+                    fontSize: 12,
+                    color: Sandik.text90,
+                    height: 1.35),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (price == null || price <= 0) return const SizedBox.shrink();
+
+    final total = qty * price;
+    final fmt = NumberFormat.currency(
+        locale: 'tr_TR', symbol: _currency == 'TRY' ? '₺ ' : '', decimalDigits: 2);
+    final formatted = _currency == 'TRY'
+        ? fmt.format(total)
+        : '${NumberFormat('#,##0.##', 'tr_TR').format(total)} $_currency';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Sandik.amber.withValues(alpha: 0.16),
+            Sandik.amber.withValues(alpha: 0.06),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: Sandik.amber.withValues(alpha: 0.4), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Sandik.amber.withValues(alpha: 0.16),
+            blurRadius: 24,
+            spreadRadius: -8,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('TOPLAM MALİYET',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Sandik.amber,
+                    letterSpacing: 0.8,
+                  )),
+              const SizedBox(height: 4),
+              Text('${_fmt(qty)} × ${_fmt(price)}',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 11, color: Sandik.text58)),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            formatted,
+            style: GoogleFonts.dmSans(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Sandik.gold,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Notlar collapsible ─────────────────────────────────────────────────────
+  Widget _notesCollapsible(ColorScheme cs) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Sandik.surface1,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () =>
+                setState(() => _notesExpanded = !_notesExpanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.notes_rounded,
+                      size: 16, color: Sandik.text58),
+                  const SizedBox(width: 10),
+                  Text('Not ekle',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Sandik.text90)),
+                  const Spacer(),
+                  if (_notes.text.isNotEmpty && !_notesExpanded)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Sandik.amber,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  Icon(
+                      _notesExpanded
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      color: Sandik.text58,
+                      size: 20),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 180),
+            crossFadeState: _notesExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: TextFormField(
+                controller: _notes,
+                style: GoogleFonts.dmSans(
+                    fontSize: 14, color: Sandik.text90),
+                maxLines: 3,
+                decoration: Sandik.inputDecoration('Notlarınız...'),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Sticky bottom CTA ──────────────────────────────────────────────────────
+  Widget _stickyBottomBar(String saveLabel) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+        decoration: BoxDecoration(
+          color: Sandik.background,
+          border: Border(
+            top: BorderSide(
+                color: Colors.white.withValues(alpha: 0.05), width: 1),
+          ),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: FilledButton(
+            onPressed: _saving ? null : _save,
+            style: FilledButton.styleFrom(
+              backgroundColor: Sandik.amber,
+              foregroundColor: Colors.black,
+              disabledBackgroundColor:
+                  Sandik.amber.withValues(alpha: 0.25),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+              elevation: 0,
+            ),
+            child: _saving
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.4, color: Colors.black),
+                  )
+                : Text(
+                    saveLabel,
+                    style: GoogleFonts.dmSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Ortak input builder (Sandik marka) ─────────────────────────────────────
+  Widget _brandInput({
+    required TextEditingController controller,
+    required String hint,
+    String? suffixText,
+    Widget? suffix,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    bool autocorrect = true,
+    String? Function(String?)? validator,
+    void Function(String)? onChanged,
+  }) {
+    return TextFormField(
+      controller: controller,
+      style: GoogleFonts.dmSans(
+          fontSize: 15,
+          color: Sandik.text90,
+          fontWeight: FontWeight.w500),
+      decoration: Sandik.inputDecoration(hint).copyWith(
+        suffixText: suffixText,
+        suffixStyle: GoogleFonts.dmSans(
+            fontSize: 12,
+            color: Sandik.text58,
+            fontWeight: FontWeight.w600),
+        suffixIcon: suffix,
+        suffixIconConstraints:
+            const BoxConstraints(minWidth: 60, minHeight: 40),
+      ),
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      textCapitalization: textCapitalization,
+      autocorrect: autocorrect,
+      validator: validator,
+      onChanged: onChanged,
+    );
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  // ── Varlık türü seçici (Sandik brand) ──────────────────────────────────────
 
   Widget _typeSelector(ColorScheme cs) {
     return HScrollWithFade(
-      fadeColor: cs.surface,
+      fadeColor: Sandik.background,
       child: Row(
         children: AssetType.values.map((t) {
           final selected = _type == t;
@@ -392,31 +852,40 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: selected
-                      ? t.color.withValues(alpha: 0.15)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
+                      ? t.color.withValues(alpha: 0.18)
+                      : Sandik.surface1,
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: selected
                         ? t.color
-                        : cs.outlineVariant.withValues(alpha: 0.4),
-                    width: selected ? 1.5 : 1,
+                        : Colors.white.withValues(alpha: 0.06),
+                    width: selected ? 1.4 : 1,
                   ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: t.color.withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            spreadRadius: -6,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(t.icon,
-                        size: 16,
-                        color: selected ? t.color : cs.onSurfaceVariant),
-                    const SizedBox(width: 6),
+                        size: 18,
+                        color: selected ? t.color : Sandik.text58),
+                    const SizedBox(width: 8),
                     Text(t.label,
-                        style: TextStyle(
+                        style: GoogleFonts.dmSans(
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: selected ? t.color : cs.onSurface,
+                          fontWeight: FontWeight.w700,
+                          color: selected ? Sandik.text90 : Sandik.text58,
                         )),
                   ],
                 ),
@@ -428,15 +897,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  // ── Alt kategori widget router ─────────────────────────────────────────────
-
-  Widget _subCategoryWidget(ColorScheme cs) {
-    if (_type == AssetType.doviz) return _dovizSelector(cs);
-    if (_type == AssetType.altin) return _goldSubCategoryWidget(cs);
-    return _bubbleSelector(_getSubCategories(), cs);
-  }
-
-  // ── Döviz para birimi seçici ───────────────────────────────────────────────
+  // ── Döviz para birimi seçici (Sandik brand, 4 büyük kart) ──────────────────
 
   Widget _dovizSelector(ColorScheme cs) {
     return Row(
@@ -449,46 +910,58 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               onTap: () => setState(() {
                 _subCategory = opt.label;
                 _ticker.text = opt.ticker;
-                _currency = 'TRY'; // doviz her zaman TRY bazlı
+                _currency = 'TRY';
                 _isManualPrice = opt.ticker.isEmpty;
                 _name.text = opt.name;
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 160),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: selected
-                      ? AssetType.doviz.color.withValues(alpha: 0.14)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(12),
+                      ? AssetType.doviz.color.withValues(alpha: 0.18)
+                      : Sandik.surface1,
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: selected
                         ? AssetType.doviz.color
-                        : cs.outlineVariant.withValues(alpha: 0.35),
-                    width: selected ? 1.5 : 1,
+                        : Colors.white.withValues(alpha: 0.06),
+                    width: selected ? 1.4 : 1,
                   ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: AssetType.doviz.color
+                                .withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            spreadRadius: -6,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       opt.symbol,
-                      style: TextStyle(
-                        fontSize: 20,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: selected ? AssetType.doviz.color : cs.onSurface,
+                        color: selected
+                            ? AssetType.doviz.color
+                            : Sandik.text90,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       opt.label,
-                      style: TextStyle(
+                      style: GoogleFonts.dmSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: selected
                             ? AssetType.doviz.color
-                            : cs.onSurfaceVariant,
-                        letterSpacing: 0.5,
+                            : Sandik.text58,
+                        letterSpacing: 0.6,
                       ),
                     ),
                   ],
@@ -501,93 +974,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  // ── Altın alt kategori (bubble + dropdown) ─────────────────────────────────
-
-  Widget _goldSubCategoryWidget(ColorScheme cs) {
-    final cats = GoldSubCategory.values.map((g) => g.label).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Bubble buttons
-        _bubbleSelector(cats, cs),
-        const SizedBox(height: 10),
-        // Dropdown — alternative selection
-        DropdownButtonFormField<String>(
-          initialValue: _subCategory,
-          decoration: InputDecoration(
-            hintText: 'Listeden seç...',
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            prefixIcon: Icon(Icons.star_rounded,
-                color: AssetType.altin.color, size: 18),
-          ),
-          items: cats
-              .map((c) => DropdownMenuItem(
-                    value: c,
-                    child: Text(c, style: const TextStyle(fontSize: 14)),
-                  ))
-              .toList(),
-          onChanged: (v) {
-            if (v == null) return;
-            setState(() {
-              _subCategory = v;
-              _unitType = _getUnitTypeForSubCategory(v);
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  // ── Genel bubble seçici ────────────────────────────────────────────────────
-
-  Widget _bubbleSelector(List<String> cats, ColorScheme cs) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: cats.map((cat) {
-        final selected = _subCategory == cat;
-        return GestureDetector(
-          onTap: () => setState(() {
-            _subCategory = cat;
-            _unitType = _getUnitTypeForSubCategory(cat);
-            _bist100SelectedTicker = null;
-            _ticker.clear();
-            _name.clear();
-          }),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(
-              color: selected
-                  ? _type.color.withValues(alpha: 0.12)
-                  : cs.surfaceContainerHighest.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: selected
-                    ? _type.color
-                    : cs.outlineVariant.withValues(alpha: 0.35),
-                width: selected ? 1.5 : 1,
-              ),
-            ),
-            child: Text(cat,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: selected ? _type.color : cs.onSurface,
-                )),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // ── Miktar preset chipleri ─────────────────────────────────────────────────
+  // ── Miktar preset chipleri (Sandik brand) ──────────────────────────────────
 
   Widget _quantityPresetsRow(ColorScheme cs) {
     final presets = _quantityPresets;
     return HScrollWithFade(
-      fadeColor: cs.surface,
+      fadeColor: Sandik.background,
       child: Row(
         children: presets.map((v) {
           final selected = _quantity.text == v;
@@ -601,13 +993,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: selected
-                      ? cs.primary.withValues(alpha: 0.12)
-                      : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
+                      ? Sandik.amber.withValues(alpha: 0.16)
+                      : Sandik.surface1,
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: selected
-                        ? cs.primary.withValues(alpha: 0.4)
-                        : cs.outlineVariant.withValues(alpha: 0.3),
+                        ? Sandik.amber.withValues(alpha: 0.45)
+                        : Colors.white.withValues(alpha: 0.05),
                   ),
                 ),
                 child: Row(
@@ -615,20 +1007,20 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   children: [
                     Text(
                       v,
-                      style: TextStyle(
+                      style: GoogleFonts.dmSans(
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: selected ? cs.primary : cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w700,
+                        color: selected ? Sandik.amber : Sandik.text58,
                       ),
                     ),
-                    const SizedBox(width: 3),
+                    const SizedBox(width: 4),
                     Text(
                       _getUnitLabel(_unitType),
-                      style: TextStyle(
+                      style: GoogleFonts.dmSans(
                         fontSize: 10,
                         color: selected
-                            ? cs.primary.withValues(alpha: 0.7)
-                            : cs.onSurfaceVariant.withValues(alpha: 0.6),
+                            ? Sandik.amber.withValues(alpha: 0.75)
+                            : Sandik.text36,
                       ),
                     ),
                   ],
@@ -749,195 +1141,55 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        color: Sandik.surface1,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: hasError
-              ? cs.error
-              : (hasValue ? color : cs.outlineVariant.withValues(alpha: 0.4)),
-          width: hasValue ? 1.5 : 1,
+              ? Sandik.loss
+              : (hasValue ? color : Colors.white.withValues(alpha: 0.06)),
+          width: hasValue ? 1.4 : 1,
         ),
+        boxShadow: hasValue
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.20),
+                  blurRadius: 14,
+                  spreadRadius: -6,
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
           if (badgeText != null) ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
+                color: color.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(badgeText,
-                  style: TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+                  style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                      letterSpacing: 0.5)),
             ),
             const SizedBox(width: 10),
           ],
           Expanded(
             child: Text(
               mainText,
-              style: TextStyle(
+              style: GoogleFonts.dmSans(
                 fontSize: 14,
                 fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
-                color: hasValue
-                    ? cs.onSurface
-                    : cs.onSurfaceVariant.withValues(alpha: 0.6),
+                color: hasValue ? Sandik.text90 : Sandik.text36,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Icon(Icons.search_rounded, size: 18, color: cs.onSurfaceVariant),
+          const Icon(Icons.search_rounded, size: 18, color: Sandik.text58),
         ],
-      ),
-    );
-  }
-
-  // ── Input fields ───────────────────────────────────────────────────────────
-
-  Widget _inputField(
-    TextEditingController ctrl, {
-    String? hint,
-    String? suffix,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
-    void Function(String)? onChanged,
-  }) =>
-      TextFormField(
-        controller: ctrl,
-        style: const TextStyle(fontSize: 14),
-        decoration: InputDecoration(
-          hintText: hint,
-          suffixText: suffix,
-          suffixStyle: TextStyle(
-              fontSize: 13,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
-        validator: validator,
-        onChanged: onChanged,
-      );
-
-  Widget _tickerInputField(ColorScheme cs) => TextFormField(
-        controller: _ticker,
-        style: const TextStyle(fontSize: 14),
-        decoration:
-            InputDecoration(hintText: _type.tickerHint, hintMaxLines: 2),
-        textCapitalization: TextCapitalization.characters,
-        autocorrect: false,
-        onChanged: (v) {
-          if (v.isEmpty) setState(() => _isManualPrice = true);
-        },
-      );
-
-  Widget _manualSwitch(ColorScheme cs) => Row(
-        children: [
-          Expanded(
-            child: Text('Manuel fiyat gir (sembol kullanma)',
-                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-          ),
-          Switch(
-            value: _isManualPrice,
-            onChanged: (v) => setState(() => _isManualPrice = v),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        ],
-      );
-
-  Widget _currencySelector(ColorScheme cs) => Container(
-        height: 50,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: cs.outlineVariant.withValues(alpha: 0.4), width: 1),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: _currency,
-            isDense: true,
-            icon: const SizedBox.shrink(),
-            items: _currencies
-                .map((c) => DropdownMenuItem(
-                    value: c,
-                    child: Text(c,
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600))))
-                .toList(),
-            onChanged: (v) => setState(() => _currency = v ?? _currency),
-          ),
-        ),
-      );
-
-  Widget _totalPreview(ColorScheme cs) {
-    final qty = _parse(_quantity.text);
-    final price = _parse(_price.text);
-    final isPriceEmpty =
-        _price.text.trim().isEmpty || (price != null && price == 0);
-
-    if (qty == null || qty <= 0) return const SizedBox.shrink();
-
-    if (isPriceEmpty) {
-      // Price will be fetched on save
-      return Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: cs.secondaryContainer.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline_rounded,
-                  size: 14, color: cs.secondary.withValues(alpha: 0.8)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Alış fiyatı boş — kaydederken güncel piyasa fiyatı otomatik atanacak.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: cs.onSecondaryContainer.withValues(alpha: 0.8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (price == null || price <= 0) return const SizedBox.shrink();
-
-    final total = qty * price;
-    final fmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
-    final numFmt = NumberFormat('#,##0.##', 'tr_TR');
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: cs.primaryContainer.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Text('Toplam maliyet',
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-            const Spacer(),
-            Text(
-              _currency == 'TRY'
-                  ? fmt.format(total)
-                  : '${numFmt.format(total)} $_currency',
-              style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w700, color: cs.primary),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1140,6 +1392,33 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             : _isDoviz
                 ? ticker.isEmpty
                 : _isManualPrice || ticker.isEmpty);
+
+    // ── Sepete ekleme modu: bulkCartProvider'a push, fiyat çekme yok ──
+    if (widget.cartMode) {
+      if (assetName.isEmpty) {
+        assetName = ticker.isNotEmpty ? ticker : (_subCategory ?? _type.label);
+      }
+      final item = BulkCartItem(
+        id: widget.cartInitial?.id ?? _addAssetUuid.v4(),
+        type: _type,
+        name: assetName,
+        ticker: ticker,
+        quantity: qty,
+        price: price,
+        currency: _currency,
+        subCategory: _subCategory,
+        unitType: _unitType,
+        isManualPrice: manual,
+      );
+      final notifier = ref.read(bulkCartProvider.notifier);
+      if (widget.cartInitial != null) {
+        notifier.update(item);
+      } else {
+        notifier.add(item);
+      }
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
 
     // ── Güncel fiyat çek (alış fiyatı boşsa) ──────────────────────────────
     if (price == 0.0 && ticker.isNotEmpty) {

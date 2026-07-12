@@ -446,9 +446,8 @@ class AuthService {
           .invoke('redeem-invite-code', body: {'code': trimmed})
           .timeout(const Duration(seconds: 15));
 
-      final status = response.status;
       final data = response.data;
-      if (status == 200 && data is Map) {
+      if (response.status == 200 && data is Map) {
         await _clearAttempts(currentUserId);
         try {
           await SupabaseService.instance
@@ -463,32 +462,38 @@ class AuthService {
         );
       }
 
-      // Edge function hata kodları
-      final errCode =
-          (data is Map && data['error'] is String) ? data['error'] as String : '';
+      final errCode = _extractErrorCode(data);
       await _recordAttempt(currentUserId);
       throw AuthException(_translateInviteError(errCode));
+    } on FunctionException catch (e) {
+      await _recordAttempt(currentUserId);
+      throw AuthException(_translateInviteError(_extractErrorCode(e.details)));
     } on AuthException {
       rethrow;
-    } catch (e) {
-      throw AuthException('Davet doğrulanamadı: ${_safe(e)}');
+    } catch (_) {
+      throw const AuthException('Bağlantı kurulamadı. İnternetini kontrol et.');
     }
+  }
+
+  String _extractErrorCode(dynamic data) {
+    if (data is Map && data['error'] is String) return data['error'] as String;
+    return '';
   }
 
   String _translateInviteError(String code) {
     switch (code) {
       case 'invalid_code_format':
-        return 'Geçersiz kod formatı.';
+        return 'Kodu XXXXX-XXXXX biçiminde gir.';
       case 'invite_not_found_or_expired':
-        return 'Kod bulunamadı veya süresi dolmuş.';
+        return 'Kod bulunamadı ya da süresi dolmuş. Ortağından yeni bir kod iste.';
       case 'cannot_use_own_code':
-        return 'Kendi kodunuzu kullanamazsınız.';
+        return 'Kendi ürettiğin kodu kullanamazsın.';
       case 'already_claimed':
-        return 'Bu kod zaten başka bir kullanıcı tarafından kullanılıyor.';
+        return 'Bu kod başka bir kullanıcı tarafından kullanılıyor.';
       case 'already_partners':
-        return 'Bu kullanıcı zaten ortağınız.';
+        return 'Bu kullanıcı zaten ortağın. Ortaklarım listende görebilirsin.';
       default:
-        return 'Davet doğrulanamadı.';
+        return 'Davet doğrulanamadı. Tekrar dene.';
     }
   }
 
@@ -528,32 +533,39 @@ class AuthService {
           })
           .timeout(const Duration(seconds: 15));
       if (response.status == 200) return;
-
-      final data = response.data;
-      final errCode =
-          (data is Map && data['error'] is String) ? data['error'] as String : '';
-      throw AuthException(_translateAcceptError(errCode));
+      throw AuthException(
+          _translateAcceptError(_extractErrorCode(response.data), action));
+    } on FunctionException catch (e) {
+      throw AuthException(
+          _translateAcceptError(_extractErrorCode(e.details), action));
     } on AuthException {
       rethrow;
-    } catch (e) {
-      throw AuthException('İşlem tamamlanamadı: ${_safe(e)}');
+    } catch (_) {
+      throw const AuthException('Bağlantı kurulamadı. İnternetini kontrol et.');
     }
   }
 
-  String _translateAcceptError(String code) {
+  String _translateAcceptError(String code, [String action = 'accept']) {
+    final isReject = action == 'reject';
     switch (code) {
       case 'invite_not_found':
-        return 'Davet bulunamadı.';
+        return 'Davet bulunamadı. Sayfayı yenileyip tekrar dene.';
       case 'forbidden':
-        return 'Bu daveti işleme yetkiniz yok.';
+        return isReject
+            ? 'Bu daveti iptal etme yetkin yok.'
+            : 'Bu daveti işleme yetkin yok.';
       case 'already_processed':
-        return 'Bu davet zaten işlenmiş.';
+        return isReject
+            ? 'Bu davet zaten sonuçlanmış.'
+            : 'Bu davet zaten yanıtlanmış.';
       case 'expired':
-        return 'Davet süresi dolmuş.';
+        return 'Davetin süresi dolmuş. Yeni bir kod üretmen gerekiyor.';
       case 'no_target':
-        return 'Davet hedefi tanımlı değil.';
+        return 'Davet henüz kimseye gönderilmemiş.';
       default:
-        return 'İşlem başarısız.';
+        return isReject
+            ? 'İptal işlemi tamamlanamadı. Tekrar dene.'
+            : 'İşlem tamamlanamadı. Tekrar dene.';
     }
   }
 

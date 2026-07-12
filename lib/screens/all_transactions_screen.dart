@@ -199,7 +199,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => PerformanceScreen(asset: asset, showBackButton: true)),
+          MaterialPageRoute(
+              builder: (_) =>
+                  PerformanceScreen(asset: asset, showBackButton: true)),
         ),
         child: Container(
           padding: const EdgeInsets.all(14),
@@ -211,7 +213,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             children: [
               asset.currencySymbol != null
                   ? Container(
-                      width: 28, height: 28,
+                      width: 28,
+                      height: 28,
                       decoration: BoxDecoration(
                         color: asset.type.color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(7),
@@ -236,14 +239,17 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                   children: [
                     if (asset.showTicker) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: asset.type.color.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(asset.displayTicker!,
                             style: GoogleFonts.dmSans(
-                                fontSize: 10, fontWeight: FontWeight.w800, color: asset.type.color)),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: asset.type.color)),
                       ),
                       const SizedBox(height: 3),
                     ],
@@ -277,6 +283,24 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                               .format(asset.addedDate),
                           style: GoogleFonts.dmSans(
                               fontSize: 11, color: Sandik.text36),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            asset.unitIsPrefix
+                                ? '${asset.unitLabel}${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)}'
+                                : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 10,
+                                color: Sandik.text58,
+                                fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ],
                     ),
