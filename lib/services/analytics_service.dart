@@ -83,6 +83,19 @@ class AnalyticsService {
       _log('asset_deleted', {'asset_type': type});
 
   // ── Sinyal / Teknik analiz ──────────────────────────────────────────────
+  Future<void> logSignalReceived({
+    required String ticker,
+    required String action,
+    required double confidence,
+    required String slot,
+  }) =>
+      _log('signal_received', {
+        'ticker': ticker,
+        'action': action,
+        'confidence': confidence.round(),
+        'slot': slot, // morning | afternoon | manual
+      });
+
   Future<void> logSignalViewed({required String ticker, required String action}) =>
       _log('signal_viewed', {'ticker': ticker, 'action': action});
 

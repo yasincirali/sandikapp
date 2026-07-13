@@ -11,6 +11,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
+import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
@@ -63,6 +64,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onDismissAll: () => ref.read(signalProvider.notifier).dismissAll(),
         onTap: (alert) {
           Navigator.pop(context);
+          AnalyticsService.instance.logSignalViewed(
+            ticker: alert.assetTicker,
+            action: alert.signal.name,
+          );
           final asset = ref
               .read(portfolioProvider)
               .valueOrNull

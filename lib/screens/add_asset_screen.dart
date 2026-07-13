@@ -12,6 +12,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'bulk_add_asset_screen.dart';
 
@@ -1488,6 +1489,17 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               unitType: _unitType,
             );
       }
+    } on AssetLimitExceededException catch (e) {
+      if (mounted) setState(() => _saving = false);
+      if (!mounted) return;
+      await showSandikDialog(
+        context: context,
+        kind: SandikDialogKind.info,
+        title: 'Varlık limitine ulaştın',
+        message:
+            'Ücretsiz planda ${e.limit} varlık takip edebilirsin. Sınırsız varlık için Premium gerekiyor.',
+      );
+      return;
     } finally {
       if (mounted) setState(() => _saving = false);
     }

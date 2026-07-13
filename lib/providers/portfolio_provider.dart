@@ -6,8 +6,20 @@ import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../services/price_service.dart';
 import 'auth_provider.dart';
+import 'preferences_provider.dart';
 
 const _uuid = Uuid();
+
+/// Free tier varlık limiti aşıldığında `addAsset` bunu fırlatır. UI yakalayıp
+/// paywall gösterir + `premium_gate_shown` event log'lar.
+class AssetLimitExceededException implements Exception {
+  final int currentCount;
+  final int limit;
+  const AssetLimitExceededException(this.currentCount, this.limit);
+  @override
+  String toString() =>
+      'AssetLimitExceededException(current: $currentCount, limit: $limit)';
+}
 
 // ---------------------------------------------------------------------------
 // State
@@ -130,6 +142,26 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     if (user == null) return;
 
     final currentState = state.valueOrNull ?? const PortfolioState();
+
+    // ── Free tier gate: distinct pozisyon (buy lot) sayısını kontrol et ─────
+    // Position aggregation'a göre count ediyoruz: aynı ticker'a ek lot ekleme
+    // yeni "varlık" sayılmasın (kullanıcı zaten sahip olduğuna ekliyor).
+    final limit = ref.read(assetLimitProvider);
+    if (limit < (1 << 30)) {
+      final existingKeys = <String>{};
+      for (final a in currentState.assets) {
+        if (a.isBuy) {
+          existingKeys.add('${a.type.name}|${a.ticker}|${a.currency}');
+        }
+      }
+      final newKey = '${type.name}|$ticker|$currency';
+      if (!existingKeys.contains(newKey) && existingKeys.length >= limit) {
+        AnalyticsService.instance
+            .logPremiumGateShown(feature: 'asset_limit');
+        throw AssetLimitExceededException(existingKeys.length, limit);
+      }
+    }
+
     final fxRate = _fxRateForCurrency(currency, currentState);
 
     final asset = Asset(
@@ -207,6 +239,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   Future<void> updateAsset(Asset asset) async {
     await SupabaseService.instance.updateAsset(asset);
+    AnalyticsService.instance.logAssetUpdated(type: asset.type.name);
     final current = state.valueOrNull;
     if (current != null) {
       state = AsyncData(current.copyWith(
@@ -249,6 +282,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         refAssetId: deleted.id,
       );
       await SupabaseService.instance.insertAsset(transaction);
+      AnalyticsService.instance.logAssetDeleted(type: deleted.type.name);
     }
     await SupabaseService.instance.deleteAsset(id);
     if (current != null) {

@@ -85,6 +85,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     }
 
     // ── 2) Insert'leri paralel çalıştır ────────────────────────────────────
+    bool limitHit = false;
     await Future.wait(items.map((item) async {
       try {
         await portfolio.addAsset(
@@ -100,10 +101,25 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           unitType: item.unitType,
         );
         if (mounted) setState(() => _saved++);
+      } on AssetLimitExceededException {
+        limitHit = true;
+        failures.add('${item.name}: varlık limitine ulaşıldı');
       } catch (e) {
         failures.add('${item.name}: ${e.toString()}');
       }
     }));
+
+    if (limitHit && mounted) {
+      setState(() => _saving = false);
+      await showSandikDialog(
+        context: context,
+        kind: SandikDialogKind.info,
+        title: 'Varlık limitine ulaştın',
+        message:
+            'Ücretsiz planda sınırlı sayıda varlık takip edebilirsin. Sepetteki bazı varlıklar eklenemedi. Sınırsız için Premium gerekiyor.',
+      );
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _saving = false);

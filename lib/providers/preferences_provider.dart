@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset_type.dart';
+import '../services/remote_config_service.dart';
 import '../services/technical_analysis_service.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
@@ -111,6 +112,25 @@ const _kPremiumUnlockedKey = 'pref_premium_unlocked';
 
 final premiumUnlockedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kPremiumUnlockedKey, false));
+
+/// UI'da kullanılması gereken effective premium bayrağı:
+///  - Kullanıcı premium mu (satın aldı / test toggle açık)?  AND
+///  - Remote Config premium_enabled kill switch true mu?
+///
+/// Faz 1'de `premiumUnlockedProvider` RevenueCat CustomerInfo'ya bağlanacak.
+/// Bu provider'ı kullanan kodun değişmesi gerekmez.
+final effectivePremiumProvider = Provider<bool>((ref) {
+  final unlocked = ref.watch(premiumUnlockedProvider);
+  return unlocked && RemoteConfigService.instance.premiumEnabled;
+});
+
+/// Free tier varlık limiti — Remote Config'ten dinamik.
+/// Premium ise limit yoktur (int.max ile temsil edilir).
+final assetLimitProvider = Provider<int>((ref) {
+  final premium = ref.watch(effectivePremiumProvider);
+  if (premium) return 1 << 30; // pratik olarak sınırsız
+  return RemoteConfigService.instance.freeAssetLimit;
+});
 
 // ─── Per-category göstergeler ─────────────────────────────────────────────────
 // Kullanıcı her varlık türü için hangi göstergelerin sinyal üretmesini istediğini

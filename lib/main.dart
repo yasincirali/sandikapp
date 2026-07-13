@@ -13,12 +13,14 @@ import 'config/supabase_config.dart';
 import 'models/user_model.dart';
 import 'providers/auth_provider.dart';
 import 'providers/portfolio_provider.dart';
+import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/analytics_service.dart';
+import 'services/remote_config_service.dart';
 import 'services/db_logger.dart';
 import 'services/disclaimer_service.dart';
 import 'services/fx_rate_migration_service.dart';
@@ -63,6 +65,7 @@ void main() async {
 
       await RemotePushService.instance.init();
       await AnalyticsService.instance.init();
+      await RemoteConfigService.instance.init();
     } catch (e, st) {
       // Firebase config dosyalari yoksa veya init başarısızsa
       // sessizce devam et; uygulama remote push + crashlytics olmadan çalışır.
@@ -460,9 +463,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       } else if (user != null && user.id != _checkedUserId) {
         _checkedUserId = user.id;
         AnalyticsService.instance.setUserId(user.id);
+        final isPremium = ref.read(effectivePremiumProvider);
         AnalyticsService.instance.setUserProperty(
           name: 'user_type',
-          value: 'free',
+          value: isPremium ? 'premium' : 'free',
         );
         DisclaimerService.instance.hasAccepted(user.id).then((accepted) {
           if (!mounted) return;
@@ -499,8 +503,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (RemotePushService.instance.isAvailable) {
         await PartnerInviteListenerService.instance.stop();
         // Cron tetiklendiğinde portföy analizi başlat.
-        RemotePushService.instance.onSignalAnalyzeRequest = () {
-          _triggerSignalAnalysis();
+        RemotePushService.instance.onSignalAnalyzeRequest = (slot) {
+          _triggerSignalAnalysis(slot);
         };
         await RemotePushService.instance.start(userId);
         return;
@@ -513,16 +517,28 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     }
   }
 
+  /// GA4 user property için varlık sayısını bucket'a çevir (sayı yerine
+  /// audience segmentation daha kolay olur).
+  String _bucketAssetCount(int n) {
+    if (n == 0) return '0';
+    if (n <= 5) return '1-5';
+    if (n <= 10) return '6-10';
+    if (n <= 20) return '11-20';
+    if (n <= 50) return '21-50';
+    return '50+';
+  }
+
   /// FCM data-message `signal_analyze_request` alındığında (günlük TR 11:00 &
   /// 15:00 cron), portföyü çeker ve teknik analiz servisiyle sinyalleri üretir.
   /// Yeni sinyaller `signal_notifications` tablosuna yazılır + local push atılır.
-  Future<void> _triggerSignalAnalysis() async {
+  /// [slot] cron'un hangi zaman slot'undan geldiği ('morning' | 'afternoon').
+  Future<void> _triggerSignalAnalysis(String slot) async {
     try {
       final portfolio = ref.read(portfolioProvider).valueOrNull;
       if (portfolio == null || portfolio.assets.isEmpty) return;
       await ref
           .read(signalProvider.notifier)
-          .analyzePortfolio(portfolio.assets);
+          .analyzePortfolio(portfolio.assets, slot: slot);
     } catch (_) {
       // Sessizce yut — bir sonraki cron çağrısında yeniden denenir.
     }
@@ -550,6 +566,23 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final user = auth.valueOrNull;
+
+    // Portföy varlık sayısı değişince analytics user property'sini güncelle.
+    // Analytics dashboard'ta cohort analizi için gerekli.
+    ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (prev, next) {
+      final prevCount = prev?.valueOrNull?.assets
+              .where((a) => a.isBuy)
+              .length ??
+          -1;
+      final currCount =
+          next.valueOrNull?.assets.where((a) => a.isBuy).length ?? 0;
+      if (prevCount != currCount) {
+        AnalyticsService.instance.setUserProperty(
+          name: 'asset_count',
+          value: _bucketAssetCount(currCount),
+        );
+      }
+    });
 
     // Splash minimum süresi veya auth/disclaimer/onboarding yükleniyorsa loading göster
     if (!_splashDone ||

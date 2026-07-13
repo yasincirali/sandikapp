@@ -39,9 +39,10 @@ class RemotePushService {
   /// Cron'dan (`analyze-signals` edge function) gelen `signal_analyze_request`
   /// data-message'ı yakalandığında çağrılır. App root'ta set edilir → içinde
   /// `signalProvider.notifier.analyzePortfolio(...)` çalıştırılır.
-  void Function()? _onSignalAnalyzeRequest;
+  /// [slot] FCM data'sındaki 'morning' | 'afternoon' | 'manual' değeri.
+  void Function(String slot)? _onSignalAnalyzeRequest;
 
-  set onSignalAnalyzeRequest(void Function()? cb) {
+  set onSignalAnalyzeRequest(void Function(String slot)? cb) {
     _onSignalAnalyzeRequest = cb;
   }
 
@@ -85,8 +86,9 @@ class RemotePushService {
       if (type == NotificationService.signalAnalyzeRequestType) {
         // Cron'dan gelen "analiz zamanı" tetiği. Callback set edilmişse
         // client tarafında portföy analizini başlatır.
+        final slot = data['slot']?.toString() ?? 'manual';
         try {
-          _onSignalAnalyzeRequest?.call();
+          _onSignalAnalyzeRequest?.call(slot);
         } catch (_) {}
         return;
       }

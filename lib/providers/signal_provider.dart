@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
+import '../services/analytics_service.dart';
 import '../services/notification_service.dart';
 import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
@@ -43,7 +44,10 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
 
   /// Kullanıcının portföyünü analiz et; eşiği geçen ve önceki sinyalden
   /// farklı olan her varlık için yeni bildirim yazar + push gönderir.
-  Future<void> analyzePortfolio(List<Asset> assets) async {
+  ///
+  /// [slot] analytics için: 'morning' (TR 11:00), 'afternoon' (TR 15:00),
+  /// 'manual' (kullanıcı tetikli), 'startup' (uygulama açılışı — nadir).
+  Future<void> analyzePortfolio(List<Asset> assets, {String slot = 'manual'}) async {
     if (assets.isEmpty) return;
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -104,6 +108,13 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
         );
         inserted.add(saved);
 
+        AnalyticsService.instance.logSignalReceived(
+          ticker: asset.ticker,
+          action: summary.signal.name,
+          confidence: summary.confidence,
+          slot: slot,
+        );
+
         if (summary.signal != SignalType.neutral) {
           await NotificationService.instance.sendSignalNotification(
             assetName: asset.name,
@@ -125,10 +136,15 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
   /// Kullanıcı bildirim geçmişinden bir kaydı sildi.
   /// Statü değişmedikçe yeniden push atılmaz.
   Future<void> dismiss(String id) async {
+    final current = state.valueOrNull ?? const [];
+    final alert = current.where((a) => a.id == id).firstOrNull;
+    if (alert != null) {
+      AnalyticsService.instance
+          .logSignalDismissed(ticker: alert.assetTicker);
+    }
     try {
       await SupabaseService.instance.dismissSignalNotification(id);
     } catch (_) {}
-    final current = state.valueOrNull ?? const [];
     state = AsyncData([
       for (final a in current)
         if (a.id == id) a.copyWith(dismissedAt: DateTime.now()) else a,
