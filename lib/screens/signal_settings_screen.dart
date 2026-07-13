@@ -9,9 +9,9 @@ import '../theme/sandik.dart';
 import '../widgets/disclaimer_widget.dart';
 import 'paywall_screen.dart';
 
-/// KullanÄ±cÄ± her varlÄ±k tÃ¼rÃ¼ iÃ§in hangi teknik gÃ¶stergelerin sinyal Ã¼retmesini
-/// istediÄŸini seÃ§er. Premium gÃ¶stergeler premium olmayan kullanÄ±cÄ±ya kilitli
-/// gÃ¶rÃ¼nÃ¼r â€” aÃ§mak iÃ§in Premium'a geÃ§mesi gerekir.
+/// Kullanıcı her varlık türü için hangi teknik göstergelerin sinyal üretmesini
+/// istediğini seçer. Premium göstergeler premium olmayan kullanıcıya kilitli
+/// görünür — açmak için Premium'a geçmesi gerekir.
 class SignalSettingsScreen extends ConsumerWidget {
   const SignalSettingsScreen({super.key});
 
@@ -33,7 +33,7 @@ class SignalSettingsScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Sinyal AyarlarÄ±',
+          'Sinyal Ayarları',
           style: GoogleFonts.dmSans(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -73,14 +73,14 @@ class SignalSettingsScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('NÃ¶tr sinyalleri de bildir',
+                          Text('Nötr sinyalleri de bildir',
                               style: GoogleFonts.dmSans(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white)),
                           const SizedBox(height: 3),
                           Text(
-                            'KapalÄ±yken sadece AL/SAT bildirimi gelir. NÃ¶tr sinyaller yine geÃ§miÅŸe yazÄ±lÄ±r.',
+                            'Kapalıyken sadece AL/SAT bildirimi gelir. Nötr sinyaller yine geçmişe yazılır.',
                             style: GoogleFonts.dmSans(
                                 fontSize: 11,
                                 color: Sandik.text58,
@@ -104,7 +104,7 @@ class SignalSettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           Text(
-            'Her varlÄ±k tÃ¼rÃ¼ iÃ§in hangi gÃ¶stergelerin sinyal Ã¼retmesini istediÄŸini ve bildirim gÃ¼ven eÅŸiÄŸini seÃ§.',
+            'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
             style: GoogleFonts.dmSans(
                 fontSize: 12, color: Sandik.text58, height: 1.5),
           ),
@@ -168,7 +168,7 @@ class _PremiumCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  unlocked ? 'Premium aktif' : 'Premium gÃ¶stergeler',
+                  unlocked ? 'Premium aktif' : 'Premium göstergeler',
                   style: GoogleFonts.dmSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -178,8 +178,8 @@ class _PremiumCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   unlocked
-                      ? 'ADX, Williams %R ve CCI gÃ¶stergeleri kullanÄ±labilir.'
-                      : 'ADX, Williams %R, CCI gÃ¶stergelerini aÃ§mak iÃ§in Premium\'a geÃ§.',
+                      ? 'ADX, Williams %R ve CCI göstergeleri kullanılabilir.'
+                      : 'ADX, Williams %R, CCI göstergelerini açmak için Premium\'a geç.',
                   style: GoogleFonts.dmSans(
                       fontSize: 11, color: Sandik.text58, height: 1.4),
                 ),
@@ -196,7 +196,7 @@ class _PremiumCard extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             child: Text(
-              unlocked ? 'Kapat' : 'AÃ§',
+              unlocked ? 'Kapat' : 'Aç',
               style: TextStyle(
                 color: unlocked ? Colors.white : Colors.black,
                 fontWeight: FontWeight.w700,
@@ -259,7 +259,7 @@ class _CategorySection extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'Bildirim eÅŸiÄŸi',
+                  'Bildirim eşiği',
                   style: GoogleFonts.dmSans(
                       fontSize: 12,
                       color: Sandik.text58,
@@ -353,7 +353,7 @@ class _IndicatorRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'Ã–NERÄ°LEN',
+                  'ÖNERİLEN',
                   style: GoogleFonts.dmSans(
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
@@ -372,7 +372,7 @@ class _IndicatorRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'Ã–NERÄ°LEN',
+                    'ÖNERİLEN',
                     style: GoogleFonts.dmSans(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
