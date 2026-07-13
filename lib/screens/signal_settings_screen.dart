@@ -19,6 +19,7 @@ class SignalSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final prefs = ref.watch(indicatorPrefsProvider);
     final premium = ref.watch(premiumUnlockedProvider);
+    final paywallOn = ref.watch(paywallVisibleProvider);
     final thresholds = ref.watch(signalThresholdProvider);
     final neutralPush = ref.watch(signalNeutralPushProvider);
 
@@ -47,14 +48,16 @@ class SignalSettingsScreen extends ConsumerWidget {
           const DisclaimerWidget(),
           const SizedBox(height: 16),
 
-          // â”€â”€ Premium banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          _PremiumCard(
-            unlocked: premium,
-            onToggle: () => ref
-                .read(premiumUnlockedProvider.notifier)
-                .set(!premium),
-          ),
-          const SizedBox(height: 24),
+          // ── Premium banner (paywall kapalıysa hiç gösterilmez) ───────────
+          if (paywallOn) ...[
+            _PremiumCard(
+              unlocked: premium,
+              onToggle: () => ref
+                  .read(premiumUnlockedProvider.notifier)
+                  .set(!premium),
+            ),
+            const SizedBox(height: 24),
+          ],
 
           // â”€â”€ Genel bildirim ayarlarÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Container(
@@ -115,7 +118,10 @@ class SignalSettingsScreen extends ConsumerWidget {
               type: type,
               selected: prefs[type] ??
                   TechnicalAnalysisService.defaultEnabledFor(type),
-              premiumUnlocked: premium,
+              // Paywall kapalıyken herkes premium'muş gibi davranır (kilit yok,
+              // "PREMIUM" chip'i yok). Store hazır olunca RC'den açılır.
+              premiumUnlocked: !paywallOn || premium,
+              paywallVisible: paywallOn,
               threshold:
                   thresholds[type] ?? kSignalThresholdDefault,
               onToggle: (id) => ref
@@ -214,6 +220,7 @@ class _CategorySection extends StatelessWidget {
   final AssetType type;
   final Set<String> selected;
   final bool premiumUnlocked;
+  final bool paywallVisible;
   final int threshold;
   final void Function(String id) onToggle;
   final void Function(int threshold) onThresholdChanged;
@@ -222,6 +229,7 @@ class _CategorySection extends StatelessWidget {
     required this.type,
     required this.selected,
     required this.premiumUnlocked,
+    required this.paywallVisible,
     required this.threshold,
     required this.onToggle,
     required this.onThresholdChanged,
@@ -283,6 +291,7 @@ class _CategorySection extends StatelessWidget {
               checked: selected.contains(id),
               locked: IndicatorId.premium.contains(id) && !premiumUnlocked,
               recommended: IndicatorId.recommendedFor(type).contains(id),
+              showPremiumChip: paywallVisible,
               onTap: () {
                 if (IndicatorId.premium.contains(id) && !premiumUnlocked) {
                   AnalyticsService.instance
@@ -305,6 +314,7 @@ class _IndicatorRow extends StatelessWidget {
   final bool checked;
   final bool locked;
   final bool recommended;
+  final bool showPremiumChip;
   final VoidCallback onTap;
 
   const _IndicatorRow({
@@ -312,6 +322,7 @@ class _IndicatorRow extends StatelessWidget {
     required this.checked,
     required this.locked,
     required this.recommended,
+    required this.showPremiumChip,
     required this.onTap,
   });
 
@@ -381,23 +392,24 @@ class _IndicatorRow extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (recommended) const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Sandik.amber.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'PREMIUM',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    color: Sandik.amber,
-                    letterSpacing: 0.8,
+              if (showPremiumChip && recommended) const SizedBox(width: 6),
+              if (showPremiumChip)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Sandik.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'PREMIUM',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: Sandik.amber,
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ),
-              ),
             ],
           ],
         ),

@@ -26,8 +26,14 @@ class RemoteConfigService {
   // ── Default değerler ─────────────────────────────────────────────────────
   // Firebase Console'dan override edilene kadar bu değerler geçerli.
   static const _defaults = <String, dynamic>{
-    // Kill switch: false yaparsak tüm premium feature'lar kapatılır (paywall
-    // yerine "yakında" mesajı gösterilebilir). Emergency rollback için.
+    // Master kill switch: kullanıcının göreceği TÜM üyelik/ödeme ekranları,
+    // banner, chip, kilit overlay, paywall trigger'ları buna bağlı. false ise
+    // premium sistem uygulamada hiç yokmuş gibi davranır. RevenueCat entegrasyonu
+    // + store onayları tamamlanana kadar kapalı tutulur.
+    'paywall_enabled': false,
+
+    // Premium feature kill switch: paywall açık olsa bile emergency rollback
+    // için premium özellikleri kapatabilir.
     'premium_enabled': true,
 
     // Free tier varlık limiti. Launch'ta 20 ile başla, engagement düşükse
@@ -78,6 +84,13 @@ class RemoteConfigService {
   }
 
   // ── Feature flag getter'ları ─────────────────────────────────────────────
+  /// Kullanıcının göreceği tüm üyelik/ödeme UI'ları buna bağlı. false ise
+  /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
+  /// edilmez; add-asset limit'i devreye girmez. Store + RevenueCat hazır
+  /// olunca Firebase Console'dan true'ya çekilecek.
+  bool get paywallEnabled =>
+      _rc?.getBool('paywall_enabled') ?? _defaults['paywall_enabled'] as bool;
+
   bool get premiumEnabled =>
       _rc?.getBool('premium_enabled') ?? _defaults['premium_enabled'] as bool;
 

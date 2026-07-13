@@ -17,6 +17,26 @@
 - Register'a KVKK + Açık Rıza checkbox'ları
 - 9 adet hukuki belge (TR + EN)
 
+---
+
+## 💰 MONETİZASYON: `paywall_enabled` bayrağı (2026-07-13)
+
+**Şu an durum:** Paywall UI iskeleti hazır ama **Firebase Remote Config** üzerinden `paywall_enabled = false` ile kapalı. Kullanıcı hiçbir premium/ödeme ekranı görmüyor.
+
+**Açman gerekli olduğunda sıra:**
+
+1. **App Store Connect + Google Play Console** — 2 subscription ürünü oluştur (aynı product ID'ler):
+   - `sandik_premium_monthly`
+   - `sandik_premium_yearly`
+2. **RevenueCat Dashboard:** proje aç → iOS/Android app'leri bağla → `premium` entitlement + `default` offering tanımla → iOS/Android API key'lerini al
+3. Bana bildir → RevenueCat SDK entegrasyonunu yaparım ([paywall_screen.dart:120, :140](lib/screens/paywall_screen.dart) TODO'ları)
+4. **Firebase Console → Remote Config → `paywall_enabled` → `true` → Publish**
+5. Uygulama açılışında UI otomatik gelir, kod push'una gerek yok
+
+Detay: [MONETIZATION_ROADMAP.md](MONETIZATION_ROADMAP.md#-master-kill-switch-paywall_enabled-2026-07-13)
+
+---
+
 ❌ **Senin yapacakların — 7 ana başlık, 4-6 iş günü:**
 
 | Sıra | İş | Tahmini süre | Bloker? |

@@ -6,6 +6,16 @@
 
 ---
 
+## 🚧 Aktif Feature Flag'ler
+
+| Flag | Kaynak | Default | Durum | Açılma Koşulu |
+|---|---|---|---|---|
+| `paywall_enabled` | Firebase Remote Config | `false` | ❌ KAPALI | RevenueCat + App Store/Play Console subscription ürünleri hazır olunca `true` |
+
+**`paywall_enabled = false` iken:** Paywall ekranı, Premium banner, Premium chip'leri, kilit overlay, ADX/Williams/CCI kilidi, varlık limiti — hiçbiri kullanıcıya görünmez. Herkes free-tier davranır. Detay: [MONETIZATION_ROADMAP.md](MONETIZATION_ROADMAP.md#-master-kill-switch-paywall_enabled-2026-07-13)
+
+---
+
 ## 1) GÜVENLİK & VERİ GÜVENLİĞİ
 
 ### Kritik (4/4) ✅

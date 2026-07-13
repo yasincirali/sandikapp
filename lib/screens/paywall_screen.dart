@@ -19,6 +19,11 @@ class PaywallScreen extends ConsumerStatefulWidget {
 
   static Future<bool?> show(BuildContext context,
       {required String source}) {
+    // Güvenlik ağı: master switch kapalıyken paywall açılmasın. UI trigger'lar
+    // zaten gate'leniyor ama merkezi bir noktada da tut.
+    if (!RemoteConfigService.instance.paywallEnabled) {
+      return Future.value(null);
+    }
     AnalyticsService.instance
         .logPremiumUpgradeStarted(source: source);
     return Navigator.of(context).push<bool>(

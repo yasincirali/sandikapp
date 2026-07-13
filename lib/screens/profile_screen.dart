@@ -948,6 +948,8 @@ class _ProfilePremiumBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Paywall master switch kapalıysa banner hiç gösterilmez.
+    if (!ref.watch(paywallVisibleProvider)) return const SizedBox.shrink();
     final premium = ref.watch(effectivePremiumProvider);
     if (premium) return const _PremiumActiveBadge();
     return GestureDetector(

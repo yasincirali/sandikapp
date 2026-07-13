@@ -113,20 +113,38 @@ const _kPremiumUnlockedKey = 'pref_premium_unlocked';
 final premiumUnlockedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kPremiumUnlockedKey, false));
 
+/// Kullanıcının göreceği tüm üyelik/ödeme UI'ları buna bağlı. false ise
+/// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
+/// edilmez. Store + RevenueCat entegrasyonu hazır olunca Remote Config'ten
+/// true'ya çekilir.
+final paywallVisibleProvider = Provider<bool>((_) {
+  return RemoteConfigService.instance.paywallEnabled;
+});
+
 /// UI'da kullanılması gereken effective premium bayrağı:
-///  - Kullanıcı premium mu (satın aldı / test toggle açık)?  AND
+///  - Paywall açık mı (master switch)? AND
+///  - Kullanıcı premium mu (satın aldı / test toggle açık)? AND
 ///  - Remote Config premium_enabled kill switch true mu?
+///
+/// Paywall kapalıyken herkes free olarak davranır — kilit UI'ları render
+/// edilmediği için bu değerin false olması bir premium özelliği görünür
+/// kılmaz, yalnızca "premium açıldı" state'ini uygulamaz.
 ///
 /// Faz 1'de `premiumUnlockedProvider` RevenueCat CustomerInfo'ya bağlanacak.
 /// Bu provider'ı kullanan kodun değişmesi gerekmez.
 final effectivePremiumProvider = Provider<bool>((ref) {
+  final paywallOn = ref.watch(paywallVisibleProvider);
+  if (!paywallOn) return false;
   final unlocked = ref.watch(premiumUnlockedProvider);
   return unlocked && RemoteConfigService.instance.premiumEnabled;
 });
 
 /// Free tier varlık limiti — Remote Config'ten dinamik.
+/// Paywall kapalıyken sınırsız (limit devreye girmez).
 /// Premium ise limit yoktur (int.max ile temsil edilir).
 final assetLimitProvider = Provider<int>((ref) {
+  final paywallOn = ref.watch(paywallVisibleProvider);
+  if (!paywallOn) return 1 << 30;
   final premium = ref.watch(effectivePremiumProvider);
   if (premium) return 1 << 30; // pratik olarak sınırsız
   return RemoteConfigService.instance.freeAssetLimit;

@@ -5,6 +5,33 @@
 
 ---
 
+## 🚧 Master Kill Switch: `paywall_enabled` (2026-07-13)
+
+Kullanıcının göreceği **TÜM** üyelik/ödeme UI'ları tek bir Remote Config bayrağına bağlı:
+
+- **Firebase Remote Config key:** `paywall_enabled`
+- **Default değer:** `false` (kapalı)
+- **Kod:** [remote_config_service.dart](lib/services/remote_config_service.dart) → `paywallEnabled` getter, [preferences_provider.dart](lib/providers/preferences_provider.dart) → `paywallVisibleProvider`
+
+**Kapalıyken (mevcut durum):**
+- Paywall ekranı açılmaz (`PaywallScreen.show` no-op)
+- Profil ekranındaki "Premium'a Geç" banner gizli
+- Sinyal Ayarları ekranındaki premium card gizli
+- ADX / Williams %R / CCI göstergelerinde kilit ve "PREMIUM" chip yok, herkes seçebiliyor
+- `PremiumGate` widget child'ı olduğu gibi gösterir (kilit overlay yok)
+- Varlık limiti devreye girmez (add-asset akışında paywall açılmaz)
+- Herkes free-tier olarak davranır
+
+**Açmak için:**
+1. RevenueCat + App Store Connect + Google Play Console entegrasyonu tamamlanır
+2. `paywall_screen.dart:120` ve `:140` TODO'ları RevenueCat çağrılarıyla değiştirilir
+3. Firebase Console → Remote Config → `paywall_enabled` → `true` → Publish
+4. Uygulama açılışında (veya 1 saatlik TTL dolduğunda) tüm UI otomatik gelir
+
+**Kod değişikliği gerekmez** — sadece dashboard'dan flip.
+
+---
+
 ## 0. Mevcut Durum Özeti
 
 ### Ne var?

@@ -7,6 +7,9 @@ import '../screens/paywall_screen.dart';
 import '../services/analytics_service.dart';
 import '../theme/sandik.dart';
 
+/// Paywall kapalıyken kullanılabilecek statik chip. Widget'ın statelessliğini
+/// bozmamak için PremiumChip'i çağıran taraf paywallVisibleProvider'ı izler.
+
 /// Premium'a bağlı içerikleri saran widget. Kullanıcı premium ise [child]'ı
 /// olduğu gibi gösterir. Değilse [child]'ı arka planda soluk bırakır,
 /// üzerine kilit + "Premium'da açık" overlay koyar. Kullanıcı üzerine
@@ -36,6 +39,10 @@ class PremiumGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Paywall kapalıysa premium sistem hiç yokmuş gibi davran → child'ı olduğu
+    // gibi göster, kilit overlay çizme, tap paywall açmasın.
+    final paywallOn = ref.watch(paywallVisibleProvider);
+    if (!paywallOn) return child;
     final unlocked = ref.watch(effectivePremiumProvider);
     if (unlocked) return child;
 
