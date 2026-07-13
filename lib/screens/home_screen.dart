@@ -51,7 +51,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _scrollToSignals() {
-    final signals = ref.read(signalProvider);
+    final signals = ref.read(signalProvider).valueOrNull ?? const [];
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -59,6 +59,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       builder: (_) => _SignalsBottomSheet(
         signals: signals,
         onDismiss: (id) => ref.read(signalProvider.notifier).dismiss(id),
+        onDelete: (id) => ref.read(signalProvider.notifier).delete(id),
         onDismissAll: () => ref.read(signalProvider.notifier).dismissAll(),
         onTap: (alert) {
           Navigator.pop(context);
@@ -1319,19 +1320,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 class _SignalsBottomSheet extends StatelessWidget {
   final List<SignalAlert> signals;
-  final void Function(String assetId) onDismiss;
+  final void Function(String id) onDismiss;
+  final void Function(String id) onDelete;
   final VoidCallback onDismissAll;
   final void Function(SignalAlert alert) onTap;
 
   const _SignalsBottomSheet({
     required this.signals,
     required this.onDismiss,
+    required this.onDelete,
     required this.onDismissAll,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final active = signals.where((a) => !a.isDismissed).toList();
+    final history = signals.where((a) => a.isDismissed).toList();
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(
           color: Colors.white, decoration: TextDecoration.none),
@@ -1410,7 +1415,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              if (signals.isEmpty)
+              if (active.isEmpty && history.isEmpty)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                   child: Row(
@@ -1427,144 +1432,59 @@ class _SignalsBottomSheet extends StatelessWidget {
                   ),
                 )
               else
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.55),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    itemCount: signals.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, i) {
-                      final alert = signals[i];
-                      final isBuy = alert.signal == SignalType.buy;
-                      final color = isBuy ? Sandik.gain : Sandik.loss;
-                      final label = isBuy ? 'AL' : 'SAT';
-                      final icon = isBuy
-                          ? Icons.trending_up_rounded
-                          : Icons.trending_down_rounded;
-                      final count = isBuy ? alert.buyCount : alert.sellCount;
-
-                      return GestureDetector(
-                        onTap: () => onTap(alert),
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                                color: color.withValues(alpha: 0.28),
-                                width: 1.5),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.18),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(icon, color: color, size: 20),
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.60),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final a in active) ...[
+                            _SignalTile(
+                              alert: a,
+                              faded: false,
+                              onTap: () => onTap(a),
+                              onDismiss: a.id != null
+                                  ? () => onDismiss(a.id!)
+                                  : null,
+                              onDelete: a.id != null
+                                  ? () => onDelete(a.id!)
+                                  : null,
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          if (history.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(4, 6, 4, 8),
+                              child: Text(
+                                'GEÇMİŞ',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                    color: Sandik.text36,
+                                    decoration: TextDecoration.none),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Builder(builder: (_) {
-                                          final t = alert.assetTicker
-                                              .replaceAll('.IS', '')
-                                              .replaceAll('=X', '')
-                                              .trim();
-                                          if (t.isEmpty)
-                                            return const SizedBox.shrink();
-                                          return Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 6,
-                                                      vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: color.withValues(
-                                                        alpha: 0.18),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5),
-                                                  ),
-                                                  child: Text(t,
-                                                      style: GoogleFonts.dmSans(
-                                                          fontSize: 10,
-                                                          fontWeight:
-                                                              FontWeight.w800,
-                                                          color: color,
-                                                          decoration:
-                                                              TextDecoration
-                                                                  .none)),
-                                                ),
-                                                const SizedBox(width: 6),
-                                              ]);
-                                        }),
-                                        Flexible(
-                                          child: Text(
-                                            alert.assetName,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.dmSans(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.white,
-                                                decoration:
-                                                    TextDecoration.none),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                color.withValues(alpha: 0.18),
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                          ),
-                                          child: Text(label,
-                                              style: GoogleFonts.dmSans(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: color,
-                                                  decoration:
-                                                      TextDecoration.none)),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      '$count/5 gösterge · %${(alert.confidence * 100).toStringAsFixed(0)} güven',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 11,
-                                          color: Sandik.text58,
-                                          decoration: TextDecoration.none),
-                                    ),
-                                  ],
-                                ),
+                            ),
+                            for (final a in history) ...[
+                              _SignalTile(
+                                alert: a,
+                                faded: true,
+                                onTap: () => onTap(a),
+                                onDismiss: null,
+                                onDelete: a.id != null
+                                    ? () => onDelete(a.id!)
+                                    : null,
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.close_rounded,
-                                    size: 18, color: Sandik.text36),
-                                onPressed: () => onDismiss(alert.assetId),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                    minWidth: 32, minHeight: 32),
-                              ),
+                              const SizedBox(height: 8),
                             ],
-                          ),
-                        ),
-                      );
-                    },
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               const Padding(
@@ -1576,6 +1496,150 @@ class _SignalsBottomSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ── Tekil sinyal satırı ───────────────────────────────────────────────────────
+
+class _SignalTile extends StatelessWidget {
+  final SignalAlert alert;
+  final bool faded;
+  final VoidCallback onTap;
+  final VoidCallback? onDismiss;
+  final VoidCallback? onDelete;
+
+  const _SignalTile({
+    required this.alert,
+    required this.faded,
+    required this.onTap,
+    required this.onDismiss,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isBuy = alert.signal == SignalType.buy;
+    final isSell = alert.signal == SignalType.sell;
+    final Color color = isBuy
+        ? Sandik.gain
+        : (isSell ? Sandik.loss : Sandik.text58);
+    final String label = isBuy ? 'AL' : (isSell ? 'SAT' : 'NÖTR');
+    final IconData icon = isBuy
+        ? Icons.trending_up_rounded
+        : (isSell
+            ? Icons.trending_down_rounded
+            : Icons.horizontal_rule_rounded);
+    final int count =
+        isBuy ? alert.buyCount : (isSell ? alert.sellCount : 0);
+
+    final double alphaFactor = faded ? 0.45 : 1.0;
+    final double bgAlpha = faded ? 0.05 : 0.10;
+    final double borderAlpha = faded ? 0.12 : 0.28;
+
+    final Widget content = GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: bgAlpha),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: color.withValues(alpha: borderAlpha), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.18 * alphaFactor),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon,
+                  color: color.withValues(alpha: alphaFactor), size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          alert.assetName,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white
+                                  .withValues(alpha: alphaFactor),
+                              decoration: TextDecoration.none),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color:
+                              color.withValues(alpha: 0.18 * alphaFactor),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(label,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: color.withValues(alpha: alphaFactor),
+                                decoration: TextDecoration.none)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    faded
+                        ? '${_formatDate(alert.detectedAt)} · silindi'
+                        : '$count gösterge · %${alert.confidence.toStringAsFixed(0)} güven',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        color: Sandik.text58.withValues(alpha: alphaFactor),
+                        decoration: TextDecoration.none),
+                  ),
+                ],
+              ),
+            ),
+            if (onDismiss != null)
+              IconButton(
+                icon: const Icon(Icons.close_rounded,
+                    size: 18, color: Sandik.text36),
+                onPressed: onDismiss,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                    minWidth: 32, minHeight: 32),
+              )
+            else if (onDelete != null)
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded,
+                    size: 18, color: Sandik.text36),
+                onPressed: onDelete,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                    minWidth: 32, minHeight: 32),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    return content;
+  }
+
+  String _formatDate(DateTime d) {
+    final now = DateTime.now();
+    if (d.year == now.year && d.month == now.month && d.day == now.day) {
+      return 'Bugün ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    }
+    return '${d.day}.${d.month}.${d.year}';
   }
 }
 
@@ -1664,7 +1728,7 @@ class _SignalBadgeButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(signalProvider).length;
+    final count = ref.watch(activeSignalsProvider).length;
 
     return GestureDetector(
       onTap: onTap,

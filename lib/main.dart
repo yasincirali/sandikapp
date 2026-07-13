@@ -12,6 +12,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'models/user_model.dart';
 import 'providers/auth_provider.dart';
+import 'providers/portfolio_provider.dart';
+import 'providers/signal_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
@@ -496,6 +498,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
       if (RemotePushService.instance.isAvailable) {
         await PartnerInviteListenerService.instance.stop();
+        // Cron tetiklendiğinde portföy analizi başlat.
+        RemotePushService.instance.onSignalAnalyzeRequest = () {
+          _triggerSignalAnalysis();
+        };
         await RemotePushService.instance.start(userId);
         return;
       }
@@ -504,6 +510,21 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       await PartnerInviteListenerService.instance.start(userId);
     } catch (_) {
       // Firebase/push servisi hazır değilse auth akışını engelleme
+    }
+  }
+
+  /// FCM data-message `signal_analyze_request` alındığında (günlük TR 11:00 &
+  /// 15:00 cron), portföyü çeker ve teknik analiz servisiyle sinyalleri üretir.
+  /// Yeni sinyaller `signal_notifications` tablosuna yazılır + local push atılır.
+  Future<void> _triggerSignalAnalysis() async {
+    try {
+      final portfolio = ref.read(portfolioProvider).valueOrNull;
+      if (portfolio == null || portfolio.assets.isEmpty) return;
+      await ref
+          .read(signalProvider.notifier)
+          .analyzePortfolio(portfolio.assets);
+    } catch (_) {
+      // Sessizce yut — bir sonraki cron çağrısında yeniden denenir.
     }
   }
 

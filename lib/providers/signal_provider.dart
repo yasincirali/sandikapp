@@ -2,28 +2,61 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
-import '../services/technical_analysis_service.dart';
 import '../services/notification_service.dart';
+import '../services/supabase_service.dart';
+import '../services/technical_analysis_service.dart';
+import 'auth_provider.dart';
 import 'preferences_provider.dart';
 
-// Aktif sinyal listesi — sadece AL veya SAT olanlar
-class SignalNotifier extends Notifier<List<SignalAlert>> {
+/// Supabase `signal_notifications` tablosunun state'i.
+///
+/// - `analyzePortfolio`: kullanıcının varlıklarını göstergelerle analiz eder,
+///   confidence eşiğini geçenler için (asset tipi başına) yeni satır yazar.
+/// - De-dup: aynı asset için son sinyal ile aynıysa yeniden atılmaz.
+/// - `dismiss` / `delete`: kullanıcı sildiğinde dismissed_at set edilir /
+///   kalıcı silinir. Statü değişmedikçe yeniden push atılmaz.
+class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
   @override
-  List<SignalAlert> build() => [];
+  Future<List<SignalAlert>> build() async {
+    final user = ref.watch(authProvider).valueOrNull;
+    if (user == null) return const [];
+    try {
+      return await SupabaseService.instance
+          .fetchSignalNotifications(userId: user.id);
+    } catch (_) {
+      return const [];
+    }
+  }
 
-  /// Verilen varlık listesini analiz eder, güçlü sinyal (3+/5) olanları
-  /// state'e yazar ve push notification gönderir.
+  Future<void> refresh() async {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+    state = const AsyncLoading();
+    try {
+      final list = await SupabaseService.instance
+          .fetchSignalNotifications(userId: user.id);
+      state = AsyncData(list);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    }
+  }
+
+  /// Kullanıcının portföyünü analiz et; eşiği geçen ve önceki sinyalden
+  /// farklı olan her varlık için yeni bildirim yazar + push gönderir.
   Future<void> analyzePortfolio(List<Asset> assets) async {
     if (assets.isEmpty) return;
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
 
-    final newAlerts = <SignalAlert>[];
-
-    final prefs = ref.read(indicatorPrefsProvider.notifier);
+    final indicatorPrefs = ref.read(indicatorPrefsProvider.notifier);
+    final thresholds = ref.read(signalThresholdProvider.notifier);
+    final neutralPushEnabled = ref.read(signalNeutralPushProvider);
     final premium = ref.read(premiumUnlockedProvider);
 
+    final inserted = <SignalAlert>[];
+
     for (final asset in assets) {
-      final enabledIds = prefs.forType(asset.type);
-      // Kullanıcı bu tür için hiç gösterge seçmediyse sinyal üretme
+      final enabledIds = indicatorPrefs.forType(asset.type);
       if (enabledIds.isEmpty) continue;
 
       final indicators = TechnicalAnalysisService.analyze(
@@ -32,47 +65,108 @@ class SignalNotifier extends Notifier<List<SignalAlert>> {
         enabledIds: enabledIds,
         premiumUnlocked: premium,
       );
-      final summary = TechnicalAnalysisService.summarize(indicators);
-      if (summary.signal == SignalType.neutral) continue;
+      if (indicators.isEmpty) continue;
 
-      newAlerts.add(SignalAlert(
+      final summary = TechnicalAnalysisService.summarize(indicators);
+      final threshold = thresholds.forType(asset.type);
+
+      // Neutral push kapalıysa neutral sinyalleri es geç.
+      if (summary.signal == SignalType.neutral && !neutralPushEnabled) continue;
+      // Confidence eşiği: 0-100 arası. Threshold'un altında kalıyorsa skip.
+      if (summary.confidence < threshold) continue;
+
+      // De-dup: aynı asset için en son sinyalle aynıysa skip.
+      SignalAlert? last;
+      try {
+        last = await SupabaseService.instance.fetchLastSignalForAsset(
+          userId: user.id,
+          assetId: asset.id,
+        );
+      } catch (_) {}
+      if (last != null && last.signal == summary.signal) continue;
+
+      final alert = SignalAlert(
         assetId: asset.id,
         assetName: asset.name,
         assetTicker: asset.ticker,
+        assetType: asset.type,
         signal: summary.signal,
         buyCount: summary.buyCount,
         sellCount: summary.sellCount,
         confidence: summary.confidence,
         detectedAt: DateTime.now(),
-      ));
-    }
+      );
 
-    // Önceki listeden farklı olan (yeni veya değişen) sinyalleri bul
-    final previous = state;
-    for (final alert in newAlerts) {
-      final prev = previous.where((a) => a.assetId == alert.assetId).firstOrNull;
-      // Yeni sinyal veya öncekinden farklı yön → bildirim gönder
-      if (prev == null || prev.signal != alert.signal) {
-        await NotificationService.instance.sendSignalNotification(
-          assetName: alert.assetName,
-          ticker: alert.assetTicker,
-          signal: alert.signal,
-          buyCount: alert.buyCount,
-          sellCount: alert.sellCount,
+      try {
+        final saved = await SupabaseService.instance.insertSignalNotification(
+          userId: user.id,
+          alert: alert,
         );
-      }
+        inserted.add(saved);
+
+        if (summary.signal != SignalType.neutral) {
+          await NotificationService.instance.sendSignalNotification(
+            assetName: asset.name,
+            ticker: asset.ticker,
+            signal: summary.signal,
+            buyCount: summary.buyCount,
+            sellCount: summary.sellCount,
+          );
+        }
+      } catch (_) {}
     }
 
-    state = newAlerts;
+    if (inserted.isNotEmpty) {
+      final current = state.valueOrNull ?? const [];
+      state = AsyncData([...inserted, ...current]);
+    }
   }
 
-  void dismiss(String assetId) {
-    state = state.where((a) => a.assetId != assetId).toList();
+  /// Kullanıcı bildirim geçmişinden bir kaydı sildi.
+  /// Statü değişmedikçe yeniden push atılmaz.
+  Future<void> dismiss(String id) async {
+    try {
+      await SupabaseService.instance.dismissSignalNotification(id);
+    } catch (_) {}
+    final current = state.valueOrNull ?? const [];
+    state = AsyncData([
+      for (final a in current)
+        if (a.id == id) a.copyWith(dismissedAt: DateTime.now()) else a,
+    ]);
   }
 
-  void dismissAll() => state = [];
+  /// Kalıcı sil (kullanıcı long-press veya delete ile).
+  Future<void> delete(String id) async {
+    try {
+      await SupabaseService.instance.deleteSignalNotification(id);
+    } catch (_) {}
+    final current = state.valueOrNull ?? const [];
+    state = AsyncData(current.where((a) => a.id != id).toList());
+  }
+
+  /// Tümünü dismiss et (bell sheet'teki "Tümünü sil" butonu için).
+  Future<void> dismissAll() async {
+    final current = state.valueOrNull ?? const [];
+    final active = current.where((a) => !a.isDismissed && a.id != null);
+    for (final a in active) {
+      try {
+        await SupabaseService.instance.dismissSignalNotification(a.id!);
+      } catch (_) {}
+    }
+    state = AsyncData([
+      for (final a in current)
+        if (!a.isDismissed) a.copyWith(dismissedAt: DateTime.now()) else a,
+    ]);
+  }
 }
 
-final signalProvider = NotifierProvider<SignalNotifier, List<SignalAlert>>(
+final signalProvider =
+    AsyncNotifierProvider<SignalNotifier, List<SignalAlert>>(
   SignalNotifier.new,
 );
+
+/// Bell sheet ve rozet için: sadece dismissed olmayan (aktif) sinyaller.
+final activeSignalsProvider = Provider<List<SignalAlert>>((ref) {
+  final all = ref.watch(signalProvider).valueOrNull ?? const [];
+  return all.where((a) => !a.isDismissed).toList();
+});

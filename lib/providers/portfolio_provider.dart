@@ -6,7 +6,6 @@ import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../services/price_service.dart';
 import 'auth_provider.dart';
-import 'signal_provider.dart';
 
 const _uuid = Uuid();
 
@@ -357,12 +356,14 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       final userId = ref.read(authProvider).valueOrNull?.id ?? '';
       await _saveSnapshot(finalState, userId: userId);
 
-      // Teknik sinyal analizi
-      final allAssets = [...finalState.assets];
-      for (final list in partnerAssetsMap.values) {
-        allAssets.addAll(list);
-      }
-      ref.read(signalProvider.notifier).analyzePortfolio(allAssets);
+      // NOT: Teknik sinyal analizi burada tetiklenmez. `refreshPrices` her
+      // ekran açılışında/pull-to-refresh'te çağrıldığı için burada
+      // `analyzePortfolio` çalıştırmak spam push'a yol açıyor. Sinyal analizi
+      // artık sadece iki yerden tetiklenir:
+      //   1. Günde 2 kez cron (TR 11:00 & 15:00) → analyze-signals edge
+      //      function → FCM data-message → `_AuthGate._triggerSignalAnalysis`
+      //   2. Uygulama açılışında `signalProvider.build()` DB'den okur
+      //      (yeni analiz yapmaz, sadece geçmişi yükler).
     } catch (e) {
       state = AsyncData(s.copyWith(
         isLoading: false,

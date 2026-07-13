@@ -36,6 +36,15 @@ class RemotePushService {
   StreamSubscription<RemoteMessage>? _foregroundSubscription;
   StreamSubscription<RemoteMessage>? _openedAppSubscription;
 
+  /// Cron'dan (`analyze-signals` edge function) gelen `signal_analyze_request`
+  /// data-message'ı yakalandığında çağrılır. App root'ta set edilir → içinde
+  /// `signalProvider.notifier.analyzePortfolio(...)` çalıştırılır.
+  void Function()? _onSignalAnalyzeRequest;
+
+  set onSignalAnalyzeRequest(void Function()? cb) {
+    _onSignalAnalyzeRequest = cb;
+  }
+
   bool get isAvailable => _available;
 
   Future<bool> init() async {
@@ -55,22 +64,32 @@ class RemotePushService {
     _foregroundSubscription =
         FirebaseMessaging.onMessage.listen((message) async {
       final data = message.data;
-      if (data['type']?.toString() != NotificationService.partnerInviteType) {
+      final type = data['type']?.toString();
+
+      if (type == NotificationService.partnerInviteType) {
+        final inviteId = data['invite_id']?.toString();
+        if (inviteId == null || inviteId.isEmpty) return;
+
+        final requesterName =
+            data['requester_name']?.toString().trim().isNotEmpty == true
+                ? data['requester_name']!.toString().trim()
+                : 'Bir kullanici';
+
+        await NotificationService.instance.showPartnerInviteNotification(
+          inviteId: inviteId,
+          requesterName: requesterName,
+        );
         return;
       }
 
-      final inviteId = data['invite_id']?.toString();
-      if (inviteId == null || inviteId.isEmpty) return;
-
-      final requesterName =
-          data['requester_name']?.toString().trim().isNotEmpty == true
-              ? data['requester_name']!.toString().trim()
-              : 'Bir kullanici';
-
-      await NotificationService.instance.showPartnerInviteNotification(
-        inviteId: inviteId,
-        requesterName: requesterName,
-      );
+      if (type == NotificationService.signalAnalyzeRequestType) {
+        // Cron'dan gelen "analiz zamanı" tetiği. Callback set edilmişse
+        // client tarafında portföy analizini başlatır.
+        try {
+          _onSignalAnalyzeRequest?.call();
+        } catch (_) {}
+        return;
+      }
     });
 
     _openedAppSubscription =

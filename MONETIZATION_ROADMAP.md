@@ -54,11 +54,16 @@
 - Manuel fiyat güncelleme
 - **1 partner** paylaşımı
 - Son **30 günlük** grafik geçmişi
-- Günlük 1 push bildirim
+- **Günde 1 sinyal analizi** (TR 11:00) — sabit saat, özelleştirilemez
+- Sadece **AL/SAT** bildirimleri; nötr sinyaller sadece geçmişte görünür
 
 **Premium katman:**
 - ✅ **Sınırsız varlık ve tüm tipler** (fon + emtia dahil)
 - ✅ **Premium göstergeler** (ADX, Williams %R, CCI) — kod hazır!
+- ✅ **Günde 2 sinyal analizi** (TR 11:00 + 15:00) — hazır: `analyze-signals` edge function
+- ✅ **Nötr sinyal push bildirimi** (istersen aç, market kilitli / trendsiz olduğunda haber ver)
+- ✅ **Asset türü başına eşik ayarı** (%50/%70/%85 — sıkı/gevşek sinyal filtresi)
+- ✅ **Ayda 1 canlı analiz kotası** (istediğin zaman tetikle — "şimdi analiz et")
 - ✅ **AI portföy raporu** (aylık, Claude API ile — güçlü/zayıf yönler, öneriler)
 - ✅ **Fiyat alarmları** ("USD 35₺ olduğunda haber ver")
 - ✅ **Vergi/KVK raporu PDF** (yıl sonu kâr-zarar)
@@ -66,6 +71,28 @@
 - ✅ **5 yıl grafik geçmişi**
 - ✅ **Reklamsız** (ileride free'ye reklam eklerken)
 - ✅ **Öncelikli müşteri desteği**
+
+### 🔔 Sinyal Bildirim Mimarisi (hazır, 2026-07-13)
+
+Cron-tabanlı sinyal bildirimi altyapısı devrede:
+- **Server:** `supabase/functions/analyze-signals/index.ts` — pg_cron ile
+  TR 11:00 & 15:00'te tüm push token'lara `signal_analyze_request` data-message
+  atar (sessiz).
+- **Client:** `_AuthGate._triggerSignalAnalysis` — data-message'ı yakalar,
+  `signalProvider.analyzePortfolio()` çağırır. Sinyal önceki push'tan farklıysa
+  `signal_notifications` tablosuna yazar + local push. Aynı sinyal tekrar edilmez.
+- **Persistence:** `signal_notifications` tablosu (RLS'li). Kullanıcı silse bile
+  statü değişmedikçe yeni push atılmaz. Bell sheet'te aktif + geçmiş bölümleri.
+- **Threshold + neutral toggle:** `signalThresholdProvider` (per AssetType) +
+  `signalNeutralPushProvider` (Ayarlar → Sinyal Ayarları).
+
+**Premium ile fark:**
+- Free: cron her iki slot'ta da atar ama client 15:00'te sadece nötr sinyalleri
+  DB'ye yazar, push göndermez (premium değil kontrolü client tarafında).
+  → **TODO Faz 2'de eklenmesi gereken bir gate:**
+  `if (!premium && slot == 'afternoon' && signal != neutral) skip push`
+- Premium: iki slot da tam sinyal + kullanıcı istediği zaman "Şimdi analiz et"
+  butonu (rate-limited, aylık N kez).
 
 ---
 

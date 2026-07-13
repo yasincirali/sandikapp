@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/asset_type.dart';
@@ -7,9 +7,9 @@ import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/disclaimer_widget.dart';
 
-/// Kullanıcı her varlık türü için hangi teknik göstergelerin sinyal üretmesini
-/// istediğini seçer. Premium göstergeler premium olmayan kullanıcıya kilitli
-/// görünür — açmak için Premium'a geçmesi gerekir.
+/// KullanÄ±cÄ± her varlÄ±k tÃ¼rÃ¼ iÃ§in hangi teknik gÃ¶stergelerin sinyal Ã¼retmesini
+/// istediÄŸini seÃ§er. Premium gÃ¶stergeler premium olmayan kullanÄ±cÄ±ya kilitli
+/// gÃ¶rÃ¼nÃ¼r â€” aÃ§mak iÃ§in Premium'a geÃ§mesi gerekir.
 class SignalSettingsScreen extends ConsumerWidget {
   const SignalSettingsScreen({super.key});
 
@@ -17,6 +17,8 @@ class SignalSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final prefs = ref.watch(indicatorPrefsProvider);
     final premium = ref.watch(premiumUnlockedProvider);
+    final thresholds = ref.watch(signalThresholdProvider);
+    final neutralPush = ref.watch(signalNeutralPushProvider);
 
     return Scaffold(
       backgroundColor: Sandik.background,
@@ -29,7 +31,7 @@ class SignalSettingsScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Sinyal Ayarları',
+          'Sinyal AyarlarÄ±',
           style: GoogleFonts.dmSans(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -43,7 +45,7 @@ class SignalSettingsScreen extends ConsumerWidget {
           const DisclaimerWidget(),
           const SizedBox(height: 16),
 
-          // ── Premium banner ──────────────────────────────────────────
+          // â”€â”€ Premium banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           _PremiumCard(
             unlocked: premium,
             onToggle: () => ref
@@ -52,8 +54,55 @@ class SignalSettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
+          // â”€â”€ Genel bildirim ayarlarÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Sandik.surface1,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('NÃ¶tr sinyalleri de bildir',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
+                          const SizedBox(height: 3),
+                          Text(
+                            'KapalÄ±yken sadece AL/SAT bildirimi gelir. NÃ¶tr sinyaller yine geÃ§miÅŸe yazÄ±lÄ±r.',
+                            style: GoogleFonts.dmSans(
+                                fontSize: 11,
+                                color: Sandik.text58,
+                                height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: neutralPush,
+                      activeColor: Sandik.amber,
+                      onChanged: (v) => ref
+                          .read(signalNeutralPushProvider.notifier)
+                          .set(v),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
           Text(
-            'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç.',
+            'Her varlÄ±k tÃ¼rÃ¼ iÃ§in hangi gÃ¶stergelerin sinyal Ã¼retmesini istediÄŸini ve bildirim gÃ¼ven eÅŸiÄŸini seÃ§.',
             style: GoogleFonts.dmSans(
                 fontSize: 12, color: Sandik.text58, height: 1.5),
           ),
@@ -65,9 +114,14 @@ class SignalSettingsScreen extends ConsumerWidget {
               selected: prefs[type] ??
                   TechnicalAnalysisService.defaultEnabledFor(type),
               premiumUnlocked: premium,
+              threshold:
+                  thresholds[type] ?? kSignalThresholdDefault,
               onToggle: (id) => ref
                   .read(indicatorPrefsProvider.notifier)
                   .toggle(type, id),
+              onThresholdChanged: (v) => ref
+                  .read(signalThresholdProvider.notifier)
+                  .setForType(type, v),
             ),
             const SizedBox(height: 20),
           ],
@@ -112,7 +166,7 @@ class _PremiumCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  unlocked ? 'Premium aktif' : 'Premium göstergeler',
+                  unlocked ? 'Premium aktif' : 'Premium gÃ¶stergeler',
                   style: GoogleFonts.dmSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -122,8 +176,8 @@ class _PremiumCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   unlocked
-                      ? 'ADX, Williams %R ve CCI göstergeleri kullanılabilir.'
-                      : 'ADX, Williams %R, CCI göstergelerini açmak için Premium\'a geç.',
+                      ? 'ADX, Williams %R ve CCI gÃ¶stergeleri kullanÄ±labilir.'
+                      : 'ADX, Williams %R, CCI gÃ¶stergelerini aÃ§mak iÃ§in Premium\'a geÃ§.',
                   style: GoogleFonts.dmSans(
                       fontSize: 11, color: Sandik.text58, height: 1.4),
                 ),
@@ -140,7 +194,7 @@ class _PremiumCard extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             child: Text(
-              unlocked ? 'Kapat' : 'Aç',
+              unlocked ? 'Kapat' : 'AÃ§',
               style: TextStyle(
                 color: unlocked ? Colors.white : Colors.black,
                 fontWeight: FontWeight.w700,
@@ -158,13 +212,17 @@ class _CategorySection extends StatelessWidget {
   final AssetType type;
   final Set<String> selected;
   final bool premiumUnlocked;
+  final int threshold;
   final void Function(String id) onToggle;
+  final void Function(int threshold) onThresholdChanged;
 
   const _CategorySection({
     required this.type,
     required this.selected,
     required this.premiumUnlocked,
+    required this.threshold,
     required this.onToggle,
+    required this.onThresholdChanged,
   });
 
   @override
@@ -190,6 +248,25 @@ class _CategorySection extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Row(
+              children: [
+                Text(
+                  'Bildirim eÅŸiÄŸi',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      color: Sandik.text58,
+                      fontWeight: FontWeight.w600),
+                ),
+                const Spacer(),
+                _ThresholdSegment(
+                  value: threshold,
+                  onChanged: onThresholdChanged,
                 ),
               ],
             ),
@@ -270,7 +347,7 @@ class _IndicatorRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'ÖNERİLEN',
+                  'Ã–NERÄ°LEN',
                   style: GoogleFonts.dmSans(
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
@@ -289,7 +366,7 @@ class _IndicatorRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'ÖNERİLEN',
+                    'Ã–NERÄ°LEN',
                     style: GoogleFonts.dmSans(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
@@ -318,6 +395,60 @@ class _IndicatorRow extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ThresholdSegment extends StatelessWidget {
+  final int value;
+  final void Function(int) onChanged;
+
+  const _ThresholdSegment({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final opt in kSignalThresholdOptions)
+            GestureDetector(
+              onTap: () => onChanged(opt),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: value == opt
+                      ? Sandik.amber.withValues(alpha: 0.20)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: value == opt
+                        ? Sandik.amber.withValues(alpha: 0.55)
+                        : Colors.transparent,
+                  ),
+                ),
+                child: Text(
+                  '%$opt',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 12,
+                    fontWeight:
+                        value == opt ? FontWeight.w800 : FontWeight.w600,
+                    color: value == opt
+                        ? Sandik.amber
+                        : Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/asset.dart';
+import '../models/signal_alert.dart';
 import '../models/user_model.dart';
 import 'db_logger.dart';
 
@@ -689,5 +690,98 @@ class SupabaseService {
     }
 
     return result;
+  }
+
+  // ── Signal Notifications ─────────────────────────────────────────────────
+
+  /// Kullanıcı için son N gün içindeki (default 30) tüm sinyalleri getir.
+  Future<List<SignalAlert>> fetchSignalNotifications({
+    required String userId,
+    int limit = 100,
+  }) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchSignalNotifications',
+      table: 'signal_notifications',
+      op: 'SELECT',
+      request: {'user_id': userId, 'limit': limit},
+      call: () => _db
+          .from('signal_notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('sent_at', ascending: false)
+          .limit(limit),
+    );
+    return rows.map<SignalAlert>((r) => SignalAlert.fromMap(r)).toList();
+  }
+
+  /// Aynı asset için gönderilmiş son sinyal (dismissed dahil).
+  /// De-dup için: yeni sinyal == son sinyal ise skip.
+  Future<SignalAlert?> fetchLastSignalForAsset({
+    required String userId,
+    required String assetId,
+  }) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchLastSignalForAsset',
+      table: 'signal_notifications',
+      op: 'SELECT',
+      request: {'user_id': userId, 'asset_id': assetId},
+      call: () => _db
+          .from('signal_notifications')
+          .select()
+          .eq('user_id', userId)
+          .eq('asset_id', assetId)
+          .order('sent_at', ascending: false)
+          .limit(1),
+    );
+    if (rows.isEmpty) return null;
+    return SignalAlert.fromMap(rows.first);
+  }
+
+  Future<SignalAlert> insertSignalNotification({
+    required String userId,
+    required SignalAlert alert,
+  }) async {
+    final body = alert.toInsertMap(userId);
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.insertSignalNotification',
+      table: 'signal_notifications',
+      op: 'INSERT',
+      request: {
+        'user_id': userId,
+        'asset_id': alert.assetId,
+        'signal': body['signal'],
+      },
+      call: () =>
+          _db.from('signal_notifications').insert(body).select().limit(1),
+    );
+    if (rows.isEmpty) {
+      // Fallback: insert döndürmedi, çekilen değerle devam et
+      return alert;
+    }
+    return SignalAlert.fromMap(rows.first);
+  }
+
+  Future<void> dismissSignalNotification(String id) async {
+    await _log.log<void>(
+      source: 'SupabaseService.dismissSignalNotification',
+      table: 'signal_notifications',
+      op: 'UPDATE',
+      request: {'id': id, 'dismissed_at': 'now()'},
+      call: () => _db
+          .from('signal_notifications')
+          .update({'dismissed_at': DateTime.now().toIso8601String()})
+          .eq('id', id),
+    );
+  }
+
+  Future<void> deleteSignalNotification(String id) async {
+    await _log.log<void>(
+      source: 'SupabaseService.deleteSignalNotification',
+      table: 'signal_notifications',
+      op: 'DELETE',
+      request: {'id': id},
+      call: () =>
+          _db.from('signal_notifications').delete().eq('id', id),
+    );
   }
 }

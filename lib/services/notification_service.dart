@@ -23,6 +23,7 @@ class NotificationService {
   NotificationService._();
 
   static const partnerInviteType = 'partner_invite';
+  static const signalAnalyzeRequestType = 'signal_analyze_request';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
 
   final _plugin = FlutterLocalNotificationsPlugin();

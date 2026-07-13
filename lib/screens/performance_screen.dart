@@ -12,7 +12,6 @@ import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
 import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
-import '../services/notification_service.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../providers/preferences_provider.dart';
 import 'signal_settings_screen.dart';
@@ -43,8 +42,6 @@ class _TechnicalSignalPanel extends ConsumerStatefulWidget {
 }
 
 class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
-  bool _notified = false;
-
   @override
   Widget build(BuildContext context) {
     // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
@@ -61,20 +58,10 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
     );
 
     final summary = TechnicalAnalysisService.summarize(indicators);
-
-    // Güçlü sinyal — sadece bir kez bildirim gönder
-    if (!_notified && summary.signal != SignalType.neutral && indicators.isNotEmpty) {
-      _notified = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        NotificationService.instance.sendSignalNotification(
-          assetName: widget.asset.name,
-          ticker: widget.asset.ticker,
-          signal: summary.signal,
-          buyCount: summary.buyCount,
-          sellCount: summary.sellCount,
-        );
-      });
-    }
+    // NOT: Push bildirimi burada tetiklenmez — bu widget her ekran açılışında
+    // yeniden build olduğu için her tıklamada yeni push atardı. Sinyal push'u
+    // artık sadece günlük cron (analyze-signals edge function → analyzePortfolio)
+    // tarafından üretilir. Bu panel sadece göstergelerin özetini gösterir.
 
     if (indicators.isEmpty) {
       return Container(

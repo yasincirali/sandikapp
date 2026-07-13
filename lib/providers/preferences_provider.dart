@@ -190,3 +190,72 @@ final indicatorPrefsProvider =
     NotifierProvider<IndicatorPrefsNotifier, Map<AssetType, Set<String>>>(
   IndicatorPrefsNotifier.new,
 );
+
+// ─── Sinyal bildirim eşiği (per asset type) ───────────────────────────────────
+// Kullanıcı her varlık türü için confidence eşiğini seçer:
+//   50 → düşük (daha çok push)
+//   70 → orta (default)
+//   85 → yüksek (sadece güçlü sinyaller)
+// Eşiğin altında kalan sinyaller push gönderilmez.
+
+const _kSignalThresholdKey = 'pref_signal_threshold_by_type_v1';
+const _kSignalNeutralPushKey = 'pref_signal_neutral_push';
+
+const kSignalThresholdOptions = <int>[50, 70, 85];
+const kSignalThresholdDefault = 70;
+
+class SignalThresholdNotifier extends Notifier<Map<AssetType, int>> {
+  @override
+  Map<AssetType, int> build() {
+    _load();
+    return {for (final t in AssetType.values) t: kSignalThresholdDefault};
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getStringList(_kSignalThresholdKey);
+      if (raw == null) return;
+      // Format: "typeName:70"
+      final next = <AssetType, int>{};
+      for (final entry in raw) {
+        final parts = entry.split(':');
+        if (parts.length != 2) continue;
+        final type = AssetType.fromString(parts[0]);
+        final v = int.tryParse(parts[1]) ?? kSignalThresholdDefault;
+        next[type] =
+            kSignalThresholdOptions.contains(v) ? v : kSignalThresholdDefault;
+      }
+      for (final t in AssetType.values) {
+        next.putIfAbsent(t, () => kSignalThresholdDefault);
+      }
+      state = next;
+    } catch (_) {}
+  }
+
+  Future<void> _persist() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final entries =
+          state.entries.map((e) => '${e.key.name}:${e.value}').toList();
+      await prefs.setStringList(_kSignalThresholdKey, entries);
+    } catch (_) {}
+  }
+
+  Future<void> setForType(AssetType type, int threshold) async {
+    if (!kSignalThresholdOptions.contains(threshold)) return;
+    state = {...state, type: threshold};
+    await _persist();
+  }
+
+  int forType(AssetType type) => state[type] ?? kSignalThresholdDefault;
+}
+
+final signalThresholdProvider =
+    NotifierProvider<SignalThresholdNotifier, Map<AssetType, int>>(
+  SignalThresholdNotifier.new,
+);
+
+/// Nötr sinyaller de push olarak gönderilsin mi (default: false).
+final signalNeutralPushProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(_kSignalNeutralPushKey, false));
