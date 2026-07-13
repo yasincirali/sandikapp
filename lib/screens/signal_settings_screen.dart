@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/asset_type.dart';
 import '../providers/preferences_provider.dart';
+import '../services/analytics_service.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/disclaimer_widget.dart';
+import 'paywall_screen.dart';
 
 /// KullanÄ±cÄ± her varlÄ±k tÃ¼rÃ¼ iÃ§in hangi teknik gÃ¶stergelerin sinyal Ã¼retmesini
 /// istediÄŸini seÃ§er. Premium gÃ¶stergeler premium olmayan kullanÄ±cÄ±ya kilitli
@@ -283,6 +285,10 @@ class _CategorySection extends StatelessWidget {
               recommended: IndicatorId.recommendedFor(type).contains(id),
               onTap: () {
                 if (IndicatorId.premium.contains(id) && !premiumUnlocked) {
+                  AnalyticsService.instance
+                      .logPremiumGateShown(feature: 'indicator_$id');
+                  PaywallScreen.show(context,
+                      source: 'signal_settings_$id');
                   return;
                 }
                 onToggle(id);

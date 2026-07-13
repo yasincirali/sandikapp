@@ -12,8 +12,8 @@ import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
-import '../utils/friendly_error.dart';
 import '../widgets/h_scroll_with_fade.dart';
+import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
 
 const _addAssetUuid = Uuid();
@@ -1492,13 +1492,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     } on AssetLimitExceededException catch (e) {
       if (mounted) setState(() => _saving = false);
       if (!mounted) return;
-      await showSandikDialog(
-        context: context,
-        kind: SandikDialogKind.info,
-        title: 'Varlık limitine ulaştın',
-        message:
-            'Ücretsiz planda ${e.limit} varlık takip edebilirsin. Sınırsız varlık için Premium gerekiyor.',
+      // Analytics ve paywall provider tarafından zaten log'landı.
+      final upgraded = await PaywallScreen.show(
+        context,
+        source: 'asset_limit_${e.limit}',
       );
+      if (upgraded == true && mounted) {
+        // Kullanıcı premium'a geçti — save'i yeniden dene.
+        Navigator.pop(context);
+        _save();
+      }
       return;
     } finally {
       if (mounted) setState(() => _saving = false);

@@ -8,6 +8,7 @@ import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'add_asset_screen.dart';
+import 'paywall_screen.dart';
 
 class BulkAddAssetScreen extends ConsumerStatefulWidget {
   const BulkAddAssetScreen({super.key});
@@ -111,13 +112,14 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
 
     if (limitHit && mounted) {
       setState(() => _saving = false);
-      await showSandikDialog(
-        context: context,
-        kind: SandikDialogKind.info,
-        title: 'Varlık limitine ulaştın',
-        message:
-            'Ücretsiz planda sınırlı sayıda varlık takip edebilirsin. Sepetteki bazı varlıklar eklenemedi. Sınırsız için Premium gerekiyor.',
+      final upgraded = await PaywallScreen.show(
+        context,
+        source: 'bulk_add_asset_limit',
       );
+      if (upgraded == true && mounted) {
+        // Kullanıcı premium'a geçti — kalan item'ları tekrar dene.
+        _saveAll();
+      }
       return;
     }
 

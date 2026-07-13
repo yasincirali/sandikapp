@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'paywall_screen.dart';
 import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
 import '../services/analytics_service.dart';
@@ -271,6 +273,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           horizontal: 20, vertical: 4),
                       children: [
                         _buildUserHeader(user),
+                        const SizedBox(height: 20),
+                        const _ProfilePremiumBanner(),
                         const SizedBox(height: 24),
                         _PendingRequestsSection(userId: user?.id ?? ''),
                         const SizedBox(height: 8),
@@ -932,6 +936,127 @@ class _ActionIcon extends StatelessWidget {
           border: Border.all(color: iconColor.withValues(alpha: 0.18)),
         ),
         child: Center(child: Icon(icon, color: iconColor, size: 20)),
+      ),
+    );
+  }
+}
+
+// ── Premium banner ────────────────────────────────────────────────────────
+
+class _ProfilePremiumBanner extends ConsumerWidget {
+  const _ProfilePremiumBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final premium = ref.watch(effectivePremiumProvider);
+    if (premium) return const _PremiumActiveBadge();
+    return GestureDetector(
+      onTap: () {
+        AnalyticsService.instance
+            .logPremiumGateShown(feature: 'profile_banner');
+        PaywallScreen.show(context, source: 'profile_banner');
+      },
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Sandik.amber.withValues(alpha: 0.20),
+              Sandik.gold.withValues(alpha: 0.08),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Sandik.amber.withValues(alpha: 0.40)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Sandik.amber.withValues(alpha: 0.20),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.workspace_premium_rounded,
+                  color: Sandik.amber, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Sandık Premium',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white)),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Sınırsız varlık, AI portföy raporu, premium göstergeler',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        color: Sandik.text58,
+                        height: 1.35),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                size: 14, color: Sandik.amber),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumActiveBadge extends StatelessWidget {
+  const _PremiumActiveBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: Sandik.gain.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Sandik.gain.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Sandik.gain.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.check_circle_outline_rounded,
+                color: Sandik.gain, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Premium aktif',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white)),
+                const SizedBox(height: 2),
+                Text('Tüm gelişmiş özellikler açık',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 11, color: Sandik.text58)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
