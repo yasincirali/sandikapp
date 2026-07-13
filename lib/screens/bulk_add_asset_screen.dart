@@ -44,33 +44,55 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     final failures = <String>[];
     final portfolio = ref.read(portfolioProvider.notifier);
 
+    // ── 1) Eksik fiyatları tek batch'te çek ────────────────────────────────
+    final tefasCodes = <String>{};
+    final yahooSymbols = <String>{};
     for (final item in items) {
+      if (item.price > 0 || item.ticker.isEmpty) continue;
+      if (item.ticker.startsWith('TEFAS:')) {
+        tefasCodes.add(item.ticker.replaceFirst('TEFAS:', ''));
+      } else {
+        yahooSymbols.add(item.ticker);
+      }
+    }
+
+    final priceFetches = await Future.wait([
+      if (tefasCodes.isNotEmpty)
+        TefasService.instance.fetchPrices(tefasCodes.toList()).catchError(
+            (_) => <String, double>{})
+      else
+        Future.value(<String, double>{}),
+      if (yahooSymbols.isNotEmpty)
+        PriceService.instance.fetchQuotes(yahooSymbols.toList()).catchError(
+            (_) => <String, YahooQuote>{})
+      else
+        Future.value(<String, YahooQuote>{}),
+    ]);
+    final tefasPrices = priceFetches[0] as Map<String, double>;
+    final yahooQuotes = priceFetches[1] as Map<String, YahooQuote>;
+
+    double resolvePrice(BulkCartItem item) {
+      if (item.price > 0 || item.ticker.isEmpty) return item.price;
+      if (item.ticker.startsWith('TEFAS:')) {
+        final code = item.ticker.replaceFirst('TEFAS:', '');
+        return tefasPrices[code] ?? 0.0;
+      }
+      final q = yahooQuotes[item.ticker.toUpperCase()];
+      if (q?.regularMarketPrice != null && q!.regularMarketPrice! > 0) {
+        return q.regularMarketPrice!;
+      }
+      return 0.0;
+    }
+
+    // ── 2) Insert'leri paralel çalıştır ────────────────────────────────────
+    await Future.wait(items.map((item) async {
       try {
-        var price = item.price;
-        if (price <= 0 && item.ticker.isNotEmpty) {
-          try {
-            if (item.ticker.startsWith('TEFAS:')) {
-              final code = item.ticker.replaceFirst('TEFAS:', '');
-              final prices =
-                  await TefasService.instance.fetchPrices([code]);
-              price = prices[code] ?? 0.0;
-            } else {
-              final quotes =
-                  await PriceService.instance.fetchQuotes([item.ticker]);
-              final q = quotes[item.ticker.toUpperCase()];
-              if (q?.regularMarketPrice != null &&
-                  q!.regularMarketPrice! > 0) {
-                price = q.regularMarketPrice!;
-              }
-            }
-          } catch (_) {}
-        }
         await portfolio.addAsset(
           name: item.name,
           ticker: item.ticker,
           type: item.type,
           quantity: item.quantity,
-          purchasePrice: price,
+          purchasePrice: resolvePrice(item),
           currency: item.currency,
           notes: '',
           isManualPrice: item.isManualPrice,
@@ -81,7 +103,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       } catch (e) {
         failures.add('${item.name}: ${e.toString()}');
       }
-    }
+    }));
 
     if (!mounted) return;
     setState(() => _saving = false);

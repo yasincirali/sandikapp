@@ -158,11 +158,20 @@ class HistoryService {
 
     // Bugünün noktasını anlık portföy değerine sabitle (Yahoo API'sindeki
     // son gün datası bazen geç güncellenir; ana ekranla tutarlılık için).
+    //
+    // NOT: Altın için `currentPrice` adet fiyatı (Cumhuriyet ~40k gibi) iken
+    // geçmiş serisi gram22k × factor × qty üzerinden hesaplanır — ölçekler
+    // aynı olduğu için sadece live veri varsa altın için de kullan.
     final todayTs = normalizeTs(now.millisecondsSinceEpoch);
     if (groupedPoints.containsKey(todayTs)) {
       double liveTotal = 0.0;
+      bool skipOverwrite = false;
       for (final a in assets) {
         final price = a.currentPrice > 0 ? a.currentPrice : 0.0;
+        if (price <= 0) {
+          skipOverwrite = true;
+          break;
+        }
         double liveUsd = 40.0;
         if (usdTryHistory.isNotEmpty) {
           liveUsd = usdTryHistory.values.last;
@@ -170,7 +179,21 @@ class HistoryService {
         final tryPrice = a.currency == 'USD' ? price * liveUsd : price;
         liveTotal += tryPrice * a.quantity;
       }
-      if (liveTotal > 0) groupedPoints[todayTs] = liveTotal;
+      if (!skipOverwrite && liveTotal > 0) {
+        // Geçmiş seriye göre >%30 sapma varsa (ölçek uyumsuzluğu şüphesi)
+        // suni sıçrama yaratmamak için overwrite'ı atla.
+        final prevDayTs = normalizeTs(
+            now.subtract(const Duration(days: 1)).millisecondsSinceEpoch);
+        final prev = groupedPoints[prevDayTs];
+        if (prev != null && prev > 0) {
+          final dev = ((liveTotal - prev) / prev).abs();
+          if (dev < 0.30) {
+            groupedPoints[todayTs] = liveTotal;
+          }
+        } else {
+          groupedPoints[todayTs] = liveTotal;
+        }
+      }
     }
 
     // Outlier smoothing: bir gün önceki ve sonraki noktaya göre >%1.5 sapan ama

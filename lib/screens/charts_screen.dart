@@ -21,6 +21,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -52,34 +53,59 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   AssetType? _filteredType;
   _SortOrder _sortOrder = _SortOrder.valueDesc;
 
-  List<Asset> _applySortOrder(List<Asset> list, PortfolioState pState) {
+  List<Position> _applyPositionSortOrder(
+      List<Position> list, PortfolioState pState) {
     switch (_sortOrder) {
       case _SortOrder.valueDesc:
-        return list..sort((a, b) => pState.toTRY(b.totalValue, b.currency).compareTo(pState.toTRY(a.totalValue, a.currency)));
+        return list
+          ..sort((a, b) => pState
+              .toTRY(b.totalValue, b.representative.currency)
+              .compareTo(pState.toTRY(a.totalValue, a.representative.currency)));
       case _SortOrder.valueAsc:
-        return list..sort((a, b) => pState.toTRY(a.totalValue, a.currency).compareTo(pState.toTRY(b.totalValue, b.currency)));
+        return list
+          ..sort((a, b) => pState
+              .toTRY(a.totalValue, a.representative.currency)
+              .compareTo(pState.toTRY(b.totalValue, b.representative.currency)));
       case _SortOrder.gainDesc:
         return list..sort((a, b) {
-          final ga = (a.purchasePrice > 0 && a.currentPrice > 0) ? pState.toTRY(a.totalValue, a.currency) - a.totalCostTRY : double.negativeInfinity;
-          final gb = (b.purchasePrice > 0 && b.currentPrice > 0) ? pState.toTRY(b.totalValue, b.currency) - b.totalCostTRY : double.negativeInfinity;
+          final ga = a.weightedPurchasePrice > 0
+              ? pState.toTRY(a.totalValue, a.representative.currency) -
+                  a.totalCostTRY
+              : double.negativeInfinity;
+          final gb = b.weightedPurchasePrice > 0
+              ? pState.toTRY(b.totalValue, b.representative.currency) -
+                  b.totalCostTRY
+              : double.negativeInfinity;
           return gb.compareTo(ga);
         });
       case _SortOrder.gainAsc:
         return list..sort((a, b) {
-          final ga = (a.purchasePrice > 0 && a.currentPrice > 0) ? pState.toTRY(a.totalValue, a.currency) - a.totalCostTRY : double.infinity;
-          final gb = (b.purchasePrice > 0 && b.currentPrice > 0) ? pState.toTRY(b.totalValue, b.currency) - b.totalCostTRY : double.infinity;
+          final ga = a.weightedPurchasePrice > 0
+              ? pState.toTRY(a.totalValue, a.representative.currency) -
+                  a.totalCostTRY
+              : double.infinity;
+          final gb = b.weightedPurchasePrice > 0
+              ? pState.toTRY(b.totalValue, b.representative.currency) -
+                  b.totalCostTRY
+              : double.infinity;
           return ga.compareTo(gb);
         });
       case _SortOrder.gainPctDesc:
         return list..sort((a, b) {
-          final pa = (a.purchasePrice > 0 && a.currentPrice > 0) ? a.gainLossPercentage : double.negativeInfinity;
-          final pb = (b.purchasePrice > 0 && b.currentPrice > 0) ? b.gainLossPercentage : double.negativeInfinity;
+          final pa = a.weightedPurchasePrice > 0
+              ? a.gainLossPercentage
+              : double.negativeInfinity;
+          final pb = b.weightedPurchasePrice > 0
+              ? b.gainLossPercentage
+              : double.negativeInfinity;
           return pb.compareTo(pa);
         });
       case _SortOrder.gainPctAsc:
         return list..sort((a, b) {
-          final pa = (a.purchasePrice > 0 && a.currentPrice > 0) ? a.gainLossPercentage : double.infinity;
-          final pb = (b.purchasePrice > 0 && b.currentPrice > 0) ? b.gainLossPercentage : double.infinity;
+          final pa =
+              a.weightedPurchasePrice > 0 ? a.gainLossPercentage : double.infinity;
+          final pb =
+              b.weightedPurchasePrice > 0 ? b.gainLossPercentage : double.infinity;
           return pa.compareTo(pb);
         });
     }
@@ -227,44 +253,55 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                             }
                           }
 
-                          if (assets.isEmpty) {
+                          final positions = aggregatePositions(assets);
+
+                          if (positions.isEmpty) {
                             return const _EmptyState();
                           }
 
-                          final filteredAssets = _applySortOrder(
+                          final filteredPositions = _applyPositionSortOrder(
                             _filteredType != null
-                                ? assets.where((a) => a.type == _filteredType).toList()
-                                : List<Asset>.from(assets),
+                                ? positions
+                                    .where((p) =>
+                                        p.representative.type == _filteredType)
+                                    .toList()
+                                : List<Position>.from(positions),
                             pState,
                           );
+                          final displayAssets = positions
+                              .map((position) => position.asDisplayAsset())
+                              .toList();
 
                           return Column(
                             children: [
                               _AssetTypeDonut(
-                                assets: assets,
+                                assets: displayAssets,
                                 pState: pState,
                                 onTypeSelected: (type) => setState(() => _filteredType = type),
                               ),
                               const SizedBox(height: 32),
                               _AssetList(
-                                assets: filteredAssets,
+                                positions: filteredPositions,
                                 pState: pState,
                                 currentUserId: currentUserId,
-                                onTap: (a) => Navigator.push(
+                                onTap: (p) => Navigator.push(
                                   context,
                                   CupertinoPageRoute(
-                                      builder: (_) =>
-                                          PerformanceScreen(asset: a, showBackButton: true)),
+                                      builder: (_) => PerformanceScreen(
+                                            asset: p.asDisplayAsset(),
+                                            showBackButton: true,
+                                            lots: p.lots,
+                                          )),
                                 ),
-                                onDelete: (a) =>
-                                    _confirmDelete(context, ref, a),
-                                onAdd: (a) => showQuickAdjustDialog(
+                                onDelete: (p) =>
+                                    _confirmDelete(context, ref, p.representative),
+                                onAdd: (p) => showQuickAdjustDialog(
                                     context, ref,
-                                    asset: a,
+                                    asset: p.asDisplayAsset(),
                                     mode: QuickAdjustMode.add),
-                                onRemove: (a) => showQuickAdjustDialog(
+                                onRemove: (p) => showQuickAdjustDialog(
                                     context, ref,
-                                    asset: a,
+                                    asset: p.asDisplayAsset(),
                                     mode: QuickAdjustMode.remove),
                               ),
                             ],
@@ -488,16 +525,16 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 // ── Asset List ────────────────────────────────────────────────────────────────
 
 class _AssetList extends StatelessWidget {
-  final List<Asset> assets;
+  final List<Position> positions;
   final PortfolioState pState;
   final String? currentUserId;
-  final void Function(Asset) onTap;
-  final void Function(Asset) onDelete;
-  final void Function(Asset) onAdd;
-  final void Function(Asset) onRemove;
+  final void Function(Position) onTap;
+  final void Function(Position) onDelete;
+  final void Function(Position) onAdd;
+  final void Function(Position) onRemove;
 
   const _AssetList({
-    required this.assets,
+    required this.positions,
     required this.pState,
     required this.currentUserId,
     required this.onTap,
@@ -510,12 +547,13 @@ class _AssetList extends StatelessWidget {
   Widget build(BuildContext context) {
     return SlidableAutoCloseBehavior(
       child: Column(
-        children: assets
-            .map((a) => _AssetCard(
-                  a: a,
+        children: positions
+            .map((position) => _AssetCard(
+                  position: position,
                   pState: pState,
                   canEdit:
-                      currentUserId != null && a.userId == currentUserId,
+                      currentUserId != null &&
+                          position.representative.userId == currentUserId,
                   onTap: onTap,
                   onDelete: onDelete,
                   onAdd: onAdd,
@@ -529,17 +567,17 @@ class _AssetList extends StatelessWidget {
 
 // ── Asset Card ────────────────────────────────────────────────────────────────
 
-class _AssetCard extends StatelessWidget {
-  final Asset a;
+class _AssetCard extends StatefulWidget {
+  final Position position;
   final PortfolioState pState;
   final bool canEdit;
-  final void Function(Asset) onTap;
-  final void Function(Asset) onDelete;
-  final void Function(Asset) onAdd;
-  final void Function(Asset) onRemove;
+  final void Function(Position) onTap;
+  final void Function(Position) onDelete;
+  final void Function(Position) onAdd;
+  final void Function(Position) onRemove;
 
   const _AssetCard({
-    required this.a,
+    required this.position,
     required this.pState,
     required this.canEdit,
     required this.onTap,
@@ -549,23 +587,46 @@ class _AssetCard extends StatelessWidget {
   });
 
   @override
+  State<_AssetCard> createState() => _AssetCardState();
+}
+
+class _AssetCardState extends State<_AssetCard>
+    with SingleTickerProviderStateMixin {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final position = widget.position;
+    final pState = widget.pState;
+    final canEdit = widget.canEdit;
+    final onTap = widget.onTap;
+    final onAdd = widget.onAdd;
+    final onRemove = widget.onRemove;
+    final onDelete = widget.onDelete;
+
+    final a = position.asDisplayAsset();
     final tryFmt =
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-    final isPos = a.gainLossPercentage >= 0;
+    final gainLossTRY =
+        pState.toTRY(position.totalValue, a.currency) - position.totalCostTRY;
+    final isPos = gainLossTRY >= 0;
 
-    Widget card = CupertinoButton(
-      minimumSize: Size.zero,
-      padding: EdgeInsets.zero,
-      onPressed: () => onTap(a),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Sandik.surface1,
-          borderRadius: BorderRadius.circular(canEdit ? 0 : 16),
-        ),
-          child: Row(
-            children: [
+    Widget card = Container(
+      decoration: BoxDecoration(
+        color: Sandik.surface1,
+        borderRadius: BorderRadius.circular(canEdit ? 0 : 16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          CupertinoButton(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
+            onPressed: () => onTap(position),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
               a.currencySymbol != null
                   ? Container(
                       width: 28, height: 28,
@@ -636,35 +697,72 @@ class _AssetCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: Colors.white),
                   ),
-                  if (a.purchasePrice > 0 && a.currentPrice > 0 && a.gainLoss != 0) ...[
+                  if (a.purchasePrice > 0 && a.currentPrice > 0) ...[
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          isPos
-                              ? Icons.arrow_drop_up_rounded
-                              : Icons.arrow_drop_down_rounded,
-                          color: isPos ? Sandik.gain : Sandik.loss,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${tryFmt.format((pState.toTRY(a.totalValue, a.currency) - a.totalCostTRY).abs())} · %${a.gainLossPercentage.abs().toStringAsFixed(3)}',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                    Builder(builder: (_) {
+                      final pctTRY = position.totalCostTRY > 0
+                          ? (gainLossTRY / position.totalCostTRY) * 100
+                          : 0.0;
+                      final isFlat =
+                          gainLossTRY.abs().round() == 0 && pctTRY.abs() < 0.005;
+                      if (isFlat) {
+                        return Row(
+                          children: [
+                            const Icon(Icons.horizontal_rule_rounded,
+                                color: Sandik.text58, size: 14),
+                            const SizedBox(width: 2),
+                            Text('Değişim yok',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Sandik.text58)),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Icon(
+                            isPos
+                                ? Icons.arrow_drop_up_rounded
+                                : Icons.arrow_drop_down_rounded,
                             color: isPos ? Sandik.gain : Sandik.loss,
+                            size: 14,
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${tryFmt.format(gainLossTRY.abs())} · %${pctTRY.abs().toStringAsFixed(2)}',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isPos ? Sandik.gain : Sandik.loss,
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
                   ],
                 ],
               ),
+              const SizedBox(width: 4),
+              _ExpandChevron(
+                expanded: _expanded,
+                onTap: () => setState(() => _expanded = !_expanded),
+              ),
             ],
           ),
-        ),
-      );
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: _expanded
+                ? _AssetDetailsPanel(position: position, pState: pState)
+                : const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
+    );
 
     if (canEdit) {
       card = ClipRRect(
@@ -676,14 +774,14 @@ class _AssetCard extends StatelessWidget {
             extentRatio: 0.5,
             children: [
               SlidableAction(
-                onPressed: (_) => onAdd(a),
+                onPressed: (_) => onAdd(position),
                 backgroundColor: Sandik.gain,
                 foregroundColor: Colors.white,
                 icon: Icons.add_rounded,
                 label: 'Ekle',
               ),
               SlidableAction(
-                onPressed: (_) => onRemove(a),
+                onPressed: (_) => onRemove(position),
                 backgroundColor: Sandik.loss.withValues(alpha: 0.85),
                 foregroundColor: Colors.white,
                 icon: Icons.remove_rounded,
@@ -696,7 +794,7 @@ class _AssetCard extends StatelessWidget {
             extentRatio: 0.28,
             children: [
               SlidableAction(
-                onPressed: (_) => onDelete(a),
+                onPressed: (_) => onDelete(position),
                 backgroundColor: const Color(0xFFEF4444),
                 foregroundColor: Colors.white,
                 icon: Icons.delete_outline_rounded,
@@ -712,6 +810,186 @@ class _AssetCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: card,
+    );
+  }
+}
+
+// ── Expand Chevron ────────────────────────────────────────────────────────────
+
+class _ExpandChevron extends StatelessWidget {
+  final bool expanded;
+  final VoidCallback onTap;
+
+  const _ExpandChevron({required this.expanded, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
+        child: AnimatedRotation(
+          turns: expanded ? 0.5 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Sandik.text58,
+            size: 22,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Asset Details Panel (expandable) ──────────────────────────────────────────
+
+class _AssetDetailsPanel extends StatelessWidget {
+  final Position position;
+  final PortfolioState pState;
+
+  const _AssetDetailsPanel({required this.position, required this.pState});
+
+  @override
+  Widget build(BuildContext context) {
+    final rep = position.representative;
+    final tryFmt3 =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 3);
+    final numFmt = NumberFormat('#,##0.####', 'tr_TR');
+    final costFmt3 = NumberFormat('#,##0.000', 'tr_TR');
+
+    // İlk alış tarihi = en eski buy lot
+    final buyLots = position.lots.where((l) => l.isBuy).toList()
+      ..sort((a, b) => a.addedDate.compareTo(b.addedDate));
+    final firstBuyDate = buyLots.isNotEmpty ? buyLots.first.addedDate : null;
+
+    final avgCostStr = position.weightedPurchasePrice > 0
+        ? '${numFmt.format(position.weightedPurchasePrice)} ${rep.currency}'
+        : '—';
+
+    final qty = position.totalQuantity;
+    final qtyStr = qty == qty.truncateToDouble()
+        ? NumberFormat('#,###', 'tr_TR').format(qty.toInt())
+        : numFmt.format(qty);
+    final qtyDisplay =
+        rep.unitIsPrefix ? '${rep.unitLabel}$qtyStr' : '$qtyStr ${rep.unitLabel}';
+
+    final currentValueTRY = pState.toTRY(position.totalValue, rep.currency);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 1,
+            margin: const EdgeInsets.only(bottom: 12),
+            color: Colors.white.withValues(alpha: 0.06),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  label: 'İlk Alış',
+                  value: firstBuyDate != null
+                      ? DateFormat('d MMM yyyy', 'tr_TR').format(firstBuyDate)
+                      : '—',
+                ),
+              ),
+              Expanded(
+                child: _DetailItem(
+                  label: 'Miktar',
+                  value: qtyDisplay,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  label: 'Ort. Maliyet',
+                  value: avgCostStr,
+                ),
+              ),
+              Expanded(
+                child: _DetailItem(
+                  label: 'Toplam Maliyet',
+                  value: position.weightedPurchasePrice > 0
+                      ? '${costFmt3.format(position.totalCost)} ${rep.currency}'
+                      : '—',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  label: 'Güncel Tutar',
+                  value: tryFmt3.format(currentValueTRY),
+                  emphasize: true,
+                ),
+              ),
+            ],
+          ),
+          if (position.lots.length > 1) ...[
+            const SizedBox(height: 10),
+            Text(
+              '${buyLots.length} alım · ${position.lots.where((l) => l.isSell).length} çıkarma',
+              style: GoogleFonts.dmSans(
+                  fontSize: 11,
+                  color: Sandik.text36,
+                  fontWeight: FontWeight.w500),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool emphasize;
+
+  const _DetailItem({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.dmSans(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: Sandik.text36,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.dmSans(
+            fontSize: emphasize ? 15 : 13,
+            fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
+            color: emphasize ? Sandik.gold : Colors.white,
+          ),
+        ),
+      ],
     );
   }
 }

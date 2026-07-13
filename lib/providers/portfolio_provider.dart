@@ -133,75 +133,76 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final currentState = state.valueOrNull ?? const PortfolioState();
     final fxRate = _fxRateForCurrency(currency, currentState);
 
-    // ── Aynı ticker ile mevcut bir varlık var mı kontrol et ──────────────────
-    final existingAssetIndex = currentState.assets.indexWhere(
-      (a) => a.ticker == ticker && a.type == type,
+    final asset = Asset(
+      id: _uuid.v4(),
+      userId: user.id,
+      name: name,
+      ticker: ticker,
+      type: type,
+      quantity: quantity,
+      purchasePrice: purchasePrice,
+      currency: currency,
+      notes: notes,
+      isManualPrice: isManualPrice,
+      subCategory: subCategory,
+      unitType: unitType,
+      purchaseFxRate: fxRate,
+      kind: AssetKind.buy,
+    );
+    if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
+      asset.purchasePrice = asset.currentPrice;
+    }
+
+    await SupabaseService.instance.insertAsset(asset);
+
+    AnalyticsService.instance.logAssetAdded(
+      type: type.name,
+      subCategory: subCategory,
     );
 
-    if (existingAssetIndex >= 0) {
-      // ── Mevcut varlığı güncelle: Miktar ve ortalama maliyet ────────────────
-      final existingAsset = currentState.assets[existingAssetIndex];
-      final oldTotalCost = existingAsset.quantity * existingAsset.purchasePrice;
-      final newTotalCost = quantity * purchasePrice;
-      final totalQuantity = existingAsset.quantity + quantity;
-      final newAvgPrice = totalQuantity > 0
-          ? (oldTotalCost + newTotalCost) / totalQuantity
-          : existingAsset.purchasePrice;
-
-      existingAsset.quantity = totalQuantity;
-      existingAsset.purchasePrice = newAvgPrice;
-
-      await SupabaseService.instance.updateAsset(existingAsset);
-
-      AnalyticsService.instance.logAssetAdded(
-        type: type.name,
-        subCategory: subCategory,
-      );
-
-      final current = state.valueOrNull;
-      if (current != null) {
-        state = AsyncData(current.copyWith(
-          assets: current.assets
-              .map((a) => a.id == existingAsset.id ? existingAsset : a)
-              .toList(),
-        ));
-      }
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(assets: [asset, ...current.assets]));
     } else {
-      // ── Yeni varlık oluştur ────────────────────────────────────────────────
-      final asset = Asset(
-        id: _uuid.v4(),
-        userId: user.id,
-        name: name,
-        ticker: ticker,
-        type: type,
-        quantity: quantity,
-        purchasePrice: purchasePrice,
-        currency: currency,
-        notes: notes,
-        isManualPrice: isManualPrice,
-        subCategory: subCategory,
-        unitType: unitType,
-        purchaseFxRate: fxRate,
-      );
-      // Alım fiyatı girilmemişse ve güncel fiyat biliniyorsa, onu alım fiyatı yap.
-      if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
-        asset.purchasePrice = asset.currentPrice;
-      }
+      final assets = await SupabaseService.instance.fetchByUser(user.id);
+      state = AsyncData(PortfolioState(assets: assets));
+    }
+  }
 
-      await SupabaseService.instance.insertAsset(asset);
+  Future<void> addSellTransaction({
+    required Asset asset,
+    required double quantity,
+    double? sellPrice,
+  }) async {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
 
-      AnalyticsService.instance.logAssetAdded(
-        type: type.name,
-        subCategory: subCategory,
-      );
+    final transaction = Asset(
+      id: _uuid.v4(),
+      userId: user.id,
+      name: asset.name,
+      ticker: asset.ticker,
+      type: asset.type,
+      quantity: quantity,
+      purchasePrice: asset.purchasePrice,
+      currency: asset.currency,
+      notes: asset.notes,
+      isManualPrice: asset.isManualPrice,
+      subCategory: asset.subCategory,
+      unitType: asset.unitType,
+      purchaseFxRate: asset.purchaseFxRate,
+      currentPrice: asset.currentPrice,
+      lastUpdated: asset.lastUpdated,
+      kind: AssetKind.sell,
+      refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
+      sellPrice: sellPrice,
+    );
 
-      final current = state.valueOrNull;
-      if (current != null) {
-        state = AsyncData(current.copyWith(assets: [asset, ...current.assets]));
-      } else {
-        final assets = await SupabaseService.instance.fetchByUser(user.id);
-        state = AsyncData(PortfolioState(assets: assets));
-      }
+    await SupabaseService.instance.insertAsset(transaction);
+
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(assets: [transaction, ...current.assets]));
     }
   }
 
@@ -217,11 +218,47 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   }
 
   Future<void> deleteAsset(String id) async {
-    await SupabaseService.instance.deleteAsset(id);
     final current = state.valueOrNull;
+    Asset? deleted;
+    if (current != null) {
+      for (final asset in current.assets) {
+        if (asset.id == id) {
+          deleted = asset;
+          break;
+        }
+      }
+    }
+    Asset? transaction;
+    if (deleted != null) {
+      transaction = Asset(
+        id: _uuid.v4(),
+        userId: deleted.userId,
+        name: deleted.name,
+        ticker: deleted.ticker,
+        type: deleted.type,
+        quantity: deleted.quantity,
+        purchasePrice: deleted.purchasePrice,
+        currency: deleted.currency,
+        notes: deleted.notes,
+        isManualPrice: deleted.isManualPrice,
+        subCategory: deleted.subCategory,
+        unitType: deleted.unitType,
+        purchaseFxRate: deleted.purchaseFxRate,
+        currentPrice: deleted.currentPrice,
+        lastUpdated: deleted.lastUpdated,
+        kind: AssetKind.deleteLog,
+        refAssetId: deleted.id,
+      );
+      await SupabaseService.instance.insertAsset(transaction);
+    }
+    await SupabaseService.instance.deleteAsset(id);
     if (current != null) {
       state = AsyncData(current.copyWith(
-          assets: current.assets.where((a) => a.id != id).toList()));
+        assets: [
+          if (transaction != null) transaction,
+          ...current.assets.where((a) => a.id != id),
+        ],
+      ));
     }
   }
 

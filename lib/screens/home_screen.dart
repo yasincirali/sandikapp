@@ -184,13 +184,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ? displayedAssets
         : displayedAssets.where((a) => a.type == _typeFilter).toList();
 
-    // Aynı ticker/type/currency/subCategory lot'larını tek pozisyona topla.
-    // AllTransactions ekranı ham asset listesini kullandığı için burada
-    // aggregation UI-only kalır (DB'de her lot aynen durur).
-    final aggregated = aggregatePositions(filteredAssets);
-    final sortedPositions = [...aggregated]
-      ..sort((a, b) => b.latestAddedDate.compareTo(a.latestAddedDate));
-
     return RefreshIndicator(
       color: Sandik.amber,
       onRefresh: () => ref.read(portfolioProvider.notifier).refreshPrices(),
@@ -418,7 +411,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'PORTFÖY',
+                      'PORTFÖY HAREKETLERİ',
                       style: GoogleFonts.dmSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -427,7 +420,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
-                  if (sortedPositions.length > 3)
+                  if (filteredAssets.length > 3)
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
@@ -535,7 +528,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           // Show all / less button
-          if (sortedPositions.length > 3)
+          if (filteredAssets.length > 3)
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
@@ -558,7 +551,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: Text(
                             _showAllTransactions
                                 ? 'Daha Az Göster'
-                                : 'Tümünü Gör (${sortedPositions.length})',
+                                : 'Tümünü Gör (${filteredAssets.length})',
                             style: GoogleFonts.dmSans(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -964,25 +957,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildAssetTile(Asset asset, PortfolioState portfolioState) {
     final tryFmt =
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-    final totalTRY = portfolioState.toTRY(asset.totalValue, asset.currency);
-    final hasPnl = asset.purchasePrice > 0 && asset.currentPrice > 0;
-    final gainLossTRY = hasPnl ? totalTRY - asset.totalCostTRY : 0.0;
-    final isPos = gainLossTRY >= 0;
+    final unitPrice = asset.isSell
+        ? (asset.sellPrice ?? asset.currentPrice)
+        : asset.purchasePrice;
+    final txValue = asset.quantity * unitPrice;
+    final txValueTRY = portfolioState.toTRY(txValue, asset.currency);
+
+    final bool isSell = asset.isSell;
+    final bool isDelete = asset.isDeleteLog;
+    final Color accent = isDelete
+        ? Sandik.text58
+        : (isSell ? Sandik.loss : Sandik.gain);
+    final IconData kindIcon = isDelete
+        ? Icons.delete_outline_rounded
+        : (isSell ? Icons.remove_rounded : Icons.add_rounded);
+    final String kindLabel = isDelete ? 'Silindi' : (isSell ? 'Çıkarıldı' : 'Eklendi');
+    final String sign = isSell || isDelete ? '−' : '+';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) =>
-                  PerformanceScreen(asset: asset, showBackButton: true)),
-        ),
+        onTap: isDelete
+            ? null
+            : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          PerformanceScreen(asset: asset, showBackButton: true)),
+                ),
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Sandik.surface1,
             borderRadius: BorderRadius.circular(16),
+            border: Border(
+              left: BorderSide(color: accent.withValues(alpha: 0.7), width: 3),
+            ),
           ),
           child: Row(
             children: [
@@ -1085,21 +1095,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(tryFmt.format(totalTRY),
-                      style: GoogleFonts.dmSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white)),
-                  if (hasPnl) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      '${isPos ? '+' : ''}₺${NumberFormat('#,###').format(gainLossTRY.abs().toInt())}',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isPos ? Sandik.gain : Sandik.loss),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(kindIcon, size: 11, color: accent),
+                        const SizedBox(width: 3),
+                        Text(kindLabel,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: accent)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$sign${tryFmt.format(txValueTRY)}',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: isDelete
+                            ? Sandik.text58
+                            : (isSell ? Sandik.loss : Colors.white)),
+                  ),
                 ],
               ),
             ],

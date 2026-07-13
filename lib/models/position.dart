@@ -33,6 +33,15 @@ class Position {
 
   bool get isSingle => lots.length == 1;
 
+  /// İlk buy lot'un tarihi — grafik "sahip olma dönemi"nin başlangıcı için.
+  DateTime get firstBuyDate {
+    final buys = lots.where((l) => l.isBuy);
+    if (buys.isEmpty) return latestAddedDate;
+    return buys
+        .map((l) => l.addedDate)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+  }
+
   /// Aggregated toplam maliyet (alım para biriminde)
   double get totalCost => totalQuantity * weightedPurchasePrice;
 
@@ -66,7 +75,7 @@ class Position {
       purchaseFxRate: weightedFxRate,
       currentPrice: r.currentPrice,
       lastUpdated: r.lastUpdated,
-      addedDate: latestAddedDate,
+      addedDate: firstBuyDate,
     );
   }
 }
@@ -113,29 +122,43 @@ String positionKey(Asset a) {
 List<Position> aggregatePositions(List<Asset> assets) {
   final map = <String, List<Asset>>{};
   for (final a in assets) {
+    if (a.isDeleteLog) continue;
     map.putIfAbsent(positionKey(a), () => []).add(a);
   }
   final positions = <Position>[];
   map.forEach((key, lots) {
     lots.sort((a, b) => b.addedDate.compareTo(a.addedDate));
-    double totalQty = 0;
-    double totalCostSum = 0;
-    double totalFxCostSum = 0;
+    final buyLots = lots.where((l) => l.isBuy).toList();
+    if (buyLots.isEmpty) return;
+
+    double buyQty = 0;
+    double buyCostSum = 0;
+    double buyFxCostSum = 0;
+    double soldQty = 0;
     for (final l in lots) {
-      totalQty += l.quantity;
-      totalCostSum += l.quantity * l.purchasePrice;
-      totalFxCostSum += l.quantity * l.purchasePrice * l.purchaseFxRate;
+      if (l.isSell) {
+        soldQty += l.quantity;
+        continue;
+      }
+      buyQty += l.quantity;
+      buyCostSum += l.quantity * l.purchasePrice;
+      buyFxCostSum += l.quantity * l.purchasePrice * l.purchaseFxRate;
     }
-    final weightedPrice = totalQty > 0 ? totalCostSum / totalQty : 0.0;
-    final weightedFxRate = totalCostSum > 0 ? totalFxCostSum / totalCostSum : 1.0;
+
+    final totalQty = buyQty - soldQty;
+    if (totalQty <= 0.0000001) return;
+
+    final weightedPrice = buyQty > 0 ? buyCostSum / buyQty : 0.0;
+    final weightedFxRate = buyCostSum > 0 ? buyFxCostSum / buyCostSum : 1.0;
+    final representative = buyLots.first;
     positions.add(Position(
       key: key,
-      representative: lots.first,
+      representative: representative,
       lots: lots,
       totalQuantity: totalQty,
       weightedPurchasePrice: weightedPrice,
       weightedFxRate: weightedFxRate,
-      latestAddedDate: lots.first.addedDate,
+      latestAddedDate: representative.addedDate,
     ));
   });
   return positions;

@@ -349,8 +349,17 @@ class TransactionSegment {
 class PerformanceScreen extends ConsumerStatefulWidget {
   final Asset asset;
   final bool showBackButton;
+  /// Aggregate edilmiş pozisyonun tüm lot'ları (buy + sell). Grafik üstünde
+  /// işlem marker'ları çizmek için kullanılır. Boş bırakılırsa sadece
+  /// [asset]'in kendisi tek buy olarak varsayılır.
+  final List<Asset>? lots;
 
-  const PerformanceScreen({super.key, required this.asset, this.showBackButton = false});
+  const PerformanceScreen({
+    super.key,
+    required this.asset,
+    this.showBackButton = false,
+    this.lots,
+  });
 
   @override
   ConsumerState<PerformanceScreen> createState() => _PerformanceScreenState();
@@ -427,40 +436,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     );
   }
 
-  // Sadece ilgili varlığın kendi kayıt tarihine dayalı tek bir gerçek işlem üretiyoruz!
-  List<GoldTransaction> get _transactions {
-    final txs = <GoldTransaction>[];
-    final activePartners = ref.read(activePartnersProvider);
-    final allAssetsMap = ref.read(allPartnerAssetsProvider).valueOrNull ?? {};
-
-    // Ben
-    if (_view == '' || _view == null) {
-      txs.add(GoldTransaction(
-        date: widget.asset.addedDate,
-        gramChange: widget.asset.quantity,
-        label: 'ALIM (Ben)',
-      ));
-    }
-
-    // Ortaklar
-    for (final p in activePartners) {
-      if (_view == null || _view == p.id) {
-        final assets = allAssetsMap[p.id] ?? [];
-        final match = assets.where((a) => a.ticker == widget.asset.ticker);
-        if (match.isNotEmpty) {
-          final pa = match.first;
-          txs.add(GoldTransaction(
-            date: pa.addedDate,
-            gramChange: pa.quantity,
-            label: 'ALIM (${p.displayName})',
-          ));
-        }
-      }
-    }
-
-    return txs..sort((a, b) => a.date.compareTo(b.date));
-  }
-
   double get _currentQuantity {
     if (_view == '') return widget.asset.quantity;
 
@@ -486,8 +461,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   List<TransactionSegment> _convertHistoryToSegments(
     Map<int, double> history,
     DateTime startDate,
-    DateTime endDate,
-  ) {
+    DateTime endDate, {
+    double? currentUnitPriceOverride,
+  }) {
     if (history.isEmpty) return [];
 
     final segments = <TransactionSegment>[];
@@ -495,8 +471,16 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final firstAssetMidnight =
         DateTime(firstAssetDate.year, firstAssetDate.month, firstAssetDate.day);
 
-    // Aktif segmentin ilk history noktasını alım maliyetiyle değiştir.
-    final anchorCost = widget.asset.totalCostTRY;
+    // Grafik "birim fiyat" (TL) gösterir — HistoryService'in döndürdüğü
+    // toplam pozisyon değerini quantity'ye bölerek per-unit fiyata çeviririz.
+    // Böylece ek alım/sell miktarı değiştirdiğinde grafik çizgisinde suni
+    // sıçrama olmaz; sadece cost basis (yatay çizgi) rebase olur.
+    final qty = widget.asset.quantity;
+    final divisor = qty > 0 ? qty : 1.0;
+
+    // Anchor = alım anındaki birim fiyat (TL cinsinden).
+    final anchorUnitPrice =
+        widget.asset.purchasePrice * widget.asset.purchaseFxRate;
 
     final sortedTs = history.keys.toList()..sort();
     final passiveSpots = <FlSpot>[];
@@ -506,20 +490,49 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     for (final ts in sortedTs) {
       final date = DateTime.fromMillisecondsSinceEpoch(ts);
       final x = date.difference(startDate).inDays.toDouble();
-      final y = history[ts]!;
+      final y = history[ts]! / divisor;
 
       if (date.isBefore(firstAssetMidnight)) {
         passiveSpots.add(FlSpot(x, y));
       } else {
-        if (!firstActiveReplaced && anchorCost > 0) {
-          if (passiveSpots.isNotEmpty) {
-            activeSpots.add(passiveSpots.last);
-          }
-          activeSpots.add(FlSpot(x, anchorCost));
+        if (!firstActiveReplaced && anchorUnitPrice > 0) {
+          // Aktif segmentin İLK noktası her zaman anchor (ort. maliyet).
+          // Passive çizgisiyle görsel bağlantı için: anchor spot'unu
+          // passive segmentin de sonuna ekliyoruz. Böylece kesikli çizgi
+          // anchor noktasına kadar uzanır, aktif çizgi de aynı noktadan
+          // başlar — arada boşluk kalmaz.
+          activeSpots.add(FlSpot(x, anchorUnitPrice));
+          passiveSpots.add(FlSpot(x, anchorUnitPrice));
           firstActiveReplaced = true;
         } else {
           activeSpots.add(FlSpot(x, y));
         }
+      }
+    }
+
+    // Son aktif spot'u canlı fiyat ile değiştir — böylece grafik bitiş
+    // noktası ve üstteki PnL chip aynı değeri gösterir (Yahoo history son
+    // bar'ı ile canlı `currentPrice` arasındaki gecikme/ölçek farkını kapat).
+    // ANCAK aktif segmentte tek spot varsa (yani ilk alım = bugün), o spot
+    // anchor'dır — override edersen anchor "bugünkü fiyat" olur ve ALIŞ
+    // çizgisi yanlış yerde çizilir. Bu durumda anchor'ı olduğu gibi bırakıp
+    // canlı fiyat için ayrı bir "son" spot ekleriz (biraz farklı X ile).
+    if (currentUnitPriceOverride != null &&
+        currentUnitPriceOverride > 0 &&
+        activeSpots.isNotEmpty) {
+      if (activeSpots.length >= 2) {
+        final last = activeSpots.last;
+        activeSpots[activeSpots.length - 1] =
+            FlSpot(last.x, currentUnitPriceOverride);
+      } else {
+        // Tek spot (anchor) var — ayrı bir "bugün" noktası ekle. X biraz
+        // ileride (bugünün offset'i) olsun.
+        final anchorX = activeSpots.first.x;
+        final todayX =
+            DateTime.now().difference(startDate).inDays.toDouble();
+        // Aynı gün ise minik bir ε ekle ki iki nokta farklı X'te olsun.
+        final endX = todayX > anchorX ? todayX : anchorX + 0.01;
+        activeSpots.add(FlSpot(endX, currentUnitPriceOverride));
       }
     }
 
@@ -548,10 +561,14 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     return segments;
   }
 
-  String _formatKiloTL(double value) {
+  String _formatKiloTL(double value, {double? scaleHint}) {
     if (value == 0) return '0 TL';
+    // scaleHint: grafik aralığı (maxY-minY). Küçükse daha çok ondalık göster
+    // ki komşu etiketler farklı görünsün (40.5k vs 40.7k gibi).
+    final hint = scaleHint ?? value;
     if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(0)}k TL';
+      final digits = hint < 5000 ? 2 : (hint < 50000 ? 1 : 0);
+      return '${(value / 1000).toStringAsFixed(digits)}k TL';
     }
     return '${value.toStringAsFixed(0)} TL';
   }
@@ -615,6 +632,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
     final activePartners = ref.watch(activePartnersProvider);
     final allPartnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
+    final pState = ref.watch(portfolioProvider).valueOrNull;
 
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
     final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;
@@ -668,37 +686,39 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             child: Column(
               children: [
-                allPartnerAssetsAsync.maybeWhen(
-                  data: (allAssetsMap) {
-                    final matchingPartners = <AppUser>[];
-                    final matchingAssets = <Asset>[];
+                if (!widget.showBackButton)
+                  allPartnerAssetsAsync.maybeWhen(
+                    data: (allAssetsMap) {
+                      final matchingPartners = <AppUser>[];
+                      final matchingAssets = <Asset>[];
 
-                    for (final p in activePartners) {
-                      final assets = allAssetsMap[p.id] ?? [];
-                      final match =
-                          assets.where((a) => a.ticker == widget.asset.ticker);
-                      if (match.isNotEmpty) {
-                        matchingPartners.add(p);
-                        matchingAssets.add(match.first);
+                      for (final p in activePartners) {
+                        final assets = allAssetsMap[p.id] ?? [];
+                        final match = assets
+                            .where((a) => a.ticker == widget.asset.ticker);
+                        if (match.isNotEmpty) {
+                          matchingPartners.add(p);
+                          matchingAssets.add(match.first);
+                        }
                       }
-                    }
 
-                    if (matchingPartners.isEmpty)
-                      return const SizedBox.shrink();
+                      if (matchingPartners.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
 
-                    return Column(
-                      children: [
-                        ModernTabSelector(
-                          partners: matchingPartners,
-                          selectedId: _view,
-                          onChanged: (v) => setState(() => _view = v),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                    );
-                  },
-                  orElse: () => const SizedBox.shrink(),
-                ),
+                      return Column(
+                        children: [
+                          ModernTabSelector(
+                            partners: matchingPartners,
+                            selectedId: _view,
+                            onChanged: (v) => setState(() => _view = v),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      );
+                    },
+                    orElse: () => const SizedBox.shrink(),
+                  ),
                 _buildPeriodToggle(),
                 const SizedBox(height: 24),
                 FutureBuilder<Map<int, double>>(
@@ -713,44 +733,127 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     }
 
                     final historyMap = snapshot.data ?? {};
+
+                    // ── PnL: KART İLE BİREBİR AYNI FORMÜL ───────────────────
+                    // Grafiğin son noktasını da bu canlı değerle sabitliyoruz
+                    // (aşağıdaki `currentUnitPriceOverride`) — böylece grafik
+                    // bitiş noktası ve chip her zaman aynı sayıyı gösterir.
+                    final asset = widget.asset;
+                    final qty = asset.quantity;
+                    final anchorUnitTRY =
+                        asset.purchasePrice * asset.purchaseFxRate;
+                    final currentValueTRY = pState != null
+                        ? pState.toTRY(asset.totalValue, asset.currency)
+                        : asset.totalValue;
+                    final currentUnitTRY = qty > 0 ? currentValueTRY / qty : 0.0;
+
                     final segments = _convertHistoryToSegments(
-                        historyMap, startDate, endDate);
+                        historyMap, startDate, endDate,
+                        currentUnitPriceOverride: currentUnitTRY);
+
+                    // Aktif segmenti bul (kesikli olmayan, yani alım sonrası)
+                    final activeSeg = segments.firstWhere(
+                      (s) => !s.dashed && s.spots.isNotEmpty,
+                      orElse: () => TransactionSegment(
+                        spots: const [],
+                        lineColor: Sandik.amber,
+                        areaGradientStart: Colors.transparent,
+                        areaGradientEnd: Colors.transparent,
+                        thickness: 3.5,
+                      ),
+                    );
+                    final anchorSpot =
+                        activeSeg.spots.isNotEmpty ? activeSeg.spots.first : null;
+                    final lastSpot =
+                        activeSeg.spots.isNotEmpty ? activeSeg.spots.last : null;
+                    final anchorY = anchorSpot?.y ?? 0.0;
+                    final totalCostTRY = asset.totalCostTRY;
+                    final totalPnlTRY = currentValueTRY - totalCostTRY;
+                    final pnlPct = totalCostTRY > 0
+                        ? (totalPnlTRY / totalCostTRY) * 100
+                        : 0.0;
+                    final gainPositive = totalPnlTRY >= 0;
+                    final endpointColor =
+                        gainPositive ? Sandik.gain : Sandik.loss;
+
+                    // Lot marker'ları için: gün-hassasiyetli tarih → (isSell) map.
+                    // Aynı güne birden fazla işlem düşerse buy önceliklidir
+                    // (ek alım genelde daha anlamlı sinyal).
+                    final Map<int, bool> lotDayIsSell = {};
+                    final activeLots = widget.lots ?? [widget.asset];
+                    for (final lot in activeLots) {
+                      if (lot.isDeleteLog) continue;
+                      final d = DateTime(lot.addedDate.year,
+                          lot.addedDate.month, lot.addedDate.day);
+                      if (d.isBefore(startDate)) continue;
+                      final dayKey = d.difference(startDate).inDays;
+                      final isSell = lot.isSell;
+                      // Buy varsa buy kalsın (override etme)
+                      if (lotDayIsSell.containsKey(dayKey) &&
+                          !lotDayIsSell[dayKey]!) {
+                        continue;
+                      }
+                      lotDayIsSell[dayKey] = isSell;
+                    }
 
                     // Determine Min/Max Y safely
                     double minY = double.infinity;
                     double maxY = -double.infinity;
-                    double sumY = 0;
-                    int countY = 0;
                     for (final seg in segments) {
                       for (final spot in seg.spots) {
                         if (spot.y > maxY) maxY = spot.y;
                         if (spot.y < minY) minY = spot.y;
-                        sumY += spot.y;
-                        countY++;
                       }
                     }
                     if (minY == double.infinity) minY = 0;
                     if (maxY == -double.infinity) maxY = 1000;
-                    final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
-                    final dataRange = (maxY - minY).clamp(1.0, double.infinity);
-                    final minSpread = (avgY * 0.08).clamp(1.0, double.infinity);
-                    final effectiveRange =
-                        dataRange < minSpread ? minSpread : dataRange;
-                    final yPad = effectiveRange * 0.1;
-                    maxY = (avgY + effectiveRange / 2) + yPad;
-                    minY = (avgY - effectiveRange / 2 - yPad).clamp(0, double.infinity);
 
-                    return Container(
-                      height: 400,
-                      decoration: BoxDecoration(
-                        color: Sandik.surface1,
-                        borderRadius: BorderRadius.circular(16),
-                        border:
-                            Border.all(color: Colors.white.withOpacity(0.05)),
-                      ),
-                      padding: const EdgeInsets.only(
-                          top: 36, right: 16, left: 0, bottom: 16),
-                      child: LineChart(
+                    // Y ekseni ölçeği ANCHOR MERKEZLİ:
+                    // - ALIŞ çizgisi grafiğin tam ortasında dursun,
+                    // - Küçük hareketler (%0.5 gibi) görsel olarak belirgin
+                    //   çıksın (minimum spread anchor'ın ±%1'i),
+                    // - Anchor'dan uzaklaşan noktalar simetrik ile sığdırılır.
+                    final center = anchorY > 0 ? anchorY : (minY + maxY) / 2;
+                    double maxAbsDev = 0;
+                    for (final seg in segments) {
+                      for (final spot in seg.spots) {
+                        final dev = (spot.y - center).abs();
+                        if (dev > maxAbsDev) maxAbsDev = dev;
+                      }
+                    }
+                    // Minimum sapma: anchor'ın %1'i — küçük değişimler bile
+                    // grafikte gözle görülür genlikte çizilsin.
+                    final minDev = (center * 0.01).clamp(1.0, double.infinity);
+                    final halfRange = maxAbsDev < minDev ? minDev : maxAbsDev;
+                    final yPad = halfRange * 0.35;
+                    maxY = center + halfRange + yPad;
+                    minY = (center - halfRange - yPad).clamp(0, double.infinity);
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (anchorSpot != null && lastSpot != null)
+                          _PnlSummaryStrip(
+                            anchorUnitPrice: anchorUnitTRY,
+                            currentUnitPrice: currentUnitTRY,
+                            pnlPct: pnlPct,
+                            totalPnl: totalPnlTRY,
+                            unitLabel: widget.asset.unitLabel,
+                            isPositive: gainPositive,
+                          ),
+                        if (anchorSpot != null && lastSpot != null)
+                          const SizedBox(height: 12),
+                        Container(
+                          height: 400,
+                          decoration: BoxDecoration(
+                            color: Sandik.surface1,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.05)),
+                          ),
+                          padding: const EdgeInsets.only(
+                              top: 36, right: 16, left: 0, bottom: 16),
+                          child: LineChart(
                         LineChartData(
                           minX: 0,
                           maxX: maxX,
@@ -807,7 +910,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                   return Padding(
                                     padding: const EdgeInsets.only(right: 8.0),
                                     child: Text(
-                                      _formatKiloTL(value),
+                                      _formatKiloTL(value,
+                                          scaleHint: maxY - minY),
                                       textAlign: TextAlign.right,
                                       style: const TextStyle(
                                         color: Colors.white54,
@@ -820,6 +924,32 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               ),
                             ),
                           ),
+                          extraLinesData: anchorSpot != null
+                              ? ExtraLinesData(
+                                  horizontalLines: [
+                                    HorizontalLine(
+                                      y: anchorY,
+                                      color: Colors.white.withValues(alpha: 0.35),
+                                      strokeWidth: 1,
+                                      dashArray: const [4, 4],
+                                      label: HorizontalLineLabel(
+                                        show: true,
+                                        alignment: Alignment.topLeft,
+                                        padding: const EdgeInsets.only(
+                                            left: 8, bottom: 2),
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white
+                                              .withValues(alpha: 0.75),
+                                        ),
+                                        labelResolver: (_) =>
+                                            'ALIŞ  ${NumberFormat('#,##0.00', 'tr_TR').format(anchorY)} ₺',
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : const ExtraLinesData(),
                           lineBarsData: segments
                               .map((seg) => LineChartBarData(
                                     spots: seg.spots,
@@ -833,17 +963,60 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       checkToShowDot: (spot, barData) {
                                         // Pasif (silik) segmentte hiç nokta yok.
                                         if (seg.dashed) return false;
-                                        // Sadece gerçek alım tarihine denk gelen noktada göster.
-                                        final dateAtSpot = startDate.add(Duration(days: spot.x.toInt()));
-                                        return _transactions.any((tx) =>
-                                            tx.date.year == dateAtSpot.year &&
-                                            tx.date.month == dateAtSpot.month &&
-                                            tx.date.day == dateAtSpot.day);
+                                        // Başlangıç (alış) ve bitiş (son) her zaman görünsün.
+                                        if (anchorSpot != null &&
+                                            spot.x == anchorSpot.x &&
+                                            spot.y == anchorSpot.y) {
+                                          return true;
+                                        }
+                                        if (lastSpot != null &&
+                                            spot.x == lastSpot.x &&
+                                            spot.y == lastSpot.y) {
+                                          return true;
+                                        }
+                                        // Lot işlem günleri (ek alım/sell) marker göster.
+                                        return lotDayIsSell
+                                            .containsKey(spot.x.toInt());
                                       },
                                       getDotPainter:
                                           (spot, percent, barData, index) {
+                                        // Alış noktası (ilk buy): beyaz halkalı amber
+                                        if (anchorSpot != null &&
+                                            spot.x == anchorSpot.x &&
+                                            spot.y == anchorSpot.y) {
+                                          return FlDotCirclePainter(
+                                            radius: 7,
+                                            color: Sandik.amber,
+                                            strokeColor: Colors.white,
+                                            strokeWidth: 3,
+                                          );
+                                        }
+                                        // Son nokta: kar/zarar rengi
+                                        if (lastSpot != null &&
+                                            spot.x == lastSpot.x &&
+                                            spot.y == lastSpot.y) {
+                                          return FlDotCirclePainter(
+                                            radius: 8,
+                                            color: endpointColor,
+                                            strokeColor: Colors.white,
+                                            strokeWidth: 3,
+                                          );
+                                        }
+                                        // Ek alım / satış marker'ları
+                                        final isSell =
+                                            lotDayIsSell[spot.x.toInt()];
+                                        if (isSell != null) {
+                                          return FlDotCirclePainter(
+                                            radius: 5.5,
+                                            color: isSell
+                                                ? Sandik.loss
+                                                : Sandik.gain,
+                                            strokeColor: Colors.white,
+                                            strokeWidth: 2,
+                                          );
+                                        }
                                         return FlDotCirclePainter(
-                                          radius: 2.5,
+                                          radius: 3.5,
                                           color: Sandik.amber,
                                           strokeColor: Sandik.background,
                                           strokeWidth: 1.5,
@@ -884,6 +1057,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           ),
                         ),
                       ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -923,6 +1098,189 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── PnL özet strip'i (alış → şimdi + değişim) ────────────────────────────────
+
+class _PnlSummaryStrip extends StatelessWidget {
+  final double anchorUnitPrice;
+  final double currentUnitPrice;
+  final double pnlPct;
+  final double totalPnl;
+  final String unitLabel;
+  final bool isPositive;
+
+  const _PnlSummaryStrip({
+    required this.anchorUnitPrice,
+    required this.currentUnitPrice,
+    required this.pnlPct,
+    required this.totalPnl,
+    required this.unitLabel,
+    required this.isPositive,
+  });
+
+  String _fmtPrice(double v) {
+    // Birim fiyat — kullanıcı per-unit farkı algılayabilsin diye ondalık koru.
+    // Grup ayraçlı, 2 ondalıklı (tr locale).
+    final f = NumberFormat('#,##0.00', 'tr_TR');
+    return '${f.format(v)} ₺';
+  }
+
+  String _fmtTotal(double v) {
+    if (v.abs() >= 1000000) return '${(v / 1000000).toStringAsFixed(2)}M ₺';
+    if (v.abs() >= 1000) return '${(v / 1000).toStringAsFixed(1)}k ₺';
+    return '${v.toStringAsFixed(0)} ₺';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Değişim yoksa (yuvarlanmış tutar ve yüzde ikisi de sıfırsa) nötr göster.
+    final bool isFlat =
+        totalPnl.abs().round() == 0 && pnlPct.abs() < 0.005;
+    final Color accent = isFlat
+        ? Sandik.text36
+        : (isPositive ? Sandik.gain : Sandik.loss);
+    final String sign = isPositive ? '+' : '−';
+    final IconData arrow = isPositive
+        ? Icons.trending_up_rounded
+        : Icons.trending_down_rounded;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Sandik.surface1,
+        borderRadius: BorderRadius.circular(14),
+        border: Border(
+          left: BorderSide(color: accent.withValues(alpha: 0.8), width: 3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ALIŞ / $unitLabel',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 9,
+                        letterSpacing: 0.8,
+                        fontWeight: FontWeight.w700,
+                        color: Sandik.text36)),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(_fmtPrice(anchorUnitPrice),
+                      maxLines: 1,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.75))),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Icon(Icons.arrow_forward_rounded,
+                size: 14, color: Sandik.text36),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('BUGÜN / $unitLabel',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 9,
+                        letterSpacing: 0.8,
+                        fontWeight: FontWeight.w700,
+                        color: Sandik.text36)),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(_fmtPrice(currentUnitPrice),
+                      maxLines: 1,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (isFlat)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+                border:
+                    Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.horizontal_rule_rounded,
+                      size: 14, color: Sandik.text58),
+                  const SizedBox(width: 4),
+                  Text('Değişim yok',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Sandik.text58)),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: accent.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(arrow, size: 14, color: accent),
+                  const SizedBox(width: 4),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('$sign${_fmtTotal(totalPnl.abs())}',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: accent,
+                              height: 1.0)),
+                      const SizedBox(height: 2),
+                      Text(
+                          '$sign${_fmtPrice((currentUnitPrice - anchorUnitPrice).abs())} / $unitLabel',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: accent.withValues(alpha: 0.85),
+                              height: 1.2)),
+                      const SizedBox(height: 1),
+                      Text('%${pnlPct.abs().toStringAsFixed(2)}',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: accent.withValues(alpha: 0.85),
+                              height: 1.0)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

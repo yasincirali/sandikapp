@@ -129,25 +129,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       final notifier = widget.ref.read(portfolioProvider.notifier);
 
       if (_isAdd) {
-        final addQty = qty;
         final addPrice = _parse(_priceCtrl.text)!;
-        final existingCost = asset.quantity * asset.purchasePrice;
-        final addedCost = addQty * addPrice;
-        final newQty = asset.quantity + addQty;
-        final newAvgPrice =
-            newQty > 0 ? (existingCost + addedCost) / newQty : addPrice;
-        asset
-          ..quantity = newQty
-          ..purchasePrice = newAvgPrice;
-        await notifier.updateAsset(asset);
+        await notifier.addAsset(
+          name: asset.name,
+          ticker: asset.ticker,
+          type: asset.type,
+          quantity: qty,
+          purchasePrice: addPrice,
+          currency: asset.currency,
+          notes: asset.notes,
+          isManualPrice: asset.isManualPrice,
+          subCategory: asset.subCategory,
+          unitType: asset.unitType,
+        );
       } else {
-        final newQty = asset.quantity - qty;
-        if (newQty <= 0.0000001) {
-          await notifier.deleteAsset(asset.id);
-        } else {
-          asset.quantity = newQty;
-          await notifier.updateAsset(asset);
-        }
+        await notifier.addSellTransaction(
+          asset: asset,
+          quantity: qty,
+          sellPrice: asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice,
+        );
       }
 
       if (!mounted) return;
