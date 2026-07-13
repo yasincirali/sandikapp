@@ -560,11 +560,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     return '${value.toStringAsFixed(0)} TL';
   }
 
-  String _formatKiloTLLabel(double value) {
-    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(2)}M TL';
-    if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}k TL';
-    return '${value.toStringAsFixed(0)} TL';
-  }
 
   Widget _buildPeriodToggle() {
     return Container(
@@ -1026,17 +1021,45 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           lineTouchData: LineTouchData(
                             enabled: true,
                             touchTooltipData: LineTouchTooltipData(
-                              getTooltipColor: (_) => Colors.black87,
+                              getTooltipColor: (_) =>
+                                  Sandik.surface1.withValues(alpha: 0.95),
+                              tooltipRoundedRadius: 10,
+                              tooltipPadding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 8),
+                              fitInsideHorizontally: true,
+                              fitInsideVertically: true,
                               getTooltipItems: (touchedSpots) {
-                                return touchedSpots.map((spot) {
-                                  final date = startDate.add(Duration(days: spot.x.toInt()));
-                                  final dateLabel = DateFormat('d MMM').format(date);
+                                final valueFmt =
+                                    NumberFormat('#,##0.000', 'tr_TR');
+                                // Passive + active segmentler anchor noktasında
+                                // aynı (x, y) spot'unu paylaşır → aynı tooltip
+                                // iki kere görünür. Yakın olanları filtrele.
+                                final seen = <String>{};
+                                return touchedSpots.map<LineTooltipItem?>((spot) {
+                                  final key =
+                                      '${spot.x.toStringAsFixed(2)}|${spot.y.toStringAsFixed(2)}';
+                                  if (!seen.add(key)) return null;
+                                  final date = startDate
+                                      .add(Duration(days: spot.x.toInt()));
+                                  final dateLabel = DateFormat('d MMM', 'tr_TR')
+                                      .format(date);
                                   return LineTooltipItem(
-                                    '$dateLabel\n${_formatKiloTLLabel(spot.y)}',
-                                    const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12),
+                                    '${valueFmt.format(spot.y)} ₺',
+                                    GoogleFonts.dmSans(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: '\n$dateLabel',
+                                        style: GoogleFonts.dmSans(
+                                          color: Sandik.text58,
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
                                   );
                                 }).toList();
                               },
