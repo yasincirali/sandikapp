@@ -79,18 +79,26 @@ class PortfolioState {
     }
   }
 
-  double get totalValue =>
-      assets.fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
+  // Toplamlar SADECE aktif alım lot'ları üzerinden hesaplanır. Satış (sell)
+  // ve silme kaydı (deleteLog) transaction ledger'ında yaşayan geçmiş
+  // kayıtlardır; net varlık toplamına yeniden dahil edilirlerse
+  // ana ekranda "sildim ama toplam düşmedi" ya da "sattığım miktar hâlâ
+  // sayılıyor" bug'ı doğar. Position aggregate'i (portföy ekranı) zaten
+  // buy − sell mantığıyla çalıştığı için tutarlı sonuç veriyordu; bu getter'lar
+  // da aynı davranışa hizalanır.
+  double get totalValue => assets
+      .where((a) => a.isBuy)
+      .fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
 
   /// Hem alım fiyatı hem güncel fiyatı bilinen varlıkların TRY maliyeti.
   /// currentPrice=0 olan varlıklar henüz fiyat çekilememiş demektir — dahil etme.
   double get totalCost => assets
-      .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
+      .where((a) => a.isBuy && a.purchasePrice > 0 && a.currentPrice > 0)
       .fold(0, (s, a) => s + a.totalCostTRY);
 
   /// Aynı filtre: güncel değer hesabı da sadece fiyatı bilinen varlıkları kapsar.
   double get _trackedValue => assets
-      .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
+      .where((a) => a.isBuy && a.purchasePrice > 0 && a.currentPrice > 0)
       .fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
 
   double get gainLoss => _trackedValue - totalCost;
@@ -433,7 +441,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final categoryValues = <String, double>{};
     for (final type in AssetType.values) {
       final val = s.assets
-          .where((a) => a.type == type)
+          .where((a) => a.isBuy && a.type == type)
           .fold<double>(0, (sum, a) => sum + s.toTRY(a.totalValue, a.currency));
       if (val > 0) categoryValues[type.name] = val;
     }

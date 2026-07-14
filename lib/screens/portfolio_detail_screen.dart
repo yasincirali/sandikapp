@@ -397,8 +397,9 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       Map<String, List<Asset>> partnerMap, List<AppUser> partners) {
     double totalAll = myState.totalValue;
     for (final list in partnerMap.values)
-      totalAll +=
-          list.fold(0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
+      totalAll += list
+          .where((a) => a.isBuy)
+          .fold(0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
 
     return Column(
       children: [
