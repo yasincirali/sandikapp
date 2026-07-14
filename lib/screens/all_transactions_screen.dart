@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/h_scroll_with_fade.dart';
@@ -124,7 +125,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               child: Row(
                 children: [
                   _typeChip(null, 'Tümü'),
-                  for (final t in AssetType.values) _typeChip(t, t.label),
+                  for (final t in RemoteConfigService.instance.visibleAssetTypes)
+                    _typeChip(t, t.label),
                 ],
               ),
             ),

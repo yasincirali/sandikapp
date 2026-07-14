@@ -14,6 +14,7 @@ import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../services/history_service.dart';
+import '../services/remote_config_service.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/h_scroll_with_fade.dart';
 
@@ -237,7 +238,7 @@ class _PortfolioPerformanceScreenState
                               child: Row(
                                 children: [
                                   _typeChip(null, 'Tümü'),
-                                  for (final t in AssetType.values)
+                                  for (final t in RemoteConfigService.instance.visibleAssetTypes)
                                     _typeChip(t, t.label),
                                 ],
                               ),

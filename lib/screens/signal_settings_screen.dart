@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/asset_type.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/disclaimer_widget.dart';
@@ -113,7 +114,7 @@ class SignalSettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          for (final type in AssetType.values) ...[
+          for (final type in RemoteConfigService.instance.visibleAssetTypes) ...[
             _CategorySection(
               type: type,
               selected: prefs[type] ??

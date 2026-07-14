@@ -148,6 +148,8 @@ class Asset {
           default:
             return 'adet';
         }
+      case AssetType.mevduat:
+        return '₺';
       case AssetType.diger:
         return 'adet';
     }

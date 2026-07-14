@@ -3,6 +3,8 @@ import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../services/analytics_service.dart';
+import '../services/deposit_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/price_service.dart';
 import 'auth_provider.dart';
@@ -108,7 +110,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     if (user == null) return const PortfolioState();
 
     final assets = await SupabaseService.instance.fetchByUser(user.id);
-    return PortfolioState(assets: assets);
+    return PortfolioState(
+      assets: RemoteConfigService.instance.filterHiddenTypes(assets),
+    );
   }
 
   // ---- CRUD ----------------------------------------------------------------
@@ -137,6 +141,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     required bool isManualPrice,
     String? subCategory,
     String unitType = 'piece',
+    DateTime? addedDate,
+    double? initialCurrentPrice,
   }) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -179,6 +185,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       unitType: unitType,
       purchaseFxRate: fxRate,
       kind: AssetKind.buy,
+      addedDate: addedDate,
+      currentPrice: initialCurrentPrice,
     );
     if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
       asset.purchasePrice = asset.currentPrice;
@@ -196,7 +204,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       state = AsyncData(current.copyWith(assets: [asset, ...current.assets]));
     } else {
       final assets = await SupabaseService.instance.fetchByUser(user.id);
-      state = AsyncData(PortfolioState(assets: assets));
+      state = AsyncData(PortfolioState(
+        assets: RemoteConfigService.instance.filterHiddenTypes(assets),
+      ));
     }
   }
 
@@ -324,7 +334,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final activePartners = ref.read(activePartnersProvider);
     final partnerAssetsMap = <String, List<Asset>>{};
     for (final partner in activePartners) {
-      final assets = await SupabaseService.instance.fetchByUser(partner.id);
+      final assets = RemoteConfigService.instance.filterHiddenTypes(
+        await SupabaseService.instance.fetchByUser(partner.id),
+      );
       partnerAssetsMap[partner.id] = assets;
       for (final a in assets) {
         if (a.ticker.isNotEmpty && !a.isManualPrice) {
@@ -344,7 +356,15 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       // Kendi varlıklarını güncelle
       final updated = s.assets.map((asset) {
-        if (!asset.isManualPrice && asset.ticker.isNotEmpty) {
+        if (asset.type == AssetType.mevduat) {
+          // Vadeli mevduat — API yok, birim değeri lokal hesapla.
+          final terms = DepositService.decode(asset);
+          if (terms != null) {
+            asset.currentPrice = DepositService.currentUnitValue(terms);
+            asset.lastUpdated = DateTime.now();
+            SupabaseService.instance.updateAsset(asset);
+          }
+        } else if (!asset.isManualPrice && asset.ticker.isNotEmpty) {
           final price = quotes[asset.ticker.toUpperCase()]?.regularMarketPrice;
           if (price != null) {
             asset.currentPrice = price;
@@ -449,7 +469,9 @@ class _PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     final activePartners = ref.watch(activePartnersProvider);
     final map = <String, List<Asset>>{};
     for (final p in activePartners) {
-      map[p.id] = await SupabaseService.instance.fetchByUser(p.id);
+      map[p.id] = RemoteConfigService.instance.filterHiddenTypes(
+        await SupabaseService.instance.fetchByUser(p.id),
+      );
     }
     return map;
   }
@@ -464,7 +486,9 @@ class _PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     // Mevcut veriyi koru, loading state'e GEÇMEDEn arka planda yenile
     final map = <String, List<Asset>>{};
     for (final p in activePartners) {
-      map[p.id] = await SupabaseService.instance.fetchByUser(p.id);
+      map[p.id] = RemoteConfigService.instance.filterHiddenTypes(
+        await SupabaseService.instance.fetchByUser(p.id),
+      );
     }
     state = AsyncData(map);
   }

@@ -1,32 +1,61 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/analytics_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 
 /// Yeni kullanıcılara gösterilen interaktif demo.
-/// Her adım gerçek uygulama üzerinde bir spotlight + açıklama balonu gösterir.
+///
+/// Gösterim politikası (2026-07): SADECE cihaza uygulamayı ilk defa yükleyen
+/// kullanıcılara bir kez gösterilir. Karar cihaz-bazlı SharedPreferences flag'i
+/// (`_deviceFlagKey`) üzerinden verilir; kullanıcı hesabı üzerinden değil.
+/// - Yeni kayıt olan biri, cihaz daha önce onboarding gördüyse tekrar görmez.
+/// - Kullanıcı uygulamayı silip yeniden yüklese bile Supabase profilindeki
+///   `onboarding_completed` alanı hâlâ true olduğundan tekrar tetiklenmez
+///   (fallback).
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
   final String userId;
 
   const OnboardingScreen({super.key, required this.onComplete, required this.userId});
 
-  /// Onboarding'in tamamlanıp tamamlanmadığını Supabase profil'inden okur.
-  /// Böylece kullanıcı uygulamayı silip yeniden yüklese bile durum kaybolmaz.
+  /// Cihaz-bazlı "onboarding gösterildi" bayrağı. Uygulama silinip yeniden
+  /// kurulunca sıfırlanır — bu istenen davranış: mağazadan ilk defa indiren
+  /// cihazda sadece bir kere göster.
+  static const _deviceFlagKey = 'onboarding_shown_on_device_v2';
+
+  /// Onboarding'in bu cihaz için tamamlanıp tamamlanmadığını döner.
+  /// Öncelik: cihaz flag'i (SharedPreferences). Cihazda gösterilmediyse
+  /// Supabase profilindeki onboarding_completed kontrol edilir; bu alan
+  /// true ise (kullanıcı başka bir cihazda görmüş) yine gösterilmez.
   /// Sorgu başarısız olursa "gösterildi" say (agresif yeniden-göstermeyi önle).
   static Future<bool> isCompleted(String userId) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_deviceFlagKey) == true) return true;
       final profile = await SupabaseService.instance.getProfile(userId);
-      return profile?.onboardingCompleted ?? false;
+      final serverDone = profile?.onboardingCompleted ?? false;
+      if (serverDone) {
+        // Sunucu tarafı tamam görüyor — cihaz flag'ini de yaz ki bir daha
+        // ağ sorgusu bile yapılmasın.
+        await prefs.setBool(_deviceFlagKey, true);
+        return true;
+      }
+      return false;
     } catch (_) {
       return true;
     }
   }
 
   static Future<void> markCompleted(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_deviceFlagKey, true);
+    } catch (_) {}
     try {
       await SupabaseService.instance.markOnboardingCompleted(userId);
     } catch (_) {}
@@ -42,44 +71,71 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   late AnimationController _anim;
   late Animation<double> _fade;
 
-  static const _steps = [
+  late final List<_DemoStep> _steps = _buildSteps();
+
+  static List<_DemoStep> _buildSteps() {
+    final depositsOn = RemoteConfigService.instance.depositsEnabled;
+    return [
     _DemoStep(
       icon: Icons.account_balance_wallet_rounded,
-      title: 'Portföyünüze hoş geldiniz',
-      body: 'Sandık; hisse, fon, döviz ve altın varlıklarınızı tek ekranda toplar. '
-          'Fiyatlar otomatik güncellenir.',
+      title: 'Sandığınıza hoş geldiniz',
+      body: depositsOn
+          ? 'Hisse, fon, döviz, altın, emtia, kripto ve vadeli mevduatlarınızı '
+              'tek bir ekranda takip edin. Fiyatlar arka planda otomatik güncellenir.'
+          : 'Hisse, fon, döviz, altın ve emtia varlıklarınızı tek bir ekranda '
+              'takip edin. Fiyatlar arka planda otomatik güncellenir.',
       align: _BalloonAlign.center,
     ),
     _DemoStep(
       icon: Icons.add_circle_rounded,
-      title: 'Varlık ekleyin',
-      body: 'Sağ alttaki + butonuna dokunarak yeni varlık ekleyebilirsiniz. '
-          'Mikrofon ikonuyla "100 dolar" veya "10 gram altın" yazarak hızlı toplu giriş de yapabilirsiniz.',
+      title: depositsOn ? 'Varlık ve mevduat ekleyin' : 'Varlık ekleyin',
+      body: depositsOn
+          ? 'Sağ alttaki + butonuyla varlık ekleyin; ayrıca vadeli mevduatlarınızı '
+              'faiz oranı ve vade tarihiyle birlikte kayıt altına alabilirsiniz.'
+          : 'Sağ alttaki + butonuyla portföyüne yeni varlık ekleyin. Alış tarihi, '
+              'miktar ve maliyeti girin; anlık değer ve kâr/zarar otomatik hesaplanır.',
       align: _BalloonAlign.bottom,
     ),
     _DemoStep(
-      icon: Icons.show_chart_rounded,
-      title: 'Performansı takip edin',
-      body: 'Portföy sekmesindeki grafik ikonundan toplam getiri grafiğinizi, '
-          'kâr/zarar detaylarını ve teknik sinyalleri görüntüleyebilirsiniz.',
+      icon: Icons.bolt_rounded,
+      title: 'Hızlı ve toplu giriş',
+      body: 'Varlık ekle ekranındaki ⚡ ile "100 dolar", "10 gram altın 4500 lira", '
+          '"GARAN 500 adet" gibi cümleleri tek seferde birden fazla varlığa dönüştürün. '
+          'Sepet ile birden çok işlemi tek onayda kaydedebilirsiniz.',
+      align: _BalloonAlign.center,
+    ),
+    _DemoStep(
+      icon: Icons.insights_rounded,
+      title: 'Performans ve grafikler',
+      body: 'Toplam getiri grafiği, kâr/zarar dökümü, varlık kırılımı ve tarihsel '
+          'performansınızı Portföy sekmesindeki grafik ikonundan görün.',
+      align: _BalloonAlign.top,
+    ),
+    _DemoStep(
+      icon: Icons.notifications_active_rounded,
+      title: 'Teknik sinyaller',
+      body: 'Portföyünüz her gün otomatik olarak analiz edilir. Al/sat sinyalleri '
+          've önemli fiyat hareketleri bildirim olarak gelir. Ayarlardan hangi '
+          'sinyalleri almak istediğinizi seçebilirsiniz.',
       align: _BalloonAlign.top,
     ),
     _DemoStep(
       icon: Icons.people_rounded,
       title: 'Ortakla paylaşın',
-      body: 'Profil sekmesinden "Kod Üret" butonuyla bir davet kodu oluşturun '
-          've bu kodu eşinize veya iş ortağınıza gönderin.',
+      body: 'Profil sekmesinden davet kodu üretip eşinize veya iş ortağınıza gönderin. '
+          'Onaylandığında portföyleri tek bir ekranda birlikte takip edersiniz.',
       align: _BalloonAlign.top,
     ),
     _DemoStep(
-      icon: Icons.bolt_rounded,
-      title: 'Hızlı giriş',
-      body: 'Varlık ekle ekranındaki ⚡ simgesine dokunun ve her satıra bir varlık yazın:\n'
-          '"100 dolar\n10 gram altın 4500 lira\nGARAN 500 adet"\n'
-          'Hepsi tek seferde eklenir.',
+      icon: Icons.workspace_premium_rounded,
+      title: 'Sınırsız Sandık Premium',
+      body: 'Ücretsiz plan belirli sayıda varlık ile sınırlıdır. Premium ile '
+          'sınırsız varlık, gelişmiş sinyaller ve reklamsız deneyim elde edersiniz. '
+          'Profil > Premium sekmesinden inceleyebilirsiniz.',
       align: _BalloonAlign.center,
     ),
   ];
+  }
 
   bool get _isLast => _step == _steps.length - 1;
 

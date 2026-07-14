@@ -135,8 +135,16 @@ class AuthService {
         createdAt: DateTime.now(),
       );
 
-      await SupabaseService.instance.upsertProfile(user);
-      await _saveEmail(normalizedEmail);
+      // Post-signup best-effort: Supabase Auth kullanıcı oluşturdu; profil
+      // upsert'i veya email kaydı fail olsa da register akışını hata olarak
+      // gösterme (kullanıcı zaten kaydolmuş durumda). Profil satırı
+      // eksikse ilk login'de tekrar upsert edilir.
+      try {
+        await SupabaseService.instance.upsertProfile(user);
+      } catch (_) {}
+      try {
+        await _saveEmail(normalizedEmail);
+      } catch (_) {}
       return user;
     } on AuthException {
       rethrow;

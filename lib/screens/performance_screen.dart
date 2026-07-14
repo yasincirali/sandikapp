@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
+import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -1103,7 +1104,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                _TechnicalSignalPanel(asset: widget.asset),
+                if (widget.asset.type != AssetType.mevduat)
+                  _TechnicalSignalPanel(asset: widget.asset),
               ],
             ),
           ),

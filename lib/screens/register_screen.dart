@@ -201,7 +201,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
 
       final authState = ref.read(authProvider);
-      if (authState.hasError) {
+      // Başarı önceliği: user oluştuysa akış başarılıdır — post-signup
+      // adımlardaki (upsertProfile, disclaimer vb.) sessiz bir istisna
+      // olsa bile kullanıcıyı "hata" ile karşılama.
+      if (authState.hasValue && authState.valueOrNull != null) {
+        // devam et — success + navigation aşağıda
+      } else if (authState.hasError) {
         if (!mounted) return;
         final err = authState.error;
         final msg = err?.toString() ?? '';

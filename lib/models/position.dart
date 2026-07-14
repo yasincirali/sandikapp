@@ -111,6 +111,11 @@ String positionKey(Asset a) {
       final t = a.ticker.trim().toUpperCase();
       core = t.isNotEmpty ? t : 'name:${a.name.trim().toLowerCase()}';
       break;
+    case AssetType.mevduat:
+      // Vadeli mevduatta her ekleme kendi vade tarihi ve faiziyle bağımsız
+      // bir hesaptır — asla aggregate edilmez. Her lot ayrı position.
+      core = 'id:${a.id}';
+      break;
   }
   return '$type|$core|$currency';
 }

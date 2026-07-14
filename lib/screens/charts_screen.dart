@@ -24,6 +24,7 @@ import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/deposit_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
@@ -862,6 +863,11 @@ class _AssetDetailsPanel extends StatelessWidget {
     final numFmt = NumberFormat('#,##0.####', 'tr_TR');
     final costFmt3 = NumberFormat('#,##0.000', 'tr_TR');
 
+    // Vadeli mevduat için özel panel — normal Position gösteriminden farklı.
+    if (rep.type == AssetType.mevduat) {
+      return _DepositDetailsPanel(asset: rep);
+    }
+
     // İlk alış tarihi = en eski buy lot
     final buyLots = position.lots.where((l) => l.isBuy).toList()
       ..sort((a, b) => a.addedDate.compareTo(b.addedDate));
@@ -949,6 +955,268 @@ class _AssetDetailsPanel extends StatelessWidget {
                   fontWeight: FontWeight.w500),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Deposit Details Panel ─────────────────────────────────────────────────────
+// Vadeli mevduat için özel expand panel — vade sayacı, faiz, brüt/net getiri.
+
+class _DepositDetailsPanel extends StatelessWidget {
+  final Asset asset;
+  const _DepositDetailsPanel({required this.asset});
+
+  @override
+  Widget build(BuildContext context) {
+    final terms = DepositService.decode(asset);
+    if (terms == null) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Text(
+          'Mevduat bilgileri okunamadı.',
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+
+    final money = NumberFormat.currency(
+        locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
+    final dateFmt = DateFormat('d MMM yyyy', 'tr_TR');
+
+    final principal = asset.quantity;
+    final currentUnit = DepositService.currentUnitValue(terms);
+    final currentValue = principal * currentUnit;
+    final maturityValue = principal * DepositService.maturityUnitValue(terms);
+
+    final currentGain = currentValue - principal;
+    final maturityGain = maturityValue - principal;
+
+    final currentPct = principal > 0 ? (currentGain / principal) * 100 : 0.0;
+    final maturityPct = principal > 0 ? (maturityGain / principal) * 100 : 0.0;
+
+    final daysLeft = DepositService.daysToMaturity(terms);
+    final matured = DepositService.isMatured(terms);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 1,
+            margin: const EdgeInsets.only(bottom: 12),
+            color: Colors.white.withValues(alpha: 0.06),
+          ),
+
+          // Vade durumu banner'ı
+          _MaturityStatus(matured: matured, daysLeft: daysLeft),
+          const SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  label: 'Anapara',
+                  value: money.format(principal),
+                ),
+              ),
+              Expanded(
+                child: _DetailItem(
+                  label: 'Yıllık Faiz',
+                  value:
+                      '%${terms.annualRatePct.toStringAsFixed(2)} ${terms.interestType == DepositInterestType.compound ? '· bileşik' : '· basit'}',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  label: 'Başlangıç',
+                  value: dateFmt.format(terms.start),
+                ),
+              ),
+              Expanded(
+                child: _DetailItem(
+                  label: 'Vade Sonu',
+                  value: dateFmt.format(terms.end),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Şu anki net değer
+          _MevduatGetiriRow(
+            label: 'Şu Anki Net Değer',
+            value: currentValue,
+            gain: currentGain,
+            pct: currentPct,
+            money: money,
+            emphasize: true,
+          ),
+          const SizedBox(height: 8),
+          _MevduatGetiriRow(
+            label: 'Vade Sonu Net (Öngörü)',
+            value: maturityValue,
+            gain: maturityGain,
+            pct: maturityPct,
+            money: money,
+          ),
+
+          const SizedBox(height: 10),
+          Text(
+            terms.taxWasProvided
+                ? 'Stopaj: %${terms.taxRatePct.toStringAsFixed(2)} (kullanıcı)'
+                : 'Stopaj: %${terms.taxRatePct.toStringAsFixed(0)} (varsayılan — banka dekontunuzu kontrol edin)',
+            style: GoogleFonts.dmSans(
+              fontSize: 10,
+              color: Sandik.text36,
+              fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MaturityStatus extends StatelessWidget {
+  final bool matured;
+  final int daysLeft;
+  const _MaturityStatus({required this.matured, required this.daysLeft});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    final String text;
+    final IconData icon;
+    if (matured) {
+      color = Sandik.gain;
+      icon = Icons.check_circle_rounded;
+      text = 'Vade doldu';
+    } else if (daysLeft <= 7) {
+      color = Sandik.amber;
+      icon = Icons.access_time_rounded;
+      text = '$daysLeft gün kaldı';
+    } else {
+      color = AssetType.mevduat.color;
+      icon = Icons.savings_rounded;
+      text = '$daysLeft gün kaldı';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: GoogleFonts.dmSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MevduatGetiriRow extends StatelessWidget {
+  final String label;
+  final double value;
+  final double gain;
+  final double pct;
+  final NumberFormat money;
+  final bool emphasize;
+
+  const _MevduatGetiriRow({
+    required this.label,
+    required this.value,
+    required this.gain,
+    required this.pct,
+    required this.money,
+    this.emphasize = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final positive = gain >= 0;
+    final color = positive ? Sandik.gain : Sandik.loss;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: emphasize
+            ? color.withValues(alpha: 0.08)
+            : Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: emphasize
+              ? color.withValues(alpha: 0.30)
+              : Colors.white.withValues(alpha: 0.05),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: GoogleFonts.dmSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.7,
+                    color: Sandik.text58,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  money.format(value),
+                  style: GoogleFonts.dmSans(
+                    fontSize: emphasize ? 16 : 14,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${positive ? '+' : ''}${money.format(gain)}',
+                style: GoogleFonts.dmSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+              Text(
+                '${positive ? '+' : ''}${pct.toStringAsFixed(2)}%',
+                style: GoogleFonts.dmSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: color.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
