@@ -23,6 +23,7 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
 import 'performance_screen.dart';
+import 'all_transactions_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -165,7 +166,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             : 'O';
         for (final assets in allPartnerAssets.values) {
           for (final a in assets) {
-            if (!a.isBuy) continue;
             rightTotal += myState.toTRY(a.totalValue, a.currency);
           }
         }
@@ -182,7 +182,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         rightLabel = name.split(' ').first;
         rightInitial = name[0].toUpperCase();
         for (final a in allPartnerAssets[_view!] ?? <Asset>[]) {
-          if (!a.isBuy) continue;
           rightTotal += myState.toTRY(a.totalValue, a.currency);
         }
       }
@@ -416,14 +415,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(hp, 24, hp, 8),
-              child: Text(
-                'PORTFÖY HAREKETLERİ',
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: Sandik.text36,
-                ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'PORTFÖY HAREKETLERİ',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: Sandik.text36,
+                      ),
+                    ),
+                  ),
+                  if (filteredAssets.length > 3)
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AllTransactionsScreen(
+                            myAssets: myState.assets,
+                            allPartnerAssets: allPartnerAssets,
+                            partners: partners,
+                            usdTry: myState.usdTry,
+                            eurTry: myState.eurTry,
+                            gbpTry: myState.gbpTry,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Tümünü Gör',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Sandik.amber,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -649,7 +678,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildDistributionList(PortfolioState state) {
     final totals = <AssetType, double>{};
     for (final a in state.assets) {
-      if (!a.isBuy) continue;
       totals[a.type] =
           (totals[a.type] ?? 0) + state.toTRY(a.totalValue, a.currency);
     }
