@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
+import '../utils/tr_format.dart';
 
 class AssetRowWidget extends StatelessWidget {
   final Asset asset;
@@ -187,7 +188,7 @@ class AssetRowWidget extends StatelessWidget {
                       ),
                       const SizedBox(width: 1),
                       Text(
-                        '%${asset.gainLossPercentage.toStringAsFixed(3)}',
+                        fmtPct(asset.gainLossPercentage, digits: 3),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,

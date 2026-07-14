@@ -27,6 +27,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/deposit_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/quick_adjust_dialog.dart';
@@ -200,10 +201,12 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.12)),
                       ),
                       child: const Center(
-                        child: Icon(Icons.show_chart_rounded, color: Sandik.amber, size: 22),
+                        child: Icon(Icons.show_chart_rounded,
+                            color: Sandik.amber, size: 22),
                       ),
                     ),
                   ),
@@ -361,10 +364,10 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
   int? _touchedIndex;
 
   static String _formatTL(double val) {
-    if (val >= 1000000) {
-      return '${(val / 1000000).toStringAsFixed(2).replaceAll('.', ',')} mn ₺';
-    }
-    return NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0).format(val);
+    // Ana ekran hero'suyla birebir aynı format: ₺1.234.567
+    return NumberFormat.currency(
+            locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
+        .format(val);
   }
 
   @override
@@ -389,7 +392,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
         ? _formatTL(touched.value)
         : _formatTL(totalVal);
     final centerPct = touched != null
-        ? '%${(touched.value / (totalVal > 0 ? totalVal : 1) * 100).toStringAsFixed(1)}'
+        ? fmtPct(touched.value / (totalVal > 0 ? totalVal : 1) * 100, digits: 1)
         : null;
     final centerColor = touched != null ? touched.key.color : Sandik.gold;
 
@@ -480,8 +483,8 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
           alignment: WrapAlignment.center,
           children: sorted.asMap().entries.map((e) {
             final isTouched = e.key == _touchedIndex;
-            final pct = (e.value.value / (totalVal > 0 ? totalVal : 1) * 100)
-                .toStringAsFixed(1);
+            final pct =
+                fmtPct(e.value.value / (totalVal > 0 ? totalVal : 1) * 100, digits: 1);
             return GestureDetector(
               onTap: () {
                 final newIdx = _touchedIndex == e.key ? null : e.key;
@@ -505,7 +508,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '${e.value.key.label} %$pct',
+                      '${e.value.key.label} $pct',
                       style: GoogleFonts.dmSans(
                         fontSize: 13,
                         fontWeight: isTouched ? FontWeight.w700 : FontWeight.w500,
@@ -681,8 +684,8 @@ class _AssetCardState extends State<_AssetCard>
                     const SizedBox(height: 3),
                     Text(
                       a.unitIsPrefix
-                          ? '${a.unitLabel}${a.quantity.toStringAsFixed(a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
-                          : '${a.quantity.toStringAsFixed(a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
+                          ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
+                          : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
                       style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
                     ),
                   ],
@@ -731,7 +734,7 @@ class _AssetCardState extends State<_AssetCard>
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            '${tryFmt.format(gainLossTRY.abs())} · %${pctTRY.abs().toStringAsFixed(2)}',
+                            '${tryFmt.format(gainLossTRY.abs())} · ${fmtPct(pctTRY.abs(), digits: 2)}',
                             style: GoogleFonts.dmSans(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -1026,7 +1029,7 @@ class _DepositDetailsPanel extends StatelessWidget {
                 child: _DetailItem(
                   label: 'Yıllık Faiz',
                   value:
-                      '%${terms.annualRatePct.toStringAsFixed(2)} ${terms.interestType == DepositInterestType.compound ? '· bileşik' : '· basit'}',
+                      '${fmtPct(terms.annualRatePct, digits: 2)} ${terms.interestType == DepositInterestType.compound ? '· bileşik' : '· basit'}',
                 ),
               ),
             ],
@@ -1071,8 +1074,8 @@ class _DepositDetailsPanel extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             terms.taxWasProvided
-                ? 'Stopaj: %${terms.taxRatePct.toStringAsFixed(2)} (kullanıcı)'
-                : 'Stopaj: %${terms.taxRatePct.toStringAsFixed(0)} (varsayılan — banka dekontunuzu kontrol edin)',
+                ? 'Stopaj: ${fmtPct(terms.taxRatePct, digits: 2)} (kullanıcı)'
+                : 'Stopaj: ${fmtPct(terms.taxRatePct, digits: 0)} (varsayılan — banka dekontunuzu kontrol edin)',
             style: GoogleFonts.dmSans(
               fontSize: 10,
               color: Sandik.text36,
@@ -1208,7 +1211,7 @@ class _MevduatGetiriRow extends StatelessWidget {
                 ),
               ),
               Text(
-                '${positive ? '+' : ''}${pct.toStringAsFixed(2)}%',
+                fmtPct(pct, digits: 2, showSign: true),
                 style: GoogleFonts.dmSans(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
+import '../utils/tr_format.dart';
 import 'add_asset_screen.dart';
 import 'performance_screen.dart';
 
@@ -241,7 +242,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '${isPositive ? '+' : ''}%${asset.gainLossPercentage.toStringAsFixed(3)}',
+                            fmtPct(asset.gainLossPercentage, digits: 3, showSign: true),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,

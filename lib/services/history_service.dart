@@ -10,8 +10,15 @@ class HistoryService {
 
   /// Verilen varlıkların ilgili periyot için (örn. 365 gün) geçmiş fiyatlarını
   /// gün-den-güne hesaplar. Dönen map: { UNIX_MILLIS: TOPLAM_PORTFOY_DEGERI_TRY }
+  ///
+  /// [simulate] true iken: her lot'un `addedDate`'i ve alım/satış geçmişi
+  /// yok sayılır — tüm dönem boyunca bugünkü net miktar sabit tutulur.
+  /// "Şu anki portföyüm o zaman elimde olsaydı ne olurdu?" senaryosunu
+  /// çizer. Bu modda arayan `assets` olarak aggregate edilmiş (net)
+  /// display-asset listesini verir; buy/sell ayrımı olmaz.
   Future<Map<int, double>> getPortfolioHistory(
-      List<Asset> assets, int periodDays) async {
+      List<Asset> assets, int periodDays,
+      {bool simulate = false}) async {
     // Haftalık için de günlük çözünürlük kullan — saatlik veri (Yahoo 1h)
     // bazı hisse/emtia sembollerinde çok az nokta döndürüp grafiği bozuyor.
     // Trading uygulamaları da 1H sekmesinde günlük 7 nokta gösterir.
@@ -81,8 +88,11 @@ class HistoryService {
       }
     }
 
-    // Hisse, Emtia, Döviz ve TEFAS Fon API Verileri
+    // Hisse, Emtia, Döviz ve TEFAS Fon API Verileri.
+    // Fiyat serilerini sadece BUY lot'larından çek — sell/deleteLog aynı
+    // ticker'ı zaten kapsar, tekrar API çağrısı yapmaya gerek yok.
     for (final a in assets) {
+      if (!a.isBuy) continue;
       if (a.quantity <= 0) continue;
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
@@ -98,6 +108,21 @@ class HistoryService {
       }
     }
 
+    // Her lot için "o gün geçerli miktar":
+    // - simulate=true: addedDate yok sayılır, quantity tüm dönem boyunca
+    //   sabit → "şu anki portföyümü geçmişte tutsaydım" senaryosu.
+    // - simulate=false (gerçek):
+    //   * Buy lot: addedDate <= dayTs ise +quantity, aksi 0.
+    //   * Sell lot: addedDate <= dayTs ise -quantity.
+    //   * deleteLog: skip.
+    double signedQtyOnDay(Asset a, int dayTs) {
+      if (a.isDeleteLog) return 0.0;
+      if (simulate) return a.quantity;
+      final addedTs = normalizeTs(a.addedDate.millisecondsSinceEpoch);
+      if (addedTs > dayTs) return 0.0;
+      return a.isSell ? -a.quantity : a.quantity;
+    }
+
     // -- Toparlama ve Hizalama (Her gün için) --
     final startMs = now.subtract(Duration(days: periodDays)).millisecondsSinceEpoch;
     for (int i = periodDays; i >= 0; i--) {
@@ -109,6 +134,9 @@ class HistoryService {
 
       for (final a in assets) {
         try {
+          final qty = signedQtyOnDay(a, dayTs);
+          if (qty == 0) continue;
+
           double assetDayVal = 0.0;
 
           if (a.type == AssetType.altin) {
@@ -122,9 +150,9 @@ class HistoryService {
                           ? 7.216
                           : 1.0;
               double price = _getClosestPrice(goldHistory, dayTs, null);
-              assetDayVal = price * factor * a.quantity;
+              assetDayVal = price * factor * qty;
             } else {
-              assetDayVal = _flatFallback(a);
+              assetDayVal = _flatFallback(a) * (qty / a.quantity);
             }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
@@ -139,20 +167,25 @@ class HistoryService {
                     : 35.0;
                 price *= usdRate;
               }
-              assetDayVal = price * a.quantity;
+              assetDayVal = price * qty;
             } else {
-              assetDayVal = _flatFallback(a);
+              assetDayVal = _flatFallback(a) * (qty / a.quantity);
             }
           } else {
-            assetDayVal = _flatFallback(a);
+            assetDayVal = _flatFallback(a) * (qty / a.quantity);
           }
 
           dayTotalValue += assetDayVal;
         } catch (e) {
+          // Bir lot'un günü hesaplanamazsa, sadece o günkü işaretli
+          // katkıyı fallback ile ekle — yine de negatif olamaz.
           dayTotalValue += _flatFallback(a);
         }
       }
 
+      // Geçmişte satılan miktarlar buy'lardan büyük olsa (edge case)
+      // negatif toplam çıkmasın.
+      if (dayTotalValue < 0) dayTotalValue = 0;
       groupedPoints[dayTs] = dayTotalValue;
     }
 
@@ -167,6 +200,9 @@ class HistoryService {
       double liveTotal = 0.0;
       bool skipOverwrite = false;
       for (final a in assets) {
+        if (a.isDeleteLog) continue;
+        final qty = signedQtyOnDay(a, todayTs);
+        if (qty == 0) continue;
         final price = a.currentPrice > 0 ? a.currentPrice : 0.0;
         if (price <= 0) {
           skipOverwrite = true;
@@ -177,8 +213,9 @@ class HistoryService {
           liveUsd = usdTryHistory.values.last;
         }
         final tryPrice = a.currency == 'USD' ? price * liveUsd : price;
-        liveTotal += tryPrice * a.quantity;
+        liveTotal += tryPrice * qty;
       }
+      if (liveTotal < 0) liveTotal = 0;
       if (!skipOverwrite && liveTotal > 0) {
         // Geçmiş seriye göre >%30 sapma varsa (ölçek uyumsuzluğu şüphesi)
         // suni sıçrama yaratmamak için overwrite'ı atla.
@@ -285,7 +322,9 @@ class HistoryService {
       }
     }
 
+    // Fiyat serilerini sadece BUY lot'larından çek.
     for (final a in assets) {
+      if (!a.isBuy) continue;
       if (a.quantity <= 0) continue;
       if (a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
@@ -301,6 +340,15 @@ class HistoryService {
       }
     }
 
+    // Slot-bazlı işaretli miktar. Bugünkü zaman dilimlerinde:
+    // buy addedDate <= slot ise +qty, sell addedDate <= slot ise -qty.
+    double signedQtyOnSlot(Asset a, int slotTs) {
+      if (a.isDeleteLog) return 0.0;
+      final addedTs = normalizeSlot(a.addedDate.millisecondsSinceEpoch);
+      if (addedTs > slotTs) return 0.0;
+      return a.isSell ? -a.quantity : a.quantity;
+    }
+
     final groupedPoints = <int, double>{};
 
     // Bugünün 00:00'ından başlayarak 5 dakikalık grid üret.
@@ -314,12 +362,14 @@ class HistoryService {
       double total = 0.0;
       for (final a in assets) {
         try {
+          final qty = signedQtyOnSlot(a, hourTs);
+          if (qty == 0) continue;
           double v = 0.0;
           if (a.type == AssetType.altin) {
             // Saatlik altın verisi yok — currentPrice sabit
-            v = a.currentPrice * a.quantity;
+            v = a.currentPrice * qty;
           } else if (a.type == AssetType.fon) {
-            v = a.currentPrice * a.quantity;
+            v = a.currentPrice * qty;
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
               a.type == AssetType.doviz) {
@@ -332,19 +382,20 @@ class HistoryService {
                     : 35.0;
                 price *= usdRate;
               }
-              v = price * a.quantity;
+              v = price * qty;
             } else {
-              v = a.currentPrice * a.quantity *
+              v = a.currentPrice * qty *
                   (a.currency == 'USD' ? 35.0 : 1.0);
             }
           } else {
-            v = a.currentPrice * a.quantity;
+            v = a.currentPrice * qty;
           }
           total += v;
         } catch (_) {
-          total += a.currentPrice * a.quantity;
+          total += a.currentPrice * signedQtyOnSlot(a, hourTs);
         }
       }
+      if (total < 0) total = 0;
       groupedPoints[hourTs] = total;
     }
 

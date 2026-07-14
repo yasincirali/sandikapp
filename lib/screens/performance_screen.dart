@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
 import '../models/technical_signal.dart';
@@ -196,7 +197,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '%${(summary.confidence * 100).toStringAsFixed(0)}',
+                    fmtPct(summary.confidence * 100, digits: 0),
                     style: GoogleFonts.dmSans(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
@@ -556,9 +557,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final hint = scaleHint ?? value;
     if (value >= 1000) {
       final digits = hint < 5000 ? 2 : (hint < 50000 ? 1 : 0);
-      return '${(value / 1000).toStringAsFixed(digits)}k TL';
+      return '${fmtNum(value / 1000, digits: digits)}k TL';
     }
-    return '${value.toStringAsFixed(0)} TL';
+    return '${fmtNum(value, digits: 0)} TL';
   }
 
 
@@ -1094,7 +1095,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             letterSpacing: 1.2),
                       ),
                       Text(
-                        '${_currentQuantity.toStringAsFixed(2)} ${widget.asset.unitType}',
+                        '${fmtNum(_currentQuantity, digits: 2)} ${widget.asset.unitType}',
                         style: GoogleFonts.dmSans(
                             color: Sandik.gold,
                             fontSize: 18,
@@ -1142,9 +1143,11 @@ class _PnlSummaryStrip extends StatelessWidget {
   }
 
   String _fmtTotal(double v) {
-    if (v.abs() >= 1000000) return '${(v / 1000000).toStringAsFixed(2)}M ₺';
-    if (v.abs() >= 1000) return '${(v / 1000).toStringAsFixed(1)}k ₺';
-    return '${v.toStringAsFixed(0)} ₺';
+    final abs = v.abs();
+    final sign = v < 0 ? '-' : '';
+    if (abs >= 1000000) return '$sign${fmtNum(abs / 1000000, digits: 2)}M ₺';
+    if (abs >= 1000) return '$sign${fmtNum(abs / 1000, digits: 1)}k ₺';
+    return '$sign${fmtNum(abs, digits: 0)} ₺';
   }
 
   @override
@@ -1281,7 +1284,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                               color: accent.withValues(alpha: 0.85),
                               height: 1.2)),
                       const SizedBox(height: 1),
-                      Text('%${pnlPct.abs().toStringAsFixed(2)}',
+                      Text(fmtPct(pnlPct.abs(), digits: 2),
                           style: GoogleFonts.dmSans(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,

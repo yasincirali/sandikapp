@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 
 class PortfolioSummaryWidget extends StatelessWidget {
   final PortfolioState state;
@@ -92,7 +93,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        '%${state.gainLossPercentage.toStringAsFixed(3)}',
+                        fmtPct(state.gainLossPercentage, digits: 3),
                         style: GoogleFonts.dmSans(
                           fontSize: subFontSize,
                           fontWeight: FontWeight.w500,

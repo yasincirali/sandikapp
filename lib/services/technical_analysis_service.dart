@@ -2,6 +2,7 @@ import 'dart:math';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/technical_signal.dart';
+import '../utils/tr_format.dart';
 
 /// Gösterge kimlikleri — per-category seçim ve premium gating için stable key.
 class IndicatorId {
@@ -107,10 +108,10 @@ class TechnicalAnalysisService {
             : SignalType.neutral;
 
     final desc = value < oversold
-        ? 'Aşırı satım bölgesi (${value.toStringAsFixed(1)})'
+        ? 'Aşırı satım bölgesi (${fmtNum(value, digits: 1)})'
         : value > overbought
-            ? 'Aşırı alım bölgesi (${value.toStringAsFixed(1)})'
-            : 'Nötr bölge (${value.toStringAsFixed(1)})';
+            ? 'Aşırı alım bölgesi (${fmtNum(value, digits: 1)})'
+            : 'Nötr bölge (${fmtNum(value, digits: 1)})';
 
     return TechnicalIndicator(name: label, value: value, signal: signal, description: desc);
   }
@@ -144,9 +145,9 @@ class TechnicalAnalysisService {
         : SignalType.neutral;
 
     final desc = histogram > 0
-        ? 'MACD çizgisi sinyal üzerinde (+${histogram.toStringAsFixed(2)})'
+        ? 'MACD çizgisi sinyal üzerinde (+${fmtNum(histogram, digits: 2)})'
         : histogram < 0
-            ? 'MACD çizgisi sinyal altında (${histogram.toStringAsFixed(2)})'
+            ? 'MACD çizgisi sinyal altında (${fmtNum(histogram, digits: 2)})'
             : 'Kesişim noktasında';
 
     return TechnicalIndicator(name: label, value: histogram, signal: signal, description: desc);
@@ -183,7 +184,7 @@ class TechnicalAnalysisService {
         ? 'Alt bantın altında — potansiyel dönüş'
         : current > upper
             ? 'Üst bantın üzerinde — potansiyel düzeltme'
-            : '%B: ${(pctB * 100).toStringAsFixed(0)} (bant içi)';
+            : '%B: ${fmtNum(pctB * 100, digits: 0)} (bant içi)';
 
     return TechnicalIndicator(name: label, value: pctB * 100, signal: signal, description: desc);
   }
@@ -249,10 +250,10 @@ class TechnicalAnalysisService {
         : SignalType.neutral;
 
     final desc = k < oversold
-        ? 'Aşırı satım (%K: ${k.toStringAsFixed(1)})'
+        ? 'Aşırı satım (%K: ${fmtNum(k, digits: 1)})'
         : k > overbought
-            ? 'Aşırı alım (%K: ${k.toStringAsFixed(1)})'
-            : 'Nötr bölge (%K: ${k.toStringAsFixed(1)})';
+            ? 'Aşırı alım (%K: ${fmtNum(k, digits: 1)})'
+            : 'Nötr bölge (%K: ${fmtNum(k, digits: 1)})';
 
     return TechnicalIndicator(name: label, value: k, signal: signal, description: desc);
   }
@@ -291,10 +292,10 @@ class TechnicalAnalysisService {
         : SignalType.neutral;
 
     final desc = directional > 40
-        ? 'Güçlü trend (${directional.toStringAsFixed(0)})'
+        ? 'Güçlü trend (${fmtNum(directional, digits: 0)})'
         : directional > 25
-            ? 'Trend başlıyor (${directional.toStringAsFixed(0)})'
-            : 'Zayıf trend (${directional.toStringAsFixed(0)})';
+            ? 'Trend başlıyor (${fmtNum(directional, digits: 0)})'
+            : 'Zayıf trend (${fmtNum(directional, digits: 0)})';
 
     return TechnicalIndicator(name: label, value: directional, signal: signal, description: desc);
   }
@@ -323,10 +324,10 @@ class TechnicalAnalysisService {
         : SignalType.neutral;
 
     final desc = wr < -80
-        ? 'Aşırı satım (${wr.toStringAsFixed(0)})'
+        ? 'Aşırı satım (${fmtNum(wr, digits: 0)})'
         : wr > -20
-            ? 'Aşırı alım (${wr.toStringAsFixed(0)})'
-            : 'Nötr bölge (${wr.toStringAsFixed(0)})';
+            ? 'Aşırı alım (${fmtNum(wr, digits: 0)})'
+            : 'Nötr bölge (${fmtNum(wr, digits: 0)})';
 
     return TechnicalIndicator(name: label, value: wr, signal: signal, description: desc);
   }
@@ -354,10 +355,10 @@ class TechnicalAnalysisService {
         : SignalType.neutral;
 
     final desc = value < -100
-        ? 'Aşırı satım (${value.toStringAsFixed(0)})'
+        ? 'Aşırı satım (${fmtNum(value, digits: 0)})'
         : value > 100
-            ? 'Aşırı alım (${value.toStringAsFixed(0)})'
-            : 'Nötr bölge (${value.toStringAsFixed(0)})';
+            ? 'Aşırı alım (${fmtNum(value, digits: 0)})'
+            : 'Nötr bölge (${fmtNum(value, digits: 0)})';
 
     return TechnicalIndicator(name: label, value: value, signal: signal, description: desc);
   }

@@ -5,12 +5,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart';
 import '../models/technical_signal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/technical_analysis_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../services/history_service.dart';
@@ -38,6 +40,9 @@ class _PortfolioPerformanceScreenState
   int _selectedPeriodIdx = 0; // Haftalık (1H)
   late String? _view;
   late AssetType? _typeFilter;
+  // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
+  //             true  = simülasyon (bugünkü net pozisyon tüm dönem boyunca).
+  bool _simulate = false;
 
   @override
   void initState() {
@@ -60,12 +65,52 @@ class _PortfolioPerformanceScreenState
     Map<int, double> history,
     List<Asset> allAssets,
     DateTime startDate,
-    DateTime endDate,
-  ) {
+    DateTime endDate, {
+    double? currentTotalOverride,
+    bool simulate = false,
+  }) {
     if (history.isEmpty || allAssets.isEmpty) return [];
 
     final segments = <TransactionSegment>[];
-    final firstAssetDate = allAssets
+    // Simülasyon modu: tüm dönem tek aktif segment (sarı çizgi). Anchor
+    // yok, passive segment yok; her nokta "o gün bugünkü net pozisyon
+    // tutulsaydı" değeri.
+    if (simulate) {
+      final sortedTs = history.keys.toList()..sort();
+      final spots = <FlSpot>[];
+      for (final ts in sortedTs) {
+        final date = DateTime.fromMillisecondsSinceEpoch(ts);
+        final x = date.difference(startDate).inDays.toDouble();
+        spots.add(FlSpot(x, history[ts]!));
+      }
+      if (currentTotalOverride != null && currentTotalOverride > 0) {
+        final todayX = DateTime(endDate.year, endDate.month, endDate.day)
+            .difference(startDate)
+            .inDays
+            .toDouble();
+        if (spots.isNotEmpty && spots.last.x == todayX) {
+          spots[spots.length - 1] = FlSpot(todayX, currentTotalOverride);
+        } else {
+          spots.add(FlSpot(todayX, currentTotalOverride));
+        }
+      }
+      if (spots.length < 2) return [];
+      segments.add(TransactionSegment(
+        spots: spots,
+        lineColor: Sandik.amber,
+        areaGradientStart: Sandik.amber.withValues(alpha: 0.12),
+        areaGradientEnd: Colors.transparent,
+        thickness: 3.5,
+      ));
+      return segments;
+    }
+
+    // Aktif segment başlangıcı = ilk BUY lot tarihi. Sell/deleteLog dahil
+    // edilirse edge case'lerde yanlış tarih seçilebilir; buy yoksa segment
+    // zaten çizilmeyecek.
+    final buyLots = allAssets.where((a) => a.isBuy).toList();
+    if (buyLots.isEmpty) return [];
+    final firstAssetDate = buyLots
         .map((a) => a.addedDate)
         .reduce((a, b) => a.isBefore(b) ? a : b);
 
@@ -73,11 +118,11 @@ class _PortfolioPerformanceScreenState
     final firstAssetMidnight =
         DateTime(firstAssetDate.year, firstAssetDate.month, firstAssetDate.day);
 
-    // Alım maliyeti (sabit) — active segmentin başlangıç noktası olarak kullanılır.
-    // Böylece grafik kullanıcının gerçekten harcadığı tutardan başlayıp o günkü
-    // piyasa değerine yükselir/düşer.
+    // Alım maliyeti (sabit) — active segmentin başlangıç noktası olarak
+    // kullanılır. Sadece BUY lot'ları toplanır; sell lot'unun totalCostTRY'si
+    // buy fiyatını taşır ve toplama tekrar eklenirse maliyet ikiye katlanır.
     double totalCostTRY = 0.0;
-    for (final a in allAssets) {
+    for (final a in buyLots) {
       totalCostTRY += a.totalCostTRY;
     }
 
@@ -110,6 +155,24 @@ class _PortfolioPerformanceScreenState
         } else {
           activeSpots.add(FlSpot(x, y));
         }
+      }
+    }
+
+    // Son noktayı, kullanıcının şu an ekranda gördüğü toplam mal varlığı
+    // değerine sabitle. HistoryService USDTRY için hardcoded oran ve son
+    // Yahoo verisi kullandığından son nokta ana ekranla eşleşmeyebilir.
+    // Bugüne ait spot varsa onu güncelle; yoksa bugünün x'inde yeni bir
+    // spot ekle — son nokta her zaman ekrandaki güncel toplamı gösterir.
+    if (currentTotalOverride != null && currentTotalOverride > 0) {
+      final todayX = DateTime(endDate.year, endDate.month, endDate.day)
+          .difference(startDate)
+          .inDays
+          .toDouble();
+      if (activeSpots.isNotEmpty && activeSpots.last.x == todayX) {
+        activeSpots[activeSpots.length - 1] =
+            FlSpot(todayX, currentTotalOverride);
+      } else {
+        activeSpots.add(FlSpot(todayX, currentTotalOverride));
       }
     }
 
@@ -197,16 +260,35 @@ class _PortfolioPerformanceScreenState
                         targetAssets.addAll(list);
                       }
                     }
+                    // deleteLog'u çıkar (buy row zaten silinmiş, sadece
+                    // transaction kaydı). Buy + sell birlikte gider —
+                    // HistoryService her gün için buy addedDate <= dayTs
+                    // ve sell addedDate <= dayTs kurallarıyla o gün geçerli
+                    // net miktarı hesaplar. Böylece grafik hem alınmadan
+                    // önceki günlerde 0 gösterir hem de satış günü sonrası
+                    // net miktara oturur.
+                    targetAssets =
+                        targetAssets.where((a) => !a.isDeleteLog).toList();
                     // Apply asset type filter
                     if (_typeFilter != null) {
                       targetAssets = targetAssets
                           .where((a) => a.type == _typeFilter)
                           .toList();
                     }
+                    // Simülasyon modu: bugünün net pozisyonlarını
+                    // tüm dönem boyunca sabit tut — "şu anki portföyümü o
+                    // zaman elimde tutsaydım" senaryosunu HistoryService'e
+                    // net display-asset listesi olarak ver.
+                    final chartAssets = _simulate
+                        ? aggregatePositions(targetAssets)
+                            .map((p) => p.asDisplayAsset())
+                            .toList()
+                        : targetAssets;
 
                     return FutureBuilder<Map<int, double>>(
                       future: HistoryService.instance.getPortfolioHistory(
-                          targetAssets, _periods[_selectedPeriodIdx].days),
+                          chartAssets, _periods[_selectedPeriodIdx].days,
+                          simulate: _simulate),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -218,8 +300,21 @@ class _PortfolioPerformanceScreenState
                         }
 
                         final historyMap = snapshot.data ?? {};
+                        // Ana ekranla birebir aynı TRY hesabı: targetAssets
+                        // grafik için ham buy lot'ları içeriyor (satılan
+                        // miktarı geçmişte düşürmemek için). Ancak GÜNCEL
+                        // toplam net pozisyondan gelmeli — aggregate ile
+                        // sell'leri düşüp asDisplayAsset.totalValue'yu topla.
+                        final currentTotal = aggregatePositions(targetAssets)
+                            .map((p) => p.asDisplayAsset())
+                            .fold<double>(
+                                0,
+                                (s, a) =>
+                                    s + pState.toTRY(a.totalValue, a.currency));
                         final segments = _convertHistoryToSegments(
-                            historyMap, targetAssets, startDate, endDate);
+                            historyMap, chartAssets, startDate, endDate,
+                            currentTotalOverride: currentTotal,
+                            simulate: _simulate);
 
                         return ListView(
                           padding: const EdgeInsets.symmetric(
@@ -245,9 +340,11 @@ class _PortfolioPerformanceScreenState
                             ),
                             const SizedBox(height: 16),
                             _buildPeriodToggle(),
+                            const SizedBox(height: 12),
+                            _buildModeToggle(),
                             const SizedBox(height: 24),
                             _buildChartContainer(
-                                segments, startDate, endDate, targetAssets),
+                                segments, startDate, endDate, chartAssets),
                             const SizedBox(height: 24),
                             _PortfolioSignalPanel(assets: targetAssets),
                             const SizedBox(height: 12),
@@ -340,12 +437,55 @@ class _PortfolioPerformanceScreenState
     );
   }
 
-  /// TRY değeri için okunabilir kısa etiket (₺1.2M / ₺450K / ₺900)
-  String _fmtY(double val) {
-    if (val >= 1000000) return '₺${(val / 1000000).toStringAsFixed(2)}M';
-    if (val >= 1000) return '₺${(val / 1000).toStringAsFixed(0)}K';
-    return '₺${val.toStringAsFixed(0)}';
+  /// Gerçek geçmiş / Simülasyon toggle'ı.
+  /// - Gerçek: her günün o günkü net miktarına göre değer (alım/satışlar
+  ///   tarihlerine göre).
+  /// - Simülasyon: bugünkü net portföy tüm dönem boyunca elde tutulmuş gibi.
+  Widget _buildModeToggle() {
+    final options = const [
+      (label: 'Gerçek', sim: false),
+      (label: 'Simülasyon', sim: true),
+    ];
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: options.map((o) {
+          final selected = _simulate == o.sim;
+          return Expanded(
+            child: CupertinoButton(
+              minimumSize: Size.zero,
+              padding: EdgeInsets.zero,
+              onPressed: () => setState(() => _simulate = o.sim),
+              child: Container(
+                decoration: BoxDecoration(
+                  color:
+                      selected ? const Color(0xFF1A3D2E) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    o.label,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      fontWeight:
+                          selected ? FontWeight.w600 : FontWeight.w500,
+                      color: selected ? Sandik.amber : Sandik.text36,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
+
+  /// TRY değeri için okunabilir kısa etiket (₺1,2M / ₺450K / ₺900)
+  String _fmtY(double val) => fmtTRYCompact(val);
 
   Widget _buildChartContainer(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets) {
@@ -360,39 +500,65 @@ class _PortfolioPerformanceScreenState
       );
     }
 
+    // Y ekseni scale'i — SADECE en kalın segmentin (aktif sarı çizgi)
+    // değerlerine göre hesaplanır. Passive segment (alım öncesi 0 çizgisi)
+    // Y aralığına dahil edilirse min hep 0'a çekilir ve aktif değerler
+    // ezik görünür. Bu yüzden en kalın segmenti "ana" kabul edip diğerleri
+    // clipData ile alta düşer.
+    final primarySeg = segments
+        .reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
     double minY = double.infinity;
     double maxY = -double.infinity;
     double sumY = 0;
     int countY = 0;
-    for (final seg in segments) {
-      for (final spot in seg.spots) {
-        if (spot.y > maxY) maxY = spot.y;
-        if (spot.y < minY) minY = spot.y;
-        sumY += spot.y;
-        countY++;
-      }
+    for (final spot in primarySeg.spots) {
+      if (spot.y > maxY) maxY = spot.y;
+      if (spot.y < minY) minY = spot.y;
+      sumY += spot.y;
+      countY++;
     }
     if (minY == double.infinity) minY = 0;
     if (maxY == -double.infinity) maxY = 1000;
     final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
     final dataRange = (maxY - minY).clamp(1.0, double.infinity);
     // Küçük gerçek değişimlerin dramatik görünmesini önlemek için Y ekseni
-    // aralığını ortalamanın en az %8'i kadar tut (yani %4 dip ~yarı ekran).
+    // aralığını ortalamanın en az %8'i kadar tut.
     final minSpread = (avgY * 0.08).clamp(1.0, double.infinity);
     final effectiveRange =
         dataRange < minSpread ? minSpread : dataRange;
-    final yPadding = effectiveRange * 0.1;
+    final yPadding = effectiveRange * 0.12;
+    // Merkezleme: primary segment değerleri viewport'un ortasında görünsün.
     maxY = (avgY + effectiveRange / 2) + yPadding;
     minY = (avgY - effectiveRange / 2 - yPadding).clamp(0, double.infinity);
 
-    final maxX =
+    // X ekseni — aktif segment çok sıkışıksa (örn. tek gün alım + bugün)
+    // viewport'u aktif segment başlangıcından biraz öncesine daralt.
+    // Böylece "12 Tem'de aldım, bugün 13" senaryosu tüm 1H window'da
+    // dikey çubuk gibi değil, geniş bir eğri gibi görünür.
+    final fullMaxX =
         end.difference(start).inDays.toDouble().clamp(1.0, double.infinity);
+    double minX = 0;
+    double maxX = fullMaxX;
+    final activeSpotXs = primarySeg.spots.map((s) => s.x).toList()..sort();
+    if (activeSpotXs.isNotEmpty) {
+      final firstActiveX = activeSpotXs.first;
+      final lastActiveX = activeSpotXs.last;
+      final activeSpan = lastActiveX - firstActiveX;
+      final fullSpan = fullMaxX;
+      // Aktif segment tüm periyodun %25'inden azsa viewport'u daralt.
+      if (activeSpan < fullSpan * 0.25) {
+        // Aktif segment etrafına iki katı kadar bağlam ekle, en az 1 gün.
+        final pad = (activeSpan.clamp(1.0, double.infinity)) * 1.0;
+        minX = (firstActiveX - pad).clamp(0.0, fullMaxX);
+        maxX = (lastActiveX + pad * 0.2).clamp(minX + 1, fullMaxX);
+      }
+    }
 
     // 4 eşit aralıklı Y etiketi (min ve max hariç)
     // fl_chart `assert(interval > 0)` — tek-nokta veride çökmemesi için clamp
     final yInterval = ((maxY - minY) / 4).clamp(1.0, double.infinity);
-    // X ekseni için uygun aralık (4 etiket)
-    final xInterval = (maxX / 4).ceilToDouble().clamp(1.0, double.infinity);
+    // X ekseni için uygun aralık (4 etiket) — viewport genişliği baz alınır.
+    final xInterval = ((maxX - minX) / 4).ceilToDouble().clamp(1.0, double.infinity);
 
     return Container(
       height: 360,
@@ -404,7 +570,7 @@ class _PortfolioPerformanceScreenState
       ),
       child: LineChart(
         LineChartData(
-          minX: 0,
+          minX: minX,
           maxX: maxX,
           minY: minY,
           maxY: maxY,
@@ -738,7 +904,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '$count/5 gösterge $label diyor  ·  %${(r.summary.confidence * 100).toStringAsFixed(0)} güven',
+                    '$count/5 gösterge $label diyor  ·  ${fmtPct(r.summary.confidence * 100, digits: 0)} güven',
                     style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text58),
                   ),
                 ],

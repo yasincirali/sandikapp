@@ -16,6 +16,7 @@ import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/disclaimer_widget.dart';
@@ -123,21 +124,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final hp = sw < 360 ? 14.0 : 20.0;
     final allActivePartners = ref.watch(activePartnersProvider);
 
+    // Ham `assets` transaction ledger'ıdır — buy/sell/deleteLog hepsi karışık.
+    // Ana sayfadaki summary, dağılım, mini card, hareket listesi ve kâr/zarar
+    // portföy ekranı ile birebir tutarlı olmalı. Portföy ekranı
+    // `aggregatePositions` kullanıyor: sell lot'ları buy qty'sinden düşer,
+    // deleteLog skip edilir, totalQty <= 0 pozisyonlar liste dışı kalır.
+    // Aynı aggregate'i burada da uyguluyoruz ve `asDisplayAsset()` ile
+    // downstream widget'ların beklediği Asset formatına çeviriyoruz.
+    List<Asset> positionedAssets(Iterable<Asset> raw) =>
+        aggregatePositions(raw.toList())
+            .map((p) => p.asDisplayAsset())
+            .toList();
+
     final List<Asset> displayedAssets;
     if (_view == '') {
-      displayedAssets = myState.assets;
+      displayedAssets = positionedAssets(myState.assets);
     } else if (_view != null && _view!.isNotEmpty) {
-      displayedAssets = allPartnerAssets[_view!] ?? [];
+      displayedAssets = positionedAssets(allPartnerAssets[_view!] ?? const []);
     } else {
       displayedAssets = [
-        ...myState.assets,
-        for (final list in allPartnerAssets.values) ...list,
+        ...positionedAssets(myState.assets),
+        for (final list in allPartnerAssets.values) ...positionedAssets(list),
       ];
     }
 
     final filteredForSummary = _typeFilter == null
         ? displayedAssets
         : displayedAssets.where((a) => a.type == _typeFilter).toList();
+
+    // "Ben" mini card'ı — kendi net pozisyon toplamı (satışlar düşülmüş).
+    final myBuyTotal = positionedAssets(myState.assets).fold<double>(
+        0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
 
     final displayedState = PortfolioState(
       assets: filteredForSummary,
@@ -166,6 +183,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             : 'O';
         for (final assets in allPartnerAssets.values) {
           for (final a in assets) {
+            if (!a.isBuy) continue;
             rightTotal += myState.toTRY(a.totalValue, a.currency);
           }
         }
@@ -182,6 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         rightLabel = name.split(' ').first;
         rightInitial = name[0].toUpperCase();
         for (final a in allPartnerAssets[_view!] ?? <Asset>[]) {
+          if (!a.isBuy) continue;
           rightTotal += myState.toTRY(a.totalValue, a.currency);
         }
       }
@@ -337,7 +356,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Expanded(
                     child: _personMiniCard(
                       'Ben',
-                      myState.totalValue,
+                      myBuyTotal,
                       Sandik.amber,
                       tryFmt,
                       user?.displayName.isNotEmpty == true
@@ -720,9 +739,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(width: 12),
               SizedBox(
-                width: 40,
+                width: 52,
                 child: Text(
-                  '%${(ratio * 100).toStringAsFixed(0)}',
+                  fmtPct(ratio * 100, digits: 1),
                   textAlign: TextAlign.right,
                   style: GoogleFonts.dmSans(
                       fontSize: 13,
@@ -760,7 +779,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           : (unit == 'gr' || unit == 'oz' || unit == 'kg' ? 2 : 4);
       final qStr = isInt
           ? NumberFormat('#,###', 'tr_TR').format(q.toInt())
-          : q.toStringAsFixed(fractionDigits);
+          : fmtNum(q, digits: fractionDigits);
       quantityText = asset.unitIsPrefix ? '$unit$qStr' : '$qStr $unit';
     }
 
@@ -963,8 +982,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildAssetTile(Asset asset, PortfolioState portfolioState) {
+    // Portföy ekranındaki varlık kartlarıyla birebir tutar gösterimi için
+    // 3 ondalıklı format (tryFmt3 ile aynı biçim).
     final tryFmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 3);
     final unitPrice = asset.isSell
         ? (asset.sellPrice ?? asset.currentPrice)
         : asset.purchasePrice;
@@ -1253,7 +1274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       final qStr = lotQty == lotQty.truncateToDouble()
                           ? NumberFormat('#,###', 'tr_TR')
                               .format(lotQty.toInt())
-                          : lotQty.toStringAsFixed(4);
+                          : fmtNum(lotQty, digits: 4);
                       final qDisplay =
                           lot.unitIsPrefix ? '$unit$qStr' : '$qStr $unit';
                       final priceStr = lot.purchasePrice > 0
@@ -1606,7 +1627,7 @@ class _SignalTile extends StatelessWidget {
                   Text(
                     faded
                         ? '${_formatDate(alert.detectedAt)} · silindi'
-                        : '$count gösterge · %${alert.confidence.toStringAsFixed(0)} güven',
+                        : '$count gösterge · ${fmtPct(alert.confidence, digits: 0)} güven',
                     style: GoogleFonts.dmSans(
                         fontSize: 11,
                         color: Sandik.text58.withValues(alpha: alphaFactor),

@@ -320,7 +320,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                   if (hasPnl) ...[
                     const SizedBox(height: 3),
                     Text(
-                      '${isPos ? '+' : ''}₺${NumberFormat('#,###').format(gainLossTRY.abs().toInt())}',
+                      '${isPos ? '+' : ''}₺${NumberFormat('#,###', 'tr_TR').format(gainLossTRY.abs().toInt())}',
                       style: GoogleFonts.dmSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

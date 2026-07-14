@@ -10,39 +10,37 @@ import '../theme/sandik.dart';
 
 /// Yeni kullanıcılara gösterilen interaktif demo.
 ///
-/// Gösterim politikası (2026-07): SADECE cihaza uygulamayı ilk defa yükleyen
-/// kullanıcılara bir kez gösterilir. Karar cihaz-bazlı SharedPreferences flag'i
-/// (`_deviceFlagKey`) üzerinden verilir; kullanıcı hesabı üzerinden değil.
-/// - Yeni kayıt olan biri, cihaz daha önce onboarding gördüyse tekrar görmez.
-/// - Kullanıcı uygulamayı silip yeniden yüklese bile Supabase profilindeki
-///   `onboarding_completed` alanı hâlâ true olduğundan tekrar tetiklenmez
-///   (fallback).
+/// Gösterim politikası: yalnızca **hesap başına bir kez** — yeni kayıt olan
+/// kullanıcı ilk kez giriş yaptığında gösterilir, sonraki giriş/açılışlarda
+/// asla. Karar Supabase profil `onboarding_completed` alanı üzerindendir.
+///
+/// - Aynı hesapla farklı cihazlarda tekrar gösterilmez (server-truth).
+/// - Silinip tekrar yüklenen aynı hesapta gösterilmez.
+/// - Yeni kayıt olan başka bir hesap kendi ilk açılışında görür.
+///
+/// Ek olarak per-user bir cihaz cache'i tutulur (`onboarding_seen_${userId}`)
+/// → server yazımı fail etse bile aynı cihazda tekrar açılmaz. Bu, "sürekli
+/// gösteriliyor" bug'ını (network hatasında infinite loop) engeller.
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
   final String userId;
 
   const OnboardingScreen({super.key, required this.onComplete, required this.userId});
 
-  /// Cihaz-bazlı "onboarding gösterildi" bayrağı. Uygulama silinip yeniden
-  /// kurulunca sıfırlanır — bu istenen davranış: mağazadan ilk defa indiren
-  /// cihazda sadece bir kere göster.
-  static const _deviceFlagKey = 'onboarding_shown_on_device_v2';
+  static String _deviceCacheKey(String userId) => 'onboarding_seen_$userId';
 
-  /// Onboarding'in bu cihaz için tamamlanıp tamamlanmadığını döner.
-  /// Öncelik: cihaz flag'i (SharedPreferences). Cihazda gösterilmediyse
-  /// Supabase profilindeki onboarding_completed kontrol edilir; bu alan
-  /// true ise (kullanıcı başka bir cihazda görmüş) yine gösterilmez.
-  /// Sorgu başarısız olursa "gösterildi" say (agresif yeniden-göstermeyi önle).
+  /// Kullanıcı için onboarding daha önce tamamlanmış mı?
+  /// Sıra: (1) per-user cihaz cache, (2) Supabase profil flag.
+  /// Sorgu başarısız olursa "gösterildi" say — agresif yeniden gösterme
+  /// önlenir, kullanıcı kayıt akışını rahatsız eden loop'a girmez.
   static Future<bool> isCompleted(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool(_deviceFlagKey) == true) return true;
+      if (prefs.getBool(_deviceCacheKey(userId)) == true) return true;
       final profile = await SupabaseService.instance.getProfile(userId);
       final serverDone = profile?.onboardingCompleted ?? false;
       if (serverDone) {
-        // Sunucu tarafı tamam görüyor — cihaz flag'ini de yaz ki bir daha
-        // ağ sorgusu bile yapılmasın.
-        await prefs.setBool(_deviceFlagKey, true);
+        await prefs.setBool(_deviceCacheKey(userId), true);
         return true;
       }
       return false;
@@ -51,14 +49,31 @@ class OnboardingScreen extends StatefulWidget {
     }
   }
 
+  /// Onboarding'i tamamla — server flag'ini yaz + per-user cihaz cache'i set
+  /// et. Cache önce yazılır; server yazımı başarısız olsa bile aynı cihazda
+  /// tekrar açılmaz. SharedPreferences instance'ı istisna atarsa 2 kez daha
+  /// dene — infinite loop bug'ının önlenmesi için kritik.
   static Future<void> markCompleted(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_deviceFlagKey, true);
-    } catch (_) {}
+    Object? cacheError;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(_deviceCacheKey(userId), true);
+        cacheError = null;
+        break;
+      } catch (e) {
+        cacheError = e;
+      }
+    }
+    // Server yazımı best-effort — cache set edildiği için fail olsa da
+    // aynı cihazda tekrar gösterilmez.
     try {
       await SupabaseService.instance.markOnboardingCompleted(userId);
     } catch (_) {}
+    // Cache 3 denemede de fail ettiyse en azından log — teşhis için.
+    if (cacheError != null) {
+      debugPrint('OnboardingScreen.markCompleted cache write failed: $cacheError');
+    }
   }
 
   @override

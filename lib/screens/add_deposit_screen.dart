@@ -7,6 +7,7 @@ import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/deposit_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import 'paywall_screen.dart';
 
 /// Vadeli mevduat ekleme ekranı. Sıradan Asset formundan ayrı — çünkü
@@ -278,7 +279,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
             _label('Stopaj Oranı (%)  —  opsiyonel'),
             _textField(
               controller: _taxCtl,
-              hint: 'Boş bırakırsan %${DepositService.defaultTaxRate.toStringAsFixed(0)} kullanılır',
+              hint: 'Boş bırakırsan ${fmtPct(DepositService.defaultTaxRate, digits: 0)} kullanılır',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
                 if ((v ?? '').trim().isEmpty) return null;
@@ -294,7 +295,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
               text:
                   'TR mevduat stopajı vadeye göre değişir (6+ ay: %10, 1+ yıl: %5, kısa vade: %15). '
                   'Kesin oran için banka dekontunuzu kontrol edin. Belirtmezseniz '
-                  '%${DepositService.defaultTaxRate.toStringAsFixed(0)} varsayılan kullanılır.',
+                  '${fmtPct(DepositService.defaultTaxRate, digits: 0)} varsayılan kullanılır.',
             ),
             const SizedBox(height: 20),
 
@@ -587,7 +588,7 @@ class _PreviewCard extends StatelessWidget {
           _row(
             'Net Getiri',
             '${good ? '+' : ''}${money.format(gain)}  '
-                '(${good ? '+' : ''}${pct.toStringAsFixed(2)}%)',
+                '(${fmtPct(pct, digits: 2, showSign: good)})',
             color: good ? Sandik.gain : Sandik.loss,
             bold: true,
           ),

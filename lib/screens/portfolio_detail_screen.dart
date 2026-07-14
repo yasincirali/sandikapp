@@ -10,6 +10,7 @@ import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 
@@ -387,7 +388,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
     return Column(
       children: sorted.map((e) {
         final pct =
-            (e.value / (totalVal > 0 ? totalVal : 1) * 100).toStringAsFixed(1);
+            fmtPct(e.value / (totalVal > 0 ? totalVal : 1) * 100, digits: 1);
         return _breakdownTile(e.key.label, e.value, pct, e.key.color);
       }).toList(),
     );
@@ -405,8 +406,8 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
         _breakdownTile(
             'Ben',
             myState.totalValue,
-            (myState.totalValue / (totalAll > 0 ? totalAll : 1) * 100)
-                .toStringAsFixed(1),
+            fmtPct(myState.totalValue / (totalAll > 0 ? totalAll : 1) * 100,
+                digits: 1),
             Sandik.amber),
         ...partners.map((p) {
           final pAssets = partnerMap[p.id] ?? [];
@@ -415,7 +416,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           return _breakdownTile(
               p.displayName,
               pTotal,
-              (pTotal / (totalAll > 0 ? totalAll : 1) * 100).toStringAsFixed(1),
+              fmtPct(pTotal / (totalAll > 0 ? totalAll : 1) * 100, digits: 1),
               Sandik.gain);
         }),
       ],
@@ -451,7 +452,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Colors.white)),
-              Text('%$pct',
+              Text(pct,
                   style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text36)),
             ],
           ),
