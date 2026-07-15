@@ -180,9 +180,12 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     return Dialog(
       backgroundColor: Sandik.surface1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-        child: Column(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -301,6 +304,46 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             ),
             const SizedBox(height: 8),
             _quickChips(),
+
+            // Remove modunda tüm miktarı çıkarırken kısa bilgi: bu bir
+            // "satış" kaydı; delete değil. Kullanıcı "sattım = sil" diye
+            // düşünmesin diye net bir metinle ayrımı vurguluyoruz.
+            if (!_isAdd && qty > 0 && (qty - asset.quantity).abs() < 0.0001)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Sandik.amber.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: Sandik.amber.withValues(alpha: 0.30)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline_rounded,
+                          size: 16, color: Sandik.amber),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Tüm miktarı çıkarıyorsun — pozisyon listeden '
+                          'kalkar ama bu bir satış kaydı olarak durur. '
+                          'İşlem geçmişin ve realize kâr/zararın korunur. '
+                          'Kaydı tamamen silmek istiyorsan varlık detayından '
+                          '"Sil"i kullan.',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 11,
+                            color: Sandik.text58,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             // ── Fiyat (sadece ekleme için) ────────────────────────────
             if (_isAdd) ...[
@@ -425,6 +468,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

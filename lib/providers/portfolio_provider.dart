@@ -319,8 +319,15 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   // ---- Price refresh -------------------------------------------------------
 
   Future<void> refreshPrices() async {
-    final s = state.valueOrNull;
-    if (s == null) return;
+    // Build henüz bitmediyse (ya da user null → boş state) — bekle. Aksi
+    // halde eski/boş `s.assets`'i alıp await'ten sonra güncel state'in
+    // üzerine sıfır yazma race'i oluşur (bkz. varlıkların bir görünüp
+    // kaybolma bug'ı).
+    final built = await future;
+    // future'dan sonra en güncel state artık valid.
+    final s = state.valueOrNull ?? built;
+    // Sadece kendi varlıkları boşsa refresh yapılacak bir şey yok.
+    if (s.assets.isEmpty) return;
     state = AsyncData(s.copyWith(isLoading: true, clearError: true));
 
     final symbols = <String>{'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'};
@@ -348,14 +355,22 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     try {
       final quotes = await PriceService.instance.fetchQuotes(symbols.toList());
 
-      final usd = quotes['USDTRY=X']?.regularMarketPrice ?? s.usdTry;
-      final eur = quotes['EURTRY=X']?.regularMarketPrice ?? s.eurTry;
-      final gbp = quotes['GBPTRY=X']?.regularMarketPrice ?? s.gbpTry;
+      // await sonrası state başka bir yerden değişmiş olabilir (addAsset,
+      // deleteAsset gibi). Kendi asset listesini yazmadan önce **en güncel**
+      // state'i tekrar oku — aksi halde bu arada eklenen/silinen lot'lar
+      // eski snapshot ile ezilir.
+      final current = state.valueOrNull ?? s;
+      final baseAssets = current.assets;
 
-      final nextState = s.copyWith(usdTry: usd, eurTry: eur, gbpTry: gbp);
+      final usd = quotes['USDTRY=X']?.regularMarketPrice ?? current.usdTry;
+      final eur = quotes['EURTRY=X']?.regularMarketPrice ?? current.eurTry;
+      final gbp = quotes['GBPTRY=X']?.regularMarketPrice ?? current.gbpTry;
+
+      final nextState =
+          current.copyWith(usdTry: usd, eurTry: eur, gbpTry: gbp);
 
       // Kendi varlıklarını güncelle
-      final updated = s.assets.map((asset) {
+      final updated = baseAssets.map((asset) {
         if (asset.type == AssetType.mevduat) {
           // Vadeli mevduat — API yok, birim değeri lokal hesapla.
           final terms = DepositService.decode(asset);
@@ -419,7 +434,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       //   2. Uygulama açılışında `signalProvider.build()` DB'den okur
       //      (yeni analiz yapmaz, sadece geçmişi yükler).
     } catch (e) {
-      state = AsyncData(s.copyWith(
+      final current = state.valueOrNull ?? s;
+      state = AsyncData(current.copyWith(
         isLoading: false,
         errorMessage: 'Fiyatlar güncellenemedi: $e',
       ));

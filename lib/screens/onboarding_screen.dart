@@ -51,9 +51,14 @@ class OnboardingScreen extends StatefulWidget {
 
   /// Onboarding'i tamamla — server flag'ini yaz + per-user cihaz cache'i set
   /// et. Cache önce yazılır; server yazımı başarısız olsa bile aynı cihazda
-  /// tekrar açılmaz. SharedPreferences instance'ı istisna atarsa 2 kez daha
-  /// dene — infinite loop bug'ının önlenmesi için kritik.
+  /// tekrar açılmaz.
+  ///
+  /// Debug reinstall / cihaz değişikliği senaryolarında SharedPreferences
+  /// silinir ve `isCompleted` server'a bakar → bu yüzden server yazımı
+  /// **kritik** ve retry'lı yapılır. update fail ederse (satır yoksa) upsert
+  /// fallback'i devreye girer.
   static Future<void> markCompleted(String userId) async {
+    // Cache — 3 denemeye kadar tekrar.
     Object? cacheError;
     for (var attempt = 0; attempt < 3; attempt++) {
       try {
@@ -65,14 +70,27 @@ class OnboardingScreen extends StatefulWidget {
         cacheError = e;
       }
     }
-    // Server yazımı best-effort — cache set edildiği için fail olsa da
-    // aynı cihazda tekrar gösterilmez.
-    try {
-      await SupabaseService.instance.markOnboardingCompleted(userId);
-    } catch (_) {}
-    // Cache 3 denemede de fail ettiyse en azından log — teşhis için.
     if (cacheError != null) {
-      debugPrint('OnboardingScreen.markCompleted cache write failed: $cacheError');
+      debugPrint(
+          'OnboardingScreen.markCompleted cache write failed: $cacheError');
+    }
+
+    // Server yazımı — reinstall/cihaz değişikliği sonrası true dönebilmek
+    // için garanti altına alınmalı. 3 kez retry + exponential backoff.
+    Object? serverError;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        await SupabaseService.instance.markOnboardingCompleted(userId);
+        serverError = null;
+        break;
+      } catch (e) {
+        serverError = e;
+        await Future.delayed(Duration(milliseconds: 300 * (attempt + 1)));
+      }
+    }
+    if (serverError != null) {
+      debugPrint(
+          'OnboardingScreen.markCompleted server write failed: $serverError');
     }
   }
 

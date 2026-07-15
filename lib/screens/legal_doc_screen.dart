@@ -409,17 +409,56 @@ class LegalDocs {
 
 // ─── Ekran ────────────────────────────────────────────────────────────────────
 
-class LegalDocScreen extends StatelessWidget {
+class LegalDocScreen extends StatefulWidget {
   final String title;
   final List<LegalBlock> blocks;
   final IconData icon;
+  /// Onay akışında kullanılıyorsa: sayfanın sonunda "Okudum ve onaylıyorum"
+  /// butonu görünür. Buton yalnızca kullanıcı en aşağıya kaydırdıktan sonra
+  /// aktifleşir. Butona basınca `Navigator.pop(ctx, true)` döner.
+  final bool confirmMode;
+  final String confirmButtonLabel;
 
   const LegalDocScreen({
     super.key,
     required this.title,
     required this.blocks,
     required this.icon,
+    this.confirmMode = false,
+    this.confirmButtonLabel = 'Okudum ve onaylıyorum',
   });
+
+  @override
+  State<LegalDocScreen> createState() => _LegalDocScreenState();
+}
+
+class _LegalDocScreenState extends State<LegalDocScreen> {
+  final _scrollCtrl = ScrollController();
+  bool _reachedBottom = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.confirmMode) {
+      _scrollCtrl.addListener(_onScroll);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_reachedBottom) return;
+    // maxScrollExtent'e yakınsak (~40px tolerans) "okundu" say.
+    if (_scrollCtrl.position.pixels >=
+        _scrollCtrl.position.maxScrollExtent - 40) {
+      setState(() => _reachedBottom = true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -435,11 +474,11 @@ class LegalDocScreen extends StatelessWidget {
         ),
         title: Row(
           children: [
-            Icon(icon, color: const Color(0xFFF5A623), size: 20),
+            Icon(widget.icon, color: const Color(0xFFF5A623), size: 20),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                title,
+                widget.title,
                 style: GoogleFonts.dmSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -461,7 +500,8 @@ class LegalDocScreen extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5A623).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
@@ -482,20 +522,115 @@ class LegalDocScreen extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   'sandık · ${LegalDocs._web}',
-                  style: GoogleFonts.dmSans(fontSize: 11, color: Colors.white54),
+                  style:
+                      GoogleFonts.dmSans(fontSize: 11, color: Colors.white54),
                 ),
               ],
             ),
           ),
           // ── İçerik ──────────────────────────────────────────────────────
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 48),
-              itemCount: blocks.length,
-              itemBuilder: (_, i) => _buildBlock(blocks[i], i),
+            child: NotificationListener<ScrollMetricsNotification>(
+              // Kısa belgelerde scroll gerekmiyorsa buton hemen aktifleşsin.
+              onNotification: (n) {
+                if (!widget.confirmMode || _reachedBottom) return false;
+                if (n.metrics.maxScrollExtent <= 0) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _reachedBottom = true);
+                  });
+                }
+                return false;
+              },
+              child: ListView.builder(
+                controller: _scrollCtrl,
+                padding: EdgeInsets.only(
+                    bottom: widget.confirmMode ? 24 : 48),
+                itemCount: widget.blocks.length,
+                itemBuilder: (_, i) => _buildBlock(widget.blocks[i], i),
+              ),
             ),
           ),
+          if (widget.confirmMode) _buildConfirmBar(context),
         ],
+      ),
+    );
+  }
+
+  Widget _buildConfirmBar(BuildContext context) {
+    final active = _reachedBottom;
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A2E),
+          border: Border(
+            top: BorderSide(color: Colors.white12, width: 0.5),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!active)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 16, color: Colors.white54),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Onaylamak için belgeyi sona kadar okuyun',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: active ? () => Navigator.pop(context, true) : null,
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: active
+                      ? const Color(0xFFF5A623).withValues(alpha: 0.95)
+                      : const Color(0xFFF5A623).withValues(alpha: 0.30),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      active
+                          ? Icons.check_circle_rounded
+                          : Icons.lock_outline_rounded,
+                      size: 18,
+                      color: active
+                          ? const Color(0xFF1A1A2E)
+                          : Colors.black.withValues(alpha: 0.35),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.confirmButtonLabel,
+                      style: GoogleFonts.dmSans(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: active
+                            ? const Color(0xFF1A1A2E)
+                            : Colors.black.withValues(alpha: 0.35),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

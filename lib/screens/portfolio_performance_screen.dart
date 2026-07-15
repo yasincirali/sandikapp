@@ -128,33 +128,24 @@ class _PortfolioPerformanceScreenState
 
     final sortedTs = history.keys.toList()..sort();
 
-    // Split into two segments: before first asset (passive) and after (active)
-    final passiveSpots = <FlSpot>[];
+    // Sadece aktif segment (ilk alımdan bugüne). Alım öncesi "passive"
+    // 0-çizgisi çizmiyoruz — grafik Y ekseni ilk alım maliyetinden başlar,
+    // 0'dan değil. Böylece "12 Tem'de aldım, ekranda 0'dan başlıyor" gibi
+    // yanlış okuma olmaz; ilk nokta gerçek yatırım tutarını gösterir.
     final activeSpots = <FlSpot>[];
-
-    // Active segmentin ilk history noktasını alım maliyetiyle değiştir — aynı
-    // X'te iki nokta (anchor + history) zigzag üretiyordu.
     bool firstActiveReplaced = false;
 
     for (final ts in sortedTs) {
       final date = DateTime.fromMillisecondsSinceEpoch(ts);
+      if (date.isBefore(firstAssetMidnight)) continue;
       final x = date.difference(startDate).inDays.toDouble();
       final y = history[ts]!;
 
-      if (date.isBefore(firstAssetMidnight)) {
-        passiveSpots.add(FlSpot(x, y));
+      if (!firstActiveReplaced && totalCostTRY > 0) {
+        activeSpots.add(FlSpot(x, totalCostTRY));
+        firstActiveReplaced = true;
       } else {
-        if (!firstActiveReplaced && totalCostTRY > 0) {
-          // Görsel süreklilik: passive'in son noktasını active'in başına ekle
-          // (silik → kalın geçişi arasında boşluk kalmasın).
-          if (passiveSpots.isNotEmpty) {
-            activeSpots.add(passiveSpots.last);
-          }
-          activeSpots.add(FlSpot(x, totalCostTRY));
-          firstActiveReplaced = true;
-        } else {
-          activeSpots.add(FlSpot(x, y));
-        }
+        activeSpots.add(FlSpot(x, y));
       }
     }
 
@@ -174,16 +165,6 @@ class _PortfolioPerformanceScreenState
       } else {
         activeSpots.add(FlSpot(todayX, currentTotalOverride));
       }
-    }
-
-    if (passiveSpots.isNotEmpty) {
-      segments.add(TransactionSegment(
-        spots: passiveSpots,
-        lineColor: Colors.white.withValues(alpha: 0.15),
-        areaGradientStart: Colors.white.withValues(alpha: 0.05),
-        areaGradientEnd: Colors.transparent,
-        thickness: 1.5,
-      ));
     }
 
     if (activeSpots.isNotEmpty) {
@@ -447,7 +428,7 @@ class _PortfolioPerformanceScreenState
       (label: 'Simülasyon', sim: true),
     ];
     return Container(
-      height: 40,
+      height: 44,
       decoration: BoxDecoration(
           color: Sandik.surface1, borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.all(4),
@@ -460,26 +441,116 @@ class _PortfolioPerformanceScreenState
               padding: EdgeInsets.zero,
               onPressed: () => setState(() => _simulate = o.sim),
               child: Container(
+                height: double.infinity,
                 decoration: BoxDecoration(
-                  color:
-                      selected ? const Color(0xFF1A3D2E) : Colors.transparent,
+                  color: selected
+                      ? const Color(0xFF1A3D2E)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Center(
-                  child: Text(
-                    o.label,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 12,
-                      fontWeight:
-                          selected ? FontWeight.w600 : FontWeight.w500,
-                      color: selected ? Sandik.amber : Sandik.text36,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      o.label,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.w500,
+                        color: selected ? Sandik.amber : Sandik.text36,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _showModeInfoSheet(forSim: o.sim),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.info_outline_rounded,
+                          size: 15,
+                          color: selected
+                              ? Sandik.amber.withValues(alpha: 0.85)
+                              : Sandik.text36,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  void _showModeInfoSheet({required bool forSim}) {
+    final title = forSim ? 'Simülasyon Modu' : 'Gerçek Mod';
+    final body = forSim
+        ? 'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş '
+            'olsaydın grafik nasıl görünürdü — geçmişteki alım/satış '
+            'kararlarını yok sayar, sadece güncel pozisyonun fiyat '
+            'değişimini gösterir.'
+        : 'Her günün grafikteki değeri, o gün elinde olan net miktara '
+            'göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri '
+            've varsa alım / satış tutarları görünür — böylece grafiğin '
+            'neden yükseldiğini veya düştüğünü net görebilirsin.';
+
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (ctx) => DefaultTextStyle(
+        style: GoogleFonts.dmSans(
+            color: Colors.white, decoration: TextDecoration.none),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          decoration: const BoxDecoration(
+            color: Sandik.surface1,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded,
+                        size: 20, color: Sandik.amber),
+                    const SizedBox(width: 8),
+                    Text(title,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            decoration: TextDecoration.none)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  body,
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      color: Sandik.text58,
+                      height: 1.5,
+                      decoration: TextDecoration.none),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -520,21 +591,37 @@ class _PortfolioPerformanceScreenState
     if (minY == double.infinity) minY = 0;
     if (maxY == -double.infinity) maxY = 1000;
     final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
-    final dataRange = (maxY - minY).clamp(1.0, double.infinity);
+    final dataMinY = minY;
+    final dataMaxY = maxY;
+    final dataRange = (dataMaxY - dataMinY).clamp(1.0, double.infinity);
     // Küçük gerçek değişimlerin dramatik görünmesini önlemek için Y ekseni
     // aralığını ortalamanın en az %8'i kadar tut.
     final minSpread = (avgY * 0.08).clamp(1.0, double.infinity);
     final effectiveRange =
         dataRange < minSpread ? minSpread : dataRange;
-    final yPadding = effectiveRange * 0.12;
+    final yPadding = effectiveRange * 0.15;
     // Merkezleme: primary segment değerleri viewport'un ortasında görünsün.
     maxY = (avgY + effectiveRange / 2) + yPadding;
     minY = (avgY - effectiveRange / 2 - yPadding).clamp(0, double.infinity);
+    // Güvence: başlangıç (ilk buy) veya bitiş (bugün) noktası viewport
+    // dışında kalmasın — merkezleme sırasında minSpread küçük olduğunda
+    // uçtaki değerler kırpılabiliyordu. Data uçlarını her zaman içerecek
+    // şekilde genişlet ve üstüne dot yarıçapı için pay bırak.
+    final endpointPad = effectiveRange * 0.10;
+    if (dataMinY - endpointPad < minY) {
+      minY = (dataMinY - endpointPad).clamp(0, double.infinity);
+    }
+    if (dataMaxY + endpointPad > maxY) {
+      maxY = dataMaxY + endpointPad;
+    }
 
     // X ekseni — aktif segment çok sıkışıksa (örn. tek gün alım + bugün)
     // viewport'u aktif segment başlangıcından biraz öncesine daralt.
     // Böylece "12 Tem'de aldım, bugün 13" senaryosu tüm 1H window'da
-    // dikey çubuk gibi değil, geniş bir eğri gibi görünür.
+    // dikey çubuk gibi değil, geniş bir eğri gibi görünür. AYRICA
+    // başlangıç ve bitiş noktaları hep viewport'un içinde kalmalı —
+    // dot çizim yarıçapı (~6px) sınırda clip'lenmesin diye her iki
+    // uca minimum yarım günlük pay bırakılır.
     final fullMaxX =
         end.difference(start).inDays.toDouble().clamp(1.0, double.infinity);
     double minX = 0;
@@ -547,10 +634,22 @@ class _PortfolioPerformanceScreenState
       final fullSpan = fullMaxX;
       // Aktif segment tüm periyodun %25'inden azsa viewport'u daralt.
       if (activeSpan < fullSpan * 0.25) {
-        // Aktif segment etrafına iki katı kadar bağlam ekle, en az 1 gün.
-        final pad = (activeSpan.clamp(1.0, double.infinity)) * 1.0;
+        // İlk & son noktanın iki tarafına eşit ve cömert bağlam bırak
+        // (en az 1 gün, en çok aktif span kadar). Böylece başlangıç
+        // ve bitiş noktaları grafiğin ortasında değil, kenardan güvenli
+        // bir mesafede görünür.
+        final pad = (activeSpan.clamp(1.0, double.infinity)) * 0.8;
         minX = (firstActiveX - pad).clamp(0.0, fullMaxX);
-        maxX = (lastActiveX + pad * 0.2).clamp(minX + 1, fullMaxX);
+        maxX = (lastActiveX + pad).clamp(minX + 1, fullMaxX);
+      }
+      // Son güvenlik payı: dot yarıçapı viewport sınırında clip olmasın.
+      // Toplam aralığın %3'ü kadar minimum pay bırak.
+      final safety = ((maxX - minX) * 0.03).clamp(0.15, double.infinity);
+      if (firstActiveX - minX < safety) {
+        minX = (firstActiveX - safety).clamp(0.0, fullMaxX);
+      }
+      if (maxX - lastActiveX < safety) {
+        maxX = (lastActiveX + safety).clamp(minX + 1, fullMaxX);
       }
     }
 
@@ -642,15 +741,31 @@ class _PortfolioPerformanceScreenState
           ),
           lineBarsData: segments.map((seg) {
             final isActive = seg.thickness > 2.0;
+            // Uzun dönemlerde (6A/1Y) kalın çizgi kıvrımları yutuyor —
+            // dönem uzadıkça ince tut, kısa dönemde belirgin kalınlıkta bırak.
+            final periodDays = _periods[_selectedPeriodIdx].days;
+            final activeBarWidth = periodDays <= 7
+                ? 3.5
+                : periodDays <= 30
+                    ? 2.8
+                    : periodDays <= 90
+                        ? 2.2
+                        : periodDays <= 180
+                            ? 1.8
+                            : 1.5;
+            final effectiveBarWidth =
+                isActive ? activeBarWidth : seg.thickness;
             return LineChartBarData(
               spots: seg.spots,
               isCurved: false,
               color: seg.lineColor,
-              barWidth: seg.thickness,
+              barWidth: effectiveBarWidth,
               dotData: FlDotData(
                 show: true,
                 checkToShowDot: (spot, barData) {
                   if (!isActive) return false;
+                  // Simülasyonda nokta yok — sadece süreklilik çizgisi.
+                  if (_simulate) return false;
                   final dateAtSpot = start.add(Duration(days: spot.x.toInt()));
                   final hasAddition = assets.any((a) =>
                       a.addedDate.year == dateAtSpot.year &&
@@ -660,13 +775,20 @@ class _PortfolioPerformanceScreenState
                       spot.x == seg.spots.first.x ||
                       spot.x == seg.spots.last.x;
                 },
-                getDotPainter: (spot, percent, barData, index) =>
-                    FlDotCirclePainter(
-                  radius: isActive ? 4.5 : 2,
-                  color: isActive ? Sandik.amber : Colors.white24,
-                  strokeColor: Sandik.background,
-                  strokeWidth: 2,
-                ),
+                getDotPainter: (spot, percent, barData, index) {
+                  // Tüm noktalar aynı marka rengi (amber) + beyaz halka.
+                  // Alım/satış bilgisi renkte değil, dokunma tooltip'inde
+                  // gösteriliyor.
+                  final isFirst = spot.x == seg.spots.first.x;
+                  final isLast = spot.x == seg.spots.last.x;
+                  final radius = (isFirst || isLast) ? 5.5 : 4.5;
+                  return FlDotCirclePainter(
+                    radius: radius,
+                    color: Sandik.amber,
+                    strokeColor: Colors.white,
+                    strokeWidth: 2,
+                  );
+                },
               ),
               belowBarData: BarAreaData(
                 show: true,
@@ -685,28 +807,138 @@ class _PortfolioPerformanceScreenState
               tooltipRoundedRadius: 10,
               tooltipPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              getTooltipItems: (spots) => spots.map((s) {
-                final date = start.add(Duration(days: s.x.toInt()));
-                return LineTooltipItem(
-                  '${DateFormat('d MMM yyyy', 'tr_TR').format(date)}\n',
-                  GoogleFonts.dmSans(
-                      color: Sandik.text58,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500),
-                  children: [
+              getTooltipItems: (spots) {
+                final tryFmt0 = NumberFormat.currency(
+                    symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
+                // Primary segmentteki ilk ve son x — anchor / bugün tespiti.
+                final firstX = primarySeg.spots.first.x;
+                final lastX = primarySeg.spots.last.x;
+                final firstY = primarySeg.spots.first.y;
+                final lastY = primarySeg.spots.last.y;
+
+                return spots.map((s) {
+                  final date = start.add(Duration(days: s.x.toInt()));
+                  final isFirst = s.x == firstX;
+                  final isLast = s.x == lastX;
+
+                  // O gün YAPILAN alım/satım hareketleri (Gerçek modda).
+                  double dayBuyTRY = 0, daySellTRY = 0;
+                  // İlk noktadan (anchor) bugüne kadar KÜMÜLATİF hareketler.
+                  double cumBuyTRY = 0, cumSellTRY = 0;
+                  if (!_simulate) {
+                    final spotDayMs =
+                        DateTime(date.year, date.month, date.day)
+                            .millisecondsSinceEpoch;
+                    for (final a in assets) {
+                      if (a.isDeleteLog) continue;
+                      final aDay = DateTime(a.addedDate.year,
+                              a.addedDate.month, a.addedDate.day)
+                          .millisecondsSinceEpoch;
+                      final onSameDay = aDay == spotDayMs;
+                      final onOrBefore = aDay <= spotDayMs;
+                      if (a.isBuy) {
+                        if (onSameDay) dayBuyTRY += a.totalCostTRY;
+                        if (onOrBefore) cumBuyTRY += a.totalCostTRY;
+                      } else if (a.isSell) {
+                        if (onSameDay) daySellTRY += a.totalCostTRY;
+                        if (onOrBefore) cumSellTRY += a.totalCostTRY;
+                      }
+                    }
+                  }
+
+                  final dayNet = dayBuyTRY - daySellTRY;
+                  final hasActivity = dayBuyTRY > 0 || daySellTRY > 0;
+
+                  // Anchor'a göre net getiri (bugüne kadarki maliyet vs
+                  // portföy değeri). Sadece son nokta için göster.
+                  final gainVsAnchor = lastY - firstY;
+
+                  final children = <TextSpan>[
                     TextSpan(
-                      text: NumberFormat.currency(
-                              symbol: '₺', locale: 'tr_TR', decimalDigits: 0)
-                          .format(s.y),
+                      text: tryFmt0.format(s.y),
                       style: GoogleFonts.dmSans(
                         color: Sandik.gold,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ],
-                );
-              }).toList(),
+                  ];
+
+                  // Bugün (son nokta) → getiri
+                  if (isLast && !_simulate && gainVsAnchor.abs() > 0.5) {
+                    final positive = gainVsAnchor >= 0;
+                    children.add(TextSpan(
+                      text:
+                          '\nGetiri ${positive ? '+' : '−'}${tryFmt0.format(gainVsAnchor.abs())}',
+                      style: GoogleFonts.dmSans(
+                        color: positive ? Sandik.gain : Sandik.loss,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ));
+                  }
+
+                  // O gün yapılan hareketler
+                  if (hasActivity) {
+                    if (dayBuyTRY > 0) {
+                      children.add(TextSpan(
+                        text: '\nAlım  +${tryFmt0.format(dayBuyTRY)}',
+                        style: GoogleFonts.dmSans(
+                          color: Sandik.gain,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ));
+                    }
+                    if (daySellTRY > 0) {
+                      children.add(TextSpan(
+                        text: '\nSatış −${tryFmt0.format(daySellTRY)}',
+                        style: GoogleFonts.dmSans(
+                          color: Sandik.loss,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ));
+                    }
+                    if (dayBuyTRY > 0 && daySellTRY > 0) {
+                      children.add(TextSpan(
+                        text:
+                            '\nNet ${dayNet >= 0 ? '+' : '−'}${tryFmt0.format(dayNet.abs())}',
+                        style: GoogleFonts.dmSans(
+                          color: dayNet >= 0 ? Sandik.gain : Sandik.loss,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ));
+                    }
+                  }
+
+                  // İlk nokta (anchor) — birikmiş yatırım toplamı bilgisi
+                  // (bu döneme kadar tüm buy - sell). Kullanıcı "grafik
+                  // buradan başlıyor, ne kadar para koydum?" sorusuna
+                  // cevap alsın.
+                  if (isFirst && !_simulate && cumBuyTRY > 0) {
+                    final cumNet = cumBuyTRY - cumSellTRY;
+                    children.add(TextSpan(
+                      text: '\nToplam yatırım ${tryFmt0.format(cumNet)}',
+                      style: GoogleFonts.dmSans(
+                        color: Sandik.text58,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ));
+                  }
+
+                  return LineTooltipItem(
+                    '${DateFormat('d MMM yyyy', 'tr_TR').format(date)}\n',
+                    GoogleFonts.dmSans(
+                        color: Sandik.text58,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500),
+                    children: children,
+                  );
+                }).toList();
+              },
             ),
           ),
         ),

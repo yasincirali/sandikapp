@@ -2,18 +2,15 @@ import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
-        AlertDialog,
         CircularProgressIndicator,
         Colors,
         Form,
         FormState,
         GlobalKey,
         Icons,
+        MaterialPageRoute,
         Material,
-        SelectableText,
-        TextButton,
-        TextFormField,
-        showDialog;
+        TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
@@ -21,6 +18,7 @@ import '../services/auth_service.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import 'legal_doc_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -44,15 +42,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _termsError = false;
   bool _consentAccepted = false;
   bool _consentError = false;
+  // Belge açılıp sona kadar okunup "onaylıyorum" tıklanınca true olur.
+  // Bu true olmadan ilgili checkbox'ı tıklayarak işaretleyemez.
+  bool _termsDocConfirmed = false;
+  bool _consentDocConfirmed = false;
   bool _emailTouched = false; // focus kaybedince hata göster
   bool _submitting = false; // register çağrısı + başarı dialog süresince
 
 
-  // TODO: Production'da gerçek URL'ler.
-  static const _privacyUrl = 'https://yasincirali.github.io/sandikapp/privacy.html';
-  static const _termsUrl = 'https://yasincirali.github.io/sandikapp/terms.html';
-  static const _kvkkUrl = 'https://yasincirali.github.io/sandikapp/privacy.html';
-  static const _consentUrl = 'https://yasincirali.github.io/sandikapp/privacy.html';
 
   bool get _canSubmit =>
       _nameCtrl.text.trim().isNotEmpty &&
@@ -104,80 +101,52 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  /// Birleştirilmiş "Yasal Koşullar" altındaki üç belgeyi tek dialog'da göster.
-  void _showLegalLinks() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Sandik.surface2,
-        title: const Text('Yasal Belgeler',
-            style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Aşağıdaki belgeleri inceleyebilirsin:',
-              style: TextStyle(color: Sandik.text58, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            const Text('Kullanım Koşulları',
-                style: TextStyle(color: Sandik.text90, fontSize: 13)),
-            SelectableText(_termsUrl,
-                style: const TextStyle(color: Sandik.amber, fontSize: 12)),
-            const SizedBox(height: 10),
-            const Text('KVKK Aydınlatma Metni',
-                style: TextStyle(color: Sandik.text90, fontSize: 13)),
-            SelectableText(_kvkkUrl,
-                style: const TextStyle(color: Sandik.amber, fontSize: 12)),
-            const SizedBox(height: 10),
-            const Text('Gizlilik Politikası',
-                style: TextStyle(color: Sandik.text90, fontSize: 13)),
-            SelectableText(_privacyUrl,
-                style: const TextStyle(color: Sandik.amber, fontSize: 12)),
-          ],
+  /// Yasal Koşullar belgesini "sona kadar okuyup onaylama" akışıyla aç.
+  /// Kullanıcı belgeyi sonuna kadar kaydırıp "Okudum ve onaylıyorum" butonuna
+  /// basınca dönüş `true` olur; checkbox otomatik işaretlenir.
+  Future<void> _openTermsDoc() async {
+    final confirmed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LegalDocScreen(
+          title: 'Yasal Koşullar & KVKK Aydınlatma',
+          icon: Icons.gavel_rounded,
+          blocks: LegalDocs.terms,
+          confirmMode: true,
+          confirmButtonLabel: 'Okudum ve onaylıyorum',
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat',
-                style: TextStyle(color: Sandik.amber)),
-          ),
-        ],
       ),
     );
+    if (confirmed == true && mounted) {
+      setState(() {
+        _termsDocConfirmed = true;
+        _termsAccepted = true;
+        _termsError = false;
+      });
+    }
   }
 
-  void _showLegalDoc(String title, String url) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Sandik.surface2,
-        title: Text(title, style: const TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Belgenin tamamı aşağıdaki adreste yayınlanıyor:',
-              style: TextStyle(color: Sandik.text58, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            SelectableText(
-              url,
-              style: const TextStyle(color: Sandik.amber, fontSize: 14),
-            ),
-          ],
+  /// Açık Rıza (yurt dışı veri aktarımı) belgesini onay akışıyla aç.
+  Future<void> _openConsentDoc() async {
+    final confirmed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LegalDocScreen(
+          title: 'Açık Rıza — Yurt Dışı Veri Aktarımı',
+          icon: Icons.public_rounded,
+          blocks: LegalDocs.privacy,
+          confirmMode: true,
+          confirmButtonLabel: 'Okudum ve açık rıza veriyorum',
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat',
-                style: TextStyle(color: Sandik.amber)),
-          ),
-        ],
       ),
     );
+    if (confirmed == true && mounted) {
+      setState(() {
+        _consentDocConfirmed = true;
+        _consentAccepted = true;
+        _consentError = false;
+      });
+    }
   }
 
   Future<void> _register() async {
@@ -421,17 +390,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 checkboxLabel:
                     'Yasal Koşulları, KVKK Aydınlatma Metni\'ni ve '
                     '18+ olduğumu kabul ediyorum.',
-                linkLabel: 'Belgeleri incele',
-                linkUrl: _termsUrl,
+                linkLabel: _termsDocConfirmed
+                    ? 'Belgeyi tekrar aç'
+                    : 'Belgeyi aç ve onayla',
                 accepted: _termsAccepted,
+                docConfirmed: _termsDocConfirmed,
                 error: _termsError,
-                errorMessage:
-                    'Devam etmek için yasal koşulları kabul etmelisin.',
+                errorMessage: _termsDocConfirmed
+                    ? 'Devam etmek için yasal koşulları kabul etmelisin.'
+                    : 'Önce belgeyi açıp sona kadar okumalısın.',
                 onToggle: () => setState(() {
                   _termsAccepted = !_termsAccepted;
                   if (_termsAccepted) _termsError = false;
                 }),
-                onShowText: () => _showLegalLinks(),
+                onShowText: _openTermsDoc,
               ),
               const SizedBox(height: 14),
 
@@ -447,19 +419,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 checkboxLabel:
                     'Verilerimin yurt dışına aktarılmasına açık rıza '
                     'veriyorum.',
-                linkLabel: 'Açık Rıza Metni',
-                linkUrl: _consentUrl,
+                linkLabel: _consentDocConfirmed
+                    ? 'Belgeyi tekrar aç'
+                    : 'Belgeyi aç ve onayla',
                 accepted: _consentAccepted,
+                docConfirmed: _consentDocConfirmed,
                 error: _consentError,
-                errorMessage:
-                    'Devam etmek için yurt dışı aktarım rızasını '
-                    'kabul etmelisin.',
+                errorMessage: _consentDocConfirmed
+                    ? 'Devam etmek için yurt dışı aktarım rızasını '
+                        'kabul etmelisin.'
+                    : 'Önce belgeyi açıp sona kadar okumalısın.',
                 onToggle: () => setState(() {
                   _consentAccepted = !_consentAccepted;
                   if (_consentAccepted) _consentError = false;
                 }),
-                onShowText: () =>
-                    _showLegalDoc('Açık Rıza Metni', _consentUrl),
+                onShowText: _openConsentDoc,
               ),
               const SizedBox(height: 24),
 
@@ -542,12 +516,15 @@ class _LegalConsentBox extends StatelessWidget {
   final String bodyText;
   final String checkboxLabel;
   final String? linkLabel;
-  final String? linkUrl;
   final VoidCallback? onShowText;
   final bool accepted;
   final bool error;
   final String errorMessage;
   final VoidCallback onToggle;
+  /// Kullanıcı bağlı belgeyi açıp sonuna kadar okuyup onayladıysa `true`
+  /// olur. `false` iken checkbox tıklamayla değiştirilemez; sadece belgeyi
+  /// aç butonu (linkLabel) çalışır.
+  final bool docConfirmed;
 
   const _LegalConsentBox({
     required this.icon,
@@ -556,12 +533,12 @@ class _LegalConsentBox extends StatelessWidget {
     required this.bodyText,
     required this.checkboxLabel,
     this.linkLabel,
-    this.linkUrl,
     this.onShowText,
     required this.accepted,
     required this.error,
     required this.errorMessage,
     required this.onToggle,
+    this.docConfirmed = true,
   });
 
   @override
@@ -633,7 +610,14 @@ class _LegalConsentBox extends StatelessWidget {
           ],
           const SizedBox(height: 14),
           GestureDetector(
-            onTap: onToggle,
+            onTap: () {
+              if (!docConfirmed) {
+                // Belge henüz açılıp onaylanmadı → belgeyi aç.
+                onShowText?.call();
+                return;
+              }
+              onToggle();
+            },
             behavior: HitTestBehavior.opaque,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -643,24 +627,39 @@ class _LegalConsentBox extends StatelessWidget {
                   width: 22,
                   height: 22,
                   decoration: BoxDecoration(
-                    color: accepted ? Sandik.amber : Colors.transparent,
+                    color: accepted
+                        ? Sandik.amber
+                        : (docConfirmed
+                            ? Colors.transparent
+                            : Colors.white.withValues(alpha: 0.04)),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: accepted
                           ? Sandik.amber
-                          : (error ? Sandik.loss : Sandik.text36),
+                          : (error
+                              ? Sandik.loss
+                              : (docConfirmed
+                                  ? Sandik.text36
+                                  : Sandik.text36
+                                      .withValues(alpha: 0.4))),
                       width: 2,
                     ),
                   ),
                   child: accepted
                       ? const Icon(Icons.check_rounded,
                           size: 14, color: Sandik.dark)
-                      : null,
+                      : (docConfirmed
+                          ? null
+                          : Icon(Icons.lock_outline_rounded,
+                              size: 12,
+                              color: Sandik.text36.withValues(alpha: 0.7))),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    checkboxLabel,
+                    docConfirmed
+                        ? checkboxLabel
+                        : '$checkboxLabel\n(Önce belgeyi okuyun)',
                     style: GoogleFonts.dmSans(
                       fontSize: 12,
                       color: error ? Sandik.loss : Sandik.text58,

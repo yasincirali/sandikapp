@@ -118,7 +118,30 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       context: ctx,
       builder: (dlg) => AlertDialog(
         title: const Text('Varlığı Sil'),
-        content: Text('"${asset.name}" kalıcı olarak silinsin mi?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('"${asset.name}" kalıcı olarak silinsin mi?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color:
+                        const Color(0xFFEF4444).withValues(alpha: 0.25)),
+              ),
+              child: const Text(
+                'Bu bir satış değil — kayıt tamamen silinir ve geçmiş '
+                'grafiğinden de düşer. Sattıysan bunun yerine "Çıkar" '
+                'kullan; realize kâr/zararın ve alım geçmişin korunur.',
+                style: TextStyle(fontSize: 12, height: 1.4),
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dlg),
@@ -144,7 +167,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                 );
               }
             },
-            child: const Text('Sil'),
+            child: const Text('Yine de sil'),
           ),
         ],
       ),
