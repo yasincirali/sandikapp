@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle;
+import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +22,7 @@ import '../services/remote_config_service.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/zoomable_chart.dart';
+import '../widgets/fullscreen_chart_route.dart';
 import '../widgets/zoom_data_controller.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
@@ -58,6 +59,12 @@ class _PortfolioPerformanceScreenState
   // kurulduğunu takip et — bunlar değişince yeni controller kurulur.
   String? _zoomKey;
 
+  // Ana grafik + volume subchart aynı X viewport'unu paylaşsın diye
+  // ortak controller. Grafiğin fullMinX/fullMaxX'i period değiştikçe
+  // güncellenir; ZoomableChart & ZoomableBarChart bunu dinler.
+  ChartViewport? _viewport;
+  String? _viewportKey;
+
   @override
   void initState() {
     super.initState();
@@ -70,7 +77,27 @@ class _PortfolioPerformanceScreenState
   void dispose() {
     _intradayTick?.cancel();
     _zoomController?.dispose();
+    _viewport?.dispose();
     super.dispose();
+  }
+
+  /// Grafik viewport'unu period/asset key değişince yenile.
+  /// Aynı key + aynı minX/maxX → controller aynı kalır (kullanıcı zoom'unu
+  /// kaybetmez). fullRange değiştiyse controller'ı reset et.
+  ChartViewport _ensureViewport({
+    required String key,
+    required double fullMinX,
+    required double fullMaxX,
+  }) {
+    if (_viewportKey != key || _viewport == null) {
+      _viewport?.dispose();
+      _viewport = ChartViewport(fullMinX: fullMinX, fullMaxX: fullMaxX);
+      _viewportKey = key;
+    } else if (_viewport!.fullMinX != fullMinX ||
+        _viewport!.fullMaxX != fullMaxX) {
+      _viewport!.updateFullRange(fullMinX, fullMaxX);
+    }
+    return _viewport!;
   }
 
   /// Chart assets/period/simülasyon değiştiğinde controller'ı yeniden kur.
@@ -529,9 +556,28 @@ class _PortfolioPerformanceScreenState
               color: Sandik.amber,
             ),
           ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _PortfolioFullscreenChip(
+              onTap: () {
+                FullscreenChartRoute.open(
+                  context,
+                  title: 'Portföy Performans',
+                  builder: (_) => PortfolioPerformanceScreen(
+                    initialView: _view,
+                    initialTypeFilter: _typeFilter,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
         _buildChartContainer(
             segments, startDate, endDate, chartAssets,
-            intraday: isIntraday),
+            intraday: isIntraday,
+            allTargetAssets: targetAssets),
         const SizedBox(height: 24),
         _PortfolioSignalPanel(assets: targetAssets),
         const SizedBox(height: 12),
@@ -758,7 +804,7 @@ class _PortfolioPerformanceScreenState
 
   Widget _buildChartContainer(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets,
-      {bool intraday = false}) {
+      {bool intraday = false, List<Asset>? allTargetAssets}) {
     if (segments.isEmpty) {
       return Container(
         height: 280,
@@ -924,15 +970,14 @@ class _PortfolioPerformanceScreenState
                       dashArray: const [5, 4],
                       label: VerticalLineLabel(
                         show: true,
-                        alignment: Alignment.topRight,
-                        padding: const EdgeInsets.only(bottom: 6, left: 4),
+                        alignment: Alignment.topLeft,
+                        padding: const EdgeInsets.only(bottom: 6, right: 4),
                         style: GoogleFonts.dmSans(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: Sandik.amber,
                         ),
-                        labelResolver: (_) =>
-                            'ŞİMDİ ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+                        labelResolver: (_) => 'ŞİMDİ',
                       ),
                     ),
                   ],
@@ -942,34 +987,11 @@ class _PortfolioPerformanceScreenState
                       ? const []
                       : [
                           // Başlangıç (dönem başı) için dashed amber marker.
+                          // Etiket çizginin SAĞINA (grafik içine) yaslanır,
+                          // aksi halde sol kenara sıkışıp kırpılır.
                           VerticalLine(
                             x: primarySeg.spots.first.x,
                             color: Sandik.amber.withValues(alpha: 0.4),
-                            strokeWidth: 1.2,
-                            dashArray: const [4, 4],
-                            label: VerticalLineLabel(
-                              show: true,
-                              alignment: Alignment.topLeft,
-                              padding: const EdgeInsets.only(
-                                  bottom: 8, right: 6),
-                              style: GoogleFonts.dmSans(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: Sandik.amber,
-                              ),
-                              labelResolver: (_) {
-                                final startTs = start.add(Duration(
-                                    minutes:
-                                        (primarySeg.spots.first.x * 1440)
-                                            .round()));
-                                return 'BAŞLANGIÇ ${DateFormat('d MMM', 'tr_TR').format(startTs)}';
-                              },
-                            ),
-                          ),
-                          // Son nokta (bugün / şimdi) için dashed marker.
-                          VerticalLine(
-                            x: primarySeg.spots.last.x,
-                            color: Sandik.gain.withValues(alpha: 0.55),
                             strokeWidth: 1.2,
                             dashArray: const [4, 4],
                             label: VerticalLineLabel(
@@ -979,13 +1001,37 @@ class _PortfolioPerformanceScreenState
                                   bottom: 8, left: 6),
                               style: GoogleFonts.dmSans(
                                 fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: Sandik.gain,
+                                fontWeight: FontWeight.w700,
+                                color: Sandik.amber,
                               ),
                               labelResolver: (_) {
-                                final now = DateTime.now();
-                                return 'ŞİMDİ ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+                                final startTs = start.add(Duration(
+                                    minutes:
+                                        (primarySeg.spots.first.x * 1440)
+                                            .round()));
+                                return DateFormat('d MMM', 'tr_TR')
+                                    .format(startTs);
                               },
+                            ),
+                          ),
+                          // Son nokta (bugün / şimdi) için dashed marker.
+                          // Etiket çizginin SOLUNA (grafik içine) yaslanır.
+                          VerticalLine(
+                            x: primarySeg.spots.last.x,
+                            color: Sandik.gain.withValues(alpha: 0.55),
+                            strokeWidth: 1.2,
+                            dashArray: const [4, 4],
+                            label: VerticalLineLabel(
+                              show: true,
+                              alignment: Alignment.topLeft,
+                              padding: const EdgeInsets.only(
+                                  bottom: 8, right: 6),
+                              style: GoogleFonts.dmSans(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Sandik.gain,
+                              ),
+                              labelResolver: (_) => 'ŞİMDİ',
                             ),
                           ),
                         ],
@@ -1289,6 +1335,24 @@ class _PortfolioPerformanceScreenState
         );
     }
 
+    // Volume subchart için sync viewport. Aynı controller ZoomableChart ve
+    // ZoomableBarChart tarafından paylaşılır → üstte pinch/pan yapılınca
+    // alt panel de aynı X aralığına oturur.
+    final viewport = _ensureViewport(
+      key:
+          '${_zoomKey ?? "n/a"}|${start.millisecondsSinceEpoch}|${end.millisecondsSinceEpoch}|$intraday',
+      fullMinX: minX,
+      fullMaxX: maxX,
+    );
+
+    // Volume verisi: gün-bazlı buy/sell TRY. Intraday'de bar chart mantıklı
+    // değil (gün içi işlem yoğunluğu farklı bir metrik) → sadece intraday
+    // olmayan periyotlarda çizilir.
+    final volumeBars = intraday
+        ? const <_VolumeBar>[]
+        : _computeVolumeBars(allTargetAssets ?? const [], start);
+    final showVolume = volumeBars.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 20, 16, 12),
       decoration: BoxDecoration(
@@ -1296,14 +1360,152 @@ class _PortfolioPerformanceScreenState
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
-      child: ZoomableChart(
+      child: Column(
+        children: [
+          ZoomableChart(
         fullMinX: minX,
         fullMaxX: maxX,
         height: 360 - 32,
         builder: buildData,
+        viewportController: viewport,
+        onViewportChanged: intraday
+            ? null
+            : (viewMinX, viewMaxX) {
+                final controller = _zoomController;
+                if (controller == null) return;
+                final from = start.add(
+                    Duration(minutes: (viewMinX * 1440).round()));
+                final to = start.add(
+                    Duration(minutes: (viewMaxX * 1440).round()));
+                controller.updateViewport(from, to);
+              },
+        crosshairLabelBuilder: (x) {
+          final spots = primarySeg.spots;
+          if (spots.isEmpty) return null;
+          // İki komşu spot arasında lineer interpolate.
+          final clamped = x.clamp(spots.first.x, spots.last.x);
+          int hi = spots.length - 1;
+          for (int i = 1; i < spots.length; i++) {
+            if (spots[i].x >= clamped) {
+              hi = i;
+              break;
+            }
+          }
+          final a = spots[hi - 1 < 0 ? 0 : hi - 1];
+          final b = spots[hi];
+          final span = (b.x - a.x).abs();
+          final y = span < 1e-9
+              ? b.y
+              : a.y + (b.y - a.y) * ((clamped - a.x) / span);
+          final date = intraday
+              ? DateTime(start.year, start.month, start.day)
+                  .add(Duration(minutes: clamped.round()))
+              : start.add(Duration(minutes: (clamped * 1440).round()));
+          final title = NumberFormat.currency(
+                  locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
+              .format(y);
+          final subtitle = intraday
+              ? DateFormat('HH:mm', 'tr_TR').format(date)
+              : DateFormat('d MMM yyyy', 'tr_TR').format(date);
+          return (title, subtitle);
+        },
+      ),
+      if (showVolume) ...[
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, right: 4),
+          child: Text(
+            'İŞLEM HACMİ',
+            style: GoogleFonts.dmSans(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: Sandik.text58,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 70,
+          child: ListenableBuilder(
+            listenable: viewport,
+            builder: (_, __) {
+              final vp = viewport;
+              final maxY = volumeBars
+                  .fold<double>(0, (m, b) => b.total > m ? b.total : m);
+              // Her bar için 2 spot'lu ayrı bir LineChartBarData → dikey
+              // çubuk. fl_chart'ın BarChart'ında X data-space değil, group
+              // index olduğu için sync viewport için LineChart hilesi kullanıyoruz.
+              final bars = <LineChartBarData>[];
+              for (final b in volumeBars) {
+                final buyPositive = b.buy >= b.sell;
+                final color = buyPositive ? Sandik.gain : Sandik.loss;
+                bars.add(LineChartBarData(
+                  spots: [FlSpot(b.x, 0), FlSpot(b.x, b.total)],
+                  isCurved: false,
+                  color: color.withValues(alpha: 0.85),
+                  barWidth: 3,
+                  isStrokeCapRound: false,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(show: false),
+                ));
+              }
+              return LineChart(
+                LineChartData(
+                  minX: vp.minX,
+                  maxX: vp.maxX,
+                  minY: 0,
+                  maxY: maxY == 0 ? 1 : maxY * 1.15,
+                  clipData: const FlClipData.all(),
+                  lineTouchData: const LineTouchData(enabled: false),
+                  gridData: const FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  titlesData: const FlTitlesData(show: false),
+                  lineBarsData: bars,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+        ],
       ),
     );
   }
+
+  /// Gün-bazlı buy/sell TRY hacim. X price chart ile aynı gün-fraction
+  /// birimde.
+  List<_VolumeBar> _computeVolumeBars(
+      List<Asset> assets, DateTime start) {
+    final Map<int, ({double buy, double sell})> perDay = {};
+    for (final a in assets) {
+      final dayIdx = a.addedDate.difference(start).inDays;
+      if (dayIdx < 0) continue;
+      final prev = perDay[dayIdx] ?? (buy: 0.0, sell: 0.0);
+      if (a.isBuy) {
+        perDay[dayIdx] =
+            (buy: prev.buy + a.totalCostTRY, sell: prev.sell);
+      } else if (a.isSell) {
+        perDay[dayIdx] =
+            (buy: prev.buy, sell: prev.sell + a.totalCostTRY);
+      }
+    }
+    final out = <_VolumeBar>[];
+    perDay.forEach((day, tot) {
+      if (tot.buy + tot.sell <= 0) return;
+      out.add(_VolumeBar(
+          x: day.toDouble(), buy: tot.buy, sell: tot.sell));
+    });
+    return out;
+  }
+}
+
+class _VolumeBar {
+  final double x;
+  final double buy;
+  final double sell;
+  const _VolumeBar({required this.x, required this.buy, required this.sell});
+  double get total => buy + sell;
 }
 
 // ── Portfolio Sinyal Paneli ───────────────────────────────────────────────────
@@ -1522,4 +1724,35 @@ class TransactionSegment {
       required this.areaGradientStart,
       required this.areaGradientEnd,
       required this.thickness});
+}
+
+/// Portfolio ekranı grafik container'ının üstündeki "genişlet" ikon butonu.
+class _PortfolioFullscreenChip extends StatelessWidget {
+  final VoidCallback onTap;
+  const _PortfolioFullscreenChip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: const Icon(
+            Icons.fullscreen_rounded,
+            size: 16,
+            color: Sandik.text58,
+          ),
+        ),
+      ),
+    );
+  }
 }

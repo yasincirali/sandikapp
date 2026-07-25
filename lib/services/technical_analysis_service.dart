@@ -78,6 +78,24 @@ class TechnicalAnalysisService {
     return ema;
   }
 
+  /// Basit hareketli ortalama serisi. İlk (period-1) elemanı NaN döner —
+/// grafik overlay çizerken bu noktalar atlanır.
+  static List<double> smaSeries(List<double> prices, int period) {
+    final n = prices.length;
+    final out = List<double>.filled(n, double.nan);
+    if (n < period || period <= 0) return out;
+    double sum = 0;
+    for (int i = 0; i < period; i++) {
+      sum += prices[i];
+    }
+    out[period - 1] = sum / period;
+    for (int i = period; i < n; i++) {
+      sum += prices[i] - prices[i - period];
+      out[i] = sum / period;
+    }
+    return out;
+  }
+
   // ── 1. RSI ────────────────────────────────────────────────────────────────
 
   static TechnicalIndicator rsi(List<double> prices, AssetType type) {

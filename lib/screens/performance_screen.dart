@@ -17,6 +17,7 @@ import '../services/technical_analysis_service.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
 import '../providers/preferences_provider.dart';
+import '../widgets/fullscreen_chart_route.dart';
 import 'signal_settings_screen.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
@@ -749,6 +750,23 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                         activeSeg.spots.isNotEmpty ? activeSeg.spots.first : null;
                     final lastSpot =
                         activeSeg.spots.isNotEmpty ? activeSeg.spots.last : null;
+
+                    // MA20 overlay: aktif segmentin fiyat serisi üzerinden
+                    // hesaplanır. İlk 19 nokta NaN olur (yetersiz veri) →
+                    // atlanır. Kullanıcı chip ile açıp kapatır.
+                    final ma20On = ref.watch(chartMA20Provider);
+                    List<FlSpot>? ma20Spots;
+                    if (ma20On && activeSeg.spots.length >= 20) {
+                      final prices =
+                          activeSeg.spots.map((s) => s.y).toList();
+                      final sma = TechnicalAnalysisService.smaSeries(
+                          prices, 20);
+                      ma20Spots = <FlSpot>[];
+                      for (int i = 0; i < sma.length; i++) {
+                        if (sma[i].isNaN) continue;
+                        ma20Spots.add(FlSpot(activeSeg.spots[i].x, sma[i]));
+                      }
+                    }
                     final anchorY = anchorSpot?.y ?? 0.0;
                     final totalCostTRY = asset.totalCostTRY;
                     final totalPnlTRY = currentValueTRY - totalCostTRY;
@@ -831,6 +849,36 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           ),
                         if (anchorSpot != null && lastSpot != null)
                           const SizedBox(height: 12),
+                        // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            _OverlayChip(
+                              label: 'MA20',
+                              active: ma20On,
+                              onTap: () {
+                                ref
+                                    .read(chartMA20Provider.notifier)
+                                    .set(!ma20On);
+                              },
+                            ),
+                            const SizedBox(width: 6),
+                            _FullscreenChip(
+                              onTap: () {
+                                FullscreenChartRoute.open(
+                                  context,
+                                  title: widget.asset.name,
+                                  builder: (_) => PerformanceScreen(
+                                    asset: widget.asset,
+                                    lots: widget.lots,
+                                    showBackButton: false,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         Container(
                           height: 400,
                           decoration: BoxDecoration(
@@ -997,12 +1045,12 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       dashArray: const [4, 4],
                                       label: VerticalLineLabel(
                                         show: true,
-                                        alignment: Alignment.topLeft,
+                                        alignment: Alignment.topRight,
                                         padding: const EdgeInsets.only(
-                                            bottom: 8, right: 6),
+                                            bottom: 8, left: 6),
                                         style: GoogleFonts.dmSans(
                                           fontSize: 10,
-                                          fontWeight: FontWeight.w800,
+                                          fontWeight: FontWeight.w700,
                                           color: Sandik.amber,
                                         ),
                                         labelResolver: (_) {
@@ -1026,24 +1074,33 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         dashArray: const [4, 4],
                                         label: VerticalLineLabel(
                                           show: true,
-                                          alignment: Alignment.topRight,
+                                          alignment: Alignment.topLeft,
                                           padding: const EdgeInsets.only(
-                                              bottom: 8, left: 6),
+                                              bottom: 8, right: 6),
                                           style: GoogleFonts.dmSans(
                                             fontSize: 10,
-                                            fontWeight: FontWeight.w800,
+                                            fontWeight: FontWeight.w700,
                                             color: endpointColor,
                                           ),
-                                          labelResolver: (_) {
-                                            final now = DateTime.now();
-                                            return 'ŞİMDİ ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-                                          },
+                                          labelResolver: (_) => 'ŞİMDİ',
                                         ),
                                       ),
                                   ],
                                 )
                               : const ExtraLinesData(),
-                          lineBarsData: segments
+                          lineBarsData: <LineChartBarData>[
+                            if (ma20Spots != null && ma20Spots.length >= 2)
+                              LineChartBarData(
+                                spots: ma20Spots,
+                                isCurved: false,
+                                color: Sandik.text58,
+                                barWidth: 1.4,
+                                isStrokeCapRound: true,
+                                dashArray: const [3, 3],
+                                dotData: const FlDotData(show: false),
+                                belowBarData: BarAreaData(show: false),
+                              ),
+                            ...segments
                               .map((seg) {
                                 // Trading estetiği: dönem uzadıkça ince
                                 // çizgi, kısa dönemde biraz belirgin.
@@ -1151,8 +1208,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       ),
                                     ),
                                   );
-                              })
-                              .toList(),
+                              }),
+                          ],
                           lineTouchData: LineTouchData(
                             enabled: true,
                             touchTooltipData: LineTouchTooltipData(
@@ -1201,6 +1258,38 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             ),
                           ),
                         );
+                            },
+                            crosshairLabelBuilder: (x) {
+                              final spots = activeSeg.spots;
+                              if (spots.isEmpty) return null;
+                              final clamped =
+                                  x.clamp(spots.first.x, spots.last.x);
+                              int hi = spots.length - 1;
+                              for (int i = 1; i < spots.length; i++) {
+                                if (spots[i].x >= clamped) {
+                                  hi = i;
+                                  break;
+                                }
+                              }
+                              final a = spots[hi - 1 < 0 ? 0 : hi - 1];
+                              final b = spots[hi];
+                              final span = (b.x - a.x).abs();
+                              final y = span < 1e-9
+                                  ? b.y
+                                  : a.y +
+                                      (b.y - a.y) *
+                                          ((clamped - a.x) / span);
+                              final date = startDate.add(Duration(
+                                  minutes: (clamped * 1440).round()));
+                              final title = NumberFormat.currency(
+                                      locale: 'tr_TR',
+                                      symbol: '₺',
+                                      decimalDigits: 2)
+                                  .format(y);
+                              final subtitle = DateFormat(
+                                      'd MMM yyyy', 'tr_TR')
+                                  .format(date);
+                              return (title, subtitle);
                             },
                           );
                           }),
@@ -1431,6 +1520,100 @@ class _PnlSummaryStrip extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Fullscreen landscape moduna geçiren küçük ikon buton.
+class _FullscreenChip extends StatelessWidget {
+  final VoidCallback onTap;
+  const _FullscreenChip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Icon(
+            Icons.fullscreen_rounded,
+            size: 16,
+            color: Sandik.text58,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Grafik üzerine çizilen göstergeleri açıp kapatan küçük toggle chip.
+class _OverlayChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _OverlayChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: active
+                ? Sandik.amber.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: active
+                  ? Sandik.amber.withValues(alpha: 0.55)
+                  : Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                active
+                    ? Icons.check_rounded
+                    : Icons.horizontal_rule_rounded,
+                size: 12,
+                color: active ? Sandik.amber : Sandik.text58,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: GoogleFonts.dmSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: active ? Sandik.amber : Sandik.text58,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

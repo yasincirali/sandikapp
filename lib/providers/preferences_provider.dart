@@ -297,3 +297,18 @@ final signalThresholdProvider =
 /// Nötr sinyaller de push olarak gönderilsin mi (default: false).
 final signalNeutralPushProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kSignalNeutralPushKey, false));
+
+// ─── Chart overlay tercihleri ─────────────────────────────────────────────────
+// Grafik üzerine çizilecek göstergeler. Sinyal göstergelerinden ayrı: burası
+// sadece görsel overlay (MA20, MA50, Bollinger vs.). Faz 4'te MA20 ile başlar.
+
+const _kChartMA20Key = 'pref_chart_overlay_ma20';
+const _kChartLogScaleKey = 'pref_chart_log_scale';
+
+final chartMA20Provider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(_kChartMA20Key, false));
+
+/// Y ekseni log10 mı? Uzun dönem fiyat serilerinde yüzde-bazlı değişim
+/// eşit görünür. Default kapalı — linear.
+final chartLogScaleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(_kChartLogScaleKey, false));
