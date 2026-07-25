@@ -2,6 +2,63 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import 'price_service.dart';
 
+/// Grafik çözünürlük seviyeleri. Zoom yaptıkça daha ince tier'a düşer.
+enum ResolutionTier {
+  fiveMin, // 5 dakikalık — sadece bugün için (1d range)
+  hourly, // 1 saatlik — son 5-7 gün (5d range)
+  daily, // günlük close — son 30-180 gün
+  weekly, // haftalık close — 1 yıl+ (uzun dönem)
+}
+
+extension ResolutionTierMeta on ResolutionTier {
+  /// Yahoo API range parametresi
+  String get yahooRange => switch (this) {
+        ResolutionTier.fiveMin => '1d',
+        ResolutionTier.hourly => '5d',
+        ResolutionTier.daily => '1y', // günlük için 1y'a kadar veri gelir
+        ResolutionTier.weekly => '5y',
+      };
+
+  /// Yahoo API interval parametresi (PriceService._intervalFor ile uyumlu)
+  String get yahooInterval => switch (this) {
+        ResolutionTier.fiveMin => '5m',
+        ResolutionTier.hourly => '1h',
+        ResolutionTier.daily => '1d',
+        ResolutionTier.weekly => '1wk',
+      };
+
+  /// Bu tier'da ts'yi hangi ölçekte normalize edelim (aynı bucket'a düşen
+  /// noktalar tek değer olur).
+  int normalizeTs(int ms) {
+    final d = DateTime.fromMillisecondsSinceEpoch(ms);
+    switch (this) {
+      case ResolutionTier.fiveMin:
+        final snappedMin = (d.minute ~/ 5) * 5;
+        return DateTime(d.year, d.month, d.day, d.hour, snappedMin)
+            .millisecondsSinceEpoch;
+      case ResolutionTier.hourly:
+        return DateTime(d.year, d.month, d.day, d.hour).millisecondsSinceEpoch;
+      case ResolutionTier.daily:
+        return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
+      case ResolutionTier.weekly:
+        // Haftanın pazartesi 00:00'ına snap
+        final wd = d.weekday; // 1..7
+        final monday = DateTime(d.year, d.month, d.day)
+            .subtract(Duration(days: wd - 1));
+        return monday.millisecondsSinceEpoch;
+      }
+  }
+
+  /// Görünen aralığın gün cinsinden genişliğine göre optimal tier seçimi.
+  /// Trading uygulamalarındaki gibi ~30-300 nokta hedefler.
+  static ResolutionTier pickForSpan(double viewportDays) {
+    if (viewportDays < 5) return ResolutionTier.fiveMin;
+    if (viewportDays < 30) return ResolutionTier.hourly;
+    if (viewportDays < 180) return ResolutionTier.daily;
+    return ResolutionTier.weekly;
+  }
+}
+
 class HistoryService {
   static final HistoryService instance = HistoryService._();
   HistoryService._();
@@ -19,20 +76,25 @@ class HistoryService {
   Future<Map<int, double>> getPortfolioHistory(
       List<Asset> assets, int periodDays,
       {bool simulate = false}) async {
-    // Haftalık için de günlük çözünürlük kullan — saatlik veri (Yahoo 1h)
-    // bazı hisse/emtia sembollerinde çok az nokta döndürüp grafiği bozuyor.
-    // Trading uygulamaları da 1H sekmesinde günlük 7 nokta gösterir.
+    // Haftalık (7 gün) → saatlik veri: `5d` range + `1h` interval.
+    // Diğer dönemler günlük veya haftalık.
+    final bool hourly = periodDays <= 7;
     final range = periodDays > 100
         ? '1y'
         : periodDays > 60
             ? '3mo'
             : periodDays > 20
                 ? '1mo'
-                : '1mo';
+                : hourly
+                    ? '5d'
+                    : '1mo';
 
-    // Tüm timestamp'leri gece yarısına (00:00:00) normalize eden yardımcı fonskiyon
+    // Haftalık'ta saat başına, diğerlerinde gece yarısına normalize.
     int normalizeTs(int ms) {
       final d = DateTime.fromMillisecondsSinceEpoch(ms);
+      if (hourly) {
+        return DateTime(d.year, d.month, d.day, d.hour).millisecondsSinceEpoch;
+      }
       return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
     }
 
@@ -123,12 +185,25 @@ class HistoryService {
       return a.isSell ? -a.quantity : a.quantity;
     }
 
-    // -- Toparlama ve Hizalama (Her gün için) --
-    final startMs = now.subtract(Duration(days: periodDays)).millisecondsSinceEpoch;
-    for (int i = periodDays; i >= 0; i--) {
-      final dayDate = now.subtract(Duration(days: i));
-      final dayTs = normalizeTs(dayDate.millisecondsSinceEpoch);
+    // -- Toparlama ve Hizalama --
+    // Haftalık'ta saat başına, diğerlerinde gün başına grid oluştur.
+    final startMs =
+        now.subtract(Duration(days: periodDays)).millisecondsSinceEpoch;
+    final int stepMinutes = hourly ? 60 : 24 * 60;
+    final int totalSteps = hourly ? periodDays * 24 : periodDays;
+    for (int i = totalSteps; i >= 0; i--) {
+      final slotDate =
+          now.subtract(Duration(minutes: i * stepMinutes));
+      final dayTs = normalizeTs(slotDate.millisecondsSinceEpoch);
       if (dayTs < normalizeTs(startMs)) continue;
+      // Haftalık (saatlik) grid'de hafta sonlarını atla — trading apps'lerde
+      // görüldüğü gibi Cts/Paz plato'sunu göstermeyelim. Diğer dönemlerde
+      // (aylık, yıllık vs) gün grid'i kalır: haftada 5 nokta vs 7 çok
+      // farklı değil.
+      if (hourly) {
+        final wd = slotDate.weekday; // 6=Cts, 7=Paz
+        if (wd == DateTime.saturday || wd == DateTime.sunday) continue;
+      }
 
       double dayTotalValue = 0.0;
 
@@ -296,9 +371,30 @@ class HistoryService {
           .millisecondsSinceEpoch;
     }
 
+    // Intraday'e özel "geçmişe yakın olan" price lookup. Standart
+    // `_getClosestPrice` past yoksa gelecekteki en yakın slotu döndürüyor —
+    // bu intraday grafiğinde borsa açılmadan önceki tüm slotlara açılış
+    // fiyatını yayıyor ve grafiği düz gösteriyor. Burada past yoksa null
+    // döndürüp o slotu atlıyoruz (grafik ilk gerçek veriden başlasın).
+    double? pastOrNull(Map<int, double> map, int targetTs) {
+      if (map.isEmpty) return null;
+      if (map.containsKey(targetTs)) return map[targetTs];
+      final keys = map.keys.toList()..sort();
+      int? bestKey;
+      for (final k in keys) {
+        if (k <= targetTs) {
+          bestKey = k;
+        } else {
+          break;
+        }
+      }
+      return bestKey == null ? null : map[bestKey];
+    }
+
     final now = DateTime.now();
     final Map<String, Map<int, double>> tickerSlots = {};
     Map<int, double> usdTrySlots = {};
+    Map<int, double> goldSlots = {}; // TRY / gram22k
 
     Future<List<(int, double)>> getHistorySafe(String sym) async {
       final cacheKey = '${sym}_$range';
@@ -312,13 +408,26 @@ class HistoryService {
       }
     }
 
-    bool needsUsd = assets
-        .any((a) => a.currency == 'USD' || a.type == AssetType.altin);
+    bool needsGold = assets.any((a) => a.type == AssetType.altin);
+    bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
 
     if (needsUsd) {
       final usd = await getHistorySafe('USDTRY=X');
       for (final p in usd) {
         usdTrySlots[normalizeSlot(p.$1)] = p.$2;
+      }
+    }
+
+    if (needsGold) {
+      // XAU/USD intraday (GC=F) + USDTRY intraday → gram22k TRY.
+      final xau = await getHistorySafe('GC=F');
+      for (final p in xau) {
+        final ts = normalizeSlot(p.$1);
+        final xauUsd = p.$2;
+        double usdRate = pastOrNull(usdTrySlots, ts) ?? 40.0;
+        final xauTry = xauUsd * usdRate;
+        final gram22k = xauTry / 31.1035 * (22 / 24);
+        goldSlots[ts] = gram22k;
       }
     }
 
@@ -349,56 +458,380 @@ class HistoryService {
       return a.isSell ? -a.quantity : a.quantity;
     }
 
+    // Altın türü katsayısı (gram22k referansına göre).
+    double goldFactor(String ticker) {
+      switch (ticker) {
+        case 'ALTIN_CEYREK':
+          return 1.75;
+        case 'ALTIN_YARIM':
+          return 3.5;
+        case 'ALTIN_CUMHURIYET':
+        case 'ALTIN_ATA':
+          return 7.216;
+        default:
+          return 1.0;
+      }
+    }
+
     final groupedPoints = <int, double>{};
 
     // Bugünün 00:00'ından başlayarak 5 dakikalık grid üret.
     final dayStart = DateTime(now.year, now.month, now.day);
     final slotCount = hours * (60 ~/ slotMinutes); // 24h → 288 slot
+    final nowTs = normalizeSlot(now.millisecondsSinceEpoch);
+
+    // Her varlık için "seed" fiyatı — intraday veri henüz gelmediği
+    // slotlarda kullanılır (dünkü kapanış proxy'si). Böylece bir varlığın
+    // borsa açılışı gecikse bile grafik ilk slot'tan itibaren varlığı sayar
+    // ve borsa açıldığında dik sıçrama olmaz, sadece intraday hareket
+    // görünür.
+    //
+    // Seed önceliği:
+    //   1. Yahoo intraday map'inin en erken (bugüne ait ilk) noktası —
+    //      dünkü kapanışa en yakın değer.
+    //   2. Yoksa currentPrice (canlı — genelde intraday map ile aynı
+    //      mertebede).
+    double? assetSeedTRY(Asset a) {
+      double? unitTRY;
+      if (a.type == AssetType.altin) {
+        final firstTs = goldSlots.keys.isEmpty
+            ? null
+            : goldSlots.keys.reduce((x, y) => x < y ? x : y);
+        if (firstTs != null) {
+          unitTRY = goldSlots[firstTs]! * goldFactor(a.ticker);
+        } else if (a.currentPrice > 0) {
+          unitTRY = a.currentPrice;
+        }
+      } else if (a.type == AssetType.hisse ||
+          a.type == AssetType.emtia ||
+          a.type == AssetType.doviz) {
+        final map = tickerSlots[a.ticker] ?? {};
+        double? unitLocal;
+        if (map.isNotEmpty) {
+          final firstTs = map.keys.reduce((x, y) => x < y ? x : y);
+          unitLocal = map[firstTs];
+        } else if (a.currentPrice > 0) {
+          unitLocal = a.currentPrice;
+        }
+        if (unitLocal != null) {
+          if (a.currency == 'USD') {
+            final usdSeed = usdTrySlots.isNotEmpty
+                ? usdTrySlots[
+                    usdTrySlots.keys.reduce((x, y) => x < y ? x : y)]!
+                : 40.0;
+            unitTRY = unitLocal * usdSeed;
+          } else {
+            unitTRY = unitLocal;
+          }
+        }
+      } else if (a.type == AssetType.fon && a.currentPrice > 0) {
+        unitTRY = a.currentPrice;
+      } else if (a.currentPrice > 0) {
+        unitTRY = a.currentPrice;
+      }
+      return unitTRY;
+    }
 
     for (int i = 0; i <= slotCount; i++) {
       final hourDate = dayStart.add(Duration(minutes: i * slotMinutes));
       final hourTs = normalizeSlot(hourDate.millisecondsSinceEpoch);
+      // Gelecek slotları çizme — grafik "ŞİMDİ" marker'ında bitsin.
+      if (hourTs > nowTs) break;
 
       double total = 0.0;
+      // "Bu slotta o varlığın en az bir gerçek veya seed fiyatı var mı?"
+      // Tüm varlıkların değeri hesaplanabildiği slotları çiziyoruz —
+      // aksi halde eksik varlık nedeniyle ilk slotlar suni-düşük çıkıp
+      // sonra dik sıçrama yaratıyor.
+      bool allCovered = true;
+
       for (final a in assets) {
         try {
           final qty = signedQtyOnSlot(a, hourTs);
           if (qty == 0) continue;
-          double v = 0.0;
+          double? v;
+
           if (a.type == AssetType.altin) {
-            // Saatlik altın verisi yok — currentPrice sabit
-            v = a.currentPrice * qty;
-          } else if (a.type == AssetType.fon) {
-            v = a.currentPrice * qty;
+            final gram = pastOrNull(goldSlots, hourTs);
+            if (gram != null) {
+              v = gram * goldFactor(a.ticker) * qty;
+            }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
               a.type == AssetType.doviz) {
             final map = tickerSlots[a.ticker] ?? {};
-            if (map.isNotEmpty) {
-              double price = _getClosestPrice(map, hourTs, null);
+            final price = pastOrNull(map, hourTs);
+            if (price != null) {
+              double p = price;
               if (a.currency == 'USD') {
-                double usdRate = usdTrySlots.isNotEmpty
-                    ? _getClosestPrice(usdTrySlots, hourTs, 35.0)
-                    : 35.0;
-                price *= usdRate;
+                final usdRate = pastOrNull(usdTrySlots, hourTs) ?? 40.0;
+                p *= usdRate;
               }
-              v = price * qty;
-            } else {
-              v = a.currentPrice * qty *
-                  (a.currency == 'USD' ? 35.0 : 1.0);
+              v = p * qty;
             }
-          } else {
+          }
+          // Fon (TEFAS) intraday NAV yayınlamıyor — o gün için sabit
+          // currentPrice kullanılır (alternatif yok).
+          if (v == null && a.type == AssetType.fon) {
             v = a.currentPrice * qty;
           }
-          total += v;
+          // Intraday verisi henüz gelmemiş varlıklar için seed fiyatı
+          // kullan — grafik dik sıçramasın.
+          if (v == null) {
+            final seed = assetSeedTRY(a);
+            if (seed != null) {
+              v = seed * qty;
+            }
+          }
+
+          if (v != null) {
+            total += v;
+          } else {
+            allCovered = false;
+            break;
+          }
         } catch (_) {
-          total += a.currentPrice * signedQtyOnSlot(a, hourTs);
+          allCovered = false;
+          break;
         }
       }
+
+      if (!allCovered) continue;
       if (total < 0) total = 0;
       groupedPoints[hourTs] = total;
     }
 
+    // Son slotu anlık portföy toplamı ile hizala — grafiğin bitiş noktası
+    // her zaman ana ekrandaki toplamla eşleşsin.
+    if (groupedPoints.isNotEmpty) {
+      double liveTotal = 0.0;
+      bool ok = true;
+      for (final a in assets) {
+        if (a.isDeleteLog) continue;
+        final qty = signedQtyOnSlot(a, nowTs);
+        if (qty == 0) continue;
+        if (a.currentPrice <= 0) {
+          ok = false;
+          break;
+        }
+        final liveUsd = usdTrySlots.isNotEmpty
+            ? usdTrySlots.values.last
+            : 40.0;
+        final tryPrice =
+            a.currency == 'USD' ? a.currentPrice * liveUsd : a.currentPrice;
+        liveTotal += tryPrice * qty;
+      }
+      if (ok && liveTotal > 0) {
+        final lastKey = groupedPoints.keys.reduce((a, b) => a > b ? a : b);
+        groupedPoints[lastKey] = liveTotal;
+      }
+    }
+
     return groupedPoints;
+  }
+
+  // ── Tier-bazlı çözünürlük (zoom-aware) ────────────────────────────────────
+  //
+  // Cache: (tier, sembol) → ts→price map. Aynı tier+sembol tekrar istenirse
+  // ağa çıkılmaz. Farklı tier'da aynı sembol için ayrı istek (Yahoo interval
+  // farklı olduğundan).
+  final Map<String, Map<int, double>> _tierCache = {};
+
+  String _tierCacheKey(ResolutionTier tier, String symbol) =>
+      '${tier.name}::$symbol';
+
+  Future<Map<int, double>> _fetchTickerAtTier(
+      String ticker, ResolutionTier tier) async {
+    final key = _tierCacheKey(tier, ticker);
+    final cached = _tierCache[key];
+    if (cached != null) return cached;
+    try {
+      final pts = await PriceService.instance
+          .fetchHistoryAtInterval(ticker, tier.yahooRange, tier.yahooInterval);
+      final map = <int, double>{};
+      for (final p in pts) {
+        map[tier.normalizeTs(p.$1)] = p.$2;
+      }
+      _tierCache[key] = map;
+      return map;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Verilen tarih aralığında ve tier'da portföy toplam değeri (TRY) döner.
+  /// Zoom yaptıkça viewport daralır → tier ince olur → daha detaylı nokta.
+  /// [assets] tüm buy/sell lot'ları içerir (deleteLog hariç filtrelenir).
+  Future<Map<int, double>> getPortfolioHistoryAtResolution({
+    required List<Asset> assets,
+    required DateTime from,
+    required DateTime to,
+    required ResolutionTier tier,
+    bool simulate = false,
+  }) async {
+    if (assets.isEmpty) return {};
+
+    final normalizedFrom = tier.normalizeTs(from.millisecondsSinceEpoch);
+    final normalizedTo = tier.normalizeTs(to.millisecondsSinceEpoch);
+    final nowTs = tier.normalizeTs(DateTime.now().millisecondsSinceEpoch);
+
+    // Gerekli sembolleri tespit et.
+    bool needsGold = assets.any((a) => a.type == AssetType.altin);
+    bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
+
+    final tickerFutures = <String, Future<Map<int, double>>>{};
+    for (final a in assets) {
+      if (!a.isBuy) continue;
+      if (a.quantity <= 0) continue;
+      final fetchable = a.type == AssetType.hisse ||
+          a.type == AssetType.emtia ||
+          (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
+          (a.type == AssetType.fon && a.ticker.isNotEmpty);
+      if (!fetchable) continue;
+      tickerFutures.putIfAbsent(
+          a.ticker, () => _fetchTickerAtTier(a.ticker, tier));
+    }
+    Future<Map<int, double>>? usdFuture;
+    Future<Map<int, double>>? goldFuture;
+    if (needsUsd) usdFuture = _fetchTickerAtTier('USDTRY=X', tier);
+    if (needsGold) goldFuture = _fetchTickerAtTier('GC=F', tier);
+
+    // Paralel bekle.
+    await Future.wait([
+      ...tickerFutures.values,
+      if (usdFuture != null) usdFuture,
+      if (goldFuture != null) goldFuture,
+    ]);
+
+    final tickerMaps = <String, Map<int, double>>{};
+    for (final entry in tickerFutures.entries) {
+      tickerMaps[entry.key] = await entry.value;
+    }
+    final usdMap = usdFuture != null ? await usdFuture : <int, double>{};
+    final xauMap = goldFuture != null ? await goldFuture : <int, double>{};
+
+    // XAU → gram22k TRY seri
+    final goldMap = <int, double>{};
+    for (final entry in xauMap.entries) {
+      final ts = entry.key;
+      final xauUsd = entry.value;
+      final usdRate = _pastOrNull(usdMap, ts) ?? 40.0;
+      final xauTry = xauUsd * usdRate;
+      goldMap[ts] = xauTry / 31.1035 * (22 / 24);
+    }
+
+    double goldFactor(String ticker) {
+      switch (ticker) {
+        case 'ALTIN_CEYREK':
+          return 1.75;
+        case 'ALTIN_YARIM':
+          return 3.5;
+        case 'ALTIN_CUMHURIYET':
+        case 'ALTIN_ATA':
+          return 7.216;
+        default:
+          return 1.0;
+      }
+    }
+
+    // Signed quantity per slot
+    double signedQtyOnSlot(Asset a, int slotTs) {
+      if (a.isDeleteLog) return 0.0;
+      if (simulate) return a.isSell ? -a.quantity : a.quantity;
+      final addedTs = tier.normalizeTs(a.addedDate.millisecondsSinceEpoch);
+      if (addedTs > slotTs) return 0.0;
+      return a.isSell ? -a.quantity : a.quantity;
+    }
+
+    // Grid: from..to arası tier step'inde tüm slot'lar
+    final result = <int, double>{};
+    final stepMs = _tierStepMs(tier);
+    int cursor = normalizedFrom;
+    while (cursor <= normalizedTo) {
+      // Gelecek slotları atla
+      if (cursor > nowTs) break;
+      // Haftalık intraday'de hafta sonu atla (Cts/Paz)
+      if (tier == ResolutionTier.hourly) {
+        final wd = DateTime.fromMillisecondsSinceEpoch(cursor).weekday;
+        if (wd == DateTime.saturday || wd == DateTime.sunday) {
+          cursor += stepMs;
+          continue;
+        }
+      }
+
+      double total = 0.0;
+      bool allCovered = true;
+      for (final a in assets) {
+        final qty = signedQtyOnSlot(a, cursor);
+        if (qty == 0) continue;
+        double? v;
+        if (a.type == AssetType.altin) {
+          final gram = _pastOrNull(goldMap, cursor);
+          if (gram != null) v = gram * goldFactor(a.ticker) * qty;
+        } else if (a.type == AssetType.hisse ||
+            a.type == AssetType.emtia ||
+            a.type == AssetType.doviz ||
+            a.type == AssetType.fon) {
+          final map = tickerMaps[a.ticker] ?? {};
+          final price = _pastOrNull(map, cursor);
+          if (price != null) {
+            double p = price;
+            if (a.currency == 'USD') {
+              final usdRate = _pastOrNull(usdMap, cursor) ?? 40.0;
+              p *= usdRate;
+            }
+            v = p * qty;
+          }
+        }
+        // Fallback: intraday tier'de bir varlığın hâlâ verisi yoksa
+        // seed (currentPrice) kullan — dik sıçrama olmasın.
+        if (v == null) {
+          if (a.currentPrice > 0) {
+            final seedPrice = a.currency == 'USD'
+                ? a.currentPrice * 40.0
+                : a.currentPrice;
+            v = seedPrice * qty;
+          } else {
+            allCovered = false;
+            break;
+          }
+        }
+        total += v;
+      }
+      if (allCovered) {
+        if (total < 0) total = 0;
+        result[cursor] = total;
+      }
+      cursor += stepMs;
+    }
+
+    return result;
+  }
+
+  int _tierStepMs(ResolutionTier tier) => switch (tier) {
+        ResolutionTier.fiveMin => 5 * 60 * 1000,
+        ResolutionTier.hourly => 60 * 60 * 1000,
+        ResolutionTier.daily => 24 * 60 * 60 * 1000,
+        ResolutionTier.weekly => 7 * 24 * 60 * 60 * 1000,
+      };
+
+  double? _pastOrNull(Map<int, double> map, int targetTs) {
+    if (map.isEmpty) return null;
+    if (map.containsKey(targetTs)) return map[targetTs];
+    final keys = map.keys.toList()..sort();
+    int? best;
+    for (final k in keys) {
+      if (k <= targetTs) {
+        best = k;
+      } else {
+        break;
+      }
+    }
+    return best == null ? null : map[best];
+  }
+
+  /// Bir kısmi tier'ın cache'ini temizle (invalidate). Debug için.
+  void clearTierCache() {
+    _tierCache.clear();
   }
 }

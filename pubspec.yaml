@@ -1,6 +1,6 @@
 name: portfoy_takip
 description: sandık — kişisel portföy takibi (hisse, fon, döviz, altın)
-version: 1.1.1+4
+version: 1.1.2+5
 
 environment:
   sdk: '>=3.3.0 <4.0.0'

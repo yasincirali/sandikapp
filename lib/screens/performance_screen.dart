@@ -15,6 +15,7 @@ import '../services/history_service.dart';
 import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
 import '../widgets/disclaimer_widget.dart';
+import '../widgets/zoomable_chart.dart';
 import '../providers/preferences_provider.dart';
 import 'signal_settings_screen.dart';
 
@@ -494,30 +495,27 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
         widget.asset.purchasePrice * widget.asset.purchaseFxRate;
 
     final sortedTs = history.keys.toList()..sort();
-    final passiveSpots = <FlSpot>[];
     final activeSpots = <FlSpot>[];
     bool firstActiveReplaced = false;
 
+    // Passive segment (alış öncesi dashed çizgi) kaldırıldı — portfolio
+    // performance ekranıyla görsel bütünlük için. Grafik sadece alış → şimdi
+    // aralığını gösterir; kullanıcı "elimde olmadığı dönemin" fiyatını
+    // aramaz, bu aralık zaten periyot seçimi ile ayarlanır.
     for (final ts in sortedTs) {
       final date = DateTime.fromMillisecondsSinceEpoch(ts);
-      final x = date.difference(startDate).inDays.toDouble();
+      if (date.isBefore(firstAssetMidnight)) continue;
+      // Saatlik veride (haftalık) her saat farklı X'e düşmeli — inDays saati
+      // keser ve tüm saatler aynı X'e sıkışırdı, grafik dikey zigzag olurdu.
+      final x = date.difference(startDate).inMinutes / (60.0 * 24.0);
       final y = history[ts]! / divisor;
 
-      if (date.isBefore(firstAssetMidnight)) {
-        passiveSpots.add(FlSpot(x, y));
+      if (!firstActiveReplaced && anchorUnitPrice > 0) {
+        // Aktif segmentin İLK noktası her zaman anchor (ort. maliyet).
+        activeSpots.add(FlSpot(x, anchorUnitPrice));
+        firstActiveReplaced = true;
       } else {
-        if (!firstActiveReplaced && anchorUnitPrice > 0) {
-          // Aktif segmentin İLK noktası her zaman anchor (ort. maliyet).
-          // Passive çizgisiyle görsel bağlantı için: anchor spot'unu
-          // passive segmentin de sonuna ekliyoruz. Böylece kesikli çizgi
-          // anchor noktasına kadar uzanır, aktif çizgi de aynı noktadan
-          // başlar — arada boşluk kalmaz.
-          activeSpots.add(FlSpot(x, anchorUnitPrice));
-          passiveSpots.add(FlSpot(x, anchorUnitPrice));
-          firstActiveReplaced = true;
-        } else {
-          activeSpots.add(FlSpot(x, y));
-        }
+        activeSpots.add(FlSpot(x, y));
       }
     }
 
@@ -540,22 +538,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
         // ileride (bugünün offset'i) olsun.
         final anchorX = activeSpots.first.x;
         final todayX =
-            DateTime.now().difference(startDate).inDays.toDouble();
+            DateTime.now().difference(startDate).inMinutes / (60.0 * 24.0);
         // Aynı gün ise minik bir ε ekle ki iki nokta farklı X'te olsun.
         final endX = todayX > anchorX ? todayX : anchorX + 0.01;
         activeSpots.add(FlSpot(endX, currentUnitPriceOverride));
       }
-    }
-
-    if (passiveSpots.isNotEmpty) {
-      segments.add(TransactionSegment(
-        spots: passiveSpots,
-        lineColor: Colors.white.withValues(alpha: 0.10),
-        areaGradientStart: Colors.white.withValues(alpha: 0.02),
-        areaGradientEnd: Colors.transparent,
-        thickness: 1.2,
-        dashed: true,
-      ));
     }
 
     if (activeSpots.isNotEmpty) {
@@ -570,18 +557,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     }
 
     return segments;
-  }
-
-  String _formatKiloTL(double value, {double? scaleHint}) {
-    if (value == 0) return '0 TL';
-    // scaleHint: grafik aralığı (maxY-minY). Küçükse daha çok ondalık göster
-    // ki komşu etiketler farklı görünsün (40.5k vs 40.7k gibi).
-    final hint = scaleHint ?? value;
-    if (value >= 1000) {
-      final digits = hint < 5000 ? 2 : (hint < 50000 ? 1 : 0);
-      return '${fmtNum(value / 1000, digits: digits)}k TL';
-    }
-    return '${fmtNum(value, digits: 0)} TL';
   }
 
 
@@ -632,7 +607,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final startDate = endDate.subtract(Duration(days: period.days));
-    final maxX = endDate.difference(startDate).inDays.toDouble();
+    // Kesirli gün — saatlik veride son X gün sınırında değil, gerçek
+    // anlarında olmalı. Yoksa nokta grafiğin ortasında yalnız kalır.
+    final maxX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
 
     // Logic moved inside FutureBuilder
 
@@ -802,38 +779,43 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                       lotDayIsSell[dayKey] = isSell;
                     }
 
-                    // Determine Min/Max Y safely
-                    double minY = double.infinity;
-                    double maxY = -double.infinity;
-                    for (final seg in segments) {
-                      for (final spot in seg.spots) {
-                        if (spot.y > maxY) maxY = spot.y;
-                        if (spot.y < minY) minY = spot.y;
+                    // Y sınırlarını görünür X aralığındaki spot'lara göre
+                    // hesaplayan closure — zoom sırasında yeniden çağrılır.
+                    ({double minY, double maxY}) computeY(
+                        double viewMinX, double viewMaxX) {
+                      double minY = double.infinity;
+                      double maxY = -double.infinity;
+                      for (final seg in segments) {
+                        for (final spot in seg.spots) {
+                          if (spot.x < viewMinX || spot.x > viewMaxX) continue;
+                          if (spot.y > maxY) maxY = spot.y;
+                          if (spot.y < minY) minY = spot.y;
+                        }
                       }
-                    }
-                    if (minY == double.infinity) minY = 0;
-                    if (maxY == -double.infinity) maxY = 1000;
+                      if (minY == double.infinity) minY = 0;
+                      if (maxY == -double.infinity) maxY = 1000;
 
-                    // Y ekseni ölçeği ANCHOR MERKEZLİ:
-                    // - ALIŞ çizgisi grafiğin tam ortasında dursun,
-                    // - Küçük hareketler (%0.5 gibi) görsel olarak belirgin
-                    //   çıksın (minimum spread anchor'ın ±%1'i),
-                    // - Anchor'dan uzaklaşan noktalar simetrik ile sığdırılır.
-                    final center = anchorY > 0 ? anchorY : (minY + maxY) / 2;
-                    double maxAbsDev = 0;
-                    for (final seg in segments) {
-                      for (final spot in seg.spots) {
-                        final dev = (spot.y - center).abs();
-                        if (dev > maxAbsDev) maxAbsDev = dev;
+                      // Anchor merkezli ölçek — ALIŞ çizgisi ortada dursun.
+                      final center =
+                          anchorY > 0 ? anchorY : (minY + maxY) / 2;
+                      double maxAbsDev = 0;
+                      for (final seg in segments) {
+                        for (final spot in seg.spots) {
+                          if (spot.x < viewMinX || spot.x > viewMaxX) continue;
+                          final dev = (spot.y - center).abs();
+                          if (dev > maxAbsDev) maxAbsDev = dev;
+                        }
                       }
+                      final minDev =
+                          (center * 0.01).clamp(1.0, double.infinity);
+                      final halfRange =
+                          maxAbsDev < minDev ? minDev : maxAbsDev;
+                      final yPad = halfRange * 0.35;
+                      final outMaxY = center + halfRange + yPad;
+                      final outMinY = (center - halfRange - yPad)
+                          .clamp(0, double.infinity);
+                      return (minY: outMinY.toDouble(), maxY: outMaxY);
                     }
-                    // Minimum sapma: anchor'ın %1'i — küçük değişimler bile
-                    // grafikte gözle görülür genlikte çizilsin.
-                    final minDev = (center * 0.01).clamp(1.0, double.infinity);
-                    final halfRange = maxAbsDev < minDev ? minDev : maxAbsDev;
-                    final yPad = halfRange * 0.35;
-                    maxY = center + halfRange + yPad;
-                    minY = (center - halfRange - yPad).clamp(0, double.infinity);
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -858,19 +840,54 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                 color: Colors.white.withOpacity(0.05)),
                           ),
                           padding: const EdgeInsets.only(
-                              top: 36, right: 16, left: 0, bottom: 16),
-                          child: LineChart(
-                        LineChartData(
-                          minX: 0,
-                          maxX: maxX,
-                          minY: minY,
-                          maxY: maxY,
+                              top: 36, right: 16, left: 8, bottom: 16),
+                          child: Builder(builder: (_) {
+                            // Aktif segment (alış → bugün) tüm dönemin
+                            // %25'inden azsa viewport'u aktif segmentin
+                            // etrafına daralt — kullanıcı yıllık seçse
+                            // bile 2 gün önce aldığı varlık için grafik
+                            // dolgun görünsün, dikey çubuk gibi değil.
+                            // Sağa daha fazla pay (~%8) → son nokta ve
+                            // "ŞİMDİ" etiketi x-tick'lerle çakışmasın.
+                            double focusMin = -maxX * 0.03;
+                            double focusMax = maxX * 1.08;
+                            if (anchorSpot != null && lastSpot != null) {
+                              final firstX = anchorSpot.x;
+                              final lastX = lastSpot.x;
+                              final activeSpan = lastX - firstX;
+                              if (activeSpan < maxX * 0.25) {
+                                final pad = activeSpan < 1.0
+                                    ? 1.0
+                                    : activeSpan * 0.8;
+                                focusMin = (firstX - pad).clamp(-maxX * 0.03, maxX);
+                                // Sağa fazladan %25 pay → son nokta
+                                // grafiğin sağ kenarında değil, biraz
+                                // içeride kalsın ki "şimdi" etiketi ve
+                                // dot rahat okunsun.
+                                focusMax = (lastX + pad * 1.25)
+                                    .clamp(focusMin + 0.5, maxX * 1.08);
+                              }
+                            }
+                            return ZoomableChart(
+                            fullMinX: focusMin,
+                            fullMaxX: focusMax,
+                            height: 400 - 36 - 16,
+                            builder: (viewMinX, viewMaxX) {
+                              final yBounds = computeY(viewMinX, viewMaxX);
+                              final viewMinY = yBounds.minY;
+                              final viewMaxY = yBounds.maxY;
+                              return LineChartData(
+                          minX: viewMinX,
+                          maxX: viewMaxX,
+                          minY: viewMinY,
+                          maxY: viewMaxY,
                           clipData: const FlClipData.all(),
                           gridData: FlGridData(
                             show: true,
                             drawVerticalLine: false,
-                            horizontalInterval:
-                                (maxY - minY) > 0 ? (maxY - minY) / 4 : 50000,
+                            horizontalInterval: (viewMaxY - viewMinY) > 0
+                                ? (viewMaxY - viewMinY) / 4
+                                : 50000,
                             getDrawingHorizontalLine: (value) => FlLine(
                               color: Colors.white.withOpacity(0.05),
                               strokeWidth: 1,
@@ -883,22 +900,34 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                 sideTitles: SideTitles(showTitles: false)),
                             rightTitles: const AxisTitles(
                                 sideTitles: SideTitles(showTitles: false)),
+                            // Portfolio Performance grafiğiyle birebir aynı
+                            // eksen formatı ve interval mantığı — X ekseni
+                            // 4 etiket + tr_TR "d MMM", Y ekseni 4 etiket +
+                            // fmtTRYCompact ("₺1,2M").
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                interval:
-                                    maxX > 0 ? (maxX / 4).ceilToDouble() : 1,
-                                reservedSize: 28,
+                                reservedSize: 32,
+                                interval: (viewMaxX - viewMinX) > 0
+                                    ? ((viewMaxX - viewMinX) / 4)
+                                    : 1,
                                 getTitlesWidget: (value, meta) {
-                                  final date = startDate.add(Duration(days: value.toInt()));
+                                  if (value == meta.min ||
+                                      value == meta.max) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  final date = startDate.add(Duration(
+                                      minutes:
+                                          (value * 60 * 24).round()));
                                   return Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
+                                    padding: const EdgeInsets.only(top: 8),
                                     child: Text(
-                                      DateFormat('d MMM', 'en_US').format(date),
-                                      style: const TextStyle(
-                                        color: Colors.white54,
+                                      DateFormat('d MMM', 'tr_TR')
+                                          .format(date),
+                                      style: GoogleFonts.dmSans(
+                                        color: Sandik.text58,
                                         fontSize: 11,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   );
@@ -908,21 +937,24 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             leftTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                reservedSize: 48,
-                                interval: maxY > 0 ? maxY / 4 : 50000,
+                                reservedSize: 72,
+                                interval: (viewMaxY - viewMinY) > 0
+                                    ? (viewMaxY - viewMinY) / 4
+                                    : 50000,
                                 getTitlesWidget: (value, meta) {
-                                  if (value == maxY || value == 0)
+                                  if (value == meta.min ||
+                                      value == meta.max) {
                                     return const SizedBox.shrink();
+                                  }
                                   return Padding(
-                                    padding: const EdgeInsets.only(right: 8.0),
+                                    padding: const EdgeInsets.only(right: 8),
                                     child: Text(
-                                      _formatKiloTL(value,
-                                          scaleHint: maxY - minY),
+                                      fmtTRYCompact(value),
                                       textAlign: TextAlign.right,
-                                      style: const TextStyle(
-                                        color: Colors.white54,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
+                                      style: GoogleFonts.dmSans(
+                                        color: Sandik.text58,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   );
@@ -954,22 +986,89 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       ),
                                     ),
                                   ],
+                                  verticalLines: [
+                                    // Başlangıç (alış) X'i — tarih etiketli
+                                    // dashed vertical marker.
+                                    VerticalLine(
+                                      x: anchorSpot.x,
+                                      color: Sandik.amber
+                                          .withValues(alpha: 0.4),
+                                      strokeWidth: 1.2,
+                                      dashArray: const [4, 4],
+                                      label: VerticalLineLabel(
+                                        show: true,
+                                        alignment: Alignment.topLeft,
+                                        padding: const EdgeInsets.only(
+                                            bottom: 8, right: 6),
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: Sandik.amber,
+                                        ),
+                                        labelResolver: (_) {
+                                          final buyDate = startDate.add(
+                                              Duration(
+                                                  minutes:
+                                                      (anchorSpot.x * 1440)
+                                                          .round()));
+                                          return 'ALIŞ ${DateFormat('d MMM', 'tr_TR').format(buyDate)}';
+                                        },
+                                      ),
+                                    ),
+                                    // Bitiş (bugün) X'i — "ŞİMDİ" etiketi
+                                    // ile net görünsün.
+                                    if (lastSpot != null)
+                                      VerticalLine(
+                                        x: lastSpot.x,
+                                        color: endpointColor
+                                            .withValues(alpha: 0.55),
+                                        strokeWidth: 1.2,
+                                        dashArray: const [4, 4],
+                                        label: VerticalLineLabel(
+                                          show: true,
+                                          alignment: Alignment.topRight,
+                                          padding: const EdgeInsets.only(
+                                              bottom: 8, left: 6),
+                                          style: GoogleFonts.dmSans(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            color: endpointColor,
+                                          ),
+                                          labelResolver: (_) {
+                                            final now = DateTime.now();
+                                            return 'ŞİMDİ ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+                                          },
+                                        ),
+                                      ),
+                                  ],
                                 )
                               : const ExtraLinesData(),
                           lineBarsData: segments
-                              .map((seg) => LineChartBarData(
+                              .map((seg) {
+                                // Trading estetiği: dönem uzadıkça ince
+                                // çizgi, kısa dönemde biraz belirgin.
+                                final periodDays = _periods[_selectedPeriodIdx].days;
+                                final baseWidth = periodDays <= 7
+                                    ? 2.0
+                                    : periodDays <= 30
+                                        ? 2.4
+                                        : periodDays <= 90
+                                            ? 2.0
+                                            : periodDays <= 180
+                                                ? 1.8
+                                                : 1.5;
+                                final effective = seg.dashed ? seg.thickness : baseWidth;
+                                return LineChartBarData(
                                     spots: seg.spots,
                                     isCurved: false,
                                     color: seg.lineColor,
-                                    barWidth: seg.thickness,
+                                    barWidth: effective,
                                     isStrokeCapRound: true,
                                     dashArray: seg.dashed ? const [4, 4] : null,
                                     dotData: FlDotData(
                                       show: !seg.dashed,
                                       checkToShowDot: (spot, barData) {
-                                        // Pasif (silik) segmentte hiç nokta yok.
                                         if (seg.dashed) return false;
-                                        // Başlangıç (alış) ve bitiş (son) her zaman görünsün.
                                         if (anchorSpot != null &&
                                             spot.x == anchorSpot.x &&
                                             spot.y == anchorSpot.y) {
@@ -980,32 +1079,32 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                             spot.y == lastSpot.y) {
                                           return true;
                                         }
-                                        // Lot işlem günleri (ek alım/sell) marker göster.
                                         return lotDayIsSell
                                             .containsKey(spot.x.toInt());
                                       },
                                       getDotPainter:
                                           (spot, percent, barData, index) {
-                                        // Alış noktası (ilk buy): beyaz halkalı amber
+                                        // Alış: beyaz halkalı amber (ince).
                                         if (anchorSpot != null &&
                                             spot.x == anchorSpot.x &&
                                             spot.y == anchorSpot.y) {
                                           return FlDotCirclePainter(
-                                            radius: 7,
+                                            radius: 5.5,
                                             color: Sandik.amber,
                                             strokeColor: Colors.white,
-                                            strokeWidth: 3,
+                                            strokeWidth: 2,
                                           );
                                         }
-                                        // Son nokta: kar/zarar rengi
+                                        // Son (şimdi): kar/zarar rengi.
                                         if (lastSpot != null &&
                                             spot.x == lastSpot.x &&
                                             spot.y == lastSpot.y) {
                                           return FlDotCirclePainter(
-                                            radius: 8,
+                                            radius: 5.5,
                                             color: endpointColor,
-                                            strokeColor: Colors.white,
-                                            strokeWidth: 3,
+                                            strokeColor: Colors.white
+                                                .withValues(alpha: 0.85),
+                                            strokeWidth: 1.5,
                                           );
                                         }
                                         // Ek alım / satış marker'ları
@@ -1013,7 +1112,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                             lotDayIsSell[spot.x.toInt()];
                                         if (isSell != null) {
                                           return FlDotCirclePainter(
-                                            radius: 5.5,
+                                            radius: 4.5,
                                             color: isSell
                                                 ? Sandik.loss
                                                 : Sandik.gain,
@@ -1022,7 +1121,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                           );
                                         }
                                         return FlDotCirclePainter(
-                                          radius: 3.5,
+                                          radius: 3.0,
                                           color: Sandik.amber,
                                           strokeColor: Sandik.background,
                                           strokeWidth: 1.5,
@@ -1032,15 +1131,27 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     belowBarData: BarAreaData(
                                       show: true,
                                       gradient: LinearGradient(
-                                        colors: [
-                                          seg.areaGradientStart,
-                                          seg.areaGradientEnd
-                                        ],
+                                        colors: seg.dashed
+                                            ? [
+                                                seg.areaGradientStart,
+                                                seg.areaGradientEnd,
+                                              ]
+                                            : [
+                                                Sandik.amber
+                                                    .withValues(alpha: 0.22),
+                                                Sandik.amber
+                                                    .withValues(alpha: 0.06),
+                                                Colors.transparent,
+                                              ],
+                                        stops: seg.dashed
+                                            ? null
+                                            : const [0.0, 0.5, 1.0],
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                       ),
                                     ),
-                                  ))
+                                  );
+                              })
                               .toList(),
                           lineTouchData: LineTouchData(
                             enabled: true,
@@ -1089,8 +1200,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               },
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                            },
+                          );
+                          }),
                         ),
                       ],
                     );

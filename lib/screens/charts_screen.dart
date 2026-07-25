@@ -13,6 +13,7 @@ import 'package:flutter/material.dart'
         FilledButton,
         ListTile,
         Divider,
+        CircularProgressIndicator,
         showDialog,
         showModalBottomSheet;
 import 'package:flutter/material.dart' show Icons;
@@ -262,9 +263,19 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                         ),
                       const SizedBox(height: 24),
 
-                      // Verileri birleştir
+                      // Verileri birleştir. NOT: burada iç Scaffold koymayız —
+                      // SandikLoadingScreen bir Scaffold içerir ve ListView
+                      // child olarak konulunca layout crash oluyor
+                      // ("!_debugDoingThisLayout" assertion). Bunun yerine
+                      // inline bir loading göstergesi kullanıyoruz.
                       partnerAssetsAsync.when(
-                        loading: () => const SandikLoadingScreen(),
+                        loading: () => const SizedBox(
+                          height: 300,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                                color: Sandik.amber),
+                          ),
+                        ),
                         error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                         data: (partnerMap) {
                           List<Asset> assets = [];

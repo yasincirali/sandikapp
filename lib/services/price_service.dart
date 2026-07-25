@@ -401,7 +401,14 @@ class PriceService {
 
   Future<List<(int, double)>> fetchHistory(
       String symbol, String range) async {
-    // TEFAS fonları için TEFAS history endpoint'ini kullan
+    return fetchHistoryAtInterval(symbol, range, _intervalFor(range));
+  }
+
+  /// Aynı fetchHistory ama interval'i çağıran belirler. Zoom-aware
+  /// çözünürlük için (HistoryService.getPortfolioHistoryAtResolution).
+  Future<List<(int, double)>> fetchHistoryAtInterval(
+      String symbol, String range, String interval) async {
+    // TEFAS fonları için TEFAS history endpoint'i (interval yok, periyod ay).
     if (symbol.startsWith(_tefasPrefix)) {
       final code = symbol.replaceFirst(_tefasPrefix, '');
       final periyod = _tefasPeriyodFor(range);
@@ -409,7 +416,6 @@ class PriceService {
     }
 
     final yahooRange = range;
-    final interval = _intervalFor(range);
 
     final uri = Uri.https(
         'query1.finance.yahoo.com',
@@ -444,7 +450,7 @@ class PriceService {
 
   String _intervalFor(String range) => switch (range) {
         '1d' => '5m',
-        '5d' => '30m',
+        '5d' => '1h',
         '1mo' => '1d',
         '3mo' => '1d',
         '6mo' => '1wk',

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'notification_service.dart';
@@ -122,22 +123,56 @@ class RemotePushService {
       provisional: false,
     );
 
+    // Debug: TestFlight'ta gerçekten hangi iznin verildiğini Crashlytics
+    // log'una yaz. Firebase Console → Crashlytics → cihazın loglarında
+    // görülebilir. Push hiç gelmiyorsa çoğunlukla burada authorized/denied
+    // ayrımı ortaya çıkar.
+    try {
+      await FirebaseCrashlytics.instance.log(
+          'push_permission=${settings.authorizationStatus.name} platform=$_platformName');
+    } catch (_) {}
+
     if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      try {
+        await FirebaseCrashlytics.instance
+            .log('push_permission_denied → token sync skipped');
+      } catch (_) {}
       return;
     }
 
     // iOS: APNs token hazır olmadan FCM token null dönebilir.
     // Kısa retry ile APNs'in register olmasını bekle.
     String? token;
+    String? apnsToken;
     if (Platform.isIOS) {
+      // APNs token'ı bekle — 5 retry × 2 sn = 10 sn'ye kadar.
       for (int i = 0; i < 5; i++) {
-        token = await _messaging.getToken();
-        if (token != null && token.isNotEmpty) break;
+        try {
+          apnsToken = await _messaging.getAPNSToken();
+        } catch (_) {}
+        if (apnsToken != null && apnsToken.isNotEmpty) break;
         await Future.delayed(const Duration(seconds: 2));
+      }
+      // APNs token yoksa FCM token null döner. Bunu logla ki sunucudan
+      // push atarken cihazın neden alıcı olarak listelenmediği anlaşılsın.
+      try {
+        await FirebaseCrashlytics.instance.log(
+            'apns_token=${apnsToken == null ? 'NULL' : 'len=${apnsToken.length}'}');
+      } catch (_) {}
+      if (apnsToken != null && apnsToken.isNotEmpty) {
+        for (int i = 0; i < 5; i++) {
+          token = await _messaging.getToken();
+          if (token != null && token.isNotEmpty) break;
+          await Future.delayed(const Duration(seconds: 2));
+        }
       }
     } else {
       token = await _messaging.getToken();
     }
+    try {
+      await FirebaseCrashlytics.instance.log(
+          'fcm_token=${token == null ? 'NULL' : 'len=${token.length}'} userId=$userId');
+    } catch (_) {}
     if (token == null || token.isEmpty) return;
 
     await _syncToken(userId, token);

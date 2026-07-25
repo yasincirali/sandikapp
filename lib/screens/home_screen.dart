@@ -24,7 +24,6 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
 import 'performance_screen.dart';
-import 'all_transactions_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -434,44 +433,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(hp, 24, hp, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'PORTFÖY HAREKETLERİ',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                        color: Sandik.text36,
-                      ),
-                    ),
-                  ),
-                  if (filteredAssets.length > 3)
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AllTransactionsScreen(
-                            myAssets: myState.assets,
-                            allPartnerAssets: allPartnerAssets,
-                            partners: partners,
-                            usdTry: myState.usdTry,
-                            eurTry: myState.eurTry,
-                            gbpTry: myState.gbpTry,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        'Tümünü Gör',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Sandik.amber,
-                        ),
-                      ),
-                    ),
-                ],
+              child: Text(
+                'PORTFÖY HAREKETLERİ',
+                style: GoogleFonts.dmSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: Sandik.text36,
+                ),
               ),
             ),
           ),
@@ -547,9 +516,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ? recentAssets.length
                     : (recentAssets.length > 3 ? 3 : recentAssets.length);
 
+                final hideBalance = ref.watch(balanceHiddenProvider);
                 return Column(
                   children: List.generate(
-                      count, (i) => _buildAssetTile(recentAssets[i], myState)),
+                      count,
+                      (i) => _buildAssetTile(
+                          recentAssets[i], myState, hideBalance: hideBalance)),
                 );
               }),
             ),
@@ -981,7 +953,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildAssetTile(Asset asset, PortfolioState portfolioState) {
+  Widget _buildAssetTile(Asset asset, PortfolioState portfolioState,
+      {bool hideBalance = false}) {
     // Portföy ekranındaki varlık kartlarıyla birebir tutar gösterimi için
     // 3 ondalıklı format (tryFmt3 ile aynı biçim).
     final tryFmt =
@@ -1005,16 +978,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: GestureDetector(
-        onTap: isDelete
-            ? null
-            : () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) =>
-                          PerformanceScreen(asset: asset, showBackButton: true)),
-                ),
-        child: Container(
+      child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Sandik.surface1,
@@ -1146,7 +1110,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$sign${tryFmt.format(txValueTRY)}',
+                    hideBalance
+                        ? '$sign₺••••'
+                        : '$sign${tryFmt.format(txValueTRY)}',
                     style: GoogleFonts.dmSans(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1159,7 +1125,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 

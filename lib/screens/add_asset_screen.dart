@@ -1776,10 +1776,42 @@ class _TefasPickerState extends State<_TefasPicker> {
   List<TefasFund>? _funds;
   String? _error;
 
+  // TEFAS liste API'sinde olmayan ama fiyat API'sinde bulunan
+  // (kurucu-only) fonlar için lookup sonucu. Kullanıcı örn. "ALE" ya da
+  // "YLB" yazdığında liste boş çıkarsa, arka planda tek-fon sorgusu
+  // gönderilir ve sonuç buraya konur — kullanıcı "para piyasası fonu"
+  // gibi görünmeyen fonları da bulabilsin.
+  final Map<String, TefasFund?> _lookupCache = {};
+  final Set<String> _lookupInFlight = {};
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  Future<void> _tryLookup(String rawCode) async {
+    final code = rawCode.trim().toUpperCase();
+    if (code.length < 2 || code.length > 6) return;
+    if (_lookupCache.containsKey(code)) return;
+    if (_lookupInFlight.contains(code)) return;
+    _lookupInFlight.add(code);
+    try {
+      final fund = await TefasService.instance.lookupFund(code);
+      if (!mounted) return;
+      setState(() {
+        _lookupCache[code] = fund;
+        if (fund != null && _funds != null) {
+          // Cache'e yansı — bir sonraki filtreleme direkt bulur.
+          if (!_funds!.any((f) => f.code == fund.code)) {
+            _funds = [..._funds!, fund]
+              ..sort((a, b) => a.name.compareTo(b.name));
+          }
+        }
+      });
+    } finally {
+      _lookupInFlight.remove(code);
+    }
   }
 
   Future<void> _load() async {
@@ -1844,7 +1876,19 @@ class _TefasPickerState extends State<_TefasPicker> {
       count: filtered.length,
       color: AssetType.fon.color,
       searchCtrl: _ctrl,
-      onSearch: (v) => setState(() => _q = v),
+      onSearch: (v) {
+        setState(() => _q = v);
+        // TEFAS liste API'sinde olmayan (kurucu-only) fon kodları için —
+        // örn. ALE, YLB gibi para piyasası fonları — arama filtresi boş
+        // çıkarsa arka planda tek-fon lookup gönder. Bulunursa cache'e
+        // eklenip filtreye dâhil olur.
+        final code = v.trim().toUpperCase();
+        if (code.length >= 3 && code.length <= 6) {
+          final already =
+              (_funds ?? []).any((f) => f.code == code);
+          if (!already) _tryLookup(code);
+        }
+      },
       query: _q,
       cs: cs,
       child: _funds == null && _error == null
