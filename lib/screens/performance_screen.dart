@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -19,6 +20,8 @@ import '../widgets/zoomable_chart.dart';
 import '../providers/preferences_provider.dart';
 import '../widgets/fullscreen_chart_route.dart';
 import 'signal_settings_screen.dart';
+import '../models/asset_categories.dart';
+import '../services/tefas_service.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -344,12 +347,17 @@ class PerformanceScreen extends ConsumerStatefulWidget {
   /// işlem marker'ları çizmek için kullanılır. Boş bırakılırsa sadece
   /// [asset]'in kendisi tek buy olarak varsayılır.
   final List<Asset>? lots;
+  /// Landscape fullscreen'de açılınca grafik hemen görünsün diye body
+  /// başlangıçta bu offset kadar aşağı kayar. Kullanıcı yukarı swipe ile
+  /// header'a döner.
+  final double initialScrollOffset;
 
   const PerformanceScreen({
     super.key,
     required this.asset,
     this.showBackButton = false,
     this.lots,
+    this.initialScrollOffset = 0,
   });
 
   @override
@@ -360,6 +368,12 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   late int _selectedPeriodIdx;
   String? _view = ''; // '' = Ben (Default), null = Tümü, uuid = Ortak
   late Future<Map<int, double>> _historyFuture;
+  late ScrollController _scrollController;
+  // Compare mode: seçili karşılaştırma varlığı (kullanıcının portföyünden).
+  // null = compare kapalı. Bu varlığın history serisi ana varlıkla aynı
+  // periyotta fetch edilir, ilk nokta 100 kabul edilip % normalize edilir.
+  Asset? _compareAsset;
+  Future<Map<int, double>>? _compareHistoryFuture;
 
   static const List<({String label, int days})> _periods = [
     (label: 'HAFTALIK', days: 7),
@@ -374,6 +388,14 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     _selectedPeriodIdx = 0;
     _historyFuture = HistoryService.instance
         .getPortfolioHistory([widget.asset], _periods[0].days);
+    _scrollController =
+        ScrollController(initialScrollOffset: widget.initialScrollOffset);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _selectPeriod(int idx) {
@@ -381,7 +403,51 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
       _selectedPeriodIdx = idx;
       _historyFuture = HistoryService.instance
           .getPortfolioHistory([widget.asset], _periods[idx].days);
+      // Compare aktifse aynı yeni periyot için compare history'yi de yenile.
+      if (_compareAsset != null) {
+        _compareHistoryFuture = HistoryService.instance
+            .getPortfolioHistory([_compareAsset!], _periods[idx].days);
+      }
     });
+  }
+
+  void _openComparePicker() {
+    final pState = ref.read(portfolioProvider).valueOrNull;
+    final all = pState?.assets ?? const <Asset>[];
+    // Aynı ticker hariç — kendisiyle karşılaştırma yok. Aynı ticker'ın
+    // birden fazla lot'u olabilir (birden çok alım); ticker bazlı dedup.
+    final seen = <String>{};
+    final choices = <Asset>[];
+    for (final a in all) {
+      if (a.ticker == widget.asset.ticker) continue;
+      if (!seen.add(a.ticker)) continue;
+      choices.add(a);
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Sandik.surface1,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) {
+        return _ComparePickerSheet(
+          choices: choices,
+          currentSelectionTicker: _compareAsset?.ticker,
+          onSelected: (choice) {
+            final vAsset = choice?.toVirtualAsset();
+            setState(() {
+              _compareAsset = vAsset;
+              _compareHistoryFuture = vAsset == null
+                  ? null
+                  : HistoryService.instance.getPortfolioHistory(
+                      [vAsset], _periods[_selectedPeriodIdx].days);
+            });
+            Navigator.pop(sheetCtx);
+          },
+        );
+      },
+    );
   }
 
 
@@ -666,6 +732,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             child: Column(
@@ -731,9 +798,63 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                         : asset.totalValue;
                     final currentUnitTRY = qty > 0 ? currentValueTRY / qty : 0.0;
 
-                    final segments = _convertHistoryToSegments(
+                    // Compare mode devrede mi? Öncelikli — log-scale ile
+                    // aynı anda anlamlı değil (biri % biri log), compare
+                    // aktifken log ignore edilir.
+                    final compareOn = _compareAsset != null;
+                    final logOnPref = ref.watch(chartLogScaleProvider);
+                    final logOn = compareOn ? false : logOnPref;
+
+                    final rawSegments = _convertHistoryToSegments(
                         historyMap, startDate, endDate,
                         currentUnitPriceOverride: currentUnitTRY);
+
+                    // Normalize base: aktif segmentin ilk noktası. Bunun
+                    // altında ana varlığın Y'leri (y / base) * 100 → % olur.
+                    final rawActiveForBase = rawSegments.firstWhere(
+                      (s) => !s.dashed && s.spots.isNotEmpty,
+                      orElse: () => TransactionSegment(
+                        spots: const [],
+                        lineColor: Sandik.amber,
+                        areaGradientStart: Colors.transparent,
+                        areaGradientEnd: Colors.transparent,
+                        thickness: 3.5,
+                      ),
+                    );
+                    final normBase = rawActiveForBase.spots.isNotEmpty
+                        ? rawActiveForBase.spots.first.y
+                        : 1.0;
+
+                    // Y ekseni transform: compare → % normalize; log → log10;
+                    // default → identity. `fromY` label/tooltip'te ters
+                    // çeviren fonksiyon (compare'de gösterim değişik: "+%12.4"
+                    // formatı için ayrıca handle edilir).
+                    double toY(double y) {
+                      if (compareOn) return (y / (normBase.abs() < 1e-9 ? 1 : normBase)) * 100.0;
+                      if (logOn) return math.log(y < 1e-6 ? 1e-6 : y) / math.ln10;
+                      return y;
+                    }
+                    double fromY(double v) {
+                      if (compareOn) return v; // % zaten, ters çevirme yok
+                      if (logOn) return math.pow(10, v).toDouble();
+                      return v;
+                    }
+
+                    final segments = (compareOn || logOn)
+                        ? rawSegments
+                            .map((s) => TransactionSegment(
+                                  spots: s.spots
+                                      .map((sp) =>
+                                          FlSpot(sp.x, toY(sp.y)))
+                                      .toList(),
+                                  lineColor: s.lineColor,
+                                  areaGradientStart: s.areaGradientStart,
+                                  areaGradientEnd: s.areaGradientEnd,
+                                  thickness: s.thickness,
+                                  dashed: s.dashed,
+                                ))
+                            .toList()
+                        : rawSegments;
 
                     // Aktif segmenti bul (kesikli olmayan, yani alım sonrası)
                     final activeSeg = segments.firstWhere(
@@ -751,20 +872,37 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     final lastSpot =
                         activeSeg.spots.isNotEmpty ? activeSeg.spots.last : null;
 
+                    // Compare mode: ikinci varlığın history'sini alt bir
+                    // FutureBuilder ile fetch ediyoruz. Veri hazır olunca
+                    // ilk noktası 100 kabul edilip (val/first)*100 normalize.
+
                     // MA20 overlay: aktif segmentin fiyat serisi üzerinden
                     // hesaplanır. İlk 19 nokta NaN olur (yetersiz veri) →
                     // atlanır. Kullanıcı chip ile açıp kapatır.
                     final ma20On = ref.watch(chartMA20Provider);
                     List<FlSpot>? ma20Spots;
                     if (ma20On && activeSeg.spots.length >= 20) {
+                      // MA20 her zaman ham fiyat serisinden hesaplanır;
+                      // sonra grafiğe koyulurken log domain'e alınır.
+                      final rawActive = rawSegments.firstWhere(
+                        (s) => !s.dashed && s.spots.isNotEmpty,
+                        orElse: () => TransactionSegment(
+                          spots: const [],
+                          lineColor: Sandik.amber,
+                          areaGradientStart: Colors.transparent,
+                          areaGradientEnd: Colors.transparent,
+                          thickness: 3.5,
+                        ),
+                      );
                       final prices =
-                          activeSeg.spots.map((s) => s.y).toList();
+                          rawActive.spots.map((s) => s.y).toList();
                       final sma = TechnicalAnalysisService.smaSeries(
                           prices, 20);
                       ma20Spots = <FlSpot>[];
                       for (int i = 0; i < sma.length; i++) {
                         if (sma[i].isNaN) continue;
-                        ma20Spots.add(FlSpot(activeSeg.spots[i].x, sma[i]));
+                        ma20Spots
+                            .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
                       }
                     }
                     final anchorY = anchorSpot?.y ?? 0.0;
@@ -863,6 +1001,16 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               },
                             ),
                             const SizedBox(width: 6),
+                            _OverlayChip(
+                              label: 'LOG',
+                              active: logOn,
+                              onTap: () {
+                                ref
+                                    .read(chartLogScaleProvider.notifier)
+                                    .set(!logOn);
+                              },
+                            ),
+                            const SizedBox(width: 6),
                             _FullscreenChip(
                               onTap: () {
                                 FullscreenChartRoute.open(
@@ -872,6 +1020,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     asset: widget.asset,
                                     lots: widget.lots,
                                     showBackButton: false,
+                                    // Landscape'te grafiği hemen üste getir;
+                                    // header/tab/chip'ler yukarı swipe ile.
+                                    initialScrollOffset: 240,
                                   ),
                                 );
                               },
@@ -879,7 +1030,60 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Container(
+                        _CompareStrip(
+                          primaryTicker: widget.asset.ticker,
+                          compare: _compareAsset,
+                          onAddPressed: _openComparePicker,
+                          onClearPressed: () {
+                            setState(() {
+                              _compareAsset = null;
+                              _compareHistoryFuture = null;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        FutureBuilder<Map<int, double>>(
+                          future: _compareHistoryFuture,
+                          builder: (context, compareSnap) {
+                            // Compare barı — snapshot hazır olduğunda
+                            // normalize edilip LineChartBarData olur.
+                            LineChartBarData? compareBar;
+                            if (compareOn &&
+                                compareSnap.hasData &&
+                                compareSnap.data!.isNotEmpty) {
+                              final entries = compareSnap.data!.entries
+                                  .toList()
+                                ..sort((a, b) => a.key.compareTo(b.key));
+                              final firstY = entries.first.value;
+                              if (firstY.abs() > 1e-9) {
+                                final spots = <FlSpot>[];
+                                for (final e in entries) {
+                                  final ts = e.key;
+                                  final date = DateTime
+                                      .fromMillisecondsSinceEpoch(ts);
+                                  final x = date
+                                          .difference(startDate)
+                                          .inMinutes /
+                                      (60.0 * 24.0);
+                                  if (x < 0) continue;
+                                  spots.add(FlSpot(
+                                      x, (e.value / firstY) * 100.0));
+                                }
+                                if (spots.length >= 2) {
+                                  compareBar = LineChartBarData(
+                                    spots: spots,
+                                    isCurved: false,
+                                    color: _kCompareColor,
+                                    barWidth: 1.6,
+                                    isStrokeCapRound: true,
+                                    dotData: const FlDotData(show: false),
+                                    belowBarData:
+                                        BarAreaData(show: false),
+                                  );
+                                }
+                              }
+                            }
+                            return Container(
                           height: 400,
                           decoration: BoxDecoration(
                             color: Sandik.surface1,
@@ -994,10 +1198,13 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       value == meta.max) {
                                     return const SizedBox.shrink();
                                   }
+                                  final label = compareOn
+                                      ? '${(value - 100).toStringAsFixed(1)}%'
+                                      : fmtTRYCompact(fromY(value));
                                   return Padding(
                                     padding: const EdgeInsets.only(right: 8),
                                     child: Text(
-                                      fmtTRYCompact(value),
+                                      label,
                                       textAlign: TextAlign.right,
                                       style: GoogleFonts.dmSans(
                                         color: Sandik.text58,
@@ -1100,6 +1307,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                 dotData: const FlDotData(show: false),
                                 belowBarData: BarAreaData(show: false),
                               ),
+                            if (compareBar != null) compareBar,
                             ...segments
                               .map((seg) {
                                 // Trading estetiği: dönem uzadıkça ince
@@ -1235,8 +1443,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       .add(Duration(days: spot.x.toInt()));
                                   final dateLabel = DateFormat('d MMM', 'tr_TR')
                                       .format(date);
+                                  final tipText = compareOn
+                                      ? '${(spot.y - 100).toStringAsFixed(2)}%'
+                                      : '${valueFmt.format(fromY(spot.y))} ₺';
                                   return LineTooltipItem(
-                                    '${valueFmt.format(spot.y)} ₺',
+                                    tipText,
                                     GoogleFonts.dmSans(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w800,
@@ -1281,11 +1492,13 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                           ((clamped - a.x) / span);
                               final date = startDate.add(Duration(
                                   minutes: (clamped * 1440).round()));
-                              final title = NumberFormat.currency(
-                                      locale: 'tr_TR',
-                                      symbol: '₺',
-                                      decimalDigits: 2)
-                                  .format(y);
+                              final title = compareOn
+                                  ? '${(y - 100).toStringAsFixed(2)}%'
+                                  : NumberFormat.currency(
+                                          locale: 'tr_TR',
+                                          symbol: '₺',
+                                          decimalDigits: 2)
+                                      .format(fromY(y));
                               final subtitle = DateFormat(
                                       'd MMM yyyy', 'tr_TR')
                                   .format(date);
@@ -1293,6 +1506,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             },
                           );
                           }),
+                        );
+                          },
                         ),
                       ],
                     );
@@ -1618,3 +1833,485 @@ class _OverlayChip extends StatelessWidget {
     );
   }
 }
+
+// ─── Compare mode UI ─────────────────────────────────────────────────────────
+
+/// Grafik container'ının üstünde: legend (rozet) + "Karşılaştır" ekle butonu.
+/// Compare seçili değilse sadece + butonu görünür; seçiliyken rozet ve ✕.
+class _CompareStrip extends StatelessWidget {
+  final String primaryTicker;
+  final Asset? compare;
+  final VoidCallback onAddPressed;
+  final VoidCallback onClearPressed;
+
+  const _CompareStrip({
+    required this.primaryTicker,
+    required this.compare,
+    required this.onAddPressed,
+    required this.onClearPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 32,
+      child: Row(
+        children: [
+          // Ana varlık rozeti — renk = Sandik.amber
+          _LegendBadge(
+            color: Sandik.amber,
+            label: primaryTicker,
+          ),
+          const SizedBox(width: 8),
+          if (compare != null) ...[
+            _LegendBadge(
+              color: _kCompareColor,
+              label: compare!.ticker,
+              onRemove: onClearPressed,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onAddPressed,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    style: BorderStyle.solid,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      compare == null
+                          ? Icons.add_rounded
+                          : Icons.swap_horiz_rounded,
+                      size: 14,
+                      color: Sandik.text58,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      compare == null ? 'Karşılaştır' : 'Değiştir',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Sandik.text58,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendBadge extends StatelessWidget {
+  final Color color;
+  final String label;
+  final VoidCallback? onRemove;
+  const _LegendBadge({
+    required this.color,
+    required this.label,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+          left: 10, right: onRemove == null ? 10 : 4, top: 5, bottom: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+              letterSpacing: 0.4,
+            ),
+          ),
+          if (onRemove != null) ...[
+            const SizedBox(width: 2),
+            InkWell(
+              onTap: onRemove,
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child:
+                    Icon(Icons.close_rounded, size: 12, color: color),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Compare picker satır kaynağı — hem portföydeki varlık hem de
+/// katalog (BIST100 / döviz / altın) aynı yapıyla temsil edilir.
+class _CompareChoice {
+  final String ticker;
+  final String name;
+  final AssetType type;
+  final String currency;
+  final String source; // 'portfolio' | 'bist' | 'fx' | 'gold'
+
+  const _CompareChoice({
+    required this.ticker,
+    required this.name,
+    required this.type,
+    required this.currency,
+    required this.source,
+  });
+
+  /// HistoryService'in beklediği minimum alanları sağlayan sanal Asset.
+  /// Grafik için sadece ticker/type/currency kullanılıyor.
+  Asset toVirtualAsset() {
+    return Asset(
+      id: 'compare-$ticker',
+      userId: '',
+      name: name,
+      ticker: ticker,
+      type: type,
+      quantity: 1,
+      purchasePrice: 1,
+      currency: currency,
+      notes: '',
+    );
+  }
+}
+
+/// Katalog seçenekleri — kullanıcının portföyde tutmadığı varlıklarla
+/// da karşılaştırma yapabilsin diye statik olarak sağlanır.
+List<_CompareChoice> _catalogChoices() {
+  final out = <_CompareChoice>[];
+  // BIST100 hisseleri
+  bist100StocksMap.forEach((ticker, name) {
+    out.add(_CompareChoice(
+      ticker: ticker,
+      name: name,
+      type: AssetType.hisse,
+      currency: 'TRY',
+      source: 'bist',
+    ));
+  });
+  // Major dövizler
+  out.addAll(const [
+    _CompareChoice(
+        ticker: 'USDTRY=X',
+        name: 'ABD Doları',
+        type: AssetType.doviz,
+        currency: 'USD',
+        source: 'fx'),
+    _CompareChoice(
+        ticker: 'EURTRY=X',
+        name: 'Euro',
+        type: AssetType.doviz,
+        currency: 'EUR',
+        source: 'fx'),
+    _CompareChoice(
+        ticker: 'GBPTRY=X',
+        name: 'İngiliz Sterlini',
+        type: AssetType.doviz,
+        currency: 'GBP',
+        source: 'fx'),
+  ]);
+  // Altın (gram karşılığı, HistoryService altın için USD/gr → TRY dönüşümü yapar)
+  out.add(const _CompareChoice(
+    ticker: 'XAU',
+    name: 'Altın (Gram)',
+    type: AssetType.altin,
+    currency: 'USD',
+    source: 'gold',
+  ));
+  return out;
+}
+
+/// Compare için varlık seçim sheet — iki sekme: Portföyüm + Diğer.
+/// Arama kutusu aktif sekmede filtreler.
+class _ComparePickerSheet extends StatefulWidget {
+  final List<Asset> choices; // portföy varlıkları
+  final String? currentSelectionTicker;
+  final void Function(_CompareChoice?) onSelected;
+
+  const _ComparePickerSheet({
+    required this.choices,
+    required this.currentSelectionTicker,
+    required this.onSelected,
+  });
+
+  @override
+  State<_ComparePickerSheet> createState() => _ComparePickerSheetState();
+}
+
+class _ComparePickerSheetState extends State<_ComparePickerSheet>
+    with SingleTickerProviderStateMixin {
+  String _query = '';
+  late TabController _tabController;
+  late List<_CompareChoice> _catalog = _catalogChoices();
+  late final List<_CompareChoice> _portfolio = widget.choices
+      .map((a) => _CompareChoice(
+            ticker: a.ticker,
+            name: a.name,
+            type: a.type,
+            currency: a.currency,
+            source: 'portfolio',
+          ))
+      .toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _appendTefas();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  /// TEFAS fonlarını katalog listesine ekle. Uygulama açılışında disk
+  /// cache'ten hazır geldiği için pratikte anında döner; spinner gösterme.
+  Future<void> _appendTefas() async {
+    try {
+      final funds = await TefasService.instance.fetchAllFunds();
+      if (!mounted || funds.isEmpty) return;
+      final extra = funds.map((f) => _CompareChoice(
+            ticker: 'TEFAS:${f.code}',
+            name: f.name,
+            type: AssetType.fon,
+            currency: 'TRY',
+            source: 'tefas',
+          ));
+      setState(() {
+        _catalog = [..._catalog, ...extra];
+      });
+    } catch (_) {
+      // Cache yoksa TEFAS sekmesi olmadan devam et.
+    }
+  }
+
+  // TEFAS liste API'sinde olmayan (kurucu-only) fonlar için tek-fon
+  // lookup — kullanıcı ALE / YLB gibi bir kod yazınca arka planda çağrılır.
+  final Set<String> _lookupInFlight = {};
+  final Set<String> _lookupTried = {};
+
+  Future<void> _tryLookupTefas(String rawCode) async {
+    final code = rawCode.trim().toUpperCase();
+    if (code.length < 3 || code.length > 6) return;
+    if (_lookupTried.contains(code)) return;
+    if (_lookupInFlight.contains(code)) return;
+    if (_catalog.any((c) => c.ticker == 'TEFAS:$code')) return;
+    _lookupInFlight.add(code);
+    try {
+      final fund = await TefasService.instance.lookupFund(code);
+      _lookupTried.add(code);
+      if (!mounted || fund == null) return;
+      setState(() {
+        _catalog = [
+          ..._catalog,
+          _CompareChoice(
+            ticker: 'TEFAS:${fund.code}',
+            name: fund.name,
+            type: AssetType.fon,
+            currency: 'TRY',
+            source: 'tefas',
+          ),
+        ];
+      });
+    } catch (_) {
+      _lookupTried.add(code); // spam engelle
+    } finally {
+      _lookupInFlight.remove(code);
+    }
+  }
+
+  List<_CompareChoice> _filter(List<_CompareChoice> src) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return src;
+    return src.where((c) {
+      return c.ticker.toLowerCase().contains(q) ||
+          c.name.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  Widget _list(List<_CompareChoice> items) {
+    if (items.isEmpty) {
+      return Center(
+        child: Text(
+          'Sonuç yok.',
+          style: GoogleFonts.dmSans(color: Sandik.text58, fontSize: 13),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: items.length,
+      itemBuilder: (_, i) {
+        final c = items[i];
+        final selected = widget.currentSelectionTicker == c.ticker;
+        return ListTile(
+          leading: Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: c.type.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          title: Text(
+            c.ticker,
+            style: GoogleFonts.dmSans(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          subtitle: Text(
+            c.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.dmSans(color: Sandik.text58, fontSize: 11),
+          ),
+          trailing: selected
+              ? const Icon(Icons.check_rounded, color: Sandik.amber)
+              : null,
+          onTap: () => widget.onSelected(c),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: FractionallySizedBox(
+          heightFactor: 0.78,
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 8, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      'Karşılaştır',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (widget.currentSelectionTicker != null)
+                      TextButton(
+                        onPressed: () => widget.onSelected(null),
+                        child: const Text('Temizle'),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextField(
+                  autofocus: false,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search_rounded,
+                        color: Sandik.text58),
+                    hintText: 'Ticker veya isim ara…',
+                    hintStyle:
+                        const TextStyle(color: Sandik.text36, fontSize: 13),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.04),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    isDense: true,
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onChanged: (v) {
+                    setState(() => _query = v);
+                    // Kurucu-only TEFAS fonları (ör. ALE, YLB) fetchAllFunds
+                    // içinde yok — kullanıcı kısa bir kod yazınca arka
+                    // planda lookup yap, bulunursa katalog liste güncellenir.
+                    _tryLookupTefas(v);
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              TabBar(
+                controller: _tabController,
+                indicatorColor: Sandik.amber,
+                labelColor: Sandik.amber,
+                unselectedLabelColor: Sandik.text58,
+                labelStyle: GoogleFonts.dmSans(
+                    fontSize: 12, fontWeight: FontWeight.w700),
+                tabs: const [
+                  Tab(text: 'Portföyüm'),
+                  Tab(text: 'Diğer'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _list(_filter(_portfolio)),
+                    _list(_filter(_catalog)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const Color _kCompareColor = Color(0xFF4EA8DE);
+

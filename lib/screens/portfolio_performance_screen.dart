@@ -29,10 +29,13 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   final String? initialView;
   final AssetType? initialTypeFilter;
 
+  final double initialScrollOffset;
+
   const PortfolioPerformanceScreen({
     super.key,
     this.initialView = '',
     this.initialTypeFilter,
+    this.initialScrollOffset = 0,
   });
 
   @override
@@ -65,11 +68,15 @@ class _PortfolioPerformanceScreenState
   ChartViewport? _viewport;
   String? _viewportKey;
 
+  late ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
     _view = widget.initialView;
     _typeFilter = widget.initialTypeFilter;
+    _scrollController =
+        ScrollController(initialScrollOffset: widget.initialScrollOffset);
     _startIntradayTickIfNeeded();
   }
 
@@ -78,6 +85,7 @@ class _PortfolioPerformanceScreenState
     _intradayTick?.cancel();
     _zoomController?.dispose();
     _viewport?.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -519,6 +527,7 @@ class _PortfolioPerformanceScreenState
         intraday: isIntraday);
 
     return ListView(
+      controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       children: [
         if (activePartners.isNotEmpty) ...[
@@ -567,6 +576,9 @@ class _PortfolioPerformanceScreenState
                   builder: (_) => PortfolioPerformanceScreen(
                     initialView: _view,
                     initialTypeFilter: _typeFilter,
+                    // Landscape'te grafik hemen görünsün diye header'ları
+                    // aşağı kaydır. Yukarı swipe ile tab/filtre/period gelir.
+                    initialScrollOffset: 220,
                   ),
                 );
               },
