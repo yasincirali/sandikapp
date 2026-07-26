@@ -312,3 +312,13 @@ final chartMA20Provider = NotifierProvider<_BoolPrefNotifier, bool>(
 /// eşit görünür. Default kapalı — linear.
 final chartLogScaleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kChartLogScaleKey, false));
+
+// ─── Leaderboard opt-in ───────────────────────────────────────────────────────
+// Kullanıcı yarış (partner leaderboard) özelliğine katılmak için explicit
+// consent verir. Default kapalı (KVKK). Ortakların yarış'ında görünmek için
+// bu true olmalı; false ise kendisi de leaderboard'u göremez.
+
+const _kLeaderboardOptInKey = 'pref_leaderboard_opt_in';
+
+final leaderboardOptInProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(_kLeaderboardOptInKey, false));

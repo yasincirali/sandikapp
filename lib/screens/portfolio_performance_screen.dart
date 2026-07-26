@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
+import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle, Material, InkWell, MaterialPageRoute;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -23,6 +23,8 @@ import '../widgets/disclaimer_widget.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/zoomable_chart.dart';
 import '../widgets/fullscreen_chart_route.dart';
+import '../providers/preferences_provider.dart' show leaderboardOptInProvider;
+import 'leaderboard_screen.dart';
 import '../widgets/zoom_data_controller.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
@@ -568,6 +570,17 @@ class _PortfolioPerformanceScreenState
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
+            if (ref.watch(leaderboardOptInProvider) &&
+                activePartners.isNotEmpty) ...[
+              _LeaderboardChip(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const LeaderboardScreen()),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             _PortfolioFullscreenChip(
               onTap: () {
                 FullscreenChartRoute.open(
@@ -1736,6 +1749,51 @@ class TransactionSegment {
       required this.areaGradientStart,
       required this.areaGradientEnd,
       required this.thickness});
+}
+
+/// Yarış (leaderboard) ekranını açan küçük ikon buton — grafik container
+/// üstünde, fullscreen chip'inin solunda. Opt-in ve partner varsa gösterilir.
+class _LeaderboardChip extends StatelessWidget {
+  final VoidCallback onTap;
+  const _LeaderboardChip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: Sandik.amber.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: Sandik.amber.withValues(alpha: 0.45)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.emoji_events_rounded,
+                  size: 13, color: Sandik.amber),
+              const SizedBox(width: 4),
+              Text(
+                'YARIŞ',
+                style: GoogleFonts.dmSans(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: Sandik.amber,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Portfolio ekranı grafik container'ının üstündeki "genişlet" ikon butonu.
