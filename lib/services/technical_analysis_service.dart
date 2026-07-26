@@ -110,7 +110,11 @@ class TechnicalAnalysisService {
     double gains = 0, losses = 0;
     for (int i = prices.length - period; i < prices.length; i++) {
       final d = prices[i] - prices[i - 1];
-      if (d > 0) gains += d; else losses -= d;
+      if (d > 0) {
+        gains += d;
+      } else {
+        losses -= d;
+      }
     }
     final avgG = gains / period;
     final avgL = losses / period;
@@ -139,7 +143,7 @@ class TechnicalAnalysisService {
   static TechnicalIndicator macd(List<double> prices, AssetType type) {
     final fast = type == AssetType.fon ? 8 : 12;
     final slow = type == AssetType.fon ? 21 : 26;
-    final sig = 9;
+    const sig = 9;
     final label = 'MACD ($fast,$slow,$sig)';
 
     if (prices.length < slow + sig) {
@@ -176,7 +180,7 @@ class TechnicalAnalysisService {
   static TechnicalIndicator bollingerBands(List<double> prices, AssetType type) {
     final period = type == AssetType.altin ? 14 : 20;
     final mult = type == AssetType.doviz ? 1.5 : 2.0;
-    final label = 'Bollinger ($period, ${mult}σ)';
+    final label = 'Bollinger ($period, $multσ)';
 
     if (prices.length < period) {
       return TechnicalIndicator(
@@ -246,8 +250,8 @@ class TechnicalAnalysisService {
 
   static TechnicalIndicator stochastic(List<double> prices, AssetType type) {
     final period = type == AssetType.doviz ? 9 : 14;
-    final overbought = 80.0;
-    final oversold = 20.0;
+    const overbought = 80.0;
+    const oversold = 20.0;
     final label = 'Stokastik %K ($period)';
 
     if (prices.length < period) {
@@ -282,8 +286,8 @@ class TechnicalAnalysisService {
   // için OHLC gerekli; bizde sadece close var — proxy hesap kullanılır.
 
   static TechnicalIndicator adx(List<double> prices, AssetType type) {
-    final period = 14;
-    final label = 'ADX ($period)';
+    const period = 14;
+    const label = 'ADX ($period)';
 
     if (prices.length < period + 1) {
       return TechnicalIndicator(
@@ -295,7 +299,11 @@ class TechnicalAnalysisService {
     double sumUp = 0, sumDown = 0, sumRange = 0;
     for (int i = 1; i < recent.length; i++) {
       final d = recent[i] - recent[i - 1];
-      if (d > 0) sumUp += d; else sumDown -= d;
+      if (d > 0) {
+        sumUp += d;
+      } else {
+        sumDown -= d;
+      }
       sumRange += d.abs();
     }
     if (sumRange == 0) {
@@ -321,8 +329,8 @@ class TechnicalAnalysisService {
   // ── 7. Williams %R — aşırı alım/satım osilatörü (PREMIUM) ─────────────────
 
   static TechnicalIndicator williamsR(List<double> prices, AssetType type) {
-    final period = 14;
-    final label = 'Williams %R ($period)';
+    const period = 14;
+    const label = 'Williams %R ($period)';
 
     if (prices.length < period) {
       return TechnicalIndicator(
@@ -353,8 +361,8 @@ class TechnicalAnalysisService {
   // ── 8. CCI (Commodity Channel Index) (PREMIUM) ────────────────────────────
 
   static TechnicalIndicator cci(List<double> prices, AssetType type) {
-    final period = 20;
-    final label = 'CCI ($period)';
+    const period = 20;
+    const label = 'CCI ($period)';
 
     if (prices.length < period) {
       return TechnicalIndicator(

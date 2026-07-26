@@ -108,7 +108,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final confirmed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => LegalDocScreen(
+        builder: (_) => const LegalDocScreen(
           title: 'Yasal Koşullar & KVKK Aydınlatma',
           icon: Icons.gavel_rounded,
           blocks: LegalDocs.terms,
@@ -131,7 +131,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final confirmed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => LegalDocScreen(
+        builder: (_) => const LegalDocScreen(
           title: 'Açık Rıza — Yurt Dışı Veri Aktarımı',
           icon: Icons.public_rounded,
           blocks: LegalDocs.privacy,

@@ -129,7 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               'miktar ve maliyeti girin; anlık değer ve kâr/zarar otomatik hesaplanır.',
       align: _BalloonAlign.bottom,
     ),
-    _DemoStep(
+    const _DemoStep(
       icon: Icons.bolt_rounded,
       title: 'Hızlı ve toplu giriş',
       body: 'Varlık ekle ekranındaki ⚡ ile "100 dolar", "10 gram altın 4500 lira", '
@@ -137,14 +137,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           'Sepet ile birden çok işlemi tek onayda kaydedebilirsiniz.',
       align: _BalloonAlign.center,
     ),
-    _DemoStep(
+    const _DemoStep(
       icon: Icons.insights_rounded,
       title: 'Performans ve grafikler',
       body: 'Toplam getiri grafiği, kâr/zarar dökümü, varlık kırılımı ve tarihsel '
           'performansınızı Portföy sekmesindeki grafik ikonundan görün.',
       align: _BalloonAlign.top,
     ),
-    _DemoStep(
+    const _DemoStep(
       icon: Icons.notifications_active_rounded,
       title: 'Teknik sinyaller',
       body: 'Portföyünüz her gün otomatik olarak analiz edilir. Al/sat sinyalleri '
@@ -152,14 +152,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           'sinyalleri almak istediğinizi seçebilirsiniz.',
       align: _BalloonAlign.top,
     ),
-    _DemoStep(
+    const _DemoStep(
       icon: Icons.people_rounded,
       title: 'Ortakla paylaşın',
       body: 'Profil sekmesinden davet kodu üretip eşinize veya iş ortağınıza gönderin. '
           'Onaylandığında portföyleri tek bir ekranda birlikte takip edersiniz.',
       align: _BalloonAlign.top,
     ),
-    _DemoStep(
+    const _DemoStep(
       icon: Icons.workspace_premium_rounded,
       title: 'Sınırsız Sandık Premium',
       body: 'Ücretsiz plan belirli sayıda varlık ile sınırlıdır. Premium ile '

@@ -346,9 +346,9 @@ class _ZoomableChartState extends State<ZoomableChart> {
                   behavior: HitTestBehavior.translucent,
                   onHorizontalDragStart: _onTimeDragStart,
                   onHorizontalDragUpdate: _onTimeDragUpdate,
-                  child: MouseRegion(
+                  child: const MouseRegion(
                     cursor: SystemMouseCursors.resizeColumn,
-                    child: const SizedBox.expand(),
+                    child: SizedBox.expand(),
                   ),
                 ),
               ),
@@ -373,9 +373,9 @@ class _ZoomableChartState extends State<ZoomableChart> {
                         border: Border.all(
                             color: Colors.white.withValues(alpha: 0.2)),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Icon(Icons.zoom_out_map_rounded,
                               size: 14, color: Colors.white70),
                           SizedBox(width: 4),

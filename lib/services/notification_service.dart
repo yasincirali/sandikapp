@@ -117,13 +117,13 @@ class NotificationService {
     if (!await _prefEnabled(_kPartnerNotificationsKey)) return;
     if (!_initialized) await init();
 
-    final androidDetails = AndroidNotificationDetails(
+    const androidDetails = AndroidNotificationDetails(
       'partner_invite_channel',
       'Ortaklik Bildirimleri',
       channelDescription: 'Yeni ortaklik onay istekleri',
       importance: Importance.max,
       priority: Priority.high,
-      color: const Color(0xFFF4B400),
+      color: Color(0xFFF4B400),
       colorized: true,
     );
 
@@ -137,7 +137,7 @@ class NotificationService {
       inviteId.hashCode,
       'Yeni ortaklik istegi',
       '$requesterName ortaklik kodunuzu girdi.',
-      NotificationDetails(android: androidDetails, iOS: iosDetails),
+      const NotificationDetails(android: androidDetails, iOS: iosDetails),
       payload: '$_partnerInvitePayloadPrefix$inviteId',
     );
   }

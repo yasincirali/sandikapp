@@ -97,11 +97,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (e) {
       await _showMsg(e.toString(), isError: true);
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _generating = false;
           _busy = false;
         });
+      }
     }
   }
 
@@ -123,11 +124,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (e) {
       await _showMsg(e.toString(), isError: true);
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _submitting = false;
           _busy = false;
         });
+      }
     }
   }
 
@@ -831,8 +833,9 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
     } catch (_) {
       profile = null;
     }
-    if (mounted)
+    if (mounted) {
       setState(() => _requesterName = profile?.displayName ?? 'Kullanıcı');
+    }
   }
 
   @override

@@ -107,13 +107,15 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
           data: (partnerMap) {
             List<Asset> targetAssets = [];
-            if (_view == '')
+            if (_view == '') {
               targetAssets = pState.assets;
-            else if (_view != null)
+            } else if (_view != null)
               targetAssets = partnerMap[_view] ?? [];
             else {
               targetAssets = [...pState.assets];
-              for (final list in partnerMap.values) targetAssets.addAll(list);
+              for (final list in partnerMap.values) {
+                targetAssets.addAll(list);
+              }
             }
 
             return FutureBuilder<Map<int, double>>(
@@ -152,12 +154,12 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                       _buildChartSection(
                           segments, startDate, endDate, targetAssets),
                     const SizedBox(height: 32),
-                    _SectionTitle('KATEGORİ DAĞILIMI'),
+                    const _SectionTitle('KATEGORİ DAĞILIMI'),
                     const SizedBox(height: 16),
                     _buildCategoryBreakdown(targetAssets, pState),
                     const SizedBox(height: 32),
                     if (_view == null && activePartners.isNotEmpty) ...[
-                      _SectionTitle('ORTAKLAR'),
+                      const _SectionTitle('ORTAKLAR'),
                       const SizedBox(height: 16),
                       _buildPartnerBreakdown(
                           pState, partnerMap, activePartners),
@@ -187,7 +189,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.show_chart_rounded,
+            const Icon(Icons.show_chart_rounded,
                 size: 36, color: Sandik.text36),
             const SizedBox(height: 12),
             Text(
@@ -250,9 +252,10 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
 
   Widget _buildChartSection(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets) {
-    if (segments.isEmpty)
+    if (segments.isEmpty) {
       return const SizedBox(
           height: 200, child: Center(child: Text('Veri yok')));
+    }
     double minY = double.infinity;
     double maxY = -double.infinity;
     for (final seg in segments) {
@@ -397,9 +400,10 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
   Widget _buildPartnerBreakdown(PortfolioState myState,
       Map<String, List<Asset>> partnerMap, List<AppUser> partners) {
     double totalAll = myState.totalValue;
-    for (final list in partnerMap.values)
+    for (final list in partnerMap.values) {
       totalAll +=
           list.fold(0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
+    }
 
     return Column(
       children: [

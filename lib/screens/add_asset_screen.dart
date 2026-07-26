@@ -569,7 +569,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.calculate_outlined,
+            const Icon(Icons.calculate_outlined,
                 color: Sandik.text36, size: 18),
             const SizedBox(width: 10),
             Expanded(
@@ -695,7 +695,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   horizontal: 14, vertical: 12),
               child: Row(
                 children: [
-                  Icon(Icons.notes_rounded,
+                  const Icon(Icons.notes_rounded,
                       size: 16, color: Sandik.text58),
                   const SizedBox(width: 10),
                   Text('Not ekle',

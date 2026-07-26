@@ -95,12 +95,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               if (v == 'delete') _confirmDelete(context);
             },
             itemBuilder: (_) => [
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'delete',
                 child: Row(
                   children: [
                     Icon(Icons.delete_outline_rounded, color: red, size: 20),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text('Sil', style: TextStyle(color: red)),
                   ],
                 ),

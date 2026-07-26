@@ -72,14 +72,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
             ),
             title: const Text('Uygulamadan Çık', style: TextStyle(color: Colors.white)),
-            content: Text(
+            content: const Text(
               'Uygulamadan çıkmak istiyor musunuz?',
               style: TextStyle(color: Sandik.text58),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text('Vazgeç', style: TextStyle(color: Sandik.text36)),
+                child: const Text('Vazgeç', style: TextStyle(color: Sandik.text36)),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),

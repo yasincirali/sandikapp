@@ -201,10 +201,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-        content: SingleChildScrollView(
+        content: const SingleChildScrollView(
           child: Text(
             disclaimerText,
-            style: const TextStyle(
+            style: TextStyle(
               color: Sandik.text90,
               fontSize: 13,
               height: 1.55,
@@ -250,7 +250,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
               'Mail uygulaması açılamadı. Lütfen $_supportEmail adresine yazın.'),
         ),

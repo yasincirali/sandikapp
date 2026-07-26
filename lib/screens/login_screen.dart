@@ -113,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Center(
                       child: Column(
                         children: [
-                          SandikLogo(size: 110),
+                          const SandikLogo(size: 110),
                           const SizedBox(height: 16),
                           Text(
                             'sandık',

@@ -133,7 +133,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.tune_rounded, size: 14, color: Sandik.amber),
+                  const Icon(Icons.tune_rounded, size: 14, color: Sandik.amber),
                   const SizedBox(width: 4),
                   Text(
                     'Göstergeleri Ayarla',
@@ -1665,8 +1665,8 @@ class _PnlSummaryStrip extends StatelessWidget {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
             child: Icon(Icons.arrow_forward_rounded,
                 size: 14, color: Sandik.text36),
           ),
@@ -1708,7 +1708,7 @@ class _PnlSummaryStrip extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.horizontal_rule_rounded,
+                  const Icon(Icons.horizontal_rule_rounded,
                       size: 14, color: Sandik.text58),
                   const SizedBox(width: 4),
                   Text('Değişim yok',
@@ -1789,7 +1789,7 @@ class _FullscreenChip extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.08),
             ),
           ),
-          child: Icon(
+          child: const Icon(
             Icons.fullscreen_rounded,
             size: 16,
             color: Sandik.text58,

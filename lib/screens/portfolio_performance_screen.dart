@@ -679,7 +679,7 @@ class _PortfolioPerformanceScreenState
   ///   tarihlerine göre).
   /// - Simülasyon: bugünkü net portföy tüm dönem boyunca elde tutulmuş gibi.
   Widget _buildModeToggle() {
-    final options = const [
+    const options = [
       (label: 'Gerçek', sim: false),
       (label: 'Simülasyon', sim: true),
     ];
