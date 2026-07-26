@@ -938,7 +938,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     // Y sınırlarını görünür X aralığındaki spot'lara göre
                     // hesaplayan closure — zoom sırasında yeniden çağrılır.
                     ({double minY, double maxY}) computeY(
-                        double viewMinX, double viewMaxX) {
+                        double viewMinX, double viewMaxX,
+                        {List<FlSpot>? extraSpots}) {
                       double minY = double.infinity;
                       double maxY = -double.infinity;
                       for (final seg in segments) {
@@ -948,15 +949,33 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           if (spot.y < minY) minY = spot.y;
                         }
                       }
+                      // Compare barı da Y aralığına dahil edilsin ki
+                      // 2. varlığın çizgisi grafik dışına düşmesin.
+                      if (extraSpots != null) {
+                        for (final spot in extraSpots) {
+                          if (spot.x < viewMinX || spot.x > viewMaxX) continue;
+                          if (spot.y > maxY) maxY = spot.y;
+                          if (spot.y < minY) minY = spot.y;
+                        }
+                      }
                       if (minY == double.infinity) minY = 0;
                       if (maxY == -double.infinity) maxY = 1000;
 
-                      // Anchor merkezli ölçek — ALIŞ çizgisi ortada dursun.
-                      final center =
-                          anchorY > 0 ? anchorY : (minY + maxY) / 2;
+                      // Compare modda anchor 100 (normalize base). Aksi
+                      // halde anchorY (ham ilk noktanın normalize hali).
+                      final center = compareOn
+                          ? 100.0
+                          : (anchorY > 0 ? anchorY : (minY + maxY) / 2);
                       double maxAbsDev = 0;
                       for (final seg in segments) {
                         for (final spot in seg.spots) {
+                          if (spot.x < viewMinX || spot.x > viewMaxX) continue;
+                          final dev = (spot.y - center).abs();
+                          if (dev > maxAbsDev) maxAbsDev = dev;
+                        }
+                      }
+                      if (extraSpots != null) {
+                        for (final spot in extraSpots) {
                           if (spot.x < viewMinX || spot.x > viewMaxX) continue;
                           final dev = (spot.y - center).abs();
                           if (dev > maxAbsDev) maxAbsDev = dev;
@@ -968,8 +987,13 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           maxAbsDev < minDev ? minDev : maxAbsDev;
                       final yPad = halfRange * 0.35;
                       final outMaxY = center + halfRange + yPad;
-                      final outMinY = (center - halfRange - yPad)
-                          .clamp(0, double.infinity);
+                      // Compare modda negatif % olabilir (varlık düşmüş) —
+                      // 0'a clamp'lemeyelim; ham hesabı bırak.
+                      final outMinY = compareOn
+                          ? (center - halfRange - yPad)
+                          : (center - halfRange - yPad)
+                              .clamp(0, double.infinity)
+                              .toDouble();
                       return (minY: outMinY.toDouble(), maxY: outMaxY);
                     }
 
@@ -1125,7 +1149,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             fullMaxX: focusMax,
                             height: 400 - 36 - 16,
                             builder: (viewMinX, viewMaxX) {
-                              final yBounds = computeY(viewMinX, viewMaxX);
+                              final yBounds = computeY(
+                                viewMinX,
+                                viewMaxX,
+                                extraSpots: compareBar?.spots,
+                              );
                               final viewMinY = yBounds.minY;
                               final viewMaxY = yBounds.maxY;
                               return LineChartData(
@@ -1995,6 +2023,8 @@ class _CompareChoice {
 
   /// HistoryService'in beklediği minimum alanları sağlayan sanal Asset.
   /// Grafik için sadece ticker/type/currency kullanılıyor.
+  /// addedDate çok geriye ayarlanır — HistoryService `addedTs > dayTs` ise
+  /// quantity=0 döndürüyor, bu compare için tüm dönemde quantity=1 olsun.
   Asset toVirtualAsset() {
     return Asset(
       id: 'compare-$ticker',
@@ -2006,6 +2036,7 @@ class _CompareChoice {
       purchasePrice: 1,
       currency: currency,
       notes: '',
+      addedDate: DateTime(2000, 1, 1),
     );
   }
 }
