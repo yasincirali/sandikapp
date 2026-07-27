@@ -13,7 +13,6 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'signal_settings_screen.dart';
-import 'leaderboard_screen.dart';
 
 /// Profil → Ayarlar ekranı.
 ///
@@ -427,16 +426,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: ref.watch(leaderboardOptInProvider),
               onChanged: (v) =>
                   ref.read(leaderboardOptInProvider.notifier).set(v),
-            ),
-            _SettingsTile(
-              icon: Icons.leaderboard_outlined,
-              title: 'Yarış Sıralamasını Aç',
-              subtitle: 'Ortaklarınla getiri yüzdesini karşılaştır',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const LeaderboardScreen()),
-              ),
             ),
             const SizedBox(height: 28),
             const _SectionTitle('SİNYALLER'),

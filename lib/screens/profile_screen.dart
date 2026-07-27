@@ -16,6 +16,7 @@ import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
 import '../utils/friendly_error.dart';
 import 'settings_screen.dart';
+import '../widgets/leaderboard_hero_card.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -295,9 +296,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           data: (partners) => partners.isEmpty
                               ? _buildEmptyPartners()
                               : Column(
-                                  children: partners
-                                      .map((p) => _buildPartnerTile(p))
-                                      .toList(),
+                                  children: [
+                                    ...partners
+                                        .map((p) => _buildPartnerTile(p)),
+                                    const SizedBox(height: 20),
+                                    const LeaderboardHeroCard(),
+                                  ],
                                 ),
                         ),
                         const SizedBox(height: 40),
