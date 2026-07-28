@@ -15,6 +15,19 @@ import 'history_service.dart';
 /// netCashFlow: period içinde yapılan (buy TRY) - (sell TRY) — deposit
 /// etkisini ROI'den çıkarır ki büyük yatırım yapan biri "daha iyi
 /// performans göstermiş" gibi görünmesin.
+/// Top gainer satırı — anonim, sadece rank + ROI + tür yüzdeleri.
+class TopGainerAllocation {
+  final int rank;
+  final double roiPct;
+  /// Tür bazlı yüzde, örn. {"hisse": 45.2, "doviz": 30.1, ...}. Sum ≈ 100.
+  final Map<String, double> allocation;
+  const TopGainerAllocation({
+    required this.rank,
+    required this.roiPct,
+    required this.allocation,
+  });
+}
+
 class LeaderboardService {
   static final LeaderboardService instance = LeaderboardService._();
   LeaderboardService._();
@@ -140,6 +153,123 @@ class LeaderboardService {
       });
     } catch (_) {
       // Sessizce yut — global percentile "yakında" hâli, kullanıcıyı bozmasın.
+    }
+  }
+
+  /// Aktif ortakların son ROI snapshot'larını Supabase'ten çeker.
+  /// Her cihaz bu değeri okuyacak → iki cihaz aynı satırı görür (hesap
+  /// tutarsızlığı biter). Snapshot atmayan partner map'te olmaz —
+  /// caller onu "veri yok" olarak gösterir.
+  ///
+  /// Dönen map: partnerUserId → (roi%, snapshot'ın atıldığı zaman).
+  Future<Map<String, ({double roi, DateTime updatedAt})>>
+      fetchPartnerRois(int periodDays) async {
+    try {
+      final res = await Supabase.instance.client.rpc(
+        'get_partner_rois',
+        params: {'p_period_days': periodDays},
+      );
+      if (res == null) return const {};
+      final rows = res as List<dynamic>;
+      final out = <String, ({double roi, DateTime updatedAt})>{};
+      for (final r in rows) {
+        final row = r as Map<String, dynamic>;
+        final uid = row['user_id'] as String?;
+        final roi = (row['roi_pct'] as num?)?.toDouble();
+        final tsRaw = row['updated_at'];
+        if (uid == null || roi == null) continue;
+        final ts = tsRaw is String
+            ? DateTime.tryParse(tsRaw) ?? DateTime.now()
+            : DateTime.now();
+        out[uid] = (roi: roi, updatedAt: ts);
+      }
+      return out;
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  /// Verilen aktif portföy asset'lerinden tür bazlı yüzdesel dağılım
+  /// hesaplar. Net pozisyonlar (buy - sell) üzerinden, TL bazlı toplam
+  /// değere göre. Sonuç `{tür: %}` map — sum ≈ 100 (yalnızca değeri > 0
+  /// olan türler girer).
+  ///
+  /// Kullanım: computeAllocation'un çıktısı `uploadAllocationSnapshot`
+  /// için doğrudan geçilebilir. Client-side hesap gerekiyor çünkü FX
+  /// conversion ve net pozisyon mantığı server'da yok.
+  Map<String, double> computeAllocation(
+    List<Asset> assets,
+    double Function(double, String) toTRY,
+  ) {
+    final byType = <String, double>{};
+    for (final p in aggregatePositions(assets)) {
+      final a = p.asDisplayAsset();
+      final tl = toTRY(a.totalValue, a.currency);
+      if (tl <= 0) continue;
+      byType.update(a.type.name, (v) => v + tl, ifAbsent: () => tl);
+    }
+    final total = byType.values.fold<double>(0, (s, v) => s + v);
+    if (total <= 0) return const {};
+    return {
+      for (final e in byType.entries) e.key: (e.value / total) * 100.0,
+    };
+  }
+
+  /// Kullanıcının tür bazlı % dağılımını Supabase'e yazar. Miktar, TL,
+  /// ticker göndermez — sadece {tür: %}. Aktif varlıklar (buy - sell)
+  /// üzerinden TL bazlı hesaplanmış oranlar client tarafında hazırlanır.
+  ///
+  /// [allocation] map: {"hisse": 45.2, "doviz": 30.1, ...} — sum ≈ 100.
+  /// [typeCount] map'teki tür sayısı; RPC anti-fingerprint filtresi için.
+  Future<void> uploadAllocationSnapshot({
+    required String userId,
+    required Map<String, double> allocation,
+    required int typeCount,
+  }) async {
+    try {
+      await Supabase.instance.client.from('user_allocation_snapshots').insert({
+        'user_id': userId,
+        'allocation_pct': allocation,
+        'type_count': typeCount,
+      });
+    } catch (_) {
+      // Sessizce yut — ikincil özellik, ana leaderboard'u bozmasın.
+    }
+  }
+
+  /// Top N gainer'ın anonim portföy dağılımını çeker. user_id/isim/
+  /// ticker YOK; sadece rank + roi% + tür yüzdeleri.
+  Future<List<TopGainerAllocation>> fetchTopGainersAllocation({
+    required int periodDays,
+    int topN = 5,
+  }) async {
+    try {
+      final res = await Supabase.instance.client.rpc(
+        'get_top_gainers_allocation',
+        params: {'p_period_days': periodDays, 'p_top_n': topN},
+      );
+      if (res == null) return const [];
+      final rows = res as List<dynamic>;
+      final out = <TopGainerAllocation>[];
+      for (final r in rows) {
+        final row = r as Map<String, dynamic>;
+        final rank = (row['rank'] as num?)?.toInt();
+        final roi = (row['roi_pct'] as num?)?.toDouble();
+        final allocRaw = row['allocation_pct'];
+        if (rank == null || roi == null || allocRaw is! Map) continue;
+        final alloc = <String, double>{
+          for (final e in allocRaw.entries)
+            e.key as String: (e.value as num).toDouble(),
+        };
+        out.add(TopGainerAllocation(
+          rank: rank,
+          roiPct: roi,
+          allocation: alloc,
+        ));
+      }
+      return out;
+    } catch (_) {
+      return const [];
     }
   }
 

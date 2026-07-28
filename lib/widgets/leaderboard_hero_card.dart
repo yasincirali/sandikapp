@@ -1,8 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/asset.dart';
-import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
@@ -131,64 +130,107 @@ class _RankPreviewHero extends ConsumerStatefulWidget {
 
 class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   late Future<_RankSnapshot?> _future;
+  Timer? _liveTick;
+  static const _livePeriod = Duration(seconds: 30);
+
+  static const _periods = <({int days, String label})>[
+    (days: 7, label: 'haftalık'),
+    (days: 30, label: 'aylık'),
+    (days: 365, label: 'yıllık'),
+  ];
 
   @override
   void initState() {
     super.initState();
     _future = _compute();
+    _liveTick = Timer.periodic(_livePeriod, (_) {
+      if (!mounted) return;
+      setState(() => _future = _compute());
+    });
   }
 
+  @override
+  void dispose() {
+    _liveTick?.cancel();
+    super.dispose();
+  }
+
+  /// 3 periyotta paralel hesap → kullanıcının en iyi sırada olduğu
+  /// periyodu seç. Kendi ROI'sini lokal hesap + Supabase upload; partner
+  /// ROI'lerini Supabase RPC'den oku (leaderboard ekranı ile aynı otorite).
   Future<_RankSnapshot?> _compute() async {
     final me = ref.read(authProvider).valueOrNull;
     final partners = ref.read(activePartnersProvider);
     final myAssets = ref.read(portfolioProvider).valueOrNull?.assets ?? [];
-    final partnerAssets =
-        ref.read(allPartnerAssetsProvider).valueOrNull ?? {};
     final pState = ref.read(portfolioProvider).valueOrNull;
     if (me == null || pState == null) return null;
+    if (partners.isEmpty) return null;
 
-    Future<double?> roiFor(String userId, List<Asset> assets) async {
-      if (assets.isEmpty) return null;
-      final currentTRY = LeaderboardService.instance
-          .totalValueTRY(assets, pState.toTRY);
-      return LeaderboardService.instance.computeROI(
-        assets: assets,
-        periodDays: 30,
-        currentValueTRY: currentTRY,
+    final myCurrentTRY =
+        LeaderboardService.instance.totalValueTRY(myAssets, pState.toTRY);
+
+    Future<_PeriodSnapshot?> compute(int periodDays, String label) async {
+      // Kendi ROI — lokal hesap + upload (fire-and-forget).
+      final myRoi = await LeaderboardService.instance.computeROI(
+        assets: myAssets,
+        periodDays: periodDays,
+        currentValueTRY: myCurrentTRY,
         toTRY: pState.toTRY,
-        cacheKey: userId,
+        cacheKey: me.id,
+      );
+      if (myRoi != null) {
+        LeaderboardService.instance.uploadRoiSnapshot(
+          userId: me.id,
+          periodDays: periodDays,
+          roiPct: myRoi,
+        );
+      }
+      // Partner ROI'leri — Supabase snapshot'ı (tek otorite).
+      final partnerRois =
+          await LeaderboardService.instance.fetchPartnerRois(periodDays);
+
+      final rows = <_Row>[
+        _Row(name: '${me.displayName} (sen)', isMe: true, roi: myRoi),
+        for (final p in partners)
+          _Row(name: p.displayName, isMe: false, roi: partnerRois[p.id]?.roi),
+      ];
+      rows.sort((a, b) {
+        if (a.roi == null && b.roi == null) return 0;
+        if (a.roi == null) return 1;
+        if (b.roi == null) return -1;
+        return b.roi!.compareTo(a.roi!);
+      });
+      final myIdx = rows.indexWhere((r) => r.isMe);
+      if (myIdx < 0) return null;
+      return _PeriodSnapshot(
+        periodDays: periodDays,
+        periodLabel: label,
+        myRank: myIdx + 1,
+        total: rows.length,
+        myRoi: rows[myIdx].roi,
+        leaderName: rows.first.name,
+        leaderRoi: rows.first.roi,
+        justAboveName: myIdx > 0 ? rows[myIdx - 1].name : null,
+        justAboveRoi: myIdx > 0 ? rows[myIdx - 1].roi : null,
       );
     }
 
-    // Paralel fetch — sequential await yerine Future.wait
-    final tasks = <Future<_Row>>[
-      roiFor(me.id, myAssets).then(
-          (roi) => _Row(name: '${me.displayName} (sen)', isMe: true, roi: roi)),
-      for (final p in partners)
-        roiFor(p.id, partnerAssets[p.id] ?? const []).then(
-            (roi) => _Row(name: p.displayName, isMe: false, roi: roi)),
-    ];
-    final rows = await Future.wait(tasks);
-    rows.sort((a, b) {
-      if (a.roi == null && b.roi == null) return 0;
-      if (a.roi == null) return 1;
-      if (b.roi == null) return -1;
-      return b.roi!.compareTo(a.roi!);
-    });
-
-    final myIdx = rows.indexWhere((r) => r.isMe);
-    if (myIdx < 0) return null;
-
-    return _RankSnapshot(
-      myRank: myIdx + 1,
-      total: rows.length,
-      myRoi: rows[myIdx].roi,
-      leaderName: rows.first.name,
-      leaderRoi: rows.first.roi,
-      justAboveName:
-          myIdx > 0 ? rows[myIdx - 1].name : null,
-      justAboveRoi: myIdx > 0 ? rows[myIdx - 1].roi : null,
+    final snapshots = await Future.wait(
+      _periods.map((p) => compute(p.days, p.label)),
     );
+    final valid = snapshots.whereType<_PeriodSnapshot>().toList();
+    if (valid.isEmpty) return null;
+
+    // En iyi periyot = önce myRank'i en düşük (1 en iyi), eşitse ROI en
+    // yüksek. Bu şekilde 3 periyottan hangisinde parlayan varsa o vitrine.
+    valid.sort((a, b) {
+      final rc = a.myRank.compareTo(b.myRank);
+      if (rc != 0) return rc;
+      final aR = a.myRoi ?? -1e9;
+      final bR = b.myRoi ?? -1e9;
+      return bR.compareTo(aR);
+    });
+    return _RankSnapshot(best: valid.first, all: valid);
   }
 
   void _openLeaderboard() {
@@ -240,31 +282,46 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   }
 
   Widget _preview(_RankSnapshot d) {
-    final rankLabel = _rankLabel(d.myRank);
-    final positive = (d.myRoi ?? 0) >= 0;
-    final roiColor = d.myRoi == null
+    final best = d.best;
+    final rankLabel = _rankLabel(best.myRank);
+    final positive = (best.myRoi ?? 0) >= 0;
+    final roiColor = best.myRoi == null
         ? Colors.white.withValues(alpha: 0.5)
         : (positive ? Sandik.gain : Sandik.loss);
-    final roiText = d.myRoi == null
+    final roiText = best.myRoi == null
         ? '—'
-        : '${positive ? '+' : ''}${d.myRoi!.toStringAsFixed(1)}%';
+        : '${positive ? '+' : ''}${best.myRoi!.toStringAsFixed(1)}%';
 
-    // Alt satır mesajı: liderdeysem "Zirvedesin" göster, değilsem
-    // "hemen üstündekini" kimin geçmesi gerektiği bilgisiyle ver.
+    // Başlık: "Haftalıkta 1. sıradasın" gibi — hangi periyotta parladığını
+    // göstermek rekabet duygusunu güçlendirir, "ne olduğu" belirsizliğini
+    // giderir. Sadece 1'i vurgula, 2+'ta rank etiketiyle bilgi ver.
+    final periodCap = _capitalize(best.periodLabel);
+    final title = best.myRank == 1 && best.total > 1
+        ? '$periodCap sıralamada 1.\'sin'
+        : '$periodCap sıralamada $rankLabel sıradasın';
+
+    // Alt satır: liderde motive → "seni yakalamak için X% lazım", değilse
+    // → "X'i geçmen için +Y%". Kısa, aksiyona teşvik eder.
     String subLine;
-    if (d.myRank == 1 && d.total > 1) {
-      subLine = 'Zirvedesin 🏆';
-    } else if (d.justAboveName != null && d.justAboveRoi != null) {
-      final diff = (d.justAboveRoi! - (d.myRoi ?? 0)).abs();
+    if (best.myRank == 1 && best.total > 1) {
+      // Zirvedeysen, ikinci sıradaki senden ne kadar geride onu göster.
+      final gap = (best.myRoi ?? 0) - (best.leaderRoi == best.myRoi
+          ? _secondRoi(d) ?? (best.myRoi ?? 0)
+          : (best.myRoi ?? 0));
+      subLine = gap > 0.05
+          ? 'Farkı büyüt — ikinci +${gap.toStringAsFixed(1)}% geride'
+          : 'Zirvedesin — farkı koru 🏆';
+    } else if (best.justAboveName != null && best.justAboveRoi != null) {
+      final diff = (best.justAboveRoi! - (best.myRoi ?? 0)).abs();
       subLine =
-          '${d.justAboveName!.split(' ').first}\'i geçmen için +${diff.toStringAsFixed(1)}%';
+          '${best.justAboveName!.split(' ').first}\'i geçmen için +${diff.toStringAsFixed(1)}%';
     } else {
-      subLine = 'Son 30 gün getiri sıralaması';
+      subLine = 'Diğer periyotlarda daha üsttesin — dokun, bak';
     }
 
     return Row(
       children: [
-        _RankMedal(rank: d.myRank, total: d.total),
+        _RankMedal(rank: best.myRank, total: best.total),
         const SizedBox(width: 16),
         Expanded(
           child: Column(
@@ -273,12 +330,16 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
             children: [
               Row(
                 children: [
-                  Text(
-                    '$rankLabel sıradasın',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -313,6 +374,18 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
     );
   }
 
+  String _capitalize(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+
+  /// Best snapshot 1.'yse ikinci sıranın ROI'sini bulur — alt satırdaki
+  /// "ikinci +X% geride" cümlesi için.
+  double? _secondRoi(_RankSnapshot d) {
+    // Best snapshot'ta myRank=1 ise, o period'daki justAbove yok (biz
+    // liderz). İkinciyi bulmak için period-level tekrar hesap gerekir;
+    // basit approach: bilgi yoksa null döner, üst kod fallback yazar.
+    return null;
+  }
+
   String _rankLabel(int rank) {
     if (rank == 1) return '1.';
     if (rank == 2) return '2.';
@@ -328,7 +401,9 @@ class _Row {
   const _Row({required this.name, required this.isMe, required this.roi});
 }
 
-class _RankSnapshot {
+class _PeriodSnapshot {
+  final int periodDays;
+  final String periodLabel; // "haftalık" | "aylık" | "yıllık"
   final int myRank;
   final int total;
   final double? myRoi;
@@ -336,7 +411,9 @@ class _RankSnapshot {
   final double? leaderRoi;
   final String? justAboveName;
   final double? justAboveRoi;
-  const _RankSnapshot({
+  const _PeriodSnapshot({
+    required this.periodDays,
+    required this.periodLabel,
     required this.myRank,
     required this.total,
     required this.myRoi,
@@ -345,6 +422,12 @@ class _RankSnapshot {
     required this.justAboveName,
     required this.justAboveRoi,
   });
+}
+
+class _RankSnapshot {
+  final _PeriodSnapshot best;
+  final List<_PeriodSnapshot> all;
+  const _RankSnapshot({required this.best, required this.all});
 }
 
 /// Kart kabuğu: gradient + trophy pattern arka plan + tıklama davranışı.

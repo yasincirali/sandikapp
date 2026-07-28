@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/asset.dart';
+import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -87,17 +89,18 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                   _GlobalPercentileTeaser(
                     periodDays: _periods[_periodIdx].days,
                   ),
+                  _TopGainersAllocationCard(
+                    periodDays: _periods[_periodIdx].days,
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 12),
                     child: Text(
                       activePartners.isEmpty
-                          ? 'Genel sıralama, tüm Sandık kullanıcıları arasında '
-                              'anonim yüzdeliktir. Ortak eklersen aranızda '
-                              'ayrıca sıralama görürsün.'
-                          : 'Sıralama, ortakların net getirisi (%) — deposit '
-                              've çekme etkisi hariç. Kimsenin varlık listesi '
-                              'gösterilmez.',
+                          ? 'Sıralamalar ve dağılımlar anonimdir — kimlik, '
+                              'miktar ve TL bilgisi asla paylaşılmaz.'
+                          : 'Ortak sıralaması net getiri (%) — deposit/çekim '
+                              'hariç. Kimsenin varlık listesi görünmez.',
                       style: GoogleFonts.dmSans(
                         fontSize: 10,
                         color: Sandik.text36,
@@ -191,6 +194,8 @@ class _SoloPanel extends StatefulWidget {
 class _SoloPanelState extends State<_SoloPanel> {
   double? _myRoi;
   bool _computing = false;
+  Timer? _liveTick;
+  static const _livePeriod = Duration(seconds: 15);
 
   @override
   void initState() {
@@ -202,6 +207,15 @@ class _SoloPanelState extends State<_SoloPanel> {
             periodDays: widget.periodDays,
           );
     _refresh();
+    _liveTick = Timer.periodic(_livePeriod, (_) {
+      if (mounted) _refresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    _liveTick?.cancel();
+    super.dispose();
   }
 
   @override
@@ -506,12 +520,18 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   // ekran anında bu satırlarla açılır; Future dolunca setState ile
   // yenilenir. Kullanıcı "her girdiğimde hesaplanıyor" hissi almaz.
   List<_LeaderboardRow>? _staleRows;
+  // "Anlık" hissi için düzenli tick — her tetikte kendi ROI'sini
+  // yeniden hesaplayıp upload eder, sonra partner ROI'lerini
+  // Supabase'ten tazeler.
+  Timer? _liveTick;
+  static const _livePeriod = Duration(seconds: 15);
 
   @override
   void initState() {
     super.initState();
     _staleRows = _readCachedRows();
     _future = _compute();
+    _startLiveTick();
   }
 
   @override
@@ -522,6 +542,20 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       _staleRows = _readCachedRows();
       _future = _compute();
     }
+  }
+
+  @override
+  void dispose() {
+    _liveTick?.cancel();
+    super.dispose();
+  }
+
+  void _startLiveTick() {
+    _liveTick?.cancel();
+    _liveTick = Timer.periodic(_livePeriod, (_) {
+      if (!mounted) return;
+      setState(() => _future = _compute());
+    });
   }
 
   /// LeaderboardService cache'inden — TTL geçmiş bile olsa — synchronous
@@ -562,84 +596,66 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   }
 
   Future<List<_LeaderboardRow>> _compute() async {
-    // Tüm katılımcılar için ROI hesabını paralel başlat — sequential await
-    // önceki tasarımda 5 partner × 500ms = 2.5sn bekletiyordu. Future.wait
-    // ile total süre = en yavaş fetch'e düşer.
-    final tasks = <Future<_LeaderboardRow>>[];
-
-    if (widget.me != null) {
-      final myAssets = widget.myAssets;
-      final me = widget.me!;
+    // Kendi ROI'mizi lokal hesapla → Supabase'e upload et → sonra hem
+    // kendimizin hem partnerların ROI'sini TEK OTORİTE olan Supabase
+    // snapshot tablosundan oku. Böylece iki cihaz her zaman aynı sayıyı
+    // görür. Tick her 15 sn'de bu döngüyü tekrar eder → canlı hissi.
+    final me = widget.me;
+    double? myRoi;
+    if (me != null) {
       final myCurrentTRY = LeaderboardService.instance
-          .totalValueTRY(myAssets, widget.pnlToTRY);
-      tasks.add(
-        LeaderboardService.instance
-            .computeROI(
-          assets: myAssets,
-          periodDays: widget.periodDays,
-          currentValueTRY: myCurrentTRY,
-          toTRY: widget.pnlToTRY,
-          cacheKey: me.id,
-        )
-            .then((roi) => _LeaderboardRow(
-                  userId: me.id,
-                  displayName: '${me.displayName} (sen)',
-                  isMe: true,
-                  roi: roi,
-                )),
+          .totalValueTRY(widget.myAssets, widget.pnlToTRY);
+      myRoi = await LeaderboardService.instance.computeROI(
+        assets: widget.myAssets,
+        periodDays: widget.periodDays,
+        currentValueTRY: myCurrentTRY,
+        toTRY: widget.pnlToTRY,
+        cacheKey: me.id,
       );
-    }
-
-    for (final p in widget.partners) {
-      final assets = widget.partnerAssets[p.id] ?? const <Asset>[];
-      if (assets.isEmpty) {
-        tasks.add(Future.value(_LeaderboardRow(
-          userId: p.id,
-          displayName: p.displayName,
-          isMe: false,
-          roi: null,
-        )));
-        continue;
-      }
-      final currentTRY = LeaderboardService.instance
-          .totalValueTRY(assets, widget.pnlToTRY);
-      tasks.add(
-        LeaderboardService.instance
-            .computeROI(
-          assets: assets,
-          periodDays: widget.periodDays,
-          currentValueTRY: currentTRY,
-          toTRY: widget.pnlToTRY,
-          cacheKey: p.id,
-        )
-            .then((roi) => _LeaderboardRow(
-                  userId: p.id,
-                  displayName: p.displayName,
-                  isMe: false,
-                  roi: roi,
-                )),
-      );
-    }
-
-    final rows = await Future.wait(tasks);
-    // Kendi ROI'mizi global percentile için snapshot olarak yükle —
-    // asenkron ve unawaited, ana leaderboard render'ını yavaşlatmaz.
-    if (widget.me != null) {
-      final myRow = rows.firstWhere(
-        (r) => r.isMe,
-        orElse: () => const _LeaderboardRow(
-            userId: '', displayName: '', isMe: false, roi: null),
-      );
-      if (myRow.roi != null && myRow.userId.isNotEmpty) {
-        // Fire-and-forget — kullanıcıyı bekletmesin.
+      if (myRoi != null) {
+        // Await ETMİYORUZ, snapshot upload + partner fetch paralel gitsin.
         LeaderboardService.instance.uploadRoiSnapshot(
-          userId: myRow.userId,
+          userId: me.id,
           periodDays: widget.periodDays,
-          roiPct: myRow.roi!,
+          roiPct: myRoi,
         );
+        // Top gainers allocation feature'ı için anonim tür dağılımını da
+        // gönder — miktar/TL yok, sadece {tür: %}. RPC k-anonymity + min
+        // type_count filtreleri ile agregat gösterir.
+        final alloc = LeaderboardService.instance
+            .computeAllocation(widget.myAssets, widget.pnlToTRY);
+        if (alloc.length >= 2) {
+          LeaderboardService.instance.uploadAllocationSnapshot(
+            userId: me.id,
+            allocation: alloc,
+            typeCount: alloc.length,
+          );
+        }
       }
     }
-    // Sort: null'lar sona, gerisi desc
+
+    final partnerRois = await LeaderboardService.instance
+        .fetchPartnerRois(widget.periodDays);
+
+    final rows = <_LeaderboardRow>[];
+    if (me != null) {
+      rows.add(_LeaderboardRow(
+        userId: me.id,
+        displayName: '${me.displayName} (sen)',
+        isMe: true,
+        roi: myRoi,
+      ));
+    }
+    for (final p in widget.partners) {
+      final entry = partnerRois[p.id];
+      rows.add(_LeaderboardRow(
+        userId: p.id,
+        displayName: p.displayName,
+        isMe: false,
+        roi: entry?.roi,
+      ));
+    }
+
     rows.sort((a, b) {
       if (a.roi == null && b.roi == null) return 0;
       if (a.roi == null) return 1;
@@ -999,27 +1015,58 @@ class _GlobalPercentileTeaser extends StatefulWidget {
 
 class _GlobalPercentileTeaserState
     extends State<_GlobalPercentileTeaser> {
-  late Future<({int percentile, int total})?> _future;
+  late Future<_BestPercentile?> _future;
+  Timer? _liveTick;
+  static const _livePeriod = Duration(seconds: 30);
+
+  static const _periods = <({int days, String label})>[
+    (days: 7, label: 'haftalık'),
+    (days: 30, label: 'aylık'),
+    (days: 365, label: 'yıllık'),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _future = LeaderboardService.instance.fetchPercentile(widget.periodDays);
+    _future = _computeBest();
+    _liveTick = Timer.periodic(_livePeriod, (_) {
+      if (!mounted) return;
+      setState(() => _future = _computeBest());
+    });
   }
 
   @override
-  void didUpdateWidget(covariant _GlobalPercentileTeaser old) {
-    super.didUpdateWidget(old);
-    if (old.periodDays != widget.periodDays) {
-      _future = LeaderboardService.instance.fetchPercentile(widget.periodDays);
-    }
+  void dispose() {
+    _liveTick?.cancel();
+    super.dispose();
+  }
+
+  /// 3 periyotta paralel percentile çek → en iyi (düşük percentile = üst)
+  /// olanı göster. "Genel havuzda hangi periyotta en üsttesin" hissi
+  /// verir; kullanıcı belirli bir periyot seçmeden vitrin görür.
+  Future<_BestPercentile?> _computeBest() async {
+    final results = await Future.wait(
+      _periods.map((p) => LeaderboardService.instance
+          .fetchPercentile(p.days)
+          .then((data) => data == null
+              ? null
+              : _BestPercentile(
+                  periodLabel: p.label,
+                  percentile: data.percentile,
+                  total: data.total,
+                ))),
+    );
+    final valid = results.whereType<_BestPercentile>().toList();
+    if (valid.isEmpty) return null;
+    valid.sort((a, b) => a.percentile.compareTo(b.percentile));
+    return valid.first;
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-      child: FutureBuilder<({int percentile, int total})?>(
+      child: FutureBuilder<_BestPercentile?>(
         future: _future,
         builder: (_, snap) {
           final data = snap.data;
@@ -1050,8 +1097,7 @@ class _GlobalPercentileTeaserState
     );
   }
 
-  Widget _content(
-      ({int percentile, int total})? data, ConnectionState state) {
+  Widget _content(_BestPercentile? data, ConnectionState state) {
     // Loading
     if (state == ConnectionState.waiting && data == null) {
       return _row(
@@ -1075,23 +1121,28 @@ class _GlobalPercentileTeaserState
       );
     }
 
-    // Gerçek percentile
+    // En iyi periyot vitrine — kullanıcı hangi zaman diliminde parlıyorsa.
     final pct = data.percentile;
     final total = data.total;
     final tone = _toneFor(pct);
+    final periodCap = _capitalize(data.periodLabel);
     return _row(
       badge: _Badge(
-        text: total > 1000 ? '${(total / 1000).toStringAsFixed(1)}K KİŞİ'
+        text: total > 1000
+            ? '${(total / 1000).toStringAsFixed(1)}K KİŞİ'
             : '$total KİŞİ',
         color: Colors.white.withValues(alpha: 0.6),
       ),
-      title: 'İlk %$pct\'desin',
+      title: '$periodCap sıralamada ilk %$pct\'desin',
       subtitle: tone,
       icon: Icons.public_rounded,
       iconColor: pct <= 25 ? Sandik.gain : Sandik.amber,
       hero: true,
     );
   }
+
+  String _capitalize(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 
   String _toneFor(int pct) {
     if (pct <= 5) return 'Zirvedeki azınlıktasın 🚀';
@@ -1166,6 +1217,452 @@ class _GlobalPercentileTeaserState
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Top Gainers Allocation kartı — anonim, agregat: "Bu hafta en çok kazanan
+// portföyler neyden oluşuyor?" Kimlik, miktar, TL yok — sadece rank + ROI +
+// tür yüzdeleri. Marka: gold/amber gradient shell, madalya rank, tür
+// renkleri (AssetType.color), horizontal stacked bar + inline legend.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TopGainersAllocationCard extends StatefulWidget {
+  final int periodDays;
+  const _TopGainersAllocationCard({required this.periodDays});
+
+  @override
+  State<_TopGainersAllocationCard> createState() =>
+      _TopGainersAllocationCardState();
+}
+
+class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
+  late Future<List<TopGainerAllocation>> _future;
+  Timer? _liveTick;
+  static const _livePeriod = Duration(seconds: 45);
+  int _expandedIdx = 0; // seçili rank kartı
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _fetch();
+    _liveTick = Timer.periodic(_livePeriod, (_) {
+      if (!mounted) return;
+      setState(() => _future = _fetch());
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _TopGainersAllocationCard old) {
+    super.didUpdateWidget(old);
+    if (old.periodDays != widget.periodDays) {
+      _expandedIdx = 0;
+      _future = _fetch();
+    }
+  }
+
+  @override
+  void dispose() {
+    _liveTick?.cancel();
+    super.dispose();
+  }
+
+  Future<List<TopGainerAllocation>> _fetch() =>
+      LeaderboardService.instance.fetchTopGainersAllocation(
+        periodDays: widget.periodDays,
+        topN: 5,
+      );
+
+  String get _periodLabel {
+    switch (widget.periodDays) {
+      case 7:
+        return 'HAFTALIK';
+      case 30:
+        return 'AYLIK';
+      default:
+        return 'YILLIK';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
+      child: FutureBuilder<List<TopGainerAllocation>>(
+        future: _future,
+        builder: (_, snap) {
+          final rows = snap.data ?? const <TopGainerAllocation>[];
+          final loading =
+              snap.connectionState == ConnectionState.waiting && rows.isEmpty;
+          return _shell(child: _content(rows, loading));
+        },
+      ),
+    );
+  }
+
+  Widget _shell({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Sandik.gold.withValues(alpha: 0.08),
+            Sandik.surface1.withValues(alpha: 0.9),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Sandik.gold.withValues(alpha: 0.18)),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _content(List<TopGainerAllocation> rows, bool loading) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _header(rows.length, loading),
+        const SizedBox(height: 10),
+        if (loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Sandik.gold),
+              ),
+            ),
+          )
+        else if (rows.isEmpty)
+          _emptyState()
+        else
+          Column(
+            children: [
+              _rankStrip(rows),
+              const SizedBox(height: 12),
+              _AllocationDetail(row: rows[_expandedIdx.clamp(0, rows.length - 1)]),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _header(int count, bool loading) {
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Sandik.gold, Sandik.amber],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: const Icon(Icons.emoji_events_rounded,
+              color: Colors.black87, size: 16),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Zirvedeki Portföyler',
+                style: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                '${_periodLabel.toLowerCase()} en çok kazananların dağılımı',
+                style: GoogleFonts.dmSans(
+                  fontSize: 10,
+                  color: Sandik.text58,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: Sandik.gold.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            'ANONİM',
+            style: GoogleFonts.dmSans(
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              color: Sandik.gold,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _emptyState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Text(
+        'Yeterli katılımcı olunca zirve portföyler burada görünecek. '
+        'Anonim havuz oluşuyor…',
+        style: GoogleFonts.dmSans(
+          fontSize: 11,
+          color: Sandik.text58,
+          height: 1.35,
+        ),
+      ),
+    );
+  }
+
+  /// Yatay rank chip'leri: 1-5, tıklanınca alt detay değişir.
+  Widget _rankStrip(List<TopGainerAllocation> rows) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: rows.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final r = rows[i];
+          final selected = i == _expandedIdx;
+          final positive = r.roiPct >= 0;
+          final roiColor = positive ? Sandik.gain : Sandik.loss;
+          return GestureDetector(
+            onTap: () => setState(() => _expandedIdx = i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: selected
+                    ? Sandik.gold.withValues(alpha: 0.16)
+                    : Colors.white.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: selected
+                      ? Sandik.gold.withValues(alpha: 0.55)
+                      : Colors.white.withValues(alpha: 0.06),
+                  width: selected ? 1.2 : 1.0,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _rankMedal(r.rank),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${r.rank}. portföy',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Sandik.text58,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                      Text(
+                        '${positive ? '+' : ''}${r.roiPct.toStringAsFixed(1)}%',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: roiColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _rankMedal(int rank) {
+    final (light, dark) = switch (rank) {
+      1 => (Sandik.gold, const Color(0xFFB8860B)),
+      2 => (const Color(0xFFE0E0E0), const Color(0xFF9E9E9E)),
+      3 => (const Color(0xFFCD7F32), const Color(0xFF8B4513)),
+      _ => (Colors.white24, Colors.white10),
+    };
+    return Container(
+      width: 22,
+      height: 22,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [light, dark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        '$rank',
+        style: GoogleFonts.dmSans(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: Colors.black.withValues(alpha: 0.75),
+        ),
+      ),
+    );
+  }
+}
+
+/// Seçili rank için tür bazlı dağılım detay bloğu — stacked bar + legend.
+class _AllocationDetail extends StatelessWidget {
+  final TopGainerAllocation row;
+  const _AllocationDetail({required this.row});
+
+  @override
+  Widget build(BuildContext context) {
+    // Türleri değer sırasına göre büyükten küçüğe sırala; renkleri
+    // AssetType.color'dan al, tanınmayan tür için nötr slate rengi.
+    final entries = row.allocation.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final segments = entries
+        .map((e) => (
+              label: _labelFor(e.key),
+              pct: e.value,
+              color: _colorFor(e.key),
+            ))
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Stacked bar — yatay, her türü renk ile ayırır. FractionallySized
+        // ile toplam width içinde oransal segmentler.
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 10,
+            child: Row(
+              children: [
+                for (final s in segments)
+                  Expanded(
+                    flex: (s.pct * 100).round().clamp(1, 100000),
+                    child: Container(color: s.color),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            for (final s in segments)
+              _LegendChip(
+                label: s.label,
+                pct: s.pct,
+                color: s.color,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _labelFor(String typeKey) {
+    for (final t in AssetType.values) {
+      if (t.name == typeKey) return t.label;
+    }
+    // Bilinmeyen tür (ileride eklenecek yeni tür); kelimeyi düzgün göster.
+    if (typeKey.isEmpty) return '—';
+    return typeKey[0].toUpperCase() + typeKey.substring(1);
+  }
+
+  Color _colorFor(String typeKey) {
+    for (final t in AssetType.values) {
+      if (t.name == typeKey) return t.color;
+    }
+    return const Color(0xFF9AA5B1); // nötr slate — bilinmeyen tür
+  }
+}
+
+class _LegendChip extends StatelessWidget {
+  final String label;
+  final double pct;
+  final Color color;
+  const _LegendChip({
+    required this.label,
+    required this.pct,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.30), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '%${pct.toStringAsFixed(0)}',
+            style: GoogleFonts.dmSans(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Global percentile için "en iyi periyot" satırı — 3 periyot arasından
+/// kullanıcının en üst sırada olduğu bir tanesi vitrine çıkar.
+class _BestPercentile {
+  final String periodLabel; // "haftalık" | "aylık" | "yıllık"
+  final int percentile;
+  final int total;
+  const _BestPercentile({
+    required this.periodLabel,
+    required this.percentile,
+    required this.total,
+  });
+}
+
 class _Badge extends StatelessWidget {
   final String text;
   final Color color;
@@ -1191,3 +1688,5 @@ class _Badge extends StatelessWidget {
     );
   }
 }
+
+
