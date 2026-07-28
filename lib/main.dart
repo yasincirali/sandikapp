@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -177,6 +178,16 @@ class SandikApp extends ConsumerWidget {
       theme: _buildTheme(),
       darkTheme: _buildTheme(),
       themeMode: ThemeMode.dark,
+      // Türkçe locale — showDatePicker, showTimePicker vb. tüm Material
+      // widget'ları için dd/MM/yyyy formatı, Türkçe ay/gün adları, virgüllü
+      // ondalık ayırıcı. İngilizce yedek locale olarak kalır.
+      locale: const Locale('tr', 'TR'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('tr', 'TR'), Locale('en', 'US')],
       home: const _AuthGate(),
     );
   }
