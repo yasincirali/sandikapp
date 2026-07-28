@@ -25,6 +25,7 @@ import 'services/db_logger.dart';
 import 'services/disclaimer_service.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/notification_service.dart';
+import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
 import 'theme/sandik.dart';
@@ -36,6 +37,9 @@ void main() async {
   await runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
     await initializeDateFormatting('tr_TR');
+    // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
+    // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
+    await initPreferencesCache();
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     try {
@@ -478,6 +482,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         });
         // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
         FxRateMigrationService.instance.runFor(user.id);
+        // Leaderboard opt-in server-side hydration: kullanıcı başka bir cihazda
+        // katılmışsa (veya uygulamayı yeniden kurmuşsa) bayrağı geri getir.
+        _hydrateLeaderboardOptIn(user.id);
       }
 
       _syncInviteDelivery(user?.id);
@@ -490,6 +497,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     PartnerInviteListenerService.instance.stop();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _hydrateLeaderboardOptIn(String userId) async {
+    try {
+      final current = ref.read(leaderboardOptInProvider);
+      if (current) return; // Zaten açık, network'e gitme.
+      final server = await LeaderboardService.instance.hasServerSideOptIn(userId);
+      if (server && mounted) {
+        await ref.read(leaderboardOptInProvider.notifier).set(true);
+      }
+    } catch (_) {}
   }
 
   Future<void> _syncInviteDelivery(String? userId) async {

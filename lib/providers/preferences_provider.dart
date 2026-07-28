@@ -66,6 +66,15 @@ final themeModeProvider =
     NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
 
 /// Bildirim kategorileri için tek tip notifier
+/// Uygulama başlarken bir kere warm-up edilen SharedPreferences instance.
+/// Böylece `_BoolPrefNotifier.build()` senkron okuyabilir, ilk render'da
+/// "loading → gerçek değer" flash'ı olmaz. main.dart bunu init eder.
+SharedPreferences? _prefsSync;
+
+Future<void> initPreferencesCache() async {
+  _prefsSync = await SharedPreferences.getInstance();
+}
+
 class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
   final bool defaultValue;
@@ -74,11 +83,19 @@ class _BoolPrefNotifier extends Notifier<bool> {
 
   @override
   bool build() {
-    _load();
+    // Senkron okuma — cache yoksa default. Cache init edilmişse gerçek değer.
+    final prefs = _prefsSync;
+    if (prefs != null) {
+      final v = prefs.getBool(key);
+      if (v != null) return v;
+    } else {
+      // Fallback: cache init değilse eskisi gibi async load et.
+      _loadAsync();
+    }
     return defaultValue;
   }
 
-  Future<void> _load() async {
+  Future<void> _loadAsync() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final v = prefs.getBool(key);
@@ -89,7 +106,7 @@ class _BoolPrefNotifier extends Notifier<bool> {
   Future<void> set(bool value) async {
     state = value;
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setBool(key, value);
     } catch (_) {}
   }

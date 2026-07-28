@@ -107,6 +107,23 @@ class LeaderboardService {
 
   // ─── Global percentile ─────────────────────────────────────────────────
 
+  /// Sunucuda bu kullanıcı için daha önce bir ROI snapshot atıldı mı?
+  /// True ise kullanıcı bir cihazda opt-in yapmış demektir — uygulama
+  /// yeniden kurulsa bile lokal bayrağı buradan hydrate ederiz.
+  Future<bool> hasServerSideOptIn(String userId) async {
+    try {
+      final res = await Supabase.instance.client
+          .from('user_roi_snapshots')
+          .select('user_id')
+          .eq('user_id', userId)
+          .limit(1)
+          .maybeSingle();
+      return res != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Client'ın hesapladığı ROI değerini snapshot tablosuna yazar. Opt-in
   /// kontrolü çağıran yerin sorumluluğu. Hata sessizce yutulur — bu ikincil
   /// bir operasyon, ana leaderboard'un düşmesine izin vermez.

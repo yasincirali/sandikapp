@@ -84,3 +84,6 @@ skills.md
 
 # Supabase CLI cache
 supabase/.temp/
+
+# codebase-memory-mcp local graph artifacts
+.codebase-memory/

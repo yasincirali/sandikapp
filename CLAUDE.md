@@ -73,6 +73,33 @@
 
 **Not:** pixel7_1 ve pixel7_2 AVD'lerinde `hw.keyboard = yes` 2026-05-09 tarihinde düzeltildi.
 
+## Kod Belleği: codebase-memory-mcp
+
+Proje `.mcp.json` üzerinden `codebase-memory-mcp` (v0.9.0) MCP sunucusuna bağlıdır.
+Binary: `C:\Users\vasin\AppData\Local\Programs\codebase-memory-mcp\codebase-memory-mcp.exe`
+Proje adı (graph içinde): `C-projects-PortfoyTakip`
+
+Kurulum **sadece proje kapsamlıdır** — global `~/.claude.json`, hook veya skill kurulmadı.
+
+### Kullanım kuralları
+- Kod keşfinde önce graph sorgusu yap (`search_graph`, `query_graph`, `trace_path`,
+  `get_architecture`), geniş `Grep`/`Glob` taramalarına sonra düş. Token maliyeti çok daha düşük.
+- Mimari kararlar `manage_adr` içinde saklanır — oturumlar arası kalıcıdır.
+  Mimari bir karar değiştiğinde `manage_adr --mode update` ile güncelle.
+- Büyük değişikliklerden sonra indeksi tazele:
+  `codebase-memory-mcp cli index_repository --repo-path "c:\projects\PortfoyTakip"`
+- `detect_changes` commit edilmemiş değişiklikleri etkilenen sembollere eşler.
+
+### CLI notları
+- Ham JSON argümanı **deprecated** — flag kullan (`--repo-path`, `--project`, `--mode`).
+  Uzun/Türkçe içerik için `--args-file <path.json>`.
+- `cli` modu daemon başlatmaz; tek seferlik sorgular için güvenlidir.
+- PowerShell'de stderr'deki `level=info` logları NativeCommandError olarak görünür; zararsızdır.
+
+### Bilinen kapsam notu
+Repo kökündeki `PortfoyTakip/*.swift` dosyaları eski SwiftUI prototipidir ve indekse dahil olur.
+Aktif kod `lib/` altındadır.
+
 ## Areas for Automated Improvements
 
 ### Code Quality
