@@ -1,1 +1,7 @@
-Initial release — start tracking your portfolio with sandık.
+• NEW: Competition — return rankings with your partners + anonymous global percentile
+• NEW: "Top Portfolios" — anonymous allocation of top gainers
+• NEW: Bulk asset add, historical purchase date support
+• Chart: TradingView-style professional experience, pinch zoom, crosshair
+• Fix: Date format is now dd/MM/yyyy (full Turkish locale)
+• Fix: Value synchronization on partner leaderboard
+• Fix: Long-period chart for portfolios with short history

@@ -2,25 +2,36 @@ sandık, tüm yatırımlarını tek bir yerden yönetmeni sağlayan kişisel por
 
 TEMEL ÖZELLİKLER
 
-• Hisse senedi, yatırım fonu, döviz ve altın varlıklarını ekle
+• Hisse senedi, yatırım fonu, döviz, altın ve emtia varlıklarını ekle
 • Fiyatlar otomatik güncellenir; manuel fiyat da girebilirsin
 • Toplam değer, kâr/zarar ve dağılım grafiğini anlık gör
-• Geçmiş performansını günlük olarak takip et
+• Geçmiş performansını TradingView tarzı profesyonel grafik ile takip et — pinch zoom, crosshair, dinamik zaman aralıkları
 • Portföyünü aile üyeleri veya iş ortaklarınla güvenli paylaş
 • İstediğin zaman ortaklığı sonlandır
 
-GÜVENLİK
+YARIŞ (Opsiyonel)
+
+• Ortaklarınla getiri sıralamasında rekabet et
+• Anonim genel sıralamada tüm Sandık kullanıcıları arasındaki yerini gör
+• "Zirvedeki portföyler" ile en çok kazananların dağılım pattern'ini keşfet — kimlik, miktar, TL bilgisi asla paylaşılmaz
+• KVKK uyumlu, sadece opt-in — istediğin zaman kapatabilirsin
+
+GÜVENLİK & GİZLİLİK
 
 • Tüm veriler şifreli bulut depolama ile korunur
 • Uygulama ekran görüntüsü ve görev yöneticisine karşı otomatik olarak gizlenir
 • KVKK ve GDPR uyumlu veri işleme
+• Yarış özelliği k-anonimlik ilkesiyle çalışır (min. 20 katılımcı)
+• İstediğin zaman hesabını ve tüm verini sil
 
 KULLANIM KOLAYLIĞI
 
-• Hızlı varlık ekleme akışı
+• Hızlı varlık ekleme akışı (geçmiş tarihli alım desteği ile)
+• Toplu varlık ekleme sepeti
 • Bakiye gizleme özelliği
 • Karanlık tema, göz dostu arayüz
 • Çevrimdışı modda son verilerle çalışmaya devam eder
+• Türkçe tarih ve para formatları
 
 Sandığını aç, yatırımlarını takip et.
 

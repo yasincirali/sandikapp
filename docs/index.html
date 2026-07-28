@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sandık — Portföy Takibi</title>
+<meta name="description" content="sandık, tüm yatırımlarını tek ekranda takip et. Hisse, fon, döviz, altın, emtia.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+:root {
+  --bg: #0A1E15;
+  --surface: #10281E;
+  --surface-2: #1A3D2E;
+  --border: rgba(255,255,255,0.06);
+  --text: rgba(255,255,255,0.90);
+  --text-58: rgba(255,255,255,0.58);
+  --amber: #F5A623;
+  --gold: #F5C842;
+  --gain: #6BB77B;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'DM Sans', sans-serif; line-height: 1.6; min-height: 100vh; }
+.hero { max-width: 960px; margin: 0 auto; padding: 80px 24px 60px; text-align: center; }
+.logo-hero { width: 96px; height: 96px; background: linear-gradient(135deg, var(--gold), var(--amber)); border-radius: 24px; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; color: #0A1E15; font-size: 52px; margin-bottom: 24px; box-shadow: 0 12px 40px rgba(245,166,35,0.25); }
+h1 { font-size: 48px; font-weight: 800; letter-spacing: -1.5px; margin: 0 0 12px; }
+.tagline { font-size: 20px; color: var(--text-58); margin-bottom: 40px; max-width: 560px; margin-left: auto; margin-right: auto; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin: 40px 0; }
+.feature { background: var(--surface); padding: 24px 20px; border-radius: 16px; border: 1px solid var(--border); text-align: left; }
+.feature h3 { color: var(--gold); font-size: 16px; margin-bottom: 8px; }
+.feature p { font-size: 14px; color: var(--text-58); }
+.legal-nav { margin-top: 60px; padding: 32px; background: var(--surface); border-radius: 16px; border: 1px solid var(--border); text-align: left; max-width: 640px; margin-left: auto; margin-right: auto; }
+.legal-nav h2 { color: var(--gold); font-size: 16px; margin-bottom: 16px; font-weight: 700; }
+.legal-nav ul { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+.legal-nav a { color: var(--text); text-decoration: none; font-size: 14px; padding: 6px 0; display: block; border-bottom: 1px solid var(--border); }
+.legal-nav a:hover { color: var(--amber); }
+footer { text-align: center; padding: 40px 20px; font-size: 12px; color: rgba(255,255,255,0.36); }
+@media (max-width: 600px) {
+  h1 { font-size: 32px; }
+  .tagline { font-size: 16px; }
+  .legal-nav ul { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="logo-hero">S</div>
+  <h1>sandık</h1>
+  <p class="tagline">Hisse, fon, döviz, altın ve emtia varlıklarını tek ekranda takip et. TradingView tarzı profesyonel grafik. KVKK ve GDPR uyumlu.</p>
+
+  <div class="features">
+    <div class="feature">
+      <h3>📊 Profesyonel Grafik</h3>
+      <p>Pinch zoom, crosshair, dinamik zaman aralıkları. Portföy performansın anlık ve tarihsel.</p>
+    </div>
+    <div class="feature">
+      <h3>👥 Ortak Paylaşımı</h3>
+      <p>Aile veya iş ortaklarınla portföyünü güvenli paylaş. İstediğin zaman sonlandır.</p>
+    </div>
+    <div class="feature">
+      <h3>🏆 Yarış (Opsiyonel)</h3>
+      <p>Ortaklarınla getiri sıralaması + anonim genel percentile. Sadece opt-in ile aktif.</p>
+    </div>
+    <div class="feature">
+      <h3>🔒 Gizlilik</h3>
+      <p>KVKK + GDPR uyumlu. Uçtan uca şifreli. Hesabını istediğin zaman sil.</p>
+    </div>
+  </div>
+
+  <div class="legal-nav">
+    <h2>Hukuki & Destek</h2>
+    <ul>
+      <li><a href="privacy/">Gizlilik Politikası (TR)</a></li>
+      <li><a href="privacy-en/">Privacy Policy (EN)</a></li>
+      <li><a href="terms/">Kullanım Koşulları</a></li>
+      <li><a href="terms-en/">Terms of Service</a></li>
+      <li><a href="legal/kvkk/">KVKK Aydınlatma</a></li>
+      <li><a href="legal/gdpr/">GDPR Notice</a></li>
+      <li><a href="legal/acik-riza/">Açık Rıza Metni</a></li>
+      <li><a href="legal/depolama/">Depolama Bilgisi</a></li>
+      <li><a href="data-deletion/">Hesap Silme (TR)</a></li>
+      <li><a href="data-request/">Data Request (EN)</a></li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  © sandık · <a href="mailto:sandikapp.destek@gmail.com" style="color:inherit">sandikapp.destek@gmail.com</a>
+</footer>
+</body>
+</html>

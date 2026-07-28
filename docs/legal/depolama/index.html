@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Çerezler ve Yerel Depolama — sandık</title>
+<meta name="description" content="Yerel depolama ve çerez kullanımı bilgilendirmesi.">
+<link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
+<style>
+:root {
+  --bg: #0A1E15;
+  --surface: #10281E;
+  --surface-2: #1A3D2E;
+  --border: rgba(255,255,255,0.06);
+  --text: rgba(255,255,255,0.90);
+  --text-58: rgba(255,255,255,0.58);
+  --text-36: rgba(255,255,255,0.36);
+  --amber: #F5A623;
+  --gold: #F5C842;
+  --gain: #6BB77B;
+  --loss: #E86A5E;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'DM Sans', sans-serif; line-height: 1.6; }
+.container { max-width: 720px; margin: 0 auto; padding: 24px 20px 64px; }
+header { display: flex; align-items: center; gap: 12px; padding: 20px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+header .logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--gold), var(--amber)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0A1E15; font-size: 20px; }
+header .brand { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+header .brand small { font-size: 12px; color: var(--text-58); font-weight: 500; display: block; letter-spacing: 0; }
+h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 8px; }
+h2 { font-size: 20px; font-weight: 700; margin: 32px 0 12px; color: var(--gold); }
+h3 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; color: var(--text); }
+p, li { font-size: 15px; }
+a { color: var(--amber); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Fira Code', 'Consolas', monospace; }
+pre { background: var(--surface); padding: 16px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); }
+pre code { background: transparent; padding: 0; }
+blockquote { border-left: 3px solid var(--amber); padding: 8px 14px; margin: 16px 0; background: rgba(245,166,35,0.06); border-radius: 0 6px 6px 0; color: var(--text); }
+hr { border: 0; height: 1px; background: var(--border); margin: 32px 0; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 700; color: var(--gold); }
+tr:hover td { background: rgba(255,255,255,0.02); }
+ul, ol { padding-left: 20px; }
+li { margin: 6px 0; }
+footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-36); }
+footer a { color: var(--text-58); margin: 0 8px; }
+input[type="text"], input[type="email"], textarea { width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 14px; }
+input:focus, textarea:focus { outline: none; border-color: var(--amber); }
+button { background: var(--amber); color: #0A1E15; border: 0; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+button:hover { opacity: 0.9; }
+.checkbox-row { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; font-size: 14px; color: var(--text-58); }
+.checkbox-row input { width: auto; margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="logo">S</div>
+  <div class="brand">sandık<small>Depolama</small></div>
+</header>
+<p>﻿# Ã‡erez ve Yerel Depolama PolitikasÄ± â€” sandÄ±k</p>
+<p><strong>YÃ¼rÃ¼rlÃ¼k tarihi:</strong> 11 MayÄ±s 2026
+<strong>SÃ¼rÃ¼m:</strong> 1.0</p>
+<hr />
+<h2>1. Genel</h2>
+<p><strong>sandÄ±k</strong> mobil bir uygulamadÄ±r ve geleneksel web Ã§erezleri (HTTP cookies) <strong>kullanmaz</strong>. Bu politika, uygulamanÄ±n cihazÄ±nÄ±zda kullandÄ±ÄŸÄ± yerel depolama mekanizmalarÄ±nÄ± aÃ§Ä±klar ve KVKK + GDPR + ePrivacy Direktifi (2002/58/EC) uyumluluÄŸunu saÄŸlar.</p>
+<hr />
+<h2>2. KullanÄ±lan Yerel Depolama TÃ¼rleri</h2>
+<h3>2.1 SharedPreferences (Android) / NSUserDefaults (iOS)</h3>
+<p>Ä°ÅŸletim sisteminin saÄŸladÄ±ÄŸÄ± kÃ¼Ã§Ã¼k key-value deposu. Ä°Ã§inde tutulan veriler:</p>
+<table>
+<thead>
+<tr>
+<th>Anahtar</th>
+<th>Ä°Ã§erik</th>
+<th>AmaÃ§</th>
+<th>Saklama sÃ¼resi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>last_login_email</code></td>
+<td>KullanÄ±cÄ± isterse kayÄ±tlÄ± e-posta</td>
+<td>"Beni hatÄ±rla" Ã¶zelliÄŸi</td>
+<td>KullanÄ±cÄ± silene kadar</td>
+</tr>
+<tr>
+<td><code>theme_mode</code></td>
+<td>Tema tercihi (dark/light/system)</td>
+<td>UI ayarÄ±</td>
+<td>Uninstall'a kadar</td>
+</tr>
+<tr>
+<td><code>disclaimer_accepted_v1.0</code></td>
+<td>Disclaimer onay durumu</td>
+<td>Tekrar gÃ¶stermemek</td>
+<td>Disclaimer sÃ¼rÃ¼mÃ¼ deÄŸiÅŸene kadar</td>
+</tr>
+<tr>
+<td><code>notification_enabled</code></td>
+<td>Bildirim aÃ§Ä±k/kapalÄ±</td>
+<td>KullanÄ±cÄ± tercihi</td>
+<td>Uninstall'a kadar</td>
+</tr>
+</tbody>
+</table>
+<p><strong>KiÅŸisel veri iÃ§ermez</strong> veya yalnÄ±zca kullanÄ±cÄ±nÄ±n aÃ§Ä±kÃ§a izin verdiÄŸi e-posta'yÄ± iÃ§erir.</p>
+<h3>2.2 Supabase Auth Session Token</h3>
+<p>Supabase SDK, oturum tokenlarÄ±nÄ± otomatik olarak gÃ¼venli bir ÅŸekilde saklar:</p>
+<ul>
+<li><strong>JWT access token:</strong> 1 saat geÃ§erli</li>
+<li><strong>Refresh token:</strong> 7 gÃ¼n geÃ§erli, otomatik yenilenir</li>
+<li><strong>Saklama yeri:</strong> Android'de <code>EncryptedSharedPreferences</code>, iOS'ta Keychain</li>
+</ul>
+<p>Bu token'lar oturum aÃ§ma iÃ§in <strong>zorunludur</strong> (sÃ¶zleÅŸmenin ifasÄ± â€” KVKK 5(2)(c) / GDPR 6(1)(b)). KullanÄ±cÄ± izni gerektirmez.</p>
+<h3>2.3 SQLite Yerel VeritabanÄ± (sqflite cache)</h3>
+<p>Performans iÃ§in bazÄ± veriler cihaz Ã¼zerinde Ã¶nbelleÄŸe alÄ±nÄ±r:</p>
+<ul>
+<li>Son fiyat bilgileri (geÃ§ici cache)</li>
+<li>GÃ¶rsel asset'ler</li>
+</ul>
+<p><strong>HiÃ§bir kiÅŸisel veri</strong> SQLite'da kalÄ±cÄ± saklanmaz; tÃ¼m asÄ±l veri Supabase'dedir.</p>
+<h3>2.4 Push Notification Token (FCM)</h3>
+<p>Firebase Cloud Messaging, cihazÄ±nÄ±za Ã¶zel bir token Ã¼retir. Bu token:</p>
+<ul>
+<li>YalnÄ±zca bildirim gÃ¶ndermek iÃ§in kullanÄ±lÄ±r</li>
+<li>KullanÄ±cÄ±nÄ±n <strong>aÃ§Ä±k rÄ±za</strong> vermesiyle Supabase'e kaydedilir</li>
+<li>Logout veya uninstall'da silinir</li>
+</ul>
+<hr />
+<h2>3. KullanÄ±lmayan Mekanizmalar</h2>
+<p>AÅŸaÄŸÄ±dakileri <strong>kullanmÄ±yoruz</strong>:</p>
+<ul>
+<li>âŒ HTTP Ã§erezleri (cookies)</li>
+<li>âŒ Web tracking pixel'leri</li>
+<li>âŒ ÃœÃ§Ã¼ncÃ¼ taraf reklam SDK'larÄ± (Google AdMob, Facebook Audience, AppLovin, vb. â€” yok)</li>
+<li>âŒ ÃœÃ§Ã¼ncÃ¼ taraf analitik SDK'larÄ± (Mixpanel, Amplitude, Segment, Adjust, AppsFlyer, vb. â€” yok)</li>
+<li>âŒ Cross-app tracking (IDFA, GAID kullanÄ±mÄ± yok)</li>
+<li>âŒ Web view iÃ§inde third-party content</li>
+</ul>
+<hr />
+<h2>4. ePrivacy Direktifi ("Cookie YasasÄ±")</h2>
+<p>ePrivacy Direktifi (2002/58/EC) ve TÃ¼rkiye Elektronik HaberleÅŸme Kanunu Madde 51 kapsamÄ±nda, "kesinlikle gerekli olmayan" izleme/depolama iÃ§in <strong>kullanÄ±cÄ± rÄ±zasÄ±</strong> gerekir.</p>
+<p>sandÄ±k'Ä±n kullandÄ±ÄŸÄ± tÃ¼m yerel depolama mekanizmalarÄ± <strong>hizmetin saÄŸlanmasÄ± iÃ§in kesinlikle gereklidir</strong> veya kullanÄ±cÄ±nÄ±n aÃ§Ä±k tercihiyle (theme, "Beni hatÄ±rla", notification) etkinleÅŸtirilir. Bu nedenle ek bir "Ã§erez bildirimi banner'Ä±" gerekmez.</p>
+<hr />
+<h2>5. Verilerinizi Cihazdan Silme</h2>
+<h3>5.1 Uygulama Ä°Ã§inden</h3>
+<ul>
+<li><strong>Logout:</strong> Profile â†’ Ã‡Ä±kÄ±ÅŸ Yap (oturum tokenÄ± silinir; yerel cache temizlenir)</li>
+<li><strong>Hesap silme:</strong> Profile â†’ Ayarlar â†’ HesabÄ±mÄ± Sil (tÃ¼m yerel + sunucu verisi silinir)</li>
+</ul>
+<h3>5.2 Ä°ÅŸletim Sistemi Ãœzerinden</h3>
+<ul>
+<li><strong>Android:</strong> Ayarlar â†’ Uygulamalar â†’ sandÄ±k â†’ Depolama â†’ Verileri Temizle</li>
+<li><strong>iOS:</strong> Ayarlar â†’ Genel â†’ iPhone Depolama â†’ sandÄ±k â†’ UygulamayÄ± Sil</li>
+</ul>
+<p>Uninstall, cihaz Ã¼zerindeki <strong>tÃ¼m yerel depolamayÄ± siler</strong>. Ancak Supabase'deki sunucu verisi durur â€” onu silmek iÃ§in ayrÄ±ca hesap silme akÄ±ÅŸÄ±nÄ± kullanÄ±n.</p>
+<hr />
+<h2>6. DeÄŸiÅŸiklikler</h2>
+<p>Bu politikada deÄŸiÅŸiklik yapÄ±lÄ±rsa "SÃ¼rÃ¼m" numarasÄ± artÄ±rÄ±lÄ±r ve uygulama iÃ§i bildirim gÃ¶sterilir.</p>
+<hr />
+<h2>7. Ä°letiÅŸim</h2>
+<p>Yerel depolamayla ilgili sorular iÃ§in: <code>[Ä°LETÄ°ÅÄ°M E-POSTA]</code></p>
+<footer>
+  sandık — <a href="/sandikapp/">Ana Sayfa</a> · <a href="/sandikapp/privacy">Gizlilik</a> · <a href="/sandikapp/terms">Kullanım</a> · <a href="/sandikapp/data-deletion">Hesap Silme</a>
+</footer>
+</div>
+</body>
+</html>

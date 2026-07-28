@@ -1,1 +1,7 @@
-İlk yayın — sandık ile portföyünü takip etmeye başla.
+• YENİ: Yarış — ortaklarınla getiri sıralaması + anonim genel sıralama
+• YENİ: "Zirvedeki Portföyler" — en çok kazananların anonim dağılımı
+• YENİ: Toplu varlık ekleme, geçmiş tarihli alım kaydı desteği
+• Grafik: TradingView tarzı profesyonel deneyim, pinch zoom, crosshair
+• Fix: Tarih formatı dd/MM/yyyy oldu (tüm Türkçe locale)
+• Fix: Ortak leaderboard'unda değer senkronizasyonu
+• Fix: Kısa geçmişli portföyde uzun periyot grafiği düzeltildi

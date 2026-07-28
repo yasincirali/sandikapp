@@ -1,28 +1,39 @@
-sandık is a personal portfolio tracking app that lets you manage all your investments in one place.
+sandık is a personal portfolio tracker that lets you manage all your investments from one place.
 
-KEY FEATURES
+CORE FEATURES
 
-• Add stocks, mutual funds, forex and gold assets
-• Prices update automatically; manual entry also supported
-• See total value, profit/loss and allocation chart in real time
-• Track your daily performance history
-• Securely share your portfolio with family or business partners
-• End the partnership at any time
+• Add stocks, mutual funds, currencies, gold, and commodities
+• Prices update automatically; manual price entry supported
+• See total value, gain/loss, and allocation chart instantly
+• Track historical performance with a TradingView-style professional chart — pinch zoom, crosshair, dynamic time ranges
+• Share your portfolio securely with family members or business partners
+• End sharing at any time
 
-SECURITY
+COMPETITION MODE (Optional)
+
+• Compete in return rankings with your partners
+• See where you stand among all Sandık users via anonymous global percentile
+• Discover the allocation patterns of top gainers with "Top Portfolios" — identity, amounts, and TRY totals are never shared
+• KVKK/GDPR-compliant, opt-in only — turn it off anytime
+
+SECURITY & PRIVACY
 
 • All data protected with encrypted cloud storage
 • App automatically hides from screenshots and task manager
-• GDPR-compliant data processing
+• KVKK and GDPR compliant data processing
+• Competition feature operates on k-anonymity principle (min. 20 participants)
+• Delete your account and all data at any time
 
-EASE OF USE
+CONVENIENCE
 
-• Fast asset-adding flow
-• Balance hiding feature
-• Dark theme, eye-friendly interface
-• Works offline with last known data
+• Quick asset add flow (with historical purchase date support)
+• Bulk asset add cart
+• Hide-balance mode
+• Dark theme, eye-friendly UI
+• Continues to work offline with last-cached data
+• Turkish/English date and currency formatting
 
-Open your sandık and start tracking.
+Open your sandık, track your investments.
 
 ---
-This app does not provide investment advice. Data shown is for informational purposes only. Please consult a professional financial adviser before making investment decisions.
+Not investment advice. Data shown is for informational purposes only; consult a licensed advisor for investment decisions.

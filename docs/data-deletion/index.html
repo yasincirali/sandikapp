@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hesap Silme Talebi — sandık</title>
+<meta name="description" content="Hesap silme talep formu — 30 gün içinde işleme alınır.">
+<link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
+<style>
+:root {
+  --bg: #0A1E15;
+  --surface: #10281E;
+  --surface-2: #1A3D2E;
+  --border: rgba(255,255,255,0.06);
+  --text: rgba(255,255,255,0.90);
+  --text-58: rgba(255,255,255,0.58);
+  --text-36: rgba(255,255,255,0.36);
+  --amber: #F5A623;
+  --gold: #F5C842;
+  --gain: #6BB77B;
+  --loss: #E86A5E;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'DM Sans', sans-serif; line-height: 1.6; }
+.container { max-width: 720px; margin: 0 auto; padding: 24px 20px 64px; }
+header { display: flex; align-items: center; gap: 12px; padding: 20px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+header .logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--gold), var(--amber)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0A1E15; font-size: 20px; }
+header .brand { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+header .brand small { font-size: 12px; color: var(--text-58); font-weight: 500; display: block; letter-spacing: 0; }
+h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 8px; }
+h2 { font-size: 20px; font-weight: 700; margin: 32px 0 12px; color: var(--gold); }
+h3 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; color: var(--text); }
+p, li { font-size: 15px; }
+a { color: var(--amber); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Fira Code', 'Consolas', monospace; }
+pre { background: var(--surface); padding: 16px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); }
+pre code { background: transparent; padding: 0; }
+blockquote { border-left: 3px solid var(--amber); padding: 8px 14px; margin: 16px 0; background: rgba(245,166,35,0.06); border-radius: 0 6px 6px 0; color: var(--text); }
+hr { border: 0; height: 1px; background: var(--border); margin: 32px 0; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--surface); font-weight: 700; color: var(--gold); }
+tr:hover td { background: rgba(255,255,255,0.02); }
+ul, ol { padding-left: 20px; }
+li { margin: 6px 0; }
+footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-36); }
+footer a { color: var(--text-58); margin: 0 8px; }
+input[type="text"], input[type="email"], textarea { width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 14px; }
+input:focus, textarea:focus { outline: none; border-color: var(--amber); }
+button { background: var(--amber); color: #0A1E15; border: 0; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+button:hover { opacity: 0.9; }
+.checkbox-row { display: flex; align-items: flex-start; gap: 10px; margin: 12px 0; font-size: 14px; color: var(--text-58); }
+.checkbox-row input { width: auto; margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="logo">S</div>
+  <div class="brand">sandık<small>Hesap Silme</small></div>
+</header>
+<h1>Veri Silme Talep Formu / Data Deletion Request Form</h1>
+<blockquote>
+<p><strong>NOT:</strong> Bu sayfayı <code>https://yasincirali.github.io/sandikapp/data-deletion</code> URL'inde halka açık bir HTML formu olarak yayınlayın. Google Play hesap silme zorunluluğu için <strong>Web URL</strong> istemektedir; uygulama içi akışa ek olarak halka açık bir web sayfası gerekir.</p>
+</blockquote>
+<hr />
+<h2>🇹🇷 Türkçe</h2>
+<h3>sandık — Hesap ve Veri Silme Talebi</h3>
+<p>Hesabınızı silmek için iki seçeneğiniz var:</p>
+<p><strong>Seçenek 1 — Uygulama İçinden (önerilen):</strong>
+1. sandık uygulamasını açın
+2. Profile sekmesine gidin
+3. Ayarlar → "Hesabımı Sil" butonuna tıklayın
+4. Onay dialog'unda işlemi onaylayın
+5. Hesabınız 30 gün içinde kalıcı olarak silinir</p>
+<p><strong>Seçenek 2 — Bu Form İle:</strong>
+Aşağıdaki bilgileri <code>sandikapp.destek@gmail.com</code> adresine gönderin:</p>
+<pre><code>Konu: Hesap Silme Talebi
+
+Ad-Soyad: ___________________
+Hesap E-postası: ___________________
+Talep Tarihi: ___________________
+Açıklama (opsiyonel): ___________________
+</code></pre>
+<p>Talebiniz <strong>30 gün</strong> içinde işleme alınır. İşlem öncesi e-posta adresinizden onay isteriz (kimlik doğrulama).</p>
+<h3>Silinen Veriler</h3>
+<ul>
+<li>Hesap bilgileriniz (e-posta, display name)</li>
+<li>Tüm portföy varlık kayıtlarınız</li>
+<li>Performans snapshot geçmişiniz</li>
+<li>Ortaklık bağlantılarınız (karşı tarafın hesabından da çıkarılırsınız)</li>
+<li>Push bildirim token'ınız</li>
+<li>Yerel cihaz cache'iniz (uninstall ile)</li>
+</ul>
+<h3>Yasal Saklama Süresi Olan Veriler</h3>
+<ul>
+<li><strong>Disclaimer onay logu:</strong> TBK Madde 146 zamanaşımı uyarınca silmeden sonra <strong>3 yıl</strong> anonim formda saklanır</li>
+<li><strong>Hata logları:</strong> 90 gün sonra otomatik silinir</li>
+</ul>
+<h3>Soru?</h3>
+<p><code>sandikapp.destek@gmail.com</code> adresinden bize ulaşın.</p>
+<hr />
+<h2>🇬🇧 English</h2>
+<h3>sandık — Account and Data Deletion Request</h3>
+<p>You have two options to delete your account:</p>
+<p><strong>Option 1 — In-App (recommended):</strong>
+1. Open the sandık app
+2. Go to the Profile tab
+3. Settings → "Delete Account"
+4. Confirm in the dialog
+5. Your account is permanently deleted within 30 days</p>
+<p><strong>Option 2 — Via This Form:</strong>
+Send the following to <code>sandikapp.destek@gmail.com</code>:</p>
+<pre><code>Subject: Account Deletion Request
+
+Full name: ___________________
+Account email: ___________________
+Request date: ___________________
+Notes (optional): ___________________
+</code></pre>
+<p>Your request will be processed within <strong>30 days</strong>. We will send a verification email before processing (identity verification).</p>
+<h3>Data That Will Be Deleted</h3>
+<ul>
+<li>Account information (email, display name)</li>
+<li>All your portfolio asset records</li>
+<li>Your performance snapshot history</li>
+<li>Partnership links (you'll also be removed from your partner's account)</li>
+<li>Push notification token</li>
+<li>Local device cache (after uninstall)</li>
+</ul>
+<h3>Data With Legal Retention</h3>
+<ul>
+<li><strong>Disclaimer acceptance log:</strong> Anonymized form retained for <strong>3 years</strong> under Turkish CO Art. 146 statute of limitations</li>
+<li><strong>Error logs:</strong> Auto-deleted after 90 days</li>
+</ul>
+<h3>Questions?</h3>
+<p>Contact us at <code>sandikapp.destek@gmail.com</code>.</p>
+<hr />
+<h2>Suggested HTML Form (deploy at <code>https://yasincirali.github.io/sandikapp/data-deletion</code>)</h2>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;tr&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;title&gt;Hesap Silme — sandık&lt;/title&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;/head&gt;
+&lt;body style=&quot;font-family:system-ui;max-width:640px;margin:40px auto;padding:0 16px;line-height:1.6&quot;&gt;
+  &lt;h1&gt;Hesap Silme Talebi — sandık&lt;/h1&gt;
+  &lt;p&gt;Hesabınızı silmek için aşağıdaki formu doldurun. 30 gün içinde işleme alınacaktır.&lt;/p&gt;
+
+  &lt;form action=&quot;mailto:sandikapp.destek@gmail.com&quot; method=&quot;post&quot; enctype=&quot;text/plain&quot;&gt;
+    &lt;p&gt;
+      &lt;label&gt;Ad-Soyad:&lt;br&gt;
+        &lt;input type=&quot;text&quot; name=&quot;name&quot; required style=&quot;width:100%;padding:8px&quot;&gt;
+      &lt;/label&gt;
+    &lt;/p&gt;
+    &lt;p&gt;
+      &lt;label&gt;Hesap E-postası:&lt;br&gt;
+        &lt;input type=&quot;email&quot; name=&quot;email&quot; required style=&quot;width:100%;padding:8px&quot;&gt;
+      &lt;/label&gt;
+    &lt;/p&gt;
+    &lt;p&gt;
+      &lt;label&gt;Açıklama (opsiyonel):&lt;br&gt;
+        &lt;textarea name=&quot;notes&quot; rows=&quot;4&quot; style=&quot;width:100%;padding:8px&quot;&gt;&lt;/textarea&gt;
+      &lt;/label&gt;
+    &lt;/p&gt;
+    &lt;p&gt;
+      &lt;label&gt;
+        &lt;input type=&quot;checkbox&quot; required&gt;
+        Hesabımın ve verilerimin silineceğini, disclaimer onay logumun
+        3 yıl anonim formda saklanacağını anladım.
+      &lt;/label&gt;
+    &lt;/p&gt;
+    &lt;button type=&quot;submit&quot; style=&quot;background:#F5A623;color:#fff;border:0;padding:12px 24px;border-radius:8px;font-size:16px;cursor:pointer&quot;&gt;
+      Hesap Silme Talebimi Gönder
+    &lt;/button&gt;
+  &lt;/form&gt;
+
+  &lt;hr style=&quot;margin:40px 0&quot;&gt;
+  &lt;p&gt;&lt;small&gt;
+    sandık — &lt;a href=&quot;/privacy&quot;&gt;Gizlilik Politikası&lt;/a&gt; ·
+    &lt;a href=&quot;/terms&quot;&gt;Kullanım Koşulları&lt;/a&gt; ·
+    &lt;a href=&quot;/legal/kvkk&quot;&gt;KVKK Aydınlatma Metni&lt;/a&gt;
+  &lt;/small&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<blockquote>
+<p>Production'da <code>mailto:</code> yerine bir backend endpoint (örn. Supabase Edge Function veya basit bir web form servisi) kullanın ki spam'e karşı korunabilesiniz ve talep otomatik kuyruğa girsin.</p>
+</blockquote>
+<footer>
+  sandık — <a href="/sandikapp/">Ana Sayfa</a> · <a href="/sandikapp/privacy">Gizlilik</a> · <a href="/sandikapp/terms">Kullanım</a> · <a href="/sandikapp/data-deletion">Hesap Silme</a>
+</footer>
+</div>
+</body>
+</html>
