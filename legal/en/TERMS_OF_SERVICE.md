@@ -4,13 +4,13 @@
 **Last updated:** May 11, 2026
 **Version:** 1.0
 
-> **TODO:** Fill in `[COMPANY NAME]`, `[ADDRESS]`, `[CONTACT EMAIL]`, `[GOVERNING COURT]`.
+> **TODO:** Fill in `Yasin Çıralı`, `Istanbul, Türkiye`, `sandikapp.destek@gmail.com`, `Istanbul Anatolian Courts and Enforcement Offices`.
 
 ---
 
 ## 1. Parties and Acceptance
 
-These Terms of Service ("Terms") form a contract between `[COMPANY NAME]` ("Company", "we") and the natural person ("User", "you") who uses the **sandık** mobile application ("App", "Service").
+These Terms of Service ("Terms") form a contract between `Yasin Çıralı` ("Company", "we") and the natural person ("User", "you") who uses the **sandık** mobile application ("App", "Service").
 
 By downloading the App and creating an account, you confirm that you have read, understood and accepted these Terms, the **Privacy Policy** and the **KVKK Disclosure Document**.
 
@@ -55,7 +55,7 @@ This notice is acknowledged at first launch on a separate disclaimer screen; the
 ### 4.2 Account Security
 - Do not share your password with anyone.
 - You are responsible for the security of your password.
-- If you suspect unauthorized access, immediately change your password and notify us at `[CONTACT EMAIL]`.
+- If you suspect unauthorized access, immediately change your password and notify us at `sandikapp.destek@gmail.com`.
 - All actions performed on your account are deemed to be performed by you.
 
 ### 4.3 One Account
@@ -109,7 +109,7 @@ The terms of use of third-party data providers (including Yahoo Finance, TEFAS) 
 
 ## 8. Intellectual Property
 
-- The design, code, logo, brand name and content of the App belong to `[COMPANY NAME]`.
+- The design, code, logo, brand name and content of the App belong to `Yasin Çıralı`.
 - The "sandık" trademark, logo and visual identity are protected by copyright and trademark laws.
 - You receive a **non-exclusive, non-transferable, non-sublicensable** license to download and use the App for personal use.
 - Data you enter (your asset records) belongs to you; the Company may process this data only to provide the Service to you.
@@ -167,7 +167,7 @@ We are not liable for service disruptions caused by circumstances beyond our con
 
 ## 14. Notices
 
-All notices to us must be sent to `[CONTACT EMAIL]`.
+All notices to us must be sent to `sandikapp.destek@gmail.com`.
 
 Notices to you may be delivered via:
 - In-app notification
@@ -214,10 +214,10 @@ If we change these Terms:
 
 ## 19. Contact
 
-`[COMPANY NAME]`
-`[FULL ADDRESS]`
-Email: `[CONTACT EMAIL]`
-Web: `[WEBSITE]`
+`Yasin Çıralı`
+`Istanbul, Türkiye`
+Email: `sandikapp.destek@gmail.com`
+Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 

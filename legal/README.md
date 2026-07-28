@@ -32,7 +32,7 @@ Bu klasör, **sandık** uygulamasının App Store ve Google Play yayını için 
 
 ### 1. TODO Alanlarını Doldurun
 
-Tüm dokümanlarda `[ŞİRKET ADI]`, `[ADRES]`, `[İLETİŞİM E-POSTA]`, `[VERBİS NO]`, `[YETKİLİ MAHKEME]` vb. placeholder'lar var. Production'a çıkmadan önce **mutlaka** gerçek değerlerle değiştirin.
+Tüm dokümanlarda `Yasin Çıralı`, `İstanbul, Türkiye`, `sandikapp.destek@gmail.com`, `Kayıtlı değil (bireysel geliştirici — VERBIS kaydı ticari faaliyet başlangıcında yapılacaktır)`, `İstanbul Anadolu Mahkemeleri ve İcra Daireleri` vb. placeholder'lar var. Production'a çıkmadan önce **mutlaka** gerçek değerlerle değiştirin.
 
 ```bash
 # Yardımcı komut — placeholder'ları bul:
@@ -52,12 +52,12 @@ Hukuki belgeleri **halka açık URL'de** yayınlamak zorunludur:
 
 | URL | İçerik |
 |---|---|
-| `[WEBSITE]/privacy` | tr/PRIVACY_POLICY.md (HTML render) |
-| `[WEBSITE]/privacy-en` | en/PRIVACY_POLICY.md |
-| `[WEBSITE]/terms` | tr/TERMS_OF_SERVICE.md |
-| `[WEBSITE]/legal/kvkk` | tr/KVKK_AYDINLATMA_METNI.md |
-| `[WEBSITE]/legal/gdpr` | en/GDPR_NOTICE.md |
-| `[WEBSITE]/data-deletion` | DATA_DELETION_REQUEST_FORM.md HTML |
+| `https://yasincirali.github.io/sandikapp/privacy` | tr/PRIVACY_POLICY.md (HTML render) |
+| `https://yasincirali.github.io/sandikapp/privacy-en` | en/PRIVACY_POLICY.md |
+| `https://yasincirali.github.io/sandikapp/terms` | tr/TERMS_OF_SERVICE.md |
+| `https://yasincirali.github.io/sandikapp/legal/kvkk` | tr/KVKK_AYDINLATMA_METNI.md |
+| `https://yasincirali.github.io/sandikapp/legal/gdpr` | en/GDPR_NOTICE.md |
+| `https://yasincirali.github.io/sandikapp/data-deletion` | DATA_DELETION_REQUEST_FORM.md HTML |
 
 **Önerilen hosting:** GitHub Pages (ücretsiz), Vercel, Netlify, Cloudflare Pages. Domain için: `sandik.app` veya `sandikapp.com`.
 

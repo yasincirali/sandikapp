@@ -4,17 +4,17 @@
 **Last updated:** May 11, 2026
 **Version:** 1.0
 
-> **TODO (fill in before publication):** Replace `[COMPANY NAME]`, `[ADDRESS]`, `[TAX ID]`, `[CONTACT EMAIL]`, `[WEBSITE]`, `[DPO]` with real values. If you operate as an individual developer, "company" can be replaced with your name and a contact address. For commercial activity, VERBIS registration in Türkiye may be mandatory (kvkk.gov.tr).
+> **Note:** Published version. Data controller is an individual developer; VERBIS registration is not required unless commercial activity is initiated in Türkiye (kvkk.gov.tr). Contact for privacy inquiries: sandikapp.destek@gmail.com.
 
 ---
 
 ## 1. Data Controller
 
-This application (**sandık**, the "App") is operated by `[COMPANY NAME]` ("we", "us", "Company").
+This application (**sandık**, the "App") is operated by `Yasin Çıralı` ("we", "us", "Company").
 
-- **Address:** `[FULL ADDRESS]`
-- **Email:** `[CONTACT EMAIL]`
-- **Website:** `[WEBSITE]`
+- **Address:** `Istanbul, Türkiye`
+- **Email:** `sandikapp.destek@gmail.com`
+- **Website:** `https://yasincirali.github.io/sandikapp`
 
 We act as data controller under GDPR Article 4(7) and Turkish KVKK Article 3(1)(ı).
 
@@ -139,8 +139,8 @@ You may exercise the following rights by contacting us:
 
 **How to request:**
 1. **In-app:** Profile → Settings → "Delete Account" / "Download My Data"
-2. **Email:** `[CONTACT EMAIL]` with identity-verification information
-3. **Web form:** `[WEBSITE]/data-request`
+2. **Email:** `sandikapp.destek@gmail.com` with identity-verification information
+3. **Web form:** `https://yasincirali.github.io/sandikapp/data-request`
 
 We respond to requests within **30 days** (GDPR Art. 12(3) / KVKK Art. 13(2)).
 
@@ -212,9 +212,9 @@ If you do not object within 30 days, you are deemed to have accepted the changes
 
 For all data protection questions, requests and complaints:
 
-- **Email:** `[CONTACT EMAIL]`
-- **Address:** `[FULL ADDRESS]`
-- **Data Protection Officer (DPO, if appointed):** `[DPO NAME] — [DPO EMAIL]`
+- **Email:** `sandikapp.destek@gmail.com`
+- **Address:** `Istanbul, Türkiye`
+- **Data Protection Officer (DPO, if appointed):** `Not appointed — inquiries to sandikapp.destek@gmail.com`
 
 ---
 

@@ -1,6 +1,6 @@
 # Veri Silme Talep Formu / Data Deletion Request Form
 
-> **NOT:** Bu sayfayı `[WEB SİTESİ]/data-deletion` URL'inde halka açık bir HTML formu olarak yayınlayın. Google Play hesap silme zorunluluğu için **Web URL** istemektedir; uygulama içi akışa ek olarak halka açık bir web sayfası gerekir.
+> **NOT:** Bu sayfayı `https://yasincirali.github.io/sandikapp/data-deletion` URL'inde halka açık bir HTML formu olarak yayınlayın. Google Play hesap silme zorunluluğu için **Web URL** istemektedir; uygulama içi akışa ek olarak halka açık bir web sayfası gerekir.
 
 ---
 
@@ -18,7 +18,7 @@ Hesabınızı silmek için iki seçeneğiniz var:
 5. Hesabınız 30 gün içinde kalıcı olarak silinir
 
 **Seçenek 2 — Bu Form İle:**
-Aşağıdaki bilgileri `[İLETİŞİM E-POSTA]` adresine gönderin:
+Aşağıdaki bilgileri `sandikapp.destek@gmail.com` adresine gönderin:
 
 ```
 Konu: Hesap Silme Talebi
@@ -44,7 +44,7 @@ Talebiniz **30 gün** içinde işleme alınır. İşlem öncesi e-posta adresini
 - **Hata logları:** 90 gün sonra otomatik silinir
 
 ### Soru?
-`[İLETİŞİM E-POSTA]` adresinden bize ulaşın.
+`sandikapp.destek@gmail.com` adresinden bize ulaşın.
 
 ---
 
@@ -62,7 +62,7 @@ You have two options to delete your account:
 5. Your account is permanently deleted within 30 days
 
 **Option 2 — Via This Form:**
-Send the following to `[CONTACT EMAIL]`:
+Send the following to `sandikapp.destek@gmail.com`:
 
 ```
 Subject: Account Deletion Request
@@ -88,11 +88,11 @@ Your request will be processed within **30 days**. We will send a verification e
 - **Error logs:** Auto-deleted after 90 days
 
 ### Questions?
-Contact us at `[CONTACT EMAIL]`.
+Contact us at `sandikapp.destek@gmail.com`.
 
 ---
 
-## Suggested HTML Form (deploy at `[WEBSITE]/data-deletion`)
+## Suggested HTML Form (deploy at `https://yasincirali.github.io/sandikapp/data-deletion`)
 
 ```html
 <!DOCTYPE html>
@@ -106,7 +106,7 @@ Contact us at `[CONTACT EMAIL]`.
   <h1>Hesap Silme Talebi — sandık</h1>
   <p>Hesabınızı silmek için aşağıdaki formu doldurun. 30 gün içinde işleme alınacaktır.</p>
 
-  <form action="mailto:[CONTACT EMAIL]" method="post" enctype="text/plain">
+  <form action="mailto:sandikapp.destek@gmail.com" method="post" enctype="text/plain">
     <p>
       <label>Ad-Soyad:<br>
         <input type="text" name="name" required style="width:100%;padding:8px">

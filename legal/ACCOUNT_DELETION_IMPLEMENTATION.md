@@ -389,7 +389,7 @@ SELECT cron.schedule(
 
 ## 6. Web Sayfası — Halka Açık Veri Silme
 
-Google Play "Account deletion" zorunluluğu için web sayfası da şart. `[WEBSITE]/data-deletion` URL'inde [DATA_DELETION_REQUEST_FORM.md](DATA_DELETION_REQUEST_FORM.md) içindeki HTML formu yayınlayın.
+Google Play "Account deletion" zorunluluğu için web sayfası da şart. `https://yasincirali.github.io/sandikapp/data-deletion` URL'inde [DATA_DELETION_REQUEST_FORM.md](DATA_DELETION_REQUEST_FORM.md) içindeki HTML formu yayınlayın.
 
 ---
 
@@ -409,12 +409,12 @@ Google Play "Account deletion" zorunluluğu için web sayfası da şart. `[WEBSI
 
 ### Google Play Console — Data Safety:
 - "Users can request that data be deleted" → ✓ Yes
-- "User data deletion link" → `[WEBSITE]/data-deletion`
+- "User data deletion link" → `https://yasincirali.github.io/sandikapp/data-deletion`
 - "Users can delete their account from within the app" → ✓ Yes
 
 ### App Store Connect — App Privacy:
 - "Account Deletion Method" → "In-app + URL"
-- URL: `[WEBSITE]/data-deletion`
+- URL: `https://yasincirali.github.io/sandikapp/data-deletion`
 
 ---
 

@@ -9,10 +9,10 @@
 
 ## 1. Identity of the Controller
 
-`[COMPANY NAME]` is the controller of your personal data within the meaning of GDPR Article 4(7).
+`Yasin Çıralı` is the controller of your personal data within the meaning of GDPR Article 4(7).
 
-- **Address:** `[FULL ADDRESS]`
-- **Email:** `[CONTACT EMAIL]`
+- **Address:** `Istanbul, Türkiye`
+- **Email:** `sandikapp.destek@gmail.com`
 - **EU representative (Art. 27):** `[EU REPRESENTATIVE — required if you have no EU establishment AND offer services to EU residents]`
 - **Data Protection Officer (Art. 37):** `[DPO NAME / EMAIL — appointed if required]`
 
@@ -59,7 +59,7 @@ Data is transferred to the United States via:
 
 **Risk assessment:** The U.S. is a recipient of the EU-U.S. Data Privacy Framework adequacy decision (10 July 2023). However, due to evolving CJEU jurisprudence, we additionally rely on SCCs and supplementary measures (encryption in transit and at rest, access controls, RLS).
 
-You may request a copy of the SCCs by emailing `[CONTACT EMAIL]`.
+You may request a copy of the SCCs by emailing `sandikapp.destek@gmail.com`.
 
 ---
 
@@ -81,7 +81,7 @@ You may correct inaccurate or incomplete data.
 You may request deletion. We will erase your data unless retention is required by law (e.g., disclaimer log under Turkish CO Art. 146).
 
 **In-app:** Profile → Settings → Delete Account.
-**Web:** `[WEBSITE]/data-request`
+**Web:** `https://yasincirali.github.io/sandikapp/data-request`
 
 ### 7.4 Right to Restriction (Art. 18)
 You may ask us to limit processing in specific situations (e.g., contesting accuracy, unlawful processing without erasure request).
@@ -119,9 +119,9 @@ Find yours: https://edpb.europa.eu/about-edpb/about-edpb/members_en
 | Method | Address |
 |---|---|
 | In-app | Profile → Settings (Delete / Download) |
-| Email | `[CONTACT EMAIL]` |
-| Web form | `[WEBSITE]/data-request` |
-| Postal mail | `[FULL ADDRESS]` |
+| Email | `sandikapp.destek@gmail.com` |
+| Web form | `https://yasincirali.github.io/sandikapp/data-request` |
+| Postal mail | `Istanbul, Türkiye` |
 
 **Identity verification:** We may ask you to verify your identity (e.g., confirm via the email associated with your account). If we have reasonable doubts about your identity, we may request additional information (Art. 12(6)).
 
@@ -142,13 +142,13 @@ If we detect a personal data breach likely to result in a risk to your rights an
 
 ## 10. Children (Art. 8)
 
-Our service is not directed to children under 16. We do not knowingly process data of children under 16 without parental consent. If you believe a child has provided data, contact us at `[CONTACT EMAIL]` for immediate deletion.
+Our service is not directed to children under 16. We do not knowingly process data of children under 16 without parental consent. If you believe a child has provided data, contact us at `sandikapp.destek@gmail.com` for immediate deletion.
 
 ---
 
 ## 11. Changes to This Notice
 
-Material changes will be communicated via in-app notification and email at least **30 days in advance**. The current version is always available at `[WEBSITE]/legal/gdpr`.
+Material changes will be communicated via in-app notification and email at least **30 days in advance**. The current version is always available at `https://yasincirali.github.io/sandikapp/legal/gdpr`.
 
 ---
 
@@ -156,8 +156,8 @@ Material changes will be communicated via in-app notification and email at least
 
 | Role | Contact |
 |---|---|
-| Controller | `[COMPANY NAME]` — `[CONTACT EMAIL]` |
-| Data Protection Officer (if appointed) | `[DPO NAME] — [DPO EMAIL]` |
+| Controller | `Yasin Çıralı` — `sandikapp.destek@gmail.com` |
+| Data Protection Officer (if appointed) | `Not appointed — inquiries to sandikapp.destek@gmail.com` |
 | EU Representative (Art. 27) | `[EU REP NAME, ADDRESS]` |
 
 ---

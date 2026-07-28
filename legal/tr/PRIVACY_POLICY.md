@@ -15,7 +15,7 @@ Bu uygulamayÄ± (**sandÄ±k**, "Uygulama") `[ÅÄ°RKET ADI]` ("biz", "Åi
 - **Adres:** `[AÃ‡IK ADRES]`
 - **E-posta:** `[Ä°LETÄ°ÅÄ°M E-POSTA]`
 - **Web:** `[WEB SÄ°TESÄ°]`
-- **VERBÄ°S:** `[NUMARA]` (uygulanabilirse)
+- **VERBÄ°S:** `Kayıtlı değil (bireysel geliştirici)` (uygulanabilirse)
 
 KVKK Madde 3(1)(Ä±) uyarÄ±nca veri sorumlusu sÄ±fatÄ±yla hareket ediyoruz.
 
