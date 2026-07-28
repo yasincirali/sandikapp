@@ -48,6 +48,20 @@ platform :ios do
       api_key: api_key
     )
 
+    # 1b) Xcode project'i MANUAL signing'e zorla — match'in ürettiği profili
+    #     tanısın. Aksi halde Xcode "No profiles for com.sandik.app were
+    #     found: Automatic signing is disabled" ile fail eder.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Runner.xcodeproj",
+      team_id: ENV["APPLE_TEAM_ID"],
+      code_sign_identity: "Apple Distribution",
+      bundle_identifier: "com.sandik.app",
+      profile_name: "match AppStore com.sandik.app",
+      targets: ["Runner"],
+      build_configurations: ["Release"]
+    )
+
     # 2) Build number'ı ASC'den al + 1 (Flutter side de bakar ama fastlane
     #    kesin doğruyu alsın; "value already used" hatasına karşı güvenli)
     latest_build = latest_testflight_build_number(
