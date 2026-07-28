@@ -1,0 +1,96 @@
+default_platform(:ios)
+
+# ── Yardımcı: App Store Connect API key'i ENV'den (base64) yükle ─────────────
+# GitHub Actions'ta APP_STORE_CONNECT_API_KEY_BASE64 secret'ından geliyor.
+def asc_api_key
+  app_store_connect_api_key(
+    key_id: ENV["ASC_KEY_ID"],
+    issuer_id: ENV["ASC_ISSUER_ID"],
+    key_content: ENV["ASC_KEY_CONTENT"], # p8 içeriği (BEGIN/END PRIVATE KEY dahil)
+    is_key_content_base64: false,
+    in_house: false
+  )
+end
+
+platform :ios do
+  # ─────────────────────────────────────────────────────────────────────────
+  # setup_match_certificates
+  # ─────────────────────────────────────────────────────────────────────────
+  # TEK SEFERLİK. Match private repo boşsa çalıştır — App Store dağıtım
+  # sertifikası + provisioning profili üretir, private repo'ya şifreli
+  # (MATCH_PASSWORD) push eder. Sonraki build'ler bu artefaktları
+  # readonly modda çekip kullanır.
+  desc "İlk kurulum: Match ile App Store sertifika + profil üret ve private repo'ya yaz"
+  lane :setup_match_certificates do
+    api_key = asc_api_key
+    match(
+      type: "appstore",
+      readonly: false,
+      force_for_new_devices: false,
+      api_key: api_key
+    )
+    UI.success("Match kurulum tamam — sertifika ve profil #{ENV['MATCH_GIT_URL']} içine yazıldı")
+  end
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # beta
+  # ─────────────────────────────────────────────────────────────────────────
+  # Her main push'ta: match readonly ile signing hazırla, Flutter release
+  # build al, .ipa üret, TestFlight'a upload et.
+  desc "Build ve TestFlight'a upload"
+  lane :beta do
+    api_key = asc_api_key
+
+    # 1) Signing artefaktlarını private cert repo'dan çek (readonly)
+    match(
+      type: "appstore",
+      readonly: true,
+      api_key: api_key
+    )
+
+    # 2) Build number'ı ASC'den al + 1 (Flutter side de bakar ama fastlane
+    #    kesin doğruyu alsın; "value already used" hatasına karşı güvenli)
+    latest_build = latest_testflight_build_number(
+      app_identifier: "com.sandik.app",
+      api_key: api_key,
+      initial_build_number: 5
+    )
+    next_build_number = (latest_build || 5) + 1
+    UI.message("Bir sonraki build number: #{next_build_number}")
+
+    # 3) Info.plist içindeki CFBundleVersion'ı güncelle
+    increment_build_number(
+      xcodeproj: "Runner.xcodeproj",
+      build_number: next_build_number.to_s
+    )
+
+    # 4) Flutter release build (workflow build_ios adımından geliyor;
+    #    burada sadece gym ile Xcode archive + export yapılır)
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.sandik.app" => "match AppStore com.sandik.app"
+        }
+      },
+      output_directory: "./build",
+      output_name: "sandik.ipa",
+      clean: true,
+      silent: false,
+      suppress_xcode_output: false
+    )
+
+    # 5) TestFlight upload
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: "./build/sandik.ipa",
+      skip_waiting_for_build_processing: true,
+      changelog: File.read("../../store_listing/en-US/whats_new.txt").strip
+    )
+
+    UI.success("Build #{next_build_number} TestFlight'a upload edildi 🚀")
+  end
+end

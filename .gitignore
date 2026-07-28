@@ -87,3 +87,16 @@ supabase/.temp/
 
 # codebase-memory-mcp local graph artifacts
 .codebase-memory/
+
+# Fastlane çıktıları (iOS deployment)
+ios/fastlane/report.xml
+ios/fastlane/Preview.html
+ios/fastlane/screenshots/**/*.png
+ios/fastlane/screenshots/**/*.jpg
+ios/fastlane/test_output/
+ios/Pods/
+ios/.symlinks/
+ios/build/
+*.ipa
+*.dSYM.zip
+*.dSYM

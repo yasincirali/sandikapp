@@ -1,0 +1,4 @@
+app_identifier("com.sandik.app")
+apple_id(ENV["APPLE_ID"]) # sandikapp.destek@gmail.com (senin ASC login e-posta)
+itc_team_id(ENV["ITC_TEAM_ID"]) # App Store Connect team id
+team_id(ENV["APPLE_TEAM_ID"]) # Apple Developer team id

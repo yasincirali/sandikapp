@@ -1,0 +1,42 @@
+name: iOS — Setup Match Certificates (one-time)
+
+# TEK SEFERLİK manuel tetiklenir. Match private cert repo'sunu boş bir
+# şekilde oluşturduktan sonra bu workflow'u çalıştır — App Store dağıtım
+# sertifikası + provisioning profili üretir ve şifreli olarak cert repo'ya
+# push eder. Bir kere yeterli. Cert 1 yıl geçerli; expire olunca yine
+# manuel tetikleyerek yenilenir.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Install fastlane
+        working-directory: ios
+        run: bundle install
+
+      - name: Run match (create certs + push to cert repo)
+        working-directory: ios
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ITC_TEAM_ID: ${{ secrets.ITC_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTH: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_READONLY: "false"
+        run: bundle exec fastlane setup_match_certificates
