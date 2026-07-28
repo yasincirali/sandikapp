@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
@@ -15,6 +16,15 @@ import 'history_service.dart';
 /// netCashFlow: period içinde yapılan (buy TRY) - (sell TRY) — deposit
 /// etkisini ROI'den çıkarır ki büyük yatırım yapan biri "daha iyi
 /// performans göstermiş" gibi görünmesin.
+/// ROI hesabı sonucu — değer ve fallback bayrağı birlikte. usedFallback=true
+/// ise UI "tahmini" işareti gösterebilir; hesap history yerine unrealized
+/// PnL'den yapılmıştır.
+class RoiResult {
+  final double? roi;
+  final bool usedFallback;
+  const RoiResult({required this.roi, required this.usedFallback});
+}
+
 /// Top gainer satırı — anonim, sadece rank + ROI + tür yüzdeleri.
 class TopGainerAllocation {
   final int rank;
@@ -48,21 +58,37 @@ class LeaderboardService {
   }
 
   /// Bir kullanıcının portföy assets'ini alıp verilen periyotta ROI% döner.
-  /// History fetch başarısızsa unrealized PnL%'ye fallback yapar. Her
-  /// çağrıda gerçek hesap yapılır; [cacheKey] verilirse sonuç cache'e
-  /// yazılır — sonraki açılışta [staleROI] anında okuyabilir.
-  Future<double?> computeROI({
+  ///
+  /// Formül:
+  ///   ROI% = (currentValue - startValue - netCashFlow) / startValue × 100
+  ///
+  /// Nerede:
+  ///   - startValue = dönem başındaki portföy değeri (TL, o günkü fiyatlarla)
+  ///   - currentValue = bugünkü portföy değeri (TL)
+  ///   - netCashFlow = dönem içinde eklenen yeni sermaye eksi çekim:
+  ///        + isBuy: satın alım TL maliyeti (deposit)
+  ///        - isSell: satış geliri (sellPrice × quantity × FX)  — DİKKAT:
+  ///          maliyet DEĞİL, satış geliri kullanılır. Aksi halde kârlı
+  ///          satış "çekilmiş sermaye" olarak eksik sayılır ve ROI düşük
+  ///          hesaplanır.
+  ///
+  /// History fetch başarısız ya da dönem başı değer 0 ise unrealized PnL%'ye
+  /// fallback yapar ([usedFallback] = true olarak dönerse UI "tahmini"
+  /// göstergesi koyabilir).
+  Future<RoiResult> computeROIDetailed({
     required List<Asset> assets,
     required int periodDays,
     required double currentValueTRY,
     required double Function(double, String) toTRY,
     String? cacheKey,
   }) async {
-    if (assets.isEmpty) return null;
+    if (assets.isEmpty) {
+      return const RoiResult(roi: null, usedFallback: false);
+    }
 
     final ck = cacheKey == null ? null : '$cacheKey|$periodDays';
 
-    // Fallback: net pozisyonun toplam maliyeti — her zaman hesaplanabilir.
+    // Unrealized PnL fallback — net pozisyonun toplam maliyetine göre.
     final totalCostTRY = aggregatePositions(assets)
         .map((p) => p.asDisplayAsset())
         .fold<double>(0, (s, a) => s + toTRY(a.totalCost, a.currency));
@@ -72,17 +98,26 @@ class LeaderboardService {
     }
 
     double? result;
+    bool usedFallback = false;
+    String? diagnostic;
+
     try {
       final history = await HistoryService.instance
           .getPortfolioHistory(assets, periodDays);
       if (history.isEmpty) {
         result = fallbackPnlPct();
+        usedFallback = true;
+        diagnostic =
+            'history=empty periodDays=$periodDays → unrealized PnL fallback';
       } else {
         final entries = history.entries.toList()
           ..sort((a, b) => a.key.compareTo(b.key));
         final startValue = entries.first.value;
         if (startValue <= 0) {
           result = fallbackPnlPct();
+          usedFallback = true;
+          diagnostic =
+              'startValue=$startValue (dönem başında portföy boş) → fallback';
         } else {
           final startTs = entries.first.key;
           final now = DateTime.now();
@@ -92,21 +127,64 @@ class LeaderboardService {
           for (final a in assets) {
             if (a.addedDate.isBefore(periodStart)) continue;
             if (a.addedDate.isAfter(now)) continue;
-            if (a.isBuy) netCashFlow += a.totalCostTRY;
-            if (a.isSell) netCashFlow -= a.totalCostTRY;
+            if (a.isBuy) {
+              // Alım maliyeti — asset üzerindeki purchaseFxRate ile TL.
+              netCashFlow += a.totalCostTRY;
+            } else if (a.isSell) {
+              // Satış geliri — sellPrice ile hesaplanır (maliyet DEĞİL).
+              // sellPrice varsa onu, yoksa purchasePrice'a fallback.
+              // TL'ye çevirme için bugünkü FX kullanılır (satış anındaki
+              // tarihsel FX'i persist etmiyoruz; approximation).
+              final unitPrice = a.sellPrice ?? a.purchasePrice;
+              final saleProceedsTRY =
+                  toTRY(unitPrice * a.quantity, a.currency);
+              netCashFlow -= saleProceedsTRY;
+            }
           }
           final adjustedGain = currentValueTRY - startValue - netCashFlow;
           result = (adjustedGain / startValue) * 100.0;
+          diagnostic =
+              'startValue=${startValue.toStringAsFixed(0)} '
+              'current=${currentValueTRY.toStringAsFixed(0)} '
+              'netCashFlow=${netCashFlow.toStringAsFixed(0)} '
+              'periodDays=$periodDays historyPoints=${history.length}';
         }
       }
-    } catch (_) {
+    } catch (e) {
       result = fallbackPnlPct();
+      usedFallback = true;
+      diagnostic = 'exception=$e → unrealized PnL fallback';
+    }
+
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('[LeaderboardService.computeROI] '
+          'user=${cacheKey ?? "?"} $diagnostic '
+          '=> roi=${result?.toStringAsFixed(2) ?? "null"}%');
     }
 
     if (ck != null) {
       _roiCache[ck] = (at: DateTime.now(), roi: result);
     }
-    return result;
+    return RoiResult(roi: result, usedFallback: usedFallback);
+  }
+
+  /// Backwards-compat: eski call site'lar sadece double? bekliyor.
+  Future<double?> computeROI({
+    required List<Asset> assets,
+    required int periodDays,
+    required double currentValueTRY,
+    required double Function(double, String) toTRY,
+    String? cacheKey,
+  }) async {
+    final r = await computeROIDetailed(
+      assets: assets,
+      periodDays: periodDays,
+      currentValueTRY: currentValueTRY,
+      toTRY: toTRY,
+      cacheKey: cacheKey,
+    );
+    return r.roi;
   }
 
   /// Bir varlık listesinin canlı toplam TRY değeri (net pozisyondan hesaplı).
