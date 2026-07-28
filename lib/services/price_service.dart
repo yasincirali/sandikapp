@@ -358,6 +358,158 @@ class PriceService {
 
   /// Verilen tarih için günlük kapanış FX kurunu döndürür.
   /// Bulunamazsa null döner — çağıran 1.0 fallback kullanır.
+  /// Yahoo Finance sembolü (hisse, ETF, emtia, FX) için verilen [date] tarihine
+  /// en yakın işlem gününün kapanış fiyatını döndürür. Aralık: hedef tarihten
+  /// 10 gün önce - 10 gün sonra (hafta sonu, tatil, veri gecikmesi toleransı).
+  /// Bulamazsa null.
+  ///
+  /// TEFAS sembolleri (`TEFAS:XYZ`) için TefasService.fetchHistory kullanılır.
+  Future<double?> fetchHistoricalClose(String symbol, DateTime date) async {
+    if (symbol.trim().isEmpty) return null;
+
+    // Altın iç sembolleri: önce XAUTRY=X dene; Yahoo bu sembolü 404 döner-
+    // se GC=F (ons USD) × USDTRY=X ile hesapla — spot fallback'in birebir
+    // tarihli versiyonu.
+    if (_goldWeights.containsKey(symbol)) {
+      // ignore: avoid_print
+      print('[PriceService] historicalGold: sym=$symbol date=$date');
+      double? xauTry = await fetchHistoricalClose('XAUTRY=X', date);
+      if (xauTry == null || xauTry <= 0) {
+        // Fallback: GC=F × USDTRY
+        final xauUsd = await fetchHistoricalClose('GC=F', date);
+        final usdTry = await fetchHistoricalClose('USDTRY=X', date);
+        // ignore: avoid_print
+        print('[PriceService] historicalGold fallback: xauUsd=$xauUsd usdTry=$usdTry');
+        if (xauUsd != null && xauUsd > 0 && usdTry != null && usdTry > 0) {
+          xauTry = xauUsd * usdTry;
+        }
+      }
+      // ignore: avoid_print
+      print('[PriceService] historicalGold: xauTry=$xauTry');
+      if (xauTry == null || xauTry <= 0) return null;
+      final gram22k = xauTry / 31.1035 * (22 / 24);
+      final result = gram22k * (_goldWeights[symbol] ?? 1.0);
+      // ignore: avoid_print
+      print('[PriceService] historicalGold: result=$result');
+      return result;
+    }
+
+    if (symbol.startsWith('TEFAS:')) {
+      final code = symbol.replaceFirst('TEFAS:', '');
+      final points = await TefasService.instance
+          .fetchHistory(code, periyod: 12);
+      if (points.isEmpty) return null;
+      // "Son geçerli kapanış" kuralı: hedef tarihe eşit veya öncesindeki
+      // en yeni noktayı seç. Hafta sonu/tatil için doğal olarak bir önceki
+      // işlem günü gelir. İleri günü asla seçme.
+      final target =
+          DateTime(date.year, date.month, date.day, 23, 59, 59)
+              .millisecondsSinceEpoch;
+      double? best;
+      int bestTs = -1;
+      for (final p in points) {
+        if (p.$1 > target) continue;
+        if (p.$1 > bestTs) {
+          bestTs = p.$1;
+          best = p.$2;
+        }
+      }
+      // Hiç ≤ hedef nokta yoksa (kullanıcı fonun kuruluş tarihinden önce
+      // seçmiş) fallback: en eski noktayı ver.
+      if (best == null && points.isNotEmpty) {
+        points.sort((a, b) => a.$1.compareTo(b.$1));
+        best = points.first.$2;
+      }
+      return best;
+    }
+
+    // Yahoo Finance: "son geçerli kapanış" kuralı — hedef tarihte veya
+    // öncesindeki en yeni işlem günü kapanışını al. Hafta sonu/tatil için
+    // otomatik olarak Cuma'ya (ya da son işlem gününe) düşer. Pencere: 15
+    // gün geriye (uzun tatilleri kapsasın diye), 1 gün ileri (Yahoo'nun UTC
+    // dilim farkını tolere etmek için — kullanıcının seçtiği tarihin gün
+    // sonuna kadar).
+    final windowStart =
+        DateTime.utc(date.year, date.month, date.day)
+            .subtract(const Duration(days: 15));
+    final windowEnd =
+        DateTime.utc(date.year, date.month, date.day, 23, 59, 59)
+            .add(const Duration(days: 1));
+    final p1 = (windowStart.millisecondsSinceEpoch / 1000).round();
+    final p2 = (windowEnd.millisecondsSinceEpoch / 1000).round();
+    final targetEnd =
+        DateTime.utc(date.year, date.month, date.day, 23, 59, 59)
+            .millisecondsSinceEpoch;
+
+    try {
+      final uri = Uri.https(
+        'query1.finance.yahoo.com',
+        '/v8/finance/chart/$symbol',
+        {'interval': '1d', 'period1': '$p1', 'period2': '$p2'},
+      );
+      // ignore: avoid_print
+      print('[PriceService] histClose GET $uri');
+      final res = await _client
+          .get(uri, headers: {'User-Agent': _ua, 'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 10));
+      // ignore: avoid_print
+      print('[PriceService] histClose status=${res.statusCode} bodyLen=${res.body.length}');
+      if (res.statusCode != 200) return null;
+
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final result = (body['chart']?['result'] as List?)?.firstOrNull
+          as Map<String, dynamic>?;
+      if (result == null) {
+        // ignore: avoid_print
+        print('[PriceService] histClose: null result');
+        return null;
+      }
+
+      final timestamps = (result['timestamp'] as List?)?.cast<dynamic>();
+      final closes = ((result['indicators']?['quote'] as List?)?.firstOrNull
+              as Map<String, dynamic>?)?['close']
+          ?.cast<dynamic>();
+      if (timestamps == null ||
+          closes == null ||
+          timestamps.isEmpty ||
+          closes.isEmpty) {
+        // ignore: avoid_print
+        print('[PriceService] histClose: empty timestamps/closes');
+        return null;
+      }
+
+      // ≤ hedef en yeni kapanış (hafta sonu → Cuma, tatil → önceki iş günü).
+      double? best;
+      int bestTs = -1;
+      double? earliest;
+      int earliestTs = 1 << 62;
+      for (var i = 0; i < timestamps.length && i < closes.length; i++) {
+        final ts = (timestamps[i] as num?)?.toInt();
+        final v = (closes[i] as num?)?.toDouble();
+        if (ts == null || v == null || v <= 0) continue;
+        final tsMs = ts * 1000;
+        if (tsMs <= targetEnd && tsMs > bestTs) {
+          bestTs = tsMs;
+          best = v;
+        }
+        if (tsMs < earliestTs) {
+          earliestTs = tsMs;
+          earliest = v;
+        }
+      }
+      // Hedef tarihten önce hiç veri yoksa (kullanıcı çok eski tarih seçmiş)
+      // pencerede bulunan en eski veriyi ver — hiç dönmemekten iyidir.
+      final picked = best ?? earliest;
+      // ignore: avoid_print
+      print('[PriceService] histClose picked=$picked bestTs=$bestTs');
+      return picked;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[PriceService] histClose EXC: $e');
+      return null;
+    }
+  }
+
   Future<double?> fetchHistoricalFxRate(String fxSymbol, DateTime date) async {
     // Yahoo Finance UNIX timestamp: gün başı ve gün sonu (UTC)
     final dayStart = DateTime.utc(date.year, date.month, date.day);

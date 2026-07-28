@@ -267,37 +267,19 @@ class _PortfolioPerformanceScreenState
     final firstAssetMidnight =
         DateTime(firstAssetDate.year, firstAssetDate.month, firstAssetDate.day);
 
-    // Alım maliyeti (sabit) — active segmentin başlangıç noktası olarak
-    // kullanılır. Sadece BUY lot'ları toplanır; sell lot'unun totalCostTRY'si
-    // buy fiyatını taşır ve toplama tekrar eklenirse maliyet ikiye katlanır.
-    double totalCostTRY = 0.0;
-    for (final a in buyLots) {
-      totalCostTRY += a.totalCostTRY;
-    }
-
     final sortedTs = history.keys.toList()..sort();
 
-    // Sadece aktif segment (ilk alımdan bugüne). Alım öncesi "passive"
-    // 0-çizgisi çizmiyoruz — grafik Y ekseni ilk alım maliyetinden başlar,
-    // 0'dan değil. Böylece "12 Tem'de aldım, ekranda 0'dan başlıyor" gibi
-    // yanlış okuma olmaz; ilk nokta gerçek yatırım tutarını gösterir.
+    // Sadece aktif segment (ilk alımdan bugüne). TradingView tarzı: ilk
+    // noktanın Y değeri o günün gerçek piyasa değeri (history[ts]). Alım
+    // maliyeti tarihsel Y'yi bastırıp yapay atlama üretmez.
     final activeSpots = <FlSpot>[];
-    bool firstActiveReplaced = false;
 
     for (final ts in sortedTs) {
       final date = DateTime.fromMillisecondsSinceEpoch(ts);
       if (date.isBefore(firstAssetMidnight)) continue;
-      // Saatlik veri için kesirli gün (24 → 1.0 gün). inDays saati keser
-      // ve tüm saatler aynı X'e düşerdi → grafik zigzag olurdu.
       final x = date.difference(startDate).inMinutes / (60.0 * 24.0);
       final y = history[ts]!;
-
-      if (!firstActiveReplaced && totalCostTRY > 0) {
-        activeSpots.add(FlSpot(x, totalCostTRY));
-        firstActiveReplaced = true;
-      } else {
-        activeSpots.add(FlSpot(x, y));
-      }
+      activeSpots.add(FlSpot(x, y));
     }
 
     // Son noktayı, kullanıcının şu an ekranda gördüğü toplam mal varlığı
@@ -930,7 +912,12 @@ class _PortfolioPerformanceScreenState
         // bir mesafede görünür.
         final pad = (activeSpan.clamp(1.0, double.infinity)) * 0.8;
         minX = (firstActiveX - pad).clamp(0.0, fullMaxX);
-        maxX = (lastActiveX + pad).clamp(minX + 1, fullMaxX);
+        // clamp(lower, upper) kuralı: lower <= upper olmalı. Aktif segment
+        // fullMaxX'e yakınsa "minX + 1" fullMaxX'i geçebilir → crash. O yüzden
+        // önce üst sınırı belirle, sonra minX + 1'i onunla clamp'la.
+        final upper = fullMaxX;
+        final lower = (minX + 1).clamp(0.0, upper);
+        maxX = (lastActiveX + pad).clamp(lower, upper);
       }
       // Son güvenlik payı: dot yarıçapı viewport sınırında clip olmasın.
       // Toplam aralığın %3'ü kadar minimum pay bırak.
@@ -939,7 +926,14 @@ class _PortfolioPerformanceScreenState
         minX = (firstActiveX - safety).clamp(0.0, fullMaxX);
       }
       if (maxX - lastActiveX < safety) {
-        maxX = (lastActiveX + safety).clamp(minX + 1, fullMaxX);
+        final upper = fullMaxX;
+        final lower = (minX + 1).clamp(0.0, upper);
+        maxX = (lastActiveX + safety).clamp(lower, upper);
+      }
+      // Son bir güvenlik: minX ile maxX çakışmışsa hafifçe aç.
+      if (maxX <= minX) {
+        maxX = (minX + 1).clamp(0.0, fullMaxX);
+        if (maxX <= minX) minX = (maxX - 1).clamp(0.0, fullMaxX);
       }
     }
 
@@ -1016,8 +1010,8 @@ class _PortfolioPerformanceScreenState
                           // aksi halde sol kenara sıkışıp kırpılır.
                           VerticalLine(
                             x: primarySeg.spots.first.x,
-                            color: Sandik.amber.withValues(alpha: 0.4),
-                            strokeWidth: 1.2,
+                            color: Sandik.amber.withValues(alpha: 0.75),
+                            strokeWidth: 1.6,
                             dashArray: const [4, 4],
                             label: VerticalLineLabel(
                               show: true,
@@ -1025,8 +1019,8 @@ class _PortfolioPerformanceScreenState
                               padding: const EdgeInsets.only(
                                   bottom: 8, left: 6),
                               style: GoogleFonts.dmSans(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
                                 color: Sandik.amber,
                               ),
                               labelResolver: (_) {
@@ -1034,8 +1028,9 @@ class _PortfolioPerformanceScreenState
                                     minutes:
                                         (primarySeg.spots.first.x * 1440)
                                             .round()));
-                                return DateFormat('d MMM', 'tr_TR')
-                                    .format(startTs);
+                                final showYear =
+                                    startTs.year != DateTime.now().year;
+                                return '● ${DateFormat(showYear ? 'd MMM yyyy' : 'd MMM', 'tr_TR').format(startTs)}';
                               },
                             ),
                           ),
@@ -1076,14 +1071,25 @@ class _PortfolioPerformanceScreenState
                   if (val == meta.min || val == meta.max) {
                     return const SizedBox.shrink();
                   }
+                  // Non-intraday: X kesirli gün → gerçek tarihe çevir.
+                  // Yıl farklı bir yıla düşerse label'a yıl ekle ki
+                  // kullanıcı 27 Eki 2025 vs 27 Eki 2026 karışıklığı
+                  // yaşamasın.
+                  String nonIntradayLabel(double v) {
+                    final d = start.add(Duration(
+                        minutes: (v * 24 * 60).round()));
+                    final showYear = d.year != DateTime.now().year;
+                    return DateFormat(
+                            showYear ? 'd MMM yy' : 'd MMM', 'tr_TR')
+                        .format(d);
+                  }
                   final label = intraday
                       ? () {
                           final h = (val ~/ 60).clamp(0, 23);
                           final m = (val % 60).toInt();
                           return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
                         }()
-                      : DateFormat('d MMM', 'tr_TR')
-                          .format(start.add(Duration(days: val.toInt())));
+                      : nonIntradayLabel(val);
                   return Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
@@ -1160,7 +1166,8 @@ class _PortfolioPerformanceScreenState
                     // Trading hissiyatı: sadece "şimdi" noktası görünsün.
                     return spot.x == seg.spots.last.x;
                   }
-                  final dateAtSpot = start.add(Duration(days: spot.x.toInt()));
+                  final dateAtSpot =
+                      start.add(Duration(minutes: (spot.x * 24 * 60).round()));
                   final hasAddition = assets.any((a) =>
                       a.addedDate.year == dateAtSpot.year &&
                       a.addedDate.month == dateAtSpot.month &&
@@ -1185,9 +1192,26 @@ class _PortfolioPerformanceScreenState
                       strokeWidth: 1.6,
                     );
                   }
-                  final radius = (isFirst || isLast) ? 5.5 : 4.5;
+                  // İlk nokta (başlangıç) — büyük halka + amber dolgu +
+                  // kalın halo. "ŞİMDİ" ile aynı ağırlıkta görünsün.
+                  if (isFirst) {
+                    return FlDotCirclePainter(
+                      radius: 8.0,
+                      color: Sandik.amber,
+                      strokeColor: Colors.white,
+                      strokeWidth: 3.5,
+                    );
+                  }
+                  if (isLast) {
+                    return FlDotCirclePainter(
+                      radius: 8.0,
+                      color: Sandik.gain,
+                      strokeColor: Colors.white,
+                      strokeWidth: 3.5,
+                    );
+                  }
                   return FlDotCirclePainter(
-                    radius: radius,
+                    radius: 4.5,
                     color: Sandik.amber,
                     strokeColor: Colors.white,
                     strokeWidth: 2,
@@ -1228,9 +1252,13 @@ class _PortfolioPerformanceScreenState
                 final lastY = primarySeg.spots.last.y;
 
                 return spots.map((s) {
+                  // Non-intraday: s.x kesirli gün → dakika cinsinden ekle.
+                  // `.toInt()` kullanılırsa saat/dakika kısmı düşer ve tooltip
+                  // etiketi yakınlardaki tarihe kayıyor.
                   final date = intraday
                       ? start.add(Duration(minutes: s.x.toInt()))
-                      : start.add(Duration(days: s.x.toInt()));
+                      : start.add(
+                          Duration(minutes: (s.x * 24 * 60).round()));
                   final isFirst = s.x == firstX;
                   final isLast = s.x == lastX;
 
@@ -1502,9 +1530,16 @@ class _PortfolioPerformanceScreenState
   /// birimde.
   List<_VolumeBar> _computeVolumeBars(
       List<Asset> assets, DateTime start) {
+    // Ana chart'ın X birimi ile birebir aynı: kesirli gün (1 saat = 1/24).
+    // İşlemi kendi gününün ortasına (12:00) snap et — TradingView tarzı hacim
+    // çubuğu tarih çizgisinin üstüne düşer. `inDays` kullanılırsa tam sayıya
+    // yuvarlanır ve grafik X ekseni ile hizasız kalır.
     final Map<int, ({double buy, double sell})> perDay = {};
     for (final a in assets) {
-      final dayIdx = a.addedDate.difference(start).inDays;
+      final dayMidnight = DateTime(
+          a.addedDate.year, a.addedDate.month, a.addedDate.day);
+      final dayIdx =
+          dayMidnight.difference(start).inMinutes ~/ (60 * 24);
       if (dayIdx < 0) continue;
       final prev = perDay[dayIdx] ?? (buy: 0.0, sell: 0.0);
       if (a.isBuy) {
@@ -1518,8 +1553,9 @@ class _PortfolioPerformanceScreenState
     final out = <_VolumeBar>[];
     perDay.forEach((day, tot) {
       if (tot.buy + tot.sell <= 0) return;
+      // Bar merkezi gün ortasına — tarih etiketinin altına düşer.
       out.add(_VolumeBar(
-          x: day.toDouble(), buy: tot.buy, sell: tot.sell));
+          x: day.toDouble() + 0.5, buy: tot.buy, sell: tot.sell));
     });
     return out;
   }

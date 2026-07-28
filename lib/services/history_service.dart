@@ -14,8 +14,10 @@ extension ResolutionTierMeta on ResolutionTier {
   /// Yahoo API range parametresi
   String get yahooRange => switch (this) {
         ResolutionTier.fiveMin => '1d',
-        ResolutionTier.hourly => '5d',
-        ResolutionTier.daily => '1y', // günlük için 1y'a kadar veri gelir
+        // 1H periyot 7 gün ister — Yahoo 5d döner ve sol tarafta boşluk kalır.
+        // 1mo döndür (Yahoo 1h intervalinde 1mo'ya kadar destekler).
+        ResolutionTier.hourly => '1mo',
+        ResolutionTier.daily => '1y',
         ResolutionTier.weekly => '5y',
       };
 
@@ -291,20 +293,11 @@ class HistoryService {
         liveTotal += tryPrice * qty;
       }
       if (liveTotal < 0) liveTotal = 0;
+      // TradingView tarzı: son bar canlı fiyattır — tarihsel bar'lara asla
+      // dokunma, sapma eşiği kullanma. %30 kural, gerçek büyük hareketlerde
+      // (yeni alım, döviz sıçraması) canlı toplamı bastırıp grafiği yanıltıyor.
       if (!skipOverwrite && liveTotal > 0) {
-        // Geçmiş seriye göre >%30 sapma varsa (ölçek uyumsuzluğu şüphesi)
-        // suni sıçrama yaratmamak için overwrite'ı atla.
-        final prevDayTs = normalizeTs(
-            now.subtract(const Duration(days: 1)).millisecondsSinceEpoch);
-        final prev = groupedPoints[prevDayTs];
-        if (prev != null && prev > 0) {
-          final dev = ((liveTotal - prev) / prev).abs();
-          if (dev < 0.30) {
-            groupedPoints[todayTs] = liveTotal;
-          }
-        } else {
-          groupedPoints[todayTs] = liveTotal;
-        }
+        groupedPoints[todayTs] = liveTotal;
       }
     }
 
@@ -391,6 +384,18 @@ class HistoryService {
       return bestKey == null ? null : map[bestKey];
     }
 
+    // pastOrNull başarısızsa "en yakın nokta" ile fallback yap.
+    // 40.0 gibi sabit sayı kullanmak eski/yeni tarihlerde büyük sapma yaratır.
+    // Bu helper hiç değilse serinin en yakın gerçek değerini kullanır.
+    double? closestOrNull(Map<int, double> map, int targetTs) {
+      final past = pastOrNull(map, targetTs);
+      if (past != null) return past;
+      if (map.isEmpty) return null;
+      // Geçmişte yok → ileride en yakın
+      final keys = map.keys.toList()..sort();
+      return map[keys.first];
+    }
+
     final now = DateTime.now();
     final Map<String, Map<int, double>> tickerSlots = {};
     Map<int, double> usdTrySlots = {};
@@ -424,7 +429,7 @@ class HistoryService {
       for (final p in xau) {
         final ts = normalizeSlot(p.$1);
         final xauUsd = p.$2;
-        double usdRate = pastOrNull(usdTrySlots, ts) ?? 40.0;
+        double usdRate = closestOrNull(usdTrySlots, ts) ?? 40.0;
         final xauTry = xauUsd * usdRate;
         final gram22k = xauTry / 31.1035 * (22 / 24);
         goldSlots[ts] = gram22k;
@@ -539,11 +544,10 @@ class HistoryService {
       if (hourTs > nowTs) break;
 
       double total = 0.0;
-      // "Bu slotta o varlığın en az bir gerçek veya seed fiyatı var mı?"
-      // Tüm varlıkların değeri hesaplanabildiği slotları çiziyoruz —
-      // aksi halde eksik varlık nedeniyle ilk slotlar suni-düşük çıkıp
-      // sonra dik sıçrama yaratıyor.
-      bool allCovered = true;
+      // En az bir varlık için fiyat hesaplanabildiyse slot'u çiz. Bir
+      // varlığın hiç fiyatı yoksa (kurucu-only fon, silinmiş sembol vs.)
+      // O ASSET'İ yok say — tüm portföyü boşaltma.
+      bool anyCovered = false;
 
       for (final a in assets) {
         try {
@@ -564,7 +568,7 @@ class HistoryService {
             if (price != null) {
               double p = price;
               if (a.currency == 'USD') {
-                final usdRate = pastOrNull(usdTrySlots, hourTs) ?? 40.0;
+                final usdRate = closestOrNull(usdTrySlots, hourTs) ?? 40.0;
                 p *= usdRate;
               }
               v = p * qty;
@@ -572,7 +576,7 @@ class HistoryService {
           }
           // Fon (TEFAS) intraday NAV yayınlamıyor — o gün için sabit
           // currentPrice kullanılır (alternatif yok).
-          if (v == null && a.type == AssetType.fon) {
+          if (v == null && a.type == AssetType.fon && a.currentPrice > 0) {
             v = a.currentPrice * qty;
           }
           // Intraday verisi henüz gelmemiş varlıklar için seed fiyatı
@@ -586,34 +590,28 @@ class HistoryService {
 
           if (v != null) {
             total += v;
-          } else {
-            allCovered = false;
-            break;
+            anyCovered = true;
           }
         } catch (_) {
-          allCovered = false;
-          break;
+          // Bu asset hesaplanamadı, diğerlerine devam et.
         }
       }
 
-      if (!allCovered) continue;
+      if (!anyCovered) continue;
       if (total < 0) total = 0;
       groupedPoints[hourTs] = total;
     }
 
     // Son slotu anlık portföy toplamı ile hizala — grafiğin bitiş noktası
-    // her zaman ana ekrandaki toplamla eşleşsin.
+    // her zaman ana ekrandaki toplamla eşleşsin. currentPrice=0 olan
+    // varlıklar (kurucu-fon vs.) hesap dışı, diğerleri toplama girer.
     if (groupedPoints.isNotEmpty) {
       double liveTotal = 0.0;
-      bool ok = true;
       for (final a in assets) {
         if (a.isDeleteLog) continue;
         final qty = signedQtyOnSlot(a, nowTs);
         if (qty == 0) continue;
-        if (a.currentPrice <= 0) {
-          ok = false;
-          break;
-        }
+        if (a.currentPrice <= 0) continue;
         final liveUsd = usdTrySlots.isNotEmpty
             ? usdTrySlots.values.last
             : 40.0;
@@ -621,7 +619,7 @@ class HistoryService {
             a.currency == 'USD' ? a.currentPrice * liveUsd : a.currentPrice;
         liveTotal += tryPrice * qty;
       }
-      if (ok && liveTotal > 0) {
+      if (liveTotal > 0) {
         final lastKey = groupedPoints.keys.reduce((a, b) => a > b ? a : b);
         groupedPoints[lastKey] = liveTotal;
       }
@@ -715,7 +713,7 @@ class HistoryService {
     for (final entry in xauMap.entries) {
       final ts = entry.key;
       final xauUsd = entry.value;
-      final usdRate = _pastOrNull(usdMap, ts) ?? 40.0;
+      final usdRate = _closestOrNull(usdMap, ts) ?? 40.0;
       final xauTry = xauUsd * usdRate;
       goldMap[ts] = xauTry / 31.1035 * (22 / 24);
     }
@@ -738,8 +736,13 @@ class HistoryService {
     double signedQtyOnSlot(Asset a, int slotTs) {
       if (a.isDeleteLog) return 0.0;
       if (simulate) return a.isSell ? -a.quantity : a.quantity;
-      final addedTs = tier.normalizeTs(a.addedDate.millisecondsSinceEpoch);
-      if (addedTs > slotTs) return 0.0;
+      // slotTs tier bucket başlangıcı. Bir varlığın o slot'ta olabilmesi
+      // için addedDate <= slotTs olmalı — böylece slot başlangıcından SONRA
+      // alınan varlık (örn. çarşamba alım vs pazartesi slot) o slot'a
+      // dahil edilmez, bir sonraki bucket'a girer. Yanlış "erken katılım"
+      // grafiği geçmişte yapay yükseltirdi.
+      final addedMs = a.addedDate.millisecondsSinceEpoch;
+      if (addedMs > slotTs) return 0.0;
       return a.isSell ? -a.quantity : a.quantity;
     }
 
@@ -760,45 +763,49 @@ class HistoryService {
       }
 
       double total = 0.0;
-      bool allCovered = true;
+      bool anyCovered = false;
       for (final a in assets) {
         final qty = signedQtyOnSlot(a, cursor);
         if (qty == 0) continue;
         double? v;
         if (a.type == AssetType.altin) {
-          final gram = _pastOrNull(goldMap, cursor);
+          // Altın için _pastOrNull yerine _closestOrNull — cursor'dan önce
+          // veri yoksa serinin en yakın gelecek noktasına düş. Böylece yeni
+          // eklenmiş bir altın için düz plato + dik sıçrama olmaz.
+          final gram = _closestOrNull(goldMap, cursor);
           if (gram != null) v = gram * goldFactor(a.ticker) * qty;
         } else if (a.type == AssetType.hisse ||
             a.type == AssetType.emtia ||
             a.type == AssetType.doviz ||
             a.type == AssetType.fon) {
           final map = tickerMaps[a.ticker] ?? {};
-          final price = _pastOrNull(map, cursor);
+          final price = _closestOrNull(map, cursor);
           if (price != null) {
             double p = price;
             if (a.currency == 'USD') {
-              final usdRate = _pastOrNull(usdMap, cursor) ?? 40.0;
+              final usdRate = _closestOrNull(usdMap, cursor) ?? 40.0;
               p *= usdRate;
             }
             v = p * qty;
           }
         }
-        // Fallback: intraday tier'de bir varlığın hâlâ verisi yoksa
-        // seed (currentPrice) kullan — dik sıçrama olmasın.
-        if (v == null) {
-          if (a.currentPrice > 0) {
-            final seedPrice = a.currency == 'USD'
-                ? a.currentPrice * 40.0
-                : a.currentPrice;
-            v = seedPrice * qty;
-          } else {
-            allCovered = false;
-            break;
-          }
+        // Son çare: canlı fiyat (Yahoo serisi tamamen boşsa). Bunun yerine
+        // artık nadiren buraya düşülür çünkü _closestOrNull mevcut serideki
+        // herhangi bir noktayı bulur.
+        if (v == null && a.currentPrice > 0) {
+          final seedPrice = a.currency == 'USD'
+              ? a.currentPrice * 40.0
+              : a.currentPrice;
+          v = seedPrice * qty;
         }
+        // Bir asset için hiç fiyat yoksa (kurucu-fon YLB(0.00) gibi) O
+        // ASSET'İ o slot'ta yok say — diğer varlıklar toplama girmeye devam
+        // etsin. Aksi halde tek eksik varlık için tüm grafik boş kalır.
+        if (v == null) continue;
         total += v;
+        anyCovered = true;
       }
-      if (allCovered) {
+      if (anyCovered) {
         if (total < 0) total = 0;
         result[cursor] = total;
       }
@@ -828,6 +835,17 @@ class HistoryService {
       }
     }
     return best == null ? null : map[best];
+  }
+
+  /// pastOrNull null döndüyse "en yakın ileri nokta" ile fallback. Böylece
+  /// eski tarihlere sabit 40.0 kur atamak yerine serinin en yakın gerçek
+  /// değerini kullanırız → grafik ani sıçrama üretmez.
+  double? _closestOrNull(Map<int, double> map, int targetTs) {
+    final past = _pastOrNull(map, targetTs);
+    if (past != null) return past;
+    if (map.isEmpty) return null;
+    final keys = map.keys.toList()..sort();
+    return map[keys.first];
   }
 
   /// Bir kısmi tier'ın cache'ini temizle (invalidate). Debug için.

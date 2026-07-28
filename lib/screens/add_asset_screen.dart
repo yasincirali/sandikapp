@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,7 +96,17 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   late String _unitType;
   late String _currency;
   late bool _isManualPrice;
+  late DateTime _addedDate;
   bool _saving = false;
+
+  // Preview: kullanıcı save'e basmadan önce tahmini birim fiyat.
+  // Ticker+tarih değişince debounce ile fetch tetiklenir, sonuç card'da
+  // gösterilir. Kullanıcı fiyatı kendisi yazdıysa preview gizlenir.
+  double? _previewPrice;
+  bool _previewLoading = false;
+  bool _previewIsHistorical = false;
+  Timer? _previewDebounce;
+  int _previewSeq = 0;
 
   String? _bist100SelectedTicker;
   TefasFund? _selectedFund;
@@ -136,6 +147,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     _unitType = initUnit;
     _currency = initCurrency;
     _isManualPrice = a?.isManualPrice ?? (c != null && c.ticker.isEmpty);
+    _addedDate = a?.addedDate ?? DateTime.now();
+    // Form açılışında preview'ı bir kere tetikle.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPricePreview());
 
     // BIST100 seçili hisse prefill
     if (initType == AssetType.hisse &&
@@ -157,10 +171,103 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   @override
   void dispose() {
+    _previewDebounce?.cancel();
     for (final c in [_name, _ticker, _quantity, _price, _notes]) {
       c.dispose();
     }
     super.dispose();
+  }
+
+  // ── Preview: seçili varlık + tarih için tahmini birim fiyat ──────────────
+  //
+  // Ticker/tarih değişince 400 ms debounce ile çalışır. Kullanıcı fiyat
+  // alanına manuel değer yazdıysa preview gösterilmez (o zaman zaten kesin
+  // fiyat var). Sequence sayacı ile eski request sonuçlarını yutar.
+  String? _resolveTickerForPreview() {
+    if (_isBist100) return _bist100SelectedTicker;
+    if (_isFon && _selectedFund != null) return 'TEFAS:${_selectedFund!.code}';
+    if (_type == AssetType.altin && _subCategory != null) {
+      return goldTickerMap[_subCategory!];
+    }
+    if (_isDoviz && _subCategory != null) {
+      final opt = _dovizOptions.firstWhere(
+        (o) => o.label == _subCategory,
+        orElse: () => _dovizOptions.first,
+      );
+      return opt.ticker;
+    }
+    final t = _ticker.text.trim().toUpperCase();
+    return t.isEmpty ? null : t;
+  }
+
+  void _schedulePricePreview() {
+    _previewDebounce?.cancel();
+    _previewDebounce =
+        Timer(const Duration(milliseconds: 400), _refreshPricePreview);
+  }
+
+  Future<void> _refreshPricePreview() async {
+    // Kullanıcı fiyatı kendi yazdıysa preview'a gerek yok.
+    final userPrice = _parse(_price.text);
+    if (userPrice != null && userPrice > 0) {
+      if (mounted && _previewPrice != null) {
+        setState(() {
+          _previewPrice = null;
+          _previewLoading = false;
+        });
+      }
+      return;
+    }
+
+    final ticker = _resolveTickerForPreview();
+    if (ticker == null || ticker.isEmpty) {
+      if (mounted && (_previewPrice != null || _previewLoading)) {
+        setState(() {
+          _previewPrice = null;
+          _previewLoading = false;
+        });
+      }
+      return;
+    }
+
+    final now = DateTime.now();
+    final isToday = _addedDate.year == now.year &&
+        _addedDate.month == now.month &&
+        _addedDate.day == now.day;
+
+    final seq = ++_previewSeq;
+    if (mounted) setState(() => _previewLoading = true);
+
+    double? fetched;
+    bool isHistorical = false;
+    try {
+      if (!isToday) {
+        final hist = await PriceService.instance
+            .fetchHistoricalClose(ticker, _addedDate);
+        if (hist != null && hist > 0) {
+          fetched = hist;
+          isHistorical = true;
+        }
+      }
+      if (fetched == null) {
+        if (ticker.startsWith('TEFAS:')) {
+          final code = ticker.replaceFirst('TEFAS:', '');
+          final prices = await TefasService.instance.fetchPrices([code]);
+          fetched = prices[code];
+        } else {
+          final quotes = await PriceService.instance.fetchQuotes([ticker]);
+          fetched = quotes[ticker.toUpperCase()]?.regularMarketPrice;
+        }
+      }
+    } catch (_) {}
+
+    // Eski istek dönmüşse yut.
+    if (seq != _previewSeq || !mounted) return;
+    setState(() {
+      _previewPrice = (fetched != null && fetched > 0) ? fetched : null;
+      _previewIsHistorical = isHistorical;
+      _previewLoading = false;
+    });
   }
 
   String _fmt(double v) =>
@@ -302,6 +409,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
                   // ── Toplam maliyet hero card ─────────────────────────
                   _totalHero(cs),
+                  const SizedBox(height: 10),
+
+                  // ── Tahmini birim fiyat preview ──────────────────────
+                  _pricePreviewCard(cs),
+
+                  // ── İşlem tarihi (chip) ──────────────────────────────
+                  _dateChip(cs),
                   const SizedBox(height: 16),
 
                   // ── Notlar (collapsible) ─────────────────────────────
@@ -353,6 +467,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           autocorrect: false,
           onChanged: (v) {
             if (v.isEmpty) setState(() => _isManualPrice = true);
+            _schedulePricePreview();
           },
         ),
       ],
@@ -404,6 +519,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 _isManualPrice = true;
               }
             });
+            _schedulePricePreview();
           },
         ),
         const SizedBox(height: 8),
@@ -423,11 +539,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       children: GoldSubCategory.values.map((g) {
         final selected = _subCategory == g.label;
         return GestureDetector(
-          onTap: () => setState(() {
-            _subCategory = g.label;
-            _unitType = g.unitType;
-            _name.text = g.label;
-          }),
+          onTap: () {
+            setState(() {
+              _subCategory = g.label;
+              _unitType = g.unitType;
+              _name.text = g.label;
+            });
+            _schedulePricePreview();
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -523,7 +642,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               v != null && v.trim().isNotEmpty && _parse(v) == null
                   ? 'Geçersiz'
                   : null,
-          onChanged: (_) => setState(() {}),
+          onChanged: (_) {
+            setState(() {});
+            _schedulePricePreview();
+          },
           suffix: _isDoviz ? null : _inlineCurrencyPicker(),
         ),
       ],
@@ -585,6 +707,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     }
 
     if (isPriceEmpty) {
+      final now = DateTime.now();
+      final isToday = _addedDate.year == now.year &&
+          _addedDate.month == now.month &&
+          _addedDate.day == now.day;
+      final msg = isToday
+          ? 'Alış fiyatı boş — kaydederken güncel piyasa fiyatı otomatik atanacak.'
+          : 'Alış fiyatı boş — ${DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate)} '
+              'tarihli kapanış fiyatı otomatik atanacak.';
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -600,7 +730,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Alış fiyatı boş — kaydederken güncel piyasa fiyatı otomatik atanacak.',
+                msg,
                 style: GoogleFonts.dmSans(
                     fontSize: 12,
                     color: Sandik.text90,
@@ -672,6 +802,205 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Tahmini birim fiyat kartı ──────────────────────────────────────────────
+  //
+  // Kullanıcı fiyat alanını boş bıraktığında, seçili varlık + tarih için
+  // asenkron çekilen birim fiyatı burada gösterir. Kullanıcı save'e basmadan
+  // "kaç TL'den atanacak" bilgisine sahip olur. Manuel fiyat yazıldığında
+  // gizlenir (o zaman zaten bilinen değer var).
+  Widget _pricePreviewCard(ColorScheme cs) {
+    final userPrice = _parse(_price.text);
+    // Kullanıcı fiyat yazmışsa preview gerekmez.
+    if (userPrice != null && userPrice > 0) {
+      return const SizedBox(height: 6);
+    }
+    final ticker = _resolveTickerForPreview();
+    if (ticker == null || ticker.isEmpty) {
+      return const SizedBox(height: 6);
+    }
+
+    final now = DateTime.now();
+    final isToday = _addedDate.year == now.year &&
+        _addedDate.month == now.month &&
+        _addedDate.day == now.day;
+    final dateLabel = isToday
+        ? 'bugün'
+        : DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
+
+    final Color color;
+    final IconData icon;
+    final String title;
+    final String subtitle;
+
+    if (_previewLoading && _previewPrice == null) {
+      color = Sandik.text58;
+      icon = Icons.hourglass_top_rounded;
+      title = 'Fiyat çekiliyor…';
+      subtitle = '$dateLabel için kapanış aranıyor';
+    } else if (_previewPrice != null) {
+      final p = _previewPrice!;
+      final fmt = NumberFormat('#,##0.##', 'tr_TR');
+      color = _previewIsHistorical ? Sandik.gain : Sandik.amber;
+      icon = _previewIsHistorical
+          ? Icons.event_available_rounded
+          : Icons.auto_awesome_rounded;
+      title = '${fmt.format(p)} $_currency / birim';
+      subtitle = _previewIsHistorical
+          ? '$dateLabel kapanışı — kayıtta bu fiyat kullanılacak'
+          : 'Tarihli fiyat bulunamadı — güncel piyasa fiyatı kullanılacak';
+    } else {
+      color = Sandik.loss.withValues(alpha: 0.8);
+      icon = Icons.help_outline_rounded;
+      title = 'Fiyat bulunamadı';
+      subtitle = 'İnternet yok ya da bu sembol için veri gelmedi — '
+          'alış fiyatını manuel girmek isteyebilirsin';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: _previewLoading && _previewPrice == null
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Sandik.text58),
+                    )
+                  : Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Sandik.text90,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11,
+                      color: Sandik.text58,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── İşlem tarihi chip'i ────────────────────────────────────────────────────
+  //
+  // Varsayılan: bugün. Kullanıcı geriye dönük bir tarih seçerse ve alış
+  // fiyatı boşsa, kaydederken o tarihin kapanış fiyatı otomatik atanır.
+  // UX: küçük tek satır, dokununca native date picker açılır.
+  Widget _dateChip(ColorScheme cs) {
+    final now = DateTime.now();
+    final isToday = _addedDate.year == now.year &&
+        _addedDate.month == now.month &&
+        _addedDate.day == now.day;
+    final label = isToday
+        ? 'Bugün'
+        : DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _addedDate,
+          firstDate: DateTime(2000),
+          lastDate: DateTime.now(),
+          helpText: 'İşlem tarihi',
+          cancelText: 'İptal',
+          confirmText: 'Seç',
+          builder: (ctx, child) => Theme(
+            data: Theme.of(ctx).copyWith(
+              colorScheme: Theme.of(ctx).colorScheme.copyWith(
+                    primary: Sandik.amber,
+                    onPrimary: Colors.black,
+                  ),
+            ),
+            child: child!,
+          ),
+        );
+        if (picked != null) {
+          setState(() => _addedDate = picked);
+          _schedulePricePreview();
+        }
+      },
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Sandik.surface1,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isToday
+                ? Colors.white.withValues(alpha: 0.05)
+                : Sandik.amber.withValues(alpha: 0.35),
+            width: isToday ? 1 : 1.2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.event_rounded,
+                size: 16,
+                color: isToday ? Sandik.text58 : Sandik.amber),
+            const SizedBox(width: 10),
+            Text('İşlem tarihi',
+                style: GoogleFonts.dmSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Sandik.text90)),
+            const Spacer(),
+            Text(label,
+                style: GoogleFonts.dmSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isToday ? Sandik.text58 : Sandik.amber)),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded,
+                size: 16,
+                color: isToday ? Sandik.text36 : Sandik.amber),
+          ],
+        ),
       ),
     );
   }
@@ -874,6 +1203,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   _ticker.clear();
                   _name.clear();
                 });
+                _schedulePricePreview();
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
@@ -933,13 +1263,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           child: Padding(
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
-              onTap: () => setState(() {
-                _subCategory = opt.label;
-                _ticker.text = opt.ticker;
-                _currency = 'TRY';
-                _isManualPrice = opt.ticker.isEmpty;
-                _name.text = opt.name;
-              }),
+              onTap: () {
+                setState(() {
+                  _subCategory = opt.label;
+                  _ticker.text = opt.ticker;
+                  _currency = 'TRY';
+                  _isManualPrice = opt.ticker.isEmpty;
+                  _name.text = opt.name;
+                });
+                _schedulePricePreview();
+              },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 160),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1102,6 +1435,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             _name.text =
                 bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', '');
           });
+          _schedulePricePreview();
           Navigator.pop(ctx);
         },
       ),
@@ -1148,6 +1482,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               _price.text = _fmt(fund.price);
             }
           });
+          _schedulePricePreview();
           Navigator.pop(ctx);
         },
       ),
@@ -1446,22 +1781,43 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       return;
     }
 
-    // ── Güncel fiyat çek (alış fiyatı boşsa) ──────────────────────────────
+    // ── Fiyat çek (alış fiyatı boşsa) ──────────────────────────────────────
+    // Bugün seçildiyse güncel spot; geçmiş bir tarih seçildiyse o tarihin
+    // kapanış fiyatı. Historical fetch başarısızsa spot'a fallback yapar.
+    bool priceFromHistorical = false;
+    bool priceFallbackToSpot = false;
     if (price == 0.0 && ticker.isNotEmpty) {
       setState(() => _saving = true);
       try {
-        if (ticker.startsWith('TEFAS:') && _selectedFund != null) {
-          // TEFAS fiyatı API'den çek
-          final code = ticker.replaceFirst('TEFAS:', '');
-          final prices = await TefasService.instance.fetchPrices([code]);
-          price = prices[code] ?? 0.0;
-        } else {
-          final quotes = await PriceService.instance.fetchQuotes([ticker]);
-          if (!mounted) return;
-          final q = quotes[ticker.toUpperCase()];
-          if (q?.regularMarketPrice != null && q!.regularMarketPrice! > 0) {
-            price = q.regularMarketPrice!;
+        final now = DateTime.now();
+        final isToday = _addedDate.year == now.year &&
+            _addedDate.month == now.month &&
+            _addedDate.day == now.day;
+
+        if (!isToday) {
+          final hist = await PriceService.instance
+              .fetchHistoricalClose(ticker, _addedDate);
+          if (hist != null && hist > 0) {
+            price = hist;
+            priceFromHistorical = true;
           }
+        }
+
+        // Historical yoksa veya bugünse spot
+        if (price == 0.0) {
+          if (ticker.startsWith('TEFAS:') && _selectedFund != null) {
+            final code = ticker.replaceFirst('TEFAS:', '');
+            final prices = await TefasService.instance.fetchPrices([code]);
+            price = prices[code] ?? 0.0;
+          } else {
+            final quotes = await PriceService.instance.fetchQuotes([ticker]);
+            if (!mounted) return;
+            final q = quotes[ticker.toUpperCase()];
+            if (q?.regularMarketPrice != null && q!.regularMarketPrice! > 0) {
+              price = q.regularMarketPrice!;
+            }
+          }
+          if (price > 0 && !isToday) priceFallbackToSpot = true;
         }
       } catch (_) {}
       if (!mounted) return;
@@ -1499,7 +1855,34 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ..currency = _currency
           ..notes = _notes.text.trim()
           ..isManualPrice = manual;
-        await ref.read(portfolioProvider.notifier).updateAsset(a);
+        // addedDate final — direkt set edilemez; kullanıcı düzenlemede tarih
+        // değiştirdiyse Asset'i yeniden inşa edip provider'a yolla.
+        if (a.addedDate != _addedDate) {
+          final updated = Asset(
+            id: a.id,
+            userId: a.userId,
+            name: a.name,
+            ticker: a.ticker,
+            type: a.type,
+            quantity: a.quantity,
+            purchasePrice: a.purchasePrice,
+            currency: a.currency,
+            notes: a.notes,
+            subCategory: a.subCategory,
+            unitType: a.unitType,
+            purchaseFxRate: a.purchaseFxRate,
+            currentPrice: a.currentPrice,
+            lastUpdated: a.lastUpdated,
+            addedDate: _addedDate,
+            isManualPrice: a.isManualPrice,
+            kind: a.kind,
+            refAssetId: a.refAssetId,
+            sellPrice: a.sellPrice,
+          );
+          await ref.read(portfolioProvider.notifier).updateAsset(updated);
+        } else {
+          await ref.read(portfolioProvider.notifier).updateAsset(a);
+        }
       } else {
         await ref.read(portfolioProvider.notifier).addAsset(
               name: assetName,
@@ -1512,6 +1895,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               isManualPrice: manual,
               subCategory: _subCategory,
               unitType: _unitType,
+              addedDate: _addedDate,
             );
       }
     } on AssetLimitExceededException catch (e) {
@@ -1531,7 +1915,32 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      // Tarihli fiyat çekimi yapıldıysa kullanıcıya bildir — atanan değer
+      // net görünsün, "güncel geldi sandım" hissi olmasın.
+      if (priceFromHistorical || priceFallbackToSpot) {
+        final fmt = NumberFormat('#,##0.##', 'tr_TR');
+        final dateStr =
+            DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
+        final msg = priceFromHistorical
+            ? '$dateStr kapanışı ${fmt.format(price)} $_currency olarak atandı'
+            : '$dateStr için geçmiş fiyat bulunamadı — güncel fiyat '
+                '${fmt.format(price)} $_currency atandı';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg,
+                style: GoogleFonts.dmSans(
+                    fontSize: 13, fontWeight: FontWeight.w600)),
+            backgroundColor: priceFromHistorical
+                ? Sandik.gain.withValues(alpha: 0.9)
+                : Sandik.amber.withValues(alpha: 0.9),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      Navigator.pop(context);
+    }
   }
 }
 

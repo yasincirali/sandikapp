@@ -56,47 +56,57 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                     .read(leaderboardOptInProvider.notifier)
                     .set(true),
               )
-            : activePartners.isEmpty
-                ? _EmptyPartners()
-                : Column(
-                    children: [
-                      _PeriodBar(
-                        selected: _periodIdx,
-                        onChange: (i) => setState(() => _periodIdx = i),
-                        periods: _periods
-                            .map((p) => p.label)
-                            .toList(growable: false),
-                      ),
-                      Expanded(
-                        child: _LeaderboardList(
-                          me: me,
-                          myAssets: myAssets,
-                          partners: activePartners,
-                          partnerAssets: partnerAssets,
-                          periodDays: _periods[_periodIdx].days,
-                          pnlToTRY: (val, cur) =>
-                              pState?.toTRY(val, cur) ?? val,
-                        ),
-                      ),
-                      _GlobalPercentileTeaser(
-                        periodDays: _periods[_periodIdx].days,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                        child: Text(
-                          'Sıralama, ortakların net getirisi (%) — deposit '
-                          've çekme etkisi hariç. Kimsenin varlık listesi '
-                          'gösterilmez.',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 10,
-                            color: Sandik.text36,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
+            : Column(
+                children: [
+                  _PeriodBar(
+                    selected: _periodIdx,
+                    onChange: (i) => setState(() => _periodIdx = i),
+                    periods: _periods
+                        .map((p) => p.label)
+                        .toList(growable: false),
                   ),
+                  Expanded(
+                    child: activePartners.isEmpty
+                        ? _SoloPanel(
+                            me: me,
+                            myAssets: myAssets,
+                            periodDays: _periods[_periodIdx].days,
+                            pnlToTRY: (val, cur) =>
+                                pState?.toTRY(val, cur) ?? val,
+                          )
+                        : _LeaderboardList(
+                            me: me,
+                            myAssets: myAssets,
+                            partners: activePartners,
+                            partnerAssets: partnerAssets,
+                            periodDays: _periods[_periodIdx].days,
+                            pnlToTRY: (val, cur) =>
+                                pState?.toTRY(val, cur) ?? val,
+                          ),
+                  ),
+                  _GlobalPercentileTeaser(
+                    periodDays: _periods[_periodIdx].days,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    child: Text(
+                      activePartners.isEmpty
+                          ? 'Genel sıralama, tüm Sandık kullanıcıları arasında '
+                              'anonim yüzdeliktir. Ortak eklersen aranızda '
+                              'ayrıca sıralama görürsün.'
+                          : 'Sıralama, ortakların net getirisi (%) — deposit '
+                              've çekme etkisi hariç. Kimsenin varlık listesi '
+                              'gösterilmez.',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 10,
+                        color: Sandik.text36,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -157,39 +167,230 @@ class _OptInPrompt extends StatelessWidget {
   }
 }
 
-class _EmptyPartners extends StatelessWidget {
+/// Ortağı olmayan opt-in kullanıcı için: kendi ROI'sini hesaplayıp arka
+/// planda snapshot yükler (global percentile aktif olsun diye) ve
+/// "ortak ekle" CTA'sı gösterir. Global percentile teaser ayrı widget
+/// olarak zaten Column'un altında; bu panel sadece solo state için.
+class _SoloPanel extends StatefulWidget {
+  final AppUser? me;
+  final List<Asset> myAssets;
+  final int periodDays;
+  final double Function(double, String) pnlToTRY;
+
+  const _SoloPanel({
+    required this.me,
+    required this.myAssets,
+    required this.periodDays,
+    required this.pnlToTRY,
+  });
+
+  @override
+  State<_SoloPanel> createState() => _SoloPanelState();
+}
+
+class _SoloPanelState extends State<_SoloPanel> {
+  double? _myRoi;
+  bool _computing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _myRoi = widget.me == null
+        ? null
+        : LeaderboardService.instance.staleROI(
+            userId: widget.me!.id,
+            periodDays: widget.periodDays,
+          );
+    _refresh();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SoloPanel old) {
+    super.didUpdateWidget(old);
+    if (old.periodDays != widget.periodDays ||
+        old.myAssets.length != widget.myAssets.length) {
+      _myRoi = widget.me == null
+          ? null
+          : LeaderboardService.instance.staleROI(
+              userId: widget.me!.id,
+              periodDays: widget.periodDays,
+            );
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    final me = widget.me;
+    if (me == null) return;
+    setState(() => _computing = true);
+    final myCurrentTRY = LeaderboardService.instance
+        .totalValueTRY(widget.myAssets, widget.pnlToTRY);
+    final roi = await LeaderboardService.instance.computeROI(
+      assets: widget.myAssets,
+      periodDays: widget.periodDays,
+      currentValueTRY: myCurrentTRY,
+      toTRY: widget.pnlToTRY,
+      cacheKey: me.id,
+    );
+    if (roi != null) {
+      // Fire-and-forget snapshot — global percentile için.
+      LeaderboardService.instance.uploadRoiSnapshot(
+        userId: me.id,
+        periodDays: widget.periodDays,
+        roiPct: roi,
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _myRoi = roi;
+      _computing = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.people_outline_rounded,
-                size: 48, color: Sandik.text36),
-            const SizedBox(height: 16),
-            Text(
-              'Yarışacak ortağın yok',
-              style: GoogleFonts.dmSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SoloRoiCard(roi: _myRoi, computing: _computing),
+          const SizedBox(height: 14),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: Sandik.surface1,
+              borderRadius: BorderRadius.circular(14),
+              border:
+                  Border.all(color: Colors.white.withValues(alpha: 0.06)),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Sıralama görmek için önce en az bir ortak ekle. '
-              'Ortaklar da Yarış\'a katılmış olmalı.',
-              style: GoogleFonts.dmSans(
-                fontSize: 13,
-                color: Sandik.text58,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
+            child: Row(
+              children: [
+                const Icon(Icons.people_outline_rounded,
+                    size: 22, color: Sandik.amber),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ortak ekle, aranızda da yarış',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Kimsenin varlık listesi paylaşılmaz — yalnız '
+                        'getiri yüzdeleri sıralanır.',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 11,
+                          color: Sandik.text58,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SoloRoiCard extends StatelessWidget {
+  final double? roi;
+  final bool computing;
+  const _SoloRoiCard({required this.roi, required this.computing});
+
+  @override
+  Widget build(BuildContext context) {
+    final r = roi;
+    final positive = r != null && r >= 0;
+    final color = r == null
+        ? Sandik.text58
+        : (positive ? Sandik.gain : Sandik.loss);
+    final valueText = r == null
+        ? (computing ? 'Hesaplanıyor…' : '—')
+        : '${positive ? '+' : ''}${r.toStringAsFixed(2)}%';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.18),
+            Sandik.surface1.withValues(alpha: 0.9),
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              r == null
+                  ? Icons.query_stats_rounded
+                  : (positive
+                      ? Icons.trending_up_rounded
+                      : Icons.trending_down_rounded),
+              color: color,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'SENİN GETİRİN',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: Sandik.text58,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  valueText,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (computing)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Sandik.text58),
+            ),
+        ],
       ),
     );
   }
