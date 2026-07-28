@@ -67,6 +67,16 @@ class ZoomableChart extends StatefulWidget {
   /// dikey çizgi hâlâ çizilir.
   final (String, String)? Function(double x)? crosshairLabelBuilder;
 
+  /// Opsiyonel — verilirse pill'de fiyat/tarih altında ek detay satırları
+  /// gösterilir (getiri, alım/satım vs.). Her satır: (metin, renk).
+  final List<(String, Color)> Function(double x)? crosshairDetailsBuilder;
+
+  /// Opsiyonel: crosshair X'ini en yakın data noktasına snap eder. Verilirse
+  /// hem dikey çizgi hem pill label snap edilmiş X'te gösterilir — böylece
+  /// fl_chart'ın built-in tooltip'i ile crosshair birebir aynı noktaya
+  /// oturur, kullanıcı "çizgi ile veri tutmuyor" hissi almaz.
+  final double Function(double x)? crosshairSnapX;
+
   /// Verilirse widget kendi viewport state'ini tutmaz — controller üstünden
   /// paylaşılır. Volume subchart gibi 2. panelin aynı X aralığına oturması
   /// için kullanılır.
@@ -80,6 +90,15 @@ class ZoomableChart extends StatefulWidget {
   /// bu alan drag'i yakalar; üstteki chart alanı pinch/tap için serbest.
   final double bottomAxisHeight;
 
+  /// Sağdaki Y-ekseni rezerv alanı (px). Chart plot area sağdan bu kadar
+  /// içeride biter — crosshair/touch bu alana **girmez**. fl_chart'ın
+  /// `rightTitles.reservedSize` değeriyle aynı olmalı.
+  final double plotPaddingRight;
+
+  /// Soldaki Y-ekseni rezerv alanı (px). fl_chart `leftTitles.reservedSize`
+  /// ile aynı olmalı. Sağ Y kullanılıyorsa 0.
+  final double plotPaddingLeft;
+
   const ZoomableChart({
     super.key,
     required this.fullMinX,
@@ -88,9 +107,13 @@ class ZoomableChart extends StatefulWidget {
     this.height = 360,
     this.onViewportChanged,
     this.crosshairLabelBuilder,
+    this.crosshairDetailsBuilder,
+    this.crosshairSnapX,
     this.viewportController,
     this.enableTimeScaleDrag = true,
     this.bottomAxisHeight = 32,
+    this.plotPaddingRight = 0,
+    this.plotPaddingLeft = 0,
   });
 
   @override
@@ -178,8 +201,11 @@ class _ZoomableChartState extends State<ZoomableChart> {
   void _onScaleStart(ScaleStartDetails details) {
     _startMinX = _minX;
     _startMaxX = _maxX;
-    _startFocalRel =
-        (details.localFocalPoint.dx / _chartWidth).clamp(0.0, 1.0);
+    // Focal point plot area sınırlarına clamp — Y ekseni bandına gelirse
+    // %100 olarak alma.
+    final localInPlot =
+        (details.localFocalPoint.dx - _plotLeft).clamp(0.0, _plotWidth);
+    _startFocalRel = (localInPlot / _plotWidth).clamp(0.0, 1.0);
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
@@ -189,7 +215,13 @@ class _ZoomableChartState extends State<ZoomableChart> {
     final width = _startMaxX - _startMinX;
     if (width <= 0) return;
 
-    double newWidth = width / details.scale;
+    // Pinch her açıda tetiklenmeli — yatay, dikey ya da çapraz. `details.scale`
+    // geometric mean, dikey pinch'te ~1.0 kalıp chart'ı zoom etmiyor. Yatay ve
+    // dikey ölçekten "1'den daha uzak olanı" seç → dikey pinch de X zoom yapar.
+    final hs = details.horizontalScale;
+    final vs = details.verticalScale;
+    final effectiveScale = ((hs - 1).abs() >= (vs - 1).abs()) ? hs : vs;
+    double newWidth = width / effectiveScale;
     final fullWidth = widget.fullMaxX - widget.fullMinX;
     final minWidth = fullWidth * 0.02;
     if (newWidth < minWidth) newWidth = minWidth;
@@ -200,7 +232,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
     double newMax = newMin + newWidth;
 
     final panPx = details.focalPointDelta.dx;
-    final panData = -panPx / _chartWidth * newWidth;
+    final panData = -panPx / _plotWidth * newWidth;
     newMin += panData;
     newMax += panData;
 
@@ -219,12 +251,37 @@ class _ZoomableChartState extends State<ZoomableChart> {
     widget.onViewportChanged?.call(newMin, newMax);
   }
 
+  /// Chart plot area'nın genişliği = toplam - sağ Y rezervi - sol Y rezervi.
+  /// Kullanıcı touch'ı bu alana konumlanır; Y ekseni bandına düşen dokunuşlar
+  /// clamp'lenir. TradingView'de dikey crosshair Y-ekseni bantına asla girmez.
+  double get _plotWidth {
+    final w = _chartWidth - widget.plotPaddingRight - widget.plotPaddingLeft;
+    return w <= 0 ? 1.0 : w;
+  }
+
+  double get _plotLeft => widget.plotPaddingLeft;
+  double get _plotRight => _chartWidth - widget.plotPaddingRight;
+
   void _updateCrosshair(double localDx) {
-    final clamped = localDx.clamp(0.0, _chartWidth);
-    final rel = _chartWidth <= 0 ? 0.0 : clamped / _chartWidth;
-    final xData = _minX + (_maxX - _minX) * rel;
+    // Touch X'i plot area sınırlarına clamp — Y ekseni bandında dokunulsa
+    // bile crosshair plot içinde kalır.
+    final clamped = localDx.clamp(_plotLeft, _plotRight);
+    final relInPlot = (clamped - _plotLeft) / _plotWidth;
+    var xData = _minX + (_maxX - _minX) * relInPlot;
+    var px = clamped;
+    // En yakın data noktasına snap: hem çizgi hem label aynı X'te olsun.
+    if (widget.crosshairSnapX != null) {
+      final snappedX = widget.crosshairSnapX!(xData);
+      xData = snappedX;
+      final span = _maxX - _minX;
+      if (span > 0) {
+        px = (_plotLeft +
+                (snappedX - _minX) / span * _plotWidth)
+            .clamp(_plotLeft, _plotRight);
+      }
+    }
     setState(() {
-      _crosshairPx = clamped;
+      _crosshairPx = px;
       _crosshairX = xData;
     });
   }
@@ -252,7 +309,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
     // yaklaşık %25'i kadar daraltsın (~4x sensitivity).
     final delta = d.primaryDelta ?? 0;
     if (delta == 0) return;
-    final factor = 1 - (delta / _chartWidth) * 2.5;
+    final factor = 1 - (delta / _plotWidth) * 2.5;
     double newWidth = (_maxX - _minX) * factor;
     final fullWidth = widget.fullMaxX - widget.fullMinX;
     final minWidth = fullWidth * 0.02;
@@ -287,6 +344,8 @@ class _ZoomableChartState extends State<ZoomableChart> {
               _CrosshairOverlay(
                 px: _crosshairPx!,
                 pill: widget.crosshairLabelBuilder!(_crosshairX!),
+                details: widget.crosshairDetailsBuilder
+                    ?.call(_crosshairX!),
                 reserveTopRight: _isZoomed,
               ),
 
@@ -401,12 +460,14 @@ class _ZoomableChartState extends State<ZoomableChart> {
 class _CrosshairOverlay extends StatelessWidget {
   final double px;
   final (String, String)? pill;
+  final List<(String, Color)>? details;
   /// Sıfırla chip'i sağ üstteyse pill onun soluna kayar.
   final bool reserveTopRight;
 
   const _CrosshairOverlay({
     required this.px,
     required this.pill,
+    this.details,
     this.reserveTopRight = false,
   });
 
@@ -470,6 +531,29 @@ class _CrosshairOverlay extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (details != null && details!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            height: 1,
+                            width: 40,
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
+                          const SizedBox(height: 4),
+                          for (final line in details!)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 1),
+                              child: Text(
+                                line.$1,
+                                style: TextStyle(
+                                  color: line.$2,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
                       ],
                     ),
                   ),

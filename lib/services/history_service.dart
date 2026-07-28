@@ -812,7 +812,32 @@ class HistoryService {
       cursor += stepMs;
     }
 
+    // Outlier smoothing: tek nokta V-dip artefaktları (Yahoo veri gecikmesi
+    // veya eksik slot) yumuşat. Komşu iki nokta birbirine yakınken ortadaki
+    // >%1.5 sapıyorsa yerine ortalama koy.
+    _smoothOutliers(result);
+
     return result;
+  }
+
+  /// In-place outlier smoothing — tek nokta V-dip / N-tepe artefaktlarını
+  /// komşuların ortalamasıyla değiştirir. Gerçek trendleri (komşular arası
+  /// da büyük fark) korur.
+  void _smoothOutliers(Map<int, double> points) {
+    if (points.length < 3) return;
+    final keys = points.keys.toList()..sort();
+    for (int i = 1; i < keys.length - 1; i++) {
+      final prev = points[keys[i - 1]]!;
+      final cur = points[keys[i]]!;
+      final next = points[keys[i + 1]]!;
+      if (prev <= 0 || next <= 0) continue;
+      final devPrev = ((cur - prev) / prev).abs();
+      final devNext = ((cur - next) / next).abs();
+      final prevNextGap = ((next - prev) / prev).abs();
+      if (devPrev > 0.015 && devNext > 0.015 && prevNextGap < 0.01) {
+        points[keys[i]] = (prev + next) / 2;
+      }
+    }
   }
 
   int _tierStepMs(ResolutionTier tier) => switch (tier) {

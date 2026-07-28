@@ -365,6 +365,28 @@ class PerformanceScreen extends ConsumerStatefulWidget {
 }
 
 class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
+  /// Y/X ekseni interval'i için TradingView tarzı "nice number" —
+  /// 1/2/2.5/5/10 tabanında yuvarlar. Örn: 34398 → 50000, 137 → 200.
+  double _niceRound(double raw) {
+    if (raw <= 0) return 1;
+    final magnitude =
+        math.pow(10, (math.log(raw) / math.ln10).floor()).toDouble();
+    final normalized = raw / magnitude;
+    double nice;
+    if (normalized <= 1) {
+      nice = 1;
+    } else if (normalized <= 2) {
+      nice = 2;
+    } else if (normalized <= 2.5) {
+      nice = 2.5;
+    } else if (normalized <= 5) {
+      nice = 5;
+    } else {
+      nice = 10;
+    }
+    return nice * magnitude;
+  }
+
   late int _selectedPeriodIdx;
   String? _view = ''; // '' = Ben (Default), null = Tümü, uuid = Ortak
   late Future<Map<int, double>> _historyFuture;
@@ -986,15 +1008,35 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                       final halfRange =
                           maxAbsDev < minDev ? minDev : maxAbsDev;
                       final yPad = halfRange * 0.35;
-                      final outMaxY = center + halfRange + yPad;
+                      final rawMaxY = center + halfRange + yPad;
                       // Compare modda negatif % olabilir (varlık düşmüş) —
                       // 0'a clamp'lemeyelim; ham hesabı bırak.
-                      final outMinY = compareOn
+                      final rawMinY = compareOn
                           ? (center - halfRange - yPad)
                           : (center - halfRange - yPad)
                               .clamp(0, double.infinity)
                               .toDouble();
-                      return (minY: outMinY.toDouble(), maxY: outMaxY);
+                      // TradingView tarzı nice-round Y bound: label'lar temiz
+                      // yuvarlak sayılar olsun ve grid çizgilerine denk gelsin.
+                      final rawInterval = (rawMaxY - rawMinY) / 4;
+                      if (rawInterval <= 0) {
+                        return (
+                          minY: rawMinY.toDouble(),
+                          maxY: rawMaxY.toDouble()
+                        );
+                      }
+                      final niceInterval = _niceRound(rawInterval);
+                      final niceMin = compareOn
+                          ? (rawMinY / niceInterval).floor() * niceInterval
+                          : ((rawMinY / niceInterval).floor() *
+                                  niceInterval)
+                              .clamp(0.0, double.infinity);
+                      final niceMax =
+                          (rawMaxY / niceInterval).ceil() * niceInterval;
+                      return (
+                        minY: niceMin.toDouble(),
+                        maxY: niceMax.toDouble()
+                      );
                     }
 
                     return Column(
@@ -1148,6 +1190,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             fullMinX: focusMin,
                             fullMaxX: focusMax,
                             height: 400 - 36 - 16,
+                            plotPaddingRight: 60,
                             builder: (viewMinX, viewMaxX) {
                               final yBounds = computeY(
                                 viewMinX,
@@ -1166,60 +1209,42 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             show: true,
                             drawVerticalLine: false,
                             horizontalInterval: (viewMaxY - viewMinY) > 0
-                                ? (viewMaxY - viewMinY) / 4
+                                ? _niceRound(
+                                    (viewMaxY - viewMinY) / 4)
                                 : 50000,
                             getDrawingHorizontalLine: (value) => FlLine(
                               color: Colors.white.withOpacity(0.05),
                               strokeWidth: 1,
                             ),
                           ),
-                          borderData: FlBorderData(show: false),
+                          // TradingView paritesi: plot area sağ kenarına
+                          // ince Y-ekseni ayraç çizgisi — Y bandı görsel
+                          // olarak plot area'dan ayrılsın.
+                          borderData: FlBorderData(
+                            show: true,
+                            border: Border(
+                              right: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.10),
+                                width: 1,
+                              ),
+                            ),
+                          ),
                           titlesData: FlTitlesData(
                             show: true,
                             topTitles: const AxisTitles(
                                 sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(
+                            // Y ekseni SAĞDA (TradingView convention).
+                            // leftTitles kapalı. rightTitles nice-round
+                            // interval ile temiz sayılar (100K/200K/...).
+                            leftTitles: const AxisTitles(
                                 sideTitles: SideTitles(showTitles: false)),
-                            // Portfolio Performance grafiğiyle birebir aynı
-                            // eksen formatı ve interval mantığı — X ekseni
-                            // 4 etiket + tr_TR "d MMM", Y ekseni 4 etiket +
-                            // fmtTRYCompact ("₺1,2M").
-                            bottomTitles: AxisTitles(
+                            rightTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                reservedSize: 32,
-                                interval: (viewMaxX - viewMinX) > 0
-                                    ? ((viewMaxX - viewMinX) / 4)
-                                    : 1,
-                                getTitlesWidget: (value, meta) {
-                                  if (value == meta.min ||
-                                      value == meta.max) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  final date = startDate.add(Duration(
-                                      minutes:
-                                          (value * 60 * 24).round()));
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Text(
-                                      DateFormat('d MMM', 'tr_TR')
-                                          .format(date),
-                                      style: GoogleFonts.dmSans(
-                                        color: Sandik.text58,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 72,
+                                reservedSize: 60,
                                 interval: (viewMaxY - viewMinY) > 0
-                                    ? (viewMaxY - viewMinY) / 4
+                                    ? _niceRound(
+                                        (viewMaxY - viewMinY) / 4)
                                     : 50000,
                                 getTitlesWidget: (value, meta) {
                                   if (value == meta.min ||
@@ -1230,10 +1255,62 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       ? '${(value - 100).toStringAsFixed(1)}%'
                                       : fmtTRYCompact(fromY(value));
                                   return Padding(
-                                    padding: const EdgeInsets.only(right: 8),
+                                    padding: const EdgeInsets.only(left: 8),
                                     child: Text(
                                       label,
-                                      textAlign: TextAlign.right,
+                                      textAlign: TextAlign.left,
+                                      style: GoogleFonts.dmSans(
+                                        color: Sandik.text58,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            // X ekseni: dinamik format (span'a göre yıl/saat
+                            // ekle), nice-round interval.
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 40,
+                                interval: (viewMaxX - viewMinX) > 0
+                                    ? _niceRound(
+                                        (viewMaxX - viewMinX) / 5)
+                                    : 1,
+                                getTitlesWidget: (value, meta) {
+                                  if (value == meta.min ||
+                                      value == meta.max) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  final date = startDate.add(Duration(
+                                      minutes:
+                                          (value * 60 * 24).round()));
+                                  final span =
+                                      (meta.max - meta.min).abs();
+                                  final showYearOnly = span > 400;
+                                  final showTime = span < 3;
+                                  final showYear = !showYearOnly &&
+                                      date.year != DateTime.now().year;
+                                  final label = showYearOnly
+                                      ? DateFormat('MMM yy', 'tr_TR')
+                                          .format(date)
+                                      : showTime
+                                          ? DateFormat('d MMM HH:mm',
+                                                  'tr_TR')
+                                              .format(date)
+                                          : DateFormat(
+                                                  showYear
+                                                      ? 'd MMM yy'
+                                                      : 'd MMM',
+                                                  'tr_TR')
+                                              .format(date);
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.only(top: 10),
+                                    child: Text(
+                                      label,
                                       style: GoogleFonts.dmSans(
                                         color: Sandik.text58,
                                         fontSize: 11,
@@ -1446,8 +1523,13 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                   );
                               }),
                           ],
+                          // Built-in tooltip kapalı — crosshair TEK KAYNAK.
+                          // fl_chart tooltip'i ile ZoomableChart crosshair'ı
+                          // paralel çalışınca X hesabı farklı olup değerler
+                          // uyumsuz görünüyordu.
                           lineTouchData: LineTouchData(
-                            enabled: true,
+                            enabled: false,
+                            handleBuiltInTouches: false,
                             touchTooltipData: LineTouchTooltipData(
                               getTooltipColor: (_) =>
                                   Sandik.surface1.withValues(alpha: 0.95),
@@ -1498,35 +1580,45 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           ),
                         );
                             },
-                            crosshairLabelBuilder: (x) {
+                            crosshairSnapX: (x) {
                               final spots = activeSeg.spots;
-                              if (spots.isEmpty) return null;
+                              if (spots.isEmpty) return x;
                               final clamped =
                                   x.clamp(spots.first.x, spots.last.x);
-                              int hi = spots.length - 1;
-                              for (int i = 1; i < spots.length; i++) {
-                                if (spots[i].x >= clamped) {
-                                  hi = i;
-                                  break;
+                              int nearestIdx = 0;
+                              double nearestDx = double.infinity;
+                              for (int i = 0; i < spots.length; i++) {
+                                final dx = (spots[i].x - clamped).abs();
+                                if (dx < nearestDx) {
+                                  nearestDx = dx;
+                                  nearestIdx = i;
                                 }
                               }
-                              final a = spots[hi - 1 < 0 ? 0 : hi - 1];
-                              final b = spots[hi];
-                              final span = (b.x - a.x).abs();
-                              final y = span < 1e-9
-                                  ? b.y
-                                  : a.y +
-                                      (b.y - a.y) *
-                                          ((clamped - a.x) / span);
+                              return spots[nearestIdx].x;
+                            },
+                            crosshairLabelBuilder: (x) {
+                              // x zaten snap edildi — spot'u bul.
+                              final spots = activeSeg.spots;
+                              if (spots.isEmpty) return null;
+                              FlSpot snapped = spots.first;
+                              double best = double.infinity;
+                              for (final s in spots) {
+                                final d = (s.x - x).abs();
+                                if (d < best) {
+                                  best = d;
+                                  snapped = s;
+                                }
+                              }
                               final date = startDate.add(Duration(
-                                  minutes: (clamped * 1440).round()));
+                                  minutes:
+                                      (snapped.x * 1440).round()));
                               final title = compareOn
-                                  ? '${(y - 100).toStringAsFixed(2)}%'
+                                  ? '${(snapped.y - 100).toStringAsFixed(2)}%'
                                   : NumberFormat.currency(
                                           locale: 'tr_TR',
                                           symbol: '₺',
                                           decimalDigits: 2)
-                                      .format(fromY(y));
+                                      .format(fromY(snapped.y));
                               final subtitle = DateFormat(
                                       'd MMM yyyy', 'tr_TR')
                                   .format(date);
