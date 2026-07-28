@@ -402,13 +402,33 @@ class _PortfolioPerformanceScreenState
                             .toList()
                         : targetAssets;
 
+                    // TradingView "auto range": kullanıcı seçilen periyot
+                    // içinde hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün
+                    // önce başladı), chart ilk alım tarihinden itibaren
+                    // çizilir. History fetch'i de bu daraltılmış aralıkta
+                    // yapmalıyız — aksi halde controller 1Y'lik boş veri
+                    // fetch edip görselde tek nokta gibi gösterir.
+                    DateTime effectiveStart = startDate;
+                    if (!isIntraday) {
+                      final buys = chartAssets.where((a) => a.isBuy);
+                      if (buys.isNotEmpty) {
+                        final firstBuy = buys
+                            .map((a) => a.addedDate)
+                            .reduce((a, b) => a.isBefore(b) ? a : b);
+                        if (firstBuy.isAfter(startDate)) {
+                          effectiveStart = DateTime(
+                              firstBuy.year, firstBuy.month, firstBuy.day);
+                        }
+                      }
+                    }
+
                     // Intraday hâlâ eski hourly servisini kullanır (5 dk
                     // grid, ayrı optimize logic). Diğer periyotlar zoom-aware
                     // ZoomDataController üstünden gider.
                     if (!isIntraday) {
                       _ensureController(
                         chartAssets: chartAssets,
-                        from: startDate,
+                        from: effectiveStart,
                         to: endDate,
                         intraday: false,
                       );
@@ -464,7 +484,7 @@ class _PortfolioPerformanceScreenState
                           historyMap,
                           targetAssets,
                           chartAssets,
-                          startDate,
+                          effectiveStart,
                           endDate,
                           isIntraday,
                           pState,

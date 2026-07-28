@@ -147,7 +147,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     _unitType = initUnit;
     _currency = initCurrency;
     _isManualPrice = a?.isManualPrice ?? (c != null && c.ticker.isEmpty);
-    _addedDate = a?.addedDate ?? DateTime.now();
+    _addedDate = a?.addedDate ?? c?.addedDate ?? DateTime.now();
     // Form açılışında preview'ı bir kere tetikle.
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPricePreview());
 
@@ -1770,6 +1770,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         subCategory: _subCategory,
         unitType: _unitType,
         isManualPrice: manual,
+        addedDate: _addedDate,
       );
       final notifier = ref.read(bulkCartProvider.notifier);
       if (widget.cartInitial != null) {

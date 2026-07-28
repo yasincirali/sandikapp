@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
@@ -45,11 +46,20 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     final failures = <String>[];
     final portfolio = ref.read(portfolioProvider.notifier);
 
-    // ── 1) Eksik fiyatları tek batch'te çek ────────────────────────────────
+    // ── 1) Eksik fiyatları çek ─────────────────────────────────────────────
+    // Bugün seçilmiş item'lar için toplu spot fetch (tek batch).
+    // Geçmiş tarihli item'lar için per-item tarihsel kapanış fetch et —
+    // aksi halde 6 ay önce alınmış varlık bugünkü fiyatla eklenir ve
+    // portföy PnL'i yanlış görünür.
+    final now = DateTime.now();
+    bool isToday(DateTime d) =>
+        d.year == now.year && d.month == now.month && d.day == now.day;
+
     final tefasCodes = <String>{};
     final yahooSymbols = <String>{};
     for (final item in items) {
       if (item.price > 0 || item.ticker.isEmpty) continue;
+      if (!isToday(item.addedDate)) continue; // tarihsel için per-item fetch
       if (item.ticker.startsWith('TEFAS:')) {
         tefasCodes.add(item.ticker.replaceFirst('TEFAS:', ''));
       } else {
@@ -72,8 +82,30 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     final tefasPrices = priceFetches[0] as Map<String, double>;
     final yahooQuotes = priceFetches[1] as Map<String, YahooQuote>;
 
+    // Geçmiş tarihli item'lar için tarihsel kapanış — paralel fetch.
+    final historicalPrices = <String, double>{}; // key: itemId
+    await Future.wait(items.where((it) {
+      return it.price <= 0 &&
+          it.ticker.isNotEmpty &&
+          !isToday(it.addedDate);
+    }).map((it) async {
+      try {
+        final hist = await PriceService.instance
+            .fetchHistoricalClose(it.ticker, it.addedDate);
+        if (hist != null && hist > 0) {
+          historicalPrices[it.id] = hist;
+        }
+      } catch (_) {
+        // Sessiz — resolvePrice fallback olarak spot deneyecek.
+      }
+    }));
+
     double resolvePrice(BulkCartItem item) {
       if (item.price > 0 || item.ticker.isEmpty) return item.price;
+      // Tarihsel varsa onu kullan.
+      final hist = historicalPrices[item.id];
+      if (hist != null && hist > 0) return hist;
+      // Bugün ya da tarihsel fetch başarısız → spot fallback.
       if (item.ticker.startsWith('TEFAS:')) {
         final code = item.ticker.replaceFirst('TEFAS:', '');
         return tefasPrices[code] ?? 0.0;
@@ -100,6 +132,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           isManualPrice: item.isManualPrice,
           subCategory: item.subCategory,
           unitType: item.unitType,
+          addedDate: item.addedDate,
         );
         if (mounted) setState(() => _saved++);
       } on AssetLimitExceededException {
@@ -378,10 +411,19 @@ class _BulkItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final isToday = item.addedDate.year == now.year &&
+        item.addedDate.month == now.month &&
+        item.addedDate.day == now.day;
+    final dateLabel = isToday
+        ? null
+        : DateFormat('d MMM yyyy', 'tr_TR').format(item.addedDate);
+
     final subtitle = <String>[
       '${_fmt(item.quantity)} ${_unitLabel()}',
       if (item.price > 0) '${_fmt(item.price)} ${item.currency}',
       if (item.price <= 0) 'Fiyat otomatik',
+      if (dateLabel != null) dateLabel,
       if (item.subCategory != null && item.subCategory!.isNotEmpty)
         item.subCategory!,
     ].join(' · ');

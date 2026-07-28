@@ -10,6 +10,7 @@ class BulkCartItem {
     required this.quantity,
     required this.price,
     required this.currency,
+    required this.addedDate,
     this.subCategory,
     this.unitType = 'piece',
     this.isManualPrice = false,
@@ -25,6 +26,10 @@ class BulkCartItem {
   final String? subCategory;
   final String unitType;
   final bool isManualPrice;
+  /// Kullanıcının bu varlığı hangi tarihte satın aldığını belirtir. Save
+  /// aşamasında hem asset.addedDate olarak yazılır hem de fiyat boşsa bu
+  /// tarihin kapanış fiyatı fetch edilir.
+  final DateTime addedDate;
 
   BulkCartItem copyWith({
     AssetType? type,
@@ -36,6 +41,7 @@ class BulkCartItem {
     String? subCategory,
     String? unitType,
     bool? isManualPrice,
+    DateTime? addedDate,
   }) =>
       BulkCartItem(
         id: id,
@@ -48,6 +54,7 @@ class BulkCartItem {
         subCategory: subCategory ?? this.subCategory,
         unitType: unitType ?? this.unitType,
         isManualPrice: isManualPrice ?? this.isManualPrice,
+        addedDate: addedDate ?? this.addedDate,
       );
 }
 
