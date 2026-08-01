@@ -9,6 +9,7 @@ import 'supabase_service.dart';
 
 const _uuid = Uuid();
 const _savedEmailKey = 'saved_email';
+const _pendingDisplayNameKey = 'pending_display_name';
 
 class AuthException implements Exception {
   final String message;
@@ -66,6 +67,23 @@ class AuthService {
   /// email'i SharedPreferences'a yazar.
   Future<void> saveEmailForLogin(String email) => _saveEmail(email);
 
+  /// Register + OTP verify arasında displayName'i taşımak için.
+  /// Verify başarılı olunca profile upsert'inde kullanılır ve silinir.
+  Future<void> _savePendingDisplayName(String displayName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pendingDisplayNameKey, displayName);
+  }
+
+  Future<String?> _getPendingDisplayName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_pendingDisplayNameKey);
+  }
+
+  Future<void> _clearPendingDisplayName() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_pendingDisplayNameKey);
+  }
+
   Future<void> clearSavedEmail() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_savedEmailKey);
@@ -107,27 +125,19 @@ class AuthService {
         throw const AuthException('Kayıt başarısız. Lütfen tekrar deneyin.');
       }
 
-      // Supabase, confirm-email kapalı olsa bile duplicate signup'ı 400
-      // ile döndürmez (enumeration'a karşı koruma). Bunun yerine
-      // response.user.identities'i boş bırakır — resmi ayırt etme yolu.
-      // Ref: https://supabase.com/docs/guides/auth/auth-identity-linking
-      final identities = response.user!.identities ?? const [];
-      if (identities.isEmpty) {
-        throw const AuthException(
-          'Bu e-posta zaten kayıtlı. Giriş yapmayı deneyin.',
-        );
-      }
+      // NOT: identities.isEmpty kontrolü kaldırıldı. Confirm-email AÇIKKEN
+      // Supabase 2024+ changelog'a göre yeni ve unconfirmed user için de
+      // identities boş dönebiliyor — duplicate ayrımını güvenle yapamayız.
+      // Doğru akış: her durumda OTP ekranına yönlendir; duplicate ise
+      // kullanıcı mevcut hesabının OTP'sini alır, verify başarılı → giriş.
+      // "Bu e-posta zaten kayıtlı" hatası verifyOtp aşamasında da yakalanır
+      // (Supabase yanlış koda 'invalid token' döner).
 
-      // Confirm email KAPALIYKEN Supabase yine de session null döndürebilir
-      // (profile trigger'ları iş yaparken). Bu durumda otomatik signIn ile
-      // session yakala.
-      if (response.session == null) {
-        await _client.auth.signInWithPassword(
-          email: normalizedEmail,
-          password: password,
-        );
-      }
-
+      // Confirm-email AÇIK — session null olmalı. Supabase register sonrası
+      // otomatik OTP maili gönderir. Kullanıcı verifyOtp ile doğrulayana
+      // kadar oturum açılmaz. Register'ı burada sonlandırıyoruz;
+      // RegisterScreen bir sonraki adımda OtpVerificationScreen'e
+      // yönlendirir.
       final user = AppUser(
         id: response.user!.id,
         email: normalizedEmail,
@@ -135,15 +145,14 @@ class AuthService {
         createdAt: DateTime.now(),
       );
 
-      // Post-signup best-effort: Supabase Auth kullanıcı oluşturdu; profil
-      // upsert'i veya email kaydı fail olsa da register akışını hata olarak
-      // gösterme (kullanıcı zaten kaydolmuş durumda). Profil satırı
-      // eksikse ilk login'de tekrar upsert edilir.
-      try {
-        await SupabaseService.instance.upsertProfile(user);
-      } catch (_) {}
+      // Post-signup best-effort: displayName'i email için kaydet, profil
+      // upsert'i doğrulama sonrasına ertelenir (RLS auth.uid() ile
+      // korunuyor, doğrulanmadan yazamayız).
       try {
         await _saveEmail(normalizedEmail);
+      } catch (_) {}
+      try {
+        await _savePendingDisplayName(displayName.trim());
       } catch (_) {}
       return user;
     } on AuthException {
@@ -158,6 +167,102 @@ class AuthService {
       throw AuthException(e.message);
     } catch (e) {
       throw AuthException('Kayıt hatası: $e');
+    }
+  }
+
+  // ── Email OTP (register verification) ─────────────────────────────────────
+
+  /// Register sonrası kullanıcının email'ine gönderilen 6 haneli kodu
+  /// doğrular. Başarılı olursa Supabase session açılır ve profil upsert
+  /// edilir (register sırasında pending kaydedilen displayName ile).
+  ///
+  /// AuthGate authProvider'ı dinlediği için verifyOtp'den sonra
+  /// authProvider.refresh() çağırmak session'ı UI'ya yansıtır.
+  Future<AppUser> verifyRegistrationOtp({
+    required String email,
+    required String token,
+  }) async {
+    final normalizedEmail = email.toLowerCase().trim();
+    final cleanToken = token.trim();
+    if (cleanToken.length != 6 || int.tryParse(cleanToken) == null) {
+      throw const AuthException('Kod 6 haneli olmalı.');
+    }
+
+    try {
+      final response = await _log.log(
+        source: 'AuthService.verifyRegistrationOtp',
+        table: 'auth/verify-otp',
+        op: 'RPC',
+        request: {'email': normalizedEmail, 'type': 'signup'},
+        call: () => _client.auth.verifyOTP(
+          email: normalizedEmail,
+          token: cleanToken,
+          type: OtpType.signup,
+        ),
+      );
+
+      if (response.user == null) {
+        throw const AuthException('Kod doğrulanamadı. Tekrar deneyin.');
+      }
+
+      // Register sırasında kaydettiğimiz displayName'i çek; profile upsert.
+      final pendingName = await _getPendingDisplayName();
+      final displayName = pendingName?.trim().isNotEmpty == true
+          ? pendingName!.trim()
+          : (response.user!.userMetadata?['display_name'] as String?)?.trim() ??
+              normalizedEmail.split('@').first;
+
+      final user = AppUser(
+        id: response.user!.id,
+        email: normalizedEmail,
+        displayName: displayName,
+        createdAt: DateTime.now(),
+      );
+
+      try {
+        await SupabaseService.instance.upsertProfile(user);
+      } catch (_) {}
+      try {
+        await _clearPendingDisplayName();
+      } catch (_) {}
+      return user;
+    } on AuthApiException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('expired') || msg.contains('invalid')) {
+        throw const AuthException(
+            'Kod geçersiz veya süresi doldu. Yeni kod isteyin.');
+      }
+      throw AuthException(e.message);
+    } catch (e) {
+      throw AuthException('Doğrulama hatası: $e');
+    }
+  }
+
+  /// Yeni OTP kodu gönderilir (kullanıcı gelen kodu yakalayamadıysa).
+  Future<void> resendRegistrationOtp(String email) async {
+    final normalizedEmail = email.toLowerCase().trim();
+    try {
+      await _log.log<void>(
+        source: 'AuthService.resendRegistrationOtp',
+        table: 'auth/resend',
+        op: 'RPC',
+        request: {'email': normalizedEmail, 'type': 'signup'},
+        call: () async {
+          await _client.auth.resend(
+            type: OtpType.signup,
+            email: normalizedEmail,
+          );
+        },
+      );
+    } on AuthApiException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('rate') || msg.contains('too many')) {
+        throw const AuthException(
+            'Çok sık kod istediniz. 60 saniye bekleyip tekrar deneyin.');
+      }
+      throw AuthException(e.message);
+    } catch (e) {
+      throw AuthException('Kod gönderilemedi: $e');
     }
   }
 
@@ -186,9 +291,15 @@ class AuthService {
         throw const AuthException('Giriş başarısız.');
       }
 
-      // NOT: Supabase dashboard'da "Confirm email" kapalı olduğu için
-      // emailConfirmedAt kontrolü kaldırıldı. Prod'a çıkarken confirm
-      // email açılırsa bu blok geri getirilmeli.
+      // Confirm-email AÇIK — doğrulamamış kullanıcı login yaparsa
+      // OTP ekranına yönlendir (UI bu exception'ı yakalayıp
+      // OtpVerificationScreen'e push edecek).
+      if (response.user!.emailConfirmedAt == null) {
+        // Session'ı temizle — yarım login state'i kalmasın.
+        try { await _client.auth.signOut(); } catch (_) {}
+        throw const AuthException(
+            'EMAIL_NOT_CONFIRMED');
+      }
 
       var profile =
           await SupabaseService.instance.getProfile(response.user!.id);

@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
@@ -8,17 +7,16 @@ import 'package:flutter/material.dart'
         FormState,
         GlobalKey,
         Icons,
-        MaterialPageRoute,
         Material,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
+import 'otp_verification_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -107,7 +105,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _openTermsDoc() async {
     final confirmed = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      adaptiveRoute(
         builder: (_) => const LegalDocScreen(
           title: 'Yasal Koşullar & KVKK Aydınlatma',
           icon: Icons.gavel_rounded,
@@ -130,7 +128,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _openConsentDoc() async {
     final confirmed = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      adaptiveRoute(
         builder: (_) => const LegalDocScreen(
           title: 'Açık Rıza — Yurt Dışı Veri Aktarımı',
           icon: Icons.public_rounded,
@@ -162,70 +160,33 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _submitting = true);
+    final emailForOtp = _emailCtrl.text.trim().toLowerCase();
     try {
-      await ref.read(authProvider.notifier).register(
-            email: _emailCtrl.text,
-            displayName: _nameCtrl.text,
-            password: _passCtrl.text,
-          );
-
-      final authState = ref.read(authProvider);
-      // Başarı önceliği: user oluştuysa akış başarılıdır — post-signup
-      // adımlardaki (upsertProfile, disclaimer vb.) sessiz bir istisna
-      // olsa bile kullanıcıyı "hata" ile karşılama.
-      if (authState.hasValue && authState.valueOrNull != null) {
-        // devam et — success + navigation aşağıda
-      } else if (authState.hasError) {
-        if (!mounted) return;
-        final err = authState.error;
-        final msg = err?.toString() ?? '';
-        // Confirm-email açıksa AuthService "doğrulama maili gönderildi"
-        // exception'ı atar — bu bir başarı akışı, hata değil.
-        final isPendingConfirmation = msg.contains('doğrulama maili') ||
-            msg.contains('E-posta adresinize doğrulama');
-        if (isPendingConfirmation) {
-          await showAppSuccess(
-            context,
-            title: 'Kayıt başarılı',
-            message: msg,
-          );
-          if (!mounted) return;
-          await AuthService.instance.saveEmailForLogin(_emailCtrl.text.trim());
-          if (!mounted) return;
-          Navigator.pop(context);
-          return;
-        }
-        showAppError(context, err);
-        return;
-      }
-
-      // Kayıt başarılı — disclaimer'ı Supabase'e yaz
-      final user = authState.valueOrNull;
-      if (user != null) {
-        try {
-          await DisclaimerService.instance.recordAcceptance(
-            userId: user.id,
-            appVersion: '1.0.0+1',
-            platform: Platform.isIOS ? 'ios' : 'android',
-            locale: 'tr_TR',
-          );
-        } catch (_) {
-          // Disclaimer kaydı fail olursa devam et
-        }
-      }
-
-      if (!mounted) return;
-      // Kullanıcıya başarı bildir, sonra kök route'a dön — AuthGate
-      // artık user != null gördüğü için otomatik olarak
-      // Disclaimer/Onboarding/Main akışına devam eder. RegisterScreen
-      // ve LoginScreen stack'ten çıkar.
-      await showAppSuccess(
-        context,
-        title: 'Hoş geldin!',
-        message: 'Kaydın tamamlandı. Ana ekrana yönlendiriliyorsun.',
+      // Confirm-email AÇIK — register signUp() çağırır ama session
+      // vermez. Kullanıcı OTP doğrulanmadan authProvider hâlâ null.
+      // Sadece AuthService.register çağırıp OtpVerificationScreen'e
+      // yönlendiriyoruz. Disclaimer/onboarding OTP sonrasına ertelenir
+      // (_AuthGate zaten user != null olduğunda ilgili akışa yönlendirir).
+      await AuthService.instance.register(
+        email: emailForOtp,
+        displayName: _nameCtrl.text,
+        password: _passCtrl.text,
       );
+
       if (!mounted) return;
-      Navigator.of(context).popUntil((r) => r.isFirst);
+      await AuthService.instance.saveEmailForLogin(emailForOtp);
+      if (!mounted) return;
+      // Register success dialog → OTP ekranına push.
+      // OTP ekranı verify sonrası authProvider'ı invalidate edip
+      // popUntil first yapıyor; _AuthGate devralır.
+      await Navigator.of(context).push(
+        CupertinoPageRoute(
+          builder: (_) => OtpVerificationScreen(email: emailForOtp),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showAppError(context, e);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -243,7 +204,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         backgroundColor: Sandik.background,
         border: null,
         middle: Text('Kayıt Ol',
-            style: GoogleFonts.dmSans(
+            style: context.t.headlineSmall?.copyWith(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
                 color: Colors.white)),
@@ -265,7 +226,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const SizedBox(height: 4),
               Text(
                 'Sandığına hoş geldin.',
-                style: GoogleFonts.dmSans(
+                style: context.t.headlineLarge?.copyWith(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: Sandik.gold,
@@ -274,7 +235,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const SizedBox(height: 4),
               Text(
                 'Birkaç adımda hesabını oluştur.',
-                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36),
+                style: context.t.bodyMedium?.copyWith(color: Sandik.text36),
               ),
               const SizedBox(height: 24),
 
@@ -282,7 +243,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _nameCtrl,
                 textCapitalization: TextCapitalization.words,
-                style: GoogleFonts.dmSans(color: Sandik.text90),
+                style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
                 decoration: Sandik.inputDecoration('',
                     labelText: 'Ad Soyad',
                     prefixIcon: const Padding(
@@ -299,7 +260,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                style: GoogleFonts.dmSans(color: Sandik.text90),
+                style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
                 onEditingComplete: () {
                   setState(() => _emailTouched = true);
                   FocusScope.of(context).nextFocus();
@@ -324,7 +285,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _passCtrl,
                 obscureText: _obscure,
-                style: GoogleFonts.dmSans(color: Sandik.text90),
+                style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
                 decoration: Sandik.inputDecoration('',
                     labelText: 'Şifre',
                     errorText: _passCtrl.text.isEmpty
@@ -356,7 +317,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _passConfirmCtrl,
                 obscureText: _obscure,
-                style: GoogleFonts.dmSans(color: Sandik.text90),
+                style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
                 decoration: Sandik.inputDecoration('',
                     labelText: 'Şifre Tekrar',
                     errorText: (_passConfirmCtrl.text.isNotEmpty &&
@@ -482,9 +443,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         )
                       : Text(
                           'Kayıt Ol',
-                          style: GoogleFonts.dmSans(
+                          style: context.t.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w700,
-                              fontSize: 15,
                               color: Sandik.dark),
                         ),
                 ),
@@ -494,7 +454,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   'Zaten hesabınız var mı? Giriş yapın',
-                  style: GoogleFonts.dmSans(color: Sandik.amber),
+                  style: context.t.bodyLarge?.copyWith(color: Sandik.amber),
                 ),
               ),
               const SizedBox(height: 24),
@@ -567,8 +527,7 @@ class _LegalConsentBox extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 13,
+                  style: context.t.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Sandik.amber,
                   ),
@@ -577,16 +536,15 @@ class _LegalConsentBox extends StatelessWidget {
               if (versionLabel != null)
                 Text(
                   versionLabel!,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 10, color: Sandik.text36),
+                  style: context.t.labelMedium?.copyWith(
+                      letterSpacing: 0, color: Sandik.text36),
                 ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             bodyText,
-            style: GoogleFonts.dmSans(
-              fontSize: 11,
+            style: context.t.bodySmall?.copyWith(
               color: Sandik.text58,
               height: 1.6,
             ),
@@ -599,8 +557,7 @@ class _LegalConsentBox extends StatelessWidget {
               onPressed: onShowText,
               child: Text(
                 linkLabel!,
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
+                style: context.t.bodySmall?.copyWith(
                   color: Sandik.amber,
                   decoration: TextDecoration.underline,
                   decorationColor: Sandik.amber,
@@ -660,10 +617,8 @@ class _LegalConsentBox extends StatelessWidget {
                     docConfirmed
                         ? checkboxLabel
                         : '$checkboxLabel\n(Önce belgeyi okuyun)',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 12,
+                    style: context.t.titleSmall?.copyWith(
                       color: error ? Sandik.loss : Sandik.text58,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -674,8 +629,7 @@ class _LegalConsentBox extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               errorMessage,
-              style: GoogleFonts.dmSans(
-                  fontSize: 11, color: Sandik.loss),
+              style: context.t.bodySmall?.copyWith(color: Sandik.loss),
             ),
           ],
         ],
