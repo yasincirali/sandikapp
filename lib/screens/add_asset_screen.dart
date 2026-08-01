@@ -17,6 +17,7 @@ import '../widgets/h_scroll_with_fade.dart';
 import 'add_deposit_screen.dart';
 import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 const _addAssetUuid = Uuid();
 
@@ -874,12 +875,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
               child: _previewLoading && _previewPrice == null
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Sandik.text58),
-                    )
+                  ? const CustomLoadingIndicator(size: 14)
                   : Icon(icon, size: 18, color: color),
             ),
             const SizedBox(width: 12),
@@ -1094,12 +1090,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               elevation: 0,
             ),
             child: _saving
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.4, color: Colors.black),
-                  )
+                ? const CustomLoadingIndicator(size: 22)
                 : Text(
                     saveLabel,
                     style: context.t.titleLarge?.copyWith(
@@ -2052,12 +2043,20 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
           SizedBox(
             width: double.infinity,
             child: _saving
-                ? const Center(child: CircularProgressIndicator(color: Sandik.amber, strokeWidth: 2))
+                ? const CustomLoadingView()
                 : isMulti
                     ? FilledButton.icon(
                         onPressed: () async {
+                          // Kilit çift kaydı önler. finally olmadan, kaydetme
+                          // hata verirse buton kalıcı olarak spinner'da
+                          // kalıyordu — kullanıcı tekrar deneyemiyordu.
+                          if (_saving) return;
                           setState(() => _saving = true);
-                          await widget.onSaveBatch(_previews);
+                          try {
+                            await widget.onSaveBatch(_previews);
+                          } finally {
+                            if (mounted) setState(() => _saving = false);
+                          }
                         },
                         style: FilledButton.styleFrom(backgroundColor: Sandik.amber, foregroundColor: Sandik.dark),
                         icon: const Icon(Icons.playlist_add_check_rounded),
@@ -2292,7 +2291,7 @@ class _TefasPickerState extends State<_TefasPicker> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(color: AssetType.fon.color),
+                  const CustomLoadingIndicator(),
                   const SizedBox(height: 12),
                   Text('Fonlar yükleniyor...',
                       style: TextStyle(color: cs.onSurfaceVariant)),

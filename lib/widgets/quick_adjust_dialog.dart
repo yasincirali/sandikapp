@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import 'custom_loading_indicator.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
 ///
@@ -444,12 +445,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                           borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
                     child: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
+                        ? const CustomLoadingIndicator(size: 18)
                         : Text(_isAdd ? 'Ekle' : 'Çıkar',
                             style: context.t.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,

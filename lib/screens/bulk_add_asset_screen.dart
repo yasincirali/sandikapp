@@ -9,6 +9,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'add_asset_screen.dart';
 import 'paywall_screen.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class BulkAddAssetScreen extends ConsumerStatefulWidget {
   const BulkAddAssetScreen({super.key});
@@ -341,12 +342,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                     ? Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.black),
-                          ),
+                          const CustomLoadingIndicator(size: 18),
                           const SizedBox(width: 12),
                           Text(
                             'Kaydediliyor $_saved / ${items.length}',

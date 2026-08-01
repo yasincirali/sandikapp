@@ -613,18 +613,35 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       }
     });
 
+    // Splash bittiğinde ana ekran birden belirmesin: iki ekran arasında
+    // çapraz sönümleme yapılır. Karar mantığı _resolveScreen'de aynen durur —
+    // AnimatedSwitcher yalnızca sonucun nasıl göründüğünü değiştirir.
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 420),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      // Varsayılan layoutBuilder giren/çıkan çocuğu üst üste bindirir; splash
+      // sönerken ana ekran altında beliriyor olsun diye aynısı korunur.
+      child: _resolveScreen(auth, user),
+    );
+  }
+
+  /// Hangi ekranın gösterileceğine karar verir. Sıra ve koşullar
+  /// değiştirilmemelidir — auth/disclaimer/onboarding kapıları bu sıraya bağlı.
+  Widget _resolveScreen(AsyncValue<AppUser?> auth, AppUser? user) {
     // Splash minimum süresi veya auth/disclaimer/onboarding yükleniyorsa loading göster
     if (!_splashDone ||
         (auth.isLoading && !auth.hasValue) ||
         (user != null &&
             (_disclaimerAccepted == null || _onboardingDone == null))) {
-      return const SandikLoadingScreen();
+      return const SandikLoadingScreen(key: ValueKey('splash'));
     }
 
-    if (user == null) return const LoginScreen();
+    if (user == null) return const LoginScreen(key: ValueKey('login'));
 
     if (_disclaimerAccepted == false) {
       return DisclaimerAcceptanceScreen(
+        key: const ValueKey('disclaimer'),
         userId: user.id,
         onAccepted: () => setState(() => _disclaimerAccepted = true),
       );
@@ -632,12 +649,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
     if (_onboardingDone == false) {
       return OnboardingScreen(
+        key: const ValueKey('onboarding'),
         userId: _checkedUserId!,
         onComplete: () => setState(() => _onboardingDone = true),
       );
     }
 
-    return const MainNavigationScreen();
+    return const MainNavigationScreen(key: ValueKey('main'));
   }
 }
 

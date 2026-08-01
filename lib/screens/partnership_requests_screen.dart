@@ -8,6 +8,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class PartnershipRequestsScreen extends ConsumerStatefulWidget {
   final String? highlightInviteId;
@@ -136,9 +137,7 @@ class _PartnershipRequestsScreenState
             if (_loading)
               const Padding(
                 padding: EdgeInsets.only(top: 40),
-                child: Center(
-                  child: CircularProgressIndicator(color: Sandik.amber),
-                ),
+                child: CustomLoadingView(),
               )
             else if (_pendingInvites.isEmpty)
               Container(

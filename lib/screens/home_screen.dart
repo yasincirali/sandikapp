@@ -23,6 +23,7 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
 import 'performance_screen.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -260,12 +261,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   _HeaderIconButton(
                     onTap: _reload,
                     child: _reloading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Sandik.amber),
-                          )
+                        ? const CustomLoadingIndicator(size: 20)
                         : const Icon(Icons.refresh_rounded,
                             color: Sandik.text58, size: 22),
                   ),
@@ -456,7 +452,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(height: SandikSpace.lg),
                         GestureDetector(
-                          onTap: () => Navigator.push(
+                          onTap: () => pushGuarded(
                             context,
                             adaptiveRoute(
                                 builder: (_) => const AddAssetScreen()),

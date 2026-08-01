@@ -21,6 +21,7 @@ import '../widgets/fullscreen_chart_route.dart';
 import 'signal_settings_screen.dart';
 import '../models/asset_categories.dart';
 import '../services/tefas_service.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -795,9 +796,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const SizedBox(
                           height: 400,
-                          child: Center(
-                              child: CircularProgressIndicator(
-                                  color: Sandik.amber)));
+                          child: CustomLoadingView());
                     }
 
                     final historyMap = snapshot.data ?? {};

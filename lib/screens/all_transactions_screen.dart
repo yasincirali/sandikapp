@@ -195,7 +195,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
-        onTap: () => Navigator.push(
+        onTap: () => pushGuarded(
           context,
           adaptiveRoute(
               builder: (_) =>

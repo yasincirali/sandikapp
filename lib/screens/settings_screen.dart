@@ -12,6 +12,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'signal_settings_screen.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 /// Profil → Ayarlar ekranı.
 ///
@@ -486,14 +487,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Verilerimi İndir',
               subtitle: 'Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)',
               trailing: _exporting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Sandik.amber,
-                      ),
-                    )
+                  ? const CustomLoadingIndicator(size: 18)
                   : null,
               onTap: _exporting ? null : _exportData,
             ),
@@ -503,14 +497,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'Tüm verilerin kalıcı olarak silinir',
               destructive: true,
               trailing: _deleting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Sandik.loss,
-                      ),
-                    )
+                  ? const CustomLoadingIndicator(size: 18)
                   : null,
               onTap: _deleting ? null : _confirmDeleteAccount,
             ),

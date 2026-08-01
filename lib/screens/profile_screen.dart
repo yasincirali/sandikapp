@@ -16,6 +16,7 @@ import '../services/supabase_service.dart';
 import '../utils/friendly_error.dart';
 import 'settings_screen.dart';
 import '../widgets/leaderboard_hero_card.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -287,10 +288,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const _SectionTitle('ORTAKLARIM'),
                         const SizedBox(height: 16),
                         partnersAsync.when(
-                          loading: () => const Center(
-                            child:
-                                CircularProgressIndicator(color: Sandik.amber),
-                          ),
+                          loading: () => const CustomLoadingView(),
                           error: (e, _) => SandikErrorView(error: e),
                           data: (partners) => partners.isEmpty
                               ? _buildEmptyPartners()
@@ -328,12 +326,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: Sandik.amber),
-                  ),
+                  const CustomLoadingIndicator(size: 22),
                   const SizedBox(width: 16),
                   Text(
                     _submitting
@@ -552,12 +545,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           Row(
             children: [
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Sandik.amber),
-              ),
+              const CustomLoadingIndicator(size: 18),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(

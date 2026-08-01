@@ -12,6 +12,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class PortfolioDetailScreen extends ConsumerStatefulWidget {
   final String? initialView;
@@ -142,9 +143,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     if (loading)
                       const SizedBox(
                         height: 300,
-                        child: Center(
-                          child: CircularProgressIndicator(color: Sandik.amber),
-                        ),
+                        child: CustomLoadingView(),
                       )
                     else if (segments.isEmpty)
                       _buildEmptyChartState(targetAssets.isEmpty)

@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
-        CircularProgressIndicator,
         Colors,
         Form,
         FormState,
@@ -17,6 +16,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -435,12 +435,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   alignment: Alignment.center,
                   child: isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Sandik.dark),
-                        )
+                      ? const CustomLoadingIndicator(size: 20)
                       : Text(
                           'Kayıt Ol',
                           style: context.t.bodyLarge?.copyWith(

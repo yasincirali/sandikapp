@@ -35,6 +35,34 @@ PageRoute<T> adaptiveRoute<T>({
   );
 }
 
+/// Aynı sayfanın çift açılmasını engelleyen güvenli push.
+///
+/// Sorun: hızlı iki dokunuş iki route iter; kullanıcı geri dönerken aynı
+/// ekranı iki kez kapatmak zorunda kalır. `Navigator.push` bunu kendisi
+/// engellemez — geçiş animasyonu sürerken buton hâlâ dokunulabilirdir.
+///
+/// Çözüm: son push'un zaman damgası tutulur; [window] içinde gelen ikinci
+/// çağrı yok sayılır ve `null` döner. Pencere, geçiş animasyonundan
+/// (~300ms) biraz uzun tutulmuştur.
+///
+/// İş mantığını değiştirmez: ilk push aynen çalışır, dönüş değeri aynen
+/// iletilir. Yalnızca yinelenen ikinci çağrı düşer.
+DateTime? _lastPushAt;
+
+Future<T?> pushGuarded<T>(
+  BuildContext context,
+  Route<T> route, {
+  Duration window = const Duration(milliseconds: 350),
+}) {
+  final now = DateTime.now();
+  final last = _lastPushAt;
+  if (last != null && now.difference(last) < window) {
+    return Future<T?>.value(null);
+  }
+  _lastPushAt = now;
+  return Navigator.of(context).push<T>(route);
+}
+
 /// Köşe yarıçapı ölçeği — üç kademe.
 ///
 /// Denetim öncesi projede 17 farklı radius değeri vardı (2,4,5,6,7,8,9,10,
@@ -458,8 +486,19 @@ class SandikLogoutButton extends StatelessWidget {
 }
 
 /// Tam ekran loading — gif + "sandık" yazısı. Ekran ilk açılışında kullan.
+///
+/// Zemin [Sandik.background] ile aynı; GIF'in kendi arka planı şeffaf olduğu
+/// için çerçeve/renk uyuşmazlığı oluşmaz. GIF içeriği 200×200 tuvalin
+/// ortasındaki 150×150'de durduğundan, görünen boyutu istenen ölçüye
+/// oturtmak için [_gifOverdraw] kadar büyütülüp ortalanır.
 class SandikLoadingScreen extends StatefulWidget {
   const SandikLoadingScreen({super.key});
+
+  /// GIF'in şeffaf kenar dolgusunu telafi eden çarpan (200/150).
+  /// Bu değer [CustomLoadingIndicator] ile bilinçli olarak aynıdır — açılıştaki
+  /// görsel ile uygulama içi göstergenin oranı birebir tutsun diye.
+  static const double _gifOverdraw = 200 / 150;
+  static const double _logoSize = 140;
 
   @override
   State<SandikLoadingScreen> createState() => _SandikLoadingScreenState();
@@ -480,17 +519,46 @@ class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const size = SandikLoadingScreen._logoSize;
+    const drawSize = size * SandikLoadingScreen._gifOverdraw;
+
     return Scaffold(
       backgroundColor: Sandik.background,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_showGif)
-              Image.asset('assets/images/loading.gif', width: 140, height: 140)
-            else
-              const SizedBox(width: 140, height: 140),
-            const SizedBox(height: 20),
+            // Kutu her iki durumda da aynı ölçüde — GIF belirince "sandık"
+            // yazısı yerinden zıplamaz.
+            SizedBox(
+              width: size,
+              height: size,
+              // GIF hazır olana kadar boş kalır, sonra yumuşakça belirir:
+              // ani "pat" diye görünme yerine 220ms fade.
+              child: AnimatedOpacity(
+                opacity: _showGif ? 1 : 0,
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                child: _showGif
+                    ? Center(
+                        child: SizedBox(
+                          width: drawSize,
+                          height: drawSize,
+                          child: Image.asset(
+                            'assets/images/loading.gif',
+                            width: drawSize,
+                            height: drawSize,
+                            fit: BoxFit.contain,
+                            // GIF alfası 1-bit; yüksek kalite ölçekleme
+                            // kenardaki testere dişini yumuşatır.
+                            filterQuality: FilterQuality.high,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
+            const SizedBox(height: SandikSpace.lg),
             Text(
               'sandık',
               style: GoogleFonts.dmSans(

@@ -5,6 +5,7 @@ import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 /// Premium'a geçiş için paywall. Faz 1'de RevenueCat'e bağlanacak;
 /// şu an dummy — [_completePurchase] direkt [premiumUnlockedProvider]'ı
@@ -519,12 +520,7 @@ class _BottomBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(SandikRadius.md)),
                 ),
                 child: busy
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2.5, color: Colors.black),
-                      )
+                    ? const CustomLoadingIndicator(size: 22)
                     : Text(
                         selectedPlan == _Plan.yearly
                             ? '7 gün ücretsiz dene'

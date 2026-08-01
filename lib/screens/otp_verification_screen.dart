@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 /// Register (veya login) sonrası email doğrulama ekranı.
 ///
@@ -404,12 +405,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             ),
           ),
           icon: _resending
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.black),
-                )
+              ? const CustomLoadingIndicator(size: 18)
               : const Icon(Icons.send_rounded, size: 18),
           label: Text(
             _resending ? 'Gönderiliyor…' : 'Yeni Kod İste',
@@ -434,12 +430,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ),
         ),
         child: _submitting
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.black),
-              )
+            ? const CustomLoadingIndicator(size: 22)
             : Text(
                 'Doğrula',
                 style: context.t.titleLarge?.copyWith(

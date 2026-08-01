@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
-        CircularProgressIndicator,
         Colors,
         Form,
         FormState,
@@ -13,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 /// Şifremi Unuttum — OTP tabanlı akış.
 ///
@@ -339,14 +339,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         alignment: Alignment.center,
         child: _loading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: Sandik.dark,
-                ),
-              )
+            ? const CustomLoadingIndicator(size: 22)
             : Text(
                 label,
                 style: context.t.bodyLarge?.copyWith(

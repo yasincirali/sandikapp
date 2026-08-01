@@ -9,6 +9,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -389,12 +390,7 @@ class _SoloRoiCard extends StatelessWidget {
             ),
           ),
           if (computing)
-            const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Sandik.text58),
-            ),
+            const CustomLoadingIndicator(size: 18),
         ],
       ),
     );
@@ -665,8 +661,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         // Öncelik: fresh Future data > stale cache > spinner
         final rows = snap.data ?? _staleRows;
         if (rows == null) {
-          return const Center(
-              child: CircularProgressIndicator(color: Sandik.amber));
+          return const CustomLoadingView();
         }
         if (rows.isEmpty) {
           return Center(
@@ -1314,12 +1309,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Center(
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Sandik.gold),
-              ),
+              child: CustomLoadingIndicator(size: 18),
             ),
           )
         else if (rows.isEmpty)

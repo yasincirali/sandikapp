@@ -2,12 +2,12 @@ import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
-        CircularProgressIndicator,
         Colors,
         Icons;
 import 'package:google_fonts/google_fonts.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 /// Varolan kullanıcılar için splash sonrası disclaimer onay ekranı.
 /// Geri butonu yok — onaylanmadan uygulama kullanılamaz.
@@ -199,12 +199,7 @@ class _DisclaimerAcceptanceScreenState
                   ),
                   alignment: Alignment.center,
                   child: _loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Sandik.dark),
-                        )
+                      ? const CustomLoadingIndicator(size: 20)
                       : Text(
                           'Kabul Ediyorum',
                           style: context.t.bodyLarge?.copyWith(

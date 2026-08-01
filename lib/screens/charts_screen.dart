@@ -13,7 +13,6 @@ import 'package:flutter/material.dart'
         FilledButton,
         ListTile,
         Divider,
-        CircularProgressIndicator,
         showDialog,
         showModalBottomSheet;
 import 'package:flutter/material.dart' show Icons;
@@ -33,6 +32,7 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'performance_screen.dart';
 import 'portfolio_performance_screen.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 enum _SortOrder {
   valueDesc,
@@ -270,10 +270,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       partnerAssetsAsync.when(
                         loading: () => const SizedBox(
                           height: 300,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                                color: Sandik.amber),
-                          ),
+                          child: CustomLoadingView(),
                         ),
                         error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                         data: (partnerMap) {

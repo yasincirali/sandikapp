@@ -8,6 +8,7 @@ import '../services/deposit_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'paywall_screen.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 /// Vadeli mevduat ekleme ekranı. Sıradan Asset formundan ayrı — çünkü
 /// mevduatın "quantity + purchasePrice" mantığı yok; anapara + faiz + vade
@@ -319,14 +320,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
                   ),
                 ),
                 child: _saving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.black,
-                        ),
-                      )
+                    ? const CustomLoadingIndicator(size: 20)
                     : Text(
                         'Mevduatı Kaydet',
                         style: context.t.titleLarge?.copyWith(

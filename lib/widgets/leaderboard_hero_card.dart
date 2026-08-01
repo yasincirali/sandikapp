@@ -7,6 +7,7 @@ import '../providers/preferences_provider.dart';
 import '../screens/leaderboard_screen.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
+import 'custom_loading_indicator.dart';
 
 /// Profile ekranında öne çıkan Yarış hero kartı.
 ///
@@ -268,11 +269,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
             ),
           ),
         ),
-        const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-                strokeWidth: 2, color: Sandik.amber)),
+        const CustomLoadingIndicator(size: 20),
       ],
     );
   }

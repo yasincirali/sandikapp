@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
+import 'package:flutter/material.dart' show Colors, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -27,6 +27,7 @@ import '../widgets/fullscreen_chart_route.dart';
 import '../providers/preferences_provider.dart' show leaderboardOptInProvider;
 import 'leaderboard_screen.dart';
 import '../widgets/zoom_data_controller.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   final String? initialView;
@@ -452,9 +453,7 @@ class _PortfolioPerformanceScreenState
                               if (loading && snapshot.data == null) {
                                 return const SizedBox(
                                     height: 300,
-                                    child: Center(
-                                        child: CircularProgressIndicator(
-                                            color: Sandik.amber)));
+                                    child: CustomLoadingView());
                               }
                               return _buildChartWithData(
                                 snapshot.data ?? const {},
@@ -476,9 +475,7 @@ class _PortfolioPerformanceScreenState
                         if (historyMap.isEmpty && waiting) {
                           return const SizedBox(
                               height: 300,
-                              child: Center(
-                                  child: CircularProgressIndicator(
-                                      color: Sandik.amber)));
+                              child: CustomLoadingView());
                         }
                         return _buildChartWithData(
                           historyMap,

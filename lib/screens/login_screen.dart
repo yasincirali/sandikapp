@@ -2,7 +2,6 @@ import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
-        CircularProgressIndicator,
         Colors,
         Form,
         FormState,
@@ -19,6 +18,7 @@ import '../utils/friendly_error.dart';
 import 'forgot_password_screen.dart';
 import 'otp_verification_screen.dart';
 import 'register_screen.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -329,14 +329,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         alignment: Alignment.center,
                         child: _loading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Sandik.dark,
-                                ),
-                              )
+                            ? const CustomLoadingIndicator(size: 22)
                             : Text(
                                 'Giriş Yap',
                                 style: context.t.bodyLarge?.copyWith(
