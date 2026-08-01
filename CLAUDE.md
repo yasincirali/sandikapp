@@ -100,6 +100,27 @@ Kurulum **sadece proje kapsamlıdır** — global `~/.claude.json`, hook veya sk
 Repo kökündeki `PortfoyTakip/*.swift` dosyaları eski SwiftUI prototipidir ve indekse dahil olur.
 Aktif kod `lib/` altındadır.
 
+## UI/UX Referans: ui-ux-pro-mcp
+
+Proje `.mcp.json` üzerinden `ui-ux-pro-mcp` (npm global) MCP sunucusuna bağlıdır.
+Binary: `C:\Users\vasin\AppData\Roaming\npm\ui-ux-pro-mcp.cmd` (global install).
+
+**İçerik:** 1029 kaynak — iOS Human Interface Guidelines (110), Android
+Material 3 (112), Flutter widget denklemleri, tipografi/renk sistemleri,
+UX guideline, chart pattern, ikon set önerileri. Her platform pattern'i
+Flutter + React Native eşdeğerlerini içerir.
+
+### Kullanım kuralları
+- Yeni ekran/komponent tasarlarken önce ilgili MCP tool'unu (`search_ui`,
+  `get_platform_guidelines` vb.) sorgula. Marka rengini/tonunu koru,
+  yerleşim + hierarchy önerilerini adapte et.
+- iOS TestFlight için özel deneyim değişiklikleri istendiğinde HIG'e bak;
+  bir Sandık ekranı hem iOS'ta hem Android'de doğal hissetsin diye
+  cross-platform equivalents'a başvur.
+- Bu MCP jenerik design bilgisi verir — Sandık marka renkleri
+  (amber/gold/gain/loss/surface) ve DM Sans typography ayrıştırılmalı;
+  MCP'nin verdiği renk paletlerini olduğu gibi almayın.
+
 ## Areas for Automated Improvements
 
 ### Code Quality
