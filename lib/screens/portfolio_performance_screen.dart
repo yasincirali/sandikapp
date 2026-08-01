@@ -409,8 +409,14 @@ class _PortfolioPerformanceScreenState
                     // çizilir. History fetch'i de bu daraltılmış aralıkta
                     // yapmalıyız — aksi halde controller 1Y'lik boş veri
                     // fetch edip görselde tek nokta gibi gösterir.
+                    //
+                    // Simülasyonda UYGULANMAZ: o mod "bugünkü net pozisyonu
+                    // tüm dönem boyunca tutsaydım" senaryosudur — pozisyon
+                    // her gün var sayılır, ilk alım tarihi alakasızdır.
+                    // Aralığı ona daraltmak, 1A seçiliyken grafiği ilk alım
+                    // tarihinden başlatıyordu (gerçek tab doğru çalışırken).
                     DateTime effectiveStart = startDate;
-                    if (!isIntraday) {
+                    if (!isIntraday && !_simulate) {
                       final buys = chartAssets.where((a) => a.isBuy);
                       if (buys.isNotEmpty) {
                         final firstBuy = buys
@@ -527,8 +533,13 @@ class _PortfolioPerformanceScreenState
     // hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün önce başladı), chart
     // ilk alım tarihinden itibaren çizilir. Böylece kısa geçmişli portföyde
     // grafik boş değil, sıkışık şekilde ilk alıştan bugüne yayılır.
+    //
+    // Simülasyonda UYGULANMAZ — yukarıdaki fetch tarafıyla aynı gerekçe:
+    // sabit pozisyon senaryosunda ilk alım tarihi aralığı daraltmamalı.
+    // İki taraf aynı koşulu kullanmalı, aksi halde fetch penceresi ile
+    // çizim penceresi ayrışır ve X ekseni kayar.
     DateTime effectiveStart = startDate;
-    if (!isIntraday) {
+    if (!isIntraday && !_simulate) {
       final buys = chartAssets.where((a) => a.isBuy);
       if (buys.isNotEmpty) {
         final firstBuy = buys
