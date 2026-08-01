@@ -631,6 +631,14 @@ class _PortfolioPerformanceScreenState
           ],
         ),
         const SizedBox(height: 6),
+        _buildPeriodChangeCard(
+          segments,
+          effectiveStart,
+          endDate,
+          targetAssets,
+          intraday: isIntraday,
+        ),
+        const SizedBox(height: SandikSpace.sm),
         _buildChartContainer(
             segments, effectiveStart, endDate, chartAssets,
             intraday: isIntraday,
@@ -878,6 +886,169 @@ class _PortfolioPerformanceScreenState
 
   double _log10(double x) => (x <= 0) ? 0 : (math.log(x) / math.ln10);
   double _pow10(int n) => math.pow(10, n).toDouble();
+
+  /// Seçili periyodun değişim özeti — grafiğin hemen üstünde.
+  ///
+  /// Değişim = son değer − ilk değer (ham fark). Grafikteki iki uçla birebir
+  /// tutarlıdır: kullanıcı çizginin başladığı ve bittiği yeri görüp aradaki
+  /// farkı burada okur.
+  ///
+  /// Uyarı satırı: gerçek modda dönem içinde net para girişi varsa ham fark
+  /// getiriden yüksek çıkar (yatırılan para da farka dahildir). Rakamı
+  /// değiştirmeyip altına net giriş tutarını yazıyoruz — kullanıcı farkın
+  /// ne kadarının kendi parası olduğunu görebilsin.
+  Widget _buildPeriodChangeCard(
+    List<TransactionSegment> segments,
+    DateTime start,
+    DateTime end,
+    List<Asset> targetAssets, {
+    required bool intraday,
+  }) {
+    if (segments.isEmpty) return const SizedBox.shrink();
+
+    // Y değerleri en kalın (aktif) segmentten okunur — passive segment
+    // alım öncesi 0 çizgisidir, değişime karışmamalı.
+    final primary =
+        segments.reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
+    if (primary.spots.length < 2) return const SizedBox.shrink();
+
+    final firstY = primary.spots.first.y;
+    final lastY = primary.spots.last.y;
+    final change = lastY - firstY;
+    // Yüzde tabanı sıfırsa oran tanımsız — tutarı göster, yüzdeyi gizle.
+    final pct = firstY > 0 ? (change / firstY) * 100 : null;
+    final positive = change >= 0;
+    // Yuvarlanmış tutar ve yüzde ikisi de sıfırsa nötr renk — yeşil göstermek
+    // "kazanç var" yanılgısı yaratır. _PeriodChangeRow ile aynı kural.
+    final isFlat = change.abs().round() == 0 && (pct?.abs() ?? 0) < 0.005;
+    final color =
+        isFlat ? Sandik.text36 : (positive ? Sandik.gain : Sandik.loss);
+
+    // Dönem içi net para girişi (yalnız gerçek modda anlamlı).
+    double netInflow = 0;
+    if (!_simulate) {
+      final startMs = DateTime(start.year, start.month, start.day)
+          .millisecondsSinceEpoch;
+      final endMs =
+          DateTime(end.year, end.month, end.day, 23, 59, 59)
+              .millisecondsSinceEpoch;
+      for (final a in targetAssets) {
+        if (a.isDeleteLog) continue;
+        final ms = a.addedDate.millisecondsSinceEpoch;
+        if (ms < startMs || ms > endMs) continue;
+        if (a.isBuy) {
+          netInflow += a.totalCostTRY;
+        } else if (a.isSell) {
+          netInflow -= a.totalCostTRY;
+        }
+      }
+    }
+
+    final tryFmt = NumberFormat.currency(
+        locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+    final periodLabel = _periods[_selectedPeriodIdx].label;
+    final dateFmt = DateFormat('d MMM', 'tr_TR');
+    final title = intraday
+        ? 'Bugünkü değişim'
+        : '$periodLabel değişim${_simulate ? ' · simülasyon' : ''}';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.md, vertical: 14),
+      decoration: Sandik.surfaceCard(radius: SandikRadius.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: context.t.titleSmall?.copyWith(color: Sandik.text58),
+          ),
+          const SizedBox(height: SandikSpace.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Tutar — bloğun ana bilgisi, en büyük tipografi.
+              // FittedBox: milyonluk portföyde dar ekranda taşmasın,
+              // punto düşsün ama satır kırılmasın.
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    isFlat
+                        ? 'Değişim yok'
+                        : '${positive ? '+' : '−'}${tryFmt.format(change.abs())}',
+                    maxLines: 1,
+                    style: context.t.numMedium.copyWith(color: color),
+                  ),
+                ),
+              ),
+              if (pct != null && !isFlat) ...[
+                const SizedBox(width: SandikSpace.sm),
+                // Yüzde rozeti — yön ikonu renge ek bir sinyal taşır,
+                // renk körlüğünde de okunur.
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: SandikRadius.smAll,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        positive
+                            ? Icons.arrow_upward_rounded
+                            : Icons.arrow_downward_rounded,
+                        size: 13,
+                        color: color,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        fmtPct(pct.abs(), digits: 2),
+                        style: context.t.numSmall.copyWith(color: color),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: SandikSpace.sm),
+          Text(
+            intraday
+                ? 'Bugün'
+                : '${dateFmt.format(start)} → ${dateFmt.format(end)}',
+            style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+          ),
+          // Ham fark, dönem içi para girişini de içerir. Rakamı bozmadan
+          // bağlamı ver — aksi halde kullanıcı yatırdığı parayı kâr sanır.
+          if (netInflow.abs() > 0.5) ...[
+            const SizedBox(height: SandikSpace.sm),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline_rounded,
+                    size: 13, color: Sandik.text36),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    netInflow > 0
+                        ? 'Bu dönemde ${tryFmt.format(netInflow)} tutarında alım yapıldı; '
+                            'değişimin bir kısmı yeni yatırımdan geliyor.'
+                        : 'Bu dönemde ${tryFmt.format(netInflow.abs())} tutarında satış yapıldı.',
+                    style:
+                        context.t.bodySmall?.copyWith(color: Sandik.text36),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _buildChartContainer(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets,

@@ -921,6 +921,30 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
                       }
                     }
+                    // Seçili periyodun değişimi — HAM fiyat serisinden.
+                    // activeSeg normalize/log dönüşümü almış olabilir; oradan
+                    // okumak yüzdeyi bozar. rawSegments her zaman TRY birim
+                    // fiyattır.
+                    final rawActiveSeg = rawSegments.firstWhere(
+                      (s) => !s.dashed && s.spots.isNotEmpty,
+                      orElse: () => TransactionSegment(
+                        spots: const [],
+                        lineColor: Sandik.amber,
+                        areaGradientStart: Colors.transparent,
+                        areaGradientEnd: Colors.transparent,
+                        thickness: 3.5,
+                      ),
+                    );
+                    double? periodChangeTRY;
+                    double? periodChangePct;
+                    if (rawActiveSeg.spots.length >= 2) {
+                      final f = rawActiveSeg.spots.first.y;
+                      final l = rawActiveSeg.spots.last.y;
+                      // Birim fiyat farkı × elde tutulan miktar = dönem etkisi.
+                      periodChangeTRY = (l - f) * qty;
+                      if (f > 0) periodChangePct = ((l - f) / f) * 100;
+                    }
+
                     final anchorY = anchorSpot?.y ?? 0.0;
                     final totalCostTRY = asset.totalCostTRY;
                     final totalPnlTRY = currentValueTRY - totalCostTRY;
@@ -1044,6 +1068,17 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             totalPnl: totalPnlTRY,
                             unitLabel: widget.asset.unitLabel,
                             isPositive: gainPositive,
+                          ),
+                        if (anchorSpot != null && lastSpot != null)
+                          const SizedBox(height: SandikSpace.sm),
+                        // Seçili periyodun değişimi — üstteki strip alış→bugün
+                        // toplam PnL'i gösterir, bu satır "bu dönemde ne oldu"
+                        // sorusunu yanıtlar. İkisi farklı sorular.
+                        if (periodChangeTRY != null)
+                          _PeriodChangeRow(
+                            label: _periods[_selectedPeriodIdx].label,
+                            changeTRY: periodChangeTRY,
+                            changePct: periodChangePct,
                           ),
                         if (anchorSpot != null && lastSpot != null)
                           const SizedBox(height: 12),
@@ -1672,6 +1707,100 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 }
 
 // ── PnL özet strip'i (alış → şimdi + değişim) ────────────────────────────────
+
+/// Seçili periyodun değişimi — tek satır, üstteki [_PnlSummaryStrip]'in
+/// altında durur.
+///
+/// İkisi farklı soruları yanıtlar ve bilerek ayrı tutulmuştur:
+/// - [_PnlSummaryStrip]: "aldığımdan bugüne ne kazandım?" (toplam PnL)
+/// - Bu satır: "seçtiğim dönemde ne oldu?" (dönemsel değişim)
+///
+/// Değişim ham fiyat farkıdır (son − ilk) × miktar. Grafikteki çizginin iki
+/// ucuyla birebir tutarlıdır.
+class _PeriodChangeRow extends StatelessWidget {
+  final String label;
+  final double changeTRY;
+  final double? changePct;
+
+  const _PeriodChangeRow({
+    required this.label,
+    required this.changeTRY,
+    required this.changePct,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Yuvarlanmış tutar ve yüzde ikisi de sıfırsa nötr — yeşil/kırmızı
+    // göstermek "hareket var" yanılgısı yaratır.
+    final isFlat =
+        changeTRY.abs().round() == 0 && (changePct?.abs() ?? 0) < 0.005;
+    final positive = changeTRY >= 0;
+    final color =
+        isFlat ? Sandik.text36 : (positive ? Sandik.gain : Sandik.loss);
+    final tryFmt = NumberFormat.currency(
+        locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Sandik.surface1,
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+      ),
+      child: Row(
+        children: [
+          Text(
+            '$label DEĞİŞİM',
+            style: context.t.labelSmall?.copyWith(
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w700,
+              color: Sandik.text36,
+            ),
+          ),
+          const Spacer(),
+          if (!isFlat) ...[
+            Icon(
+              positive
+                  ? Icons.arrow_upward_rounded
+                  : Icons.arrow_downward_rounded,
+              size: 13,
+              color: color,
+            ),
+            const SizedBox(width: 3),
+          ],
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                isFlat
+                    ? 'Değişim yok'
+                    : '${positive ? '+' : '−'}${tryFmt.format(changeTRY.abs())}',
+                maxLines: 1,
+                style: context.t.numSmall.copyWith(color: color),
+              ),
+            ),
+          ),
+          if (changePct != null && !isFlat) ...[
+            const SizedBox(width: SandikSpace.sm),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.14),
+                borderRadius: SandikRadius.smAll,
+              ),
+              child: Text(
+                fmtPct(changePct!.abs(), digits: 2),
+                style: context.t.numSmall.copyWith(color: color),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _PnlSummaryStrip extends StatelessWidget {
   final double anchorUnitPrice;
