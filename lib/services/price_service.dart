@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'tefas_service.dart';
 
@@ -371,26 +372,22 @@ class PriceService {
     // se GC=F (ons USD) × USDTRY=X ile hesapla — spot fallback'in birebir
     // tarihli versiyonu.
     if (_goldWeights.containsKey(symbol)) {
-      // ignore: avoid_print
-      print('[PriceService] historicalGold: sym=$symbol date=$date');
+      if (kDebugMode) debugPrint('[PriceService] historicalGold: sym=$symbol date=$date');
       double? xauTry = await fetchHistoricalClose('XAUTRY=X', date);
       if (xauTry == null || xauTry <= 0) {
         // Fallback: GC=F × USDTRY
         final xauUsd = await fetchHistoricalClose('GC=F', date);
         final usdTry = await fetchHistoricalClose('USDTRY=X', date);
-        // ignore: avoid_print
-        print('[PriceService] historicalGold fallback: xauUsd=$xauUsd usdTry=$usdTry');
+        if (kDebugMode) debugPrint('[PriceService] historicalGold fallback: xauUsd=$xauUsd usdTry=$usdTry');
         if (xauUsd != null && xauUsd > 0 && usdTry != null && usdTry > 0) {
           xauTry = xauUsd * usdTry;
         }
       }
-      // ignore: avoid_print
-      print('[PriceService] historicalGold: xauTry=$xauTry');
+      if (kDebugMode) debugPrint('[PriceService] historicalGold: xauTry=$xauTry');
       if (xauTry == null || xauTry <= 0) return null;
       final gram22k = xauTry / 31.1035 * (22 / 24);
       final result = gram22k * (_goldWeights[symbol] ?? 1.0);
-      // ignore: avoid_print
-      print('[PriceService] historicalGold: result=$result');
+      if (kDebugMode) debugPrint('[PriceService] historicalGold: result=$result');
       return result;
     }
 
@@ -447,21 +444,18 @@ class PriceService {
         '/v8/finance/chart/$symbol',
         {'interval': '1d', 'period1': '$p1', 'period2': '$p2'},
       );
-      // ignore: avoid_print
-      print('[PriceService] histClose GET $uri');
+      if (kDebugMode) debugPrint('[PriceService] histClose GET $uri');
       final res = await _client
           .get(uri, headers: {'User-Agent': _ua, 'Accept': 'application/json'})
           .timeout(const Duration(seconds: 10));
-      // ignore: avoid_print
-      print('[PriceService] histClose status=${res.statusCode} bodyLen=${res.body.length}');
+      if (kDebugMode) debugPrint('[PriceService] histClose status=${res.statusCode} bodyLen=${res.body.length}');
       if (res.statusCode != 200) return null;
 
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       final result = (body['chart']?['result'] as List?)?.firstOrNull
           as Map<String, dynamic>?;
       if (result == null) {
-        // ignore: avoid_print
-        print('[PriceService] histClose: null result');
+        if (kDebugMode) debugPrint('[PriceService] histClose: null result');
         return null;
       }
 
@@ -473,8 +467,7 @@ class PriceService {
           closes == null ||
           timestamps.isEmpty ||
           closes.isEmpty) {
-        // ignore: avoid_print
-        print('[PriceService] histClose: empty timestamps/closes');
+        if (kDebugMode) debugPrint('[PriceService] histClose: empty timestamps/closes');
         return null;
       }
 
@@ -500,12 +493,10 @@ class PriceService {
       // Hedef tarihten önce hiç veri yoksa (kullanıcı çok eski tarih seçmiş)
       // pencerede bulunan en eski veriyi ver — hiç dönmemekten iyidir.
       final picked = best ?? earliest;
-      // ignore: avoid_print
-      print('[PriceService] histClose picked=$picked bestTs=$bestTs');
+      if (kDebugMode) debugPrint('[PriceService] histClose picked=$picked bestTs=$bestTs');
       return picked;
     } catch (e) {
-      // ignore: avoid_print
-      print('[PriceService] histClose EXC: $e');
+      if (kDebugMode) debugPrint('[PriceService] histClose EXC: $e');
       return null;
     }
   }

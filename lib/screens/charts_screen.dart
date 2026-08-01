@@ -25,8 +25,10 @@ import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/deposit_service.dart';
+import '../services/sparkline_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../widgets/asset_sparkline.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/quick_adjust_dialog.dart';
@@ -715,6 +717,14 @@ class _AssetCardState extends State<_AssetCard>
                   ],
                 ),
               ),
+              // Mini trend eğrisi — son 1 ay. Yalnızca fiyat geçmişi olan
+              // varlıklarda yer kaplar; manuel fiyatlılarda hiç eklenmez ki
+              // sağdaki tutar kolonu sola kaymasın.
+              if (SparklineService.supports(a)) ...[
+                const SizedBox(width: SandikSpace.sm),
+                AssetSparkline(asset: a, isPositive: isPos),
+              ],
+              const SizedBox(width: SandikSpace.sm),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [

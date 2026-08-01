@@ -7,6 +7,7 @@ import '../services/deposit_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/price_service.dart';
+import '../services/sparkline_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
 
@@ -329,6 +330,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // Sadece kendi varlıkları boşsa refresh yapılacak bir şey yok.
     if (s.assets.isEmpty) return;
     state = AsyncData(s.copyWith(isLoading: true, clearError: true));
+
+    // Sparkline serileri gün-içinde değişmediği için süresiz cache'lenir;
+    // kullanıcı bilerek yenilediğinde (pull-to-refresh) tazelenmeli — aksi
+    // halde gün dönse bile dünkü eğri kalırdı.
+    SparklineService.instance.clear();
 
     final symbols = <String>{'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'};
     for (final a in s.assets) {
