@@ -41,11 +41,31 @@ platform :ios do
   lane :beta do
     api_key = asc_api_key
 
+    # 0) CI'da izole, kilidi açık bir keychain oluştur.
+    #    Bu olmadan match sertifikayı runner'ın `login` keychain'ine yazar ve
+    #    codesign keychain'i açmak için ETKİLEŞİMLİ parola istemi gösterir.
+    #    Headless runner'da o istem asla yanıtlanmaz: build "Signing ..."
+    #    satırında sessizce asılı kalır ve 60 dk job limitinde iptal edilir.
+    if is_ci
+      create_keychain(
+        name: "sandik_ci",
+        password: ENV["MATCH_PASSWORD"],
+        default_keychain: true,
+        unlock: true,
+        timeout: 3600,   # job süresince kilitlenmesin
+        lock_when_sleeps: false,
+        # Job yeniden çalıştırılırsa keychain zaten var olabilir; hata verme.
+        require_create: false
+      )
+    end
+
     # 1) Signing artefaktlarını private cert repo'dan çek (readonly)
     match(
       type: "appstore",
       readonly: true,
-      api_key: api_key
+      api_key: api_key,
+      keychain_name: is_ci ? "sandik_ci" : nil,
+      keychain_password: is_ci ? ENV["MATCH_PASSWORD"] : nil
     )
 
     # 1b) Xcode project'i MANUAL signing'e zorla — match'in ürettiği profili
@@ -94,7 +114,11 @@ platform :ios do
       output_name: "sandik.ipa",
       clean: true,
       silent: false,
-      suppress_xcode_output: false
+      suppress_xcode_output: false,
+      # OTHER_CODE_SIGN_FLAGS: codesign'a hangi keychain'i kullanacağını
+      # açıkça söyler. Bu olmadan arama sırası `login` keychain'e düşebilir
+      # ve yeniden parola istemi tetiklenir.
+      xcargs: is_ci ? "OTHER_CODE_SIGN_FLAGS='--keychain #{Dir.home}/Library/Keychains/sandik_ci-db'" : nil
     )
 
     # 5) TestFlight upload

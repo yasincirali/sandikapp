@@ -70,6 +70,10 @@ jobs:
 
       - name: Fastlane beta (match + gym + TestFlight)
         working-directory: ios
+        # Job limitinden (60 dk) kısa: codesign etkileşimli parola istemiyle
+        # asılırsa 35 dk'da bu adım düşer, log'lar ve artefaktlar yüklenir.
+        # Aksi halde job iptal edilir ve sonraki adımlar hiç çalışmaz.
+        timeout-minutes: 35
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
