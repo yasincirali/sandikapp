@@ -100,3 +100,6 @@ ios/build/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+# Android Gradle build output
+/android/build/
