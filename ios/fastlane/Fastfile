@@ -1,3 +1,5 @@
+require "shellwords" # String#shellescape — keychain yollarını sh'a güvenle geçir
+
 default_platform(:ios)
 
 # ── Yardımcı: App Store Connect API key'i ENV'den (base64) yükle ─────────────
@@ -46,6 +48,8 @@ platform :ios do
     #    codesign keychain'i açmak için ETKİLEŞİMLİ parola istemi gösterir.
     #    Headless runner'da o istem asla yanıtlanmaz: build "Signing ..."
     #    satırında sessizce asılı kalır ve 60 dk job limitinde iptal edilir.
+    keychain_path = File.expand_path("~/Library/Keychains/sandik_ci-db")
+
     if is_ci
       create_keychain(
         name: "sandik_ci",
@@ -57,6 +61,29 @@ platform :ios do
         # Job yeniden çalıştırılırsa keychain zaten var olabilir; hata verme.
         require_create: false
       )
+
+      # `create_keychain` keychain'i DEFAULT yapar ama ARAMA LİSTESİNE
+      # eklemez. `security find-identity` ve codesign yalnızca arama
+      # listesindeki keychain'lere bakar — bu yüzden match sertifikayı
+      # başarıyla kurduğu hâlde bir sonraki satırda "There are no local code
+      # signing identities found" yazıyordu; ardından codesign kimliği
+      # bulamayıp etkileşimli isteme düşüyor ve 52 dakika asılı kalıyordu
+      # (bkz. run 30710359883, "Signing GoogleAppMeasurement..." satırı).
+      #
+      # login.keychain'i de listede tutuyoruz: Xcode'un kendi yardımcı
+      # sertifikaları (Apple WWDR ara sertifikası) orada bulunabiliyor.
+      #
+      # Mevcut listeyi kabuk yerine Ruby tarafında ayrıştırıyoruz: iç içe
+      # tırnak (`tr -d '"'`) kaçışları Fastfile'da kırılgan.
+      existing = sh("security list-keychains -d user", log: false)
+                   .lines.map { |l| l.strip.delete('"') }.reject(&:empty?)
+      search_list = ([keychain_path] + existing).uniq
+      sh("security list-keychains -d user -s #{search_list.shelljoin}")
+
+      # Kilidi burada bir kez daha aç: `create_keychain`'in unlock'u
+      # arama listesi değişiminden ÖNCE oldu.
+      sh("security unlock-keychain -p #{ENV['MATCH_PASSWORD'].to_s.shellescape} " \
+         "#{keychain_path.shellescape}")
     end
 
     # 1) Signing artefaktlarını private cert repo'dan çek (readonly)
@@ -67,6 +94,33 @@ platform :ios do
       keychain_name: is_ci ? "sandik_ci" : nil,
       keychain_password: is_ci ? ENV["MATCH_PASSWORD"] : nil
     )
+
+    # 1a) Kimlik gerçekten görünüyor mu? — ERKEN DOĞRULAMA
+    #
+    # match sertifikayı kurduğunu söylese bile keychain arama listesi yanlışsa
+    # `codesign` kimliği bulamaz ve ETKİLEŞİMLİ parola istemine düşer. Headless
+    # runner'da o istem yanıtlanmaz: build sessizce asılır ve 60 dk job
+    # limitinde iptal edilir (run 30710359883 → 52 dk boş bekleme).
+    #
+    # Burada 10 saniyede kesin cevabı alırız: kimlik yoksa anlamlı bir hatayla
+    # ve hızlıca düşeriz — bir saat beklemek yerine.
+    if is_ci
+      identities = sh(
+        "security find-identity -v -p codesigning #{keychain_path.shellescape} || true",
+        log: false
+      )
+      UI.message("Keychain'deki codesigning kimlikleri:\n#{identities}")
+
+      unless identities.include?("Apple Distribution")
+        UI.user_error!(
+          "Keychain'de 'Apple Distribution' kimliği yok — codesign etkileşimli " \
+          "parola istemine düşer ve job 60 dk'da iptal edilir.\n" \
+          "Olası sebepler: MATCH_PASSWORD yanlış, match repo'sundaki sertifika " \
+          "süresi dolmuş, ya da keychain arama listesi kurulamadı.\n" \
+          "Bulunan kimlikler:\n#{identities}"
+        )
+      end
+    end
 
     # 1b) Xcode project'i MANUAL signing'e zorla — match'in ürettiği profili
     #     tanısın. Aksi halde Xcode "No profiles for com.sandik.app were
@@ -118,7 +172,7 @@ platform :ios do
       # OTHER_CODE_SIGN_FLAGS: codesign'a hangi keychain'i kullanacağını
       # açıkça söyler. Bu olmadan arama sırası `login` keychain'e düşebilir
       # ve yeniden parola istemi tetiklenir.
-      xcargs: is_ci ? "OTHER_CODE_SIGN_FLAGS='--keychain #{Dir.home}/Library/Keychains/sandik_ci-db'" : nil
+      xcargs: is_ci ? "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_path}'" : nil
     )
 
     # 5) TestFlight upload
