@@ -315,7 +315,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
                   backgroundColor: Sandik.amber,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                   ),
                 ),
                 child: _saving
@@ -378,15 +378,15 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           borderSide: BorderSide(color: AssetType.mevduat.color, width: 1.5),
         ),
       ),
@@ -406,7 +406,7 @@ class _InterestTypeSelector extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
       ),
       child: Row(
         children: [
@@ -421,7 +421,7 @@ class _InterestTypeSelector extends StatelessWidget {
                     color: value == t
                         ? AssetType.mevduat.color.withValues(alpha: 0.20)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
                     border: Border.all(
                       color: value == t
                           ? AssetType.mevduat.color.withValues(alpha: 0.55)
@@ -462,7 +462,7 @@ class _DateRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: Sandik.surface1,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
@@ -496,7 +496,7 @@ class _InfoBox extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Sandik.amber.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: Sandik.amber.withValues(alpha: 0.25)),
       ),
       child: Row(
@@ -549,7 +549,7 @@ class _PreviewCard extends StatelessWidget {
             AssetType.mevduat.color.withValues(alpha: 0.03),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
             color: AssetType.mevduat.color.withValues(alpha: 0.35)),
       ),

@@ -35,6 +35,127 @@ PageRoute<T> adaptiveRoute<T>({
   );
 }
 
+/// Köşe yarıçapı ölçeği — üç kademe.
+///
+/// Denetim öncesi projede 17 farklı radius değeri vardı (2,4,5,6,7,8,9,10,
+/// 12,14,16,18,20,22,24,28); aynı ekranda dört farklı yuvarlaklık yan yana
+/// gelebiliyordu. Göz bunu "özensiz" okur ama sebebini adlandıramaz.
+///
+/// Kademeler bir hiyerarşi taşır — büyüdükçe eleman "daha üstte" durur:
+/// - [sm] rozet, çip, küçük ikon kutusu
+/// - [md] liste satırı, input, ikincil kart
+/// - [lg] hero kart, bottom sheet, modal
+abstract final class SandikRadius {
+  static const double sm = 8;
+  static const double md = 14;
+  static const double lg = 20;
+
+  static BorderRadius get smAll => BorderRadius.circular(sm);
+  static BorderRadius get mdAll => BorderRadius.circular(md);
+  static BorderRadius get lgAll => BorderRadius.circular(lg);
+
+  /// Bottom sheet üst köşeleri.
+  static const BorderRadius sheetTop =
+      BorderRadius.vertical(top: Radius.circular(lg));
+}
+
+/// 8'lik boşluk ızgarası.
+///
+/// Önceki durumda ana sayfada SizedBox yükseklikleri 3,4,8,10,12,16,24,40
+/// gibi keyfi değerlerdi — hiyerarşi boşlukla değil yalnızca yazı tipiyle
+/// kuruluyordu. Bu ölçek dikey ritmi tek bir tabana oturtur.
+///
+/// [xs] ölçeğin dışında kalan tek değer (4): ikon–metin gibi sıkı
+/// eşleşmelerde 8 fazla geliyor.
+abstract final class SandikSpace {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 16;
+  static const double lg = 24;
+  static const double xl = 32;
+  static const double xxl = 48;
+
+  /// Ekran kenar boşluğu — dar cihazlarda daralır.
+  static double screenH(BuildContext context) =>
+      MediaQuery.sizeOf(context).width < 360 ? md : lg;
+}
+
+/// Dokunma geri bildirimi — basılınca hafifçe küçülür.
+///
+/// Neden: iOS'ta Material ripple yabancı durur, ama hiç geri bildirim
+/// olmaması da uygulamayı "ölü" hissettirir. Scale-down her iki platformda
+/// da doğal karşılanan nötr bir tepkidir.
+///
+/// [scale] 0.97 ve 110ms bilinçli seçim: daha derin/yavaş bir animasyon
+/// listede hızlı gezinirken yorucu oluyor, daha sığı fark edilmiyor.
+///
+/// ```dart
+/// SandikTappable(
+///   onTap: () => Navigator.push(...),
+///   child: Container(...),
+/// )
+/// ```
+class SandikTappable extends StatefulWidget {
+  const SandikTappable({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.onLongPress,
+    this.scale = 0.97,
+    this.semanticLabel,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final double scale;
+  final String? semanticLabel;
+
+  @override
+  State<SandikTappable> createState() => _SandikTappableState();
+}
+
+class _SandikTappableState extends State<SandikTappable> {
+  bool _down = false;
+
+  void _set(bool v) {
+    if (widget.onTap == null && widget.onLongPress == null) return;
+    if (_down != v && mounted) setState(() => _down = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.onTap != null || widget.onLongPress != null;
+    // Erişilebilirlik: "hareketi azalt" açıkken scale uygulanmaz.
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    Widget result = AnimatedScale(
+      scale: (_down && enabled && !reduceMotion) ? widget.scale : 1.0,
+      duration: const Duration(milliseconds: 110),
+      curve: Curves.easeOut,
+      child: widget.child,
+    );
+
+    if (widget.semanticLabel != null) {
+      result = Semantics(
+        button: true,
+        label: widget.semanticLabel,
+        child: result,
+      );
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      onTapDown: (_) => _set(true),
+      onTapUp: (_) => _set(false),
+      onTapCancel: () => _set(false),
+      child: result,
+    );
+  }
+}
+
 /// Tipografi erişimi — `main.dart` içindeki merkezi [TextTheme]'e kısa yol.
 ///
 /// Hardcoded `GoogleFonts.dmSans(fontSize: 13, ...)` yerine bunu kullan:
@@ -104,6 +225,41 @@ class Sandik {
   static const Color text58    = Color(0x8CFFFFFF); // 0.55 (İkincil etiket)
   static const Color text36    = Color(0x59FFFFFF); // 0.35 (Üçüncül yardımcı)
   static const Color text20    = Color(0x33FFFFFF); // 0.20 (Devre dışı)
+
+  // ── Yüzey dekorasyonları (Yön A) ───────────────────────────────────────────
+  //
+  // Cam efekti (BackdropFilter) bir vurgu aracıdır — her yerde kullanılınca
+  // vurgu olmaktan çıkar, geriye yalnızca katman kompozisyon maliyeti kalır.
+  // Ana sayfada 7 ayrı blur vardı; artık yalnızca hero kart bulanıklaştırılır,
+  // diğer yüzeyler aşağıdaki opak dekorasyonları kullanır.
+
+  /// Liste satırı / ikincil kart — düz yüzey, kenarlıksız.
+  ///
+  /// Kenarlık yerine zeminden hafif açık bir dolgu kullanılır: 23 ayrı
+  /// çerçeve "kart içinde kart" hissi veriyordu.
+  static BoxDecoration surfaceCard({double radius = SandikRadius.md}) {
+    return BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.045),
+      borderRadius: BorderRadius.circular(radius),
+    );
+  }
+
+  /// Dokunulabilir ikon kutusu / çip — seçili durumda amber'e döner.
+  static BoxDecoration chip({
+    required bool selected,
+    Color accent = amber,
+    double radius = SandikRadius.md,
+  }) {
+    return BoxDecoration(
+      color: selected
+          ? accent.withValues(alpha: 0.16)
+          : Colors.white.withValues(alpha: 0.055),
+      borderRadius: BorderRadius.circular(radius),
+      border: selected
+          ? Border.all(color: accent.withValues(alpha: 0.42), width: 1)
+          : null,
+    );
+  }
 
   // ── Liquid Glass helpers ────────────────────────────────────────────────────
 

@@ -229,7 +229,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
           boxShadow: [
             BoxShadow(
               color: Sandik.amber.withValues(alpha: 0.28),
@@ -302,7 +302,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           filled: true,
           fillColor: Sandik.surface1,
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: BorderSide(
               color: filled
                   ? Sandik.amber
@@ -311,11 +311,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: const BorderSide(color: Sandik.amber, width: 1.8),
           ),
           disabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: BorderSide(
               color: Colors.white.withValues(alpha: 0.04),
             ),
@@ -344,7 +344,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: Sandik.loss.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
               color: Sandik.loss.withValues(alpha: 0.35),
               width: 1,
@@ -400,7 +400,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             foregroundColor: Colors.black,
             disabledBackgroundColor: Sandik.amber.withValues(alpha: 0.35),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
             ),
           ),
           icon: _resending
@@ -430,7 +430,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           foregroundColor: Colors.black,
           disabledBackgroundColor: Sandik.amber.withValues(alpha: 0.35),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
           ),
         ),
         child: _submitting

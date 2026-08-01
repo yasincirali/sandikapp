@@ -145,7 +145,7 @@ class _PartnershipRequestsScreenState
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Sandik.surface1,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(SandikRadius.lg),
                 ),
                 child: Column(
                   children: [
@@ -206,7 +206,7 @@ class _ApprovalInviteCard extends StatelessWidget {
       decoration: BoxDecoration(
         color:
             highlighted ? Sandik.amber.withValues(alpha: 0.1) : Sandik.surface1,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: highlighted
               ? Sandik.amber.withValues(alpha: 0.45)

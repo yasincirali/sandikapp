@@ -171,7 +171,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 height: 4,
                 decoration: BoxDecoration(
                   color: Sandik.text36,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
               ),
               const SizedBox(height: 24),
@@ -210,7 +210,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     backgroundColor: Sandik.amber,
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(SandikRadius.md)),
                   ),
                   child: Text('Harika',
                       style: context.t.bodyLarge?.copyWith(
@@ -260,7 +260,7 @@ class _HeroCard extends StatelessWidget {
             Sandik.gold.withValues(alpha: 0.06),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(SandikRadius.lg),
         border: Border.all(color: Sandik.amber.withValues(alpha: 0.35)),
       ),
       child: Column(
@@ -271,7 +271,7 @@ class _HeroCard extends StatelessWidget {
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: Sandik.amber.withValues(alpha: 0.20),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(SandikRadius.sm),
               border: Border.all(color: Sandik.amber.withValues(alpha: 0.5)),
             ),
             child: Text(
@@ -336,7 +336,7 @@ class _FeatureList extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Sandik.amber.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Icon(f.$1, color: Sandik.amber, size: 16),
               ),
@@ -391,7 +391,7 @@ class _PlanCard extends StatelessWidget {
           color: selected
               ? Sandik.amber.withValues(alpha: 0.12)
               : Sandik.surface1,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
             color: selected
                 ? Sandik.amber
@@ -441,7 +441,7 @@ class _PlanCard extends StatelessWidget {
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Sandik.gain.withValues(alpha: 0.20),
-                            borderRadius: BorderRadius.circular(5),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(
                             badgeText!,
@@ -516,7 +516,7 @@ class _BottomBar extends StatelessWidget {
                   disabledBackgroundColor:
                       Sandik.amber.withValues(alpha: 0.35),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(SandikRadius.md)),
                 ),
                 child: busy
                     ? const SizedBox(

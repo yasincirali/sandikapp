@@ -218,7 +218,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             final t = global.position.clamp(0.0, 1.0);
                             return Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(SandikRadius.lg),
                                 color: Color.lerp(
                                   Colors.white.withValues(alpha: 0.07),
                                   Sandik.amber.withValues(alpha: 0.88),
@@ -313,7 +313,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           color: _loading
                               ? Sandik.amber.withValues(alpha: 0.45)
                               : Sandik.amber.withValues(alpha: 0.92),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(SandikRadius.md),
                           border: Border.all(
                             color: Sandik.amber.withValues(alpha: 0.60),
                             width: 1.0,

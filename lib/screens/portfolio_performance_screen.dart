@@ -650,7 +650,7 @@ class _PortfolioPerformanceScreenState
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: selected ? color.withValues(alpha: 0.15) : Sandik.surface1,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
               color: selected ? color : Colors.white.withValues(alpha: 0.06),
               width: selected ? 1.5 : 1,
@@ -672,7 +672,7 @@ class _PortfolioPerformanceScreenState
     return Container(
       height: 44,
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(12)),
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: List.generate(_periods.length, (i) {
@@ -689,7 +689,7 @@ class _PortfolioPerformanceScreenState
                 decoration: BoxDecoration(
                   color:
                       isSelected ? const Color(0xFF1A3D2E) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Center(
                   child: Text(
@@ -721,7 +721,7 @@ class _PortfolioPerformanceScreenState
     return Container(
       height: 44,
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(12)),
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: options.map((o) {
@@ -737,7 +737,7 @@ class _PortfolioPerformanceScreenState
                   color: selected
                       ? const Color(0xFF1A3D2E)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -810,7 +810,7 @@ class _PortfolioPerformanceScreenState
                     height: 4,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(SandikRadius.sm),
                     ),
                   ),
                 ),
@@ -878,7 +878,7 @@ class _PortfolioPerformanceScreenState
       return Container(
         height: 280,
         decoration: BoxDecoration(
-            color: Sandik.surface1, borderRadius: BorderRadius.circular(24)),
+            color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.lg)),
         child: const Center(
             child: Text('Veri yok',
                 style: TextStyle(color: Sandik.text36))),
@@ -1504,7 +1504,7 @@ class _PortfolioPerformanceScreenState
       padding: const EdgeInsets.fromLTRB(4, 20, 16, 12),
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(SandikRadius.lg),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
@@ -1751,7 +1751,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Sandik.surface1,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
@@ -1781,7 +1781,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
                   color: Sandik.amber.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm)),
               child: Text('${results.length}',
                   style: context.t.bodySmall?.copyWith(
                       fontWeight: FontWeight.w700,
@@ -1802,7 +1802,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                     color: color.withValues(alpha: 0.22), width: 1.5),
               ),
@@ -1838,7 +1838,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: color.withValues(alpha: 0.18),
-                                      borderRadius: BorderRadius.circular(5),
+                                      borderRadius: BorderRadius.circular(SandikRadius.sm),
                                     ),
                                     child: Text(r.asset.displayTicker!,
                                         style: context.t.bodySmall?.copyWith(
@@ -1868,7 +1868,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                             horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                         child: Text(label,
                             style: context.t.numSmall.copyWith(
@@ -1894,7 +1894,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                               height: 4,
                               decoration: BoxDecoration(
                                 color: c,
-                                borderRadius: BorderRadius.circular(2),
+                                borderRadius: BorderRadius.circular(SandikRadius.sm),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -1955,13 +1955,13 @@ class _LeaderboardChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         child: Container(
           padding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: Sandik.amber.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             border:
                 Border.all(color: Sandik.amber.withValues(alpha: 0.45)),
           ),
@@ -1998,12 +1998,12 @@ class _PortfolioFullscreenChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             border:
                 Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),

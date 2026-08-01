@@ -11,7 +11,7 @@ class DisclaimerWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
       ),
       child: Row(

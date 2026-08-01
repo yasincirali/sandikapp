@@ -21,7 +21,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
     final hPad = w < 360 ? 16.0 : 24.0;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(SandikRadius.lg),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
@@ -29,7 +29,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 20),
           decoration: BoxDecoration(
             color: const Color(0xFF14332B).withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
               color: Sandik.gain.withValues(alpha: 0.18),
               width: 1.0,

@@ -178,7 +178,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
 
     return Dialog(
       backgroundColor: Sandik.surface1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SandikRadius.lg)),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
@@ -196,7 +196,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   height: 40,
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                   ),
                   child: Icon(
                     _isAdd ? Icons.add_rounded : Icons.remove_rounded,
@@ -242,7 +242,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
               child: Row(
                 children: [
@@ -292,7 +292,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -311,7 +311,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: Sandik.amber.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(
                         color: Sandik.amber.withValues(alpha: 0.30)),
                   ),
@@ -367,7 +367,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   filled: true,
                   fillColor: Colors.white.withValues(alpha: 0.04),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     borderSide: BorderSide.none,
                   ),
                 ),
@@ -382,7 +382,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                       color: accent.withValues(alpha: 0.25), width: 1),
                 ),
@@ -424,7 +424,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       backgroundColor: Colors.white.withValues(alpha: 0.06),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
                     child: Text('İptal',
                         style: context.t.titleMedium?.copyWith(
@@ -441,7 +441,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       backgroundColor: accent,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
                     child: _saving
                         ? const SizedBox(
@@ -502,7 +502,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   alignment: Alignment.center,
                   child: Text(

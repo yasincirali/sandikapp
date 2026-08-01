@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../theme/sandik.dart';
 
 /// Birden fazla grafik (ana + volume subchart) aynı X viewport'unu paylaşsın
 /// diye kullanılan ChangeNotifier. Ana grafikte pinch/pan olur, viewport
@@ -420,7 +421,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(SandikRadius.lg),
                     onTap: _reset,
                     onDoubleTap: _reset,
                     child: Container(
@@ -428,7 +429,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.45),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(SandikRadius.lg),
                         border: Border.all(
                             color: Colors.white.withValues(alpha: 0.2)),
                       ),
@@ -502,7 +503,7 @@ class _CrosshairOverlay extends StatelessWidget {
                         horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.72),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
                       border: Border.all(
                           color: Colors.white.withValues(alpha: 0.15)),
                     ),

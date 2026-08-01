@@ -95,7 +95,7 @@ class _DisclaimerAcceptanceScreenState
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.04),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.08),
                   ),
@@ -122,7 +122,7 @@ class _DisclaimerAcceptanceScreenState
                     color: _showError
                         ? Sandik.loss.withValues(alpha: 0.07)
                         : Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(
                       color: _showError
                           ? Sandik.loss.withValues(alpha: 0.4)
@@ -139,7 +139,7 @@ class _DisclaimerAcceptanceScreenState
                           color: _accepted
                               ? Sandik.amber
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                           border: Border.all(
                             color: _accepted
                                 ? Sandik.amber
@@ -185,7 +185,7 @@ class _DisclaimerAcceptanceScreenState
                     color: (_loading || !_accepted)
                         ? Sandik.amber.withValues(alpha: 0.45)
                         : Sandik.amber.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(
                         color: Sandik.amber.withValues(alpha: 0.60)),
                     boxShadow: [

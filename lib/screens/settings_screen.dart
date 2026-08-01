@@ -326,7 +326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     filled: true,
                     fillColor: Sandik.surface1,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
                       borderSide: BorderSide.none,
                     ),
                   ),
@@ -595,7 +595,7 @@ class _SettingsTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: CupertinoButton(
@@ -608,7 +608,7 @@ class _SettingsTile extends StatelessWidget {
               height: 36,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
               child: Icon(icon, color: color, size: 20),
             ),
@@ -669,7 +669,7 @@ class _SwitchTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
@@ -679,7 +679,7 @@ class _SwitchTile extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
             ),
             child: Icon(icon, color: Colors.white, size: 20),
           ),

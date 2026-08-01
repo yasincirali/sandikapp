@@ -128,7 +128,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFFEF4444).withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                     color:
                         const Color(0xFFEF4444).withValues(alpha: 0.25)),
@@ -223,7 +223,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       height: 42,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(SandikRadius.md),
                         border: Border.all(
                             color: Colors.white.withValues(alpha: 0.12)),
                       ),
@@ -647,17 +647,16 @@ class _AssetCardState extends State<_AssetCard>
     Widget card = Container(
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(canEdit ? 0 : 16),
+        borderRadius:
+            BorderRadius.circular(canEdit ? 0 : SandikRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CupertinoButton(
-            minimumSize: Size.zero,
-            padding: EdgeInsets.zero,
-            onPressed: () => onTap(position),
+          SandikTappable(
+            onTap: () => onTap(position),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(SandikSpace.md),
               child: Row(
                 children: [
               a.currencySymbol != null
@@ -665,7 +664,7 @@ class _AssetCardState extends State<_AssetCard>
                       width: 28, height: 28,
                       decoration: BoxDecoration(
                         color: a.type.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(7),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
                       child: Center(
                         child: Text(
@@ -690,7 +689,7 @@ class _AssetCardState extends State<_AssetCard>
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: a.type.color.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                         child: Text(
                           a.displayTicker!,
@@ -797,7 +796,7 @@ class _AssetCardState extends State<_AssetCard>
 
     if (canEdit) {
       card = ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         child: Slidable(
           key: ValueKey('asset-${a.id}'),
           startActionPane: ActionPane(
@@ -1142,7 +1141,7 @@ class _MaturityStatus extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Row(
@@ -1191,7 +1190,7 @@ class _MevduatGetiriRow extends StatelessWidget {
         color: emphasize
             ? color.withValues(alpha: 0.08)
             : Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: emphasize
               ? color.withValues(alpha: 0.30)
@@ -1328,7 +1327,7 @@ class _SortButton extends StatelessWidget {
           color: current != _SortOrder.valueDesc
               ? Sandik.amber.withValues(alpha: 0.15)
               : Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
             color: current != _SortOrder.valueDesc
                 ? Sandik.amber.withValues(alpha: 0.5)

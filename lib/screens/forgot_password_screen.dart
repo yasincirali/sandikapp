@@ -325,7 +325,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           color: enabled
               ? Sandik.amber.withValues(alpha: 0.92)
               : Sandik.amber.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border:
               Border.all(color: Sandik.amber.withValues(alpha: 0.60), width: 1),
           boxShadow: [

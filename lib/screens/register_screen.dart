@@ -421,7 +421,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     color: (isLoading || !_canSubmit)
                         ? Sandik.amber.withValues(alpha: 0.45)
                         : Sandik.amber.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(
                         color: Sandik.amber.withValues(alpha: 0.60)),
                     boxShadow: [
@@ -509,7 +509,7 @@ class _LegalConsentBox extends StatelessWidget {
         color: error
             ? Sandik.loss.withValues(alpha: 0.08)
             : Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: error
               ? Sandik.loss.withValues(alpha: 0.5)
@@ -589,7 +589,7 @@ class _LegalConsentBox extends StatelessWidget {
                         : (docConfirmed
                             ? Colors.transparent
                             : Colors.white.withValues(alpha: 0.04)),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
                     border: Border.all(
                       color: accepted
                           ? Sandik.amber

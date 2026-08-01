@@ -1,4 +1,3 @@
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -230,43 +229,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               padding: EdgeInsets.fromLTRB(hp, 0, hp, 0),
               child: Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                              color: Sandik.amber.withValues(alpha: 0.28),
-                              width: 1.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.18),
-                              blurRadius: 20,
-                              spreadRadius: -4,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
+                  // Yön A: blur + gölge kaldırıldı — marka rozeti bir vurgu
+                  // öğesi değil, kimlik işareti. Cam efekti hero karta ayrıldı.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Sandik.amber.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
+                      border: Border.all(
+                          color: Sandik.amber.withValues(alpha: 0.24),
+                          width: 1.0),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SandikLogo(size: 20, color: Sandik.amber),
+                        const SizedBox(width: SandikSpace.sm),
+                        Text(
+                          'sandık',
+                          style: context.t.headlineMedium?.copyWith(
+                            color: Sandik.gold,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SandikLogo(size: 20, color: Sandik.amber),
-                            const SizedBox(width: 7),
-                            Text(
-                              'sandık',
-                              style: context.t.headlineMedium?.copyWith(
-                                color: Sandik.gold,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
                   ),
                   const Spacer(),
@@ -282,11 +269,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         : const Icon(Icons.refresh_rounded,
                             color: Sandik.text58, size: 22),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: SandikSpace.sm),
                   const _BalanceToggleButton(),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: SandikSpace.sm),
                   _SignalBadgeButton(onTap: _scrollToSignals),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: SandikSpace.sm),
                   SandikLogoutButton(
                       onPressed: () => confirmAndLogout(context, ref)),
                 ],
@@ -303,7 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: Sandik.amber.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     border:
                         Border.all(color: Sandik.amber.withValues(alpha: 0.35)),
                   ),
@@ -311,7 +298,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       const Icon(Icons.wifi_off_rounded,
                           color: Sandik.amber, size: 16),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: SandikSpace.sm),
                       Expanded(
                         child: Text(
                           'Fiyatlar güncellenemedi — eski veriler gösteriliyor.',
@@ -362,7 +349,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   if (showRightCard && partners.isNotEmpty) ...[
-                    const SizedBox(width: 12),
+                    const SizedBox(width: SandikSpace.md),
                     Expanded(
                       child: _personMiniCard(
                         rightLabel,
@@ -454,20 +441,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         const Icon(Icons.savings_outlined,
                             color: Sandik.text36, size: 48),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: SandikSpace.md),
                         Text(
                           'Henüz varlık eklenmemiş',
                           style: context.t.titleLarge
                               ?.copyWith(color: Colors.white),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: SandikSpace.sm),
                         Text(
                           'İlk varlığını ekleyerek sandığını oluşturmaya başla.',
                           textAlign: TextAlign.center,
                           style: context.t.bodyMedium
                               ?.copyWith(color: Sandik.text36),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: SandikSpace.lg),
                         GestureDetector(
                           onTap: () => Navigator.push(
                             context,
@@ -479,7 +466,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 horizontal: 28, vertical: 14),
                             decoration: BoxDecoration(
                               color: Sandik.amber.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(SandikRadius.md),
                               border: Border.all(
                                   color: Sandik.amber.withValues(alpha: 0.5)),
                             ),
@@ -488,7 +475,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               children: [
                                 const Icon(Icons.add_rounded,
                                     color: Sandik.amber, size: 20),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: SandikSpace.sm),
                                 Text(
                                   'İlk Varlığını Ekle',
                                   style: context.t.bodyLarge?.copyWith(
@@ -523,33 +510,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
-                child: GestureDetector(
+                child: SandikTappable(
                   onTap: () => setState(
                       () => _showAllTransactions = !_showAllTransactions),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.10)),
-                        ),
-                        child: Center(
-                          child: Text(
-                            _showAllTransactions
-                                ? 'Daha Az Göster'
-                                : 'Tümünü Gör (${filteredAssets.length})',
-                            style: context.t.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: _showAllTransactions
-                                  ? Sandik.text36
-                                  : Sandik.amber,
-                            ),
-                          ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: SandikSpace.md),
+                    decoration: Sandik.surfaceCard(),
+                    child: Center(
+                      child: Text(
+                        _showAllTransactions
+                            ? 'Daha Az Göster'
+                            : 'Tümünü Gör (${filteredAssets.length})',
+                        style: context.t.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: _showAllTransactions
+                              ? Sandik.text36
+                              : Sandik.amber,
                         ),
                       ),
                     ),
@@ -557,7 +534,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+          const SliverToBoxAdapter(child: SizedBox(height: SandikSpace.xxl)),
         ],
       ),
     );
@@ -568,34 +545,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final color = type?.color ?? Sandik.amber;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
+      child: SandikTappable(
         onTap: () => setState(() => _typeFilter = type),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                color: selected
-                    ? color.withValues(alpha: 0.18)
-                    : Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: selected
-                      ? color.withValues(alpha: 0.7)
-                      : Colors.white.withValues(alpha: 0.10),
-                  width: selected ? 1.5 : 1.0,
-                ),
-              ),
-              child: Text(
-                label,
-                style: context.t.titleSmall?.copyWith(
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? color : Sandik.text58,
-                ),
-              ),
+        semanticLabel: label,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+          decoration: Sandik.chip(
+            selected: selected,
+            accent: color,
+            radius: SandikRadius.lg,
+          ),
+          child: Text(
+            label,
+            style: context.t.titleSmall?.copyWith(
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? color : Sandik.text58,
             ),
           ),
         ),
@@ -608,50 +575,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       {bool hideBalance = false}) {
     final sw = MediaQuery.of(context).size.width;
     final cardFontSize = sw < 360 ? 14.0 : 18.0;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: EdgeInsets.all(sw < 360 ? 12 : 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+    // Yön A: blur kaldırıldı — opak yüzey. Cam efekti hero karta ayrıldı.
+    return Container(
+      padding: EdgeInsets.all(sw < 360 ? SandikSpace.sm : SandikSpace.md),
+      decoration: Sandik.surfaceCard(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 12,
+            backgroundColor: color.withValues(alpha: 0.2),
+            child: Text(
+              initial,
+              style: context.t.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w800, color: color),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 12,
-                backgroundColor: color.withValues(alpha: 0.2),
-                child: Text(
-                  initial,
-                  style: TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.bold, color: color),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(name,
-                  style: context.t.bodySmall?.copyWith(
-                      color: Sandik.text58,
-                      fontWeight: FontWeight.w500)),
-              const SizedBox(height: 3),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  hideBalance ? '••••••' : fmt.format(total),
-                  // cardFontSize dinamik (tutar uzunluğuna göre küçülür), o
-                  // yüzden boyut override'ı kalıyor; tabular figür tema'dan.
-                  style: context.t.numSmall.copyWith(
-                      fontSize: cardFontSize,
-                      color: Colors.white),
-                ),
-              ),
-            ],
+          const SizedBox(height: SandikSpace.sm),
+          Text(name,
+              style: context.t.bodySmall?.copyWith(
+                  color: Sandik.text58,
+                  fontWeight: FontWeight.w500)),
+          const SizedBox(height: SandikSpace.xs),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              hideBalance ? '••••••' : fmt.format(total),
+              // cardFontSize dinamik (tutar uzunluğuna göre küçülür), o
+              // yüzden boyut override'ı kalıyor; tabular figür tema'dan.
+              style: context.t.numSmall.copyWith(
+                  fontSize: cardFontSize,
+                  color: Colors.white),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -669,7 +627,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: sorted.take(3).map((e) {
         final ratio = e.value / (state.totalValue > 0 ? state.totalValue : 1);
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
           child: Row(
             children: [
               Container(
@@ -678,7 +636,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 decoration:
                     BoxDecoration(color: e.key.color, shape: BoxShape.circle),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: SandikSpace.sm),
               Expanded(
                 flex: 2,
                 child: Text(e.key.label,
@@ -688,16 +646,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 flex: 5,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: ratio,
-                    backgroundColor: Colors.white.withValues(alpha: 0.07),
-                    color: e.key.color,
-                    minHeight: 6,
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  // Fiyat yenilendiğinde çubuk zıplamak yerine akar.
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: ratio),
+                    duration: const Duration(milliseconds: 520),
+                    curve: Curves.easeOutCubic,
+                    builder: (_, v, __) => LinearProgressIndicator(
+                      value: v,
+                      backgroundColor: Colors.white.withValues(alpha: 0.07),
+                      color: e.key.color,
+                      minHeight: 6,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: SandikSpace.sm),
               SizedBox(
                 width: 52,
                 child: Text(
@@ -745,7 +709,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Sandik.surface1,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border(
               left: BorderSide(color: accent.withValues(alpha: 0.7), width: 3),
             ),
@@ -758,7 +722,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       height: 28,
                       decoration: BoxDecoration(
                         color: asset.type.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(7),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
                       child: Center(
                         child: Text(
@@ -773,7 +737,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     )
                   : Icon(asset.type.icon, color: asset.type.color, size: 22),
-              const SizedBox(width: 12),
+              const SizedBox(width: SandikSpace.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -784,7 +748,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: asset.type.color.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                         child: Text(asset.displayTicker!,
                             style: context.t.labelMedium?.copyWith(
@@ -792,7 +756,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 letterSpacing: 0,
                                 color: asset.type.color)),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: SandikSpace.xs),
                     ],
                     Text(asset.name,
                         maxLines: 2,
@@ -801,7 +765,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             fontWeight: FontWeight.w600,
                             height: 1.25,
                             color: Colors.white)),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: SandikSpace.xs),
                     Row(
                       children: [
                         Container(
@@ -809,7 +773,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: asset.type.color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(asset.type.label,
                               style: TextStyle(
@@ -817,20 +781,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   color: asset.type.color,
                                   fontWeight: FontWeight.w600)),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: SandikSpace.sm),
                         Text(
                           DateFormat('d MMM yyyy', 'tr_TR')
                               .format(asset.addedDate),
                           style: context.t.bodySmall
                               ?.copyWith(color: Sandik.text36),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: SandikSpace.sm),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(
                             asset.unitIsPrefix
@@ -855,13 +819,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: accent.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(SandikRadius.sm),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(kindIcon, size: 11, color: accent),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: SandikSpace.xs),
                         Text(kindLabel,
                             style: context.t.labelMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
@@ -870,7 +834,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: SandikSpace.xs),
                   Text(
                     hideBalance
                         ? '$sign₺••••'
@@ -920,24 +884,24 @@ class _SignalsBottomSheet extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFF0F2A1F),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 12),
+              const SizedBox(height: SandikSpace.md),
               Center(
                 child: Container(
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
                     color: Sandik.text36,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SandikSpace.md),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
@@ -949,14 +913,14 @@ class _SignalsBottomSheet extends StatelessWidget {
                           color: Colors.white,
                           decoration: TextDecoration.none),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: SandikSpace.sm),
                     if (signals.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: Sandik.amber.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                           border: Border.all(
                               color: Sandik.amber.withValues(alpha: 0.3)),
                         ),
@@ -985,7 +949,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: SandikSpace.md),
               if (active.isEmpty && history.isEmpty)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -993,7 +957,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                     children: [
                       const Icon(Icons.check_circle_outline_rounded,
                           color: Sandik.gain, size: 22),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: SandikSpace.md),
                       Text('Şu an aktif sinyal yok',
                           style: context.t.titleMedium?.copyWith(
                               color: Sandik.text58,
@@ -1023,10 +987,10 @@ class _SignalsBottomSheet extends StatelessWidget {
                                   ? () => onDelete(a.id!)
                                   : null,
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: SandikSpace.sm),
                           ],
                           if (history.isNotEmpty) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: SandikSpace.xs),
                             Padding(
                               padding: const EdgeInsets.fromLTRB(4, 6, 4, 8),
                               child: Text(
@@ -1048,7 +1012,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                                     ? () => onDelete(a.id!)
                                     : null,
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: SandikSpace.sm),
                             ],
                           ],
                         ],
@@ -1111,7 +1075,7 @@ class _SignalTile extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
         decoration: BoxDecoration(
           color: color.withValues(alpha: bgAlpha),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border:
               Border.all(color: color.withValues(alpha: borderAlpha), width: 1.5),
         ),
@@ -1127,7 +1091,7 @@ class _SignalTile extends StatelessWidget {
               child: Icon(icon,
                   color: color.withValues(alpha: alphaFactor), size: 20),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: SandikSpace.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1145,14 +1109,14 @@ class _SignalTile extends StatelessWidget {
                               decoration: TextDecoration.none),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: SandikSpace.sm),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color:
                               color.withValues(alpha: 0.18 * alphaFactor),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                         child: Text(label,
                             style: context.t.bodySmall?.copyWith(
@@ -1162,7 +1126,7 @@ class _SignalTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: SandikSpace.xs),
                   Text(
                     faded
                         ? '${_formatDate(alert.detectedAt)} · silindi'
@@ -1217,36 +1181,18 @@ class _BalanceToggleButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hidden = ref.watch(balanceHiddenProvider);
-    return GestureDetector(
+    return SandikTappable(
       onTap: () => ref.read(balanceHiddenProvider.notifier).set(!hidden),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: hidden
-                  ? Sandik.amber.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: hidden
-                    ? Sandik.amber.withValues(alpha: 0.40)
-                    : Colors.white.withValues(alpha: 0.12),
-                width: 1,
-              ),
-            ),
-            child: Center(
-              child: Icon(
-                hidden
-                    ? Icons.visibility_off_rounded
-                    : Icons.visibility_rounded,
-                color: hidden ? Sandik.amber : Sandik.text58,
-                size: 20,
-              ),
-            ),
+      semanticLabel: hidden ? 'Bakiyeyi göster' : 'Bakiyeyi gizle',
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: Sandik.chip(selected: hidden),
+        child: Center(
+          child: Icon(
+            hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+            color: hidden ? Sandik.amber : Sandik.text58,
+            size: 20,
           ),
         ),
       ),
@@ -1263,24 +1209,13 @@ class _HeaderIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SandikTappable(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.12), width: 1),
-            ),
-            child: Center(child: child),
-          ),
-        ),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: Sandik.chip(selected: false),
+        child: Center(child: child),
       ),
     );
   }
@@ -1296,39 +1231,23 @@ class _SignalBadgeButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final count = ref.watch(activeSignalsProvider).length;
 
-    return GestureDetector(
+    return SandikTappable(
       onTap: onTap,
+      semanticLabel: count > 0 ? '$count yeni sinyal' : 'Sinyaller',
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: count > 0
-                      ? Sandik.amber.withValues(alpha: 0.14)
-                      : Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: count > 0
-                        ? Sandik.amber.withValues(alpha: 0.40)
-                        : Colors.white.withValues(alpha: 0.12),
-                    width: 1,
-                  ),
-                ),
-                child: Center(
-                  child: Icon(
-                    count > 0
-                        ? Icons.notifications_rounded
-                        : Icons.notifications_none_rounded,
-                    color: count > 0 ? Sandik.amber : Sandik.text58,
-                    size: 22,
-                  ),
-                ),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: Sandik.chip(selected: count > 0),
+            child: Center(
+              child: Icon(
+                count > 0
+                    ? Icons.notifications_rounded
+                    : Icons.notifications_none_rounded,
+                color: count > 0 ? Sandik.amber : Sandik.text58,
+                size: 22,
               ),
             ),
           ),
@@ -1342,7 +1261,7 @@ class _SignalBadgeButton extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   color: Sandik.loss,
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                   border: Border.all(color: Sandik.background, width: 1.5),
                 ),
                 child: Center(

@@ -272,7 +272,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: Sandik.surface1,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(SandikRadius.lg),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.08),
                         ),
@@ -314,7 +314,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         height: 7,
                         decoration: BoxDecoration(
                           color: active ? Sandik.amber : Sandik.text36,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                       );
                     }),
@@ -334,7 +334,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           height: 52,
                           decoration: BoxDecoration(
                             color: Sandik.amber.withValues(alpha: 0.92),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(SandikRadius.md),
                             boxShadow: [
                               BoxShadow(
                                 color: Sandik.amber.withValues(alpha: 0.28),

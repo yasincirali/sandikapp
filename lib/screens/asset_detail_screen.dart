@@ -91,7 +91,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: cs.onSurfaceVariant, size: 22),
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(SandikRadius.md)),
             onSelected: (v) {
               if (v == 'delete') _confirmDelete(context);
             },
@@ -118,7 +118,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: asset.type.color.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(SandikRadius.lg),
               border: Border.all(
                 color: asset.type.color.withValues(alpha: 0.15),
               ),
@@ -133,7 +133,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: asset.type.color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -160,7 +160,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         decoration: BoxDecoration(
                           color:
                               cs.surfaceContainerHighest.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                         child: Text(
                           asset.subCategory!,
@@ -213,7 +213,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: gainColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -240,7 +240,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: gainColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(
                             fmtPct(asset.gainLossPercentage, digits: 3, showSign: true),
@@ -357,19 +357,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             color: cs.onSurfaceVariant,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                             borderSide: BorderSide(
                               color: cs.outlineVariant.withValues(alpha: 0.25),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                             borderSide: BorderSide(
                               color: cs.outlineVariant.withValues(alpha: 0.25),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                             borderSide: BorderSide(
                               color: cs.primary,
                               width: 1.5,
@@ -482,7 +482,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.25)),
       ),
       child: Column(
@@ -543,7 +543,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         context: ctx,
         builder: (dlg) => AlertDialog(
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(SandikRadius.lg)),
           title: const Text('Varlığı Sil'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -555,7 +555,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEF4444).withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                       color: const Color(0xFFEF4444)
                           .withValues(alpha: 0.25)),

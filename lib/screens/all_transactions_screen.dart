@@ -168,7 +168,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: selected ? color.withValues(alpha: 0.15) : Sandik.surface1,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
               color: selected ? color : Colors.white.withValues(alpha: 0.06),
               width: selected ? 1.5 : 1,
@@ -205,7 +205,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Sandik.surface1,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
           ),
           child: Row(
             children: [
@@ -215,7 +215,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       height: 28,
                       decoration: BoxDecoration(
                         color: asset.type.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(7),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
                       child: Center(
                         child: Text(
@@ -241,7 +241,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: asset.type.color.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                         child: Text(asset.displayTicker!,
                             style: context.t.labelMedium?.copyWith(
@@ -266,7 +266,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: asset.type.color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(asset.type.label,
                               style: TextStyle(
@@ -286,7 +286,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(
                             asset.unitIsPrefix

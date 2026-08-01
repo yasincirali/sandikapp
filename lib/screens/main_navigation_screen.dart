@@ -69,13 +69,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(SandikRadius.lg),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: AlertDialog(
             backgroundColor: Colors.white.withValues(alpha: 0.08),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(SandikRadius.lg),
               side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
             ),
             title: const Text('Uygulamadan Çık', style: TextStyle(color: Colors.white)),
@@ -174,15 +174,23 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: 26),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: context.t.labelMedium?.copyWith(
+              // Aktif sekme ikonu hafifçe büyür — hangi sekmede olduğun
+              // rengin yanı sıra boyutla da okunur.
+              AnimatedScale(
+                scale: isSelected ? 1.08 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                child: Icon(icon, color: color, size: 26),
+              ),
+              const SizedBox(height: SandikSpace.xs),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: context.t.labelMedium!.copyWith(
                   letterSpacing: 0,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: color,
                 ),
+                child: Text(label),
               ),
             ],
           ),
@@ -193,8 +201,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   Widget _buildFab() {
     return Expanded(
-      child: GestureDetector(
+      child: SandikTappable(
         onTap: _showAddAsset,
+        // Ana eylem — basılınca biraz daha belirgin küçülsün.
+        scale: 0.92,
+        semanticLabel: 'Varlık ekle',
         child: Center(
           child: Container(
             width: 52,

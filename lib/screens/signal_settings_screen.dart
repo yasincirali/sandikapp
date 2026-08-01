@@ -62,7 +62,7 @@ class SignalSettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Sandik.surface1,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
               border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
             ),
             child: Column(
@@ -150,7 +150,7 @@ class _PremiumCard extends StatelessWidget {
               ? [Sandik.amber.withValues(alpha: 0.18), Sandik.amber.withValues(alpha: 0.05)]
               : [Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.02)],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: unlocked
               ? Sandik.amber.withValues(alpha: 0.4)
@@ -235,7 +235,7 @@ class _CategorySection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
@@ -353,7 +353,7 @@ class _IndicatorRow extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Text(
                   'ÖNERİLEN',
@@ -371,7 +371,7 @@ class _IndicatorRow extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text(
                     'ÖNERİLEN',
@@ -388,7 +388,7 @@ class _IndicatorRow extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: Sandik.amber.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text(
                     'PREMIUM',
@@ -419,7 +419,7 @@ class _ThresholdSegment extends StatelessWidget {
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -435,7 +435,7 @@ class _ThresholdSegment extends StatelessWidget {
                   color: value == opt
                       ? Sandik.amber.withValues(alpha: 0.20)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                   border: Border.all(
                     color: value == opt
                         ? Sandik.amber.withValues(alpha: 0.55)

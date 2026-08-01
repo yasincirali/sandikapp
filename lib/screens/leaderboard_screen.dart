@@ -271,7 +271,7 @@ class _SoloPanelState extends State<_SoloPanel> {
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               color: Sandik.surface1,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
               border:
                   Border.all(color: Colors.white.withValues(alpha: 0.06)),
             ),
@@ -339,7 +339,7 @@ class _SoloRoiCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Row(
@@ -351,7 +351,7 @@ class _SoloRoiCard extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
             ),
             child: Icon(
               r == null
@@ -425,7 +425,7 @@ class _PeriodBar extends StatelessWidget {
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
           border:
               Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
@@ -449,7 +449,7 @@ class _PeriodBar extends StatelessWidget {
                             end: Alignment.bottomRight,
                           )
                         : null,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     boxShadow: active
                         ? [
                             BoxShadow(
@@ -792,7 +792,7 @@ class _LeaderRow extends StatelessWidget {
         color: isMe
             ? Sandik.amber.withValues(alpha: 0.10)
             : Sandik.surface1,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: isMe
               ? Sandik.amber.withValues(alpha: 0.55)
@@ -846,7 +846,7 @@ class _LeaderRow extends StatelessWidget {
                             decoration: BoxDecoration(
                               color:
                                   Sandik.gold.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(SandikRadius.sm),
                             ),
                             child: Text(
                               'LİDER',
@@ -965,7 +965,7 @@ class _DiffBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(SandikRadius.sm),
       child: Container(
         height: 4,
         color: Colors.white.withValues(alpha: 0.05),
@@ -980,7 +980,7 @@ class _DiffBar extends StatelessWidget {
                   color,
                 ],
               ),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(SandikRadius.sm),
             ),
           ),
         ),
@@ -1078,7 +1078,7 @@ class _GlobalPercentileTeaserState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border:
             Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
@@ -1158,7 +1158,7 @@ class _GlobalPercentileTeaserState
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: iconColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
           ),
           child: Icon(icon, size: 18, color: iconColor),
         ),
@@ -1297,7 +1297,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: Sandik.gold.withValues(alpha: 0.18)),
       ),
       child: child,
@@ -1349,7 +1349,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(SandikRadius.sm),
           ),
           child: const Icon(Icons.emoji_events_rounded,
               color: Colors.black87, size: 16),
@@ -1382,7 +1382,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
             color: Sandik.gold.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(SandikRadius.sm),
           ),
           child: Text(
             'ANONİM',
@@ -1436,7 +1436,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
                 color: selected
                     ? Sandik.gold.withValues(alpha: 0.16)
                     : Colors.white.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                   color: selected
                       ? Sandik.gold.withValues(alpha: 0.55)
@@ -1535,7 +1535,7 @@ class _AllocationDetail extends StatelessWidget {
         // Stacked bar — yatay, her türü renk ile ayırır. FractionallySized
         // ile toplam width içinde oransal segmentler.
         ClipRRect(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(SandikRadius.sm),
           child: SizedBox(
             height: 10,
             child: Row(
@@ -1599,7 +1599,7 @@ class _LegendChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(SandikRadius.sm),
         border: Border.all(color: color.withValues(alpha: 0.30), width: 1),
       ),
       child: Row(
@@ -1657,7 +1657,7 @@ class _Badge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(SandikRadius.sm),
       ),
       child: Text(
         text,

@@ -550,7 +550,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               color: selected
                   ? AssetType.altin.color.withValues(alpha: 0.18)
                   : Sandik.surface1,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
               border: Border.all(
                 color: selected
                     ? AssetType.altin.color
@@ -681,7 +681,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Sandik.surface1,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
         ),
         child: Row(
@@ -714,7 +714,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Sandik.amber.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
               color: Sandik.amber.withValues(alpha: 0.3), width: 1),
         ),
@@ -756,7 +756,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             Sandik.amber.withValues(alpha: 0.06),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
             color: Sandik.amber.withValues(alpha: 0.4), width: 1),
         boxShadow: [
@@ -860,7 +860,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(color: color.withValues(alpha: 0.35)),
         ),
         child: Row(
@@ -871,7 +871,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
               child: _previewLoading && _previewPrice == null
                   ? const SizedBox(
@@ -931,7 +931,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         : DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(SandikRadius.md),
       onTap: () async {
         final picked = await showDatePicker(
           context: context,
@@ -961,7 +961,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: Sandik.surface1,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
             color: isToday
                 ? Colors.white.withValues(alpha: 0.05)
@@ -999,13 +999,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         children: [
           InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             onTap: () =>
                 setState(() => _notesExpanded = !_notesExpanded),
             child: Padding(
@@ -1090,7 +1090,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               disabledBackgroundColor:
                   Sandik.amber.withValues(alpha: 0.25),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(SandikRadius.md)),
               elevation: 0,
             ),
             child: _saving
@@ -1198,7 +1198,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   color: selected
                       ? t.color.withValues(alpha: 0.18)
                       : Sandik.surface1,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                     color: selected
                         ? t.color
@@ -1264,7 +1264,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   color: selected
                       ? AssetType.doviz.color.withValues(alpha: 0.18)
                       : Sandik.surface1,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                     color: selected
                         ? AssetType.doviz.color
@@ -1337,7 +1337,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   color: selected
                       ? Sandik.amber.withValues(alpha: 0.16)
                       : Sandik.surface1,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                     color: selected
                         ? Sandik.amber.withValues(alpha: 0.45)
@@ -1485,7 +1485,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: hasError
               ? Sandik.loss
@@ -1509,7 +1509,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(SandikRadius.sm),
               ),
               child: Text(badgeText,
                   style: context.t.labelLarge?.copyWith(
@@ -2007,15 +2007,15 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 borderSide: BorderSide(color: Sandik.amber.withValues(alpha: 0.6)),
               ),
             ),
@@ -2408,7 +2408,7 @@ class _PickerShellState extends State<_PickerShell> {
             height: 4,
             decoration: BoxDecoration(
                 color: cs.outlineVariant,
-                borderRadius: BorderRadius.circular(2)),
+                borderRadius: BorderRadius.circular(SandikRadius.sm)),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -2426,7 +2426,7 @@ class _PickerShellState extends State<_PickerShell> {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: widget.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text('${widget.count}',
                       style: TextStyle(
@@ -2443,7 +2443,7 @@ class _PickerShellState extends State<_PickerShell> {
               height: 44,
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border:
                     Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
               ),
@@ -2530,7 +2530,7 @@ class _PickerRow extends StatelessWidget {
                 color: isSelected
                     ? color.withValues(alpha: 0.15)
                     : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: isSelected
                     ? Border.all(
                         color: color.withValues(alpha: 0.5), width: 1.5)

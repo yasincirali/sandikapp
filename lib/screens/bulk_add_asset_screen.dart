@@ -318,7 +318,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                   side: BorderSide(
                       color: Sandik.amber.withValues(alpha: 0.45), width: 1),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(SandikRadius.md)),
                 ),
               ),
             ),
@@ -335,7 +335,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                   disabledBackgroundColor:
                       Sandik.amber.withValues(alpha: 0.25),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(SandikRadius.md)),
                 ),
                 child: _saving
                     ? Row(
@@ -431,7 +431,7 @@ class _BulkItemTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: Sandik.surface1,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
         child: Row(
@@ -441,7 +441,7 @@ class _BulkItemTile extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: item.type.color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
               child: Icon(item.type.icon, color: item.type.color, size: 22),
             ),

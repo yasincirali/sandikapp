@@ -180,7 +180,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(SandikRadius.lg),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Center(
@@ -217,7 +217,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(12)),
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: List.generate(_periods.length, (i) {
@@ -230,7 +230,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     color: isSelected
                         ? const Color(0xFF1A3D2E)
                         : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm)),
                 child: Center(
                     child: Text(_periods[i].label,
                         style: context.t.bodyMedium?.copyWith(
@@ -274,7 +274,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       padding: const EdgeInsets.fromLTRB(0, 24, 16, 12),
       decoration: BoxDecoration(
           color: Sandik.surface1,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
           border: Border.all(color: Colors.white.withValues(alpha: 0.05))),
       child: LineChart(
         LineChartData(
@@ -429,7 +429,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       child: Row(
         children: [
           Container(

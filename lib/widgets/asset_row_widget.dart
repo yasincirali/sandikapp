@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
+import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 
 class AssetRowWidget extends StatelessWidget {
@@ -61,7 +62,7 @@ class AssetRowWidget extends StatelessWidget {
                     height: 28,
                     decoration: BoxDecoration(
                       color: asset.type.color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(7),
+                      borderRadius: BorderRadius.circular(SandikRadius.sm),
                     ),
                     child: Center(
                       child: Text(
@@ -90,7 +91,7 @@ class AssetRowWidget extends StatelessWidget {
                           horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(
                         color: asset.type.color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
                       child: Text(
                         ticker,

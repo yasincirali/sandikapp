@@ -321,7 +321,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
                 color: Sandik.surface1,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                     color: Colors.white.withValues(alpha: 0.08)),
               ),
@@ -360,7 +360,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(SandikRadius.lg),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
@@ -407,7 +407,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-              color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
+              color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -426,7 +426,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                   ),
                   child: Row(
                     children: [
@@ -469,7 +469,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     color: _generating
                         ? Sandik.amber.withValues(alpha: 0.05)
                         : Sandik.amber.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -487,7 +487,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-              color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
+              color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -521,7 +521,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       color: _submitting
                           ? Sandik.gain.withValues(alpha: 0.05)
                           : Sandik.gain.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
                     ),
                     alignment: Alignment.center,
                     child: Text(
@@ -544,7 +544,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Sandik.amber.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border:
             Border.all(color: Sandik.amber.withValues(alpha: 0.3), width: 1.5),
       ),
@@ -587,7 +587,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       child: Column(
         children: [
           const Icon(Icons.people_outline_rounded,
@@ -608,7 +608,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(16)),
+          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       child: Row(
         children: [
           CircleAvatar(
@@ -839,7 +839,7 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Sandik.amber.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border:
             Border.all(color: Sandik.amber.withValues(alpha: 0.3), width: 1.5),
       ),
@@ -937,7 +937,7 @@ class _ActionIcon extends StatelessWidget {
         height: 42,
         decoration: BoxDecoration(
           color: iconColor.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(color: iconColor.withValues(alpha: 0.18)),
         ),
         child: Center(child: Icon(icon, color: iconColor, size: 20)),
@@ -974,7 +974,7 @@ class _ProfilePremiumBanner extends ConsumerWidget {
               Sandik.gold.withValues(alpha: 0.08),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(color: Sandik.amber.withValues(alpha: 0.40)),
         ),
         child: Row(
@@ -984,7 +984,7 @@ class _ProfilePremiumBanner extends ConsumerWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: Sandik.amber.withValues(alpha: 0.20),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
               child: const Icon(Icons.workspace_premium_rounded,
                   color: Sandik.amber, size: 22),
@@ -1029,7 +1029,7 @@ class _PremiumActiveBadge extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: Sandik.gain.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: Sandik.gain.withValues(alpha: 0.35)),
       ),
       child: Row(
@@ -1039,7 +1039,7 @@ class _PremiumActiveBadge extends StatelessWidget {
             height: 32,
             decoration: BoxDecoration(
               color: Sandik.gain.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(SandikRadius.sm),
             ),
             child: const Icon(Icons.check_circle_outline_rounded,
                 color: Sandik.gain, size: 18),

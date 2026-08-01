@@ -74,7 +74,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Sandik.surface1,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
@@ -154,7 +154,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: signalColor.withValues(alpha: isNeutral ? 0.04 : 0.08),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
               color: signalColor.withValues(alpha: isNeutral ? 0.08 : 0.25),
               width: isNeutral ? 1 : 1.5,
@@ -222,7 +222,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
         Container(
           decoration: BoxDecoration(
             color: Sandik.surface1,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: Column(
@@ -253,7 +253,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                           height: 36,
                           decoration: BoxDecoration(
                             color: c,
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -283,7 +283,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: c.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(
                             lbl,
@@ -474,7 +474,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
       context: ctx,
       builder: (dlg) => AlertDialog(
         shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(SandikRadius.lg)),
         title: const Text('Varlığı Sil'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -486,7 +486,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFFEF4444).withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                     color:
                         const Color(0xFFEF4444).withValues(alpha: 0.25)),
@@ -650,7 +650,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
       height: 40,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
       ),
       padding: const EdgeInsets.all(3),
       child: Row(
@@ -664,7 +664,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   color: isSelected ? Sandik.surface2 : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Center(
                   child: Text(
@@ -726,7 +726,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(SandikRadius.md)),
               onSelected: (v) {
                 if (v == 'delete') _confirmDelete(context);
               },
@@ -1148,7 +1148,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           height: 400,
                           decoration: BoxDecoration(
                             color: Sandik.surface1,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(SandikRadius.md),
                             border: Border.all(
                                 color: Colors.white.withValues(alpha: 0.05)),
                           ),
@@ -1637,7 +1637,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   ),
                   child: Row(
@@ -1723,7 +1723,7 @@ class _PnlSummaryStrip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Sandik.surface1,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border(
           left: BorderSide(color: accent.withValues(alpha: 0.8), width: 3),
         ),
@@ -1786,7 +1786,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border:
                     Border.all(color: Colors.white.withValues(alpha: 0.10)),
               ),
@@ -1809,7 +1809,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: accent.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(color: accent.withValues(alpha: 0.4)),
               ),
               child: Row(
@@ -1860,12 +1860,12 @@ class _FullscreenChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.08),
             ),
@@ -1899,7 +1899,7 @@ class _OverlayChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           padding:
@@ -1908,7 +1908,7 @@ class _OverlayChip extends StatelessWidget {
             color: active
                 ? Sandik.amber.withValues(alpha: 0.18)
                 : Colors.white.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(
               color: active
                   ? Sandik.amber.withValues(alpha: 0.55)
@@ -1983,12 +1983,12 @@ class _CompareStrip extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: onAddPressed,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.15),
                     style: BorderStyle.solid,
@@ -2041,7 +2041,7 @@ class _LegendBadge extends StatelessWidget {
           left: 10, right: onRemove == null ? 10 : 4, top: 5, bottom: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
       child: Row(
@@ -2068,7 +2068,7 @@ class _LegendBadge extends StatelessWidget {
             const SizedBox(width: 2),
             InkWell(
               onTap: onRemove,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
               child: Padding(
                 padding: const EdgeInsets.all(4),
                 child:
@@ -2338,7 +2338,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 height: 4,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
               ),
               Padding(
@@ -2375,7 +2375,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.04),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
                       borderSide: BorderSide.none,
                     ),
                     isDense: true,

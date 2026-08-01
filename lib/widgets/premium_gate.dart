@@ -62,7 +62,7 @@ class PremiumGate extends ConsumerWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: Sandik.background.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                   color: Sandik.amber.withValues(alpha: 0.35),
                   width: 1,
@@ -107,7 +107,7 @@ class PremiumChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: Sandik.amber.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(SandikRadius.sm),
         border: Border.all(color: Sandik.amber.withValues(alpha: 0.4)),
       ),
       child: Row(

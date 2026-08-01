@@ -68,7 +68,7 @@ class _OptInHero extends StatelessWidget {
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Sandik.gain.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
                       child: Text(
                         'YENİ',
@@ -100,7 +100,7 @@ class _OptInHero extends StatelessWidget {
                 horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Sandik.amber,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(SandikRadius.lg),
             ),
             child: Text(
               'Katıl',
@@ -436,10 +436,10 @@ class _HeroShell extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(SandikRadius.lg),
         child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(SandikRadius.lg),
             gradient: LinearGradient(
               colors: [
                 const Color(0xFF6D3A00).withValues(alpha: 0.55),
@@ -498,7 +498,7 @@ class _TrophyBadge extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         boxShadow: [
           BoxShadow(
             color: Sandik.amber.withValues(alpha: 0.35),
@@ -543,7 +543,7 @@ class _RankMedal extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
         boxShadow: [
           BoxShadow(
             color: color.withValues(alpha: 0.4),

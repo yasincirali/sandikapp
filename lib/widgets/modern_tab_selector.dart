@@ -46,7 +46,7 @@ class _ModernTabSelectorState extends State<ModernTabSelector> {
           height: 48,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.12),
               width: 1.0,
@@ -66,7 +66,7 @@ class _ModernTabSelectorState extends State<ModernTabSelector> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: Sandik.amber,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
                     boxShadow: [
                       BoxShadow(
                         color: Sandik.amber.withValues(alpha: 0.40),
