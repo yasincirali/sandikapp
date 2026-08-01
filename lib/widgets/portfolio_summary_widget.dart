@@ -1,6 +1,5 @@
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
@@ -49,8 +48,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
             children: [
               Text(
                 'TOPLAM NET VARLIK',
-                style: GoogleFonts.dmSans(
-                  fontSize: 10,
+                style: context.t.labelMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
                   color: const Color(0xFF2D9E6C).withValues(alpha: 0.8),
@@ -62,7 +60,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   hideBalance ? '••••••' : tryFmt.format(state.totalValue),
-                  style: GoogleFonts.dmSans(
+                  style: context.t.numLarge.copyWith(
                     fontSize: heroFontSize,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.5,
@@ -83,7 +81,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                       Flexible(
                         child: Text(
                           '${isPos ? '+' : ''}${tryFmt.format(state.gainLoss)}',
-                          style: GoogleFonts.dmSans(
+                          style: context.t.numSmall.copyWith(
                             fontSize: subFontSize,
                             fontWeight: FontWeight.w600,
                             color: gainColor,
@@ -94,7 +92,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                       const SizedBox(width: 10),
                       Text(
                         fmtPct(state.gainLossPercentage, digits: 3),
-                        style: GoogleFonts.dmSans(
+                        style: context.t.numSmall.copyWith(
                           fontSize: subFontSize,
                           fontWeight: FontWeight.w500,
                           color: gainColor,
@@ -103,7 +101,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                     ] else
                       Text(
                         '•••• / ••••',
-                        style: GoogleFonts.dmSans(
+                        style: context.t.numSmall.copyWith(
                           fontSize: subFontSize,
                           fontWeight: FontWeight.w500,
                           color: Sandik.text36,

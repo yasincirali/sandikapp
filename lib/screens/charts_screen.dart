@@ -26,7 +26,6 @@ import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/deposit_service.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
@@ -198,7 +197,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                   Expanded(
                     child: Text(
                       'Portföy',
-                      style: GoogleFonts.dmSans(
+                      style: context.t.headlineLarge?.copyWith(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -375,7 +374,7 @@ class _EmptyState extends StatelessWidget {
           const Icon(Icons.inbox_rounded, size: 64, color: Sandik.text36),
           const SizedBox(height: 16),
           Text('Henüz varlık eklenmemiş',
-              style: GoogleFonts.dmSans(color: Sandik.text36)),
+              style: context.t.bodyMedium?.copyWith(color: Sandik.text36)),
         ],
       ),
     );
@@ -474,9 +473,8 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                       if (centerPct != null) ...[
                         Text(
                           centerPct,
-                          style: GoogleFonts.dmSans(
+                          style: context.t.numLarge.copyWith(
                             fontSize: 18,
-                            fontWeight: FontWeight.w800,
                             color: centerColor,
                           ),
                         ),
@@ -486,7 +484,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                         fit: BoxFit.scaleDown,
                         child: Text(
                           centerValue,
-                          style: GoogleFonts.dmSans(
+                          style: context.t.numLarge.copyWith(
                             fontSize: centerPct != null ? 16 : 22,
                             fontWeight: FontWeight.w700,
                             color: centerColor,
@@ -496,10 +494,8 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                       const SizedBox(height: 2),
                       Text(
                         centerLabel,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
+                        style: context.t.titleSmall?.copyWith(
                           color: Sandik.text36,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -543,8 +539,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                     const SizedBox(width: 6),
                     Text(
                       '${e.value.key.label} $pct',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 13,
+                      style: context.t.bodyMedium?.copyWith(
                         fontWeight: isTouched ? FontWeight.w700 : FontWeight.w500,
                         color: isTouched ? e.value.key.color : Sandik.text58,
                       ),
@@ -675,7 +670,7 @@ class _AssetCardState extends State<_AssetCard>
                       child: Center(
                         child: Text(
                           a.currencySymbol!,
-                          style: GoogleFonts.dmSans(
+                          style: context.t.bodyMedium!.copyWith(
                             fontSize: a.currencySymbol!.length > 1 ? 9 : 13,
                             fontWeight: FontWeight.w800,
                             color: a.type.color,
@@ -699,8 +694,8 @@ class _AssetCardState extends State<_AssetCard>
                         ),
                         child: Text(
                           a.displayTicker!,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 10, fontWeight: FontWeight.w800, color: a.type.color),
+                          style: context.t.labelMedium?.copyWith(
+                              letterSpacing: 0, fontWeight: FontWeight.w800, color: a.type.color),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -709,8 +704,7 @@ class _AssetCardState extends State<_AssetCard>
                       a.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14,
+                      style: context.t.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                           height: 1.25),
@@ -720,7 +714,7 @@ class _AssetCardState extends State<_AssetCard>
                       a.unitIsPrefix
                           ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
                           : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
-                      style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
+                      style: context.t.bodySmall?.copyWith(color: Sandik.text36),
                     ),
                   ],
                 ),
@@ -730,8 +724,7 @@ class _AssetCardState extends State<_AssetCard>
                 children: [
                   Text(
                     tryFmt.format(pState.toTRY(a.totalValue, a.currency)),
-                    style: GoogleFonts.dmSans(
-                        fontSize: 16,
+                    style: context.t.numMedium.copyWith(
                         fontWeight: FontWeight.w700,
                         color: Colors.white),
                   ),
@@ -750,7 +743,7 @@ class _AssetCardState extends State<_AssetCard>
                                 color: Sandik.text58, size: 14),
                             const SizedBox(width: 2),
                             Text('Değişim yok',
-                                style: GoogleFonts.dmSans(
+                                style: context.t.numSmall.copyWith(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: Sandik.text58)),
@@ -769,7 +762,7 @@ class _AssetCardState extends State<_AssetCard>
                           const SizedBox(width: 2),
                           Text(
                             '${tryFmt.format(gainLossTRY.abs())} · ${fmtPct(pctTRY.abs(), digits: 2)}',
-                            style: GoogleFonts.dmSans(
+                            style: context.t.numSmall.copyWith(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: isPos ? Sandik.gain : Sandik.loss,
@@ -986,8 +979,7 @@ class _AssetDetailsPanel extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               '${buyLots.length} alım · ${position.lots.where((l) => l.isSell).length} çıkarma',
-              style: GoogleFonts.dmSans(
-                  fontSize: 11,
+              style: context.t.bodySmall?.copyWith(
                   color: Sandik.text36,
                   fontWeight: FontWeight.w500),
             ),
@@ -1110,8 +1102,8 @@ class _DepositDetailsPanel extends StatelessWidget {
             terms.taxWasProvided
                 ? 'Stopaj: ${fmtPct(terms.taxRatePct, digits: 2)} (kullanıcı)'
                 : 'Stopaj: ${fmtPct(terms.taxRatePct, digits: 0)} (varsayılan — banka dekontunuzu kontrol edin)',
-            style: GoogleFonts.dmSans(
-              fontSize: 10,
+            style: context.t.labelMedium?.copyWith(
+              letterSpacing: 0,
               color: Sandik.text36,
               fontWeight: FontWeight.w600,
               fontStyle: FontStyle.italic,
@@ -1159,7 +1151,7 @@ class _MaturityStatus extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             text,
-            style: GoogleFonts.dmSans(
+            style: context.t.numSmall.copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w800,
               color: color,
@@ -1214,8 +1206,7 @@ class _MevduatGetiriRow extends StatelessWidget {
               children: [
                 Text(
                   label.toUpperCase(),
-                  style: GoogleFonts.dmSans(
-                    fontSize: 10,
+                  style: context.t.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.7,
                     color: Sandik.text58,
@@ -1224,7 +1215,7 @@ class _MevduatGetiriRow extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   money.format(value),
-                  style: GoogleFonts.dmSans(
+                  style: context.t.numSmall.copyWith(
                     fontSize: emphasize ? 16 : 14,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -1238,7 +1229,7 @@ class _MevduatGetiriRow extends StatelessWidget {
             children: [
               Text(
                 '${positive ? '+' : ''}${money.format(gain)}',
-                style: GoogleFonts.dmSans(
+                style: context.t.numSmall.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: color,
@@ -1246,9 +1237,8 @@ class _MevduatGetiriRow extends StatelessWidget {
               ),
               Text(
                 fmtPct(pct, digits: 2, showSign: true),
-                style: GoogleFonts.dmSans(
+                style: context.t.numSmall.copyWith(
                   fontSize: 11,
-                  fontWeight: FontWeight.w700,
                   color: color.withValues(alpha: 0.85),
                 ),
               ),
@@ -1278,8 +1268,7 @@ class _DetailItem extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: GoogleFonts.dmSans(
-            fontSize: 10,
+          style: context.t.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.8,
             color: Sandik.text36,
@@ -1288,7 +1277,7 @@ class _DetailItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: GoogleFonts.dmSans(
+          style: context.t.numSmall.copyWith(
             fontSize: emphasize ? 15 : 13,
             fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
             color: emphasize ? Sandik.gold : Colors.white,
@@ -1373,8 +1362,7 @@ class _SortSheet extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
             child: Text(
               'SIRALAMA KRİTERİ',
-              style: GoogleFonts.dmSans(
-                fontSize: 11,
+              style: context.t.labelLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
                 color: Sandik.text36,
@@ -1394,15 +1382,14 @@ class _SortSheet extends StatelessWidget {
               ),
               title: Text(
                 group,
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
+                style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: selected ? Sandik.amber : Colors.white,
                 ),
               ),
               subtitle: Text(
                 label,
-                style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
+                style: context.t.bodySmall?.copyWith(color: Sandik.text36),
               ),
               trailing: selected
                   ? const Icon(Icons.check_rounded, color: Sandik.amber, size: 18)

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 
 /// Yasal uyarı — sinyal/analiz içeren her ekranın altına eklenir.
@@ -27,8 +26,8 @@ class DisclaimerWidget extends StatelessWidget {
               'yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık '
               'niteliği taşımaz. Yatırım kararlarınızı yetkili bir mali danışmana '
               'danışarak veriniz. Geçmiş performans gelecekteki sonuçları garanti etmez.',
-              style: GoogleFonts.dmSans(
-                fontSize: 10,
+              style: context.t.labelMedium?.copyWith(
+                letterSpacing: 0,
                 color: Sandik.text36,
                 height: 1.5,
               ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
+import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'add_asset_screen.dart';
 import 'performance_screen.dart';
@@ -79,7 +80,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
             onPressed: () async {
               await Navigator.push(
                 context,
-                MaterialPageRoute(
+                adaptiveRoute(
                     builder: (_) => AddAssetScreen(editingAsset: asset)),
               );
               if (mounted) {
@@ -267,7 +268,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  adaptiveRoute(
                     builder: (_) => PerformanceScreen(asset: asset, showBackButton: true),
                   ),
                 );

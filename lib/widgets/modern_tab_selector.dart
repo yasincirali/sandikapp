@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../theme/sandik.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class ModernTabSelector extends StatefulWidget {
   final List<AppUser> partners;
@@ -90,8 +89,7 @@ class _ModernTabSelectorState extends State<ModernTabSelector> {
                         child: Center(
                           child: AnimatedDefaultTextStyle(
                             duration: const Duration(milliseconds: 150),
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13,
+                            style: context.t.bodyMedium!.copyWith(
                               fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
                               color: sel ? Colors.black87 : Sandik.text36,
                             ),

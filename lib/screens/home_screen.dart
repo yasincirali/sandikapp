@@ -78,7 +78,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (asset != null) {
             Navigator.push(
               context,
-              MaterialPageRoute(
+              adaptiveRoute(
                   builder: (_) =>
                       PerformanceScreen(asset: asset, showBackButton: true)),
             );
@@ -259,9 +259,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             const SizedBox(width: 7),
                             Text(
                               'sandık',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
+                              style: context.t.headlineMedium?.copyWith(
                                 color: Sandik.gold,
                                 letterSpacing: -0.5,
                               ),
@@ -317,16 +315,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Expanded(
                         child: Text(
                           'Fiyatlar güncellenemedi — eski veriler gösteriliyor.',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12, color: Sandik.amber),
+                          style: context.t.titleSmall
+                              ?.copyWith(color: Sandik.amber),
                         ),
                       ),
                       GestureDetector(
                         onTap: _reload,
                         child: Text(
                           'Tekrar Dene',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12,
+                          style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: Sandik.amber),
                         ),
@@ -414,8 +411,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               padding: EdgeInsets.fromLTRB(hp, 16, hp, 8),
               child: Text(
                 'VARLIK DAĞILIMI',
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
+                style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
                   color: Sandik.text36,
@@ -435,8 +431,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               padding: EdgeInsets.fromLTRB(hp, 24, hp, 8),
               child: Text(
                 'PORTFÖY HAREKETLERİ',
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
+                style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
                   color: Sandik.text36,
@@ -462,23 +457,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(height: 16),
                         Text(
                           'Henüz varlık eklenmemiş',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white),
+                          style: context.t.titleLarge
+                              ?.copyWith(color: Colors.white),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'İlk varlığını ekleyerek sandığını oluşturmaya başla.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 13, color: Sandik.text36),
+                          style: context.t.bodyMedium
+                              ?.copyWith(color: Sandik.text36),
                         ),
                         const SizedBox(height: 24),
                         GestureDetector(
                           onTap: () => Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            adaptiveRoute(
                                 builder: (_) => const AddAssetScreen()),
                           ),
                           child: Container(
@@ -498,8 +491,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'İlk Varlığını Ekle',
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 15,
+                                  style: context.t.bodyLarge?.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: Sandik.amber),
                                 ),
@@ -551,8 +543,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             _showAllTransactions
                                 ? 'Daha Az Göster'
                                 : 'Tümünü Gör (${filteredAssets.length})',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                            style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: _showAllTransactions
                                   ? Sandik.text36
@@ -600,8 +591,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               child: Text(
                 label,
-                style: GoogleFonts.dmSans(
-                  fontSize: 12,
+                style: context.t.titleSmall?.copyWith(
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   color: selected ? color : Sandik.text58,
                 ),
@@ -643,8 +633,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: 10),
               Text(name,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                  style: context.t.bodySmall?.copyWith(
                       color: Sandik.text58,
                       fontWeight: FontWeight.w500)),
               const SizedBox(height: 3),
@@ -653,9 +642,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   hideBalance ? '••••••' : fmt.format(total),
-                  style: GoogleFonts.dmSans(
+                  // cardFontSize dinamik (tutar uzunluğuna göre küçülür), o
+                  // yüzden boyut override'ı kalıyor; tabular figür tema'dan.
+                  style: context.t.numSmall.copyWith(
                       fontSize: cardFontSize,
-                      fontWeight: FontWeight.w700,
                       color: Colors.white),
                 ),
               ),
@@ -692,10 +682,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 flex: 2,
                 child: Text(e.key.label,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 14,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500)),
+                    style: context.t.titleMedium
+                        ?.copyWith(color: Colors.white)),
               ),
               Expanded(
                 flex: 5,
@@ -715,8 +703,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Text(
                   fmtPct(ratio * 100, digits: 1),
                   textAlign: TextAlign.right,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13,
+                  // Sabit 52pt kolonda sağa dayalı — tabular figür şart.
+                  style: context.t.numSmall.copyWith(
                       color: Sandik.text58,
                       fontWeight: FontWeight.w500),
                 ),
@@ -725,231 +713,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildTransactionItem(Position position) {
-    final asset = position.asDisplayAsset();
-    final hp = MediaQuery.of(context).size.width < 360 ? 14.0 : 20.0;
-    final portfolioState = ref.watch(portfolioProvider).valueOrNull;
-    final hideBalance = ref.watch(balanceHiddenProvider);
-    final tryFmt = NumberFormat('#,###', 'tr_TR');
-
-    final bool isRemoved = asset.quantity <= 0;
-    final int lotCount = position.lots.length;
-
-    // Miktar metni: birime göre formatla
-    String quantityText;
-    if (isRemoved) {
-      quantityText = 'Çıkarıldı';
-    } else {
-      final q = asset.quantity;
-      final unit = asset.unitLabel;
-      final isInt = q == q.truncateToDouble();
-      final fractionDigits = asset.type == AssetType.doviz
-          ? 2
-          : (unit == 'gr' || unit == 'oz' || unit == 'kg' ? 2 : 4);
-      final qStr = isInt
-          ? NumberFormat('#,###', 'tr_TR').format(q.toInt())
-          : fmtNum(q, digits: fractionDigits);
-      quantityText = asset.unitIsPrefix ? '$unit$qStr' : '$qStr $unit';
-    }
-
-    // TL karşılığı — aggregated pozisyonun toplam değeri
-    final double tryValue = portfolioState != null
-        ? portfolioState.toTRY(asset.totalValue, asset.currency)
-        : asset.totalValue;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(hp, 0, hp, 10),
-      child: GestureDetector(
-        onTap: isRemoved
-            ? null
-            : () {
-                if (position.isSingle) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => PerformanceScreen(
-                            asset: position.lots.first, showBackButton: true)),
-                  );
-                } else {
-                  _showPositionLotsSheet(position);
-                }
-              },
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isRemoved
-                    ? Colors.white.withValues(alpha: 0.03)
-                    : Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isRemoved
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.white.withValues(alpha: 0.09),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Opacity(
-                    opacity: isRemoved ? 0.4 : 1.0,
-                    child: asset.currencySymbol != null
-                        ? Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: asset.type.color.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(7),
-                            ),
-                            child: Center(
-                              child: Text(
-                                asset.currencySymbol!,
-                                style: GoogleFonts.dmSans(
-                                  fontSize:
-                                      asset.currencySymbol!.length > 1 ? 9 : 13,
-                                  fontWeight: FontWeight.w800,
-                                  color: asset.type.color,
-                                  height: 1,
-                                ),
-                              ),
-                            ),
-                          )
-                        : Icon(asset.type.icon,
-                            color: asset.type.color, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            if (asset.showTicker && !isRemoved) ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color:
-                                      asset.type.color.withValues(alpha: 0.18),
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Text(
-                                  asset.displayTicker!,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: asset.type.color),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                            ],
-                            Flexible(
-                              child: Text(
-                                asset.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      isRemoved ? Sandik.text36 : Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                lotCount > 1
-                                    ? '${asset.type.label} · Ort. ${DateFormat('d MMM', 'tr_TR').format(position.latestAddedDate)}'
-                                    : '${asset.type.label} · ${DateFormat('d MMM', 'tr_TR').format(asset.addedDate)}',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 12, color: Sandik.text36),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (lotCount > 1) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: Sandik.amber.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  '$lotCount alım',
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: Sandik.amber,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      if (isRemoved)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Sandik.loss.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Çıkarıldı',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Sandik.loss,
-                            ),
-                          ),
-                        )
-                      else ...[
-                        Text(
-                          hideBalance
-                              ? '₺••••'
-                              : '₺${tryFmt.format(tryValue.toInt())}',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          quantityText,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Sandik.text36,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -1024,9 +787,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(asset.displayTicker!,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 10,
+                            style: context.t.labelMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
+                                letterSpacing: 0,
                                 color: asset.type.color)),
                       ),
                       const SizedBox(height: 3),
@@ -1034,8 +797,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Text(asset.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.dmSans(
-                            fontSize: 14,
+                        style: context.t.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             height: 1.25,
                             color: Colors.white)),
@@ -1059,8 +821,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Text(
                           DateFormat('d MMM yyyy', 'tr_TR')
                               .format(asset.addedDate),
-                          style: GoogleFonts.dmSans(
-                              fontSize: 11, color: Sandik.text36),
+                          style: context.t.bodySmall
+                              ?.copyWith(color: Sandik.text36),
                         ),
                         const SizedBox(width: 6),
                         Container(
@@ -1074,8 +836,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             asset.unitIsPrefix
                                 ? '${asset.unitLabel}${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)}'
                                 : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 10,
+                            style: context.t.labelMedium?.copyWith(
+                                letterSpacing: 0,
                                 color: Sandik.text58,
                                 fontWeight: FontWeight.w600),
                           ),
@@ -1101,9 +863,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Icon(kindIcon, size: 11, color: accent),
                         const SizedBox(width: 3),
                         Text(kindLabel,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 10,
+                            style: context.t.labelMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
+                                letterSpacing: 0,
                                 color: accent)),
                       ],
                     ),
@@ -1113,9 +875,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     hideBalance
                         ? '$sign₺••••'
                         : '$sign${tryFmt.format(txValueTRY)}',
-                    style: GoogleFonts.dmSans(
+                    // İşlem tutarı — alt alta listelenir, tabular figür.
+                    style: context.t.numSmall.copyWith(
                         fontSize: 15,
-                        fontWeight: FontWeight.w700,
                         color: isDelete
                             ? Sandik.text58
                             : (isSell ? Sandik.loss : Colors.white)),
@@ -1125,186 +887,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
         ),
-    );
-  }
-
-  // ── Lot detay bottom sheet ─────────────────────────────────────────────────
-  //
-  // Aggregated pozisyon tıklandığında, alt-alt tüm lot'lar (alım işlemleri)
-  // listelenir. Her lot tıklanınca ilgili işlemin performans ekranına gidilir.
-  void _showPositionLotsSheet(Position position) {
-    final portfolioState = ref.read(portfolioProvider).valueOrNull;
-    final hideBalance = ref.read(balanceHiddenProvider);
-    final tryFmt = NumberFormat('#,###', 'tr_TR');
-    final numFmt = NumberFormat('#,##0.##', 'tr_TR');
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Sandik.background,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetCtx) {
-        final rep = position.representative;
-        final totalTry = portfolioState != null
-            ? portfolioState.toTRY(position.totalValue, rep.currency)
-            : position.totalValue;
-        final avgPriceStr = position.weightedPurchasePrice > 0
-            ? '${numFmt.format(position.weightedPurchasePrice)} ${rep.currency}'
-            : '—';
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: rep.type.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child:
-                          Icon(rep.type.icon, color: rep.type.color, size: 22),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(rep.name,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${position.lots.length} alım · Ort. maliyet $avgPriceStr',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 12, color: Sandik.text58),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      hideBalance
-                          ? '₺••••'
-                          : '₺${tryFmt.format(totalTry.toInt())}',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Sandik.gold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Text('ALIMLAR',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                        color: Sandik.text36)),
-                const SizedBox(height: 8),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * 0.5,
-                  ),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: position.lots.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) {
-                      final lot = position.lots[i];
-                      final lotQty = lot.quantity;
-                      final unit = lot.unitLabel;
-                      final qStr = lotQty == lotQty.truncateToDouble()
-                          ? NumberFormat('#,###', 'tr_TR')
-                              .format(lotQty.toInt())
-                          : fmtNum(lotQty, digits: 4);
-                      final qDisplay =
-                          lot.unitIsPrefix ? '$unit$qStr' : '$qStr $unit';
-                      final priceStr = lot.purchasePrice > 0
-                          ? '${numFmt.format(lot.purchasePrice)} ${lot.currency}'
-                          : 'Fiyatsız';
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pop(sheetCtx);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PerformanceScreen(
-                                  asset: lot, showBackButton: true),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Sandik.surface1,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.05)),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      DateFormat('d MMM yyyy', 'tr_TR')
-                                          .format(lot.addedDate),
-                                      style: GoogleFonts.dmSans(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '$qDisplay @ $priceStr',
-                                      style: GoogleFonts.dmSans(
-                                        fontSize: 12,
-                                        color: Sandik.text58,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right_rounded,
-                                  color: Sandik.text36, size: 20),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -1362,8 +944,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       'Teknik Sinyaller',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 18,
+                      style: context.t.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                           decoration: TextDecoration.none),
@@ -1381,8 +962,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                         ),
                         child: Text(
                           '${signals.length}',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12,
+                          style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: Sandik.amber,
                               decoration: TextDecoration.none),
@@ -1397,10 +977,8 @@ class _SignalsBottomSheet extends StatelessWidget {
                         },
                         child: Text(
                           'Tümünü Temizle',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12,
+                          style: context.t.titleSmall?.copyWith(
                               color: Sandik.text36,
-                              fontWeight: FontWeight.w500,
                               decoration: TextDecoration.none),
                         ),
                       ),
@@ -1417,8 +995,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                           color: Sandik.gain, size: 22),
                       const SizedBox(width: 12),
                       Text('Şu an aktif sinyal yok',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                          style: context.t.titleMedium?.copyWith(
                               color: Sandik.text58,
                               decoration: TextDecoration.none)),
                     ],
@@ -1454,8 +1031,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                               padding: const EdgeInsets.fromLTRB(4, 6, 4, 8),
                               child: Text(
                                 'GEÇMİŞ',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 10,
+                                style: context.t.labelMedium?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 1.2,
                                     color: Sandik.text36,
@@ -1562,8 +1138,7 @@ class _SignalTile extends StatelessWidget {
                         child: Text(
                           alert.assetName,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                          style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: Colors.white
                                   .withValues(alpha: alphaFactor),
@@ -1580,8 +1155,7 @@ class _SignalTile extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(label,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 11,
+                            style: context.t.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: color.withValues(alpha: alphaFactor),
                                 decoration: TextDecoration.none)),
@@ -1593,8 +1167,7 @@ class _SignalTile extends StatelessWidget {
                     faded
                         ? '${_formatDate(alert.detectedAt)} · silindi'
                         : '$count gösterge · ${fmtPct(alert.confidence, digits: 0)} güven',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 11,
+                    style: context.t.bodySmall?.copyWith(
                         color: Sandik.text58.withValues(alpha: alphaFactor),
                         decoration: TextDecoration.none),
                   ),
@@ -1775,9 +1348,9 @@ class _SignalBadgeButton extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     count > 9 ? '+9' : '$count',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 9,
+                    style: context.t.labelSmall?.copyWith(
                         fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
                         color: Colors.white),
                   ),
                 ),

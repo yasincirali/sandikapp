@@ -12,12 +12,12 @@ import 'package:flutter/material.dart'
         Material,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'forgot_password_screen.dart';
+import 'otp_verification_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -65,6 +65,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final valid = _formKey.currentState!.validate();
     if (!valid) return;
     setState(() => _loading = true);
+    final emailForOtp = _emailCtrl.text.trim().toLowerCase();
     try {
       await ref.read(authProvider.notifier).login(
             email: _emailCtrl.text,
@@ -74,6 +75,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      // Confirm-email açık ve doğrulanmamış kullanıcı → OTP ekranına yönlendir.
+      // AuthService.login "EMAIL_NOT_CONFIRMED" sentinel exception atar.
+      final msg = e.toString();
+      if (msg.contains('EMAIL_NOT_CONFIRMED')) {
+        // Yeni bir OTP gönderilsin ki kullanıcı elinde taze kod olsun.
+        try {
+          await AuthService.instance.resendRegistrationOtp(emailForOtp);
+        } catch (_) {
+          // Rate-limit vb — sessizce yut, kullanıcı OTP ekranında "yeniden
+          // gönder" cooldown'ını görecek.
+        }
+        if (!mounted) return;
+        await Navigator.of(context).push(
+          CupertinoPageRoute(
+            builder: (_) => OtpVerificationScreen(email: emailForOtp),
+          ),
+        );
+        return;
+      }
       showAppError(context, e);
       return;
     }
@@ -117,17 +137,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'sandık',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.02 * 32,
+                            style: context.t.displaySmall?.copyWith(
                               color: Sandik.gold,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Hazineni birlikte büyüt.',
-                            style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text58),
+                            style: context.t.bodyMedium?.copyWith(color: Sandik.text58),
                           ),
                         ],
                       ),
@@ -139,7 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      style: GoogleFonts.dmSans(color: Sandik.text90),
+                      style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
                       decoration: Sandik.inputDecoration(
                         '',
                         labelText: 'E-posta',
@@ -160,7 +177,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       obscureText: _obscure,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _loading ? null : _login(),
-                      style: GoogleFonts.dmSans(color: Sandik.text90),
+                      style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
                       decoration: Sandik.inputDecoration(
                         '',
                         labelText: 'Şifre',
@@ -254,8 +271,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const SizedBox(width: 10),
                         Text(
                           'Beni hatırla',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 14,
+                          style: context.t.titleMedium?.copyWith(
                             color: Sandik.text58,
                           ),
                         ),
@@ -274,8 +290,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           child: Text(
                             'Şifremi unuttum',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13,
+                            style: context.t.bodyMedium?.copyWith(
                               color: Sandik.amber,
                               fontWeight: FontWeight.w600,
                             ),
@@ -324,9 +339,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               )
                             : Text(
                                 'Giriş Yap',
-                                style: GoogleFonts.dmSans(
+                                style: context.t.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 15,
                                   color: Sandik.dark,
                                 ),
                               ),
@@ -342,7 +356,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       child: Text(
                         'Hesabınız yok mu? Kayıt olun',
-                        style: GoogleFonts.dmSans(color: Sandik.amber),
+                        style: context.t.bodyLarge?.copyWith(color: Sandik.amber),
                       ),
                     ),
                     const SizedBox(height: 32),

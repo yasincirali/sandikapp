@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/preferences_provider.dart';
 import '../screens/paywall_screen.dart';
@@ -77,8 +76,7 @@ class PremiumGate extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Text(
                     'Premium',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 12,
+                    style: context.t.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: Sandik.amber,
                     ),
@@ -118,8 +116,7 @@ class PremiumChip extends StatelessWidget {
           const Icon(Icons.lock_rounded, size: 10, color: Sandik.amber),
           const SizedBox(width: 4),
           Text('Premium',
-              style: GoogleFonts.dmSans(
-                  fontSize: 9,
+              style: context.t.labelSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: Sandik.amber)),
         ],

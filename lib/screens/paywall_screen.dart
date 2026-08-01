@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
@@ -27,7 +26,7 @@ class PaywallScreen extends ConsumerStatefulWidget {
     AnalyticsService.instance
         .logPremiumUpgradeStarted(source: source);
     return Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+      adaptiveRoute(
         fullscreenDialog: true,
         builder: (_) => PaywallScreen(source: source),
       ),
@@ -92,8 +91,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     'iptal için Ayarlar → Apple ID → Abonelikler menüsünden '
                     'yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; '
                     'iptal etmezsen deneme sonunda ücret tahsil edilir.',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                    style: context.t.bodySmall?.copyWith(
                       color: Sandik.text36,
                       height: 1.5,
                     ),
@@ -146,7 +144,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       SnackBar(
         content: Text(
           'Geri yükleme yakında (RevenueCat entegrasyonu ile)',
-          style: GoogleFonts.dmSans(),
+          style: context.t.bodyLarge,
         ),
         backgroundColor: Sandik.surface2,
       ),
@@ -191,8 +189,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ),
               const SizedBox(height: 16),
               Text('Premium açıldı 🎉',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 20,
+                  style: context.t.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: Colors.white)),
               const SizedBox(height: 8),
@@ -200,8 +197,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 'Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve '
                 'daha fazlası açıldı.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.dmSans(
-                    fontSize: 13, color: Sandik.text58, height: 1.5),
+                style: context.t.bodyMedium?.copyWith(
+                    color: Sandik.text58, height: 1.5),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -216,8 +213,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text('Harika',
-                      style: GoogleFonts.dmSans(
-                          fontWeight: FontWeight.w800, fontSize: 15)),
+                      style: context.t.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w800)),
                 ),
               ),
             ],
@@ -279,8 +276,7 @@ class _HeroCard extends StatelessWidget {
             ),
             child: Text(
               'SANDIK PREMIUM',
-              style: GoogleFonts.dmSans(
-                fontSize: 10,
+              style: context.t.labelMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
                 color: Sandik.amber,
@@ -290,8 +286,7 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             'Portföyünü daha derinlemesine\ntakip et',
-            style: GoogleFonts.dmSans(
-              fontSize: 24,
+            style: context.t.headlineLarge?.copyWith(
               fontWeight: FontWeight.w800,
               color: Colors.white,
               height: 1.15,
@@ -300,8 +295,7 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Sınırsız varlık, gelişmiş göstergeler, AI portföy raporu ve daha fazlası.',
-            style: GoogleFonts.dmSans(
-              fontSize: 13,
+            style: context.t.bodyMedium?.copyWith(
               color: Sandik.text58,
               height: 1.4,
             ),
@@ -350,8 +344,7 @@ class _FeatureList extends StatelessWidget {
               Expanded(
                 child: Text(
                   f.$2,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 13,
+                  style: context.t.bodyMedium?.copyWith(
                     color: Colors.white,
                     height: 1.35,
                   ),
@@ -438,8 +431,7 @@ class _PlanCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(title,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 15,
+                          style: context.t.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: Colors.white)),
                       if (badgeText != null) ...[
@@ -453,8 +445,8 @@ class _PlanCard extends StatelessWidget {
                           ),
                           child: Text(
                             badgeText!,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 10,
+                            style: context.t.labelMedium?.copyWith(
+                                letterSpacing: 0,
                                 fontWeight: FontWeight.w800,
                                 color: Sandik.gain),
                           ),
@@ -464,8 +456,7 @@ class _PlanCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11,
+                      style: context.t.bodySmall?.copyWith(
                           color: Sandik.text58,
                           height: 1.4)),
                 ],
@@ -473,7 +464,7 @@ class _PlanCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Text(price,
-                style: GoogleFonts.dmSans(
+                style: context.t.numSmall.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                     color: Sandik.gold)),
@@ -538,8 +529,8 @@ class _BottomBar extends StatelessWidget {
                         selectedPlan == _Plan.yearly
                             ? '7 gün ücretsiz dene'
                             : 'Premium ol',
-                        style: GoogleFonts.dmSans(
-                            fontWeight: FontWeight.w800, fontSize: 16),
+                        style: context.t.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800),
                       ),
               ),
             ),
@@ -547,8 +538,7 @@ class _BottomBar extends StatelessWidget {
             TextButton(
               onPressed: busy ? null : onRestore,
               child: Text('Satın alımı geri yükle',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12,
+                  style: context.t.titleSmall?.copyWith(
                       color: Sandik.text58,
                       fontWeight: FontWeight.w600)),
             ),

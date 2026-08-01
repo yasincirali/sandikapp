@@ -1,6 +1,5 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/asset_type.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
@@ -36,9 +35,7 @@ class SignalSettingsScreen extends ConsumerWidget {
         ),
         title: Text(
           'Sinyal Ayarları',
-          style: GoogleFonts.dmSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
+          style: context.t.headlineMedium?.copyWith(
             color: Colors.white,
           ),
         ),
@@ -78,15 +75,13 @@ class SignalSettingsScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Nötr sinyalleri de bildir',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 14,
+                              style: context.t.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white)),
                           const SizedBox(height: 3),
                           Text(
                             'Kapalıyken sadece AL/SAT bildirimi gelir. Nötr sinyaller yine geçmişe yazılır.',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 11,
+                            style: context.t.bodySmall?.copyWith(
                                 color: Sandik.text58,
                                 height: 1.4),
                           ),
@@ -109,8 +104,8 @@ class SignalSettingsScreen extends ConsumerWidget {
 
           Text(
             'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
-            style: GoogleFonts.dmSans(
-                fontSize: 12, color: Sandik.text58, height: 1.5),
+            style: context.t.titleSmall?.copyWith(
+                color: Sandik.text58, height: 1.5),
           ),
           const SizedBox(height: 16),
 
@@ -176,8 +171,7 @@ class _PremiumCard extends StatelessWidget {
               children: [
                 Text(
                   unlocked ? 'Premium aktif' : 'Premium göstergeler',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 14,
+                  style: context.t.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
@@ -187,8 +181,8 @@ class _PremiumCard extends StatelessWidget {
                   unlocked
                       ? 'ADX, Williams %R ve CCI göstergeleri kullanılabilir.'
                       : 'ADX, Williams %R, CCI göstergelerini açmak için Premium\'a geç.',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11, color: Sandik.text58, height: 1.4),
+                  style: context.t.bodySmall?.copyWith(
+                      color: Sandik.text58, height: 1.4),
                 ),
               ],
             ),
@@ -254,8 +248,7 @@ class _CategorySection extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   type.label,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 15,
+                  style: context.t.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
@@ -269,8 +262,7 @@ class _CategorySection extends StatelessWidget {
               children: [
                 Text(
                   'Bildirim eşiği',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12,
+                  style: context.t.titleSmall?.copyWith(
                       color: Sandik.text58,
                       fontWeight: FontWeight.w600),
                 ),
@@ -350,8 +342,7 @@ class _IndicatorRow extends StatelessWidget {
             Expanded(
               child: Text(
                 IndicatorId.labelOf(id),
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
+                style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: locked ? Sandik.text36 : Colors.white,
                 ),
@@ -366,8 +357,7 @@ class _IndicatorRow extends StatelessWidget {
                 ),
                 child: Text(
                   'ÖNERİLEN',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 9,
+                  style: context.t.labelSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: Colors.green,
                     letterSpacing: 0.8,
@@ -385,8 +375,7 @@ class _IndicatorRow extends StatelessWidget {
                   ),
                   child: Text(
                     'ÖNERİLEN',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 9,
+                    style: context.t.labelSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: Colors.green,
                       letterSpacing: 0.8,
@@ -403,8 +392,7 @@ class _IndicatorRow extends StatelessWidget {
                   ),
                   child: Text(
                     'PREMIUM',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 9,
+                    style: context.t.labelSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: Sandik.amber,
                       letterSpacing: 0.8,
@@ -456,8 +444,7 @@ class _ThresholdSegment extends StatelessWidget {
                 ),
                 child: Text(
                   '%$opt',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 12,
+                  style: context.t.titleSmall?.copyWith(
                     fontWeight:
                         value == opt ? FontWeight.w800 : FontWeight.w600,
                     color: value == opt

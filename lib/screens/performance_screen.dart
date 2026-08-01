@@ -8,7 +8,6 @@ import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
@@ -86,7 +85,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
               child: Text(
                 'Bu varlık türü için hiçbir gösterge seçilmemiş. '
                 'Profil → Sinyal Ayarları\'ndan aktifleştir.',
-                style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58),
+                style: context.t.titleSmall?.copyWith(color: Sandik.text58),
               ),
             ),
           ],
@@ -112,8 +111,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
           children: [
             Text(
               'TEKNİK ANALİZ',
-              style: GoogleFonts.dmSans(
-                fontSize: 11,
+              style: context.t.labelLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
                 color: Sandik.text36,
@@ -122,13 +120,13 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
             const SizedBox(width: 8),
             Text(
               '· ${enabledIds.length}/${IndicatorId.all.length} gösterge',
-              style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
+              style: context.t.bodySmall?.copyWith(color: Sandik.text36),
             ),
             const Spacer(),
             GestureDetector(
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                adaptiveRoute(
                     builder: (_) => const SignalSettingsScreen()),
               ),
               child: Row(
@@ -137,8 +135,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                   const SizedBox(width: 4),
                   Text(
                     'Göstergeleri Ayarla',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                    style: context.t.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Sandik.amber,
                     ),
@@ -182,7 +179,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                   children: [
                     Text(
                       signalLabel,
-                      style: GoogleFonts.dmSans(
+                      style: context.t.headlineLarge?.copyWith(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
                         color: signalColor,
@@ -192,7 +189,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                     const SizedBox(height: 2),
                     Text(
                       '${summary.buyCount} AL · ${summary.sellCount} SAT · ${indicators.length - summary.buyCount - summary.sellCount} NÖTR',
-                      style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58),
+                      style: context.t.titleSmall?.copyWith(color: Sandik.text58),
                     ),
                   ],
                 ),
@@ -203,7 +200,8 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                 children: [
                   Text(
                     fmtPct(summary.confidence * 100, digits: 0),
-                    style: GoogleFonts.dmSans(
+                    // Güven skoru (%) — tabular figür, değişince zıplamasın.
+                    style: context.t.numLarge.copyWith(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: signalColor,
@@ -211,7 +209,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                   ),
                   Text(
                     'güven',
-                    style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text36),
+                    style: context.t.bodySmall?.copyWith(color: Sandik.text36),
                   ),
                 ],
               ),
@@ -265,8 +263,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                             children: [
                               Text(
                                 ind.name,
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 13,
+                                style: context.t.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
@@ -274,8 +271,8 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                               const SizedBox(height: 2),
                               Text(
                                 ind.description,
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 11, color: Sandik.text36),
+                                style: context.t.bodySmall
+                                    ?.copyWith(color: Sandik.text36),
                               ),
                             ],
                           ),
@@ -290,8 +287,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                           ),
                           child: Text(
                             lbl,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 12,
+                            style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: c,
                             ),
@@ -653,7 +649,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
       ),
       padding: const EdgeInsets.all(3),
@@ -673,13 +669,13 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 child: Center(
                   child: Text(
                     _periods[i].label,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 10,
+                    style: context.t.labelMedium?.copyWith(
+                      letterSpacing: 0,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected
                           ? Sandik.gold
-                          : Colors.white.withOpacity(0.35),
+                          : Colors.white.withValues(alpha: 0.35),
                     ),
                   ),
                 ),
@@ -723,8 +719,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
             : null,
         title: Text(
           'Performans: ${widget.asset.name}',
-          style: GoogleFonts.dmSans(
-              fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+          style: context.t.headlineSmall?.copyWith(color: Colors.white),
         ),
         actions: [
           if (isOwnAsset && !widget.showBackButton)
@@ -1155,7 +1150,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             color: Sandik.surface1,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                                color: Colors.white.withOpacity(0.05)),
+                                color: Colors.white.withValues(alpha: 0.05)),
                           ),
                           padding: const EdgeInsets.only(
                               top: 36, right: 16, left: 8, bottom: 16),
@@ -1213,7 +1208,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     (viewMaxY - viewMinY) / 4)
                                 : 50000,
                             getDrawingHorizontalLine: (value) => FlLine(
-                              color: Colors.white.withOpacity(0.05),
+                              color: Colors.white.withValues(alpha: 0.05),
                               strokeWidth: 1,
                             ),
                           ),
@@ -1259,7 +1254,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     child: Text(
                                       label,
                                       textAlign: TextAlign.left,
-                                      style: GoogleFonts.dmSans(
+                                      // Eksen etiketi — tabular figür, tik
+                                      // değerleri değişince kaymasın.
+                                      style: context.t.numSmall.copyWith(
                                         color: Sandik.text58,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
@@ -1311,7 +1308,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         const EdgeInsets.only(top: 10),
                                     child: Text(
                                       label,
-                                      style: GoogleFonts.dmSans(
+                                      // Eksen etiketi — tabular figür, tik
+                                      // değerleri değişince kaymasın.
+                                      style: context.t.numSmall.copyWith(
                                         color: Sandik.text58,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
@@ -1335,8 +1334,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         alignment: Alignment.topLeft,
                                         padding: const EdgeInsets.only(
                                             left: 8, bottom: 2),
-                                        style: GoogleFonts.dmSans(
-                                          fontSize: 10,
+                                        style: context.t.labelMedium?.copyWith(
+                                          letterSpacing: 0,
                                           fontWeight: FontWeight.w800,
                                           color: Colors.white
                                               .withValues(alpha: 0.75),
@@ -1360,8 +1359,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         alignment: Alignment.topRight,
                                         padding: const EdgeInsets.only(
                                             bottom: 8, left: 6),
-                                        style: GoogleFonts.dmSans(
-                                          fontSize: 10,
+                                        style: context.t.labelMedium?.copyWith(
+                                          letterSpacing: 0,
                                           fontWeight: FontWeight.w700,
                                           color: Sandik.amber,
                                         ),
@@ -1389,8 +1388,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                           alignment: Alignment.topLeft,
                                           padding: const EdgeInsets.only(
                                               bottom: 8, right: 6),
-                                          style: GoogleFonts.dmSans(
-                                            fontSize: 10,
+                                          style: context.t.labelMedium?.copyWith(
+                                            letterSpacing: 0,
                                             fontWeight: FontWeight.w700,
                                             color: endpointColor,
                                           ),
@@ -1558,18 +1557,17 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       : '${valueFmt.format(fromY(spot.y))} ₺';
                                   return LineTooltipItem(
                                     tipText,
-                                    GoogleFonts.dmSans(
+                                    context.t.numSmall.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w800,
-                                      fontSize: 13,
                                     ),
                                     children: [
                                       TextSpan(
                                         text: '\n$dateLabel',
-                                        style: GoogleFonts.dmSans(
+                                        style: context.t.labelMedium?.copyWith(
+                                          letterSpacing: 0,
                                           color: Sandik.text58,
                                           fontWeight: FontWeight.w500,
-                                          fontSize: 10,
                                         ),
                                       ),
                                     ],
@@ -1638,24 +1636,23 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'TOPLAM MİKTAR',
-                        style: GoogleFonts.dmSans(
+                        style: context.t.labelLarge?.copyWith(
                             color: Sandik.amber,
-                            fontSize: 11,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.2),
                       ),
                       Text(
                         '${fmtNum(_currentQuantity, digits: 2)} ${widget.asset.unitType}',
-                        style: GoogleFonts.dmSans(
+                        style: context.t.numLarge.copyWith(
                             color: Sandik.gold,
                             fontSize: 18,
                             fontWeight: FontWeight.w700),
@@ -1738,8 +1735,7 @@ class _PnlSummaryStrip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('ALIŞ / $unitLabel',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 9,
+                    style: context.t.labelSmall?.copyWith(
                         letterSpacing: 0.8,
                         fontWeight: FontWeight.w700,
                         color: Sandik.text36)),
@@ -1749,9 +1745,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(_fmtPrice(anchorUnitPrice),
                       maxLines: 1,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                      style: context.t.numSmall.copyWith(
                           color: Colors.white.withValues(alpha: 0.75))),
                 ),
               ],
@@ -1767,8 +1761,7 @@ class _PnlSummaryStrip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('BUGÜN / $unitLabel',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 9,
+                    style: context.t.labelSmall?.copyWith(
                         letterSpacing: 0.8,
                         fontWeight: FontWeight.w700,
                         color: Sandik.text36)),
@@ -1778,7 +1771,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(_fmtPrice(currentUnitPrice),
                       maxLines: 1,
-                      style: GoogleFonts.dmSans(
+                      style: context.t.numSmall.copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: Colors.white)),
@@ -1804,8 +1797,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                       size: 14, color: Sandik.text58),
                   const SizedBox(width: 4),
                   Text('Değişim yok',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11,
+                      style: context.t.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: Sandik.text58)),
                 ],
@@ -1829,24 +1821,21 @@ class _PnlSummaryStrip extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text('$sign${_fmtTotal(totalPnl.abs())}',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 13,
+                          style: context.t.numSmall.copyWith(
                               fontWeight: FontWeight.w800,
                               color: accent,
                               height: 1.0)),
                       const SizedBox(height: 2),
                       Text(
                           '$sign${_fmtPrice((currentUnitPrice - anchorUnitPrice).abs())} / $unitLabel',
-                          style: GoogleFonts.dmSans(
+                          style: context.t.numSmall.copyWith(
                               fontSize: 10,
-                              fontWeight: FontWeight.w700,
                               color: accent.withValues(alpha: 0.85),
                               height: 1.2)),
                       const SizedBox(height: 1),
                       Text(fmtPct(pnlPct.abs(), digits: 2),
-                          style: GoogleFonts.dmSans(
+                          style: context.t.numSmall.copyWith(
                               fontSize: 10,
-                              fontWeight: FontWeight.w700,
                               color: accent.withValues(alpha: 0.85),
                               height: 1.0)),
                     ],
@@ -1939,8 +1928,7 @@ class _OverlayChip extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
+                style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: active ? Sandik.amber : Sandik.text58,
                   letterSpacing: 0.4,
@@ -2019,8 +2007,7 @@ class _CompareStrip extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       compare == null ? 'Karşılaştır' : 'Değiştir',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 11,
+                      style: context.t.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: Sandik.text58,
                         letterSpacing: 0.4,
@@ -2071,8 +2058,7 @@ class _LegendBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.dmSans(
-              fontSize: 11,
+            style: context.t.labelLarge?.copyWith(
               fontWeight: FontWeight.w700,
               color: color,
               letterSpacing: 0.4,
@@ -2294,7 +2280,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
       return Center(
         child: Text(
           'Sonuç yok.',
-          style: GoogleFonts.dmSans(color: Sandik.text58, fontSize: 13),
+          style: context.t.bodyMedium?.copyWith(color: Sandik.text58),
         ),
       );
     }
@@ -2314,7 +2300,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
           ),
           title: Text(
             c.ticker,
-            style: GoogleFonts.dmSans(
+            style: context.t.titleMedium?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w700,
             ),
@@ -2323,7 +2309,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
             c.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.dmSans(color: Sandik.text58, fontSize: 11),
+            style: context.t.bodySmall?.copyWith(color: Sandik.text58),
           ),
           trailing: selected
               ? const Icon(Icons.check_rounded, color: Sandik.amber)
@@ -2361,8 +2347,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                   children: [
                     Text(
                       'Karşılaştır',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 18,
+                      style: context.t.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
@@ -2412,8 +2397,8 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 indicatorColor: Sandik.amber,
                 labelColor: Sandik.amber,
                 unselectedLabelColor: Sandik.text58,
-                labelStyle: GoogleFonts.dmSans(
-                    fontSize: 12, fontWeight: FontWeight.w700),
+                labelStyle: context.t.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
                 tabs: const [
                   Tab(text: 'Portföyüm'),
                   Tab(text: 'Diğer'),

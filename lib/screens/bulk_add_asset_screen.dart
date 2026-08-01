@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -25,7 +24,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
 
   Future<void> _openAddForm({BulkCartItem? existing}) async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
+      adaptiveRoute(
         builder: (_) => AddAssetScreen(
           cartMode: true,
           cartInitial: existing,
@@ -187,7 +186,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             style: TextStyle(color: Colors.white)),
         content: Text(
           'Sepetteki tüm varlıklar silinecek. Emin misin?',
-          style: GoogleFonts.dmSans(color: Sandik.text58),
+          style: context.t.bodyLarge?.copyWith(color: Sandik.text58),
         ),
         actions: [
           TextButton(
@@ -255,16 +254,15 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             ),
             const SizedBox(height: 16),
             Text('Sepet boş',
-                style: GoogleFonts.dmSans(
-                    fontSize: 18,
+                style: context.t.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Colors.white)),
             const SizedBox(height: 6),
             Text(
               'Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.dmSans(
-                  fontSize: 13, color: Sandik.text58, height: 1.4),
+              style: context.t.bodyMedium?.copyWith(
+                  color: Sandik.text58, height: 1.4),
             ),
           ],
         ),
@@ -312,10 +310,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                 icon: const Icon(Icons.add_rounded, color: Sandik.amber),
                 label: Text(
                   'Varlık Ekle',
-                  style: GoogleFonts.dmSans(
+                  style: context.t.bodyLarge?.copyWith(
                       color: Sandik.amber,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15),
+                      fontWeight: FontWeight.w600),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
@@ -353,8 +350,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                           const SizedBox(width: 12),
                           Text(
                             'Kaydediliyor $_saved / ${items.length}',
-                            style: GoogleFonts.dmSans(
-                                fontWeight: FontWeight.w700, fontSize: 15),
+                            style: context.t.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w700),
                           ),
                         ],
                       )
@@ -362,8 +359,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                         items.isEmpty
                             ? 'Kaydet'
                             : 'Tümünü Kaydet (${items.length})',
-                        style: GoogleFonts.dmSans(
-                            fontWeight: FontWeight.w700, fontSize: 15),
+                        style: context.t.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w700),
                       ),
               ),
             ),
@@ -455,17 +452,15 @@ class _BulkItemTile extends StatelessWidget {
                 children: [
                   Text(
                     item.name.isEmpty ? item.type.label : item.name,
-                    style: GoogleFonts.dmSans(
+                    style: context.t.bodyLarge?.copyWith(
                         color: Colors.white,
-                        fontSize: 15,
                         fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: GoogleFonts.dmSans(
-                          color: Sandik.text58, fontSize: 12),
+                      style: context.t.titleSmall?.copyWith(color: Sandik.text58),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                 ],

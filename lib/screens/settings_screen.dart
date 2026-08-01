@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_provider.dart';
@@ -225,7 +224,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showLegalDoc(String title, List<LegalBlock> blocks, IconData icon) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      adaptiveRoute(
         builder: (_) => LegalDocScreen(title: title, blocks: blocks, icon: icon),
       ),
     );
@@ -290,9 +289,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Text(
                   'Şikayet & Tavsiye',
-                  style: GoogleFonts.dmSans(
+                  style: context.t.headlineSmall?.copyWith(
                     color: Colors.white,
-                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -377,9 +375,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         title: Text(
           'Ayarlar',
-          style: GoogleFonts.dmSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
+          style: context.t.headlineMedium?.copyWith(
             color: Colors.white,
           ),
         ),
@@ -436,7 +432,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'Her varlık türü için gösterge seçimi + Premium',
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
+                adaptiveRoute(
                     builder: (_) => const SignalSettingsScreen()),
               ),
             ),
@@ -565,8 +561,7 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8),
       child: Text(
         text,
-        style: GoogleFonts.dmSans(
-          fontSize: 12,
+        style: context.t.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
           color: Sandik.text36,
           letterSpacing: 1.2,

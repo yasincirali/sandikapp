@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
@@ -57,8 +56,7 @@ class _OptInHero extends StatelessWidget {
                   children: [
                     Text(
                       'Yarış',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 15,
+                      style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         letterSpacing: 0.3,
@@ -74,7 +72,7 @@ class _OptInHero extends StatelessWidget {
                       ),
                       child: Text(
                         'YENİ',
-                        style: GoogleFonts.dmSans(
+                        style: context.t.labelSmall?.copyWith(
                           fontSize: 8,
                           fontWeight: FontWeight.w900,
                           color: Sandik.gain,
@@ -87,7 +85,7 @@ class _OptInHero extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Ortaklarınla getiri sıralaması. Kim daha iyi kazanıyor?',
-                  style: GoogleFonts.dmSans(
+                  style: context.t.bodySmall?.copyWith(
                     fontSize: 11.5,
                     color: Colors.white.withValues(alpha: 0.75),
                     height: 1.35,
@@ -106,8 +104,7 @@ class _OptInHero extends StatelessWidget {
             ),
             child: Text(
               'Katıl',
-              style: GoogleFonts.dmSans(
-                fontSize: 11,
+              style: context.t.bodySmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: Colors.black,
                 letterSpacing: 0.4,
@@ -236,7 +233,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   void _openLeaderboard() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+      adaptiveRoute(builder: (_) => const LeaderboardScreen()),
     );
   }
 
@@ -266,8 +263,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         Expanded(
           child: Text(
             'Yarış hesaplanıyor…',
-            style: GoogleFonts.dmSans(
-              fontSize: 13,
+            style: context.t.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
@@ -333,8 +329,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                   Flexible(
                     child: Text(
                       title,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 14,
+                      style: context.t.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
@@ -345,8 +340,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                   const SizedBox(width: 8),
                   Text(
                     roiText,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 13,
+                    style: context.t.numSmall.copyWith(
                       fontWeight: FontWeight.w800,
                       color: roiColor,
                     ),
@@ -356,7 +350,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
               const SizedBox(height: 3),
               Text(
                 subLine,
-                style: GoogleFonts.dmSans(
+                style: context.t.bodySmall?.copyWith(
                   fontSize: 11.5,
                   color: Colors.white.withValues(alpha: 0.70),
                   height: 1.3,
@@ -563,8 +557,7 @@ class _RankMedal extends StatelessWidget {
         children: [
           Text(
             '$rank',
-            style: GoogleFonts.dmSans(
-              fontSize: 16,
+            style: context.t.titleLarge?.copyWith(
               fontWeight: FontWeight.w900,
               color: Colors.black,
               height: 1,
@@ -572,7 +565,7 @@ class _RankMedal extends StatelessWidget {
           ),
           Text(
             '/$total',
-            style: GoogleFonts.dmSans(
+            style: context.t.labelSmall?.copyWith(
               fontSize: 8,
               fontWeight: FontWeight.w700,
               color: Colors.black.withValues(alpha: 0.55),

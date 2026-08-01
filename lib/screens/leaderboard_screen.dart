@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/user_model.dart';
@@ -45,8 +44,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         elevation: 0,
         title: Text(
           'Yarış',
-          style: GoogleFonts.dmSans(
-              fontSize: 18,
+          style: context.t.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: Colors.white),
         ),
@@ -101,8 +99,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                               'miktar ve TL bilgisi asla paylaşılmaz.'
                           : 'Ortak sıralaması net getiri (%) — deposit/çekim '
                               'hariç. Kimsenin varlık listesi görünmez.',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 10,
+                      style: context.t.labelMedium?.copyWith(
+                        letterSpacing: 0,
                         color: Sandik.text36,
                       ),
                       textAlign: TextAlign.center,
@@ -132,8 +130,7 @@ class _OptInPrompt extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Yarış\'a katılmadın',
-              style: GoogleFonts.dmSans(
-                fontSize: 18,
+              style: context.t.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
@@ -145,8 +142,7 @@ class _OptInPrompt extends StatelessWidget {
               'katılmayı aç. Sadece kaydolan ortaklar birbirinin '
               'yüzdesini görebilir. Varlıkların ve toplam TRY '
               'değerin asla paylaşılmaz.',
-              style: GoogleFonts.dmSans(
-                fontSize: 13,
+              style: context.t.bodyMedium?.copyWith(
                 color: Sandik.text58,
                 height: 1.4,
               ),
@@ -290,8 +286,7 @@ class _SoloPanelState extends State<_SoloPanel> {
                     children: [
                       Text(
                         'Ortak ekle, aranızda da yarış',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13,
+                        style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
@@ -300,8 +295,7 @@ class _SoloPanelState extends State<_SoloPanel> {
                       Text(
                         'Kimsenin varlık listesi paylaşılmaz — yalnız '
                         'getiri yüzdeleri sıralanır.',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 11,
+                        style: context.t.bodySmall?.copyWith(
                           color: Sandik.text58,
                           height: 1.35,
                         ),
@@ -377,8 +371,7 @@ class _SoloRoiCard extends StatelessWidget {
               children: [
                 Text(
                   'SENİN GETİRİN',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 10,
+                  style: context.t.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
                     color: Sandik.text58,
@@ -387,9 +380,7 @@ class _SoloRoiCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   valueText,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
+                  style: context.t.numLarge.copyWith(
                     color: color,
                     letterSpacing: -0.5,
                   ),
@@ -473,8 +464,7 @@ class _PeriodBar extends StatelessWidget {
                   child: Center(
                     child: AnimatedDefaultTextStyle(
                       duration: const Duration(milliseconds: 200),
-                      style: GoogleFonts.dmSans(
-                        fontSize: 13,
+                      style: context.t.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w800,
                         color:
                             active ? Colors.black : Sandik.text58,
@@ -682,7 +672,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
           return Center(
             child: Text(
               'Veri hazır değil.',
-              style: GoogleFonts.dmSans(color: Sandik.text58),
+              style: context.t.bodyMedium?.copyWith(color: Sandik.text58),
             ),
           );
         }
@@ -827,7 +817,7 @@ class _LeaderRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              _rankBadge(),
+              _rankBadge(context),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -840,8 +830,7 @@ class _LeaderRow extends StatelessWidget {
                         Flexible(
                           child: Text(
                             row.displayName,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                            style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -861,7 +850,7 @@ class _LeaderRow extends StatelessWidget {
                             ),
                             child: Text(
                               'LİDER',
-                              style: GoogleFonts.dmSans(
+                              style: context.t.labelSmall?.copyWith(
                                 fontSize: 8,
                                 fontWeight: FontWeight.w900,
                                 color: Sandik.gold,
@@ -876,8 +865,9 @@ class _LeaderRow extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         gapTeaser,
-                        style: GoogleFonts.dmSans(
+                        style: context.t.labelMedium?.copyWith(
                           fontSize: 10.5,
+                          letterSpacing: 0,
                           fontWeight: FontWeight.w600,
                           color: Sandik.amber.withValues(alpha: 0.85),
                         ),
@@ -889,7 +879,7 @@ class _LeaderRow extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 roiText,
-                style: GoogleFonts.dmSans(
+                style: context.t.numSmall.copyWith(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: roiColor,
@@ -906,7 +896,7 @@ class _LeaderRow extends StatelessWidget {
     );
   }
 
-  Widget _rankBadge() {
+  Widget _rankBadge(BuildContext context) {
     // 1-3: gradient madalyalar; 4+: sade amber outlined
     if (rank <= 3) {
       final (Color light, Color dark) = switch (rank) {
@@ -935,7 +925,7 @@ class _LeaderRow extends StatelessWidget {
         ),
         child: Text(
           '$rank',
-          style: GoogleFonts.dmSans(
+          style: context.t.numSmall.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w900,
             color: Colors.black.withValues(alpha: 0.75),
@@ -956,8 +946,7 @@ class _LeaderRow extends StatelessWidget {
       ),
       child: Text(
         '$rank',
-        style: GoogleFonts.dmSans(
-          fontSize: 13,
+        style: context.t.numSmall.copyWith(
           fontWeight: FontWeight.w800,
           color: Sandik.text58,
         ),
@@ -1185,7 +1174,7 @@ class _GlobalPercentileTeaserState
                   Flexible(
                     child: Text(
                       title,
-                      style: GoogleFonts.dmSans(
+                      style: context.t.bodyMedium?.copyWith(
                         fontSize: hero ? 14 : 13,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -1201,8 +1190,7 @@ class _GlobalPercentileTeaserState
               const SizedBox(height: 3),
               Text(
                 subtitle,
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
+                style: context.t.bodySmall?.copyWith(
                   color: Colors.white.withValues(alpha: 0.65),
                   height: 1.35,
                 ),
@@ -1335,7 +1323,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
             ),
           )
         else if (rows.isEmpty)
-          _emptyState()
+          _emptyState(context)
         else
           Column(
             children: [
@@ -1374,8 +1362,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
             children: [
               Text(
                 'Zirvedeki Portföyler',
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
+                style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                 ),
@@ -1383,8 +1370,8 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
               const SizedBox(height: 1),
               Text(
                 '${_periodLabel.toLowerCase()} en çok kazananların dağılımı',
-                style: GoogleFonts.dmSans(
-                  fontSize: 10,
+                style: context.t.labelMedium?.copyWith(
+                  letterSpacing: 0,
                   color: Sandik.text58,
                 ),
               ),
@@ -1399,7 +1386,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
           ),
           child: Text(
             'ANONİM',
-            style: GoogleFonts.dmSans(
+            style: context.t.labelSmall?.copyWith(
               fontSize: 8,
               fontWeight: FontWeight.w900,
               color: Sandik.gold,
@@ -1411,14 +1398,13 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
     );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Text(
         'Yeterli katılımcı olunca zirve portföyler burada görünecek. '
         'Anonim havuz oluşuyor…',
-        style: GoogleFonts.dmSans(
-          fontSize: 11,
+        style: context.t.bodySmall?.copyWith(
           color: Sandik.text58,
           height: 1.35,
         ),
@@ -1461,7 +1447,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _rankMedal(r.rank),
+                  _rankMedal(context, r.rank),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1469,8 +1455,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
                     children: [
                       Text(
                         '${r.rank}. portföy',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 10,
+                        style: context.t.labelMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: Sandik.text58,
                           letterSpacing: 0.4,
@@ -1478,8 +1463,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
                       ),
                       Text(
                         '${positive ? '+' : ''}${r.roiPct.toStringAsFixed(1)}%',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13,
+                        style: context.t.numSmall.copyWith(
                           fontWeight: FontWeight.w800,
                           color: roiColor,
                         ),
@@ -1495,7 +1479,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
     );
   }
 
-  Widget _rankMedal(int rank) {
+  Widget _rankMedal(BuildContext context, int rank) {
     final (light, dark) = switch (rank) {
       1 => (Sandik.gold, const Color(0xFFB8860B)),
       2 => (const Color(0xFFE0E0E0), const Color(0xFF9E9E9E)),
@@ -1516,7 +1500,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
       ),
       child: Text(
         '$rank',
-        style: GoogleFonts.dmSans(
+        style: context.t.numSmall.copyWith(
           fontSize: 10,
           fontWeight: FontWeight.w900,
           color: Colors.black.withValues(alpha: 0.75),
@@ -1629,8 +1613,7 @@ class _LegendChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.dmSans(
-              fontSize: 11,
+            style: context.t.bodySmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
@@ -1638,7 +1621,7 @@ class _LegendChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             '%${pct.toStringAsFixed(0)}',
-            style: GoogleFonts.dmSans(
+            style: context.t.numSmall.copyWith(
               fontSize: 11,
               fontWeight: FontWeight.w800,
               color: color,
@@ -1678,7 +1661,7 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: GoogleFonts.dmSans(
+        style: context.t.labelSmall?.copyWith(
           fontSize: 8,
           fontWeight: FontWeight.w900,
           color: color,

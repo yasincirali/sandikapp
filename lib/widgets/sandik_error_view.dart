@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 
@@ -22,7 +21,7 @@ class SandikErrorView extends StatelessWidget {
             Text(
               friendlyError(error),
               textAlign: TextAlign.center,
-              style: GoogleFonts.dmSans(fontSize: 14, color: Sandik.text58),
+              style: context.t.titleMedium?.copyWith(color: Sandik.text58),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 20),
@@ -30,7 +29,7 @@ class SandikErrorView extends StatelessWidget {
                 onPressed: onRetry,
                 style: TextButton.styleFrom(
                   foregroundColor: Sandik.amber,
-                  textStyle: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w600),
+                  textStyle: context.t.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 child: const Text('Tekrar Dene'),
               ),

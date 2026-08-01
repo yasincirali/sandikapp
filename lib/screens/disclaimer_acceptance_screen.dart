@@ -67,17 +67,14 @@ class _DisclaimerAcceptanceScreenState
                   const SizedBox(width: 10),
                   Text(
                     'Yasal Uyarı',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                    style: context.t.headlineMedium?.copyWith(
                       color: Sandik.amber,
                     ),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     'v$disclaimerVersion',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                    style: context.t.bodySmall?.copyWith(
                       color: Sandik.text36,
                     ),
                   ),
@@ -86,8 +83,7 @@ class _DisclaimerAcceptanceScreenState
               const SizedBox(height: 8),
               Text(
                 'Uygulamayı kullanmaya devam etmek için lütfen aşağıdaki yasal uyarıyı okuyun ve onaylayın.',
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
+                style: context.t.bodyMedium?.copyWith(
                   color: Sandik.text58,
                   height: 1.5,
                 ),
@@ -106,8 +102,7 @@ class _DisclaimerAcceptanceScreenState
                 ),
                 child: Text(
                   disclaimerText,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 12,
+                  style: context.t.titleSmall?.copyWith(
                     color: Sandik.text58,
                     height: 1.7,
                   ),
@@ -161,8 +156,7 @@ class _DisclaimerAcceptanceScreenState
                       Expanded(
                         child: Text(
                           'Yukarıdaki yasal uyarıyı okudum ve kabul ediyorum.',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
+                          style: context.t.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                             color: _showError ? Sandik.loss : Sandik.text90,
                           ),
@@ -176,7 +170,7 @@ class _DisclaimerAcceptanceScreenState
                 const SizedBox(height: 8),
                 Text(
                   'Devam etmek için yasal uyarıyı kabul etmelisiniz.',
-                  style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.loss),
+                  style: context.t.bodySmall?.copyWith(color: Sandik.loss),
                 ),
               ],
               const SizedBox(height: 28),
@@ -213,9 +207,8 @@ class _DisclaimerAcceptanceScreenState
                         )
                       : Text(
                           'Kabul Ediyorum',
-                          style: GoogleFonts.dmSans(
+                          style: context.t.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
                             color: Sandik.dark,
                           ),
                         ),

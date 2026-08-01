@@ -1,7 +1,6 @@
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import 'home_screen.dart';
 import 'charts_screen.dart';
@@ -54,7 +53,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }
 
   Future<void> _showAddAsset() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAssetScreen()));
+    // fullscreenDialog: iOS'ta alttan-yukarı modal geçiş + "kapat" semantiği —
+    // varlık ekleme bir görev akışı, hiyerarşik gezinme değil.
+    await Navigator.push(
+      context,
+      adaptiveRoute(
+        builder: (_) => const AddAssetScreen(),
+        fullscreenDialog: true,
+      ),
+    );
     if (mounted) ref.read(portfolioProvider.notifier).refreshPrices();
   }
 
@@ -114,27 +121,35 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }
 
   Widget _buildBottomBar() {
+    // iOS Home Indicator / Android gesture bar yüksekliği cihaza göre değişir
+    // (iPhone X+ ≈ 34pt, indicator'sız cihazlarda 0). Sabit height yerine
+    // içerik yüksekliği + viewPadding.bottom kullanılır; aksi halde bar
+    // Dynamic Island'lı cihazlarda indicator'ın altında kalıyordu.
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          height: 84,
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset : 12),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.06),
             border: Border(
               top: BorderSide(color: Colors.white.withValues(alpha: 0.10), width: 1),
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(0, Icons.home_rounded, 'Ana'),
-              _navItem(1, Icons.donut_large_rounded, 'Portföy'),
-              _buildFab(),
-              _navItem(3, Icons.show_chart_rounded, 'Performans'),
-              _navItem(4, Icons.person_rounded, 'Profil'),
-            ],
+          child: SizedBox(
+            // 60pt içerik — her sekme 44pt HIG minimumunun üzerinde kalır
+            height: 60,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _navItem(0, Icons.home_rounded, 'Ana'),
+                _navItem(1, Icons.donut_large_rounded, 'Portföy'),
+                _buildFab(),
+                _navItem(3, Icons.show_chart_rounded, 'Performans'),
+                _navItem(4, Icons.person_rounded, 'Profil'),
+              ],
+            ),
           ),
         ),
       ),
@@ -145,23 +160,32 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final isSelected = _currentIndex == index;
     final color = isSelected ? Sandik.amber : Sandik.text36;
 
+    // InkWell yerine opaque GestureDetector: iOS'ta Material ripple dalgası
+    // yabancı duruyor. HitTestBehavior.opaque, Column'un boş kalan alanının
+    // da dokunmayı yakalamasını sağlar (tam 60pt yükseklikte hedef).
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () => _onItemTapped(index),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.dmSans(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: color,
+        child: Semantics(
+          button: true,
+          selected: isSelected,
+          label: label,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 26),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: context.t.labelMedium?.copyWith(
+                  letterSpacing: 0,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

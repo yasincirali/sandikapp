@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle, Material, InkWell, MaterialPageRoute;
+import 'package:flutter/material.dart' show Colors, CircularProgressIndicator, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -344,7 +344,7 @@ class _PortfolioPerformanceScreenState
                   Expanded(
                     child: Text(
                       'Performans',
-                      style: GoogleFonts.dmSans(
+                      style: context.t.headlineLarge?.copyWith(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
                           color: Colors.white),
@@ -599,7 +599,7 @@ class _PortfolioPerformanceScreenState
               _LeaderboardChip(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  adaptiveRoute(
                       builder: (_) => const LeaderboardScreen()),
                 ),
               ),
@@ -658,8 +658,7 @@ class _PortfolioPerformanceScreenState
           ),
           child: Text(
             label,
-            style: GoogleFonts.dmSans(
-              fontSize: 12,
+            style: context.t.titleSmall?.copyWith(
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               color: selected ? color : Sandik.text58,
             ),
@@ -695,8 +694,7 @@ class _PortfolioPerformanceScreenState
                 child: Center(
                   child: Text(
                     _periods[i].label,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 13,
+                    style: context.t.bodyMedium?.copyWith(
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected ? Sandik.amber : Sandik.text36,
@@ -746,8 +744,7 @@ class _PortfolioPerformanceScreenState
                   children: [
                     Text(
                       o.label,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 13,
+                      style: context.t.bodyMedium?.copyWith(
                         fontWeight:
                             selected ? FontWeight.w600 : FontWeight.w500,
                         color: selected ? Sandik.amber : Sandik.text36,
@@ -824,8 +821,7 @@ class _PortfolioPerformanceScreenState
                         size: 20, color: Sandik.amber),
                     const SizedBox(width: 8),
                     Text(title,
-                        style: GoogleFonts.dmSans(
-                            fontSize: 16,
+                        style: context.t.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                             decoration: TextDecoration.none)),
@@ -834,8 +830,7 @@ class _PortfolioPerformanceScreenState
                 const SizedBox(height: 12),
                 Text(
                   body,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13,
+                  style: context.t.bodyMedium?.copyWith(
                       color: Sandik.text58,
                       height: 1.5,
                       decoration: TextDecoration.none),
@@ -1078,8 +1073,8 @@ class _PortfolioPerformanceScreenState
                         show: true,
                         alignment: Alignment.topLeft,
                         padding: const EdgeInsets.only(bottom: 6, right: 4),
-                        style: GoogleFonts.dmSans(
-                          fontSize: 10,
+                        style: context.t.labelMedium?.copyWith(
+                          letterSpacing: 0,
                           fontWeight: FontWeight.w700,
                           color: Sandik.amber,
                         ),
@@ -1105,8 +1100,7 @@ class _PortfolioPerformanceScreenState
                               alignment: Alignment.topRight,
                               padding: const EdgeInsets.only(
                                   bottom: 8, left: 6),
-                              style: GoogleFonts.dmSans(
-                                fontSize: 11,
+                              style: context.t.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: Sandik.amber,
                               ),
@@ -1133,8 +1127,8 @@ class _PortfolioPerformanceScreenState
                               alignment: Alignment.topLeft,
                               padding: const EdgeInsets.only(
                                   bottom: 8, right: 6),
-                              style: GoogleFonts.dmSans(
-                                fontSize: 10,
+                              style: context.t.labelMedium?.copyWith(
+                                letterSpacing: 0,
                                 fontWeight: FontWeight.w700,
                                 color: Sandik.gain,
                               ),
@@ -1166,7 +1160,7 @@ class _PortfolioPerformanceScreenState
                     child: Text(
                       _fmtY(val),
                       textAlign: TextAlign.left,
-                      style: GoogleFonts.dmSans(
+                      style: context.t.numSmall.copyWith(
                         color: Sandik.text58,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -1217,7 +1211,7 @@ class _PortfolioPerformanceScreenState
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       label,
-                      style: GoogleFonts.dmSans(
+                      style: context.t.numSmall.copyWith(
                         color: Sandik.text58,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -1402,10 +1396,9 @@ class _PortfolioPerformanceScreenState
                   final children = <TextSpan>[
                     TextSpan(
                       text: tryFmt0.format(s.y),
-                      style: GoogleFonts.dmSans(
+                      style: context.t.numSmall.copyWith(
                         color: Sandik.gold,
                         fontSize: 15,
-                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ];
@@ -1416,10 +1409,9 @@ class _PortfolioPerformanceScreenState
                     children.add(TextSpan(
                       text:
                           '\nGetiri ${positive ? '+' : '−'}${tryFmt0.format(gainVsAnchor.abs())}',
-                      style: GoogleFonts.dmSans(
+                      style: context.t.numSmall.copyWith(
                         color: positive ? Sandik.gain : Sandik.loss,
                         fontSize: 11,
-                        fontWeight: FontWeight.w700,
                       ),
                     ));
                   }
@@ -1429,7 +1421,7 @@ class _PortfolioPerformanceScreenState
                     if (dayBuyTRY > 0) {
                       children.add(TextSpan(
                         text: '\nAlım  +${tryFmt0.format(dayBuyTRY)}',
-                        style: GoogleFonts.dmSans(
+                        style: context.t.numSmall.copyWith(
                           color: Sandik.gain,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1439,7 +1431,7 @@ class _PortfolioPerformanceScreenState
                     if (daySellTRY > 0) {
                       children.add(TextSpan(
                         text: '\nSatış −${tryFmt0.format(daySellTRY)}',
-                        style: GoogleFonts.dmSans(
+                        style: context.t.numSmall.copyWith(
                           color: Sandik.loss,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1450,10 +1442,9 @@ class _PortfolioPerformanceScreenState
                       children.add(TextSpan(
                         text:
                             '\nNet ${dayNet >= 0 ? '+' : '−'}${tryFmt0.format(dayNet.abs())}',
-                        style: GoogleFonts.dmSans(
+                        style: context.t.numSmall.copyWith(
                           color: dayNet >= 0 ? Sandik.gain : Sandik.loss,
                           fontSize: 11,
-                          fontWeight: FontWeight.w700,
                         ),
                       ));
                     }
@@ -1467,10 +1458,9 @@ class _PortfolioPerformanceScreenState
                     final cumNet = cumBuyTRY - cumSellTRY;
                     children.add(TextSpan(
                       text: '\nToplam yatırım ${tryFmt0.format(cumNet)}',
-                      style: GoogleFonts.dmSans(
+                      style: context.t.labelMedium?.copyWith(
+                        letterSpacing: 0,
                         color: Sandik.text58,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
                       ),
                     ));
                   }
@@ -1480,9 +1470,8 @@ class _PortfolioPerformanceScreenState
                       : DateFormat('d MMM yyyy', 'tr_TR').format(date);
                   return LineTooltipItem(
                     '$headerLabel\n',
-                    GoogleFonts.dmSans(
+                    context.t.bodySmall!.copyWith(
                         color: Sandik.text58,
-                        fontSize: 11,
                         fontWeight: FontWeight.w500),
                     children: children,
                   );
@@ -1641,8 +1630,7 @@ class _PortfolioPerformanceScreenState
           padding: const EdgeInsets.only(left: 4, right: 4),
           child: Text(
             'İŞLEM HACMİ',
-            style: GoogleFonts.dmSans(
-              fontSize: 9,
+            style: context.t.labelSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: Sandik.text58,
               letterSpacing: 1.2,
@@ -1772,7 +1760,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                 color: Sandik.gain, size: 20),
             const SizedBox(width: 12),
             Text('Güçlü sinyal yok — portföy nötr bölgede',
-                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text58)),
+                style: context.t.bodyMedium?.copyWith(color: Sandik.text58)),
           ],
         ),
       );
@@ -1784,8 +1772,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
         Row(
           children: [
             Text('TEKNİK SİNYALLER',
-                style: GoogleFonts.dmSans(
-                    fontSize: 11,
+                style: context.t.labelLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
                     color: Sandik.text36)),
@@ -1796,8 +1783,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   color: Sandik.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8)),
               child: Text('${results.length}',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                  style: context.t.bodySmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: Sandik.amber)),
             ),
@@ -1855,8 +1841,8 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                                       borderRadius: BorderRadius.circular(5),
                                     ),
                                     child: Text(r.asset.displayTicker!,
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 11, fontWeight: FontWeight.w800, color: color, decoration: TextDecoration.none)),
+                                        style: context.t.bodySmall?.copyWith(
+                                            fontWeight: FontWeight.w800, color: color, decoration: TextDecoration.none)),
                                   ),
                                   const SizedBox(width: 6),
                                 ],
@@ -1864,8 +1850,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                                   child: Text(r.asset.name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 14,
+                                      style: context.t.titleMedium?.copyWith(
                                           fontWeight: FontWeight.w600,
                                           color: Colors.white,
                                           decoration: TextDecoration.none)),
@@ -1873,8 +1858,8 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                               ],
                             ),
                             Text(r.asset.type.label,
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 11, color: Sandik.text36, decoration: TextDecoration.none)),
+                                style: context.t.bodySmall?.copyWith(
+                                    color: Sandik.text36, decoration: TextDecoration.none)),
                           ],
                         ),
                       ),
@@ -1886,8 +1871,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(label,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 13,
+                            style: context.t.numSmall.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: color,
                                 letterSpacing: 0.5)),
@@ -1916,8 +1900,8 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                             const SizedBox(height: 4),
                             Text(
                               ind.name.split(' ').first,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 9,
+                              style: context.t.labelSmall?.copyWith(
+                                  letterSpacing: 0,
                                   color: c,
                                   fontWeight: FontWeight.w600,
                                   decoration: TextDecoration.none),
@@ -1931,7 +1915,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     '$count/5 gösterge $label diyor  ·  ${fmtPct(r.summary.confidence * 100, digits: 0)} güven',
-                    style: GoogleFonts.dmSans(fontSize: 11, color: Sandik.text58),
+                    style: context.t.bodySmall?.copyWith(color: Sandik.text58),
                   ),
                 ],
               ),
@@ -1989,8 +1973,7 @@ class _LeaderboardChip extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 'YARIŞ',
-                style: GoogleFonts.dmSans(
-                  fontSize: 10,
+                style: context.t.labelMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: Sandik.amber,
                   letterSpacing: 0.6,

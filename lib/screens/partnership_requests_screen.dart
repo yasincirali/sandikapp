@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -114,7 +113,7 @@ class _PartnershipRequestsScreenState
         elevation: 0,
         title: Text(
           'Ortaklık Onayı',
-          style: GoogleFonts.dmSans(
+          style: context.t.headlineLarge?.copyWith(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -129,8 +128,7 @@ class _PartnershipRequestsScreenState
           children: [
             Text(
               'Ortaklık kodunuzu giren müşterileri buradan görup onaylayabilirsiniz.',
-              style: GoogleFonts.dmSans(
-                fontSize: 14,
+              style: context.t.titleMedium?.copyWith(
                 color: Sandik.text36,
               ),
             ),
@@ -159,8 +157,7 @@ class _PartnershipRequestsScreenState
                     const SizedBox(height: 12),
                     Text(
                       'Bekleyen ortaklık isteği yok.',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 14,
+                      style: context.t.titleMedium?.copyWith(
                         color: Sandik.text36,
                       ),
                     ),
@@ -229,8 +226,7 @@ class _ApprovalInviteCard extends StatelessWidget {
               ),
               child: Text(
                 'Yeni gelen istek',
-                style: GoogleFonts.dmSans(
-                  fontSize: 11,
+                style: context.t.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: Sandik.amber,
                 ),
@@ -260,8 +256,7 @@ class _ApprovalInviteCard extends StatelessWidget {
                   children: [
                     Text(
                       requesterName,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 16,
+                      style: context.t.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
@@ -269,8 +264,7 @@ class _ApprovalInviteCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Ortaklık kodunuzu girdi ve onay bekliyor.',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 13,
+                      style: context.t.bodyMedium?.copyWith(
                         color: Sandik.text36,
                       ),
                     ),

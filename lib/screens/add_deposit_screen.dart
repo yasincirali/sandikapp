@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../models/asset_type.dart';
@@ -188,9 +187,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
         ),
         title: Text(
           'Vadeli Mevduat',
-          style: GoogleFonts.dmSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
+          style: context.t.headlineMedium?.copyWith(
             color: Colors.white,
           ),
         ),
@@ -266,8 +263,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
                 padding: const EdgeInsets.only(left: 4),
                 child: Text(
                   'Vade süresi: $_termDays gün',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 12,
+                  style: context.t.titleSmall?.copyWith(
                     color: Sandik.text58,
                     fontWeight: FontWeight.w600,
                   ),
@@ -333,8 +329,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
                       )
                     : Text(
                         'Mevduatı Kaydet',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 16,
+                        style: context.t.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -351,8 +346,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
         padding: const EdgeInsets.only(bottom: 8, left: 4),
         child: Text(
           s,
-          style: GoogleFonts.dmSans(
-            fontSize: 12,
+          style: context.t.titleSmall?.copyWith(
             color: Sandik.text58,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.3,
@@ -369,16 +363,15 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      style: GoogleFonts.dmSans(
+      style: context.t.numMedium.copyWith(
         fontSize: 15,
         color: Colors.white,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.dmSans(
+        hintStyle: context.t.titleMedium?.copyWith(
           color: Sandik.text36,
-          fontSize: 14,
         ),
         filled: true,
         fillColor: Sandik.surface1,
@@ -438,8 +431,7 @@ class _InterestTypeSelector extends StatelessWidget {
                   child: Center(
                     child: Text(
                       t.label,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 12,
+                      style: context.t.titleSmall?.copyWith(
                         fontWeight:
                             value == t ? FontWeight.w800 : FontWeight.w600,
                         color: value == t
@@ -480,8 +472,7 @@ class _DateRow extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               text,
-              style: GoogleFonts.dmSans(
-                fontSize: 15,
+              style: context.t.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
@@ -517,8 +508,7 @@ class _InfoBox extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: GoogleFonts.dmSans(
-                fontSize: 11,
+              style: context.t.bodySmall?.copyWith(
                 color: Sandik.amber,
                 height: 1.4,
                 fontWeight: FontWeight.w600,
@@ -573,8 +563,7 @@ class _PreviewCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Vade Sonu Öngörüsü',
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
+                style: context.t.numSmall.copyWith(
                   fontWeight: FontWeight.w800,
                   color: AssetType.mevduat.color,
                   letterSpacing: 0.3,
@@ -583,9 +572,11 @@ class _PreviewCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _row('Anapara', money.format(principal)),
-          _row('Vade Sonu (Net)', money.format(maturityNet), bold: true),
+          _row(context, 'Anapara', money.format(principal)),
+          _row(context, 'Vade Sonu (Net)', money.format(maturityNet),
+              bold: true),
           _row(
+            context,
             'Net Getiri',
             '${good ? '+' : ''}${money.format(gain)}  '
                 '(${fmtPct(pct, digits: 2, showSign: good)})',
@@ -595,8 +586,8 @@ class _PreviewCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Stopaj ve faiz türü hesaba dahil edilmiştir.',
-            style: GoogleFonts.dmSans(
-              fontSize: 10,
+            style: context.t.labelMedium?.copyWith(
+              letterSpacing: 0,
               color: Sandik.text58,
               fontStyle: FontStyle.italic,
             ),
@@ -606,15 +597,15 @@ class _PreviewCard extends StatelessWidget {
     );
   }
 
-  Widget _row(String k, String v, {Color? color, bool bold = false}) {
+  Widget _row(BuildContext context, String k, String v,
+      {Color? color, bool bold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Text(
             k,
-            style: GoogleFonts.dmSans(
-              fontSize: 12,
+            style: context.t.titleSmall?.copyWith(
               color: Sandik.text58,
               fontWeight: FontWeight.w600,
             ),
@@ -622,8 +613,7 @@ class _PreviewCard extends StatelessWidget {
           const Spacer(),
           Text(
             v,
-            style: GoogleFonts.dmSans(
-              fontSize: 13,
+            style: context.t.numSmall.copyWith(
               color: color ?? Colors.white,
               fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
             ),

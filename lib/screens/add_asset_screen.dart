@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
@@ -311,8 +310,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   Widget _sectionLabel(String text) => Text(
         text.toUpperCase(),
-        style: GoogleFonts.dmSans(
-          fontSize: 11,
+        style: context.t.labelLarge?.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
           color: Sandik.text58,
@@ -321,8 +319,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   Widget _fieldLabel(String text) => Text(
         text,
-        style: GoogleFonts.dmSans(
-          fontSize: 13,
+        style: context.t.bodyMedium?.copyWith(
           fontWeight: FontWeight.w600,
           color: Sandik.text90,
         ),
@@ -347,8 +344,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         surfaceTintColor: Colors.transparent,
         title: Text(
           title,
-          style: GoogleFonts.dmSans(
-              fontSize: 18,
+          style: context.t.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: Sandik.text90),
         ),
@@ -359,7 +355,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               icon: const Icon(Icons.playlist_add_rounded,
                   color: Sandik.text58),
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const BulkAddAssetScreen()),
+                adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
               ),
             ),
             IconButton(
@@ -493,8 +489,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Text('veya listede yok',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11, color: Sandik.text36)),
+                  style: context.t.bodySmall
+                      ?.copyWith(color: Sandik.text36)),
             ),
             Expanded(
               child: Container(
@@ -582,8 +578,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         : Sandik.text58),
                 const SizedBox(width: 6),
                 Text(g.label,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13,
+                    style: context.t.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color:
                             selected ? Sandik.text90 : Sandik.text58)),
@@ -628,8 +623,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             _fieldLabel('Alış Fiyatı'),
             const SizedBox(width: 6),
             Text('· opsiyonel',
-                style: GoogleFonts.dmSans(
-                    fontSize: 11, color: Sandik.text36)),
+                style: context.t.bodySmall
+                    ?.copyWith(color: Sandik.text36)),
           ],
         ),
         const SizedBox(height: 8),
@@ -658,8 +653,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         value: _currency,
         isDense: true,
         dropdownColor: Sandik.surface2,
-        style: GoogleFonts.dmSans(
-            color: Sandik.amber, fontWeight: FontWeight.w700, fontSize: 12),
+        style: context.t.titleSmall?.copyWith(
+            color: Sandik.amber, fontWeight: FontWeight.w700),
         icon: const Icon(Icons.arrow_drop_down,
             color: Sandik.amber, size: 18),
         items: _currencies
@@ -697,8 +692,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             Expanded(
               child: Text(
                 'Miktar girince toplam maliyet burada görünecek.',
-                style: GoogleFonts.dmSans(
-                    fontSize: 12, color: Sandik.text58),
+                style: context.t.titleSmall
+                    ?.copyWith(color: Sandik.text58),
               ),
             ),
           ],
@@ -731,8 +726,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             Expanded(
               child: Text(
                 msg,
-                style: GoogleFonts.dmSans(
-                    fontSize: 12,
+                style: context.t.titleSmall?.copyWith(
                     color: Sandik.text90,
                     height: 1.35),
               ),
@@ -779,24 +773,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('TOPLAM MALİYET',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 11,
+                  style: context.t.labelLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: Sandik.amber,
                     letterSpacing: 0.8,
                   )),
               const SizedBox(height: 4),
               Text('${_fmt(qty)} × ${_fmt(price)}',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11, color: Sandik.text58)),
+                  style: context.t.bodySmall
+                      ?.copyWith(color: Sandik.text58)),
             ],
           ),
           const Spacer(),
           Text(
             formatted,
-            style: GoogleFonts.dmSans(
+            // Form özeti toplam tutarı — tabular figür, yazarken zıplamasın.
+            style: context.t.numLarge.copyWith(
               fontSize: 22,
-              fontWeight: FontWeight.w800,
               color: Sandik.gold,
               letterSpacing: -0.5,
             ),
@@ -897,8 +890,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 14,
+                    style: context.t.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: Sandik.text90,
                     ),
@@ -908,8 +900,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                    style: context.t.bodySmall?.copyWith(
                       color: Sandik.text58,
                       height: 1.3,
                     ),
@@ -985,14 +976,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 color: isToday ? Sandik.text58 : Sandik.amber),
             const SizedBox(width: 10),
             Text('İşlem tarihi',
-                style: GoogleFonts.dmSans(
-                    fontSize: 13,
+                style: context.t.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Sandik.text90)),
             const Spacer(),
             Text(label,
-                style: GoogleFonts.dmSans(
-                    fontSize: 13,
+                style: context.t.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: isToday ? Sandik.text58 : Sandik.amber)),
             const SizedBox(width: 4),
@@ -1028,8 +1017,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       size: 16, color: Sandik.text58),
                   const SizedBox(width: 10),
                   Text('Not ekle',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 13,
+                      style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: Sandik.text90)),
                   const Spacer(),
@@ -1065,8 +1053,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: TextFormField(
                 controller: _notes,
-                style: GoogleFonts.dmSans(
-                    fontSize: 14, color: Sandik.text90),
+                style: context.t.titleMedium
+                    ?.copyWith(color: Sandik.text90),
                 maxLines: 3,
                 decoration: Sandik.inputDecoration('Notlarınız...'),
                 onChanged: (_) => setState(() {}),
@@ -1114,8 +1102,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   )
                 : Text(
                     saveLabel,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 16,
+                    style: context.t.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.2),
                   ),
@@ -1140,14 +1127,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }) {
     return TextFormField(
       controller: controller,
-      style: GoogleFonts.dmSans(
-          fontSize: 15,
+      style: context.t.bodyLarge?.copyWith(
           color: Sandik.text90,
           fontWeight: FontWeight.w500),
       decoration: Sandik.inputDecoration(hint).copyWith(
         suffixText: suffixText,
-        suffixStyle: GoogleFonts.dmSans(
-            fontSize: 12,
+        suffixStyle: context.t.titleSmall?.copyWith(
             color: Sandik.text58,
             fontWeight: FontWeight.w600),
         suffixIcon: suffix,
@@ -1186,7 +1171,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 if (t == AssetType.mevduat) {
                   // Vadeli mevduat için ayrı, form yapısı tamamen farklı ekran.
                   final ok = await Navigator.of(context).push<bool>(
-                    MaterialPageRoute(
+                    adaptiveRoute(
                       builder: (_) => const AddDepositScreen(),
                     ),
                   );
@@ -1238,8 +1223,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         color: selected ? t.color : Sandik.text58),
                     const SizedBox(width: 8),
                     Text(t.label,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13,
+                        style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: selected ? Sandik.text90 : Sandik.text58,
                         )),
@@ -1303,7 +1287,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   children: [
                     Text(
                       opt.symbol,
-                      style: GoogleFonts.dmSans(
+                      style: context.t.headlineLarge?.copyWith(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: selected
@@ -1314,8 +1298,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     const SizedBox(height: 3),
                     Text(
                       opt.label,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 11,
+                      style: context.t.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: selected
                             ? AssetType.doviz.color
@@ -1366,8 +1349,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   children: [
                     Text(
                       v,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 12,
+                      style: context.t.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: selected ? Sandik.amber : Sandik.text58,
                       ),
@@ -1375,8 +1357,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     const SizedBox(width: 4),
                     Text(
                       _getUnitLabel(_unitType),
-                      style: GoogleFonts.dmSans(
-                        fontSize: 10,
+                      style: context.t.labelMedium?.copyWith(
+                        letterSpacing: 0,
                         color: selected
                             ? Sandik.amber.withValues(alpha: 0.75)
                             : Sandik.text36,
@@ -1530,8 +1512,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(badgeText,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                  style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: color,
                       letterSpacing: 0.5)),
@@ -1541,8 +1522,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           Expanded(
             child: Text(
               mainText,
-              style: GoogleFonts.dmSans(
-                fontSize: 14,
+              style: context.t.titleMedium?.copyWith(
                 fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
                 color: hasValue ? Sandik.text90 : Sandik.text36,
               ),
@@ -1930,8 +1910,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg,
-                style: GoogleFonts.dmSans(
-                    fontSize: 13, fontWeight: FontWeight.w600)),
+                style: context.t.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             backgroundColor: priceFromHistorical
                 ? Sandik.gain.withValues(alpha: 0.9)
                 : Sandik.amber.withValues(alpha: 0.9),
@@ -1998,8 +1978,9 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
               const SizedBox(width: 8),
               Text(
                 'Hızlı Giriş',
-                style: GoogleFonts.dmSans(
-                  fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white,
+                style: context.t.headlineSmall?.copyWith(
+                  fontSize: 17, fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
             ],
@@ -2008,7 +1989,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
           Text(
             'Her satıra bir varlık yazın. Fiyat opsiyonel — boş bırakırsanız güncel fiyat otomatik çekilir.\n'
             'Örn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet',
-            style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58, height: 1.5),
+            style: context.t.titleSmall
+                ?.copyWith(color: Sandik.text58, height: 1.5),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -2017,10 +1999,11 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
             maxLines: 5,
             minLines: 2,
             textCapitalization: TextCapitalization.sentences,
-            style: GoogleFonts.dmSans(fontSize: 14, color: Colors.white),
+            style: context.t.titleMedium?.copyWith(color: Colors.white),
             decoration: InputDecoration(
               hintText: '100 dolar\n10 gram altın 4500 lira\nGARAN 500 adet 105 lira',
-              hintStyle: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36),
+              hintStyle:
+                  context.t.bodyMedium?.copyWith(color: Sandik.text36),
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.05),
               border: OutlineInputBorder(
@@ -2057,7 +2040,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                       '${e.type.label}  ·  ${e.qty % 1 == 0 ? e.qty.toInt() : e.qty}'
                       '${e.subCategory != null ? '  ${e.subCategory}' : ''}'
                       '${e.price > 0 ? '  @ ${e.price % 1 == 0 ? e.price.toInt() : e.price} ₺' : '  (fiyat otomatik)'}',
-                      style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text58),
+                      style: context.t.titleSmall
+                          ?.copyWith(color: Sandik.text58),
                     ),
                   ),
                 ],
@@ -2078,7 +2062,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                         style: FilledButton.styleFrom(backgroundColor: Sandik.amber, foregroundColor: Sandik.dark),
                         icon: const Icon(Icons.playlist_add_check_rounded),
                         label: Text('${_previews.length} varlığı kaydet',
-                            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+                            style: context.t.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700)),
                       )
                     : FilledButton.icon(
                         onPressed: _previews.isEmpty
@@ -2087,7 +2072,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                         style: FilledButton.styleFrom(backgroundColor: Sandik.amber, foregroundColor: Sandik.dark),
                         icon: const Icon(Icons.check_rounded),
                         label: Text('Formu doldur',
-                            style: GoogleFonts.dmSans(fontWeight: FontWeight.w700)),
+                            style: context.t.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700)),
                       ),
           ),
         ],

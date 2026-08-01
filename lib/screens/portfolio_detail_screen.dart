@@ -7,7 +7,6 @@ import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -94,8 +93,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('Detaylı Portföy Analizi',
-            style: GoogleFonts.dmSans(
-                fontSize: 18,
+            style: context.t.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.white)),
       ),
@@ -194,8 +192,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
             const SizedBox(height: 12),
             Text(
               noAssets ? 'Henüz varlığın yok' : 'Yeterli veri yok',
-              style: GoogleFonts.dmSans(
-                fontSize: 15,
+              style: context.t.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Sandik.text90,
               ),
@@ -206,8 +203,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                   ? 'Varlık ekledikçe performans grafiğin oluşacak.'
                   : 'Birkaç günlük veri biriktikten sonra grafiğin oluşacak.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.dmSans(
-                fontSize: 12,
+              style: context.t.titleSmall?.copyWith(
                 color: Sandik.text58,
               ),
             ),
@@ -237,8 +233,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     borderRadius: BorderRadius.circular(8)),
                 child: Center(
                     child: Text(_periods[i].label,
-                        style: GoogleFonts.dmSans(
-                            fontSize: 13,
+                        style: context.t.bodyMedium?.copyWith(
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w500,
                             color: isSelected ? Sandik.amber : Sandik.text36))),
@@ -444,20 +439,21 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           const SizedBox(width: 16),
           Expanded(
               child: Text(label,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 15,
+                  style: context.t.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.white))),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(fmt.format(val),
-                  style: GoogleFonts.dmSans(
+                  style: context.t.numSmall.copyWith(
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
                       color: Colors.white)),
               Text(pct,
-                  style: GoogleFonts.dmSans(fontSize: 12, color: Sandik.text36)),
+                  style: context.t.numSmall.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Sandik.text36)),
             ],
           ),
         ],
@@ -485,8 +481,7 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
   @override
   Widget build(BuildContext context) => Text(text,
-      style: GoogleFonts.dmSans(
-          fontSize: 11,
+      style: context.t.labelLarge?.copyWith(
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,
           color: Sandik.text36));

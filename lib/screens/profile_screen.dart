@@ -7,7 +7,6 @@ import 'package:share_plus/share_plus.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'paywall_screen.dart';
 import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
@@ -235,7 +234,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Expanded(
                         child: Text(
                           'Profil',
-                          style: GoogleFonts.dmSans(
+                          style: context.t.headlineLarge?.copyWith(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
                             color: CupertinoColors.white,
@@ -248,7 +247,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         onPressed: _busy
                             ? null
                             : () => Navigator.of(context).push(
-                                  MaterialPageRoute(
+                                  adaptiveRoute(
                                     builder: (_) => const SettingsScreen(),
                                   ),
                                 ),
@@ -342,10 +341,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         : _generating
                             ? 'Kod üretiliyor...'
                             : 'İşleniyor...',
-                    style: GoogleFonts.dmSans(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500),
+                    style: context.t.titleMedium?.copyWith(
+                        color: Colors.white),
                   ),
                 ],
               ),
@@ -388,15 +385,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 Text(
                   user.displayName,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  style: context.t.headlineMedium?.copyWith(
                       color: Colors.white),
                 ),
                 const SizedBox(height: 4),
                 Text(user.email,
                     style:
-                        GoogleFonts.dmSans(fontSize: 14, color: Sandik.text36)),
+                        context.t.titleMedium?.copyWith(color: Sandik.text36)),
               ],
             ),
           ),
@@ -417,14 +412,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('Davet Kodu Üret',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 15,
+                  style: context.t.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.white)),
               const SizedBox(height: 8),
               Text(
                 'Kodu ortağınıza gönderin. Ortak kodu girince size onay isteği gelir.',
-                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36),
+                style: context.t.bodyMedium?.copyWith(color: Sandik.text36),
               ),
               const SizedBox(height: 20),
               if (_generatedCode != null) ...[
@@ -439,8 +433,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Expanded(
                         child: Text(
                           _generatedCode!.split(':')[0],
-                          style: GoogleFonts.dmSans(
-                            fontSize: 24,
+                          style: context.t.numLarge.copyWith(
                             fontWeight: FontWeight.w700,
                             color: Sandik.amber,
                             letterSpacing: 4,
@@ -481,7 +474,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   alignment: Alignment.center,
                   child: Text(
                     _generating ? 'Üretiliyor...' : 'Kod Üret',
-                    style: GoogleFonts.dmSans(
+                    style: context.t.titleMedium?.copyWith(
                         color: Sandik.amber, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -499,14 +492,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('Ortak Kodunu Gir',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 15,
+                  style: context.t.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.white)),
               const SizedBox(height: 8),
               Text(
                 'Ortağınızın size gönderdiği kodu girin (örn: ABCDE-12345). Onay vermesi beklenir.',
-                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36),
+                style: context.t.bodyMedium?.copyWith(color: Sandik.text36),
               ),
               const SizedBox(height: 16),
               if (_pendingInviteId != null) ...[
@@ -534,7 +526,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     alignment: Alignment.center,
                     child: Text(
                       _submitting ? 'Gönderiliyor...' : 'Ortaklık İste',
-                      style: GoogleFonts.dmSans(
+                      style: context.t.titleMedium?.copyWith(
                           color: Sandik.gain, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -570,8 +562,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Expanded(
                 child: Text(
                   '$_pendingPartnerName onayı bekleniyor...',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 14,
+                  style: context.t.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.white),
                 ),
@@ -581,10 +572,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 12),
           CupertinoButton(
             onPressed: _cancelPending,
-            minimumSize: Size.zero,
-            padding: EdgeInsets.zero,
+            // HIG 44pt — 13pt metin sıfır padding'de ~17pt hedef veriyordu.
+            minimumSize: const Size(44, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text('İptal',
-                style: GoogleFonts.dmSans(fontSize: 13, color: Sandik.text36)),
+                style: context.t.bodyMedium?.copyWith(color: Sandik.text36)),
           ),
         ],
       ),
@@ -603,7 +595,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 16),
           Text(
             'Henüz ortağınız yok',
-            style: GoogleFonts.dmSans(fontSize: 14, color: Sandik.text36),
+            style: context.t.titleMedium?.copyWith(color: Sandik.text36),
             textAlign: TextAlign.center,
           ),
         ],
@@ -638,14 +630,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(p.user.displayName,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 15,
+                    style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: Colors.white)),
                 Text(
                   p.isActive ? 'Görünür' : 'Gizlendi',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12,
+                  style: context.t.titleSmall?.copyWith(
                       color: p.isActive ? Sandik.gain : Sandik.text36),
                 ),
               ],
@@ -869,29 +859,38 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_requesterName,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 15,
+                    style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: Colors.white)),
                 Text('Ortaklık istiyor',
                     style:
-                        GoogleFonts.dmSans(fontSize: 12, color: Sandik.text36)),
+                        context.t.titleSmall?.copyWith(color: Sandik.text36)),
               ],
             ),
           ),
+          // HIG: dokunma hedefi min 44×44pt. İkon 22pt kalır, tıklanabilir
+          // alan görünmez şekilde 44pt'ye genişletilir.
           CupertinoButton(
-            minimumSize: Size.zero,
+            minimumSize: const Size(44, 44),
             padding: EdgeInsets.zero,
             onPressed: widget.onReject,
-            child:
-                const Icon(Icons.close_rounded, color: Sandik.loss, size: 22),
+            child: Semantics(
+              button: true,
+              label: 'Ortaklık isteğini reddet',
+              child:
+                  const Icon(Icons.close_rounded, color: Sandik.loss, size: 22),
+            ),
           ),
           CupertinoButton(
-            minimumSize: Size.zero,
+            minimumSize: const Size(44, 44),
             padding: EdgeInsets.zero,
             onPressed: widget.onAccept,
-            child:
-                const Icon(Icons.check_rounded, color: Sandik.gain, size: 22),
+            child: Semantics(
+              button: true,
+              label: 'Ortaklık isteğini kabul et',
+              child:
+                  const Icon(Icons.check_rounded, color: Sandik.gain, size: 22),
+            ),
           ),
         ],
       ),
@@ -906,8 +905,7 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text,
-        style: GoogleFonts.dmSans(
-          fontSize: 11,
+        style: context.t.labelLarge?.copyWith(
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,
           color: Sandik.text36,
@@ -997,15 +995,13 @@ class _ProfilePremiumBanner extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Sandık Premium',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14,
+                      style: context.t.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: Colors.white)),
                   const SizedBox(height: 2),
                   Text(
                     'Sınırsız varlık, AI portföy raporu, premium göstergeler',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 11,
+                    style: context.t.bodySmall?.copyWith(
                         color: Sandik.text58,
                         height: 1.35),
                     maxLines: 2,
@@ -1054,14 +1050,12 @@ class _PremiumActiveBadge extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Premium aktif',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13,
+                    style: context.t.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: Colors.white)),
                 const SizedBox(height: 2),
                 Text('Tüm gelişmiş özellikler açık',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 11, color: Sandik.text58)),
+                    style: context.t.bodySmall?.copyWith(color: Sandik.text58)),
               ],
             ),
           ),

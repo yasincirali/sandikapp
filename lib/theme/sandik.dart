@@ -1,8 +1,85 @@
-import 'dart:ui' show ImageFilter;
-import 'package:flutter/cupertino.dart' show CupertinoButton;
+import 'dart:io' show Platform;
+import 'dart:ui' show FontFeature, ImageFilter;
+import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoPageRoute;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+/// Platforma uygun sayfa geçişi.
+///
+/// iOS'ta [CupertinoPageRoute] döner: sağdan-sola kayma animasyonu ve
+/// kenardan içeri swipe-to-go-back jesti (HIG'in beklediği davranış).
+/// Android'de [MaterialPageRoute] ile alttan-yukarı geçiş korunur.
+///
+/// `MaterialPageRoute(builder: ...)` yerine bunu kullan:
+/// ```dart
+/// Navigator.push(context, adaptiveRoute(builder: (_) => const FooScreen()));
+/// ```
+PageRoute<T> adaptiveRoute<T>({
+  required WidgetBuilder builder,
+  RouteSettings? settings,
+  bool fullscreenDialog = false,
+}) {
+  // Platform.isIOS yalnızca mobilde güvenli; web'de bu dosya kullanılmıyor.
+  if (Platform.isIOS) {
+    return CupertinoPageRoute<T>(
+      builder: builder,
+      settings: settings,
+      fullscreenDialog: fullscreenDialog,
+    );
+  }
+  return MaterialPageRoute<T>(
+    builder: builder,
+    settings: settings,
+    fullscreenDialog: fullscreenDialog,
+  );
+}
+
+/// Tipografi erişimi — `main.dart` içindeki merkezi [TextTheme]'e kısa yol.
+///
+/// Hardcoded `GoogleFonts.dmSans(fontSize: 13, ...)` yerine bunu kullan:
+/// ```dart
+/// Text('Toplam', style: context.t.bodyMedium)
+/// Text('₺1.240', style: context.t.numMedium.copyWith(color: Sandik.gain))
+/// ```
+///
+/// Neden: hardcoded `fontSize` iOS Dynamic Type ölçeklemesini yok sayar ve
+/// her çağrıda font çözümlemesi yapar. Merkezi tema her ikisini de çözer.
+extension SandikTypography on BuildContext {
+  /// Merkezi metin ölçeği. Tanım: `main.dart` → `_buildTheme()`.
+  ///
+  /// Marka eşlemesi (mevcut kullanıma göre kalibre edildi):
+  /// - `headlineLarge` 24 / `headlineMedium` 20 / `headlineSmall` 18 — başlık
+  /// - `titleLarge` 16 / `titleMedium` 14 / `titleSmall` 12 — kart başlığı
+  /// - `bodyLarge` 15 / `bodyMedium` 13 / `bodySmall` 11 — gövde
+  /// - `labelLarge` 11 / `labelMedium` 10 / `labelSmall` 9 — etiket (letterSpacing'li)
+  /// - `displaySmall` 32 / `displayMedium` 40 — büyük para tutarları (gold)
+  TextTheme get t => Theme.of(this).textTheme;
+}
+
+/// Finansal sayı stilleri — tabular figür hizalaması gerektiren yerler için.
+///
+/// Para tutarları ve yüzdeler listede alt alta geldiğinde rakamlar aynı
+/// genişlikte olmalı; aksi halde kolonlar oynak görünür.
+extension SandikNumericText on TextTheme {
+  /// Liste satırı tutarı (13pt, w700) — [FontFeature.tabularFigures] ile.
+  TextStyle get numSmall => (bodyMedium ?? const TextStyle()).copyWith(
+        fontWeight: FontWeight.w700,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+
+  /// Kart içi tutar (16pt, w800).
+  TextStyle get numMedium => (titleLarge ?? const TextStyle()).copyWith(
+        fontWeight: FontWeight.w800,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+
+  /// Hero/özet tutarı (24pt, w800).
+  TextStyle get numLarge => (headlineLarge ?? const TextStyle()).copyWith(
+        fontWeight: FontWeight.w800,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+}
 
 /// Sandık (ex-Toka) marka renk paleti ve logo painter
 class Sandik {
@@ -107,14 +184,14 @@ class Sandik {
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.black.withOpacity(0.1),
+      fillColor: Colors.black.withValues(alpha: 0.1),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

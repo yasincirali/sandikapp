@@ -10,7 +10,6 @@ import 'package:flutter/material.dart'
         Material,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
@@ -113,7 +112,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         border: null,
         middle: Text(
           'Şifremi Unuttum',
-          style: GoogleFonts.dmSans(
+          style: context.t.headlineSmall?.copyWith(
             fontSize: 17,
             fontWeight: FontWeight.w600,
             color: Sandik.text90,
@@ -150,8 +149,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 12),
           Text(
             'Kod göndereceğimiz e-posta adresini gir.',
-            style: GoogleFonts.dmSans(
-              fontSize: 15,
+            style: context.t.bodyLarge?.copyWith(
               color: Sandik.text58,
               height: 1.4,
             ),
@@ -162,7 +160,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _loading ? null : _sendCode(),
-            style: GoogleFonts.dmSans(color: Sandik.text90),
+            style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
             decoration: Sandik.inputDecoration(
               '',
               labelText: 'E-posta',
@@ -195,8 +193,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Text(
             '${_emailCtrl.text.trim()} adresine kod gönderdik. '
             'Kodu ve yeni şifreni gir.',
-            style: GoogleFonts.dmSans(
-              fontSize: 14,
+            style: context.t.titleMedium?.copyWith(
               color: Sandik.text58,
               height: 1.4,
             ),
@@ -209,7 +206,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
             maxLength: 8,
-            style: GoogleFonts.dmSans(
+            style: context.t.numLarge.copyWith(
               color: Sandik.text90,
               fontSize: 20,
               letterSpacing: 6,
@@ -235,7 +232,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             controller: _passCtrl,
             obscureText: _obscure,
             textInputAction: TextInputAction.next,
-            style: GoogleFonts.dmSans(color: Sandik.text90),
+            style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
             decoration: Sandik.inputDecoration(
               '',
               labelText: 'Yeni Şifre',
@@ -273,7 +270,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             obscureText: _obscure,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _loading ? null : _verifyAndUpdate(),
-            style: GoogleFonts.dmSans(color: Sandik.text90),
+            style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
             decoration: Sandik.inputDecoration(
               '',
               labelText: 'Yeni Şifre Tekrar',
@@ -309,7 +306,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     }),
             child: Text(
               'Farklı bir e-posta ile tekrar dene',
-              style: GoogleFonts.dmSans(color: Sandik.amber, fontSize: 13),
+              style: context.t.bodyMedium?.copyWith(color: Sandik.amber),
             ),
           ),
         ],
@@ -352,9 +349,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               )
             : Text(
                 label,
-                style: GoogleFonts.dmSans(
+                style: context.t.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w700,
-                  fontSize: 15,
                   color: Sandik.dark,
                 ),
               ),

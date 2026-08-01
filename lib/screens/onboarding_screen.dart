@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/analytics_service.dart';
@@ -221,15 +220,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               top: 8,
               right: 16,
               child: CupertinoButton(
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
+                // HIG 44pt: metin 14pt olduğu için sıfır padding'de hedef
+                // ~18pt'ye düşüyordu.
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                minimumSize: const Size(44, 44),
                 onPressed: _skip,
                 child: Text(
                   'Atla',
-                  style: GoogleFonts.dmSans(
+                  style: context.t.titleMedium?.copyWith(
                     color: Sandik.text58,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -283,9 +282,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         children: [
                           Text(
                             step.title,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                            style: context.t.headlineMedium?.copyWith(
                               color: Colors.white,
                               letterSpacing: -0.3,
                             ),
@@ -293,8 +290,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           const SizedBox(height: 10),
                           Text(
                             step.body,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 14,
+                            style: context.t.titleMedium?.copyWith(
                               color: Sandik.text58,
                               height: 1.6,
                             ),
@@ -351,9 +347,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           alignment: Alignment.center,
                           child: Text(
                             _isLast ? 'Sandığımı Aç' : 'İleri',
-                            style: GoogleFonts.dmSans(
+                            style: context.t.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w700,
-                              fontSize: 15,
                               color: Sandik.dark,
                             ),
                           ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
@@ -102,8 +101,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         ),
         title: Text(
           'Tüm İşlemler',
-          style: GoogleFonts.dmSans(
-              fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
+          style: context.t.headlineMedium?.copyWith(color: Colors.white),
         ),
       ),
       body: Column(
@@ -143,8 +141,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             size: 52, color: Sandik.text36),
                         const SizedBox(height: 12),
                         Text('İşlem bulunamadı',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 14, color: Sandik.text36)),
+                            style: context.t.titleMedium?.copyWith(color: Sandik.text36)),
                       ],
                     ),
                   )
@@ -179,8 +176,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           ),
           child: Text(
             label,
-            style: GoogleFonts.dmSans(
-              fontSize: 12,
+            style: context.t.titleSmall?.copyWith(
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               color: selected ? color : Sandik.text58,
             ),
@@ -201,7 +197,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
+          adaptiveRoute(
               builder: (_) =>
                   PerformanceScreen(asset: asset, showBackButton: true)),
         ),
@@ -224,7 +220,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       child: Center(
                         child: Text(
                           asset.currencySymbol!,
-                          style: GoogleFonts.dmSans(
+                          style: context.t.bodyMedium!.copyWith(
                             fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
                             fontWeight: FontWeight.w800,
                             color: asset.type.color,
@@ -248,8 +244,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(asset.displayTicker!,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 10,
+                            style: context.t.labelMedium?.copyWith(
+                                letterSpacing: 0,
                                 fontWeight: FontWeight.w800,
                                 color: asset.type.color)),
                       ),
@@ -258,8 +254,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                     Text(asset.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.dmSans(
-                            fontSize: 14,
+                        style: context.t.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             height: 1.25,
                             color: Colors.white)),
@@ -283,8 +278,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                         Text(
                           DateFormat('d MMM yyyy', 'tr_TR')
                               .format(asset.addedDate),
-                          style: GoogleFonts.dmSans(
-                              fontSize: 11, color: Sandik.text36),
+                          style: context.t.bodySmall?.copyWith(color: Sandik.text36),
                         ),
                         const SizedBox(width: 6),
                         Container(
@@ -298,8 +292,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             asset.unitIsPrefix
                                 ? '${asset.unitLabel}${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)}'
                                 : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 10,
+                            style: context.t.labelMedium?.copyWith(
+                                letterSpacing: 0,
                                 color: Sandik.text58,
                                 fontWeight: FontWeight.w600),
                           ),
@@ -313,15 +307,14 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(tryFmt.format(totalTRY),
-                      style: GoogleFonts.dmSans(
+                      style: context.t.numSmall.copyWith(
                           fontSize: 15,
-                          fontWeight: FontWeight.w700,
                           color: Colors.white)),
                   if (hasPnl) ...[
                     const SizedBox(height: 3),
                     Text(
                       '${isPos ? '+' : ''}₺${NumberFormat('#,###', 'tr_TR').format(gainLossTRY.abs().toInt())}',
-                      style: GoogleFonts.dmSans(
+                      style: context.t.numSmall.copyWith(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: isPos ? Sandik.gain : Sandik.loss),

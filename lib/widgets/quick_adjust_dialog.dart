@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
@@ -212,8 +211,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     children: [
                       Text(
                         _isAdd ? 'Ekle' : 'Çıkar',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 18,
+                        style: context.t.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                         ),
@@ -222,8 +220,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                         asset.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
+                        style: context.t.titleSmall?.copyWith(
                           color: Sandik.text58,
                         ),
                       ),
@@ -250,13 +247,12 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               child: Row(
                 children: [
                   Text('Mevcut',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11, color: Sandik.text36)),
+                      style: context.t.bodySmall?.copyWith(color: Sandik.text36)),
                   const Spacer(),
                   Text(
                     '${numFmt.format(asset.quantity)} $_unitLabel · '
                     'ort. ${numFmt.format(asset.purchasePrice)} $_currencySymbol',
-                    style: GoogleFonts.dmSans(
+                    style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -269,8 +265,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
 
             // ── Miktar ────────────────────────────────────────────────
             Text('Miktar',
-                style: GoogleFonts.dmSans(
-                    fontSize: 12,
+                style: context.t.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Sandik.text58)),
             const SizedBox(height: 6),
@@ -282,7 +277,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
               ],
-              style: GoogleFonts.dmSans(
+              style: context.t.numLarge.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.white),
@@ -290,10 +285,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               decoration: InputDecoration(
                 hintText: '0',
                 hintStyle:
-                    GoogleFonts.dmSans(color: Sandik.text36, fontSize: 18),
+                    context.t.headlineSmall?.copyWith(color: Sandik.text36),
                 suffixText: _unitLabel,
                 suffixStyle:
-                    GoogleFonts.dmSans(color: Sandik.text58, fontSize: 14),
+                    context.t.titleMedium?.copyWith(color: Sandik.text58),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
@@ -333,8 +328,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                           'İşlem geçmişin ve realize kâr/zararın korunur. '
                           'Kaydı tamamen silmek istiyorsan varlık detayından '
                           '"Sil"i kullan.',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 11,
+                          style: context.t.bodySmall?.copyWith(
                             color: Sandik.text58,
                             height: 1.4,
                           ),
@@ -349,8 +343,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             if (_isAdd) ...[
               const SizedBox(height: 16),
               Text('Birim fiyat',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12,
+                  style: context.t.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Sandik.text58)),
               const SizedBox(height: 6),
@@ -361,16 +354,16 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                 ],
-                style: GoogleFonts.dmSans(
-                    fontSize: 16, color: Colors.white),
+                style: context.t.numMedium.copyWith(
+                    fontWeight: FontWeight.w500, color: Colors.white),
                 onChanged: (_) => setState(() => _error = null),
                 decoration: InputDecoration(
                   hintText: '0.00',
                   hintStyle:
-                      GoogleFonts.dmSans(color: Sandik.text36, fontSize: 16),
+                      context.t.titleLarge?.copyWith(color: Sandik.text36),
                   suffixText: _currencySymbol,
                   suffixStyle:
-                      GoogleFonts.dmSans(color: Sandik.text58, fontSize: 14),
+                      context.t.titleMedium?.copyWith(color: Sandik.text58),
                   filled: true,
                   fillColor: Colors.white.withValues(alpha: 0.04),
                   border: OutlineInputBorder(
@@ -396,12 +389,11 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 child: Row(
                   children: [
                     Text(_isAdd ? 'Toplam maliyet' : 'Çıkarılan değer',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 12, color: Sandik.text58)),
+                        style: context.t.titleSmall?.copyWith(color: Sandik.text58)),
                     const Spacer(),
                     Text(
                       '${numFmt.format(total)} $_currencySymbol',
-                      style: GoogleFonts.dmSans(
+                      style: context.t.numSmall.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: accent,
@@ -416,8 +408,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               const SizedBox(height: 10),
               Text(
                 _error!,
-                style: GoogleFonts.dmSans(
-                    fontSize: 12, color: Sandik.loss),
+                style: context.t.titleSmall?.copyWith(color: Sandik.loss),
               ),
             ],
 
@@ -436,7 +427,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                           borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text('İptal',
-                        style: GoogleFonts.dmSans(
+                        style: context.t.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: Colors.white)),
                   ),
@@ -460,7 +451,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                                 strokeWidth: 2, color: Colors.white),
                           )
                         : Text(_isAdd ? 'Ekle' : 'Çıkar',
-                            style: GoogleFonts.dmSans(
+                            style: context.t.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white)),
                   ),
@@ -518,7 +509,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     p == _fmt(widget.asset.quantity) && !_isAdd
                         ? 'Hepsi ($p)'
                         : p,
-                    style: GoogleFonts.dmSans(
+                    style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,

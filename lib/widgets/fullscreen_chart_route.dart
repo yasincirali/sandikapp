@@ -21,7 +21,7 @@ class FullscreenChartRoute extends StatefulWidget {
   static Future<void> open(BuildContext context,
       {required WidgetBuilder builder, String? title}) {
     return Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
+      adaptiveRoute(
         fullscreenDialog: true,
         builder: (_) => FullscreenChartRoute(builder: builder, title: title),
       ),
