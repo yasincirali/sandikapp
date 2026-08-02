@@ -221,6 +221,7 @@ interface PrefRow {
   threshold: number;
   indicators: string[];
   neutral_push: boolean;
+  signals_enabled: boolean;
 }
 
 const DEFAULT_THRESHOLD = 70;
@@ -315,7 +316,9 @@ Deno.serve(async (request) => {
     // ── 3) Tercihler ────────────────────────────────────────────────────────
     const { data: prefRows } = await admin
       .from('signal_preferences')
-      .select('user_id, asset_type, threshold, indicators, neutral_push')
+      .select(
+        'user_id, asset_type, threshold, indicators, neutral_push, signals_enabled',
+      )
       .in('user_id', userIds);
 
     const prefKey = (u: string, t: string) => `${u}|${t}`;
@@ -357,6 +360,11 @@ Deno.serve(async (request) => {
       if (!prices || prices.length < MIN_POINTS) continue;
 
       const pref = prefs.get(prefKey(asset.user_id, asset.type));
+
+      // Kullanıcı bu tür için bildirimleri kapatmışsa hiç analiz etme.
+      // Satır yoksa varsayılan AÇIK (kullanıcı hiç ayara girmemiş demektir).
+      if (pref && !pref.signals_enabled) continue;
+
       const threshold = pref?.threshold ?? DEFAULT_THRESHOLD;
       const indicators = pref?.indicators?.length
         ? pref.indicators

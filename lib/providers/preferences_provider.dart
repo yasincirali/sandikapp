@@ -112,6 +112,13 @@ class _BoolPrefNotifier extends Notifier<bool> {
       await prefs.setBool(key, value);
     } catch (_) {}
   }
+
+  /// Sunucudan gelen değeri yerele uygular.
+  ///
+  /// Davranışı [set] ile aynı (bu notifier zaten sunucuya yazmaz); ayrı isim
+  /// çağrı yerinde yönü açık kılmak içindir — sunucudan İNEN veri, kullanıcı
+  /// dokunuşu değil.
+  Future<void> applyFromServer(bool value) => set(value);
 }
 
 final signalNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
@@ -287,6 +294,7 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
     final indicators = read(indicatorPrefsProvider)[type] ??
         TechnicalAnalysisService.defaultEnabledFor(type);
     final neutralPush = read(signalNeutralPushProvider);
+    final signalsEnabled = read(signalNotificationsProvider);
 
     await SupabaseService.instance.upsertSignalPreference(
       userId: user.id,
@@ -294,6 +302,7 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
       threshold: threshold,
       indicators: indicators.toList(),
       neutralPush: neutralPush,
+      signalsEnabled: signalsEnabled,
     );
   } catch (_) {
     // Sunucu senkronu başarısız olsa da yerel tercih geçerli kalır.
@@ -396,6 +405,19 @@ Future<void> syncNeutralPushPreference(WidgetRef ref) async {
   }
 }
 
+/// Sinyal bildirimleri ana anahtarını sunucuya yazar.
+///
+/// [syncNeutralPushPreference] ile aynı sebeple tüm türleri günceller:
+/// tercih uygulama genelinde tek, tabloda ise tür başına satır.
+///
+/// Bu senkron ŞART: push'u sunucu gönderiyor. Anahtar yalnızca cihazda
+/// kalırsa kullanıcı bildirimleri kapatsa bile sunucu göndermeye devam eder.
+Future<void> syncSignalsEnabledPreference(WidgetRef ref) async {
+  for (final type in AssetType.values) {
+    await _syncSignalPreferenceWith(ref.read, type);
+  }
+}
+
 /// Oturum açıldığında sinyal tercihlerini sunucuyla eşitler.
 ///
 /// Yön kritik: sunucuda satır **varsa** o kazanır ve cihaza indirilir.
@@ -435,6 +457,16 @@ Future<void> syncSignalPreferencesOnLogin(WidgetRef ref) async {
       await thresholds.applyFromServer(type, row.threshold);
       await indicators.applyFromServer(type, row.indicators);
     }
+
+    // `neutralPush` ve `signalsEnabled` tür başına DEĞİL, uygulama genelinde
+    // tek anahtardır; sunucuda ise her satırda tekrarlanır. Satırlar teoride
+    // ayrışabilir (ör. yarıda kalmış yazma), bu yüzden "herhangi biri açıksa
+    // açık" kuralı uygulanır: kullanıcıyı sessizce bildirimsiz bırakmak,
+    // fazladan bildirim göndermekten daha kötü bir hata.
+    final neutral = remote.any((r) => r.neutralPush);
+    final enabled = remote.any((r) => r.signalsEnabled);
+    await ref.read(signalNeutralPushProvider.notifier).applyFromServer(neutral);
+    await ref.read(signalNotificationsProvider.notifier).applyFromServer(enabled);
   } catch (_) {
     // Ağ hatasında yerel tercihler geçerli kalır.
   }

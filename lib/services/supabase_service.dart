@@ -451,7 +451,8 @@ class SupabaseService {
       request: {'user_id': userId},
       call: () => _db
           .from('signal_preferences')
-          .select('asset_type, threshold, indicators, neutral_push')
+          .select(
+              'asset_type, threshold, indicators, neutral_push, signals_enabled')
           .eq('user_id', userId),
     );
 
@@ -463,6 +464,9 @@ class SupabaseService {
           indicators:
               (r['indicators'] as List?)?.cast<String>().toList() ?? const [],
           neutralPush: r['neutral_push'] as bool? ?? false,
+          // Sütun yoksa/boşsa açık kabul et — kullanıcıyı sessizce
+          // bildirimsiz bırakmaktansa varsayılanı korumak doğru.
+          signalsEnabled: r['signals_enabled'] as bool? ?? true,
         ),
     ];
   }
@@ -483,6 +487,7 @@ class SupabaseService {
     required int threshold,
     required List<String> indicators,
     required bool neutralPush,
+    required bool signalsEnabled,
   }) async {
     await _log.log<void>(
       source: 'SupabaseService.upsertSignalPreference',
@@ -501,6 +506,7 @@ class SupabaseService {
           'threshold': threshold,
           'indicators': indicators,
           'neutral_push': neutralPush,
+          'signals_enabled': signalsEnabled,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         },
         onConflict: 'user_id,asset_type',

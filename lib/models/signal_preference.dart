@@ -13,6 +13,7 @@ class SignalPreferenceRow {
     required this.threshold,
     required this.indicators,
     required this.neutralPush,
+    required this.signalsEnabled,
   });
 
   /// `AssetType.name` karşılığı ('hisse', 'fon', 'altin', ...).
@@ -27,4 +28,11 @@ class SignalPreferenceRow {
 
   /// Nötr sinyaller de bildirilsin mi.
   final bool neutralPush;
+
+  /// Bu tür için sinyal bildirimi gönderilsin mi (ana anahtar).
+  ///
+  /// Sunucuda tutulmasının sebebi: push'u sunucu gönderiyor. Tercih yalnızca
+  /// cihazda kalsaydı kullanıcı bildirimleri kapatsa bile sunucu göndermeye
+  /// devam ederdi.
+  final bool signalsEnabled;
 }

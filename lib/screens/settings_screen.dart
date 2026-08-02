@@ -397,9 +397,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Teknik sinyal bildirimleri',
               subtitle: 'AL/SAT göstergesi tetiklendiğinde bildirim al',
               value: ref.watch(signalNotificationsProvider),
-              onChanged: (v) => ref
-                  .read(signalNotificationsProvider.notifier)
-                  .set(v),
+              onChanged: (v) async {
+                await ref.read(signalNotificationsProvider.notifier).set(v);
+                // Sunucuya da yaz: sinyal push'unu sunucu gönderiyor, bu
+                // anahtar orada bilinmezse kapatmak işe yaramaz.
+                await syncSignalsEnabledPreference(ref);
+              },
             ),
             _SwitchTile(
               icon: Icons.people_outline_rounded,
