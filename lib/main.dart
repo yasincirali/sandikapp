@@ -536,6 +536,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           _triggerSignalAnalysis(slot);
         };
         await RemotePushService.instance.start(userId);
+
+        // Sinyal tercihlerini sunucuyla eşitle.
+        //
+        // Sunucuda kayıt varsa o kazanır (cihaza indirilir); yoksa yerel
+        // değerler yukarı taşınır. Yön önemli: her girişte yereli yukarı
+        // basmak, yeni cihazda varsayılanların kullanıcının gerçek
+        // ayarlarını ezmesine yol açıyordu.
+        //
+        // Beklenmez (unawaited): push kurulumunu ve açılışı yavaşlatmasın.
+        unawaited(syncSignalPreferencesOnLogin(ref));
         return;
       }
 

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset_type.dart';
 import '../services/remote_config_service.dart';
+import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
+import 'auth_provider.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -230,10 +232,23 @@ class IndicatorPrefsNotifier
     }
     state = {...state, type: current};
     await _persist();
+    await _syncSignalPreferenceWith(ref.read, type);
   }
 
   Future<void> setForType(AssetType type, Set<String> ids) async {
     state = {...state, type: ids};
+    await _persist();
+    await _syncSignalPreferenceWith(ref.read, type);
+  }
+
+  /// Sunucudan gelen değeri yerele uygular.
+  ///
+  /// [setForType]'dan farkı: sunucuya GERİ yazmaz. Aksi halde indirdiğimiz
+  /// değeri aynı satıra tekrar upsert eder, gereksiz yazma yaratırdık.
+  Future<void> applyFromServer(AssetType type, List<String> ids) async {
+    final valid = ids.where(IndicatorId.all.contains).toSet();
+    if (valid.isEmpty) return; // bozuk/boş kayıt — yereli koru
+    state = {...state, type: valid};
     await _persist();
   }
 
@@ -245,6 +260,45 @@ final indicatorPrefsProvider =
     NotifierProvider<IndicatorPrefsNotifier, Map<AssetType, Set<String>>>(
   IndicatorPrefsNotifier.new,
 );
+
+/// Bir varlık türünün sinyal tercihini sunucuya yazar.
+///
+/// Sinyal analizi sunucuda çalıştığı için (bkz. `analyze-signals` edge
+/// function) eşik ve gösterge seçimi orada da bilinmeli. Eşik ve gösterge
+/// ayrı notifier'larda tutulduğundan, hangisi değişirse değişsin satırın
+/// TAMAMI birlikte yazılır — aksi halde upsert diğer alanı varsayılana
+/// döndürürdü.
+///
+/// Hata durumunda sessizce geçilir: tercih zaten SharedPreferences'a
+/// yazıldı, kullanıcı akışı bloklanmamalı. Bir sonraki değişiklikte
+/// yeniden denenir.
+/// [ref] hem [Ref] (provider içi) hem [WidgetRef] (ekran) olabilir; ikisi de
+/// `read` sunar ama ortak bir arayüzleri yok. Bu yüzden gereken tek yetenek
+/// olan `read` bir fonksiyon olarak alınır.
+typedef _Reader = T Function<T>(ProviderListenable<T> provider);
+
+Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
+  try {
+    final user = read(authProvider).valueOrNull;
+    if (user == null) return;
+
+    final threshold =
+        read(signalThresholdProvider)[type] ?? kSignalThresholdDefault;
+    final indicators = read(indicatorPrefsProvider)[type] ??
+        TechnicalAnalysisService.defaultEnabledFor(type);
+    final neutralPush = read(signalNeutralPushProvider);
+
+    await SupabaseService.instance.upsertSignalPreference(
+      userId: user.id,
+      assetType: type.name,
+      threshold: threshold,
+      indicators: indicators.toList(),
+      neutralPush: neutralPush,
+    );
+  } catch (_) {
+    // Sunucu senkronu başarısız olsa da yerel tercih geçerli kalır.
+  }
+}
 
 // ─── Sinyal bildirim eşiği (per asset type) ───────────────────────────────────
 // Kullanıcı her varlık türü için confidence eşiğini seçer:
@@ -301,6 +355,19 @@ class SignalThresholdNotifier extends Notifier<Map<AssetType, int>> {
     if (!kSignalThresholdOptions.contains(threshold)) return;
     state = {...state, type: threshold};
     await _persist();
+    await _syncSignalPreferenceWith(ref.read, type);
+  }
+
+  /// Sunucudan gelen eşiği yerele uygular (geri yazmaz).
+  ///
+  /// Sunucu 0-100 aralığını kabul ediyor ama UI yalnızca 50/70/85 sunuyor.
+  /// Aradaki bir değer gelirse (ileride kaydırmalı seçici eklenirse)
+  /// olduğu gibi saklanır — UI o değeri seçili göstermese de sunucu
+  /// kararı bozulmaz.
+  Future<void> applyFromServer(AssetType type, int threshold) async {
+    if (threshold < 0 || threshold > 100) return;
+    state = {...state, type: threshold};
+    await _persist();
   }
 
   int forType(AssetType type) => state[type] ?? kSignalThresholdDefault;
@@ -314,6 +381,64 @@ final signalThresholdProvider =
 /// Nötr sinyaller de push olarak gönderilsin mi (default: false).
 final signalNeutralPushProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kSignalNeutralPushKey, false));
+
+/// "Nötr sinyalleri de bildir" tercihi tüm varlık türleri için geçerlidir,
+/// ama sunucudaki tablo tür başına satır tutar — bu yüzden değişince
+/// hepsi güncellenir.
+///
+/// Ayrı bir fonksiyon olmasının sebebi: `signalNeutralPushProvider` genel
+/// amaçlı [_BoolPrefNotifier] kullanıyor; ona sinyale özel senkron mantığı
+/// gömmek diğer bool tercihleri de (tema, bakiye gizleme) gereksiz yere
+/// ağa çıkarırdı.
+Future<void> syncNeutralPushPreference(WidgetRef ref) async {
+  for (final type in AssetType.values) {
+    await _syncSignalPreferenceWith(ref.read, type);
+  }
+}
+
+/// Oturum açıldığında sinyal tercihlerini sunucuyla eşitler.
+///
+/// Yön kritik: sunucuda satır **varsa** o kazanır ve cihaza indirilir.
+/// Yalnızca sunucuda hiç kayıt yoksa yerel değerler yukarı yazılır.
+///
+/// Neden: tersi (her girişte yereli yukarı basmak) kullanıcının ayarını
+/// sessizce siliyordu. Yeni bir cihaza giriş yapıldığında — ya da uygulama
+/// yeniden kurulduğunda — `SharedPreferences` boş olduğu için VARSAYILANLAR
+/// (eşik 70) sunucudaki gerçek tercihin üzerine yazılıyordu. Kullanıcı
+/// telefonunu değiştirince "ayarlarım sıfırlandı" derdi.
+///
+/// Not: uygulama içi tek-tek değişiklikler zaten anında sunucuya yazılıyor
+/// (`_syncSignalPreferenceWith`); bu fonksiyon sadece oturum başlangıcı
+/// içindir.
+Future<void> syncSignalPreferencesOnLogin(WidgetRef ref) async {
+  try {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+
+    final remote =
+        await SupabaseService.instance.fetchSignalPreferences(user.id);
+
+    if (remote.isEmpty) {
+      // Sunucuda hiç kayıt yok → ilk kurulum. Yerelleri yukarı taşı.
+      for (final type in AssetType.values) {
+        await _syncSignalPreferenceWith(ref.read, type);
+      }
+      return;
+    }
+
+    // Sunucu doğruluk kaynağı → cihaza indir.
+    final thresholds = ref.read(signalThresholdProvider.notifier);
+    final indicators = ref.read(indicatorPrefsProvider.notifier);
+
+    for (final row in remote) {
+      final type = AssetType.fromString(row.assetType);
+      await thresholds.applyFromServer(type, row.threshold);
+      await indicators.applyFromServer(type, row.indicators);
+    }
+  } catch (_) {
+    // Ağ hatasında yerel tercihler geçerli kalır.
+  }
+}
 
 // ─── Chart overlay tercihleri ─────────────────────────────────────────────────
 // Grafik üzerine çizilecek göstergeler. Sinyal göstergelerinden ayrı: burası

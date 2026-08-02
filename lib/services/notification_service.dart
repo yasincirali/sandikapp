@@ -37,7 +37,10 @@ class NotificationService {
     }
     if (_initialized) return;
 
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Durum çubuğu ikonu beyaz siluet + şeffaf zemin olmalı; Android yalnızca
+    // alfa kanalını kullanır. `@mipmap/ic_launcher` renkli olduğu için düz
+    // beyaz kare olarak görünüyordu.
+    const android = AndroidInitializationSettings('ic_stat_sandik');
     const darwin = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -52,6 +55,17 @@ class NotificationService {
       },
     );
 
+    // Android 8+ (API 26): bildirim kanalı ÖNCEDEN oluşturulmalı.
+    //
+    // Sunucudan gelen push `channel_id: signal_channel` taşıyor. Kanal
+    // yoksa Android mesajı sessizce düşürür — FCM "başarılı" der, cihaz
+    // mesajı alır, ama kullanıcı hiçbir şey görmez. Tam olarak bu yaşandı:
+    // `sent: 1, failed: 0` dönerken bildirim gölgesi boş kaldı.
+    //
+    // Local bildirimler kanalı ilk gösterimde kendiliğinden yaratır; uzak
+    // (FCM) bildirimler yaratmaz. Bu yüzden burada açıkça kuruyoruz.
+    await _createAndroidChannels();
+
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
 
     _initialized = true;
@@ -60,6 +74,38 @@ class NotificationService {
     if (launchPayload != null) {
       Future<void>.microtask(() => _handleNotificationPayload(launchPayload));
     }
+  }
+
+  /// Android bildirim kanallarını oluşturur (API 26+).
+  ///
+  /// Kanal id'leri sunucu tarafıyla eşleşmek ZORUNDA:
+  /// `supabase/functions/analyze-signals/index.ts` → `channel_id`.
+  /// Biri değişirse diğeri de değişmeli, aksi halde uzak bildirimler
+  /// sessizce düşer.
+  Future<void> _createAndroidChannels() async {
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) return; // iOS/diğer platform — kanal kavramı yok
+
+    // Teknik sinyal bildirimleri (sunucudan FCM ile gelir).
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'signal_channel',
+        'Teknik Sinyal Bildirimleri',
+        description: 'Portföyünüzdeki varlıklar için trend bildirimleri',
+        importance: Importance.high,
+      ),
+    );
+
+    // Ortaklık davetleri.
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'partner_invite_channel',
+        'Ortaklik Bildirimleri',
+        description: 'Yeni ortaklik onay istekleri',
+        importance: Importance.max,
+      ),
+    );
   }
 
   /// Bildirim iznini kullanıcıya sor. Onboarding tamamlandıktan sonra çağır.
@@ -98,9 +144,12 @@ class NotificationService {
       channelDescription: 'AL/SAT teknik analiz sinyalleri',
       importance: Importance.high,
       priority: Priority.high,
+      icon: 'ic_stat_sandik',
+      // Vurgu rengi: ikonu ve uygulama adını tonlar. `colorized` KULLANMA —
+      // o bildirimin tüm arka planını boyar (medya bildirimi görünümü).
       color: isBuy ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-      colorized: true,
       ticker: ticker,
+      styleInformation: BigTextStyleInformation(body),
     );
 
     await _plugin.show(
@@ -124,8 +173,8 @@ class NotificationService {
       channelDescription: 'Yeni ortaklik onay istekleri',
       importance: Importance.max,
       priority: Priority.high,
-      color: Color(0xFFF4B400),
-      colorized: true,
+      icon: 'ic_stat_sandik',
+      color: Color(0xFFF5A623), // marka amber
     );
 
     const iosDetails = DarwinNotificationDetails(

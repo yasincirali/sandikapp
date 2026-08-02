@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/asset.dart';
 import '../models/signal_alert.dart';
+import '../models/signal_preference.dart';
 import '../models/user_model.dart';
 import 'db_logger.dart';
 
@@ -431,6 +432,79 @@ class SupabaseService {
       op: 'DELETE',
       request: {'token': '[redacted]'},
       call: () => _db.from('user_push_tokens').delete().eq('token', token),
+    );
+  }
+
+  // ── Sinyal tercihleri ─────────────────────────────────────────────────────
+
+  /// Kullanıcının sunucudaki sinyal tercihlerini okur.
+  ///
+  /// Oturum açılışında çağrılır: sunucu doğruluk kaynağıdır, cihaz onu
+  /// indirir. Kayıt yoksa boş liste döner — arayan bunu "ilk kurulum"
+  /// olarak yorumlayıp yerel değerleri yukarı taşır.
+  Future<List<SignalPreferenceRow>> fetchSignalPreferences(
+      String userId) async {
+    final rows = await _log.log<List<dynamic>>(
+      source: 'SupabaseService.fetchSignalPreferences',
+      table: 'signal_preferences',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('signal_preferences')
+          .select('asset_type, threshold, indicators, neutral_push')
+          .eq('user_id', userId),
+    );
+
+    return [
+      for (final r in rows.cast<Map<String, dynamic>>())
+        SignalPreferenceRow(
+          assetType: r['asset_type'] as String,
+          threshold: (r['threshold'] as num?)?.toInt() ?? 70,
+          indicators:
+              (r['indicators'] as List?)?.cast<String>().toList() ?? const [],
+          neutralPush: r['neutral_push'] as bool? ?? false,
+        ),
+    ];
+  }
+
+  /// Kullanıcının bir varlık türü için eşik/gösterge tercihlerini sunucuya
+  /// yazar.
+  ///
+  /// Neden gerekli: sinyal analizi artık sunucuda (`analyze-signals` edge
+  /// function) çalışıyor ve push kararını orada veriyor. Tercihler yalnızca
+  /// cihazda kalırsa sunucu kullanıcının eşiğini bilemez ve herkese aynı
+  /// varsayılanı uygular.
+  ///
+  /// SharedPreferences yazımı korunur (çevrimdışı okuma ve anlık UI için);
+  /// burası ikinci, kalıcı kopyadır.
+  Future<void> upsertSignalPreference({
+    required String userId,
+    required String assetType,
+    required int threshold,
+    required List<String> indicators,
+    required bool neutralPush,
+  }) async {
+    await _log.log<void>(
+      source: 'SupabaseService.upsertSignalPreference',
+      table: 'signal_preferences',
+      op: 'UPSERT',
+      request: {
+        'user_id': userId,
+        'asset_type': assetType,
+        'threshold': threshold,
+        'indicators': indicators.length,
+      },
+      call: () => _db.from('signal_preferences').upsert(
+        {
+          'user_id': userId,
+          'asset_type': assetType,
+          'threshold': threshold,
+          'indicators': indicators,
+          'neutral_push': neutralPush,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict: 'user_id,asset_type',
+      ),
     );
   }
 

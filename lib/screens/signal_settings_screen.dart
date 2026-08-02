@@ -91,9 +91,14 @@ class SignalSettingsScreen extends ConsumerWidget {
                     Switch.adaptive(
                       value: neutralPush,
                       activeColor: Sandik.amber,
-                      onChanged: (v) => ref
-                          .read(signalNeutralPushProvider.notifier)
-                          .set(v),
+                      onChanged: (v) async {
+                        await ref
+                            .read(signalNeutralPushProvider.notifier)
+                            .set(v);
+                        // Sunucu analizi bu tercihi de okur — tüm türler
+                        // için satırları güncelle.
+                        await syncNeutralPushPreference(ref);
+                      },
                     ),
                   ],
                 ),

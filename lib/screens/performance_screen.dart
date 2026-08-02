@@ -200,7 +200,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    fmtPct(summary.confidence * 100, digits: 0),
+                    fmtPct(summary.confidence, digits: 0),
                     // Güven skoru (%) — tabular figür, değişince zıplamasın.
                     style: context.t.numLarge.copyWith(
                       fontSize: 22,

@@ -1,20 +1,39 @@
-// Analyze Signals Edge Function
+// Analyze Signals Edge Function — SUNUCU TARAFLI ANALİZ
 //
-// pg_cron tarafından günde iki kez tetiklenir (TR 11:00 & 15:00).
-// Her aktif kullanıcının push token'ına "signal_analyze_request" tipinde bir
-// FCM data-message atar. Client bunu yakalar, mevcut teknik analiz servisini
-// çalıştırır, sinyal değişiklikleri varsa signal_notifications tablosuna yazar
-// ve gerçek AL/SAT/NÖTR push'unu local notification olarak gösterir.
+// pg_cron tarafından tetiklenir. Her kullanıcının portföyünü sunucuda analiz
+// eder ve eşiği geçen sinyaller için GERÇEK push notification gönderir.
 //
-// Neden hibrit? Teknik göstergeler (RSI, MACD, Bollinger, EMA, Stochastic vs.)
-// Dart'ta implement edildi ve canlı Yahoo/TEFAS fiyat çekimi client'ta zaten
-// çalışıyor. Sunucuda tekrarlamak yerine cron sadece "analiz zamanı" tetikleyici
-// görevi görür. Bu sayede:
-//   1) Teknik analiz kodu tek yerde (client) kalır
-//   2) Yahoo API rate-limit riski server'da patlamaz
-//   3) İleride "premium canlı sinyaller" için bu function saatlik çalıştırılabilir
+// ── Neden değişti ───────────────────────────────────────────────────────────
+// Önceki sürüm "hibrit" idi: cron yalnızca data-only bir tetik atıyor, analizi
+// client yapıyordu. Bu tasarımın kırılma noktası: bildirim `flutter_local_
+// notifications` ile üretiliyordu, yani Dart kodunun ÇALIŞIYOR olması
+// gerekiyordu. Uygulama kapalıyken arka plan handler'ı yalnızca Firebase'i
+// başlatıp çıkıyordu → kullanıcı hiçbir zaman bildirim almıyordu. iOS'ta
+// `content-available` sessiz mesajları zaten garanti edilmez.
+//
+// Artık analiz burada yapılır ve FCM `notification` payload'ı gönderilir —
+// uygulama kapalı olsa da sistem bildirimi gösterir.
+//
+// ── Maliyet ─────────────────────────────────────────────────────────────────
+// Fiyat çekimi sembol başına TEK sefer yapılır ve `price_history_cache`
+// üzerinden tüm kullanıcılar arasında paylaşılır (bkz. _shared/price_history.ts).
+// Böylece istek sayısı kullanıcı sayısıyla değil portföy çeşitliliğiyle
+// ölçeklenir; Supabase ve FCM ücretsiz katmanlarında kalınır.
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+
+import {
+  analyze,
+  AssetType,
+  DEFAULT_INDICATORS,
+  SignalType,
+  summarize,
+} from '../_shared/technical_analysis.ts';
+import {
+  loadPriceHistories,
+  MIN_POINTS,
+  resolveSymbol,
+} from '../_shared/price_history.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,24 +50,18 @@ type ServiceAccount = {
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'application/json',
-    },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
+
+// ── Google OAuth (FCM v1) ───────────────────────────────────────────────────
 
 function base64UrlEncode(input: string | Uint8Array) {
   const bytes =
     typeof input === 'string' ? new TextEncoder().encode(input) : input;
   let binary = '';
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 function pemToArrayBuffer(pem: string) {
@@ -56,12 +69,9 @@ function pemToArrayBuffer(pem: string) {
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
     .replace(/\s+/g, '');
-
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
   return bytes.buffer;
 }
 
@@ -86,13 +96,11 @@ async function createAccessToken(serviceAccount: ServiceAccount) {
     false,
     ['sign'],
   );
-
   const signature = await crypto.subtle.sign(
     'RSASSA-PKCS1-v1_5',
     privateKey,
     new TextEncoder().encode(unsignedToken),
   );
-
   const jwt = `${unsignedToken}.${base64UrlEncode(new Uint8Array(signature))}`;
 
   const response = await fetch(
@@ -106,29 +114,49 @@ async function createAccessToken(serviceAccount: ServiceAccount) {
       }),
     },
   );
-
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Google access token alinamadi: ${errorText}`);
+    throw new Error(`Google access token alinamadi: ${await response.text()}`);
   }
-
-  const tokenJson = await response.json();
-  return tokenJson.access_token as string;
+  return (await response.json()).access_token as string;
 }
 
-async function sendAnalyzeTrigger({
+// ── Bildirim metni ──────────────────────────────────────────────────────────
+//
+// Yasal not: "AL/SAT sinyali" yerine trend yönü ifadesi kullanılır ve
+// "Yatırım tavsiyesi değildir" ibaresi eklenir — client'taki
+// `NotificationService.sendSignalNotification` ile aynı dil.
+
+function buildMessage(
+  assetName: string,
+  signal: SignalType,
+  buyCount: number,
+  sellCount: number,
+): { title: string; body: string } {
+  const isBuy = signal === 'buy';
+  const total = buyCount + sellCount;
+  return {
+    title: isBuy ? `Yukarı trend: ${assetName}` : `Aşağı trend: ${assetName}`,
+    body: isBuy
+      ? `Göstergelerin çoğunluğu yukarı yönlü (${buyCount}/${total}). Yatırım tavsiyesi değildir.`
+      : `Göstergelerin çoğunluğu aşağı yönlü (${sellCount}/${total}). Yatırım tavsiyesi değildir.`,
+  };
+}
+
+async function sendPush({
   accessToken,
   projectId,
   token,
-  slot,
+  title,
+  body,
+  assetId,
 }: {
   accessToken: string;
   projectId: string;
   token: string;
-  slot: string;
+  title: string;
+  body: string;
+  assetId: string;
 }) {
-  // Data-only message → client tarafında sessiz çalışır (bildirim göstermez).
-  // Gerçek AL/SAT bildirimini client `analyzePortfolio` çağırdıktan sonra üretir.
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
     {
@@ -140,25 +168,23 @@ async function sendAnalyzeTrigger({
       body: JSON.stringify({
         message: {
           token,
-          data: {
-            type: 'signal_analyze_request',
-            slot,
-            triggered_at: new Date().toISOString(),
-          },
+          // GERÇEK notification payload — uygulama kapalıyken de gösterilir.
+          notification: { title, body },
+          data: { type: 'signal_alert', asset_id: assetId },
           android: {
             priority: 'high',
-            // Bildirim göstermiyoruz — sadece background handler çalışsın.
+            notification: {
+              channel_id: 'signal_channel',
+              sound: 'default',
+              // Marka görünümü. `icon` res adıdır (uzantısız) ve beyaz siluet
+              // + şeffaf zemin olmalı; Android yalnızca alfa kanalını kullanır.
+              icon: 'ic_stat_sandik',
+              color: '#F5A623',
+            },
           },
           apns: {
-            headers: {
-              'apns-priority': '5',
-              'apns-push-type': 'background',
-            },
-            payload: {
-              aps: {
-                'content-available': 1,
-              },
-            },
+            headers: { 'apns-priority': '10', 'apns-push-type': 'alert' },
+            payload: { aps: { sound: 'default', badge: 1 } },
           },
         },
       }),
@@ -166,8 +192,7 @@ async function sendAnalyzeTrigger({
   );
 
   const rawText = await response.text();
-  if (response.ok) return { ok: true as const, rawText };
-
+  if (response.ok) return { ok: true as const };
   return {
     ok: false as const,
     rawText,
@@ -178,6 +203,31 @@ async function sendAnalyzeTrigger({
   };
 }
 
+// ── Veri tipleri ────────────────────────────────────────────────────────────
+
+interface AssetRow {
+  id: string;
+  user_id: string;
+  name: string;
+  ticker: string;
+  type: string;
+  is_manual_price: boolean | null;
+  kind: string | null;
+}
+
+interface PrefRow {
+  user_id: string;
+  asset_type: string;
+  threshold: number;
+  indicators: string[];
+  neutral_push: boolean;
+}
+
+const DEFAULT_THRESHOLD = 70;
+
+/// Sinyal üretilebilen türler. Vadeli mevduatın teknik göstergesi yoktur.
+const ANALYZABLE = new Set(['hisse', 'fon', 'altin', 'doviz', 'emtia']);
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -185,98 +235,242 @@ Deno.serve(async (request) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const fcmProjectId = Deno.env.get('FCM_PROJECT_ID');
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
     const cronSecret = Deno.env.get('ANALYZE_SIGNALS_CRON_SECRET');
 
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      throw new Error('Supabase env degiskenleri eksik.');
+    // SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY platform tarafından otomatik
+    // enjekte edilir (elle girilemez — `SUPABASE_` öneki rezerve). Yoksa
+    // runtime bozuk demektir, secret eksikliği değil.
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error(
+        'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY runtime tarafından '
+        + 'sağlanmadı. Bunlar otomatik enjekte edilir; elle secret olarak '
+        + 'eklenemez.',
+      );
     }
     if (!fcmProjectId || !fcmServiceAccountJson) {
-      throw new Error('FCM env degiskenleri eksik.');
+      throw new Error(
+        'FCM secret\'ları eksik. Gerekli: FCM_PROJECT_ID, '
+        + 'FCM_SERVICE_ACCOUNT_JSON. Bkz. README → "Secret\'lar".',
+      );
     }
 
-    // Cron authentication: sadece pg_cron veya bilinen bir çağıran çalıştırabilir.
-    // pg_cron çağrısında `Authorization: Bearer <ANALYZE_SIGNALS_CRON_SECRET>`
-    // gönderilir. Yoksa 401.
-    const authHeader = request.headers.get('Authorization');
     if (cronSecret) {
+      const authHeader = request.headers.get('Authorization');
       if (authHeader !== `Bearer ${cronSecret}`) {
         return jsonResponse({ error: 'Yetkisiz cron cagrisi.' }, 401);
       }
     }
 
-    // Slot: hangi zamanlanmış çağrı ("morning" / "afternoon")
     let slot = 'unknown';
+    let dryRun = false;
     try {
       const body = await request.json();
       if (typeof body?.slot === 'string') slot = body.slot;
-    } catch (_) {
-      // Body opsiyonel
-    }
+      // dry_run: push göndermeden analizi çalıştırır (deploy sonrası doğrulama).
+      if (body?.dry_run === true) dryRun = true;
+    } catch (_) { /* body opsiyonel */ }
 
-    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+    const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Aktif tüm push token'ları çek (user başına birden fazla olabilir —
-    // aynı user'da hem Android hem iOS gibi).
-    const { data: tokens, error: tokenError } = await adminClient
+    // ── 1) Push token'ı olan kullanıcılar ───────────────────────────────────
+    // Token'ı olmayan kullanıcıyı analiz etmenin anlamı yok.
+    const { data: tokenRows, error: tokenError } = await admin
       .from('user_push_tokens')
       .select('token, user_id');
-
-    if (tokenError) {
-      throw new Error(`Push tokenlari alinamadi: ${tokenError.message}`);
+    if (tokenError) throw new Error(`Push tokenlari alinamadi: ${tokenError.message}`);
+    if (!tokenRows || tokenRows.length === 0) {
+      return jsonResponse({ ok: true, reason: 'Kayitli push token yok.', sent: 0 });
     }
 
-    if (!tokens || tokens.length === 0) {
-      return jsonResponse({
-        ok: true,
-        delivered: 0,
-        skipped: 0,
-        reason: 'Kayitli push token yok.',
-      });
+    const tokensByUser = new Map<string, string[]>();
+    for (const r of tokenRows) {
+      const uid = r.user_id as string;
+      const list = tokensByUser.get(uid) ?? [];
+      list.push(r.token as string);
+      tokensByUser.set(uid, list);
+    }
+    const userIds = [...tokensByUser.keys()];
+
+    // ── 2) Varlıklar ────────────────────────────────────────────────────────
+    const { data: assetRows, error: assetError } = await admin
+      .from('assets')
+      .select('id, user_id, name, ticker, type, is_manual_price, kind')
+      .in('user_id', userIds);
+    if (assetError) throw new Error(`Varliklar alinamadi: ${assetError.message}`);
+
+    // Yalnızca aktif alım lot'ları; manuel fiyatlılar için geçmiş yok.
+    const assets = (assetRows ?? []).filter((a: AssetRow) =>
+      ANALYZABLE.has(a.type) &&
+      a.is_manual_price !== true &&
+      (a.kind ?? 'buy') === 'buy'
+    ) as AssetRow[];
+
+    if (assets.length === 0) {
+      return jsonResponse({ ok: true, reason: 'Analiz edilecek varlik yok.', sent: 0 });
     }
 
-    const accessToken = await createAccessToken(
-      JSON.parse(fcmServiceAccountJson) as ServiceAccount,
-    );
+    // ── 3) Tercihler ────────────────────────────────────────────────────────
+    const { data: prefRows } = await admin
+      .from('signal_preferences')
+      .select('user_id, asset_type, threshold, indicators, neutral_push')
+      .in('user_id', userIds);
 
-    // Concurrency: FCM'ye 25 paralel çağrı, sonra bir sonraki batch.
-    const results: { token: string; ok: boolean; rawText: string }[] = [];
-    const batchSize = 25;
-    for (let i = 0; i < tokens.length; i += batchSize) {
-      const batch = tokens.slice(i, i + batchSize);
-      const batchResults = await Promise.all(
-        batch.map(async ({ token }) => {
-          const r = await sendAnalyzeTrigger({
-            accessToken,
-            projectId: fcmProjectId,
-            token,
-            slot,
-          });
-          if (!r.ok && r.shouldDeleteToken) {
-            try {
-              await adminClient
-                .from('user_push_tokens')
-                .delete()
-                .eq('token', token);
-            } catch (_) {}
-          }
-          return { token, ok: r.ok, rawText: r.rawText };
-        }),
+    const prefKey = (u: string, t: string) => `${u}|${t}`;
+    const prefs = new Map<string, PrefRow>();
+    for (const p of (prefRows ?? []) as PrefRow[]) {
+      prefs.set(prefKey(p.user_id, p.asset_type), p);
+    }
+
+    // ── 4) Fiyat serileri — sembol başına TEK çekim ─────────────────────────
+    const symbolOf = new Map<string, string>(); // assetId → symbol
+    const symbols = new Set<string>();
+    for (const a of assets) {
+      const sym = resolveSymbol(a.ticker ?? '', a.type);
+      if (!sym) continue;
+      symbolOf.set(a.id, sym);
+      symbols.add(sym);
+    }
+
+    const histories = await loadPriceHistories(admin, symbols);
+
+    // ── 5) Analiz + de-dup ──────────────────────────────────────────────────
+    const accessToken = dryRun
+      ? ''
+      : await createAccessToken(JSON.parse(fcmServiceAccountJson) as ServiceAccount);
+
+    let evaluated = 0;
+    let passed = 0;
+    let sent = 0;
+    let failed = 0;
+    const preview: Array<Record<string, unknown>> = [];
+    // FCM'in reddettiği gönderimlerin sebebi. `failed > 0` olduğunda
+    // "neden" sorusunu log'a bakmadan cevaplayabilmek için yanıta eklenir.
+    const errors: string[] = [];
+
+    for (const asset of assets) {
+      const symbol = symbolOf.get(asset.id);
+      if (!symbol) continue;
+      const prices = histories.get(symbol);
+      if (!prices || prices.length < MIN_POINTS) continue;
+
+      const pref = prefs.get(prefKey(asset.user_id, asset.type));
+      const threshold = pref?.threshold ?? DEFAULT_THRESHOLD;
+      const indicators = pref?.indicators?.length
+        ? pref.indicators
+        : DEFAULT_INDICATORS;
+      const neutralPush = pref?.neutral_push ?? false;
+
+      // Premium göstergeler sunucuda hesaplanmaz — premium durumu burada
+      // güvenilir biçimde bilinmiyor. Kullanıcı premium ise uygulama içi
+      // analiz zaten gösteriyor; push temel göstergelerle üretilir.
+      const inds = analyze(prices, asset.type as AssetType, indicators, false);
+      if (inds.length === 0) continue;
+
+      evaluated++;
+      const summary = summarize(inds);
+
+      if (summary.signal === 'neutral' && !neutralPush) continue;
+      if (summary.confidence < threshold) continue;
+      passed++;
+
+      // De-dup: aynı varlık için son sinyalle aynıysa tekrar gönderme.
+      const { data: lastRows } = await admin
+        .from('signal_notifications')
+        .select('signal')
+        .eq('user_id', asset.user_id)
+        .eq('asset_id', asset.id)
+        .order('sent_at', { ascending: false })
+        .limit(1);
+
+      if (lastRows?.[0]?.signal === summary.signal) continue;
+
+      const { title, body } = buildMessage(
+        asset.name,
+        summary.signal,
+        summary.buyCount,
+        summary.sellCount,
       );
-      results.push(...batchResults);
-    }
 
-    const delivered = results.filter((r) => r.ok).length;
-    const failed = results.length - delivered;
+      // dry-run: HİÇBİR yan etki bırakma.
+      //
+      // Önceden geçmiş kaydı bu kontrolden önce yazılıyordu; dry-run kendi
+      // yazdığı satır yüzünden bir sonraki GERÇEK çağrıda de-dup'a takılıyor
+      // ve push hiç gitmiyordu ("passed_threshold: 1, sent: 0"). Prova,
+      // provası olduğu şeyi bozmamalı.
+      if (dryRun) {
+        preview.push({
+          user: asset.user_id.slice(0, 8),
+          asset: asset.name,
+          signal: summary.signal,
+          confidence: Math.round(summary.confidence),
+          threshold,
+          title,
+        });
+        sent++;
+        continue;
+      }
+
+      // Geçmişe yaz (uygulama içi bildirim listesi bunu okur).
+      const { error: insertError } = await admin
+        .from('signal_notifications')
+        .insert({
+          user_id: asset.user_id,
+          asset_id: asset.id,
+          asset_name: asset.name,
+          asset_ticker: asset.ticker,
+          asset_type: asset.type,
+          signal: summary.signal,
+          buy_count: summary.buyCount,
+          sell_count: summary.sellCount,
+          confidence: summary.confidence,
+        });
+      if (insertError) { failed++; continue; }
+
+      if (summary.signal === 'neutral') continue; // kayda geçer, push gitmez
+
+      for (const token of tokensByUser.get(asset.user_id) ?? []) {
+        const r = await sendPush({
+          accessToken,
+          projectId: fcmProjectId,
+          token,
+          title,
+          body,
+          assetId: asset.id,
+        });
+        if (r.ok) {
+          sent++;
+        } else {
+          failed++;
+          // Sebebi kısaltarak sakla — tam FCM yanıtı uzun olabiliyor.
+          if (errors.length < 5) {
+            errors.push(r.rawText.slice(0, 300));
+          }
+          if (r.shouldDeleteToken) {
+            try {
+              await admin.from('user_push_tokens').delete().eq('token', token);
+            } catch (_) { /* yut */ }
+          }
+        }
+      }
+    }
 
     return jsonResponse({
       ok: true,
       slot,
-      delivered,
+      dry_run: dryRun,
+      users: userIds.length,
+      assets: assets.length,
+      symbols: symbols.size,
+      histories: histories.size,
+      evaluated,
+      passed_threshold: passed,
+      sent,
       failed,
-      total: results.length,
+      ...(errors.length > 0 ? { errors } : {}),
+      ...(dryRun ? { preview } : {}),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

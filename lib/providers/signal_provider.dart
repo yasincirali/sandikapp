@@ -4,7 +4,6 @@ import '../models/asset_type.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../services/analytics_service.dart';
-import '../services/notification_service.dart';
 import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
@@ -118,15 +117,16 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
           slot: slot,
         );
 
-        if (summary.signal != SignalType.neutral) {
-          await NotificationService.instance.sendSignalNotification(
-            assetName: asset.name,
-            ticker: asset.ticker,
-            signal: summary.signal,
-            buyCount: summary.buyCount,
-            sellCount: summary.sellCount,
-          );
-        }
+        // NOT: burada artık local notification GÖNDERİLMEZ.
+        //
+        // Sinyal push'u sunucu tarafında üretiliyor (`analyze-signals` edge
+        // function → FCM `notification` payload). Client de ayrıca local
+        // bildirim gösterirse kullanıcı aynı sinyal için İKİ bildirim alır.
+        //
+        // Bu fonksiyon yine de değerli: kullanıcı uygulamayı açtığında
+        // portföyü anında analiz eder ve uygulama içi bildirim listesini
+        // (`signal_notifications`) günceller — sunucunun bir sonraki
+        // turunu beklemeden.
       } catch (_) {}
     }
 

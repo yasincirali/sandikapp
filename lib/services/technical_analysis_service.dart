@@ -492,6 +492,13 @@ class TechnicalAnalysisService {
 
   /// Genel sinyal özeti. Toplam gösterge sayısı değişken olduğundan eşik
   /// oransal hesaplanır (%60+ buy → BUY).
+  ///
+  /// [confidence] **0-100 ölçeğindedir** (oran değil). Kullanıcının seçtiği
+  /// eşikler de yüzdedir (50/70/85), karşılaştırma aynı ölçekte olmalı.
+  ///
+  /// Not: bu değer önceden 0..1 oranı dönüyordu ve `signal_provider`
+  /// içindeki `confidence < threshold` kontrolü her zaman doğru oluyordu —
+  /// yani hiçbir sinyal eşiği geçemiyor, push hiç gönderilmiyordu.
   static ({SignalType signal, int buyCount, int sellCount, double confidence})
       summarize(List<TechnicalIndicator> indicators) {
     final buy = indicators.where((i) => i.signal == SignalType.buy).length;
@@ -508,7 +515,7 @@ class TechnicalAnalysisService {
         : sellRatio >= 0.6 ? SignalType.sell
         : SignalType.neutral;
 
-    final confidence = max(buyRatio, sellRatio);
+    final confidence = max(buyRatio, sellRatio) * 100;
 
     return (signal: signal, buyCount: buy, sellCount: sell, confidence: confidence);
   }

@@ -599,6 +599,123 @@ class _AssetList extends StatelessWidget {
 
 // ── Asset Card ────────────────────────────────────────────────────────────────
 
+/// Varlık satırının sabit kolon ölçüleri.
+///
+/// Tek yerde tanımlanır çünkü hizalama bu üç sayının tutarlılığına bağlı:
+/// sparkline yuvası ve tutar kolonu her satırda aynı genişlikte olmazsa
+/// liste sağ kenarı tarak gibi görünür.
+abstract final class _AssetCardMetrics {
+  /// Mini grafik yuvası — grafiği olmayan varlıklarda da ayrılır.
+  static const double sparklineWidth = 56;
+
+  /// Tutar + kâr/zarar kolonu.
+  ///
+  /// 108: "₺125.400 · %12,34" (en uzun tipik kâr/zarar satırı) 12pt'de
+  /// yaklaşık bu genişliği ister. Daha geniş tutmak isim alanından çalar;
+  /// daha dar tutmak tutarı sürekli küçültür (bkz. [FittedBox]).
+  static const double valueWidth = 108;
+}
+
+/// Satır başındaki tür ikonu / döviz sembolü — sabit 28×28.
+class _AssetLeadingIcon extends StatelessWidget {
+  const _AssetLeadingIcon({required this.asset});
+
+  final Asset asset;
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = asset.currencySymbol;
+    if (symbol == null) {
+      // İkonu da 28×28 kutuya oturt: sembollü ve sembolsüz satırlarda
+      // başlık bloğu aynı x konumundan başlasın.
+      return SizedBox(
+        width: 28,
+        height: 28,
+        child: Center(
+          child: Icon(asset.type.icon, color: asset.type.color, size: 22),
+        ),
+      );
+    }
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: asset.type.color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(SandikRadius.sm),
+      ),
+      child: Center(
+        child: Text(
+          symbol,
+          style: context.t.bodyMedium!.copyWith(
+            fontSize: symbol.length > 1 ? 9 : 13,
+            fontWeight: FontWeight.w800,
+            color: asset.type.color,
+            height: 1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tutarın altındaki kâr/zarar satırı — ok + tutar · yüzde.
+///
+/// Sabit genişlikli kolona sığması için [FittedBox] ile küçültülür;
+/// kırpmak yerine ölçeklemek tercih edildi çünkü "₺125.4..." okunmaz.
+class _GainLossLine extends StatelessWidget {
+  const _GainLossLine({
+    required this.gainLossTRY,
+    required this.totalCostTRY,
+    required this.isPositive,
+    required this.tryFmt,
+  });
+
+  final double gainLossTRY;
+  final double totalCostTRY;
+  final bool isPositive;
+  final NumberFormat tryFmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = totalCostTRY > 0 ? (gainLossTRY / totalCostTRY) * 100 : 0.0;
+    final isFlat = gainLossTRY.abs().round() == 0 && pct.abs() < 0.005;
+
+    final Color color =
+        isFlat ? Sandik.text58 : (isPositive ? Sandik.gain : Sandik.loss);
+
+    final IconData icon = isFlat
+        ? Icons.horizontal_rule_rounded
+        : (isPositive
+            ? Icons.arrow_drop_up_rounded
+            : Icons.arrow_drop_down_rounded);
+
+    final String label = isFlat
+        ? 'Değişim yok'
+        : '${tryFmt.format(gainLossTRY.abs())} · ${fmtPct(pct.abs(), digits: 2)}';
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 2),
+          Text(
+            label,
+            maxLines: 1,
+            style: context.t.numSmall.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AssetCard extends StatefulWidget {
   final Position position;
   final PortfolioState pState;
@@ -656,137 +773,108 @@ class _AssetCardState extends State<_AssetCard>
             onTap: () => onTap(position),
             child: Padding(
               padding: const EdgeInsets.all(SandikSpace.md),
+              // crossAxisAlignment.center: ikon, başlık bloğu, sparkline ve
+              // tutar kolonu ortak bir yatay eksende hizalanır. Satır
+              // yüksekliği içeriğe göre değişse de (tek/çift satır başlık)
+              // öğeler birbirine göre kaymaz.
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-              a.currencySymbol != null
-                  ? Container(
-                      width: 28, height: 28,
-                      decoration: BoxDecoration(
-                        color: a.type.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      ),
-                      child: Center(
-                        child: Text(
-                          a.currencySymbol!,
-                          style: context.t.bodyMedium!.copyWith(
-                            fontSize: a.currencySymbol!.length > 1 ? 9 : 13,
-                            fontWeight: FontWeight.w800,
-                            color: a.type.color,
-                            height: 1,
+                  _AssetLeadingIcon(asset: a),
+                  const SizedBox(width: 14),
+
+                  // ── Başlık bloğu — esnek, kalan tüm alanı alır ──────────
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Fon/hisse: yalnızca KOD (THYAO). Uzun tam ad
+                        // satırı taşırıyordu — tam ad artık detay panelinde
+                        // "TAM ADI" alanında, kırpılmadan.
+                        Text(
+                          a.showTicker ? a.displayTicker! : a.name,
+                          maxLines: a.showTicker ? 1 : 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            height: 1.25,
+                            letterSpacing: a.showTicker ? 0.2 : -0.2,
                           ),
                         ),
-                      ),
-                    )
-                  : Icon(a.type.icon, color: a.type.color, size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (a.showTicker) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: a.type.color.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(SandikRadius.sm),
+                        const SizedBox(height: 3),
+                        Text(
+                          a.unitIsPrefix
+                              ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
+                              : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              context.t.bodySmall?.copyWith(color: Sandik.text36),
                         ),
-                        child: Text(
-                          a.displayTicker!,
-                          style: context.t.labelMedium?.copyWith(
-                              letterSpacing: 0, fontWeight: FontWeight.w800, color: a.type.color),
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                    ],
-                    Text(
-                      a.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.t.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.25),
+                      ],
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      a.unitIsPrefix
-                          ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
-                          : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
-                      style: context.t.bodySmall?.copyWith(color: Sandik.text36),
-                    ),
-                  ],
-                ),
-              ),
-              // Mini trend eğrisi — son 1 ay. Yalnızca fiyat geçmişi olan
-              // varlıklarda yer kaplar; manuel fiyatlılarda hiç eklenmez ki
-              // sağdaki tutar kolonu sola kaymasın.
-              if (SparklineService.supports(a)) ...[
-                const SizedBox(width: SandikSpace.sm),
-                AssetSparkline(asset: a, isPositive: isPos),
-              ],
-              const SizedBox(width: SandikSpace.sm),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    tryFmt.format(pState.toTRY(a.totalValue, a.currency)),
-                    style: context.t.numMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white),
                   ),
-                  if (a.purchasePrice > 0 && a.currentPrice > 0) ...[
-                    const SizedBox(height: 4),
-                    Builder(builder: (_) {
-                      final pctTRY = position.totalCostTRY > 0
-                          ? (gainLossTRY / position.totalCostTRY) * 100
-                          : 0.0;
-                      final isFlat =
-                          gainLossTRY.abs().round() == 0 && pctTRY.abs() < 0.005;
-                      if (isFlat) {
-                        return Row(
-                          children: [
-                            const Icon(Icons.horizontal_rule_rounded,
-                                color: Sandik.text58, size: 14),
-                            const SizedBox(width: 2),
-                            Text('Değişim yok',
-                                style: context.t.numSmall.copyWith(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Sandik.text58)),
-                          ],
-                        );
-                      }
-                      return Row(
-                        children: [
-                          Icon(
-                            isPos
-                                ? Icons.arrow_drop_up_rounded
-                                : Icons.arrow_drop_down_rounded,
-                            color: isPos ? Sandik.gain : Sandik.loss,
-                            size: 14,
+
+                  // ── Sparkline — SABİT yuva ─────────────────────────────
+                  //
+                  // Grafiği olmayan varlıklarda da aynı genişlik ayrılır.
+                  // Aksi halde bazı satırlarda tutar kolonu 64dp sola kayar
+                  // ve liste "kırık" görünür. Hizalama > birkaç piksel alan.
+                  const SizedBox(width: SandikSpace.sm),
+                  SizedBox(
+                    width: _AssetCardMetrics.sparklineWidth,
+                    child: SparklineService.supports(a)
+                        ? Center(
+                            child: AssetSparkline(asset: a, isPositive: isPos))
+                        : const SizedBox.shrink(),
+                  ),
+
+                  // ── Tutar + kâr/zarar — SABİT genişlik ─────────────────
+                  //
+                  // Sınırsız bırakılırsa kolon genişliğini en uzun sayı
+                  // belirler ve isim alanını yer: büyük portföyde isimler
+                  // daha çok kırpılırdı. Sabit genişlik hem bunu önler hem
+                  // de tüm satırların sağ kenarını hizalar.
+                  const SizedBox(width: SandikSpace.sm),
+                  SizedBox(
+                    width: _AssetCardMetrics.valueWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            tryFmt.format(
+                                pState.toTRY(a.totalValue, a.currency)),
+                            maxLines: 1,
+                            style: context.t.numMedium.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white),
                           ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${tryFmt.format(gainLossTRY.abs())} · ${fmtPct(pctTRY.abs(), digits: 2)}',
-                            style: context.t.numSmall.copyWith(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isPos ? Sandik.gain : Sandik.loss,
-                            ),
+                        ),
+                        if (a.purchasePrice > 0 && a.currentPrice > 0) ...[
+                          const SizedBox(height: 4),
+                          _GainLossLine(
+                            gainLossTRY: gainLossTRY,
+                            totalCostTRY: position.totalCostTRY,
+                            isPositive: isPos,
+                            tryFmt: tryFmt,
                           ),
                         ],
-                      );
-                    }),
-                  ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _ExpandChevron(
+                    expanded: _expanded,
+                    onTap: () => setState(() => _expanded = !_expanded),
+                  ),
                 ],
               ),
-              const SizedBox(width: 4),
-              _ExpandChevron(
-                expanded: _expanded,
-                onTap: () => setState(() => _expanded = !_expanded),
-              ),
-            ],
-          ),
             ),
           ),
           AnimatedSize(
@@ -932,6 +1020,12 @@ class _AssetDetailsPanel extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 12),
             color: Colors.white.withValues(alpha: 0.06),
           ),
+          // Tam ad — satırda yalnızca kod (THYAO) gösterilen varlıklar için.
+          // Kırpma yok: burada yer var, isim tam okunmalı.
+          if (rep.showTicker) ...[
+            _DetailItem(label: 'Tam Adı', value: rep.name, isText: true),
+            const SizedBox(height: 12),
+          ],
           Row(
             children: [
               Expanded(
@@ -1261,14 +1355,25 @@ class _DetailItem extends StatelessWidget {
   final String value;
   final bool emphasize;
 
+  /// Değer bir sayı değil, düz metinse (örn. varlığın tam adı).
+  ///
+  /// Tabular figür hizalaması yalnızca rakamlar için anlamlı; metinde
+  /// harf aralıklarını bozar.
+  final bool isText;
+
   const _DetailItem({
     required this.label,
     required this.value,
     this.emphasize = false,
+    this.isText = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final valueStyle = isText
+        ? context.t.bodyMedium ?? const TextStyle()
+        : context.t.numSmall;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1283,10 +1388,11 @@ class _DetailItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: context.t.numSmall.copyWith(
+          style: valueStyle.copyWith(
             fontSize: emphasize ? 15 : 13,
             fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
             color: emphasize ? Sandik.gold : Colors.white,
+            height: isText ? 1.35 : null, // sarma satırları sıkışmasın
           ),
         ),
       ],

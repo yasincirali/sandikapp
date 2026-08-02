@@ -36,9 +36,19 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Bildirim görünümü. İkon beyaz siluet + şeffaf zemin olmalı (Android
+             yalnızca alfa kanalını kullanır); renkli PNG düz kare olarak çıkar. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_sandik" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/sandik_notification_accent" />
+        <!-- Payload'da channel_id gelmezse kullanılacak kanal. Sunucu sinyal
+             bildirimlerinde signal_channel gönderiyor; bu yalnızca yedek. -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="partner_invite_channel" />
+            android:value="signal_channel" />
         <service
             android:name="com.google.firebase.messaging.FirebaseMessagingService"
             android:exported="false">

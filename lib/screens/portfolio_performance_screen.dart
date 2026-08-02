@@ -2093,7 +2093,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '$count/5 gösterge $label diyor  ·  ${fmtPct(r.summary.confidence * 100, digits: 0)} güven',
+                    '$count/5 gösterge $label diyor  ·  ${fmtPct(r.summary.confidence, digits: 0)} güven',
                     style: context.t.bodySmall?.copyWith(color: Sandik.text58),
                   ),
                 ],

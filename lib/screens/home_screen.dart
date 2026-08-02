@@ -711,6 +711,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           child: Row(
+            // İkon, metin bloğu ve tutar kolonu ortak eksende hizalansın.
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               asset.currencySymbol != null
                   ? Container(
@@ -738,28 +740,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (asset.showTicker) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: asset.type.color.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(SandikRadius.sm),
-                        ),
-                        child: Text(asset.displayTicker!,
-                            style: context.t.labelMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0,
-                                color: asset.type.color)),
-                      ),
-                      const SizedBox(height: SandikSpace.xs),
-                    ],
-                    Text(asset.name,
-                        maxLines: 2,
+                    // Fon/hisse: başlık olarak yalnızca KOD (THYAO).
+                    //
+                    // Önceden kod bir rozette, tam ad da altında ayrı
+                    // satırdaydı; uzun fon adları (45 karaktere kadar)
+                    // satırı taşırıyordu. Artık kod başlığın kendisi —
+                    // hem tekrar yok hem de tek satır garanti.
+                    // Tam ad, varlığın detay ekranında görünür.
+                    Text(
+                        asset.showTicker ? asset.displayTicker! : asset.name,
+                        maxLines: asset.showTicker ? 1 : 2,
                         overflow: TextOverflow.ellipsis,
                         style: context.t.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight:
+                                asset.showTicker ? FontWeight.w700 : FontWeight.w600,
                             height: 1.25,
+                            letterSpacing: asset.showTicker ? 0.2 : null,
                             color: Colors.white)),
                     const SizedBox(height: SandikSpace.xs),
                     Row(
@@ -807,42 +803,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(SandikRadius.sm),
+              const SizedBox(width: SandikSpace.sm),
+              // Sağ kolon sabit genişlikte: sınırsız bırakılırsa genişliği
+              // en uzun tutar belirler ve soldaki isim alanını yer. Sabit
+              // tutmak hem bunu önler hem tüm satırların sağ kenarını
+              // hizalar. Sığmayan tutar kırpılmaz, FittedBox ile küçülür.
+              SizedBox(
+                width: 116,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(kindIcon, size: 11, color: accent),
+                          const SizedBox(width: SandikSpace.xs),
+                          Text(kindLabel,
+                              style: context.t.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0,
+                                  color: accent)),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(kindIcon, size: 11, color: accent),
-                        const SizedBox(width: SandikSpace.xs),
-                        Text(kindLabel,
-                            style: context.t.labelMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0,
-                                color: accent)),
-                      ],
+                    const SizedBox(height: SandikSpace.xs),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        hideBalance
+                            ? '$sign₺••••'
+                            : '$sign${tryFmt.format(txValueTRY)}',
+                        maxLines: 1,
+                        // İşlem tutarı — alt alta listelenir, tabular figür.
+                        style: context.t.numSmall.copyWith(
+                            fontSize: 15,
+                            color: isDelete
+                                ? Sandik.text58
+                                : (isSell ? Sandik.loss : Colors.white)),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: SandikSpace.xs),
-                  Text(
-                    hideBalance
-                        ? '$sign₺••••'
-                        : '$sign${tryFmt.format(txValueTRY)}',
-                    // İşlem tutarı — alt alta listelenir, tabular figür.
-                    style: context.t.numSmall.copyWith(
-                        fontSize: 15,
-                        color: isDelete
-                            ? Sandik.text58
-                            : (isSell ? Sandik.loss : Colors.white)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
