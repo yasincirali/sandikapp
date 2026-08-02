@@ -136,39 +136,42 @@ Secret değişikliği **anında** geçerlidir, yeniden deploy gerekmez.
 
 ### 4. pg_cron
 
+**Durum: kurulu.** Migration `0017_analyze_signals_cron.sql` uzak veritabanına
+uygulandı; iki job aktif (TR 11:00 ve 15:00).
+
+Önce Vault'a secret eklenmeli — cron secret'ı SQL'e gömülmez:
+
 ```sql
-create extension if not exists pg_net;
-
-create or replace function public.trigger_analyze_signals(slot text)
-returns void language plpgsql security definer as $$
-declare
-  function_url text := 'https://<PROJECT_REF>.supabase.co/functions/v1/analyze-signals';
-  cron_secret text;
-begin
-  select decrypted_secret into cron_secret
-  from vault.decrypted_secrets
-  where name = 'analyze_signals_cron_secret';
-
-  perform net.http_post(
-    url := function_url,
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || cron_secret
-    ),
-    body := jsonb_build_object('slot', slot)
-  );
-end;
-$$;
-
--- TR 11:00 = 08:00 UTC, TR 15:00 = 12:00 UTC
-select cron.schedule('analyze-signals-morning',   '0 8  * * *',
-  $$select public.trigger_analyze_signals('morning')$$);
-select cron.schedule('analyze-signals-afternoon', '0 12 * * *',
-  $$select public.trigger_analyze_signals('afternoon')$$);
+select vault.create_secret('<CRON_SECRET>', 'analyze_signals_cron_secret');
 ```
 
-Vault'a (Database → Vault) `analyze_signals_cron_secret` adıyla aynı string
-eklenmeli.
+`<CRON_SECRET>`, edge function'daki `ANALYZE_SIGNALS_CRON_SECRET` ile
+**birebir aynı** olmalı. Doğrula (uzunluk 64 ve `matches` true olmalı —
+PowerShell'den kopyalarken BOM eklenmesi tipik hatadır):
+
+```sql
+select length(decrypted_secret), decrypted_secret = '<CRON_SECRET>' as matches
+from vault.decrypted_secrets where name = 'analyze_signals_cron_secret';
+```
+
+Sonra migration'ı uygula (satır başındaki `--` yorumu bayrak sanıldığı için
+SQL'i argüman olarak DEĞİL dosya olarak ver):
+
+```bash
+supabase db query --linked --file supabase/migrations/0017_analyze_signals_cron.sql
+```
+
+Doğrulama — `net.http_post` asenkrondur, dönen boş sonuç "gönderildi"
+anlamına gelmez; gerçek yanıt ayrı tabloda:
+
+```sql
+select public.trigger_analyze_signals('manual-test');
+-- birkaç saniye sonra:
+select status_code, content from net._http_response order by id desc limit 1;
+```
+
+`status_code = 200` beklenir. `sent: 0` dönmesi hata değildir: aynı sinyal
+daha önce gönderilmişse de-dup tekrar göndermez.
 
 ### Daha sık sinyal istenirse
 
