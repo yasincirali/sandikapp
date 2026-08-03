@@ -1,0 +1,139 @@
+name: Android — Release AAB
+
+# Play Console'a yüklenecek AAB'yi üretir.
+#
+# Neden APK değil AAB: `flutter build apk` üç ABI'yi de tek dosyada taşır
+# (ölçüldü: 64,3 MB). AAB'de Play cihaz başına ayırır ve kullanıcı yalnızca
+# kendi ABI'sini indirir — arm64'te ~11,9 MB. Debug sembolleri de teslim
+# edilmez.
+#
+# Elle tetiklenir (workflow_dispatch) veya `v*` tag'i push edilince çalışır:
+# her main push'unda imzalı sürüm üretmenin anlamı yok.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_apk:
+        description: 'Yan yükleme için ABI-bölünmüş APK de üret'
+        type: boolean
+        default: false
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      # google-services.json repoda tutulmaz; secret'tan yazılır.
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON_BASE64 secret'ı tanımlı değil"
+            exit 1
+          fi
+          echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+
+      # build.gradle.kts key.properties'i okur; yoksa debug key'e düşer ve
+      # Play böyle bir AAB'yi reddeder → burada varlığını zorunlu kılıyoruz.
+      - name: Restore keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret'ı tanımlı değil — imzasız AAB Play tarafından reddedilir"
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_STORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Analyze
+        run: flutter analyze lib/ test/
+
+      - name: Test
+        run: flutter test
+
+      - name: Build AAB
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          flutter build appbundle --release \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+
+      # Yan yükleme / doğrudan dağıtım için. --split-per-abi olmadan üretilen
+      # APK üç ABI'yi birden taşır ve gereksiz büyük olur.
+      - name: Build split APKs
+        if: inputs.build_apk
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+
+      # Play'e yüklenen AAB'nin sembolleri strip'lenmiş olur; crash'lerin
+      # okunabilir kalması için sembolleri ayrıca sakla.
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            build/app/outputs/bundle/release/*.aab
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/mapping/release/mapping.txt
+
+      - name: Boyut özeti
+        run: |
+          {
+            echo "### Android release çıktısı"
+            echo ""
+            echo "| Dosya | Boyut |"
+            echo "|---|---|"
+            find build/app/outputs -name '*.aab' -o -name '*.apk' | while read -r f; do
+              printf "| %s | %s |\n" "$(basename "$f")" "$(du -h "$f" | cut -f1)"
+            done
+            echo ""
+            echo "AAB boyutu teslim edilen boyut DEĞİLDİR — Play cihaz başına"
+            echo "ayırır ve sembolleri strip'ler. arm64 indirmesi ~12 MB."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keystore temizle
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties
