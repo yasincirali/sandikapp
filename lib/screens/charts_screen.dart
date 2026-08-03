@@ -591,22 +591,36 @@ class _AssetList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // `Column` + `.map()` her kartı bir kerede kurardı. Free tier 20 varlıkla
+    // sınırlı ama premium sınırsız — büyük portföyde ekran dışındaki kartlar
+    // da (sparkline yükleyen State'leriyle birlikte) boşuna inşa ediliyordu.
+    //
+    // Dış ListView zaten kaydırmayı yönetiyor, bu yüzden burada
+    // shrinkWrap + NeverScrollable: iç içe iki kaydırma olmaz, ama
+    // `itemBuilder` yalnızca görünür aralığı kurar.
     return SlidableAutoCloseBehavior(
-      child: Column(
-        children: positions
-            .map((position) => _AssetCard(
-                  position: position,
-                  pState: pState,
-                  canEdit:
-                      currentUserId != null &&
-                          position.representative.userId == currentUserId,
-                  onTap: onTap,
-                  onDelete: onDelete,
-                  onAdd: onAdd,
-                  onRemove: onRemove,
-                  onDividend: onDividend,
-                ))
-            .toList(),
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: positions.length,
+        // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
+        // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
+        itemBuilder: (context, i) {
+          final position = positions[i];
+          return _AssetCard(
+            key: ValueKey(position.key),
+            position: position,
+            pState: pState,
+            canEdit: currentUserId != null &&
+                position.representative.userId == currentUserId,
+            onTap: onTap,
+            onDelete: onDelete,
+            onAdd: onAdd,
+            onRemove: onRemove,
+            onDividend: onDividend,
+          );
+        },
       ),
     );
   }
@@ -833,6 +847,7 @@ class _AssetCard extends StatefulWidget {
   final void Function(Position) onDividend;
 
   const _AssetCard({
+    super.key,
     required this.position,
     required this.pState,
     required this.canEdit,

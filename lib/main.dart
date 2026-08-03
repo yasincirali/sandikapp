@@ -33,6 +33,26 @@ import 'theme/sandik.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
+/// İlk frame'i beklemesi gerekmeyen Firebase servisleri.
+///
+/// Arka planda sırayla kurulur; biri patlarsa diğerleri yine denenir ve
+/// hata Crashlytics'e düşer — `main` içinde sessizce yutulmaz.
+Future<void> _initDeferredServices() async {
+  for (final step in <(String, Future<void> Function())>[
+    ('RemotePushService', () => RemotePushService.instance.init()),
+    ('AnalyticsService', () => AnalyticsService.instance.init()),
+    ('RemoteConfigService', () => RemoteConfigService.instance.init()),
+  ]) {
+    try {
+      await step.$2();
+    } catch (e, st) {
+      if (kDebugMode) debugPrint('${step.$1} init failed: $e');
+      FirebaseCrashlytics.instance
+          .recordError(e, st, reason: '${step.$1} deferred init');
+    }
+  }
+}
+
 void main() async {
   // Crashlytics + tüm async hatalar tek `runZonedGuarded` içinde toplanır
   await runZonedGuarded<Future<void>>(() async {
@@ -68,9 +88,16 @@ void main() async {
         return true;
       };
 
-      await RemotePushService.instance.init();
-      await AnalyticsService.instance.init();
-      await RemoteConfigService.instance.init();
+      // Bu üçü ilk frame'i BEKLETMEZ — hiçbiri açılış ekranını çizmek için
+      // gerekli değil:
+      //   - RemotePushService: `start(userId)` zaten kendi içinde init()
+      //     çağırıyor (auth gate'te, ilk frame'den sonra).
+      //   - AnalyticsService: `navigatorObserver` hiçbir yerde kullanılmıyor;
+      //     ilk event'e kadar hazır olması yeterli.
+      //   - RemoteConfigService: getter'ları init edilmemişken default'lara
+      //     düşer, yani erken okuma güvenli.
+      // Hataları yutmuyoruz; yalnızca beklemiyoruz.
+      unawaited(_initDeferredServices());
     } catch (e, st) {
       // Firebase config dosyalari yoksa veya init başarısızsa
       // sessizce devam et; uygulama remote push + crashlytics olmadan çalışır.
