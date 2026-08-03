@@ -295,7 +295,7 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Sınırsız varlık, gelişmiş göstergeler, AI portföy raporu ve daha fazlası.',
+            'Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.',
             style: context.t.bodyMedium?.copyWith(
               color: Sandik.text58,
               height: 1.4,
@@ -312,13 +312,17 @@ class _HeroCard extends StatelessWidget {
 class _FeatureList extends StatelessWidget {
   const _FeatureList();
 
+  // ⚠️ BURAYA YALNIZCA UYGULAMADA GERÇEKTEN VAR OLAN ÖZELLİK YAZILIR.
+  // Henüz yazılmamış bir özelliği listelemek App Store 2.3.1 (yanıltıcı
+  // tanıtım) ihlalidir ve parası alınıp verilmeyen özellik anlamına gelir.
+  // Kaldırılanlar (yeniden eklemeden ÖNCE implementasyonu yaz):
+  //   - "Aylık AI portföy raporu" → hiçbir servis/edge function yok
+  //   - "Fiyat alarmları"        → yalnızca bu ekranda geçiyordu
+  //   - "Yıllık vergi PDF raporu" → yalnızca bu ekranda geçiyordu
   static const _features = <(IconData, String)>[
     (Icons.all_inclusive_rounded, 'Sınırsız varlık ve tüm tipler (fon + emtia dahil)'),
     (Icons.trending_up_rounded, 'Premium göstergeler: ADX, Williams %R, CCI'),
     (Icons.notifications_active_outlined, 'Günde 2 sinyal analizi (11:00 + 15:00) + nötr bildirim'),
-    (Icons.auto_awesome_rounded, 'Aylık AI portföy raporu (güçlü/zayıf yönler)'),
-    (Icons.notifications_none_rounded, 'Fiyat alarmları (sınırsız)'),
-    (Icons.description_outlined, 'Yıllık vergi PDF raporu'),
     (Icons.groups_2_outlined, 'Sınırsız partner paylaşımı'),
     (Icons.timeline_rounded, '5 yıl grafik geçmişi'),
   ];

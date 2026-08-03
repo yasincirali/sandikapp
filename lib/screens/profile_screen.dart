@@ -988,7 +988,7 @@ class _ProfilePremiumBanner extends ConsumerWidget {
                           color: Colors.white)),
                   const SizedBox(height: 2),
                   Text(
-                    'Sınırsız varlık, AI portföy raporu, premium göstergeler',
+                    'Sınırsız varlık, premium göstergeler, günde 2 sinyal analizi',
                     style: context.t.bodySmall?.copyWith(
                         color: Sandik.text58,
                         height: 1.35),

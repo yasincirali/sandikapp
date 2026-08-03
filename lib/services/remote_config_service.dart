@@ -54,8 +54,9 @@ class RemoteConfigService {
     // sabah, 2 = sabah+öğleden sonra). Premium her zaman 2.
     'free_signal_slots_per_day': 1,
 
-    // Free kullanıcılar için AI portföy raporu etkin mi (upsell hook).
-    'free_ai_report_enabled': false,
+    // NOT: `free_ai_report_enabled` kaldırıldı — AI portföy raporunun hiçbir
+    // implementasyonu yoktu, flag var olmayan bir özelliği gate'liyordu.
+    // Özellik yazıldığında flag'i geri ekle.
 
     // Vadeli mevduat feature'ı. false ise add-asset ekranında "Vadeli Mevduat"
     // türü gizlenir ve mevduat ekleme akışına yeni giriş yapılamaz. Mevcut
@@ -121,10 +122,6 @@ class RemoteConfigService {
   int get freeSignalSlotsPerDay =>
       _rc?.getInt('free_signal_slots_per_day') ??
       _defaults['free_signal_slots_per_day'] as int;
-
-  bool get freeAiReportEnabled =>
-      _rc?.getBool('free_ai_report_enabled') ??
-      _defaults['free_ai_report_enabled'] as bool;
 
   bool get depositsEnabled =>
       _rc?.getBool('deposits_enabled') ??
