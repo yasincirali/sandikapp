@@ -90,6 +90,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   late final TextEditingController _quantity;
   late final TextEditingController _price;
   late final TextEditingController _notes;
+  late final TextEditingController _commission;
 
   late AssetType _type;
   late String? _subCategory;
@@ -142,6 +143,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     _price = TextEditingController(
         text: initPrice > 0 ? _fmt(initPrice) : '');
     _notes = TextEditingController(text: a?.notes ?? '');
+    _commission = TextEditingController(
+        text: (a?.commission ?? 0) > 0 ? _fmt(a!.commission) : '');
     _type = initType;
     _subCategory = initSubCat;
     _unitType = initUnit;
@@ -172,7 +175,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   @override
   void dispose() {
     _previewDebounce?.cancel();
-    for (final c in [_name, _ticker, _quantity, _price, _notes]) {
+    for (final c in [_name, _ticker, _quantity, _price, _notes, _commission]) {
       c.dispose();
     }
     super.dispose();
@@ -415,6 +418,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   _dateChip(cs),
                   const SizedBox(height: 16),
 
+                  // ── Komisyon / masraf ────────────────────────────────
+                  _commissionBlock(cs),
+                  const SizedBox(height: 16),
+
                   // ── Notlar (collapsible) ─────────────────────────────
                   _notesCollapsible(cs),
                 ],
@@ -643,6 +650,51 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             _schedulePricePreview();
           },
           suffix: _isDoviz ? null : _inlineCurrencyPicker(),
+        ),
+      ],
+    );
+  }
+
+  // ── Komisyon / masraf (opsiyonel) ─────────────────────────────────────────
+  // Komisyon maliyete girmezse kâr olduğundan yüksek görünür. İşlem başına
+  // toplam tutar girilir (birim başına değil) ve varlığın para birimindedir.
+  Widget _commissionBlock(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _fieldLabel('Komisyon / Masraf'),
+            const SizedBox(width: 6),
+            Text('· opsiyonel',
+                style: context.t.bodySmall?.copyWith(color: Sandik.text36)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _brandInput(
+          controller: _commission,
+          hint: '0',
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [_DecimalFormatter()],
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return null;
+            final parsed = _parse(v);
+            if (parsed == null) return 'Geçersiz';
+            if (parsed < 0) return 'Negatif olamaz';
+            return null;
+          },
+          onChanged: (_) => setState(() {}),
+          suffix: Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Text(_currency,
+                style: context.t.titleSmall?.copyWith(
+                    color: Sandik.text58, fontWeight: FontWeight.w700)),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Alım-satım komisyonu maliyete eklenir — kâr/zarar gerçek rakamı gösterir.',
+          style: context.t.bodySmall?.copyWith(color: Sandik.text36),
         ),
       ],
     );
@@ -1826,7 +1878,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ..purchasePrice = price
           ..currency = _currency
           ..notes = _notes.text.trim()
-          ..isManualPrice = manual;
+          ..isManualPrice = manual
+          ..commission = _parse(_commission.text) ?? 0;
         // addedDate final — direkt set edilemez; kullanıcı düzenlemede tarih
         // değiştirdiyse Asset'i yeniden inşa edip provider'a yolla.
         if (a.addedDate != _addedDate) {
@@ -1850,6 +1903,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             kind: a.kind,
             refAssetId: a.refAssetId,
             sellPrice: a.sellPrice,
+            commission: a.commission,
           );
           await ref.read(portfolioProvider.notifier).updateAsset(updated);
         } else {
@@ -1868,6 +1922,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               subCategory: _subCategory,
               unitType: _unitType,
               addedDate: _addedDate,
+              commission: _parse(_commission.text) ?? 0,
             );
       }
     } on AssetLimitExceededException catch (e) {

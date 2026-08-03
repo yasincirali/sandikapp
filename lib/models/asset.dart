@@ -63,6 +63,13 @@ class Asset {
   /// Sell işleminde gerçekleşen birim satış fiyatı (raporlama/kar-zarar için).
   final double? sellPrice;
 
+  /// İşlem komisyonu + masrafı — varlığın PARA BİRİMİNDE (purchasePrice ile
+  /// aynı birim), işlem başına toplam (birim başına değil).
+  ///
+  /// Alımda maliyeti artırır. Komisyon hesaba katılmazsa kâr olduğundan
+  /// yüksek görünür. Varsayılan 0 → kullanıcı girmedikçe eski davranış.
+  double commission;
+
   Asset({
     required this.id,
     required this.userId,
@@ -83,6 +90,7 @@ class Asset {
     this.kind = AssetKind.buy,
     this.refAssetId,
     this.sellPrice,
+    this.commission = 0,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
@@ -95,10 +103,14 @@ class Asset {
   /// (negatif) ve delete_log'lar aggregator'da özel işlenir.
   bool get affectsPosition => kind == AssetKind.buy;
 
-  double get totalCost => quantity * purchasePrice;
+  /// Toplam maliyet — komisyon DAHİL (gerçekte cebinden çıkan para).
+  double get totalCost => quantity * purchasePrice + commission;
   double get totalValue => quantity * currentPrice;
-  /// Maliyet TRY cinsinden — alım anındaki kur sabit tutulur (bankacılık standardı).
-  double get totalCostTRY => quantity * purchasePrice * purchaseFxRate;
+
+  /// Maliyet TRY cinsinden — alım anındaki kur sabit tutulur (bankacılık
+  /// standardı). Komisyon da aynı kurdan çevrilir: işlemle aynı anda ödendi.
+  double get totalCostTRY =>
+      (quantity * purchasePrice + commission) * purchaseFxRate;
   double get gainLoss => totalValue - totalCost;
   double get gainLossPercentage =>
       totalCost > 0 ? (gainLoss / totalCost) * 100 : 0;
@@ -224,6 +236,7 @@ class Asset {
         'kind': kind.dbValue,
         'ref_asset_id': refAssetId,
         'sell_price': sellPrice,
+        'commission': commission,
       };
 
   factory Asset.fromSupabase(Map<String, dynamic> m) => Asset(
@@ -250,5 +263,7 @@ class Asset {
         kind: AssetKind.fromDb(m['kind'] as String?),
         refAssetId: m['ref_asset_id'] as String?,
         sellPrice: (m['sell_price'] as num?)?.toDouble(),
+        // Migration 0019 öncesi kayıtlarda sütun yok → 0.
+        commission: (m['commission'] as num?)?.toDouble() ?? 0,
       );
 }

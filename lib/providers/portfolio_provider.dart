@@ -144,6 +144,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     String unitType = 'piece',
     DateTime? addedDate,
     double? initialCurrentPrice,
+    double commission = 0,
   }) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -188,6 +189,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       kind: AssetKind.buy,
       addedDate: addedDate,
       currentPrice: initialCurrentPrice,
+      commission: commission,
     );
     if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
       asset.purchasePrice = asset.currentPrice;

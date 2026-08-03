@@ -15,6 +15,7 @@ class Position {
     required this.weightedPurchasePrice,
     required this.weightedFxRate,
     required this.latestAddedDate,
+    this.totalCommission = 0,
   });
 
   /// Aggregation match anahtarı (debug/analytics için)
@@ -31,6 +32,9 @@ class Position {
   final double weightedFxRate;
   final DateTime latestAddedDate;
 
+  /// Bu pozisyona giren buy lot'larının komisyon toplamı (alım para biriminde).
+  final double totalCommission;
+
   bool get isSingle => lots.length == 1;
 
   /// İlk buy lot'un tarihi — grafik "sahip olma dönemi"nin başlangıcı için.
@@ -42,8 +46,13 @@ class Position {
         .reduce((a, b) => a.isBefore(b) ? a : b);
   }
 
-  /// Aggregated toplam maliyet (alım para biriminde)
-  double get totalCost => totalQuantity * weightedPurchasePrice;
+  /// Aggregated toplam maliyet — komisyonlar DAHİL (alım para biriminde).
+  ///
+  /// Komisyon miktara oranlanamaz (işlem başına sabit bir masraftır), bu
+  /// yüzden ağırlıklı fiyata gömülmez; buy lot'larının komisyon toplamı
+  /// olarak ayrı taşınır ve maliyete eklenir.
+  double get totalCost =>
+      totalQuantity * weightedPurchasePrice + totalCommission;
 
   /// Aggregated toplam maliyet TRY (alım anındaki kur ile)
   double get totalCostTRY => totalCost * weightedFxRate;
@@ -76,6 +85,9 @@ class Position {
       currentPrice: r.currentPrice,
       lastUpdated: r.lastUpdated,
       addedDate: firstBuyDate,
+      // Komisyon toplamı taşınmazsa pozisyon Asset'e çevrildiği anda
+      // maliyetten düşer ve kâr olduğundan yüksek görünür.
+      commission: totalCommission,
     );
   }
 }
@@ -206,14 +218,18 @@ List<Position> aggregatePositions(List<Asset> assets) {
     double buyCostSum = 0;
     double buyFxCostSum = 0;
     double soldQty = 0;
+    double commissionSum = 0;
     for (final l in lots) {
       if (l.isSell) {
         soldQty += l.quantity;
+        // Satış komisyonu da cepten çıkar → net maliyeti artırır.
+        commissionSum += l.commission;
         continue;
       }
       buyQty += l.quantity;
       buyCostSum += l.quantity * l.purchasePrice;
       buyFxCostSum += l.quantity * l.purchasePrice * l.purchaseFxRate;
+      commissionSum += l.commission;
     }
 
     final totalQty = buyQty - soldQty;
@@ -230,6 +246,7 @@ List<Position> aggregatePositions(List<Asset> assets) {
       weightedPurchasePrice: weightedPrice,
       weightedFxRate: weightedFxRate,
       latestAddedDate: representative.addedDate,
+      totalCommission: commissionSum,
     ));
   });
   return positions;
