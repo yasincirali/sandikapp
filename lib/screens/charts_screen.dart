@@ -617,16 +617,78 @@ class _AssetList extends StatelessWidget {
 /// Tek yerde tanımlanır çünkü hizalama bu üç sayının tutarlılığına bağlı:
 /// sparkline yuvası ve tutar kolonu her satırda aynı genişlikte olmazsa
 /// liste sağ kenarı tarak gibi görünür.
+/// Satır kolonlarının genişlik dağıtımı.
+///
+/// **Sabit genişlik YOK, eşik YOK.** Kolonlar satırın gerçek genişliğinden
+/// (LayoutBuilder) pay alır; her cihazda kendiliğinden doğru oranı bulur.
+///
+/// Dağıtım sırası — önce zorunlu olan, sonra lüks olan:
+///   1. İsim bloğu [minNameWidth] alır (asla feda edilmez).
+///   2. Tutar kolonu [minValueWidth]–[maxValueWidth] arasında ölçeklenir.
+///   3. Sparkline yalnızca ARTAN alandan beslenir; artan yoksa hiç çizilmez.
+///
+/// Bu sıralama sayesinde alan daraldıkça önce grafik, sonra tutar kolonu
+/// küçülür; isim en son etkilenir. Eskiden tam tersiydi: sparkline (56pt) ve
+/// tutar (108pt) sabitti, kalan ne varsa isme düşüyordu — iPhone 12 mini'de
+/// 81pt, 320pt'lik cihazlarda 26pt kalıyordu ve isimler okunmuyordu.
 abstract final class _AssetCardMetrics {
-  /// Mini grafik yuvası — grafiği olmayan varlıklarda da ayrılır.
-  static const double sparklineWidth = 56;
+  /// İsim bloğunun taban genişliği — "THYAO" + alt satır ("10 adet · Hisse").
+  /// 320pt'lik cihazlarda bile ulaşılabilir olsun diye ölçülü tutuldu.
+  static const double minNameWidth = 112;
 
-  /// Tutar + kâr/zarar kolonu.
-  ///
-  /// 108: "₺125.400 · %12,34" (en uzun tipik kâr/zarar satırı) 12pt'de
-  /// yaklaşık bu genişliği ister. Daha geniş tutmak isim alanından çalar;
-  /// daha dar tutmak tutarı sürekli küçültür (bkz. [FittedBox]).
-  static const double valueWidth = 108;
+  /// Sparkline'ın doyduğu genişlik. Bunun ötesindeki alan tamamen isme gider.
+  static const double maxSparklineWidth = 56;
+
+  /// Tutar kolonu. FittedBox içeriği zaten küçültür; alt sınır, rakamların
+  /// okunamayacak kadar ufalmasını engeller.
+  static const double minValueWidth = 88;
+  static const double maxValueWidth = 108;
+
+  /// Kolonlar arası boşluk (SandikSpace.sm).
+  static const double columnGap = 8;
+
+  /// İkon + ikon boşluğu — satır başındaki sabit blok.
+  static const double leadingWidth = 28 + 14;
+
+  /// Satır sonundaki genişletme oku (32pt) + öncesindeki 4pt boşluk.
+  static const double trailingChevronWidth = 32 + 4;
+
+  /// [rowWidth] = kart iç genişliği (padding düşülmüş).
+  static ({double name, double spark, double value}) resolve(double rowWidth) {
+    // 1) Tutar kolonu: alan bollaştıkça max'a doğru büyür.
+    //    İsim + ikon + tutar'ın sığması gereken taban:
+    final afterLeading = rowWidth - leadingWidth - trailingChevronWidth;
+    double value = maxValueWidth;
+    final needForNameAndValue = minNameWidth + columnGap + value;
+    if (afterLeading < needForNameAndValue) {
+      // Tutar kolonunu kıs — ama minValueWidth'in altına inme.
+      value = (afterLeading - minNameWidth - columnGap)
+          .clamp(minValueWidth, maxValueWidth);
+    }
+
+    // 2) İsme kalan alan (sparkline'sız hâli).
+    double name = afterLeading - columnGap - value;
+
+    // 3) Sparkline yalnızca isim tabanının ÜSTÜNDEKİ fazladan beslenir ve
+    //    o fazlanın en çok YARISINI alır — kalan yarısı isimde kalır.
+    //    Oransal pay, sabit bir yuvanın yarattığı sıçramayı önler: ekran
+    //    büyüdükçe grafik de isim de birlikte büyür, biri diğerini tek
+    //    hamlede yemez.
+    // Sparkline yuvası (boşluk dahil) fazlanın en çok yarısını alır; kalan
+    // yarısı isimde kalır. Grafik 0'dan büyüyerek gelir — sabit bir yuva
+    // olsaydı belirdiği anda isimden 64pt'yi tek hamlede alırdı.
+    double spark = 0;
+    final surplus = name - minNameWidth;
+    final slot = (surplus / 2).clamp(0.0, columnGap + maxSparklineWidth);
+    if (slot > columnGap) {
+      spark = slot - columnGap;
+      name -= slot;
+    }
+
+    // Aşırı dar cihazda (katlanabilir kapak ekranı vb.) negatife düşmesin.
+    if (name < 0) name = 0;
+    return (name: name, spark: spark, value: value);
+  }
 }
 
 /// Satır başındaki tür ikonu / döviz sembolü — sabit 28×28.
@@ -779,6 +841,11 @@ class _AssetCardState extends State<_AssetCard>
             totalDividendTRY(position.lots);
     final isPos = gainLossTRY >= 0;
 
+    // Kart iç boşluğu sabit: eşiğe bağlı bir sıçrama, kolon dağıtımının
+    // sürekliliğini bozardı. 12pt her cihazda hem nefes payı bırakır hem de
+    // eski 16pt'ye göre isme 8pt kazandırır.
+    const cardPad = SandikSpace.sm + 4;
+
     Widget card = Container(
       decoration: BoxDecoration(
         color: Sandik.surface1,
@@ -791,12 +858,21 @@ class _AssetCardState extends State<_AssetCard>
           SandikTappable(
             onTap: () => onTap(position),
             child: Padding(
-              padding: const EdgeInsets.all(SandikSpace.md),
+              padding: const EdgeInsets.all(cardPad),
+              // Kolon genişlikleri satırın GERÇEK genişliğinden hesaplanır —
+              // sabit değer veya cihaz eşiği yok. Böylece her telefonda,
+              // katlanabilirlerde ve bölünmüş ekranda doğru oran çıkar.
+              child: LayoutBuilder(
+                builder: (context, rowConstraints) {
+                  final m = _AssetCardMetrics.resolve(rowConstraints.maxWidth);
+                  final sparkW = m.spark;
+                  final valueW = m.value;
+                  return
               // crossAxisAlignment.center: ikon, başlık bloğu, sparkline ve
               // tutar kolonu ortak bir yatay eksende hizalanır. Satır
               // yüksekliği içeriğe göre değişse de (tek/çift satır başlık)
               // öğeler birbirine göre kaymaz.
-              child: Row(
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _AssetLeadingIcon(asset: a),
@@ -841,14 +917,18 @@ class _AssetCardState extends State<_AssetCard>
                   // Grafiği olmayan varlıklarda da aynı genişlik ayrılır.
                   // Aksi halde bazı satırlarda tutar kolonu 64dp sola kayar
                   // ve liste "kırık" görünür. Hizalama > birkaç piksel alan.
-                  const SizedBox(width: SandikSpace.sm),
-                  SizedBox(
-                    width: _AssetCardMetrics.sparklineWidth,
-                    child: SparklineService.supports(a)
-                        ? Center(
-                            child: AssetSparkline(asset: a, isPositive: isPos))
-                        : const SizedBox.shrink(),
-                  ),
+                  // Dar ekranda sparkW = 0 → yuva tamamen kalkar, kazanılan
+                  // 64pt doğrudan isim alanına gider.
+                  if (sparkW > 0) ...[
+                    const SizedBox(width: SandikSpace.sm),
+                    SizedBox(
+                      width: sparkW,
+                      child: SparklineService.supports(a)
+                          ? Center(
+                              child: AssetSparkline(asset: a, isPositive: isPos))
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
 
                   // ── Tutar + kâr/zarar — SABİT genişlik ─────────────────
                   //
@@ -858,7 +938,7 @@ class _AssetCardState extends State<_AssetCard>
                   // de tüm satırların sağ kenarını hizalar.
                   const SizedBox(width: SandikSpace.sm),
                   SizedBox(
-                    width: _AssetCardMetrics.valueWidth,
+                    width: valueW,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
@@ -893,6 +973,8 @@ class _AssetCardState extends State<_AssetCard>
                     onTap: () => setState(() => _expanded = !_expanded),
                   ),
                 ],
+              );
+                },
               ),
             ),
           ),
