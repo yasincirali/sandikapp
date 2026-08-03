@@ -180,7 +180,9 @@ class HistoryService {
     //   * Sell lot: addedDate <= dayTs ise -quantity.
     //   * deleteLog: skip.
     double signedQtyOnDay(Asset a, int dayTs) {
-      if (a.isDeleteLog) return 0.0;
+      // Temettü nakit hareketidir, miktara girmez. deleteLog da mezar taşı.
+      // Bu satır olmadan aşağıdaki `isSell ? -q : +q` temettüyü alım sayardı.
+      if (a.isQuantityNeutral) return 0.0;
       if (simulate) return a.quantity;
       final addedTs = normalizeTs(a.addedDate.millisecondsSinceEpoch);
       if (addedTs > dayTs) return 0.0;
@@ -457,7 +459,9 @@ class HistoryService {
     // Slot-bazlı işaretli miktar. Bugünkü zaman dilimlerinde:
     // buy addedDate <= slot ise +qty, sell addedDate <= slot ise -qty.
     double signedQtyOnSlot(Asset a, int slotTs) {
-      if (a.isDeleteLog) return 0.0;
+      // Temettü nakit hareketidir, miktara girmez. deleteLog da mezar taşı.
+      // Bu satır olmadan aşağıdaki `isSell ? -q : +q` temettüyü alım sayardı.
+      if (a.isQuantityNeutral) return 0.0;
       final addedTs = normalizeSlot(a.addedDate.millisecondsSinceEpoch);
       if (addedTs > slotTs) return 0.0;
       return a.isSell ? -a.quantity : a.quantity;
@@ -734,7 +738,9 @@ class HistoryService {
 
     // Signed quantity per slot
     double signedQtyOnSlot(Asset a, int slotTs) {
-      if (a.isDeleteLog) return 0.0;
+      // Temettü nakit hareketidir, miktara girmez. deleteLog da mezar taşı.
+      // Bu satır olmadan aşağıdaki `isSell ? -q : +q` temettüyü alım sayardı.
+      if (a.isQuantityNeutral) return 0.0;
       if (simulate) return a.isSell ? -a.quantity : a.quantity;
       // slotTs tier bucket başlangıcı. Bir varlığın o slot'ta olabilmesi
       // için addedDate <= slotTs olmalı — böylece slot başlangıcından SONRA

@@ -16,6 +16,7 @@ class Position {
     required this.weightedFxRate,
     required this.latestAddedDate,
     this.totalCommission = 0,
+    this.totalDividend = 0,
   });
 
   /// Aggregation match anahtarı (debug/analytics için)
@@ -34,6 +35,14 @@ class Position {
 
   /// Bu pozisyona giren buy lot'larının komisyon toplamı (alım para biriminde).
   final double totalCommission;
+
+  /// Bu pozisyondan tahsil edilen nakit temettü toplamı (alım para biriminde).
+  ///
+  /// DİKKAT: tamamen satılmış pozisyonlar `aggregatePositions` tarafından
+  /// listeden düşürülür (totalQty <= 0) — o pozisyonların temettüsü burada
+  /// GÖRÜNMEZ. Portföy geneli temettü için [totalDividendTRY] kullan; o ham
+  /// lot listesinden hesaplar.
+  final double totalDividend;
 
   bool get isSingle => lots.length == 1;
 
@@ -167,11 +176,14 @@ typedef ToTRY = double Function(double amount, String currency);
 /// Tüm varlıkları TRY kabul eden dönüştürücü — sadece test/TRY-only senaryolar.
 double identityToTRY(double amount, String currency) => amount;
 
-/// Sahiplik sınırını koruyan toplam kâr/zarar (TRY).
+/// Sahiplik sınırını koruyan toplam kâr/zarar (TRY) — temettü DAHİL.
 ///
 /// `PortfolioState.gainLoss` ile aynı kuralları uygular — fiyatı bilinmeyen
-/// varlıklar (purchasePrice/currentPrice = 0) hesap dışıdır — ama filtreyi
-/// her sahibin KENDİ pozisyonlarına ayrı ayrı uygular.
+/// varlıklar (purchasePrice/currentPrice = 0) sermaye kazancı hesabı dışıdır
+/// — ama filtreyi her sahibin KENDİ pozisyonlarına ayrı ayrı uygular.
+///
+/// Temettü fiyat filtresine tabi değildir ve ham lot'lardan toplanır:
+/// tamamen satılmış pozisyonların temettüsü de cebe girmiştir.
 double ownerScopedGainLoss(
   Iterable<List<Asset>> ownerLots, {
   ToTRY toTRY = identityToTRY,
@@ -181,6 +193,26 @@ double ownerScopedGainLoss(
     final a = position.asDisplayAsset();
     if (a.purchasePrice <= 0 || a.currentPrice <= 0) continue;
     total += toTRY(a.totalValue, a.currency) - a.totalCostTRY;
+  }
+  for (final lots in ownerLots) {
+    total += totalDividendTRY(lots);
+  }
+  return total;
+}
+
+/// Ham lot listesinden toplam nakit temettü (TRY).
+///
+/// [aggregatePositions] üzerinden DEĞİL, doğrudan lot'lardan hesaplar:
+/// tamamen satılmış pozisyonlar aggregate sonucundan düşer ama onlardan
+/// tahsil edilen temettü yine de kullanıcının cebine girmiştir.
+///
+/// Temettü, ödeme günü kuruyla TRY'ye çevrilir (`purchaseFxRate` temettü
+/// satırında o günün kurunu taşır).
+double totalDividendTRY(Iterable<Asset> lots) {
+  double total = 0;
+  for (final l in lots) {
+    if (!l.isDividend) continue;
+    total += l.dividendTRY;
   }
   return total;
 }
@@ -219,7 +251,16 @@ List<Position> aggregatePositions(List<Asset> assets) {
     double buyFxCostSum = 0;
     double soldQty = 0;
     double commissionSum = 0;
+    double dividendSum = 0;
     for (final l in lots) {
+      // Temettü nakit hareketidir — miktara ASLA girmez. Bu kontrol `isSell`
+      // öncesinde olmalı: aşağıdaki blok "sell değilse buy'dır" varsayar,
+      // temettü oraya düşerse hayalet lot olarak miktarı şişirirdi.
+      if (l.isDividend) {
+        dividendSum += l.dividendAmount;
+        commissionSum += l.commission;
+        continue;
+      }
       if (l.isSell) {
         soldQty += l.quantity;
         // Satış komisyonu da cepten çıkar → net maliyeti artırır.
@@ -247,6 +288,7 @@ List<Position> aggregatePositions(List<Asset> assets) {
       weightedFxRate: weightedFxRate,
       latestAddedDate: representative.addedDate,
       totalCommission: commissionSum,
+      totalDividend: dividendSum,
     ));
   });
   return positions;

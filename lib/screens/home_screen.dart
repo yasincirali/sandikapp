@@ -682,21 +682,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // 3 ondalıklı format (tryFmt3 ile aynı biçim).
     final tryFmt =
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 3);
+    final bool isSell = asset.isSell;
+    final bool isDelete = asset.isDeleteLog;
+    final bool isDividend = asset.isDividend;
+
     final unitPrice = asset.isSell
         ? (asset.sellPrice ?? asset.currentPrice)
         : asset.purchasePrice;
-    final txValue = asset.quantity * unitPrice;
+    // Temettüde miktar 0'dır; tutar `dividendAmount` alanında taşınır.
+    final txValue =
+        isDividend ? asset.dividendAmount : asset.quantity * unitPrice;
     final txValueTRY = portfolioState.toTRY(txValue, asset.currency);
 
-    final bool isSell = asset.isSell;
-    final bool isDelete = asset.isDeleteLog;
     final Color accent = isDelete
         ? Sandik.text58
-        : (isSell ? Sandik.loss : Sandik.gain);
+        : (isSell ? Sandik.loss : (isDividend ? Sandik.amber : Sandik.gain));
     final IconData kindIcon = isDelete
         ? Icons.delete_outline_rounded
-        : (isSell ? Icons.remove_rounded : Icons.add_rounded);
-    final String kindLabel = isDelete ? 'Silindi' : (isSell ? 'Çıkarıldı' : 'Eklendi');
+        : (isSell
+            ? Icons.remove_rounded
+            : (isDividend
+                ? Icons.savings_outlined
+                : Icons.add_rounded));
+    final String kindLabel = isDelete
+        ? 'Silindi'
+        : (isSell ? 'Çıkarıldı' : (isDividend ? 'Temettü' : 'Eklendi'));
     final String sign = isSell || isDelete ? '−' : '+';
 
     return Padding(
@@ -781,23 +791,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ?.copyWith(color: Sandik.text36),
                         ),
                         const SizedBox(width: SandikSpace.sm),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(SandikRadius.sm),
+                        // Temettüde miktar 0'dır — "0 adet" rozeti anlamsız
+                        // olurdu, o yüzden yalnızca miktarlı işlemlerde göster.
+                        if (!isDividend)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              borderRadius:
+                                  BorderRadius.circular(SandikRadius.sm),
+                            ),
+                            child: Text(
+                              asset.unitIsPrefix
+                                  ? '${asset.unitLabel}${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)}'
+                                  : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
+                              style: context.t.labelMedium?.copyWith(
+                                  letterSpacing: 0,
+                                  color: Sandik.text58,
+                                  fontWeight: FontWeight.w600),
+                            ),
                           ),
-                          child: Text(
-                            asset.unitIsPrefix
-                                ? '${asset.unitLabel}${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)}'
-                                : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
-                            style: context.t.labelMedium?.copyWith(
-                                letterSpacing: 0,
-                                color: Sandik.text58,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
                       ],
                     ),
                   ],

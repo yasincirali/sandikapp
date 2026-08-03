@@ -5,10 +5,13 @@ import 'asset_type.dart';
 /// - sell: satım (refAssetId ile ilgili buy lot'una bağlı; net miktarda düşer)
 /// - delete_log: silinen bir buy lot'unun mezar taşı (portföyden çıkar, işlem
 ///   defterinde "SILDI" olarak kalır)
+/// - dividend: nakit temettü. **Miktarı DEĞİŞTİRMEZ** — eline geçen parayı
+///   `dividendAmount` alanında taşır. Getiriye eklenir, pozisyona eklenmez.
 enum AssetKind {
   buy,
   sell,
-  deleteLog;
+  deleteLog,
+  dividend;
 
   String get dbValue {
     switch (this) {
@@ -18,6 +21,8 @@ enum AssetKind {
         return 'sell';
       case AssetKind.deleteLog:
         return 'delete_log';
+      case AssetKind.dividend:
+        return 'dividend';
     }
   }
 
@@ -27,6 +32,8 @@ enum AssetKind {
         return AssetKind.sell;
       case 'delete_log':
         return AssetKind.deleteLog;
+      case 'dividend':
+        return AssetKind.dividend;
       case 'buy':
       case null:
       default:
@@ -70,6 +77,13 @@ class Asset {
   /// yüksek görünür. Varsayılan 0 → kullanıcı girmedikçe eski davranış.
   double commission;
 
+  /// Nakit temettü tutarı — yalnızca `kind == dividend` satırlarında anlamlı.
+  /// Varlığın para biriminde, ELE GEÇEN NET tutar (stopaj sonrası).
+  ///
+  /// Temettü satırı miktarı değiştirmez; bu tutar realize edilmiş getiri
+  /// olarak kâr/zarara eklenir.
+  double dividendAmount;
+
   Asset({
     required this.id,
     required this.userId,
@@ -91,6 +105,7 @@ class Asset {
     this.refAssetId,
     this.sellPrice,
     this.commission = 0,
+    this.dividendAmount = 0,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
@@ -98,10 +113,23 @@ class Asset {
   bool get isBuy => kind == AssetKind.buy;
   bool get isSell => kind == AssetKind.sell;
   bool get isDeleteLog => kind == AssetKind.deleteLog;
+  bool get isDividend => kind == AssetKind.dividend;
 
   /// Portföy net pozisyonuna katkı gösteren tek satırlar buy'lar. Sell'ler
   /// (negatif) ve delete_log'lar aggregator'da özel işlenir.
+  ///
+  /// DİKKAT: `!isBuy` ile "sell demektir" varsayımı YAPMA — temettü satırları
+  /// da buy değildir ama miktara hiç dokunmaz. Miktar hesabında bu getter'ı
+  /// veya açık `isSell` kontrolü kullan.
   bool get affectsPosition => kind == AssetKind.buy;
+
+  /// Miktar hesabına hiç girmeyen satırlar (nakit hareketi / mezar taşı).
+  bool get isQuantityNeutral =>
+      kind == AssetKind.dividend || kind == AssetKind.deleteLog;
+
+  /// TRY cinsinden temettü — alım kuruyla değil, TEMETTÜ ANININ kuruyla
+  /// çevrilir. `purchaseFxRate` temettü satırında ödeme günü kurunu taşır.
+  double get dividendTRY => dividendAmount * purchaseFxRate;
 
   /// Toplam maliyet — komisyon DAHİL (gerçekte cebinden çıkan para).
   double get totalCost => quantity * purchasePrice + commission;
@@ -237,6 +265,7 @@ class Asset {
         'ref_asset_id': refAssetId,
         'sell_price': sellPrice,
         'commission': commission,
+        'dividend_amount': dividendAmount,
       };
 
   factory Asset.fromSupabase(Map<String, dynamic> m) => Asset(
@@ -265,5 +294,7 @@ class Asset {
         sellPrice: (m['sell_price'] as num?)?.toDouble(),
         // Migration 0019 öncesi kayıtlarda sütun yok → 0.
         commission: (m['commission'] as num?)?.toDouble() ?? 0,
+        // Migration 0020 öncesi kayıtlarda sütun yok → 0.
+        dividendAmount: (m['dividend_amount'] as num?)?.toDouble() ?? 0,
       );
 }

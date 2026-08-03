@@ -31,6 +31,7 @@ import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
+import '../widgets/dividend_dialog.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'performance_screen.dart';
 import 'portfolio_performance_screen.dart';
@@ -345,6 +346,9 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                                     context, ref,
                                     asset: p.asDisplayAsset(),
                                     mode: QuickAdjustMode.remove),
+                                onDividend: (p) => showDividendDialog(
+                                    context, ref,
+                                    asset: p.asDisplayAsset()),
                               ),
                             ],
                           );
@@ -570,6 +574,7 @@ class _AssetList extends StatelessWidget {
   final void Function(Position) onDelete;
   final void Function(Position) onAdd;
   final void Function(Position) onRemove;
+  final void Function(Position) onDividend;
 
   const _AssetList({
     required this.positions,
@@ -579,6 +584,7 @@ class _AssetList extends StatelessWidget {
     required this.onDelete,
     required this.onAdd,
     required this.onRemove,
+    required this.onDividend,
   });
 
   @override
@@ -596,6 +602,7 @@ class _AssetList extends StatelessWidget {
                   onDelete: onDelete,
                   onAdd: onAdd,
                   onRemove: onRemove,
+                  onDividend: onDividend,
                 ))
             .toList(),
       ),
@@ -730,6 +737,7 @@ class _AssetCard extends StatefulWidget {
   final void Function(Position) onDelete;
   final void Function(Position) onAdd;
   final void Function(Position) onRemove;
+  final void Function(Position) onDividend;
 
   const _AssetCard({
     required this.position,
@@ -739,6 +747,7 @@ class _AssetCard extends StatefulWidget {
     required this.onDelete,
     required this.onAdd,
     required this.onRemove,
+    required this.onDividend,
   });
 
   @override
@@ -758,12 +767,16 @@ class _AssetCardState extends State<_AssetCard>
     final onAdd = widget.onAdd;
     final onRemove = widget.onRemove;
     final onDelete = widget.onDelete;
+    final onDividend = widget.onDividend;
 
     final a = position.asDisplayAsset();
     final tryFmt =
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+    // Temettü dahil — üstteki özet de dahil ediyor, satır onunla tutarlı olmalı.
     final gainLossTRY =
-        pState.toTRY(position.totalValue, a.currency) - position.totalCostTRY;
+        pState.toTRY(position.totalValue, a.currency) -
+            position.totalCostTRY +
+            totalDividendTRY(position.lots);
     final isPos = gainLossTRY >= 0;
 
     Widget card = Container(
@@ -902,7 +915,8 @@ class _AssetCardState extends State<_AssetCard>
           key: ValueKey('asset-${a.id}'),
           startActionPane: ActionPane(
             motion: const DrawerMotion(),
-            extentRatio: 0.5,
+            // Üç aksiyon — 0.5'te etiketler sıkışıyordu.
+            extentRatio: 0.72,
             children: [
               SlidableAction(
                 onPressed: (_) => onAdd(position),
@@ -917,6 +931,13 @@ class _AssetCardState extends State<_AssetCard>
                 foregroundColor: Colors.white,
                 icon: Icons.remove_rounded,
                 label: 'Çıkar',
+              ),
+              SlidableAction(
+                onPressed: (_) => onDividend(position),
+                backgroundColor: Sandik.amber,
+                foregroundColor: Colors.black87,
+                icon: Icons.savings_outlined,
+                label: 'Temettü',
               ),
             ],
           ),

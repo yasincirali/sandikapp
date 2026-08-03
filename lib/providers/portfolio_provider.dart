@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart';
 import '../services/analytics_service.dart';
 import '../services/deposit_service.dart';
 import '../services/remote_config_service.dart';
@@ -94,7 +95,20 @@ class PortfolioState {
       .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
       .fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
 
-  double get gainLoss => _trackedValue - totalCost;
+  /// Tahsil edilen nakit temettü toplamı (TRY).
+  ///
+  /// Fiyat filtresine TABİ DEĞİL: temettü zaten cebe girmiş realize gelirdir,
+  /// varlığın güncel fiyatının bilinip bilinmemesiyle ilgisi yoktur.
+  double get totalDividend => totalDividendTRY(assets);
+
+  /// Sermaye kazancı — temettü HARİÇ (yalnızca fiyat hareketi).
+  double get capitalGainLoss => _trackedValue - totalCost;
+
+  /// Toplam getiri — sermaye kazancı + tahsil edilen temettü.
+  ///
+  /// Temettü eklenmezse uygulama getiriyi olduğundan DÜŞÜK gösterir; BIST'te
+  /// temettü getirinin büyük parçasıdır.
+  double get gainLoss => capitalGainLoss + totalDividend;
 
   double get gainLossPercentage =>
       totalCost > 0 ? gainLoss / totalCost * 100 : 0;
@@ -247,6 +261,55 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final current = state.valueOrNull;
     if (current != null) {
       state = AsyncData(current.copyWith(assets: [transaction, ...current.assets]));
+    }
+  }
+
+  /// Nakit temettü kaydı ekler.
+  ///
+  /// Temettü satırı miktarı DEĞİŞTİRMEZ — `quantity: 0` ile yazılır ve
+  /// `dividendAmount` alanında ele geçen net tutarı taşır. `purchaseFxRate`
+  /// burada ÖDEME GÜNÜ kurunu tutar (alım kurunu değil), böylece TRY karşılığı
+  /// temettünün alındığı günün kuruyla sabitlenir.
+  Future<void> addDividend({
+    required Asset asset,
+    required double amount,
+    DateTime? paidAt,
+  }) async {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+    if (amount <= 0) return;
+
+    final currentState = state.valueOrNull ?? const PortfolioState();
+    final fxRate = _fxRateForCurrency(asset.currency, currentState);
+
+    final transaction = Asset(
+      id: _uuid.v4(),
+      userId: user.id,
+      name: asset.name,
+      ticker: asset.ticker,
+      type: asset.type,
+      // Miktar 0 — temettü pozisyona dokunmaz.
+      quantity: 0,
+      purchasePrice: 0,
+      currency: asset.currency,
+      notes: '',
+      isManualPrice: asset.isManualPrice,
+      subCategory: asset.subCategory,
+      unitType: asset.unitType,
+      purchaseFxRate: fxRate,
+      currentPrice: asset.currentPrice,
+      kind: AssetKind.dividend,
+      refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
+      addedDate: paidAt,
+      dividendAmount: amount,
+    );
+
+    await SupabaseService.instance.insertAsset(transaction);
+
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(
+          current.copyWith(assets: [transaction, ...current.assets]));
     }
   }
 
