@@ -66,21 +66,12 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
 
   Future<void> _pickDate(bool start) async {
     final initial = start ? _start : _end;
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickSandikDate(
+      context,
       initialDate: initial,
-      firstDate: DateTime(2000),
+      // Vade tarihi geleceğe ait olabilir — varsayılan "bugün" sınırı geçilir.
       lastDate: DateTime.now().add(const Duration(days: 365 * 20)),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: Sandik.amber,
-            surface: Sandik.surface1,
-            onSurface: Colors.white,
-          ),
-        ),
-        child: child!,
-      ),
+      helpText: start ? 'Başlangıç tarihi' : 'Vade tarihi',
     );
     if (picked == null) return;
     setState(() {

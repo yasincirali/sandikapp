@@ -154,6 +154,14 @@ class Asset {
   bool get showTicker =>
       displayTicker != null && (type == AssetType.fon || type == AssetType.hisse);
 
+  /// Nakit temettü kaydedilebilir mi?
+  ///
+  /// Yalnızca **hisse** senedi temettü dağıtır. Altın/döviz/emtia fiziksel ya
+  /// da parasal varlıktır, mevduatın getirisi faizdir ve kendi alanlarında
+  /// izlenir. Fonlar da dağıtım yapabilir ama TEFAS'ta bu fiyata yansıdığı
+  /// için ayrıca girilmesi çift sayıma yol açar.
+  bool get supportsDividend => type == AssetType.hisse;
+
   /// Döviz varlığı için para sembolü ($ € £ vb.)
   String? get currencySymbol =>
       type == AssetType.doviz ? currencySymbolFor(ticker, currency) : null;

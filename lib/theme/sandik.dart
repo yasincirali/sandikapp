@@ -15,6 +15,57 @@ import 'package:google_fonts/google_fonts.dart';
 /// ```dart
 /// Navigator.push(context, adaptiveRoute(builder: (_) => const FooScreen()));
 /// ```
+/// Uygulama genelinde TEK tarih seçici.
+///
+/// `showDatePicker`'ı doğrudan çağırma — her çağrı kendi temasını kurunca
+/// ekranlar arasında farklı görünüyordu (biri açık Material teması, biri
+/// `ColorScheme.dark`, biri hiç tema vermiyordu). Buradaki tek tanım marka
+/// renklerini ve Türkçe etiketleri her yerde aynı yapar.
+///
+/// [lastDate] varsayılanı bugündür: işlem/ödeme tarihleri geçmişe aittir.
+/// Gelecek tarih gereken yerler (mevduat vadesi) kendi değerini verir.
+Future<DateTime?> pickSandikDate(
+  BuildContext context, {
+  required DateTime initialDate,
+  DateTime? firstDate,
+  DateTime? lastDate,
+  String helpText = 'Tarih seç',
+}) {
+  final last = lastDate ?? DateTime.now();
+  // initialDate aralık dışındaysa Flutter assert atar — güvenli tarafa çek.
+  var initial = initialDate;
+  final first = firstDate ?? DateTime(2000);
+  if (initial.isBefore(first)) initial = first;
+  if (initial.isAfter(last)) initial = last;
+
+  return showDatePicker(
+    context: context,
+    initialDate: initial,
+    firstDate: first,
+    lastDate: last,
+    helpText: helpText,
+    cancelText: 'İptal',
+    confirmText: 'Seç',
+    builder: (ctx, child) => Theme(
+      data: Theme.of(ctx).copyWith(
+        colorScheme: const ColorScheme.dark(
+          primary: Sandik.amber,
+          onPrimary: Colors.black,
+          surface: Sandik.surface2,
+          onSurface: Colors.white,
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: Sandik.surface2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+          ),
+        ),
+      ),
+      child: child!,
+    ),
+  );
+}
+
 PageRoute<T> adaptiveRoute<T>({
   required WidgetBuilder builder,
   RouteSettings? settings,

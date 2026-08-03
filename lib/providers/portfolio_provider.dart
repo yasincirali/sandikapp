@@ -278,6 +278,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
     if (amount <= 0) return;
+    // Yalnızca hisse temettü dağıtır — UI zaten butonu gizliyor, bu ikinci
+    // savunma başka bir giriş noktası eklendiğinde kuralı korur.
+    if (!asset.supportsDividend) return;
 
     final currentState = state.valueOrNull ?? const PortfolioState();
     final fxRate = _fxRateForCurrency(asset.currency, currentState);

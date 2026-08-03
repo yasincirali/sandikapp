@@ -113,6 +113,43 @@ void main() {
     });
   });
 
+  group('temettü yalnızca hisseye özgü', () {
+    Asset ofType(AssetType t) => Asset(
+          id: 't-${t.name}',
+          userId: 'u1',
+          name: t.label,
+          ticker: 'X',
+          type: t,
+          quantity: 1,
+          purchasePrice: 100,
+          currency: 'TRY',
+          notes: '',
+          isManualPrice: false,
+          currentPrice: 110,
+          addedDate: DateTime(2026, 1, 1),
+        );
+
+    test('hisse temettü destekler', () {
+      expect(ofType(AssetType.hisse).supportsDividend, isTrue);
+    });
+
+    test('diğer türler desteklemez', () {
+      // Altın/döviz/emtia temettü dağıtmaz; mevduatın getirisi faizdir.
+      // Fon dağıtım yapabilir ama TEFAS fiyatına yansır → çift sayım olurdu.
+      for (final t in [
+        AssetType.fon,
+        AssetType.doviz,
+        AssetType.altin,
+        AssetType.emtia,
+        AssetType.mevduat,
+        AssetType.diger,
+      ]) {
+        expect(ofType(t).supportsDividend, isFalse,
+            reason: '${t.label} için temettü butonu görünmemeli');
+      }
+    });
+  });
+
   group('temettü getiriye eklenir', () {
     test('toplam getiri = sermaye kazancı + temettü', () {
       final state = PortfolioState(assets: [

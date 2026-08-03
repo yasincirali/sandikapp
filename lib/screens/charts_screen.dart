@@ -612,6 +612,58 @@ class _AssetList extends StatelessWidget {
 
 // ── Asset Card ────────────────────────────────────────────────────────────────
 
+/// Kaydırma aksiyonu (Ekle / Çıkar / Temettü / Sil).
+///
+/// `SlidableAction` yerine elle kuruldu: o widget ikon + etiketi sabit
+/// padding'li bir `Column`'a koyuyor ve satır yüksekliği kısaldığında alttan
+/// KIRPIYOR — kullanıcı ekranında "Ekle"/"Çıkar" yazıları yarım görünüyordu.
+///
+/// Buradaki çözüm: içerik [FittedBox] ile ölçeklenir ve dikeyde ortalanır;
+/// yükseklik ne olursa olsun taşma olmaz, yazı küçülerek sığar.
+Widget _rowAction(
+  BuildContext context, {
+  required VoidCallback onPressed,
+  required Color background,
+  required Color foreground,
+  required IconData icon,
+  required String label,
+}) {
+  return Expanded(
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        // Aksiyon paneli açık kalmasın — dokunulan satır kapanır.
+        Slidable.of(context)?.close();
+        onPressed();
+      },
+      child: Container(
+        color: background,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: foreground, size: 20),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                style: context.t.bodySmall?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 /// Satır kolonlarının genişlik dağıtımı.
 ///
 /// **Sabit genişlik YOK, cihaz eşiği YOK.** Kolonlar satırın gerçek
@@ -954,6 +1006,8 @@ class _AssetCardState extends State<_AssetCard>
       ),
     );
 
+    final showsDividend = a.supportsDividend;
+
     if (canEdit) {
       card = ClipRRect(
         borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -961,40 +1015,48 @@ class _AssetCardState extends State<_AssetCard>
           key: ValueKey('asset-${a.id}'),
           startActionPane: ActionPane(
             motion: const DrawerMotion(),
-            // Üç aksiyon — 0.5'te etiketler sıkışıyordu.
-            extentRatio: 0.72,
+            // Temettü yalnızca temettü ödeyen türlerde görünür → aksiyon
+            // sayısı 2 veya 3 olabilir, pane genişliği de ona göre.
+            extentRatio: showsDividend ? 0.72 : 0.5,
             children: [
-              SlidableAction(
-                onPressed: (_) => onAdd(position),
-                backgroundColor: Sandik.gain,
-                foregroundColor: Colors.white,
+              _rowAction(
+                context,
+                onPressed: () => onAdd(position),
+                background: Sandik.gain,
+                foreground: Colors.white,
                 icon: Icons.add_rounded,
                 label: 'Ekle',
               ),
-              SlidableAction(
-                onPressed: (_) => onRemove(position),
-                backgroundColor: Sandik.loss.withValues(alpha: 0.85),
-                foregroundColor: Colors.white,
+              _rowAction(
+                context,
+                onPressed: () => onRemove(position),
+                background: Sandik.loss.withValues(alpha: 0.85),
+                foreground: Colors.white,
                 icon: Icons.remove_rounded,
                 label: 'Çıkar',
               ),
-              SlidableAction(
-                onPressed: (_) => onDividend(position),
-                backgroundColor: Sandik.amber,
-                foregroundColor: Colors.black87,
-                icon: Icons.savings_outlined,
-                label: 'Temettü',
-              ),
+              // Temettü nakit dağıtan varlıklara özgü — altın/döviz/emtia
+              // veya mevduatta anlamsız.
+              if (showsDividend)
+                _rowAction(
+                  context,
+                  onPressed: () => onDividend(position),
+                  background: Sandik.amber,
+                  foreground: Colors.black87,
+                  icon: Icons.savings_outlined,
+                  label: 'Temettü',
+                ),
             ],
           ),
           endActionPane: ActionPane(
             motion: const DrawerMotion(),
             extentRatio: 0.28,
             children: [
-              SlidableAction(
-                onPressed: (_) => onDelete(position),
-                backgroundColor: const Color(0xFFEF4444),
-                foregroundColor: Colors.white,
+              _rowAction(
+                context,
+                onPressed: () => onDelete(position),
+                background: const Color(0xFFEF4444),
+                foreground: Colors.white,
                 icon: Icons.delete_outline_rounded,
                 label: 'Sil',
               ),

@@ -90,12 +90,10 @@ class _DividendDialogState extends State<_DividendDialog> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await pickSandikDate(
+      context,
       initialDate: _paidAt,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-      locale: const Locale('tr', 'TR'),
+      helpText: 'Temettü ödeme tarihi',
     );
     if (picked != null) setState(() => _paidAt = picked);
   }
@@ -191,9 +189,14 @@ class _DividendDialogState extends State<_DividendDialog> {
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: Sandik.gain),
           onPressed: _saving ? null : _save,
+          // Buton kutusuna sığacak boyut verilmeli: CustomLoadingView
+          // varsayılanı `large` ve 18pt'lik kutuyu taşırıyordu.
           child: _saving
               ? const SizedBox(
-                  width: 18, height: 18, child: CustomLoadingView())
+                  width: 18,
+                  height: 18,
+                  child: CustomLoadingIndicator(size: 18),
+                )
               : const Text('Kaydet'),
         ),
       ],

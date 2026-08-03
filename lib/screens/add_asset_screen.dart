@@ -981,23 +981,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return InkWell(
       borderRadius: BorderRadius.circular(SandikRadius.md),
       onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
+        final picked = await pickSandikDate(
+          context,
           initialDate: _addedDate,
-          firstDate: DateTime(2000),
-          lastDate: DateTime.now(),
           helpText: 'İşlem tarihi',
-          cancelText: 'İptal',
-          confirmText: 'Seç',
-          builder: (ctx, child) => Theme(
-            data: Theme.of(ctx).copyWith(
-              colorScheme: Theme.of(ctx).colorScheme.copyWith(
-                    primary: Sandik.amber,
-                    onPrimary: Colors.black,
-                  ),
-            ),
-            child: child!,
-          ),
         );
         if (picked != null) {
           setState(() => _addedDate = picked);
