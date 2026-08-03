@@ -65,7 +65,49 @@ class HistoryService {
   static final HistoryService instance = HistoryService._();
   HistoryService._();
 
+  /// Ticker başına fiyat serisi önbelleği.
+  ///
+  /// LRU + TTL: `static` olduğu için süreç ömrü boyunca yaşar. Sınırsız
+  /// bırakılırsa her ticker'ın 365 günlük serisi bellekte birikir; periyotlar
+  /// arasında gezinen, çok varlıklı bir portföyde onlarca MB'a çıkar.
+  /// `LinkedHashMap` ekleme sırasını korur → en eski giriş ilk atılır.
   static final Map<String, List<(int, double)>> _cache = {};
+  static final Map<String, DateTime> _cacheAt = {};
+
+  /// Aynı oturumda tekrar tekrar çekmeyi önlemeye yetecek kadar uzun,
+  /// gün içi fiyat hareketini kaçırmayacak kadar kısa.
+  static const _cacheTtl = Duration(minutes: 15);
+  static const _cacheMaxEntries = 50;
+
+  static List<(int, double)>? _cacheGet(String key) {
+    final at = _cacheAt[key];
+    if (at == null) return null;
+    if (DateTime.now().difference(at) > _cacheTtl) {
+      _cache.remove(key);
+      _cacheAt.remove(key);
+      return null;
+    }
+    return _cache[key];
+  }
+
+  static void _cachePut(String key, List<(int, double)> value) {
+    // Yeniden ekleme sırayı tazeler (LRU davranışı).
+    _cache.remove(key);
+    _cacheAt.remove(key);
+    _cache[key] = value;
+    _cacheAt[key] = DateTime.now();
+    while (_cache.length > _cacheMaxEntries) {
+      final oldest = _cache.keys.first;
+      _cache.remove(oldest);
+      _cacheAt.remove(oldest);
+    }
+  }
+
+  /// Bellek baskısında veya oturum kapanışında çağrılabilir.
+  static void clearCache() {
+    _cache.clear();
+    _cacheAt.clear();
+  }
 
   /// Verilen varlıkların ilgili periyot için (örn. 365 gün) geçmiş fiyatlarını
   /// gün-den-güne hesaplar. Dönen map: { UNIX_MILLIS: TOPLAM_PORTFOY_DEGERI_TRY }
@@ -114,10 +156,11 @@ class HistoryService {
 
     Future<List<(int, double)>> getHistorySafe(String sym) async {
       final cacheKey = '${sym}_$range';
-      if (_cache.containsKey(cacheKey)) return _cache[cacheKey]!;
+      final cached = _cacheGet(cacheKey);
+      if (cached != null) return cached;
       try {
         final pts = await PriceService.instance.fetchHistory(sym, range);
-        if (pts.isNotEmpty) _cache[cacheKey] = pts;
+        if (pts.isNotEmpty) _cachePut(cacheKey, pts);
         return pts;
       } catch (e) {
         return [];
@@ -405,10 +448,11 @@ class HistoryService {
 
     Future<List<(int, double)>> getHistorySafe(String sym) async {
       final cacheKey = '${sym}_$range';
-      if (_cache.containsKey(cacheKey)) return _cache[cacheKey]!;
+      final cached = _cacheGet(cacheKey);
+      if (cached != null) return cached;
       try {
         final pts = await PriceService.instance.fetchHistory(sym, range);
-        if (pts.isNotEmpty) _cache[cacheKey] = pts;
+        if (pts.isNotEmpty) _cachePut(cacheKey, pts);
         return pts;
       } catch (_) {
         return [];

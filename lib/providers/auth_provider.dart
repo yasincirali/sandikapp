@@ -79,33 +79,73 @@ class PartnerAccount {
   PartnerAccount({required this.user, required this.isActive});
 }
 
-class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>> {
+class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
+    with WidgetsBindingObserver {
   Timer? _pollTimer;
+  bool _observing = false;
+
+  /// Ortaklık değişimi nadir bir olaydır; 8 saniye gereksiz sıktı.
+  /// 30 saniyede saatlik istek sayısı 900'den 240'a iner.
+  static const _pollInterval = Duration(seconds: 30);
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => _tick());
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  /// Uygulama arka plandayken sorgu atmanın anlamı yok: kullanıcı sonucu
+  /// göremez, ama pil ve mobil veri harcanır, Supabase kotası dolar.
+  /// Öne dönünce hemen bir kez taze veri çekilir, sonra periyot devam eder.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _tick();
+      _startPolling();
+    } else {
+      _stopPolling();
+    }
+  }
 
   @override
   Future<List<PartnerAccount>> build() async {
     final user = ref.watch(authProvider).valueOrNull;
     if (user == null) {
-      _pollTimer?.cancel();
+      _stopPolling();
       return [];
     }
-    // Karşı taraf ortaklığı kaldırınca anlık yansısın
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
-      final u = ref.read(authProvider).valueOrNull;
-      if (u == null) return;
-      final fresh = await _loadPartners(u.id);
-      // Sadece gerçekten değişiklik varsa state güncelle — gereksiz rebuild engellenir
-      final current = state.valueOrNull ?? [];
-      final changed = fresh.length != current.length ||
-          fresh.any((f) {
-            final c = current.where((c) => c.user.id == f.user.id).firstOrNull;
-            return c == null || c.isActive != f.isActive;
-          });
-      if (changed) state = AsyncData(fresh);
+    if (!_observing) {
+      WidgetsBinding.instance.addObserver(this);
+      _observing = true;
+    }
+    // Karşı taraf ortaklığı kaldırınca yansısın
+    _startPolling();
+    ref.onDispose(() {
+      _stopPolling();
+      if (_observing) {
+        WidgetsBinding.instance.removeObserver(this);
+        _observing = false;
+      }
     });
-    ref.onDispose(() => _pollTimer?.cancel());
     return _loadPartners(user.id);
+  }
+
+  Future<void> _tick() async {
+    final u = ref.read(authProvider).valueOrNull;
+    if (u == null) return;
+    final fresh = await _loadPartners(u.id);
+    // Sadece gerçekten değişiklik varsa state güncelle — gereksiz rebuild engellenir
+    final current = state.valueOrNull ?? [];
+    final changed = fresh.length != current.length ||
+        fresh.any((f) {
+          final c = current.where((c) => c.user.id == f.user.id).firstOrNull;
+          return c == null || c.isActive != f.isActive;
+        });
+    if (changed) state = AsyncData(fresh);
   }
 
   Future<List<PartnerAccount>> _loadPartners(String userId) async {
