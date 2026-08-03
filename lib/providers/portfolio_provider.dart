@@ -387,7 +387,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   // ---- Price refresh -------------------------------------------------------
 
-  Future<void> refreshPrices() async {
+  /// [force] true iken fiyat önbelleği atlanır. Kullanıcı pull-to-refresh
+  /// yaptığında bayat fiyat görmemeli; ekran açılışlarında ise 45 sn'lik
+  /// önbellek gereksiz ağ trafiğini keser.
+  Future<void> refreshPrices({bool force = false}) async {
     // Build henüz bitmediyse (ya da user null → boş state) — bekle. Aksi
     // halde eski/boş `s.assets`'i alıp await'ten sonra güncel state'in
     // üzerine sıfır yazma race'i oluşur (bkz. varlıkların bir görünüp
@@ -427,7 +430,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
 
     try {
-      final quotes = await PriceService.instance.fetchQuotes(symbols.toList());
+      final quotes = await PriceService.instance
+          .fetchQuotes(symbols.toList(), forceRefresh: force);
 
       // await sonrası state başka bir yerden değişmiş olabilir (addAsset,
       // deleteAsset gibi). Kendi asset listesini yazmadan önce **en güncel**

@@ -71,13 +71,48 @@ class PriceService {
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
-  Future<Map<String, YahooQuote>> fetchQuotes(List<String> symbols) async {
+  /// Sembol başına kısa ömürlü fiyat önbelleği.
+  ///
+  /// `refreshPrices` her ekran açılışında ve her pull-to-refresh'te
+  /// çağrılıyor; önbelleksiz her seferinde tüm semboller yeniden çekiliyordu.
+  /// TTL bilinçli olarak kısa: kullanıcı "yenile" dediğinde bayat veri
+  /// görmemeli, ama ekranlar arası gidip gelme yeni istek doğurmamalı.
+  /// (Sunucu tarafında `price_history_cache` zaten var; bu onun istemci
+  /// karşılığı.)
+  static const _quoteTtl = Duration(seconds: 45);
+  final Map<String, ({YahooQuote quote, DateTime at})> _quoteCache = {};
+
+  /// Kullanıcı açıkça yenileme istediğinde (pull-to-refresh) çağrılır —
+  /// önbellek atlanır ve fiyatlar kaynaktan tazelenir.
+  void invalidateQuoteCache() => _quoteCache.clear();
+
+  Future<Map<String, YahooQuote>> fetchQuotes(
+    List<String> symbols, {
+    bool forceRefresh = false,
+  }) async {
     final cleaned = symbols
         .map((s) => s.trim().toUpperCase())
         .where((s) => s.isNotEmpty)
         .toSet()
         .toList();
     if (cleaned.isEmpty) return {};
+
+    // Taze önbellek girişlerini ayır; yalnızca eksikler için ağa çık.
+    final cachedHits = <String, YahooQuote>{};
+    final now = DateTime.now();
+    if (!forceRefresh) {
+      cleaned.removeWhere((s) {
+        final e = _quoteCache[s];
+        if (e == null) return false;
+        if (now.difference(e.at) > _quoteTtl) {
+          _quoteCache.remove(s);
+          return false;
+        }
+        cachedHits[s] = e.quote;
+        return true;
+      });
+      if (cleaned.isEmpty) return cachedHits;
+    }
 
     final fxList = cleaned.where((s) => _fxSymbols.contains(s)).toList();
     final goldList =
@@ -150,6 +185,16 @@ class PriceService {
     results.addAll(tefasResult);
     results.addAll(yahooResult);
 
+    // Yalnızca gerçekten fiyat dönen sembolleri önbelleğe al: 0/eksik değer
+    // önbelleklenirse TTL boyunca hatalı fiyat gösterilir.
+    final cachedAt = DateTime.now();
+    for (final e in results.entries) {
+      if ((e.value.regularMarketPrice ?? 0) > 0) {
+        _quoteCache[e.key] = (quote: e.value, at: cachedAt);
+      }
+    }
+
+    results.addAll(cachedHits);
     return results;
   }
 

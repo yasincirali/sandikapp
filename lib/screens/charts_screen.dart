@@ -250,8 +250,10 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                 error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                 data: (pState) => RefreshIndicator(
                   color: Sandik.amber,
-                  onRefresh: () =>
-                      ref.read(portfolioProvider.notifier).refreshPrices(),
+                  // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
+                  onRefresh: () => ref
+                      .read(portfolioProvider.notifier)
+                      .refreshPrices(force: true),
                   child: ListView(
                     physics: const BouncingScrollPhysics(
                         parent: AlwaysScrollableScrollPhysics()),

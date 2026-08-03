@@ -42,7 +42,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _reload() async {
     if (_reloading) return;
     setState(() => _reloading = true);
-    await ref.read(portfolioProvider.notifier).refreshPrices();
+    await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
     if (mounted) setState(() => _reloading = false);
   }
 
@@ -211,7 +211,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return RefreshIndicator(
       color: Sandik.amber,
-      onRefresh: () => ref.read(portfolioProvider.notifier).refreshPrices(),
+      // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
+      onRefresh: () =>
+          ref.read(portfolioProvider.notifier).refreshPrices(force: true),
       child: CustomScrollView(
         controller: _scrollCtrl,
         physics: const BouncingScrollPhysics(
