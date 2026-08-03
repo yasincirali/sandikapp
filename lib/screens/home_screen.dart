@@ -751,6 +751,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  // Satır yüksekliği içeriğe göre belirlensin. Varsayılan
+                  // `MainAxisSize.max` bu Column'u satırın (sağ kolonun
+                  // belirlediği) yüksekliğine zorluyordu; iki satırlık fon
+                  // başlığı + rozet satırı buna sığmayınca 3.9px taşıyordu.
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Fon/hisse: başlık olarak yalnızca KOD (THYAO).
                     //
@@ -770,7 +775,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             letterSpacing: asset.showTicker ? 0.2 : null,
                             color: Colors.white)),
                     const SizedBox(height: SandikSpace.xs),
-                    Row(
+                    // Rozet satırı dar ekranda yatayda taşıyordu (320pt'de
+                    // 161px). `Wrap` sığmayanı alt satıra alır — kırpmak
+                    // yerine sarmak, tarih ve miktar okunur kalsın.
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: SandikSpace.sm,
+                      runSpacing: SandikSpace.xs,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -785,14 +796,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   color: asset.type.color,
                                   fontWeight: FontWeight.w600)),
                         ),
-                        const SizedBox(width: SandikSpace.sm),
                         Text(
                           DateFormat('d MMM yyyy', 'tr_TR')
                               .format(asset.addedDate),
                           style: context.t.bodySmall
                               ?.copyWith(color: Sandik.text36),
                         ),
-                        const SizedBox(width: SandikSpace.sm),
                         // Temettüde miktar 0'dır — "0 adet" rozeti anlamsız
                         // olurdu, o yüzden yalnızca miktarlı işlemlerde göster.
                         if (!isDividend)
