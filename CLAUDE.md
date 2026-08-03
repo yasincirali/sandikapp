@@ -105,10 +105,10 @@ Aktif kod `lib/` altındadır.
 Proje `.mcp.json` üzerinden `ui-ux-pro-mcp` (npm global) MCP sunucusuna bağlıdır.
 Binary: `C:\Users\vasin\AppData\Roaming\npm\ui-ux-pro-mcp.cmd` (global install).
 
-**İçerik:** 1029 kaynak — iOS Human Interface Guidelines (110), Android
-Material 3 (112), Flutter widget denklemleri, tipografi/renk sistemleri,
-UX guideline, chart pattern, ikon set önerileri. Her platform pattern'i
-Flutter + React Native eşdeğerlerini içerir.
+**İçerik (sunucunun başlangıçta raporladığı indeksler):** 103 style, 119 renk,
+74 tipografi, 36 chart, 170 UX guideline, 175 ikon, 75 landing pattern,
+116 ürün, 39 prompt, 12 stack, 2 platform (iOS HIG + Android Material 3).
+Her platform pattern'i Flutter + React Native eşdeğerlerini içerir.
 
 ### Kullanım kuralları
 - Yeni ekran/komponent tasarlarken önce ilgili MCP tool'unu (`search_ui`,
@@ -120,6 +120,19 @@ Flutter + React Native eşdeğerlerini içerir.
 - Bu MCP jenerik design bilgisi verir — Sandık marka renkleri
   (amber/gold/gain/loss/surface) ve DM Sans typography ayrıştırılmalı;
   MCP'nin verdiği renk paletlerini olduğu gibi almayın.
+
+## Dart/Flutter Araçları: dart MCP
+
+Proje `.mcp.json` üzerinden resmî Dart MCP sunucusuna bağlıdır:
+`dart mcp-server --force-roots-fallback`
+
+Statik analiz, test çalıştırma, pub işlemleri ve Dart-farkındalıklı düzenlemeler
+için kullanılır. `flutter analyze` / `flutter test` çıktısını ham kabuk komutu
+olarak ayrıştırmak yerine bu sunucunun tool'larını tercih et — sonuçlar yapılandırılmış
+gelir ve dosya/satır referansları doğrudan kullanılabilir.
+
+**Not:** `--force-roots-fallback` bayrağı, istemci workspace root'larını
+bildirmediğinde sunucunun proje kökünü kendi bulabilmesi için gereklidir; kaldırma.
 
 ## Areas for Automated Improvements
 

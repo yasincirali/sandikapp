@@ -7,6 +7,10 @@
     "dart": {
       "command": "dart",
       "args": ["mcp-server", "--force-roots-fallback"]
+    },
+    "ui-ux-pro-mcp": {
+      "command": "C:\\Users\\vasin\\AppData\\Roaming\\npm\\ui-ux-pro-mcp.cmd",
+      "args": []
     }
   }
 }
