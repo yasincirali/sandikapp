@@ -120,6 +120,72 @@ String positionKey(Asset a) {
   return '$type|$core|$currency';
 }
 
+/// Birden çok sahibin ("Ben" + ortaklar) lot'larını, sahiplik sınırını
+/// koruyarak tek listede pozisyonlara çevirir.
+///
+/// **Neden ayrı bir fonksiyon:** [positionKey] sahip bilgisi taşımaz
+/// (`type|ticker|currency`). Tüm sahiplerin lot'ları tek [aggregatePositions]
+/// çağrısına verilirse aynı hisseye sahip iki kişi TEK pozisyonda birleşir.
+/// Bunun üç ayrı bozucu etkisi var:
+///   1. Pozisyonun tek bir `representative`'i olur → `totalValue` hesabı
+///      herkesin miktarına tek kişinin `currentPrice`'ını uygular.
+///      Temsilcinin fiyatı çekilememişse (0) birleşik pozisyon
+///      `PortfolioState.gainLoss` filtresine takılıp TAMAMEN elenir; kârda
+///      olan ortağın kârı da yok olur.
+///   2. Ağırlıklı maliyet sahipler arasında ortalanır → kimsenin gerçek
+///      maliyeti değildir.
+///   3. Net miktar havuz genelinde hesaplanır → bir sahibin satışı diğerinin
+///      alımından düşülebilir.
+///
+/// Sonuç: "Birlikte" sekmesi, tekil sekmelerin toplamıyla tutarsız (hatta
+/// ters işaretli) bir kâr/zarar gösteriyordu.
+///
+/// Bu fonksiyon her sahibi kendi içinde aggregate eder ve pozisyonları
+/// birleştirir — böylece toplamlar her zaman parçaların toplamına eşittir.
+List<Position> aggregatePositionsByOwner(Iterable<List<Asset>> ownerLots) => [
+      for (final lots in ownerLots) ...aggregatePositions(lots),
+    ];
+
+/// TRY'ye çeviren dönüştürücü. Canlı kurlar `PortfolioState`'te tutulur;
+/// model katmanının state'e erişimi yok, bu yüzden çağıran enjekte eder
+/// (`state.toTRY`). Yalnızca TRY varlıklarla çalışan testler
+/// [identityToTRY] verebilir.
+typedef ToTRY = double Function(double amount, String currency);
+
+/// Tüm varlıkları TRY kabul eden dönüştürücü — sadece test/TRY-only senaryolar.
+double identityToTRY(double amount, String currency) => amount;
+
+/// Sahiplik sınırını koruyan toplam kâr/zarar (TRY).
+///
+/// `PortfolioState.gainLoss` ile aynı kuralları uygular — fiyatı bilinmeyen
+/// varlıklar (purchasePrice/currentPrice = 0) hesap dışıdır — ama filtreyi
+/// her sahibin KENDİ pozisyonlarına ayrı ayrı uygular.
+double ownerScopedGainLoss(
+  Iterable<List<Asset>> ownerLots, {
+  ToTRY toTRY = identityToTRY,
+}) {
+  double total = 0;
+  for (final position in aggregatePositionsByOwner(ownerLots)) {
+    final a = position.asDisplayAsset();
+    if (a.purchasePrice <= 0 || a.currentPrice <= 0) continue;
+    total += toTRY(a.totalValue, a.currency) - a.totalCostTRY;
+  }
+  return total;
+}
+
+/// Sahiplik sınırını koruyan toplam güncel değer (TRY).
+double ownerScopedTotalValue(
+  Iterable<List<Asset>> ownerLots, {
+  ToTRY toTRY = identityToTRY,
+}) {
+  double total = 0;
+  for (final position in aggregatePositionsByOwner(ownerLots)) {
+    final a = position.asDisplayAsset();
+    total += toTRY(a.totalValue, a.currency);
+  }
+  return total;
+}
+
 /// Lot listesini pozisyonlara topla.
 ///
 /// - Sıralama: en yüksek totalValue (TRY) DESC — home ekranı için makul.

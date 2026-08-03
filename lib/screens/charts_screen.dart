@@ -276,20 +276,26 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                         ),
                         error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                         data: (partnerMap) {
-                          List<Asset> assets = [];
+                          // Sahiplik sınırı KORUNMALI: `positionKey` sahip
+                          // bilgisi taşımaz, bu yüzden tüm ortakların lot'ları
+                          // tek listede aggregate edilirse aynı hisseye sahip
+                          // iki kişi tek pozisyonda birleşir ve kâr/zarar
+                          // tekil sekmelerin toplamıyla tutarsız çıkar.
+                          // Ayrıntı: aggregatePositionsByOwner dökümantasyonu.
+                          final List<List<Asset>> ownerLots;
                           if (_view == '') {
-                            assets = pState.assets;
+                            ownerLots = [pState.assets];
                           } else if (_view != null) {
-                            assets = partnerMap[_view] ?? [];
+                            ownerLots = [partnerMap[_view] ?? const []];
                           } else {
                             // Birlikte
-                            assets = [...pState.assets];
-                            for (final list in partnerMap.values) {
-                              assets.addAll(list);
-                            }
+                            ownerLots = [
+                              pState.assets,
+                              ...partnerMap.values,
+                            ];
                           }
 
-                          final positions = aggregatePositions(assets);
+                          final positions = aggregatePositionsByOwner(ownerLots);
 
                           if (positions.isEmpty) {
                             return const _EmptyState();

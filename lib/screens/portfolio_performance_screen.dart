@@ -367,17 +367,21 @@ class _PortfolioPerformanceScreenState
                   error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                   data: (partnerMap) {
                     // Filter assets based on view
-                    List<Asset> targetAssets = [];
+                    // Sahiplik sınırı korunmalı — bkz. aggregatePositionsByOwner.
+                    // `targetAssets` ham ledger olarak akmaya devam eder
+                    // (HistoryService buy/sell tarihlerini kendisi yorumlar),
+                    // ancak aggregate edilirken sahipler ayrı tutulur.
+                    final List<List<Asset>> ownerLots;
                     if (_view == '') {
-                      targetAssets = pState.assets;
+                      ownerLots = [pState.assets];
                     } else if (_view != null) {
-                      targetAssets = partnerMap[_view] ?? [];
+                      ownerLots = [partnerMap[_view] ?? const []];
                     } else {
-                      targetAssets = [...pState.assets];
-                      for (final list in partnerMap.values) {
-                        targetAssets.addAll(list);
-                      }
+                      ownerLots = [pState.assets, ...partnerMap.values];
                     }
+                    List<Asset> targetAssets = [
+                      for (final l in ownerLots) ...l
+                    ];
                     // deleteLog'u çıkar (buy row zaten silinmiş, sadece
                     // transaction kaydı). Buy + sell birlikte gider —
                     // HistoryService her gün için buy addedDate <= dayTs
@@ -385,20 +389,24 @@ class _PortfolioPerformanceScreenState
                     // net miktarı hesaplar. Böylece grafik hem alınmadan
                     // önceki günlerde 0 gösterir hem de satış günü sonrası
                     // net miktara oturur.
-                    targetAssets =
-                        targetAssets.where((a) => !a.isDeleteLog).toList();
-                    // Apply asset type filter
-                    if (_typeFilter != null) {
-                      targetAssets = targetAssets
-                          .where((a) => a.type == _typeFilter)
-                          .toList();
-                    }
+                    // Filtreler hem düz listeye hem sahip gruplarına AYNI
+                    // şekilde uygulanmalı; aksi halde grafik ile özet farklı
+                    // varlık kümelerini gösterir.
+                    bool keep(Asset a) =>
+                        !a.isDeleteLog &&
+                        (_typeFilter == null || a.type == _typeFilter);
+
+                    targetAssets = targetAssets.where(keep).toList();
+                    final filteredOwnerLots = [
+                      for (final lots in ownerLots) lots.where(keep).toList(),
+                    ];
+
                     // Simülasyon modu: bugünün net pozisyonlarını
                     // tüm dönem boyunca sabit tut — "şu anki portföyümü o
                     // zaman elimde tutsaydım" senaryosunu HistoryService'e
                     // net display-asset listesi olarak ver.
                     final chartAssets = _simulate
-                        ? aggregatePositions(targetAssets)
+                        ? aggregatePositionsByOwner(filteredOwnerLots)
                             .map((p) => p.asDisplayAsset())
                             .toList()
                         : targetAssets;
@@ -464,6 +472,7 @@ class _PortfolioPerformanceScreenState
                               return _buildChartWithData(
                                 snapshot.data ?? const {},
                                 targetAssets,
+                                filteredOwnerLots,
                                 chartAssets,
                                 startDate,
                                 endDate,
@@ -486,6 +495,7 @@ class _PortfolioPerformanceScreenState
                         return _buildChartWithData(
                           historyMap,
                           targetAssets,
+                          filteredOwnerLots,
                           chartAssets,
                           effectiveStart,
                           endDate,
@@ -512,6 +522,7 @@ class _PortfolioPerformanceScreenState
   Widget _buildChartWithData(
     Map<int, double> historyMap,
     List<Asset> targetAssets,
+    List<List<Asset>> ownerLots,
     List<Asset> chartAssets,
     DateTime startDate,
     DateTime endDate,
@@ -524,10 +535,10 @@ class _PortfolioPerformanceScreenState
     // lot'ları içeriyor (satılan miktarı geçmişte düşürmemek için). Ancak
     // GÜNCEL toplam net pozisyondan gelmeli — aggregate ile sell'leri düşüp
     // asDisplayAsset.totalValue'yu topla.
-    final currentTotal = aggregatePositions(targetAssets)
-        .map((p) => p.asDisplayAsset())
-        .fold<double>(
-            0, (s, a) => s + pState.toTRY(a.totalValue, a.currency));
+    // Sahipler ayrı aggregate edilir — havuzlanırsa aynı hisseye sahip iki
+    // ortak tek pozisyona düşer ve toplam, tekil sekmelerin toplamını tutmaz.
+    final currentTotal =
+        ownerScopedTotalValue(ownerLots, toTRY: pState.toTRY);
 
     // TradingView "auto range" davranışı: kullanıcı seçilen periyot içinde
     // hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün önce başladı), chart

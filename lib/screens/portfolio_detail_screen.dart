@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -105,17 +106,24 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           loading: () => const SandikLoadingScreen(),
           error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
           data: (partnerMap) {
-            List<Asset> targetAssets = [];
+            // Sahiplik sınırı korunmalı — bkz. aggregatePositionsByOwner.
+            // Tüm ortakların lot'ları tek havuzda toplanırsa aynı hisseye
+            // sahip iki kişi tek pozisyona düşer ve kategori dağılımı ile
+            // kâr/zarar tekil sekmelerle tutarsız olur.
+            final List<List<Asset>> ownerLots;
             if (_view == '') {
-              targetAssets = pState.assets;
-            } else if (_view != null)
-              targetAssets = partnerMap[_view] ?? [];
-            else {
-              targetAssets = [...pState.assets];
-              for (final list in partnerMap.values) {
-                targetAssets.addAll(list);
-              }
+              ownerLots = [pState.assets];
+            } else if (_view != null) {
+              ownerLots = [partnerMap[_view] ?? const []];
+            } else {
+              ownerLots = [pState.assets, ...partnerMap.values];
             }
+            // Grafik geçmişi ham ledger ister (HistoryService buy/sell
+            // tarihlerini kendisi yorumlar), dağılım ise net pozisyon.
+            final targetAssets = [for (final l in ownerLots) ...l];
+            final positionedAssets = aggregatePositionsByOwner(ownerLots)
+                .map((p) => p.asDisplayAsset())
+                .toList();
 
             return FutureBuilder<Map<int, double>>(
               future: HistoryService.instance.getPortfolioHistory(
@@ -153,7 +161,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     const SizedBox(height: 32),
                     const _SectionTitle('KATEGORİ DAĞILIMI'),
                     const SizedBox(height: 16),
-                    _buildCategoryBreakdown(targetAssets, pState),
+                    _buildCategoryBreakdown(positionedAssets, pState),
                     const SizedBox(height: 32),
                     if (_view == null && activePartners.isNotEmpty) ...[
                       const _SectionTitle('ORTAKLAR'),
@@ -393,24 +401,28 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
 
   Widget _buildPartnerBreakdown(PortfolioState myState,
       Map<String, List<Asset>> partnerMap, List<AppUser> partners) {
-    double totalAll = myState.totalValue;
+    // Her sahibin NET pozisyon değeri — ham lot toplamı satışları da pozitif
+    // sayardı ve "Ben" satırı (net) ortak satırlarıyla (brüt) kıyaslanamazdı.
+    double ownerValue(List<Asset> lots) => ownerScopedTotalValue(
+          [lots],
+          toTRY: myState.toTRY,
+        );
+
+    final myTotal = ownerValue(myState.assets);
+    double totalAll = myTotal;
     for (final list in partnerMap.values) {
-      totalAll +=
-          list.fold(0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
+      totalAll += ownerValue(list);
     }
 
     return Column(
       children: [
         _breakdownTile(
             'Ben',
-            myState.totalValue,
-            fmtPct(myState.totalValue / (totalAll > 0 ? totalAll : 1) * 100,
-                digits: 1),
+            myTotal,
+            fmtPct(myTotal / (totalAll > 0 ? totalAll : 1) * 100, digits: 1),
             Sandik.amber),
         ...partners.map((p) {
-          final pAssets = partnerMap[p.id] ?? [];
-          final pTotal = pAssets.fold<double>(
-              0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
+          final pTotal = ownerValue(partnerMap[p.id] ?? const []);
           return _breakdownTile(
               p.displayName,
               pTotal,
