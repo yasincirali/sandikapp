@@ -134,6 +134,15 @@ gelir ve dosya/satır referansları doğrudan kullanılabilir.
 **Not:** `--force-roots-fallback` bayrağı, istemci workspace root'larını
 bildirmediğinde sunucunun proje kökünü kendi bulabilmesi için gereklidir; kaldırma.
 
+## Teknik Borç Defteri
+
+Ertelenmiş **kod** kararları `TECHNICAL_DEBT.md`'de tutulur — neden ertelendi,
+ertelemenin maliyeti ne, ne zaman ele alınmalı. Yeni bir borç ertelendiğinde
+oraya yaz; kapandığında "KAPANDI" tablosuna commit hash'iyle taşı.
+
+Kullanıcının elden yapacağı işler (store formları, keystore, hukuki adımlar)
+oraya DEĞİL, `YAPMAN_GEREKENLER.md`'ye gider.
+
 ## Areas for Automated Improvements
 
 ### Code Quality
