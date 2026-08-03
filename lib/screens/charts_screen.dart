@@ -612,32 +612,26 @@ class _AssetList extends StatelessWidget {
 
 // ── Asset Card ────────────────────────────────────────────────────────────────
 
-/// Varlık satırının sabit kolon ölçüleri.
-///
-/// Tek yerde tanımlanır çünkü hizalama bu üç sayının tutarlılığına bağlı:
-/// sparkline yuvası ve tutar kolonu her satırda aynı genişlikte olmazsa
-/// liste sağ kenarı tarak gibi görünür.
 /// Satır kolonlarının genişlik dağıtımı.
 ///
-/// **Sabit genişlik YOK, eşik YOK.** Kolonlar satırın gerçek genişliğinden
-/// (LayoutBuilder) pay alır; her cihazda kendiliğinden doğru oranı bulur.
+/// **Sabit genişlik YOK, cihaz eşiği YOK.** Kolonlar satırın gerçek
+/// genişliğinden (LayoutBuilder) pay alır; her ekranda kendiliğinden doğru
+/// oranı bulur.
 ///
-/// Dağıtım sırası — önce zorunlu olan, sonra lüks olan:
-///   1. İsim bloğu [minNameWidth] alır (asla feda edilmez).
+/// Dağıtım sırası — önce zorunlu olan:
+///   1. İsim bloğu [minNameWidth] alır; asla feda edilmez.
 ///   2. Tutar kolonu [minValueWidth]–[maxValueWidth] arasında ölçeklenir.
-///   3. Sparkline yalnızca ARTAN alandan beslenir; artan yoksa hiç çizilmez.
+///   3. Kalan her şey isme gider.
 ///
-/// Bu sıralama sayesinde alan daraldıkça önce grafik, sonra tutar kolonu
-/// küçülür; isim en son etkilenir. Eskiden tam tersiydi: sparkline (56pt) ve
-/// tutar (108pt) sabitti, kalan ne varsa isme düşüyordu — iPhone 12 mini'de
-/// 81pt, 320pt'lik cihazlarda 26pt kalıyordu ve isimler okunmuyordu.
+/// Eskiden tam tersiydi: sparkline (56pt) ve tutar (108pt) sabitti, isme
+/// "kalan ne varsa" düşüyordu — iPhone 12 mini'de 45pt, 320pt'lik cihazlarda
+/// neredeyse hiç. Sparkline artık satırda değil (bkz. _AssetDetailsPanel):
+/// telefon genişliklerinde yuvaya 2–22pt kalıyordu ve o boyutta eğri bilgi
+/// taşımıyordu.
 abstract final class _AssetCardMetrics {
   /// İsim bloğunun taban genişliği — "THYAO" + alt satır ("10 adet · Hisse").
   /// 320pt'lik cihazlarda bile ulaşılabilir olsun diye ölçülü tutuldu.
   static const double minNameWidth = 112;
-
-  /// Sparkline'ın doyduğu genişlik. Bunun ötesindeki alan tamamen isme gider.
-  static const double maxSparklineWidth = 56;
 
   /// Tutar kolonu. FittedBox içeriği zaten küçültür; alt sınır, rakamların
   /// okunamayacak kadar ufalmasını engeller.
@@ -654,40 +648,23 @@ abstract final class _AssetCardMetrics {
   static const double trailingChevronWidth = 32 + 4;
 
   /// [rowWidth] = kart iç genişliği (padding düşülmüş).
-  static ({double name, double spark, double value}) resolve(double rowWidth) {
-    // 1) Tutar kolonu: alan bollaştıkça max'a doğru büyür.
-    //    İsim + ikon + tutar'ın sığması gereken taban:
+  static ({double name, double value}) resolve(double rowWidth) {
     final afterLeading = rowWidth - leadingWidth - trailingChevronWidth;
+
+    // Tutar kolonu: alan bollaştıkça max'a doğru büyür, dar kalınca isim
+    // tabanını korumak için minValueWidth'e kadar kısılır.
     double value = maxValueWidth;
-    final needForNameAndValue = minNameWidth + columnGap + value;
-    if (afterLeading < needForNameAndValue) {
-      // Tutar kolonunu kıs — ama minValueWidth'in altına inme.
+    if (afterLeading < minNameWidth + columnGap + value) {
       value = (afterLeading - minNameWidth - columnGap)
           .clamp(minValueWidth, maxValueWidth);
     }
 
-    // 2) İsme kalan alan (sparkline'sız hâli).
+    // Kalan her şey isme.
     double name = afterLeading - columnGap - value;
-
-    // 3) Sparkline yalnızca isim tabanının ÜSTÜNDEKİ fazladan beslenir ve
-    //    o fazlanın en çok YARISINI alır — kalan yarısı isimde kalır.
-    //    Oransal pay, sabit bir yuvanın yarattığı sıçramayı önler: ekran
-    //    büyüdükçe grafik de isim de birlikte büyür, biri diğerini tek
-    //    hamlede yemez.
-    // Sparkline yuvası (boşluk dahil) fazlanın en çok yarısını alır; kalan
-    // yarısı isimde kalır. Grafik 0'dan büyüyerek gelir — sabit bir yuva
-    // olsaydı belirdiği anda isimden 64pt'yi tek hamlede alırdı.
-    double spark = 0;
-    final surplus = name - minNameWidth;
-    final slot = (surplus / 2).clamp(0.0, columnGap + maxSparklineWidth);
-    if (slot > columnGap) {
-      spark = slot - columnGap;
-      name -= slot;
-    }
 
     // Aşırı dar cihazda (katlanabilir kapak ekranı vb.) negatife düşmesin.
     if (name < 0) name = 0;
-    return (name: name, spark: spark, value: value);
+    return (name: name, value: value);
   }
 }
 
@@ -865,7 +842,6 @@ class _AssetCardState extends State<_AssetCard>
               child: LayoutBuilder(
                 builder: (context, rowConstraints) {
                   final m = _AssetCardMetrics.resolve(rowConstraints.maxWidth);
-                  final sparkW = m.spark;
                   final valueW = m.value;
                   return
               // crossAxisAlignment.center: ikon, başlık bloğu, sparkline ve
@@ -912,23 +888,11 @@ class _AssetCardState extends State<_AssetCard>
                     ),
                   ),
 
-                  // ── Sparkline — SABİT yuva ─────────────────────────────
-                  //
-                  // Grafiği olmayan varlıklarda da aynı genişlik ayrılır.
-                  // Aksi halde bazı satırlarda tutar kolonu 64dp sola kayar
-                  // ve liste "kırık" görünür. Hizalama > birkaç piksel alan.
-                  // Dar ekranda sparkW = 0 → yuva tamamen kalkar, kazanılan
-                  // 64pt doğrudan isim alanına gider.
-                  if (sparkW > 0) ...[
-                    const SizedBox(width: SandikSpace.sm),
-                    SizedBox(
-                      width: sparkW,
-                      child: SparklineService.supports(a)
-                          ? Center(
-                              child: AssetSparkline(asset: a, isPositive: isPos))
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
+                  // Sparkline SATIRDA YOK — bkz. _AssetCardMetrics.
+                  // Telefon genişliklerinde yuvaya 2–22pt kalıyordu; o boyutta
+                  // eğri bilgi taşımaz, yalnızca isimden yer yerdi. Grafik
+                  // artık satır genişletildiğinde detay panelinde TAM
+                  // GENİŞLİKTE çiziliyor.
 
                   // ── Tutar + kâr/zarar — SABİT genişlik ─────────────────
                   //
@@ -1119,6 +1083,12 @@ class _AssetDetailsPanel extends StatelessWidget {
 
     final currentValueTRY = pState.toTRY(position.totalValue, rep.currency);
 
+    // Grafiğin rengi satırdaki yüzdeyle aynı kaynaktan gelmeli (temettü dahil),
+    // yoksa eğri yeşilken yazı kırmızı olabilir.
+    final gainLossTRY = currentValueTRY -
+        position.totalCostTRY +
+        totalDividendTRY(position.lots);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: Column(
@@ -1129,6 +1099,28 @@ class _AssetDetailsPanel extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 12),
             color: Colors.white.withValues(alpha: 0.06),
           ),
+          // Son 1 ayın fiyat eğrisi — TAM GENİŞLİKTE.
+          //
+          // Eskiden satır içinde 56pt'lik bir yuvadaydı; responsive dağıtımda
+          // telefonlarda 2–22pt'ye düşüyor ve okunmuyordu. Burada panelin
+          // tamamını kullanır, yükseklik de 24→48pt'ye çıkar: eğrinin şekli
+          // gerçekten görünür.
+          if (SparklineService.supports(rep)) ...[
+            LayoutBuilder(
+              builder: (context, c) => AssetSparkline(
+                asset: rep,
+                isPositive: gainLossTRY >= 0,
+                width: c.maxWidth,
+                height: 48,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Son 1 ay',
+              style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+            ),
+            const SizedBox(height: 14),
+          ],
           // Tam ad — satırda yalnızca kod (THYAO) gösterilen varlıklar için.
           // Kırpma yok: burada yer var, isim tam okunmalı.
           if (rep.showTicker) ...[
