@@ -43,19 +43,26 @@ o dokunuşta ortak parçayı çıkar:
 
 ## 🟠 AÇIK — Widget test kapsamı (kısmen kapandı)
 
-**2026-08-04 durumu:** 120 testin 11'i gerçek widget testi
-(`transaction_row_overflow_test.dart`, `TransactionRow` üzerinde,
-320/360/375/390/430pt taramalı). Kalan ekranlarda widget testi hâlâ yok.
+**2026-08-04 durumu:** 128 testin 19'u gerçek widget testi:
+- `transaction_row_overflow_test.dart` — `TransactionRow` (11 senaryo)
+- `asset_card_overflow_test.dart` — `ChartsScreen` provider override ile
+  pump edilir, varlık kartları gerçek haliyle çizilir (8 senaryo)
+
+İkisi de 320/360/375/390/430pt genişlik taraması yapıyor.
 
 Bu yaklaşımın değeri ölçüldü: gerçek widget'a bağlanan test, ilk çalıştırmada
 **daha önce bilinmeyen bir taşmayı** ortaya çıkardı (satış satırında 19px
 yatay — "Çıkarıldı" etiketi "Eklendi"den uzun ve 116pt'lik kolona sığmıyordu).
 Yapısal kopya bunu yakalayamazdı çünkü kopyada etiket sabitti.
 
-**Sırada:** aynı kalıbı diğer liste satırlarına uygula — özellikle
-`charts_screen`'deki `_AssetCard` (kaydırma aksiyonları + genişleyen panel)
-ve `leaderboard_screen` kartları. `tester.takeException()` yeterli, golden
-test gerekmiyor.
+**Ekran-seviyesi test kalıbı (yeni):** `_AssetCard` gibi private ve çok
+yardımcılı widget'lar için ayrı dosyaya çıkarmayı BEKLEMEYE gerek yok.
+Ekranı `ProviderScope` override'larıyla pump et; iç yapı değil dış davranış
+doğrulanır, ekran ileride parçalanınca test yine geçer. Örnek:
+`asset_card_overflow_test.dart`.
+
+**Sırada:** `leaderboard_screen` kartları, `performance_screen` grafik
+başlıkları. `tester.takeException()` yeterli, golden test gerekmiyor.
 
 ---
 
