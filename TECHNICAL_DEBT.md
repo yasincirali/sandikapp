@@ -73,9 +73,28 @@ Ekranı `ProviderScope` override'larıyla pump et; iç yapı değil dış davran
 doğrulanır, ekran ileride parçalanınca test yine geçer. Örnek:
 `asset_card_overflow_test.dart`.
 
-**Sırada:** `home_screen` (özet + mini kartlar), `add_asset_screen` (form
-alanları), `portfolio_performance_screen`. `tester.takeException()` yeterli,
-golden test gerekmiyor.
+**Sırada:** `add_asset_screen` (form alanları), `portfolio_performance_screen`.
+`tester.takeException()` yeterli, golden test gerekmiyor.
+
+### ⚠️ `home_screen` widget testi DENENDİ, geri alındı (2026-08-04)
+
+Ekran testte izole edilemedi. `ChartsScreen`/`LeaderboardScreen` dört
+provider override'ıyla temiz çalışırken `HomeScreen` ek olarak şunları
+tetikliyor ve hepsi testte hata + bekleyen timer üretiyor:
+- `signalProvider` → Supabase (`fetchSignalNotifications`)
+- `DbLogger._persistAsync` → her başarısız çağrı için ayrı timer
+- `google_fonts` → DM Sans'ı ağdan çekmeye çalışıyor; `allowRuntimeFetching
+  = false` yapınca bu sefer "font assets'te yok" diye fırlatıyor
+
+Sonuç: `FlutterError.onError` ile yerleşim hatalarını süzmek yetmedi;
+`_verifyInvariants` bekleyen timer'lar yüzünden testi yine düşürüyor.
+
+**Yeniden denemeden önce gereken:** ya `DbLogger` test modunda no-op olmalı,
+ya da DM Sans `pubspec.yaml`'a asset olarak eklenmeli (google_fonts ağ
+bağımlılığı bir üretim riski de — offline ilk açılışta font düşer).
+
+**Ama bulunan hatalar geçerli ve düzeltildi** — test tutmasa da ekran gerçek
+haliyle pump edilip taşmalar ölçüldü.
 
 ---
 

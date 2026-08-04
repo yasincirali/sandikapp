@@ -251,29 +251,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   // Yön A: blur + gölge kaldırıldı — marka rozeti bir vurgu
                   // öğesi değil, kimlik işareti. Cam efekti hero karta ayrıldı.
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Sandik.amber.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(SandikRadius.md),
-                      border: Border.all(
-                          color: Sandik.amber.withValues(alpha: 0.24),
-                          width: 1.0),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SandikLogo(size: 20, color: Sandik.amber),
-                        const SizedBox(width: SandikSpace.sm),
-                        Text(
-                          'sandık',
-                          style: context.t.headlineMedium?.copyWith(
-                            color: Sandik.gold,
-                            letterSpacing: -0.5,
-                          ),
+                  //
+                  // Flexible + FittedBox: rozet sabit genişlikteyken sağdaki
+                  // dört aksiyon düğmesiyle birlikte satırı taşırıyordu
+                  // (17px). Aksiyonlar kimlik işaretinden önceliklidir —
+                  // gerekirse rozet küçülür, hiçbir düğme gizlenmez.
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Sandik.amber.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(SandikRadius.md),
+                          border: Border.all(
+                              color: Sandik.amber.withValues(alpha: 0.24),
+                              width: 1.0),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SandikLogo(size: 20, color: Sandik.amber),
+                            const SizedBox(width: SandikSpace.sm),
+                            Text(
+                              'sandık',
+                              style: context.t.headlineMedium?.copyWith(
+                                color: Sandik.gold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -450,8 +461,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ..sort((a, b) => b.addedDate.compareTo(a.addedDate));
 
                 if (recentAssets.isEmpty) {
+                  // Yatay `hp` ÜST Padding'te zaten uygulanıyor; burada
+                  // tekrarlanınca içerik kutusu iki kat daralıyor ve 320pt'de
+                  // "İlk Varlığını Ekle" düğmesi 119px taşıyordu.
                   return Padding(
-                    padding: EdgeInsets.fromLTRB(hp, 16, hp, 8),
+                    padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
                     child: Column(
                       children: [
                         const Icon(Icons.savings_outlined,
@@ -485,19 +499,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               border: Border.all(
                                   color: Sandik.amber.withValues(alpha: 0.5)),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.add_rounded,
-                                    color: Sandik.amber, size: 20),
-                                const SizedBox(width: SandikSpace.sm),
-                                Text(
-                                  'İlk Varlığını Ekle',
-                                  style: context.t.bodyLarge?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: Sandik.amber),
-                                ),
-                              ],
+                            // 28pt yatay padding + ikon + etiket dar ekranda
+                            // sığmıyor. FittedBox içeriği kırpmadan küçültür;
+                            // düğme metni her cihazda tam okunur.
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.add_rounded,
+                                      color: Sandik.amber, size: 20),
+                                  const SizedBox(width: SandikSpace.sm),
+                                  Text(
+                                    'İlk Varlığını Ekle',
+                                    style: context.t.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: Sandik.amber),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),

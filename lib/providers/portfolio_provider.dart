@@ -553,11 +553,13 @@ final portfolioProvider =
 );
 
 final allPartnerAssetsProvider =
-    AsyncNotifierProvider<_PartnerAssetsNotifier, Map<String, List<Asset>>>(
-  _PartnerAssetsNotifier.new,
+    AsyncNotifierProvider<PartnerAssetsNotifier, Map<String, List<Asset>>>(
+  PartnerAssetsNotifier.new,
 );
 
-class _PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
+/// Ortakların varlıkları. Public: widget testleri `overrideWith` ile sahte
+/// veri besleyebilsin (private sınıf test tarafından extend edilemiyor).
+class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
   @override
   Future<Map<String, List<Asset>>> build() async {
     final activePartners = ref.watch(activePartnersProvider);
