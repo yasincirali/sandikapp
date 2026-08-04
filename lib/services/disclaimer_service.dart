@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Yasal uyarı metni ve versiyonu — değiştirilirse versiyon artırılmalı.
@@ -60,9 +61,26 @@ class DisclaimerService {
         )
         .timeout(_timeout);
     _cache[userId] = true;
+    // Kalıcı iz — sonraki açılışta ağ yoksa `hasAccepted` buna düşer.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_deviceKey(userId), true);
   }
 
+  /// Onayın cihazdaki kalıcı izi. Bellek cache'i uygulama kapanınca gider;
+  /// bu anahtar kalır, böylece ağ yokken de "zaten onayladı" bilinebilir.
+  static String _deviceKey(String userId) =>
+      'disclaimer_accepted_${disclaimerVersion}_$userId';
+
   /// Kullanıcının bu versiyon için onayı var mı?
+  ///
+  /// Ağ hatasında **cihazdaki kalıcı ize** düşer. Bu, hukuki kapıyı
+  /// zayıflatmaz: yalnızca daha önce onayladığı doğrulanmış kullanıcı
+  /// offline geçebilir. Hiç onaylamamış kullanıcı ağsızken yine
+  /// disclaimer ekranını görür.
+  ///
+  /// Eskiden ağ hatasında koşulsuz `false` dönüyordu; oturumu olan
+  /// kullanıcı uçak modunda disclaimer ekranında kilitleniyordu — çünkü
+  /// oradan onay da yazılamıyor.
   Future<bool> hasAccepted(String userId) async {
     if (_cache.containsKey(userId)) return _cache[userId]!;
     try {
@@ -75,10 +93,15 @@ class DisclaimerService {
           .timeout(_timeout);
       final accepted = (rows as List).isNotEmpty;
       _cache[userId] = accepted;
+      if (accepted) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(_deviceKey(userId), true);
+      }
       return accepted;
     } catch (e) {
       debugPrint('DisclaimerService.hasAccepted error: $e');
-      return false;
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_deviceKey(userId)) ?? false;
     }
   }
 }

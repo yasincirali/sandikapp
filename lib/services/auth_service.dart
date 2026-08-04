@@ -45,7 +45,42 @@ class AuthService {
 
   // ── Mevcut oturum ──────────────────────────────────────────────────────────
 
+  /// Cihazda geçerli bir oturum token'ı var mı? Tamamen yerel — ağ gerekmez.
+  ///
+  /// "Profil çekilemedi" ile "oturum yok" ayrımı için: ilkinde kullanıcı
+  /// hâlâ oturumdadır ve login ekranına atılmamalıdır.
+  bool get hasLocalSession => _client.auth.currentSession != null;
+
+  /// Mevcut oturumun kullanıcısı.
+  ///
+  /// `currentUser` yerel (Supabase token'ı diskte tutar) ve ağ olmadan da
+  /// doludur; `getProfile` ise ağa gider. Ağ yokken profil çekimi
+  /// fırlatırsa **oturum düşürülmez** — token geçerli olduğu sürece
+  /// kullanıcı oturumdadır. Aksi halde uçak modunda uygulama kullanıcıyı
+  /// LoginScreen'e atıyordu; oysa yapması gereken "bağlantını kontrol et"
+  /// demek ve ağ gelince kaldığı yerden devam etmek.
+  ///
+  /// Profil çekilemediğinde token'daki bilgiden minimal bir [AppUser]
+  /// kurulur; `displayName` boş kalır ve ağ gelince gerçek profille
+  /// [refreshProfile] üzerinden değişir.
   Future<AppUser?> getSessionUser() async {
+    final supaUser = _client.auth.currentUser;
+    if (supaUser == null) return null;
+    try {
+      return await SupabaseService.instance.getProfile(supaUser.id);
+    } catch (_) {
+      return AppUser.fromSession(
+        id: supaUser.id,
+        email: supaUser.email,
+        displayName: supaUser.userMetadata?['display_name'] as String?,
+        createdAt: supaUser.createdAt,
+      );
+    }
+  }
+
+  /// Ağ geri geldiğinde gerçek profili tazeler.
+  /// Yine başarısız olursa mevcut (minimal) kullanıcı korunur.
+  Future<AppUser?> refreshProfile() async {
     final supaUser = _client.auth.currentUser;
     if (supaUser == null) return null;
     return SupabaseService.instance.getProfile(supaUser.id);

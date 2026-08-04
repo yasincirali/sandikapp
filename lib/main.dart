@@ -22,6 +22,7 @@ import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/analytics_service.dart';
+import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
 import 'services/db_logger.dart';
 import 'services/disclaimer_service.dart';
@@ -31,6 +32,7 @@ import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
 import 'theme/sandik.dart';
+import 'widgets/sandik_error_view.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -680,6 +682,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         ref.read(authProvider.notifier).logout();
       } else {
         _backgroundedAt = null;
+        // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
+        // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
+        // devam etsin, elle "Tekrar Dene"ye basmak zorunda kalmasın.
+        if (ref.read(authProvider).hasError &&
+            AuthService.instance.hasLocalSession) {
+          ref.invalidate(authProvider);
+        } else {
+          // Offline'da minimal profille girildiyse gerçek profili tazele.
+          ref.read(authProvider.notifier).refreshProfileIfStale();
+        }
       }
     }
   }
@@ -760,6 +772,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (!portfolioSettled || !partnersSettled) {
         return const SandikLoadingScreen(key: ValueKey('splash'));
       }
+    }
+
+    // Oturum çözülemedi ama bu "oturum yok" demek DEĞİL: Supabase token'ı
+    // yerelde duruyorsa kullanıcı hâlâ oturumdadır, yalnızca ağ yok.
+    // Eskiden buradan doğrudan LoginScreen'e düşülüyordu — uçak modunda
+    // kullanıcı oturumundan atılmış gibi görünüyordu.
+    if (auth.hasError && AuthService.instance.hasLocalSession) {
+      return SandikErrorView(
+        key: const ValueKey('auth-offline'),
+        error: auth.error!,
+        onRetry: () => ref.invalidate(authProvider),
+      );
     }
 
     if (user == null) return const LoginScreen(key: ValueKey('login'));

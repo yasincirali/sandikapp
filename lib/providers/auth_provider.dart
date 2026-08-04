@@ -47,6 +47,22 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     }
   }
 
+  /// Ağ geri geldiğinde minimal (offline) profili gerçeğiyle değiştirir.
+  ///
+  /// `getSessionUser` ağ yokken token'dan minimal bir kullanıcı kuruyor —
+  /// `displayName` boş oluyor. Bağlantı gelince sessizce tazelenir.
+  /// Başarısız olursa mevcut state korunur: kullanıcı oturumdan atılmaz.
+  Future<void> refreshProfileIfStale() async {
+    final current = state.valueOrNull;
+    if (current == null || current.displayName.isNotEmpty) return;
+    try {
+      final fresh = await AuthService.instance.refreshProfile();
+      if (fresh != null) state = AsyncData(fresh);
+    } catch (_) {
+      // Ağ hâlâ yok — mevcut minimal profille devam.
+    }
+  }
+
   Future<void> logout() async {
     AnalyticsService.instance.logLogout();
     await RemotePushService.instance.stop();

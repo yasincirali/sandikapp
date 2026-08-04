@@ -37,6 +37,28 @@ class AppUser {
         createdAt: DateTime.fromMillisecondsSinceEpoch(m['created_at'] as int),
       );
 
+  /// Ağ yokken profil tablosu okunamadığında, yerel oturum token'ındaki
+  /// bilgiden kurulan minimal kullanıcı.
+  ///
+  /// `displayName` boş kalır — çağıran taraf bunu "profil henüz gelmedi"
+  /// olarak yorumlayıp e-postaya düşebilir. `onboardingCompleted` burada
+  /// anlamlı değildir; onboarding kapısı `OnboardingScreen.isCompleted`
+  /// üzerinden ayrıca karar verir.
+  factory AppUser.fromSession({
+    required String id,
+    String? email,
+    String? displayName,
+    String? createdAt,
+  }) =>
+      AppUser(
+        id: id,
+        email: email ?? '',
+        displayName: displayName ?? '',
+        createdAt:
+            (createdAt != null ? DateTime.tryParse(createdAt) : null) ??
+                DateTime.now(),
+      );
+
   factory AppUser.fromSupabase(Map<String, dynamic> m) => AppUser(
         id: m['id'] as String,
         email: m['email'] as String,
