@@ -30,7 +30,6 @@ CONVENIENCE
 • Bulk asset add cart
 • Hide-balance mode
 • Dark theme, eye-friendly UI
-• Continues to work offline with last-cached data
 • Turkish/English date and currency formatting
 
 Open your sandık, track your investments.

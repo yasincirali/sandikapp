@@ -30,7 +30,6 @@ KULLANIM KOLAYLIĞI
 • Toplu varlık ekleme sepeti
 • Bakiye gizleme özelliği
 • Karanlık tema, göz dostu arayüz
-• Çevrimdışı modda son verilerle çalışmaya devam eder
 • Türkçe tarih ve para formatları
 
 Sandığını aç, yatırımlarını takip et.

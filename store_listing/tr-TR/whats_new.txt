@@ -1,7 +1,7 @@
-• YENİ: Yarış — ortaklarınla getiri sıralaması + anonim genel sıralama
-• YENİ: "Zirvedeki Portföyler" — en çok kazananların anonim dağılımı
-• YENİ: Toplu varlık ekleme, geçmiş tarihli alım kaydı desteği
-• Grafik: TradingView tarzı profesyonel deneyim, pinch zoom, crosshair
-• Fix: Tarih formatı dd/MM/yyyy oldu (tüm Türkçe locale)
-• Fix: Ortak leaderboard'unda değer senkronizasyonu
-• Fix: Kısa geçmişli portföyde uzun periyot grafiği düzeltildi
+• YENİ: Nakit temettü takibi — tarihiyle gir, getirine yansısın
+• YENİ: Alım komisyonu maliyete dahil, kâr artık gerçek rakam
+• Fix: Ortak portföyde "Birlikte" kâr/zararı tekil sekmelerle tutarlı
+• Fix: Varlık isimleri küçük ekranlarda tam okunuyor
+• Fix: Ana ekran, performans ve hareketlerdeki yerleşim taşmaları
+• Fix: İnternet kesildiğinde oturum kapanmıyor, bağlantı gelince devam
+• Hız: Açılış hızlandı, arka plan trafiği azaldı
