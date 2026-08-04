@@ -103,3 +103,8 @@ ios/build/
 
 # Android Gradle build output
 /android/build/
+
+# Store ekran görüntüleri — ham girdiler ve üretilen çıktılar
+# (üretilebilir dosyalar; script ve plan versiyonlanır)
+store_listing/screenshots/raw/*.png
+store_listing/screenshots/out/

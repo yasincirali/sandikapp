@@ -1,0 +1,18 @@
+Ham ekran görüntülerini (iPhone 12 mini) buraya koyun.
+
+Dosya adları SIRA NUMARASIYLA başlamalı — başlık metni buna göre eşleşir:
+
+  01_home.png          → "Tüm yatırımların tek ekranda"
+  02_performance.png   → "Zaman içinde ne kazandın, gör"
+  03_commission.png    → "Komisyon ve temettü dahil gerçek rakam"
+  04_allocation.png    → "Ağırlığın nerede, tek bakışta"
+  05_partner.png       → "Eşinle, ortağınla aynı portföy"
+  06_leaderboard.png   → "İstersen sıralamada yerini gör"
+
+Sonra:
+  cd store_listing
+  python build_screenshots.py
+
+Çıktı:
+  screenshots/out/1242x2688/   (6.5")
+  screenshots/out/1284x2778/   (6.7")
