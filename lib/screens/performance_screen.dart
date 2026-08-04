@@ -10,6 +10,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../utils/dot_thinning.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
 import '../models/technical_signal.dart';
@@ -1228,6 +1229,35 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               );
                               final viewMinY = yBounds.minY;
                               final viewMaxY = yBounds.maxY;
+                              // Lot marker'ları piksel bazlı seyreltmeden
+                              // geçer — arka arkaya alım yapılan günlerde
+                              // dot'lar üst üste binip yığın gibi
+                              // görünüyordu. Zoom'da viewport daralınca
+                              // gizlenenler tek tek ortaya çıkar.
+                              // Adaylar gerçek spot X'leridir: `spot.x`
+                              // kesirli gün (dakika/1440), gün anahtarı ise
+                              // `spot.x.toInt()`. Gün anahtarını doğrudan
+                              // aday yaparsak hiçbir spot'a eşleşmez.
+                              final dotThinner = DotThinner.build(
+                                candidates: segments
+                                    .expand((s) => s.spots)
+                                    .map((sp) => sp.x)
+                                    .where((x) => lotDayIsSell
+                                        .containsKey(x.toInt())),
+                                viewMinX: viewMinX,
+                                viewMaxX: viewMaxX,
+                                plotWidthPx: (MediaQuery.of(context)
+                                            .size
+                                            .width -
+                                        60 -
+                                        40)
+                                    .clamp(120.0, 2000.0),
+                                minSeparationPx: 16,
+                                alwaysKeep: {
+                                  if (anchorSpot != null) anchorSpot.x,
+                                  if (lastSpot != null) lastSpot.x,
+                                },
+                              );
                               return LineChartData(
                           minX: viewMinX,
                           maxX: viewMaxX,
@@ -1311,15 +1341,21 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         (viewMaxX - viewMinX) / 5)
                                     : 1,
                                 getTitlesWidget: (value, meta) {
-                                  if (value == meta.min ||
-                                      value == meta.max) {
+                                  final span =
+                                      (meta.max - meta.min).abs();
+                                  // Etiket tick'in üzerinde ortalanır; kenara
+                                  // çok yakın tick'in etiketi plot alanının
+                                  // dışına taşar. Zoom'da interval sınırlara
+                                  // denk gelmediği için min/max eşitliği
+                                  // yetmiyor — %6 kenar payı bırak.
+                                  final edge = span * 0.06;
+                                  if (value <= meta.min + edge ||
+                                      value >= meta.max - edge) {
                                     return const SizedBox.shrink();
                                   }
                                   final date = startDate.add(Duration(
                                       minutes:
                                           (value * 60 * 24).round()));
-                                  final span =
-                                      (meta.max - meta.min).abs();
                                   final showYearOnly = span > 400;
                                   final showTime = span < 3;
                                   final showYear = !showYearOnly &&
@@ -1340,14 +1376,23 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                   return Padding(
                                     padding:
                                         const EdgeInsets.only(top: 10),
-                                    child: Text(
-                                      label,
-                                      // Eksen etiketi — tabular figür, tik
-                                      // değerleri değişince kaymasın.
-                                      style: context.t.numSmall.copyWith(
-                                        color: Sandik.text58,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
+                                    // Sabit genişlik + ortalama: taşan metin
+                                    // ellipsis olur, komşu etiketle çakışmaz.
+                                    child: SizedBox(
+                                      width: 74,
+                                      child: Text(
+                                        label,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                        // Eksen etiketi — tabular figür, tik
+                                        // değerleri değişince kaymasın.
+                                        style: context.t.numSmall.copyWith(
+                                          color: Sandik.text58,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
                                   );
@@ -1482,8 +1527,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                             spot.y == lastSpot.y) {
                                           return true;
                                         }
-                                        return lotDayIsSell
-                                            .containsKey(spot.x.toInt());
+                                        if (!lotDayIsSell
+                                            .containsKey(spot.x.toInt())) {
+                                          return false;
+                                        }
+                                        return dotThinner.shows(spot.x);
                                       },
                                       getDotPainter:
                                           (spot, percent, barData, index) {

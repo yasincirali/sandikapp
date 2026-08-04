@@ -41,39 +41,21 @@ o dokunuşta ortak parçayı çıkar:
 
 ---
 
-## 🟠 AÇIK — `_buildAssetTile` test edilebilir değil
+## 🟠 AÇIK — Widget test kapsamı (kısmen kapandı)
 
-`lib/screens/home_screen.dart:681` — hareket satırını çizen metot
-`_HomeScreenState`'e private ve Riverpod + Supabase + auth istiyor, bu yüzden
-doğrudan `pumpWidget` edilemiyor.
+**2026-08-04 durumu:** 120 testin 11'i gerçek widget testi
+(`transaction_row_overflow_test.dart`, `TransactionRow` üzerinde,
+320/360/375/390/430pt taramalı). Kalan ekranlarda widget testi hâlâ yok.
 
-`test/transaction_row_overflow_test.dart` bu ağacın **yapısal kopyasını**
-test ediyor. Kopya, gerçek widget'ı test etmez: `home_screen.dart` değişip
-test dosyası güncellenmezse test yeşil kalırken uygulama taşabilir.
+Bu yaklaşımın değeri ölçüldü: gerçek widget'a bağlanan test, ilk çalıştırmada
+**daha önce bilinmeyen bir taşmayı** ortaya çıkardı (satış satırında 19px
+yatay — "Çıkarıldı" etiketi "Eklendi"den uzun ve 116pt'lik kolona sığmıyordu).
+Yapısal kopya bunu yakalayamazdı çünkü kopyada etiket sabitti.
 
-**Çözüm:** Tile'ı `lib/widgets/transaction_row.dart`'a çıkar; veriyi
-parametre olarak al (provider okuma çağıran tarafta kalsın). Sonra test
-gerçek widget'ı pump eder ve kopya silinir.
-
-**Neden hemen yapılmadı:** 2026-08-03 oturumunda kapsam dışıydı; taşma
-düzeltmesi öncelikliydi ve mid-session refactor riski taşıyordu.
-
----
-
-## 🟠 AÇIK — Widget test kapsamı
-
-101 testin **97'si** saf hesap/model testi. Widget testi yalnızca
-`transaction_row_overflow_test.dart` (4 senaryo) ve o da yapısal kopya
-üzerinden.
-
-2026-08-03'te çıkan üç arayüz hatası — kaydırma etiketi kırpılması, buton
-taşması, dar ekranda isim ezilmesi — hiçbiri mevcut testlerle
-yakalanamıyordu. Biri (yatay 161px taşma) yalnızca yeni yazılan widget testi
-sayesinde bulundu; gözle görülmüyordu çünkü yalnızca dar ekranda çıkıyor.
-
-**Öneri:** Kritik ekranlar için farklı genişliklerde (320 / 375 / 430 pt)
-taşma doğrulayan testler. `tester.takeException()` yeterli — golden test
-gerekmiyor.
+**Sırada:** aynı kalıbı diğer liste satırlarına uygula — özellikle
+`charts_screen`'deki `_AssetCard` (kaydırma aksiyonları + genişleyen panel)
+ve `leaderboard_screen` kartları. `tester.takeException()` yeterli, golden
+test gerekmiyor.
 
 ---
 
@@ -112,6 +94,7 @@ değil.
 | 2026-08-03 | Varlık listesi `ListView.builder` | `fed8c87` |
 | 2026-08-03 | Ölü kod: SwiftUI prototipi + `DatabaseService` | `cde78d9` |
 | 2026-08-03 | Paywall'da var olmayan özellik reklamı | `03f1798` |
+| 2026-08-04 | `_buildAssetTile` → `TransactionRow` widget'ı; test yapısal kopyadan gerçek widget'a geçti (+ 19px satış satırı taşması bulundu) | — |
 
 ---
 
@@ -120,3 +103,30 @@ değil.
 Cold start süresi, scroll jank ve bellek profili **ölçülmedi**: geliştirme
 emülatörü frame üretmiyor (`dumpsys gfxinfo` → "Total frames rendered: 1").
 Gerçek cihazda `flutter run --profile` ile ölçülmeli.
+
+### Emülatörde Flutter render etmiyor — kapsamı 2026-08-04'te daraltıldı
+
+Bu makinedeki emülatörlerde **hiçbir Flutter build'i** görsel çıktı vermiyor.
+Ekran siyah kalıyor, `screencap` ~20 KB tek renk PNG üretiyor.
+
+Elenen ihtimaller (hepsi denendi, sonuç değişmedi):
+
+| Değişken | Denenen | Sonuç |
+|---|---|---|
+| API seviyesi | 35 ve 36 | ikisinde de 1 frame |
+| Build tipi | release (R8'li) ve debug | ikisinde de 1 frame |
+| GPU modu | host default ve `swiftshader_indirect` | ikisinde de 1 frame |
+| Renderer | Impeller ve `--ez enable-impeller false` | ikisinde de 1 frame |
+
+**Emülatörün kendisi sağlam:** aynı cihazda sistem Ayarlar uygulaması 44
+frame üretiyor ve 188 KB'lık dolu bir ekran görüntüsü veriyor. Sorun
+Flutter/Impeller ile bu emülatörün GL yığını arasında.
+
+**Uygulama sağlam:** logcat'te `Supabase init completed` görünüyor, süreç
+yaşıyor, FATAL/ANR yok. Dart tarafı sonuna kadar çalışıyor — yalnızca
+sunum katmanı okunamıyor.
+
+**Sonuç:** Emülatör, görsel doğrulama için kullanılamaz. `uiautomator dump`
+da boş dönüyor (Flutter erişilebilirlik ağacını doldurmuyor), yani otomatik
+arayüz doğrulaması da bu yoldan yapılamaz. **Yerleşim/taşma doğrulaması
+gerçek cihazda veya widget testiyle yapılmalı.**

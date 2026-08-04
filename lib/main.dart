@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
+import 'models/asset.dart';
 import 'models/user_model.dart';
 import 'providers/auth_provider.dart';
 import 'providers/portfolio_provider.dart';
@@ -486,12 +487,43 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   bool? _disclaimerAccepted; // null = kontrol bekleniyor
   bool? _onboardingDone; // null = kontrol bekleniyor
   bool _splashDone = false;
+  // Veri bekleme emniyet supabı — bu süre dolunca splash veriyi beklemeyi
+  // bırakır ve ana ekrana geçer (HomeScreen kendi loading/hata durumunu
+  // gösterir). Ağ koptuğunda kullanıcı splash'te kilitlenmesin.
+  bool _dataWaitExpired = false;
+
+  // Splash sırasında ısıtılan veri provider'larının abonelikleri. Açık
+  // tutulmaları şart: kapatılırsa Riverpod provider'ı autodispose edip
+  // HomeScreen mount olunca fetch'i baştan başlatır — düzeltmek istediğimiz
+  // çift loading'in ta kendisi.
+  ProviderSubscription<AsyncValue<PortfolioState>>? _portfolioWarmUp;
+  ProviderSubscription<AsyncValue<Map<String, List<Asset>>>>?
+      _partnerAssetsWarmUp;
+
+  void _warmUpData() {
+    _portfolioWarmUp ??= ref.listenManual(
+      portfolioProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    _partnerAssetsWarmUp ??= ref.listenManual(
+      allPartnerAssetsProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     Future.delayed(const Duration(milliseconds: 1800), () {
       if (mounted) setState(() => _splashDone = true);
+    });
+    // Veri en geç 6 sn içinde gelmezse beklemeyi bırak (bkz. _dataWaitExpired).
+    Future.delayed(const Duration(seconds: 6), () {
+      if (mounted && !_dataWaitExpired) {
+        setState(() => _dataWaitExpired = true);
+      }
     });
     WidgetsBinding.instance.addObserver(this);
     _authSubscription = ref.listenManual(authProvider, (_, next) {
@@ -500,10 +532,23 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (user == null && !next.isLoading) {
         _checkedUserId = null;
         _onboardingDone = null;
+        // Çıkışta ısıtma aboneliklerini bırak — yeni kullanıcı girdiğinde
+        // provider'lar temiz şekilde yeniden çekilsin.
+        _portfolioWarmUp?.close();
+        _portfolioWarmUp = null;
+        _partnerAssetsWarmUp?.close();
+        _partnerAssetsWarmUp = null;
         AnalyticsService.instance.setUserId(null);
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
         _checkedUserId = user.id;
+        // Portföy ve ortak varlıklarını SPLASH sırasında ısıt. Bu provider'lar
+        // lazy — eskiden ilk `watch` HomeScreen mount olunca gerçekleşiyordu,
+        // yani veri çekimi splash BİTTİKTEN sonra başlıyor ve arka arkaya
+        // ikinci bir loading ekranı doğuyordu. `listenManual` ile burada
+        // abone olunca fetch splash ile paralel başlar; splash sona erdiğinde
+        // veri çoğunlukla hazırdır ve tek loading görünür.
+        _warmUpData();
         AnalyticsService.instance.setUserId(user.id);
         final isPremium = ref.read(effectivePremiumProvider);
         AnalyticsService.instance.setUserProperty(
@@ -532,6 +577,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   @override
   void dispose() {
     _authSubscription.close();
+    _portfolioWarmUp?.close();
+    _partnerAssetsWarmUp?.close();
     PartnerInviteListenerService.instance.stop();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -633,6 +680,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     final auth = ref.watch(authProvider);
     final user = auth.valueOrNull;
 
+    // Kullanıcı belli olur olmaz veri çekimini başlat. Burada yapılıyor çünkü
+    // `build` auth'un her durumunda çalışır; `initState`'teki auth listener'ı
+    // oturum geri yüklenirken kaçırılabiliyordu ve splash sonsuza kadar
+    // bekliyordu. `_warmUpData` idempotent (??= ile korunuyor).
+    if (user != null) _warmUpData();
+
     // Portföy varlık sayısı değişince analytics user property'sini güncelle.
     // Analytics dashboard'ta cohort analizi için gerekli.
     ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (prev, next) {
@@ -672,6 +725,32 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         (user != null &&
             (_disclaimerAccepted == null || _onboardingDone == null))) {
       return const SandikLoadingScreen(key: ValueKey('splash'));
+    }
+
+    // Ana ekrana geçmeden önce portföy verisi de hazır olmalı. Aksi halde
+    // splash biter, HomeScreen mount olur ve KENDİ loading'ini gösterir —
+    // kullanıcının gördüğü "arka arkaya iki loading" tam olarak budur.
+    // Veri `_warmUpData` ile splash sırasında zaten çekiliyor; burada sadece
+    // tamamlanmasını bekliyoruz, yani ek gecikme getirmez.
+    // Emniyet supabı: veri gelmezse (ağ yok, hata) splash'te takılı kalma —
+    // `_dataWaitExpired` sonrası ana ekrana geç, HomeScreen kendi hata/boş
+    // durumunu gösterir.
+    if (user != null &&
+        _disclaimerAccepted == true &&
+        _onboardingDone == true &&
+        !_dataWaitExpired) {
+      final portfolio = ref.watch(portfolioProvider);
+      final partners = ref.watch(activePartnersProvider);
+      final partnerAssets =
+          partners.isEmpty ? null : ref.watch(allPartnerAssetsProvider);
+      // Hata durumunda bekleme — HomeScreen hatayı gösterecek.
+      final portfolioSettled = portfolio.hasValue || portfolio.hasError;
+      final partnersSettled = partnerAssets == null ||
+          partnerAssets.hasValue ||
+          partnerAssets.hasError;
+      if (!portfolioSettled || !partnersSettled) {
+        return const SandikLoadingScreen(key: ValueKey('splash'));
+      }
     }
 
     if (user == null) return const LoginScreen(key: ValueKey('login'));

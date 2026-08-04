@@ -16,6 +16,7 @@ import '../services/technical_analysis_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../utils/dot_thinning.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../services/history_service.dart';
@@ -1220,6 +1221,49 @@ class _PortfolioPerformanceScreenState
           ? 240.0
           : _niceRoundNumber((viewMaxX - viewMinX) / 5)
               .clamp(1.0, double.infinity);
+
+      // Alım dot'ları için piksel bazlı seyreltme. Arka arkaya yapılan
+      // alımlarda noktalar birkaç piksel arayla düşüp üst üste biniyor ve
+      // tek bir yığın gibi görünüyordu. Aynı X uzayında minimum 16px mesafe
+      // şartı koyuyoruz; zoom yapıldıkça viewport daralır, noktalar açılır
+      // ve gizlenenler tek tek ortaya çıkar.
+      final DotThinner dotThinner = intraday || _simulate
+          ? DotThinner.build(
+              candidates: const [],
+              viewMinX: viewMinX,
+              viewMaxX: viewMaxX,
+            )
+          : () {
+              final buyDayKeys = <double>{};
+              for (final seg in segments) {
+                if (seg.thickness <= 2.0) continue;
+                for (final spot in seg.spots) {
+                  final dateAtSpot = start
+                      .add(Duration(minutes: (spot.x * 24 * 60).round()));
+                  final hasAddition = assets.any((a) =>
+                      a.addedDate.year == dateAtSpot.year &&
+                      a.addedDate.month == dateAtSpot.month &&
+                      a.addedDate.day == dateAtSpot.day);
+                  if (hasAddition) buyDayKeys.add(spot.x);
+                }
+              }
+              return DotThinner.build(
+                candidates: buyDayKeys,
+                viewMinX: viewMinX,
+                viewMaxX: viewMaxX,
+                // Grafik genişliği ~ekran - sağ Y rezervi (60px).
+                plotWidthPx:
+                    (MediaQuery.of(context).size.width - 60 - 40)
+                        .clamp(120.0, 2000.0),
+                minSeparationPx: 16,
+                // İlk ve son nokta her zaman görünür (anchor / "şimdi").
+                alwaysKeep: {
+                  primarySeg.spots.first.x,
+                  primarySeg.spots.last.x,
+                },
+              );
+            }();
+
       return LineChartData(
           minX: viewMinX,
           maxX: viewMaxX,
@@ -1366,7 +1410,14 @@ class _PortfolioPerformanceScreenState
                 reservedSize: 40,
                 interval: xInterval,
                 getTitlesWidget: (val, meta) {
-                  if (val == meta.min || val == meta.max) {
+                  // Etiket tick'in ÜZERİNDE ortalanır; kenara çok yakın bir
+                  // tick'in etiketi plot alanının dışına taşar. Zoom'da
+                  // interval artık sınırlara denk gelmediği için `val ==
+                  // meta.min/max` kontrolü yetmiyordu — bunun yerine viewport
+                  // genişliğinin %6'sı kadar bir kenar payı bırakıyoruz.
+                  final span = (meta.max - meta.min).abs();
+                  final edge = span * 0.06;
+                  if (val <= meta.min + edge || val >= meta.max - edge) {
                     return const SizedBox.shrink();
                   }
                   // Dinamik format — dar viewport'ta gün+ay, geniş
@@ -1399,12 +1450,22 @@ class _PortfolioPerformanceScreenState
                       : nonIntradayLabel(val);
                   return Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      label,
-                      style: context.t.numSmall.copyWith(
-                        color: Sandik.text58,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                    // Sabit genişlik + ortalama: fl_chart etiketi tick'te
+                    // ortalar, taşan metin ellipsis olur ve komşu etiketle
+                    // çakışmaz.
+                    child: SizedBox(
+                      width: 74,
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        style: context.t.numSmall.copyWith(
+                          color: Sandik.text58,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   );
@@ -1449,15 +1510,14 @@ class _PortfolioPerformanceScreenState
                     // Trading hissiyatı: sadece "şimdi" noktası görünsün.
                     return spot.x == seg.spots.last.x;
                   }
-                  final dateAtSpot =
-                      start.add(Duration(minutes: (spot.x * 24 * 60).round()));
-                  final hasAddition = assets.any((a) =>
-                      a.addedDate.year == dateAtSpot.year &&
-                      a.addedDate.month == dateAtSpot.month &&
-                      a.addedDate.day == dateAtSpot.day);
-                  return hasAddition ||
-                      spot.x == seg.spots.first.x ||
-                      spot.x == seg.spots.last.x;
+                  // İlk/son nokta her zaman görünür; alım dot'ları ise
+                  // piksel bazlı seyreltmeden geçer (bkz. `dotThinner`) —
+                  // yoğun alım günlerinde üst üste binip yığın oluşmasın.
+                  if (spot.x == seg.spots.first.x ||
+                      spot.x == seg.spots.last.x) {
+                    return true;
+                  }
+                  return dotThinner.shows(spot.x);
                 },
                 getDotPainter: (spot, percent, barData, index) {
                   final isFirst = spot.x == seg.spots.first.x;
