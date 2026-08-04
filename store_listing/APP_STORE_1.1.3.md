@@ -91,6 +91,8 @@ GİZLİLİK
 
 Sandığını aç, ne kazandığını gör.
 
+Uygulamayı ararken "sandik" veya "sandık" — ikisi de bizi bulur.
+
 ---
 sandık yatırım tavsiyesi vermez. Gösterilen veriler bilgi amaçlıdır;
 yatırım kararlarınızda profesyonel danışmanlık alınız.
@@ -135,14 +137,16 @@ Tarih seçici uygulama genelinde tek tip oldu.
 ## Keywords (100 karakter, virgülle, boşluksuz)
 
 Başlıkta geçen kelimeleri tekrarlamayın — App Store zaten indeksliyor.
-"portföy" ve "sandık" başlıkta olduğu için listede yok.
+`portföy` başlıkta olduğu için listede yok. **`sandik` ise listede VAR** —
+sebebi aşağıdaki marka bölümünde.
 
 ```
-borsa,hisse,yatırım,altın,döviz,fon,bist,kâr,temettü,birikim,finans,varlık,kur,gümüş,bütçe,tasarruf
+sandik,borsa,hisse,yatırım,altın,döviz,fon,bist,kâr,temettü,birikim,varlık,kur,gümüş,bütçe
 ```
-(99 karakter)
+(90 karakter — 10 karakter yedek)
 
 **Neden bunlar:**
+- `sandik` — şapkasız yazanları yakalar (bkz. marka bölümü)
 - `borsa`, `hisse`, `bist` — en yüksek hacimli arama terimleri
 - `altın`, `döviz`, `kur` — TR'de en çok aranan yatırım araçları
 - `temettü` — rakiplerin çoğunda yok, düşük rekabet
@@ -151,6 +155,49 @@ borsa,hisse,yatırım,altın,döviz,fon,bist,kâr,temettü,birikim,finans,varlı
 
 **Not:** Apple keyword alanında Türkçe karakterleri ayrı indeksler.
 `kâr` yazdım; `kar` (kar yağışı) ile karışmaması için doğrusu bu.
+
+---
+
+## Marka adının yazımı: sandık / sandik / SANDIK
+
+**Sorun neyle sınırlı, önce bunu netleştirelim.** Dört varyantın hepsi
+ayrı ayrı sorun değil:
+
+| Kullanıcı arar | Eşleşir mi | Neden |
+|---|---|---|
+| `Sandık`, `SANDIK` → `sandık` | ✅ | Büyük/küçük harf normalize edilir |
+| `sandik` → `sandık` | ⚠️ | `i` ve `ı` **ayrı harflerdir**, aksan değil |
+
+Yani tek gerçek risk **şapkasız `sandik` yazan kullanıcı**. Klavyesi
+Türkçe olmayan, acele eden veya markayı kulaktan duymuş kişi böyle yazar —
+azımsanacak bir kitle değil.
+
+**Yapılmayacak olan:** başlığa `sandık sandik Sandık SANDIK` gibi varyant
+yığmak. Hem Apple hem Google bunu keyword stuffing sayıp reddeder
+(App Store Guideline 2.3.7, Play Store metadata politikası). Kelime
+tekrarı sıralamayı da yükseltmez.
+
+**Yapılacak olan — üç katman:**
+
+1. **Başlık tek biçimde kalır:** `sandık — Portföy Takibi`
+   Marka tutarlılığı SEO'dan önce gelir; ikon, ekran görüntüsü ve
+   uygulama içi yazım hep aynı olmalı.
+
+2. **`sandik` keyword alanına girer** (yukarıda eklendi). Burada tekrar
+   cezası yoktur ve şapkasız aramayı tam olarak bu yakalar.
+   *Bu, sorunun asıl çözümüdür.*
+
+3. **Açıklama metninde bir kez doğal olarak geçer.** Play Store
+   açıklamayı indeksler, App Store indekslemez — ama iki mağazada tek
+   metin kullanıldığı için zararı yok. Zorlama cümle kurmayın; alttaki
+   ekleme bunu doğal biçimde yapıyor.
+
+**iOS ana ekran adı tutarsız:** `Info.plist` içinde `CFBundleDisplayName`
+= `SANDIK`, mağaza başlığı ise `sandık`. Android'de `strings.xml` = `sandık`.
+Yani aynı marka üç yerde iki farklı biçimde yazılıyor. Bu bir arama
+sorunu değil ama kullanıcı için kafa karıştırıcı; iOS'ta da `sandık`
+yapılması önerilir. **Karar sizin** — büyük harfli yazım bilinçli bir
+tercihse (ikon/logo ile uyum) olduğu gibi kalabilir.
 
 ---
 
