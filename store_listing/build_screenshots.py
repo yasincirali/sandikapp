@@ -45,6 +45,8 @@ BG_BOTTOM = (6, 18, 13)
 AMBER = (245, 166, 35)
 TEXT = (255, 255, 255)
 SUBTLE = (255, 255, 255, 150)
+# Ölçüldü: ortak sekmesindeki pasif etiket rengi (soluk gri-yeşil).
+TAB_GREY = (108, 120, 115)
 
 TARGETS = [(1242, 2688), (1284, 2778)]
 
@@ -66,11 +68,23 @@ CROP_TOP = 0.0
 #   python build_screenshots.py --grid
 # komutu ham görüntülerin üzerine ızgara çizip scratch klasörüne kaydeder.
 REDACTIONS = {
-    # Örnek — gerçek koordinatlar yeni görseller gelince doldurulacak:
-    # "06": [
-    #     (0.09, 0.185, 0.34, 0.030, "Ayşe K."),
-    #     (0.09, 0.255, 0.34, 0.030, "Mehmet D."),
-    # ],
+    # Ortak sekmesindeki gerçek ad ("sila") — segment kontrolünün sağ
+    # üçte biri. Satır konumu ekrana göre değiştiği için her kare ayrı.
+    # Ölçüm: segment şeridi 01=0.489-0.538, 02=0.143-0.190,
+    # 03/04/05=0.164-0.213. Yama şeridin iç yüksekliğini kaplar.
+    "01": [(0.660, 0.4955, 0.245, 0.0360, "Ayşe", "c", 0.0111, TAB_GREY)],
+    "02": [(0.660, 0.1495, 0.245, 0.0345, "Ayşe", "c", 0.0111, TAB_GREY)],
+    "03": [(0.660, 0.1710, 0.245, 0.0360, "Ayşe", "c", 0.0111, TAB_GREY)],
+    "04": [(0.660, 0.1710, 0.245, 0.0360, "Ayşe", "c", 0.0111, TAB_GREY)],
+    "05": [(0.660, 0.1710, 0.245, 0.0360, "Ayşe", "c", 0.0111, TAB_GREY)],
+    # Yarış sıralaması — iki gerçek ad + üstteki iOS sistem bildirimi
+    "06": [
+        (0.120, 0.040, 0.790, 0.058, ""),           # "Arkaya Dokunma" bildirimi
+        # Ölçüm: 1. satır ismi 0.217-0.504, LİDER rozeti 0.541-0.599.
+        # Yama 0.51'de biter — rozet korunur (kişisel veri değil, bilgi verici).
+        (0.212, 0.2415, 0.298, 0.0290, "Ayşe K. (sen)"),
+        (0.212, 0.3465, 0.230, 0.0280, "Mehmet D."),
+    ],
 }
 
 # Sıra → (başlık, alt satır). SCREENSHOT_PLAN.md ile birebir aynı sıra.
@@ -78,10 +92,13 @@ REDACTIONS = {
 CAPTIONS = {
     "01": ("Tüm yatırımların\ntek ekranda", "Hisse, fon, döviz, altın"),
     "02": ("Zaman içinde\nne kazandın, gör", "Gün, ay, yıl bazında getiri"),
-    "03": ("Komisyon ve temettü dahil\ngerçek rakam", "Kârın olduğundan yüksek görünmez"),
+    # Bu kare kaydırma aksiyonlarını gösteriyor (Ekle / Çıkar / Temettü) —
+    # komisyon kırılımını değil. Başlık kareyle uyumlu olmalı.
+    "03": ("Temettünü de\nkaydet", "Kaydır: ekle, çıkar, temettü gir"),
     "04": ("Ağırlığın nerede,\ntek bakışta", "Dağılımını dengede tut"),
     "05": ("Eşinle, ortağınla\naynı portföy", "Herkesin katkısı ayrı hesaplanır"),
     "06": ("İstersen sıralamada\nyerini gör", "Anonim — tutar paylaşılmaz"),
+    "07": ("Her varlığın\nkendi hikâyesi", "Alış çizgisi, dönem değişimi, MA20"),
 }
 
 
@@ -120,16 +137,23 @@ def fit_font(path, text, max_w, start, draw, min_size=28):
 
 
 def sample_bg(img, box):
-    """Maskelenecek alanın solundan zemin rengini örnekler.
+    """Maskelenecek alanın zemin rengini çevresinden örnekler.
 
-    Düz renk yerine gerçek zemini kullanmak, yamanın "yapıştırılmış"
-    görünmesini engeller.
+    Tek noktadan renk almak yamanın sınırını belli ediyordu (zemin hafif
+    degradeli). Bunun yerine kutunun üst ve alt kenarından medyan alınır —
+    yama çevreye karışır.
     """
     x, y, w, h = box
     px = img.load()
-    sx = max(0, x - 4)
-    sy = min(img.height - 1, y + h // 2)
-    return px[sx, sy]
+    samples = []
+    for sy in (max(0, y - 3), min(img.height - 1, y + h + 2)):
+        for i in range(1, 10):
+            sx = min(img.width - 1, x + w * i // 10)
+            samples.append(px[sx, sy])
+    if not samples:
+        return (0, 0, 0)
+    samples.sort(key=sum)
+    return samples[len(samples) // 2]
 
 
 def apply_redactions(shot, key):
@@ -143,7 +167,12 @@ def apply_redactions(shot, key):
         return shot
 
     draw = ImageDraw.Draw(shot)
-    for rx, ry, rw, rh, text in spec:
+    for item in spec:
+        rx, ry, rw, rh, text = item[:5]
+        # 6. eleman verilirse hizalama: "c" ortalı (sekme etiketi),
+        # varsayılan sola dayalı (liste satırı).
+        align = item[5] if len(item) > 5 else "l"
+
         x = int(rx * shot.width)
         y = int(ry * shot.height)
         w = int(rw * shot.width)
@@ -152,11 +181,21 @@ def apply_redactions(shot, key):
         draw.rectangle([(x, y), (x + w, y + h)],
                        fill=sample_bg(shot, (x, y, w, h)))
 
-        size = max(10, int(h * 0.82))
+        if not text:
+            continue
+
+        # 7. eleman: metin yüksekliği (ham görüntü oranı). Verilmezse
+        # yama yüksekliğinin yarısı. Orijinal metnin punto ve rengiyle
+        # eşleşmezse yama gözle belli olur — ölçüp geçmek gerekir.
+        cap_h = item[6] if len(item) > 6 else rh * 0.5
+        colour = item[7] if len(item) > 7 else TEXT
+
+        size = max(10, int(cap_h * shot.height * 1.38))
         f = ImageFont.truetype(FONT_MED, size)
         bb = draw.textbbox((0, 0), text, font=f)
-        draw.text((x, y + (h - (bb[3] - bb[1])) // 2 - bb[1]), text,
-                  font=f, fill=TEXT)
+        tx = x + (w - (bb[2] - bb[0])) // 2 if align == "c" else x
+        draw.text((tx, y + (h - (bb[3] - bb[1])) // 2 - bb[1]), text,
+                  font=f, fill=colour)
     return shot
 
 
