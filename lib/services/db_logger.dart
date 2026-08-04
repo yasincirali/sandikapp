@@ -13,6 +13,16 @@ class DbLogger {
 
   static const String _sdk = 'supabase_flutter';
 
+  /// Widget testlerinde persist'i tamamen kapatır.
+  ///
+  /// `_persistAsync` her çağrıda bir `Future(...)` kurar. Testte
+  /// `Supabase.instance` kurulu olmadığı için bu future hata verir ve
+  /// `testWidgets` sonunda "bekleyen timer" olarak testi düşürür — ekran
+  /// yerleşimiyle ilgisi olmayan bir sebeple. Varsayılanı `false`, yani
+  /// üretim yolu değişmez; yalnızca test kodu açıkça `true` yapar.
+  @visibleForTesting
+  static bool silentInTests = false;
+
   /// Tüm Supabase çağrıları için varsayılan timeout.
   /// Zayıf bağlantıda sonsuz spin yerine TimeoutException ile düşer.
   static const Duration defaultTimeout = Duration(seconds: 15);
@@ -92,6 +102,8 @@ class DbLogger {
     required int durationMs,
     required bool isError,
   }) {
+    if (silentInTests) return;
+
     // Production'da DB log yazma kapalı (KVKK/PII riski).
     // Sadece hatalar persist edilir; başarılı çağrılar sessiz geçer.
     if (kReleaseMode && !isError) return;
