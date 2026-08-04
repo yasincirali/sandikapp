@@ -52,6 +52,27 @@ TARGETS = [(1242, 2688), (1284, 2778)]
 # Ekran görüntülerinde saat/pil görünmesini istemiyorsanız 0.035 deneyin.
 CROP_TOP = 0.0
 
+# ── Gerçek isimlerin üzerine sahte isim yazma ─────────────────────────────
+#
+# Yarış/ortak ekranlarında gerçek kullanıcı adları görünür; mağaza görseline
+# gerçek kişi adı gitmemeli. Burada tanımlanan bölgeler ham görüntü
+# üzerinde ORANSAL koordinatlarla (0-1 arası) belirtilir, böylece farklı
+# çözünürlükte de aynı yere denk gelir.
+#
+# Format:
+#   "01": [ (x, y, genişlik, yükseklik, "yeni metin"), ... ]
+#
+# Koordinatları bulmak için:
+#   python build_screenshots.py --grid
+# komutu ham görüntülerin üzerine ızgara çizip scratch klasörüne kaydeder.
+REDACTIONS = {
+    # Örnek — gerçek koordinatlar yeni görseller gelince doldurulacak:
+    # "06": [
+    #     (0.09, 0.185, 0.34, 0.030, "Ayşe K."),
+    #     (0.09, 0.255, 0.34, 0.030, "Mehmet D."),
+    # ],
+}
+
 # Sıra → (başlık, alt satır). SCREENSHOT_PLAN.md ile birebir aynı sıra.
 # Alt satır None ise yalnızca başlık çizilir.
 CAPTIONS = {
@@ -98,7 +119,82 @@ def fit_font(path, text, max_w, start, draw, min_size=28):
     return ImageFont.truetype(path, min_size)
 
 
-def compose(raw_path, caption, target):
+def sample_bg(img, box):
+    """Maskelenecek alanın solundan zemin rengini örnekler.
+
+    Düz renk yerine gerçek zemini kullanmak, yamanın "yapıştırılmış"
+    görünmesini engeller.
+    """
+    x, y, w, h = box
+    px = img.load()
+    sx = max(0, x - 4)
+    sy = min(img.height - 1, y + h // 2)
+    return px[sx, sy]
+
+
+def apply_redactions(shot, key):
+    """Gerçek isimleri sahte olanlarla değiştirir.
+
+    Koordinatlar oransaldır; ham görüntünün çözünürlüğü değişse de
+    aynı yere denk gelir.
+    """
+    spec = REDACTIONS.get(key)
+    if not spec:
+        return shot
+
+    draw = ImageDraw.Draw(shot)
+    for rx, ry, rw, rh, text in spec:
+        x = int(rx * shot.width)
+        y = int(ry * shot.height)
+        w = int(rw * shot.width)
+        h = int(rh * shot.height)
+
+        draw.rectangle([(x, y), (x + w, y + h)],
+                       fill=sample_bg(shot, (x, y, w, h)))
+
+        size = max(10, int(h * 0.82))
+        f = ImageFont.truetype(FONT_MED, size)
+        bb = draw.textbbox((0, 0), text, font=f)
+        draw.text((x, y + (h - (bb[3] - bb[1])) // 2 - bb[1]), text,
+                  font=f, fill=TEXT)
+    return shot
+
+
+def write_grid_overlays():
+    """Ham görüntülerin üzerine oransal ızgara çizer.
+
+    REDACTIONS koordinatlarını gözle bulmak için: üretilen dosyada
+    her çizginin yanında 0-1 arası oran yazar.
+    """
+    out_dir = os.path.join(HERE, "screenshots", "grid")
+    os.makedirs(out_dir, exist_ok=True)
+
+    for name in sorted(f for f in os.listdir(RAW)
+                       if f.lower().endswith((".png", ".jpg", ".jpeg"))):
+        im = Image.open(os.path.join(RAW, name)).convert("RGB")
+        d = ImageDraw.Draw(im)
+        f = ImageFont.truetype(FONT_MED, max(14, im.width // 55))
+
+        for i in range(1, 20):
+            t = i / 20
+            yy = int(im.height * t)
+            d.line([(0, yy), (im.width, yy)], fill=(255, 0, 128), width=1)
+            d.text((6, yy + 2), "%.2f" % t, font=f, fill=(255, 0, 128))
+
+        for i in range(1, 10):
+            t = i / 10
+            xx = int(im.width * t)
+            d.line([(xx, 0), (xx, im.height)], fill=(0, 220, 255), width=1)
+            d.text((xx + 3, 6), "%.1f" % t, font=f, fill=(0, 220, 255))
+
+        im.save(os.path.join(out_dir, "grid_" + os.path.splitext(name)[0]
+                             + ".png"))
+        print("  + grid_%s" % name)
+
+    print("\nIzgara dosyalari -> screenshots/grid/")
+
+
+def compose(raw_path, caption, target, key=None):
     tw, th = target
     canvas = gradient(target).convert("RGB")
     draw = ImageDraw.Draw(canvas)
@@ -126,6 +222,11 @@ def compose(raw_path, caption, target):
 
     # ── Telefon çerçevesi ─────────────────────────────────────────────────
     shot = Image.open(raw_path).convert("RGB")
+
+    # Gerçek isimleri sahte olanlarla değiştir — kırpmadan ÖNCE, çünkü
+    # REDACTIONS koordinatları kırpılmamış görüntüye göre tanımlı.
+    if key:
+        shot = apply_redactions(shot, key)
 
     # Ham görüntünün üstündeki durum çubuğu (saat/pil) mağaza görselinde
     # gereksiz; istenirse kırpılır. CROP_TOP oranı ham yüksekliğe göredir.
@@ -171,16 +272,23 @@ def main():
     if not os.path.isdir(RAW):
         sys.exit("Ham görüntü klasörü yok: %s" % RAW)
 
-    files = sorted(f for f in os.listdir(RAW) if f.lower().endswith(".png"))
+    for missing in (FONT_BOLD, FONT_MED):
+        if not os.path.exists(missing):
+            sys.exit("Font bulunamadı: %s" % missing)
+
+    if "--grid" in sys.argv:
+        write_grid_overlays()
+        return
+
+    # PNG tercih edilir ama JPEG de kabul — WhatsApp/AirDrop ile taşınan
+    # görüntüler JPEG gelir.
+    files = sorted(f for f in os.listdir(RAW)
+                   if f.lower().endswith((".png", ".jpg", ".jpeg")))
     if not files:
         sys.exit(
             "screenshots/raw/ boş.\n"
             "Ham ekran görüntülerini 01_*.png ... 06_*.png olarak koyun."
         )
-
-    for missing in (FONT_BOLD, FONT_MED):
-        if not os.path.exists(missing):
-            sys.exit("Font bulunamadı: %s" % missing)
 
     made = 0
     for name in files:
@@ -190,12 +298,18 @@ def main():
             print("  ! %s — %s için başlık tanımlı değil, atlandı" % (name, key))
             continue
 
+        src = Image.open(os.path.join(RAW, name))
+        if min(src.size) < 1000:
+            print("  ! %s — çözünürlük düşük (%dx%d). Ham ekran görüntüsü "
+                  "kullanın; WhatsApp gibi araçlar görseli küçültür."
+                  % (name, src.width, src.height))
+
+        stem = os.path.splitext(name)[0] + ".png"
         for tw, th in TARGETS:
             out_dir = os.path.join(OUT, "%dx%d" % (tw, th))
             os.makedirs(out_dir, exist_ok=True)
-            img = compose(os.path.join(RAW, name), caption, (tw, th))
-            dest = os.path.join(out_dir, name)
-            img.save(dest, "PNG", optimize=True)
+            img = compose(os.path.join(RAW, name), caption, (tw, th), key=key)
+            img.save(os.path.join(out_dir, stem), "PNG", optimize=True)
             made += 1
         print("  + %s" % name)
 

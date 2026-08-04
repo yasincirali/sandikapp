@@ -1,4 +1,14 @@
-Ham ekran görüntülerini (iPhone 12 mini) buraya koyun.
+Ham ekran görüntülerini buraya koyun.
+
+═══════════════════════════════════════════════════════════════
+ÖNEMLİ: WhatsApp / Telegram ile GÖNDERMEYİN
+═══════════════════════════════════════════════════════════════
+WhatsApp görseli 1080x2340 -> 946x2048'e küçültüp JPEG'e çevirir.
+O dosya mağaza boyutuna %10 BÜYÜTÜLMEK zorunda kalır ve bulanıklaşır.
+Orijinal 1080px ise %3 küçültülür, keskin kalır.
+
+Doğru aktarım: iCloud, AirDrop, USB kablo, e-posta (orijinal boyut).
+═══════════════════════════════════════════════════════════════
 
 Dosya adları SIRA NUMARASIYLA başlamalı — başlık metni buna göre eşleşir:
 
@@ -9,10 +19,24 @@ Dosya adları SIRA NUMARASIYLA başlamalı — başlık metni buna göre eşleş
   05_partner.png       → "Eşinle, ortağınla aynı portföy"
   06_leaderboard.png   → "İstersen sıralamada yerini gör"
 
-Sonra:
+GÖRSELLERİ ÇEKERKEN
+  • Portföy kârda ama abartısız: %8-15 arası inandırıcı
+  • Varlık türleri karışık olsun (hisse + fon + döviz + altın)
+    — tek tür %78 olursa "tüm yatırımların" iddiası zayıflar
+  • En az bir varlık zararda olsun — gerçekçilik güven verir
+  • Tüm karelerde AYNI portföy görünsün (toplam değer tutarlı)
+  • Gerçek isim görünen ekranlarda (Yarış, ortak sekmesi) sahte
+    hesap kullanın; kullanamıyorsanız build_screenshots.py içindeki
+    REDACTIONS ile üzerine sahte isim yazdırabiliriz
+
+ÇALIŞTIRMA
   cd store_listing
   python build_screenshots.py
 
-Çıktı:
+  Gerçek isim maskeleyecekseniz önce koordinat bulun:
+  python build_screenshots.py --grid
+  (screenshots/grid/ altında ızgaralı kopyalar oluşur)
+
+ÇIKTI
   screenshots/out/1242x2688/   (6.5")
   screenshots/out/1284x2778/   (6.7")
