@@ -89,9 +89,8 @@ tetikliyor ve hepsi testte hata + bekleyen timer üretiyor:
 Sonuç: `FlutterError.onError` ile yerleşim hatalarını süzmek yetmedi;
 `_verifyInvariants` bekleyen timer'lar yüzünden testi yine düşürüyor.
 
-**Yeniden denemeden önce gereken:** ya `DbLogger` test modunda no-op olmalı,
-ya da DM Sans `pubspec.yaml`'a asset olarak eklenmeli (google_fonts ağ
-bağımlılığı bir üretim riski de — offline ilk açılışta font düşer).
+**Yeniden denemeden önce gereken:** `DbLogger` test modunda no-op olmalı.
+(DM Sans asset'e alındı — 2026-08-04, aşağıya bak.)
 
 **Ama bulunan hatalar geçerli ve düzeltildi** — test tutmasa da ekran gerçek
 haliyle pump edilip taşmalar ölçüldü.
@@ -134,6 +133,33 @@ değil.
 | 2026-08-03 | Ölü kod: SwiftUI prototipi + `DatabaseService` | `cde78d9` |
 | 2026-08-03 | Paywall'da var olmayan özellik reklamı | `03f1798` |
 | 2026-08-04 | `_buildAssetTile` → `TransactionRow` widget'ı; test yapısal kopyadan gerçek widget'a geçti (+ 19px satış satırı taşması bulundu) | — |
+| 2026-08-04 | DM Sans asset olarak gömüldü, `allowRuntimeFetching = false` (P2 kapandı) | — |
+
+### Not: google_fonts çalışma zamanı indirmesi (kapandı 2026-08-04)
+
+`google_fonts` paketi font **dosyalarını içermez** — varsayılan davranışı,
+istenen aileyi ilk kullanımda `fonts.gstatic.com`'dan indirip cihaza
+cache'lemektir. Sonuç: ilk açılış ağa bağımlıydı, offline'da DM Sans yerine
+sistem fontu çiziliyordu.
+
+Altı statik ağırlık (400/500/600/700/800/900 — `lib/` taraması bunları
+kullanıyor) `assets/fonts/` altına alındı ve `main()` başında
+`allowRuntimeFetching = false` yapıldı.
+
+**Maliyet:** APK içinde sıkıştırılmış **161 KB**. Buna karşılık ağ isteği
+sıfır, ilk açılış deterministik.
+
+**Doğrulama tuzağı:** `flutter test` asset/font manifest'ini uygulamadaki
+gibi yüklemez — pubspec'teki font kaydını tamamen bozsanız bile
+`GoogleFonts.dmSans()` testte sorunsuz döner. Yani "çağrı fırlatmıyor"
+biçimindeki bir test **hiçbir şey kanıtlamaz** (önce öyle yazıldı, sabotaj
+denemesinde yakalanmadığı görülüp değiştirildi). `bundled_font_test.dart`
+bunun yerine pubspec kaydını, dosyaların varlığını ve her TTF'in `OS/2`
+`usWeightClass` alanını doğrudan okur; üç sabotaj senaryosuyla (aile adı
+bozuk, ağırlık eksik, bayrak silinmiş) düştüğü teyit edildi.
+
+Derlenmiş APK'daki `FontManifest.json` da elle kontrol edildi: aile adı
+`"DM Sans"` ve altı ağırlık doğru eşlenmiş durumda.
 
 ---
 

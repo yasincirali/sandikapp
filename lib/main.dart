@@ -58,6 +58,15 @@ void main() async {
   // Crashlytics + tüm async hatalar tek `runZonedGuarded` içinde toplanır
   await runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // DM Sans `assets/fonts/` altında gömülü (bkz. pubspec.yaml `fonts:`).
+    // Bu bayrak olmadan google_fonts fontu her cihazda bir kez
+    // fonts.gstatic.com'dan indirmeye çalışır: ilk açılış ağa bağımlı olur,
+    // offline'da sistem fontuna düşer. Gömülü aile adı ("DM Sans")
+    // google_fonts'un aradığıyla aynı olduğu için paket indirme yerine
+    // asset'i bulur.
+    GoogleFonts.config.allowRuntimeFetching = false;
+
     await initializeDateFormatting('tr_TR');
     // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
     // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.

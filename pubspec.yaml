@@ -37,6 +37,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  # bundled_font_test.dart pubspec'in font kaydını doğrudan okur
+  yaml: ^3.1.2
 
 flutter_launcher_icons:
   android: true
@@ -56,3 +58,23 @@ flutter:
 
   assets:
     - assets/images/
+
+  # DM Sans yerel asset olarak gömülü — google_fonts çalışma zamanında
+  # fonts.gstatic.com'dan indirmesin diye (bkz. main.dart: allowRuntimeFetching).
+  # Aile adı google_fonts'un ürettiğiyle birebir aynı olmalı ki paket
+  # indirmek yerine gömülü olanı bulsun.
+  fonts:
+    - family: DM Sans
+      fonts:
+        - asset: assets/fonts/DMSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/DMSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/DMSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/DMSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/DMSans-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/DMSans-Black.ttf
+          weight: 900
