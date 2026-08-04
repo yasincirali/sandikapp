@@ -111,18 +111,28 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
         // ── Başlık ──────────────────────────────────────────────────────────
         Row(
           children: [
-            Text(
-              'TEKNİK ANALİZ',
-              style: context.t.labelLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: Sandik.text36,
+            // Başlık + sayaç dar ekranda sağdaki ayar bağlantısını taşırıyordu.
+            // Flexible: önce sayaç, gerekirse başlık kırpılır.
+            Flexible(
+              child: Text(
+                'TEKNİK ANALİZ',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.t.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: Sandik.text36,
+                ),
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              '· ${enabledIds.length}/${IndicatorId.all.length} gösterge',
-              style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+            Flexible(
+              child: Text(
+                '· ${enabledIds.length}/${IndicatorId.all.length} gösterge',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+              ),
             ),
             const Spacer(),
             GestureDetector(
@@ -1722,22 +1732,38 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   ),
+                  // Etiket + değer yan yana; ikisi de sınırsızdı ve büyük
+                  // miktarlarda satır taşıyordu (105px). Etiket kırpılabilir,
+                  // değer ise FittedBox ile küçülerek sığar — rakam kırpmak
+                  // yanlış okumaya yol açar.
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'TOPLAM MİKTAR',
-                        style: context.t.labelLarge?.copyWith(
-                            color: Sandik.amber,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2),
+                      Flexible(
+                        child: Text(
+                          'TOPLAM MİKTAR',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.labelLarge?.copyWith(
+                              color: Sandik.amber,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2),
+                        ),
                       ),
-                      Text(
-                        '${fmtNum(_currentQuantity, digits: 2)} ${widget.asset.unitType}',
-                        style: context.t.numLarge.copyWith(
-                            color: Sandik.gold,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700),
+                      const SizedBox(width: SandikSpace.sm),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '${fmtNum(_currentQuantity, digits: 2)} ${widget.asset.unitType}',
+                            maxLines: 1,
+                            style: context.t.numLarge.copyWith(
+                                color: Sandik.gold,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1797,12 +1823,18 @@ class _PeriodChangeRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(
-            '$label DEĞİŞİM',
-            style: context.t.labelSmall?.copyWith(
-              letterSpacing: 0.8,
-              fontWeight: FontWeight.w700,
-              color: Sandik.text36,
+          // Etiket de kırpılabilmeli: dar ekranda tam genişliği alıp sağdaki
+          // tutarı taşırıyordu (320pt'de 54px). Değer zaten Flexible.
+          Flexible(
+            child: Text(
+              '$label DEĞİŞİM',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.t.labelSmall?.copyWith(
+                letterSpacing: 0.8,
+                fontWeight: FontWeight.w700,
+                color: Sandik.text36,
+              ),
             ),
           ),
           const Spacer(),
@@ -2137,9 +2169,15 @@ class _CompareStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Rozetler + "ekle" düğmesi sabit genişlikte değil: uzun ticker'lar
+    // (TEFAS:YKT gibi) veya karşılaştırma rozeti eklenince satır taşıyordu
+    // (15px). Yatay kaydırma, rozetleri kırpmadan sığdırır — hiçbir bilgi
+    // gizlenmez, yalnızca gerekirse kaydırılır.
     return SizedBox(
       height: 32,
-      child: Row(
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
         children: [
           // Ana varlık rozeti — renk = Sandik.amber
           _LegendBadge(

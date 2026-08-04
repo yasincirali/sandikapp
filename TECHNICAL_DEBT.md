@@ -43,12 +43,24 @@ o dokunuşta ortak parçayı çıkar:
 
 ## 🟠 AÇIK — Widget test kapsamı (kısmen kapandı)
 
-**2026-08-04 durumu:** 128 testin 19'u gerçek widget testi:
+**2026-08-04 durumu:** 144 testin 35'i gerçek widget testi:
 - `transaction_row_overflow_test.dart` — `TransactionRow` (11 senaryo)
-- `asset_card_overflow_test.dart` — `ChartsScreen` provider override ile
-  pump edilir, varlık kartları gerçek haliyle çizilir (8 senaryo)
+- `asset_card_overflow_test.dart` — `ChartsScreen` (8 senaryo)
+- `leaderboard_overflow_test.dart` — `LeaderboardScreen`, opt-in açık/kapalı
+  iki hâl (8 senaryo)
+- `performance_screen_overflow_test.dart` — `PerformanceScreen` (8 senaryo)
 
-İkisi de 320/360/375/390/430pt genişlik taraması yapıyor.
+Hepsi çok genişlikli tarama yapıyor (320–430pt).
+
+**Bulunan gerçek hatalar:** bu testler yazılırken **beş** taşma ortaya çıktı,
+hiçbiri gözle görülmüyordu:
+| Yer | Taşma | Sebep |
+|---|---|---|
+| `TransactionRow` satış satırı | 19px yatay | "Çıkarıldı" etiketi "Eklendi"den uzun, 116pt kolona sığmıyor |
+| `performance_screen` TOPLAM MİKTAR | 105px yatay | etiket + değer ikisi de sınırsız |
+| `performance_screen` TEKNİK ANALİZ başlığı | — | başlık + sayaç ayar bağlantısını itiyor |
+| `performance_screen` grafik lejantı | 15px yatay | uzun ticker rozetleri |
+| `performance_screen` DEĞİŞİM kartı | 54px @320pt | etiket tam genişliği alıyor, değer taşıyor |
 
 Bu yaklaşımın değeri ölçüldü: gerçek widget'a bağlanan test, ilk çalıştırmada
 **daha önce bilinmeyen bir taşmayı** ortaya çıkardı (satış satırında 19px
@@ -61,8 +73,9 @@ Ekranı `ProviderScope` override'larıyla pump et; iç yapı değil dış davran
 doğrulanır, ekran ileride parçalanınca test yine geçer. Örnek:
 `asset_card_overflow_test.dart`.
 
-**Sırada:** `leaderboard_screen` kartları, `performance_screen` grafik
-başlıkları. `tester.takeException()` yeterli, golden test gerekmiyor.
+**Sırada:** `home_screen` (özet + mini kartlar), `add_asset_screen` (form
+alanları), `portfolio_performance_screen`. `tester.takeException()` yeterli,
+golden test gerekmiyor.
 
 ---
 
