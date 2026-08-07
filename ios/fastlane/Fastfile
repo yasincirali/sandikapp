@@ -14,6 +14,109 @@ def asc_api_key
   )
 end
 
+# ── Sürüm yardımcıları ───────────────────────────────────────────────────────
+#
+# Sürüm zinciri:
+#   pubspec.yaml `version: X.Y.Z+B`
+#     → ios/Flutter/Generated.xcconfig `FLUTTER_BUILD_NAME`
+#     → Info.plist `CFBundleShortVersionString` ($(FLUTTER_BUILD_NAME))
+#
+# Generated.xcconfig gitignore'da ve `flutter build ios` tarafından
+# üretiliyor; Xcode archive (gym) ONU okuduğu için fastlane burada
+# değiştirdiğinde .ipa yeni sürümle çıkar.
+
+PUBSPEC_PATH = File.expand_path("../../pubspec.yaml", __dir__)
+GENERATED_XCCONFIG_PATH = File.expand_path("../Flutter/Generated.xcconfig", __dir__)
+
+# pubspec.yaml'daki sürüm adı (X.Y.Z — "+build" kısmı hariç).
+def flutter_version_name
+  line = File.readlines(PUBSPEC_PATH).find { |l| l =~ /^version:\s*/ }
+  UI.user_error!("pubspec.yaml içinde `version:` bulunamadı") if line.nil?
+  line.sub(/^version:\s*/, "").strip.split("+").first
+end
+
+# Sürüm adını hem pubspec.yaml'a hem Generated.xcconfig'e yaz.
+# Generated.xcconfig kritik olan: gym/archive onu okur.
+def set_flutter_version_name(new_version)
+  pubspec = File.read(PUBSPEC_PATH)
+  pubspec = pubspec.sub(/^version:\s*([^\s+]+)(\+(\d+))?/) do
+    build_suffix = Regexp.last_match(3)
+    build_suffix ? "version: #{new_version}+#{build_suffix}" : "version: #{new_version}"
+  end
+  File.write(PUBSPEC_PATH, pubspec)
+
+  if File.exist?(GENERATED_XCCONFIG_PATH)
+    cfg = File.read(GENERATED_XCCONFIG_PATH)
+    cfg = cfg.sub(/^FLUTTER_BUILD_NAME=.*$/, "FLUTTER_BUILD_NAME=#{new_version}")
+    File.write(GENERATED_XCCONFIG_PATH, cfg)
+  else
+    # `flutter build ios` bu dosyayı üretir; yoksa lane sırası bozulmuş
+    # demektir ve sessizce eski sürümle upload etmektense durmak daha iyi.
+    UI.user_error!(
+      "Generated.xcconfig yok — `flutter build ios` fastlane'den ÖNCE çalışmalı."
+    )
+  end
+end
+
+# Bir sürümün TestFlight'a hâlâ build kabul edip etmediğini sorar.
+# ASC'de o sürüm için bir "pre-release train" varsa ve kapalı değilse açıktır.
+# Hiç train yoksa (yepyeni sürüm) de açıktır.
+def version_open_for_builds?(version, api_key)
+  # latest_testflight_build_number belirli bir sürüm için sorgulandığında,
+  # sürüm ASC'de yoksa `initial_build_number` döner — bu "yeni sürüm,
+  # kullanılabilir" anlamına gelir. Kapalı train'i tespit etmenin güvenilir
+  # yolu Spaceship üzerinden sürümün "editable" olup olmadığına bakmaktır.
+  require "spaceship"
+  # `app_store_connect_api_key` action'ı bir hash döndürür; Spaceship'i
+  # o hash ile yetkilendiriyoruz (login yerine token bazlı).
+  Spaceship::ConnectAPI.auth = Spaceship::ConnectAPI::Token.create(**{
+    key_id: api_key[:key_id],
+    issuer_id: api_key[:issuer_id],
+    key: api_key[:key],
+  })
+  app = Spaceship::ConnectAPI::App.find("com.sandik.app")
+  return true if app.nil?
+
+  # Bu sürüm için App Store sürüm kaydı var mı ve düzenlenebilir mi?
+  # READY_FOR_SALE / PENDING_APPLE_RELEASE gibi durumlar train'i kapatır.
+  closed_states = %w[
+    READY_FOR_SALE
+    PENDING_APPLE_RELEASE
+    PENDING_DEVELOPER_RELEASE
+    PROCESSING_FOR_APP_STORE
+    IN_REVIEW
+    WAITING_FOR_REVIEW
+    REPLACED_WITH_NEW_INFO
+  ]
+  versions = app.get_app_store_versions(
+    filter: { versionString: version },
+    includes: "appStoreVersionSubmission"
+  )
+  return true if versions.nil? || versions.empty?
+
+  versions.none? { |v| closed_states.include?(v.app_store_state) }
+rescue StandardError => e
+  # ASC sorgusu başarısız olursa sürümü "açık" kabul et: yanlışlıkla
+  # sürüm atlamaktansa upload'ın kendi hatasını vermesi daha iyi.
+  UI.important("Sürüm durumu sorgulanamadı (#{e.class}: #{e.message}) — açık varsayılıyor.")
+  true
+end
+
+# Açık bir sürüm bulana kadar patch'i artır. Sonsuz döngüye karşı sınırlı.
+def next_open_version(version, api_key)
+  candidate = version
+  10.times do
+    return candidate if version_open_for_builds?(candidate, api_key)
+    parts = candidate.split(".").map(&:to_i)
+    parts << 0 while parts.length < 3
+    parts[2] += 1
+    candidate = parts.join(".")
+  end
+  UI.user_error!(
+    "#{version}'dan itibaren 10 patch denendi, TestFlight'a açık sürüm bulunamadı."
+  )
+end
+
 platform :ios do
   # ─────────────────────────────────────────────────────────────────────────
   # setup_match_certificates
@@ -136,15 +239,60 @@ platform :ios do
       build_configurations: ["Release"]
     )
 
-    # 2) Build number'ı ASC'den al + 1 (Flutter side de bakar ama fastlane
+    # 2a) Sürüm (marketing version) hâlâ build kabul ediyor mu?
+    #
+    #     App Store Connect bir sürümü gönderildikten/yayınlandıktan sonra
+    #     "train"ini KAPATIR. Kapalı train'e upload şu hatayla reddedilir:
+    #
+    #       Invalid Pre-Release Train. The train version 'X' is closed
+    #       for new build submissions (90186)
+    #
+    #     Build number artışı bunu ÇÖZMEZ — kapalı olan sürümün kendisidir.
+    #     Bu yüzden upload'tan önce sürümü kontrol edip gerekirse patch'i
+    #     yükseltiyoruz. Böylece "TestFlight'a at" her seferinde çalışır.
+    current_version = flutter_version_name
+    target_version = next_open_version(current_version, api_key)
+
+    if target_version != current_version
+      UI.important(
+        "Sürüm #{current_version} TestFlight'a kapalı — #{target_version} kullanılacak."
+      )
+      set_flutter_version_name(target_version)
+    else
+      UI.message("Sürüm #{current_version} açık, olduğu gibi kullanılıyor.")
+    end
+
+    # 2b) Build number'ı ASC'den al + 1 (Flutter side de bakar ama fastlane
     #    kesin doğruyu alsın; "value already used" hatasına karşı güvenli)
-    latest_build = latest_testflight_build_number(
+    #
+    #    DİKKAT: build number SÜRÜME ÖZELDİR. `version` parametresi
+    #    verilmezse fastlane "en son train"e bakar; yeni bir sürüme
+    #    geçtiğimizde bu alakasız bir sayı döndürebilir. Hedef sürümü
+    #    açıkça geçiyoruz.
+    #    ASC build number'ı UYGULAMA GENELİNDE artan olmalı — sadece sürüm
+    #    içinde değil. Bu yüzden iki değerin BÜYÜĞÜNÜ alıyoruz:
+    #      • hedef sürümün en yüksek build'i
+    #      • herhangi bir sürümdeki en yüksek build
+    #    (Geçmişte "any version" sorgusu 1785274244 gibi timestamp bir değer
+    #    döndürdü; yeni sürüme 1'den başlarsak ASC "daha düşük" diye reddeder.)
+    build_in_version = latest_testflight_build_number(
       app_identifier: "com.sandik.app",
       api_key: api_key,
-      initial_build_number: 5
+      version: target_version,
+      initial_build_number: 0
+    ) || 0
+
+    build_any_version = latest_testflight_build_number(
+      app_identifier: "com.sandik.app",
+      api_key: api_key,
+      initial_build_number: 0
+    ) || 0
+
+    next_build_number = [build_in_version, build_any_version].max + 1
+    UI.message(
+      "Build number → sürüm içi: #{build_in_version}, genel: #{build_any_version} " \
+      "⇒ #{next_build_number}"
     )
-    next_build_number = (latest_build || 5) + 1
-    UI.message("Bir sonraki build number: #{next_build_number}")
 
     # 3) Info.plist içindeki CFBundleVersion'ı güncelle
     increment_build_number(
