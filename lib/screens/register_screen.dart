@@ -576,6 +576,7 @@ class _LegalConsentBox extends StatelessWidget {
               children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
+                  curve: SandikMotion.enter,
                   width: 22,
                   height: 22,
                   decoration: BoxDecoration(

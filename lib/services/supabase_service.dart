@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/asset.dart';
 import '../models/signal_alert.dart';
+import '../models/signal_frequency.dart';
 import '../models/signal_preference.dart';
 import '../models/user_model.dart';
 import 'db_logger.dart';
@@ -452,7 +453,7 @@ class SupabaseService {
       call: () => _db
           .from('signal_preferences')
           .select(
-              'asset_type, threshold, indicators, neutral_push, signals_enabled')
+              'asset_type, threshold, indicators, neutral_push, signals_enabled, frequency, notify_hours')
           .eq('user_id', userId),
     );
 
@@ -467,6 +468,11 @@ class SupabaseService {
           // Sütun yoksa/boşsa açık kabul et — kullanıcıyı sessizce
           // bildirimsiz bırakmaktansa varsayılanı korumak doğru.
           signalsEnabled: r['signals_enabled'] as bool? ?? true,
+          frequency: SignalFrequency.fromId(r['frequency'] as String?),
+          notifyHours:
+              (r['notify_hours'] as List?)?.map((e) => (e as num).toInt())
+                      .toList() ??
+                  const [11, 15],
         ),
     ];
   }
@@ -488,6 +494,8 @@ class SupabaseService {
     required List<String> indicators,
     required bool neutralPush,
     required bool signalsEnabled,
+    SignalFrequency? frequency,
+    List<int>? notifyHours,
   }) async {
     await _log.log<void>(
       source: 'SupabaseService.upsertSignalPreference',
@@ -498,6 +506,7 @@ class SupabaseService {
         'asset_type': assetType,
         'threshold': threshold,
         'indicators': indicators.length,
+        'frequency': frequency?.id,
       },
       call: () => _db.from('signal_preferences').upsert(
         {
@@ -507,6 +516,11 @@ class SupabaseService {
           'indicators': indicators,
           'neutral_push': neutralPush,
           'signals_enabled': signalsEnabled,
+          // Sıklık alanları YALNIZCA verildiğinde yazılır. Her upsert'te
+          // koşulsuz göndermek, sıklığı değiştirmeyen bir eşik güncellemesinin
+          // kullanıcının seçtiği sıklığı varsayılana döndürmesine yol açardı.
+          if (frequency != null) 'frequency': frequency.id,
+          if (notifyHours != null) 'notify_hours': notifyHours,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         },
         onConflict: 'user_id,asset_type',

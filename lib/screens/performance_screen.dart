@@ -11,6 +11,7 @@ import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
+import '../utils/spot_lookup.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
 import '../models/technical_signal.dart';
@@ -412,14 +413,29 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     (label: 'YILLIK', days: 365),
   ];
 
+  // Son başarılı history sonucu. Periyot değiştiğinde FutureBuilder yeni
+  // future'ı "waiting" sayar ve snapshot.data null olur; bu alan olmadan
+  // grafik + altındaki tüm kontroller (compare, MA20/LOG, fullscreen) o
+  // sürede ağaçtan düşüyordu. Artık eski seri yerinde kalır, sadece grafik
+  // alanı "yükleniyor" hissi verir ve filtreler tıklanabilir kalır.
+  Map<int, double>? _lastHistory;
+
   @override
   void initState() {
     super.initState();
     _selectedPeriodIdx = 0;
-    _historyFuture = HistoryService.instance
-        .getPortfolioHistory([widget.asset], _periods[0].days);
+    _historyFuture = _loadHistory(_periods[0].days);
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
+  }
+
+  /// History fetch + son başarılı sonucu sakla.
+  Future<Map<int, double>> _loadHistory(int days) {
+    return HistoryService.instance
+        .getPortfolioHistory([widget.asset], days)
+      ..then((v) {
+        if (mounted && v.isNotEmpty) _lastHistory = v;
+      });
   }
 
   @override
@@ -431,8 +447,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   void _selectPeriod(int idx) {
     setState(() {
       _selectedPeriodIdx = idx;
-      _historyFuture = HistoryService.instance
-          .getPortfolioHistory([widget.asset], _periods[idx].days);
+      _historyFuture = _loadHistory(_periods[idx].days);
       // Compare aktifse aynı yeni periyot için compare history'yi de yenile.
       if (_compareAsset != null) {
         _compareHistoryFuture = HistoryService.instance
@@ -674,6 +689,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
               behavior: HitTestBehavior.opaque,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
+                curve: SandikMotion.enter,
                 decoration: BoxDecoration(
                   color: isSelected ? Sandik.surface2 : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
@@ -804,13 +820,34 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 FutureBuilder<Map<int, double>>(
                   future: _historyFuture,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    final waiting =
+                        snapshot.connectionState == ConnectionState.waiting;
+                    // Periyot değişiminde eski seriye düş — böylece bu
+                    // FutureBuilder'ın altındaki compare/MA20/LOG kontrolleri
+                    // ve özet şeritleri ağaçta kalır. Hiç veri yoksa (ilk
+                    // açılış) yalnızca grafik alanı spinner gösterir.
+                    // Bayat seri ÖNCEKİ periyoda ait. Yeni periyot daha darsa
+                    // aralık dışı noktalar negatif X'e düşüp ekseni kaydırırdı
+                    // — bu yüzden seçili pencereye kırpılır.
+                    Map<int, double>? fallback;
+                    if (snapshot.data == null && _lastHistory != null) {
+                      final fromMs = startDate.millisecondsSinceEpoch;
+                      final toMs = endDate.millisecondsSinceEpoch;
+                      final clipped = <int, double>{
+                        for (final e in _lastHistory!.entries)
+                          if (e.key >= fromMs && e.key <= toMs) e.key: e.value,
+                      };
+                      if (clipped.length >= 2) fallback = clipped;
+                    }
+                    final data = snapshot.data ?? fallback;
+                    final isStale = snapshot.data == null && data != null;
+                    if (data == null) {
                       return const SizedBox(
                           height: 400,
                           child: CustomLoadingView());
                     }
 
-                    final historyMap = snapshot.data ?? {};
+                    final historyMap = data;
 
                     // ── PnL: KART İLE BİREBİR AYNI FORMÜL ───────────────────
                     // Grafiğin son noktasını da bu canlı değerle sabitliyoruz
@@ -1071,6 +1108,17 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // Yeni periyot yüklenirken ince bar — eski grafik
+                        // ekranda kalır, kontroller tıklanabilir.
+                        if (waiting)
+                          const SizedBox(
+                            height: 2,
+                            child: LinearProgressIndicator(
+                              minHeight: 2,
+                              backgroundColor: Colors.transparent,
+                              color: Sandik.amber,
+                            ),
+                          ),
                         if (anchorSpot != null && lastSpot != null)
                           _PnlSummaryStrip(
                             anchorUnitPrice: anchorUnitTRY,
@@ -1085,7 +1133,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                         // Seçili periyodun değişimi — üstteki strip alış→bugün
                         // toplam PnL'i gösterir, bu satır "bu dönemde ne oldu"
                         // sorusunu yanıtlar. İkisi farklı sorular.
-                        if (periodChangeTRY != null)
+                        // Bayat seride GİZLENİR: rakam hâlâ eski periyoda ait
+                        // olurdu ama etiket yeni periyodu yazardı — yanıltıcı.
+                        // (Üstteki strip periyottan bağımsız, o kalır.)
+                        if (periodChangeTRY != null && !isStale)
                           _PeriodChangeRow(
                             label: _periods[_selectedPeriodIdx].label,
                             changeTRY: periodChangeTRY,
@@ -1189,7 +1240,14 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                 }
                               }
                             }
-                            return Container(
+                            // Bayat seri soluk çizilir — spinner yerine
+                            // bağlam sunar, ama "bu henüz yeni periyodun
+                            // verisi değil" hissini korur.
+                            return AnimatedOpacity(
+                              opacity: isStale ? 0.35 : 1.0,
+                              duration: const Duration(milliseconds: 160),
+                              curve: SandikMotion.enter,
+                              child: Container(
                           height: 400,
                           decoration: BoxDecoration(
                             color: Sandik.surface1,
@@ -1226,6 +1284,17 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     .clamp(focusMin + 0.5, maxX * 1.08);
                               }
                             }
+                            // Seyreltme adayları viewport'a bağlı DEĞİL —
+                            // yalnızca segment'lere ve lot günlerine bağlı.
+                            // Builder içinde bırakılırsa her pinch/pan
+                            // karesinde expand+map+where zinciri baştan
+                            // kurulurdu. Bir kez hesapla.
+                            final dotCandidates = segments
+                                .expand((s) => s.spots)
+                                .map((sp) => sp.x)
+                                .where((x) =>
+                                    lotDayIsSell.containsKey(x.toInt()))
+                                .toList(growable: false);
                             return ZoomableChart(
                             fullMinX: focusMin,
                             fullMaxX: focusMax,
@@ -1249,11 +1318,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               // `spot.x.toInt()`. Gün anahtarını doğrudan
                               // aday yaparsak hiçbir spot'a eşleşmez.
                               final dotThinner = DotThinner.build(
-                                candidates: segments
-                                    .expand((s) => s.spots)
-                                    .map((sp) => sp.x)
-                                    .where((x) => lotDayIsSell
-                                        .containsKey(x.toInt())),
+                                candidates: dotCandidates,
                                 viewMinX: viewMinX,
                                 viewMaxX: viewMaxX,
                                 plotWidthPx: (MediaQuery.of(context)
@@ -1675,30 +1740,16 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               if (spots.isEmpty) return x;
                               final clamped =
                                   x.clamp(spots.first.x, spots.last.x);
-                              int nearestIdx = 0;
-                              double nearestDx = double.infinity;
-                              for (int i = 0; i < spots.length; i++) {
-                                final dx = (spots[i].x - clamped).abs();
-                                if (dx < nearestDx) {
-                                  nearestDx = dx;
-                                  nearestIdx = i;
-                                }
-                              }
-                              return spots[nearestIdx].x;
+                              // Sıralı seri → ikili arama. Parmak her
+                              // kaydığında çağrılıyor (bkz. nearestSpotIndex).
+                              return spots[nearestSpotIndex(spots, clamped)].x;
                             },
                             crosshairLabelBuilder: (x) {
                               // x zaten snap edildi — spot'u bul.
                               final spots = activeSeg.spots;
                               if (spots.isEmpty) return null;
-                              FlSpot snapped = spots.first;
-                              double best = double.infinity;
-                              for (final s in spots) {
-                                final d = (s.x - x).abs();
-                                if (d < best) {
-                                  best = d;
-                                  snapped = s;
-                                }
-                              }
+                              final snapped =
+                                  spots[nearestSpotIndex(spots, x)];
                               final date = startDate.add(Duration(
                                   minutes:
                                       (snapped.x * 1440).round()));
@@ -1716,7 +1767,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             },
                           );
                           }),
-                        );
+                        ),
+                            ); // AnimatedOpacity (bayat seri solukluğu)
                           },
                         ),
                       ],
@@ -2110,6 +2162,7 @@ class _OverlayChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(SandikRadius.md),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
+          curve: SandikMotion.enter,
           padding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(

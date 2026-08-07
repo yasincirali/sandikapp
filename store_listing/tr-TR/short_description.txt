@@ -1,1 +1,1 @@
-Hisse, fon, döviz ve altın varlıklarını tek ekranda takip et.
+Sandık ile hisse, fon, döviz, altın portföyünü tek ekranda takip et.

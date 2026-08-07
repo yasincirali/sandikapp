@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 
+/// Hata görünümü.
+///
+/// Hata anı, arayüzün en çok güven vermesi gereken andır: içerik ani biçimde
+/// yerine geçerse "bozuldu" hissi verir. Bu yüzden görünüm sert değil,
+/// kısa bir fade + yukarı kayma ile belirir.
 class SandikErrorView extends StatelessWidget {
   final Object error;
   final VoidCallback? onRetry;
@@ -10,7 +15,10 @@ class SandikErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    // Erişilebilirlik: "hareketi azalt" açıkken içerik doğrudan görünür.
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    final content = Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -25,18 +33,55 @@ class SandikErrorView extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 20),
-              TextButton(
-                onPressed: onRetry,
-                style: TextButton.styleFrom(
-                  foregroundColor: Sandik.amber,
-                  textStyle: context.t.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              // SandikTappable sarmalı: her basılabilir eleman basıldığını
+              // hissettirmeli. Tekrar deneme bir yeniden-yükleme eylemi,
+              // seçim değil — bu yüzden medium ton.
+              SandikTappable(
+                onTap: onRetry,
+                haptic: SandikHaptic.medium,
+                semanticLabel: 'Tekrar dene',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SandikSpace.lg,
+                    vertical: SandikSpace.sm + 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Sandik.amber.withValues(alpha: 0.12),
+                    borderRadius: SandikRadius.mdAll,
+                    border: Border.all(
+                      color: Sandik.amber.withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: Text(
+                    'Tekrar Dene',
+                    style: context.t.titleMedium?.copyWith(
+                      color: Sandik.amber,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-                child: const Text('Tekrar Dene'),
               ),
             ],
           ],
         ),
       ),
+    );
+
+    if (reduceMotion) return content;
+
+    // 0 → 1 tek atış: hata görünümü bir kez belirir, tekrar animasyonlanmaz.
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: SandikMotion.surface,
+      curve: SandikMotion.enter,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.translate(
+          offset: Offset(0, 8 * (1 - t)),
+          child: child,
+        ),
+      ),
+      child: content,
     );
   }
 }

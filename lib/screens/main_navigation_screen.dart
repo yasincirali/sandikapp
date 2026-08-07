@@ -43,8 +43,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   void _onItemTapped(int index) {
     if (index == 2) {
+      // FAB kendi haptic'ini SandikTappable üzerinden verir; burada tekrar
+      // tetiklenirse çift titreşim olur.
       _showAddAsset();
       return;
+    }
+    // Yalnızca sekme gerçekten değişince: aynı sekmeye tekrar dokunmak bir
+    // durum değişimi değildir, geri bildirim de vermemeli.
+    if (index != _currentIndex) {
+      SandikHaptic.selection.perform();
     }
     if (index == 0 && _currentIndex != 0) {
       ref.read(portfolioProvider.notifier).refreshPrices();
@@ -90,7 +97,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 child: const Text('Vazgeç', style: TextStyle(color: Sandik.text36)),
               ),
               FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
+                onPressed: () {
+                  // Yıkıcı onay — en belirgin ton.
+                  SandikHaptic.heavy.perform();
+                  Navigator.pop(ctx, true);
+                },
                 style: FilledButton.styleFrom(backgroundColor: Sandik.loss),
                 child: const Text('Çık'),
               ),
@@ -209,6 +220,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         onTap: _showAddAsset,
         // Ana eylem — basılınca biraz daha belirgin küçülsün.
         scale: 0.92,
+        // Uygulamanın birincil eylemi: seçim tıkırtısından daha belirgin.
+        haptic: SandikHaptic.medium,
         semanticLabel: 'Varlık ekle',
         child: Center(
           child: Container(

@@ -401,6 +401,7 @@ class _InterestTypeSelector extends StatelessWidget {
                 onTap: () => onChanged(t),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
+                  curve: SandikMotion.enter,
                   padding: const EdgeInsets.symmetric(vertical: 11),
                   decoration: BoxDecoration(
                     color: value == t

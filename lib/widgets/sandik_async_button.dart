@@ -22,10 +22,15 @@ class SandikAsyncButton extends StatefulWidget {
     this.style,
     this.expand = true,
     this.height = 52,
+    this.haptic = SandikHaptic.medium,
   });
 
   /// Asenkron iş. Devam ederken buton kilitlidir.
   final Future<void> Function()? onPressed;
+
+  /// Varsayılan [SandikHaptic.medium]: form altı ana eylem butonu genelde
+  /// kalıcı bir sonuç üretir (kaydet, gönder, satın al).
+  final SandikHaptic haptic;
 
   /// Boştayken gösterilen içerik (genelde `Text`).
   final Widget child;
@@ -47,6 +52,9 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
   Future<void> _handleTap() async {
     // Kilit: ikinci dokunuş sessizce yok sayılır.
     if (_busy || widget.onPressed == null) return;
+    // Haptic kilidin ARDINDAN: yutulan ikinci dokunuş titreşim de vermemeli,
+    // aksi halde kullanıcı isteğin gittiğini sanır.
+    widget.haptic.perform();
     setState(() => _busy = true);
     try {
       await widget.onPressed!();
@@ -106,6 +114,7 @@ class SandikAsyncTap extends StatefulWidget {
     this.showIndicator = true,
     this.indicatorSize = CustomLoadingIndicator.small,
     this.semanticLabel,
+    this.haptic = SandikHaptic.medium,
   });
 
   final Future<void> Function()? onTap;
@@ -115,6 +124,11 @@ class SandikAsyncTap extends StatefulWidget {
   final bool showIndicator;
   final double indicatorSize;
   final String? semanticLabel;
+
+  /// Varsayılan [SandikHaptic.medium]: asenkron bir iş tetikleyen dokunuşlar
+  /// genelde kalıcı sonuçludur (kaydet, gönder, onayla) — seçim tıkırtısından
+  /// daha belirgin olmalı.
+  final SandikHaptic haptic;
 
   @override
   State<SandikAsyncTap> createState() => _SandikAsyncTapState();
@@ -137,6 +151,9 @@ class _SandikAsyncTapState extends State<SandikAsyncTap> {
   Widget build(BuildContext context) {
     return SandikTappable(
       onTap: widget.onTap == null || _busy ? null : _handleTap,
+      // Meşgulken onTap null → SandikTappable haptic'i de tetiklemez;
+      // yutulan ikinci dokunuş sessiz kalır, bu doğru davranış.
+      haptic: widget.haptic,
       semanticLabel: widget.semanticLabel,
       child: _busy && widget.showIndicator
           ? Center(child: CustomLoadingIndicator(size: widget.indicatorSize))

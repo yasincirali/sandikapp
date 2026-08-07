@@ -132,13 +132,27 @@ function buildMessage(
   buyCount: number,
   sellCount: number,
 ): { title: string; body: string } {
-  const isBuy = signal === 'buy';
   const total = buyCount + sellCount;
+  const disclaimer = 'Yatırım tavsiyesi değildir.';
+
+  // Üç durum da AYRI ele alınmalı. Eskiden yalnızca `isBuy` bakılıyordu ve
+  // "buy değilse aşağı trend" varsayılıyordu; nötr sinyaller push
+  // gönderilmediği sürece bu görünmüyordu. Nötr push açıldığında kullanıcı
+  // kararsız piyasada "Aşağı trend" bildirimi alırdı — yanlış bilgi.
+  if (signal === 'neutral') {
+    return {
+      title: `Kararsız görünüm: ${assetName}`,
+      body: `Göstergeler net bir yön vermiyor ` +
+        `(${buyCount} yukarı / ${sellCount} aşağı). ${disclaimer}`,
+    };
+  }
+
+  const isBuy = signal === 'buy';
   return {
     title: isBuy ? `Yukarı trend: ${assetName}` : `Aşağı trend: ${assetName}`,
     body: isBuy
-      ? `Göstergelerin çoğunluğu yukarı yönlü (${buyCount}/${total}). Yatırım tavsiyesi değildir.`
-      : `Göstergelerin çoğunluğu aşağı yönlü (${sellCount}/${total}). Yatırım tavsiyesi değildir.`,
+      ? `Göstergelerin çoğunluğu yukarı yönlü (${buyCount}/${total}). ${disclaimer}`
+      : `Göstergelerin çoğunluğu aşağı yönlü (${sellCount}/${total}). ${disclaimer}`,
   };
 }
 
@@ -149,6 +163,7 @@ async function sendPush({
   title,
   body,
   assetId,
+  badge,
 }: {
   accessToken: string;
   projectId: string;
@@ -156,6 +171,10 @@ async function sendPush({
   title: string;
   body: string;
   assetId: string;
+  /// iOS rozet sayısı — okunmamış (dismissed_at is null) sinyal adedi.
+  /// Sabit 1 göndermek Apple'ın beklentisine aykırı: rozet okunmamış öğe
+  /// sayısını yansıtmalı, yoksa 5 bildirim gelse de "1" görünür.
+  badge: number;
 }) {
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
@@ -184,7 +203,7 @@ async function sendPush({
           },
           apns: {
             headers: { 'apns-priority': '10', 'apns-push-type': 'alert' },
-            payload: { aps: { sound: 'default', badge: 1 } },
+            payload: { aps: { sound: 'default', badge } },
           },
         },
       }),
@@ -222,9 +241,116 @@ interface PrefRow {
   indicators: string[];
   neutral_push: boolean;
   signals_enabled: boolean;
+  frequency?: SignalFrequency;
+  notify_hours?: number[];
+  window_start?: number;
+  window_end?: number;
+  last_notified_at?: string | null;
 }
 
+type SignalFrequency =
+  | 'hourly'
+  | 'every_2h'
+  | 'every_3h'
+  | 'twice_daily'
+  | 'daily';
+
 const DEFAULT_THRESHOLD = 70;
+
+/// Bildirim penceresi — TR saati. Kullanıcı bunun dışına çıkamaz.
+const DEFAULT_WINDOW_START = 10;
+const DEFAULT_WINDOW_END = 18;
+const DEFAULT_FREQUENCY: SignalFrequency = 'twice_daily';
+const DEFAULT_NOTIFY_HOURS = [11, 15];
+
+/// Periyodik sıklıklar için saat cinsinden aralık.
+const PERIOD_HOURS: Partial<Record<SignalFrequency, number>> = {
+  hourly: 1,
+  every_2h: 2,
+  every_3h: 3,
+};
+
+/// Şu anki TR saati (0-23). Sunucu UTC çalışır; TR sabit UTC+3
+/// (2016'dan beri yaz saati uygulaması yok, bu yüzden ofset sabit).
+function istanbulHour(now: Date): number {
+  return (now.getUTCHours() + 3) % 24;
+}
+
+/// Bu tercih için ŞU AN bildirim gönderilmeli mi?
+///
+/// İki kural birlikte çalışır:
+///   1. Şu anki TR saati kullanıcının penceresinde olmalı (varsayılan 10–18).
+///   2. Sıklığa göre sıra gelmiş olmalı:
+///      - periyodik (hourly/2h/3h): son gönderimden beri yeterli süre geçti mi.
+///        Süre bazlı olması önemli — cron bir turu kaçırırsa bir sonrakinde
+///        telafi edilir, slot bazlı olsa o gönderim tamamen kaybolurdu.
+///      - twice_daily/daily: şu anki saat, seçilen saatlerden biri mi.
+/// Bu sinyal için bildirim gönderilmeli mi? (de-dup kuralı)
+///
+/// Kural: aynı varlık için aynı sinyal art arda bildirilmez. Sabah SAT
+/// verildiyse akşam yine SAT çıkarsa sessiz kalınır; NÖTR veya AL'a
+/// dönerse bildirilir.
+///
+/// [oncekiSinyal] son PUSH EDİLEN sinyal (`signal_state`). Kullanıcının
+/// sildiği bildirim geçmişinden BAĞIMSIZDIR — geçmişe bakılsaydı liste
+/// temizlenince aynı sinyal yeniden gönderilirdi.
+export function shouldSendSignal(
+  oncekiSinyal: string | undefined,
+  yeniSinyal: string,
+): boolean {
+  // Hiç gönderilmemişse ilk bildirim gider.
+  if (oncekiSinyal === undefined) return true;
+  return oncekiSinyal !== yeniSinyal;
+}
+
+export function shouldNotifyNow(
+  pref: {
+    frequency?: SignalFrequency;
+    notify_hours?: number[];
+    window_start?: number;
+    window_end?: number;
+    last_notified_at?: string | null;
+  } | undefined,
+  now: Date,
+): boolean {
+  const freq = pref?.frequency ?? DEFAULT_FREQUENCY;
+  const wStart = pref?.window_start ?? DEFAULT_WINDOW_START;
+  const wEnd = pref?.window_end ?? DEFAULT_WINDOW_END;
+  const hour = istanbulHour(now);
+
+  // Pencere dışında hiçbir koşulda bildirim yok.
+  if (hour < wStart || hour > wEnd) return false;
+
+  const periodHours = PERIOD_HOURS[freq];
+  if (periodHours !== undefined) {
+    const last = pref?.last_notified_at
+      ? new Date(pref.last_notified_at)
+      : null;
+    if (last === null) return true; // hiç gönderilmemiş → ilk tur
+    const gecenSaat = (now.getTime() - last.getTime()) / 3_600_000;
+    // 5 dakikalık tolerans (0.0833 saat): cron tam saat başında tetiklenmeyip
+    // birkaç saniye/dakika kayabilir; tolerans olmazsa "saatlik" bildirim her
+    // turda bir sonraki saate ötelenirdi.
+    //
+    // Tolerans DAR tutulmalı: yarım saat gibi geniş bir pay, saatlik periyodu
+    // fiilen yarım saatliğe çevirir (30 dk önce gönderilmişken yeniden
+    // gönderilir). Bu tam olarak testin yakaladığı hataydı.
+    const TOLERANS_SAAT = 5 / 60;
+    return gecenSaat >= periodHours - TOLERANS_SAAT;
+  }
+
+  // twice_daily / daily → seçilen saatlerden biri mi?
+  const hours = pref?.notify_hours?.length
+    ? pref.notify_hours
+    : DEFAULT_NOTIFY_HOURS;
+  if (!hours.includes(hour)) return false;
+
+  // Aynı saat içinde ikinci kez çalışırsa tekrar gönderme.
+  const last = pref?.last_notified_at ? new Date(pref.last_notified_at) : null;
+  if (last === null) return true;
+  const gecenSaat = (now.getTime() - last.getTime()) / 3_600_000;
+  return gecenSaat >= 1;
+}
 
 /// Sinyal üretilebilen türler. Vadeli mevduatın teknik göstergesi yoktur.
 const ANALYZABLE = new Set(['hisse', 'fon', 'altin', 'doviz', 'emtia']);
@@ -316,9 +442,7 @@ Deno.serve(async (request) => {
     // ── 3) Tercihler ────────────────────────────────────────────────────────
     const { data: prefRows } = await admin
       .from('signal_preferences')
-      .select(
-        'user_id, asset_type, threshold, indicators, neutral_push, signals_enabled',
-      )
+      .select('user_id, asset_type, threshold, indicators, neutral_push, signals_enabled, frequency, notify_hours, window_start, window_end, last_notified_at')
       .in('user_id', userIds);
 
     const prefKey = (u: string, t: string) => `${u}|${t}`;
@@ -327,10 +451,47 @@ Deno.serve(async (request) => {
       prefs.set(prefKey(p.user_id, p.asset_type), p);
     }
 
-    // ── 4) Fiyat serileri — sembol başına TEK çekim ─────────────────────────
+    // ── 4) Son sinyal durumu — de-dup için TEK sorguda ─────────────────────
+    //
+    // Eskiden de-dup döngü İÇİNDE varlık başına ayrı sorgu yapıyordu (N+1) ve
+    // kontrol tüm ağır işten SONRA geliyordu. Artık durum önceden toplu
+    // okunur; hem N+1 gider hem de kontrol erkene alınabilir.
+    const lastSignalOf = new Map<string, string>(); // assetId → signal
+    {
+      const { data: lastRows } = await admin
+        .from('signal_state')
+        .select('asset_id, signal')
+        .in('user_id', userIds);
+      for (const r of (lastRows ?? []) as { asset_id: string; signal: string }[]) {
+        lastSignalOf.set(r.asset_id, r.signal);
+      }
+    }
+
+    const now = new Date();
+    // Sıklık/pencere yüzünden atlananlar — teşhiste "neden gönderilmedi"
+    // sorusunun cevabı. Bu sayaç olmadan sessiz atlama hata gibi görünür.
+    let skippedByFrequency = 0;
+
+    // ── 4b) Bu turda gerçekten analiz edilecek varlıklar ───────────────────
+    //
+    // YÜK AZALTMA: sıklık/pencere yüzünden sırası gelmemiş veya bildirimi
+    // kapalı varlıkların fiyat geçmişi HİÇ ÇEKİLMEZ. Önceden tüm varlıkların
+    // serisi yükleniyor, sonra döngüde atlanıyordu — saatbaşı çalışan cron'da
+    // bu, çoğu tur boş yere yapılan iş demekti.
+    const aktifAssets = assets.filter((a) => {
+      const pref = prefs.get(prefKey(a.user_id, a.type));
+      if (pref && !pref.signals_enabled) return false;
+      if (!dryRun && !shouldNotifyNow(pref, now)) {
+        skippedByFrequency++;
+        return false;
+      }
+      return true;
+    });
+
+    // ── 4c) Fiyat serileri — YALNIZCA aktif varlıkların sembolleri ─────────
     const symbolOf = new Map<string, string>(); // assetId → symbol
     const symbols = new Set<string>();
-    for (const a of assets) {
+    for (const a of aktifAssets) {
       const sym = resolveSymbol(a.ticker ?? '', a.type);
       if (!sym) continue;
       symbolOf.set(a.id, sym);
@@ -348,28 +509,34 @@ Deno.serve(async (request) => {
     let passed = 0;
     let sent = 0;
     let failed = 0;
+    // Sinyal değişmediği için atlananlar. Teşhiste "neden bildirim gelmedi"
+    // sorusunun cevabı: hata değil, kasıtlı sessizlik.
+    let skippedByDedup = 0;
+    // Sıra gelen (user,type) çiftleri — gönderim sonrası last_notified_at
+    // güncellenecek. Set: aynı türde birden çok varlık varsa tek yazım.
+    const notifiedPrefKeys = new Set<string>();
+    // Başarıyla push edilen sinyaller — döngü sonunda signal_state'e yazılır.
+    const sentSignalOf = new Map<string, { userId: string; signal: string }>();
     const preview: Array<Record<string, unknown>> = [];
     // FCM'in reddettiği gönderimlerin sebebi. `failed > 0` olduğunda
     // "neden" sorusunu log'a bakmadan cevaplayabilmek için yanıta eklenir.
     const errors: string[] = [];
 
-    for (const asset of assets) {
+    // `aktifAssets`: signals_enabled ve sıklık/pencere filtresi YUKARIDA
+    // uygulandı (fiyat çekiminden önce). Burada tekrar kontrol edilmez.
+    for (const asset of aktifAssets) {
       const symbol = symbolOf.get(asset.id);
       if (!symbol) continue;
       const prices = histories.get(symbol);
       if (!prices || prices.length < MIN_POINTS) continue;
 
       const pref = prefs.get(prefKey(asset.user_id, asset.type));
-
-      // Kullanıcı bu tür için bildirimleri kapatmışsa hiç analiz etme.
-      // Satır yoksa varsayılan AÇIK (kullanıcı hiç ayara girmemiş demektir).
-      if (pref && !pref.signals_enabled) continue;
-
       const threshold = pref?.threshold ?? DEFAULT_THRESHOLD;
       const indicators = pref?.indicators?.length
         ? pref.indicators
         : DEFAULT_INDICATORS;
       const neutralPush = pref?.neutral_push ?? false;
+      const oncekiSinyal = lastSignalOf.get(asset.id);
 
       // Premium göstergeler sunucuda hesaplanmaz — premium durumu burada
       // güvenilir biçimde bilinmiyor. Kullanıcı premium ise uygulama içi
@@ -384,16 +551,17 @@ Deno.serve(async (request) => {
       if (summary.confidence < threshold) continue;
       passed++;
 
-      // De-dup: aynı varlık için son sinyalle aynıysa tekrar gönderme.
-      const { data: lastRows } = await admin
-        .from('signal_notifications')
-        .select('signal')
-        .eq('user_id', asset.user_id)
-        .eq('asset_id', asset.id)
-        .order('sent_at', { ascending: false })
-        .limit(1);
-
-      if (lastRows?.[0]?.signal === summary.signal) continue;
+      // De-dup: aynı varlık için son PUSH EDİLEN sinyalle aynıysa gönderme.
+      // Sabah SAT → akşam SAT: sessiz. NÖTR/AL'a dönerse: bildirim.
+      //
+      // Durum `signal_state`'ten toplu okundu (döngü içinde sorgu YOK) ve
+      // ilk kontrol analizden önce yapıldı; buraya yalnızca sinyali gerçekten
+      // değişmiş olanlar gelir. Bu ikinci kontrol yine de durur çünkü
+      // erken kontrol yalnızca "değişme İHTİMALİ yok" durumunu eleyebiliyor.
+      if (!shouldSendSignal(oncekiSinyal, summary.signal)) {
+        skippedByDedup++;
+        continue;
+      }
 
       const { title, body } = buildMessage(
         asset.name,
@@ -437,7 +605,28 @@ Deno.serve(async (request) => {
         });
       if (insertError) { failed++; continue; }
 
-      if (summary.signal === 'neutral') continue; // kayda geçer, push gitmez
+      // NOT: Burada eskiden `if (summary.signal === 'neutral') continue;`
+      // vardı — nötr sinyal geçmişe yazılıp push HİÇ gönderilmiyordu.
+      // Ama nötr sinyal bu noktaya ancak kullanıcı "Nötr sinyalleri de
+      // bildir" ayarını AÇTIYSA gelebilir (bkz. yukarıdaki `neutralPush`
+      // kontrolü); açıkça bildirim isteyen kullanıcıya bildirim gitmemesi
+      // ayarın verdiği sözü tutmamaktı. Belirtisi: cron çıktısında
+      // "passed_threshold: 1, sent: 0, failed: 0" — hata yok, gönderim de yok.
+      // İstemci tarafı (signal_provider.dart) zaten böyle bir engel koymuyor;
+      // iki taraf bu değişiklikle aynı davranıyor.
+
+      // iOS rozeti: okunmamış sinyal adedi. Yeni satır yukarıda eklendiği
+      // için bu sayım onu da kapsar. Sayım başarısız olursa rozet
+      // gönderilmez (0) — yanlış sayı göstermektense hiç göstermemek yeğdir.
+      let unreadBadge = 0;
+      try {
+        const { count } = await admin
+          .from('signal_notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', asset.user_id)
+          .is('dismissed_at', null);
+        unreadBadge = count ?? 0;
+      } catch (_) { /* yut — rozet ikincil */ }
 
       for (const token of tokensByUser.get(asset.user_id) ?? []) {
         const r = await sendPush({
@@ -447,9 +636,20 @@ Deno.serve(async (request) => {
           title,
           body,
           assetId: asset.id,
+          badge: unreadBadge,
         });
         if (r.ok) {
           sent++;
+          // Periyodik sıklık bu damgaya bakar; yazılmazsa "hiç
+          // gönderilmemiş" sanılır ve her turda tekrar gönderilir.
+          notifiedPrefKeys.add(prefKey(asset.user_id, asset.type));
+          // De-dup durumu: yalnızca gönderim BAŞARILI olduğunda güncellenir.
+          // Başarısız gönderimde yazılsaydı, kullanıcıya ulaşmamış bir sinyal
+          // bir sonraki turu bloklardı.
+          sentSignalOf.set(asset.id, {
+            userId: asset.user_id,
+            signal: summary.signal,
+          });
         } else {
           failed++;
           // Sebebi kısaltarak sakla — tam FCM yanıtı uzun olabiliyor.
@@ -465,10 +665,49 @@ Deno.serve(async (request) => {
       }
     }
 
+    // Gönderim yapılan (kullanıcı, tür) çiftleri için sıklık damgasını
+    // güncelle. Tercih satırı YOKSA upsert ile oluşturulur: kullanıcı hiç
+    // ayara girmemiş olabilir ve o durumda damga tutulacak yer olmazdı —
+    // periyodik sıklık her turda yeniden tetiklenirdi.
+    // De-dup durumunu yaz. Bu olmadan aynı sinyal her turda yeniden
+    // gönderilir — istenen "sinyal değişince bildir" davranışı bozulur.
+    if (!dryRun && sentSignalOf.size > 0) {
+      const stamp = now.toISOString();
+      for (const [assetId, v] of sentSignalOf) {
+        try {
+          await admin.rpc('touch_signal_state', {
+            p_user_id: v.userId,
+            p_asset_id: assetId,
+            p_signal: v.signal,
+            p_at: stamp,
+          });
+        } catch (_) { /* yut — bir sonraki turda telafi edilir */ }
+      }
+    }
+
+    if (!dryRun && notifiedPrefKeys.size > 0) {
+      const stamp = now.toISOString();
+      for (const k of notifiedPrefKeys) {
+        const [user_id, asset_type] = k.split('|');
+        try {
+          // RPC kullanılır çünkü düz upsert, var olan satırın
+          // threshold/indicators alanlarını varsayılana döndürürdü.
+          await admin.rpc('touch_signal_notified', {
+            p_user_id: user_id,
+            p_asset_type: asset_type,
+            p_at: stamp,
+          });
+        } catch (_) { /* yut — bir sonraki turda telafi edilir */ }
+      }
+    }
+
     return jsonResponse({
       ok: true,
       slot,
       dry_run: dryRun,
+      tr_hour: istanbulHour(now),
+      skipped_by_frequency: skippedByFrequency,
+      skipped_by_dedup: skippedByDedup,
       users: userIds.length,
       assets: assets.length,
       symbols: symbols.size,

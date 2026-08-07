@@ -17,6 +17,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
+import '../utils/spot_lookup.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../services/history_service.dart';
@@ -126,14 +127,60 @@ class _PortfolioPerformanceScreenState
         '|$_selectedPeriodIdx|$_simulate|${chartAssets.length}'
         '|${chartAssets.map((a) => a.id).join(",")}';
     if (_zoomKey == key && _zoomController != null) return;
-    _zoomController?.dispose();
+    // Eski controller'ı HEMEN dispose etme. Yeni controller'ın verisi boş
+    // başlar; dispose edersek "veri yok + loading" durumu oluşur ve ekran
+    // tam sayfa spinner'a düşer — kullanıcı filtre değiştirdiğinde grafiğin
+    // (ve altındaki filtre butonlarının) kaybolmasının sebebi buydu.
+    // Bunun yerine eski veriyi tohum olarak yeni controller'a veriyoruz:
+    // yeni seri gelene kadar soluk haliyle ekranda kalır.
+    final previous = _zoomController;
+    // Tohum, ÖNCEKİ pencereye ait zaman damgaları içerir. Yeni pencere daha
+    // darsa (örn. 1Y → 1A) dışarıda kalan noktalar `startDate`'ten önceye
+    // düşer ve grafikte NEGATİF X'e çizilirdi — eksen kayar, çizgi sola
+    // taşardı. Bu yüzden tohumu yeni aralığa kırpıyoruz; kalan noktalar
+    // doğru X'e oturur, yenisi gelene kadar geçerli bir önizleme olur.
+    final fromMs = from.millisecondsSinceEpoch;
+    final toMs = to.millisecondsSinceEpoch;
+    final rawSeed = previous?.data ?? const <int, double>{};
+    final seed = <int, double>{
+      for (final e in rawSeed.entries)
+        if (e.key >= fromMs && e.key <= toMs) e.key: e.value,
+    };
     _zoomKey = key;
     _zoomController = ZoomDataController(
       assets: chartAssets,
       initialFrom: from,
       initialTo: to,
       simulate: _simulate,
+      // İki noktadan az kalırsa çizilecek bir şey yok — boş geç ki
+      // "veri var" sanılıp bozuk bir çizgi gösterilmesin.
+      seedData: seed.length >= 2 ? seed : const {},
     );
+    previous?.dispose();
+  }
+
+  // Intraday future'ı memoize et. `FutureBuilder`'a build içinde doğrudan
+  // `getPortfolioHistoryHourly(...)` verilmesi her rebuild'de (tip çipi,
+  // ortak sekmesi, 30 sn'lik tick) YENİ bir future üretiyordu; FutureBuilder
+  // yeni future'ı waiting sayıp grafiği söküyordu. Aynı varlık kümesi için
+  // aynı future yeniden kullanılır.
+  Future<Map<int, double>>? _intradayFuture;
+  String? _intradayKey;
+  // Son başarılı intraday sonucu. Future yenilendiğinde (30 sn'lik tick veya
+  // varlık kümesi değişimi) snapshot bir kare boyunca null olur; bu alan
+  // sayesinde grafik o karede boşalmaz.
+  Map<int, double>? _lastIntradayData;
+
+  Future<Map<int, double>> _intradayHistory(List<Asset> chartAssets) {
+    final key = chartAssets.map((a) => a.id).join(',');
+    if (_intradayKey == key && _intradayFuture != null) return _intradayFuture!;
+    _intradayKey = key;
+    _intradayFuture = HistoryService.instance
+        .getPortfolioHistoryHourly(chartAssets, 24)
+      ..then((v) {
+        if (mounted && v.isNotEmpty) _lastIntradayData = v;
+      });
+    return _intradayFuture!;
   }
 
   void _startIntradayTickIfNeeded() {
@@ -145,7 +192,12 @@ class _PortfolioPerformanceScreenState
       _intradayTick = Timer.periodic(const Duration(seconds: 30), (_) {
         if (!mounted) return;
         ref.read(portfolioProvider.notifier).refreshPrices();
-        setState(() {}); // marker'ın X'ini şu anki dakikaya kaydır
+        setState(() {
+          // Memoize edilen intraday future'ı bilerek düşür — tick'in amacı
+          // zaten seriyi tazelemek. Yeni future yüklenirken eski veri
+          // `hasData` sayesinde ekranda kalır, spinner'a düşülmez.
+          _intradayKey = null;
+        });
       });
     }
   }
@@ -450,49 +502,52 @@ class _PortfolioPerformanceScreenState
                       );
                     }
 
+                    // ÖNEMLİ: Aşağıdaki her iki dalda da `_buildChartWithData`
+                    // KOŞULSUZ çağrılır. Filtre kontrolleri (ortak sekmesi,
+                    // varlık tipi çipleri, periyot toggle'ı) o metodun içinde
+                    // yaşıyor; erken `return CustomLoadingView()` yapılırsa
+                    // tüm filtreler ağaçtan düşüyor ve kullanıcı yükleme
+                    // bitene kadar hiçbir filtreye dokunamıyordu. Artık
+                    // yükleme göstergesi yalnızca grafik alanını kaplar.
+                    if (isIntraday) {
+                      // Intraday için tek seferlik future — 5dk grid ve
+                      // dakikalık tick zaten var. Future `_intradayFuture`
+                      // içinde memoize edilir; aksi halde her setState
+                      // (tip/ortak filtresi, 30sn tick) yeni bir fetch
+                      // başlatıp grafiği baştan yüklemeye sokuyordu.
+                      return FutureBuilder<Map<int, double>>(
+                        future: _intradayHistory(chartAssets),
+                        builder: (context, snapshot) {
+                          final loading = snapshot.connectionState ==
+                              ConnectionState.waiting;
+                          // Tazeleme sırasında son başarılı seriye düş —
+                          // 30 sn'lik tick her seferinde grafiği spinner'a
+                          // çevirmesin.
+                          final data = snapshot.data ?? _lastIntradayData;
+                          return _buildChartWithData(
+                            data ?? const {},
+                            targetAssets,
+                            filteredOwnerLots,
+                            chartAssets,
+                            startDate,
+                            endDate,
+                            isIntraday,
+                            pState,
+                            activePartners,
+                            waiting: loading,
+                            hasData: data != null,
+                          );
+                        },
+                      );
+                    }
+
                     final controller = _zoomController;
                     return ListenableBuilder(
                       listenable: controller ?? ValueNotifier<int>(0),
                       builder: (context, _) {
-                        final Map<int, double> historyMap;
-                        final bool waiting;
-                        if (isIntraday) {
-                          // Intraday için hâlâ tek seferlik future — orası
-                          // 5dk grid ve saatte bir tick zaten var.
-                          return FutureBuilder<Map<int, double>>(
-                            future: HistoryService.instance
-                                .getPortfolioHistoryHourly(chartAssets, 24),
-                            builder: (context, snapshot) {
-                              final loading = snapshot.connectionState ==
-                                  ConnectionState.waiting;
-                              if (loading && snapshot.data == null) {
-                                return const SizedBox(
-                                    height: 300,
-                                    child: CustomLoadingView());
-                              }
-                              return _buildChartWithData(
-                                snapshot.data ?? const {},
-                                targetAssets,
-                                filteredOwnerLots,
-                                chartAssets,
-                                startDate,
-                                endDate,
-                                isIntraday,
-                                pState,
-                                activePartners,
-                                waiting: false,
-                              );
-                            },
-                          );
-                        }
-                        historyMap = controller?.data ?? const {};
-                        waiting = controller?.loading ?? false;
-                        // Veri henüz hiç gelmediyse spinner göster
-                        if (historyMap.isEmpty && waiting) {
-                          return const SizedBox(
-                              height: 300,
-                              child: CustomLoadingView());
-                        }
+                        final historyMap = controller?.data ?? const {};
+                        final waiting = controller?.loading ?? false;
+                        final stale = controller?.stale ?? false;
                         return _buildChartWithData(
                           historyMap,
                           targetAssets,
@@ -504,6 +559,14 @@ class _PortfolioPerformanceScreenState
                           pState,
                           activePartners,
                           waiting: waiting,
+                          // Tohum veri de "gösterilebilir" sayılır: aynı
+                          // varlıkların bir önceki penceresidir, spinner'dan
+                          // çok daha iyi bir ara kare. `stale` ile soluk
+                          // çizilir ve sayısal özetler gizlenir — kullanıcı
+                          // eski rakamları yeni periyodun rakamı sanmasın.
+                          // Spinner SADECE hiç veri yokken (ilk açılış).
+                          hasData: historyMap.isNotEmpty,
+                          stale: stale,
                         );
                       },
                     );
@@ -519,7 +582,16 @@ class _PortfolioPerformanceScreenState
   }
 
   /// Chart + wrap widget'ları — hem intraday hem controller-based data için.
-  /// waiting: yeni veri yükleniyor (üstte küçük progress bar göster).
+  ///
+  /// [waiting] yeni veri yükleniyor (üstte ince progress bar).
+  /// [hasData] çizilebilir bir seri var mı. False iken SADECE grafik alanı
+  /// spinner'a döner; ortak sekmesi, tip çipleri ve periyot toggle'ı ekranda
+  /// ve tıklanabilir kalır. Bu metod her durumda çağrılmalıdır — çağıranın
+  /// erken return etmesi filtreleri de siler.
+  /// [stale] eldeki seri bir ÖNCEKİ periyoda/filtreye ait mi. Grafik soluk
+  /// çizilir ve sayısal özet kartı gizlenir: eski rakamlar yeni periyodun
+  /// rakamı sanılmasın. Spinner yerine soluk grafik göstermek periyot
+  /// değişiminde çok daha akıcı hissettiriyor.
   Widget _buildChartWithData(
     Map<int, double> historyMap,
     List<Asset> targetAssets,
@@ -531,6 +603,8 @@ class _PortfolioPerformanceScreenState
     PortfolioState pState,
     List<AppUser> activePartners, {
     required bool waiting,
+    required bool hasData,
+    bool stale = false,
   }) {
     // Ana ekranla birebir aynı TRY hesabı: targetAssets grafik için ham buy
     // lot'ları içeriyor (satılan miktarı geçmişte düşürmemek için). Ancak
@@ -643,18 +717,42 @@ class _PortfolioPerformanceScreenState
           ],
         ),
         const SizedBox(height: 6),
-        _buildPeriodChangeCard(
-          segments,
-          effectiveStart,
-          endDate,
-          targetAssets,
-          intraday: isIntraday,
+        // ── Akıcı geçiş tasarımı ────────────────────────────────────────
+        // `LineChart` bir ImplicitlyAnimatedWidget: yeni `LineChartData`
+        // verildiğinde eski veriden yenisine kendi lerp'liyor (150ms).
+        // Ama bu ancak widget AĞAÇTA KALIRSA çalışır. Grafiği spinner ile
+        // değiştirmek (veya sarmalayıcı yapıyı değiştirmek) State'i yok
+        // eder, tween sıfırlanır ve geçiş "0'dan yeniden çizim" gibi
+        // görünür. Bu yüzden:
+        //   • Grafik konteyneri HER ZAMAN aynı konumda kalır.
+        //   • Özet kartı bayatken gizlenmez — yerini korusun diye
+        //     opaklığı düşer (layout zıplaması da olmaz).
+        //   • Spinner yalnızca hiç veri yokken (ilk açılış) görünür.
+        AnimatedOpacity(
+          opacity: stale ? 0.45 : 1.0,
+          duration: SandikMotion.state,
+          curve: SandikMotion.enter,
+          child: _buildPeriodChangeCard(
+            segments,
+            effectiveStart,
+            endDate,
+            targetAssets,
+            intraday: isIntraday,
+          ),
         ),
         const SizedBox(height: SandikSpace.sm),
-        _buildChartContainer(
-            segments, effectiveStart, endDate, chartAssets,
-            intraday: isIntraday,
-            allTargetAssets: targetAssets),
+        if (!hasData)
+          const SizedBox(height: 300, child: CustomLoadingView())
+        else
+          AnimatedOpacity(
+            opacity: stale ? 0.45 : 1.0,
+            duration: SandikMotion.state,
+            curve: SandikMotion.enter,
+            child: _buildChartContainer(
+                segments, effectiveStart, endDate, chartAssets,
+                intraday: isIntraday,
+                allTargetAssets: targetAssets),
+          ),
         const SizedBox(height: 24),
         _PortfolioSignalPanel(assets: targetAssets),
         const SizedBox(height: 12),
@@ -675,6 +773,7 @@ class _PortfolioPerformanceScreenState
         onPressed: () => setState(() => _typeFilter = type),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
+          curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: selected ? color.withValues(alpha: 0.15) : Sandik.surface1,
@@ -1062,6 +1161,69 @@ class _PortfolioPerformanceScreenState
     );
   }
 
+  // ── Alım günü dot'ları: viewport'tan bağımsız, cache'lenir ──────────────
+  // Hangi spot X'lerinin bir alım gününe denk geldiği yalnızca segment'lere,
+  // varlık listesine ve grafik başlangıcına bağlıdır — zoom/pan ile
+  // DEĞİŞMEZ. Eskiden bu her `buildData` çağrısında (yani her pinch/pan
+  // karesinde) yeniden hesaplanıyordu: spot × varlık iç içe döngüsü, her
+  // çift için `start.add(Duration(...))` ile DateTime üretimi. 365 nokta ve
+  // 20 varlıkta kare başına 7.300 DateTime allocation demekti.
+  Set<double>? _buyDayKeysCache;
+  String? _buyDayKeysCacheKey;
+
+  Set<double> _buyDayKeys(
+      List<TransactionSegment> segments, List<Asset> assets, DateTime start) {
+    // Cache anahtarı: başlangıç + varlık kimlikleri + segment imzası.
+    // Segment imzası nokta SAYISI ile yetinmemeli — periyot/veri değişince
+    // sayı aynı kalıp X aralığı kayabilir (örn. 30 günlük iki farklı
+    // pencere). İlk/son X de anahtara giriyor ki bayat cache dönmesin.
+    final sig = StringBuffer()
+      ..write(start.millisecondsSinceEpoch)
+      ..write('|')
+      ..write(assets.map((a) => a.id).join(','));
+    for (final s in segments) {
+      sig
+        ..write('|')
+        ..write(s.spots.length);
+      if (s.spots.isNotEmpty) {
+        sig
+          ..write(':')
+          ..write(s.spots.first.x)
+          ..write('-')
+          ..write(s.spots.last.x);
+      }
+    }
+    final key = sig.toString();
+    if (_buyDayKeysCacheKey == key && _buyDayKeysCache != null) {
+      return _buyDayKeysCache!;
+    }
+
+    // Varlıkların alım günlerini bir kez "gün damgası" set'ine indir; sonra
+    // her spot için O(1) lookup. İç içe `assets.any(...)` taraması gitti.
+    final buyDays = <int>{};
+    for (final a in assets) {
+      final d = a.addedDate;
+      buyDays.add(DateTime(d.year, d.month, d.day).millisecondsSinceEpoch);
+    }
+
+    final keys = <double>{};
+    for (final seg in segments) {
+      if (seg.thickness <= 2.0) continue;
+      for (final spot in seg.spots) {
+        final dateAtSpot =
+            start.add(Duration(minutes: (spot.x * 24 * 60).round()));
+        final dayTs = DateTime(
+                dateAtSpot.year, dateAtSpot.month, dateAtSpot.day)
+            .millisecondsSinceEpoch;
+        if (buyDays.contains(dayTs)) keys.add(spot.x);
+      }
+    }
+
+    _buyDayKeysCacheKey = key;
+    _buyDayKeysCache = keys;
+    return keys;
+  }
+
   Widget _buildChartContainer(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets,
       {bool intraday = false, List<Asset>? allTargetAssets}) {
@@ -1234,21 +1396,12 @@ class _PortfolioPerformanceScreenState
               viewMaxX: viewMaxX,
             )
           : () {
-              final buyDayKeys = <double>{};
-              for (final seg in segments) {
-                if (seg.thickness <= 2.0) continue;
-                for (final spot in seg.spots) {
-                  final dateAtSpot = start
-                      .add(Duration(minutes: (spot.x * 24 * 60).round()));
-                  final hasAddition = assets.any((a) =>
-                      a.addedDate.year == dateAtSpot.year &&
-                      a.addedDate.month == dateAtSpot.month &&
-                      a.addedDate.day == dateAtSpot.day);
-                  if (hasAddition) buyDayKeys.add(spot.x);
-                }
-              }
               return DotThinner.build(
-                candidates: buyDayKeys,
+                // `buyDayKeys` viewport'a bağlı DEĞİL — zoom/pan her karede
+                // yeniden hesaplanması saf israftı (spot × varlık döngüsü +
+                // her çift için DateTime aritmetiği). Artık segment/varlık
+                // kümesi başına bir kez hesaplanıp cache'leniyor.
+                candidates: _buyDayKeys(segments, assets, start),
                 viewMinX: viewMinX,
                 viewMaxX: viewMaxX,
                 // Grafik genişliği ~ekran - sağ Y rezervi (60px).
@@ -1492,6 +1645,12 @@ class _PortfolioPerformanceScreenState
                                 : 1.5;
             final effectiveBarWidth =
                 isActive ? activeBarWidth : seg.thickness;
+            // İlk/son X'i closure dışında bir kez oku. Bu callback'ler
+            // fl_chart tarafından NOKTA BAŞINA çağrılıyor; içeride
+            // `seg.spots.first`/`.last` demek her nokta için tekrar
+            // erişim + karşılaştırma demekti.
+            final firstX = seg.spots.isEmpty ? double.nan : seg.spots.first.x;
+            final lastX = seg.spots.isEmpty ? double.nan : seg.spots.last.x;
             return LineChartBarData(
               spots: seg.spots,
               isCurved: false,
@@ -1508,20 +1667,19 @@ class _PortfolioPerformanceScreenState
                   // grafiği bulanıklaştırır).
                   if (intraday) {
                     // Trading hissiyatı: sadece "şimdi" noktası görünsün.
-                    return spot.x == seg.spots.last.x;
+                    return spot.x == lastX;
                   }
                   // İlk/son nokta her zaman görünür; alım dot'ları ise
                   // piksel bazlı seyreltmeden geçer (bkz. `dotThinner`) —
                   // yoğun alım günlerinde üst üste binip yığın oluşmasın.
-                  if (spot.x == seg.spots.first.x ||
-                      spot.x == seg.spots.last.x) {
+                  if (spot.x == firstX || spot.x == lastX) {
                     return true;
                   }
                   return dotThinner.shows(spot.x);
                 },
                 getDotPainter: (spot, percent, barData, index) {
-                  final isFirst = spot.x == seg.spots.first.x;
-                  final isLast = spot.x == seg.spots.last.x;
+                  final isFirst = spot.x == firstX;
+                  final isLast = spot.x == lastX;
                   // Intraday'de sadece "şimdi" noktasını canlı bir amber
                   // dot ile göster — trading uygulaması hissiyatı için
                   // ince halka ile.
@@ -1783,30 +1941,15 @@ class _PortfolioPerformanceScreenState
           final spots = primarySeg.spots;
           if (spots.isEmpty) return x;
           final clamped = x.clamp(spots.first.x, spots.last.x);
-          int nearestIdx = 0;
-          double nearestDx = double.infinity;
-          for (int i = 0; i < spots.length; i++) {
-            final dx = (spots[i].x - clamped).abs();
-            if (dx < nearestDx) {
-              nearestDx = dx;
-              nearestIdx = i;
-            }
-          }
-          return spots[nearestIdx].x;
+          // Spot'lar X'e göre sıralı → ikili arama (bkz. nearestSpotIndex).
+          // Bu callback parmak her kaydığında çağrılıyor.
+          return spots[nearestSpotIndex(spots, clamped)].x;
         },
         crosshairLabelBuilder: (x) {
           // x zaten crosshairSnapX ile snap edildi — burada eşleşen spot'u bul.
           final spots = primarySeg.spots;
           if (spots.isEmpty) return null;
-          FlSpot snapped = spots.first;
-          double best = double.infinity;
-          for (final s in spots) {
-            final d = (s.x - x).abs();
-            if (d < best) {
-              best = d;
-              snapped = s;
-            }
-          }
+          final snapped = spots[nearestSpotIndex(spots, x)];
           final date = intraday
               ? DateTime(start.year, start.month, start.day)
                   .add(Duration(minutes: snapped.x.round()))
@@ -1823,15 +1966,8 @@ class _PortfolioPerformanceScreenState
           // Snap edilmiş spot'u bul (crosshairSnapX zaten uyguladı).
           final spots = primarySeg.spots;
           if (spots.isEmpty || _simulate || intraday) return const [];
-          FlSpot snapped = spots.first;
-          double best = double.infinity;
-          for (final s in spots) {
-            final d = (s.x - x).abs();
-            if (d < best) {
-              best = d;
-              snapped = s;
-            }
-          }
+          // Diğer crosshair callback'leriyle aynı ikili arama.
+          final snapped = spots[nearestSpotIndex(spots, x)];
           final tryFmt0 = NumberFormat.currency(
               symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
           final firstY = spots.first.y;
@@ -1926,6 +2062,11 @@ class _PortfolioPerformanceScreenState
                   titlesData: const FlTitlesData(show: false),
                   lineBarsData: bars,
                 ),
+                // Ana grafikle aynı motion token'ları — hacim paneli
+                // periyot değişiminde onunla birlikte morf'lansın, kendi
+                // başına (fl_chart varsayılanı 150ms/linear) kaymasın.
+                duration: SandikMotion.state,
+                curve: SandikMotion.enter,
               );
             },
           ),

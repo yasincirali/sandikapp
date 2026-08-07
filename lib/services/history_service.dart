@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import 'price_service.dart';
@@ -369,14 +371,18 @@ class HistoryService {
 
   double _getClosestPrice(
       Map<int, double> map, int targetTs, double? fallbackValue) {
-    if (map.containsKey(targetTs)) return map[targetTs]!;
-    // Yoksa en yakın geçmiş tarihi (haftasonu durumu vs) bul
-    List<int> sortedKeys = map.keys.toList()..sort();
-    final pastKeys = sortedKeys.where((k) => k <= targetTs).toList();
-    if (pastKeys.isNotEmpty) return map[pastKeys.last]!;
+    final exact = map[targetTs];
+    if (exact != null) return exact;
+    // Yoksa en yakın geçmiş tarihi (haftasonu durumu vs) bul.
+    // Intraday'de slot × varlık başına çağrılır — sıralı indeks + ikili
+    // arama şart (bkz. _sortedKeys). Eskiden her çağrıda sort + where
+    // yapıyordu.
+    if (map.isEmpty) return fallbackValue ?? 0.0;
+    final sortedKeys = _sortedKeys(map);
+    final idx = _floorIndex(sortedKeys, targetTs);
+    if (idx >= 0) return map[sortedKeys[idx]]!;
     // Geçmişte yoksa gelecekteki en yakın ilk günü dön
-    if (sortedKeys.isNotEmpty) return map[sortedKeys.first]!;
-    return fallbackValue ?? 0.0;
+    return map[sortedKeys.first]!;
   }
 
   /// Gerçek geçmiş veri yoksa currentPrice'ı sabit kullan (simülasyon yok).
@@ -416,17 +422,13 @@ class HistoryService {
     // döndürüp o slotu atlıyoruz (grafik ilk gerçek veriden başlasın).
     double? pastOrNull(Map<int, double> map, int targetTs) {
       if (map.isEmpty) return null;
-      if (map.containsKey(targetTs)) return map[targetTs];
-      final keys = map.keys.toList()..sort();
-      int? bestKey;
-      for (final k in keys) {
-        if (k <= targetTs) {
-          bestKey = k;
-        } else {
-          break;
-        }
-      }
-      return bestKey == null ? null : map[bestKey];
+      final exact = map[targetTs];
+      if (exact != null) return exact;
+      // Sıralı indeks + ikili arama (bkz. _sortedKeys) — bu closure her
+      // 5dk slot × varlık için çağrılıyor.
+      final keys = _sortedKeys(map);
+      final idx = _floorIndex(keys, targetTs);
+      return idx < 0 ? null : map[keys[idx]];
     }
 
     // pastOrNull başarısızsa "en yakın nokta" ile fallback yap.
@@ -437,8 +439,7 @@ class HistoryService {
       if (past != null) return past;
       if (map.isEmpty) return null;
       // Geçmişte yok → ileride en yakın
-      final keys = map.keys.toList()..sort();
-      return map[keys.first];
+      return map[_sortedKeys(map).first];
     }
 
     final now = DateTime.now();
@@ -897,19 +898,55 @@ class HistoryService {
         ResolutionTier.weekly => 7 * 24 * 60 * 60 * 1000,
       };
 
-  double? _pastOrNull(Map<int, double> map, int targetTs) {
-    if (map.isEmpty) return null;
-    if (map.containsKey(targetTs)) return map[targetTs];
+  /// Sıralı anahtar indeksi (identity-keyed).
+  ///
+  /// `_pastOrNull` slot × varlık kombinasyonu başına bir kez çağrılır —
+  /// 1 yıllık haftalık grafikte 20 varlıkla binlerce çağrı eder. Eskiden her
+  /// çağrı `map.keys.toList()..sort()` yapıyordu: O(n log n) sıralama +
+  /// O(n) doğrusal tarama, hep AYNI değişmeyen map üstünde. Grafiğin
+  /// "ağ beklemiyorken bile" saniyelerce takılmasının sebebi buydu.
+  ///
+  /// Fiyat serisi map'leri `_tierCache` içinde immutable tutulur, bu yüzden
+  /// sıralı anahtar listesi map nesnesi başına bir kez üretilip
+  /// önbelleğe alınabilir. `Expando` kullanıyoruz: map çöp toplandığında
+  /// indeks de gider, elle invalidasyon gerekmez.
+  static final Expando<List<int>> _sortedKeysCache = Expando<List<int>>();
+
+  static List<int> _sortedKeys(Map<int, double> map) {
+    final cached = _sortedKeysCache[map];
+    if (cached != null) return cached;
     final keys = map.keys.toList()..sort();
-    int? best;
-    for (final k in keys) {
-      if (k <= targetTs) {
-        best = k;
+    _sortedKeysCache[map] = keys;
+    return keys;
+  }
+
+  /// [keys] içinde `<= targetTs` olan EN BÜYÜK indeksi bulur; yoksa -1.
+  /// Doğrusal tarama yerine ikili arama — O(log n).
+  @visibleForTesting
+  static int floorIndexForTest(List<int> keys, int targetTs) =>
+      _floorIndex(keys, targetTs);
+
+  static int _floorIndex(List<int> keys, int targetTs) {
+    int lo = 0, hi = keys.length - 1, best = -1;
+    while (lo <= hi) {
+      final mid = (lo + hi) >> 1;
+      if (keys[mid] <= targetTs) {
+        best = mid;
+        lo = mid + 1;
       } else {
-        break;
+        hi = mid - 1;
       }
     }
-    return best == null ? null : map[best];
+    return best;
+  }
+
+  double? _pastOrNull(Map<int, double> map, int targetTs) {
+    if (map.isEmpty) return null;
+    final exact = map[targetTs];
+    if (exact != null) return exact;
+    final keys = _sortedKeys(map);
+    final idx = _floorIndex(keys, targetTs);
+    return idx < 0 ? null : map[keys[idx]];
   }
 
   /// pastOrNull null döndüyse "en yakın ileri nokta" ile fallback. Böylece
@@ -919,8 +956,7 @@ class HistoryService {
     final past = _pastOrNull(map, targetTs);
     if (past != null) return past;
     if (map.isEmpty) return null;
-    final keys = map.keys.toList()..sort();
-    return map[keys.first];
+    return map[_sortedKeys(map).first];
   }
 
   /// Bir kısmi tier'ın cache'ini temizle (invalidate). Debug için.

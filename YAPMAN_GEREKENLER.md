@@ -81,11 +81,32 @@ Bunlar sonraki her şeyin temeli. Önce karar verelim ki ben de URL'leri / e-pos
 
 ### 1.3 App Store / Play Store Görünen İsim
 
-**Karar:** "sandık" mı, "Sandık" mı, "sandık - portföy takibi" mi?
+**Karar verildi: "Sandık" (büyük S, dotless ı).** Arama bulunabilirliği için
+tüm yüzeylerde tek yazım kullanılıyor:
 
-- Android `strings.xml` zaten `sandık` olarak set edildi.
-- Play Store başlığı ayrı set edilir (Console listing).
-- **Öneri:** "sandık — Portföy Takibi" (Play Store 30 karakter limit içinde, ASO için "portföy" anahtar kelimesi var).
+- Android `strings.xml` → `Sandık` ✅ (kodda güncellendi)
+- iOS `CFBundleDisplayName` → `Sandık` ✅ (eski değer `SANDIK` idi, düzeltildi)
+- `store_listing/tr-TR/title.txt` → `Sandık — Portföy Takibi` ✅ (27/30 karakter)
+- `store_listing/en-US/title.txt` → `Sandık — Portfolio Tracker` ✅
+
+**⚠️ SENİN YAPMAN GEREKEN — Play Console'daki başlık repodan okunmaz.**
+Store listing metinleri Console'a elle girilir; repodaki `store_listing/`
+dosyaları yalnızca kaynak metindir. "Sandık" araması sonuç vermiyorsa asıl
+sebep büyük ihtimalle Console'daki başlığın hâlâ eski yazımda olmasıdır.
+
+Play Console → Grow → Store presence → Main store listing:
+1. **App name** alanına `Sandık — Portföy Takibi` yaz
+   (`store_listing/tr-TR/title.txt` içeriğiyle birebir aynı)
+2. **Short description** → `store_listing/tr-TR/short_description.txt`
+3. **Full description** → `store_listing/tr-TR/full_description.txt`
+4. Kaydet → yayına alınması genelde birkaç saat, arama indeksine tam
+   yansıması **birkaç güne kadar** sürebilir. Hemen sonuç bekleme.
+
+**Not:** Play Store'un arama indeksi Türkçe diakritiklerde tam eşleşmeye
+yakın davranıyor; bu yüzden `full_description.txt` içine "Sandık / sandık /
+SANDIK / Sandik / sandik" varyantlarını içeren bir ARAMA bölümü eklendi.
+Anahtar kelime doldurma (keyword stuffing) sayılmaması için varyantlar tek
+bir doğal cümlede tutuldu — bu bölümü şişirme, politika ihlali riski var.
 
 ### 1.4 Logo & Görsel Asset'ler
 

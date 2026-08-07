@@ -11,6 +11,7 @@ import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
+import 'push_diagnostics_screen.dart';
 import 'signal_settings_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 
@@ -519,6 +520,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   // Bilinçli olarak çökertiyoruz — Crashlytics dashboard'da görünmeli
                   throw Exception('Test crash — kullanıcı tetikledi');
                 },
+              ),
+              const SizedBox(height: 8),
+              _SettingsTile(
+                icon: Icons.notifications_active_outlined,
+                title: 'Push Teşhisi (debug-only)',
+                subtitle:
+                    'cron → edge function → FCM zincirinin neresi kopuk, '
+                    'sunucudan sorgular',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PushDiagnosticsScreen(),
+                  ),
+                ),
               ),
             ],
             const SizedBox(height: 24),

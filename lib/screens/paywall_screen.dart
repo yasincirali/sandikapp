@@ -391,6 +391,7 @@ class _PlanCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
+        curve: SandikMotion.enter,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: selected

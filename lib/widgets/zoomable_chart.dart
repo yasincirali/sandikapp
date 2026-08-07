@@ -100,6 +100,13 @@ class ZoomableChart extends StatefulWidget {
   /// ile aynı olmalı. Sağ Y kullanılıyorsa 0.
   final double plotPaddingLeft;
 
+  /// Veri (periyot/filtre) değişiminde grafiğin eski şekilden yenisine
+  /// morf süresi. Jest sırasında yok sayılır — bkz. build().
+  final Duration swapDuration;
+
+  /// Morf eğrisi. `ease-out` hızlı başlar: değişim hemen algılanır.
+  final Curve swapCurve;
+
   const ZoomableChart({
     super.key,
     required this.fullMinX,
@@ -115,6 +122,8 @@ class ZoomableChart extends StatefulWidget {
     this.bottomAxisHeight = 32,
     this.plotPaddingRight = 0,
     this.plotPaddingLeft = 0,
+    this.swapDuration = SandikMotion.state,
+    this.swapCurve = SandikMotion.enter,
   });
 
   @override
@@ -140,6 +149,21 @@ class _ZoomableChartState extends State<ZoomableChart> {
   // piksel offset'i; `_crosshairX` chart data cinsinden değer.
   double? _crosshairPx;
   double? _crosshairX;
+
+  // Kullanıcı şu an pinch/pan/time-scale drag yapıyor mu? Doğruysa
+  // LineChart'ın implicit animasyonu kapatılır: viewport her karede
+  // değişirken lerp etmek parmağın arkasında kalan "lastikli" bir his
+  // yaratıyor. Jest bitince tekrar açılır ki periyot/filtre değişimleri
+  // yumuşak morf'lansın.
+  bool _interacting = false;
+
+  void _setInteracting(bool v) {
+    if (_interacting == v) return;
+    // Jest sırasında setState zaten viewport değişimiyle tetikleniyor;
+    // burada yalnızca bayrağı güncelliyoruz (build bir sonraki karede
+    // doğru süreyi okur).
+    _interacting = v;
+  }
 
   @override
   void initState() {
@@ -200,6 +224,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
   }
 
   void _onScaleStart(ScaleStartDetails details) {
+    _setInteracting(true);
     _startMinX = _minX;
     _startMaxX = _maxX;
     // Focal point plot area sınırlarına clamp — Y ekseni bandına gelirse
@@ -301,7 +326,13 @@ class _ZoomableChartState extends State<ZoomableChart> {
   double _timeDragStartWidth = 0;
 
   void _onTimeDragStart(DragStartDetails _) {
+    _setInteracting(true);
     _timeDragStartWidth = _maxX - _minX;
+  }
+
+  void _onTimeDragEnd(DragEndDetails _) {
+    if (!mounted) return;
+    setState(() => _interacting = false);
   }
 
   void _onTimeDragUpdate(DragUpdateDetails d) {
@@ -338,7 +369,25 @@ class _ZoomableChartState extends State<ZoomableChart> {
           clipBehavior: Clip.none,
           children: [
             // Alt: LineChart (tooltip'i için touch handler kendi içinde çalışır)
-            Positioned.fill(child: LineChart(widget.builder(_minX, _maxX))),
+            //
+            // `LineChart` bir ImplicitlyAnimatedWidget: yeni LineChartData
+            // gelince eskisinden yenisine kendi lerp'ler. Periyot/filtre
+            // değişiminde grafiğin "0'dan yeniden çizilmesi" yerine akıcı
+            // şekilde şekil değiştirmesini sağlayan mekanizma budur —
+            // ANCAK widget ağaçta kalmalı, aksi halde State ve tween sıfırlanır.
+            //
+            // Süre iki moda ayrılır:
+            //  • Jest sırasında (pinch/pan) animasyon KAPALI (Duration.zero).
+            //    Aksi halde her kare bir önceki hedefe doğru lerp'lerken yeni
+            //    hedef gelir; parmak takip etmesi gecikmeli/lastikli hissedilir.
+            //  • Veri/periyot değişiminde `swapDuration` ile yumuşak morf.
+            Positioned.fill(
+              child: LineChart(
+                widget.builder(_minX, _maxX),
+                duration: _interacting ? Duration.zero : widget.swapDuration,
+                curve: widget.swapCurve,
+              ),
+            ),
 
             // Crosshair overlay
             if (_crosshairEnabled && _crosshairPx != null)
@@ -370,7 +419,13 @@ class _ZoomableChartState extends State<ZoomableChart> {
                     (instance) {
                       instance
                         ..onStart = _onScaleStart
-                        ..onUpdate = _onScaleUpdate;
+                        ..onUpdate = _onScaleUpdate
+                        // Jest bitti → implicit animasyon tekrar açılsın.
+                        // setState şart: son kare doğru süreyle çizilmeli.
+                        ..onEnd = (_) {
+                          if (!mounted) return;
+                          setState(() => _interacting = false);
+                        };
                     },
                   ),
                   if (_crosshairEnabled)
@@ -406,6 +461,8 @@ class _ZoomableChartState extends State<ZoomableChart> {
                   behavior: HitTestBehavior.translucent,
                   onHorizontalDragStart: _onTimeDragStart,
                   onHorizontalDragUpdate: _onTimeDragUpdate,
+                  onHorizontalDragEnd: _onTimeDragEnd,
+                  onHorizontalDragCancel: () => _onTimeDragEnd(DragEndDetails()),
                   child: const MouseRegion(
                     cursor: SystemMouseCursors.resizeColumn,
                     child: SizedBox.expand(),

@@ -208,9 +208,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         CustomAnimatedToggleSwitch<bool>(
                           current: _rememberMe,
                           values: const [false, true],
-                          onChanged: (v) => setState(() => _rememberMe = v),
-                          animationDuration: const Duration(milliseconds: 400),
-                          animationCurve: Curves.easeInOutCubic,
+                          onChanged: (v) {
+                            SandikHaptic.selection.perform();
+                            setState(() => _rememberMe = v);
+                          },
+                          // 400ms → 180ms: toggle bir buton geri bildirimidir,
+                          // 400ms anahtarı ağır hissettiriyordu.
+                          animationDuration: SandikMotion.state,
+                          // Sürgü ekranda yer değiştiriyor → move.
+                          animationCurve: SandikMotion.move,
                           height: 28,
                           spacing: 4,
                           indicatorSize: const Size(22, double.infinity),

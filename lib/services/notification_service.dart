@@ -25,6 +25,11 @@ class NotificationService {
 
   static const partnerInviteType = 'partner_invite';
   static const signalAnalyzeRequestType = 'signal_analyze_request';
+
+  /// Sunucudan gelen hazır sinyal bildirimi (analyze-signals edge function
+  /// → FCM `data.type`). Uygulama ÖN PLANDAYKEN Android `notification`
+  /// payload'ını sistem göstermez; bu tipi görünce bildirimi biz basarız.
+  static const signalAlertType = 'signal_alert';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
 
   final _plugin = FlutterLocalNotificationsPlugin();
@@ -189,6 +194,45 @@ class NotificationService {
       '$requesterName ortaklik kodunuzu girdi.',
       const NotificationDetails(android: androidDetails, iOS: iosDetails),
       payload: '$_partnerInvitePayloadPrefix$inviteId',
+    );
+  }
+
+  /// Sunucudan gelen teknik sinyal bildirimini gösterir.
+  ///
+  /// Yalnızca uygulama ÖN PLANDAYKEN çağrılır. Arka planda/kapalıyken FCM
+  /// `notification` payload'ını Android'in kendisi gösterir; oraya ikinci
+  /// bir bildirim basmak çift gösterime yol açar.
+  ///
+  /// Kanal `signal_channel` — sunucudaki `channel_id` ile aynı olmak
+  /// zorunda (bkz. `_createAndroidChannels`).
+  Future<void> showSignalNotification({
+    required String title,
+    required String body,
+    required String assetId,
+  }) async {
+    if (!_initialized) await init();
+
+    const androidDetails = AndroidNotificationDetails(
+      'signal_channel',
+      'Teknik Sinyal Bildirimleri',
+      channelDescription: 'Portföyünüzdeki varlıklar için trend bildirimleri',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: 'ic_stat_sandik',
+      color: Color(0xFFF5A623), // marka amber
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    await _plugin.show(
+      assetId.hashCode,
+      title,
+      body,
+      const NotificationDetails(android: androidDetails, iOS: iosDetails),
     );
   }
 

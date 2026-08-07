@@ -1,7 +1,10 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset_type.dart';
+import '../models/signal_frequency.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
@@ -296,6 +299,8 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
     final neutralPush = read(signalNeutralPushProvider);
     final signalsEnabled = read(signalNotificationsProvider);
 
+    final schedule = read(signalScheduleProvider)[type] ?? kDefaultSchedule;
+
     await SupabaseService.instance.upsertSignalPreference(
       userId: user.id,
       assetType: type.name,
@@ -303,9 +308,26 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
       indicators: indicators.toList(),
       neutralPush: neutralPush,
       signalsEnabled: signalsEnabled,
+      frequency: schedule.frequency,
+      notifyHours: schedule.hours,
     );
-  } catch (_) {
-    // Sunucu senkronu başarısız olsa da yerel tercih geçerli kalır.
+  } catch (e, st) {
+    // Sunucu senkronu başarısız olsa da yerel tercih geçerli kalır —
+    // kullanıcıyı ayar ekranında hata diyaloğuyla durdurmak doğru değil.
+    //
+    // AMA sessizce yutmak da olmaz: push kararını SUNUCU veriyor, yani bu
+    // yazma düşerse kullanıcının seçtiği eşik/sıklık hiç uygulanmaz ve
+    // hiçbir belirti görünmez. Debug'da konsola, üretimde Crashlytics'e
+    // düşsün ki teşhis edilebilsin.
+    if (kDebugMode) {
+      debugPrint('[signal_pref] ${type.name} sunucuya yazılamadı: $e');
+    }
+    FirebaseCrashlytics.instance.recordError(
+      e,
+      st,
+      reason: 'signal_preferences upsert (${type.name})',
+      fatal: false,
+    );
   }
 }
 
@@ -387,6 +409,133 @@ final signalThresholdProvider =
   SignalThresholdNotifier.new,
 );
 
+// ─── Sinyal bildirim sıklığı (per asset type) ────────────────────────────────
+// Kullanıcı her varlık türü için ayrı sıklık ve saat seçer. Sunucu saatbaşı
+// çalışıp bu tercihe göre karar verir (bkz. `shouldNotifyNow`).
+// Bildirimler TR 10:00–18:00 penceresi dışına asla çıkmaz.
+
+const _kSignalFrequencyKey = 'pref_signal_frequency_by_type_v1';
+const _kSignalHoursKey = 'pref_signal_hours_by_type_v1';
+
+/// Bir varlık türünün sıklık ayarı: sıklık + seçilen saatler.
+typedef SignalSchedule = ({SignalFrequency frequency, List<int> hours});
+
+const kDefaultSchedule = (
+  frequency: SignalFrequency.twiceDaily,
+  hours: <int>[11, 15],
+);
+
+class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
+  @override
+  Map<AssetType, SignalSchedule> build() {
+    _load();
+    return {for (final t in AssetType.values) t: kDefaultSchedule};
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final freqRaw = prefs.getStringList(_kSignalFrequencyKey) ?? const [];
+      final hoursRaw = prefs.getStringList(_kSignalHoursKey) ?? const [];
+
+      final freqByType = <AssetType, SignalFrequency>{};
+      for (final e in freqRaw) {
+        final p = e.split(':');
+        if (p.length != 2) continue;
+        freqByType[AssetType.fromString(p[0])] = SignalFrequency.fromId(p[1]);
+      }
+      final hoursByType = <AssetType, List<int>>{};
+      for (final e in hoursRaw) {
+        // Format: "typeName:11,15"
+        final p = e.split(':');
+        if (p.length != 2) continue;
+        hoursByType[AssetType.fromString(p[0])] = p[1]
+            .split(',')
+            .map(int.tryParse)
+            .whereType<int>()
+            .where((h) => h >= kSignalWindowStart && h <= kSignalWindowEnd)
+            .toList();
+      }
+
+      final next = <AssetType, SignalSchedule>{};
+      for (final t in AssetType.values) {
+        next[t] = (
+          frequency: freqByType[t] ?? kDefaultSchedule.frequency,
+          hours: hoursByType[t]?.isNotEmpty == true
+              ? hoursByType[t]!
+              : kDefaultSchedule.hours,
+        );
+      }
+      state = next;
+    } catch (_) {}
+  }
+
+  Future<void> _persist() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _kSignalFrequencyKey,
+        state.entries.map((e) => '${e.key.name}:${e.value.frequency.id}').toList(),
+      );
+      await prefs.setStringList(
+        _kSignalHoursKey,
+        state.entries
+            .map((e) => '${e.key.name}:${e.value.hours.join(",")}')
+            .toList(),
+      );
+    } catch (_) {}
+  }
+
+  /// Sıklığı değiştirir. Saat seçimi gerektiren bir sıklığa geçilirken
+  /// mevcut saat sayısı uymuyorsa makul bir varsayılan atanır — kullanıcı
+  /// "günde 2"den "günde 1"e geçince elde 2 saat kalması sunucuda
+  /// tutarsızlık yaratırdı.
+  Future<void> setFrequency(AssetType type, SignalFrequency freq) async {
+    final mevcut = state[type] ?? kDefaultSchedule;
+    var hours = mevcut.hours;
+    if (freq.needsHourPicker && hours.length != freq.hourCount) {
+      hours = freq.hourCount == 1 ? const [11] : const [11, 15];
+    }
+    state = {...state, type: (frequency: freq, hours: hours)};
+    await _persist();
+    await _syncSignalPreferenceWith(ref.read, type);
+  }
+
+  /// Seçilen saatleri değiştirir. Pencere dışındaki saatler yok sayılır.
+  Future<void> setHours(AssetType type, List<int> hours) async {
+    final temiz = hours
+        .where((h) => h >= kSignalWindowStart && h <= kSignalWindowEnd)
+        .toSet()
+        .toList()
+      ..sort();
+    if (temiz.isEmpty) return;
+    final mevcut = state[type] ?? kDefaultSchedule;
+    state = {...state, type: (frequency: mevcut.frequency, hours: temiz)};
+    await _persist();
+    await _syncSignalPreferenceWith(ref.read, type);
+  }
+
+  /// Sunucudan gelen değeri yerele uygular (geri yazmaz).
+  Future<void> applyFromServer(
+    AssetType type,
+    SignalFrequency freq,
+    List<int> hours,
+  ) async {
+    state = {
+      ...state,
+      type: (frequency: freq, hours: hours.isEmpty ? kDefaultSchedule.hours : hours),
+    };
+    await _persist();
+  }
+
+  SignalSchedule forType(AssetType type) => state[type] ?? kDefaultSchedule;
+}
+
+final signalScheduleProvider =
+    NotifierProvider<SignalScheduleNotifier, Map<AssetType, SignalSchedule>>(
+  SignalScheduleNotifier.new,
+);
+
 /// Nötr sinyaller de push olarak gönderilsin mi (default: false).
 final signalNeutralPushProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kSignalNeutralPushKey, false));
@@ -451,11 +600,13 @@ Future<void> syncSignalPreferencesOnLogin(WidgetRef ref) async {
     // Sunucu doğruluk kaynağı → cihaza indir.
     final thresholds = ref.read(signalThresholdProvider.notifier);
     final indicators = ref.read(indicatorPrefsProvider.notifier);
+    final schedules = ref.read(signalScheduleProvider.notifier);
 
     for (final row in remote) {
       final type = AssetType.fromString(row.assetType);
       await thresholds.applyFromServer(type, row.threshold);
       await indicators.applyFromServer(type, row.indicators);
+      await schedules.applyFromServer(type, row.frequency, row.notifyHours);
     }
 
     // `neutralPush` ve `signalsEnabled` tür başına DEĞİL, uygulama genelinde

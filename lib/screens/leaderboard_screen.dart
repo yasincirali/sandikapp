@@ -49,6 +49,27 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               fontWeight: FontWeight.w700,
               color: Colors.white),
         ),
+        actions: [
+          // Yarıştaki getiri ile Performans ekranındaki yüzde farklı
+          // formüllerdir (dönemsel + para akışı düzeltmeli vs. toplam
+          // maliyete göre). Kullanıcı ikisini yan yana görünce "hangisi
+          // doğru?" diye soruyor — açıklama burada.
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded,
+                color: Sandik.text58, size: 22),
+            tooltip: 'Getiri nasıl hesaplanıyor?',
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              backgroundColor: Sandik.surface1,
+              isScrollControlled: true,
+              useSafeArea: true,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              builder: (_) => const _RoiInfoSheet(),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: !optIn
@@ -96,10 +117,13 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         horizontal: 20, vertical: 12),
                     child: Text(
                       activePartners.isEmpty
-                          ? 'Sıralamalar ve dağılımlar anonimdir — kimlik, '
-                              'miktar ve TL bilgisi asla paylaşılmaz.'
-                          : 'Ortak sıralaması net getiri (%) — deposit/çekim '
-                              'hariç. Kimsenin varlık listesi görünmez.',
+                          ? 'Getiri seçili döneme göre hesaplanır; para '
+                              'giriş/çıkışı hariç tutulur. Sıralamalar ve '
+                              'dağılımlar anonimdir — kimlik, miktar ve TL '
+                              'bilgisi asla paylaşılmaz.'
+                          : 'Ortak sıralaması seçili dönemin getirisidir '
+                              '(%) — para giriş/çıkışı hariç. Kimsenin '
+                              'varlık listesi görünmez.',
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
                         color: Sandik.text36,
@@ -109,6 +133,163 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+/// "Getiri nasıl hesaplanıyor?" açıklaması.
+///
+/// Yarıştaki ROI ile Performans ekranındaki kâr/zarar yüzdesi kasıtlı olarak
+/// FARKLI metriklerdir; kullanıcı ikisini karşılaştırınca hata sanıyor.
+/// Formüller:
+///   Yarış      → (bugünkü değer − dönem başı değer − net para akışı)
+///                / dönem başı değer × 100   [LeaderboardService.computeROI]
+///   Performans → (bugünkü değer − toplam maliyet) / toplam maliyet × 100
+class _RoiInfoSheet extends StatelessWidget {
+  const _RoiInfoSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Sandik.text36,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Getiri nasıl hesaplanıyor?',
+              style: context.t.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 14),
+            const _InfoBlock(
+              icon: Icons.emoji_events_outlined,
+              title: 'Yarıştaki getiri — dönemsel',
+              body: 'Seçtiğin dönemin başındaki portföy değerine göre '
+                  'hesaplanır. Dönem içinde yatırdığın yeni para ve '
+                  'çektiğin tutar sonuçtan düşülür.\n\n'
+                  'Böylece sıralama "kim daha çok para yatırdı" değil, '
+                  '"kim parasını daha iyi değerlendirdi" sorusunu ölçer.',
+            ),
+            const SizedBox(height: 12),
+            const _InfoBlock(
+              icon: Icons.show_chart_rounded,
+              title: 'Performans ekranındaki yüzde — toplam',
+              body: 'Varlığın bugünkü değerini ödediğin toplam maliyetle '
+                  'karşılaştırır. Dönem ayrımı yoktur, ilk aldığın günden '
+                  'bugüne kadarki kâr/zararını gösterir.',
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Sandik.amber.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(
+                    color: Sandik.amber.withValues(alpha: 0.28)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.lightbulb_outline_rounded,
+                      size: 18, color: Sandik.amber),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'İki sayının farklı olması normaldir — aynı portföyün '
+                      'iki ayrı ölçüsüdür. Örnek: bir yıl önce 100.000 ₺\'ye '
+                      'alıp bugün 150.000 ₺ olan portföyde Performans +%50 '
+                      'gösterir; portföy 30 gün önce 145.000 ₺ ise "30 gün" '
+                      'yarışındaki getirin +%3,4\'tür.',
+                      style: context.t.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Dönem başına ait fiyat geçmişi bulunamazsa yarış getirisi de '
+              'toplam kâr/zarar yöntemine düşer; bu durumda iki sayı aynı '
+              'çıkabilir.',
+              style: context.t.labelMedium?.copyWith(
+                letterSpacing: 0,
+                color: Sandik.text36,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoBlock extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+  const _InfoBlock({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Sandik.surface2,
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: Sandik.amber),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: context.t.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            body,
+            style: context.t.bodySmall?.copyWith(
+              color: Sandik.text58,
+              height: 1.45,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1420,6 +1601,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
             onTap: () => setState(() => _expandedIdx = i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
+              curve: SandikMotion.enter,
               padding: const EdgeInsets.symmetric(
                   horizontal: 12, vertical: 6),
               decoration: BoxDecoration(

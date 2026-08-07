@@ -540,6 +540,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                   children: [
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
+                      curve: SandikMotion.enter,
                       width: isTouched ? 10 : 8,
                       height: isTouched ? 10 : 8,
                       decoration: BoxDecoration(

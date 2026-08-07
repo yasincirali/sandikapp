@@ -309,6 +309,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       final active = i == _step;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
+                        curve: SandikMotion.enter,
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         width: active ? 24 : 7,
                         height: 7,

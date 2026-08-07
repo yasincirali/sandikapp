@@ -1,3 +1,5 @@
+import 'signal_frequency.dart';
+
 /// Sunucudaki `signal_preferences` tablosunun bir satırı.
 ///
 /// Kullanıcı × varlık türü başına: güven eşiği, aktif göstergeler ve nötr
@@ -14,7 +16,16 @@ class SignalPreferenceRow {
     required this.indicators,
     required this.neutralPush,
     required this.signalsEnabled,
+    this.frequency = SignalFrequency.twiceDaily,
+    this.notifyHours = const [11, 15],
   });
+
+  /// Bildirim sıklığı — sunucu saatbaşı çalışıp bu değere göre karar verir.
+  final SignalFrequency frequency;
+
+  /// twice_daily/daily için seçilen TR saatleri. Periyodik sıklıklarda
+  /// kullanılmaz. Pencere (10-18) dışına çıkamaz.
+  final List<int> notifyHours;
 
   /// `AssetType.name` karşılığı ('hisse', 'fon', 'altin', ...).
   final String assetType;

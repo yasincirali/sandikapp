@@ -84,6 +84,26 @@ class RemotePushService {
         return;
       }
 
+      // Sunucunun ürettiği hazır sinyal bildirimi.
+      //
+      // Android, uygulama ÖN PLANDAYKEN `notification` payload'ını kendisi
+      // GÖSTERMEZ — göstermek uygulamanın işidir. Bu dal eksikti: mesaj
+      // cihaza ulaşıyor (`FLTFireMsgReceiver: broadcast received`), FCM
+      // `sent` diyor, ama kullanıcı hiçbir şey görmüyordu. Arka planda ve
+      // uygulama kapalıyken bildirim zaten sistem tarafından gösterilir,
+      // bu yüzden burada yalnızca ön plan durumu ele alınır.
+      if (type == NotificationService.signalAlertType) {
+        final n = message.notification;
+        final title = n?.title ?? data['title']?.toString() ?? 'Yeni sinyal';
+        final body = n?.body ?? data['body']?.toString() ?? '';
+        await NotificationService.instance.showSignalNotification(
+          title: title,
+          body: body,
+          assetId: data['asset_id']?.toString() ?? '',
+        );
+        return;
+      }
+
       if (type == NotificationService.signalAnalyzeRequestType) {
         // Cron'dan gelen "analiz zamanı" tetiği. Callback set edilmişse
         // client tarafında portföy analizini başlatır.

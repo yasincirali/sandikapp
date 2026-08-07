@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset_type.dart';
+import '../models/signal_frequency.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
@@ -21,6 +22,7 @@ class SignalSettingsScreen extends ConsumerWidget {
     final premium = ref.watch(premiumUnlockedProvider);
     final paywallOn = ref.watch(paywallVisibleProvider);
     final thresholds = ref.watch(signalThresholdProvider);
+    final schedules = ref.watch(signalScheduleProvider);
     final neutralPush = ref.watch(signalNeutralPushProvider);
 
     return Scaffold(
@@ -131,6 +133,12 @@ class SignalSettingsScreen extends ConsumerWidget {
               onThresholdChanged: (v) => ref
                   .read(signalThresholdProvider.notifier)
                   .setForType(type, v),
+              schedule: schedules[type] ?? kDefaultSchedule,
+              onFrequencyChanged: (f) => ref
+                  .read(signalScheduleProvider.notifier)
+                  .setFrequency(type, f),
+              onHoursChanged: (h) =>
+                  ref.read(signalScheduleProvider.notifier).setHours(type, h),
             ),
             const SizedBox(height: 20),
           ],
@@ -224,6 +232,9 @@ class _CategorySection extends StatelessWidget {
   final int threshold;
   final void Function(String id) onToggle;
   final void Function(int threshold) onThresholdChanged;
+  final SignalSchedule schedule;
+  final void Function(SignalFrequency freq) onFrequencyChanged;
+  final void Function(List<int> hours) onHoursChanged;
 
   const _CategorySection({
     required this.type,
@@ -233,6 +244,9 @@ class _CategorySection extends StatelessWidget {
     required this.threshold,
     required this.onToggle,
     required this.onThresholdChanged,
+    required this.schedule,
+    required this.onFrequencyChanged,
+    required this.onHoursChanged,
   });
 
   @override
@@ -283,6 +297,16 @@ class _CategorySection extends StatelessWidget {
             height: 1,
             color: Colors.white.withValues(alpha: 0.05),
           ),
+          _FrequencyRow(
+            type: type,
+            schedule: schedule,
+            onFrequencyChanged: onFrequencyChanged,
+            onHoursChanged: onHoursChanged,
+          ),
+          Divider(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.05),
+          ),
           for (final id in IndicatorId.all)
             _IndicatorRow(
               id: id,
@@ -302,6 +326,369 @@ class _CategorySection extends StatelessWidget {
               },
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Bildirim sıklığı satırı: sıklık seçimi + (gerekiyorsa) saat seçimi.
+///
+/// Saatler TR 10:00–18:00 penceresiyle sınırlıdır; bu kısıt hem burada hem
+/// sunucudaki check constraint'te vardır (bkz. 0024_signal_frequency.sql).
+class _FrequencyRow extends StatelessWidget {
+  final AssetType type;
+  final SignalSchedule schedule;
+  final void Function(SignalFrequency freq) onFrequencyChanged;
+  final void Function(List<int> hours) onHoursChanged;
+
+  const _FrequencyRow({
+    required this.type,
+    required this.schedule,
+    required this.onFrequencyChanged,
+    required this.onHoursChanged,
+  });
+
+  String _saatMetni(int h) => '${h.toString().padLeft(2, '0')}:00';
+
+  Future<void> _saatSec(BuildContext context) async {
+    final freq = schedule.frequency;
+    final secili = <int>[...schedule.hours];
+
+    final sonuc = await showModalBottomSheet<List<int>>(
+      context: context,
+      backgroundColor: Sandik.surface1,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final tam = secili.length == freq.hourCount;
+          return SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Sandik.text36,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    freq.hourCount == 1
+                        ? 'Bildirim saatini seç'
+                        : 'İki bildirim saati seç',
+                    style: context.t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700, color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Bildirimler yalnızca '
+                    '${_saatMetni(kSignalWindowStart)}–'
+                    '${_saatMetni(kSignalWindowEnd)} arasında gönderilir.',
+                    style: context.t.bodySmall
+                        ?.copyWith(color: Sandik.text58, height: 1.4),
+                  ),
+                  const SizedBox(height: 6),
+                  // Seçili saatler her zaman görünür — kapasite dolduğunda
+                  // hangi saatin değişeceği tahmin edilmesin diye.
+                  Text(
+                    secili.isEmpty
+                        ? 'Henüz saat seçilmedi'
+                        : 'Seçili: ${([...secili]..sort()).map(_saatMetni).join("  •  ")}',
+                    style: context.t.bodySmall?.copyWith(
+                        color: secili.isEmpty ? Sandik.text36 : Sandik.amber,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final h in signalSelectableHours)
+                        _SaatChip(
+                          label: _saatMetni(h),
+                          secili: secili.contains(h),
+                          onTap: () => setSheet(() {
+                            if (secili.contains(h)) {
+                              // "Günde 1"de tek saat zorunlu: son kalanı
+                              // kaldırmak kullanıcıyı geçersiz duruma
+                              // sokar, dokunuşu yok say.
+                              if (secili.length > 1 || freq.hourCount > 1) {
+                                secili.remove(h);
+                              }
+                            } else {
+                              // Kapasite dolduysa en eskiyi çıkar — kullanıcı
+                              // önce silmek zorunda kalmasın. Hangi saatin
+                              // düştüğü yukarıdaki "Seçili:" satırında görülür.
+                              if (secili.length >= freq.hourCount) {
+                                secili.removeAt(0);
+                              }
+                              secili.add(h);
+                            }
+                          }),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                          backgroundColor: Sandik.amber,
+                          disabledBackgroundColor:
+                              Sandik.amber.withValues(alpha: 0.3)),
+                      onPressed: tam
+                          ? () => Navigator.pop(ctx, [...secili]..sort())
+                          : null,
+                      child: Text(tam
+                          ? 'Kaydet'
+                          : '${freq.hourCount} saat seçmelisin '
+                              '(${secili.length}/${freq.hourCount})'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    if (sonuc != null && sonuc.isNotEmpty) onHoursChanged(sonuc);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final freq = schedule.frequency;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bildirim sıklığı',
+            style: context.t.titleSmall?.copyWith(
+                color: Sandik.text58, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+          // Liste seçimi (Wrap+chip DEĞİL).
+          //
+          // Chip'ler iki sorun çıkarıyordu:
+          //   1. Seçili chip'in fontWeight'i değişince genişliği de değişiyor,
+          //      Wrap satırları yeniden hesaplıyor ve TÜM chip'ler yer
+          //      değiştiriyordu. Kullanıcı bir seçeneğe basınca diğerlerinin
+          //      kayması, yanlış öğeye basmaya yol açan bir hata.
+          //   2. HIG segmented control'ü 2-5 seçenek için önerir ama etiketler
+          //      uzun ("2 saatte bir", "Günde 2 kez"); 5'ini yan yana
+          //      sıkıştırmak okunaksız olurdu.
+          //
+          // Liste düzeni her satırı sabit yükseklikte tutar — seçim değişince
+          // hiçbir şey kaymaz. iOS Ayarlar'ın kendi seçim deseni de budur.
+          Container(
+            decoration: BoxDecoration(
+              color: Sandik.surface2,
+              borderRadius: BorderRadius.circular(SandikRadius.sm),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            ),
+            child: Column(
+              children: [
+                for (var i = 0; i < SignalFrequency.values.length; i++) ...[
+                  if (i > 0)
+                    Divider(
+                      height: 1,
+                      indent: 12,
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  _FrequencyOption(
+                    frequency: SignalFrequency.values[i],
+                    secili: SignalFrequency.values[i] == freq,
+                    // Saat gerektiren sıklıkta seçili satırın altında
+                    // saatler gösterilir — ayrı bir kutu aramaya gerek kalmaz.
+                    hoursLabel: SignalFrequency.values[i] == freq &&
+                            freq.needsHourPicker
+                        ? schedule.hours.map(_saatMetni).join('  •  ')
+                        : null,
+                    onTap: () => onFrequencyChanged(SignalFrequency.values[i]),
+                    onHoursTap: () => _saatSec(context),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (!freq.needsHourPicker)
+            Text(
+              '${freq.description} — '
+              '${_saatMetni(kSignalWindowStart)}–'
+              '${_saatMetni(kSignalWindowEnd)} arası.',
+              style: context.t.bodySmall
+                  ?.copyWith(color: Sandik.text36, height: 1.4),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sıklık listesinde tek satır.
+///
+/// Tasarım notu: seçili/seçili değil farkı YALNIZCA renk ve onay işaretiyle
+/// anlatılır — font ağırlığı sabit kalır. Ağırlık değişimi metnin genişliğini
+/// değiştirir ve satırın yeniden ölçülmesine yol açardı; chip düzenindeki
+/// kayma sorununun kökü tam olarak buydu.
+///
+/// Dokunma hedefi en az 44pt (HIG minimumu).
+class _FrequencyOption extends StatelessWidget {
+  final SignalFrequency frequency;
+  final bool secili;
+
+  /// Seçili ve saat gerektiren sıklıkta gösterilecek saat metni.
+  /// null ise saat satırı çizilmez.
+  final String? hoursLabel;
+  final VoidCallback onTap;
+  final VoidCallback onHoursTap;
+
+  const _FrequencyOption({
+    required this.frequency,
+    required this.secili,
+    required this.hoursLabel,
+    required this.onTap,
+    required this.onHoursTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      selected: secili,
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            children: [
+              Container(
+                constraints: const BoxConstraints(minHeight: 44),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    // Onay işareti sabit genişlikte bir kutuda durur; görünüp
+                    // kaybolması metni ittirmez.
+                    SizedBox(
+                      width: 22,
+                      child: secili
+                          ? const Icon(Icons.check_rounded,
+                              size: 18, color: Sandik.amber)
+                          : null,
+                    ),
+                    Expanded(
+                      child: Text(
+                        frequency.label,
+                        style: context.t.bodyMedium?.copyWith(
+                          color: secili ? Sandik.amber : Colors.white,
+                          // Ağırlık BİLİNÇLİ olarak sabit — bkz. sınıf notu.
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (hoursLabel != null)
+                InkWell(
+                  onTap: onHoursTap,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    padding: const EdgeInsets.fromLTRB(34, 0, 12, 10),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.schedule_rounded,
+                            size: 15, color: Sandik.text58),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            hoursLabel!,
+                            style: context.t.bodySmall?.copyWith(
+                                color: Colors.white, height: 1.3),
+                          ),
+                        ),
+                        Text(
+                          'Değiştir',
+                          style: context.t.labelMedium?.copyWith(
+                              color: Sandik.amber, letterSpacing: 0),
+                        ),
+                        const Icon(Icons.chevron_right_rounded,
+                            size: 16, color: Sandik.text36),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Seçilebilir çip — saat seçim sayfasında kullanılır.
+class _SaatChip extends StatelessWidget {
+  final String label;
+  final bool secili;
+  final VoidCallback onTap;
+  const _SaatChip({
+    required this.label,
+    required this.secili,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: secili,
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          // 44pt HIG minimum dokunma hedefi.
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 72),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: secili
+                ? Sandik.amber.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(SandikRadius.sm),
+            border: Border.all(
+              color: secili
+                  ? Sandik.amber.withValues(alpha: 0.6)
+                  : Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Text(
+            label,
+            style: context.t.bodySmall?.copyWith(
+              color: secili ? Sandik.amber : Sandik.text58,
+              // Ağırlık SABİT: seçimle değişirse metin genişler, chip büyür
+              // ve Wrap tüm satırı yeniden dizer. Seçim rengi zaten yeterli
+              // ayrım sağlıyor.
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -434,6 +821,7 @@ class _ThresholdSegment extends StatelessWidget {
               onTap: () => onChanged(opt),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
+                curve: SandikMotion.enter,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(

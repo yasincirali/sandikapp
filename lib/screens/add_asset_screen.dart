@@ -553,6 +553,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
+            curve: SandikMotion.enter,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: selected
@@ -1222,6 +1223,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
+                curve: SandikMotion.enter,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
@@ -1289,6 +1291,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 160),
+                curve: SandikMotion.enter,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: selected
@@ -1361,6 +1364,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               onTap: () => setState(() => _quantity.text = v),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 140),
+                curve: SandikMotion.enter,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
@@ -2163,7 +2167,7 @@ class _Bist100PickerState extends State<_Bist100Picker> {
     final cs = Theme.of(context).colorScheme;
     final filtered = _filtered;
     return _PickerShell(
-      title: 'BIST 100',
+      title: 'BIST Hisseleri',
       count: filtered.length,
       color: AssetType.hisse.color,
       searchCtrl: _ctrl,

@@ -1,4 +1,6 @@
-sandık, tüm yatırımlarını tek bir yerden yönetmeni sağlayan kişisel portföy takip uygulamasıdır.
+Sandık, tüm yatırımlarını tek bir yerden yönetmeni sağlayan kişisel portföy takip uygulamasıdır.
+
+Sandık ile hisse senedi, yatırım fonu, döviz, altın ve emtia varlıklarını tek ekranda topla; sandığını her açtığında portföyünün güncel durumunu gör.
 
 TEMEL ÖZELLİKLER
 
@@ -34,7 +36,12 @@ KULLANIM KOLAYLIĞI
 
 Sandığını aç, yatırımlarını takip et.
 
-Uygulamayı ararken "sandik" veya "sandık" — ikisi de bizi bulur.
+ARAMA
+
+Uygulamayı ararken Sandık, sandık, SANDIK, Sandik veya sandik yazabilirsin —
+hepsi Sandık portföy takip uygulamasına ulaşır. Ayrıca "sandık portföy",
+"sandık borsa", "sandık yatırım" ve "sandık hisse takip" aramalarında da
+bizi bulabilirsin.
 
 ---
 Yatırım tavsiyeleri içermez. Gösterilen veriler bilgi amaçlıdır; yatırım kararlarınızda profesyonel danışmanlık alınız.

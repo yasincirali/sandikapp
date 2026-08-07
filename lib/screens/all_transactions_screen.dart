@@ -165,6 +165,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         onTap: () => setState(() => _typeFilter = type),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
+          curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: selected ? color.withValues(alpha: 0.15) : Sandik.surface1,

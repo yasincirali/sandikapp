@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'dart:ui' show FontFeature, ImageFilter;
 import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoPageRoute;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -159,6 +160,81 @@ abstract final class SandikSpace {
       MediaQuery.sizeOf(context).width < 360 ? md : lg;
 }
 
+/// Marka hareket dili — süre ve eğri birlikte seçilir, ayrı ayrı değil.
+///
+/// Neden gerekli: Flutter'da `AnimatedContainer.curve` varsayılanı
+/// [Curves.linear]'dır. Doğrusal hareket fiziksel dünyada yoktur; göz bunu
+/// "özensiz" okur ama sebebini adlandıramaz. Denetim öncesi projedeki 18
+/// `AnimatedContainer`'ın 16'sı eğri vermiyordu — süreler doğru seçilmişti,
+/// eksik olan yalnızca eğriydi.
+///
+/// `duration:` yazdığın her yerde [enter] veya [move] ile eşleştir:
+/// ```dart
+/// AnimatedContainer(
+///   duration: SandikMotion.state,
+///   curve: SandikMotion.enter,
+///   ...
+/// )
+/// ```
+abstract final class SandikMotion {
+  /// Basma geri bildirimi (110ms) — [SandikTappable] kullanır.
+  static const Duration press = Duration(milliseconds: 110);
+
+  /// Durum geçişi: çip, sekme, seçim (180ms). En sık kullanılan.
+  static const Duration state = Duration(milliseconds: 180);
+
+  /// Giren/çıkan yüzey: sheet, dialog, ekran geçişi (240ms).
+  static const Duration surface = Duration(milliseconds: 240);
+
+  /// Giren, çıkan veya durum değiştiren her şey.
+  ///
+  /// `ease-out` hızlı başlar: kullanıcının en dikkatli baktığı ilk anda
+  /// hareket zaten olmuştur. `ease-in` asla kullanılmaz — yavaş başlayıp
+  /// tam o anı geciktirir ve arayüzü ağır hissettirir.
+  static const Curve enter = Curves.easeOutCubic;
+
+  /// Ekranda yer değiştiren / biçim değiştiren eleman.
+  static const Curve move = Curves.easeInOutCubic;
+}
+
+/// Dokunsal geri bildirim ölçeği.
+///
+/// Mobilde dokunsal geri bildirim, web'deki `:active` scale'in karşılığıdır —
+/// hareketin ulaşamadığı bir kanal. Finansal bir uygulamada "işlem gerçekten
+/// kaydedildi" hissi için özellikle değerlidir.
+///
+/// Ton seçimi sıklığa göre yapılır: günde onlarca kez tekrarlanan bir eylem
+/// (sekme değişimi, çip seçimi) en hafif tonu alır; nadir ve kalıcı sonuçlu
+/// olan (varlık kaydedildi, silindi) daha belirgin olanı.
+enum SandikHaptic {
+  /// Geri bildirim yok. Sürükleme sırasında sürekli tetiklenen ya da
+  /// zaten kendi geri bildirimi olan hedefler için.
+  none,
+
+  /// Seçim değişti — çip, sekme, filtre. Ölçeğin en hafifi.
+  selection,
+
+  /// Ana eylem veya kalıcı sonuç — kaydet, ekle, onayla.
+  medium,
+
+  /// Yıkıcı işlem veya hata. Kullanıcı ekrana bakmıyorken bile fark edilir.
+  heavy;
+
+  /// Platform çağrısına çevirir. [none] hiçbir şey yapmaz.
+  void perform() {
+    switch (this) {
+      case SandikHaptic.none:
+        break;
+      case SandikHaptic.selection:
+        HapticFeedback.selectionClick();
+      case SandikHaptic.medium:
+        HapticFeedback.mediumImpact();
+      case SandikHaptic.heavy:
+        HapticFeedback.heavyImpact();
+    }
+  }
+}
+
 /// Dokunma geri bildirimi — basılınca hafifçe küçülür.
 ///
 /// Neden: iOS'ta Material ripple yabancı durur, ama hiç geri bildirim
@@ -182,6 +258,7 @@ class SandikTappable extends StatefulWidget {
     this.onLongPress,
     this.scale = 0.97,
     this.semanticLabel,
+    this.haptic = SandikHaptic.selection,
   });
 
   final Widget child;
@@ -189,6 +266,13 @@ class SandikTappable extends StatefulWidget {
   final VoidCallback? onLongPress;
   final double scale;
   final String? semanticLabel;
+
+  /// Dokunuşta verilecek dokunsal geri bildirim.
+  ///
+  /// Varsayılan [SandikHaptic.selection] — ölçeğin en hafif tonu. Ana
+  /// eylemler ([SandikHaptic.medium]) ve yıkıcı onaylar için yükseltilir;
+  /// [SandikHaptic.none] ile tamamen kapatılabilir.
+  final SandikHaptic haptic;
 
   @override
   State<SandikTappable> createState() => _SandikTappableState();
@@ -225,8 +309,22 @@ class _SandikTappableState extends State<SandikTappable> {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
+      // Haptic yalnızca eylem gerçekten varken tetiklenir; onTap null ise
+      // GestureDetector'a da null gider ve hedef pasif kalır (mevcut davranış).
+      onTap: widget.onTap == null
+          ? null
+          : () {
+              widget.haptic.perform();
+              widget.onTap!();
+            },
+      onLongPress: widget.onLongPress == null
+          ? null
+          : () {
+              // Uzun basma her zaman daha belirgin: kullanıcı bir eşiği
+              // geçtiğini bilmeli, aksi halde ne zaman bırakacağını kestiremez.
+              SandikHaptic.medium.perform();
+              widget.onLongPress!();
+            },
       onTapDown: (_) => _set(true),
       onTapUp: (_) => _set(false),
       onTapCancel: () => _set(false),
@@ -344,7 +442,7 @@ class Sandik {
 
   /// Blur + translucent overlay — temel glass katmanı.
   static BoxDecoration glassDecoration({
-    double radius = 18,
+    double radius = SandikRadius.lg,
     Color tint = Colors.white,
     double tintOpacity = 0.07,
     Color borderColor = Colors.white,
@@ -374,7 +472,7 @@ class Sandik {
   /// BackdropFilter + glass container. Clip gerektirir (ClipRRect ile kullan).
   static Widget glassBox({
     required Widget child,
-    double radius = 18,
+    double radius = SandikRadius.lg,
     double blur = 14,
     Color tint = Colors.white,
     double tintOpacity = 0.07,
@@ -421,23 +519,23 @@ class Sandik {
       filled: true,
       fillColor: Colors.black.withValues(alpha: 0.1),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: SandikRadius.mdAll,
         borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: SandikRadius.mdAll,
         borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: SandikRadius.mdAll,
         borderSide: const BorderSide(color: amber, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: SandikRadius.mdAll,
         borderSide: const BorderSide(color: loss, width: 1.2),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: SandikRadius.mdAll,
         borderSide: const BorderSide(color: loss, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -524,7 +622,7 @@ class SandikLogoutButton extends StatelessWidget {
           height: 42,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: SandikRadius.mdAll,
             border: Border.all(color: color.withValues(alpha: 0.18)),
           ),
           child: Center(

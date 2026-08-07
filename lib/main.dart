@@ -36,6 +36,30 @@ import 'widgets/sandik_error_view.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Splash'in ana ekrana geçmesi için veri yeterince hazır mı?
+///
+/// Saf fonksiyon — `_AuthGateState._veriHazir()` provider'ları `watch` edip
+/// sonuçları buraya aktarır. Ayrı durmasının sebebi test edilebilirlik:
+/// kullanıcının bildirdiği "ana ekran 2 kez load oluyor" hatasının kökü bu
+/// karar tablosuydu ve zamanlamaya bağlı olduğu için elle test kırılgan.
+///
+/// [partnerListSettled] ortak LİSTESİNİN çözülmüş olması. Kritik: liste
+/// yüklenirken `activePartnersProvider` boş döner, yani "ortak yok" ile
+/// "ortaklar henüz bilinmiyor" ayırt edilemez. Beklenmezse kapı erken açılır,
+/// liste sonradan dolunca HomeScreen ortak varlıkları için kendi loading'ini
+/// açar — ikinci loading budur.
+bool splashVeriHazir({
+  required bool portfolioSettled,
+  required bool partnerListSettled,
+  required bool ortakVar,
+  required bool partnerAssetsSettled,
+}) {
+  if (!partnerListSettled) return false;
+  if (!portfolioSettled) return false;
+  if (!ortakVar) return true; // Ortak yoksa ortak varlığı da beklenmez.
+  return partnerAssetsSettled;
+}
+
 /// İlk frame'i beklemesi gerekmeyen Firebase servisleri.
 ///
 /// Arka planda sırayla kurulur; biri patlarsa diğerleri yine denenir ve
@@ -502,6 +526,22 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   // bırakır ve ana ekrana geçer (HomeScreen kendi loading/hata durumunu
   // gösterir). Ağ koptuğunda kullanıcı splash'te kilitlenmesin.
   bool _dataWaitExpired = false;
+  // Emniyet supabı zamanlayıcısı. `initState`'te DEĞİL, kullanıcı belli olunca
+  // (cold start'ta oturum geri yüklendiğinde veya login başarılı olduğunda)
+  // başlatılır. Eskiden initState'te kuruluyordu: kullanıcı login ekranında
+  // 6 sn'den fazla kaldığında (e-posta/şifre yazmak zaten bundan uzun sürer)
+  // supap login'den ÖNCE patlıyor, veri bekleme kapısı ölü doğuyor ve
+  // HomeScreen kendi loading'ini açıyordu — login sonrası çift loading buydu.
+  Timer? _dataWaitTimer;
+
+  void _startDataWaitTimeout() {
+    if (_dataWaitTimer != null || _dataWaitExpired) return;
+    _dataWaitTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted && !_dataWaitExpired) {
+        setState(() => _dataWaitExpired = true);
+      }
+    });
+  }
 
   // Splash sırasında ısıtılan veri provider'larının abonelikleri. Açık
   // tutulmaları şart: kapatılırsa Riverpod provider'ı autodispose edip
@@ -510,10 +550,22 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   ProviderSubscription<AsyncValue<PortfolioState>>? _portfolioWarmUp;
   ProviderSubscription<AsyncValue<Map<String, List<Asset>>>>?
       _partnerAssetsWarmUp;
+  // Ortak listesi de ısıtılmalı. `activePartnersProvider` bunun türevidir ve
+  // yüklenirken `valueOrNull ?? []` yüzünden "ortak yok" gibi görünür — splash
+  // kapısı ortak varlıklarını beklemeden geçer, sonra liste dolunca HomeScreen
+  // kendi loading'ini açardı. Çift loading'in kalan ayağı buydu.
+  ProviderSubscription<AsyncValue<List<PartnerAccount>>>? _partnersWarmUp;
 
   void _warmUpData() {
+    // Veri çekimi başlıyor → emniyet supabını da şimdi kur.
+    _startDataWaitTimeout();
     _portfolioWarmUp ??= ref.listenManual(
       portfolioProvider,
+      (_, __) {},
+      fireImmediately: true,
+    );
+    _partnersWarmUp ??= ref.listenManual(
+      partnersProvider,
       (_, __) {},
       fireImmediately: true,
     );
@@ -530,12 +582,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     Future.delayed(const Duration(milliseconds: 1800), () {
       if (mounted) setState(() => _splashDone = true);
     });
-    // Veri en geç 6 sn içinde gelmezse beklemeyi bırak (bkz. _dataWaitExpired).
-    Future.delayed(const Duration(seconds: 6), () {
-      if (mounted && !_dataWaitExpired) {
-        setState(() => _dataWaitExpired = true);
-      }
-    });
+    // Emniyet supabı burada BAŞLATILMAZ — kullanıcı belli olunca
+    // `_startDataWaitTimeout()` ile başlar (bkz. _dataWaitTimer).
     WidgetsBinding.instance.addObserver(this);
     _authSubscription = ref.listenManual(authProvider, (_, next) {
       final user = next.valueOrNull;
@@ -547,8 +595,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // provider'lar temiz şekilde yeniden çekilsin.
         _portfolioWarmUp?.close();
         _portfolioWarmUp = null;
+        _partnersWarmUp?.close();
+        _partnersWarmUp = null;
         _partnerAssetsWarmUp?.close();
         _partnerAssetsWarmUp = null;
+        // Supabı sıfırla: bir sonraki login'de yeniden 6 sn'lik pencere olsun.
+        // Aksi halde ilk oturumda patlamış supap ikinci login'de de kapalı
+        // kalır ve veri bekleme kapısı hiç çalışmaz.
+        _dataWaitTimer?.cancel();
+        _dataWaitTimer = null;
+        _dataWaitExpired = false;
         AnalyticsService.instance.setUserId(null);
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
@@ -588,7 +644,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   @override
   void dispose() {
     _authSubscription.close();
+    _dataWaitTimer?.cancel();
     _portfolioWarmUp?.close();
+    _partnersWarmUp?.close();
     _partnerAssetsWarmUp?.close();
     PartnerInviteListenerService.instance.stop();
     WidgetsBinding.instance.removeObserver(this);
@@ -728,19 +786,64 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // çapraz sönümleme yapılır. Karar mantığı _resolveScreen'de aynen durur —
     // AnimatedSwitcher yalnızca sonucun nasıl göründüğünü değiştirir.
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 420),
-      switchInCurve: Curves.easeOut,
-      switchOutCurve: Curves.easeIn,
+      // 420ms → 240ms: bu geçiş her açılışta görülür ve UI hareketleri 300ms
+      // altında kalmalı. Uzun süre burada "cilalı" değil, "yavaş açılıyor"
+      // olarak okunuyordu.
+      duration: SandikMotion.surface,
+      switchInCurve: SandikMotion.enter,
+      // Çıkan katman da ease-out: ease-in yavaş başlar ve kullanıcının en
+      // dikkatli baktığı ilk anı geciktirir — arayüzü ağır hissettirir.
+      switchOutCurve: SandikMotion.enter,
       // Varsayılan layoutBuilder giren/çıkan çocuğu üst üste bindirir; splash
       // sönerken ana ekran altında beliriyor olsun diye aynısı korunur.
       child: _resolveScreen(auth, user),
     );
   }
 
+  /// Portföy + ortak verisi ana ekranı çizmeye yetecek kadar hazır mı?
+  ///
+  /// Hata da "hazır" sayılır — HomeScreen kendi hata görünümünü gösterir,
+  /// splash'te kilitlenmemeli.
+  ///
+  /// Saf karar mantığı `splashVeriHazir` içinde (test edilebilir olsun diye);
+  /// burada yalnızca provider'lar `watch` edilip oraya aktarılır.
+  bool _veriHazir() {
+    final portfolio = ref.watch(portfolioProvider);
+    // Önce ortak LİSTESİ çözülmeli. `activePartnersProvider` yüklenirken boş
+    // liste döndürdüğü için, beklenmezse "ortak yok" sanılıp kapıdan geçilir;
+    // liste sonradan dolunca HomeScreen ortak varlıklarını beklemek üzere
+    // kendi loading'ini açar — çift loading'in bir ayağı buydu.
+    final partnerList = ref.watch(partnersProvider);
+    final partnerListSettled = partnerList.hasValue || partnerList.hasError;
+    if (!partnerListSettled) return false;
+
+    final partners = ref.watch(activePartnersProvider);
+    final partnerAssets =
+        partners.isEmpty ? null : ref.watch(allPartnerAssetsProvider);
+
+    return splashVeriHazir(
+      portfolioSettled: portfolio.hasValue || portfolio.hasError,
+      partnerListSettled: partnerListSettled,
+      ortakVar: partners.isNotEmpty,
+      partnerAssetsSettled:
+          partnerAssets != null &&
+              (partnerAssets.hasValue || partnerAssets.hasError),
+    );
+  }
+
   /// Hangi ekranın gösterileceğine karar verir. Sıra ve koşullar
   /// değiştirilmemelidir — auth/disclaimer/onboarding kapıları bu sıraya bağlı.
   Widget _resolveScreen(AsyncValue<AppUser?> auth, AppUser? user) {
-    // Splash minimum süresi veya auth/disclaimer/onboarding yükleniyorsa loading göster
+    // Splash minimum süresi veya auth/disclaimer/onboarding yükleniyorsa loading göster.
+    //
+    // Kritik: `_veriHazir()` bu kapıda da ÇAĞRILIR (kısa devre olmasın diye
+    // `||` zincirinin soluna değil, ayrı değişkene alınarak). Riverpod'da bir
+    // provider yalnızca `watch` edildiği sürece canlı kalır; disclaimer/
+    // onboarding beklenirken veri watch EDİLMEZSE bu kapı geçilir, HomeScreen
+    // mount olur ve veri o an gelmemişse kendi loading'ini açar. Login sonrası
+    // görülen ikinci loading tam olarak buydu — cold start'ta ise disclaimer
+    // kontrolleri hızlı döndüğü için maskeleniyordu.
+    final veriHazir = user == null || _veriHazir();
     if (!_splashDone ||
         (auth.isLoading && !auth.hasValue) ||
         (user != null &&
@@ -759,19 +862,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     if (user != null &&
         _disclaimerAccepted == true &&
         _onboardingDone == true &&
-        !_dataWaitExpired) {
-      final portfolio = ref.watch(portfolioProvider);
-      final partners = ref.watch(activePartnersProvider);
-      final partnerAssets =
-          partners.isEmpty ? null : ref.watch(allPartnerAssetsProvider);
-      // Hata durumunda bekleme — HomeScreen hatayı gösterecek.
-      final portfolioSettled = portfolio.hasValue || portfolio.hasError;
-      final partnersSettled = partnerAssets == null ||
-          partnerAssets.hasValue ||
-          partnerAssets.hasError;
-      if (!portfolioSettled || !partnersSettled) {
-        return const SandikLoadingScreen(key: ValueKey('splash'));
-      }
+        !_dataWaitExpired &&
+        !veriHazir) {
+      return const SandikLoadingScreen(key: ValueKey('splash'));
     }
 
     // Oturum çözülemedi ama bu "oturum yok" demek DEĞİL: Supabase token'ı
