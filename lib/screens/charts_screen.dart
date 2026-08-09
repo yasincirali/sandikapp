@@ -1050,21 +1050,26 @@ class _AssetCardState extends State<_AssetCard>
             // sayısı 2 veya 3 olabilir, pane genişliği de ona göre.
             extentRatio: showsDividend ? 0.72 : 0.5,
             children: [
+              // "Ekle/Çıkar" envanter dilidir; bu aksiyonlar ise FİYATLI
+              // işlem kaydeder (alışta birim fiyat zorunlu, satışta güncel
+              // fiyattan `addSellTransaction`). Kullanıcı "listeye satır
+              // ekle" sanıp fiyat sorulunca şaşırıyordu. Veri modeli zaten
+              // `isSell` ile alım/satım tutuyor — etiket ona hizalandı.
               _rowAction(
                 context,
                 onPressed: () => onAdd(position),
                 background: context.c.gain,
                 foreground: context.c.text90,
-                icon: Icons.add_rounded,
-                label: 'Ekle',
+                icon: Icons.trending_up_rounded,
+                label: 'Al',
               ),
               _rowAction(
                 context,
                 onPressed: () => onRemove(position),
                 background: context.c.loss.withValues(alpha: 0.85),
                 foreground: context.c.text90,
-                icon: Icons.remove_rounded,
-                label: 'Çıkar',
+                icon: Icons.trending_down_rounded,
+                label: 'Sat',
               ),
               // Temettü nakit dağıtan varlıklara özgü — altın/döviz/emtia
               // veya mevduatta anlamsız.

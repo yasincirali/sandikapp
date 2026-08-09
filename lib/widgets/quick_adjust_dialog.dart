@@ -10,10 +10,10 @@ import 'custom_loading_indicator.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
 ///
-/// Ekle: yeni miktar + birim fiyat girer, ağırlıklı ortalama maliyet
+/// Al: yeni miktar + birim fiyat girer, ağırlıklı ortalama maliyet
 /// yeniden hesaplanır (mevcut maliyet + yeni maliyet) / toplam adet.
 ///
-/// Çıkar: sadece miktar girer; alış fiyatı (birim maliyet) korunur.
+/// Sat: sadece miktar girer; alış fiyatı (birim maliyet) korunur.
 /// Miktar sıfıra düşerse varlık silinir.
 enum QuickAdjustMode { add, remove }
 
@@ -155,8 +155,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_isAdd
-              ? '${_fmt(qty)} $_unitLabel eklendi'
-              : '${_fmt(qty)} $_unitLabel çıkarıldı'),
+              ? '${_fmt(qty)} $_unitLabel alındı'
+              : '${_fmt(qty)} $_unitLabel satıldı'),
         ),
       );
     } catch (e) {
@@ -200,7 +200,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                   ),
                   child: Icon(
-                    _isAdd ? Icons.add_rounded : Icons.remove_rounded,
+                    _isAdd
+                        ? Icons.trending_up_rounded
+                        : Icons.trending_down_rounded,
                     color: accent,
                     size: 24,
                   ),
@@ -211,7 +213,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _isAdd ? 'Ekle' : 'Çıkar',
+                        // Swipe etiketiyle aynı dil: orada "Al/Sat" deyip
+                        // burada "Ekle/Çıkar" göstermek akışı kopartıyordu.
+                        _isAdd ? 'Al' : 'Sat',
                         style: context.t.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: context.c.text90,
@@ -324,7 +328,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Tüm miktarı çıkarıyorsun — pozisyon listeden '
+                          'Tüm miktarı satıyorsun — pozisyon listeden '
                           'kalkar ama bu bir satış kaydı olarak durur. '
                           'İşlem geçmişin ve realize kâr/zararın korunur. '
                           'Kaydı tamamen silmek istiyorsan varlık detayından '
@@ -389,7 +393,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 ),
                 child: Row(
                   children: [
-                    Text(_isAdd ? 'Toplam maliyet' : 'Çıkarılan değer',
+                    Text(_isAdd ? 'Toplam maliyet' : 'Satış değeri',
                         style: context.t.titleSmall?.copyWith(color: context.c.text58)),
                     const Spacer(),
                     Text(
@@ -446,7 +450,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     ),
                     child: _saving
                         ? const CustomLoadingIndicator(size: 18)
-                        : Text(_isAdd ? 'Ekle' : 'Çıkar',
+                        : Text(_isAdd ? 'Al' : 'Sat',
                             style: context.t.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: context.c.text90)),

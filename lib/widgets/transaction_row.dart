@@ -49,13 +49,20 @@ class TransactionRow extends StatelessWidget {
     final IconData kindIcon = isDelete
         ? Icons.delete_outline_rounded
         : (isSell
-            ? Icons.remove_rounded
+            ? Icons.trending_down_rounded
             : (isDividend
                 ? Icons.savings_outlined
-                : Icons.add_rounded));
+                : Icons.trending_up_rounded));
+    // "Eklendi/Çıkarıldı" envanter diliydi; kayıtlar aslında fiyatlı
+    // alım/satım işlemleri. Swipe aksiyonları ve hızlı işlem dialogu da
+    // "Al/Sat" diline geçti — geçmiş listesi onlarla aynı dili konuşmalı.
+    //
+    // Yan fayda: "Satım" (5 harf), "Çıkarıldı"dan (9 harf) kısa. O etiket
+    // 116pt'lik kolonda 19px taşıyordu (bkz. TECHNICAL_DEBT.md); artık
+    // FittedBox küçültmek zorunda kalmıyor.
     final String kindLabel = isDelete
         ? 'Silindi'
-        : (isSell ? 'Çıkarıldı' : (isDividend ? 'Temettü' : 'Eklendi'));
+        : (isSell ? 'Satım' : (isDividend ? 'Temettü' : 'Alım'));
     final String sign = isSell || isDelete ? '−' : '+';
 
     return Padding(

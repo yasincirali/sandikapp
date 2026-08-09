@@ -131,6 +131,21 @@ class Asset {
   /// çevrilir. `purchaseFxRate` temettü satırında ödeme günü kurunu taşır.
   double get dividendTRY => dividendAmount * purchaseFxRate;
 
+  /// Satıştan ELE GEÇEN tutar (TRY) — nakit akışı hesapları için.
+  ///
+  /// [totalCostTRY] bu iş için YANLIŞ araçtır: o, lot'un alım maliyetidir.
+  /// Kâr/zararla satılmış bir pozisyonda cepten çıkan/cebe giren para
+  /// maliyet değil, satış fiyatıdır. Dönem getirisini para giriş-çıkışından
+  /// arındırırken bu fark doğrudan sonuca yansır.
+  ///
+  /// [sellPrice] yalnızca sell satırlarında ve migration sonrası kayıtlarda
+  /// dolu; boşsa maliyete düşülür (eski davranış) — yaklaşık ama sıfırdan
+  /// iyi. Komisyon satışta ele geçeni AZALTIR, bu yüzden çıkarılır.
+  double get sellProceedsTRY {
+    final unit = sellPrice ?? purchasePrice;
+    return (quantity * unit - commission) * purchaseFxRate;
+  }
+
   /// Toplam maliyet — komisyon DAHİL (gerçekte cebinden çıkan para).
   double get totalCost => quantity * purchasePrice + commission;
   double get totalValue => quantity * currentPrice;

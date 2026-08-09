@@ -1055,17 +1055,13 @@ class _PortfolioPerformanceScreenState
 
     final firstY = primary.spots.first.y;
     final lastY = primary.spots.last.y;
-    final change = lastY - firstY;
-    // Yüzde tabanı sıfırsa oran tanımsız — tutarı göster, yüzdeyi gizle.
-    final pct = firstY > 0 ? (change / firstY) * 100 : null;
-    final positive = change >= 0;
-    // Yuvarlanmış tutar ve yüzde ikisi de sıfırsa nötr renk — yeşil göstermek
-    // "kazanç var" yanılgısı yaratır. _PeriodChangeRow ile aynı kural.
-    final isFlat = change.abs().round() == 0 && (pct?.abs() ?? 0) < 0.005;
-    final color =
-        isFlat ? context.c.text36 : (positive ? context.c.gain : context.c.loss);
+    final grossChange = lastY - firstY;
 
-    // Dönem içi net para girişi (yalnız gerçek modda anlamlı).
+    // ── Dönem içi net para girişi ────────────────────────────────────────
+    //
+    // Silinen varlıklar HİÇ VAR OLMAMIŞ sayılır: `deleteLog` mezar taşı
+    // atlanır ve orijinal lot zaten DB'den silinmiştir (bkz.
+    // `PortfolioNotifier.deleteAsset`), dolayısıyla listeye hiç gelmez.
     double netInflow = 0;
     if (!_simulate) {
       final startMs = DateTime(start.year, start.month, start.day)
@@ -1080,10 +1076,39 @@ class _PortfolioPerformanceScreenState
         if (a.isBuy) {
           netInflow += a.totalCostTRY;
         } else if (a.isSell) {
-          netInflow -= a.totalCostTRY;
+          // Satışta cebe giren para MALİYET değil, satış fiyatıdır.
+          netInflow -= a.sellProceedsTRY;
         }
       }
     }
+
+    // ── Ana rakam: para giriş/çıkışından ARINDIRILMIŞ değişim ─────────────
+    //
+    // Ham fark (`grossChange`) "portföyüm ne kazandı?" sorusunun cevabı
+    // DEĞİLDİR: içine dönem boyunca yatırdığın para da girer. Kullanıcı
+    // 173.736 TL'lik alım yaptığında hiçbir fiyat hareketi olmasa bile
+    // ekran "+173.736 TL (+%7,16)" yazıyordu — portföy o gün aslında değer
+    // kaybetmişken kazanç gösteriyordu.
+    //
+    // Doğru ölçü, net akışı düşmektir: sonuç yalnızca PİYASA etkisidir.
+    // (Fon endüstrisinde bunun rafine hâli time-weighted return'dür; akışın
+    // dönem içindeki zamanlamasını da ağırlıklandırır. Burada dönem başı/sonu
+    // iki noktayla çalıştığımız için basit net-akış düzeltmesi uygulanır —
+    // yön ve büyüklük doğru, gün-içi ağırlıklandırma yok.)
+    final change = grossChange - netInflow;
+
+    // Yüzde tabanı: dönem başı değer + yatırılan para. Sadece `firstY`
+    // kullanmak, dönem içinde portföyünü ikiye katlayan kullanıcıda yüzdeyi
+    // şişirirdi.
+    final pctBase = firstY + (netInflow > 0 ? netInflow : 0);
+    final pct = pctBase > 0 ? (change / pctBase) * 100 : null;
+    final positive = change >= 0;
+
+    // Yuvarlanmış tutar ve yüzde ikisi de sıfırsa nötr renk — yeşil göstermek
+    // "kazanç var" yanılgısı yaratır. _PeriodChangeRow ile aynı kural.
+    final isFlat = change.abs().round() == 0 && (pct?.abs() ?? 0) < 0.005;
+    final color =
+        isFlat ? context.c.text36 : (positive ? context.c.gain : context.c.loss);
 
     final tryFmt = NumberFormat.currency(
         locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
@@ -1163,8 +1188,10 @@ class _PortfolioPerformanceScreenState
                 : '${dateFmt.format(start)} → ${dateFmt.format(end)}',
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
-          // Ham fark, dönem içi para girişini de içerir. Rakamı bozmadan
-          // bağlamı ver — aksi halde kullanıcı yatırdığı parayı kâr sanır.
+          // Ana rakam artık ARINDIRILMIŞ. Not satırı bunu açıklar: kullanıcı
+          // portföy toplamının çok daha fazla arttığını görüp "rakam neden
+          // küçük?" diye sormasın. Eski metin ("değişimin bir kısmı yeni
+          // yatırımdan geliyor") artık yanlış olurdu — o kısım zaten düşüldü.
           if (netInflow.abs() > 0.5) ...[
             const SizedBox(height: SandikSpace.sm),
             Row(
@@ -1176,9 +1203,13 @@ class _PortfolioPerformanceScreenState
                 Expanded(
                   child: Text(
                     netInflow > 0
-                        ? 'Bu dönemde ${tryFmt.format(netInflow)} tutarında alım yapıldı; '
-                            'değişimin bir kısmı yeni yatırımdan geliyor.'
-                        : 'Bu dönemde ${tryFmt.format(netInflow.abs())} tutarında satış yapıldı.',
+                        ? 'Bu dönemde ${tryFmt.format(netInflow)} tutarında alım '
+                            'yapıldı. Yukarıdaki rakam yatırdığın parayı '
+                            'içermez — yalnızca piyasa hareketini gösterir '
+                            '(portföy toplamı ${tryFmt.format(grossChange)} arttı).'
+                        : 'Bu dönemde ${tryFmt.format(netInflow.abs())} tutarında '
+                            'satış yapıldı. Yukarıdaki rakam çıkardığın parayı '
+                            'içermez — yalnızca piyasa hareketini gösterir.',
                     style:
                         context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),
