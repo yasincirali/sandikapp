@@ -488,17 +488,17 @@ class _ZoomableChartState extends State<ZoomableChart> {
                         color: Colors.black.withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(SandikRadius.lg),
                         border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2)),
+                            color: context.c.text36),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.zoom_out_map_rounded,
-                              size: 14, color: Colors.white70),
-                          SizedBox(width: 4),
+                              size: 14, color: context.c.text58),
+                          const SizedBox(width: 4),
                           Text('Sıfırla',
                               style: TextStyle(
-                                  fontSize: 11, color: Colors.white70)),
+                                  fontSize: 11, color: context.c.text58)),
                         ],
                       ),
                     ),
@@ -545,7 +545,7 @@ class _CrosshairOverlay extends StatelessWidget {
                 child: CustomPaint(
                   size: const Size(1, double.infinity),
                   painter: _DashedLinePainter(
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: context.c.text58,
                   ),
                 ),
               ),
@@ -558,11 +558,16 @@ class _CrosshairOverlay extends StatelessWidget {
                     constraints: const BoxConstraints(minWidth: 120),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 8),
+                    // Tooltip grafiğin ÜSTÜNDE durur; zemini her iki modda
+                    // koyu kalır (açık zeminde de grafik çizgileri arasında
+                    // okunması gerekir). Bu yüzden metni text90 DEĞİL —
+                    // light modda text90 koyudur ve koyu zemine koyu yazı
+                    // olurdu. Tooltip kendi kontrast dünyasını taşır.
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.72),
+                      color: const Color(0xFF0A1E15).withValues(alpha: 0.88),
                       borderRadius: BorderRadius.circular(SandikRadius.md),
                       border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15)),
+                          color: Colors.white.withValues(alpha: 0.14)),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -571,7 +576,7 @@ class _CrosshairOverlay extends StatelessWidget {
                         Text(
                           pill!.$1,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Color(0xE1FFFFFF),
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
@@ -581,8 +586,8 @@ class _CrosshairOverlay extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           pill!.$2,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.65),
+                          style: const TextStyle(
+                            color: Color(0x8CFFFFFF),
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
                           ),
@@ -594,7 +599,7 @@ class _CrosshairOverlay extends StatelessWidget {
                           Container(
                             height: 1,
                             width: 40,
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: context.c.overlay,
                           ),
                           const SizedBox(height: 4),
                           for (final line in details!)

@@ -45,10 +45,10 @@ class _ModernTabSelectorState extends State<ModernTabSelector> {
         return Container(
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: context.c.overlay,
             borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: context.c.overlay,
               width: 1.0,
             ),
           ),
@@ -57,7 +57,7 @@ class _ModernTabSelectorState extends State<ModernTabSelector> {
             children: [
               // Sliding pill
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 220),
+                duration: SandikMotion.of(context, const Duration(milliseconds: 220)),
                 curve: Curves.easeInOutCubic,
                 left: pillLeft + 4,
                 top: 4,
@@ -65,11 +65,11 @@ class _ModernTabSelectorState extends State<ModernTabSelector> {
                 height: 40,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Sandik.amber,
+                    color: context.c.amberFill,
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     boxShadow: [
                       BoxShadow(
-                        color: Sandik.amber.withValues(alpha: 0.40),
+                        color: context.c.amberFill.withValues(alpha: 0.40),
                         blurRadius: 10,
                         spreadRadius: -2,
                       ),
@@ -88,10 +88,11 @@ class _ModernTabSelectorState extends State<ModernTabSelector> {
                         behavior: HitTestBehavior.opaque,
                         child: Center(
                           child: AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 150),
+                            duration: SandikMotion.stateOf(context),
+                            curve: SandikMotion.enter,
                             style: context.t.bodyMedium!.copyWith(
                               fontWeight: sel ? FontWeight.w600 : FontWeight.w500,
-                              color: sel ? Colors.black87 : Sandik.text36,
+                              color: sel ? context.c.onAmber : context.c.text36,
                             ),
                             child: Text(_labels[i]),
                           ),

@@ -104,7 +104,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         hasPartners ? ref.watch(allPartnerAssetsProvider) : null;
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       body: Builder(
         builder: (_) {
           // Hata önceliği: hangisi patlarsa tek hata görünümü.
@@ -184,7 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String rightLabel = '';
     double rightTotal = 0;
     String rightInitial = 'O';
-    Color rightColor = Sandik.gain;
+    Color rightColor = context.c.gain;
 
     if (showRightCard) {
       if (_view == null) {
@@ -227,7 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : displayedAssets.where((a) => a.type == _typeFilter).toList();
 
     return RefreshIndicator(
-      color: Sandik.amber,
+      color: context.c.amberText,
       // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
       onRefresh: () =>
           ref.read(portfolioProvider.notifier).refreshPrices(force: true),
@@ -240,7 +240,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverAppBar(
             pinned: true,
             floating: false,
-            backgroundColor: Sandik.background,
+            backgroundColor: context.c.background,
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             toolbarHeight: 66,
@@ -264,21 +264,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 7),
                         decoration: BoxDecoration(
-                          color: Sandik.amber.withValues(alpha: 0.10),
+                          color: context.c.amberFill.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(SandikRadius.md),
                           border: Border.all(
-                              color: Sandik.amber.withValues(alpha: 0.24),
+                              color: context.c.amberFill.withValues(alpha: 0.24),
                               width: 1.0),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const SandikLogo(size: 20, color: Sandik.amber),
+                            SandikLogo(size: 20, color: context.c.amberText),
                             const SizedBox(width: SandikSpace.sm),
                             Text(
                               'sandık',
                               style: context.t.headlineMedium?.copyWith(
-                                color: Sandik.gold,
+                                color: context.c.gold,
                                 letterSpacing: -0.5,
                               ),
                             ),
@@ -292,8 +292,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onTap: _reload,
                     child: _reloading
                         ? const CustomLoadingIndicator(size: 20)
-                        : const Icon(Icons.refresh_rounded,
-                            color: Sandik.text58, size: 22),
+                        : Icon(Icons.refresh_rounded,
+                            color: context.c.text58, size: 22),
                   ),
                   const SizedBox(width: SandikSpace.sm),
                   const _BalanceToggleButton(),
@@ -315,30 +315,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Sandik.amber.withValues(alpha: 0.12),
+                    color: context.c.amberFill.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     border:
-                        Border.all(color: Sandik.amber.withValues(alpha: 0.35)),
+                        Border.all(color: context.c.amberFill.withValues(alpha: 0.35)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.wifi_off_rounded,
-                          color: Sandik.amber, size: 16),
+                      Icon(Icons.wifi_off_rounded,
+                          color: context.c.amberText, size: 16),
                       const SizedBox(width: SandikSpace.sm),
                       Expanded(
                         child: Text(
                           'Fiyatlar güncellenemedi — eski veriler gösteriliyor.',
                           style: context.t.titleSmall
-                              ?.copyWith(color: Sandik.amber),
+                              ?.copyWith(color: context.c.amberText),
                         ),
                       ),
-                      GestureDetector(
+                      SandikTappable(
                         onTap: _reload,
+                        semanticLabel: 'Tekrar Dene',
                         child: Text(
                           'Tekrar Dene',
                           style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: Sandik.amber),
+                              color: context.c.amberText),
                         ),
                       ),
                     ],
@@ -366,7 +367,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: _personMiniCard(
                       'Ben',
                       myBuyTotal,
-                      Sandik.amber,
+                      context.c.amberText,
                       tryFmt,
                       user?.displayName.isNotEmpty == true
                           ? user!.displayName[0].toUpperCase()
@@ -427,7 +428,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
-                  color: Sandik.text36,
+                  color: context.c.text58,
                 ),
               ),
             ),
@@ -447,7 +448,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
-                  color: Sandik.text36,
+                  color: context.c.text58,
                 ),
               ),
             ),
@@ -468,23 +469,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
                     child: Column(
                       children: [
-                        const Icon(Icons.savings_outlined,
-                            color: Sandik.text36, size: 48),
+                        Icon(Icons.savings_outlined,
+                            color: context.c.text36, size: 48),
                         const SizedBox(height: SandikSpace.md),
                         Text(
                           'Henüz varlık eklenmemiş',
                           style: context.t.titleLarge
-                              ?.copyWith(color: Colors.white),
+                              ?.copyWith(color: context.c.text90),
                         ),
                         const SizedBox(height: SandikSpace.sm),
                         Text(
                           'İlk varlığını ekleyerek sandığını oluşturmaya başla.',
                           textAlign: TextAlign.center,
                           style: context.t.bodyMedium
-                              ?.copyWith(color: Sandik.text36),
+                              ?.copyWith(color: context.c.text36),
                         ),
                         const SizedBox(height: SandikSpace.lg),
-                        GestureDetector(
+                        SandikTappable(
+                          haptic: SandikHaptic.medium,
+                          semanticLabel: 'Varlık ekle',
                           onTap: () => pushGuarded(
                             context,
                             adaptiveRoute(
@@ -494,10 +497,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 28, vertical: 14),
                             decoration: BoxDecoration(
-                              color: Sandik.amber.withValues(alpha: 0.15),
+                              color: context.c.amberFill.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(SandikRadius.md),
                               border: Border.all(
-                                  color: Sandik.amber.withValues(alpha: 0.5)),
+                                  color: context.c.amberFill.withValues(alpha: 0.5)),
                             ),
                             // 28pt yatay padding + ikon + etiket dar ekranda
                             // sığmıyor. FittedBox içeriği kırpmadan küçültür;
@@ -507,14 +510,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.add_rounded,
-                                      color: Sandik.amber, size: 20),
+                                  Icon(Icons.add_rounded,
+                                      color: context.c.amberText, size: 20),
                                   const SizedBox(width: SandikSpace.sm),
                                   Text(
                                     'İlk Varlığını Ekle',
                                     style: context.t.bodyLarge?.copyWith(
                                         fontWeight: FontWeight.w600,
-                                        color: Sandik.amber),
+                                        color: context.c.amberText),
                                   ),
                                 ],
                               ),
@@ -554,7 +557,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         vertical: SandikSpace.md),
-                    decoration: Sandik.surfaceCard(),
+                    decoration: context.surfaceCard(),
                     child: Center(
                       child: Text(
                         _showAllTransactions
@@ -563,8 +566,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         style: context.t.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: _showAllTransactions
-                              ? Sandik.text36
-                              : Sandik.amber,
+                              ? context.c.text36
+                              : context.c.amberText,
                         ),
                       ),
                     ),
@@ -580,18 +583,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _typeChip(AssetType? type, String label) {
     final selected = _typeFilter == type;
-    final color = type?.color ?? Sandik.amber;
+    final color = type?.color ?? context.c.amberText;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: SandikTappable(
         onTap: () => setState(() => _typeFilter = type),
         semanticLabel: label,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: SandikMotion.stateOf(context),
           curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(
               horizontal: SandikSpace.md, vertical: SandikSpace.sm),
-          decoration: Sandik.chip(
+          decoration: context.chip(
             selected: selected,
             accent: color,
             radius: SandikRadius.lg,
@@ -600,7 +603,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             label,
             style: context.t.titleSmall?.copyWith(
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: selected ? color : Sandik.text58,
+              color: selected ? color : context.c.text58,
             ),
           ),
         ),
@@ -616,7 +619,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Yön A: blur kaldırıldı — opak yüzey. Cam efekti hero karta ayrıldı.
     return Container(
       padding: EdgeInsets.all(sw < 360 ? SandikSpace.sm : SandikSpace.md),
-      decoration: Sandik.surfaceCard(),
+      decoration: context.surfaceCard(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -632,7 +635,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: SandikSpace.sm),
           Text(name,
               style: context.t.bodySmall?.copyWith(
-                  color: Sandik.text58,
+                  color: context.c.text58,
                   fontWeight: FontWeight.w500)),
           const SizedBox(height: SandikSpace.xs),
           FittedBox(
@@ -644,7 +647,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // yüzden boyut override'ı kalıyor; tabular figür tema'dan.
               style: context.t.numSmall.copyWith(
                   fontSize: cardFontSize,
-                  color: Colors.white),
+                  color: context.c.text90),
             ),
           ),
         ],
@@ -679,7 +682,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 flex: 2,
                 child: Text(e.key.label,
                     style: context.t.titleMedium
-                        ?.copyWith(color: Colors.white)),
+                        ?.copyWith(color: context.c.text90)),
               ),
               Expanded(
                 flex: 5,
@@ -692,7 +695,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     curve: Curves.easeOutCubic,
                     builder: (_, v, __) => LinearProgressIndicator(
                       value: v,
-                      backgroundColor: Colors.white.withValues(alpha: 0.07),
+                      backgroundColor: context.c.overlay,
                       color: e.key.color,
                       minHeight: 6,
                     ),
@@ -707,7 +710,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   textAlign: TextAlign.right,
                   // Sabit 52pt kolonda sağa dayalı — tabular figür şart.
                   style: context.t.numSmall.copyWith(
-                      color: Sandik.text58,
+                      color: context.c.text58,
                       fontWeight: FontWeight.w500),
                 ),
               ),
@@ -743,14 +746,18 @@ class _SignalsBottomSheet extends StatelessWidget {
     final history = signals.where((a) => a.isDismissed).toList();
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(
-          color: Colors.white, decoration: TextDecoration.none),
+          color: context.c.text90, decoration: TextDecoration.none),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0F2A1F),
+            // Sabit koyu yeşildi; light modda ekranın üstünde yabancı bir
+            // levha gibi duruyor ve üstündeki (doğru tokenlı) metin
+            // okunmuyordu — koyu zemine koyu yazı.
+            color: context.c.surface2,
             borderRadius: BorderRadius.circular(SandikRadius.lg),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            border: Border.all(color: context.c.hairline),
+            boxShadow: context.c.cardShadow,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -761,7 +768,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Sandik.text36,
+                    color: context.c.text36,
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                 ),
@@ -775,7 +782,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                       'Teknik Sinyaller',
                       style: context.t.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: context.c.text90,
                           decoration: TextDecoration.none),
                     ),
                     const SizedBox(width: SandikSpace.sm),
@@ -784,22 +791,23 @@ class _SignalsBottomSheet extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Sandik.amber.withValues(alpha: 0.18),
+                          color: context.c.amberFill.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(SandikRadius.sm),
                           border: Border.all(
-                              color: Sandik.amber.withValues(alpha: 0.3)),
+                              color: context.c.amberFill.withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           '${signals.length}',
                           style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: Sandik.amber,
+                              color: context.c.amberText,
                               decoration: TextDecoration.none),
                         ),
                       ),
                     const Spacer(),
                     if (signals.isNotEmpty)
-                      GestureDetector(
+                      SandikTappable(
+                        semanticLabel: 'Tüm sinyalleri temizle',
                         onTap: () {
                           onDismissAll();
                           Navigator.pop(context);
@@ -807,7 +815,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                         child: Text(
                           'Tümünü Temizle',
                           style: context.t.titleSmall?.copyWith(
-                              color: Sandik.text36,
+                              color: context.c.text36,
                               decoration: TextDecoration.none),
                         ),
                       ),
@@ -820,12 +828,12 @@ class _SignalsBottomSheet extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                   child: Row(
                     children: [
-                      const Icon(Icons.check_circle_outline_rounded,
-                          color: Sandik.gain, size: 22),
+                      Icon(Icons.check_circle_outline_rounded,
+                          color: context.c.gain, size: 22),
                       const SizedBox(width: SandikSpace.md),
                       Text('Şu an aktif sinyal yok',
                           style: context.t.titleMedium?.copyWith(
-                              color: Sandik.text58,
+                              color: context.c.text58,
                               decoration: TextDecoration.none)),
                     ],
                   ),
@@ -863,7 +871,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                                 style: context.t.labelMedium?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 1.2,
-                                    color: Sandik.text36,
+                                    color: context.c.text58,
                                     decoration: TextDecoration.none),
                               ),
                             ),
@@ -919,8 +927,8 @@ class _SignalTile extends StatelessWidget {
     final isBuy = alert.signal == SignalType.buy;
     final isSell = alert.signal == SignalType.sell;
     final Color color = isBuy
-        ? Sandik.gain
-        : (isSell ? Sandik.loss : Sandik.text58);
+        ? context.c.gain
+        : (isSell ? context.c.loss : context.c.text58);
     final String label = isBuy ? 'AL' : (isSell ? 'SAT' : 'NÖTR');
     final IconData icon = isBuy
         ? Icons.trending_up_rounded
@@ -969,7 +977,7 @@ class _SignalTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: Colors.white
+                              color: context.c.text90
                                   .withValues(alpha: alphaFactor),
                               decoration: TextDecoration.none),
                         ),
@@ -997,7 +1005,7 @@ class _SignalTile extends StatelessWidget {
                         ? '${_formatDate(alert.detectedAt)} · silindi'
                         : '$count gösterge · ${fmtPct(alert.confidence, digits: 0)} güven',
                     style: context.t.bodySmall?.copyWith(
-                        color: Sandik.text58.withValues(alpha: alphaFactor),
+                        color: context.c.text58.withValues(alpha: alphaFactor),
                         decoration: TextDecoration.none),
                   ),
                 ],
@@ -1005,8 +1013,8 @@ class _SignalTile extends StatelessWidget {
             ),
             if (onDismiss != null)
               IconButton(
-                icon: const Icon(Icons.close_rounded,
-                    size: 18, color: Sandik.text36),
+                icon: Icon(Icons.close_rounded,
+                    size: 18, color: context.c.text36),
                 onPressed: onDismiss,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(
@@ -1014,8 +1022,8 @@ class _SignalTile extends StatelessWidget {
               )
             else if (onDelete != null)
               IconButton(
-                icon: const Icon(Icons.delete_outline_rounded,
-                    size: 18, color: Sandik.text36),
+                icon: Icon(Icons.delete_outline_rounded,
+                    size: 18, color: context.c.text36),
                 onPressed: onDelete,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(
@@ -1052,11 +1060,11 @@ class _BalanceToggleButton extends ConsumerWidget {
       child: Container(
         width: 42,
         height: 42,
-        decoration: Sandik.chip(selected: hidden),
+        decoration: context.chip(selected: hidden),
         child: Center(
           child: Icon(
             hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-            color: hidden ? Sandik.amber : Sandik.text58,
+            color: hidden ? context.c.amberText : context.c.text58,
             size: 20,
           ),
         ),
@@ -1079,7 +1087,7 @@ class _HeaderIconButton extends StatelessWidget {
       child: Container(
         width: 42,
         height: 42,
-        decoration: Sandik.chip(selected: false),
+        decoration: context.chip(selected: false),
         child: Center(child: child),
       ),
     );
@@ -1105,13 +1113,13 @@ class _SignalBadgeButton extends ConsumerWidget {
           Container(
             width: 42,
             height: 42,
-            decoration: Sandik.chip(selected: count > 0),
+            decoration: context.chip(selected: count > 0),
             child: Center(
               child: Icon(
                 count > 0
                     ? Icons.notifications_rounded
                     : Icons.notifications_none_rounded,
-                color: count > 0 ? Sandik.amber : Sandik.text58,
+                color: count > 0 ? context.c.amberText : context.c.text58,
                 size: 22,
               ),
             ),
@@ -1125,9 +1133,9 @@ class _SignalBadgeButton extends ConsumerWidget {
                 height: 18,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
-                  color: Sandik.loss,
+                  color: context.c.loss,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  border: Border.all(color: Sandik.background, width: 1.5),
+                  border: Border.all(color: context.c.background, width: 1.5),
                 ),
                 child: Center(
                   child: Text(
@@ -1135,7 +1143,7 @@ class _SignalBadgeButton extends ConsumerWidget {
                     style: context.t.labelSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0,
-                        color: Colors.white),
+                        color: context.c.text90),
                   ),
                 ),
               ),

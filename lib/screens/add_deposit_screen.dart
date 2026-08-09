@@ -168,19 +168,19 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
     final maturityNet = _previewMaturityNet;
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: context.c.text90, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Vadeli Mevduat',
           style: context.t.headlineMedium?.copyWith(
-            color: Colors.white,
+            color: context.c.text90,
           ),
         ),
       ),
@@ -256,7 +256,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
                 child: Text(
                   'Vade süresi: $_termDays gün',
                   style: context.t.titleSmall?.copyWith(
-                    color: Sandik.text58,
+                    color: context.c.text58,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -304,8 +304,8 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
               child: ElevatedButton(
                 onPressed: _saving ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Sandik.amber,
-                  foregroundColor: Colors.black,
+                  backgroundColor: context.c.amberFill,
+                  foregroundColor: context.c.onAmber,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                   ),
@@ -332,7 +332,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
         child: Text(
           s,
           style: context.t.titleSmall?.copyWith(
-            color: Sandik.text58,
+            color: context.c.text58,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.3,
           ),
@@ -350,25 +350,25 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
       keyboardType: keyboardType,
       style: context.t.numMedium.copyWith(
         fontSize: 15,
-        color: Colors.white,
+        color: context.c.text90,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: context.t.titleMedium?.copyWith(
-          color: Sandik.text36,
+          color: context.c.text36,
         ),
         filled: true,
-        fillColor: Sandik.surface1,
+        fillColor: context.c.surface1,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+          borderSide: BorderSide(color: context.c.hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+          borderSide: BorderSide(color: context.c.hairline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -390,7 +390,7 @@ class _InterestTypeSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
       ),
       child: Row(
@@ -400,7 +400,7 @@ class _InterestTypeSelector extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => onChanged(t),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
+                  duration: SandikMotion.stateOf(context),
                   curve: SandikMotion.enter,
                   padding: const EdgeInsets.symmetric(vertical: 11),
                   decoration: BoxDecoration(
@@ -422,7 +422,7 @@ class _InterestTypeSelector extends StatelessWidget {
                             value == t ? FontWeight.w800 : FontWeight.w600,
                         color: value == t
                             ? AssetType.mevduat.color
-                            : Sandik.text58,
+                            : context.c.text58,
                       ),
                     ),
                   ),
@@ -447,24 +447,24 @@ class _DateRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: Sandik.surface1,
+          color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: context.c.hairline),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_rounded,
-                size: 18, color: Sandik.text58),
+            Icon(Icons.calendar_today_rounded,
+                size: 18, color: context.c.text58),
             const SizedBox(width: 10),
             Text(
               text,
               style: context.t.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: context.c.text90,
               ),
             ),
             const Spacer(),
-            const Icon(Icons.chevron_right_rounded, color: Sandik.text58),
+            Icon(Icons.chevron_right_rounded, color: context.c.text58),
           ],
         ),
       ),
@@ -481,21 +481,21 @@ class _InfoBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Sandik.amber.withValues(alpha: 0.08),
+        color: context.c.amberFill.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Sandik.amber.withValues(alpha: 0.25)),
+        border: Border.all(color: context.c.amberFill.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline_rounded,
-              size: 16, color: Sandik.amber),
+          Icon(Icons.info_outline_rounded,
+              size: 16, color: context.c.amberText),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
               style: context.t.bodySmall?.copyWith(
-                color: Sandik.amber,
+                color: context.c.amberText,
                 height: 1.4,
                 fontWeight: FontWeight.w600,
               ),
@@ -566,7 +566,7 @@ class _PreviewCard extends StatelessWidget {
             'Net Getiri',
             '${good ? '+' : ''}${money.format(gain)}  '
                 '(${fmtPct(pct, digits: 2, showSign: good)})',
-            color: good ? Sandik.gain : Sandik.loss,
+            color: good ? context.c.gain : context.c.loss,
             bold: true,
           ),
           const SizedBox(height: 6),
@@ -574,7 +574,7 @@ class _PreviewCard extends StatelessWidget {
             'Stopaj ve faiz türü hesaba dahil edilmiştir.',
             style: context.t.labelMedium?.copyWith(
               letterSpacing: 0,
-              color: Sandik.text58,
+              color: context.c.text58,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -592,7 +592,7 @@ class _PreviewCard extends StatelessWidget {
           Text(
             k,
             style: context.t.titleSmall?.copyWith(
-              color: Sandik.text58,
+              color: context.c.text58,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -600,7 +600,7 @@ class _PreviewCard extends StatelessWidget {
           Text(
             v,
             style: context.t.numSmall.copyWith(
-              color: color ?? Colors.white,
+              color: color ?? context.c.text90,
               fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
             ),
           ),

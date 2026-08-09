@@ -17,6 +17,30 @@ import 'auth_provider.dart';
 ///   ref.watch(themeModeProvider) → ThemeMode
 ///   ref.read(themeModeProvider.notifier).set(ThemeMode.light)
 
+// ─── Kullanıcıya özel tercih anahtarları ─────────────────────────────────────
+//
+// Sinyal tercihleri KİŞİYE özeldir ama SharedPreferences cihaz genelindedir.
+// Anahtarlar sabit olduğunda A kullanıcısı çıkıp B girdiğinde B, A'nın
+// ayarlarını görüyordu. Daha kötüsü: B'nin sunucuda kaydı yoksa
+// `syncSignalPreferencesOnLogin` yereldekileri "ilk kurulum" sanıp
+// B'nin satırına A'nın ayarlarını YAZIYORDU.
+//
+// Çözüm: sinyal anahtarları aktif kullanıcı id'siyle ön eklenir.
+// Tema/bakiye gizleme gibi cihaz tercihleri ön eksiz kalır — onların
+// kullanıcıya bağlı olması beklenmez.
+String? _aktifKullaniciId;
+
+/// Tercih anahtarlarının hangi kullanıcıya ait olduğunu belirler.
+/// Auth durumu değişince çağrılır (bkz. `_AuthGate`).
+void setPreferencesUser(String? userId) {
+  _aktifKullaniciId = userId;
+}
+
+/// Kullanıcıya özel anahtar üretir. Oturum yoksa ön eksiz döner —
+/// giriş öncesi okunan değerler zaten kimseye ait değildir.
+String _userKey(String base) =>
+    _aktifKullaniciId == null ? base : '${base}_$_aktifKullaniciId';
+
 const _kThemeModeKey = 'pref_theme_mode'; // 'system' | 'light' | 'dark'
 const _kSignalNotificationsKey = 'pref_signal_notifications';
 const _kPartnerNotificationsKey = 'pref_partner_notifications';
@@ -25,32 +49,49 @@ const _kBalanceHiddenKey = 'pref_balance_hidden';
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
-    _load();
+    // SENKRON okuma. Eskiden `build()` koşulsuz `ThemeMode.dark` döndürüp
+    // kaydedilmiş tercihi async yüklüyordu: light seçmiş bir kullanıcı
+    // uygulamayı her açtığında önce KOYU bir kare görüp sonra aydınlığa
+    // atlıyordu. `_prefsSync` main.dart'ta ilk frame'den önce hazırlanıyor
+    // (`initPreferencesCache`), bu yüzden burada gerçek değeri hemen
+    // verebiliyoruz — bool tercihlerinde zaten uygulanan desenin aynısı.
+    final prefs = _prefsSync;
+    if (prefs != null) {
+      final parsed = _parse(prefs.getString(_kThemeModeKey));
+      if (parsed != null) return parsed;
+    } else {
+      // Cache init edilmemişse (test, beklenmedik sıra) async'e düş.
+      _loadAsync();
+    }
     return ThemeMode.dark; // sandık dark-first
   }
 
-  Future<void> _load() async {
+  /// Kayıtlı metni [ThemeMode]'a çevirir; tanınmayan/eksik değerde null.
+  static ThemeMode? _parse(String? raw) {
+    switch (raw) {
+      case 'system':
+        return ThemeMode.system;
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      default:
+        return null;
+    }
+  }
+
+  Future<void> _loadAsync() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_kThemeModeKey);
-      switch (raw) {
-        case 'system':
-          state = ThemeMode.system;
-          break;
-        case 'light':
-          state = ThemeMode.light;
-          break;
-        case 'dark':
-          state = ThemeMode.dark;
-          break;
-      }
+      final parsed = _parse(prefs.getString(_kThemeModeKey));
+      if (parsed != null) state = parsed;
     } catch (_) {}
   }
 
   Future<void> set(ThemeMode mode) async {
     state = mode;
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(_kThemeModeKey, _toString(mode));
     } catch (_) {}
   }
@@ -84,14 +125,20 @@ class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
   final bool defaultValue;
 
-  _BoolPrefNotifier(this.key, this.defaultValue);
+  /// Anahtar kullanıcıya göre ayrılsın mı. Sinyal tercihleri için true
+  /// (kişiye özel), tema/bakiye gizleme gibi cihaz tercihleri için false.
+  final bool perUser;
+
+  _BoolPrefNotifier(this.key, this.defaultValue, {this.perUser = false});
+
+  String get _key => perUser ? _userKey(key) : key;
 
   @override
   bool build() {
     // Senkron okuma — cache yoksa default. Cache init edilmişse gerçek değer.
     final prefs = _prefsSync;
     if (prefs != null) {
-      final v = prefs.getBool(key);
+      final v = prefs.getBool(_key);
       if (v != null) return v;
     } else {
       // Fallback: cache init değilse eskisi gibi async load et.
@@ -103,7 +150,7 @@ class _BoolPrefNotifier extends Notifier<bool> {
   Future<void> _loadAsync() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final v = prefs.getBool(key);
+      final v = prefs.getBool(_key);
       if (v != null) state = v;
     } catch (_) {}
   }
@@ -112,7 +159,7 @@ class _BoolPrefNotifier extends Notifier<bool> {
     state = value;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
-      await prefs.setBool(key, value);
+      await prefs.setBool(_key, value);
     } catch (_) {}
   }
 
@@ -124,8 +171,10 @@ class _BoolPrefNotifier extends Notifier<bool> {
   Future<void> applyFromServer(bool value) => set(value);
 }
 
+// Sinyal bildirim ana anahtarı KİŞİYE özel: push'u sunucu gönderiyor ve
+// karar kullanıcının satırına bakılarak veriliyor.
 final signalNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
-    () => _BoolPrefNotifier(_kSignalNotificationsKey, true));
+    () => _BoolPrefNotifier(_kSignalNotificationsKey, true, perUser: true));
 
 final partnerNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kPartnerNotificationsKey, true));
@@ -200,7 +249,7 @@ class IndicatorPrefsNotifier
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getStringList(_kIndicatorPrefsKey);
+      final raw = prefs.getStringList(_userKey(_kIndicatorPrefsKey));
       if (raw == null) return;
       // Format: "typeName:id1,id2,id3"
       final next = <AssetType, Set<String>>{};
@@ -229,7 +278,7 @@ class IndicatorPrefsNotifier
       final entries = state.entries
           .map((e) => '${e.key.name}:${e.value.join(',')}')
           .toList();
-      await prefs.setStringList(_kIndicatorPrefsKey, entries);
+      await prefs.setStringList(_userKey(_kIndicatorPrefsKey), entries);
     } catch (_) {}
   }
 
@@ -354,7 +403,7 @@ class SignalThresholdNotifier extends Notifier<Map<AssetType, int>> {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getStringList(_kSignalThresholdKey);
+      final raw = prefs.getStringList(_userKey(_kSignalThresholdKey));
       if (raw == null) return;
       // Format: "typeName:70"
       final next = <AssetType, int>{};
@@ -378,7 +427,7 @@ class SignalThresholdNotifier extends Notifier<Map<AssetType, int>> {
       final prefs = await SharedPreferences.getInstance();
       final entries =
           state.entries.map((e) => '${e.key.name}:${e.value}').toList();
-      await prefs.setStringList(_kSignalThresholdKey, entries);
+      await prefs.setStringList(_userKey(_kSignalThresholdKey), entries);
     } catch (_) {}
   }
 
@@ -435,8 +484,8 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final freqRaw = prefs.getStringList(_kSignalFrequencyKey) ?? const [];
-      final hoursRaw = prefs.getStringList(_kSignalHoursKey) ?? const [];
+      final freqRaw = prefs.getStringList(_userKey(_kSignalFrequencyKey)) ?? const [];
+      final hoursRaw = prefs.getStringList(_userKey(_kSignalHoursKey)) ?? const [];
 
       final freqByType = <AssetType, SignalFrequency>{};
       for (final e in freqRaw) {
@@ -474,11 +523,11 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(
-        _kSignalFrequencyKey,
+        _userKey(_kSignalFrequencyKey),
         state.entries.map((e) => '${e.key.name}:${e.value.frequency.id}').toList(),
       );
       await prefs.setStringList(
-        _kSignalHoursKey,
+        _userKey(_kSignalHoursKey),
         state.entries
             .map((e) => '${e.key.name}:${e.value.hours.join(",")}')
             .toList(),
@@ -538,7 +587,7 @@ final signalScheduleProvider =
 
 /// Nötr sinyaller de push olarak gönderilsin mi (default: false).
 final signalNeutralPushProvider = NotifierProvider<_BoolPrefNotifier, bool>(
-    () => _BoolPrefNotifier(_kSignalNeutralPushKey, false));
+    () => _BoolPrefNotifier(_kSignalNeutralPushKey, false, perUser: true));
 
 /// "Nötr sinyalleri de bildir" tercihi tüm varlık türleri için geçerlidir,
 /// ama sunucudaki tablo tür başına satır tutar — bu yüzden değişince

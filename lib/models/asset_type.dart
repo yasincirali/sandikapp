@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../theme/sandik.dart';
+
 enum AssetType {
   // Kategori renkleri — Sandık marka ailesine sadık, canlı ama karakteri
   // bozmayan sıcak/nötr tonlar. Her kategori grafikte ve etikette birbirinden
   // kolay ayırt edilebilir olmalı; gain/loss (yeşil/kırmızı) semantik
   // renkleriyle çakışmamalı.
-  hisse('Hisse', Icons.show_chart_rounded, Color(0xFFF5A623), 'TRY'),      // Amber — marka CTA
-  fon('Fon', Icons.pie_chart_rounded, Color(0xFF4EA8DE), 'TRY'),           // Sky blue — nötr/finansal
+  hisse('Hisse', Icons.show_chart_rounded, Sandik.amber, 'TRY'),      // Amber — marka CTA
+  fon('Fon', Icons.pie_chart_rounded, Sandik.info, 'TRY'),           // Sky blue — nötr/finansal
   doviz('Döviz', Icons.attach_money_rounded, Color(0xFF7EC8A9), 'USD'),     // Soft mint — gain'den ayrık
-  altin('Altın', Icons.star_rounded, Color(0xFFF5C842), 'TRY'),            // Gold — altın karakteri
+  altin('Altın', Icons.star_rounded, Sandik.gold, 'TRY'),            // Gold — altın karakteri
   emtia('Emtia', Icons.inventory_2_rounded, Color(0xFFC97B4F), 'USD'),      // Copper — emtia sıcaklığı
   mevduat('Vadeli Mevduat', Icons.savings_rounded, Color(0xFF6BB77B), 'TRY'), // Bank green — güvenli/pasif getiri
   diger('Diğer', Icons.more_horiz_rounded, Color(0xFF8D7BE0), 'TRY');      // Soft violet — nötr, ayrık

@@ -37,11 +37,23 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
 
   final double initialScrollOffset;
 
+  /// Geri butonu gösterilsin mi.
+  ///
+  /// Bu ekran İKİ şekilde kullanılıyor: alt menüde sekme olarak (geri
+  /// butonu olmamalı, gidilecek yer yok) ve Portföy ekranından push edilerek
+  /// (geri butonu ŞART, aksi halde kullanıcı ekranda kilitli kalır —
+  /// yalnızca sistem geri hareketiyle çıkabilir).
+  ///
+  /// Aynı bayrak çıkış butonunu da gizler: push edilmiş bir alt sayfada
+  /// "Çıkış Yap" beklenmeyen ve tehlikeli bir eylemdir.
+  final bool showBackButton;
+
   const PortfolioPerformanceScreen({
     super.key,
     this.initialView = '',
     this.initialTypeFilter,
     this.initialScrollOffset = 0,
+    this.showBackButton = false,
   });
 
   @override
@@ -264,8 +276,8 @@ class _PortfolioPerformanceScreenState
       return [
         TransactionSegment(
           spots: spots,
-          lineColor: Sandik.amber,
-          areaGradientStart: Sandik.amber.withValues(alpha: 0.12),
+          lineColor: context.c.amberText,
+          areaGradientStart: context.c.amberFill.withValues(alpha: 0.12),
           areaGradientEnd: Colors.transparent,
           thickness: 3.5,
         ),
@@ -301,8 +313,8 @@ class _PortfolioPerformanceScreenState
       if (spots.length < 2) return [];
       segments.add(TransactionSegment(
         spots: spots,
-        lineColor: Sandik.amber,
-        areaGradientStart: Sandik.amber.withValues(alpha: 0.12),
+        lineColor: context.c.amberText,
+        areaGradientStart: context.c.amberFill.withValues(alpha: 0.12),
         areaGradientEnd: Colors.transparent,
         thickness: 3.5,
       ));
@@ -357,8 +369,8 @@ class _PortfolioPerformanceScreenState
     if (activeSpots.isNotEmpty) {
       segments.add(TransactionSegment(
         spots: activeSpots,
-        lineColor: Sandik.amber,
-        areaGradientStart: Sandik.amber.withValues(alpha: 0.12),
+        lineColor: context.c.amberText,
+        areaGradientStart: context.c.amberFill.withValues(alpha: 0.12),
         areaGradientEnd: Colors.transparent,
         thickness: 3.5,
       ));
@@ -384,9 +396,9 @@ class _PortfolioPerformanceScreenState
 
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(
-          color: Colors.white, decoration: TextDecoration.none),
+          color: context.c.text90, decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       child: SafeArea(
         child: Column(
           children: [
@@ -395,18 +407,36 @@ class _PortfolioPerformanceScreenState
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
               child: Row(
                 children: [
+                  if (widget.showBackButton) ...[
+                    // 44pt dokunma hedefi (HIG minimumu).
+                    SizedBox(
+                      width: 36,
+                      height: 44,
+                      child: CupertinoButton(
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        alignment: Alignment.centerLeft,
+                        onPressed: () => Navigator.pop(context),
+                        child: Icon(Icons.arrow_back_ios_new_rounded,
+                            size: 20, color: context.c.text90),
+                      ),
+                    ),
+                  ],
                   Expanded(
                     child: Text(
                       'Performans',
                       style: context.t.headlineLarge?.copyWith(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white),
+                          color: context.c.text90),
                     ),
                   ),
-                  SandikLogoutButton(
-                    onPressed: () => confirmAndLogout(context, ref),
-                  ),
+                  // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
+                  // beklenmeyen bir eylem olurdu.
+                  if (!widget.showBackButton)
+                    SandikLogoutButton(
+                      onPressed: () => confirmAndLogout(context, ref),
+                    ),
                 ],
               ),
             ),
@@ -677,12 +707,12 @@ class _PortfolioPerformanceScreenState
         // "Yeni çözünürlükte veri yükleniyor" göstergesi — zoom sırasında
         // eski veri ekranda kalır, üstte ince bir bar akıcı hisi verir.
         if (waiting)
-          const SizedBox(
+          SizedBox(
             height: 2,
             child: LinearProgressIndicator(
               minHeight: 2,
               backgroundColor: Colors.transparent,
-              color: Sandik.amber,
+              color: context.c.amberFill,
             ),
           ),
         Row(
@@ -730,7 +760,7 @@ class _PortfolioPerformanceScreenState
         //   • Spinner yalnızca hiç veri yokken (ilk açılış) görünür.
         AnimatedOpacity(
           opacity: stale ? 0.45 : 1.0,
-          duration: SandikMotion.state,
+          duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           child: _buildPeriodChangeCard(
             segments,
@@ -746,7 +776,7 @@ class _PortfolioPerformanceScreenState
         else
           AnimatedOpacity(
             opacity: stale ? 0.45 : 1.0,
-            duration: SandikMotion.state,
+            duration: SandikMotion.stateOf(context),
             curve: SandikMotion.enter,
             child: _buildChartContainer(
                 segments, effectiveStart, endDate, chartAssets,
@@ -764,7 +794,7 @@ class _PortfolioPerformanceScreenState
 
   Widget _typeChip(AssetType? type, String label) {
     final selected = _typeFilter == type;
-    final color = type?.color ?? Sandik.amber;
+    final color = type?.color ?? context.c.amberText;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: CupertinoButton(
@@ -772,14 +802,14 @@ class _PortfolioPerformanceScreenState
         padding: EdgeInsets.zero,
         onPressed: () => setState(() => _typeFilter = type),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.15) : Sandik.surface1,
+            color: selected ? color.withValues(alpha: 0.15) : context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
-              color: selected ? color : Colors.white.withValues(alpha: 0.06),
+              color: selected ? color : context.c.overlay,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -787,7 +817,7 @@ class _PortfolioPerformanceScreenState
             label,
             style: context.t.titleSmall?.copyWith(
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: selected ? color : Sandik.text58,
+              color: selected ? color : context.c.text58,
             ),
           ),
         ),
@@ -799,7 +829,7 @@ class _PortfolioPerformanceScreenState
     return Container(
       height: 44,
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: List.generate(_periods.length, (i) {
@@ -815,7 +845,7 @@ class _PortfolioPerformanceScreenState
               child: Container(
                 decoration: BoxDecoration(
                   color:
-                      isSelected ? const Color(0xFF1A3D2E) : Colors.transparent,
+                      isSelected ? context.c.surface2 : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Center(
@@ -824,7 +854,7 @@ class _PortfolioPerformanceScreenState
                     style: context.t.bodyMedium?.copyWith(
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected ? Sandik.amber : Sandik.text36,
+                      color: isSelected ? context.c.amberText : context.c.text36,
                     ),
                   ),
                 ),
@@ -848,7 +878,7 @@ class _PortfolioPerformanceScreenState
     return Container(
       height: 44,
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: options.map((o) {
@@ -862,7 +892,7 @@ class _PortfolioPerformanceScreenState
                 height: double.infinity,
                 decoration: BoxDecoration(
                   color: selected
-                      ? const Color(0xFF1A3D2E)
+                      ? context.c.surface2
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
@@ -874,7 +904,7 @@ class _PortfolioPerformanceScreenState
                       style: context.t.bodyMedium?.copyWith(
                         fontWeight:
                             selected ? FontWeight.w600 : FontWeight.w500,
-                        color: selected ? Sandik.amber : Sandik.text36,
+                        color: selected ? context.c.amberText : context.c.text36,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -887,8 +917,8 @@ class _PortfolioPerformanceScreenState
                           Icons.info_outline_rounded,
                           size: 15,
                           color: selected
-                              ? Sandik.amber.withValues(alpha: 0.85)
-                              : Sandik.text36,
+                              ? context.c.amberFill.withValues(alpha: 0.85)
+                              : context.c.text36,
                         ),
                       ),
                     ),
@@ -918,12 +948,12 @@ class _PortfolioPerformanceScreenState
       context: context,
       builder: (ctx) => DefaultTextStyle(
         style: GoogleFonts.dmSans(
-            color: Colors.white, decoration: TextDecoration.none),
+            color: context.c.text90, decoration: TextDecoration.none),
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          decoration: const BoxDecoration(
-            color: Sandik.surface1,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: context.c.surface1,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SafeArea(
             top: false,
@@ -936,7 +966,7 @@ class _PortfolioPerformanceScreenState
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: context.c.overlay,
                       borderRadius: BorderRadius.circular(SandikRadius.sm),
                     ),
                   ),
@@ -944,13 +974,13 @@ class _PortfolioPerformanceScreenState
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded,
-                        size: 20, color: Sandik.amber),
+                    Icon(Icons.info_outline_rounded,
+                        size: 20, color: context.c.amberText),
                     const SizedBox(width: 8),
                     Text(title,
                         style: context.t.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: context.c.text90,
                             decoration: TextDecoration.none)),
                   ],
                 ),
@@ -958,7 +988,7 @@ class _PortfolioPerformanceScreenState
                 Text(
                   body,
                   style: context.t.bodyMedium?.copyWith(
-                      color: Sandik.text58,
+                      color: context.c.text58,
                       height: 1.5,
                       decoration: TextDecoration.none),
                 ),
@@ -1033,7 +1063,7 @@ class _PortfolioPerformanceScreenState
     // "kazanç var" yanılgısı yaratır. _PeriodChangeRow ile aynı kural.
     final isFlat = change.abs().round() == 0 && (pct?.abs() ?? 0) < 0.005;
     final color =
-        isFlat ? Sandik.text36 : (positive ? Sandik.gain : Sandik.loss);
+        isFlat ? context.c.text36 : (positive ? context.c.gain : context.c.loss);
 
     // Dönem içi net para girişi (yalnız gerçek modda anlamlı).
     double netInflow = 0;
@@ -1066,13 +1096,13 @@ class _PortfolioPerformanceScreenState
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: SandikSpace.md, vertical: 14),
-      decoration: Sandik.surfaceCard(radius: SandikRadius.lg),
+      decoration: context.surfaceCard(radius: SandikRadius.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: context.t.titleSmall?.copyWith(color: Sandik.text58),
+            style: context.t.titleSmall?.copyWith(color: context.c.text58),
           ),
           const SizedBox(height: SandikSpace.sm),
           Row(
@@ -1131,7 +1161,7 @@ class _PortfolioPerformanceScreenState
             intraday
                 ? 'Bugün'
                 : '${dateFmt.format(start)} → ${dateFmt.format(end)}',
-            style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
           // Ham fark, dönem içi para girişini de içerir. Rakamı bozmadan
           // bağlamı ver — aksi halde kullanıcı yatırdığı parayı kâr sanır.
@@ -1140,8 +1170,8 @@ class _PortfolioPerformanceScreenState
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline_rounded,
-                    size: 13, color: Sandik.text36),
+                Icon(Icons.info_outline_rounded,
+                    size: 13, color: context.c.text36),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -1150,7 +1180,7 @@ class _PortfolioPerformanceScreenState
                             'değişimin bir kısmı yeni yatırımdan geliyor.'
                         : 'Bu dönemde ${tryFmt.format(netInflow.abs())} tutarında satış yapıldı.',
                     style:
-                        context.t.bodySmall?.copyWith(color: Sandik.text36),
+                        context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),
                 ),
               ],
@@ -1231,10 +1261,10 @@ class _PortfolioPerformanceScreenState
       return Container(
         height: 280,
         decoration: BoxDecoration(
-            color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.lg)),
-        child: const Center(
+            color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.lg)),
+        child: Center(
             child: Text('Veri yok',
-                style: TextStyle(color: Sandik.text36))),
+                style: TextStyle(color: context.c.text36))),
       );
     }
 
@@ -1429,11 +1459,11 @@ class _PortfolioPerformanceScreenState
             verticalInterval: intraday ? 240 : null,
             horizontalInterval: yInterval,
             getDrawingHorizontalLine: (_) => FlLine(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: context.c.overlay,
               strokeWidth: 1,
             ),
             getDrawingVerticalLine: (_) => FlLine(
-              color: Colors.white.withValues(alpha: 0.04),
+              color: context.c.overlay,
               strokeWidth: 1,
             ),
           ),
@@ -1443,7 +1473,7 @@ class _PortfolioPerformanceScreenState
             show: true,
             border: Border(
               right: BorderSide(
-                color: Colors.white.withValues(alpha: 0.10),
+                color: context.c.overlay,
                 width: 1,
               ),
             ),
@@ -1453,7 +1483,7 @@ class _PortfolioPerformanceScreenState
                   verticalLines: [
                     VerticalLine(
                       x: nowMinutes,
-                      color: Sandik.amber.withValues(alpha: 0.6),
+                      color: context.c.amberFill.withValues(alpha: 0.6),
                       strokeWidth: 1.5,
                       dashArray: const [5, 4],
                       label: VerticalLineLabel(
@@ -1463,7 +1493,7 @@ class _PortfolioPerformanceScreenState
                         style: context.t.labelMedium?.copyWith(
                           letterSpacing: 0,
                           fontWeight: FontWeight.w700,
-                          color: Sandik.amber,
+                          color: context.c.amberText,
                         ),
                         labelResolver: (_) => 'ŞİMDİ',
                       ),
@@ -1479,7 +1509,7 @@ class _PortfolioPerformanceScreenState
                           // aksi halde sol kenara sıkışıp kırpılır.
                           VerticalLine(
                             x: primarySeg.spots.first.x,
-                            color: Sandik.amber.withValues(alpha: 0.75),
+                            color: context.c.amberFill.withValues(alpha: 0.75),
                             strokeWidth: 1.6,
                             dashArray: const [4, 4],
                             label: VerticalLineLabel(
@@ -1489,7 +1519,7 @@ class _PortfolioPerformanceScreenState
                                   bottom: 8, left: 6),
                               style: context.t.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: Sandik.amber,
+                                color: context.c.amberText,
                               ),
                               labelResolver: (_) {
                                 final startTs = start.add(Duration(
@@ -1506,7 +1536,7 @@ class _PortfolioPerformanceScreenState
                           // Etiket çizginin SOLUNA (grafik içine) yaslanır.
                           VerticalLine(
                             x: primarySeg.spots.last.x,
-                            color: Sandik.gain.withValues(alpha: 0.55),
+                            color: context.c.gain.withValues(alpha: 0.55),
                             strokeWidth: 1.2,
                             dashArray: const [4, 4],
                             label: VerticalLineLabel(
@@ -1517,7 +1547,7 @@ class _PortfolioPerformanceScreenState
                               style: context.t.labelMedium?.copyWith(
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.w700,
-                                color: Sandik.gain,
+                                color: context.c.gain,
                               ),
                               labelResolver: (_) => 'ŞİMDİ',
                             ),
@@ -1548,7 +1578,7 @@ class _PortfolioPerformanceScreenState
                       _fmtY(val),
                       textAlign: TextAlign.left,
                       style: context.t.numSmall.copyWith(
-                        color: Sandik.text58,
+                        color: context.c.text58,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1615,7 +1645,7 @@ class _PortfolioPerformanceScreenState
                         overflow: TextOverflow.ellipsis,
                         softWrap: false,
                         style: context.t.numSmall.copyWith(
-                          color: Sandik.text58,
+                          color: context.c.text58,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1684,12 +1714,12 @@ class _PortfolioPerformanceScreenState
                   // dot ile göster — trading uygulaması hissiyatı için
                   // ince halka ile.
                   if (intraday && isLast) {
-                    // "Şu an" noktası — canlı vurgulu yeşil (Sandik.gain)
+                    // "Şu an" noktası — canlı vurgulu yeşil (context.c.gain)
                     // ile trading uygulaması hissiyatı, ince beyaz halka.
                     return FlDotCirclePainter(
                       radius: 5.0,
-                      color: Sandik.gain,
-                      strokeColor: Colors.white.withValues(alpha: 0.9),
+                      color: context.c.gain,
+                      strokeColor: context.c.text90,
                       strokeWidth: 1.6,
                     );
                   }
@@ -1707,15 +1737,15 @@ class _PortfolioPerformanceScreenState
                   if (isLast) {
                     return FlDotCirclePainter(
                       radius: 6.0,
-                      color: Sandik.gain,
-                      strokeColor: Colors.white,
+                      color: context.c.gain,
+                      strokeColor: context.c.text90,
                       strokeWidth: 2.5,
                     );
                   }
                   return FlDotCirclePainter(
                     radius: 4.5,
-                    color: Sandik.amber,
-                    strokeColor: Colors.white,
+                    color: context.c.amberText,
+                    strokeColor: context.c.text90,
                     strokeWidth: 2,
                   );
                 },
@@ -1725,8 +1755,8 @@ class _PortfolioPerformanceScreenState
                 gradient: LinearGradient(
                   colors: intraday
                       ? [
-                          Sandik.amber.withValues(alpha: 0.22),
-                          Sandik.amber.withValues(alpha: 0.06),
+                          context.c.amberFill.withValues(alpha: 0.22),
+                          context.c.amberFill.withValues(alpha: 0.06),
                           Colors.transparent,
                         ]
                       : [seg.areaGradientStart, Colors.transparent],
@@ -1745,7 +1775,7 @@ class _PortfolioPerformanceScreenState
           lineTouchData: LineTouchData(
             handleBuiltInTouches: false,
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => Sandik.surface2,
+              getTooltipColor: (_) => context.c.surface2,
               tooltipRoundedRadius: 10,
               tooltipPadding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1805,7 +1835,7 @@ class _PortfolioPerformanceScreenState
                     TextSpan(
                       text: tryFmt0.format(s.y),
                       style: context.t.numSmall.copyWith(
-                        color: Sandik.gold,
+                        color: context.c.gold,
                         fontSize: 15,
                       ),
                     ),
@@ -1818,7 +1848,7 @@ class _PortfolioPerformanceScreenState
                       text:
                           '\nGetiri ${positive ? '+' : '−'}${tryFmt0.format(gainVsAnchor.abs())}',
                       style: context.t.numSmall.copyWith(
-                        color: positive ? Sandik.gain : Sandik.loss,
+                        color: positive ? context.c.gain : context.c.loss,
                         fontSize: 11,
                       ),
                     ));
@@ -1830,7 +1860,7 @@ class _PortfolioPerformanceScreenState
                       children.add(TextSpan(
                         text: '\nAlım  +${tryFmt0.format(dayBuyTRY)}',
                         style: context.t.numSmall.copyWith(
-                          color: Sandik.gain,
+                          color: context.c.gain,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1840,7 +1870,7 @@ class _PortfolioPerformanceScreenState
                       children.add(TextSpan(
                         text: '\nSatış −${tryFmt0.format(daySellTRY)}',
                         style: context.t.numSmall.copyWith(
-                          color: Sandik.loss,
+                          color: context.c.loss,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1851,7 +1881,7 @@ class _PortfolioPerformanceScreenState
                         text:
                             '\nNet ${dayNet >= 0 ? '+' : '−'}${tryFmt0.format(dayNet.abs())}',
                         style: context.t.numSmall.copyWith(
-                          color: dayNet >= 0 ? Sandik.gain : Sandik.loss,
+                          color: dayNet >= 0 ? context.c.gain : context.c.loss,
                           fontSize: 11,
                         ),
                       ));
@@ -1868,7 +1898,7 @@ class _PortfolioPerformanceScreenState
                       text: '\nToplam yatırım ${tryFmt0.format(cumNet)}',
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
-                        color: Sandik.text58,
+                        color: context.c.text58,
                       ),
                     ));
                   }
@@ -1879,7 +1909,7 @@ class _PortfolioPerformanceScreenState
                   return LineTooltipItem(
                     '$headerLabel\n',
                     context.t.bodySmall!.copyWith(
-                        color: Sandik.text58,
+                        color: context.c.text58,
                         fontWeight: FontWeight.w500),
                     children: children,
                   );
@@ -1911,9 +1941,9 @@ class _PortfolioPerformanceScreenState
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 20, 16, 12),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: Column(
         children: [
@@ -1992,19 +2022,19 @@ class _PortfolioPerformanceScreenState
             final positive = gain >= 0;
             out.add((
               'Getiri ${positive ? '+' : '−'}${tryFmt0.format(gain.abs())}',
-              positive ? Sandik.gain : Sandik.loss,
+              positive ? context.c.gain : context.c.loss,
             ));
           }
           if (dayBuy > 0) {
             out.add((
               'Alım +${tryFmt0.format(dayBuy)}',
-              Sandik.gain,
+              context.c.gain,
             ));
           }
           if (daySell > 0) {
             out.add((
               'Satış −${tryFmt0.format(daySell)}',
-              Sandik.loss,
+              context.c.loss,
             ));
           }
           return out;
@@ -2018,7 +2048,7 @@ class _PortfolioPerformanceScreenState
             'İŞLEM HACMİ',
             style: context.t.labelSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              color: Sandik.text58,
+              color: context.c.text58,
               letterSpacing: 1.2,
             ),
           ),
@@ -2038,7 +2068,7 @@ class _PortfolioPerformanceScreenState
               final bars = <LineChartBarData>[];
               for (final b in volumeBars) {
                 final buyPositive = b.buy >= b.sell;
-                final color = buyPositive ? Sandik.gain : Sandik.loss;
+                final color = buyPositive ? context.c.gain : context.c.loss;
                 bars.add(LineChartBarData(
                   spots: [FlSpot(b.x, 0), FlSpot(b.x, b.total)],
                   isCurved: false,
@@ -2141,17 +2171,17 @@ class _PortfolioSignalPanel extends ConsumerWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Sandik.surface1,
+          color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: context.c.hairline),
         ),
         child: Row(
           children: [
-            const Icon(Icons.check_circle_outline_rounded,
-                color: Sandik.gain, size: 20),
+            Icon(Icons.check_circle_outline_rounded,
+                color: context.c.gain, size: 20),
             const SizedBox(width: 12),
             Text('Güçlü sinyal yok — portföy nötr bölgede',
-                style: context.t.bodyMedium?.copyWith(color: Sandik.text58)),
+                style: context.t.bodyMedium?.copyWith(color: context.c.text58)),
           ],
         ),
       );
@@ -2166,24 +2196,24 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                 style: context.t.labelLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.2,
-                    color: Sandik.text36)),
+                    color: context.c.text58)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
-                  color: Sandik.amber.withValues(alpha: 0.15),
+                  color: context.c.amberFill.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(SandikRadius.sm)),
               child: Text('${results.length}',
                   style: context.t.bodySmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: Sandik.amber)),
+                      color: context.c.amberText)),
             ),
           ],
         ),
         const SizedBox(height: 12),
         ...results.map((r) {
           final isBuy = r.summary.signal == SignalType.buy;
-          final color = isBuy ? Sandik.gain : Sandik.loss;
+          final color = isBuy ? context.c.gain : context.c.loss;
           final label = isBuy ? 'AL' : 'SAT';
           final count = isBuy ? r.summary.buyCount : r.summary.sellCount;
 
@@ -2243,14 +2273,14 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                                       overflow: TextOverflow.ellipsis,
                                       style: context.t.titleMedium?.copyWith(
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.white,
+                                          color: context.c.text90,
                                           decoration: TextDecoration.none)),
                                 ),
                               ],
                             ),
                             Text(r.asset.type.label,
                                 style: context.t.bodySmall?.copyWith(
-                                    color: Sandik.text36, decoration: TextDecoration.none)),
+                                    color: context.c.text36, decoration: TextDecoration.none)),
                           ],
                         ),
                       ),
@@ -2274,10 +2304,10 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   Row(
                     children: r.indicators.map((ind) {
                       final c = ind.signal == SignalType.buy
-                          ? Sandik.gain
+                          ? context.c.gain
                           : ind.signal == SignalType.sell
-                              ? Sandik.loss
-                              : Sandik.text36;
+                              ? context.c.loss
+                              : context.c.text36;
                       return Expanded(
                         child: Column(
                           children: [
@@ -2306,7 +2336,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     '$count/5 gösterge $label diyor  ·  ${fmtPct(r.summary.confidence, digits: 0)} güven',
-                    style: context.t.bodySmall?.copyWith(color: Sandik.text58),
+                    style: context.t.bodySmall?.copyWith(color: context.c.text58),
                   ),
                 ],
               ),
@@ -2351,22 +2381,22 @@ class _LeaderboardChip extends StatelessWidget {
           padding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: Sandik.amber.withValues(alpha: 0.14),
+            color: context.c.amberFill.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(SandikRadius.md),
             border:
-                Border.all(color: Sandik.amber.withValues(alpha: 0.45)),
+                Border.all(color: context.c.amberFill.withValues(alpha: 0.45)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.emoji_events_rounded,
-                  size: 13, color: Sandik.amber),
+              Icon(Icons.emoji_events_rounded,
+                  size: 13, color: context.c.amberText),
               const SizedBox(width: 4),
               Text(
                 'YARIŞ',
                 style: context.t.labelMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: Sandik.amber,
+                  color: context.c.amberText,
                   letterSpacing: 0.6,
                 ),
               ),
@@ -2393,15 +2423,15 @@ class _PortfolioFullscreenChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.04),
+            color: context.c.overlay,
             borderRadius: BorderRadius.circular(SandikRadius.md),
             border:
-                Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                Border.all(color: context.c.hairline),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.fullscreen_rounded,
             size: 16,
-            color: Sandik.text58,
+            color: context.c.text58,
           ),
         ),
       ),

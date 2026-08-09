@@ -222,7 +222,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Stack(
       children: [
         CupertinoPageScaffold(
-          backgroundColor: Sandik.background,
+          backgroundColor: context.c.background,
           child: SafeArea(
             child: Column(
               children: [
@@ -238,10 +238,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           style: context.t.headlineLarge?.copyWith(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
-                            color: CupertinoColors.white,
+                            color: context.c.text90,
                           ),
                         ),
                       ),
+                      const _ThemeToggleButton(),
+                      const SizedBox(width: 8),
                       CupertinoButton(
                         minimumSize: Size.zero,
                         padding: EdgeInsets.zero,
@@ -254,7 +256,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ),
                         child: _ActionIcon(
                           icon: Icons.settings_outlined,
-                          color: Sandik.text90,
+                          color: context.c.text90,
                           disabled: _busy,
                           semanticLabel: 'Ayarlar',
                         ),
@@ -318,10 +320,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               padding: const EdgeInsets.symmetric(
                   horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
-                color: Sandik.surface1,
+                color: context.c.surface1,
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08)),
+                    color: context.c.overlay),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -335,7 +337,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ? 'Kod üretiliyor...'
                             : 'İşleniyor...',
                     style: context.t.titleMedium?.copyWith(
-                        color: Colors.white),
+                        color: context.c.text90),
                   ),
                 ],
               ),
@@ -352,23 +354,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 32,
-            backgroundColor: Sandik.amber.withValues(alpha: 0.1),
+            backgroundColor: context.c.amberFill.withValues(alpha: 0.1),
             child: Text(
               user.displayName.isNotEmpty
                   ? user.displayName[0].toUpperCase()
                   : '?',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Sandik.amber),
+                  color: context.c.amberText),
             ),
           ),
           const SizedBox(width: 20),
@@ -379,12 +381,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Text(
                   user.displayName,
                   style: context.t.headlineMedium?.copyWith(
-                      color: Colors.white),
+                      color: context.c.text90),
                 ),
                 const SizedBox(height: 4),
                 Text(user.email,
                     style:
-                        context.t.titleMedium?.copyWith(color: Sandik.text36)),
+                        context.t.titleMedium?.copyWith(color: context.c.text36)),
               ],
             ),
           ),
@@ -400,18 +402,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-              color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+              color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('Davet Kodu Üret',
                   style: context.t.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.white)),
+                      color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
                 'Kodu ortağınıza gönderin. Ortak kodu girince size onay isteği gelir.',
-                style: context.t.bodyMedium?.copyWith(color: Sandik.text36),
+                style: context.t.bodyMedium?.copyWith(color: context.c.text36),
               ),
               const SizedBox(height: 20),
               if (_generatedCode != null) ...[
@@ -428,7 +430,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           _generatedCode!.split(':')[0],
                           style: context.t.numLarge.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Sandik.amber,
+                            color: context.c.amberText,
                             letterSpacing: 4,
                           ),
                         ),
@@ -445,8 +447,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           await Share.share(msg, subject: 'Sandık Ortak Daveti');
                           AnalyticsService.instance.logPartnerInviteSent();
                         },
-                        child: const Icon(Icons.share_rounded,
-                            color: Sandik.amber),
+                        child: Icon(Icons.share_rounded,
+                            color: context.c.amberText),
                       ),
                     ],
                   ),
@@ -460,15 +462,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   height: 46,
                   decoration: BoxDecoration(
                     color: _generating
-                        ? Sandik.amber.withValues(alpha: 0.05)
-                        : Sandik.amber.withValues(alpha: 0.1),
+                        ? context.c.amberFill.withValues(alpha: 0.05)
+                        : context.c.amberFill.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     _generating ? 'Üretiliyor...' : 'Kod Üret',
                     style: context.t.titleMedium?.copyWith(
-                        color: Sandik.amber, fontWeight: FontWeight.w600),
+                        color: context.c.amberText, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -480,18 +482,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-              color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+              color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('Ortak Kodunu Gir',
                   style: context.t.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.white)),
+                      color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
                 'Ortağınızın size gönderdiği kodu girin (örn: ABCDE-12345). Onay vermesi beklenir.',
-                style: context.t.bodyMedium?.copyWith(color: Sandik.text36),
+                style: context.t.bodyMedium?.copyWith(color: context.c.text36),
               ),
               const SizedBox(height: 16),
               if (_pendingInviteId != null) ...[
@@ -501,8 +503,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   controller: _codeCtrl,
                   keyboardType: TextInputType.text,
                   textCapitalization: TextCapitalization.characters,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: Sandik.inputDecoration('XXXXX-XXXXX'),
+                  // Ortaklık kodu sözlükte olmayan bir dizidir; otomatik
+                  // düzeltme ve öneri girilen kodu bozar.
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textInputAction: TextInputAction.done,
+                  style: TextStyle(color: context.c.text90),
+                  decoration: context.inputDecoration('XXXXX-XXXXX'),
                 ),
                 const SizedBox(height: 16),
                 CupertinoButton(
@@ -512,15 +519,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     height: 46,
                     decoration: BoxDecoration(
                       color: _submitting
-                          ? Sandik.gain.withValues(alpha: 0.05)
-                          : Sandik.gain.withValues(alpha: 0.1),
+                          ? context.c.gain.withValues(alpha: 0.05)
+                          : context.c.gain.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(SandikRadius.md),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       _submitting ? 'Gönderiliyor...' : 'Ortaklık İste',
                       style: context.t.titleMedium?.copyWith(
-                          color: Sandik.gain, fontWeight: FontWeight.w600),
+                          color: context.c.gain, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -536,10 +543,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Sandik.amber.withValues(alpha: 0.08),
+        color: context.c.amberFill.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border:
-            Border.all(color: Sandik.amber.withValues(alpha: 0.3), width: 1.5),
+            Border.all(color: context.c.amberFill.withValues(alpha: 0.3), width: 1.5),
       ),
       child: Column(
         children: [
@@ -552,7 +559,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   '$_pendingPartnerName onayı bekleniyor...',
                   style: context.t.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.white),
+                      color: context.c.text90),
                 ),
               ),
             ],
@@ -564,7 +571,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             minimumSize: const Size(44, 44),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text('İptal',
-                style: context.t.bodyMedium?.copyWith(color: Sandik.text36)),
+                style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
           ),
         ],
       ),
@@ -575,15 +582,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       child: Column(
         children: [
-          const Icon(Icons.people_outline_rounded,
-              size: 48, color: Sandik.text36),
+          Icon(Icons.people_outline_rounded,
+              size: 48, color: context.c.text36),
           const SizedBox(height: 16),
           Text(
             'Henüz ortağınız yok',
-            style: context.t.titleMedium?.copyWith(color: Sandik.text36),
+            style: context.t.titleMedium?.copyWith(color: context.c.text36),
             textAlign: TextAlign.center,
           ),
         ],
@@ -596,19 +603,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       child: Row(
         children: [
           CircleAvatar(
             backgroundColor: p.isActive
-                ? Sandik.gain.withValues(alpha: 0.1)
-                : Sandik.text36.withValues(alpha: 0.1),
+                ? context.c.gain.withValues(alpha: 0.1)
+                : context.c.text36.withValues(alpha: 0.1),
             child: Text(
               p.user.displayName.isNotEmpty
                   ? p.user.displayName[0].toUpperCase()
                   : '?',
               style: TextStyle(
-                  color: p.isActive ? Sandik.gain : Sandik.text36,
+                  color: p.isActive ? context.c.gain : context.c.text36,
                   fontWeight: FontWeight.bold),
             ),
           ),
@@ -620,11 +627,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Text(p.user.displayName,
                     style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.white)),
+                        color: context.c.text90)),
                 Text(
                   p.isActive ? 'Görünür' : 'Gizlendi',
                   style: context.t.titleSmall?.copyWith(
-                      color: p.isActive ? Sandik.gain : Sandik.text36),
+                      color: p.isActive ? context.c.gain : context.c.text36),
                 ),
               ],
             ),
@@ -645,7 +652,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               icon: p.isActive
                   ? Icons.visibility_off_rounded
                   : Icons.visibility_rounded,
-              color: p.isActive ? Sandik.text58 : Sandik.gain,
+              color: p.isActive ? context.c.text58 : context.c.gain,
               disabled: _busy,
               semanticLabel: p.isActive ? 'Ortağı gizle' : 'Ortağı göster',
             ),
@@ -659,7 +666,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 : () => _confirmRemove(p.user.id, p.user.displayName),
             child: _ActionIcon(
               icon: Icons.delete_outline_rounded,
-              color: Sandik.loss,
+              color: context.c.loss,
               disabled: _busy,
               semanticLabel: 'Ortağı sil',
             ),
@@ -826,19 +833,19 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Sandik.amber.withValues(alpha: 0.06),
+        color: context.c.amberFill.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border:
-            Border.all(color: Sandik.amber.withValues(alpha: 0.3), width: 1.5),
+            Border.all(color: context.c.amberFill.withValues(alpha: 0.3), width: 1.5),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Sandik.amber.withValues(alpha: 0.15),
+            backgroundColor: context.c.amberFill.withValues(alpha: 0.15),
             child: Text(
               _requesterName.isNotEmpty ? _requesterName[0].toUpperCase() : '?',
-              style: const TextStyle(
-                  color: Sandik.amber, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: context.c.amberText, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 16),
@@ -849,10 +856,10 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
                 Text(_requesterName,
                     style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.white)),
+                        color: context.c.text90)),
                 Text('Ortaklık istiyor',
                     style:
-                        context.t.titleSmall?.copyWith(color: Sandik.text36)),
+                        context.t.titleSmall?.copyWith(color: context.c.text36)),
               ],
             ),
           ),
@@ -866,7 +873,7 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
               button: true,
               label: 'Ortaklık isteğini reddet',
               child:
-                  const Icon(Icons.close_rounded, color: Sandik.loss, size: 22),
+                  Icon(Icons.close_rounded, color: context.c.loss, size: 22),
             ),
           ),
           CupertinoButton(
@@ -877,7 +884,7 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
               button: true,
               label: 'Ortaklık isteğini kabul et',
               child:
-                  const Icon(Icons.check_rounded, color: Sandik.gain, size: 22),
+                  Icon(Icons.check_rounded, color: context.c.gain, size: 22),
             ),
           ),
         ],
@@ -896,7 +903,11 @@ class _SectionTitle extends StatelessWidget {
         style: context.t.labelLarge?.copyWith(
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,
-          color: Sandik.text36,
+          // Bölüm başlığı YAPISAL bilgidir, dekorasyon değil: ekranın
+          // neresinde olduğunu söyler. text36 (3.79:1) yalnızca yardımcı
+          // metin eşiğini geçer — light modda okunmuyordu. text58 (6.90:1)
+          // hiyerarşiyi bozmadan AA'yı sağlar.
+          color: context.c.text58,
         ),
       );
 }
@@ -934,6 +945,64 @@ class _ActionIcon extends StatelessWidget {
   }
 }
 
+/// Tema modu hızlı geçişi — Profil başlığında.
+///
+/// **Neden burada:** iOS HIG ve Material 3, görünüm ayarını hesap/ayarlar
+/// bölgesine koyar. Ana sayfa başlığına eklemek düşünüldü ama orada zaten
+/// dört aksiyon var ve satır 17px taşıyordu (bkz. `home_screen` yorumu);
+/// beşincisi yerleşimi kırardı. Profil başlığı hem boş hem de kullanıcının
+/// "kendi tercihlerim" diye aradığı yer.
+///
+/// Ayarlar'daki üçlü seçici (`_ThemeModePicker`) kalır — bu onun kısayolu.
+/// Tek dokunuşla **açık ↔ koyu** arasında gider; "sistem" bilinçli bir
+/// tercih olduğu için yalnızca Ayarlar'dan seçilir. Kullanıcı sistemdeyken
+/// dokunursa, o an ekranda ne görüyorsa onun tersine geçer.
+class _ThemeToggleButton extends ConsumerWidget {
+  const _ThemeToggleButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Tercih değişince yeniden çizilmek için izlenir; kararı `context`
+    // verir çünkü `system` modda ekrandaki gerçek parlaklık cihazdan gelir.
+    ref.watch(themeModeProvider);
+    final showingLight = context.isLight;
+    final next = showingLight ? ThemeMode.dark : ThemeMode.light;
+
+    return SandikTappable(
+      semanticLabel:
+          showingLight ? 'Koyu temaya geç' : 'Açık temaya geç',
+      onTap: () => ref.read(themeModeProvider.notifier).set(next),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: context.c.text90.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(SandikRadius.md),
+          border: Border.all(color: context.c.text90.withValues(alpha: 0.18)),
+        ),
+        child: Center(
+          // Gösterilen ikon HEDEFI anlatır: açık temadayken ay ikonu
+          // "koyuya geç" der. Mevcut durumu göstermek daha yaygın bir
+          // hata — kullanıcı ikona bakıp ne olacağını bilmek ister.
+          child: AnimatedSwitcher(
+            duration: SandikMotion.stateOf(context),
+            switchInCurve: SandikMotion.enter,
+            switchOutCurve: SandikMotion.enter,
+            child: Icon(
+              showingLight
+                  ? Icons.dark_mode_rounded
+                  : Icons.light_mode_rounded,
+              key: ValueKey(showingLight),
+              color: context.c.text90,
+              size: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── Premium banner ────────────────────────────────────────────────────────
 
 class _ProfilePremiumBanner extends ConsumerWidget {
@@ -958,12 +1027,12 @@ class _ProfilePremiumBanner extends ConsumerWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Sandik.amber.withValues(alpha: 0.20),
-              Sandik.gold.withValues(alpha: 0.08),
+              context.c.amberFill.withValues(alpha: 0.20),
+              context.c.gold.withValues(alpha: 0.08),
             ],
           ),
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: Sandik.amber.withValues(alpha: 0.40)),
+          border: Border.all(color: context.c.amberFill.withValues(alpha: 0.40)),
         ),
         child: Row(
           children: [
@@ -971,11 +1040,11 @@ class _ProfilePremiumBanner extends ConsumerWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Sandik.amber.withValues(alpha: 0.20),
+                color: context.c.amberFill.withValues(alpha: 0.20),
                 borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
-              child: const Icon(Icons.workspace_premium_rounded,
-                  color: Sandik.amber, size: 22),
+              child: Icon(Icons.workspace_premium_rounded,
+                  color: context.c.amberText, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -985,12 +1054,12 @@ class _ProfilePremiumBanner extends ConsumerWidget {
                   Text('Sandık Premium',
                       style: context.t.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: Colors.white)),
+                          color: context.c.text90)),
                   const SizedBox(height: 2),
                   Text(
                     'Sınırsız varlık, premium göstergeler, günde 2 sinyal analizi',
                     style: context.t.bodySmall?.copyWith(
-                        color: Sandik.text58,
+                        color: context.c.text58,
                         height: 1.35),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -999,8 +1068,8 @@ class _ProfilePremiumBanner extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: Sandik.amber),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 14, color: context.c.amberText),
           ],
         ),
       ),
@@ -1016,9 +1085,9 @@ class _PremiumActiveBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: Sandik.gain.withValues(alpha: 0.10),
+        color: context.c.gain.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Sandik.gain.withValues(alpha: 0.35)),
+        border: Border.all(color: context.c.gain.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
@@ -1026,11 +1095,11 @@ class _PremiumActiveBadge extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: Sandik.gain.withValues(alpha: 0.18),
+              color: context.c.gain.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(SandikRadius.sm),
             ),
-            child: const Icon(Icons.check_circle_outline_rounded,
-                color: Sandik.gain, size: 18),
+            child: Icon(Icons.check_circle_outline_rounded,
+                color: context.c.gain, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1040,10 +1109,10 @@ class _PremiumActiveBadge extends StatelessWidget {
                 Text('Premium aktif',
                     style: context.t.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: Colors.white)),
+                        color: context.c.text90)),
                 const SizedBox(height: 2),
                 Text('Tüm gelişmiş özellikler açık',
-                    style: context.t.bodySmall?.copyWith(color: Sandik.text58)),
+                    style: context.t.bodySmall?.copyWith(color: context.c.text58)),
               ],
             ),
           ),

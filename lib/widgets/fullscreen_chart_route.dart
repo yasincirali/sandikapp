@@ -56,7 +56,7 @@ class _FullscreenChartRouteState extends State<FullscreenChartRoute> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -66,16 +66,16 @@ class _FullscreenChartRouteState extends State<FullscreenChartRoute> {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: Colors.white70),
+                    icon: Icon(Icons.close_rounded,
+                        color: context.c.text58),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   if (widget.title != null)
                     Expanded(
                       child: Text(
                         widget.title!,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.c.text90,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),

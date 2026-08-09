@@ -76,19 +76,19 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Sandik.surface1,
+          color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          border: Border.all(color: context.c.hairline),
         ),
         child: Row(
           children: [
-            const Icon(Icons.tune_rounded, color: Sandik.text58, size: 18),
+            Icon(Icons.tune_rounded, color: context.c.text58, size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Bu varlık türü için hiçbir gösterge seçilmemiş. '
                 'Profil → Sinyal Ayarları\'ndan aktifleştir.',
-                style: context.t.titleSmall?.copyWith(color: Sandik.text58),
+                style: context.t.titleSmall?.copyWith(color: context.c.text58),
               ),
             ),
           ],
@@ -99,7 +99,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
     final isSell = summary.signal == SignalType.sell;
     final isNeutral = summary.signal == SignalType.neutral;
 
-    final signalColor = isBuy ? Sandik.gain : isSell ? Sandik.loss : Sandik.text58;
+    final signalColor = isBuy ? context.c.gain : isSell ? context.c.loss : context.c.text58;
     // Yasal not: kesin "AL/SAT" ifadesi yerine trend yönü kullanıyoruz.
     final signalLabel = isBuy ? 'YUKARI TREND' : isSell ? 'AŞAĞI TREND' : 'YATAY';
     final signalIcon = isBuy ? Icons.trending_up_rounded
@@ -122,7 +122,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                 style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
-                  color: Sandik.text36,
+                  color: context.c.text58,
                 ),
               ),
             ),
@@ -132,7 +132,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                 '· ${enabledIds.length}/${IndicatorId.all.length} gösterge',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+                style: context.t.bodySmall?.copyWith(color: context.c.text36),
               ),
             ),
             const Spacer(),
@@ -144,13 +144,13 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.tune_rounded, size: 14, color: Sandik.amber),
+                  Icon(Icons.tune_rounded, size: 14, color: context.c.amberText),
                   const SizedBox(width: 4),
                   Text(
                     'Göstergeleri Ayarla',
                     style: context.t.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Sandik.amber,
+                      color: context.c.amberText,
                     ),
                   ),
                 ],
@@ -202,7 +202,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                     const SizedBox(height: 2),
                     Text(
                       '${summary.buyCount} AL · ${summary.sellCount} SAT · ${indicators.length - summary.buyCount - summary.sellCount} NÖTR',
-                      style: context.t.titleSmall?.copyWith(color: Sandik.text58),
+                      style: context.t.titleSmall?.copyWith(color: context.c.text58),
                     ),
                   ],
                 ),
@@ -222,7 +222,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                   ),
                   Text(
                     'güven',
-                    style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+                    style: context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),
                 ],
               ),
@@ -234,9 +234,9 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
         // ── Gösterge listesi ─────────────────────────────────────────────────
         Container(
           decoration: BoxDecoration(
-            color: Sandik.surface1,
+            color: context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(color: context.c.hairline),
           ),
           child: Column(
             children: indicators.asMap().entries.map((entry) {
@@ -244,10 +244,10 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
               final ind = entry.value;
               final isLast = i == indicators.length - 1;
               final c = ind.signal == SignalType.buy
-                  ? Sandik.gain
+                  ? context.c.gain
                   : ind.signal == SignalType.sell
-                      ? Sandik.loss
-                      : Sandik.text58;
+                      ? context.c.loss
+                      : context.c.text58;
               final lbl = ind.signal == SignalType.buy
                   ? 'AL'
                   : ind.signal == SignalType.sell
@@ -278,14 +278,14 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                                 ind.name,
                                 style: context.t.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: context.c.text90,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 ind.description,
                                 style: context.t.bodySmall
-                                    ?.copyWith(color: Sandik.text36),
+                                    ?.copyWith(color: context.c.text36),
                               ),
                             ],
                           ),
@@ -312,7 +312,7 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
                   if (!isLast)
                     Divider(
                       height: 1,
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: context.c.overlay,
                       indent: 31,
                     ),
                 ],
@@ -470,7 +470,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     }
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Sandik.surface1,
+      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -512,11 +512,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                color: context.c.danger.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                     color:
-                        const Color(0xFFEF4444).withValues(alpha: 0.25)),
+                        context.c.danger.withValues(alpha: 0.25)),
               ),
               child: const Text(
                 'Bu bir satış değil — kayıt tamamen silinir ve geçmiş '
@@ -534,7 +534,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444)),
+                backgroundColor: context.c.danger),
             onPressed: () async {
               Navigator.pop(dlg);
               try {
@@ -662,7 +662,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
         spots: activeSpots,
         lineColor: Sandik
             .amber, // Use Amber for active tracking to match design system focus
-        areaGradientStart: Sandik.amber.withValues(alpha: 0.12),
+        areaGradientStart: context.c.amberFill.withValues(alpha: 0.12),
         areaGradientEnd: Colors.transparent,
         thickness: 3.5, // Thicker active line
       ));
@@ -676,7 +676,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: context.c.overlay,
         borderRadius: BorderRadius.circular(SandikRadius.md),
       ),
       padding: const EdgeInsets.all(3),
@@ -688,10 +688,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
               onTap: () => _selectPeriod(i),
               behavior: HitTestBehavior.opaque,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: SandikMotion.of(context, const Duration(milliseconds: 200)),
                 curve: SandikMotion.enter,
                 decoration: BoxDecoration(
-                  color: isSelected ? Sandik.surface2 : Colors.transparent,
+                  color: isSelected ? context.c.surface2 : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Center(
@@ -702,8 +702,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected
-                          ? Sandik.gold
-                          : Colors.white.withValues(alpha: 0.35),
+                          ? context.c.gold
+                          : context.c.text36,
                     ),
                   ),
                 ),
@@ -734,40 +734,40 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: widget.showBackButton
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    size: 20, color: Colors.white),
+                icon: Icon(Icons.arrow_back_ios_new_rounded,
+                    size: 20, color: context.c.text90),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
         title: Text(
           'Performans: ${widget.asset.name}',
-          style: context.t.headlineSmall?.copyWith(color: Colors.white),
+          style: context.t.headlineSmall?.copyWith(color: context.c.text90),
         ),
         actions: [
           if (isOwnAsset && !widget.showBackButton)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+              icon: Icon(Icons.more_vert_rounded, color: context.c.text90),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SandikRadius.md)),
               onSelected: (v) {
                 if (v == 'delete') _confirmDelete(context);
               },
-              itemBuilder: (_) => const [
+              itemBuilder: (_) => [
                 PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
                       Icon(Icons.delete_outline_rounded,
-                          color: Color(0xFFEF4444), size: 20),
-                      SizedBox(width: 10),
+                          color: context.c.danger, size: 20),
+                      const SizedBox(width: 10),
                       Text('Sil',
-                          style: TextStyle(color: Color(0xFFEF4444))),
+                          style: TextStyle(color: context.c.danger)),
                     ],
                   ),
                 ),
@@ -879,7 +879,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                       (s) => !s.dashed && s.spots.isNotEmpty,
                       orElse: () => TransactionSegment(
                         spots: const [],
-                        lineColor: Sandik.amber,
+                        lineColor: context.c.amberText,
                         areaGradientStart: Colors.transparent,
                         areaGradientEnd: Colors.transparent,
                         thickness: 3.5,
@@ -925,7 +925,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                       (s) => !s.dashed && s.spots.isNotEmpty,
                       orElse: () => TransactionSegment(
                         spots: const [],
-                        lineColor: Sandik.amber,
+                        lineColor: context.c.amberText,
                         areaGradientStart: Colors.transparent,
                         areaGradientEnd: Colors.transparent,
                         thickness: 3.5,
@@ -952,7 +952,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                         (s) => !s.dashed && s.spots.isNotEmpty,
                         orElse: () => TransactionSegment(
                           spots: const [],
-                          lineColor: Sandik.amber,
+                          lineColor: context.c.amberText,
                           areaGradientStart: Colors.transparent,
                           areaGradientEnd: Colors.transparent,
                           thickness: 3.5,
@@ -977,7 +977,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                       (s) => !s.dashed && s.spots.isNotEmpty,
                       orElse: () => TransactionSegment(
                         spots: const [],
-                        lineColor: Sandik.amber,
+                        lineColor: context.c.amberText,
                         areaGradientStart: Colors.transparent,
                         areaGradientEnd: Colors.transparent,
                         thickness: 3.5,
@@ -1001,7 +1001,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                         : 0.0;
                     final gainPositive = totalPnlTRY >= 0;
                     final endpointColor =
-                        gainPositive ? Sandik.gain : Sandik.loss;
+                        gainPositive ? context.c.gain : context.c.loss;
 
                     // Lot marker'ları için: gün-hassasiyetli tarih → (isSell) map.
                     // Aynı güne birden fazla işlem düşerse buy önceliklidir
@@ -1111,12 +1111,12 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                         // Yeni periyot yüklenirken ince bar — eski grafik
                         // ekranda kalır, kontroller tıklanabilir.
                         if (waiting)
-                          const SizedBox(
+                          SizedBox(
                             height: 2,
                             child: LinearProgressIndicator(
                               minHeight: 2,
                               backgroundColor: Colors.transparent,
-                              color: Sandik.amber,
+                              color: context.c.amberFill,
                             ),
                           ),
                         if (anchorSpot != null && lastSpot != null)
@@ -1245,15 +1245,15 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             // verisi değil" hissini korur.
                             return AnimatedOpacity(
                               opacity: isStale ? 0.35 : 1.0,
-                              duration: const Duration(milliseconds: 160),
+                              duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
                               curve: SandikMotion.enter,
                               child: Container(
                           height: 400,
                           decoration: BoxDecoration(
-                            color: Sandik.surface1,
+                            color: context.c.surface1,
                             borderRadius: BorderRadius.circular(SandikRadius.md),
                             border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.05)),
+                                color: context.c.overlay),
                           ),
                           padding: const EdgeInsets.only(
                               top: 36, right: 16, left: 8, bottom: 16),
@@ -1347,7 +1347,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     (viewMaxY - viewMinY) / 4)
                                 : 50000,
                             getDrawingHorizontalLine: (value) => FlLine(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: context.c.overlay,
                               strokeWidth: 1,
                             ),
                           ),
@@ -1358,7 +1358,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             show: true,
                             border: Border(
                               right: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.10),
+                                color: context.c.overlay,
                                 width: 1,
                               ),
                             ),
@@ -1396,7 +1396,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       // Eksen etiketi — tabular figür, tik
                                       // değerleri değişince kaymasın.
                                       style: context.t.numSmall.copyWith(
-                                        color: Sandik.text58,
+                                        color: context.c.text58,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -1464,7 +1464,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         // Eksen etiketi — tabular figür, tik
                                         // değerleri değişince kaymasın.
                                         style: context.t.numSmall.copyWith(
-                                          color: Sandik.text58,
+                                          color: context.c.text58,
                                           fontSize: 11,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -1480,7 +1480,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                   horizontalLines: [
                                     HorizontalLine(
                                       y: anchorY,
-                                      color: Colors.white.withValues(alpha: 0.35),
+                                      color: context.c.text36,
                                       strokeWidth: 1,
                                       dashArray: const [4, 4],
                                       label: HorizontalLineLabel(
@@ -1491,7 +1491,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         style: context.t.labelMedium?.copyWith(
                                           letterSpacing: 0,
                                           fontWeight: FontWeight.w800,
-                                          color: Colors.white
+                                          color: context.c.text90
                                               .withValues(alpha: 0.75),
                                         ),
                                         labelResolver: (_) =>
@@ -1504,7 +1504,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                     // dashed vertical marker.
                                     VerticalLine(
                                       x: anchorSpot.x,
-                                      color: Sandik.amber
+                                      color: context.c.amberText
                                           .withValues(alpha: 0.4),
                                       strokeWidth: 1.2,
                                       dashArray: const [4, 4],
@@ -1516,7 +1516,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         style: context.t.labelMedium?.copyWith(
                                           letterSpacing: 0,
                                           fontWeight: FontWeight.w700,
-                                          color: Sandik.amber,
+                                          color: context.c.amberText,
                                         ),
                                         labelResolver: (_) {
                                           final buyDate = startDate.add(
@@ -1558,7 +1558,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               LineChartBarData(
                                 spots: ma20Spots,
                                 isCurved: false,
-                                color: Sandik.text58,
+                                color: context.c.text58,
                                 barWidth: 1.4,
                                 isStrokeCapRound: true,
                                 dashArray: const [3, 3],
@@ -1616,8 +1616,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                             spot.y == anchorSpot.y) {
                                           return FlDotCirclePainter(
                                             radius: 5.5,
-                                            color: Sandik.amber,
-                                            strokeColor: Colors.white,
+                                            color: context.c.amberText,
+                                            strokeColor: context.c.text90,
                                             strokeWidth: 2,
                                           );
                                         }
@@ -1628,7 +1628,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                           return FlDotCirclePainter(
                                             radius: 5.5,
                                             color: endpointColor,
-                                            strokeColor: Colors.white
+                                            strokeColor: context.c.text90
                                                 .withValues(alpha: 0.85),
                                             strokeWidth: 1.5,
                                           );
@@ -1640,16 +1640,16 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                           return FlDotCirclePainter(
                                             radius: 4.5,
                                             color: isSell
-                                                ? Sandik.loss
-                                                : Sandik.gain,
-                                            strokeColor: Colors.white,
+                                                ? context.c.loss
+                                                : context.c.gain,
+                                            strokeColor: context.c.text90,
                                             strokeWidth: 2,
                                           );
                                         }
                                         return FlDotCirclePainter(
                                           radius: 3.0,
-                                          color: Sandik.amber,
-                                          strokeColor: Sandik.background,
+                                          color: context.c.amberText,
+                                          strokeColor: context.c.background,
                                           strokeWidth: 1.5,
                                         );
                                       },
@@ -1663,9 +1663,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                                 seg.areaGradientEnd,
                                               ]
                                             : [
-                                                Sandik.amber
+                                                context.c.amberText
                                                     .withValues(alpha: 0.22),
-                                                Sandik.amber
+                                                context.c.amberText
                                                     .withValues(alpha: 0.06),
                                                 Colors.transparent,
                                               ],
@@ -1688,7 +1688,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             handleBuiltInTouches: false,
                             touchTooltipData: LineTouchTooltipData(
                               getTooltipColor: (_) =>
-                                  Sandik.surface1.withValues(alpha: 0.95),
+                                  context.c.surface1.withValues(alpha: 0.95),
                               tooltipRoundedRadius: 10,
                               tooltipPadding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 8),
@@ -1715,7 +1715,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                   return LineTooltipItem(
                                     tipText,
                                     context.t.numSmall.copyWith(
-                                      color: Colors.white,
+                                      color: context.c.text90,
                                       fontWeight: FontWeight.w800,
                                     ),
                                     children: [
@@ -1723,7 +1723,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         text: '\n$dateLabel',
                                         style: context.t.labelMedium?.copyWith(
                                           letterSpacing: 0,
-                                          color: Sandik.text58,
+                                          color: context.c.text58,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -1780,9 +1780,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: context.c.overlay,
                     borderRadius: BorderRadius.circular(SandikRadius.md),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                    border: Border.all(color: context.c.hairline),
                   ),
                   // Etiket + değer yan yana; ikisi de sınırsızdı ve büyük
                   // miktarlarda satır taşıyordu (105px). Etiket kırpılabilir,
@@ -1797,7 +1797,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: context.t.labelLarge?.copyWith(
-                              color: Sandik.amber,
+                              color: context.c.amberText,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.2),
                         ),
@@ -1811,7 +1811,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             '${fmtNum(_currentQuantity, digits: 2)} ${widget.asset.unitType}',
                             maxLines: 1,
                             style: context.t.numLarge.copyWith(
-                                color: Sandik.gold,
+                                color: context.c.gold,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700),
                           ),
@@ -1862,7 +1862,7 @@ class _PeriodChangeRow extends StatelessWidget {
         changeTRY.abs().round() == 0 && (changePct?.abs() ?? 0) < 0.005;
     final positive = changeTRY >= 0;
     final color =
-        isFlat ? Sandik.text36 : (positive ? Sandik.gain : Sandik.loss);
+        isFlat ? context.c.text36 : (positive ? context.c.gain : context.c.loss);
     final tryFmt = NumberFormat.currency(
         locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
 
@@ -1870,7 +1870,7 @@ class _PeriodChangeRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
       ),
       child: Row(
@@ -1885,7 +1885,7 @@ class _PeriodChangeRow extends StatelessWidget {
               style: context.t.labelSmall?.copyWith(
                 letterSpacing: 0.8,
                 fontWeight: FontWeight.w700,
-                color: Sandik.text36,
+                color: context.c.text36,
               ),
             ),
           ),
@@ -1972,8 +1972,8 @@ class _PnlSummaryStrip extends StatelessWidget {
     final bool isFlat =
         totalPnl.abs().round() == 0 && pnlPct.abs() < 0.005;
     final Color accent = isFlat
-        ? Sandik.text36
-        : (isPositive ? Sandik.gain : Sandik.loss);
+        ? context.c.text36
+        : (isPositive ? context.c.gain : context.c.loss);
     final String sign = isPositive ? '+' : '−';
     final IconData arrow = isPositive
         ? Icons.trending_up_rounded
@@ -1982,7 +1982,7 @@ class _PnlSummaryStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border(
           left: BorderSide(color: accent.withValues(alpha: 0.8), width: 3),
@@ -1998,7 +1998,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                     style: context.t.labelSmall?.copyWith(
                         letterSpacing: 0.8,
                         fontWeight: FontWeight.w700,
-                        color: Sandik.text36)),
+                        color: context.c.text36)),
                 const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
@@ -2006,15 +2006,15 @@ class _PnlSummaryStrip extends StatelessWidget {
                   child: Text(_fmtPrice(anchorUnitPrice),
                       maxLines: 1,
                       style: context.t.numSmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.75))),
+                          color: context.c.text58)),
                 ),
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Icon(Icons.arrow_forward_rounded,
-                size: 14, color: Sandik.text36),
+                size: 14, color: context.c.text36),
           ),
           Expanded(
             child: Column(
@@ -2024,7 +2024,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                     style: context.t.labelSmall?.copyWith(
                         letterSpacing: 0.8,
                         fontWeight: FontWeight.w700,
-                        color: Sandik.text36)),
+                        color: context.c.text36)),
                 const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
@@ -2034,7 +2034,7 @@ class _PnlSummaryStrip extends StatelessWidget {
                       style: context.t.numSmall.copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white)),
+                          color: context.c.text90)),
                 ),
               ],
             ),
@@ -2045,21 +2045,21 @@ class _PnlSummaryStrip extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: context.c.overlay,
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border:
-                    Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                    Border.all(color: context.c.hairline),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.horizontal_rule_rounded,
-                      size: 14, color: Sandik.text58),
+                  Icon(Icons.horizontal_rule_rounded,
+                      size: 14, color: context.c.text58),
                   const SizedBox(width: 4),
                   Text('Değişim yok',
                       style: context.t.bodySmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: Sandik.text58)),
+                          color: context.c.text58)),
                 ],
               ),
             )
@@ -2124,16 +2124,16 @@ class _FullscreenChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.04),
+            color: context.c.overlay,
             borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: context.c.overlay,
             ),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.fullscreen_rounded,
             size: 16,
-            color: Sandik.text58,
+            color: context.c.text58,
           ),
         ),
       ),
@@ -2161,19 +2161,19 @@ class _OverlayChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
           curve: SandikMotion.enter,
           padding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: active
-                ? Sandik.amber.withValues(alpha: 0.18)
-                : Colors.white.withValues(alpha: 0.04),
+                ? context.c.amberFill.withValues(alpha: 0.18)
+                : context.c.overlay,
             borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(
               color: active
-                  ? Sandik.amber.withValues(alpha: 0.55)
-                  : Colors.white.withValues(alpha: 0.08),
+                  ? context.c.amberFill.withValues(alpha: 0.55)
+                  : context.c.overlay,
             ),
           ),
           child: Row(
@@ -2184,14 +2184,14 @@ class _OverlayChip extends StatelessWidget {
                     ? Icons.check_rounded
                     : Icons.horizontal_rule_rounded,
                 size: 12,
-                color: active ? Sandik.amber : Sandik.text58,
+                color: active ? context.c.amberText : context.c.text58,
               ),
               const SizedBox(width: 4),
               Text(
                 label,
                 style: context.t.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: active ? Sandik.amber : Sandik.text58,
+                  color: active ? context.c.amberText : context.c.text58,
                   letterSpacing: 0.4,
                 ),
               ),
@@ -2232,9 +2232,9 @@ class _CompareStrip extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         physics: const ClampingScrollPhysics(),
         children: [
-          // Ana varlık rozeti — renk = Sandik.amber
+          // Ana varlık rozeti — renk = context.c.amberText
           _LegendBadge(
-            color: Sandik.amber,
+            color: context.c.amberText,
             label: primaryTicker,
           ),
           const SizedBox(width: 8),
@@ -2257,7 +2257,7 @@ class _CompareStrip extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: context.c.overlay,
                     style: BorderStyle.solid,
                   ),
                 ),
@@ -2269,14 +2269,14 @@ class _CompareStrip extends StatelessWidget {
                           ? Icons.add_rounded
                           : Icons.swap_horiz_rounded,
                       size: 14,
-                      color: Sandik.text58,
+                      color: context.c.text58,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       compare == null ? 'Karşılaştır' : 'Değiştir',
                       style: context.t.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: Sandik.text58,
+                        color: context.c.text58,
                         letterSpacing: 0.4,
                       ),
                     ),
@@ -2547,7 +2547,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
       return Center(
         child: Text(
           'Sonuç yok.',
-          style: context.t.bodyMedium?.copyWith(color: Sandik.text58),
+          style: context.t.bodyMedium?.copyWith(color: context.c.text58),
         ),
       );
     }
@@ -2568,7 +2568,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
           title: Text(
             c.ticker,
             style: context.t.titleMedium?.copyWith(
-              color: Colors.white,
+              color: context.c.text90,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -2576,10 +2576,10 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
             c.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: context.t.bodySmall?.copyWith(color: Sandik.text58),
+            style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
           trailing: selected
-              ? const Icon(Icons.check_rounded, color: Sandik.amber)
+              ? Icon(Icons.check_rounded, color: context.c.amberText)
               : null,
           onTap: () => widget.onSelected(c),
         );
@@ -2604,7 +2604,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: context.c.overlay,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
               ),
@@ -2616,7 +2616,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                       'Karşılaştır',
                       style: context.t.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: context.c.text90,
                       ),
                     ),
                     const Spacer(),
@@ -2632,15 +2632,15 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: TextField(
                   autofocus: false,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.c.text90),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search_rounded,
-                        color: Sandik.text58),
+                    prefixIcon: Icon(Icons.search_rounded,
+                        color: context.c.text58),
                     hintText: 'Ticker veya isim ara…',
                     hintStyle:
-                        const TextStyle(color: Sandik.text36, fontSize: 13),
+                        TextStyle(color: context.c.text36, fontSize: 13),
                     filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.04),
+                    fillColor: context.c.overlay,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(SandikRadius.md),
                       borderSide: BorderSide.none,
@@ -2661,9 +2661,9 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
               const SizedBox(height: 8),
               TabBar(
                 controller: _tabController,
-                indicatorColor: Sandik.amber,
-                labelColor: Sandik.amber,
-                unselectedLabelColor: Sandik.text58,
+                indicatorColor: context.c.amberText,
+                labelColor: context.c.amberText,
+                unselectedLabelColor: context.c.text58,
                 labelStyle: context.t.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w700),
                 tabs: const [
@@ -2688,5 +2688,5 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
   }
 }
 
-const Color _kCompareColor = Color(0xFF4EA8DE);
+const Color _kCompareColor = Sandik.info;
 

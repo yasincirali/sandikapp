@@ -59,15 +59,35 @@
 - **Emulators**: pixel7_1 (emulator-5554) ve pixel7_2 (emulator-5556) — her ikisine deploy edilir
 - **Development Mode**: Debug with hot reload/restart enabled
 
-### Emülatör Başlatma Prosedürü
-"Emülatörde ayağa kaldır" istendiğinde bu adımları izle:
-1. `flutter emulators --launch pixel7_1` ve `flutter emulators --launch pixel7_2`
-2. Her AVD config.ini dosyasında `hw.keyboard = yes` olduğunu doğrula (aksi halde klavye çalışmaz)
-   - Config yolu: `C:\Users\vasin\.android\avd\<name>.avd\config.ini`
-   - `no` ise: `adb -s <id> emu kill` → config düzelt → yeniden başlat
-3. `flutter build apk --debug --dart-define-from-file=.env.local`
-4. `flutter install --device-id emulator-5554 --debug`
-5. `flutter install --device-id emulator-5556 --debug`
+### Emülatör Dağıtımı — HER DEĞİŞİKLİKTEN SONRA
+
+Kod değiştiren her turdan sonra emülatörlerdeki APK güncellenir:
+
+```bash
+bash tool/deploy_emulators.sh
+```
+
+Betik sırayla: analyze → test → build → install (bağlı tüm emülatörlere)
+→ başlat → çökme kontrolü. Herhangi bir adım kırılırsa **durur**; kırık APK
+emülatöre gitmez.
+
+**Emülatörler kapalıysa** önce:
+`flutter emulators --launch pixel7_1` ve `... pixel7_2`
+
+**⚠️ Bu emülatörler Flutter'ı RENDER EDEMİYOR.** Ekran görüntüsü tamamen
+siyah gelir (doğrulandı 2026-08-09; süreç yaşıyor, Supabase init oluyor,
+FATAL yok — yalnızca sunum katmanı okunamıyor). Betik **"çalışıyor mu"**
+sorusunu yanıtlar, **"doğru görünüyor mu"** sorusunu yanıtlamaz.
+Görsel doğrulama gerçek cihazda veya widget testiyle yapılır.
+
+**⚠️ Disk dolması:** debug APK ~215 MB ve kurulum sırasında iki katı yer
+ister. `/data` %90'ı geçince `INSTALL_FAILED_INSUFFICIENT_STORAGE` gelir.
+`pm clear` ve `uninstall` yetmez — AVD'yi sıfırla:
+```bash
+adb -s emulator-5556 emu kill
+"C:/Users/vasin/Android/sdk/emulator/emulator.exe" -avd pixel7_2 -wipe-data
+```
+Wipe sonrası `hw.keyboard = yes` korunur (doğrulandı).
 
 **adb yolu:** `C:\Users\vasin\Android\sdk\platform-tools\adb.exe`
 

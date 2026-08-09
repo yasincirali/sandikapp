@@ -61,24 +61,24 @@ class PremiumGate extends ConsumerWidget {
             child: Container(
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: Sandik.background.withValues(alpha: 0.35),
+                color: context.c.background.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
-                  color: Sandik.amber.withValues(alpha: 0.35),
+                  color: context.c.amberFill.withValues(alpha: 0.35),
                   width: 1,
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.lock_rounded,
-                      size: 16, color: Sandik.amber),
+                  Icon(Icons.lock_rounded,
+                      size: 16, color: context.c.amberText),
                   const SizedBox(width: 6),
                   Text(
                     'Premium',
                     style: context.t.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: Sandik.amber,
+                      color: context.c.amberText,
                     ),
                   ),
                 ],
@@ -106,19 +106,19 @@ class PremiumChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: Sandik.amber.withValues(alpha: 0.15),
+        color: context.c.amberFill.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(SandikRadius.sm),
-        border: Border.all(color: Sandik.amber.withValues(alpha: 0.4)),
+        border: Border.all(color: context.c.amberFill.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.lock_rounded, size: 10, color: Sandik.amber),
+          Icon(Icons.lock_rounded, size: 10, color: context.c.amberText),
           const SizedBox(width: 4),
           Text('Premium',
               style: context.t.labelSmall?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: Sandik.amber)),
+                  color: context.c.amberText)),
         ],
       ),
     );

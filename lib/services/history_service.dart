@@ -170,15 +170,45 @@ class HistoryService {
     }
 
     // -- Ağ çağrıları --
+    //
+    // Tüm semboller TEK SEFERDE başlatılır. Eskiden USD → altın → her ticker
+    // sırayla `await` ediliyordu: 15 varlıklı bir portföyde 15 gidiş-dönüş
+    // ardışık toplanıyor ve grafik ekranı saniyelerce spinner gösteriyordu.
+    // İstekler birbirinden bağımsız olduğu için paralel başlatılabilir;
+    // toplam süre en yavaş tek isteğe iner. (`getHistorySafe` zaten kendi
+    // içinde hata yutar, bu yüzden `Future.wait` bir sembol patlasa da
+    // diğerlerini düşürmez.)
+    //
+    // Not: altın hesabı USD serisine bağımlı — ikisi paralel ÇEKİLİR ama
+    // dönüşüm her ikisi de geldikten sonra yapılır (sıra korunur).
+    final usdFuture =
+        needsUsd ? getHistorySafe('USDTRY=X') : Future.value(const <(int, double)>[]);
+    final goldFuture =
+        needsGold ? getHistorySafe('GC=F') : Future.value(const <(int, double)>[]);
+
+    // Çekilecek benzersiz ticker'ları önce topla — aynı ticker'ın birden çok
+    // lot'u varsa tek istek yapılsın.
+    final tickerFutures = <String, Future<List<(int, double)>>>{};
+    for (final a in assets) {
+      if (!a.isBuy) continue;
+      if (a.quantity <= 0) continue;
+      final fetchable = a.type == AssetType.hisse ||
+          a.type == AssetType.emtia ||
+          (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
+          (a.type == AssetType.fon && a.ticker.isNotEmpty);
+      if (!fetchable) continue;
+      tickerFutures.putIfAbsent(a.ticker, () => getHistorySafe(a.ticker));
+    }
+
     if (needsUsd) {
-      final usdPoints = await getHistorySafe('USDTRY=X');
+      final usdPoints = await usdFuture;
       for (final p in usdPoints) {
         usdTryHistory[normalizeTs(p.$1)] = p.$2;
       }
     }
 
     if (needsGold) {
-      final xauPoints = await getHistorySafe('GC=F');
+      final xauPoints = await goldFuture;
       for (final p in xauPoints) {
         final dTs = normalizeTs(p.$1);
         final xauUsd = p.$2;
@@ -198,23 +228,15 @@ class HistoryService {
     }
 
     // Hisse, Emtia, Döviz ve TEFAS Fon API Verileri.
-    // Fiyat serilerini sadece BUY lot'larından çek — sell/deleteLog aynı
-    // ticker'ı zaten kapsar, tekrar API çağrısı yapmaya gerek yok.
-    for (final a in assets) {
-      if (!a.isBuy) continue;
-      if (a.quantity <= 0) continue;
-      final fetchable = a.type == AssetType.hisse ||
-          a.type == AssetType.emtia ||
-          (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
-          (a.type == AssetType.fon && a.ticker.isNotEmpty);
-      if (fetchable && !tickerNormalizedDaily.containsKey(a.ticker)) {
-        final rawPts = await getHistorySafe(a.ticker);
-        final map = <int, double>{};
-        for (final p in rawPts) {
-          map[normalizeTs(p.$1)] = p.$2;
-        }
-        tickerNormalizedDaily[a.ticker] = map;
+    // Fiyat serileri yukarıda zaten paralel başlatıldı (sadece BUY lot'ları,
+    // ticker başına tek istek) — burada yalnızca sonuçlar toplanır.
+    for (final entry in tickerFutures.entries) {
+      final rawPts = await entry.value;
+      final map = <int, double>{};
+      for (final p in rawPts) {
+        map[normalizeTs(p.$1)] = p.$2;
       }
+      tickerNormalizedDaily[entry.key] = map;
     }
 
     // Her lot için "o gün geçerli miktar":
@@ -463,8 +485,26 @@ class HistoryService {
     bool needsGold = assets.any((a) => a.type == AssetType.altin);
     bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
 
+    // Tüm semboller tek seferde başlatılır — gerekçe için `getPortfolioHistory`
+    // içindeki aynı bloğun açıklamasına bak.
+    final usdFuture =
+        needsUsd ? getHistorySafe('USDTRY=X') : Future.value(const <(int, double)>[]);
+    final goldFuture =
+        needsGold ? getHistorySafe('GC=F') : Future.value(const <(int, double)>[]);
+
+    final tickerFutures = <String, Future<List<(int, double)>>>{};
+    for (final a in assets) {
+      if (!a.isBuy) continue;
+      if (a.quantity <= 0) continue;
+      if (a.type == AssetType.hisse ||
+          a.type == AssetType.emtia ||
+          (a.type == AssetType.doviz && a.ticker.isNotEmpty)) {
+        tickerFutures.putIfAbsent(a.ticker, () => getHistorySafe(a.ticker));
+      }
+    }
+
     if (needsUsd) {
-      final usd = await getHistorySafe('USDTRY=X');
+      final usd = await usdFuture;
       for (final p in usd) {
         usdTrySlots[normalizeSlot(p.$1)] = p.$2;
       }
@@ -472,7 +512,7 @@ class HistoryService {
 
     if (needsGold) {
       // XAU/USD intraday (GC=F) + USDTRY intraday → gram22k TRY.
-      final xau = await getHistorySafe('GC=F');
+      final xau = await goldFuture;
       for (final p in xau) {
         final ts = normalizeSlot(p.$1);
         final xauUsd = p.$2;
@@ -483,22 +523,14 @@ class HistoryService {
       }
     }
 
-    // Fiyat serilerini sadece BUY lot'larından çek.
-    for (final a in assets) {
-      if (!a.isBuy) continue;
-      if (a.quantity <= 0) continue;
-      if (a.type == AssetType.hisse ||
-          a.type == AssetType.emtia ||
-          (a.type == AssetType.doviz && a.ticker.isNotEmpty)) {
-        if (!tickerSlots.containsKey(a.ticker)) {
-          final raw = await getHistorySafe(a.ticker);
-          final map = <int, double>{};
-          for (final p in raw) {
-            map[normalizeSlot(p.$1)] = p.$2;
-          }
-          tickerSlots[a.ticker] = map;
-        }
+    // Fiyat serileri yukarıda paralel başlatıldı — burada sonuçlar toplanır.
+    for (final entry in tickerFutures.entries) {
+      final raw = await entry.value;
+      final map = <int, double>{};
+      for (final p in raw) {
+        map[normalizeSlot(p.$1)] = p.$2;
       }
+      tickerSlots[entry.key] = map;
     }
 
     // Slot-bazlı işaretli miktar. Bugünkü zaman dilimlerinde:

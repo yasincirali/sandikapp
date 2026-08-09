@@ -106,25 +106,25 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       navigationBar: CupertinoNavigationBar(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         border: null,
         middle: Text(
           'Şifremi Unuttum',
           style: context.t.headlineSmall?.copyWith(
             fontSize: 17,
             fontWeight: FontWeight.w600,
-            color: Sandik.text90,
+            color: context.c.text90,
           ),
         ),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.pop(context),
-          child: const Icon(
+          child: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 18,
-            color: Sandik.text58,
+            color: context.c.text58,
           ),
         ),
       ),
@@ -150,7 +150,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           Text(
             'Kod göndereceğimiz e-posta adresini gir.',
             style: context.t.bodyLarge?.copyWith(
-              color: Sandik.text58,
+              color: context.c.text58,
               height: 1.4,
             ),
           ),
@@ -159,15 +159,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.email],
+            autocorrect: false,
+            textCapitalization: TextCapitalization.none,
             onFieldSubmitted: (_) => _loading ? null : _sendCode(),
-            style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
-            decoration: Sandik.inputDecoration(
+            style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+            decoration: context.inputDecoration(
               '',
               labelText: 'E-posta',
-              prefixIcon: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child:
-                    Icon(Icons.email_outlined, color: Sandik.text36, size: 20),
+                    Icon(Icons.email_outlined, color: context.c.text36, size: 20),
               ),
             ),
             validator: (v) =>
@@ -194,7 +197,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             '${_emailCtrl.text.trim()} adresine kod gönderdik. '
             'Kodu ve yeni şifreni gir.',
             style: context.t.titleMedium?.copyWith(
-              color: Sandik.text58,
+              color: context.c.text58,
               height: 1.4,
             ),
           ),
@@ -205,20 +208,24 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             controller: _otpCtrl,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
+            // Klavye üstünde gelen kodu öner — tek alanlı OTP'de bu doğrudan
+            // çalışır (çok hücreli OTP ekranından farklı olarak).
+            autofillHints: const [AutofillHints.oneTimeCode],
+            autocorrect: false,
             maxLength: 8,
             style: context.t.numLarge.copyWith(
-              color: Sandik.text90,
+              color: context.c.text90,
               fontSize: 20,
               letterSpacing: 6,
               fontWeight: FontWeight.w600,
             ),
-            decoration: Sandik.inputDecoration(
+            decoration: context.inputDecoration(
               '',
               labelText: 'Kod',
-              prefixIcon: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Icon(Icons.pin_outlined,
-                    color: Sandik.text36, size: 20),
+                    color: context.c.text36, size: 20),
               ),
             ),
             validator: (v) => (v == null || v.trim().length < 6)
@@ -232,17 +239,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             controller: _passCtrl,
             obscureText: _obscure,
             textInputAction: TextInputAction.next,
-            style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
-            decoration: Sandik.inputDecoration(
+            autofillHints: const [AutofillHints.newPassword],
+            autocorrect: false,
+            enableSuggestions: false,
+            style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+            decoration: context.inputDecoration(
               '',
               labelText: 'Yeni Şifre',
               errorText: _passCtrl.text.isEmpty
                   ? null
                   : AuthService.validatePassword(_passCtrl.text),
-              prefixIcon: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Icon(Icons.lock_outline,
-                    color: Sandik.text36, size: 20),
+                    color: context.c.text36, size: 20),
               ),
               suffixIcon: CupertinoButton(
                 minimumSize: Size.zero,
@@ -252,7 +262,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   _obscure
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Sandik.text36,
+                  color: context.c.text36,
                   size: 20,
                 ),
               ),
@@ -269,19 +279,22 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             controller: _passConfirmCtrl,
             obscureText: _obscure,
             textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.newPassword],
+            autocorrect: false,
+            enableSuggestions: false,
             onFieldSubmitted: (_) => _loading ? null : _verifyAndUpdate(),
-            style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
-            decoration: Sandik.inputDecoration(
+            style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+            decoration: context.inputDecoration(
               '',
               labelText: 'Yeni Şifre Tekrar',
               errorText: (_passConfirmCtrl.text.isNotEmpty &&
                       _passConfirmCtrl.text != _passCtrl.text)
                   ? 'Şifreler eşleşmiyor'
                   : null,
-              prefixIcon: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Icon(Icons.lock_outline,
-                    color: Sandik.text36, size: 20),
+                    color: context.c.text36, size: 20),
               ),
             ),
             validator: (v) =>
@@ -306,7 +319,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     }),
             child: Text(
               'Farklı bir e-posta ile tekrar dene',
-              style: context.t.bodyMedium?.copyWith(color: Sandik.amber),
+              style: context.t.bodyMedium?.copyWith(color: context.c.amberText),
             ),
           ),
         ],
@@ -323,14 +336,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         height: 52,
         decoration: BoxDecoration(
           color: enabled
-              ? Sandik.amber.withValues(alpha: 0.92)
-              : Sandik.amber.withValues(alpha: 0.45),
+              ? context.c.amberFill.withValues(alpha: 0.92)
+              : context.c.amberFill.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(SandikRadius.md),
           border:
-              Border.all(color: Sandik.amber.withValues(alpha: 0.60), width: 1),
+              Border.all(color: context.c.amberFill.withValues(alpha: 0.60), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Sandik.amber.withValues(alpha: 0.30),
+              color: context.c.amberFill.withValues(alpha: 0.30),
               blurRadius: 20,
               spreadRadius: -4,
               offset: const Offset(0, 6),
@@ -344,7 +357,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 label,
                 style: context.t.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Sandik.dark,
+                  color: context.c.onAmber,
                 ),
               ),
       ),

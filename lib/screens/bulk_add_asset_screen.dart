@@ -161,12 +161,16 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
 
     if (failures.isEmpty) {
       ref.read(bulkCartProvider.notifier).clear();
-      await showAppSuccess(
-        context,
-        title: 'Tümü Eklendi',
-        message: '${items.length} varlık portföyüne eklendi.',
-      );
-      if (mounted) Navigator.of(context).pop();
+      // Başarı dialog'u YOK — tekli ekleme de göstermiyor. Başarılı bir
+      // kayıt kendini portföyde görünen yeni satırlarla zaten anlatır;
+      // araya onay penceresi koymak kullanıcıya fazladan bir dokunuş
+      // yaptırır ve iki akışın hissini ayırıyordu.
+      //
+      // `true` döndür: bu ekran `AddAssetScreen`'in ÜSTÜNDE açılıyor
+      // (MainNav → AddAssetScreen → BulkAddAssetScreen). Sadece kendini
+      // kapatmak kullanıcıyı boş varlık ekleme formunda bırakıyordu.
+      // Sonuç `AddAssetScreen`'e gider, o da kendini kapatır.
+      if (mounted) Navigator.of(context).pop(true);
     } else {
       await showSandikDialog(
         context: context,
@@ -182,12 +186,12 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Sandik.surface1,
-        title: const Text('Sepeti Temizle',
-            style: TextStyle(color: Colors.white)),
+        backgroundColor: context.c.surface1,
+        title: Text('Sepeti Temizle',
+            style: TextStyle(color: context.c.text90)),
         content: Text(
           'Sepetteki tüm varlıklar silinecek. Emin misin?',
-          style: context.t.bodyLarge?.copyWith(color: Sandik.text58),
+          style: context.t.bodyLarge?.copyWith(color: context.c.text58),
         ),
         actions: [
           TextButton(
@@ -195,8 +199,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               child: const Text('Vazgeç')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Temizle',
-                style: TextStyle(color: Sandik.loss)),
+            child: Text('Temizle',
+                style: TextStyle(color: context.c.loss)),
           ),
         ],
       ),
@@ -210,7 +214,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     return PopScope(
       canPop: !_saving,
       child: Scaffold(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         appBar: AppBar(
           title: Text('Toplu Ekle${items.isEmpty ? '' : ' (${items.length})'}'),
           actions: [
@@ -245,25 +249,25 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: Sandik.amber.withValues(alpha: 0.10),
+                color: context.c.amberFill.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: Sandik.amber.withValues(alpha: 0.30), width: 1),
+                    color: context.c.amberFill.withValues(alpha: 0.30), width: 1),
               ),
-              child: const Icon(Icons.playlist_add_rounded,
-                  color: Sandik.amber, size: 34),
+              child: Icon(Icons.playlist_add_rounded,
+                  color: context.c.amberText, size: 34),
             ),
             const SizedBox(height: 16),
             Text('Sepet boş',
                 style: context.t.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.white)),
+                    color: context.c.text90)),
             const SizedBox(height: 6),
             Text(
               'Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.',
               textAlign: TextAlign.center,
               style: context.t.bodyMedium?.copyWith(
-                  color: Sandik.text58, height: 1.4),
+                  color: context.c.text58, height: 1.4),
             ),
           ],
         ),
@@ -295,10 +299,10 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
-          color: Sandik.surface1,
+          color: context.c.surface1,
           border: Border(
               top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.06), width: 1)),
+                  color: context.c.overlay, width: 1)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -308,16 +312,16 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               height: 48,
               child: OutlinedButton.icon(
                 onPressed: _saving ? null : () => _openAddForm(),
-                icon: const Icon(Icons.add_rounded, color: Sandik.amber),
+                icon: Icon(Icons.add_rounded, color: context.c.amberText),
                 label: Text(
                   'Varlık Ekle',
                   style: context.t.bodyLarge?.copyWith(
-                      color: Sandik.amber,
+                      color: context.c.amberText,
                       fontWeight: FontWeight.w600),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
-                      color: Sandik.amber.withValues(alpha: 0.45), width: 1),
+                      color: context.c.amberFill.withValues(alpha: 0.45), width: 1),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(SandikRadius.md)),
                 ),
@@ -331,10 +335,10 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                 onPressed:
                     _saving || items.isEmpty ? null : _saveAll,
                 style: FilledButton.styleFrom(
-                  backgroundColor: Sandik.amber,
-                  foregroundColor: Colors.black,
+                  backgroundColor: context.c.amberFill,
+                  foregroundColor: context.c.onAmber,
                   disabledBackgroundColor:
-                      Sandik.amber.withValues(alpha: 0.25),
+                      context.c.amberFill.withValues(alpha: 0.25),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(SandikRadius.md)),
                 ),
@@ -426,9 +430,9 @@ class _BulkItemTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Sandik.surface1,
+          color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: context.c.hairline),
         ),
         child: Row(
           children: [
@@ -449,14 +453,14 @@ class _BulkItemTile extends StatelessWidget {
                   Text(
                     item.name.isEmpty ? item.type.label : item.name,
                     style: context.t.bodyLarge?.copyWith(
-                        color: Colors.white,
+                        color: context.c.text90,
                         fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: context.t.titleSmall?.copyWith(color: Sandik.text58),
+                      style: context.t.titleSmall?.copyWith(color: context.c.text58),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                 ],
@@ -465,14 +469,14 @@ class _BulkItemTile extends StatelessWidget {
             IconButton(
               tooltip: 'Düzenle',
               onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined,
-                  color: Sandik.text58, size: 20),
+              icon: Icon(Icons.edit_outlined,
+                  color: context.c.text58, size: 20),
             ),
             IconButton(
               tooltip: 'Sil',
               onPressed: onDelete,
-              icon: const Icon(Icons.close_rounded,
-                  color: Sandik.text58, size: 20),
+              icon: Icon(Icons.close_rounded,
+                  color: context.c.text58, size: 20),
             ),
           ],
         ),

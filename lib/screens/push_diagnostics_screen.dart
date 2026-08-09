@@ -43,13 +43,13 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Sandik.surface2,
-        title: const Text('Sinyal geçmişi silinsin mi?',
-            style: TextStyle(color: Colors.white, fontSize: 17)),
+        backgroundColor: context.c.surface2,
+        title: Text('Sinyal geçmişi silinsin mi?',
+            style: TextStyle(color: context.c.text90, fontSize: 17)),
         content: Text(
           '${_sinyaller.length} kayıt silinecek. Uygulama içi bildirim '
           'listesi de boşalır. Bu işlem geri alınamaz.',
-          style: const TextStyle(color: Sandik.text58, fontSize: 13),
+          style: TextStyle(color: context.c.text58, fontSize: 13),
         ),
         actions: [
           TextButton(
@@ -57,7 +57,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             child: const Text('Vazgeç'),
           ),
           TextButton(
-            style: TextButton.styleFrom(foregroundColor: Sandik.loss),
+            style: TextButton.styleFrom(foregroundColor: context.c.loss),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Sil'),
           ),
@@ -81,7 +81,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: Sandik.loss,
+          backgroundColor: context.c.loss,
           content: Text('Silinemedi: $e'),
         ),
       );
@@ -109,7 +109,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: Sandik.loss,
+          backgroundColor: context.c.loss,
           content: Text('Tetikleme başarısız: $e'),
         ),
       );
@@ -221,7 +221,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       return (
         baslik: 'Teşhis eksik',
         detay: 'Cron job sorgusu okunamadı; aşağıdaki hata detayına bakın.',
-        renk: Sandik.amber,
+        renk: context.c.amberText,
       );
     }
     if (_jobs.isEmpty) {
@@ -229,7 +229,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         baslik: 'Cron job KURULU DEĞİL',
         detay: 'analyze-signals cron kaydı yok. 0017 migration uygulanmamış '
             'demektir — push hiçbir zaman tetiklenmez.',
-        renk: Sandik.loss,
+        renk: context.c.loss,
       );
     }
     final pasif = _jobs.where((j) => j['active'] == false).toList();
@@ -237,7 +237,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       return (
         baslik: 'Cron job PASİF',
         detay: 'Job kayıtlı ama active=false. Tetiklenmez.',
-        renk: Sandik.loss,
+        renk: context.c.loss,
       );
     }
     if (_runs.isEmpty) {
@@ -245,7 +245,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         baslik: 'Cron HİÇ ÇALIŞMAMIŞ',
         detay: 'Job aktif ama çalışma kaydı yok. Yeni kurulmuşsa bir sonraki '
             'slotu (TR 11:00 / 15:00) bekleyin.',
-        renk: Sandik.amber,
+        renk: context.c.amberText,
       );
     }
     final basarisiz =
@@ -255,7 +255,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         baslik: 'Cron çalıştı ama HATA verdi',
         detay: basarisiz.first['return_message']?.toString() ??
             'Bilinmeyen hata',
-        renk: Sandik.loss,
+        renk: context.c.loss,
       );
     }
     final hataliYanit = _responses
@@ -269,7 +269,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             ? 'Vault secret ile edge function secret uyuşmuyor. '
                 'ANALYZE_SIGNALS_CRON_SECRET değerlerini eşitleyin.'
             : (hataliYanit.first['content']?.toString() ?? ''),
-        renk: Sandik.loss,
+        renk: context.c.loss,
       );
     }
     if (_myTokenCount == 0) {
@@ -277,7 +277,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         baslik: 'Sunucu tarafı SAĞLAM, cihaz token\'ı yok',
         detay: 'Zincir çalışıyor ama bu hesap için kayıtlı push token yok. '
             'Bildirim izni reddedilmiş olabilir.',
-        renk: Sandik.amber,
+        renk: context.c.amberText,
       );
     }
 
@@ -296,7 +296,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         baslik: 'FCM gönderimi başarısız ($failed)',
         detay: 'Edge function push atmayı denedi ama FCM reddetti. '
             'Yanıt gövdesindeki hata sebebine bakın (3. bölüm).',
-        renk: Sandik.loss,
+        renk: context.c.loss,
       );
     }
     if (passed != null && passed > 0 && sent == 0) {
@@ -306,7 +306,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             'istek atılmadan atlandı. En olası sebep de-dup: aynı varlık '
             'için son sinyal ile yenisi aynı. 5. bölümdeki geçmişi '
             'temizleyip tekrar deneyin.',
-        renk: Sandik.loss,
+        renk: context.c.loss,
       );
     }
     if (sent != null && sent > 0) {
@@ -314,14 +314,14 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         baslik: 'Zincir çalışıyor — $sent bildirim gönderildi',
         detay: 'Cron, edge function ve FCM sağlıklı. Cihaza düşmüyorsa '
             'bildirim izni / kanal ayarlarına bakın.',
-        renk: Sandik.gain,
+        renk: context.c.gain,
       );
     }
     return (
       baslik: 'Zincir ayakta, gönderilecek sinyal yok',
       detay: 'Cron çalışıyor ve edge function 2xx dönüyor, ancak hiçbir '
           'varlık eşiği geçmedi (passed_threshold=0). Bu normal olabilir.',
-      renk: Sandik.amber,
+      renk: context.c.amberText,
     );
   }
 
@@ -336,32 +336,32 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   Widget build(BuildContext context) {
     // Güvenlik ağı: release build'de bu ekran hiç açılmamalı.
     if (!kDebugMode) {
-      return const Scaffold(
-        backgroundColor: Sandik.background,
+      return Scaffold(
+        backgroundColor: context.c.background,
         body: Center(
           child: Text('Yalnızca debug build',
-              style: TextStyle(color: Sandik.text58)),
+              style: TextStyle(color: context.c.text58)),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Push Teşhisi',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        title: Text('Push Teşhisi',
+            style: TextStyle(color: context.c.text90, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Sandik.text58),
+            icon: Icon(Icons.refresh_rounded, color: context.c.text58),
             onPressed: _loading ? null : _load,
           ),
         ],
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: Sandik.amber))
+            ? Center(child: CircularProgressIndicator(color: context.c.amberText))
             : _error != null
                 ? _hataGorunumu()
                 : _icerik(),
@@ -376,8 +376,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline_rounded,
-              color: Sandik.loss, size: 40),
+          Icon(Icons.error_outline_rounded,
+              color: context.c.loss, size: 40),
           const SizedBox(height: 12),
           Text(
             yetkisiz
@@ -385,13 +385,13 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
                     'e-postasına açıktır.'
                 : 'Teşhis okunamadı',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: TextStyle(color: context.c.text90, fontSize: 15),
           ),
           const SizedBox(height: 10),
           SelectableText(
             _error!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Sandik.text36, fontSize: 11),
+            style: TextStyle(color: context.c.text36, fontSize: 11),
           ),
         ],
       ),
@@ -420,8 +420,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
                       fontSize: 15)),
               const SizedBox(height: 6),
               Text(t.detay,
-                  style: const TextStyle(
-                      color: Colors.white70, fontSize: 13, height: 1.4)),
+                  style: TextStyle(
+                      color: context.c.text58, fontSize: 13, height: 1.4)),
             ],
           ),
         ),
@@ -430,22 +430,22 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Sandik.loss.withValues(alpha: 0.10),
+              color: context.c.loss.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: Sandik.loss.withValues(alpha: 0.3)),
+              border: Border.all(color: context.c.loss.withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Bazı bölümler okunamadı',
+                Text('Bazı bölümler okunamadı',
                     style: TextStyle(
-                        color: Sandik.loss,
+                        color: context.c.loss,
                         fontSize: 12,
                         fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 SelectableText(_kismiHatalar.join('\n\n'),
-                    style: const TextStyle(
-                        color: Sandik.text58, fontSize: 10.5, height: 1.4)),
+                    style: TextStyle(
+                        color: context.c.text58, fontSize: 10.5, height: 1.4)),
               ],
             ),
           ),
@@ -496,23 +496,23 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
           Center(
             child: TextButton.icon(
               icon: const Icon(Icons.delete_outline_rounded, size: 16),
-              style: TextButton.styleFrom(foregroundColor: Sandik.loss),
+              style: TextButton.styleFrom(foregroundColor: context.c.loss),
               label: const Text('Sinyal geçmişini temizle (de-dup sıfırla)'),
               onPressed: _tetikleniyor ? null : _sinyalGecmisiniTemizle,
             ),
           ),
-          const Text(
+          Text(
             'Edge function son kayda bakıp aynı sinyali tekrar göndermez. '
             'Test ederken bu kayıtlar gönderimi engeller.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Sandik.text36, fontSize: 11, height: 1.4),
+            style: TextStyle(color: context.c.text36, fontSize: 11, height: 1.4),
           ),
           const SizedBox(height: 12),
         ],
         const SizedBox(height: 8),
-        const Text('ZİNCİRİ ELLE TETİKLE',
+        Text('ZİNCİRİ ELLE TETİKLE',
             style: TextStyle(
-                color: Sandik.amber,
+                color: context.c.amberText,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.8)),
@@ -528,7 +528,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: Sandik.amber),
+                style: FilledButton.styleFrom(backgroundColor: context.c.amberFill),
                 onPressed: _tetikleniyor ? null : () => _tetikle(dryRun: false),
                 child: const Text('Gerçek push'),
               ),
@@ -536,10 +536,10 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
           ],
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Prova yan etki bırakmaz. "Gerçek push" bildirimi cihazına '
           'gönderir — birkaç saniye sonra yenileyip 3. bölüme bakın.',
-          style: TextStyle(color: Sandik.text36, fontSize: 11, height: 1.4),
+          style: TextStyle(color: context.c.text36, fontSize: 11, height: 1.4),
         ),
         const SizedBox(height: 16),
         Center(
@@ -600,8 +600,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(baslik,
-              style: const TextStyle(
-                  color: Sandik.amber,
+              style: TextStyle(
+                  color: context.c.amberText,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.8)),
@@ -610,20 +610,20 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Sandik.surface1,
+              color: context.c.surface1,
               borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              border: Border.all(color: context.c.hairline),
             ),
             child: bosMesaj != null
                 ? Text(bosMesaj,
-                    style: const TextStyle(
-                        color: Sandik.text36,
+                    style: TextStyle(
+                        color: context.c.text36,
                         fontSize: 12,
                         fontStyle: FontStyle.italic))
                 : SelectableText(
                     satirlar.join('\n'),
-                    style: const TextStyle(
-                        color: Colors.white70,
+                    style: TextStyle(
+                        color: context.c.text58,
                         fontSize: 11.5,
                         height: 1.5,
                         fontFamily: 'monospace'),

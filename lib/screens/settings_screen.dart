@@ -40,32 +40,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        backgroundColor: Sandik.surface2,
-        title: const Row(
+        backgroundColor: context.c.surface2,
+        title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Sandik.loss),
-            SizedBox(width: 8),
+            Icon(Icons.warning_amber_rounded, color: context.c.loss),
+            const SizedBox(width: 8),
             Text('Hesabını silmek üzeresin',
-                style: TextStyle(color: Colors.white)),
+                style: TextStyle(color: context.c.text90)),
           ],
         ),
-        content: const Text(
+        content: Text(
           'Bu işlem GERİ ALINAMAZ.\n\n'
           'Tüm portföy kayıtların, performans geçmişin ve ortaklık '
           'bağlantıların 30 gün içinde kalıcı olarak silinecek.\n\n'
           'Devam etmek istiyor musun?',
-          style: TextStyle(color: Sandik.text90),
+          style: TextStyle(color: context.c.text90),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç',
-                style: TextStyle(color: Sandik.text58)),
+            child: Text('Vazgeç',
+                style: TextStyle(color: context.c.text58)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Devam Et',
-                style: TextStyle(color: Sandik.loss)),
+            child: Text('Devam Et',
+                style: TextStyle(color: context.c.loss)),
           ),
         ],
       ),
@@ -81,33 +81,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       barrierDismissible: false,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          backgroundColor: Sandik.surface2,
-          title: const Text('Şifrenle onayla',
-              style: TextStyle(color: Colors.white)),
+          backgroundColor: context.c.surface2,
+          title: Text('Şifrenle onayla',
+              style: TextStyle(color: context.c.text90)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Güvenliğin için şifrenle onay vermen gerekiyor.',
-                style: TextStyle(color: Sandik.text58, fontSize: 13),
+                style: TextStyle(color: context.c.text58, fontSize: 13),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: passwordCtrl,
                 obscureText: obscure,
                 autofocus: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: Sandik.inputDecoration(
+                style: TextStyle(color: context.c.text90),
+                decoration: context.inputDecoration(
                   'Şifre',
-                  prefixIcon: const Icon(Icons.lock_outline,
-                      color: Sandik.text36, size: 20),
+                  prefixIcon: Icon(Icons.lock_outline,
+                      color: context.c.text36, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
                       obscure
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: Sandik.text36,
+                      color: context.c.text36,
                       size: 20,
                     ),
                     onPressed: () => setLocal(() => obscure = !obscure),
@@ -119,14 +119,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Vazgeç',
-                  style: TextStyle(color: Sandik.text58)),
+              child: Text('Vazgeç',
+                  style: TextStyle(color: context.c.text58)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('HESABI SİL',
+              child: Text('HESABI SİL',
                   style: TextStyle(
-                      color: Sandik.loss, fontWeight: FontWeight.bold)),
+                      color: context.c.loss, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -185,28 +185,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Sandik.surface2,
-        title: const Row(
+        backgroundColor: context.c.surface2,
+        title: Row(
           children: [
-            Icon(Icons.gavel_rounded, color: Sandik.amber, size: 20),
-            SizedBox(width: 8),
+            Icon(Icons.gavel_rounded, color: context.c.amberText, size: 20),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'Yatırım Tavsiyesi Reddi',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: context.c.text90, fontSize: 16),
               ),
             ),
             Text(
               'v$disclaimerVersion',
-              style: TextStyle(color: Sandik.text36, fontSize: 11),
+              style: TextStyle(color: context.c.text36, fontSize: 11),
             ),
           ],
         ),
-        content: const SingleChildScrollView(
+        content: SingleChildScrollView(
           child: Text(
             disclaimerText,
             style: TextStyle(
-              color: Sandik.text90,
+              color: context.c.text90,
               fontSize: 13,
               height: 1.55,
             ),
@@ -215,8 +215,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat',
-                style: TextStyle(color: Sandik.amber)),
+            child: Text('Kapat',
+                style: TextStyle(color: context.c.amberText)),
           ),
         ],
       ),
@@ -272,7 +272,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final result = await showModalBottomSheet<Map<String, String>>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Sandik.surface2,
+      backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -292,7 +292,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Text(
                   'Şikayet & Tavsiye',
                   style: context.t.headlineSmall?.copyWith(
-                    color: Colors.white,
+                    color: context.c.text90,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -306,10 +306,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           label: Text(t),
                           selected: type == t,
                           onSelected: (_) => setLocal(() => type = t),
-                          selectedColor: Sandik.amber.withValues(alpha: 0.25),
-                          backgroundColor: Sandik.surface1,
+                          selectedColor: context.c.amberFill.withValues(alpha: 0.25),
+                          backgroundColor: context.c.surface1,
                           labelStyle: TextStyle(
-                            color: type == t ? Sandik.amber : Sandik.text58,
+                            color: type == t ? context.c.amberText : context.c.text58,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -321,12 +321,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   controller: controller,
                   maxLines: 6,
                   minLines: 4,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: context.c.text90),
                   decoration: InputDecoration(
                     hintText: 'Mesajınızı yazın…',
-                    hintStyle: const TextStyle(color: Sandik.text36),
+                    hintStyle: TextStyle(color: context.c.text36),
                     filled: true,
-                    fillColor: Sandik.surface1,
+                    fillColor: context.c.surface1,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(SandikRadius.md),
                       borderSide: BorderSide.none,
@@ -336,8 +336,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 16),
                 FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: Sandik.amber,
-                    foregroundColor: Colors.black,
+                    backgroundColor: context.c.amberFill,
+                    foregroundColor: context.c.onAmber,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: controller.text.trim().isEmpty
@@ -366,19 +366,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: context.c.text90, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Ayarlar',
           style: context.t.headlineMedium?.copyWith(
-            color: Colors.white,
+            color: context.c.text90,
           ),
         ),
       ),
@@ -387,10 +387,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           children: [
-            // UH1 fix: Açık tema implementasyonu yok — "deneysel" diye
-            // göstermek kullanıcı güvenini sarsıyor. Tema seçici tamamen
-            // kaldırıldı; uygulama dark-first kalıyor. Gerçek light tema
-            // Faz 3'te eklendiğinde geri gelecek.
+            const _SectionTitle('GÖRÜNÜM'),
+            const SizedBox(height: 12),
+            const _ThemeModePicker(),
+            const SizedBox(height: 24),
+
             const _SectionTitle('BİLDİRİMLER'),
             const SizedBox(height: 12),
             _SwitchTile(
@@ -536,13 +537,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
             const SizedBox(height: 24),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 'sandık — sürüm 1.0.0',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Sandik.text36,
+                  color: context.c.text36,
                   fontSize: 12,
                 ),
               ),
@@ -567,9 +568,83 @@ class _SectionTitle extends StatelessWidget {
         text,
         style: context.t.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
-          color: Sandik.text36,
+          // Bölüm başlığı yapısal bilgidir — text36 (3.79:1) yalnızca
+          // yardımcı metin eşiğini geçer, light modda okunmuyordu.
+          color: context.c.text58,
           letterSpacing: 1.2,
         ),
+      ),
+    );
+  }
+}
+
+/// Tema modu seçici — Sistem / Açık / Koyu.
+///
+/// Seçim [themeModeProvider] üzerinden `SharedPreferences`'a yazılır ve
+/// `MaterialApp.themeMode`'u besler. Varsayılan koyudur: sandık dark-first
+/// bir markadır, sistem takibi kullanıcının açık tercihidir.
+class _ThemeModePicker extends ConsumerWidget {
+  const _ThemeModePicker();
+
+  static const _options = <(ThemeMode, IconData, String)>[
+    (ThemeMode.system, Icons.brightness_auto_rounded, 'Sistem'),
+    (ThemeMode.light, Icons.light_mode_rounded, 'Açık'),
+    (ThemeMode.dark, Icons.dark_mode_rounded, 'Koyu'),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themeModeProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(SandikSpace.xs),
+      decoration: context.surfaceCard(),
+      child: Row(
+        children: [
+          for (final (mode, icon, label) in _options)
+            Expanded(
+              child: SandikTappable(
+                semanticLabel: '$label tema',
+                onTap: () =>
+                    ref.read(themeModeProvider.notifier).set(mode),
+                child: AnimatedContainer(
+                  duration: SandikMotion.stateOf(context),
+                  curve: SandikMotion.enter,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: current == mode
+                        ? context.c.amberFill.withValues(alpha: 0.16)
+                        : Colors.transparent,
+                    borderRadius: SandikRadius.smAll,
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        icon,
+                        size: 20,
+                        color: current == mode
+                            ? context.c.amberText
+                            : context.c.text36,
+                      ),
+                      const SizedBox(height: SandikSpace.xs),
+                      Text(
+                        label,
+                        style: context.t.labelLarge?.copyWith(
+                          letterSpacing: 0,
+                          fontWeight: current == mode
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: current == mode
+                              ? context.c.amberText
+                              : context.c.text58,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -594,13 +669,13 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? Sandik.loss : Colors.white;
+    final color = destructive ? context.c.loss : context.c.text90;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: CupertinoButton(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -632,8 +707,8 @@ class _SettingsTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: Sandik.text58,
+                    style: TextStyle(
+                      color: context.c.text58,
                       fontSize: 12,
                     ),
                   ),
@@ -641,8 +716,8 @@ class _SettingsTile extends StatelessWidget {
               ),
             ),
             trailing ??
-                const Icon(Icons.chevron_right,
-                    color: Sandik.text36, size: 20),
+                Icon(Icons.chevron_right,
+                    color: context.c.text36, size: 20),
           ],
         ),
       ),
@@ -672,9 +747,9 @@ class _SwitchTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: Row(
         children: [
@@ -682,10 +757,10 @@ class _SwitchTile extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.10),
+              color: context.c.overlay,
               borderRadius: BorderRadius.circular(SandikRadius.md),
             ),
-            child: Icon(icon, color: Colors.white, size: 20),
+            child: Icon(icon, color: context.c.text90, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -694,8 +769,8 @@ class _SwitchTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.c.text90,
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                   ),
@@ -703,8 +778,8 @@ class _SwitchTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: Sandik.text58,
+                  style: TextStyle(
+                    color: context.c.text58,
                     fontSize: 12,
                   ),
                 ),
@@ -714,7 +789,7 @@ class _SwitchTile extends StatelessWidget {
           CupertinoSwitch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: Sandik.amber,
+            activeTrackColor: context.c.amberText,
           ),
         ],
       ),

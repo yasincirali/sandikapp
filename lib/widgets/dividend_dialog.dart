@@ -104,17 +104,17 @@ class _DividendDialogState extends State<_DividendDialog> {
     final dateFmt = DateFormat('dd/MM/yyyy', 'tr_TR');
 
     return AlertDialog(
-      backgroundColor: Sandik.surface2,
+      backgroundColor: context.c.surface2,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SandikRadius.md)),
       title: Row(
         children: [
-          const Icon(Icons.savings_outlined, color: Sandik.gain, size: 22),
+          Icon(Icons.savings_outlined, color: context.c.gain, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Text('Temettü Ekle',
                 style: context.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700, color: Colors.white)),
+                    fontWeight: FontWeight.w700, color: context.c.text90)),
           ),
         ],
       ),
@@ -124,7 +124,7 @@ class _DividendDialogState extends State<_DividendDialog> {
         children: [
           Text(
             '${a.displayTicker ?? a.name} · ele geçen net tutar',
-            style: context.t.bodySmall?.copyWith(color: Sandik.text58),
+            style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -134,14 +134,14 @@ class _DividendDialogState extends State<_DividendDialog> {
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
             ],
-            style: context.t.titleMedium?.copyWith(color: Colors.white),
+            style: context.t.titleMedium?.copyWith(color: context.c.text90),
             decoration: InputDecoration(
               hintText: '0',
               suffixText: a.currency,
               suffixStyle: context.t.titleSmall?.copyWith(
-                  color: Sandik.text58, fontWeight: FontWeight.w700),
+                  color: context.c.text58, fontWeight: FontWeight.w700),
               filled: true,
-              fillColor: Sandik.surface1,
+              fillColor: context.c.surface1,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(SandikRadius.sm),
                 borderSide: BorderSide.none,
@@ -158,12 +158,12 @@ class _DividendDialogState extends State<_DividendDialog> {
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               child: Row(
                 children: [
-                  const Icon(Icons.event_outlined,
-                      size: 18, color: Sandik.text58),
+                  Icon(Icons.event_outlined,
+                      size: 18, color: context.c.text58),
                   const SizedBox(width: 8),
                   Text('Ödeme tarihi: ${dateFmt.format(_paidAt)}',
                       style:
-                          context.t.bodyMedium?.copyWith(color: Colors.white)),
+                          context.t.bodyMedium?.copyWith(color: context.c.text90)),
                 ],
               ),
             ),
@@ -171,13 +171,13 @@ class _DividendDialogState extends State<_DividendDialog> {
           const SizedBox(height: 6),
           Text(
             'Temettü miktarı değiştirmez; toplam getirine eklenir.',
-            style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
           if (_error != null) ...[
             const SizedBox(height: 10),
             Text(_error!,
                 style: context.t.bodySmall
-                    ?.copyWith(color: const Color(0xFFEF4444))),
+                    ?.copyWith(color: context.c.danger)),
           ],
         ],
       ),
@@ -187,7 +187,7 @@ class _DividendDialogState extends State<_DividendDialog> {
           child: const Text('İptal'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: Sandik.gain),
+          style: FilledButton.styleFrom(backgroundColor: context.c.gain),
           onPressed: _saving ? null : _save,
           // Buton kutusuna sığacak boyut verilmeli: CustomLoadingView
           // varsayılanı `large` ve 18pt'lik kutuyu taşırıyordu.

@@ -39,10 +39,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     final gainLossTRY = valueTRY - costTRY;
     final isPositive = isPriceKnown ? gainLossTRY >= 0 : false;
     final cs = Theme.of(context).colorScheme;
-    const green = Color(0xFF10B981);
-    const red = Color(0xFFEF4444);
-    final gainColor =
-        isPriceKnown ? (isPositive ? green : red) : cs.onSurfaceVariant;
+    // Kâr/zarar semantik tokenları kullanır: sabit yeşil/kırmızı light
+    // modda AA altında kalıyordu ve paletteki düzeltmeyi ıskalıyordu.
+    final gainColor = isPriceKnown
+        ? (isPositive ? context.c.gain : context.c.loss)
+        : cs.onSurfaceVariant;
     final tryFmt =
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
     final numFmt = NumberFormat('#,##0.####', 'tr_TR');
@@ -96,13 +97,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               if (v == 'delete') _confirmDelete(context);
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline_rounded, color: red, size: 20),
-                    SizedBox(width: 8),
-                    Text('Sil', style: TextStyle(color: red)),
+                    Icon(Icons.delete_outline_rounded,
+                        color: context.c.danger, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Sil', style: TextStyle(color: context.c.danger)),
                   ],
                 ),
               ),
@@ -554,10 +556,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                  color: context.c.danger.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
-                      color: const Color(0xFFEF4444)
+                      color: context.c.danger
                           .withValues(alpha: 0.25)),
                 ),
                 child: const Text(
@@ -575,7 +577,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 child: const Text('İptal')),
             FilledButton(
               style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF4444)),
+                  backgroundColor: context.c.danger),
               onPressed: () {
                 ref
                     .read(portfolioProvider.notifier)

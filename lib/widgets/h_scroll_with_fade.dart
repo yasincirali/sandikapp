@@ -51,7 +51,11 @@ class _HScrollWithFadeState extends State<HScrollWithFade> {
 
   @override
   Widget build(BuildContext context) {
-    final fadeColor = widget.fadeColor ?? Sandik.background;
+    // Zemin rengi TEMADAN gelir. Sabit `Sandik.background` (koyu yeşil)
+    // kullanılıyordu; light mode'da açık zeminin üzerine koyu bir blok
+    // basıyor ve "bir garip duran" kesik oluşuyordu. Çağıran özel bir zemin
+    // (kart yüzeyi vb.) üzerindeyse `fadeColor` ile bildirir.
+    final fadeColor = widget.fadeColor ?? context.c.background;
 
     return Stack(
       children: [
@@ -77,7 +81,10 @@ class _HScrollWithFadeState extends State<HScrollWithFade> {
                           end: Alignment.centerRight,
                           colors: [
                             fadeColor.withValues(alpha: 0),
-                            fadeColor.withValues(alpha: 0.92),
+                            // 0.92 → 1.0: sert kenar bırakmaz. Kısmi opaklık,
+                            // altından geçen çipin kenarını hayalet gibi
+                            // sızdırıyordu.
+                            fadeColor,
                           ],
                         ),
                       ),
@@ -86,12 +93,13 @@ class _HScrollWithFadeState extends State<HScrollWithFade> {
                   ),
                   DecoratedBox(
                     decoration: BoxDecoration(color: fadeColor),
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 2),
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 2),
                       child: Icon(
                         Icons.chevron_right_rounded,
                         size: 16,
-                        color: Sandik.text36,
+                        // `text36` de sabit beyazdı — light zeminde görünmezdi.
+                        color: context.c.text36,
                       ),
                     ),
                   ),

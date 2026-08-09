@@ -172,13 +172,13 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   Widget build(BuildContext context) {
     final asset = widget.asset;
     final numFmt = NumberFormat('#,##0.####', 'tr_TR');
-    final accent = _isAdd ? Sandik.gain : Sandik.loss;
+    final accent = _isAdd ? context.c.gain : context.c.loss;
     final qty = _parse(_qtyCtrl.text) ?? 0;
     final price = _parse(_priceCtrl.text) ?? 0;
     final total = qty * (_isAdd ? price : asset.purchasePrice);
 
     return Dialog(
-      backgroundColor: Sandik.surface1,
+      backgroundColor: context.c.surface1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SandikRadius.lg)),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -214,7 +214,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                         _isAdd ? 'Ekle' : 'Çıkar',
                         style: context.t.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: context.c.text90,
                         ),
                       ),
                       Text(
@@ -222,15 +222,15 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: context.t.titleSmall?.copyWith(
-                          color: Sandik.text58,
+                          color: context.c.text58,
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded,
-                      color: Sandik.text58, size: 22),
+                  icon: Icon(Icons.close_rounded,
+                      color: context.c.text58, size: 22),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -242,13 +242,13 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.04),
+                color: context.c.overlay,
                 borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
               child: Row(
                 children: [
                   Text('Mevcut',
-                      style: context.t.bodySmall?.copyWith(color: Sandik.text36)),
+                      style: context.t.bodySmall?.copyWith(color: context.c.text36)),
                   const Spacer(),
                   Text(
                     '${numFmt.format(asset.quantity)} $_unitLabel · '
@@ -256,7 +256,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: context.c.text90,
                     ),
                   ),
                 ],
@@ -268,7 +268,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             Text('Miktar',
                 style: context.t.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Sandik.text58)),
+                    color: context.c.text58)),
             const SizedBox(height: 6),
             TextField(
               controller: _qtyCtrl,
@@ -281,17 +281,17 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               style: context.t.numLarge.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white),
+                  color: context.c.text90),
               onChanged: (_) => setState(() => _error = null),
               decoration: InputDecoration(
                 hintText: '0',
                 hintStyle:
-                    context.t.headlineSmall?.copyWith(color: Sandik.text36),
+                    context.t.headlineSmall?.copyWith(color: context.c.text36),
                 suffixText: _unitLabel,
                 suffixStyle:
-                    context.t.titleMedium?.copyWith(color: Sandik.text58),
+                    context.t.titleMedium?.copyWith(color: context.c.text58),
                 filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.04),
+                fillColor: context.c.overlay,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   borderSide: BorderSide.none,
@@ -311,16 +311,16 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Sandik.amber.withValues(alpha: 0.08),
+                    color: context.c.amberFill.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(
-                        color: Sandik.amber.withValues(alpha: 0.30)),
+                        color: context.c.amberFill.withValues(alpha: 0.30)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline_rounded,
-                          size: 16, color: Sandik.amber),
+                      Icon(Icons.info_outline_rounded,
+                          size: 16, color: context.c.amberText),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -330,7 +330,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                           'Kaydı tamamen silmek istiyorsan varlık detayından '
                           '"Sil"i kullan.',
                           style: context.t.bodySmall?.copyWith(
-                            color: Sandik.text58,
+                            color: context.c.text58,
                             height: 1.4,
                           ),
                         ),
@@ -346,7 +346,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               Text('Birim fiyat',
                   style: context.t.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Sandik.text58)),
+                      color: context.c.text58)),
               const SizedBox(height: 6),
               TextField(
                 controller: _priceCtrl,
@@ -356,17 +356,17 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                 ],
                 style: context.t.numMedium.copyWith(
-                    fontWeight: FontWeight.w500, color: Colors.white),
+                    fontWeight: FontWeight.w500, color: context.c.text90),
                 onChanged: (_) => setState(() => _error = null),
                 decoration: InputDecoration(
                   hintText: '0.00',
                   hintStyle:
-                      context.t.titleLarge?.copyWith(color: Sandik.text36),
+                      context.t.titleLarge?.copyWith(color: context.c.text36),
                   suffixText: _currencySymbol,
                   suffixStyle:
-                      context.t.titleMedium?.copyWith(color: Sandik.text58),
+                      context.t.titleMedium?.copyWith(color: context.c.text58),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.04),
+                  fillColor: context.c.overlay,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     borderSide: BorderSide.none,
@@ -390,7 +390,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 child: Row(
                   children: [
                     Text(_isAdd ? 'Toplam maliyet' : 'Çıkarılan değer',
-                        style: context.t.titleSmall?.copyWith(color: Sandik.text58)),
+                        style: context.t.titleSmall?.copyWith(color: context.c.text58)),
                     const Spacer(),
                     Text(
                       '${numFmt.format(total)} $_currencySymbol',
@@ -409,7 +409,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               const SizedBox(height: 10),
               Text(
                 _error!,
-                style: context.t.titleSmall?.copyWith(color: Sandik.loss),
+                style: context.t.titleSmall?.copyWith(color: context.c.loss),
               ),
             ],
 
@@ -423,14 +423,14 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     onPressed: _saving ? null : () => Navigator.pop(context),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.white.withValues(alpha: 0.06),
+                      backgroundColor: context.c.overlay,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
                     child: Text('İptal',
                         style: context.t.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Colors.white)),
+                            color: context.c.text90)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -449,7 +449,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                         : Text(_isAdd ? 'Ekle' : 'Çıkar',
                             style: context.t.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: Colors.white)),
+                                color: context.c.text90)),
                   ),
                 ),
               ],
@@ -497,7 +497,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: context.c.overlay,
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   alignment: Alignment.center,
@@ -508,7 +508,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: context.c.text90,
                     ),
                   ),
                 ),

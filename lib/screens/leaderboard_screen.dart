@@ -39,7 +39,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final pState = ref.watch(portfolioProvider).valueOrNull;
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -47,7 +47,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           'Yarış',
           style: context.t.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              color: Colors.white),
+              color: context.c.text90),
         ),
         actions: [
           // Yarıştaki getiri ile Performans ekranındaki yüzde farklı
@@ -55,12 +55,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           // maliyete göre). Kullanıcı ikisini yan yana görünce "hangisi
           // doğru?" diye soruyor — açıklama burada.
           IconButton(
-            icon: const Icon(Icons.info_outline_rounded,
-                color: Sandik.text58, size: 22),
+            icon: Icon(Icons.info_outline_rounded,
+                color: context.c.text58, size: 22),
             tooltip: 'Getiri nasıl hesaplanıyor?',
             onPressed: () => showModalBottomSheet<void>(
               context: context,
-              backgroundColor: Sandik.surface1,
+              backgroundColor: context.c.surface1,
               isScrollControlled: true,
               useSafeArea: true,
               shape: const RoundedRectangleBorder(
@@ -126,7 +126,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                               'varlık listesi görünmez.',
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
-                        color: Sandik.text36,
+                        color: context.c.text36,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -164,7 +164,7 @@ class _RoiInfoSheet extends StatelessWidget {
                 width: 38,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Sandik.text36,
+                  color: context.c.text36,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -174,7 +174,7 @@ class _RoiInfoSheet extends StatelessWidget {
               'Getiri nasıl hesaplanıyor?',
               style: context.t.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: context.c.text90,
               ),
             ),
             const SizedBox(height: 14),
@@ -199,16 +199,16 @@ class _RoiInfoSheet extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Sandik.amber.withValues(alpha: 0.10),
+                color: context.c.amberFill.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
-                    color: Sandik.amber.withValues(alpha: 0.28)),
+                    color: context.c.amberFill.withValues(alpha: 0.28)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.lightbulb_outline_rounded,
-                      size: 18, color: Sandik.amber),
+                  Icon(Icons.lightbulb_outline_rounded,
+                      size: 18, color: context.c.amberText),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -218,7 +218,7 @@ class _RoiInfoSheet extends StatelessWidget {
                       'gösterir; portföy 30 gün önce 145.000 ₺ ise "30 gün" '
                       'yarışındaki getirin +%3,4\'tür.',
                       style: context.t.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.82),
+                        color: context.c.text90,
                         height: 1.45,
                       ),
                     ),
@@ -233,7 +233,7 @@ class _RoiInfoSheet extends StatelessWidget {
               'çıkabilir.',
               style: context.t.labelMedium?.copyWith(
                 letterSpacing: 0,
-                color: Sandik.text36,
+                color: context.c.text36,
                 height: 1.4,
               ),
             ),
@@ -259,23 +259,23 @@ class _InfoBlock extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Sandik.surface2,
+        color: context.c.surface2,
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: Sandik.amber),
+              Icon(icon, size: 18, color: context.c.amberText),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
                   style: context.t.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: context.c.text90,
                   ),
                 ),
               ),
@@ -285,7 +285,7 @@ class _InfoBlock extends StatelessWidget {
           Text(
             body,
             style: context.t.bodySmall?.copyWith(
-              color: Sandik.text58,
+              color: context.c.text58,
               height: 1.45,
             ),
           ),
@@ -307,14 +307,14 @@ class _OptInPrompt extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.emoji_events_outlined,
-                size: 48, color: Sandik.amber),
+            Icon(Icons.emoji_events_outlined,
+                size: 48, color: context.c.amberText),
             const SizedBox(height: 16),
             Text(
               'Yarış\'a katılmadın',
               style: context.t.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: context.c.text90,
               ),
               textAlign: TextAlign.center,
             ),
@@ -325,7 +325,7 @@ class _OptInPrompt extends StatelessWidget {
               'yüzdesini görebilir. Varlıkların ve toplam TRY '
               'değerin asla paylaşılmaz.',
               style: context.t.bodyMedium?.copyWith(
-                color: Sandik.text58,
+                color: context.c.text58,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -334,8 +334,8 @@ class _OptInPrompt extends StatelessWidget {
             FilledButton(
               onPressed: onEnable,
               style: FilledButton.styleFrom(
-                backgroundColor: Sandik.amber,
-                foregroundColor: Colors.black,
+                backgroundColor: context.c.amberFill,
+                foregroundColor: context.c.onAmber,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 24, vertical: 12),
               ),
@@ -452,15 +452,15 @@ class _SoloPanelState extends State<_SoloPanel> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: Sandik.surface1,
+              color: context.c.surface1,
               borderRadius: BorderRadius.circular(SandikRadius.md),
               border:
-                  Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  Border.all(color: context.c.hairline),
             ),
             child: Row(
               children: [
-                const Icon(Icons.people_outline_rounded,
-                    size: 22, color: Sandik.amber),
+                Icon(Icons.people_outline_rounded,
+                    size: 22, color: context.c.amberText),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -470,7 +470,7 @@ class _SoloPanelState extends State<_SoloPanel> {
                         'Ortak ekle, aranızda da yarış',
                         style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: context.c.text90,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -478,7 +478,7 @@ class _SoloPanelState extends State<_SoloPanel> {
                         'Kimsenin varlık listesi paylaşılmaz — yalnız '
                         'getiri yüzdeleri sıralanır.',
                         style: context.t.bodySmall?.copyWith(
-                          color: Sandik.text58,
+                          color: context.c.text58,
                           height: 1.35,
                         ),
                       ),
@@ -504,8 +504,8 @@ class _SoloRoiCard extends StatelessWidget {
     final r = roi;
     final positive = r != null && r >= 0;
     final color = r == null
-        ? Sandik.text58
-        : (positive ? Sandik.gain : Sandik.loss);
+        ? context.c.text58
+        : (positive ? context.c.gain : context.c.loss);
     final valueText = r == null
         ? (computing ? 'Hesaplanıyor…' : '—')
         : '${positive ? '+' : ''}${r.toStringAsFixed(2)}%';
@@ -516,7 +516,7 @@ class _SoloRoiCard extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             color.withValues(alpha: 0.18),
-            Sandik.surface1.withValues(alpha: 0.9),
+            context.c.surface1.withValues(alpha: 0.9),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -556,7 +556,7 @@ class _SoloRoiCard extends StatelessWidget {
                   style: context.t.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
-                    color: Sandik.text58,
+                    color: context.c.text58,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -601,10 +601,10 @@ class _PeriodBar extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
+          color: context.c.overlay,
           borderRadius: BorderRadius.circular(SandikRadius.lg),
           border:
-              Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              Border.all(color: context.c.hairline),
         ),
         child: Row(
           children: List.generate(periods.length, (i) {
@@ -614,23 +614,21 @@ class _PeriodBar extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => onChange(i),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
+                  duration: SandikMotion.of(context, const Duration(milliseconds: 220)),
                   curve: Curves.easeOutCubic,
                   margin: EdgeInsets.symmetric(
                       horizontal: active ? 0 : 2),
                   decoration: BoxDecoration(
-                    gradient: active
-                        ? LinearGradient(
-                            colors: [Sandik.gold, Sandik.amber],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
+                    // Seçili pill bir YÜZEY — dolgu token'ı kullanılır.
+                    // (Eskiden `[gold, amberText]` idi; ikisi de metin
+                    // token'ı olduğu için light'ta çöküyordu — bkz.
+                    // `SandikPalette.amberGradient`.)
+                    gradient: active ? context.c.amberGradient : null,
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     boxShadow: active
                         ? [
                             BoxShadow(
-                              color: Sandik.amber
+                              color: context.c.amberFill
                                   .withValues(alpha: 0.35),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
@@ -640,11 +638,12 @@ class _PeriodBar extends StatelessWidget {
                   ),
                   child: Center(
                     child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 200),
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
                       style: context.t.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w800,
                         color:
-                            active ? Colors.black : Sandik.text58,
+                            active ? context.c.onAmber : context.c.text58,
                         letterSpacing: 0.6,
                       ),
                       child: Text(periods[i]),
@@ -848,7 +847,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
           return Center(
             child: Text(
               'Veri hazır değil.',
-              style: context.t.bodyMedium?.copyWith(color: Sandik.text58),
+              style: context.t.bodyMedium?.copyWith(color: context.c.text58),
             ),
           );
         }
@@ -878,7 +877,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
             // Stale gösterirken üstte ince progress bar — yeni veri
             // geldiğinde otomatik kaybolur, kullanıcıyı bekletmez.
             if (isLoading)
-              const Positioned(
+              Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
@@ -887,7 +886,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
                   child: LinearProgressIndicator(
                     minHeight: 2,
                     backgroundColor: Colors.transparent,
-                    color: Sandik.amber,
+                    color: context.c.amberFill,
                   ),
                 ),
               ),
@@ -935,8 +934,8 @@ class _LeaderRow extends StatelessWidget {
     final roi = row.roi;
     final positive = roi != null && roi >= 0;
     final roiColor = roi == null
-        ? Sandik.text36
-        : (positive ? Sandik.gain : Sandik.loss);
+        ? context.c.text36
+        : (positive ? context.c.gain : context.c.loss);
     final roiText = roi == null
         ? 'Veri yok'
         : '${positive ? '+' : ''}${roi.toStringAsFixed(1)}%';
@@ -966,21 +965,21 @@ class _LeaderRow extends StatelessWidget {
           const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: isMe
-            ? Sandik.amber.withValues(alpha: 0.10)
-            : Sandik.surface1,
+            ? context.c.amberFill.withValues(alpha: 0.10)
+            : context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: isMe
-              ? Sandik.amber.withValues(alpha: 0.55)
+              ? context.c.amberFill.withValues(alpha: 0.55)
               : isLeader
-                  ? Sandik.gold.withValues(alpha: 0.35)
-                  : Colors.white.withValues(alpha: 0.05),
+                  ? context.c.gold.withValues(alpha: 0.35)
+                  : context.c.overlay,
           width: isLeader && !isMe ? 1.2 : 1.0,
         ),
         boxShadow: isLeader
             ? [
                 BoxShadow(
-                  color: Sandik.gold.withValues(alpha: 0.15),
+                  color: context.c.gold.withValues(alpha: 0.15),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -1008,7 +1007,7 @@ class _LeaderRow extends StatelessWidget {
                             row.displayName,
                             style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: context.c.text90,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1021,7 +1020,7 @@ class _LeaderRow extends StatelessWidget {
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color:
-                                  Sandik.gold.withValues(alpha: 0.18),
+                                  context.c.gold.withValues(alpha: 0.18),
                               borderRadius: BorderRadius.circular(SandikRadius.sm),
                             ),
                             child: Text(
@@ -1029,7 +1028,7 @@ class _LeaderRow extends StatelessWidget {
                               style: context.t.labelSmall?.copyWith(
                                 fontSize: 8,
                                 fontWeight: FontWeight.w900,
-                                color: Sandik.gold,
+                                color: context.c.gold,
                                 letterSpacing: 0.8,
                               ),
                             ),
@@ -1045,7 +1044,13 @@ class _LeaderRow extends StatelessWidget {
                           fontSize: 10.5,
                           letterSpacing: 0,
                           fontWeight: FontWeight.w600,
-                          color: Sandik.amber.withValues(alpha: 0.85),
+                          // `amberFill` MARKA DOLGU rengidir (#F5A623) ve
+                          // light/dark'ta değişmez — zemin olarak doğru,
+                          // METİN olarak değil: light yüzeyde 1.77:1 veriyordu
+                          // (AA eşiği 4.5:1), yani cümle neredeyse görünmezdi.
+                          // `amberText` tam da bunun için var: aynı marka
+                          // ailesinin okunabilir tonu (light'ta 10.98:1).
+                          color: context.c.amberText,
                         ),
                       ),
                     ],
@@ -1075,10 +1080,13 @@ class _LeaderRow extends StatelessWidget {
   Widget _rankBadge(BuildContext context) {
     // 1-3: gradient madalyalar; 4+: sade amber outlined
     if (rank <= 3) {
+      // Tonlar [Sandik] madalya token'larından gelir — gradient'in her iki
+      // ucunda da koyu rakamın okunabilmesi için kalibre edildi (bkz. token
+      // dokümantasyonu). Yerinde renk yazmak o kalibrasyonu bozar.
       final (Color light, Color dark) = switch (rank) {
-        1 => (Sandik.gold, const Color(0xFFB8860B)),
-        2 => (const Color(0xFFE0E0E0), const Color(0xFF9E9E9E)),
-        _ => (const Color(0xFFCD7F32), const Color(0xFF8B4513)),
+        1 => (Sandik.medalGold, Sandik.medalGoldDark),
+        2 => (Sandik.medalSilver, Sandik.medalSilverDark),
+        _ => (Sandik.medalBronze, Sandik.medalBronzeDark),
       };
       return Container(
         width: 34,
@@ -1104,7 +1112,7 @@ class _LeaderRow extends StatelessWidget {
           style: context.t.numSmall.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w900,
-            color: Colors.black.withValues(alpha: 0.75),
+            color: context.c.onAmber.withValues(alpha: 0.85),
           ),
         ),
       );
@@ -1114,17 +1122,17 @@ class _LeaderRow extends StatelessWidget {
       height: 34,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: context.c.overlay,
         shape: BoxShape.circle,
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.15),
+          color: context.c.overlay,
         ),
       ),
       child: Text(
         '$rank',
         style: context.t.numSmall.copyWith(
           fontWeight: FontWeight.w800,
-          color: Sandik.text58,
+          color: context.c.text58,
         ),
       ),
     );
@@ -1144,7 +1152,7 @@ class _DiffBar extends StatelessWidget {
       borderRadius: BorderRadius.circular(SandikRadius.sm),
       child: Container(
         height: 4,
-        color: Colors.white.withValues(alpha: 0.05),
+        color: context.c.overlay,
         child: FractionallySizedBox(
           alignment: Alignment.centerLeft,
           widthFactor: ratio.clamp(0.0, 1.0),
@@ -1248,15 +1256,15 @@ class _GlobalPercentileTeaserState
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF1A3D2E).withValues(alpha: 0.7),
-            Sandik.surface1.withValues(alpha: 0.8),
+            context.c.surface2.withValues(alpha: 0.7),
+            context.c.surface1.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border:
-            Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            Border.all(color: context.c.hairline),
       ),
       child: child,
     );
@@ -1266,23 +1274,23 @@ class _GlobalPercentileTeaserState
     // Loading
     if (state == ConnectionState.waiting && data == null) {
       return _row(
-        badge: const _Badge(text: 'YÜKLENİYOR', color: Sandik.text58),
+        badge: _Badge(text: 'YÜKLENİYOR', color: context.c.text58),
         title: 'Genel Sıralama',
         subtitle: 'Anonim havuz kontrol ediliyor…',
         icon: Icons.public_rounded,
-        iconColor: Sandik.text58,
+        iconColor: context.c.text58,
       );
     }
 
     // k-anonymity altında veya yeterli veri yok
     if (data == null) {
       return _row(
-        badge: const _Badge(text: 'YAKINDA', color: Sandik.gain),
+        badge: _Badge(text: 'YAKINDA', color: context.c.gain),
         title: 'Genel Sıralama',
         subtitle:
             'Yeterli katılımcı olunca sıran açılacak — anonim, KVKK uyumlu',
         icon: Icons.public_rounded,
-        iconColor: Sandik.gain,
+        iconColor: context.c.gain,
       );
     }
 
@@ -1296,12 +1304,12 @@ class _GlobalPercentileTeaserState
         text: total > 1000
             ? '${(total / 1000).toStringAsFixed(1)}K KİŞİ'
             : '$total KİŞİ',
-        color: Colors.white.withValues(alpha: 0.6),
+        color: context.c.text58,
       ),
       title: '$periodCap sıralamada ilk %$pct\'desin',
       subtitle: tone,
       icon: Icons.public_rounded,
-      iconColor: pct <= 25 ? Sandik.gain : Sandik.amber,
+      iconColor: pct <= 25 ? context.c.gain : context.c.amberText,
       hero: true,
     );
   }
@@ -1353,7 +1361,7 @@ class _GlobalPercentileTeaserState
                       style: context.t.bodyMedium?.copyWith(
                         fontSize: hero ? 14 : 13,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: context.c.text90,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1367,7 +1375,7 @@ class _GlobalPercentileTeaserState
               Text(
                 subtitle,
                 style: context.t.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.65),
+                  color: context.c.text58,
                   height: 1.35,
                 ),
                 maxLines: 2,
@@ -1467,14 +1475,14 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Sandik.gold.withValues(alpha: 0.08),
-            Sandik.surface1.withValues(alpha: 0.9),
+            context.c.gold.withValues(alpha: 0.08),
+            context.c.surface1.withValues(alpha: 0.9),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Sandik.gold.withValues(alpha: 0.18)),
+        border: Border.all(color: context.c.gold.withValues(alpha: 0.18)),
       ),
       child: child,
     );
@@ -1515,15 +1523,13 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
           height: 30,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Sandik.gold, Sandik.amber],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            gradient: context.c.amberGradient,
             borderRadius: BorderRadius.circular(SandikRadius.sm),
           ),
-          child: const Icon(Icons.emoji_events_rounded,
-              color: Colors.black87, size: 16),
+          // Sabit `Colors.black87` yerine tema token'ı — amber dolgunun
+          // üzerine gelen içerik rengi tanımı zaten `onAmber`.
+          child: Icon(Icons.emoji_events_rounded,
+              color: context.c.onAmber, size: 16),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -1535,7 +1541,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
                 'Zirvedeki Portföyler',
                 style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: context.c.text90,
                 ),
               ),
               const SizedBox(height: 1),
@@ -1543,7 +1549,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
                 '${_periodLabel.toLowerCase()} en çok kazananların dağılımı',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
-                  color: Sandik.text58,
+                  color: context.c.text58,
                 ),
               ),
             ],
@@ -1552,7 +1558,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: Sandik.gold.withValues(alpha: 0.14),
+            color: context.c.gold.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(SandikRadius.sm),
           ),
           child: Text(
@@ -1560,7 +1566,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
             style: context.t.labelSmall?.copyWith(
               fontSize: 8,
               fontWeight: FontWeight.w900,
-              color: Sandik.gold,
+              color: context.c.gold,
               letterSpacing: 0.8,
             ),
           ),
@@ -1576,7 +1582,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
         'Yeterli katılımcı olunca zirve portföyler burada görünecek. '
         'Anonim havuz oluşuyor…',
         style: context.t.bodySmall?.copyWith(
-          color: Sandik.text58,
+          color: context.c.text58,
           height: 1.35,
         ),
       ),
@@ -1596,23 +1602,23 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
           final r = rows[i];
           final selected = i == _expandedIdx;
           final positive = r.roiPct >= 0;
-          final roiColor = positive ? Sandik.gain : Sandik.loss;
+          final roiColor = positive ? context.c.gain : context.c.loss;
           return GestureDetector(
             onTap: () => setState(() => _expandedIdx = i),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
+              duration: SandikMotion.stateOf(context),
               curve: SandikMotion.enter,
               padding: const EdgeInsets.symmetric(
                   horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: selected
-                    ? Sandik.gold.withValues(alpha: 0.16)
-                    : Colors.white.withValues(alpha: 0.04),
+                    ? context.c.gold.withValues(alpha: 0.16)
+                    : context.c.overlay,
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                   color: selected
-                      ? Sandik.gold.withValues(alpha: 0.55)
-                      : Colors.white.withValues(alpha: 0.06),
+                      ? context.c.gold.withValues(alpha: 0.55)
+                      : context.c.overlay,
                   width: selected ? 1.2 : 1.0,
                 ),
               ),
@@ -1629,7 +1635,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
                         '${r.rank}. portföy',
                         style: context.t.labelMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: Sandik.text58,
+                          color: context.c.text58,
                           letterSpacing: 0.4,
                         ),
                       ),
@@ -1652,11 +1658,12 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
   }
 
   Widget _rankMedal(BuildContext context, int rank) {
+    // Bkz. `_rankBadge` — aynı kalibre edilmiş token seti.
     final (light, dark) = switch (rank) {
-      1 => (Sandik.gold, const Color(0xFFB8860B)),
-      2 => (const Color(0xFFE0E0E0), const Color(0xFF9E9E9E)),
-      3 => (const Color(0xFFCD7F32), const Color(0xFF8B4513)),
-      _ => (Colors.white24, Colors.white10),
+      1 => (Sandik.medalGold, Sandik.medalGoldDark),
+      2 => (Sandik.medalSilver, Sandik.medalSilverDark),
+      3 => (Sandik.medalBronze, Sandik.medalBronzeDark),
+      _ => (context.c.hairline, context.c.hairline),
     };
     return Container(
       width: 22,
@@ -1675,7 +1682,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
         style: context.t.numSmall.copyWith(
           fontSize: 10,
           fontWeight: FontWeight.w900,
-          color: Colors.black.withValues(alpha: 0.75),
+          color: context.c.onAmber.withValues(alpha: 0.85),
         ),
       ),
     );
@@ -1787,7 +1794,7 @@ class _LegendChip extends StatelessWidget {
             label,
             style: context.t.bodySmall?.copyWith(
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: context.c.text90,
             ),
           ),
           const SizedBox(width: 6),

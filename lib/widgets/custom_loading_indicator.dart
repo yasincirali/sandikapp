@@ -67,7 +67,7 @@ class CustomLoadingIndicator extends StatelessWidget {
                 height: size,
                 child: CircularProgressIndicator(
                   strokeWidth: size <= small ? 2 : 3,
-                  valueColor: const AlwaysStoppedAnimation(Sandik.amber),
+                  valueColor: AlwaysStoppedAnimation(context.c.amberText),
                 ),
               ),
             ),
@@ -102,7 +102,7 @@ class CustomLoadingView extends StatelessWidget {
             Text(
               message!,
               textAlign: TextAlign.center,
-              style: context.t.bodyMedium?.copyWith(color: Sandik.text58),
+              style: context.t.bodyMedium?.copyWith(color: context.c.text58),
             ),
           ],
         ],

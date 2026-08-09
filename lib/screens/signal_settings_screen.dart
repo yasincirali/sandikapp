@@ -26,19 +26,19 @@ class SignalSettingsScreen extends ConsumerWidget {
     final neutralPush = ref.watch(signalNeutralPushProvider);
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: context.c.text90, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Sinyal Ayarları',
           style: context.t.headlineMedium?.copyWith(
-            color: Colors.white,
+            color: context.c.text90,
           ),
         ),
       ),
@@ -63,9 +63,9 @@ class SignalSettingsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Sandik.surface1,
+              color: context.c.surface1,
               borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              border: Border.all(color: context.c.hairline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,12 +79,12 @@ class SignalSettingsScreen extends ConsumerWidget {
                           Text('Nötr sinyalleri de bildir',
                               style: context.t.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white)),
+                                  color: context.c.text90)),
                           const SizedBox(height: 3),
                           Text(
                             'Kapalıyken sadece AL/SAT bildirimi gelir. Nötr sinyaller yine geçmişe yazılır.',
                             style: context.t.bodySmall?.copyWith(
-                                color: Sandik.text58,
+                                color: context.c.text58,
                                 height: 1.4),
                           ),
                         ],
@@ -92,7 +92,7 @@ class SignalSettingsScreen extends ConsumerWidget {
                     ),
                     Switch.adaptive(
                       value: neutralPush,
-                      activeColor: Sandik.amber,
+                      activeColor: context.c.amberText,
                       onChanged: (v) async {
                         await ref
                             .read(signalNeutralPushProvider.notifier)
@@ -112,7 +112,7 @@ class SignalSettingsScreen extends ConsumerWidget {
           Text(
             'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
             style: context.t.titleSmall?.copyWith(
-                color: Sandik.text58, height: 1.5),
+                color: context.c.text58, height: 1.5),
           ),
           const SizedBox(height: 16),
 
@@ -160,21 +160,21 @@ class _PremiumCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: unlocked
-              ? [Sandik.amber.withValues(alpha: 0.18), Sandik.amber.withValues(alpha: 0.05)]
-              : [Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.02)],
+              ? [context.c.amberFill.withValues(alpha: 0.18), context.c.amberFill.withValues(alpha: 0.05)]
+              : [context.c.overlay, context.c.overlay],
         ),
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: unlocked
-              ? Sandik.amber.withValues(alpha: 0.4)
-              : Colors.white.withValues(alpha: 0.08),
+              ? context.c.amberFill.withValues(alpha: 0.4)
+              : context.c.overlay,
         ),
       ),
       child: Row(
         children: [
           Icon(
             unlocked ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded,
-            color: unlocked ? Sandik.amber : Sandik.text58,
+            color: unlocked ? context.c.amberText : context.c.text58,
             size: 28,
           ),
           const SizedBox(width: 14),
@@ -186,7 +186,7 @@ class _PremiumCard extends StatelessWidget {
                   unlocked ? 'Premium aktif' : 'Premium göstergeler',
                   style: context.t.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: context.c.text90,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -195,7 +195,7 @@ class _PremiumCard extends StatelessWidget {
                       ? 'ADX, Williams %R ve CCI göstergeleri kullanılabilir.'
                       : 'ADX, Williams %R, CCI göstergelerini açmak için Premium\'a geç.',
                   style: context.t.bodySmall?.copyWith(
-                      color: Sandik.text58, height: 1.4),
+                      color: context.c.text58, height: 1.4),
                 ),
               ],
             ),
@@ -205,14 +205,14 @@ class _PremiumCard extends StatelessWidget {
             onPressed: onToggle,
             style: TextButton.styleFrom(
               backgroundColor:
-                  unlocked ? Colors.white.withValues(alpha: 0.08) : Sandik.amber,
+                  unlocked ? context.c.overlay : context.c.amberText,
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             child: Text(
               unlocked ? 'Kapat' : 'Aç',
               style: TextStyle(
-                color: unlocked ? Colors.white : Colors.black,
+                color: unlocked ? context.c.text90 : context.c.onAmber,
                 fontWeight: FontWeight.w700,
                 fontSize: 12,
               ),
@@ -253,9 +253,9 @@ class _CategorySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: Column(
         children: [
@@ -269,7 +269,7 @@ class _CategorySection extends StatelessWidget {
                   type.label,
                   style: context.t.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: context.c.text90,
                   ),
                 ),
               ],
@@ -282,7 +282,7 @@ class _CategorySection extends StatelessWidget {
                 Text(
                   'Bildirim eşiği',
                   style: context.t.titleSmall?.copyWith(
-                      color: Sandik.text58,
+                      color: context.c.text58,
                       fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
@@ -295,7 +295,7 @@ class _CategorySection extends StatelessWidget {
           ),
           Divider(
             height: 1,
-            color: Colors.white.withValues(alpha: 0.05),
+            color: context.c.overlay,
           ),
           _FrequencyRow(
             type: type,
@@ -305,7 +305,7 @@ class _CategorySection extends StatelessWidget {
           ),
           Divider(
             height: 1,
-            color: Colors.white.withValues(alpha: 0.05),
+            color: context.c.overlay,
           ),
           for (final id in IndicatorId.all)
             _IndicatorRow(
@@ -356,7 +356,7 @@ class _FrequencyRow extends StatelessWidget {
 
     final sonuc = await showModalBottomSheet<List<int>>(
       context: context,
-      backgroundColor: Sandik.surface1,
+      backgroundColor: context.c.surface1,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -377,7 +377,7 @@ class _FrequencyRow extends StatelessWidget {
                       width: 38,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Sandik.text36,
+                        color: context.c.text36,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -388,7 +388,7 @@ class _FrequencyRow extends StatelessWidget {
                         ? 'Bildirim saatini seç'
                         : 'İki bildirim saati seç',
                     style: context.t.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700, color: Colors.white),
+                        fontWeight: FontWeight.w700, color: context.c.text90),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -396,7 +396,7 @@ class _FrequencyRow extends StatelessWidget {
                     '${_saatMetni(kSignalWindowStart)}–'
                     '${_saatMetni(kSignalWindowEnd)} arasında gönderilir.',
                     style: context.t.bodySmall
-                        ?.copyWith(color: Sandik.text58, height: 1.4),
+                        ?.copyWith(color: context.c.text58, height: 1.4),
                   ),
                   const SizedBox(height: 6),
                   // Seçili saatler her zaman görünür — kapasite dolduğunda
@@ -406,7 +406,7 @@ class _FrequencyRow extends StatelessWidget {
                         ? 'Henüz saat seçilmedi'
                         : 'Seçili: ${([...secili]..sort()).map(_saatMetni).join("  •  ")}',
                     style: context.t.bodySmall?.copyWith(
-                        color: secili.isEmpty ? Sandik.text36 : Sandik.amber,
+                        color: secili.isEmpty ? context.c.text36 : context.c.amberText,
                         fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 14),
@@ -444,9 +444,9 @@ class _FrequencyRow extends StatelessWidget {
                     width: double.infinity,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                          backgroundColor: Sandik.amber,
+                          backgroundColor: context.c.amberFill,
                           disabledBackgroundColor:
-                              Sandik.amber.withValues(alpha: 0.3)),
+                              context.c.amberFill.withValues(alpha: 0.3)),
                       onPressed: tam
                           ? () => Navigator.pop(ctx, [...secili]..sort())
                           : null,
@@ -478,7 +478,7 @@ class _FrequencyRow extends StatelessWidget {
           Text(
             'Bildirim sıklığı',
             style: context.t.titleSmall?.copyWith(
-                color: Sandik.text58, fontWeight: FontWeight.w600),
+                color: context.c.text58, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 10),
           // Liste seçimi (Wrap+chip DEĞİL).
@@ -496,9 +496,9 @@ class _FrequencyRow extends StatelessWidget {
           // hiçbir şey kaymaz. iOS Ayarlar'ın kendi seçim deseni de budur.
           Container(
             decoration: BoxDecoration(
-              color: Sandik.surface2,
+              color: context.c.surface2,
               borderRadius: BorderRadius.circular(SandikRadius.sm),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              border: Border.all(color: context.c.hairline),
             ),
             child: Column(
               children: [
@@ -507,7 +507,7 @@ class _FrequencyRow extends StatelessWidget {
                     Divider(
                       height: 1,
                       indent: 12,
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: context.c.overlay,
                     ),
                   _FrequencyOption(
                     frequency: SignalFrequency.values[i],
@@ -532,7 +532,7 @@ class _FrequencyRow extends StatelessWidget {
               '${_saatMetni(kSignalWindowStart)}–'
               '${_saatMetni(kSignalWindowEnd)} arası.',
               style: context.t.bodySmall
-                  ?.copyWith(color: Sandik.text36, height: 1.4),
+                  ?.copyWith(color: context.c.text36, height: 1.4),
             ),
         ],
       ),
@@ -589,15 +589,15 @@ class _FrequencyOption extends StatelessWidget {
                     SizedBox(
                       width: 22,
                       child: secili
-                          ? const Icon(Icons.check_rounded,
-                              size: 18, color: Sandik.amber)
+                          ? Icon(Icons.check_rounded,
+                              size: 18, color: context.c.amberText)
                           : null,
                     ),
                     Expanded(
                       child: Text(
                         frequency.label,
                         style: context.t.bodyMedium?.copyWith(
-                          color: secili ? Sandik.amber : Colors.white,
+                          color: secili ? context.c.amberText : context.c.text90,
                           // Ağırlık BİLİNÇLİ olarak sabit — bkz. sınıf notu.
                           fontWeight: FontWeight.w600,
                         ),
@@ -614,23 +614,23 @@ class _FrequencyOption extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(34, 0, 12, 10),
                     child: Row(
                       children: [
-                        const Icon(Icons.schedule_rounded,
-                            size: 15, color: Sandik.text58),
+                        Icon(Icons.schedule_rounded,
+                            size: 15, color: context.c.text58),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             hoursLabel!,
                             style: context.t.bodySmall?.copyWith(
-                                color: Colors.white, height: 1.3),
+                                color: context.c.text90, height: 1.3),
                           ),
                         ),
                         Text(
                           'Değiştir',
                           style: context.t.labelMedium?.copyWith(
-                              color: Sandik.amber, letterSpacing: 0),
+                              color: context.c.amberText, letterSpacing: 0),
                         ),
-                        const Icon(Icons.chevron_right_rounded,
-                            size: 16, color: Sandik.text36),
+                        Icon(Icons.chevron_right_rounded,
+                            size: 16, color: context.c.text36),
                       ],
                     ),
                   ),
@@ -662,26 +662,27 @@ class _SaatChip extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: SandikMotion.stateOf(context),
+          curve: SandikMotion.enter,
           // 44pt HIG minimum dokunma hedefi.
           constraints: const BoxConstraints(minHeight: 44, minWidth: 72),
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: secili
-                ? Sandik.amber.withValues(alpha: 0.18)
-                : Colors.white.withValues(alpha: 0.05),
+                ? context.c.amberFill.withValues(alpha: 0.18)
+                : context.c.overlay,
             borderRadius: BorderRadius.circular(SandikRadius.sm),
             border: Border.all(
               color: secili
-                  ? Sandik.amber.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.08),
+                  ? context.c.amberFill.withValues(alpha: 0.6)
+                  : context.c.overlay,
             ),
           ),
           child: Text(
             label,
             style: context.t.bodySmall?.copyWith(
-              color: secili ? Sandik.amber : Sandik.text58,
+              color: secili ? context.c.amberText : context.c.text58,
               // Ağırlık SABİT: seçimle değişirse metin genişler, chip büyür
               // ve Wrap tüm satırı yeniden dizer. Seçim rengi zaten yeterli
               // ayrım sağlıyor.
@@ -726,8 +727,8 @@ class _IndicatorRow extends StatelessWidget {
                       ? Icons.check_box_rounded
                       : Icons.check_box_outline_blank_rounded),
               color: locked
-                  ? Sandik.text36
-                  : (checked ? Sandik.amber : Sandik.text58),
+                  ? context.c.text36
+                  : (checked ? context.c.amberText : context.c.text58),
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -736,7 +737,7 @@ class _IndicatorRow extends StatelessWidget {
                 IndicatorId.labelOf(id),
                 style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: locked ? Sandik.text36 : Colors.white,
+                  color: locked ? context.c.text36 : context.c.text90,
                 ),
               ),
             ),
@@ -779,14 +780,14 @@ class _IndicatorRow extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Sandik.amber.withValues(alpha: 0.15),
+                    color: context.c.amberFill.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text(
                     'PREMIUM',
                     style: context.t.labelSmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: Sandik.amber,
+                      color: context.c.amberText,
                       letterSpacing: 0.8,
                     ),
                   ),
@@ -810,7 +811,7 @@ class _ThresholdSegment extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: context.c.overlay,
         borderRadius: BorderRadius.circular(SandikRadius.md),
       ),
       child: Row(
@@ -820,18 +821,18 @@ class _ThresholdSegment extends StatelessWidget {
             GestureDetector(
               onTap: () => onChanged(opt),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
+                duration: SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: value == opt
-                      ? Sandik.amber.withValues(alpha: 0.20)
+                      ? context.c.amberFill.withValues(alpha: 0.20)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                   border: Border.all(
                     color: value == opt
-                        ? Sandik.amber.withValues(alpha: 0.55)
+                        ? context.c.amberFill.withValues(alpha: 0.55)
                         : Colors.transparent,
                   ),
                 ),
@@ -841,8 +842,8 @@ class _ThresholdSegment extends StatelessWidget {
                     fontWeight:
                         value == opt ? FontWeight.w800 : FontWeight.w600,
                     color: value == opt
-                        ? Sandik.amber
-                        : Colors.white.withValues(alpha: 0.55),
+                        ? context.c.amberText
+                        : context.c.text58,
                   ),
                 ),
               ),

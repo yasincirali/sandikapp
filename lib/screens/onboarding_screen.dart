@@ -228,7 +228,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 child: Text(
                   'Atla',
                   style: context.t.titleMedium?.copyWith(
-                    color: Sandik.text58,
+                    color: context.c.text58,
                   ),
                 ),
               ),
@@ -247,20 +247,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Sandik.amber.withValues(alpha: 0.12),
+                      color: context.c.amberFill.withValues(alpha: 0.12),
                       border: Border.all(
-                        color: Sandik.amber.withValues(alpha: 0.40),
+                        color: context.c.amberFill.withValues(alpha: 0.40),
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Sandik.amber.withValues(alpha: 0.25),
+                          color: context.c.amberFill.withValues(alpha: 0.25),
                           blurRadius: 40,
                           spreadRadius: 8,
                         ),
                       ],
                     ),
-                    child: Icon(step.icon, size: 48, color: Sandik.amber),
+                    child: Icon(step.icon, size: 48, color: context.c.amberText),
                   ),
 
                   const SizedBox(height: 36),
@@ -271,10 +271,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Sandik.surface1,
+                        color: context.c.surface1,
                         borderRadius: BorderRadius.circular(SandikRadius.lg),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: context.c.overlay,
                         ),
                       ),
                       child: Column(
@@ -283,7 +283,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           Text(
                             step.title,
                             style: context.t.headlineMedium?.copyWith(
-                              color: Colors.white,
+                              color: context.c.text90,
                               letterSpacing: -0.3,
                             ),
                           ),
@@ -291,7 +291,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           Text(
                             step.body,
                             style: context.t.titleMedium?.copyWith(
-                              color: Sandik.text58,
+                              color: context.c.text58,
                               height: 1.6,
                             ),
                           ),
@@ -308,13 +308,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     children: List.generate(_steps.length, (i) {
                       final active = i == _step;
                       return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
+                        duration: SandikMotion.of(context, const Duration(milliseconds: 200)),
                         curve: SandikMotion.enter,
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         width: active ? 24 : 7,
                         height: 7,
                         decoration: BoxDecoration(
-                          color: active ? Sandik.amber : Sandik.text36,
+                          color: active ? context.c.amberText : context.c.text36,
                           borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                       );
@@ -334,11 +334,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         child: Container(
                           height: 52,
                           decoration: BoxDecoration(
-                            color: Sandik.amber.withValues(alpha: 0.92),
+                            color: context.c.amberFill.withValues(alpha: 0.92),
                             borderRadius: BorderRadius.circular(SandikRadius.md),
                             boxShadow: [
                               BoxShadow(
-                                color: Sandik.amber.withValues(alpha: 0.28),
+                                color: context.c.amberFill.withValues(alpha: 0.28),
                                 blurRadius: 18,
                                 spreadRadius: -4,
                                 offset: const Offset(0, 6),
@@ -350,7 +350,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             _isLast ? 'Sandığımı Aç' : 'İleri',
                             style: context.t.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: Sandik.dark,
+                              color: context.c.onAmber,
                             ),
                           ),
                         ),

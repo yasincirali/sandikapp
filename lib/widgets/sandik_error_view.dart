@@ -24,12 +24,12 @@ class SandikErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded, color: Sandik.loss, size: 40),
+            Icon(Icons.error_outline_rounded, color: context.c.loss, size: 40),
             const SizedBox(height: 16),
             Text(
               friendlyError(error),
               textAlign: TextAlign.center,
-              style: context.t.titleMedium?.copyWith(color: Sandik.text58),
+              style: context.t.titleMedium?.copyWith(color: context.c.text58),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 20),
@@ -46,16 +46,16 @@ class SandikErrorView extends StatelessWidget {
                     vertical: SandikSpace.sm + 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Sandik.amber.withValues(alpha: 0.12),
+                    color: context.c.amberFill.withValues(alpha: 0.12),
                     borderRadius: SandikRadius.mdAll,
                     border: Border.all(
-                      color: Sandik.amber.withValues(alpha: 0.28),
+                      color: context.c.amberFill.withValues(alpha: 0.28),
                     ),
                   ),
                   child: Text(
                     'Tekrar Dene',
                     style: context.t.titleMedium?.copyWith(
-                      color: Sandik.amber,
+                      color: context.c.amberText,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

@@ -47,23 +47,33 @@ Future<DateTime?> pickSandikDate(
     helpText: helpText,
     cancelText: 'İptal',
     confirmText: 'Seç',
-    builder: (ctx, child) => Theme(
-      data: Theme.of(ctx).copyWith(
-        colorScheme: const ColorScheme.dark(
-          primary: Sandik.amber,
-          onPrimary: Colors.black,
-          surface: Sandik.surface2,
-          onSurface: Colors.white,
-        ),
-        dialogTheme: DialogThemeData(
-          backgroundColor: Sandik.surface2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SandikRadius.md),
+    builder: (ctx, child) {
+      // Palet AKTİF TEMADAN okunur. Eskiden burada sabit `ColorScheme.dark`
+      // vardı: light modda uygulama aydınlıkken tarih seçici koyu açılıyor,
+      // her tarih girişinde tema kırılıyordu. `copyWith` yalnızca marka
+      // renklerini bindiriyor; parlaklık (brightness) temadan gelir, böylece
+      // takvimin kendi iç kontrastları (bugünün halkası, devre dışı günler)
+      // doğru tarafta kalır.
+      final p = ctx.c;
+      final base = Theme.of(ctx);
+      return Theme(
+        data: base.copyWith(
+          colorScheme: base.colorScheme.copyWith(
+            primary: p.amberFill,
+            onPrimary: p.onAmber,
+            surface: p.surface2,
+            onSurface: p.text90,
+          ),
+          dialogTheme: DialogThemeData(
+            backgroundColor: p.surface2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(SandikRadius.md),
+            ),
           ),
         ),
-      ),
-      child: child!,
-    ),
+        child: child!,
+      );
+    },
   );
 }
 
@@ -195,6 +205,40 @@ abstract final class SandikMotion {
 
   /// Ekranda yer değiştiren / biçim değiştiren eleman.
   static const Curve move = Curves.easeInOutCubic;
+
+  // ── Erişilebilirlik ───────────────────────────────────────────────────────
+
+  /// "Hareketi azalt" sistem ayarı açıkken [Duration.zero], değilse [d].
+  ///
+  /// iOS HIG (Accessibility → Motion) bunu **High severity** sayar: hareket
+  /// duyarlılığı olan kullanıcıda animasyon baş dönmesi ve mide bulantısı
+  /// tetikleyebilir. Ayar açıkken animasyonu *kaldırmıyoruz* — süreyi sıfıra
+  /// çekiyoruz. Sonuç aynı: son kare anında görünür, ama widget ağacı ve
+  /// `onEnd` geri çağrıları değişmediği için çağıran tarafta hiçbir dallanma
+  /// gerekmez.
+  ///
+  /// ```dart
+  /// AnimatedContainer(
+  ///   duration: SandikMotion.stateOf(context),
+  ///   curve: SandikMotion.enter,
+  ///   ...
+  /// )
+  /// ```
+  ///
+  /// Süreyi elle `MediaQuery.disableAnimationsOf` ile dallandırmak yerine bunu
+  /// kullan: koruma tek yerde tanımlı kalır, yeni animasyon eklendiğinde
+  /// unutulmaz.
+  static Duration of(BuildContext context, Duration d) =>
+      MediaQuery.disableAnimationsOf(context) ? Duration.zero : d;
+
+  /// [press] süresinin reduce-motion farkındalıklı hâli.
+  static Duration pressOf(BuildContext context) => of(context, press);
+
+  /// [state] süresinin reduce-motion farkındalıklı hâli. En sık kullanılan.
+  static Duration stateOf(BuildContext context) => of(context, state);
+
+  /// [surface] süresinin reduce-motion farkındalıklı hâli.
+  static Duration surfaceOf(BuildContext context) => of(context, surface);
 }
 
 /// Dokunsal geri bildirim ölçeği.
@@ -294,8 +338,8 @@ class _SandikTappableState extends State<SandikTappable> {
 
     Widget result = AnimatedScale(
       scale: (_down && enabled && !reduceMotion) ? widget.scale : 1.0,
-      duration: const Duration(milliseconds: 110),
-      curve: Curves.easeOut,
+      duration: SandikMotion.press,
+      curve: SandikMotion.enter,
       child: widget.child,
     );
 
@@ -379,6 +423,397 @@ extension SandikNumericText on TextTheme {
       );
 }
 
+/// Moda duyarlı renk paleti — light/dark ayrımının tek kaynağı.
+///
+/// **Neden gerekli:** [Sandik] içindeki renkler `static const`'tur, yani
+/// derleme zamanında sabittir ve `Theme.of(context).brightness`'a bakamaz.
+/// Light mode, rengin çağrıldığı yerde context'e göre çözülmesini gerektirir.
+///
+/// [Sandik] sabitleri **kaldırılmadı** — 500'den fazla çağrı noktası onlara
+/// bağlı. Bu sınıf onların yanına gelir; migrasyon ekran ekran ilerler:
+///
+/// ```dart
+/// // eski (dark'a sabitli):
+/// color: Sandik.surface1
+/// // yeni (moda duyarlı):
+/// color: context.c.surface1
+/// ```
+///
+/// `ThemeExtension` seçilmesinin sebebi [lerp]: tema değişiminde renkler
+/// zıplamaz, `MaterialApp` geçişi boyunca yumuşakça interpole olur.
+@immutable
+class SandikPalette extends ThemeExtension<SandikPalette> {
+  const SandikPalette({
+    required this.background,
+    required this.surface1,
+    required this.surface2,
+    required this.text90,
+    required this.text58,
+    required this.text36,
+    required this.text20,
+    required this.gain,
+    required this.loss,
+    required this.danger,
+    required this.info,
+    required this.amberFill,
+    required this.amberText,
+    required this.gold,
+    required this.onAmber,
+    required this.hairline,
+    required this.overlay,
+    required this.cardShadow,
+  });
+
+  // ── Yüzeyler ──────────────────────────────────────────────────────────
+  /// Seviye 0 — ekran zemini.
+  final Color background;
+
+  /// Seviye 1 — kart, liste satırı.
+  final Color surface1;
+
+  /// Seviye 2 — hero kart, elevated yüzey.
+  final Color surface2;
+
+  // ── Metin ─────────────────────────────────────────────────────────────
+  final Color text90;
+  final Color text58;
+  final Color text36;
+  final Color text20;
+
+  // ── Anlamsal ──────────────────────────────────────────────────────────
+  final Color gain;
+  final Color loss;
+  final Color danger;
+  final Color info;
+
+  // ── Marka ─────────────────────────────────────────────────────────────
+  /// CTA butonu zemini. **Her iki modda da aynı** — amber marka kimliğidir
+  /// ve üstüne koyu metin gelir (kontrast 7.99:1).
+  final Color amberFill;
+
+  /// Amber'in metin/ikon olarak kullanımı. Light modda koyulaşır: dark amber
+  /// (#F5A623) beyaz zeminde yalnızca **1.94:1** verir, okunmaz.
+  final Color amberText;
+
+  /// Display sayılar ve wordmark.
+  final Color gold;
+
+  /// [amberFill] üzerine gelen metin/ikon rengi.
+  ///
+  /// Amber her iki modda da açık bir zemindir, bu yüzden üstüne **koyu**
+  /// metin gelir — `text90` DEĞİL. Dark modda `text90` beyazdır ve amber
+  /// üzerinde yalnızca 1.87:1 verir (okunmaz); doğru eşleşme koyu marka
+  /// yeşilidir.
+  final Color onAmber;
+
+  /// Marka rozeti / seçili pill için amber gradient. Üstüne [onAmber] gelir.
+  ///
+  /// Bu getter bir tuzağı kapatmak için var: rozet gradient'leri elle
+  /// `[gold, amberText]` diye yazılıyordu. O ikisi METİN token'ıdır ve light
+  /// palette'te ikisi de aynı koyu kahvedir (#4A3618) — gradient tek koyu
+  /// bloğa çöküp üstündeki koyu yazıyı 1.41:1'e düşürüyordu (AA 4.5:1).
+  /// Dolgu gerektiğinde daima bunu kullan; her iki temada amber kalır ve
+  /// [onAmber] ile 7.99:1 verir.
+  LinearGradient get amberGradient => LinearGradient(
+        colors: [amberFill, amberFill.withValues(alpha: 0.88)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+
+  // ── Yüzey dekorasyonu ─────────────────────────────────────────────────
+  /// İnce ayırıcı / kenarlık. Dark'ta beyaz %7, light'ta siyah %9.
+  final Color hairline;
+
+  /// Kart dolgusu. **Yön değiştirir:** dark'ta zeminin üstüne beyaz overlay
+  /// eklenerek yükseklik kurulur; light'ta yüzey zaten açık olduğu için
+  /// overlay görünmez — orada yükseklik [cardShadow] ile kurulur.
+  final Color overlay;
+
+  /// Kart gölgesi. Dark'ta boş liste (gölge koyu zeminde görünmez),
+  /// light'ta yüksekliğin tek taşıyıcısı.
+  final List<BoxShadow> cardShadow;
+
+  /// Mevcut dark palet.
+  ///
+  /// [gain] ve [loss] denetimde düzeltildi: eski değerler (#2D9E6C / #E8503A)
+  /// `surface1` üzerinde 4.30:1 ve 3.90:1 veriyordu — WCAG AA eşiği 4.5:1.
+  /// Kâr/zarar rakamları uygulamanın en kritik verisi olduğu için bu ton
+  /// parlatıldı; karakter aynı kaldı.
+  static const dark = SandikPalette(
+    background: Color(0xFF0A1E15),
+    surface1: Color(0xFF112E28),
+    surface2: Color(0xFF1A3D2E),
+    text90: Color(0xE1FFFFFF),
+    text58: Color(0x8CFFFFFF),
+    // 0x59 (0.35 opak) surface1 üzerinde yalnızca 2.91:1 veriyordu — AA'nın
+    // büyük-metin eşiğinin (3:1) bile altında. Bu ton gerçek metinde
+    // kullanıldığı için opaklık yükseltildi.
+    text36: Color(0x94FFFFFF), // 5.17:1
+    text20: Color(0x6BFFFFFF),
+    gain: Color(0xFF3DB77F), // 5.73:1 (eski #2D9E6C → 4.30:1)
+    loss: Color(0xFFFF6B52), // 5.17:1 (eski #E8503A → 3.90:1)
+    danger: Color(0xFFEF4444),
+    info: Color(0xFF4EA8DE),
+    amberFill: Color(0xFFF5A623),
+    amberText: Color(0xFFF5A623),
+    gold: Color(0xFFF5C842),
+    onAmber: Color(0xFF112E28), // koyu marka yeşili — 7.66:1
+    hairline: Color(0x12FFFFFF), // beyaz %7
+    overlay: Color(0x0BFFFFFF), // beyaz %4.5
+    cardShadow: [],
+  );
+
+  /// Light palet.
+  ///
+  /// Zemin nötr gri değil sıcak kağıt: sandık'ın nötrleri yeşile çalar, saf
+  /// gri markayı yabancılaştırırdı. Metin de saf siyah değil koyu marka
+  /// yeşilidir. Tüm oranlar WCAG 2.1 ile doğrulandı (bkz.
+  /// `test/light_mode_contrast_test.dart`).
+  static const light = SandikPalette(
+    background: Color(0xFFF4F1EA),
+    surface1: Color(0xFFFBFAF6),
+    surface2: Color(0xFFFFFFFF),
+    text90: Color(0xFF12241E), // 15.50:1 / surface1
+    text58: Color(0xFF4A5B54), // 6.90:1
+    // 3.79:1'den yükseltildi: bu ton 103 yerde GERÇEK metinde kullanılıyor
+    // (boş durum açıklamaları, "Tümünü Temizle" gibi eylem bağlantıları) ve
+    // çoğu 10–13pt. O boyutta 3.79 okunmuyordu — kullanıcı geri bildirimi.
+    text36: Color(0xFF566761), // 5.31:1
+    text20: Color(0xFF7E8C86),
+    gain: Color(0xFF0F7A4E), // 5.14:1
+    loss: Color(0xFFC0341F), // 5.36:1
+    danger: Color(0xFFC42B22), // 5.41:1
+    info: Color(0xFF1B6FA8), // 5.17:1
+    amberFill: Color(0xFFF5A623), // marka — değişmez
+    // Sarı ailesini koyulaştırmak hue'yu çamurlu kahveye kaydırır: 5.67:1
+    // AA'yı geçiyordu ama gözde "soluk sarı" olarak okunuyordu (kullanıcı
+    // geri bildirimi 2026-08-09). Çözüm daha da koyulaştırıp kahve-nötre
+    // taşımak — artık metin gibi okunuyor, renk gibi değil.
+    amberText: Color(0xFF4A3618), // 10.98:1
+    gold: Color(0xFF4A3618), // 10.98:1 — display sayılar da aynı tonda
+    onAmber: Color(0xFF12241E), // 7.99:1
+    hairline: Color(0x17122419), // siyah %9
+    overlay: Color(0xFFFFFFFF), // light'ta yükseklik = beyaz + gölge
+    cardShadow: [
+      BoxShadow(
+        color: Color(0x12122419),
+        blurRadius: 3,
+        offset: Offset(0, 1),
+      ),
+      BoxShadow(
+        color: Color(0x1F122419),
+        blurRadius: 14,
+        spreadRadius: -6,
+        offset: Offset(0, 4),
+      ),
+    ],
+  );
+
+  /// Yüksek kontrast varyantı — sistem erişilebilirlik ayarı açıkken.
+  ///
+  /// Yalnızca **yardımcı metin** tonları güçlendirilir; yüzeyler ve marka
+  /// renkleri değişmez (kimlik korunur). `text36` 3.79:1 → 6.95:1,
+  /// `text20` 2.19:1 → 4.94:1 olur; ikisi de artık normal metin eşiğini
+  /// geçer.
+  ///
+  /// Hangi tarafa gidileceği zemine bağlıdır: açık temada metin koyulaşır,
+  /// koyu temada açılır. Ayrım [text90]'ın parlaklığından yapılır.
+  SandikPalette highContrast() {
+    // text90 koyuysa açık temadayız.
+    final onLightGround = text90.computeLuminance() < 0.5;
+    return copyWith(
+      text58: onLightGround ? const Color(0xFF2F3D37) : const Color(0xFFC4CCC9),
+      text36: onLightGround ? const Color(0xFF47554F) : const Color(0xFFA3ADA9),
+      text20: onLightGround ? const Color(0xFF5E6B65) : const Color(0xFF8A9490),
+    );
+  }
+
+  @override
+  SandikPalette copyWith({
+    Color? background,
+    Color? surface1,
+    Color? surface2,
+    Color? text90,
+    Color? text58,
+    Color? text36,
+    Color? text20,
+    Color? gain,
+    Color? loss,
+    Color? danger,
+    Color? info,
+    Color? amberFill,
+    Color? amberText,
+    Color? gold,
+    Color? onAmber,
+    Color? hairline,
+    Color? overlay,
+    List<BoxShadow>? cardShadow,
+  }) {
+    return SandikPalette(
+      background: background ?? this.background,
+      surface1: surface1 ?? this.surface1,
+      surface2: surface2 ?? this.surface2,
+      text90: text90 ?? this.text90,
+      text58: text58 ?? this.text58,
+      text36: text36 ?? this.text36,
+      text20: text20 ?? this.text20,
+      gain: gain ?? this.gain,
+      loss: loss ?? this.loss,
+      danger: danger ?? this.danger,
+      info: info ?? this.info,
+      amberFill: amberFill ?? this.amberFill,
+      amberText: amberText ?? this.amberText,
+      gold: gold ?? this.gold,
+      onAmber: onAmber ?? this.onAmber,
+      hairline: hairline ?? this.hairline,
+      overlay: overlay ?? this.overlay,
+      cardShadow: cardShadow ?? this.cardShadow,
+    );
+  }
+
+  @override
+  SandikPalette lerp(covariant SandikPalette? other, double t) {
+    if (other == null) return this;
+    return SandikPalette(
+      background: Color.lerp(background, other.background, t)!,
+      surface1: Color.lerp(surface1, other.surface1, t)!,
+      surface2: Color.lerp(surface2, other.surface2, t)!,
+      text90: Color.lerp(text90, other.text90, t)!,
+      text58: Color.lerp(text58, other.text58, t)!,
+      text36: Color.lerp(text36, other.text36, t)!,
+      text20: Color.lerp(text20, other.text20, t)!,
+      gain: Color.lerp(gain, other.gain, t)!,
+      loss: Color.lerp(loss, other.loss, t)!,
+      danger: Color.lerp(danger, other.danger, t)!,
+      info: Color.lerp(info, other.info, t)!,
+      amberFill: Color.lerp(amberFill, other.amberFill, t)!,
+      amberText: Color.lerp(amberText, other.amberText, t)!,
+      gold: Color.lerp(gold, other.gold, t)!,
+      onAmber: Color.lerp(onAmber, other.onAmber, t)!,
+      hairline: Color.lerp(hairline, other.hairline, t)!,
+      overlay: Color.lerp(overlay, other.overlay, t)!,
+      cardShadow:
+          BoxShadow.lerpList(cardShadow, other.cardShadow, t) ?? cardShadow,
+    );
+  }
+}
+
+/// Moda duyarlı palete kısa yol.
+///
+/// ```dart
+/// Container(color: context.c.surface1)
+/// Text('...', style: TextStyle(color: context.c.text90))
+/// ```
+///
+/// Tema uzantısı kayıtlı değilse (test ortamında çıplak `ThemeData`)
+/// [SandikPalette.dark] döner — uygulama dark-first olduğu için güvenli
+/// varsayılan budur.
+extension SandikPaletteAccess on BuildContext {
+  SandikPalette get c {
+    final base =
+        Theme.of(this).extension<SandikPalette>() ?? SandikPalette.dark;
+    // Sistem "yüksek kontrast" erişilebilirlik ayarı açıksa yardımcı metin
+    // tonları koyulaşır/açılır. `text36` normalde 3.79:1'dir (yardımcı
+    // metin eşiği); bu ayarı açan kullanıcı zaten okumakta zorlandığını
+    // söylüyordur — orada 4.5'in de üstüne çıkarız.
+    return MediaQuery.highContrastOf(this) ? base.highContrast() : base;
+  }
+
+  /// Aydınlık modda mıyız? Yüzey mantığı yön değiştirdiği için gerekir.
+  bool get isLight => Theme.of(this).brightness == Brightness.light;
+}
+
+/// Moda duyarlı yüzey dekorasyonları.
+///
+/// [Sandik.surfaceCard] ve kardeşleri `static` olduğu için context göremez;
+/// bu uzantı onların moda duyarlı karşılığıdır. Migrasyonda
+/// `Sandik.surfaceCard()` → `context.surfaceCard()` şeklinde değişir.
+///
+/// **Yükseklik yön değiştirir.** Dark'ta kart, zeminin üstüne beyaz overlay
+/// eklenerek yükselir. Light'ta yüzey zaten açıktır — orada aynı overlay
+/// görünmez; yükseklik gölgeyle kurulur. Bu yüzden iki mod aynı kodu
+/// paylaşamaz, `if` ile ayrılır.
+extension SandikSurfaces on BuildContext {
+  /// Liste satırı / ikincil kart.
+  BoxDecoration surfaceCard({double radius = SandikRadius.md}) {
+    final p = c;
+    return BoxDecoration(
+      color: p.overlay,
+      borderRadius: BorderRadius.circular(radius),
+      // Light'ta düz beyaz kart, zeminden yalnızca gölgeyle ayrılır;
+      // ek olarak çok ince bir kenarlık kenarı netleştirir.
+      border: isLight ? Border.all(color: p.hairline, width: 1) : null,
+      boxShadow: p.cardShadow.isEmpty ? null : p.cardShadow,
+    );
+  }
+
+  /// Hero / elevated kart — bir kademe daha yüksek.
+  BoxDecoration elevatedCard({double radius = SandikRadius.lg}) {
+    final p = c;
+    return BoxDecoration(
+      color: isLight ? p.surface2 : p.surface2.withValues(alpha: 0.55),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: p.hairline, width: 1),
+      boxShadow: p.cardShadow.isEmpty ? null : p.cardShadow,
+    );
+  }
+
+  /// Dokunulabilir çip — seçili durumda [accent]'e döner.
+  ///
+  /// [accent] verilmezse moda duyarlı amber kullanılır.
+  BoxDecoration chip({
+    required bool selected,
+    Color? accent,
+    double radius = SandikRadius.md,
+  }) {
+    final p = c;
+    final a = accent ?? p.amberText;
+    return BoxDecoration(
+      color: selected
+          ? a.withValues(alpha: isLight ? 0.12 : 0.16)
+          : p.overlay,
+      borderRadius: BorderRadius.circular(radius),
+      border: selected
+          ? Border.all(color: a.withValues(alpha: 0.42), width: 1)
+          : (isLight ? Border.all(color: p.hairline, width: 1) : null),
+    );
+  }
+
+  /// Form alanı dekorasyonu — moda duyarlı.
+  InputDecoration inputDecoration(
+    String hint, {
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    String? labelText,
+    String? errorText,
+  }) {
+    final p = c;
+    OutlineInputBorder border(Color color, [double width = 1.0]) =>
+        OutlineInputBorder(
+          borderRadius: SandikRadius.mdAll,
+          borderSide: BorderSide(color: color, width: width),
+        );
+    return InputDecoration(
+      hintText: hint,
+      labelText: labelText,
+      errorText: errorText,
+      hintStyle: TextStyle(color: p.text36, fontSize: 14),
+      labelStyle: TextStyle(color: p.text36, fontSize: 14),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      // Dark'ta alan zeminden KOYULAŞARAK çukurlaşır; light'ta tam tersi,
+      // beyazlaşarak öne çıkar.
+      fillColor: isLight ? p.surface2 : Colors.black.withValues(alpha: 0.18),
+      border: border(p.hairline),
+      enabledBorder: border(p.hairline),
+      focusedBorder: border(p.amberFill, 1.5),
+      errorBorder: border(p.loss, 1.2),
+      focusedErrorBorder: border(p.loss, 1.5),
+    );
+  }
+}
+
 /// Sandık (ex-Toka) marka renk paleti ve logo painter
 class Sandik {
   // ── Core palette ────────────────────────────────────────────────────────────
@@ -394,14 +829,47 @@ class Sandik {
   static const Color adacayi   = Color(0xFFE8EDE5); // Açık zemin (light mode)
 
   // ── Finansal anlamsal ───────────────────────────────────────────────────────
-  static const Color gain      = Color(0xFF2D9E6C); // Pozitif delta (Kazanç)
-  static const Color loss      = Color(0xFFE8503A); // Negatif delta (Kayıp)
+  //
+  // 2026-08-09 erişilebilirlik denetimi: eski tonlar (#2D9E6C / #E8503A)
+  // `surface1` üzerinde 4.30:1 ve 3.90:1 veriyordu — WCAG AA eşiği 4.5:1.
+  // Kâr/zarar rakamları uygulamanın en kritik verisidir; ton parlatıldı,
+  // karakter korundu. Doğrulama: test/light_mode_contrast_test.dart
+  static const Color gain      = Color(0xFF3DB77F); // 5.73:1 (eski 4.30:1)
+  static const Color loss      = Color(0xFFFF6B52); // 5.17:1 (eski 3.90:1)
+
+  // ── Durum renkleri ─────────────────────────────────────────────────────────
+  //
+  // [loss] finansal bir anlam taşır (portföy değeri düştü); [danger] ise
+  // arayüz durumudur (silme, hata, doğrulama). İkisi görsel olarak yakın ama
+  // anlamları ayrı — aynı tokeni paylaşırlarsa "kayıptayım" ile "hata var"
+  // ayırt edilemez hale gelir.
+  static const Color danger    = Color(0xFFEF4444); // Yıkıcı eylem / hata
+  static const Color info      = Color(0xFF4EA8DE); // Bilgilendirme / nötr vurgu
+
+  // ── Madalya (leaderboard) ──────────────────────────────────────────────────
+  //
+  // Madalya rozetleri gradient'tir ve üzerlerinde sıra numarası yazar. Metin
+  // gradient'in HER İKİ ucunda da okunabilmeli — kontrast en kötü uca göre
+  // değerlendirilir. Bu yüzden tonlar bilinçli olarak AÇIK tutulur ve rakam
+  // koyu ([SandikPalette.onAmber]) yazılır: hem madalya kimliği (altın/gümüş/
+  // bronz ayrımı) korunur hem AA sağlanır.
+  //
+  // Eski değerlerde rakam açık tondaydı ve bronzun koyu ucunda 2.12:1'e
+  // düşüyordu — rozetin içindeki sayı okunmuyordu.
+  static const Color medalGold   = Color(0xFFF5C842); // 1. — gold ile aynı ton
+  static const Color medalGoldDark   = Color(0xFFD9A520); // gradient koyu uç
+  static const Color medalSilver = Color(0xFFE8E8EA); // 2.
+  static const Color medalSilverDark = Color(0xFFBFC0C4);
+  static const Color medalBronze = Color(0xFFE0A574); // 3.
+  static const Color medalBronzeDark = Color(0xFFC07E3F);
 
   // ── Sabit opaklıklar (dark zemin üzeri metin) ──────────────────────────────
   static const Color text90    = Color(0xE1FFFFFF); // 0.88 opak (Ana başlık)
   static const Color text58    = Color(0x8CFFFFFF); // 0.55 (İkincil etiket)
-  static const Color text36    = Color(0x59FFFFFF); // 0.35 (Üçüncül yardımcı)
-  static const Color text20    = Color(0x33FFFFFF); // 0.20 (Devre dışı)
+  // 0x59 surface1 üzerinde 2.91:1 veriyordu (AA büyük-metin eşiği 3:1'in
+  // bile altında) ve bu ton gerçek metinde kullanılıyor. Yükseltildi.
+  static const Color text36    = Color(0x94FFFFFF); // 5.17:1
+  static const Color text20    = Color(0x6BFFFFFF); // devre dışı
 
   // ── Yüzey dekorasyonları (Yön A) ───────────────────────────────────────────
   //

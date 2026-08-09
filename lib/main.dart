@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart'
+    show CupertinoThemeData, CupertinoTextThemeData;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -231,16 +233,18 @@ class SandikApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // UH1 fix: Light theme implementasyonu yok — dark'a sabitliyoruz.
-    // themeModeProvider kalsa da kullanılmıyor; ileride light theme
-    // eklendiğinde geri bağlanabilir.
+    // Tema modu kullanıcı tercihinden gelir (SharedPreferences'a yazılır).
+    // Varsayılan `ThemeMode.dark` — sandık dark-first bir markadır; sistem
+    // takibi kullanıcının açık seçimidir, dayatma değil.
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp(
       title: 'sandık',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
-      theme: _buildTheme(),
-      darkTheme: _buildTheme(),
-      themeMode: ThemeMode.dark,
+      theme: _buildTheme(SandikPalette.light, Brightness.light),
+      darkTheme: _buildTheme(SandikPalette.dark, Brightness.dark),
+      themeMode: themeMode,
       // Türkçe locale — showDatePicker, showTimePicker vb. tüm Material
       // widget'ları için dd/MM/yyyy formatı, Türkçe ay/gün adları, virgüllü
       // ondalık ayırıcı. İngilizce yedek locale olarak kalır.
@@ -255,45 +259,45 @@ class SandikApp extends ConsumerWidget {
     );
   }
 
-  ThemeData _buildTheme() {
+  ThemeData _buildTheme(SandikPalette p, Brightness brightness) {
     // ── ColorScheme (Sandık / Toka Spec) ────────────────────────────────────
-    const cs = ColorScheme(
-      brightness: Brightness.dark,
+    final cs = ColorScheme(
+      brightness: brightness,
       // Primary — Amber (CTA, aktif, logo ikon)
-      primary: Sandik.amber,
-      onPrimary: Sandik.dark,
-      primaryContainer: Sandik.surface2,
-      onPrimaryContainer: Sandik.gold,
+      primary: p.amberFill,
+      onPrimary: p.onAmber,
+      primaryContainer: p.surface2,
+      onPrimaryContainer: p.gold,
       // Secondary — Altın (display sayılar)
-      secondary: Sandik.gold,
-      onSecondary: Sandik.dark,
-      secondaryContainer: Color(0xFF1A3D2E),
-      onSecondaryContainer: Sandik.gold,
+      secondary: p.gold,
+      onSecondary: p.onAmber,
+      secondaryContainer: p.surface2,
+      onSecondaryContainer: p.gold,
       // Tertiary — Kazanç yeşili
-      tertiary: Sandik.gain,
-      onTertiary: Sandik.dark,
-      tertiaryContainer: Color(0xFF1E3B1C),
-      onTertiaryContainer: Sandik.gain,
+      tertiary: p.gain,
+      onTertiary: p.onAmber,
+      tertiaryContainer: p.gain.withValues(alpha: 0.18),
+      onTertiaryContainer: p.gain,
       // Error — Kayıp kırmızısı
-      error: Sandik.loss,
-      onError: Sandik.dark,
-      errorContainer: Color(0xFF4A1A14),
-      onErrorContainer: Sandik.loss,
+      error: p.loss,
+      onError: p.onAmber,
+      errorContainer: p.loss.withValues(alpha: 0.16),
+      onErrorContainer: p.loss,
       // Surfaces
-      surface: Sandik.surface1,
-      onSurface: Sandik.text90,
-      surfaceContainerLowest: Sandik.background,
-      surfaceContainerLow: Sandik.background,
-      surfaceContainer: Sandik.surface1,
-      surfaceContainerHigh: Sandik.surface2,
-      surfaceContainerHighest: Color(0xFF1A3D2E),
-      onSurfaceVariant: Sandik.text58,
+      surface: p.surface1,
+      onSurface: p.text90,
+      surfaceContainerLowest: p.background,
+      surfaceContainerLow: p.background,
+      surfaceContainer: p.surface1,
+      surfaceContainerHigh: p.surface2,
+      surfaceContainerHighest: p.surface2,
+      onSurfaceVariant: p.text58,
       // Outline
       outline: Sandik.brown,
-      outlineVariant: Color(0xFF112E28),
+      outlineVariant: p.surface1,
       // Inverse
-      inverseSurface: Colors.white,
-      onInverseSurface: Sandik.dark,
+      inverseSurface: p.text90,
+      onInverseSurface: p.onAmber,
       inversePrimary: Sandik.brown,
       // Scrim / shadow
       scrim: Colors.black,
@@ -308,63 +312,81 @@ class SandikApp extends ConsumerWidget {
             fontSize: size,
             fontWeight: weight,
             letterSpacing: ls,
-            color: Sandik.text90);
+            color: p.text90);
 
     final textTheme = baseText.copyWith(
       // Display — büyük sayılar
       displayLarge:
-          dm(52, FontWeight.w700, -0.03 * 52).copyWith(color: Sandik.gold),
+          dm(52, FontWeight.w700, -0.03 * 52).copyWith(color: p.gold),
       displayMedium:
-          dm(40, FontWeight.w700, -0.03 * 40).copyWith(color: Sandik.gold),
+          dm(40, FontWeight.w700, -0.03 * 40).copyWith(color: p.gold),
       displaySmall:
-          dm(32, FontWeight.w700, -0.02 * 32).copyWith(color: Sandik.gold),
+          dm(32, FontWeight.w700, -0.02 * 32).copyWith(color: p.gold),
       // Headline — başlıklar
       headlineLarge: dm(24, FontWeight.w700, -0.01 * 24),
       headlineMedium: dm(20, FontWeight.w700, -0.01 * 20),
       headlineSmall: dm(18, FontWeight.w600, -0.01 * 18),
       // Title — navigasyon ve kart başlıkları
       titleLarge: GoogleFonts.dmSans(
-          fontSize: 16, fontWeight: FontWeight.w600, color: Sandik.text90),
+          fontSize: 16, fontWeight: FontWeight.w600, color: p.text90),
       titleMedium: GoogleFonts.dmSans(
-          fontSize: 14, fontWeight: FontWeight.w500, color: Sandik.text90),
+          fontSize: 14, fontWeight: FontWeight.w500, color: p.text90),
       titleSmall: GoogleFonts.dmSans(
-          fontSize: 12, fontWeight: FontWeight.w500, color: Sandik.text90),
+          fontSize: 12, fontWeight: FontWeight.w500, color: p.text90),
       // Body — gövde metin
       bodyLarge: GoogleFonts.dmSans(
-          fontSize: 15, fontWeight: FontWeight.w500, color: Sandik.text90),
+          fontSize: 15, fontWeight: FontWeight.w500, color: p.text90),
       bodyMedium: GoogleFonts.dmSans(
-          fontSize: 13, fontWeight: FontWeight.w400, color: Sandik.text90),
+          fontSize: 13, fontWeight: FontWeight.w400, color: p.text90),
       bodySmall: GoogleFonts.dmSans(
-          fontSize: 11, fontWeight: FontWeight.w400, color: Sandik.text58),
+          fontSize: 11, fontWeight: FontWeight.w400, color: p.text58),
       // Label — etiket
       labelLarge: GoogleFonts.dmSans(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.06 * 11,
-          color: Sandik.text90),
+          color: p.text90),
       labelMedium: GoogleFonts.dmSans(
           fontSize: 10,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.06 * 10,
-          color: Sandik.text58),
+          color: p.text58),
       labelSmall: GoogleFonts.dmSans(
           fontSize: 9,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.06 * 9,
-          color: Sandik.text36),
+          color: p.text36),
     );
 
     return ThemeData(
       colorScheme: cs,
       useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: Sandik.background,
+      brightness: brightness,
+      scaffoldBackgroundColor: p.background,
       textTheme: textTheme,
+
+      // Cupertino köprüsü.
+      //
+      // `CupertinoAlertDialog` / `showCupertinoModalPopup` Material temasını
+      // OKUMAZ; kendi `CupertinoTheme`'ine bakar. Bağlanmazsa bu dialog'lar
+      // Flutter'ın varsayılan Cupertino paletiyle çizilir ve uygulama light
+      // moddayken koyu (ya da tersi) açılabilir. Uygulamada 3 Cupertino
+      // dialog + 1 modal popup var; hepsi buradan beslenir.
+      cupertinoOverrideTheme: CupertinoThemeData(
+        brightness: brightness,
+        primaryColor: p.amberFill,
+        scaffoldBackgroundColor: p.background,
+        barBackgroundColor: p.surface1,
+        textTheme: CupertinoTextThemeData(
+          primaryColor: p.amberFill,
+          textStyle: GoogleFonts.dmSans(color: p.text90, fontSize: 15),
+        ),
+      ),
 
       // AppBar
       appBarTheme: AppBarTheme(
-        backgroundColor: Sandik.surface1,
-        foregroundColor: Sandik.text90,
+        backgroundColor: p.surface1,
+        foregroundColor: p.text90,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -372,18 +394,23 @@ class SandikApp extends ConsumerWidget {
           fontSize: 22,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.02 * 22,
-          color: Sandik.text90,
+          color: p.text90,
         ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        // Status bar ikonları zeminin TERSİ olmalı: koyu temada açık
+        // ikon, açık temada koyu ikon. Sabit bırakılırsa light modda
+        // beyaz ikonlar beyaz zeminde kaybolur.
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
+          statusBarIconBrightness:
+              brightness == Brightness.light ? Brightness.dark : Brightness.light,
+          statusBarBrightness: brightness,
         ),
       ),
 
       // Card
       cardTheme: CardThemeData(
         elevation: 0,
-        color: Sandik.surface1,
+        color: p.surface1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
@@ -405,23 +432,23 @@ class SandikApp extends ConsumerWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Sandik.amber, width: 2),
+          borderSide: BorderSide(color: p.amberFill, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Sandik.loss, width: 1),
+          borderSide: BorderSide(color: p.loss, width: 1),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        labelStyle: GoogleFonts.dmSans(color: Sandik.text58, fontSize: 14),
-        hintStyle: GoogleFonts.dmSans(color: Sandik.text36, fontSize: 14),
+        labelStyle: GoogleFonts.dmSans(color: p.text58, fontSize: 14),
+        hintStyle: GoogleFonts.dmSans(color: p.text36, fontSize: 14),
       ),
 
       // Filled button — Amber CTA
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: Sandik.amber,
-          foregroundColor: Sandik.dark,
+          backgroundColor: p.amberFill,
+          foregroundColor: p.onAmber,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle: GoogleFonts.dmSans(
@@ -432,8 +459,8 @@ class SandikApp extends ConsumerWidget {
       // Outlined button
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: Sandik.amber,
-          side: const BorderSide(color: Sandik.amber, width: 1.5),
+          foregroundColor: p.amberFill,
+          side: BorderSide(color: p.amberFill, width: 1.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle:
@@ -444,24 +471,24 @@ class SandikApp extends ConsumerWidget {
       // Text button
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: Sandik.amber,
+          foregroundColor: p.amberFill,
           textStyle:
               GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
       // FAB — Amber
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: Sandik.amber,
-        foregroundColor: Sandik.dark,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: p.amberFill,
+        foregroundColor: p.onAmber,
         elevation: 0,
-        shape: CircleBorder(),
+        shape: const CircleBorder(),
       ),
 
       // Chip
       chipTheme: ChipThemeData(
         backgroundColor: Colors.white.withOpacity(0.05),
-        selectedColor: Sandik.amber,
+        selectedColor: p.amberFill,
         labelStyle:
             GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500),
         side: BorderSide.none,
@@ -485,20 +512,53 @@ class SandikApp extends ConsumerWidget {
 
       // Dialog
       dialogTheme: DialogThemeData(
-        backgroundColor: Sandik.surface1,
+        backgroundColor: p.surface1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titleTextStyle: GoogleFonts.dmSans(
-            fontSize: 18, fontWeight: FontWeight.w700, color: Sandik.text90),
-        contentTextStyle: GoogleFonts.dmSans(fontSize: 14, color: Sandik.text58),
+            fontSize: 18, fontWeight: FontWeight.w700, color: p.text90),
+        contentTextStyle: GoogleFonts.dmSans(fontSize: 14, color: p.text58),
       ),
 
       // SnackBar
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: Sandik.surface2,
-        contentTextStyle: GoogleFonts.dmSans(color: Sandik.text90, fontSize: 13),
+        backgroundColor: p.surface2,
+        contentTextStyle: GoogleFonts.dmSans(color: p.text90, fontSize: 13),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
+
+      // Bottom sheet
+      //
+      // `showModalBottomSheet` çağıranın zeminini DEVRALMAZ; kendi Material'ını
+      // kurar ve tema vermezsek Flutter'ın varsayılan `canvasColor`'ına düşer.
+      // 10 modal sheet çağrı yerinin çoğu `backgroundColor` veriyordu ama
+      // vermeyen biri light modda yabancı bir yüzeyle açılırdı. Tek tanım
+      // hepsini doğru tarafa çeker.
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: p.surface1,
+        modalBackgroundColor: p.surface1,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+      ),
+
+      // Popup menu (üç nokta menüleri)
+      popupMenuTheme: PopupMenuThemeData(
+        color: p.surface2,
+        surfaceTintColor: Colors.transparent,
+        textStyle: GoogleFonts.dmSans(color: p.text90, fontSize: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SandikRadius.md),
+        ),
+      ),
+
+      // Moda duyarlı palet — `context.c.*` bunu okur.
+      //
+      // Aşama 1'de yalnızca dark kayıtlı: görsel hiçbir değişiklik olmaz,
+      // sadece migrasyon zemini hazırlanır. Light tema eklendiğinde buraya
+      // `SandikPalette.light` verilecek.
+      extensions: [p],
     );
   }
 }
@@ -556,6 +616,19 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   // kendi loading'ini açardı. Çift loading'in kalan ayağı buydu.
   ProviderSubscription<AsyncValue<List<PartnerAccount>>>? _partnersWarmUp;
 
+  /// Kullanıcıya özel tercih provider'larını tazeler.
+  ///
+  /// `setPreferencesUser` yalnızca ANAHTAR ön ekini değiştirir; hâlihazırda
+  /// okunmuş state'i güncellemez. Invalidate edilmezse ayar ekranı önceki
+  /// kullanıcının değerlerini göstermeye devam eder.
+  void _invalidateUserPrefs() {
+    ref.invalidate(signalThresholdProvider);
+    ref.invalidate(indicatorPrefsProvider);
+    ref.invalidate(signalScheduleProvider);
+    ref.invalidate(signalNeutralPushProvider);
+    ref.invalidate(signalNotificationsProvider);
+  }
+
   void _warmUpData() {
     // Veri çekimi başlıyor → emniyet supabını da şimdi kur.
     _startDataWaitTimeout();
@@ -591,6 +664,11 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (user == null && !next.isLoading) {
         _checkedUserId = null;
         _onboardingDone = null;
+        // Tercih anahtarlarını kullanıcıdan ayır ve provider'ları tazele.
+        // Yapılmazsa bir sonraki kullanıcı öncekinin sinyal ayarlarını
+        // görür — ayarlar SharedPreferences'ta cihaz genelinde duruyor.
+        setPreferencesUser(null);
+        _invalidateUserPrefs();
         // Çıkışta ısıtma aboneliklerini bırak — yeni kullanıcı girdiğinde
         // provider'lar temiz şekilde yeniden çekilsin.
         _portfolioWarmUp?.close();
@@ -608,6 +686,11 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         AnalyticsService.instance.setUserId(null);
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
+        // Tercih anahtarlarını BU kullanıcıya bağla — `syncSignalPreferences
+        // OnLogin`den ÖNCE olmalı, yoksa senkron önceki kullanıcının
+        // anahtarlarını okur ve yeni kullanıcının satırına yazar.
+        setPreferencesUser(user.id);
+        _invalidateUserPrefs();
         _checkedUserId = user.id;
         // Portföy ve ortak varlıklarını SPLASH sırasında ısıt. Bu provider'lar
         // lazy — eskiden ilk `watch` HomeScreen mount olunca gerçekleşiyordu,
@@ -789,7 +872,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // 420ms → 240ms: bu geçiş her açılışta görülür ve UI hareketleri 300ms
       // altında kalmalı. Uzun süre burada "cilalı" değil, "yavaş açılıyor"
       // olarak okunuyordu.
-      duration: SandikMotion.surface,
+      duration: SandikMotion.surfaceOf(context),
       switchInCurve: SandikMotion.enter,
       // Çıkan katman da ease-out: ease-in yavaş başlar ve kullanıcının en
       // dikkatli baktığı ilk anı geciktirir — arayüzü ağır hissettirir.

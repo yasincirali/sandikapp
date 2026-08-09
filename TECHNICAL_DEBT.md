@@ -121,6 +121,138 @@ değil.
 
 ---
 
+## 🟡 AÇIK — Light mode: kalan cilalar
+
+**Aşama 1–3 tamamlandı (2026-08-09).** Light mode çalışıyor:
+`SandikPalette` `ThemeExtension`'ı, iki tema, `themeMode` provider'a bağlı,
+~1.150 çağrı noktası `context.c.*`'a taşındı. Testler:
+`light_mode_contrast_test.dart` (değerler), `light_mode_render_test.dart`
+(paletin ekrana ulaşması).
+
+**Kalanlar — hiçbiri light mode'u bloke etmiyor:**
+
+1. **`glassDecoration` / `glassBox` moda duyarlı değil.** Hâlâ beyaz tint +
+   koyu gölge varsayıyor. Light modda cam yüzeyler (hero kart, bazı sheet'ler)
+   olması gerekenden soluk görünür. `context.elevatedCard()` yazıldı ama
+   glass helper'ları henüz ona taşınmadı.
+2. **`legal_doc_screen.dart` kendi paletini taşıyor** (~29 sabit renk).
+   Hukuki belge render'ı kasten sabit kontrastlı; light modda da koyu kalır.
+   Bilinçli, ama tutarsız görünüyor — ürün kararı.
+3. **`asset_type.dart` kategori renkleri tek ton.** Rapordaki ölçüme göre
+   yedisi de light zeminde AA altında (en kötüsü altın 1.52:1). Rozet
+   *dolgusu* olarak sorun değil (arkada %15 alfa var), ama ikon/metin
+   olarak kullanıldıkları yerde light varyantı gerekiyor.
+4. **`fl_chart` grid/tooltip renkleri** elle verilmiş; grafik ekranları
+   light modda test edilmedi.
+5. **Varsayılan mod hâlâ `ThemeMode.dark`.** `system` yapmak ürün kararı —
+   marka "dark-first" olduğu için değiştirilmedi.
+
+**Doğrulama notu:** emülatör Flutter'ı render edemiyor (bkz. yukarıdaki
+emülatör maddesi). Light mode gerçek cihazda **kısmen** doğrulandı —
+kullanıcı 2026-08-09'da Profil ve Ana Sayfa ekran görüntüsü gönderdi ve
+iki hata çıktı (aşağıda). Diğer ekranlar (grafik, yarış, auth, mevduat)
+**hâlâ gözle görülmedi**.
+
+### Ekran görüntüsünden çıkan düzeltmeler (2026-08-09)
+
+| Hata | Kök sebep | Düzeltme |
+|---|---|---|
+| Profil başlığı görünmüyordu | `CupertinoColors.white` sabiti — migrasyon `Colors.white`'ı yakaladı ama `CupertinoColors`'ı taramadı | `context.c.text90` |
+| Bölüm etiketleri soluk (`ORTAKLIK İŞLEMLERİ`, `VARLIK DAĞILIMI`) | `text36` = 3.79:1 — bu **yardımcı metin** eşiği (3:1); bölüm başlığı yapısal bilgidir ve 4.5:1 ister | 8 yerde `text58` (6.90:1) |
+| Hero kart koyu levha | `Color(0xFF14332B)` sabiti + üstünde light'ta koyulaşan `gain`/`gold` metni → koyu üstüne koyu | `context.isLight` ile yüzey/gölge/kenarlık ayrıldı |
+
+**Ders:** `Colors.white` taraması yeterli değildi — `CupertinoColors.white`
+ayrı bir sembol. Ayrıca "token kullanılıyor" ≠ "doğru token kullanılıyor";
+`text36` her yerde geçerliydi ama light modda yapısal etiketler için yanlış
+seçimdi. Kontrast testi bunu yakalayamaz çünkü token *değeri* doğru — hata
+token *seçiminde*.
+
+### İkinci tur — genel okunabilirlik denetimi (2026-08-09)
+
+Kullanıcı "koyu sarı çok koyu, yazılar okunmuyor" ve bildirim ekranı
+görüntüsü gönderdi. Tüm ekranlar betikle tarandı (37 bulgu), üç sınıf çıktı:
+
+| Sınıf | Bulgu | Düzeltme |
+|---|---|---|
+| **Çamurlu sarı** | `amberText`/`gold` 5.67:1 ile AA geçiyordu ama sarıyı koyulaştırmak hue'yu kahveye kaydırıyor; göz "soluk renk" okuyor | `#4A3618` → **10.98:1**, kahve-nötr |
+| **Sabit koyu yüzey** | Bildirim sheet'i `0xFF0F2A1F`, hero kart, yarış gradyanı — light'ta yabancı levha + üstünde koyu-üstüne-koyu metin | `context.isLight` ile ayrıldı |
+| **Ters kontrast** | `zoomable_chart` tooltip'i koyu zemin + `text90` (light'ta koyu) → görünmez | Tooltip kendi kontrast dünyasını taşır: sabit koyu zemin + sabit açık metin |
+
+Ayrıca 13 `foregroundColor: Colors.black` → `onAmber` (işlevsel olarak
+doğruydu ama token dışındaydı; `amberFill` değişirse eşliği bozulurdu).
+
+**Kalan (bilinçli):** `Colors.black.withValues(...)` gölge/scrim olarak
+kullanılan ~8 yer — her iki modda doğru. `leaderboard` madalya ikincil
+tonları (gümüş/bronz gölgesi) sabit; madalya rengi moda bağlı değil.
+
+**Ders 2:** Kontrast eşiğini geçmek okunabilirlik için yeterli değil.
+Sarı/turuncu ailesinde AA'yı geçen bir ton hâlâ "soluk" okunabilir çünkü
+koyulaştırma hue'yu kaydırır. Bu yüzden `light_mode_contrast_test.dart`
+marka tonları için 4.5 değil **9.0** eşiği kullanıyor.
+
+### Üçüncü tur — üçüncül metin tonu + tema kısayolu (2026-08-09)
+
+**Bulunan asıl sorun:** `text36` tonu **103 yerde gerçek metinde**
+kullanılıyordu (boş durum açıklamaları, "Tümünü Temizle" gibi eylem
+bağlantıları), çoğu 10–13pt. Kontrastı light'ta 3.79:1, **dark'ta 2.91:1**
+idi — dark taraf AA'nın büyük-metin eşiğini (3:1) bile geçmiyordu.
+Bu ton "yardımcı/dekoratif" varsayılarak düşük tutulmuştu ama kullanımı
+öyle değildi.
+
+| Token | Önce | Sonra |
+|---|---|---|
+| `text36` light | 3.79:1 | **5.31:1** |
+| `text36` dark | 2.91:1 | **5.17:1** |
+| `text20` | kullanılmıyor | ikisi de güçlendirildi |
+
+Test eşiği 3.0 → 4.5'e çekildi, yani bu geri alınamaz.
+
+**Yüksek kontrast desteği eklendi.** `MediaQuery.highContrastOf` açıkken
+`SandikPalette.highContrast()` devreye girer: yalnızca yardımcı metin
+tonları güçlenir (`text36` → 6.95:1), yüzeyler ve marka renkleri sabit
+kalır. Android/iOS erişilebilirlik ayarına saygı gösterir.
+
+**Tema kısayolu — Profil başlığı.** Ana sayfa başlığı düşünüldü ama orada
+zaten dört aksiyon var ve satır 17px taşıyordu (kod yorumunda kayıtlı);
+beşincisi yerleşimi kırardı. iOS HIG ve Material 3 görünüm ayarını
+hesap/ayarlar bölgesine koyar. Tek dokunuş **açık ↔ koyu**; `system`
+bilinçli tercih olduğu için yalnızca Ayarlar'daki üçlü seçicide kalır.
+İkon hedefi gösterir (açık temadayken ay), mevcut durumu değil.
+
+**Yanlış alarm notu:** Otomatik "tint zemin + metin" taraması 41 bulgu
+verdi; incelemede 27'si `BoxShadow`/`Border` rengini zemin sanmaktan
+kaynaklanıyordu, kalan 14'ü de grafik çizgi rengiydi. Betik düzeltildi.
+**Ders:** otomatik kontrast taraması zemin/gölge ayrımını yapamazsa
+gürültü üretir; bulguyu kodda doğrulamadan düzeltme uygulanmamalı.
+
+### Dördüncü tur — `amberText` regresyonu (2026-08-09)
+
+**Kendi ürettiğim hata.** Üçüncü turda `amberText` okunabilirlik için koyu
+kahveye (`#4A3618`) çekildi. Ama bu token **9 yerde ZEMİN olarak**
+kullanılıyordu: FAB dairesi (+ butonu), ortak sekmesi seçili pill'i, rozet
+dolguları. Sonuç: koyu kahve zemin + `onAmber` metin = **1.41:1** → artı
+işareti ve seçili sekme etiketi görünmez oldu.
+
+Kullanıcı ekran görüntüsüyle yakaladı; testlerin hiçbiri görmedi çünkü
+her iki token da tek başına geçerliydi — hata **eşleşmedeydi**.
+
+**Kural netleştirildi:**
+- `amberFill` → marka amberi, **zemin** (CTA, FAB, seçili pill)
+- `amberText` → koyu kahve, **metin/ikon**
+- `onAmber` → amber zemin üzerindeki metin
+
+`design_token_leak_test.dart`'a regresyon koruması eklendi: `amberText`
+bir `BoxDecoration`/`Container` içinde `color:` olarak geçerse test kırılır.
+Kasten regresyon enjekte edilip doğrulandı.
+
+**Ders 3:** Bir tokenin değerini değiştirmeden önce **nasıl kullanıldığına**
+bak. "Metin rengi" diye adlandırılmış bir token pratikte zemin olarak
+kullanılıyor olabilir; ad niyeti anlatır, kullanımı garanti etmez.
+
+Tasarım ve komponent envanteri: `LIGHT_MODE_TASARIM_RAPORU.md`.
+
+---
+
 ## ✅ KAPANDI
 
 | Tarih | İş | Commit |
@@ -135,6 +267,8 @@ değil.
 | 2026-08-03 | Paywall'da var olmayan özellik reklamı | `03f1798` |
 | 2026-08-04 | `_buildAssetTile` → `TransactionRow` widget'ı; test yapısal kopyadan gerçek widget'a geçti (+ 19px satış satırı taşması bulundu) | — |
 | 2026-08-04 | DM Sans asset olarak gömüldü, `allowRuntimeFetching = false` (P2 kapandı) | — |
+| 2026-08-09 | Kâr/zarar renkleri WCAG AA altındaydı (`gain` 4.30:1, `loss` 3.90:1) → `#3DB77F` / `#FF6B52` ile 5.73:1 ve 5.17:1; kontrast testiyle kilitlendi | — |
+| 2026-08-09 | Light mode Aşama 1–3: `SandikPalette` ThemeExtension, iki tema, `themeMode` bağlandı, ~1.150 çağrı `context.c.*`'a taşındı, 12 yeni test | — |
 
 ### Not: google_fonts çalışma zamanı indirmesi (kapandı 2026-08-04)
 

@@ -130,17 +130,19 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                // Ham #EF4444 yerine tema token'ı: light'ta uyarı tonu
+                // koyulaşır, açık zeminde de okunur kalır.
+                color: ctx.c.danger.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
-                    color:
-                        const Color(0xFFEF4444).withValues(alpha: 0.25)),
+                    color: ctx.c.danger.withValues(alpha: 0.25)),
               ),
-              child: const Text(
+              child: Text(
                 'Bu bir satış değil — kayıt tamamen silinir ve geçmiş '
                 'grafiğinden de düşer. Sattıysan bunun yerine "Çıkar" '
                 'kullan; realize kâr/zararın ve alım geçmişin korunur.',
-                style: TextStyle(fontSize: 12, height: 1.4),
+                style: TextStyle(
+                    fontSize: 12, height: 1.4, color: ctx.c.text90),
               ),
             ),
           ],
@@ -152,7 +154,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444)),
+                backgroundColor: ctx.c.danger),
             onPressed: () async {
               Navigator.pop(dlg);
               try {
@@ -186,7 +188,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
 
     return CupertinoPageScaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       child: Material(
         type: MaterialType.transparency,
         child: SafeArea(
@@ -203,7 +205,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       style: context.t.headlineLarge?.copyWith(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: context.c.text90,
                       ),
                     ),
                   ),
@@ -225,14 +227,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
+                        color: context.c.overlay,
                         borderRadius: BorderRadius.circular(SandikRadius.md),
                         border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.12)),
+                            color: context.c.overlay),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(Icons.show_chart_rounded,
-                            color: Sandik.amber, size: 22),
+                            color: context.c.amberText, size: 22),
                       ),
                     ),
                   ),
@@ -249,7 +251,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                 loading: () => const SandikLoadingScreen(),
                 error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
                 data: (pState) => RefreshIndicator(
-                  color: Sandik.amber,
+                  color: context.c.amberText,
                   // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
                   onRefresh: () => ref
                       .read(portfolioProvider.notifier)
@@ -272,13 +274,25 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       // child olarak konulunca layout crash oluyor
                       // ("!_debugDoingThisLayout" assertion). Bunun yerine
                       // inline bir loading göstergesi kullanıyoruz.
-                      partnerAssetsAsync.when(
-                        loading: () => const SizedBox(
-                          height: 300,
-                          child: CustomLoadingView(),
-                        ),
-                        error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
-                        data: (partnerMap) {
+                      //
+                      // `when` yerine `AsyncValue` üzerinde manuel dallanma:
+                      // `when(loading:)` her TAZELEMEDE (ortak sekmesi
+                      // değişimi, refreshPrices sonrası reload) listeyi söküp
+                      // 300px'lik spinner koyuyordu — oysa elde gösterilebilir
+                      // bir önceki liste zaten var. `valueOrNull` yeniden
+                      // yükleme boyunca önceki değeri korur, bu yüzden spinner
+                      // artık YALNIZCA hiç veri yokken (ilk açılış) çıkar.
+                      (partnerAssetsAsync.valueOrNull == null
+                          ? (partnerAssetsAsync.hasError
+                              ? SandikErrorView(
+                                  error: partnerAssetsAsync.error!,
+                                  onRetry: () =>
+                                      ref.invalidate(portfolioProvider))
+                              : const SizedBox(
+                                  height: 300,
+                                  child: CustomLoadingView(),
+                                ))
+                          : ((Map<String, List<Asset>> partnerMap) {
                           // Sahiplik sınırı KORUNMALI: `positionKey` sahip
                           // bilgisi taşımaz, bu yüzden tüm ortakların lot'ları
                           // tek listede aggregate edilirse aynı hisseye sahip
@@ -354,8 +368,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                               ),
                             ],
                           );
-                        },
-                      ),
+                        })(partnerAssetsAsync.valueOrNull!)),
                     ],
                   ),
                 ),
@@ -382,10 +395,10 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.inbox_rounded, size: 64, color: Sandik.text36),
+          Icon(Icons.inbox_rounded, size: 64, color: context.c.text36),
           const SizedBox(height: 16),
           Text('Henüz varlık eklenmemiş',
-              style: context.t.bodyMedium?.copyWith(color: Sandik.text36)),
+              style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
         ],
       ),
     );
@@ -438,7 +451,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
     final centerPct = touched != null
         ? fmtPct(touched.value / (totalVal > 0 ? totalVal : 1) * 100, digits: 1)
         : null;
-    final centerColor = touched != null ? touched.key.color : Sandik.gold;
+    final centerColor = touched != null ? touched.key.color : context.c.gold;
 
     return Column(
       children: [
@@ -506,7 +519,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                       Text(
                         centerLabel,
                         style: context.t.titleSmall?.copyWith(
-                          color: Sandik.text36,
+                          color: context.c.text36,
                         ),
                       ),
                     ],
@@ -533,13 +546,13 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                 widget.onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
               },
               child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
+                duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
                 opacity: _touchedIndex == null || isTouched ? 1.0 : 0.45,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
                       curve: SandikMotion.enter,
                       width: isTouched ? 10 : 8,
                       height: isTouched ? 10 : 8,
@@ -553,7 +566,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                       '${e.value.key.label} $pct',
                       style: context.t.bodyMedium?.copyWith(
                         fontWeight: isTouched ? FontWeight.w700 : FontWeight.w500,
-                        color: isTouched ? e.value.key.color : Sandik.text58,
+                        color: isTouched ? e.value.key.color : context.c.text58,
                       ),
                     ),
                   ],
@@ -802,7 +815,7 @@ class _GainLossLine extends StatelessWidget {
     final isFlat = gainLossTRY.abs().round() == 0 && pct.abs() < 0.005;
 
     final Color color =
-        isFlat ? Sandik.text58 : (isPositive ? Sandik.gain : Sandik.loss);
+        isFlat ? context.c.text58 : (isPositive ? context.c.gain : context.c.loss);
 
     final IconData icon = isFlat
         ? Icons.horizontal_rule_rounded
@@ -895,7 +908,7 @@ class _AssetCardState extends State<_AssetCard>
 
     Widget card = Container(
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius:
             BorderRadius.circular(canEdit ? 0 : SandikRadius.md),
       ),
@@ -939,7 +952,7 @@ class _AssetCardState extends State<_AssetCard>
                           overflow: TextOverflow.ellipsis,
                           style: context.t.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: context.c.text90,
                             height: 1.25,
                             letterSpacing: a.showTicker ? 0.2 : -0.2,
                           ),
@@ -952,7 +965,7 @@ class _AssetCardState extends State<_AssetCard>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style:
-                              context.t.bodySmall?.copyWith(color: Sandik.text36),
+                              context.t.bodySmall?.copyWith(color: context.c.text36),
                         ),
                       ],
                     ),
@@ -986,7 +999,7 @@ class _AssetCardState extends State<_AssetCard>
                             maxLines: 1,
                             style: context.t.numMedium.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white),
+                                color: context.c.text90),
                           ),
                         ),
                         if (a.purchasePrice > 0 && a.currentPrice > 0) ...[
@@ -1013,7 +1026,7 @@ class _AssetCardState extends State<_AssetCard>
             ),
           ),
           AnimatedSize(
-            duration: const Duration(milliseconds: 220),
+            duration: SandikMotion.of(context, const Duration(milliseconds: 220)),
             curve: Curves.easeOutCubic,
             alignment: Alignment.topCenter,
             child: _expanded
@@ -1040,16 +1053,16 @@ class _AssetCardState extends State<_AssetCard>
               _rowAction(
                 context,
                 onPressed: () => onAdd(position),
-                background: Sandik.gain,
-                foreground: Colors.white,
+                background: context.c.gain,
+                foreground: context.c.text90,
                 icon: Icons.add_rounded,
                 label: 'Ekle',
               ),
               _rowAction(
                 context,
                 onPressed: () => onRemove(position),
-                background: Sandik.loss.withValues(alpha: 0.85),
-                foreground: Colors.white,
+                background: context.c.loss.withValues(alpha: 0.85),
+                foreground: context.c.text90,
                 icon: Icons.remove_rounded,
                 label: 'Çıkar',
               ),
@@ -1059,7 +1072,7 @@ class _AssetCardState extends State<_AssetCard>
                 _rowAction(
                   context,
                   onPressed: () => onDividend(position),
-                  background: Sandik.amber,
+                  background: context.c.amberText,
                   foreground: Colors.black87,
                   icon: Icons.savings_outlined,
                   label: 'Temettü',
@@ -1073,8 +1086,8 @@ class _AssetCardState extends State<_AssetCard>
               _rowAction(
                 context,
                 onPressed: () => onDelete(position),
-                background: const Color(0xFFEF4444),
-                foreground: Colors.white,
+                background: context.c.danger,
+                foreground: context.c.text90,
                 icon: Icons.delete_outline_rounded,
                 label: 'Sil',
               ),
@@ -1111,11 +1124,11 @@ class _ExpandChevron extends StatelessWidget {
         alignment: Alignment.center,
         child: AnimatedRotation(
           turns: expanded ? 0.5 : 0.0,
-          duration: const Duration(milliseconds: 200),
+          duration: SandikMotion.of(context, const Duration(milliseconds: 200)),
           curve: Curves.easeOutCubic,
-          child: const Icon(
+          child: Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Sandik.text58,
+            color: context.c.text58,
             size: 22,
           ),
         ),
@@ -1177,7 +1190,7 @@ class _AssetDetailsPanel extends StatelessWidget {
           Container(
             height: 1,
             margin: const EdgeInsets.only(bottom: 12),
-            color: Colors.white.withValues(alpha: 0.06),
+            color: context.c.overlay,
           ),
           // Son 1 ayın fiyat eğrisi — TAM GENİŞLİKTE.
           //
@@ -1197,7 +1210,7 @@ class _AssetDetailsPanel extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               'Son 1 ay',
-              style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+              style: context.t.bodySmall?.copyWith(color: context.c.text36),
             ),
             const SizedBox(height: 14),
           ],
@@ -1261,7 +1274,7 @@ class _AssetDetailsPanel extends StatelessWidget {
             Text(
               '${buyLots.length} alım · ${position.lots.where((l) => l.isSell).length} çıkarma',
               style: context.t.bodySmall?.copyWith(
-                  color: Sandik.text36,
+                  color: context.c.text36,
                   fontWeight: FontWeight.w500),
             ),
           ],
@@ -1282,11 +1295,11 @@ class _DepositDetailsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final terms = DepositService.decode(asset);
     if (terms == null) {
-      return const Padding(
-        padding: EdgeInsets.all(16),
+      return Padding(
+        padding: const EdgeInsets.all(16),
         child: Text(
           'Mevduat bilgileri okunamadı.',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: context.c.text58),
         ),
       );
     }
@@ -1317,7 +1330,7 @@ class _DepositDetailsPanel extends StatelessWidget {
           Container(
             height: 1,
             margin: const EdgeInsets.only(bottom: 12),
-            color: Colors.white.withValues(alpha: 0.06),
+            color: context.c.overlay,
           ),
 
           // Vade durumu banner'ı
@@ -1385,7 +1398,7 @@ class _DepositDetailsPanel extends StatelessWidget {
                 : 'Stopaj: ${fmtPct(terms.taxRatePct, digits: 0)} (varsayılan — banka dekontunuzu kontrol edin)',
             style: context.t.labelMedium?.copyWith(
               letterSpacing: 0,
-              color: Sandik.text36,
+              color: context.c.text36,
               fontWeight: FontWeight.w600,
               fontStyle: FontStyle.italic,
             ),
@@ -1407,11 +1420,11 @@ class _MaturityStatus extends StatelessWidget {
     final String text;
     final IconData icon;
     if (matured) {
-      color = Sandik.gain;
+      color = context.c.gain;
       icon = Icons.check_circle_rounded;
       text = 'Vade doldu';
     } else if (daysLeft <= 7) {
-      color = Sandik.amber;
+      color = context.c.amberText;
       icon = Icons.access_time_rounded;
       text = '$daysLeft gün kaldı';
     } else {
@@ -1465,18 +1478,18 @@ class _MevduatGetiriRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final positive = gain >= 0;
-    final color = positive ? Sandik.gain : Sandik.loss;
+    final color = positive ? context.c.gain : context.c.loss;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: emphasize
             ? color.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.03),
+            : context.c.overlay,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: emphasize
               ? color.withValues(alpha: 0.30)
-              : Colors.white.withValues(alpha: 0.05),
+              : context.c.overlay,
         ),
       ),
       child: Row(
@@ -1490,7 +1503,7 @@ class _MevduatGetiriRow extends StatelessWidget {
                   style: context.t.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.7,
-                    color: Sandik.text58,
+                    color: context.c.text58,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1499,7 +1512,7 @@ class _MevduatGetiriRow extends StatelessWidget {
                   style: context.t.numSmall.copyWith(
                     fontSize: emphasize ? 16 : 14,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: context.c.text90,
                   ),
                 ),
               ],
@@ -1563,7 +1576,7 @@ class _DetailItem extends StatelessWidget {
           style: context.t.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.8,
-            color: Sandik.text36,
+            color: context.c.text36,
           ),
         ),
         const SizedBox(height: 4),
@@ -1572,7 +1585,7 @@ class _DetailItem extends StatelessWidget {
           style: valueStyle.copyWith(
             fontSize: emphasize ? 15 : 13,
             fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
-            color: emphasize ? Sandik.gold : Colors.white,
+            color: emphasize ? context.c.gold : context.c.text90,
             height: isText ? 1.35 : null, // sarma satırları sıkışmasın
           ),
         ),
@@ -1605,7 +1618,7 @@ class _SortButton extends StatelessWidget {
       padding: EdgeInsets.zero,
       onPressed: () => showModalBottomSheet<void>(
         context: context,
-        backgroundColor: Sandik.surface1,
+        backgroundColor: context.c.surface1,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -1619,19 +1632,19 @@ class _SortButton extends StatelessWidget {
         height: 42,
         decoration: BoxDecoration(
           color: current != _SortOrder.valueDesc
-              ? Sandik.amber.withValues(alpha: 0.15)
-              : Colors.white.withValues(alpha: 0.06),
+              ? context.c.amberFill.withValues(alpha: 0.15)
+              : context.c.overlay,
           borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
             color: current != _SortOrder.valueDesc
-                ? Sandik.amber.withValues(alpha: 0.5)
-                : Colors.white.withValues(alpha: 0.12),
+                ? context.c.amberFill.withValues(alpha: 0.5)
+                : context.c.overlay,
           ),
         ),
         child: Icon(
           Icons.sort_rounded,
           size: 20,
-          color: current != _SortOrder.valueDesc ? Sandik.amber : Sandik.text58,
+          color: current != _SortOrder.valueDesc ? context.c.amberText : context.c.text58,
         ),
       ),
     );
@@ -1658,11 +1671,11 @@ class _SortSheet extends StatelessWidget {
               style: context.t.labelLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
-                color: Sandik.text36,
+                color: context.c.text58,
               ),
             ),
           ),
-          const Divider(color: Colors.white12, height: 1),
+          Divider(color: context.c.hairline, height: 1),
           ..._SortButton._options.map((opt) {
             final (order, group, label) = opt;
             final selected = current == order;
@@ -1671,23 +1684,23 @@ class _SortSheet extends StatelessWidget {
               leading: Icon(
                 _iconFor(order),
                 size: 18,
-                color: selected ? Sandik.amber : Sandik.text58,
+                color: selected ? context.c.amberText : context.c.text58,
               ),
               title: Text(
                 group,
                 style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: selected ? Sandik.amber : Colors.white,
+                  color: selected ? context.c.amberText : context.c.text90,
                 ),
               ),
               subtitle: Text(
                 label,
-                style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+                style: context.t.bodySmall?.copyWith(color: context.c.text36),
               ),
               trailing: selected
-                  ? const Icon(Icons.check_rounded, color: Sandik.amber, size: 18)
+                  ? Icon(Icons.check_rounded, color: context.c.amberText, size: 18)
                   : null,
-              tileColor: selected ? Sandik.amber.withValues(alpha: 0.07) : null,
+              tileColor: selected ? context.c.amberFill.withValues(alpha: 0.07) : null,
               onTap: () => onChanged(order),
             );
           }),

@@ -81,20 +81,21 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: AlertDialog(
-            backgroundColor: Colors.white.withValues(alpha: 0.08),
+            backgroundColor: context.c.overlay,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SandikRadius.lg),
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+              side: BorderSide(color: context.c.hairline),
             ),
-            title: const Text('Uygulamadan Çık', style: TextStyle(color: Colors.white)),
-            content: const Text(
+            title: Text('Uygulamadan Çık',
+                style: TextStyle(color: context.c.text90)),
+            content: Text(
               'Uygulamadan çıkmak istiyor musunuz?',
-              style: TextStyle(color: Sandik.text58),
+              style: TextStyle(color: context.c.text58),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Vazgeç', style: TextStyle(color: Sandik.text36)),
+                child: Text('Vazgeç', style: TextStyle(color: context.c.text36)),
               ),
               FilledButton(
                 onPressed: () {
@@ -102,7 +103,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   SandikHaptic.heavy.perform();
                   Navigator.pop(ctx, true);
                 },
-                style: FilledButton.styleFrom(backgroundColor: Sandik.loss),
+                style: FilledButton.styleFrom(backgroundColor: context.c.loss),
                 child: const Text('Çık'),
               ),
             ],
@@ -125,7 +126,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         if (!didPop) _confirmExit();
       },
       child: Scaffold(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         body: _AnimatedIndexedStack(
           index: _currentIndex,
           children: _screens,
@@ -147,9 +148,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         child: Container(
           padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset : 12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: context.c.overlay,
             border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.10), width: 1),
+              top: BorderSide(color: context.c.hairline, width: 1),
             ),
           ),
           child: SizedBox(
@@ -173,7 +174,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   Widget _navItem(int index, IconData icon, String label) {
     final isSelected = _currentIndex == index;
-    final color = isSelected ? Sandik.amber : Sandik.text36;
+    final color = isSelected ? context.c.amberText : context.c.text36;
 
     // InkWell yerine opaque GestureDetector: iOS'ta Material ripple dalgası
     // yabancı duruyor. HitTestBehavior.opaque, Column'un boş kalan alanının
@@ -199,7 +200,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               ),
               const SizedBox(height: SandikSpace.xs),
               AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
+                duration: SandikMotion.state,
+                curve: SandikMotion.enter,
                 style: context.t.labelMedium!.copyWith(
                   letterSpacing: 0,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -228,18 +230,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: Sandik.amber,
+              color: context.c.amberFill,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Sandik.amber.withValues(alpha: 0.45),
+                  color: context.c.amberFill.withValues(alpha: 0.45),
                   blurRadius: 18,
                   spreadRadius: -2,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: const Icon(Icons.add_rounded, color: Sandik.dark, size: 36),
+            child: Icon(Icons.add_rounded, color: context.c.onAmber, size: 36),
           ),
         ),
       ),

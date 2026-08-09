@@ -75,9 +75,9 @@ class _PartnershipRequestsScreenState
       await _load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ortaklık kabul edildi.'),
-          backgroundColor: Sandik.gain,
+        SnackBar(
+          content: const Text('Ortaklık kabul edildi.'),
+          backgroundColor: context.c.gain,
         ),
       );
     } catch (e) {
@@ -93,9 +93,9 @@ class _PartnershipRequestsScreenState
       await _load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ortaklık isteği reddedildi.'),
-          backgroundColor: Sandik.loss,
+        SnackBar(
+          content: const Text('Ortaklık isteği reddedildi.'),
+          backgroundColor: context.c.loss,
         ),
       );
     } catch (e) {
@@ -108,7 +108,7 @@ class _PartnershipRequestsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -117,12 +117,12 @@ class _PartnershipRequestsScreenState
           style: context.t.headlineLarge?.copyWith(
             fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: context.c.text90,
           ),
         ),
       ),
       body: RefreshIndicator(
-        color: Sandik.amber,
+        color: context.c.amberText,
         onRefresh: _load,
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -130,7 +130,7 @@ class _PartnershipRequestsScreenState
             Text(
               'Ortaklık kodunuzu giren müşterileri buradan görup onaylayabilirsiniz.',
               style: context.t.titleMedium?.copyWith(
-                color: Sandik.text36,
+                color: context.c.text36,
               ),
             ),
             const SizedBox(height: 20),
@@ -143,21 +143,21 @@ class _PartnershipRequestsScreenState
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Sandik.surface1,
+                  color: context.c.surface1,
                   borderRadius: BorderRadius.circular(SandikRadius.lg),
                 ),
                 child: Column(
                   children: [
                     Icon(
                       Icons.notifications_none_rounded,
-                      color: Sandik.text36.withValues(alpha: 0.5),
+                      color: context.c.text36.withValues(alpha: 0.5),
                       size: 48,
                     ),
                     const SizedBox(height: 12),
                     Text(
                       'Bekleyen ortaklık isteği yok.',
                       style: context.t.titleMedium?.copyWith(
-                        color: Sandik.text36,
+                        color: context.c.text36,
                       ),
                     ),
                   ],
@@ -204,12 +204,12 @@ class _ApprovalInviteCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color:
-            highlighted ? Sandik.amber.withValues(alpha: 0.1) : Sandik.surface1,
+            highlighted ? context.c.amberFill.withValues(alpha: 0.1) : context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: highlighted
-              ? Sandik.amber.withValues(alpha: 0.45)
-              : Colors.white.withValues(alpha: 0.05),
+              ? context.c.amberFill.withValues(alpha: 0.45)
+              : context.c.overlay,
           width: highlighted ? 1.6 : 1,
         ),
       ),
@@ -220,14 +220,14 @@ class _ApprovalInviteCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Sandik.amber.withValues(alpha: 0.12),
+                color: context.c.amberFill.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 'Yeni gelen istek',
                 style: context.t.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Sandik.amber,
+                  color: context.c.amberText,
                 ),
               ),
             ),
@@ -237,13 +237,13 @@ class _ApprovalInviteCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: Sandik.amber.withValues(alpha: 0.12),
+                backgroundColor: context.c.amberFill.withValues(alpha: 0.12),
                 child: Text(
                   requesterName.isNotEmpty
                       ? requesterName[0].toUpperCase()
                       : '?',
-                  style: const TextStyle(
-                    color: Sandik.amber,
+                  style: TextStyle(
+                    color: context.c.amberText,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -257,14 +257,14 @@ class _ApprovalInviteCard extends StatelessWidget {
                       requesterName,
                       style: context.t.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: context.c.text90,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Ortaklık kodunuzu girdi ve onay bekliyor.',
                       style: context.t.bodyMedium?.copyWith(
-                        color: Sandik.text36,
+                        color: context.c.text36,
                       ),
                     ),
                   ],
@@ -279,8 +279,8 @@ class _ApprovalInviteCard extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: onReject,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Sandik.loss,
-                    side: const BorderSide(color: Sandik.loss, width: 1.2),
+                    foregroundColor: context.c.loss,
+                    side: BorderSide(color: context.c.loss, width: 1.2),
                   ),
                   child: const Text('Reddet'),
                 ),
@@ -290,8 +290,8 @@ class _ApprovalInviteCard extends StatelessWidget {
                 child: FilledButton(
                   onPressed: onAccept,
                   style: FilledButton.styleFrom(
-                    backgroundColor: Sandik.gain,
-                    foregroundColor: Sandik.dark,
+                    backgroundColor: context.c.gain,
+                    foregroundColor: context.c.onAmber,
                   ),
                   child: const Text('Onayla'),
                 ),

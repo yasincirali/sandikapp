@@ -141,19 +141,23 @@ Future<void> showSandikDialog({
   String actionLabel = 'Tamam',
 }) {
   if (!context.mounted) return Future.value();
+  // Renkler `context`ten okunur: bu dialog light modda da açılıyor ve
+  // sabit koyu yüzey + koyu metin okunmaz hale geliyordu.
+  final palette = context.c;
+  final bool isLight = context.isLight;
   final Color accent;
   final IconData icon;
   switch (kind) {
     case SandikDialogKind.error:
-      accent = Sandik.loss;
+      accent = palette.loss;
       icon = Icons.error_outline_rounded;
       break;
     case SandikDialogKind.success:
-      accent = Sandik.gain;
+      accent = palette.gain;
       icon = Icons.check_circle_outline_rounded;
       break;
     case SandikDialogKind.info:
-      accent = Sandik.amber;
+      accent = palette.amberText;
       icon = Icons.info_outline_rounded;
       break;
   }
@@ -161,7 +165,7 @@ Future<void> showSandikDialog({
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Sandık dialog',
-    barrierColor: Colors.black.withValues(alpha: 0.55),
+    barrierColor: Colors.black.withValues(alpha: isLight ? 0.32 : 0.55),
     transitionDuration: const Duration(milliseconds: 220),
     pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
     transitionBuilder: (ctx, anim, _, __) {
@@ -209,7 +213,9 @@ class _SandikDialog extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 360),
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
             decoration: BoxDecoration(
-              color: Sandik.surface1,
+              color: context.isLight
+                  ? context.c.surface2
+                  : context.c.surface1,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: accent.withValues(alpha: 0.30),
@@ -217,7 +223,8 @@ class _SandikDialog extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: Colors.black
+                      .withValues(alpha: context.isLight ? 0.14 : 0.35),
                   blurRadius: 30,
                   spreadRadius: -6,
                   offset: const Offset(0, 12),
@@ -253,7 +260,7 @@ class _SandikDialog extends StatelessWidget {
                   style: GoogleFonts.dmSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: Sandik.text90,
+                    color: context.c.text90,
                     letterSpacing: -0.01 * 18,
                   ),
                 ),
@@ -264,7 +271,7 @@ class _SandikDialog extends StatelessWidget {
                   style: GoogleFonts.dmSans(
                     fontSize: 14,
                     height: 1.4,
-                    color: Sandik.text58,
+                    color: context.c.text58,
                   ),
                 ),
                 const SizedBox(height: 20),

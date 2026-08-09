@@ -168,14 +168,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Widget build(BuildContext context) {
     final canResend = !_isBusy && (_cooldown <= 0 || _isExpired);
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: Sandik.text90, size: 20),
+              color: context.c.text90, size: 20),
           onPressed: _submitting ? null : () => Navigator.of(context).pop(),
         ),
       ),
@@ -194,7 +194,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 style: context.t.headlineLarge?.copyWith(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
-                  color: Colors.white,
+                  color: context.c.text90,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -225,15 +225,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         height: 72,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Sandik.gold, Sandik.amber],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: context.c.amberGradient,
           borderRadius: BorderRadius.circular(SandikRadius.lg),
           boxShadow: [
             BoxShadow(
-              color: Sandik.amber.withValues(alpha: 0.28),
+              color: context.c.amberFill.withValues(alpha: 0.28),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -253,7 +249,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       textAlign: TextAlign.center,
       text: TextSpan(
         style: context.t.titleMedium?.copyWith(
-          color: Sandik.text58,
+          color: context.c.text58,
           height: 1.5,
         ),
         children: [
@@ -261,7 +257,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           TextSpan(
             text: widget.email,
             style: context.t.titleMedium?.copyWith(
-              color: Sandik.amber,
+              color: context.c.amberText,
               fontWeight: FontWeight.w700,
               height: 1.5,
             ),
@@ -288,42 +284,73 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       child: TextField(
         controller: _controllers[index],
         focusNode: _focusNodes[index],
-        maxLength: 1,
+        // `maxLength` YOK: framework girişi 1 karaktere kırpsaydı yapıştırılan
+        // 6 haneli kod onChanged'e hiç ulaşmazdı. Uzunluk aşağıda elle
+        // yönetiliyor (tek rakam → o hücre, çok rakam → hücrelere dağıt).
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         autofocus: index == 0,
+        // SMS/e-posta kodunun klavye üstünde önerilmesi için. Yalnızca İLK
+        // hücreye verilir: altı hücrenin hepsine verilirse iOS kodu her
+        // hücreye ayrı ayrı doldurmaya çalışır.
+        autofillHints:
+            index == 0 ? const [AutofillHints.oneTimeCode] : null,
         enabled: enabled,
-        cursorColor: Sandik.amber,
+        cursorColor: context.c.amberText,
         style: context.t.numLarge.copyWith(
-          color: enabled ? Colors.white : Sandik.text36,
+          color: enabled ? context.c.text90 : context.c.text36,
         ),
         decoration: InputDecoration(
           counterText: '',
           contentPadding: EdgeInsets.zero,
           filled: true,
-          fillColor: Sandik.surface1,
+          fillColor: context.c.surface1,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: BorderSide(
               color: filled
-                  ? Sandik.amber
-                  : Colors.white.withValues(alpha: 0.08),
+                  ? context.c.amberText
+                  : context.c.overlay,
               width: filled ? 1.5 : 1,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(SandikRadius.md),
-            borderSide: const BorderSide(color: Sandik.amber, width: 1.8),
+            borderSide: BorderSide(color: context.c.amberFill, width: 1.8),
           ),
           disabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: BorderSide(
-              color: Colors.white.withValues(alpha: 0.04),
+              color: context.c.overlay,
             ),
           ),
         ),
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         onChanged: (v) {
+          // Yapıştırma / otomatik doldurma: tek hücreye birden fazla rakam
+          // gelirse hepsini hücrelere dağıt. `maxLength: 1` yüzünden eskiden
+          // yalnızca ilk hane giriliyordu — kullanıcı kodu kopyalayıp
+          // yapıştırdığında kalan 5 haneyi elle yazmak zorundaydı.
+          if (v.length > 1) {
+            final rakamlar = v.replaceAll(RegExp(r'\D'), '');
+            for (var i = 0; i < 6; i++) {
+              _controllers[i].text =
+                  i < rakamlar.length ? rakamlar[i] : '';
+            }
+            final sonDolu = rakamlar.length.clamp(0, 5);
+            _focusNodes[sonDolu].requestFocus();
+            setState(() {});
+            if (_code.length == 6 && !_submitting) _submit();
+            return;
+          }
+
+          // Rakam dışı girişi (ör. klavyeden gelen boşluk) yok say.
+          if (v.isNotEmpty && !RegExp(r'^\d$').hasMatch(v)) {
+            _controllers[index].text = '';
+            setState(() {});
+            return;
+          }
+
           setState(() {});
           if (v.length == 1 && index < 5) {
             _focusNodes[index + 1].requestFocus();
@@ -344,23 +371,23 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Sandik.loss.withValues(alpha: 0.14),
+            color: context.c.loss.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
-              color: Sandik.loss.withValues(alpha: 0.35),
+              color: context.c.loss.withValues(alpha: 0.35),
               width: 1,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded,
-                  color: Sandik.loss, size: 14),
+              Icon(Icons.error_outline_rounded,
+                  color: context.c.loss, size: 14),
               const SizedBox(width: 6),
               Text(
                 'Kodun süresi doldu',
                 style: context.t.titleSmall?.copyWith(
-                  color: Sandik.loss,
+                  color: context.c.loss,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -374,12 +401,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.schedule_rounded,
-              color: Sandik.text58, size: 14),
+              color: context.c.text58, size: 14),
           const SizedBox(width: 6),
           Text(
             'Kod ${_formatMmSs(_expiry)} sonra geçersiz olur',
             style: context.t.titleSmall?.copyWith(
-              color: Sandik.text58,
+              color: context.c.text58,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -397,9 +424,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         child: FilledButton.icon(
           onPressed: _isBusy ? null : _resend,
           style: FilledButton.styleFrom(
-            backgroundColor: Sandik.amber,
-            foregroundColor: Colors.black,
-            disabledBackgroundColor: Sandik.amber.withValues(alpha: 0.35),
+            backgroundColor: context.c.amberFill,
+            foregroundColor: context.c.onAmber,
+            disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.35),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SandikRadius.md),
             ),
@@ -422,9 +449,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       child: FilledButton(
         onPressed: _submitting ? null : _submit,
         style: FilledButton.styleFrom(
-          backgroundColor: Sandik.amber,
-          foregroundColor: Colors.black,
-          disabledBackgroundColor: Sandik.amber.withValues(alpha: 0.35),
+          backgroundColor: context.c.amberFill,
+          foregroundColor: context.c.onAmber,
+          disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.35),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SandikRadius.md),
           ),
@@ -454,7 +481,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         Text(
           'Kodu almadın mı? ',
           style: context.t.bodyMedium?.copyWith(
-            color: Sandik.text58,
+            color: context.c.text58,
           ),
         ),
         GestureDetector(
@@ -467,7 +494,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     ? 'Yeniden gönder (${_cooldown}s)'
                     : 'Yeniden gönder',
             style: context.t.bodyMedium?.copyWith(
-              color: canResend ? Sandik.amber : Sandik.text36,
+              color: canResend ? context.c.amberText : context.c.text36,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -482,7 +509,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         'Yanlış e-posta mı girdin? Geri dönüp tekrar deneyebilirsin.',
         textAlign: TextAlign.center,
         style: context.t.bodySmall?.copyWith(
-          color: Sandik.text36,
+          color: context.c.text36,
           height: 1.4,
         ),
       ),

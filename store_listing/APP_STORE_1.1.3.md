@@ -179,7 +179,7 @@ tekrarı sıralamayı da yükseltmez.
 
 **Yapılacak olan — üç katman:**
 
-1. **Başlık tek biçimde kalır:** `sandık — Portföy Takibi`
+1. **Başlık tek biçimde kalır:** `Sandık: Portföy Takibi`
    Marka tutarlılığı SEO'dan önce gelir; ikon, ekran görüntüsü ve
    uygulama içi yazım hep aynı olmalı.
 

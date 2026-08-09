@@ -90,18 +90,18 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 20, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              size: 20, color: context.c.text90),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Tüm İşlemler',
-          style: context.t.headlineMedium?.copyWith(color: Colors.white),
+          style: context.t.headlineMedium?.copyWith(color: context.c.text90),
         ),
       ),
       body: Column(
@@ -129,7 +129,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               ),
             ),
           ),
-          const Divider(color: Colors.white12, height: 1),
+          Divider(color: context.c.hairline, height: 1),
           // ── Transaction list ──────────────────────────────────────────
           Expanded(
             child: assets.isEmpty
@@ -137,11 +137,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.inbox_rounded,
-                            size: 52, color: Sandik.text36),
+                        Icon(Icons.inbox_rounded,
+                            size: 52, color: context.c.text36),
                         const SizedBox(height: 12),
                         Text('İşlem bulunamadı',
-                            style: context.t.titleMedium?.copyWith(color: Sandik.text36)),
+                            style: context.t.titleMedium?.copyWith(color: context.c.text36)),
                       ],
                     ),
                   )
@@ -158,20 +158,21 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
   Widget _typeChip(AssetType? type, String label) {
     final selected = _typeFilter == type;
-    final color = type?.color ?? Sandik.amber;
+    final color = type?.color ?? context.c.amberText;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
+      child: SandikTappable(
+        semanticLabel: label,
         onTap: () => setState(() => _typeFilter = type),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.15) : Sandik.surface1,
+            color: selected ? color.withValues(alpha: 0.15) : context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
-              color: selected ? color : Colors.white.withValues(alpha: 0.06),
+              color: selected ? color : context.c.overlay,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -179,7 +180,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             label,
             style: context.t.titleSmall?.copyWith(
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: selected ? color : Sandik.text58,
+              color: selected ? color : context.c.text58,
             ),
           ),
         ),
@@ -195,7 +196,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: GestureDetector(
+      child: SandikTappable(
         onTap: () => pushGuarded(
           context,
           adaptiveRoute(
@@ -205,7 +206,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Sandik.surface1,
+            color: context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.md),
           ),
           child: Row(
@@ -258,7 +259,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                         style: context.t.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             height: 1.25,
-                            color: Colors.white)),
+                            color: context.c.text90)),
                     const SizedBox(height: 3),
                     Row(
                       children: [
@@ -279,14 +280,14 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                         Text(
                           DateFormat('d MMM yyyy', 'tr_TR')
                               .format(asset.addedDate),
-                          style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+                          style: context.t.bodySmall?.copyWith(color: context.c.text36),
                         ),
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color: context.c.overlay,
                             borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(
@@ -295,7 +296,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                                 : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
                             style: context.t.labelMedium?.copyWith(
                                 letterSpacing: 0,
-                                color: Sandik.text58,
+                                color: context.c.text58,
                                 fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -310,7 +311,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                   Text(tryFmt.format(totalTRY),
                       style: context.t.numSmall.copyWith(
                           fontSize: 15,
-                          color: Colors.white)),
+                          color: context.c.text90)),
                   if (hasPnl) ...[
                     const SizedBox(height: 3),
                     Text(
@@ -318,7 +319,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       style: context.t.numSmall.copyWith(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isPos ? Sandik.gain : Sandik.loss),
+                          color: isPos ? context.c.gain : context.c.loss),
                     ),
                   ],
                 ],

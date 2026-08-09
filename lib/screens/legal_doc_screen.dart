@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../theme/sandik.dart';
+
 // ─── Belge veri modeli ────────────────────────────────────────────────────────
 
 enum LegalBlockType { h1, h2, h3, paragraph, tableRow, tableHeader, divider, meta }
@@ -468,13 +470,13 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
         backgroundColor: const Color(0xFF1A1A2E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 20, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              size: 20, color: context.c.text90),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
-            Icon(widget.icon, color: const Color(0xFFF5A623), size: 20),
+            Icon(widget.icon, color: context.c.amberText, size: 20),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
@@ -482,7 +484,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                 style: GoogleFonts.dmSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: context.c.text90,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -503,10 +505,10 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5A623).withValues(alpha: 0.15),
+                    color: context.c.amberFill.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: const Color(0xFFF5A623).withValues(alpha: 0.4),
+                      color: context.c.amberFill.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
@@ -514,7 +516,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                     style: GoogleFonts.dmSans(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFFF5A623),
+                      color: context.c.amberText,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -562,10 +564,10 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
       top: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: const BoxDecoration(
-          color: Color(0xFF1A1A2E),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A2E),
           border: Border(
-            top: BorderSide(color: Colors.white12, width: 0.5),
+            top: BorderSide(color: context.c.hairline, width: 0.5),
           ),
         ),
         child: Column(
@@ -597,8 +599,8 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                 height: 48,
                 decoration: BoxDecoration(
                   color: active
-                      ? const Color(0xFFF5A623).withValues(alpha: 0.95)
-                      : const Color(0xFFF5A623).withValues(alpha: 0.30),
+                      ? context.c.amberFill.withValues(alpha: 0.95)
+                      : context.c.amberFill.withValues(alpha: 0.30),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
@@ -698,7 +700,7 @@ class _DocH2 extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Container(height: 2, width: 32, color: const Color(0xFFF5A623)),
+            Container(height: 2, width: 32, color: context.c.amberText),
           ],
         ),
       );
@@ -797,7 +799,9 @@ class _DocTableRow extends StatelessWidget {
         border: Border(
           bottom: BorderSide(color: const Color(0xFF0D1B2A).withValues(alpha: 0.08)),
           left: BorderSide(
-            color: isHeader ? const Color(0xFFF5A623) : const Color(0xFF0D1B2A).withValues(alpha: 0.08),
+            color: isHeader
+                ? context.c.amberFill
+                : const Color(0xFF0D1B2A).withValues(alpha: 0.08),
             width: isHeader ? 3 : 1,
           ),
           right: BorderSide(color: const Color(0xFF0D1B2A).withValues(alpha: 0.08)),

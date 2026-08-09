@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/technical_signal.dart';
 import '../screens/partnership_requests_screen.dart';
-import '../theme/sandik.dart' show adaptiveRoute;
+import '../theme/sandik.dart' show adaptiveRoute, Sandik;
 
 const _kSignalNotificationsKey = 'pref_signal_notifications';
 const _kPartnerNotificationsKey = 'pref_partner_notifications';
@@ -152,7 +152,7 @@ class NotificationService {
       icon: 'ic_stat_sandik',
       // Vurgu rengi: ikonu ve uygulama adını tonlar. `colorized` KULLANMA —
       // o bildirimin tüm arka planını boyar (medya bildirimi görünümü).
-      color: isBuy ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+      color: isBuy ? const Color(0xFF10B981) : Sandik.danger,
       ticker: ticker,
       styleInformation: BigTextStyleInformation(body),
     );
@@ -179,7 +179,7 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       icon: 'ic_stat_sandik',
-      color: Color(0xFFF5A623), // marka amber
+      color: Sandik.amber, // marka amber
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -219,7 +219,7 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       icon: 'ic_stat_sandik',
-      color: Color(0xFFF5A623), // marka amber
+      color: Sandik.amber, // marka amber
     );
 
     const iosDetails = DarwinNotificationDetails(

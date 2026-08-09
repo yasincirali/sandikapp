@@ -59,7 +59,7 @@ class _OptInHero extends StatelessWidget {
                       'Yarış',
                       style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: context.c.text90,
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -68,7 +68,7 @@ class _OptInHero extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Sandik.gain.withValues(alpha: 0.18),
+                        color: context.c.gain.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
                       child: Text(
@@ -76,7 +76,7 @@ class _OptInHero extends StatelessWidget {
                         style: context.t.labelSmall?.copyWith(
                           fontSize: 8,
                           fontWeight: FontWeight.w900,
-                          color: Sandik.gain,
+                          color: context.c.gain,
                           letterSpacing: 0.8,
                         ),
                       ),
@@ -88,7 +88,7 @@ class _OptInHero extends StatelessWidget {
                   'Ortaklarınla getiri sıralaması. Kim daha iyi kazanıyor?',
                   style: context.t.bodySmall?.copyWith(
                     fontSize: 11.5,
-                    color: Colors.white.withValues(alpha: 0.75),
+                    color: context.c.text58,
                     height: 1.35,
                   ),
                 ),
@@ -100,14 +100,14 @@ class _OptInHero extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
                 horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Sandik.amber,
+              color: context.c.amberFill,
               borderRadius: BorderRadius.circular(SandikRadius.lg),
             ),
             child: Text(
               'Katıl',
               style: context.t.bodySmall?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: Colors.black,
+                color: context.c.onAmber,
                 letterSpacing: 0.4,
               ),
             ),
@@ -265,7 +265,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
           child: Text(
             'Yarış hesaplanıyor…',
             style: context.t.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: context.c.text58,
             ),
           ),
         ),
@@ -279,8 +279,8 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
     final rankLabel = _rankLabel(best.myRank);
     final positive = (best.myRoi ?? 0) >= 0;
     final roiColor = best.myRoi == null
-        ? Colors.white.withValues(alpha: 0.5)
-        : (positive ? Sandik.gain : Sandik.loss);
+        ? context.c.text58
+        : (positive ? context.c.gain : context.c.loss);
     final roiText = best.myRoi == null
         ? '—'
         : '${positive ? '+' : ''}${best.myRoi!.toStringAsFixed(1)}%';
@@ -328,7 +328,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                       title,
                       style: context.t.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: context.c.text90,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -349,7 +349,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                 subLine,
                 style: context.t.bodySmall?.copyWith(
                   fontSize: 11.5,
-                  color: Colors.white.withValues(alpha: 0.70),
+                  color: context.c.text58,
                   height: 1.3,
                 ),
                 maxLines: 1,
@@ -360,7 +360,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         ),
         const SizedBox(width: 6),
         Icon(Icons.chevron_right_rounded,
-            color: Colors.white.withValues(alpha: 0.65), size: 22),
+            color: context.c.text58, size: 22),
       ],
     );
   }
@@ -437,23 +437,32 @@ class _HeroShell extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(SandikRadius.lg),
+            // Gradyan uçları dark'ta koyu kahve, light'ta amber'in açık
+            // tonlarıdır. Sabit koyu uçlar light modda kartı ekranın geri
+            // kalanından kopartıyordu.
             gradient: LinearGradient(
-              colors: [
-                const Color(0xFF6D3A00).withValues(alpha: 0.55),
-                Sandik.amber.withValues(alpha: 0.28),
-                const Color(0xFF3D2500).withValues(alpha: 0.55),
-              ],
+              colors: context.isLight
+                  ? [
+                      context.c.amberFill.withValues(alpha: 0.22),
+                      context.c.gold.withValues(alpha: 0.10),
+                      context.c.amberFill.withValues(alpha: 0.18),
+                    ]
+                  : [
+                      const Color(0xFF6D3A00).withValues(alpha: 0.55),
+                      context.c.amberFill.withValues(alpha: 0.28),
+                      const Color(0xFF3D2500).withValues(alpha: 0.55),
+                    ],
               stops: const [0.0, 0.55, 1.0],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             border: Border.all(
-              color: Sandik.amber.withValues(alpha: 0.35),
+              color: context.c.amberFill.withValues(alpha: 0.35),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Sandik.amber.withValues(alpha: 0.15),
+                color: context.c.amberFill.withValues(alpha: 0.15),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -490,24 +499,20 @@ class _TrophyBadge extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Sandik.gold, Sandik.amber],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: context.c.amberGradient,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         boxShadow: [
           BoxShadow(
-            color: Sandik.amber.withValues(alpha: 0.35),
+            color: context.c.amberFill.withValues(alpha: 0.35),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: const Icon(
+      child: Icon(
         Icons.emoji_events_rounded,
         size: 22,
-        color: Colors.black,
+        color: context.c.onAmber,
       ),
     );
   }
@@ -521,12 +526,12 @@ class _RankMedal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = rank == 1
-        ? Sandik.gold
+        ? context.c.gold
         : rank == 2
-            ? const Color(0xFFC0C0C0) // silver
+            ? Sandik.medalSilver // silver
             : rank == 3
-                ? const Color(0xFFCD7F32) // bronze
-                : Sandik.amber;
+                ? Sandik.medalBronze // bronze
+                : context.c.amberText;
     return Container(
       width: 44,
       height: 44,
@@ -556,7 +561,7 @@ class _RankMedal extends StatelessWidget {
             '$rank',
             style: context.t.titleLarge?.copyWith(
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: context.c.onAmber,
               height: 1,
             ),
           ),
@@ -565,7 +570,7 @@ class _RankMedal extends StatelessWidget {
             style: context.t.labelSmall?.copyWith(
               fontSize: 8,
               fontWeight: FontWeight.w700,
-              color: Colors.black.withValues(alpha: 0.55),
+              color: context.c.onAmber.withValues(alpha: 0.65),
               height: 1.2,
             ),
           ),

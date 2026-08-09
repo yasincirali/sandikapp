@@ -74,16 +74,18 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
         onPressed: widget.onPressed == null || _busy ? null : _handleTap,
         style: widget.style ??
             FilledButton.styleFrom(
-              backgroundColor: Sandik.amber,
-              foregroundColor: Sandik.dark,
-              disabledBackgroundColor: Sandik.amber.withValues(alpha: 0.5),
-              disabledForegroundColor: Sandik.dark.withValues(alpha: 0.7),
+              backgroundColor: context.c.amberFill,
+              foregroundColor: context.c.onAmber,
+              disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.5),
+              disabledForegroundColor: context.c.onAmber.withValues(alpha: 0.7),
               shape: RoundedRectangleBorder(
                 borderRadius: SandikRadius.mdAll,
               ),
             ),
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
+          duration: SandikMotion.stateOf(context),
+          switchInCurve: SandikMotion.enter,
+          switchOutCurve: SandikMotion.enter,
           child: _busy
               ? const CustomLoadingIndicator(
                   key: ValueKey('busy'),

@@ -28,6 +28,47 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
   late String? _view;
   int _selectedPeriodIdx = 0; // 1H
 
+  /// Son başarılı grafik verisi — stale-while-revalidate.
+  ///
+  /// Dönem (1H → 1A) veya sekme değiştiğinde `FutureBuilder` yeni bir future'a
+  /// geçer ve `snapshot.data` bir frame boyunca null olur. Bunu doğrudan
+  /// gösterirsek grafik yerini spinner'a bırakır: kullanıcı her dönem
+  /// dokunuşunda çizimin kaybolup geri gelmesini görür. Bunun yerine ESKİ
+  /// seriyi ekranda tutup üzerine ince bir "yenileniyor" göstergesi koyuyoruz —
+  /// layout zıplamaz, kullanıcı bağlamını kaybetmez.
+  Map<int, double>? _lastHistory;
+
+  /// Geçmiş future'ını memoize et.
+  ///
+  /// `FutureBuilder`'a build içinde doğrudan `getPortfolioHistory(...)`
+  /// verilirse HER rebuild (sekme çipi, provider tick'i, fiyat güncellemesi)
+  /// yeni bir future — dolayısıyla yeni bir ağ turu — doğurur ve FutureBuilder
+  /// bunu `waiting` sayıp grafiği söker. Aynı (varlık kümesi + dönem) için
+  /// aynı future yeniden kullanılır; yalnızca gerçekten değiştiğinde yenilenir.
+  /// Aynı düzeltme `portfolio_performance_screen`'de de uygulanmıştır.
+  Future<Map<int, double>>? _historyFuture;
+  String? _historyKey;
+
+  /// Bayat seriyi yeni dönem penceresine kırp. Sınır noktaları dahildir.
+  static Map<int, double> _clipToWindow(
+      Map<int, double> raw, DateTime from, DateTime to) {
+    final fromMs = from.millisecondsSinceEpoch;
+    final toMs = to.millisecondsSinceEpoch;
+    return {
+      for (final e in raw.entries)
+        if (e.key >= fromMs && e.key <= toMs) e.key: e.value,
+    };
+  }
+
+  Future<Map<int, double>> _history(List<Asset> targetAssets, int days) {
+    final key = '$days|${targetAssets.map((a) => a.id).join(',')}';
+    if (_historyKey == key && _historyFuture != null) return _historyFuture!;
+    _historyKey = key;
+    _historyFuture =
+        HistoryService.instance.getPortfolioHistory(targetAssets, days);
+    return _historyFuture!;
+  }
+
   static const List<({String label, int days})> _periods = [
     (label: '1H', days: 7),
     (label: '1A', days: 30),
@@ -67,8 +108,8 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
     return [
       TransactionSegment(
         spots: spots,
-        lineColor: Sandik.amber,
-        areaGradientStart: Sandik.amber.withValues(alpha: 0.12),
+        lineColor: context.c.amberText,
+        areaGradientStart: context.c.amberFill.withValues(alpha: 0.12),
         areaGradientEnd: Colors.transparent,
         thickness: 3.5,
       ),
@@ -85,19 +126,19 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
         endDate.subtract(Duration(days: _periods[_selectedPeriodIdx].days));
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 20, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              size: 20, color: context.c.text90),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('Detaylı Portföy Analizi',
             style: context.t.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white)),
+                color: context.c.text90)),
       ),
       body: pStateAsync.when(
         loading: () => const SandikLoadingScreen(),
@@ -126,14 +167,33 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                 .toList();
 
             return FutureBuilder<Map<int, double>>(
-              future: HistoryService.instance.getPortfolioHistory(
-                  targetAssets, _periods[_selectedPeriodIdx].days),
+              future:
+                  _history(targetAssets, _periods[_selectedPeriodIdx].days),
               builder: (context, snap) {
-                final historyMap = snap.data ?? const <int, double>{};
+                if (snap.hasData) _lastHistory = snap.data;
+                final busy = snap.connectionState == ConnectionState.waiting;
+                // Yeni dönem yüklenirken eski seriyi göstermeye devam et.
+                // KRİTİK: bayat seri YENİ pencereye kırpılmalı. 1Y → 1A
+                // geçişinde eski seri `startDate`'ten önceki noktaları da
+                // içerir; kırpmazsak grafik negatif X'e çizilir, eksen kayar
+                // ve çizgi sola taşar. Aynı kural `stale_window_clip_test`
+                // içinde davranış olarak sabitlenmiştir.
+                final Map<int, double> historyMap;
+                if (snap.data != null) {
+                  historyMap = snap.data!;
+                } else {
+                  final stale = _lastHistory;
+                  final clipped = stale == null
+                      ? const <int, double>{}
+                      : _clipToWindow(stale, startDate, endDate);
+                  // Tek nokta çizgi yapmaz — o durumda spinner daha dürüst.
+                  historyMap =
+                      clipped.length >= 2 ? clipped : const <int, double>{};
+                }
                 final segments =
                     _buildSegmentsFromHistory(historyMap, startDate);
-                final loading =
-                    snap.connectionState == ConnectionState.waiting;
+                // Spinner SADECE gösterilecek hiçbir veri yokken (ilk açılış).
+                final loading = busy && segments.isEmpty;
 
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
@@ -156,8 +216,15 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                     else if (segments.isEmpty)
                       _buildEmptyChartState(targetAssets.isEmpty)
                     else
-                      _buildChartSection(
-                          segments, startDate, endDate, targetAssets),
+                      // Bayat seri gösterilirken hafifçe soluklaştır: veri
+                      // tazeleniyor sinyali verir ama grafiği kaldırmaz.
+                      AnimatedOpacity(
+                        opacity: busy ? 0.45 : 1.0,
+                        duration: SandikMotion.stateOf(context),
+                        curve: SandikMotion.enter,
+                        child: _buildChartSection(
+                            segments, startDate, endDate, targetAssets),
+                      ),
                     const SizedBox(height: 32),
                     const _SectionTitle('KATEGORİ DAĞILIMI'),
                     const SizedBox(height: 16),
@@ -186,22 +253,22 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       height: 220,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.show_chart_rounded,
-                size: 36, color: Sandik.text36),
+            Icon(Icons.show_chart_rounded,
+                size: 36, color: context.c.text36),
             const SizedBox(height: 12),
             Text(
               noAssets ? 'Henüz varlığın yok' : 'Yeterli veri yok',
               style: context.t.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: Sandik.text90,
+                color: context.c.text90,
               ),
             ),
             const SizedBox(height: 6),
@@ -211,7 +278,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                   : 'Birkaç günlük veri biriktikten sonra grafiğin oluşacak.',
               textAlign: TextAlign.center,
               style: context.t.titleSmall?.copyWith(
-                color: Sandik.text58,
+                color: context.c.text58,
               ),
             ),
           ],
@@ -224,7 +291,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: List.generate(_periods.length, (i) {
@@ -235,7 +302,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
               child: Container(
                 decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF1A3D2E)
+                        ? context.c.surface2
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(SandikRadius.sm)),
                 child: Center(
@@ -243,7 +310,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                         style: context.t.bodyMedium?.copyWith(
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w500,
-                            color: isSelected ? Sandik.amber : Sandik.text36))),
+                            color: isSelected ? context.c.amberText : context.c.text36))),
               ),
             ),
           );
@@ -280,9 +347,9 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       height: 300,
       padding: const EdgeInsets.fromLTRB(0, 24, 16, 12),
       decoration: BoxDecoration(
-          color: Sandik.surface1,
+          color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.lg),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05))),
+          border: Border.all(color: context.c.hairline)),
       child: LineChart(
         LineChartData(
           minX: 0,
@@ -306,8 +373,8 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                         child: Text(
                             DateFormat('d MMM')
                                 .format(start.add(Duration(days: val.toInt()))),
-                            style: const TextStyle(
-                                color: Sandik.text36, fontSize: 10))))),
+                            style: TextStyle(
+                                color: context.c.text36, fontSize: 10))))),
             leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                     showTitles: true,
@@ -318,8 +385,8 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                             NumberFormat.compactCurrency(
                                     symbol: '₺', locale: 'tr_TR')
                                 .format(val),
-                            style: const TextStyle(
-                                color: Sandik.text36, fontSize: 10)))),
+                            style: TextStyle(
+                                color: context.c.text36, fontSize: 10)))),
           ),
           lineBarsData: segments.map((seg) {
             final isActive = seg.thickness > 2.0;
@@ -345,8 +412,8 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                 getDotPainter: (spot, percent, barData, index) =>
                     FlDotCirclePainter(
                   radius: 4,
-                  color: Sandik.amber,
-                  strokeColor: Sandik.background,
+                  color: context.c.amberText,
+                  strokeColor: context.c.background,
                   strokeWidth: 2,
                 ),
               ),
@@ -362,7 +429,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
           }).toList(),
           lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => Sandik.surface2,
+                  getTooltipColor: (_) => context.c.surface2,
                   getTooltipItems: (spots) => spots
                       .map((s) => LineTooltipItem(
                           NumberFormat.currency(
@@ -370,8 +437,8 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
                                   locale: 'tr_TR',
                                   decimalDigits: 0)
                               .format(s.y),
-                          const TextStyle(
-                              color: Colors.white,
+                          TextStyle(
+                              color: context.c.text90,
                               fontWeight: FontWeight.bold)))
                       .toList())),
         ),
@@ -420,14 +487,14 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
             'Ben',
             myTotal,
             fmtPct(myTotal / (totalAll > 0 ? totalAll : 1) * 100, digits: 1),
-            Sandik.amber),
+            context.c.amberText),
         ...partners.map((p) {
           final pTotal = ownerValue(partnerMap[p.id] ?? const []);
           return _breakdownTile(
               p.displayName,
               pTotal,
               fmtPct(pTotal / (totalAll > 0 ? totalAll : 1) * 100, digits: 1),
-              Sandik.gain);
+              context.c.gain);
         }),
       ],
     );
@@ -440,7 +507,7 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Sandik.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
       child: Row(
         children: [
           Container(
@@ -452,19 +519,19 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
               child: Text(label,
                   style: context.t.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.white))),
+                      color: context.c.text90))),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(fmt.format(val),
                   style: context.t.numSmall.copyWith(
                       fontSize: 14,
-                      color: Colors.white)),
+                      color: context.c.text90)),
               Text(pct,
                   style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Sandik.text36)),
+                      color: context.c.text36)),
             ],
           ),
         ],
@@ -495,5 +562,5 @@ class _SectionTitle extends StatelessWidget {
       style: context.t.labelLarge?.copyWith(
           fontWeight: FontWeight.w800,
           letterSpacing: 1.2,
-          color: Sandik.text36));
+          color: context.c.text58));
 }

@@ -86,8 +86,13 @@ tüm yüzeylerde tek yazım kullanılıyor:
 
 - Android `strings.xml` → `Sandık` ✅ (kodda güncellendi)
 - iOS `CFBundleDisplayName` → `Sandık` ✅ (eski değer `SANDIK` idi, düzeltildi)
-- `store_listing/tr-TR/title.txt` → `Sandık — Portföy Takibi` ✅ (27/30 karakter)
-- `store_listing/en-US/title.txt` → `Sandık — Portfolio Tracker` ✅
+- `store_listing/tr-TR/title.txt` → `Sandık: Portföy Takibi` ✅ (22/30 karakter)
+- `store_listing/en-US/title.txt` → `Sandık: Portfolio Tracker` ✅ (25/30 karakter)
+
+**Ayraç kararı (2026-08-09):** Başlıkta em dash (`—`) yerine iki nokta (`:`)
+kullanılıyor. Bir sonraki release'de App Store Connect'e girilecek isim
+budur; repo ile Console'un birebir aynı kalması için buradaki dosyalar da
+güncellendi.
 
 **⚠️ SENİN YAPMAN GEREKEN — Play Console'daki başlık repodan okunmaz.**
 Store listing metinleri Console'a elle girilir; repodaki `store_listing/`
@@ -95,7 +100,7 @@ dosyaları yalnızca kaynak metindir. "Sandık" araması sonuç vermiyorsa asıl
 sebep büyük ihtimalle Console'daki başlığın hâlâ eski yazımda olmasıdır.
 
 Play Console → Grow → Store presence → Main store listing:
-1. **App name** alanına `Sandık — Portföy Takibi` yaz
+1. **App name** alanına `Sandık: Portföy Takibi` yaz
    (`store_listing/tr-TR/title.txt` içeriğiyle birebir aynı)
 2. **Short description** → `store_listing/tr-TR/short_description.txt`
 3. **Full description** → `store_listing/tr-TR/full_description.txt`
@@ -378,7 +383,7 @@ Output: `Function delete-account deployed successfully`.
 ### 6.2 Uygulama Oluştur
 
 Play Console → Create app:
-- **App name:** "sandık" veya "sandık - Portföy Takibi"
+- **App name:** `Sandık: Portföy Takibi` (`store_listing/tr-TR/title.txt` ile birebir)
 - **Default language:** Türkçe
 - **App or game:** App
 - **Free or paid:** Free

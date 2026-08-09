@@ -44,8 +44,8 @@ class TransactionRow extends StatelessWidget {
     final txValueTRY = portfolioState.toTRY(txValue, asset.currency);
 
     final Color accent = isDelete
-        ? Sandik.text58
-        : (isSell ? Sandik.loss : (isDividend ? Sandik.amber : Sandik.gain));
+        ? context.c.text58
+        : (isSell ? context.c.loss : (isDividend ? context.c.amberText : context.c.gain));
     final IconData kindIcon = isDelete
         ? Icons.delete_outline_rounded
         : (isSell
@@ -63,7 +63,7 @@ class TransactionRow extends StatelessWidget {
       child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Sandik.surface1,
+            color: context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border(
               left: BorderSide(color: accent.withValues(alpha: 0.7), width: 3),
@@ -120,7 +120,7 @@ class TransactionRow extends StatelessWidget {
                                 asset.showTicker ? FontWeight.w700 : FontWeight.w600,
                             height: 1.25,
                             letterSpacing: asset.showTicker ? 0.2 : null,
-                            color: Colors.white)),
+                            color: context.c.text90)),
                     const SizedBox(height: SandikSpace.xs),
                     // Rozet satırı dar ekranda yatayda taşıyordu (320pt'de
                     // 161px). `Wrap` sığmayanı alt satıra alır — kırpmak
@@ -147,7 +147,7 @@ class TransactionRow extends StatelessWidget {
                           DateFormat('d MMM yyyy', 'tr_TR')
                               .format(asset.addedDate),
                           style: context.t.bodySmall
-                              ?.copyWith(color: Sandik.text36),
+                              ?.copyWith(color: context.c.text36),
                         ),
                         // Temettüde miktar 0'dır — "0 adet" rozeti anlamsız
                         // olurdu, o yüzden yalnızca miktarlı işlemlerde göster.
@@ -156,7 +156,7 @@ class TransactionRow extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
+                              color: context.c.overlay,
                               borderRadius:
                                   BorderRadius.circular(SandikRadius.sm),
                             ),
@@ -166,7 +166,7 @@ class TransactionRow extends StatelessWidget {
                                   : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
                               style: context.t.labelMedium?.copyWith(
                                   letterSpacing: 0,
-                                  color: Sandik.text58,
+                                  color: context.c.text58,
                                   fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -226,8 +226,8 @@ class TransactionRow extends StatelessWidget {
                         style: context.t.numSmall.copyWith(
                             fontSize: 15,
                             color: isDelete
-                                ? Sandik.text58
-                                : (isSell ? Sandik.loss : Colors.white)),
+                                ? context.c.text58
+                                : (isSell ? context.c.loss : context.c.text90)),
                       ),
                     ),
                   ],

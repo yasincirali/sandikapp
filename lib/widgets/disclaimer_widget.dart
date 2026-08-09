@@ -10,14 +10,14 @@ class DisclaimerWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: context.c.overlay,
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline_rounded, size: 14, color: Sandik.text36),
+          Icon(Icons.info_outline_rounded, size: 14, color: context.c.text36),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -28,7 +28,7 @@ class DisclaimerWidget extends StatelessWidget {
               'danışarak veriniz. Geçmiş performans gelecekteki sonuçları garanti etmez.',
               style: context.t.labelMedium?.copyWith(
                 letterSpacing: 0,
-                color: Sandik.text36,
+                color: context.c.text36,
                 height: 1.5,
               ),
             ),

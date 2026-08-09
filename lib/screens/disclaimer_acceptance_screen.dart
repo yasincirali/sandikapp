@@ -55,7 +55,7 @@ class _DisclaimerAcceptanceScreenState
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         child: SafeArea(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
@@ -63,19 +63,19 @@ class _DisclaimerAcceptanceScreenState
               // Başlık
               Row(
                 children: [
-                  const Icon(Icons.gavel_rounded, size: 22, color: Sandik.amber),
+                  Icon(Icons.gavel_rounded, size: 22, color: context.c.amberText),
                   const SizedBox(width: 10),
                   Text(
                     'Yasal Uyarı',
                     style: context.t.headlineMedium?.copyWith(
-                      color: Sandik.amber,
+                      color: context.c.amberText,
                     ),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     'v$disclaimerVersion',
                     style: context.t.bodySmall?.copyWith(
-                      color: Sandik.text36,
+                      color: context.c.text36,
                     ),
                   ),
                 ],
@@ -84,7 +84,7 @@ class _DisclaimerAcceptanceScreenState
               Text(
                 'Uygulamayı kullanmaya devam etmek için lütfen aşağıdaki yasal uyarıyı okuyun ve onaylayın.',
                 style: context.t.bodyMedium?.copyWith(
-                  color: Sandik.text58,
+                  color: context.c.text58,
                   height: 1.5,
                 ),
               ),
@@ -94,16 +94,16 @@ class _DisclaimerAcceptanceScreenState
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.04),
+                  color: context.c.overlay,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: context.c.overlay,
                   ),
                 ),
                 child: Text(
                   disclaimerText,
                   style: context.t.titleSmall?.copyWith(
-                    color: Sandik.text58,
+                    color: context.c.text58,
                     height: 1.7,
                   ),
                 ),
@@ -120,37 +120,37 @@ class _DisclaimerAcceptanceScreenState
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: _showError
-                        ? Sandik.loss.withValues(alpha: 0.07)
-                        : Colors.white.withValues(alpha: 0.04),
+                        ? context.c.loss.withValues(alpha: 0.07)
+                        : context.c.overlay,
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(
                       color: _showError
-                          ? Sandik.loss.withValues(alpha: 0.4)
-                          : Colors.white.withValues(alpha: 0.08),
+                          ? context.c.loss.withValues(alpha: 0.4)
+                          : context.c.overlay,
                     ),
                   ),
                   child: Row(
                     children: [
                       AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                        duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
                         curve: SandikMotion.enter,
                         width: 22,
                         height: 22,
                         decoration: BoxDecoration(
                           color: _accepted
-                              ? Sandik.amber
+                              ? context.c.amberText
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(SandikRadius.sm),
                           border: Border.all(
                             color: _accepted
-                                ? Sandik.amber
-                                : (_showError ? Sandik.loss : Sandik.text36),
+                                ? context.c.amberText
+                                : (_showError ? context.c.loss : context.c.text36),
                             width: 2,
                           ),
                         ),
                         child: _accepted
-                            ? const Icon(Icons.check_rounded,
-                                size: 14, color: Sandik.dark)
+                            ? Icon(Icons.check_rounded,
+                                size: 14, color: context.c.onAmber)
                             : null,
                       ),
                       const SizedBox(width: 12),
@@ -159,7 +159,7 @@ class _DisclaimerAcceptanceScreenState
                           'Yukarıdaki yasal uyarıyı okudum ve kabul ediyorum.',
                           style: context.t.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: _showError ? Sandik.loss : Sandik.text90,
+                            color: _showError ? context.c.loss : context.c.text90,
                           ),
                         ),
                       ),
@@ -171,7 +171,7 @@ class _DisclaimerAcceptanceScreenState
                 const SizedBox(height: 8),
                 Text(
                   'Devam etmek için yasal uyarıyı kabul etmelisiniz.',
-                  style: context.t.bodySmall?.copyWith(color: Sandik.loss),
+                  style: context.t.bodySmall?.copyWith(color: context.c.loss),
                 ),
               ],
               const SizedBox(height: 28),
@@ -184,14 +184,14 @@ class _DisclaimerAcceptanceScreenState
                   height: 52,
                   decoration: BoxDecoration(
                     color: (_loading || !_accepted)
-                        ? Sandik.amber.withValues(alpha: 0.45)
-                        : Sandik.amber.withValues(alpha: 0.92),
+                        ? context.c.amberFill.withValues(alpha: 0.45)
+                        : context.c.amberFill.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(
-                        color: Sandik.amber.withValues(alpha: 0.60)),
+                        color: context.c.amberFill.withValues(alpha: 0.60)),
                     boxShadow: [
                       BoxShadow(
-                        color: Sandik.amber.withValues(alpha: 0.28),
+                        color: context.c.amberFill.withValues(alpha: 0.28),
                         blurRadius: 18,
                         spreadRadius: -4,
                         offset: const Offset(0, 6),
@@ -205,7 +205,7 @@ class _DisclaimerAcceptanceScreenState
                           'Kabul Ediyorum',
                           style: context.t.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Sandik.dark,
+                            color: context.c.onAmber,
                           ),
                         ),
                 ),

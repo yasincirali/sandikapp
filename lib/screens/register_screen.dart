@@ -199,26 +199,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final isLoading = ref.watch(authProvider).isLoading || _submitting;
 
     return CupertinoPageScaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       navigationBar: CupertinoNavigationBar(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         border: null,
         middle: Text('Kayıt Ol',
             style: context.t.headlineSmall?.copyWith(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: Colors.white)),
+                color: context.c.text90)),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18, color: Sandik.text58),
+          child: Icon(Icons.arrow_back_ios_new_rounded,
+              size: 18, color: context.c.text58),
         ),
       ),
       child: Material(
-        color: Sandik.background,
+        color: context.c.background,
         child: SafeArea(
-          child: Form(
+          // Bkz. login_screen: grup olmadan iOS "şifreyi kaydet?" istemi
+          // görünmez ve yeni şifre Keychain'e yazılmaz.
+          child: AutofillGroup(
+            child: Form(
             key: _formKey,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
@@ -229,13 +232,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 style: context.t.headlineLarge?.copyWith(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: Sandik.gold,
+                  color: context.c.gold,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Birkaç adımda hesabını oluştur.',
-                style: context.t.bodyMedium?.copyWith(color: Sandik.text36),
+                style: context.t.bodyMedium?.copyWith(color: context.c.text36),
               ),
               const SizedBox(height: 24),
 
@@ -243,13 +246,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _nameCtrl,
                 textCapitalization: TextCapitalization.words,
-                style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
-                decoration: Sandik.inputDecoration('',
+                // Klavyede "Return" yerine "İleri" çıkar; 4 alanlı formda
+                // her alandan sonra klavyeyi kapatıp elle dokunma zorunluluğu
+                // ciddi sürtünmeydi.
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.name],
+                style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+                decoration: context.inputDecoration('',
                     labelText: 'Ad Soyad',
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 14),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.person_outline,
-                          color: Sandik.text36, size: 20),
+                          color: context.c.text36, size: 20),
                     )),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Ad soyad girin' : null,
@@ -260,21 +268,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.email],
+                autocorrect: false,
+                textCapitalization: TextCapitalization.none,
+                style: context.t.bodyLarge?.copyWith(color: context.c.text90),
                 onEditingComplete: () {
                   setState(() => _emailTouched = true);
                   FocusScope.of(context).nextFocus();
                 },
                 onTapOutside: (_) => setState(() => _emailTouched = true),
-                decoration: Sandik.inputDecoration('',
+                decoration: context.inputDecoration('',
                     labelText: 'E-posta',
                     errorText: (_emailTouched && _emailCtrl.text.isNotEmpty && !_isValidEmail(_emailCtrl.text))
                         ? 'Geçerli e-posta girin'
                         : null,
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 14),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.email_outlined,
-                          color: Sandik.text36, size: 20),
+                          color: context.c.text36, size: 20),
                     )),
                 validator: (v) =>
                     (v == null || !_isValidEmail(v)) ? 'Geçerli e-posta girin' : null,
@@ -285,16 +297,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _passCtrl,
                 obscureText: _obscure,
-                style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
-                decoration: Sandik.inputDecoration('',
+                textInputAction: TextInputAction.next,
+                // `newPassword` (password DEĞİL): iOS'un güçlü şifre önerme
+                // ve Keychain'e kaydetme akışını bu tetikler.
+                autofillHints: const [AutofillHints.newPassword],
+                autocorrect: false,
+                enableSuggestions: false,
+                style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+                decoration: context.inputDecoration('',
                     labelText: 'Şifre',
                     errorText: _passCtrl.text.isEmpty
                         ? null
                         : AuthService.validatePassword(_passCtrl.text),
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 14),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.lock_outline,
-                          color: Sandik.text36, size: 20),
+                          color: context.c.text36, size: 20),
                     ),
                     suffixIcon: CupertinoButton(
                       minimumSize: Size.zero,
@@ -304,7 +322,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         _obscure
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: Sandik.text36,
+                        color: context.c.text36,
                         size: 20,
                       ),
                     )),
@@ -317,17 +335,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _passConfirmCtrl,
                 obscureText: _obscure,
-                style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
-                decoration: Sandik.inputDecoration('',
+                // Son alan → "Bitti" ve doğrudan gönderim. Kullanıcı klavyeyi
+                // kapatıp butonu aramak zorunda kalmasın.
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.newPassword],
+                autocorrect: false,
+                enableSuggestions: false,
+                style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+                decoration: context.inputDecoration('',
                     labelText: 'Şifre Tekrar',
                     errorText: (_passConfirmCtrl.text.isNotEmpty &&
                             _passConfirmCtrl.text != _passCtrl.text)
                         ? 'Şifreler eşleşmiyor'
                         : null,
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 14),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.lock_outline,
-                          color: Sandik.text36, size: 20),
+                          color: context.c.text36, size: 20),
                     )),
                 validator: (v) =>
                     v != _passCtrl.text ? 'Şifreler eşleşmiyor' : null,
@@ -419,14 +443,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   height: 52,
                   decoration: BoxDecoration(
                     color: (isLoading || !_canSubmit)
-                        ? Sandik.amber.withValues(alpha: 0.45)
-                        : Sandik.amber.withValues(alpha: 0.92),
+                        ? context.c.amberFill.withValues(alpha: 0.45)
+                        : context.c.amberFill.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                     border: Border.all(
-                        color: Sandik.amber.withValues(alpha: 0.60)),
+                        color: context.c.amberFill.withValues(alpha: 0.60)),
                     boxShadow: [
                       BoxShadow(
-                        color: Sandik.amber.withValues(alpha: 0.28),
+                        color: context.c.amberFill.withValues(alpha: 0.28),
                         blurRadius: 18,
                         spreadRadius: -4,
                         offset: const Offset(0, 6),
@@ -440,7 +464,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Kayıt Ol',
                           style: context.t.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: Sandik.dark),
+                              color: context.c.onAmber),
                         ),
                 ),
               ),
@@ -449,12 +473,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   'Zaten hesabınız var mı? Giriş yapın',
-                  style: context.t.bodyLarge?.copyWith(color: Sandik.amber),
+                  style: context.t.bodyLarge?.copyWith(color: context.c.amberText),
                 ),
               ),
               const SizedBox(height: 24),
             ],
           ),
+        ),
         ),
         ),
       ),
@@ -502,13 +527,13 @@ class _LegalConsentBox extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: error
-            ? Sandik.loss.withValues(alpha: 0.08)
-            : Colors.white.withValues(alpha: 0.04),
+            ? context.c.loss.withValues(alpha: 0.08)
+            : context.c.overlay,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: error
-              ? Sandik.loss.withValues(alpha: 0.5)
-              : Colors.white.withValues(alpha: 0.08),
+              ? context.c.loss.withValues(alpha: 0.5)
+              : context.c.overlay,
         ),
       ),
       child: Column(
@@ -517,14 +542,14 @@ class _LegalConsentBox extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 16, color: Sandik.amber),
+              Icon(icon, size: 16, color: context.c.amberText),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
                   style: context.t.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Sandik.amber,
+                    color: context.c.amberText,
                   ),
                 ),
               ),
@@ -532,7 +557,7 @@ class _LegalConsentBox extends StatelessWidget {
                 Text(
                   versionLabel!,
                   style: context.t.labelMedium?.copyWith(
-                      letterSpacing: 0, color: Sandik.text36),
+                      letterSpacing: 0, color: context.c.text36),
                 ),
             ],
           ),
@@ -540,7 +565,7 @@ class _LegalConsentBox extends StatelessWidget {
           Text(
             bodyText,
             style: context.t.bodySmall?.copyWith(
-              color: Sandik.text58,
+              color: context.c.text58,
               height: 1.6,
             ),
           ),
@@ -553,9 +578,9 @@ class _LegalConsentBox extends StatelessWidget {
               child: Text(
                 linkLabel!,
                 style: context.t.bodySmall?.copyWith(
-                  color: Sandik.amber,
+                  color: context.c.amberText,
                   decoration: TextDecoration.underline,
-                  decorationColor: Sandik.amber,
+                  decorationColor: context.c.amberText,
                 ),
               ),
             ),
@@ -575,37 +600,37 @@ class _LegalConsentBox extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
+                  duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
                   curve: SandikMotion.enter,
                   width: 22,
                   height: 22,
                   decoration: BoxDecoration(
                     color: accepted
-                        ? Sandik.amber
+                        ? context.c.amberText
                         : (docConfirmed
                             ? Colors.transparent
-                            : Colors.white.withValues(alpha: 0.04)),
+                            : context.c.overlay),
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                     border: Border.all(
                       color: accepted
-                          ? Sandik.amber
+                          ? context.c.amberText
                           : (error
-                              ? Sandik.loss
+                              ? context.c.loss
                               : (docConfirmed
-                                  ? Sandik.text36
-                                  : Sandik.text36
+                                  ? context.c.text36
+                                  : context.c.text36
                                       .withValues(alpha: 0.4))),
                       width: 2,
                     ),
                   ),
                   child: accepted
-                      ? const Icon(Icons.check_rounded,
-                          size: 14, color: Sandik.dark)
+                      ? Icon(Icons.check_rounded,
+                          size: 14, color: context.c.onAmber)
                       : (docConfirmed
                           ? null
                           : Icon(Icons.lock_outline_rounded,
                               size: 12,
-                              color: Sandik.text36.withValues(alpha: 0.7))),
+                              color: context.c.text36.withValues(alpha: 0.7))),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -614,7 +639,7 @@ class _LegalConsentBox extends StatelessWidget {
                         ? checkboxLabel
                         : '$checkboxLabel\n(Önce belgeyi okuyun)',
                     style: context.t.titleSmall?.copyWith(
-                      color: error ? Sandik.loss : Sandik.text58,
+                      color: error ? context.c.loss : context.c.text58,
                     ),
                   ),
                 ),
@@ -625,7 +650,7 @@ class _LegalConsentBox extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               errorMessage,
-              style: context.t.bodySmall?.copyWith(color: Sandik.loss),
+              style: context.t.bodySmall?.copyWith(color: context.c.loss),
             ),
           ],
         ],

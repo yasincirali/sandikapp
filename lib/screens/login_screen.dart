@@ -115,14 +115,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.watch(authProvider);
 
     return CupertinoPageScaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       child: SafeArea(
         child: Center(
           child: Material(
             color: Colors.transparent,
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Form(
+              // AutofillGroup ŞART: `autofillHints` tek başına doldurmayı
+              // açar ama iOS'un "şifreyi kaydet?" istemini tetiklemez.
+              // Grup, alanların tek bir kimlik formu olduğunu sisteme söyler.
+              child: AutofillGroup(
+                child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -138,13 +142,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Text(
                             'sandık',
                             style: context.t.displaySmall?.copyWith(
-                              color: Sandik.gold,
+                              color: context.c.gold,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Hazineni birlikte büyüt.',
-                            style: context.t.bodyMedium?.copyWith(color: Sandik.text58),
+                            style: context.t.bodyMedium?.copyWith(color: context.c.text58),
                           ),
                         ],
                       ),
@@ -156,13 +160,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
-                      decoration: Sandik.inputDecoration(
+                      // iCloud Keychain / Google şifre yöneticisi bu ipuçlarına
+                      // bakar; olmadan otomatik doldurma HİÇ çalışmaz.
+                      autofillHints: const [AutofillHints.username],
+                      // E-posta'da otomatik düzeltme ve ilk harf büyütme
+                      // zararlıdır: "Ali@" → "Ali@" beklenirken sistem
+                      // adresi bozabiliyor.
+                      autocorrect: false,
+                      textCapitalization: TextCapitalization.none,
+                      style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+                      decoration: context.inputDecoration(
                         '',
                         labelText: 'E-posta',
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 14),
-                          child: Icon(Icons.email_outlined, color: Sandik.text36, size: 20),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: Icon(Icons.email_outlined, color: context.c.text36, size: 20),
                         ),
                       ),
                       validator: (v) =>
@@ -176,22 +188,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       focusNode: _passFocus,
                       obscureText: _obscure,
                       textInputAction: TextInputAction.done,
+                      autofillHints: const [AutofillHints.password],
+                      autocorrect: false,
+                      enableSuggestions: false,
                       onFieldSubmitted: (_) => _loading ? null : _login(),
-                      style: context.t.bodyLarge?.copyWith(color: Sandik.text90),
-                      decoration: Sandik.inputDecoration(
+                      style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+                      decoration: context.inputDecoration(
                         '',
                         labelText: 'Şifre',
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 14),
-                          child: Icon(Icons.lock_outline, color: Sandik.text36, size: 20),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          child: Icon(Icons.lock_outline, color: context.c.text36, size: 20),
                         ),
-                        suffixIcon: GestureDetector(
+                        suffixIcon: SandikTappable(
+                          semanticLabel:
+                              _obscure ? 'Şifreyi göster' : 'Şifreyi gizle',
                           onTap: () => setState(() => _obscure = !_obscure),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             child: Icon(
                               _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                              color: Sandik.text36,
+                              color: context.c.text36,
                               size: 20,
                             ),
                           ),
@@ -226,14 +243,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(SandikRadius.lg),
                                 color: Color.lerp(
-                                  Colors.white.withValues(alpha: 0.07),
-                                  Sandik.amber.withValues(alpha: 0.88),
+                                  context.c.overlay,
+                                  context.c.amberFill.withValues(alpha: 0.88),
                                   t,
                                 ),
                                 border: Border.all(
                                   color: Color.lerp(
-                                    Colors.white.withValues(alpha: 0.15),
-                                    Sandik.amber,
+                                    context.c.overlay,
+                                    context.c.amberText,
                                     t,
                                   )!,
                                   width: 1.2,
@@ -241,7 +258,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 boxShadow: t > 0.05
                                     ? [
                                         BoxShadow(
-                                          color: Sandik.amber.withValues(alpha: t * 0.4),
+                                          color: context.c.amberFill.withValues(alpha: t * 0.4),
                                           blurRadius: 10,
                                           spreadRadius: -2,
                                         ),
@@ -258,8 +275,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Color.lerp(
-                                  Colors.white.withValues(alpha: 0.55),
-                                  Sandik.dark,
+                                  context.c.text58,
+                                  context.c.onAmber,
                                   t,
                                 ),
                                 boxShadow: [
@@ -278,7 +295,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Text(
                           'Beni hatırla',
                           style: context.t.titleMedium?.copyWith(
-                            color: Sandik.text58,
+                            color: context.c.text58,
                           ),
                         ),
                         const Spacer(),
@@ -297,7 +314,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Text(
                             'Şifremi unuttum',
                             style: context.t.bodyMedium?.copyWith(
-                              color: Sandik.amber,
+                              color: context.c.amberText,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -317,16 +334,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         height: 52,
                         decoration: BoxDecoration(
                           color: _loading
-                              ? Sandik.amber.withValues(alpha: 0.45)
-                              : Sandik.amber.withValues(alpha: 0.92),
+                              ? context.c.amberFill.withValues(alpha: 0.45)
+                              : context.c.amberFill.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(SandikRadius.md),
                           border: Border.all(
-                            color: Sandik.amber.withValues(alpha: 0.60),
+                            color: context.c.amberFill.withValues(alpha: 0.60),
                             width: 1.0,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Sandik.amber.withValues(alpha: 0.30),
+                              color: context.c.amberFill.withValues(alpha: 0.30),
                               blurRadius: 20,
                               spreadRadius: -4,
                               offset: const Offset(0, 6),
@@ -340,7 +357,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 'Giriş Yap',
                                 style: context.t.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: Sandik.dark,
+                                  color: context.c.onAmber,
                                 ),
                               ),
                       ),
@@ -355,12 +372,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       child: Text(
                         'Hesabınız yok mu? Kayıt olun',
-                        style: context.t.bodyLarge?.copyWith(color: Sandik.amber),
+                        style: context.t.bodyLarge?.copyWith(color: context.c.amberText),
                       ),
                     ),
                     const SizedBox(height: 32),
                   ],
                 ),
+              ),
               ),
             ),
           ),

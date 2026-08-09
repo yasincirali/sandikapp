@@ -77,7 +77,7 @@ class _AssetSparklineState extends State<AssetSparkline> {
       return SizedBox(width: widget.width, height: widget.height);
     }
 
-    final color = widget.isPositive ? Sandik.gain : Sandik.loss;
+    final color = widget.isPositive ? context.c.gain : context.c.loss;
 
     return SizedBox(
       width: widget.width,

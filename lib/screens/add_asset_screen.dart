@@ -317,7 +317,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         style: context.t.labelLarge?.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
-          color: Sandik.text58,
+          color: context.c.text58,
         ),
       );
 
@@ -325,7 +325,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         text,
         style: context.t.bodyMedium?.copyWith(
           fontWeight: FontWeight.w600,
-          color: Sandik.text90,
+          color: context.c.text90,
         ),
       );
 
@@ -341,31 +341,39 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         : (_isEditing ? 'Düzenle' : 'Varlık Ekle');
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       appBar: AppBar(
-        backgroundColor: Sandik.background,
+        backgroundColor: context.c.background,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         title: Text(
           title,
           style: context.t.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              color: Sandik.text90),
+              color: context.c.text90),
         ),
         actions: [
           if (!_isEditing && !widget.cartMode) ...[
             IconButton(
               tooltip: 'Toplu ekle',
-              icon: const Icon(Icons.playlist_add_rounded,
-                  color: Sandik.text58),
-              onPressed: () => Navigator.of(context).push(
-                adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
-              ),
+              icon: Icon(Icons.playlist_add_rounded,
+                  color: context.c.text58),
+              // Toplu ekleme başarıyla bittiğinde `true` döner; o zaman bu
+              // ekran da kapanır ve kullanıcı portföye ulaşır. Aksi halde
+              // arkada boş kalan bu formda mahsur kalıyordu.
+              onPressed: () async {
+                final added = await Navigator.of(context).push<bool>(
+                  adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+                );
+                if (added == true && context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              },
             ),
             IconButton(
               tooltip: 'Sesli / Hızlı giriş',
-              icon: const Icon(Icons.mic_none_rounded,
-                  color: Sandik.text58),
+              icon: Icon(Icons.mic_none_rounded,
+                  color: context.c.text58),
               onPressed: _showQuickEntrySheet,
             ),
           ],
@@ -492,18 +500,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             Expanded(
               child: Container(
                   height: 1,
-                  color: Sandik.text36.withValues(alpha: 0.3)),
+                  color: context.c.text36.withValues(alpha: 0.3)),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Text('veya listede yok',
                   style: context.t.bodySmall
-                      ?.copyWith(color: Sandik.text36)),
+                      ?.copyWith(color: context.c.text36)),
             ),
             Expanded(
               child: Container(
                   height: 1,
-                  color: Sandik.text36.withValues(alpha: 0.3)),
+                  color: context.c.text36.withValues(alpha: 0.3)),
             ),
           ],
         ),
@@ -552,18 +560,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             _schedulePricePreview();
           },
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
+            duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
             curve: SandikMotion.enter,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: selected
                   ? AssetType.altin.color.withValues(alpha: 0.18)
-                  : Sandik.surface1,
+                  : context.c.surface1,
               borderRadius: BorderRadius.circular(SandikRadius.md),
               border: Border.all(
                 color: selected
                     ? AssetType.altin.color
-                    : Colors.white.withValues(alpha: 0.06),
+                    : context.c.overlay,
                 width: selected ? 1.4 : 1,
               ),
               boxShadow: selected
@@ -584,13 +592,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     size: 14,
                     color: selected
                         ? AssetType.altin.color
-                        : Sandik.text58),
+                        : context.c.text58),
                 const SizedBox(width: 6),
                 Text(g.label,
                     style: context.t.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color:
-                            selected ? Sandik.text90 : Sandik.text58)),
+                            selected ? context.c.text90 : context.c.text58)),
               ],
             ),
           ),
@@ -633,7 +641,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             const SizedBox(width: 6),
             Text('· opsiyonel',
                 style: context.t.bodySmall
-                    ?.copyWith(color: Sandik.text36)),
+                    ?.copyWith(color: context.c.text36)),
           ],
         ),
         const SizedBox(height: 8),
@@ -668,7 +676,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             _fieldLabel('Komisyon / Masraf'),
             const SizedBox(width: 6),
             Text('· opsiyonel',
-                style: context.t.bodySmall?.copyWith(color: Sandik.text36)),
+                style: context.t.bodySmall?.copyWith(color: context.c.text36)),
           ],
         ),
         const SizedBox(height: 8),
@@ -689,13 +697,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             padding: const EdgeInsets.only(right: 12),
             child: Text(_currency,
                 style: context.t.titleSmall?.copyWith(
-                    color: Sandik.text58, fontWeight: FontWeight.w700)),
+                    color: context.c.text58, fontWeight: FontWeight.w700)),
           ),
         ),
         const SizedBox(height: 6),
         Text(
           'Alım-satım komisyonu maliyete eklenir — kâr/zarar gerçek rakamı gösterir.',
-          style: context.t.bodySmall?.copyWith(color: Sandik.text36),
+          style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
       ],
     );
@@ -706,11 +714,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       child: DropdownButton<String>(
         value: _currency,
         isDense: true,
-        dropdownColor: Sandik.surface2,
+        dropdownColor: context.c.surface2,
         style: context.t.titleSmall?.copyWith(
-            color: Sandik.amber, fontWeight: FontWeight.w700),
-        icon: const Icon(Icons.arrow_drop_down,
-            color: Sandik.amber, size: 18),
+            color: context.c.amberText, fontWeight: FontWeight.w700),
+        icon: Icon(Icons.arrow_drop_down,
+            color: context.c.amberText, size: 18),
         items: _currencies
             .map((c) => DropdownMenuItem(
                   value: c,
@@ -734,20 +742,20 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Sandik.surface1,
+          color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
+          border: Border.all(color: context.c.hairline),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calculate_outlined,
-                color: Sandik.text36, size: 18),
+            Icon(Icons.calculate_outlined,
+                color: context.c.text36, size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Miktar girince toplam maliyet burada görünecek.',
                 style: context.t.titleSmall
-                    ?.copyWith(color: Sandik.text58),
+                    ?.copyWith(color: context.c.text58),
               ),
             ),
           ],
@@ -767,21 +775,21 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Sandik.amber.withValues(alpha: 0.08),
+          color: context.c.amberFill.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
-              color: Sandik.amber.withValues(alpha: 0.3), width: 1),
+              color: context.c.amberFill.withValues(alpha: 0.3), width: 1),
         ),
         child: Row(
           children: [
-            const Icon(Icons.auto_awesome_rounded,
-                color: Sandik.amber, size: 20),
+            Icon(Icons.auto_awesome_rounded,
+                color: context.c.amberText, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 msg,
                 style: context.t.titleSmall?.copyWith(
-                    color: Sandik.text90,
+                    color: context.c.text90,
                     height: 1.35),
               ),
             ),
@@ -806,16 +814,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Sandik.amber.withValues(alpha: 0.16),
-            Sandik.amber.withValues(alpha: 0.06),
+            context.c.amberFill.withValues(alpha: 0.16),
+            context.c.amberFill.withValues(alpha: 0.06),
           ],
         ),
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
-            color: Sandik.amber.withValues(alpha: 0.4), width: 1),
+            color: context.c.amberFill.withValues(alpha: 0.4), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Sandik.amber.withValues(alpha: 0.16),
+            color: context.c.amberFill.withValues(alpha: 0.16),
             blurRadius: 24,
             spreadRadius: -8,
           ),
@@ -829,13 +837,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               Text('TOPLAM MALİYET',
                   style: context.t.labelLarge?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Sandik.amber,
+                    color: context.c.amberText,
                     letterSpacing: 0.8,
                   )),
               const SizedBox(height: 4),
               Text('${_fmt(qty)} × ${_fmt(price)}',
                   style: context.t.bodySmall
-                      ?.copyWith(color: Sandik.text58)),
+                      ?.copyWith(color: context.c.text58)),
             ],
           ),
           const Spacer(),
@@ -844,7 +852,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             // Form özeti toplam tutarı — tabular figür, yazarken zıplamasın.
             style: context.t.numLarge.copyWith(
               fontSize: 22,
-              color: Sandik.gold,
+              color: context.c.gold,
               letterSpacing: -0.5,
             ),
           ),
@@ -884,14 +892,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final String subtitle;
 
     if (_previewLoading && _previewPrice == null) {
-      color = Sandik.text58;
+      color = context.c.text58;
       icon = Icons.hourglass_top_rounded;
       title = 'Fiyat çekiliyor…';
       subtitle = '$dateLabel için kapanış aranıyor';
     } else if (_previewPrice != null) {
       final p = _previewPrice!;
       final fmt = NumberFormat('#,##0.##', 'tr_TR');
-      color = _previewIsHistorical ? Sandik.gain : Sandik.amber;
+      color = _previewIsHistorical ? context.c.gain : context.c.amberText;
       icon = _previewIsHistorical
           ? Icons.event_available_rounded
           : Icons.auto_awesome_rounded;
@@ -900,7 +908,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ? '$dateLabel kapanışı — kayıtta bu fiyat kullanılacak'
           : 'Tarihli fiyat bulunamadı — güncel piyasa fiyatı kullanılacak';
     } else {
-      color = Sandik.loss.withValues(alpha: 0.8);
+      color = context.c.loss.withValues(alpha: 0.8);
       icon = Icons.help_outline_rounded;
       title = 'Fiyat bulunamadı';
       subtitle = 'İnternet yok ya da bu sembol için veri gelmedi — '
@@ -941,7 +949,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     title,
                     style: context.t.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: Sandik.text90,
+                      color: context.c.text90,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -950,7 +958,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   Text(
                     subtitle,
                     style: context.t.bodySmall?.copyWith(
-                      color: Sandik.text58,
+                      color: context.c.text58,
                       height: 1.3,
                     ),
                     maxLines: 2,
@@ -996,12 +1004,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         padding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Sandik.surface1,
+          color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
             color: isToday
-                ? Colors.white.withValues(alpha: 0.05)
-                : Sandik.amber.withValues(alpha: 0.35),
+                ? context.c.overlay
+                : context.c.amberFill.withValues(alpha: 0.35),
             width: isToday ? 1 : 1.2,
           ),
         ),
@@ -1009,21 +1017,21 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           children: [
             Icon(Icons.event_rounded,
                 size: 16,
-                color: isToday ? Sandik.text58 : Sandik.amber),
+                color: isToday ? context.c.text58 : context.c.amberText),
             const SizedBox(width: 10),
             Text('İşlem tarihi',
                 style: context.t.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Sandik.text90)),
+                    color: context.c.text90)),
             const Spacer(),
             Text(label,
                 style: context.t.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: isToday ? Sandik.text58 : Sandik.amber)),
+                    color: isToday ? context.c.text58 : context.c.amberText)),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right_rounded,
                 size: 16,
-                color: isToday ? Sandik.text36 : Sandik.amber),
+                color: isToday ? context.c.text36 : context.c.amberText),
           ],
         ),
       ),
@@ -1034,9 +1042,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Widget _notesCollapsible(ColorScheme cs) {
     return Container(
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.c.hairline),
       ),
       child: Column(
         children: [
@@ -1049,13 +1057,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   horizontal: 14, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.notes_rounded,
-                      size: 16, color: Sandik.text58),
+                  Icon(Icons.notes_rounded,
+                      size: 16, color: context.c.text58),
                   const SizedBox(width: 10),
                   Text('Not ekle',
                       style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: Sandik.text90)),
+                          color: context.c.text90)),
                   const Spacer(),
                   if (_notes.text.isNotEmpty && !_notesExpanded)
                     Padding(
@@ -1063,8 +1071,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       child: Container(
                         width: 6,
                         height: 6,
-                        decoration: const BoxDecoration(
-                          color: Sandik.amber,
+                        decoration: BoxDecoration(
+                          color: context.c.amberFill,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -1073,14 +1081,17 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       _notesExpanded
                           ? Icons.expand_less_rounded
                           : Icons.expand_more_rounded,
-                      color: Sandik.text58,
+                      color: context.c.text58,
                       size: 20),
                 ],
               ),
             ),
           ),
           AnimatedCrossFade(
-            duration: const Duration(milliseconds: 180),
+            duration: SandikMotion.state,
+            firstCurve: SandikMotion.enter,
+            secondCurve: SandikMotion.enter,
+            sizeCurve: SandikMotion.move,
             crossFadeState: _notesExpanded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
@@ -1090,9 +1101,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               child: TextFormField(
                 controller: _notes,
                 style: context.t.titleMedium
-                    ?.copyWith(color: Sandik.text90),
+                    ?.copyWith(color: context.c.text90),
                 maxLines: 3,
-                decoration: Sandik.inputDecoration('Notlarınız...'),
+                decoration: context.inputDecoration('Notlarınız...'),
                 onChanged: (_) => setState(() {}),
               ),
             ),
@@ -1109,10 +1120,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
         decoration: BoxDecoration(
-          color: Sandik.background,
+          color: context.c.background,
           border: Border(
             top: BorderSide(
-                color: Colors.white.withValues(alpha: 0.05), width: 1),
+                color: context.c.overlay, width: 1),
           ),
         ),
         child: SizedBox(
@@ -1121,10 +1132,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           child: FilledButton(
             onPressed: _saving ? null : _save,
             style: FilledButton.styleFrom(
-              backgroundColor: Sandik.amber,
-              foregroundColor: Colors.black,
+              backgroundColor: context.c.amberFill,
+              foregroundColor: context.c.onAmber,
               disabledBackgroundColor:
-                  Sandik.amber.withValues(alpha: 0.25),
+                  context.c.amberFill.withValues(alpha: 0.25),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SandikRadius.md)),
               elevation: 0,
@@ -1159,12 +1170,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return TextFormField(
       controller: controller,
       style: context.t.bodyLarge?.copyWith(
-          color: Sandik.text90,
+          color: context.c.text90,
           fontWeight: FontWeight.w500),
-      decoration: Sandik.inputDecoration(hint).copyWith(
+      decoration: context.inputDecoration(hint).copyWith(
         suffixText: suffixText,
         suffixStyle: context.t.titleSmall?.copyWith(
-            color: Sandik.text58,
+            color: context.c.text58,
             fontWeight: FontWeight.w600),
         suffixIcon: suffix,
         suffixIconConstraints:
@@ -1191,7 +1202,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ? AssetType.values
         : AssetType.values.where((t) => t != AssetType.mevduat).toList();
     return HScrollWithFade(
-      fadeColor: Sandik.background,
+      fadeColor: context.c.background,
       child: Row(
         children: types.map((t) {
           final selected = _type == t;
@@ -1222,19 +1233,19 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 _schedulePricePreview();
               },
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
+                duration: SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: selected
                       ? t.color.withValues(alpha: 0.18)
-                      : Sandik.surface1,
+                      : context.c.surface1,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                     color: selected
                         ? t.color
-                        : Colors.white.withValues(alpha: 0.06),
+                        : context.c.overlay,
                     width: selected ? 1.4 : 1,
                   ),
                   boxShadow: selected
@@ -1252,12 +1263,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   children: [
                     Icon(t.icon,
                         size: 18,
-                        color: selected ? t.color : Sandik.text58),
+                        color: selected ? t.color : context.c.text58),
                     const SizedBox(width: 8),
                     Text(t.label,
                         style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: selected ? Sandik.text90 : Sandik.text58,
+                          color: selected ? context.c.text90 : context.c.text58,
                         )),
                   ],
                 ),
@@ -1290,18 +1301,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 _schedulePricePreview();
               },
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
+                duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
                 curve: SandikMotion.enter,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: selected
                       ? AssetType.doviz.color.withValues(alpha: 0.18)
-                      : Sandik.surface1,
+                      : context.c.surface1,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                     color: selected
                         ? AssetType.doviz.color
-                        : Colors.white.withValues(alpha: 0.06),
+                        : context.c.overlay,
                     width: selected ? 1.4 : 1,
                   ),
                   boxShadow: selected
@@ -1325,7 +1336,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         fontWeight: FontWeight.w800,
                         color: selected
                             ? AssetType.doviz.color
-                            : Sandik.text90,
+                            : context.c.text90,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1335,7 +1346,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         fontWeight: FontWeight.w700,
                         color: selected
                             ? AssetType.doviz.color
-                            : Sandik.text58,
+                            : context.c.text58,
                         letterSpacing: 0.6,
                       ),
                     ),
@@ -1354,7 +1365,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Widget _quantityPresetsRow(ColorScheme cs) {
     final presets = _quantityPresets;
     return HScrollWithFade(
-      fadeColor: Sandik.background,
+      fadeColor: context.c.background,
       child: Row(
         children: presets.map((v) {
           final selected = _quantity.text == v;
@@ -1363,19 +1374,19 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _quantity.text = v),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 140),
+                duration: SandikMotion.of(context, const Duration(milliseconds: 140)),
                 curve: SandikMotion.enter,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: selected
-                      ? Sandik.amber.withValues(alpha: 0.16)
-                      : Sandik.surface1,
+                      ? context.c.amberFill.withValues(alpha: 0.16)
+                      : context.c.surface1,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
                     color: selected
-                        ? Sandik.amber.withValues(alpha: 0.45)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? context.c.amberFill.withValues(alpha: 0.45)
+                        : context.c.overlay,
                   ),
                 ),
                 child: Row(
@@ -1385,7 +1396,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       v,
                       style: context.t.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: selected ? Sandik.amber : Sandik.text58,
+                        color: selected ? context.c.amberText : context.c.text58,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -1394,8 +1405,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
                         color: selected
-                            ? Sandik.amber.withValues(alpha: 0.75)
-                            : Sandik.text36,
+                            ? context.c.amberFill.withValues(alpha: 0.75)
+                            : context.c.text36,
                       ),
                     ),
                   ],
@@ -1518,12 +1529,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: Sandik.surface1,
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: hasError
-              ? Sandik.loss
-              : (hasValue ? color : Colors.white.withValues(alpha: 0.06)),
+              ? context.c.loss
+              : (hasValue ? color : context.c.overlay),
           width: hasValue ? 1.4 : 1,
         ),
         boxShadow: hasValue
@@ -1558,12 +1569,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               mainText,
               style: context.t.titleMedium?.copyWith(
                 fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
-                color: hasValue ? Sandik.text90 : Sandik.text36,
+                color: hasValue ? context.c.text90 : context.c.text36,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Icon(Icons.search_rounded, size: 18, color: Sandik.text58),
+          Icon(Icons.search_rounded, size: 18, color: context.c.text58),
         ],
       ),
     );
@@ -1629,7 +1640,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Sandik.surface1,
+      backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => _QuickEntrySheet(
@@ -1950,8 +1961,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 style: context.t.bodyMedium
                     ?.copyWith(fontWeight: FontWeight.w600)),
             backgroundColor: priceFromHistorical
-                ? Sandik.gain.withValues(alpha: 0.9)
-                : Sandik.amber.withValues(alpha: 0.9),
+                ? context.c.gain.withValues(alpha: 0.9)
+                : context.c.amberFill.withValues(alpha: 0.9),
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 4),
           ),
@@ -2011,13 +2022,13 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
         children: [
           Row(
             children: [
-              const Icon(Icons.bolt_rounded, color: Sandik.amber, size: 22),
+              Icon(Icons.bolt_rounded, color: context.c.amberText, size: 22),
               const SizedBox(width: 8),
               Text(
                 'Hızlı Giriş',
                 style: context.t.headlineSmall?.copyWith(
                   fontSize: 17, fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: context.c.text90,
                 ),
               ),
             ],
@@ -2027,7 +2038,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
             'Her satıra bir varlık yazın. Fiyat opsiyonel — boş bırakırsanız güncel fiyat otomatik çekilir.\n'
             'Örn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet',
             style: context.t.titleSmall
-                ?.copyWith(color: Sandik.text58, height: 1.5),
+                ?.copyWith(color: context.c.text58, height: 1.5),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -2036,24 +2047,24 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
             maxLines: 5,
             minLines: 2,
             textCapitalization: TextCapitalization.sentences,
-            style: context.t.titleMedium?.copyWith(color: Colors.white),
+            style: context.t.titleMedium?.copyWith(color: context.c.text90),
             decoration: InputDecoration(
               hintText: '100 dolar\n10 gram altın 4500 lira\nGARAN 500 adet 105 lira',
               hintStyle:
-                  context.t.bodyMedium?.copyWith(color: Sandik.text36),
+                  context.t.bodyMedium?.copyWith(color: context.c.text36),
               filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.05),
+              fillColor: context.c.overlay,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(SandikRadius.md),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+                borderSide: BorderSide(color: context.c.hairline),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(SandikRadius.md),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+                borderSide: BorderSide(color: context.c.hairline),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(SandikRadius.md),
-                borderSide: BorderSide(color: Sandik.amber.withValues(alpha: 0.6)),
+                borderSide: BorderSide(color: context.c.amberFill.withValues(alpha: 0.6)),
               ),
             ),
             onChanged: _updatePreviews,
@@ -2078,7 +2089,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                       '${e.subCategory != null ? '  ${e.subCategory}' : ''}'
                       '${e.price > 0 ? '  @ ${e.price % 1 == 0 ? e.price.toInt() : e.price} ₺' : '  (fiyat otomatik)'}',
                       style: context.t.titleSmall
-                          ?.copyWith(color: Sandik.text58),
+                          ?.copyWith(color: context.c.text58),
                     ),
                   ),
                 ],
@@ -2104,7 +2115,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                             if (mounted) setState(() => _saving = false);
                           }
                         },
-                        style: FilledButton.styleFrom(backgroundColor: Sandik.amber, foregroundColor: Sandik.dark),
+                        style: FilledButton.styleFrom(backgroundColor: context.c.amberFill, foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.playlist_add_check_rounded),
                         label: Text('${_previews.length} varlığı kaydet',
                             style: context.t.titleMedium
@@ -2114,7 +2125,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                         onPressed: _previews.isEmpty
                             ? null
                             : () => widget.onConfirmSingle(_previews.first),
-                        style: FilledButton.styleFrom(backgroundColor: Sandik.amber, foregroundColor: Sandik.dark),
+                        style: FilledButton.styleFrom(backgroundColor: context.c.amberFill, foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.check_rounded),
                         label: Text('Formu doldur',
                             style: context.t.titleMedium

@@ -51,7 +51,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final priceYearly = rc.premiumPriceYearly;
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       body: SafeArea(
         child: Stack(
           children: [
@@ -93,7 +93,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     'yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; '
                     'iptal etmezsen deneme sonunda ücret tahsil edilir.',
                     style: context.t.bodySmall?.copyWith(
-                      color: Sandik.text36,
+                      color: context.c.text36,
                       height: 1.5,
                     ),
                   ),
@@ -147,7 +147,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           'Geri yükleme yakında (RevenueCat entegrasyonu ile)',
           style: context.t.bodyLarge,
         ),
-        backgroundColor: Sandik.surface2,
+        backgroundColor: context.c.surface2,
       ),
     );
   }
@@ -155,7 +155,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   Future<void> _showSuccessSheet() {
     return showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -171,7 +171,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Sandik.text36,
+                  color: context.c.text36,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
               ),
@@ -180,26 +180,26 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: Sandik.amber.withValues(alpha: 0.15),
+                  color: context.c.amberFill.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: Sandik.amber.withValues(alpha: 0.45), width: 2),
+                      color: context.c.amberFill.withValues(alpha: 0.45), width: 2),
                 ),
-                child: const Icon(Icons.check_rounded,
-                    color: Sandik.amber, size: 40),
+                child: Icon(Icons.check_rounded,
+                    color: context.c.amberText, size: 40),
               ),
               const SizedBox(height: 16),
               Text('Premium açıldı 🎉',
                   style: context.t.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: Colors.white)),
+                      color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
                 'Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve '
                 'daha fazlası açıldı.',
                 textAlign: TextAlign.center,
                 style: context.t.bodyMedium?.copyWith(
-                    color: Sandik.text58, height: 1.5),
+                    color: context.c.text58, height: 1.5),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -208,8 +208,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 child: FilledButton(
                   onPressed: () => Navigator.pop(ctx),
                   style: FilledButton.styleFrom(
-                    backgroundColor: Sandik.amber,
-                    foregroundColor: Colors.black,
+                    backgroundColor: context.c.amberFill,
+                    foregroundColor: context.c.onAmber,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(SandikRadius.md)),
                   ),
@@ -236,7 +236,7 @@ class _Header extends StatelessWidget {
     return Row(
       children: [
         IconButton(
-          icon: const Icon(Icons.close_rounded, color: Colors.white),
+          icon: Icon(Icons.close_rounded, color: context.c.text90),
           onPressed: () => Navigator.of(context).pop(false),
         ),
         const Spacer(),
@@ -257,12 +257,12 @@ class _HeroCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Sandik.amber.withValues(alpha: 0.18),
-            Sandik.gold.withValues(alpha: 0.06),
+            context.c.amberFill.withValues(alpha: 0.18),
+            context.c.gold.withValues(alpha: 0.06),
           ],
         ),
         borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: Sandik.amber.withValues(alpha: 0.35)),
+        border: Border.all(color: context.c.amberFill.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,16 +271,16 @@ class _HeroCard extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Sandik.amber.withValues(alpha: 0.20),
+              color: context.c.amberFill.withValues(alpha: 0.20),
               borderRadius: BorderRadius.circular(SandikRadius.sm),
-              border: Border.all(color: Sandik.amber.withValues(alpha: 0.5)),
+              border: Border.all(color: context.c.amberFill.withValues(alpha: 0.5)),
             ),
             child: Text(
               'SANDIK PREMIUM',
               style: context.t.labelMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
-                color: Sandik.amber,
+                color: context.c.amberText,
               ),
             ),
           ),
@@ -289,7 +289,7 @@ class _HeroCard extends StatelessWidget {
             'Portföyünü daha derinlemesine\ntakip et',
             style: context.t.headlineLarge?.copyWith(
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: context.c.text90,
               height: 1.15,
             ),
           ),
@@ -297,7 +297,7 @@ class _HeroCard extends StatelessWidget {
           Text(
             'Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.',
             style: context.t.bodyMedium?.copyWith(
-              color: Sandik.text58,
+              color: context.c.text58,
               height: 1.4,
             ),
           ),
@@ -340,17 +340,17 @@ class _FeatureList extends StatelessWidget {
                 height: 28,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Sandik.amber.withValues(alpha: 0.12),
+                  color: context.c.amberFill.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
-                child: Icon(f.$1, color: Sandik.amber, size: 16),
+                child: Icon(f.$1, color: context.c.amberText, size: 16),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   f.$2,
                   style: context.t.bodyMedium?.copyWith(
-                    color: Colors.white,
+                    color: context.c.text90,
                     height: 1.35,
                   ),
                 ),
@@ -390,18 +390,18 @@ class _PlanCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: SandikMotion.stateOf(context),
         curve: SandikMotion.enter,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: selected
-              ? Sandik.amber.withValues(alpha: 0.12)
-              : Sandik.surface1,
+              ? context.c.amberFill.withValues(alpha: 0.12)
+              : context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
             color: selected
-                ? Sandik.amber
-                : Colors.white.withValues(alpha: 0.08),
+                ? context.c.amberText
+                : context.c.overlay,
             width: selected ? 2 : 1,
           ),
         ),
@@ -414,7 +414,7 @@ class _PlanCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: selected ? Sandik.amber : Sandik.text36,
+                  color: selected ? context.c.amberText : context.c.text36,
                   width: 2,
                 ),
               ),
@@ -422,8 +422,8 @@ class _PlanCard extends StatelessWidget {
                   ? Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(
-                        color: Sandik.amber,
+                      decoration: BoxDecoration(
+                        color: context.c.amberFill,
                         shape: BoxShape.circle,
                       ),
                     )
@@ -439,14 +439,14 @@ class _PlanCard extends StatelessWidget {
                       Text(title,
                           style: context.t.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: Colors.white)),
+                              color: context.c.text90)),
                       if (badgeText != null) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Sandik.gain.withValues(alpha: 0.20),
+                            color: context.c.gain.withValues(alpha: 0.20),
                             borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(
@@ -454,7 +454,7 @@ class _PlanCard extends StatelessWidget {
                             style: context.t.labelMedium?.copyWith(
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.w800,
-                                color: Sandik.gain),
+                                color: context.c.gain),
                           ),
                         ),
                       ],
@@ -463,7 +463,7 @@ class _PlanCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(subtitle,
                       style: context.t.bodySmall?.copyWith(
-                          color: Sandik.text58,
+                          color: context.c.text58,
                           height: 1.4)),
                 ],
               ),
@@ -473,7 +473,7 @@ class _PlanCard extends StatelessWidget {
                 style: context.t.numSmall.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: Sandik.gold)),
+                    color: context.c.gold)),
           ],
         ),
       ),
@@ -501,9 +501,9 @@ class _BottomBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       decoration: BoxDecoration(
-        color: Sandik.background,
+        color: context.c.background,
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+          top: BorderSide(color: context.c.hairline),
         ),
       ),
       child: SafeArea(
@@ -517,10 +517,10 @@ class _BottomBar extends StatelessWidget {
               child: FilledButton(
                 onPressed: busy ? null : onSubscribe,
                 style: FilledButton.styleFrom(
-                  backgroundColor: Sandik.amber,
-                  foregroundColor: Colors.black,
+                  backgroundColor: context.c.amberFill,
+                  foregroundColor: context.c.onAmber,
                   disabledBackgroundColor:
-                      Sandik.amber.withValues(alpha: 0.35),
+                      context.c.amberFill.withValues(alpha: 0.35),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(SandikRadius.md)),
                 ),
@@ -540,7 +540,7 @@ class _BottomBar extends StatelessWidget {
               onPressed: busy ? null : onRestore,
               child: Text('Satın alımı geri yükle',
                   style: context.t.titleSmall?.copyWith(
-                      color: Sandik.text58,
+                      color: context.c.text58,
                       fontWeight: FontWeight.w600)),
             ),
           ],
