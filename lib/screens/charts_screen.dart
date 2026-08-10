@@ -64,54 +64,62 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
         return list
           ..sort((a, b) => pState
               .toTRY(b.totalValue, b.representative.currency)
-              .compareTo(pState.toTRY(a.totalValue, a.representative.currency)));
+              .compareTo(
+                  pState.toTRY(a.totalValue, a.representative.currency)));
       case _SortOrder.valueAsc:
         return list
           ..sort((a, b) => pState
               .toTRY(a.totalValue, a.representative.currency)
-              .compareTo(pState.toTRY(b.totalValue, b.representative.currency)));
+              .compareTo(
+                  pState.toTRY(b.totalValue, b.representative.currency)));
       case _SortOrder.gainDesc:
-        return list..sort((a, b) {
-          final ga = a.weightedPurchasePrice > 0
-              ? pState.toTRY(a.totalValue, a.representative.currency) -
-                  a.totalCostTRY
-              : double.negativeInfinity;
-          final gb = b.weightedPurchasePrice > 0
-              ? pState.toTRY(b.totalValue, b.representative.currency) -
-                  b.totalCostTRY
-              : double.negativeInfinity;
-          return gb.compareTo(ga);
-        });
+        return list
+          ..sort((a, b) {
+            final ga = a.weightedPurchasePrice > 0
+                ? pState.toTRY(a.totalValue, a.representative.currency) -
+                    a.totalCostTRY
+                : double.negativeInfinity;
+            final gb = b.weightedPurchasePrice > 0
+                ? pState.toTRY(b.totalValue, b.representative.currency) -
+                    b.totalCostTRY
+                : double.negativeInfinity;
+            return gb.compareTo(ga);
+          });
       case _SortOrder.gainAsc:
-        return list..sort((a, b) {
-          final ga = a.weightedPurchasePrice > 0
-              ? pState.toTRY(a.totalValue, a.representative.currency) -
-                  a.totalCostTRY
-              : double.infinity;
-          final gb = b.weightedPurchasePrice > 0
-              ? pState.toTRY(b.totalValue, b.representative.currency) -
-                  b.totalCostTRY
-              : double.infinity;
-          return ga.compareTo(gb);
-        });
+        return list
+          ..sort((a, b) {
+            final ga = a.weightedPurchasePrice > 0
+                ? pState.toTRY(a.totalValue, a.representative.currency) -
+                    a.totalCostTRY
+                : double.infinity;
+            final gb = b.weightedPurchasePrice > 0
+                ? pState.toTRY(b.totalValue, b.representative.currency) -
+                    b.totalCostTRY
+                : double.infinity;
+            return ga.compareTo(gb);
+          });
       case _SortOrder.gainPctDesc:
-        return list..sort((a, b) {
-          final pa = a.weightedPurchasePrice > 0
-              ? a.gainLossPercentage
-              : double.negativeInfinity;
-          final pb = b.weightedPurchasePrice > 0
-              ? b.gainLossPercentage
-              : double.negativeInfinity;
-          return pb.compareTo(pa);
-        });
+        return list
+          ..sort((a, b) {
+            final pa = a.weightedPurchasePrice > 0
+                ? a.gainLossPercentage
+                : double.negativeInfinity;
+            final pb = b.weightedPurchasePrice > 0
+                ? b.gainLossPercentage
+                : double.negativeInfinity;
+            return pb.compareTo(pa);
+          });
       case _SortOrder.gainPctAsc:
-        return list..sort((a, b) {
-          final pa =
-              a.weightedPurchasePrice > 0 ? a.gainLossPercentage : double.infinity;
-          final pb =
-              b.weightedPurchasePrice > 0 ? b.gainLossPercentage : double.infinity;
-          return pa.compareTo(pb);
-        });
+        return list
+          ..sort((a, b) {
+            final pa = a.weightedPurchasePrice > 0
+                ? a.gainLossPercentage
+                : double.infinity;
+            final pb = b.weightedPurchasePrice > 0
+                ? b.gainLossPercentage
+                : double.infinity;
+            return pa.compareTo(pb);
+          });
     }
   }
 
@@ -133,15 +141,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                 // koyulaşır, açık zeminde de okunur kalır.
                 color: ctx.c.danger.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: Border.all(
-                    color: ctx.c.danger.withValues(alpha: 0.25)),
+                border: Border.all(color: ctx.c.danger.withValues(alpha: 0.25)),
               ),
               child: Text(
                 'Bu bir satış değil — kayıt tamamen silinir ve geçmiş '
                 'grafiğinden de düşer. Sattıysan bunun yerine "Çıkar" '
                 'kullan; realize kâr/zararın ve alım geçmişin korunur.',
-                style: TextStyle(
-                    fontSize: 12, height: 1.4, color: ctx.c.text90),
+                style:
+                    TextStyle(fontSize: 12, height: 1.4, color: ctx.c.text90),
               ),
             ),
           ],
@@ -152,8 +159,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             child: const Text('İptal'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-                backgroundColor: ctx.c.danger),
+            style: FilledButton.styleFrom(backgroundColor: ctx.c.danger),
             onPressed: () async {
               Navigator.pop(dlg);
               try {
@@ -191,191 +197,200 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       child: Material(
         type: MaterialType.transparency,
         child: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Portföy',
-                      style: context.t.headlineLarge?.copyWith(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: context.c.text90,
-                      ),
-                    ),
-                  ),
-                  _SortButton(
-                    current: _sortOrder,
-                    onChanged: (o) => setState(() => _sortOrder = o),
-                  ),
-                  const SizedBox(width: 8),
-                  CupertinoButton(
-                    minimumSize: Size.zero,
-                    padding: EdgeInsets.zero,
-                    onPressed: () => Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                          builder: (_) =>
-                              PortfolioPerformanceScreen(initialView: _view)),
-                    ),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: context.c.overlay,
-                        borderRadius: BorderRadius.circular(SandikRadius.md),
-                        border: Border.all(
-                            color: context.c.overlay),
-                      ),
-                      child: Center(
-                        child: Icon(Icons.show_chart_rounded,
-                            color: context.c.amberText, size: 22),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  SandikLogoutButton(
-                    onPressed: () => confirmAndLogout(context, ref),
-                  ),
-                ],
-              ),
-            ),
-            // ── Body ──────────────────────────────────────────────────────
-            Expanded(
-              child: pStateAsync.when(
-                loading: () => const SandikLoadingScreen(),
-                error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
-                data: (pState) => RefreshIndicator(
-                  color: context.c.amberText,
-                  // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
-                  onRefresh: () => ref
-                      .read(portfolioProvider.notifier)
-                      .refreshPrices(force: true),
-                  child: ListView(
-                    physics: const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics()),
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 80),
-                    children: [
-                      if (activePartners.isNotEmpty)
-                        ModernTabSelector(
-                          partners: activePartners,
-                          selectedId: _view,
-                          onChanged: (v) => setState(() { _view = v; _filteredType = null; }),
+          child: Column(
+            children: [
+              // ── Header ────────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Portföy',
+                        style: context.t.headlineLarge?.copyWith(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: context.c.text90,
                         ),
-                      const SizedBox(height: 24),
+                      ),
+                    ),
+                    _SortButton(
+                      current: _sortOrder,
+                      onChanged: (o) => setState(() => _sortOrder = o),
+                    ),
+                    const SizedBox(width: 8),
+                    CupertinoButton(
+                      minimumSize: Size.zero,
+                      padding: EdgeInsets.zero,
+                      onPressed: () => Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                            builder: (_) =>
+                                PortfolioPerformanceScreen(initialView: _view)),
+                      ),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: context.c.overlay,
+                          borderRadius: BorderRadius.circular(SandikRadius.md),
+                          border: Border.all(color: context.c.overlay),
+                        ),
+                        child: Center(
+                          child: Icon(Icons.show_chart_rounded,
+                              color: context.c.amberText, size: 22),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    SandikLogoutButton(
+                      onPressed: () => confirmAndLogout(context, ref),
+                    ),
+                  ],
+                ),
+              ),
+              // ── Body ──────────────────────────────────────────────────────
+              Expanded(
+                child: pStateAsync.when(
+                  loading: () => const SandikLoadingScreen(),
+                  error: (e, _) => SandikErrorView(
+                      error: e,
+                      onRetry: () => ref.invalidate(portfolioProvider)),
+                  data: (pState) => RefreshIndicator(
+                    color: context.c.amberText,
+                    // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
+                    onRefresh: () => ref
+                        .read(portfolioProvider.notifier)
+                        .refreshPrices(force: true),
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics()),
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 80),
+                      children: [
+                        if (activePartners.isNotEmpty)
+                          ModernTabSelector(
+                            partners: activePartners,
+                            selectedId: _view,
+                            onChanged: (v) => setState(() {
+                              _view = v;
+                              _filteredType = null;
+                            }),
+                          ),
+                        const SizedBox(height: 24),
 
-                      // Verileri birleştir. NOT: burada iç Scaffold koymayız —
-                      // SandikLoadingScreen bir Scaffold içerir ve ListView
-                      // child olarak konulunca layout crash oluyor
-                      // ("!_debugDoingThisLayout" assertion). Bunun yerine
-                      // inline bir loading göstergesi kullanıyoruz.
-                      //
-                      // `when` yerine `AsyncValue` üzerinde manuel dallanma:
-                      // `when(loading:)` her TAZELEMEDE (ortak sekmesi
-                      // değişimi, refreshPrices sonrası reload) listeyi söküp
-                      // 300px'lik spinner koyuyordu — oysa elde gösterilebilir
-                      // bir önceki liste zaten var. `valueOrNull` yeniden
-                      // yükleme boyunca önceki değeri korur, bu yüzden spinner
-                      // artık YALNIZCA hiç veri yokken (ilk açılış) çıkar.
-                      (partnerAssetsAsync.valueOrNull == null
-                          ? (partnerAssetsAsync.hasError
-                              ? SandikErrorView(
-                                  error: partnerAssetsAsync.error!,
-                                  onRetry: () =>
-                                      ref.invalidate(portfolioProvider))
-                              : const SizedBox(
-                                  height: 300,
-                                  child: CustomLoadingView(),
-                                ))
-                          : ((Map<String, List<Asset>> partnerMap) {
-                          // Sahiplik sınırı KORUNMALI: `positionKey` sahip
-                          // bilgisi taşımaz, bu yüzden tüm ortakların lot'ları
-                          // tek listede aggregate edilirse aynı hisseye sahip
-                          // iki kişi tek pozisyonda birleşir ve kâr/zarar
-                          // tekil sekmelerin toplamıyla tutarsız çıkar.
-                          // Ayrıntı: aggregatePositionsByOwner dökümantasyonu.
-                          final List<List<Asset>> ownerLots;
-                          if (_view == '') {
-                            ownerLots = [pState.assets];
-                          } else if (_view != null) {
-                            ownerLots = [partnerMap[_view] ?? const []];
-                          } else {
-                            // Birlikte
-                            ownerLots = [
-                              pState.assets,
-                              ...partnerMap.values,
-                            ];
-                          }
+                        // Verileri birleştir. NOT: burada iç Scaffold koymayız —
+                        // SandikLoadingScreen bir Scaffold içerir ve ListView
+                        // child olarak konulunca layout crash oluyor
+                        // ("!_debugDoingThisLayout" assertion). Bunun yerine
+                        // inline bir loading göstergesi kullanıyoruz.
+                        //
+                        // `when` yerine `AsyncValue` üzerinde manuel dallanma:
+                        // `when(loading:)` her TAZELEMEDE (ortak sekmesi
+                        // değişimi, refreshPrices sonrası reload) listeyi söküp
+                        // 300px'lik spinner koyuyordu — oysa elde gösterilebilir
+                        // bir önceki liste zaten var. `valueOrNull` yeniden
+                        // yükleme boyunca önceki değeri korur, bu yüzden spinner
+                        // artık YALNIZCA hiç veri yokken (ilk açılış) çıkar.
+                        (partnerAssetsAsync.valueOrNull == null
+                            ? (partnerAssetsAsync.hasError
+                                ? SandikErrorView(
+                                    error: partnerAssetsAsync.error!,
+                                    onRetry: () =>
+                                        ref.invalidate(portfolioProvider))
+                                : const SizedBox(
+                                    height: 300,
+                                    child: CustomLoadingView(),
+                                  ))
+                            : ((Map<String, List<Asset>> partnerMap) {
+                                // Sahiplik sınırı KORUNMALI: `positionKey` sahip
+                                // bilgisi taşımaz, bu yüzden tüm ortakların lot'ları
+                                // tek listede aggregate edilirse aynı hisseye sahip
+                                // iki kişi tek pozisyonda birleşir ve kâr/zarar
+                                // tekil sekmelerin toplamıyla tutarsız çıkar.
+                                // Ayrıntı: aggregatePositionsByOwner dökümantasyonu.
+                                final List<List<Asset>> ownerLots;
+                                if (_view == '') {
+                                  ownerLots = [pState.assets];
+                                } else if (_view != null) {
+                                  ownerLots = [partnerMap[_view] ?? const []];
+                                } else {
+                                  // Birlikte
+                                  ownerLots = [
+                                    pState.assets,
+                                    ...partnerMap.values,
+                                  ];
+                                }
 
-                          final positions = aggregatePositionsByOwner(ownerLots);
+                                final positions =
+                                    aggregatePositionsByOwner(ownerLots);
 
-                          if (positions.isEmpty) {
-                            return const _EmptyState();
-                          }
+                                if (positions.isEmpty) {
+                                  return const _EmptyState();
+                                }
 
-                          final filteredPositions = _applyPositionSortOrder(
-                            _filteredType != null
-                                ? positions
-                                    .where((p) =>
-                                        p.representative.type == _filteredType)
-                                    .toList()
-                                : List<Position>.from(positions),
-                            pState,
-                          );
-                          final displayAssets = positions
-                              .map((position) => position.asDisplayAsset())
-                              .toList();
+                                final filteredPositions =
+                                    _applyPositionSortOrder(
+                                  _filteredType != null
+                                      ? positions
+                                          .where((p) =>
+                                              p.representative.type ==
+                                              _filteredType)
+                                          .toList()
+                                      : List<Position>.from(positions),
+                                  pState,
+                                );
+                                final displayAssets = positions
+                                    .map(
+                                        (position) => position.asDisplayAsset())
+                                    .toList();
 
-                          return Column(
-                            children: [
-                              _AssetTypeDonut(
-                                assets: displayAssets,
-                                pState: pState,
-                                onTypeSelected: (type) => setState(() => _filteredType = type),
-                              ),
-                              const SizedBox(height: 32),
-                              _AssetList(
-                                positions: filteredPositions,
-                                pState: pState,
-                                currentUserId: currentUserId,
-                                onTap: (p) => Navigator.push(
-                                  context,
-                                  CupertinoPageRoute(
-                                      builder: (_) => PerformanceScreen(
-                                            asset: p.asDisplayAsset(),
-                                            showBackButton: true,
-                                            lots: p.lots,
-                                          )),
-                                ),
-                                onDelete: (p) =>
-                                    _confirmDelete(context, ref, p.representative),
-                                onAdd: (p) => showQuickAdjustDialog(
-                                    context, ref,
-                                    asset: p.asDisplayAsset(),
-                                    mode: QuickAdjustMode.add),
-                                onRemove: (p) => showQuickAdjustDialog(
-                                    context, ref,
-                                    asset: p.asDisplayAsset(),
-                                    mode: QuickAdjustMode.remove),
-                                onDividend: (p) => showDividendDialog(
-                                    context, ref,
-                                    asset: p.asDisplayAsset()),
-                              ),
-                            ],
-                          );
-                        })(partnerAssetsAsync.valueOrNull!)),
-                    ],
+                                return Column(
+                                  children: [
+                                    _AssetTypeDonut(
+                                      assets: displayAssets,
+                                      pState: pState,
+                                      onTypeSelected: (type) =>
+                                          setState(() => _filteredType = type),
+                                    ),
+                                    const SizedBox(height: 32),
+                                    _AssetList(
+                                      positions: filteredPositions,
+                                      pState: pState,
+                                      currentUserId: currentUserId,
+                                      onTap: (p) => Navigator.push(
+                                        context,
+                                        CupertinoPageRoute(
+                                            builder: (_) => PerformanceScreen(
+                                                  asset: p.asDisplayAsset(),
+                                                  showBackButton: true,
+                                                  lots: p.lots,
+                                                )),
+                                      ),
+                                      onDelete: (p) => _confirmDelete(
+                                          context, ref, p.representative),
+                                      onAdd: (p) => showQuickAdjustDialog(
+                                          context, ref,
+                                          asset: p.asDisplayAsset(),
+                                          mode: QuickAdjustMode.add),
+                                      onRemove: (p) => showQuickAdjustDialog(
+                                          context, ref,
+                                          asset: p.asDisplayAsset(),
+                                          mode: QuickAdjustMode.remove),
+                                      onDividend: (p) => showDividendDialog(
+                                          context, ref,
+                                          asset: p.asDisplayAsset()),
+                                    ),
+                                  ],
+                                );
+                              })(partnerAssetsAsync.valueOrNull!)),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -410,7 +425,10 @@ class _AssetTypeDonut extends StatefulWidget {
   final List<Asset> assets;
   final PortfolioState pState;
   final void Function(AssetType?) onTypeSelected;
-  const _AssetTypeDonut({required this.assets, required this.pState, required this.onTypeSelected});
+  const _AssetTypeDonut(
+      {required this.assets,
+      required this.pState,
+      required this.onTypeSelected});
 
   @override
   State<_AssetTypeDonut> createState() => _AssetTypeDonutState();
@@ -421,8 +439,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 
   static String _formatTL(double val) {
     // Ana ekran hero'suyla birebir aynı format: ₺1.234.567
-    return NumberFormat.currency(
-            locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
+    return NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
         .format(val);
   }
 
@@ -437,16 +454,16 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
     }
     if (totals.isEmpty) return const SizedBox.shrink();
 
-    final sorted = totals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final sorted = totals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     final touched = _touchedIndex != null && _touchedIndex! < sorted.length
         ? sorted[_touchedIndex!]
         : null;
 
     // Ortada gösterilecek metin
     final centerLabel = touched != null ? touched.key.label : 'toplam';
-    final centerValue = touched != null
-        ? _formatTL(touched.value)
-        : _formatTL(totalVal);
+    final centerValue =
+        touched != null ? _formatTL(touched.value) : _formatTL(totalVal);
     final centerPct = touched != null
         ? fmtPct(touched.value / (totalVal > 0 ? totalVal : 1) * 100, digits: 1)
         : null;
@@ -464,12 +481,15 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                   pieTouchData: PieTouchData(
                     touchCallback: (event, response) {
                       if (event is FlTapUpEvent) {
-                        final idx = response?.touchedSection?.touchedSectionIndex;
-                        final newIdx = (idx != null && idx >= 0 && idx < sorted.length)
-                            ? (_touchedIndex == idx ? null : idx)
-                            : null;
+                        final idx =
+                            response?.touchedSection?.touchedSectionIndex;
+                        final newIdx =
+                            (idx != null && idx >= 0 && idx < sorted.length)
+                                ? (_touchedIndex == idx ? null : idx)
+                                : null;
                         setState(() => _touchedIndex = newIdx);
-                        widget.onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
+                        widget.onTypeSelected(
+                            newIdx != null ? sorted[newIdx].key : null);
                       }
                     },
                   ),
@@ -536,22 +556,29 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
           alignment: WrapAlignment.center,
           children: sorted.asMap().entries.map((e) {
             final isTouched = e.key == _touchedIndex;
-            final pct =
-                fmtPct(e.value.value / (totalVal > 0 ? totalVal : 1) * 100, digits: 1);
+            final pct = fmtPct(
+                e.value.value / (totalVal > 0 ? totalVal : 1) * 100,
+                digits: 1);
             return GestureDetector(
               onTap: () {
                 final newIdx = _touchedIndex == e.key ? null : e.key;
                 setState(() => _touchedIndex = newIdx);
-                widget.onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
+                widget
+                    .onTypeSelected(newIdx != null ? sorted[newIdx].key : null);
               },
               child: AnimatedOpacity(
-                duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
+                duration:
+                    SandikMotion.of(context, const Duration(milliseconds: 150)),
+                // Eksikti: curve verilmeyince Curves.linear devreye girer.
+                // Lejant sönümlemesi bir DURUM değişimidir → enter.
+                curve: SandikMotion.enter,
                 opacity: _touchedIndex == null || isTouched ? 1.0 : 0.45,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AnimatedContainer(
-                      duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
+                      duration: SandikMotion.of(
+                          context, const Duration(milliseconds: 150)),
                       curve: SandikMotion.enter,
                       width: isTouched ? 10 : 8,
                       height: isTouched ? 10 : 8,
@@ -561,11 +588,22 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      '${e.value.key.label} $pct',
-                      style: context.t.bodyMedium?.copyWith(
-                        fontWeight: isTouched ? FontWeight.w700 : FontWeight.w500,
-                        color: isTouched ? e.value.key.color : context.c.text58,
+                    // Etiket ESNEK + kısaltılabilir olmalı. `Wrap` çipi
+                    // alt satıra indirir ama TEK çip satıra sığmıyorsa
+                    // çaresizdir: büyük metin ayarında "Hisse Senedi
+                    // %45,2" 320pt'yi tek başına aşıyor ve 2×'te 45px,
+                    // 3×'te 199px taşıyordu.
+                    Flexible(
+                      child: Text(
+                        '${e.value.key.label} $pct',
+                        style: context.t.bodyMedium?.copyWith(
+                          fontWeight:
+                              isTouched ? FontWeight.w700 : FontWeight.w500,
+                          color:
+                              isTouched ? e.value.key.color : context.c.text58,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -813,8 +851,9 @@ class _GainLossLine extends StatelessWidget {
     final pct = totalCostTRY > 0 ? (gainLossTRY / totalCostTRY) * 100 : 0.0;
     final isFlat = gainLossTRY.abs().round() == 0 && pct.abs() < 0.005;
 
-    final Color color =
-        isFlat ? context.c.text58 : (isPositive ? context.c.gain : context.c.loss);
+    final Color color = isFlat
+        ? context.c.text58
+        : (isPositive ? context.c.gain : context.c.loss);
 
     final IconData icon = isFlat
         ? Icons.horizontal_rule_rounded
@@ -894,10 +933,9 @@ class _AssetCardState extends State<_AssetCard>
     final tryFmt =
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
     // Temettü dahil — üstteki özet de dahil ediyor, satır onunla tutarlı olmalı.
-    final gainLossTRY =
-        pState.toTRY(position.totalValue, a.currency) -
-            position.totalCostTRY +
-            totalDividendTRY(position.lots);
+    final gainLossTRY = pState.toTRY(position.totalValue, a.currency) -
+        position.totalCostTRY +
+        totalDividendTRY(position.lots);
     final isPos = gainLossTRY >= 0;
 
     // Kart iç boşluğu sabit: eşiğe bağlı bir sıçrama, kolon dağıtımının
@@ -908,8 +946,7 @@ class _AssetCardState extends State<_AssetCard>
     Widget card = Container(
       decoration: BoxDecoration(
         color: context.c.surface1,
-        borderRadius:
-            BorderRadius.circular(canEdit ? 0 : SandikRadius.md),
+        borderRadius: BorderRadius.circular(canEdit ? 0 : SandikRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -926,106 +963,107 @@ class _AssetCardState extends State<_AssetCard>
                   final m = _AssetCardMetrics.resolve(rowConstraints.maxWidth);
                   final valueW = m.value;
                   return
-              // crossAxisAlignment.center: ikon, başlık bloğu, sparkline ve
-              // tutar kolonu ortak bir yatay eksende hizalanır. Satır
-              // yüksekliği içeriğe göre değişse de (tek/çift satır başlık)
-              // öğeler birbirine göre kaymaz.
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _AssetLeadingIcon(asset: a),
-                  const SizedBox(width: 14),
+                      // crossAxisAlignment.center: ikon, başlık bloğu, sparkline ve
+                      // tutar kolonu ortak bir yatay eksende hizalanır. Satır
+                      // yüksekliği içeriğe göre değişse de (tek/çift satır başlık)
+                      // öğeler birbirine göre kaymaz.
+                      Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _AssetLeadingIcon(asset: a),
+                      const SizedBox(width: 14),
 
-                  // ── Başlık bloğu — esnek, kalan tüm alanı alır ──────────
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Fon/hisse: yalnızca KOD (THYAO). Uzun tam ad
-                        // satırı taşırıyordu — tam ad artık detay panelinde
-                        // "TAM ADI" alanında, kırpılmadan.
-                        Text(
-                          a.showTicker ? a.displayTicker! : a.name,
-                          maxLines: a.showTicker ? 1 : 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: context.c.text90,
-                            height: 1.25,
-                            letterSpacing: a.showTicker ? 0.2 : -0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          a.unitIsPrefix
-                              ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
-                              : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              context.t.bodySmall?.copyWith(color: context.c.text36),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Sparkline SATIRDA YOK — bkz. _AssetCardMetrics.
-                  // Telefon genişliklerinde yuvaya 2–22pt kalıyordu; o boyutta
-                  // eğri bilgi taşımaz, yalnızca isimden yer yerdi. Grafik
-                  // artık satır genişletildiğinde detay panelinde TAM
-                  // GENİŞLİKTE çiziliyor.
-
-                  // ── Tutar + kâr/zarar — SABİT genişlik ─────────────────
-                  //
-                  // Sınırsız bırakılırsa kolon genişliğini en uzun sayı
-                  // belirler ve isim alanını yer: büyük portföyde isimler
-                  // daha çok kırpılırdı. Sabit genişlik hem bunu önler hem
-                  // de tüm satırların sağ kenarını hizalar.
-                  const SizedBox(width: SandikSpace.sm),
-                  SizedBox(
-                    width: valueW,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            tryFmt.format(
-                                pState.toTRY(a.totalValue, a.currency)),
-                            maxLines: 1,
-                            style: context.t.numMedium.copyWith(
+                      // ── Başlık bloğu — esnek, kalan tüm alanı alır ──────────
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Fon/hisse: yalnızca KOD (THYAO). Uzun tam ad
+                            // satırı taşırıyordu — tam ad artık detay panelinde
+                            // "TAM ADI" alanında, kırpılmadan.
+                            Text(
+                              a.showTicker ? a.displayTicker! : a.name,
+                              maxLines: a.showTicker ? 1 : 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.t.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: context.c.text90),
-                          ),
+                                color: context.c.text90,
+                                height: 1.25,
+                                letterSpacing: a.showTicker ? 0.2 : -0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              a.unitIsPrefix
+                                  ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
+                                  : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.t.bodySmall
+                                  ?.copyWith(color: context.c.text36),
+                            ),
+                          ],
                         ),
-                        if (a.purchasePrice > 0 && a.currentPrice > 0) ...[
-                          const SizedBox(height: 4),
-                          _GainLossLine(
-                            gainLossTRY: gainLossTRY,
-                            totalCostTRY: position.totalCostTRY,
-                            isPositive: isPos,
-                            tryFmt: tryFmt,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  _ExpandChevron(
-                    expanded: _expanded,
-                    onTap: () => setState(() => _expanded = !_expanded),
-                  ),
-                ],
-              );
+                      ),
+
+                      // Sparkline SATIRDA YOK — bkz. _AssetCardMetrics.
+                      // Telefon genişliklerinde yuvaya 2–22pt kalıyordu; o boyutta
+                      // eğri bilgi taşımaz, yalnızca isimden yer yerdi. Grafik
+                      // artık satır genişletildiğinde detay panelinde TAM
+                      // GENİŞLİKTE çiziliyor.
+
+                      // ── Tutar + kâr/zarar — SABİT genişlik ─────────────────
+                      //
+                      // Sınırsız bırakılırsa kolon genişliğini en uzun sayı
+                      // belirler ve isim alanını yer: büyük portföyde isimler
+                      // daha çok kırpılırdı. Sabit genişlik hem bunu önler hem
+                      // de tüm satırların sağ kenarını hizalar.
+                      const SizedBox(width: SandikSpace.sm),
+                      SizedBox(
+                        width: valueW,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                tryFmt.format(
+                                    pState.toTRY(a.totalValue, a.currency)),
+                                maxLines: 1,
+                                style: context.t.numMedium.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: context.c.text90),
+                              ),
+                            ),
+                            if (a.purchasePrice > 0 && a.currentPrice > 0) ...[
+                              const SizedBox(height: 4),
+                              _GainLossLine(
+                                gainLossTRY: gainLossTRY,
+                                totalCostTRY: position.totalCostTRY,
+                                isPositive: isPos,
+                                tryFmt: tryFmt,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      _ExpandChevron(
+                        expanded: _expanded,
+                        onTap: () => setState(() => _expanded = !_expanded),
+                      ),
+                    ],
+                  );
                 },
               ),
             ),
           ),
           AnimatedSize(
-            duration: SandikMotion.of(context, const Duration(milliseconds: 220)),
+            duration:
+                SandikMotion.of(context, const Duration(milliseconds: 220)),
             curve: Curves.easeOutCubic,
             alignment: Alignment.topCenter,
             child: _expanded
@@ -1182,8 +1220,9 @@ class _AssetDetailsPanel extends StatelessWidget {
     final qtyStr = qty == qty.truncateToDouble()
         ? NumberFormat('#,###', 'tr_TR').format(qty.toInt())
         : numFmt.format(qty);
-    final qtyDisplay =
-        rep.unitIsPrefix ? '${rep.unitLabel}$qtyStr' : '$qtyStr ${rep.unitLabel}';
+    final qtyDisplay = rep.unitIsPrefix
+        ? '${rep.unitLabel}$qtyStr'
+        : '$qtyStr ${rep.unitLabel}';
 
     final currentValueTRY = pState.toTRY(position.totalValue, rep.currency);
 
@@ -1285,8 +1324,7 @@ class _AssetDetailsPanel extends StatelessWidget {
             Text(
               '${buyLots.length} alım · ${position.lots.where((l) => l.isSell).length} çıkarma',
               style: context.t.bodySmall?.copyWith(
-                  color: context.c.text36,
-                  fontWeight: FontWeight.w500),
+                  color: context.c.text36, fontWeight: FontWeight.w500),
             ),
           ],
         ],
@@ -1315,8 +1353,8 @@ class _DepositDetailsPanel extends StatelessWidget {
       );
     }
 
-    final money = NumberFormat.currency(
-        locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
+    final money =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
     final dateFmt = DateFormat('d MMM yyyy', 'tr_TR');
 
     final principal = asset.quantity;
@@ -1493,14 +1531,10 @@ class _MevduatGetiriRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: emphasize
-            ? color.withValues(alpha: 0.08)
-            : context.c.overlay,
+        color: emphasize ? color.withValues(alpha: 0.08) : context.c.overlay,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
-          color: emphasize
-              ? color.withValues(alpha: 0.30)
-              : context.c.overlay,
+          color: emphasize ? color.withValues(alpha: 0.30) : context.c.overlay,
         ),
       ),
       child: Row(
@@ -1575,9 +1609,8 @@ class _DetailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final valueStyle = isText
-        ? context.t.bodyMedium ?? const TextStyle()
-        : context.t.numSmall;
+    final valueStyle =
+        isText ? context.t.bodyMedium ?? const TextStyle() : context.t.numSmall;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1614,12 +1647,12 @@ class _SortButton extends StatelessWidget {
   const _SortButton({required this.current, required this.onChanged});
 
   static const _options = <(_SortOrder, String, String)>[
-    (_SortOrder.valueDesc,   'Piyasa Değeri',     'Büyükten Küçüğe'),
-    (_SortOrder.valueAsc,    'Piyasa Değeri',     'Küçükten Büyüğe'),
-    (_SortOrder.gainDesc,    'Kazanç (TL)',        'En Yüksek Önce'),
-    (_SortOrder.gainAsc,     'Kazanç (TL)',        'En Düşük Önce'),
-    (_SortOrder.gainPctDesc, 'Kazanç (%)',         'En Yüksek Önce'),
-    (_SortOrder.gainPctAsc,  'Kazanç (%)',         'En Düşük Önce'),
+    (_SortOrder.valueDesc, 'Piyasa Değeri', 'Büyükten Küçüğe'),
+    (_SortOrder.valueAsc, 'Piyasa Değeri', 'Küçükten Büyüğe'),
+    (_SortOrder.gainDesc, 'Kazanç (TL)', 'En Yüksek Önce'),
+    (_SortOrder.gainAsc, 'Kazanç (TL)', 'En Düşük Önce'),
+    (_SortOrder.gainPctDesc, 'Kazanç (%)', 'En Yüksek Önce'),
+    (_SortOrder.gainPctAsc, 'Kazanç (%)', 'En Düşük Önce'),
   ];
 
   @override
@@ -1633,10 +1666,12 @@ class _SortButton extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        builder: (_) => _SortSheet(current: current, onChanged: (o) {
-          onChanged(o);
-          Navigator.pop(context);
-        }),
+        builder: (_) => _SortSheet(
+            current: current,
+            onChanged: (o) {
+              onChanged(o);
+              Navigator.pop(context);
+            }),
       ),
       child: Container(
         width: 44,
@@ -1655,7 +1690,9 @@ class _SortButton extends StatelessWidget {
         child: Icon(
           Icons.sort_rounded,
           size: 20,
-          color: current != _SortOrder.valueDesc ? context.c.amberText : context.c.text58,
+          color: current != _SortOrder.valueDesc
+              ? context.c.amberText
+              : context.c.text58,
         ),
       ),
     );
@@ -1709,9 +1746,11 @@ class _SortSheet extends StatelessWidget {
                 style: context.t.bodySmall?.copyWith(color: context.c.text36),
               ),
               trailing: selected
-                  ? Icon(Icons.check_rounded, color: context.c.amberText, size: 18)
+                  ? Icon(Icons.check_rounded,
+                      color: context.c.amberText, size: 18)
                   : null,
-              tileColor: selected ? context.c.amberFill.withValues(alpha: 0.07) : null,
+              tileColor:
+                  selected ? context.c.amberFill.withValues(alpha: 0.07) : null,
               onTap: () => onChanged(order),
             );
           }),
@@ -1722,11 +1761,11 @@ class _SortSheet extends StatelessWidget {
   }
 
   IconData _iconFor(_SortOrder o) => switch (o) {
-    _SortOrder.valueDesc  => Icons.arrow_downward_rounded,
-    _SortOrder.valueAsc   => Icons.arrow_upward_rounded,
-    _SortOrder.gainDesc   => Icons.trending_up_rounded,
-    _SortOrder.gainAsc    => Icons.trending_down_rounded,
-    _SortOrder.gainPctDesc => Icons.percent_rounded,
-    _SortOrder.gainPctAsc  => Icons.percent_rounded,
-  };
+        _SortOrder.valueDesc => Icons.arrow_downward_rounded,
+        _SortOrder.valueAsc => Icons.arrow_upward_rounded,
+        _SortOrder.gainDesc => Icons.trending_up_rounded,
+        _SortOrder.gainAsc => Icons.trending_down_rounded,
+        _SortOrder.gainPctDesc => Icons.percent_rounded,
+        _SortOrder.gainPctAsc => Icons.percent_rounded,
+      };
 }

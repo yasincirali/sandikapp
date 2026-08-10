@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
+import 'package:flutter/material.dart'
+    show Colors, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -187,11 +188,11 @@ class _PortfolioPerformanceScreenState
     final key = chartAssets.map((a) => a.id).join(',');
     if (_intradayKey == key && _intradayFuture != null) return _intradayFuture!;
     _intradayKey = key;
-    _intradayFuture = HistoryService.instance
-        .getPortfolioHistoryHourly(chartAssets, 24)
-      ..then((v) {
-        if (mounted && v.isNotEmpty) _lastIntradayData = v;
-      });
+    _intradayFuture =
+        HistoryService.instance.getPortfolioHistoryHourly(chartAssets, 24)
+          ..then((v) {
+            if (mounted && v.isNotEmpty) _lastIntradayData = v;
+          });
     return _intradayFuture!;
   }
 
@@ -280,23 +281,20 @@ class _PortfolioPerformanceScreenState
         // ilk fiyat oluşan noktadan itibaren çizgiyi görür.
         if (y <= 0) continue;
         lastNonZero = y;
-        final minutes =
-            (ts - startDate.millisecondsSinceEpoch) / 60000.0;
+        final minutes = (ts - startDate.millisecondsSinceEpoch) / 60000.0;
         spots.add(FlSpot(minutes, y));
       }
       // Şu an'ı canlı toplamla sabitle — grafiğin son noktası her zaman
       // "şu andaki portföy değeri" olur.
       if (currentTotalOverride != null && currentTotalOverride > 0) {
-        final nowMinutes =
-            (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
+        final nowMinutes = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
         if (spots.isNotEmpty && (nowMinutes - spots.last.x).abs() < 5) {
           spots[spots.length - 1] = FlSpot(nowMinutes, currentTotalOverride);
         } else {
           spots.add(FlSpot(nowMinutes, currentTotalOverride));
         }
       } else if (lastNonZero != null && spots.isNotEmpty) {
-        final nowMinutes =
-            (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
+        final nowMinutes = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
         if ((nowMinutes - spots.last.x).abs() >= 5) {
           spots.add(FlSpot(nowMinutes, lastNonZero));
         }
@@ -323,8 +321,8 @@ class _PortfolioPerformanceScreenState
       for (final ts in sortedTs) {
         final date = DateTime.fromMillisecondsSinceEpoch(ts);
         // Saatlik veri için kesirli gün (24 → 1.0 gün). inDays saati keser
-      // ve tüm saatler aynı X'e düşerdi → grafik zigzag olurdu.
-      final x = date.difference(startDate).inMinutes / (60.0 * 24.0);
+        // ve tüm saatler aynı X'e düşerdi → grafik zigzag olurdu.
+        final x = date.difference(startDate).inMinutes / (60.0 * 24.0);
         spots.add(FlSpot(x, history[ts]!));
       }
       // Son spot'un Y değerini canlı toplamla override et — X'e dokunma,
@@ -334,8 +332,7 @@ class _PortfolioPerformanceScreenState
           final last = spots.last;
           spots[spots.length - 1] = FlSpot(last.x, currentTotalOverride);
         } else {
-          final nowX =
-              endDate.difference(startDate).inMinutes / (60.0 * 24.0);
+          final nowX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
           spots.add(FlSpot(nowX, currentTotalOverride));
         }
       }
@@ -355,9 +352,8 @@ class _PortfolioPerformanceScreenState
     // zaten çizilmeyecek.
     final buyLots = allAssets.where((a) => a.isBuy).toList();
     if (buyLots.isEmpty) return [];
-    final firstAssetDate = buyLots
-        .map((a) => a.addedDate)
-        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final firstAssetDate =
+        buyLots.map((a) => a.addedDate).reduce((a, b) => a.isBefore(b) ? a : b);
 
     // Normalize firstAssetDate to midnight for comparison
     final firstAssetMidnight =
@@ -389,8 +385,7 @@ class _PortfolioPerformanceScreenState
         activeSpots[activeSpots.length - 1] =
             FlSpot(last.x, currentTotalOverride);
       } else {
-        final nowX =
-            endDate.difference(startDate).inMinutes / (60.0 * 24.0);
+        final nowX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
         activeSpots.add(FlSpot(nowX, currentTotalOverride));
       }
     }
@@ -427,215 +422,219 @@ class _PortfolioPerformanceScreenState
       style: GoogleFonts.dmSans(
           color: context.c.text90, decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
-      backgroundColor: context.c.background,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-              child: Row(
-                children: [
-                  if (widget.showBackButton) ...[
-                    // 44pt dokunma hedefi (HIG minimumu).
-                    SizedBox(
-                      width: 36,
-                      height: 44,
-                      child: CupertinoButton(
-                        minimumSize: Size.zero,
-                        padding: EdgeInsets.zero,
-                        alignment: Alignment.centerLeft,
-                        onPressed: () => Navigator.pop(context),
-                        child: Icon(Icons.arrow_back_ios_new_rounded,
-                            size: 20, color: context.c.text90),
+        backgroundColor: context.c.background,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // ── Header ──────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: Row(
+                  children: [
+                    if (widget.showBackButton) ...[
+                      // 44pt dokunma hedefi (HIG minimumu).
+                      SizedBox(
+                        width: 36,
+                        height: 44,
+                        child: CupertinoButton(
+                          minimumSize: Size.zero,
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.centerLeft,
+                          onPressed: () => Navigator.pop(context),
+                          child: Icon(Icons.arrow_back_ios_new_rounded,
+                              size: 20, color: context.c.text90),
+                        ),
+                      ),
+                    ],
+                    Expanded(
+                      child: Text(
+                        'Performans',
+                        style: context.t.headlineLarge?.copyWith(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: context.c.text90),
                       ),
                     ),
+                    // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
+                    // beklenmeyen bir eylem olurdu.
+                    if (!widget.showBackButton)
+                      SandikLogoutButton(
+                        onPressed: () => confirmAndLogout(context, ref),
+                      ),
                   ],
-                  Expanded(
-                    child: Text(
-                      'Performans',
-                      style: context.t.headlineLarge?.copyWith(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: context.c.text90),
-                    ),
-                  ),
-                  // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
-                  // beklenmeyen bir eylem olurdu.
-                  if (!widget.showBackButton)
-                    SandikLogoutButton(
-                      onPressed: () => confirmAndLogout(context, ref),
-                    ),
-                ],
+                ),
               ),
-            ),
-            // ── Body ────────────────────────────────────────────────────
-            Expanded(
-              child: pStateAsync.when(
-                loading: () => const SandikLoadingScreen(),
-                error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
-                data: (pState) => partnerAssetsAsync.when(
+              // ── Body ────────────────────────────────────────────────────
+              Expanded(
+                child: pStateAsync.when(
                   loading: () => const SandikLoadingScreen(),
-                  error: (e, _) => SandikErrorView(error: e, onRetry: () => ref.invalidate(portfolioProvider)),
-                  data: (partnerMap) {
-                    // Filter assets based on view
-                    // Sahiplik sınırı korunmalı — bkz. aggregatePositionsByOwner.
-                    // `targetAssets` ham ledger olarak akmaya devam eder
-                    // (HistoryService buy/sell tarihlerini kendisi yorumlar),
-                    // ancak aggregate edilirken sahipler ayrı tutulur.
-                    final List<List<Asset>> ownerLots;
-                    if (_view == '') {
-                      ownerLots = [pState.assets];
-                    } else if (_view != null) {
-                      ownerLots = [partnerMap[_view] ?? const []];
-                    } else {
-                      ownerLots = [pState.assets, ...partnerMap.values];
-                    }
-                    List<Asset> targetAssets = [
-                      for (final l in ownerLots) ...l
-                    ];
-                    // deleteLog'u çıkar (buy row zaten silinmiş, sadece
-                    // transaction kaydı). Buy + sell birlikte gider —
-                    // HistoryService her gün için buy addedDate <= dayTs
-                    // ve sell addedDate <= dayTs kurallarıyla o gün geçerli
-                    // net miktarı hesaplar. Böylece grafik hem alınmadan
-                    // önceki günlerde 0 gösterir hem de satış günü sonrası
-                    // net miktara oturur.
-                    // Filtreler hem düz listeye hem sahip gruplarına AYNI
-                    // şekilde uygulanmalı; aksi halde grafik ile özet farklı
-                    // varlık kümelerini gösterir.
-                    bool keep(Asset a) =>
-                        !a.isDeleteLog &&
-                        (_typeFilter == null || a.type == _typeFilter);
+                  error: (e, _) => SandikErrorView(
+                      error: e,
+                      onRetry: () => ref.invalidate(portfolioProvider)),
+                  data: (pState) => partnerAssetsAsync.when(
+                    loading: () => const SandikLoadingScreen(),
+                    error: (e, _) => SandikErrorView(
+                        error: e,
+                        onRetry: () => ref.invalidate(portfolioProvider)),
+                    data: (partnerMap) {
+                      // Filter assets based on view
+                      // Sahiplik sınırı korunmalı — bkz. aggregatePositionsByOwner.
+                      // `targetAssets` ham ledger olarak akmaya devam eder
+                      // (HistoryService buy/sell tarihlerini kendisi yorumlar),
+                      // ancak aggregate edilirken sahipler ayrı tutulur.
+                      final List<List<Asset>> ownerLots;
+                      if (_view == '') {
+                        ownerLots = [pState.assets];
+                      } else if (_view != null) {
+                        ownerLots = [partnerMap[_view] ?? const []];
+                      } else {
+                        ownerLots = [pState.assets, ...partnerMap.values];
+                      }
+                      List<Asset> targetAssets = [
+                        for (final l in ownerLots) ...l
+                      ];
+                      // deleteLog'u çıkar (buy row zaten silinmiş, sadece
+                      // transaction kaydı). Buy + sell birlikte gider —
+                      // HistoryService her gün için buy addedDate <= dayTs
+                      // ve sell addedDate <= dayTs kurallarıyla o gün geçerli
+                      // net miktarı hesaplar. Böylece grafik hem alınmadan
+                      // önceki günlerde 0 gösterir hem de satış günü sonrası
+                      // net miktara oturur.
+                      // Filtreler hem düz listeye hem sahip gruplarına AYNI
+                      // şekilde uygulanmalı; aksi halde grafik ile özet farklı
+                      // varlık kümelerini gösterir.
+                      bool keep(Asset a) =>
+                          !a.isDeleteLog &&
+                          (_typeFilter == null || a.type == _typeFilter);
 
-                    targetAssets = targetAssets.where(keep).toList();
-                    final filteredOwnerLots = [
-                      for (final lots in ownerLots) lots.where(keep).toList(),
-                    ];
+                      targetAssets = targetAssets.where(keep).toList();
+                      final filteredOwnerLots = [
+                        for (final lots in ownerLots) lots.where(keep).toList(),
+                      ];
 
-                    // Simülasyon modu: bugünün net pozisyonlarını
-                    // tüm dönem boyunca sabit tut — "şu anki portföyümü o
-                    // zaman elimde tutsaydım" senaryosunu HistoryService'e
-                    // net display-asset listesi olarak ver.
-                    final chartAssets = _simulate
-                        ? aggregatePositionsByOwner(filteredOwnerLots)
-                            .map((p) => p.asDisplayAsset())
-                            .toList()
-                        : targetAssets;
+                      // Simülasyon modu: bugünün net pozisyonlarını
+                      // tüm dönem boyunca sabit tut — "şu anki portföyümü o
+                      // zaman elimde tutsaydım" senaryosunu HistoryService'e
+                      // net display-asset listesi olarak ver.
+                      final chartAssets = _simulate
+                          ? aggregatePositionsByOwner(filteredOwnerLots)
+                              .map((p) => p.asDisplayAsset())
+                              .toList()
+                          : targetAssets;
 
-                    // TradingView "auto range": kullanıcı seçilen periyot
-                    // içinde hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün
-                    // önce başladı), chart ilk alım tarihinden itibaren
-                    // çizilir. History fetch'i de bu daraltılmış aralıkta
-                    // yapmalıyız — aksi halde controller 1Y'lik boş veri
-                    // fetch edip görselde tek nokta gibi gösterir.
-                    //
-                    // Simülasyonda UYGULANMAZ: o mod "bugünkü net pozisyonu
-                    // tüm dönem boyunca tutsaydım" senaryosudur — pozisyon
-                    // her gün var sayılır, ilk alım tarihi alakasızdır.
-                    // Aralığı ona daraltmak, 1A seçiliyken grafiği ilk alım
-                    // tarihinden başlatıyordu (gerçek tab doğru çalışırken).
-                    DateTime effectiveStart = startDate;
-                    if (!isIntraday && !_simulate) {
-                      final buys = chartAssets.where((a) => a.isBuy);
-                      if (buys.isNotEmpty) {
-                        final firstBuy = buys
-                            .map((a) => a.addedDate)
-                            .reduce((a, b) => a.isBefore(b) ? a : b);
-                        if (firstBuy.isAfter(startDate)) {
-                          effectiveStart = DateTime(
-                              firstBuy.year, firstBuy.month, firstBuy.day);
+                      // TradingView "auto range": kullanıcı seçilen periyot
+                      // içinde hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün
+                      // önce başladı), chart ilk alım tarihinden itibaren
+                      // çizilir. History fetch'i de bu daraltılmış aralıkta
+                      // yapmalıyız — aksi halde controller 1Y'lik boş veri
+                      // fetch edip görselde tek nokta gibi gösterir.
+                      //
+                      // Simülasyonda UYGULANMAZ: o mod "bugünkü net pozisyonu
+                      // tüm dönem boyunca tutsaydım" senaryosudur — pozisyon
+                      // her gün var sayılır, ilk alım tarihi alakasızdır.
+                      // Aralığı ona daraltmak, 1A seçiliyken grafiği ilk alım
+                      // tarihinden başlatıyordu (gerçek tab doğru çalışırken).
+                      DateTime effectiveStart = startDate;
+                      if (!isIntraday && !_simulate) {
+                        final buys = chartAssets.where((a) => a.isBuy);
+                        if (buys.isNotEmpty) {
+                          final firstBuy = buys
+                              .map((a) => a.addedDate)
+                              .reduce((a, b) => a.isBefore(b) ? a : b);
+                          if (firstBuy.isAfter(startDate)) {
+                            effectiveStart = DateTime(
+                                firstBuy.year, firstBuy.month, firstBuy.day);
+                          }
                         }
                       }
-                    }
 
-                    // Intraday hâlâ eski hourly servisini kullanır (5 dk
-                    // grid, ayrı optimize logic). Diğer periyotlar zoom-aware
-                    // ZoomDataController üstünden gider.
-                    if (!isIntraday) {
-                      _ensureController(
-                        chartAssets: chartAssets,
-                        from: effectiveStart,
-                        to: endDate,
-                        intraday: false,
-                      );
-                    }
+                      // Intraday hâlâ eski hourly servisini kullanır (5 dk
+                      // grid, ayrı optimize logic). Diğer periyotlar zoom-aware
+                      // ZoomDataController üstünden gider.
+                      if (!isIntraday) {
+                        _ensureController(
+                          chartAssets: chartAssets,
+                          from: effectiveStart,
+                          to: endDate,
+                          intraday: false,
+                        );
+                      }
 
-                    // ÖNEMLİ: Aşağıdaki her iki dalda da `_buildChartWithData`
-                    // KOŞULSUZ çağrılır. Filtre kontrolleri (ortak sekmesi,
-                    // varlık tipi çipleri, periyot toggle'ı) o metodun içinde
-                    // yaşıyor; erken `return CustomLoadingView()` yapılırsa
-                    // tüm filtreler ağaçtan düşüyor ve kullanıcı yükleme
-                    // bitene kadar hiçbir filtreye dokunamıyordu. Artık
-                    // yükleme göstergesi yalnızca grafik alanını kaplar.
-                    if (isIntraday) {
-                      // Intraday için tek seferlik future — 5dk grid ve
-                      // dakikalık tick zaten var. Future `_intradayFuture`
-                      // içinde memoize edilir; aksi halde her setState
-                      // (tip/ortak filtresi, 30sn tick) yeni bir fetch
-                      // başlatıp grafiği baştan yüklemeye sokuyordu.
-                      return FutureBuilder<Map<int, double>>(
-                        future: _intradayHistory(chartAssets),
-                        builder: (context, snapshot) {
-                          final loading = snapshot.connectionState ==
-                              ConnectionState.waiting;
-                          // Tazeleme sırasında son başarılı seriye düş —
-                          // 30 sn'lik tick her seferinde grafiği spinner'a
-                          // çevirmesin.
-                          final data = snapshot.data ?? _lastIntradayData;
+                      // ÖNEMLİ: Aşağıdaki her iki dalda da `_buildChartWithData`
+                      // KOŞULSUZ çağrılır. Filtre kontrolleri (ortak sekmesi,
+                      // varlık tipi çipleri, periyot toggle'ı) o metodun içinde
+                      // yaşıyor; erken `return CustomLoadingView()` yapılırsa
+                      // tüm filtreler ağaçtan düşüyor ve kullanıcı yükleme
+                      // bitene kadar hiçbir filtreye dokunamıyordu. Artık
+                      // yükleme göstergesi yalnızca grafik alanını kaplar.
+                      if (isIntraday) {
+                        // Intraday için tek seferlik future — 5dk grid ve
+                        // dakikalık tick zaten var. Future `_intradayFuture`
+                        // içinde memoize edilir; aksi halde her setState
+                        // (tip/ortak filtresi, 30sn tick) yeni bir fetch
+                        // başlatıp grafiği baştan yüklemeye sokuyordu.
+                        return FutureBuilder<Map<int, double>>(
+                          future: _intradayHistory(chartAssets),
+                          builder: (context, snapshot) {
+                            final loading = snapshot.connectionState ==
+                                ConnectionState.waiting;
+                            // Tazeleme sırasında son başarılı seriye düş —
+                            // 30 sn'lik tick her seferinde grafiği spinner'a
+                            // çevirmesin.
+                            final data = snapshot.data ?? _lastIntradayData;
+                            return _buildChartWithData(
+                              data ?? const {},
+                              targetAssets,
+                              filteredOwnerLots,
+                              chartAssets,
+                              startDate,
+                              endDate,
+                              isIntraday,
+                              pState,
+                              activePartners,
+                              waiting: loading,
+                              hasData: data != null,
+                            );
+                          },
+                        );
+                      }
+
+                      final controller = _zoomController;
+                      return ListenableBuilder(
+                        listenable: controller ?? ValueNotifier<int>(0),
+                        builder: (context, _) {
+                          final historyMap = controller?.data ?? const {};
+                          final waiting = controller?.loading ?? false;
+                          final stale = controller?.stale ?? false;
                           return _buildChartWithData(
-                            data ?? const {},
+                            historyMap,
                             targetAssets,
                             filteredOwnerLots,
                             chartAssets,
-                            startDate,
+                            effectiveStart,
                             endDate,
                             isIntraday,
                             pState,
                             activePartners,
-                            waiting: loading,
-                            hasData: data != null,
+                            waiting: waiting,
+                            // Tohum veri de "gösterilebilir" sayılır: aynı
+                            // varlıkların bir önceki penceresidir, spinner'dan
+                            // çok daha iyi bir ara kare. `stale` ile soluk
+                            // çizilir ve sayısal özetler gizlenir — kullanıcı
+                            // eski rakamları yeni periyodun rakamı sanmasın.
+                            // Spinner SADECE hiç veri yokken (ilk açılış).
+                            hasData: historyMap.isNotEmpty,
+                            stale: stale,
                           );
                         },
                       );
-                    }
-
-                    final controller = _zoomController;
-                    return ListenableBuilder(
-                      listenable: controller ?? ValueNotifier<int>(0),
-                      builder: (context, _) {
-                        final historyMap = controller?.data ?? const {};
-                        final waiting = controller?.loading ?? false;
-                        final stale = controller?.stale ?? false;
-                        return _buildChartWithData(
-                          historyMap,
-                          targetAssets,
-                          filteredOwnerLots,
-                          chartAssets,
-                          effectiveStart,
-                          endDate,
-                          isIntraday,
-                          pState,
-                          activePartners,
-                          waiting: waiting,
-                          // Tohum veri de "gösterilebilir" sayılır: aynı
-                          // varlıkların bir önceki penceresidir, spinner'dan
-                          // çok daha iyi bir ara kare. `stale` ile soluk
-                          // çizilir ve sayısal özetler gizlenir — kullanıcı
-                          // eski rakamları yeni periyodun rakamı sanmasın.
-                          // Spinner SADECE hiç veri yokken (ilk açılış).
-                          hasData: historyMap.isNotEmpty,
-                          stale: stale,
-                        );
-                      },
-                    );
-                  },
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -671,8 +670,7 @@ class _PortfolioPerformanceScreenState
     // asDisplayAsset.totalValue'yu topla.
     // Sahipler ayrı aggregate edilir — havuzlanırsa aynı hisseye sahip iki
     // ortak tek pozisyona düşer ve toplam, tekil sekmelerin toplamını tutmaz.
-    final currentTotal =
-        ownerScopedTotalValue(ownerLots, toTRY: pState.toTRY);
+    final currentTotal = ownerScopedTotalValue(ownerLots, toTRY: pState.toTRY);
 
     // TradingView "auto range" davranışı: kullanıcı seçilen periyot içinde
     // hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün önce başladı), chart
@@ -764,8 +762,7 @@ class _PortfolioPerformanceScreenState
               _LeaderboardChip(
                 onTap: () => Navigator.push(
                   context,
-                  adaptiveRoute(
-                      builder: (_) => const LeaderboardScreen()),
+                  adaptiveRoute(builder: (_) => const LeaderboardScreen()),
                 ),
               ),
               const SizedBox(width: 6),
@@ -821,8 +818,7 @@ class _PortfolioPerformanceScreenState
             curve: SandikMotion.enter,
             child: _buildChartContainer(
                 segments, effectiveStart, endDate, chartAssets,
-                intraday: isIntraday,
-                allTargetAssets: targetAssets),
+                intraday: isIntraday, allTargetAssets: targetAssets),
           ),
         const SizedBox(height: 24),
         _PortfolioSignalPanel(assets: targetAssets),
@@ -847,7 +843,8 @@ class _PortfolioPerformanceScreenState
           curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.15) : context.c.surface1,
+            color:
+                selected ? color.withValues(alpha: 0.15) : context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.lg),
             border: Border.all(
               color: selected ? color : context.c.overlay,
@@ -870,7 +867,8 @@ class _PortfolioPerformanceScreenState
     return Container(
       height: 44,
       decoration: BoxDecoration(
-          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          color: context.c.surface1,
+          borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: List.generate(_periods.length, (i) {
@@ -885,8 +883,7 @@ class _PortfolioPerformanceScreenState
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? context.c.surface2 : Colors.transparent,
+                  color: isSelected ? context.c.surface2 : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Center(
@@ -895,7 +892,8 @@ class _PortfolioPerformanceScreenState
                     style: context.t.bodyMedium?.copyWith(
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected ? context.c.amberText : context.c.text36,
+                      color:
+                          isSelected ? context.c.amberText : context.c.text36,
                     ),
                   ),
                 ),
@@ -919,7 +917,8 @@ class _PortfolioPerformanceScreenState
     return Container(
       height: 44,
       decoration: BoxDecoration(
-          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          color: context.c.surface1,
+          borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(4),
       child: Row(
         children: options.map((o) {
@@ -932,9 +931,7 @@ class _PortfolioPerformanceScreenState
               child: Container(
                 height: double.infinity,
                 decoration: BoxDecoration(
-                  color: selected
-                      ? context.c.surface2
-                      : Colors.transparent,
+                  color: selected ? context.c.surface2 : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Row(
@@ -945,7 +942,8 @@ class _PortfolioPerformanceScreenState
                       style: context.t.bodyMedium?.copyWith(
                         fontWeight:
                             selected ? FontWeight.w600 : FontWeight.w500,
-                        color: selected ? context.c.amberText : context.c.text36,
+                        color:
+                            selected ? context.c.amberText : context.c.text36,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -1108,11 +1106,10 @@ class _PortfolioPerformanceScreenState
     // orijinal lot zaten DB'den silinmiştir (bkz. `deleteAsset`).
     double netInflow = 0;
     if (!_simulate) {
-      final startMs = DateTime(start.year, start.month, start.day)
+      final startMs =
+          DateTime(start.year, start.month, start.day).millisecondsSinceEpoch;
+      final endMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
           .millisecondsSinceEpoch;
-      final endMs =
-          DateTime(end.year, end.month, end.day, 23, 59, 59)
-              .millisecondsSinceEpoch;
       for (final a in targetAssets) {
         final ms = a.addedDate.millisecondsSinceEpoch;
         if (ms < startMs || ms > endMs) continue;
@@ -1143,11 +1140,12 @@ class _PortfolioPerformanceScreenState
     // Yuvarlanmış tutar ve yüzde ikisi de sıfırsa nötr renk — yeşil göstermek
     // "kazanç var" yanılgısı yaratır. _PeriodChangeRow ile aynı kural.
     final isFlat = change.abs().round() == 0 && (pct?.abs() ?? 0) < 0.005;
-    final color =
-        isFlat ? context.c.text36 : (positive ? context.c.gain : context.c.loss);
+    final color = isFlat
+        ? context.c.text36
+        : (positive ? context.c.gain : context.c.loss);
 
-    final tryFmt = NumberFormat.currency(
-        locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+    final tryFmt =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
     final periodLabel = _periods[_selectedPeriodIdx].label;
     final dateFmt = DateFormat('d MMM', 'tr_TR');
     final title = intraday
@@ -1155,8 +1153,8 @@ class _PortfolioPerformanceScreenState
         : '$periodLabel değişim${_simulate ? ' · simülasyon' : ''}';
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.md, vertical: 14),
+      padding:
+          const EdgeInsets.symmetric(horizontal: SandikSpace.md, vertical: 14),
       decoration: context.surfaceCard(radius: SandikRadius.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1190,8 +1188,8 @@ class _PortfolioPerformanceScreenState
                 // Yüzde rozeti — yön ikonu renge ek bir sinyal taşır,
                 // renk körlüğünde de okunur.
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.14),
                     borderRadius: SandikRadius.smAll,
@@ -1311,9 +1309,9 @@ class _PortfolioPerformanceScreenState
       for (final spot in seg.spots) {
         final dateAtSpot =
             start.add(Duration(minutes: (spot.x * 24 * 60).round()));
-        final dayTs = DateTime(
-                dateAtSpot.year, dateAtSpot.month, dateAtSpot.day)
-            .millisecondsSinceEpoch;
+        final dayTs =
+            DateTime(dateAtSpot.year, dateAtSpot.month, dateAtSpot.day)
+                .millisecondsSinceEpoch;
         if (buyDays.contains(dayTs)) keys.add(spot.x);
       }
     }
@@ -1330,10 +1328,10 @@ class _PortfolioPerformanceScreenState
       return Container(
         height: 280,
         decoration: BoxDecoration(
-            color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.lg)),
+            color: context.c.surface1,
+            borderRadius: BorderRadius.circular(SandikRadius.lg)),
         child: Center(
-            child: Text('Veri yok',
-                style: TextStyle(color: context.c.text36))),
+            child: Text('Veri yok', style: TextStyle(color: context.c.text36))),
       );
     }
 
@@ -1342,8 +1340,8 @@ class _PortfolioPerformanceScreenState
     // Y aralığına dahil edilirse min hep 0'a çekilir ve aktif değerler
     // ezik görünür. Bu yüzden en kalın segmenti "ana" kabul edip diğerleri
     // clipData ile alta düşer.
-    final primarySeg = segments
-        .reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
+    final primarySeg =
+        segments.reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
 
     // Görünür X aralığındaki spot'lara göre Y sınırlarını hesapla. Zoom
     // sırasında X daraldıkça Y ekseni otomatik yeniden fit olur — kullanıcı
@@ -1368,8 +1366,7 @@ class _PortfolioPerformanceScreenState
       final dataMaxY = maxY;
       final dataRange = (dataMaxY - dataMinY).clamp(1.0, double.infinity);
       final minSpread = (avgY * 0.08).clamp(1.0, double.infinity);
-      final effectiveRange =
-          dataRange < minSpread ? minSpread : dataRange;
+      final effectiveRange = dataRange < minSpread ? minSpread : dataRange;
       final yPadding = effectiveRange * 0.15;
       double outMaxY = (avgY + effectiveRange / 2) + yPadding;
       double outMinY =
@@ -1464,9 +1461,7 @@ class _PortfolioPerformanceScreenState
 
     // Intraday: şimdiki zaman marker'ı — dakika cinsinden 00:00'dan sapma.
     final now = DateTime.now();
-    final nowMinutes = intraday
-        ? (now.hour * 60 + now.minute).toDouble()
-        : 0.0;
+    final nowMinutes = intraday ? (now.hour * 60 + now.minute).toDouble() : 0.0;
 
     // Zoom durumunda tekrar üretilen LineChartData'yı bir closure'a al.
     // ZoomableChart pinch/pan sırasında minX/maxX değiştirdikçe bu builder
@@ -1504,9 +1499,8 @@ class _PortfolioPerformanceScreenState
                 viewMinX: viewMinX,
                 viewMaxX: viewMaxX,
                 // Grafik genişliği ~ekran - sağ Y rezervi (60px).
-                plotWidthPx:
-                    (MediaQuery.of(context).size.width - 60 - 40)
-                        .clamp(120.0, 2000.0),
+                plotWidthPx: (MediaQuery.of(context).size.width - 60 - 40)
+                    .clamp(120.0, 2000.0),
                 minSeparationPx: 16,
                 // İlk ve son nokta her zaman görünür (anchor / "şimdi").
                 alwaysKeep: {
@@ -1517,476 +1511,468 @@ class _PortfolioPerformanceScreenState
             }();
 
       return LineChartData(
-          minX: viewMinX,
-          maxX: viewMaxX,
-          minY: viewMinY,
-          maxY: viewMaxY,
-          clipData: const FlClipData.all(),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: intraday,
-            verticalInterval: intraday ? 240 : null,
-            horizontalInterval: yInterval,
-            getDrawingHorizontalLine: (_) => FlLine(
+        minX: viewMinX,
+        maxX: viewMaxX,
+        minY: viewMinY,
+        maxY: viewMaxY,
+        clipData: const FlClipData.all(),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: intraday,
+          verticalInterval: intraday ? 240 : null,
+          horizontalInterval: yInterval,
+          getDrawingHorizontalLine: (_) => FlLine(
+            color: context.c.overlay,
+            strokeWidth: 1,
+          ),
+          getDrawingVerticalLine: (_) => FlLine(
+            color: context.c.overlay,
+            strokeWidth: 1,
+          ),
+        ),
+        // Sağ Y ekseni band'ı görsel olarak plot area'dan ayrılsın diye
+        // sadece sağ kenara ince dikey çizgi. TradingView'de plot | Y ayrık.
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            right: BorderSide(
               color: context.c.overlay,
-              strokeWidth: 1,
-            ),
-            getDrawingVerticalLine: (_) => FlLine(
-              color: context.c.overlay,
-              strokeWidth: 1,
+              width: 1,
             ),
           ),
-          // Sağ Y ekseni band'ı görsel olarak plot area'dan ayrılsın diye
-          // sadece sağ kenara ince dikey çizgi. TradingView'de plot | Y ayrık.
-          borderData: FlBorderData(
-            show: true,
-            border: Border(
-              right: BorderSide(
-                color: context.c.overlay,
-                width: 1,
-              ),
-            ),
-          ),
-          extraLinesData: intraday
-              ? ExtraLinesData(
-                  verticalLines: [
-                    VerticalLine(
-                      x: nowMinutes,
-                      color: context.c.amberFill.withValues(alpha: 0.6),
-                      strokeWidth: 1.5,
-                      dashArray: const [5, 4],
-                      label: VerticalLineLabel(
-                        show: true,
-                        alignment: Alignment.topLeft,
-                        padding: const EdgeInsets.only(bottom: 6, right: 4),
-                        style: context.t.labelMedium?.copyWith(
-                          letterSpacing: 0,
-                          fontWeight: FontWeight.w700,
-                          color: context.c.amberText,
-                        ),
-                        labelResolver: (_) => 'ŞİMDİ',
+        ),
+        extraLinesData: intraday
+            ? ExtraLinesData(
+                verticalLines: [
+                  VerticalLine(
+                    x: nowMinutes,
+                    color: context.c.amberFill.withValues(alpha: 0.6),
+                    strokeWidth: 1.5,
+                    dashArray: const [5, 4],
+                    label: VerticalLineLabel(
+                      show: true,
+                      alignment: Alignment.topLeft,
+                      padding: const EdgeInsets.only(bottom: 6, right: 4),
+                      style: context.t.labelMedium?.copyWith(
+                        letterSpacing: 0,
+                        fontWeight: FontWeight.w700,
+                        color: context.c.amberText,
                       ),
+                      labelResolver: (_) => 'ŞİMDİ',
                     ),
-                  ],
-                )
-              : ExtraLinesData(
-                  verticalLines: primarySeg.spots.isEmpty
-                      ? const []
-                      : [
-                          // Başlangıç (dönem başı) için dashed amber marker.
-                          // Etiket çizginin SAĞINA (grafik içine) yaslanır,
-                          // aksi halde sol kenara sıkışıp kırpılır.
-                          VerticalLine(
-                            x: primarySeg.spots.first.x,
-                            color: context.c.amberFill.withValues(alpha: 0.75),
-                            strokeWidth: 1.6,
-                            dashArray: const [4, 4],
-                            label: VerticalLineLabel(
-                              show: true,
-                              alignment: Alignment.topRight,
-                              padding: const EdgeInsets.only(
-                                  bottom: 8, left: 6),
-                              style: context.t.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: context.c.amberText,
-                              ),
-                              labelResolver: (_) {
-                                final startTs = start.add(Duration(
-                                    minutes:
-                                        (primarySeg.spots.first.x * 1440)
-                                            .round()));
-                                final showYear =
-                                    startTs.year != DateTime.now().year;
-                                return '● ${DateFormat(showYear ? 'd MMM yyyy' : 'd MMM', 'tr_TR').format(startTs)}';
-                              },
+                  ),
+                ],
+              )
+            : ExtraLinesData(
+                verticalLines: primarySeg.spots.isEmpty
+                    ? const []
+                    : [
+                        // Başlangıç (dönem başı) için dashed amber marker.
+                        // Etiket çizginin SAĞINA (grafik içine) yaslanır,
+                        // aksi halde sol kenara sıkışıp kırpılır.
+                        VerticalLine(
+                          x: primarySeg.spots.first.x,
+                          color: context.c.amberFill.withValues(alpha: 0.75),
+                          strokeWidth: 1.6,
+                          dashArray: const [4, 4],
+                          label: VerticalLineLabel(
+                            show: true,
+                            alignment: Alignment.topRight,
+                            padding: const EdgeInsets.only(bottom: 8, left: 6),
+                            style: context.t.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: context.c.amberText,
                             ),
+                            labelResolver: (_) {
+                              final startTs = start.add(Duration(
+                                  minutes: (primarySeg.spots.first.x * 1440)
+                                      .round()));
+                              final showYear =
+                                  startTs.year != DateTime.now().year;
+                              return '● ${DateFormat(showYear ? 'd MMM yyyy' : 'd MMM', 'tr_TR').format(startTs)}';
+                            },
                           ),
-                          // Son nokta (bugün / şimdi) için dashed marker.
-                          // Etiket çizginin SOLUNA (grafik içine) yaslanır.
-                          VerticalLine(
-                            x: primarySeg.spots.last.x,
-                            color: context.c.gain.withValues(alpha: 0.55),
-                            strokeWidth: 1.2,
-                            dashArray: const [4, 4],
-                            label: VerticalLineLabel(
-                              show: true,
-                              alignment: Alignment.topLeft,
-                              padding: const EdgeInsets.only(
-                                  bottom: 8, right: 6),
-                              style: context.t.labelMedium?.copyWith(
-                                letterSpacing: 0,
-                                fontWeight: FontWeight.w700,
-                                color: context.c.gain,
-                              ),
-                              labelResolver: (_) => 'ŞİMDİ',
+                        ),
+                        // Son nokta (bugün / şimdi) için dashed marker.
+                        // Etiket çizginin SOLUNA (grafik içine) yaslanır.
+                        VerticalLine(
+                          x: primarySeg.spots.last.x,
+                          color: context.c.gain.withValues(alpha: 0.55),
+                          strokeWidth: 1.2,
+                          dashArray: const [4, 4],
+                          label: VerticalLineLabel(
+                            show: true,
+                            alignment: Alignment.topLeft,
+                            padding: const EdgeInsets.only(bottom: 8, right: 6),
+                            style: context.t.labelMedium?.copyWith(
+                              letterSpacing: 0,
+                              fontWeight: FontWeight.w700,
+                              color: context.c.gain,
                             ),
+                            labelResolver: (_) => 'ŞİMDİ',
                           ),
-                        ],
-                ),
-          titlesData: FlTitlesData(
-            show: true,
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            // TradingView tarzı: fiyat scale SAĞDA, tarih ekseni ALTTA ayrı bant.
-            // leftTitles kapatıldı, rightTitles dolduruldu. Rezerv alanları
-            // grafik alanına girmesin diye cömert (Y sağda 60, X altta 40).
-            leftTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 60,
-                interval: yInterval,
-                getTitlesWidget: (val, meta) {
-                  if (val == meta.min || val == meta.max) {
-                    return const SizedBox.shrink();
+                        ),
+                      ],
+              ),
+        titlesData: FlTitlesData(
+          show: true,
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          // TradingView tarzı: fiyat scale SAĞDA, tarih ekseni ALTTA ayrı bant.
+          // leftTitles kapatıldı, rightTitles dolduruldu. Rezerv alanları
+          // grafik alanına girmesin diye cömert (Y sağda 60, X altta 40).
+          leftTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 60,
+              interval: yInterval,
+              getTitlesWidget: (val, meta) {
+                if (val == meta.min || val == meta.max) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    _fmtY(val),
+                    textAlign: TextAlign.left,
+                    style: context.t.numSmall.copyWith(
+                      color: context.c.text58,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              interval: xInterval,
+              getTitlesWidget: (val, meta) {
+                // Etiket tick'in ÜZERİNDE ortalanır; kenara çok yakın bir
+                // tick'in etiketi plot alanının dışına taşar. Zoom'da
+                // interval artık sınırlara denk gelmediği için `val ==
+                // meta.min/max` kontrolü yetmiyordu — bunun yerine viewport
+                // genişliğinin %6'sı kadar bir kenar payı bırakıyoruz.
+                final span = (meta.max - meta.min).abs();
+                final edge = span * 0.06;
+                if (val <= meta.min + edge || val >= meta.max - edge) {
+                  return const SizedBox.shrink();
+                }
+                // Dinamik format — dar viewport'ta gün+ay, geniş
+                // viewport'ta (365+ gün) sadece "MMM yy". Çok dar (<3 gün)
+                // görünümde saat de göster.
+                String nonIntradayLabel(double v) {
+                  final d = start.add(Duration(minutes: (v * 24 * 60).round()));
+                  final span = (meta.max - meta.min).abs();
+                  final showYearOnly = span > 400;
+                  final showTime = span < 3;
+                  final showYear =
+                      !showYearOnly && d.year != DateTime.now().year;
+                  if (showYearOnly) {
+                    return DateFormat('MMM yy', 'tr_TR').format(d);
                   }
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 8),
+                  if (showTime) {
+                    return DateFormat('d MMM HH:mm', 'tr_TR').format(d);
+                  }
+                  return DateFormat(showYear ? 'd MMM yy' : 'd MMM', 'tr_TR')
+                      .format(d);
+                }
+
+                final label = intraday
+                    ? () {
+                        final h = (val ~/ 60).clamp(0, 23);
+                        final m = (val % 60).toInt();
+                        return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+                      }()
+                    : nonIntradayLabel(val);
+                return Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  // Sabit genişlik + ortalama: fl_chart etiketi tick'te
+                  // ortalar, taşan metin ellipsis olur ve komşu etiketle
+                  // çakışmaz.
+                  child: SizedBox(
+                    width: 74,
                     child: Text(
-                      _fmtY(val),
-                      textAlign: TextAlign.left,
+                      label,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
                       style: context.t.numSmall.copyWith(
                         color: context.c.text58,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: xInterval,
-                getTitlesWidget: (val, meta) {
-                  // Etiket tick'in ÜZERİNDE ortalanır; kenara çok yakın bir
-                  // tick'in etiketi plot alanının dışına taşar. Zoom'da
-                  // interval artık sınırlara denk gelmediği için `val ==
-                  // meta.min/max` kontrolü yetmiyordu — bunun yerine viewport
-                  // genişliğinin %6'sı kadar bir kenar payı bırakıyoruz.
-                  final span = (meta.max - meta.min).abs();
-                  final edge = span * 0.06;
-                  if (val <= meta.min + edge || val >= meta.max - edge) {
-                    return const SizedBox.shrink();
-                  }
-                  // Dinamik format — dar viewport'ta gün+ay, geniş
-                  // viewport'ta (365+ gün) sadece "MMM yy". Çok dar (<3 gün)
-                  // görünümde saat de göster.
-                  String nonIntradayLabel(double v) {
-                    final d = start.add(Duration(
-                        minutes: (v * 24 * 60).round()));
-                    final span = (meta.max - meta.min).abs();
-                    final showYearOnly = span > 400;
-                    final showTime = span < 3;
-                    final showYear =
-                        !showYearOnly && d.year != DateTime.now().year;
-                    if (showYearOnly) {
-                      return DateFormat('MMM yy', 'tr_TR').format(d);
-                    }
-                    if (showTime) {
-                      return DateFormat('d MMM HH:mm', 'tr_TR').format(d);
-                    }
-                    return DateFormat(
-                            showYear ? 'd MMM yy' : 'd MMM', 'tr_TR')
-                        .format(d);
-                  }
-                  final label = intraday
-                      ? () {
-                          final h = (val ~/ 60).clamp(0, 23);
-                          final m = (val % 60).toInt();
-                          return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
-                        }()
-                      : nonIntradayLabel(val);
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    // Sabit genişlik + ortalama: fl_chart etiketi tick'te
-                    // ortalar, taşan metin ellipsis olur ve komşu etiketle
-                    // çakışmaz.
-                    child: SizedBox(
-                      width: 74,
-                      child: Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: false,
-                        style: context.t.numSmall.copyWith(
-                          color: context.c.text58,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ),
-          lineBarsData: segments.map((seg) {
-            final isActive = seg.thickness > 2.0;
-            // Nokta yoğunluğu arttıkça çizgi inceltilir — intraday ve haftalık
-            // (saatlik) yüzlerce nokta içerir, kalın çizgi zigzag'i yutar.
-            // Trading uygulamalarındaki gibi ince ve okunaklı bir hat için:
-            final periodDays = _periods[_selectedPeriodIdx].days;
-            final activeBarWidth = intraday
-                ? 1.6
-                : periodDays <= 7
-                    ? 2.0
-                    : periodDays <= 30
-                        ? 2.4
-                        : periodDays <= 90
-                            ? 2.0
-                            : periodDays <= 180
-                                ? 1.8
-                                : 1.5;
-            final effectiveBarWidth =
-                isActive ? activeBarWidth : seg.thickness;
-            // İlk/son X'i closure dışında bir kez oku. Bu callback'ler
-            // fl_chart tarafından NOKTA BAŞINA çağrılıyor; içeride
-            // `seg.spots.first`/`.last` demek her nokta için tekrar
-            // erişim + karşılaştırma demekti.
-            final firstX = seg.spots.isEmpty ? double.nan : seg.spots.first.x;
-            final lastX = seg.spots.isEmpty ? double.nan : seg.spots.last.x;
-            return LineChartBarData(
-              spots: seg.spots,
-              isCurved: false,
-              color: seg.lineColor,
-              barWidth: effectiveBarWidth,
-              dotData: FlDotData(
-                show: true,
-                checkToShowDot: (spot, barData) {
-                  if (!isActive) return false;
-                  // Simülasyonda nokta yok — sadece süreklilik çizgisi.
-                  if (_simulate) return false;
-                  // Intraday: sadece ilk ve son noktada dot göster (5 dk
-                  // aralıklı yüzlerce nokta olduğu için hepsini işaretlemek
-                  // grafiği bulanıklaştırır).
-                  if (intraday) {
-                    // Trading hissiyatı: sadece "şimdi" noktası görünsün.
-                    return spot.x == lastX;
-                  }
-                  // İlk/son nokta her zaman görünür; alım dot'ları ise
-                  // piksel bazlı seyreltmeden geçer (bkz. `dotThinner`) —
-                  // yoğun alım günlerinde üst üste binip yığın oluşmasın.
-                  if (spot.x == firstX || spot.x == lastX) {
-                    return true;
-                  }
-                  return dotThinner.shows(spot.x);
-                },
-                getDotPainter: (spot, percent, barData, index) {
-                  final isFirst = spot.x == firstX;
-                  final isLast = spot.x == lastX;
-                  // Intraday'de sadece "şimdi" noktasını canlı bir amber
-                  // dot ile göster — trading uygulaması hissiyatı için
-                  // ince halka ile.
-                  if (intraday && isLast) {
-                    // "Şu an" noktası — canlı vurgulu yeşil (context.c.gain)
-                    // ile trading uygulaması hissiyatı, ince beyaz halka.
-                    return FlDotCirclePainter(
-                      radius: 5.0,
-                      color: context.c.gain,
-                      strokeColor: context.c.text90,
-                      strokeWidth: 1.6,
-                    );
-                  }
-                  // Başlangıç dot'u kaldırıldı — "orada alım yapılmış" gibi
-                  // yanıltıcı görünüyordu. Başlangıç zaten dashed marker +
-                  // label ile işaretli. Son nokta (şimdi) canlı vurgusu için
-                  // büyük yeşil dot ile kalır.
-                  if (isFirst) {
-                    return FlDotCirclePainter(
-                      radius: 0,
-                      color: Colors.transparent,
-                      strokeWidth: 0,
-                    );
-                  }
-                  if (isLast) {
-                    return FlDotCirclePainter(
-                      radius: 6.0,
-                      color: context.c.gain,
-                      strokeColor: context.c.text90,
-                      strokeWidth: 2.5,
-                    );
-                  }
+        ),
+        lineBarsData: segments.map((seg) {
+          final isActive = seg.thickness > 2.0;
+          // Nokta yoğunluğu arttıkça çizgi inceltilir — intraday ve haftalık
+          // (saatlik) yüzlerce nokta içerir, kalın çizgi zigzag'i yutar.
+          // Trading uygulamalarındaki gibi ince ve okunaklı bir hat için:
+          final periodDays = _periods[_selectedPeriodIdx].days;
+          final activeBarWidth = intraday
+              ? 1.6
+              : periodDays <= 7
+                  ? 2.0
+                  : periodDays <= 30
+                      ? 2.4
+                      : periodDays <= 90
+                          ? 2.0
+                          : periodDays <= 180
+                              ? 1.8
+                              : 1.5;
+          final effectiveBarWidth = isActive ? activeBarWidth : seg.thickness;
+          // İlk/son X'i closure dışında bir kez oku. Bu callback'ler
+          // fl_chart tarafından NOKTA BAŞINA çağrılıyor; içeride
+          // `seg.spots.first`/`.last` demek her nokta için tekrar
+          // erişim + karşılaştırma demekti.
+          final firstX = seg.spots.isEmpty ? double.nan : seg.spots.first.x;
+          final lastX = seg.spots.isEmpty ? double.nan : seg.spots.last.x;
+          return LineChartBarData(
+            spots: seg.spots,
+            isCurved: false,
+            color: seg.lineColor,
+            barWidth: effectiveBarWidth,
+            dotData: FlDotData(
+              show: true,
+              checkToShowDot: (spot, barData) {
+                if (!isActive) return false;
+                // Simülasyonda nokta yok — sadece süreklilik çizgisi.
+                if (_simulate) return false;
+                // Intraday: sadece ilk ve son noktada dot göster (5 dk
+                // aralıklı yüzlerce nokta olduğu için hepsini işaretlemek
+                // grafiği bulanıklaştırır).
+                if (intraday) {
+                  // Trading hissiyatı: sadece "şimdi" noktası görünsün.
+                  return spot.x == lastX;
+                }
+                // İlk/son nokta her zaman görünür; alım dot'ları ise
+                // piksel bazlı seyreltmeden geçer (bkz. `dotThinner`) —
+                // yoğun alım günlerinde üst üste binip yığın oluşmasın.
+                if (spot.x == firstX || spot.x == lastX) {
+                  return true;
+                }
+                return dotThinner.shows(spot.x);
+              },
+              getDotPainter: (spot, percent, barData, index) {
+                final isFirst = spot.x == firstX;
+                final isLast = spot.x == lastX;
+                // Intraday'de sadece "şimdi" noktasını canlı bir amber
+                // dot ile göster — trading uygulaması hissiyatı için
+                // ince halka ile.
+                if (intraday && isLast) {
+                  // "Şu an" noktası — canlı vurgulu yeşil (context.c.gain)
+                  // ile trading uygulaması hissiyatı, ince beyaz halka.
                   return FlDotCirclePainter(
-                    radius: 4.5,
-                    color: context.c.amberText,
+                    radius: 5.0,
+                    color: context.c.gain,
                     strokeColor: context.c.text90,
-                    strokeWidth: 2,
+                    strokeWidth: 1.6,
                   );
-                },
+                }
+                // Başlangıç dot'u kaldırıldı — "orada alım yapılmış" gibi
+                // yanıltıcı görünüyordu. Başlangıç zaten dashed marker +
+                // label ile işaretli. Son nokta (şimdi) canlı vurgusu için
+                // büyük yeşil dot ile kalır.
+                if (isFirst) {
+                  return FlDotCirclePainter(
+                    radius: 0,
+                    color: Colors.transparent,
+                    strokeWidth: 0,
+                  );
+                }
+                if (isLast) {
+                  return FlDotCirclePainter(
+                    radius: 6.0,
+                    color: context.c.gain,
+                    strokeColor: context.c.text90,
+                    strokeWidth: 2.5,
+                  );
+                }
+                return FlDotCirclePainter(
+                  radius: 4.5,
+                  color: context.c.amberText,
+                  strokeColor: context.c.text90,
+                  strokeWidth: 2,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: intraday
+                    ? [
+                        context.c.amberFill.withValues(alpha: 0.22),
+                        context.c.amberFill.withValues(alpha: 0.06),
+                        Colors.transparent,
+                      ]
+                    : [seg.areaGradientStart, Colors.transparent],
+                stops: intraday ? const [0.0, 0.5, 1.0] : null,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  colors: intraday
-                      ? [
-                          context.c.amberFill.withValues(alpha: 0.22),
-                          context.c.amberFill.withValues(alpha: 0.06),
-                          Colors.transparent,
-                        ]
-                      : [seg.areaGradientStart, Colors.transparent],
-                  stops: intraday ? const [0.0, 0.5, 1.0] : null,
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            );
-          }).toList(),
-          // fl_chart'ın built-in touch'ı kapalı — crosshair TEK KAYNAK.
-          // Kullanıcı uzun bastığında `ZoomableChart` snap edilmiş X'te dikey
-          // çizgi + pill (fiyat/tarih/getiri/hareketler) gösterir. Tooltip ve
-          // crosshair paralel çalışınca X hesabı farklı olup değerler
-          // uyumsuz görünüyordu — tek kaynağa çektik.
-          lineTouchData: LineTouchData(
-            handleBuiltInTouches: false,
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => context.c.surface2,
-              tooltipRoundedRadius: 10,
-              tooltipPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              getTooltipItems: (spots) {
-                final tryFmt0 = NumberFormat.currency(
-                    symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
-                // Primary segmentteki ilk ve son x — anchor / bugün tespiti.
-                final firstX = primarySeg.spots.first.x;
-                final lastX = primarySeg.spots.last.x;
-                final firstY = primarySeg.spots.first.y;
-                final lastY = primarySeg.spots.last.y;
+            ),
+          );
+        }).toList(),
+        // fl_chart'ın built-in touch'ı kapalı — crosshair TEK KAYNAK.
+        // Kullanıcı uzun bastığında `ZoomableChart` snap edilmiş X'te dikey
+        // çizgi + pill (fiyat/tarih/getiri/hareketler) gösterir. Tooltip ve
+        // crosshair paralel çalışınca X hesabı farklı olup değerler
+        // uyumsuz görünüyordu — tek kaynağa çektik.
+        lineTouchData: LineTouchData(
+          handleBuiltInTouches: false,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => context.c.surface2,
+            tooltipRoundedRadius: 10,
+            tooltipPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            getTooltipItems: (spots) {
+              final tryFmt0 = NumberFormat.currency(
+                  symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
+              // Primary segmentteki ilk ve son x — anchor / bugün tespiti.
+              final firstX = primarySeg.spots.first.x;
+              final lastX = primarySeg.spots.last.x;
+              final firstY = primarySeg.spots.first.y;
+              final lastY = primarySeg.spots.last.y;
 
-                return spots.map((s) {
-                  // Non-intraday: s.x kesirli gün → dakika cinsinden ekle.
-                  // `.toInt()` kullanılırsa saat/dakika kısmı düşer ve tooltip
-                  // etiketi yakınlardaki tarihe kayıyor.
-                  final date = intraday
-                      ? start.add(Duration(minutes: s.x.toInt()))
-                      : start.add(
-                          Duration(minutes: (s.x * 24 * 60).round()));
-                  final isFirst = s.x == firstX;
-                  final isLast = s.x == lastX;
+              return spots.map((s) {
+                // Non-intraday: s.x kesirli gün → dakika cinsinden ekle.
+                // `.toInt()` kullanılırsa saat/dakika kısmı düşer ve tooltip
+                // etiketi yakınlardaki tarihe kayıyor.
+                final date = intraday
+                    ? start.add(Duration(minutes: s.x.toInt()))
+                    : start.add(Duration(minutes: (s.x * 24 * 60).round()));
+                final isFirst = s.x == firstX;
+                final isLast = s.x == lastX;
 
-                  // O gün YAPILAN alım/satım hareketleri (Gerçek modda).
-                  double dayBuyTRY = 0, daySellTRY = 0;
-                  // İlk noktadan (anchor) bugüne kadar KÜMÜLATİF hareketler.
-                  double cumBuyTRY = 0, cumSellTRY = 0;
-                  if (!_simulate && !intraday) {
-                    final spotDayMs =
-                        DateTime(date.year, date.month, date.day)
-                            .millisecondsSinceEpoch;
-                    for (final a in assets) {
-                      if (a.isDeleteLog) continue;
-                      final aDay = DateTime(a.addedDate.year,
-                              a.addedDate.month, a.addedDate.day)
-                          .millisecondsSinceEpoch;
-                      final onSameDay = aDay == spotDayMs;
-                      final onOrBefore = aDay <= spotDayMs;
-                      if (a.isBuy) {
-                        if (onSameDay) dayBuyTRY += a.totalCostTRY;
-                        if (onOrBefore) cumBuyTRY += a.totalCostTRY;
-                      } else if (a.isSell) {
-                        if (onSameDay) daySellTRY += a.totalCostTRY;
-                        if (onOrBefore) cumSellTRY += a.totalCostTRY;
-                      }
+                // O gün YAPILAN alım/satım hareketleri (Gerçek modda).
+                double dayBuyTRY = 0, daySellTRY = 0;
+                // İlk noktadan (anchor) bugüne kadar KÜMÜLATİF hareketler.
+                double cumBuyTRY = 0, cumSellTRY = 0;
+                if (!_simulate && !intraday) {
+                  final spotDayMs = DateTime(date.year, date.month, date.day)
+                      .millisecondsSinceEpoch;
+                  for (final a in assets) {
+                    if (a.isDeleteLog) continue;
+                    final aDay = DateTime(a.addedDate.year, a.addedDate.month,
+                            a.addedDate.day)
+                        .millisecondsSinceEpoch;
+                    final onSameDay = aDay == spotDayMs;
+                    final onOrBefore = aDay <= spotDayMs;
+                    if (a.isBuy) {
+                      if (onSameDay) dayBuyTRY += a.totalCostTRY;
+                      if (onOrBefore) cumBuyTRY += a.totalCostTRY;
+                    } else if (a.isSell) {
+                      if (onSameDay) daySellTRY += a.totalCostTRY;
+                      if (onOrBefore) cumSellTRY += a.totalCostTRY;
                     }
                   }
+                }
 
-                  final dayNet = dayBuyTRY - daySellTRY;
-                  final hasActivity = dayBuyTRY > 0 || daySellTRY > 0;
+                final dayNet = dayBuyTRY - daySellTRY;
+                final hasActivity = dayBuyTRY > 0 || daySellTRY > 0;
 
-                  // Anchor'a göre net getiri (bugüne kadarki maliyet vs
-                  // portföy değeri). Sadece son nokta için göster.
-                  final gainVsAnchor = lastY - firstY;
+                // Anchor'a göre net getiri (bugüne kadarki maliyet vs
+                // portföy değeri). Sadece son nokta için göster.
+                final gainVsAnchor = lastY - firstY;
 
-                  final children = <TextSpan>[
-                    TextSpan(
-                      text: tryFmt0.format(s.y),
-                      style: context.t.numSmall.copyWith(
-                        color: context.c.gold,
-                        fontSize: 15,
-                      ),
+                final children = <TextSpan>[
+                  TextSpan(
+                    text: tryFmt0.format(s.y),
+                    style: context.t.numSmall.copyWith(
+                      color: context.c.gold,
+                      fontSize: 15,
                     ),
-                  ];
+                  ),
+                ];
 
-                  // Bugün (son nokta) → getiri
-                  if (isLast && !_simulate && gainVsAnchor.abs() > 0.5) {
-                    final positive = gainVsAnchor >= 0;
+                // Bugün (son nokta) → getiri
+                if (isLast && !_simulate && gainVsAnchor.abs() > 0.5) {
+                  final positive = gainVsAnchor >= 0;
+                  children.add(TextSpan(
+                    text:
+                        '\nGetiri ${positive ? '+' : '−'}${tryFmt0.format(gainVsAnchor.abs())}',
+                    style: context.t.numSmall.copyWith(
+                      color: positive ? context.c.gain : context.c.loss,
+                      fontSize: 11,
+                    ),
+                  ));
+                }
+
+                // O gün yapılan hareketler
+                if (hasActivity) {
+                  if (dayBuyTRY > 0) {
+                    children.add(TextSpan(
+                      text: '\nAlım  +${tryFmt0.format(dayBuyTRY)}',
+                      style: context.t.numSmall.copyWith(
+                        color: context.c.gain,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ));
+                  }
+                  if (daySellTRY > 0) {
+                    children.add(TextSpan(
+                      text: '\nSatış −${tryFmt0.format(daySellTRY)}',
+                      style: context.t.numSmall.copyWith(
+                        color: context.c.loss,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ));
+                  }
+                  if (dayBuyTRY > 0 && daySellTRY > 0) {
                     children.add(TextSpan(
                       text:
-                          '\nGetiri ${positive ? '+' : '−'}${tryFmt0.format(gainVsAnchor.abs())}',
+                          '\nNet ${dayNet >= 0 ? '+' : '−'}${tryFmt0.format(dayNet.abs())}',
                       style: context.t.numSmall.copyWith(
-                        color: positive ? context.c.gain : context.c.loss,
+                        color: dayNet >= 0 ? context.c.gain : context.c.loss,
                         fontSize: 11,
                       ),
                     ));
                   }
+                }
 
-                  // O gün yapılan hareketler
-                  if (hasActivity) {
-                    if (dayBuyTRY > 0) {
-                      children.add(TextSpan(
-                        text: '\nAlım  +${tryFmt0.format(dayBuyTRY)}',
-                        style: context.t.numSmall.copyWith(
-                          color: context.c.gain,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ));
-                    }
-                    if (daySellTRY > 0) {
-                      children.add(TextSpan(
-                        text: '\nSatış −${tryFmt0.format(daySellTRY)}',
-                        style: context.t.numSmall.copyWith(
-                          color: context.c.loss,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ));
-                    }
-                    if (dayBuyTRY > 0 && daySellTRY > 0) {
-                      children.add(TextSpan(
-                        text:
-                            '\nNet ${dayNet >= 0 ? '+' : '−'}${tryFmt0.format(dayNet.abs())}',
-                        style: context.t.numSmall.copyWith(
-                          color: dayNet >= 0 ? context.c.gain : context.c.loss,
-                          fontSize: 11,
-                        ),
-                      ));
-                    }
-                  }
+                // İlk nokta (anchor) — birikmiş yatırım toplamı bilgisi
+                // (bu döneme kadar tüm buy - sell). Kullanıcı "grafik
+                // buradan başlıyor, ne kadar para koydum?" sorusuna
+                // cevap alsın.
+                if (isFirst && !_simulate && cumBuyTRY > 0) {
+                  final cumNet = cumBuyTRY - cumSellTRY;
+                  children.add(TextSpan(
+                    text: '\nToplam yatırım ${tryFmt0.format(cumNet)}',
+                    style: context.t.labelMedium?.copyWith(
+                      letterSpacing: 0,
+                      color: context.c.text58,
+                    ),
+                  ));
+                }
 
-                  // İlk nokta (anchor) — birikmiş yatırım toplamı bilgisi
-                  // (bu döneme kadar tüm buy - sell). Kullanıcı "grafik
-                  // buradan başlıyor, ne kadar para koydum?" sorusuna
-                  // cevap alsın.
-                  if (isFirst && !_simulate && cumBuyTRY > 0) {
-                    final cumNet = cumBuyTRY - cumSellTRY;
-                    children.add(TextSpan(
-                      text: '\nToplam yatırım ${tryFmt0.format(cumNet)}',
-                      style: context.t.labelMedium?.copyWith(
-                        letterSpacing: 0,
-                        color: context.c.text58,
-                      ),
-                    ));
-                  }
-
-                  final headerLabel = intraday
-                      ? DateFormat('HH:mm', 'tr_TR').format(date)
-                      : DateFormat('d MMM yyyy', 'tr_TR').format(date);
-                  return LineTooltipItem(
-                    '$headerLabel\n',
-                    context.t.bodySmall!.copyWith(
-                        color: context.c.text58,
-                        fontWeight: FontWeight.w500),
-                    children: children,
-                  );
-                }).toList();
-              },
-            ),
+                final headerLabel = intraday
+                    ? DateFormat('HH:mm', 'tr_TR').format(date)
+                    : DateFormat('d MMM yyyy', 'tr_TR').format(date);
+                return LineTooltipItem(
+                  '$headerLabel\n',
+                  context.t.bodySmall!.copyWith(
+                      color: context.c.text58, fontWeight: FontWeight.w500),
+                  children: children,
+                );
+              }).toList();
+            },
           ),
-        );
+        ),
+      );
     }
 
     // Volume subchart için sync viewport. Aynı controller ZoomableChart ve
@@ -2017,160 +2003,159 @@ class _PortfolioPerformanceScreenState
       child: Column(
         children: [
           ZoomableChart(
-        fullMinX: minX,
-        fullMaxX: maxX,
-        height: 360 - 32,
-        builder: buildData,
-        viewportController: viewport,
-        // Sağdaki Y ekseni rezervi (rightTitles.reservedSize ile aynı).
-        // Crosshair bu alana **girmez** — plot area net sınırlı.
-        plotPaddingRight: 60,
-        onViewportChanged: intraday
-            ? null
-            : (viewMinX, viewMaxX) {
-                final controller = _zoomController;
-                if (controller == null) return;
-                final from = start.add(
-                    Duration(minutes: (viewMinX * 1440).round()));
-                final to = start.add(
-                    Duration(minutes: (viewMaxX * 1440).round()));
-                controller.updateViewport(from, to);
-              },
-        crosshairSnapX: (x) {
-          final spots = primarySeg.spots;
-          if (spots.isEmpty) return x;
-          final clamped = x.clamp(spots.first.x, spots.last.x);
-          // Spot'lar X'e göre sıralı → ikili arama (bkz. nearestSpotIndex).
-          // Bu callback parmak her kaydığında çağrılıyor.
-          return spots[nearestSpotIndex(spots, clamped)].x;
-        },
-        crosshairLabelBuilder: (x) {
-          // x zaten crosshairSnapX ile snap edildi — burada eşleşen spot'u bul.
-          final spots = primarySeg.spots;
-          if (spots.isEmpty) return null;
-          final snapped = spots[nearestSpotIndex(spots, x)];
-          final date = intraday
-              ? DateTime(start.year, start.month, start.day)
-                  .add(Duration(minutes: snapped.x.round()))
-              : start.add(Duration(minutes: (snapped.x * 1440).round()));
-          final title = NumberFormat.currency(
-                  locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
-              .format(snapped.y);
-          final subtitle = intraday
-              ? DateFormat('HH:mm', 'tr_TR').format(date)
-              : DateFormat('d MMM yyyy', 'tr_TR').format(date);
-          return (title, subtitle);
-        },
-        crosshairDetailsBuilder: (x) {
-          // Snap edilmiş spot'u bul (crosshairSnapX zaten uyguladı).
-          final spots = primarySeg.spots;
-          if (spots.isEmpty || _simulate || intraday) return const [];
-          // Diğer crosshair callback'leriyle aynı ikili arama.
-          final snapped = spots[nearestSpotIndex(spots, x)];
-          final tryFmt0 = NumberFormat.currency(
-              symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
-          final firstY = spots.first.y;
-          final gain = snapped.y - firstY;
-          final date = start.add(
-              Duration(minutes: (snapped.x * 1440).round()));
-          final spotDayMs =
-              DateTime(date.year, date.month, date.day)
+            fullMinX: minX,
+            fullMaxX: maxX,
+            height: 360 - 32,
+            builder: buildData,
+            viewportController: viewport,
+            // Sağdaki Y ekseni rezervi (rightTitles.reservedSize ile aynı).
+            // Crosshair bu alana **girmez** — plot area net sınırlı.
+            plotPaddingRight: 60,
+            onViewportChanged: intraday
+                ? null
+                : (viewMinX, viewMaxX) {
+                    final controller = _zoomController;
+                    if (controller == null) return;
+                    final from =
+                        start.add(Duration(minutes: (viewMinX * 1440).round()));
+                    final to =
+                        start.add(Duration(minutes: (viewMaxX * 1440).round()));
+                    controller.updateViewport(from, to);
+                  },
+            crosshairSnapX: (x) {
+              final spots = primarySeg.spots;
+              if (spots.isEmpty) return x;
+              final clamped = x.clamp(spots.first.x, spots.last.x);
+              // Spot'lar X'e göre sıralı → ikili arama (bkz. nearestSpotIndex).
+              // Bu callback parmak her kaydığında çağrılıyor.
+              return spots[nearestSpotIndex(spots, clamped)].x;
+            },
+            crosshairLabelBuilder: (x) {
+              // x zaten crosshairSnapX ile snap edildi — burada eşleşen spot'u bul.
+              final spots = primarySeg.spots;
+              if (spots.isEmpty) return null;
+              final snapped = spots[nearestSpotIndex(spots, x)];
+              final date = intraday
+                  ? DateTime(start.year, start.month, start.day)
+                      .add(Duration(minutes: snapped.x.round()))
+                  : start.add(Duration(minutes: (snapped.x * 1440).round()));
+              final title = NumberFormat.currency(
+                      locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
+                  .format(snapped.y);
+              final subtitle = intraday
+                  ? DateFormat('HH:mm', 'tr_TR').format(date)
+                  : DateFormat('d MMM yyyy', 'tr_TR').format(date);
+              return (title, subtitle);
+            },
+            crosshairDetailsBuilder: (x) {
+              // Snap edilmiş spot'u bul (crosshairSnapX zaten uyguladı).
+              final spots = primarySeg.spots;
+              if (spots.isEmpty || _simulate || intraday) return const [];
+              // Diğer crosshair callback'leriyle aynı ikili arama.
+              final snapped = spots[nearestSpotIndex(spots, x)];
+              final tryFmt0 = NumberFormat.currency(
+                  symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
+              final firstY = spots.first.y;
+              final gain = snapped.y - firstY;
+              final date =
+                  start.add(Duration(minutes: (snapped.x * 1440).round()));
+              final spotDayMs = DateTime(date.year, date.month, date.day)
                   .millisecondsSinceEpoch;
-          double dayBuy = 0, daySell = 0;
-          final txAssets = allTargetAssets ?? assets;
-          for (final a in txAssets) {
-            final addMid = DateTime(a.addedDate.year, a.addedDate.month,
-                    a.addedDate.day)
-                .millisecondsSinceEpoch;
-            if (addMid != spotDayMs) continue;
-            if (a.isBuy) dayBuy += a.totalCostTRY;
-            if (a.isSell) daySell += a.totalCostTRY;
-          }
-          final out = <(String, Color)>[];
-          if (gain.abs() > 0.5) {
-            final positive = gain >= 0;
-            out.add((
-              'Getiri ${positive ? '+' : '−'}${tryFmt0.format(gain.abs())}',
-              positive ? context.c.gain : context.c.loss,
-            ));
-          }
-          if (dayBuy > 0) {
-            out.add((
-              'Alım +${tryFmt0.format(dayBuy)}',
-              context.c.gain,
-            ));
-          }
-          if (daySell > 0) {
-            out.add((
-              'Satış −${tryFmt0.format(daySell)}',
-              context.c.loss,
-            ));
-          }
-          return out;
-        },
-      ),
-      if (showVolume) ...[
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.only(left: 4, right: 4),
-          child: Text(
-            'İŞLEM HACMİ',
-            style: context.t.labelSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: context.c.text58,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 70,
-          child: ListenableBuilder(
-            listenable: viewport,
-            builder: (_, __) {
-              final vp = viewport;
-              final maxY = volumeBars
-                  .fold<double>(0, (m, b) => b.total > m ? b.total : m);
-              // Her bar için 2 spot'lu ayrı bir LineChartBarData → dikey
-              // çubuk. fl_chart'ın BarChart'ında X data-space değil, group
-              // index olduğu için sync viewport için LineChart hilesi kullanıyoruz.
-              final bars = <LineChartBarData>[];
-              for (final b in volumeBars) {
-                final buyPositive = b.buy >= b.sell;
-                final color = buyPositive ? context.c.gain : context.c.loss;
-                bars.add(LineChartBarData(
-                  spots: [FlSpot(b.x, 0), FlSpot(b.x, b.total)],
-                  isCurved: false,
-                  color: color.withValues(alpha: 0.85),
-                  barWidth: 3,
-                  isStrokeCapRound: false,
-                  dotData: const FlDotData(show: false),
-                  belowBarData: BarAreaData(show: false),
+              double dayBuy = 0, daySell = 0;
+              final txAssets = allTargetAssets ?? assets;
+              for (final a in txAssets) {
+                final addMid = DateTime(
+                        a.addedDate.year, a.addedDate.month, a.addedDate.day)
+                    .millisecondsSinceEpoch;
+                if (addMid != spotDayMs) continue;
+                if (a.isBuy) dayBuy += a.totalCostTRY;
+                if (a.isSell) daySell += a.totalCostTRY;
+              }
+              final out = <(String, Color)>[];
+              if (gain.abs() > 0.5) {
+                final positive = gain >= 0;
+                out.add((
+                  'Getiri ${positive ? '+' : '−'}${tryFmt0.format(gain.abs())}',
+                  positive ? context.c.gain : context.c.loss,
                 ));
               }
-              return LineChart(
-                LineChartData(
-                  minX: vp.minX,
-                  maxX: vp.maxX,
-                  minY: 0,
-                  maxY: maxY == 0 ? 1 : maxY * 1.15,
-                  clipData: const FlClipData.all(),
-                  lineTouchData: const LineTouchData(enabled: false),
-                  gridData: const FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
-                  titlesData: const FlTitlesData(show: false),
-                  lineBarsData: bars,
-                ),
-                // Ana grafikle aynı motion token'ları — hacim paneli
-                // periyot değişiminde onunla birlikte morf'lansın, kendi
-                // başına (fl_chart varsayılanı 150ms/linear) kaymasın.
-                duration: SandikMotion.state,
-                curve: SandikMotion.enter,
-              );
+              if (dayBuy > 0) {
+                out.add((
+                  'Alım +${tryFmt0.format(dayBuy)}',
+                  context.c.gain,
+                ));
+              }
+              if (daySell > 0) {
+                out.add((
+                  'Satış −${tryFmt0.format(daySell)}',
+                  context.c.loss,
+                ));
+              }
+              return out;
             },
           ),
-        ),
-      ],
+          if (showVolume) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, right: 4),
+              child: Text(
+                'İŞLEM HACMİ',
+                style: context.t.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: context.c.text58,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: 70,
+              child: ListenableBuilder(
+                listenable: viewport,
+                builder: (_, __) {
+                  final vp = viewport;
+                  final maxY = volumeBars.fold<double>(
+                      0, (m, b) => b.total > m ? b.total : m);
+                  // Her bar için 2 spot'lu ayrı bir LineChartBarData → dikey
+                  // çubuk. fl_chart'ın BarChart'ında X data-space değil, group
+                  // index olduğu için sync viewport için LineChart hilesi kullanıyoruz.
+                  final bars = <LineChartBarData>[];
+                  for (final b in volumeBars) {
+                    final buyPositive = b.buy >= b.sell;
+                    final color = buyPositive ? context.c.gain : context.c.loss;
+                    bars.add(LineChartBarData(
+                      spots: [FlSpot(b.x, 0), FlSpot(b.x, b.total)],
+                      isCurved: false,
+                      color: color.withValues(alpha: 0.85),
+                      barWidth: 3,
+                      isStrokeCapRound: false,
+                      dotData: const FlDotData(show: false),
+                      belowBarData: BarAreaData(show: false),
+                    ));
+                  }
+                  return LineChart(
+                    LineChartData(
+                      minX: vp.minX,
+                      maxX: vp.maxX,
+                      minY: 0,
+                      maxY: maxY == 0 ? 1 : maxY * 1.15,
+                      clipData: const FlClipData.all(),
+                      lineTouchData: const LineTouchData(enabled: false),
+                      gridData: const FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      titlesData: const FlTitlesData(show: false),
+                      lineBarsData: bars,
+                    ),
+                    // Ana grafikle aynı motion token'ları — hacim paneli
+                    // periyot değişiminde onunla birlikte morf'lansın, kendi
+                    // başına (fl_chart varsayılanı 150ms/linear) kaymasın.
+                    duration: SandikMotion.state,
+                    curve: SandikMotion.enter,
+                  );
+                },
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -2178,34 +2163,30 @@ class _PortfolioPerformanceScreenState
 
   /// Gün-bazlı buy/sell TRY hacim. X price chart ile aynı gün-fraction
   /// birimde.
-  List<_VolumeBar> _computeVolumeBars(
-      List<Asset> assets, DateTime start) {
+  List<_VolumeBar> _computeVolumeBars(List<Asset> assets, DateTime start) {
     // Ana chart'ın X birimi ile birebir aynı: kesirli gün (1 saat = 1/24).
     // İşlemi kendi gününün ortasına (12:00) snap et — TradingView tarzı hacim
     // çubuğu tarih çizgisinin üstüne düşer. `inDays` kullanılırsa tam sayıya
     // yuvarlanır ve grafik X ekseni ile hizasız kalır.
     final Map<int, ({double buy, double sell})> perDay = {};
     for (final a in assets) {
-      final dayMidnight = DateTime(
-          a.addedDate.year, a.addedDate.month, a.addedDate.day);
-      final dayIdx =
-          dayMidnight.difference(start).inMinutes ~/ (60 * 24);
+      final dayMidnight =
+          DateTime(a.addedDate.year, a.addedDate.month, a.addedDate.day);
+      final dayIdx = dayMidnight.difference(start).inMinutes ~/ (60 * 24);
       if (dayIdx < 0) continue;
       final prev = perDay[dayIdx] ?? (buy: 0.0, sell: 0.0);
       if (a.isBuy) {
-        perDay[dayIdx] =
-            (buy: prev.buy + a.totalCostTRY, sell: prev.sell);
+        perDay[dayIdx] = (buy: prev.buy + a.totalCostTRY, sell: prev.sell);
       } else if (a.isSell) {
-        perDay[dayIdx] =
-            (buy: prev.buy, sell: prev.sell + a.totalCostTRY);
+        perDay[dayIdx] = (buy: prev.buy, sell: prev.sell + a.totalCostTRY);
       }
     }
     final out = <_VolumeBar>[];
     perDay.forEach((day, tot) {
       if (tot.buy + tot.sell <= 0) return;
       // Bar merkezi gün ortasına — tarih etiketinin altına düşer.
-      out.add(_VolumeBar(
-          x: day.toDouble() + 0.5, buy: tot.buy, sell: tot.sell));
+      out.add(
+          _VolumeBar(x: day.toDouble() + 0.5, buy: tot.buy, sell: tot.sell));
     });
     return out;
   }
@@ -2230,11 +2211,14 @@ class _PortfolioSignalPanel extends ConsumerWidget {
     if (assets.isEmpty) return const SizedBox.shrink();
 
     // Her varlığı analiz et, sadece AL/SAT olanları göster
-    final results = assets.map((asset) {
-      final indicators = TechnicalAnalysisService.analyze(asset, []);
-      final summary = TechnicalAnalysisService.summarize(indicators);
-      return (asset: asset, indicators: indicators, summary: summary);
-    }).where((r) => r.summary.signal != SignalType.neutral).toList();
+    final results = assets
+        .map((asset) {
+          final indicators = TechnicalAnalysisService.analyze(asset, []);
+          final summary = TechnicalAnalysisService.summarize(indicators);
+          return (asset: asset, indicators: indicators, summary: summary);
+        })
+        .where((r) => r.summary.signal != SignalType.neutral)
+        .toList();
 
     if (results.isEmpty) {
       return Container(
@@ -2261,11 +2245,19 @@ class _PortfolioSignalPanel extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Text('TEKNİK SİNYALLER',
-                style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: context.c.text58)),
+            // Başlık ESNEK olmalı: büyük metin ayarında (Dynamic Type)
+            // genişleyip sayaç rozetini sağa itiyor ve satır taşıyordu —
+            // 1.5×'te 61px, 3×'te 415px (320pt'de 470px). Rozet sabit
+            // kalır, daralması gereken taraf başlıktır.
+            Flexible(
+              child: Text('TEKNİK SİNYALLER',
+                  style: context.t.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: context.c.text58),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -2274,8 +2266,7 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(SandikRadius.sm)),
               child: Text('${results.length}',
                   style: context.t.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: context.c.amberText)),
+                      fontWeight: FontWeight.w700, color: context.c.amberText)),
             ),
           ],
         ),
@@ -2325,14 +2316,18 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                               children: [
                                 if (r.asset.showTicker) ...[
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: color.withValues(alpha: 0.18),
-                                      borderRadius: BorderRadius.circular(SandikRadius.sm),
+                                      borderRadius: BorderRadius.circular(
+                                          SandikRadius.sm),
                                     ),
                                     child: Text(r.asset.displayTicker!,
                                         style: context.t.bodySmall?.copyWith(
-                                            fontWeight: FontWeight.w800, color: color, decoration: TextDecoration.none)),
+                                            fontWeight: FontWeight.w800,
+                                            color: color,
+                                            decoration: TextDecoration.none)),
                                   ),
                                   const SizedBox(width: 6),
                                 ],
@@ -2349,7 +2344,8 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                             ),
                             Text(r.asset.type.label,
                                 style: context.t.bodySmall?.copyWith(
-                                    color: context.c.text36, decoration: TextDecoration.none)),
+                                    color: context.c.text36,
+                                    decoration: TextDecoration.none)),
                           ],
                         ),
                       ),
@@ -2384,7 +2380,8 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                               height: 4,
                               decoration: BoxDecoration(
                                 color: c,
-                                borderRadius: BorderRadius.circular(SandikRadius.sm),
+                                borderRadius:
+                                    BorderRadius.circular(SandikRadius.sm),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -2405,7 +2402,8 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     '$count/5 gösterge $label diyor  ·  ${fmtPct(r.summary.confidence, digits: 0)} güven',
-                    style: context.t.bodySmall?.copyWith(color: context.c.text58),
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text58),
                   ),
                 ],
               ),
@@ -2447,8 +2445,7 @@ class _LeaderboardChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: context.c.amberFill.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -2494,8 +2491,7 @@ class _PortfolioFullscreenChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.c.overlay,
             borderRadius: BorderRadius.circular(SandikRadius.md),
-            border:
-                Border.all(color: context.c.hairline),
+            border: Border.all(color: context.c.hairline),
           ),
           child: Icon(
             Icons.fullscreen_rounded,
