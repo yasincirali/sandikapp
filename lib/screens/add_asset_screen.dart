@@ -13,6 +13,7 @@ import '../services/price_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_deposit_screen.dart';
 import 'paywall_screen.dart';
@@ -274,9 +275,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
 
   double? _parse(String text) {
-    if (text.trim().isEmpty) return null;
-    final val = double.tryParse(text.trim().replaceAll(',', '.'));
-    if (val == null || !val.isFinite) return null;
+    // Türkçede `.` BİNLİK ayracıdır. Eski hâli `replaceAll(',', '.')` idi ve
+    // "1.000" girdisini 1.0 olarak okuyordu; kullanıcı 1000 adet yazıp
+    // portföyüne 1 adet kaydediyordu.
+    final val = parseTrNumber(text);
+    if (val == null) return null;
     // Aşırı büyük değerleri engelle (Simetrik UI için limit)
     if (val > 1000000000000) return 999999999999;
     return val;

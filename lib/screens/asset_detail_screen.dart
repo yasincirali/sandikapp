@@ -390,8 +390,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     const SizedBox(width: 12),
                     FilledButton(
                       onPressed: () {
-                        final p = double.tryParse(
-                            _manualPriceCtrl.text.replaceAll(',', '.'));
+                        // Türkçede `.` binlik ayracıdır; ham desen
+                        // "1.000" fiyatını 1.0 olarak okuyordu.
+                        final p = parseTrNumber(_manualPriceCtrl.text);
                         if (p != null && p > 0) {
                           ref
                               .read(portfolioProvider.notifier)

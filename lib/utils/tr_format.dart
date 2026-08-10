@@ -52,3 +52,58 @@ String fmtTRYCompact(double value) {
   }
   return '$sign₺${fmtNum(abs, digits: 0)}';
 }
+
+/// Kullanıcının yazdığı sayıyı Türkçe biçime göre çözer.
+///
+/// **Neden gerekli:** kod tabanında dört ayrı yerde
+/// `double.tryParse(text.replaceAll(',', '.'))` deseni vardı. Bu desen
+/// Türkçe girdide **sessizce yanlış sonuç** verir, çünkü `.` binlik
+/// ayracıdır:
+///
+/// | girdi | eski sonuç | doğrusu |
+/// |---|---|---|
+/// | `1.000` | **1.0** | 1000 |
+/// | `10.000` | **10.0** | 10000 |
+/// | `1.234,5` | **null** | 1234.5 |
+/// | `1,5` | 1.5 | 1.5 ✓ |
+///
+/// Yani "1.000 lot" yazan kullanıcı portföyüne **1 lot** kaydediyordu ve
+/// hiçbir uyarı almıyordu — finansal bir uygulamada sessiz veri bozulması.
+///
+/// Kural:
+/// - Hem `.` hem `,` varsa: SONUNCUSU ondalık ayracıdır, diğeri binliktir.
+/// - Yalnızca `,` varsa: ondalık ayracıdır (`1,5` → 1.5).
+/// - Yalnızca `.` varsa: belirsiz. Nokta sonrası **tam 3 hane** ve birden
+///   fazla grup varsa binlik sayılır (`1.000`, `1.000.000`); aksi halde
+///   ondalık kabul edilir (`1.5` → 1.5). Bu, hem klavyeden `.` ile ondalık
+///   yazan kullanıcıyı hem binlik ayracını korur.
+double? parseTrNumber(String text) {
+  var s = text.trim();
+  if (s.isEmpty) return null;
+  s = s.replaceAll(RegExp(r'[\s\u00A0₺$€£]'), '');
+  if (s.isEmpty) return null;
+
+  final lastDot = s.lastIndexOf('.');
+  final lastComma = s.lastIndexOf(',');
+
+  if (lastDot >= 0 && lastComma >= 0) {
+    // İkisi de var → sonuncusu ondalık.
+    if (lastComma > lastDot) {
+      s = s.replaceAll('.', '').replaceFirst(',', '.');
+    } else {
+      s = s.replaceAll(',', '');
+    }
+  } else if (lastComma >= 0) {
+    s = s.replaceFirst(',', '.');
+  } else if (lastDot >= 0) {
+    // Yalnızca nokta: binlik mi ondalık mı?
+    final parts = s.split('.');
+    final allGroupsAreThree =
+        parts.length > 1 && parts.skip(1).every((p) => p.length == 3);
+    if (allGroupsAreThree) s = s.replaceAll('.', '');
+  }
+
+  final val = double.tryParse(s);
+  if (val == null || !val.isFinite) return null;
+  return val;
+}

@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import 'custom_loading_indicator.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
@@ -76,12 +77,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   String _fmt(double v) =>
       v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
 
-  double? _parse(String text) {
-    if (text.trim().isEmpty) return null;
-    final val = double.tryParse(text.trim().replaceAll(',', '.'));
-    if (val == null || !val.isFinite) return null;
-    return val;
-  }
+  /// Türkçe biçimi doğru çözer. Eski hâli `replaceAll(',', '.')` idi ve
+  /// "1.000" girdisini 1.0 olarak okuyordu — kullanıcı 1000 lot yazıp
+  /// portföyüne 1 lot kaydediyordu, üstelik hiçbir uyarı almadan.
+  double? _parse(String text) => parseTrNumber(text);
 
   String get _unitLabel => widget.asset.unitLabel;
 

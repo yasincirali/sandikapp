@@ -125,7 +125,18 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     }
   }
 
-  void _confirmDelete(BuildContext ctx, WidgetRef ref, Asset asset) {
+  /// Kaydırma → "Sil": pozisyonun TÜM lot'ları gider.
+  ///
+  /// Kullanıcının gördüğü satır bir kayıt değil, aynı `positionKey`'e düşen
+  /// lot yığınıdır. Eskiden buraya `p.representative` (= en son eklenen alım)
+  /// geliyordu ve yalnızca o siliniyordu; parça parça eklenmiş bir varlık
+  /// "son eklenen kadarı" eksilmiş halde listede kalıyordu.
+  void _confirmDelete(BuildContext ctx, WidgetRef ref, Position position) {
+    final asset = position.representative;
+    // Silinecek gerçek kayıt sayısı — deleteLog izleri lot listesinde
+    // olabilir ama silinmez.
+    final lots = position.lots.where((l) => !l.isDeleteLog).toList();
+    final multi = lots.length > 1;
     showDialog<void>(
       context: ctx,
       builder: (dlg) => AlertDialog(
@@ -134,7 +145,10 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('"${asset.name}" kalıcı olarak silinsin mi?'),
+            Text(multi
+                ? '"${asset.name}" için ${lots.length} işlem kaydı '
+                    '(alım/satım/temettü) kalıcı olarak silinsin mi?'
+                : '"${asset.name}" kalıcı olarak silinsin mi?'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -169,7 +183,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
               try {
                 await ref
                     .read(portfolioProvider.notifier)
-                    .deleteAsset(asset.id);
+                    .deletePositionLots(lots);
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Varlık silindi')),
@@ -370,8 +384,8 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                                                   lots: p.lots,
                                                 )),
                                       ),
-                                      onDelete: (p) => _confirmDelete(
-                                          context, ref, p.representative),
+                                      onDelete: (p) =>
+                                          _confirmDelete(context, ref, p),
                                       onAdd: (p) => showQuickAdjustDialog(
                                           context, ref,
                                           asset: p.asDisplayAsset(),

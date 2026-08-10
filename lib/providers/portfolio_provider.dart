@@ -374,6 +374,66 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
   }
 
+  /// Bir pozisyonun TÜM lot'larını siler (alım + satım + temettü).
+  ///
+  /// Parça parça eklenmiş bir varlıkta UI'daki satır tek bir kayıt değil,
+  /// aynı `positionKey`'e düşen birkaç lot'tur. Kaydırıp "Sil" dendiğinde
+  /// eskiden yalnızca `representative` (= en son eklenen alım) siliniyordu;
+  /// geri kalan lot'lar kaldığı için satır azalmış miktarla yeniden
+  /// beliriyordu. Silme, kullanıcının gördüğü satırın tamamını kaldırmalı.
+  ///
+  /// Her lot için [deleteAsset] ile aynı deleteLog kaydı üretilir — geçmiş
+  /// grafiği ve realize kâr/zarar hesabı bu loglara dayanır.
+  Future<void> deletePositionLots(List<Asset> lots) async {
+    final ids = lots.map((l) => l.id).toSet();
+    if (ids.isEmpty) return;
+
+    final current = state.valueOrNull;
+    final logs = <Asset>[];
+    for (final lot in lots) {
+      // deleteLog satırlarının kendisi silinmez; onlar zaten kayıt değil iz.
+      if (lot.isDeleteLog) continue;
+      logs.add(Asset(
+        id: _uuid.v4(),
+        userId: lot.userId,
+        name: lot.name,
+        ticker: lot.ticker,
+        type: lot.type,
+        quantity: lot.quantity,
+        purchasePrice: lot.purchasePrice,
+        currency: lot.currency,
+        notes: lot.notes,
+        isManualPrice: lot.isManualPrice,
+        subCategory: lot.subCategory,
+        unitType: lot.unitType,
+        purchaseFxRate: lot.purchaseFxRate,
+        currentPrice: lot.currentPrice,
+        lastUpdated: lot.lastUpdated,
+        kind: AssetKind.deleteLog,
+        refAssetId: lot.id,
+      ));
+    }
+
+    for (final log in logs) {
+      await SupabaseService.instance.insertAsset(log);
+    }
+    if (logs.isNotEmpty) {
+      AnalyticsService.instance.logAssetDeleted(type: logs.first.type.name);
+    }
+    for (final id in ids) {
+      await SupabaseService.instance.deleteAsset(id);
+    }
+
+    if (current != null) {
+      state = AsyncData(current.copyWith(
+        assets: [
+          ...logs,
+          ...current.assets.where((a) => !ids.contains(a.id)),
+        ],
+      ));
+    }
+  }
+
   Future<void> updateManualPrice(Asset asset, double price) async {
     asset.currentPrice = price;
     asset.lastUpdated = DateTime.now();

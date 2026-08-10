@@ -46,12 +46,12 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
 
   // Canlı önizleme: kullanıcı formu doldururken vade sonu net getiri.
   double? get _previewMaturityNet {
-    final p = double.tryParse(_principalCtl.text.replaceAll(',', '.'));
-    final r = double.tryParse(_rateCtl.text.replaceAll(',', '.'));
+    final p = parseTrNumber(_principalCtl.text);
+    final r = parseTrNumber(_rateCtl.text);
     if (p == null || r == null || p <= 0 || r <= 0 || _termDays <= 0) {
       return null;
     }
-    final tax = double.tryParse(_taxCtl.text.replaceAll(',', '.')) ??
+    final tax = parseTrNumber(_taxCtl.text) ??
         DepositService.defaultTaxRate;
     final terms = DepositTerms(
       start: _start,
@@ -96,12 +96,12 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
     }
     setState(() => _saving = true);
     try {
-      final principal = double.parse(_principalCtl.text.replaceAll(',', '.'));
-      final rate = double.parse(_rateCtl.text.replaceAll(',', '.'));
+      final principal = parseTrNumber(_principalCtl.text)!;
+      final rate = parseTrNumber(_rateCtl.text)!;
       final taxText = _taxCtl.text.trim();
       final tax = taxText.isEmpty
           ? DepositService.defaultTaxRate
-          : double.parse(taxText.replaceAll(',', '.'));
+          : parseTrNumber(taxText)!;
 
       final sub = DepositService.encode(
         start: _start,
@@ -206,7 +206,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
               hint: 'ör. 50000',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
-                final n = double.tryParse((v ?? '').replaceAll(',', '.'));
+                final n = parseTrNumber(v ?? '');
                 if (n == null || n <= 0) return 'Geçerli bir anapara girin';
                 return null;
               },
@@ -220,7 +220,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
               hint: 'ör. 45.5',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
-                final n = double.tryParse((v ?? '').replaceAll(',', '.'));
+                final n = parseTrNumber(v ?? '');
                 if (n == null || n <= 0 || n > 500) {
                   return '0 ile 500 arası bir oran girin';
                 }
@@ -271,7 +271,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
                 if ((v ?? '').trim().isEmpty) return null;
-                final n = double.tryParse(v!.replaceAll(',', '.'));
+                final n = parseTrNumber(v ?? '');
                 if (n == null || n < 0 || n > 100) {
                   return '0 ile 100 arası bir oran girin';
                 }
@@ -291,7 +291,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
             if (maturityNet != null)
               _PreviewCard(
                 principal:
-                    double.parse(_principalCtl.text.replaceAll(',', '.')),
+                    parseTrNumber(_principalCtl.text)!,
                 maturityNet: maturityNet,
                 termDays: _termDays,
                 money: money,
