@@ -16,11 +16,11 @@ gerçek yerleşim, gerçek metin ölçekleri)
 | # | Bulgu | Önem | Kanıt |
 |---|---|---|---|
 | 1 | **Taşma** — 3 ekran, 7 yer (2'si normal font!) | 🔴 YÜKSEK | Ölçüldü: 1.0×'te 138px, 3×'te 415px |
-| 2 | Boşluk ölçeği fiilen kullanılmıyor (%92 ham sayı) | 🟠 ORTA | 493 ham / 44 token |
+| 2 | ✅ Boşluk ölçeği fiilen kullanılmıyor | ÇÖZÜLDÜ | Kapsam %37 → %84 |
 | 3 | 66 kart kabuğu elle kuruluyor — ortak komponent yok | 🟠 ORTA | Sayıldı |
 | 4 | 6 ekranda taşma testi yok | 🟠 ORTA | 5 test / 11 büyük ekran |
 | 5 | ~~Sabit yükseklikli butonlar kırpar~~ | ❌ GEÇERSİZ | Hepsi kare ikon kutusuymuş |
-| 6 | `boldText` sistem ayarı yok sayılıyor | 🟡 DÜŞÜK | Kaynak |
+| 6 | ✅ `boldText` sistem ayarı yok sayılıyor | ÇÖZÜLDÜ | `context.t` |
 | 7 | Ölü ekran (`asset_detail_screen`) | 🟡 DÜŞÜK | 0 çağrı yeri |
 
 **En önemlisi 1. madde.** Diğerleri bakım/tutarlılık borcu; 1. madde
@@ -120,10 +120,25 @@ Ham değerlerin **%59'u** ölçeğe uymuyor:
 **2pt adımlı gayriresmî bir ölçek** var ve resmî ölçek (4pt adım) onu
 karşılamıyor.
 
-**Öneri:** 493 kullanımı yeniden yazmak yerine **ölçeği gerçeğe uydur**:
-`xs=4, sm=8, md=16...` yanına `xxs=2, xs2=6, smd=12` gibi ara adımlar ekle,
-sonra en sık 3-4 değeri token'a çevir. Büyük patlama refactor'ı bu iş için
-maliyet/fayda açısından yanlış.
+### ✅ ÇÖZÜLDÜ (2026-08-10)
+
+878 boşluk kullanımının tamamı ölçüldü. En sık **5 ölçek dışı değer**
+(12, 10, 14, 6, 20) token'a eklenince kapsam **%37 → %84** çıkıyor.
+
+Ölçek 2pt adımlı hale getirildi: `xxs=2, xs=4, xs2=6, sm=8, sm2=10,
+smd=12, md2=14, md=16, lgs=20, lg=24, xl=32, xxl=48`.
+
+**555 çağrı yeri değiştirilmedi ve tek piksel kımıldamadı.** Alternatif —
+hepsini eski ölçeğe zorlamak — görsel yerleşimi piksel piksel kaydırırdı;
+riski yüksek, faydası tartışmalı. Ölçeği veriye uydurmak aynı tutarlılığı
+sıfır görsel değişiklikle veriyor.
+
+Sınıfın doküman yorumu da düzeltildi: "8'lik ızgara" yazıyordu, kod hiçbir
+zaman öyle değildi.
+
+Regresyon: `spacing_scale_test.dart` — **cırcır (ratchet)** testi. Kalan
+48 ölçek dışı kullanım dondurulur; sayı artarsa kırılır, azalırsa eşik
+düşürülür. Kanaryayla doğrulandı.
 
 ---
 
@@ -235,13 +250,28 @@ BoxConstraints(minHeight: …)` kullan — kutu metinle birlikte büyür.
 
 ---
 
-## 6. 🟡 `boldText` sistem ayarı yok sayılıyor
+## 6. ✅ ÇÖZÜLDÜ — `boldText` sistem ayarı
 
-`MediaQuery.highContrastOf` destekleniyor ([sandik.dart:745](lib/theme/sandik.dart#L745)
-→ `highContrast()` paleti). Ama `MediaQuery.boldTextOf` hiç okunmuyor.
+`MediaQuery.highContrastOf` destekleniyordu ama `boldTextOf` hiç
+okunmuyordu: iOS'ta "Kalın Metin" ayarını açan kullanıcı için hiçbir şey
+değişmiyordu.
 
-iOS'ta "Kalın Metin" ayarı açık olan kullanıcı için yazı ağırlığı artmaz.
-Küçük bir eksik; `fontWeight` haritalaması gerekir.
+Çözüm `context.t` içinde — tüm metin stilleri zaten oradan geçiyor,
+`context.c`'nin `highContrast` için yaptığının aynısı. Tek noktada
+çözülür, hiçbir ekran değişmez.
+
+**`FontWeight.bold` sabiti kullanılmadı.** Marka tipografisi w500–w900
+arası beş ağırlık kullanıyor; hepsini w700'e eşitlemek hiyerarşiyi
+düzleştirirdi (w800 başlık ile w500 gövde ayırt edilemez olurdu). Bunun
+yerine kademeli artış: w400 → w600 (tek kademe gözle fark edilmiyor),
+üsttekiler tek adım, w900 tavanda kalır.
+
+Regresyon: `bold_text_support_test.dart` (4 test) — kapalıyken
+değişmemesi, açıkken artması, tavanda taşmaması ve **hiyerarşinin
+korunması**. Kanaryayla doğrulandı.
+
+Ayrıca kalın glifler daha geniş olduğu için taşma testine "en kötü durum"
+grubu eklendi: **kalın metin + 3.0× ölçek + 320pt** üç ekranda da temiz.
 
 ---
 

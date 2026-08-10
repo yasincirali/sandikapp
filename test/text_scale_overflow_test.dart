@@ -109,6 +109,7 @@ Future<String?> _pumpAndCatch(
   Widget screen, {
   required double width,
   required double scale,
+  bool boldText = false,
 }) async {
   tester.view.physicalSize = Size(width * 3, 900 * 3);
   tester.view.devicePixelRatio = 3.0;
@@ -123,7 +124,10 @@ Future<String?> _pumpAndCatch(
       ],
       child: MaterialApp(
         home: MediaQuery(
-          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+          data: MediaQueryData(
+            textScaler: TextScaler.linear(scale),
+            boldText: boldText,
+          ),
           child: screen,
         ),
       ),
@@ -178,6 +182,23 @@ void main() {
         });
       }
     }
+  });
+
+  // En kötü durum: "Kalın Metin" + en büyük ölçek + en dar ekran birlikte.
+  // Kalın glifler daha geniştir; ölçek testleri tek başına bunu kapsamaz.
+  group('en kötü durum — kalın metin + 3.0× + 320pt', () {
+    final screens = <String, Widget>{
+      'PortfolioPerformance': const PortfolioPerformanceScreen(),
+      'Charts': const ChartsScreen(),
+      'AddAsset': const Scaffold(body: AddAssetScreen()),
+    };
+    screens.forEach((name, w) {
+      testWidgets('$name taşmamalı', (t) async {
+        final err = await _pumpAndCatch(t, w,
+            width: 320, scale: 3.0, boldText: true);
+        expect(err, isNull, reason: '$name: $err');
+      });
+    });
   });
 
   // En büyük ekran (2.648 satır) ve taşma testi hiç yoktu. Form alanları

@@ -149,18 +149,42 @@ abstract final class SandikRadius {
       BorderRadius.vertical(top: Radius.circular(lg));
 }
 
-/// 8'lik boşluk ızgarası.
+/// Boşluk ölçeği — 2pt adımlı.
 ///
-/// Önceki durumda ana sayfada SizedBox yükseklikleri 3,4,8,10,12,16,24,40
-/// gibi keyfi değerlerdi — hiyerarşi boşlukla değil yalnızca yazı tipiyle
-/// kuruluyordu. Bu ölçek dikey ritmi tek bir tabana oturtur.
+/// **Neden 8'lik ızgara değil:** bu sınıf başta 4/8/16/24/32/48 olarak
+/// tanımlandı ve "8'lik ızgara" olduğu yazıyordu. Kod ölçüldüğünde
+/// (2026-08-10, 878 boşluk kullanımı) gerçeğin farklı olduğu görüldü:
 ///
-/// [xs] ölçeğin dışında kalan tek değer (4): ikon–metin gibi sıkı
-/// eşleşmelerde 8 fazla geliyor.
+/// | değer | kullanım | ölçekte miydi? |
+/// |---|---|---|
+/// | 12 | 125 | ❌ |
+/// | 8  | 125 | ✅ |
+/// | 10 | 83  | ❌ |
+/// | 16 | 81  | ✅ |
+/// | 14 | 81  | ❌ |
+/// | 6  | 80  | ❌ |
+///
+/// Kullanımın **%63'ü ölçek dışıydı** ve bu rastgelelik değildi — 12, 10,
+/// 14, 6 tek başına 369 kullanım. Yani pratikte 2pt adımlı bir ölçek
+/// zaten vardı; resmî ölçek onu karşılamıyordu.
+///
+/// İki seçenek vardı: 555 kullanımı ölçeğe zorlamak (görsel yerleşimi
+/// bozar, riski yüksek, faydası tartışmalı) ya da ölçeği gerçeğe uydurmak.
+/// İkincisi seçildi: ara adımlar eklenince token kapsamı **%37 → %84**
+/// çıkıyor ve tek bir piksel bile kımıldamıyor.
+///
+/// Yeni kod bu ölçeğin dışına çıkmamalı; `spacing_scale_test.dart` yeni
+/// ölçek-dışı değerlerin sayısının artmasını engeller.
 abstract final class SandikSpace {
+  static const double xxs = 2;
   static const double xs = 4;
+  static const double xs2 = 6;
   static const double sm = 8;
+  static const double sm2 = 10;
+  static const double smd = 12;
+  static const double md2 = 14;
   static const double md = 16;
+  static const double lgs = 20;
   static const double lg = 24;
   static const double xl = 32;
   static const double xxl = 48;
@@ -396,7 +420,60 @@ extension SandikTypography on BuildContext {
   /// - `bodyLarge` 15 / `bodyMedium` 13 / `bodySmall` 11 — gövde
   /// - `labelLarge` 11 / `labelMedium` 10 / `labelSmall` 9 — etiket (letterSpacing'li)
   /// - `displaySmall` 32 / `displayMedium` 40 — büyük para tutarları (gold)
-  TextTheme get t => Theme.of(this).textTheme;
+  ///
+  /// Sistem **"Kalın Metin"** (iOS Settings → Erişilebilirlik → Ekran ve
+  /// Metin Boyutu → Kalın Metin) ayarı açıksa tüm ağırlıklar bir kademe
+  /// yukarı çıkar. `context.c`'nin `highContrast` için yaptığının aynısı:
+  /// tek bir geçiş noktasında çözülür, çağıran hiçbir şey bilmez.
+  TextTheme get t {
+    final base = Theme.of(this).textTheme;
+    return MediaQuery.boldTextOf(this) ? base.boldened : base;
+  }
+}
+
+/// Sistem "Kalın Metin" ayarı için ağırlık yükseltmesi.
+extension SandikBoldText on TextTheme {
+  /// Her stilin ağırlığını bir kademe artırır.
+  ///
+  /// Neden `FontWeight.bold` sabiti değil: marka tipografisi w500–w900
+  /// arasında **beş** farklı ağırlık kullanıyor. Hepsini `bold`a (w700)
+  /// eşitlemek hiyerarşiyi düzleştirir — w800 başlık ile w500 gövde aynı
+  /// görünür. Kademeli artış hiyerarşiyi korur.
+  ///
+  /// w900 zaten en üstteki ağırlıktır; daha yukarısı yok, olduğu gibi kalır.
+  TextTheme get boldened {
+    TextStyle? up(TextStyle? s) {
+      if (s == null) return null;
+      // `FontWeight` `==`'i ezdiği için const map anahtarı olamaz;
+      // sayısal ağırlık (`value`: 100–900) üzerinden ilerlenir.
+      final w = s.fontWeight ?? FontWeight.w400;
+      // w400 → w600 (iki kademe): normal gövde metninde tek kademe (w500)
+      // gözle fark edilmiyor. Üstteki ağırlıklarda tek adım yeterli.
+      final step = w.value <= FontWeight.w400.value ? 200 : 100;
+      final next = (w.value + step).clamp(100, 900);
+      return s.copyWith(
+        fontWeight: FontWeight.values.firstWhere((f) => f.value == next),
+      );
+    }
+
+    return TextTheme(
+      displayLarge: up(displayLarge),
+      displayMedium: up(displayMedium),
+      displaySmall: up(displaySmall),
+      headlineLarge: up(headlineLarge),
+      headlineMedium: up(headlineMedium),
+      headlineSmall: up(headlineSmall),
+      titleLarge: up(titleLarge),
+      titleMedium: up(titleMedium),
+      titleSmall: up(titleSmall),
+      bodyLarge: up(bodyLarge),
+      bodyMedium: up(bodyMedium),
+      bodySmall: up(bodySmall),
+      labelLarge: up(labelLarge),
+      labelMedium: up(labelMedium),
+      labelSmall: up(labelSmall),
+    );
+  }
 }
 
 /// Finansal sayı stilleri — tabular figür hizalaması gerektiren yerler için.
