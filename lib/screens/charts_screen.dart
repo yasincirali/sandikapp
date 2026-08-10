@@ -160,9 +160,10 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                 border: Border.all(color: ctx.c.danger.withValues(alpha: 0.25)),
               ),
               child: Text(
-                'Bu bir satış değil — kayıt tamamen silinir ve geçmiş '
-                'grafiğinden de düşer. Sattıysan bunun yerine "Çıkar" '
-                'kullan; realize kâr/zararın ve alım geçmişin korunur.',
+                'Bu bir satış değil — varlık portföyden çıkar, toplamlardan '
+                've geçmiş grafiğinden düşer. İşlem kayıtları "Portföy '
+                'Hareketleri"nde kalır. Sattıysan bunun yerine "Sat" kullan; '
+                'realize kâr/zararın hesaba dahil olur.',
                 style:
                     TextStyle(fontSize: 12, height: 1.4, color: ctx.c.text90),
               ),
@@ -719,42 +720,54 @@ Widget _rowAction(
   required String label,
 }) {
   return Expanded(
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () async {
-        // Panel kapanışı bir ANİMASYONDUR. Eskiden `close()` çağrılıp hemen
-        // ardından dialog açılıyordu; dialog açılış animasyonu araya girince
-        // kapanış yarıda kalıyor ve dialog kapandığında panel hâlâ açık
-        // duruyordu.
-        //
-        // Sıra tersine çevrildi: önce aksiyonun kendisi (dialog) beklenir,
-        // sonra panel kapatılır. `Slidable.of` referansı ÖNCEDEN alınır —
-        // await sonrası bu context artık geçerli olmayabilir.
-        final slidable = Slidable.of(context);
-        await onPressed();
-        slidable?.close();
-      },
-      child: Container(
-        color: background,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: foreground, size: 20),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                maxLines: 1,
-                style: context.t.bodySmall?.copyWith(
-                  color: foreground,
-                  fontWeight: FontWeight.w600,
+    // `Slidable.of` bir InheritedWidget aramasıdır: yalnızca `Slidable`'ın
+    // ALTINDAKİ bir context'ten çalışır. Buraya gelen `context`
+    // `_AssetCardState.build`'in context'idir ve `Slidable` o build içinde
+    // kurulduğu için ONUN ÜSTÜNDE kalır → arama `null` döner, `close()`
+    // sessizce hiçbir şey yapmazdı. Panel her aksiyondan sonra açık
+    // kalıyordu; "Sil" düzelmiş görünüyordu çünkü onay dialogu listeyi
+    // yeniden kurup paneli yan etkiyle sıfırlıyordu.
+    //
+    // `Builder` aramayı bir seviye aşağı taşır — artık gerçek `Slidable`
+    // bulunur.
+    child: Builder(
+      builder: (innerContext) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () async {
+          // Panel kapanışı bir ANİMASYONDUR. Eskiden `close()` çağrılıp hemen
+          // ardından dialog açılıyordu; dialog açılış animasyonu araya girince
+          // kapanış yarıda kalıyor ve dialog kapandığında panel hâlâ açık
+          // duruyordu.
+          //
+          // Sıra tersine çevrildi: önce aksiyonun kendisi (dialog) beklenir,
+          // sonra panel kapatılır. `Slidable.of` referansı ÖNCEDEN alınır —
+          // await sonrası bu context artık geçerli olmayabilir.
+          final slidable = Slidable.of(innerContext);
+          await onPressed();
+          slidable?.close();
+        },
+        child: Container(
+          color: background,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: foreground, size: 20),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  style: context.t.bodySmall?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
