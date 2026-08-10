@@ -59,13 +59,23 @@
 - **Emulators**: pixel7_1 (emulator-5554) ve pixel7_2 (emulator-5556) — her ikisine deploy edilir
 - **Development Mode**: Debug with hot reload/restart enabled
 
-### Emülatör Dağıtımı — HER DEĞİŞİKLİKTEN SONRA
-
-Kod değiştiren her turdan sonra emülatörlerdeki APK güncellenir:
+### Emülatör Dağıtımı — PUSH ÖNCESİ (her tur değil)
 
 ```bash
 bash tool/deploy_emulators.sh
 ```
+
+**Ne zaman koşulur (2026-08-11 kararı):** Tam paket + APK build iterasyonu
+yavaşlattığı için feature/bugfix turlarında ATLANIR. Şu üç durumda koşulur:
+- Push / commit öncesi (regresyon kapısı),
+- Kullanıcı görsel doğrulama ya da "emülatöre at" istediğinde,
+- Bir dizi değişikliğin sonunda, iş tamamlandığında.
+
+**Feature turunda bunun yerine:** `flutter analyze` + yalnızca o turda
+yazılan/etkilenen test dosyası (`flutter test test/<dosya>.dart`).
+Testler yine YAZILIR — sadece tam paket her turda koşulmaz.
+
+**flutter yolu:** `/c/flutter/bin/flutter` (PATH'te yok, Bash aracıyla çağır).
 
 Betik sırayla: analyze → test → build → install (bağlı tüm emülatörlere)
 → başlat → çökme kontrolü. Herhangi bir adım kırılırsa **durur**; kırık APK

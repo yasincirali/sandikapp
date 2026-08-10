@@ -19,6 +19,42 @@
 
 ---
 
+## 🗄️ BEKLEYEN MIGRATION: `0027_soft_delete_lots.sql` (2026-08-11)
+
+**Ne:** `assets` tablosuna `deleted_at TIMESTAMPTZ` sütunu + aktif kayıtlar
+için kısmi indeks.
+
+**Neden gerekli:** Silme artık FİZİKSEL değil, YUMUŞAK. Lot'lar yerinde
+kalır ve damgalanır; böylece silinen varlığın Alım/Satım/Temettü satırları
+"Portföy Hareketleri"nde durmaya devam eder. Toplamlar/grafik/aggregate
+damgalı kayıtları eler (`Asset.isActive`).
+
+**Uygulanmazsa ne olur:** Silme UPDATE'i patlar (bilinmeyen sütun) →
+kullanıcı varlık silemez. Bloker.
+
+**Nasıl:**
+```bash
+supabase db push
+```
+veya Dashboard → SQL Editor → `supabase/migrations/0027_soft_delete_lots.sql`.
+
+**Geriye dönük uyumlu:** Mevcut satırlarda NULL = aktif, davranış değişmez.
+Daha önce FİZİKSEL silinmiş kayıtlar geri gelmez (veri yok) — bu migration
+öncesi silinen varlıkların geçmişi kurtarılamaz.
+
+---
+
+## ✅ UYGULANDI: `0026_delete_log_count.sql` (2026-08-11)
+
+`assets.deleted_count INTEGER NOT NULL DEFAULT 0` sütunu eklendi. Silme
+artık lot başına değil, pozisyon başına TEK kayıt yazıyor ve kaç ledger
+satırının silindiğini bu sütunda taşıyor → "Silindi · 3 kayıt".
+
+Eski `delete_log` satırlarında sütun 0 kalır; uygulama 0'ı "sayı bilinmiyor"
+sayıp düz "Silindi" gösterir. Bekleyen bir iş yok.
+
+---
+
 ## 💰 MONETİZASYON: `paywall_enabled` bayrağı (2026-07-13)
 
 **Şu an durum:** Paywall UI iskeleti hazır ama **Firebase Remote Config** üzerinden `paywall_enabled = false` ile kapalı. Kullanıcı hiçbir premium/ödeme ekranı görmüyor.
