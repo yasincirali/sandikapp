@@ -23,6 +23,7 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/transaction_row.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
+import 'all_transactions_screen.dart';
 import 'performance_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 
@@ -38,7 +39,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   AssetType? _typeFilter;
   final _scrollCtrl = ScrollController();
   bool _reloading = false;
-  bool _showAllTransactions = false;
 
   Future<void> _reload() async {
     if (_reloading) return;
@@ -164,6 +164,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ];
     }
 
+    // "PORTFÖY HAREKETLERİ" listesi aggregate'i KULLANAMAZ.
+    //
+    // `positionedAssets` her varlığı tek bir sentetik pozisyona indirger:
+    // sell lot'ları buy miktarından düşer, temettü ve deleteLog satırları
+    // tamamen elenir. Summary/dağılım için doğru olan bu davranış, hareket
+    // listesi için yanlıştı — kullanıcı Al/Sat/Temettü yaptığında listede
+    // yeni bir kayıt GÖRÜNMÜYORDU; yalnızca mevcut satırın miktarı değişiyordu.
+    //
+    // Hareketler ham ledger'dan gelir: her işlem kendi satırıdır.
+    // `TransactionRow` dört türü de (Alım/Satım/Temettü/Silindi) kendi ikon,
+    // etiket ve tutarıyla çiziyor.
+    //
+    // Silinen varlığın satırları da BURADA KALIR: silme artık fiziksel
+    // değil, `deleted_at` damgasıdır. Böylece "ne aldım, ne sattım, sonra
+    // sildim" zinciri okunabilir. Damgalı satırlar `aggregatePositions`
+    // ve `PortfolioState.activeAssets` tarafından elendiği için hiçbir
+    // toplama girmez — yalnızca bu listede görünürler.
+    //
+    // Silme işleminin kendisi ayrıca bir `deleteLog` satırı yazar; o da
+    // en üstte "Silindi · N kayıt" olarak görünür.
+    final List<Asset> ledgerAssets;
+    if (_view == '') {
+      ledgerAssets = myState.assets;
+    } else if (_view != null && _view!.isNotEmpty) {
+      ledgerAssets = allPartnerAssets[_view!] ?? const [];
+    } else {
+      ledgerAssets = [
+        ...myState.assets,
+        for (final list in allPartnerAssets.values) ...list,
+      ];
+    }
+
     final filteredForSummary = _typeFilter == null
         ? displayedAssets
         : displayedAssets.where((a) => a.type == _typeFilter).toList();
@@ -199,7 +231,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             : 'O';
         for (final assets in allPartnerAssets.values) {
           for (final a in assets) {
-            if (!a.isBuy) continue;
+            // `isActive`: yumuşak silinmiş lot toplama girmemeli.
+            if (!a.isBuy || !a.isActive) continue;
             rightTotal += myState.toTRY(a.totalValue, a.currency);
           }
         }
@@ -216,15 +249,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         rightLabel = name.split(' ').first;
         rightInitial = name[0].toUpperCase();
         for (final a in allPartnerAssets[_view!] ?? <Asset>[]) {
-          if (!a.isBuy) continue;
+          if (!a.isBuy || !a.isActive) continue;
           rightTotal += myState.toTRY(a.totalValue, a.currency);
         }
       }
     }
 
-    final filteredAssets = _typeFilter == null
-        ? displayedAssets
-        : displayedAssets.where((a) => a.type == _typeFilter).toList();
+    // Hareket sayısı — "Tümünü Gör" rozeti ve eşiği için. Ledger'dan
+    // sayılır; aggregate edilmiş pozisyon sayısı hareket sayısı DEĞİLDİR.
+    final ledgerCount = _typeFilter == null
+        ? ledgerAssets.length
+        : ledgerAssets.where((a) => a.type == _typeFilter).length;
 
     return RefreshIndicator(
       color: context.c.amberText,
@@ -458,7 +493,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
               child: Builder(builder: (_) {
-                final recentAssets = filteredAssets.toList()
+                // Tür filtresi hareketlere de uygulanır, ama liste ham
+                // ledger'dan gelir — her Al/Sat/Temettü kaydı ayrı satır.
+                final recentAssets = (_typeFilter == null
+                    ? ledgerAssets.toList()
+                    : ledgerAssets.where((a) => a.type == _typeFilter).toList())
                   ..sort((a, b) => b.addedDate.compareTo(a.addedDate));
 
                 if (recentAssets.isEmpty) {
@@ -529,9 +568,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   );
                 }
 
-                final count = _showAllTransactions
-                    ? recentAssets.length
-                    : (recentAssets.length > 3 ? 3 : recentAssets.length);
+                // Ana sayfa yalnızca son 3 kaydı gösterir; tamamı için
+                // `AllTransactionsScreen` (filtre + sayfalama). Burada
+                // sınırsız büyütmek, log niteliğindeki bu listeyi ana
+                // sayfanın altına yığardı.
+                final count = recentAssets.length > 3 ? 3 : recentAssets.length;
 
                 final hideBalance = ref.watch(balanceHiddenProvider);
                 return Column(
@@ -546,29 +587,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               }),
             ),
           ),
-          // Show all / less button
-          if (filteredAssets.length > 3)
+          // "Tümünü Gör" — hareket ekranına götürür.
+          //
+          // Sayı ledger'dan okunur, aggregate edilmiş pozisyonlardan DEĞİL:
+          // pozisyon sayısı hareket sayısını olduğundan az gösterirdi
+          // (3 lot + 1 satış = 1 pozisyon ama 4 hareket).
+          if (ledgerCount > 3)
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
                 child: SandikTappable(
-                  onTap: () => setState(
-                      () => _showAllTransactions = !_showAllTransactions),
+                  semanticLabel: 'Tüm hareketleri gör',
+                  onTap: () => pushGuarded(
+                    context,
+                    adaptiveRoute(
+                      builder: (_) => AllTransactionsScreen(
+                        allPartnerAssets: allPartnerAssets,
+                        partners: partners,
+                        initialView: _view,
+                        initialTypeFilter: _typeFilter,
+                      ),
+                    ),
+                  ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         vertical: SandikSpace.md),
                     decoration: context.surfaceCard(),
                     child: Center(
-                      child: Text(
-                        _showAllTransactions
-                            ? 'Daha Az Göster'
-                            : 'Tümünü Gör (${filteredAssets.length})',
-                        style: context.t.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: _showAllTransactions
-                              ? context.c.text36
-                              : context.c.amberText,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Tümünü Gör ($ledgerCount)',
+                            style: context.t.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: context.c.amberText,
+                            ),
+                          ),
+                          const SizedBox(width: SandikSpace.xs),
+                          Icon(Icons.arrow_forward_ios_rounded,
+                              size: 13, color: context.c.amberText),
+                        ],
                       ),
                     ),
                   ),

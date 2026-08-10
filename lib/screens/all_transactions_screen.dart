@@ -5,30 +5,41 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/h_scroll_with_fade.dart';
-import 'performance_screen.dart';
+import '../widgets/transaction_row.dart';
 
+/// Portföy hareketleri — tam liste.
+///
+/// Ana sayfadaki "PORTFÖY HAREKETLERİ" bölümü yalnızca son 3 kaydı gösterir;
+/// "Tümünü Gör" buraya getirir. Bu ekran bir LOG'dur: her Al/Sat/Temettü ve
+/// her silme işlemi ayrı satırdır, dolayısıyla kayıt sayısı zamanla büyür.
+/// Bu yüzden üç şey gerekiyor:
+///
+///   1. **Sayfalama** — hepsini birden kurmak uzun listede kare düşürür.
+///      `ListView.builder` zaten tembel çalışır ama satır sayısı arttıkça
+///      filtre/sıralama maliyeti de büyüdüğü için [_pageSize]'lık parçalar
+///      hâlinde büyütüyoruz.
+///   2. **Tarih aralığı** — "geçen ay ne yaptım" sorusu.
+///   3. **Metin araması** — varlık adı / ticker üzerinde.
+///
+/// Ana sayfadan farklı olarak burada AGGREGATE YOK: liste ham ledger'dır.
 class AllTransactionsScreen extends ConsumerStatefulWidget {
-  final List<Asset> myAssets;
   final Map<String, List<Asset>> allPartnerAssets;
   final List<AppUser> partners;
-  final double usdTry;
-  final double eurTry;
-  final double gbpTry;
+
+  /// Ana sayfadaki sahiplik sekmesi ('' = Ben, null = Birlikte, id = ortak).
   final String? initialView;
   final AssetType? initialTypeFilter;
 
   const AllTransactionsScreen({
     super.key,
-    required this.myAssets,
     required this.allPartnerAssets,
     required this.partners,
-    required this.usdTry,
-    required this.eurTry,
-    required this.gbpTry,
     this.initialView,
     this.initialTypeFilter,
   });
@@ -38,56 +49,148 @@ class AllTransactionsScreen extends ConsumerStatefulWidget {
       _AllTransactionsScreenState();
 }
 
+/// Tarih aralığı ön ayarları — mutlak tarih seçtirmek yerine yaygın
+/// pencereleri tek dokunuşla veriyoruz; "Özel" takvim açar.
+enum _DateRange { all, days7, days30, days90, thisYear, custom }
+
+extension _DateRangeLabel on _DateRange {
+  String get label {
+    switch (this) {
+      case _DateRange.all:
+        return 'Tüm zamanlar';
+      case _DateRange.days7:
+        return 'Son 7 gün';
+      case _DateRange.days30:
+        return 'Son 30 gün';
+      case _DateRange.days90:
+        return 'Son 90 gün';
+      case _DateRange.thisYear:
+        return 'Bu yıl';
+      case _DateRange.custom:
+        return 'Özel';
+    }
+  }
+}
+
 class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
+  static const int _pageSize = 25;
+
   late String? _view;
   AssetType? _typeFilter;
+  _DateRange _range = _DateRange.all;
+  DateTimeRange? _customRange;
+  String _query = '';
+
+  int _visible = _pageSize;
+
+  final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _view = widget.initialView ?? '';
     _typeFilter = widget.initialTypeFilter;
+    // Kullanıcı listenin sonuna yaklaşınca sessizce büyüt — "daha fazla
+    // yükle" düğmesi log okumada akışı bölerdi.
+    _scrollCtrl.addListener(_maybeGrow);
   }
 
-  double _toTRY(double value, String currency) {
-    switch (currency) {
-      case 'USD':
-        return value * widget.usdTry;
-      case 'EUR':
-        return value * widget.eurTry;
-      case 'GBP':
-        return value * widget.gbpTry;
-      default:
-        return value;
+  @override
+  void dispose() {
+    _scrollCtrl.removeListener(_maybeGrow);
+    _scrollCtrl.dispose();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _maybeGrow() {
+    if (!_scrollCtrl.hasClients) return;
+    final pos = _scrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 400) {
+      final total = _filtered.length;
+      if (_visible < total) {
+        setState(() => _visible = (_visible + _pageSize).clamp(0, total));
+      }
+    }
+  }
+
+  /// Filtre değişince sayfalama başa sarmalı; aksi halde kullanıcı dar bir
+  /// sonuç kümesinde "zaten hepsi yüklü" sanır ya da tersi.
+  void _resetPaging() => _visible = _pageSize;
+
+  /// Sahiplik sekmesine göre ham ledger.
+  List<Asset> get _ledger {
+    final myAssets = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    if (_view == '') return myAssets;
+    if (_view != null && _view!.isNotEmpty) {
+      return widget.allPartnerAssets[_view!] ?? const [];
+    }
+    return [
+      ...myAssets,
+      for (final list in widget.allPartnerAssets.values) ...list,
+    ];
+  }
+
+  (DateTime?, DateTime?) get _rangeBounds {
+    final now = DateTime.now();
+    switch (_range) {
+      case _DateRange.all:
+        return (null, null);
+      case _DateRange.days7:
+        return (now.subtract(const Duration(days: 7)), null);
+      case _DateRange.days30:
+        return (now.subtract(const Duration(days: 30)), null);
+      case _DateRange.days90:
+        return (now.subtract(const Duration(days: 90)), null);
+      case _DateRange.thisYear:
+        return (DateTime(now.year), null);
+      case _DateRange.custom:
+        final r = _customRange;
+        if (r == null) return (null, null);
+        // Bitiş günü DAHİL olmalı: kullanıcı 5 Mart seçtiyse o günün
+        // işlemleri de listeye girsin.
+        return (
+          DateTime(r.start.year, r.start.month, r.start.day),
+          DateTime(r.end.year, r.end.month, r.end.day, 23, 59, 59),
+        );
     }
   }
 
   List<Asset> get _filtered {
-    final List<Asset> base;
-    if (_view == '') {
-      base = widget.myAssets;
-    } else if (_view != null && _view!.isNotEmpty) {
-      base = widget.allPartnerAssets[_view!] ?? [];
-    } else {
-      base = [
-        ...widget.myAssets,
-        for (final list in widget.allPartnerAssets.values) ...list,
-      ];
+    final (from, to) = _rangeBounds;
+    final q = _query.trim().toLowerCase();
+
+    final out = <Asset>[];
+    for (final a in _ledger) {
+      if (_typeFilter != null && a.type != _typeFilter) continue;
+      if (from != null && a.addedDate.isBefore(from)) continue;
+      if (to != null && a.addedDate.isAfter(to)) continue;
+      if (q.isNotEmpty) {
+        final name = a.name.toLowerCase();
+        final ticker = a.ticker.toLowerCase();
+        final sub = (a.subCategory ?? '').toLowerCase();
+        if (!name.contains(q) && !ticker.contains(q) && !sub.contains(q)) {
+          continue;
+        }
+      }
+      out.add(a);
     }
-
-    final sorted = [...base]
-      ..sort((a, b) => b.addedDate.compareTo(a.addedDate));
-
-    if (_typeFilter == null) return sorted;
-    return sorted.where((a) => a.type == _typeFilter).toList();
+    out.sort((a, b) => b.addedDate.compareTo(a.addedDate));
+    return out;
   }
+
+  bool get _hasActiveFilter =>
+      _typeFilter != null || _range != _DateRange.all || _query.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
     final activePartners = ref.watch(activePartnersProvider);
-    final assets = _filtered;
-    final tryFmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+    final pState = ref.watch(portfolioProvider).valueOrNull;
+    final hideBalance = ref.watch(balanceHiddenProvider);
+
+    final rows = _filtered;
+    final shown = _visible.clamp(0, rows.length);
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -100,25 +203,69 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Tüm İşlemler',
+          'Portföy Hareketleri',
           style: context.t.headlineMedium?.copyWith(color: context.c.text90),
         ),
       ),
       body: Column(
         children: [
-          // ── Partner tab bar ────────────────────────────────────────────
           if (activePartners.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: ModernTabSelector(
                 partners: activePartners,
                 selectedId: _view,
-                onChanged: (v) => setState(() => _view = v),
+                onChanged: (v) => setState(() {
+                  _view = v;
+                  _resetPaging();
+                }),
               ),
             ),
-          // ── Asset type filter chips ────────────────────────────────────
+
+          // ── Arama ────────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() {
+                _query = v;
+                _resetPaging();
+              }),
+              style: context.t.bodyMedium?.copyWith(color: context.c.text90),
+              decoration: context.inputDecoration(
+                'Varlık adı veya sembol ara',
+                prefixIcon:
+                    Icon(Icons.search_rounded, size: 20, color: context.c.text36),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: Icon(Icons.close_rounded,
+                            size: 18, color: context.c.text36),
+                        onPressed: () => setState(() {
+                          _searchCtrl.clear();
+                          _query = '';
+                          _resetPaging();
+                        }),
+                      ),
+              ),
+            ),
+          ),
+
+          // ── Tarih aralığı ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: HScrollWithFade(
+              child: Row(
+                children: [
+                  for (final r in _DateRange.values) _rangeChip(r),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Varlık türü ──────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: HScrollWithFade(
               child: Row(
                 children: [
@@ -129,29 +276,152 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               ),
             ),
           ),
-          Divider(color: context.c.hairline, height: 1),
-          // ── Transaction list ──────────────────────────────────────────
-          Expanded(
-            child: assets.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.inbox_rounded,
-                            size: 52, color: context.c.text36),
-                        const SizedBox(height: 12),
-                        Text('İşlem bulunamadı',
-                            style: context.t.titleMedium?.copyWith(color: context.c.text36)),
-                      ],
+
+          // ── Sonuç sayacı ─────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Row(
+              children: [
+                Text(
+                  rows.isEmpty
+                      ? 'Kayıt yok'
+                      : '${rows.length} kayıt'
+                          '${shown < rows.length ? ' · $shown gösteriliyor' : ''}',
+                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
+                ),
+                const Spacer(),
+                if (_hasActiveFilter)
+                  SandikTappable(
+                    semanticLabel: 'Filtreleri temizle',
+                    onTap: () => setState(() {
+                      _typeFilter = null;
+                      _range = _DateRange.all;
+                      _customRange = null;
+                      _query = '';
+                      _searchCtrl.clear();
+                      _resetPaging();
+                    }),
+                    child: Text(
+                      'Filtreleri temizle',
+                      style: context.t.bodySmall?.copyWith(
+                          color: context.c.amberText,
+                          fontWeight: FontWeight.w600),
                     ),
-                  )
+                  ),
+              ],
+            ),
+          ),
+          Divider(color: context.c.hairline, height: 1),
+
+          // ── Liste ────────────────────────────────────────────────────
+          Expanded(
+            child: rows.isEmpty
+                ? _empty()
                 : ListView.builder(
+                    controller: _scrollCtrl,
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                    itemCount: assets.length,
-                    itemBuilder: (ctx, i) => _buildTile(assets[i], tryFmt),
+                    // +1: son satırda "yükleniyor" göstergesi (daha var ise).
+                    itemCount: shown + (shown < rows.length ? 1 : 0),
+                    itemBuilder: (ctx, i) {
+                      if (i >= shown) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: Text(
+                              'Yükleniyor…',
+                              style: context.t.bodySmall
+                                  ?.copyWith(color: context.c.text36),
+                            ),
+                          ),
+                        );
+                      }
+                      return TransactionRow(
+                        asset: rows[i],
+                        portfolioState: pState ?? const PortfolioState(),
+                        hideBalance: hideBalance,
+                      );
+                    },
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _empty() => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.inbox_rounded, size: 52, color: context.c.text36),
+            const SizedBox(height: 12),
+            Text(
+              _hasActiveFilter ? 'Filtreye uyan kayıt yok' : 'Henüz işlem yok',
+              style: context.t.titleMedium?.copyWith(color: context.c.text36),
+            ),
+            if (_hasActiveFilter) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.',
+                textAlign: TextAlign.center,
+                style: context.t.bodySmall?.copyWith(color: context.c.text36),
+              ),
+            ],
+          ],
+        ),
+      );
+
+  Widget _rangeChip(_DateRange r) {
+    final selected = _range == r;
+    // "Özel" seçiliyse etiket seçilen aralığı göstersin — yoksa kullanıcı
+    // hangi aralıkta olduğunu chip'ten okuyamaz.
+    final label = r == _DateRange.custom && _customRange != null
+        ? '${DateFormat('d MMM', 'tr_TR').format(_customRange!.start)}'
+            ' – ${DateFormat('d MMM', 'tr_TR').format(_customRange!.end)}'
+        : r.label;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: SandikTappable(
+        semanticLabel: label,
+        onTap: () async {
+          if (r == _DateRange.custom) {
+            final picked = await showDateRangePicker(
+              context: context,
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+              // Locale MaterialApp'ten gelir (tr_TR) — burada tekrar
+              // vermek gereksiz ve iki yerde sürüklenmesi gereken bir
+              // sabit yaratırdı.
+              initialDateRange: _customRange,
+            );
+            if (picked == null) return;
+            if (!mounted) return;
+            setState(() {
+              _customRange = picked;
+              _range = _DateRange.custom;
+              _resetPaging();
+            });
+            return;
+          }
+          setState(() {
+            _range = r;
+            _resetPaging();
+          });
+        },
+        child: AnimatedContainer(
+          duration: SandikMotion.stateOf(context),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+          decoration: context.chip(selected: selected, radius: SandikRadius.lg),
+          child: Text(
+            label,
+            style: context.t.titleSmall?.copyWith(
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? context.c.amberText : context.c.text58,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -163,168 +433,23 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
       padding: const EdgeInsets.only(right: 8),
       child: SandikTappable(
         semanticLabel: label,
-        onTap: () => setState(() => _typeFilter = type),
+        onTap: () => setState(() {
+          _typeFilter = type;
+          _resetPaging();
+        }),
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
-          curve: SandikMotion.enter,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.15) : context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.lg),
-            border: Border.all(
-              color: selected ? color : context.c.overlay,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+          decoration: context.chip(
+              selected: selected, accent: color, radius: SandikRadius.lg),
           child: Text(
             label,
             style: context.t.titleSmall?.copyWith(
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               color: selected ? color : context.c.text58,
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTile(Asset asset, NumberFormat tryFmt) {
-    final totalTRY = _toTRY(asset.totalValue, asset.currency);
-    final hasPnl = asset.purchasePrice > 0 && asset.currentPrice > 0;
-    final gainLossTRY = hasPnl ? totalTRY - asset.totalCostTRY : 0.0;
-    final isPos = gainLossTRY >= 0;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: SandikTappable(
-        onTap: () => pushGuarded(
-          context,
-          adaptiveRoute(
-              builder: (_) =>
-                  PerformanceScreen(asset: asset, showBackButton: true)),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-          ),
-          child: Row(
-            children: [
-              asset.currencySymbol != null
-                  ? Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: asset.type.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      ),
-                      child: Center(
-                        child: Text(
-                          asset.currencySymbol!,
-                          style: context.t.bodyMedium!.copyWith(
-                            fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
-                            fontWeight: FontWeight.w800,
-                            color: asset.type.color,
-                            height: 1,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Icon(asset.type.icon, color: asset.type.color, size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (asset.showTicker) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: asset.type.color.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(SandikRadius.sm),
-                        ),
-                        child: Text(asset.displayTicker!,
-                            style: context.t.labelMedium?.copyWith(
-                                letterSpacing: 0,
-                                fontWeight: FontWeight.w800,
-                                color: asset.type.color)),
-                      ),
-                      const SizedBox(height: 3),
-                    ],
-                    Text(asset.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.t.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            height: 1.25,
-                            color: context.c.text90)),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: asset.type.color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(SandikRadius.sm),
-                          ),
-                          child: Text(asset.type.label,
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  color: asset.type.color,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          DateFormat('d MMM yyyy', 'tr_TR')
-                              .format(asset.addedDate),
-                          style: context.t.bodySmall?.copyWith(color: context.c.text36),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: context.c.overlay,
-                            borderRadius: BorderRadius.circular(SandikRadius.sm),
-                          ),
-                          child: Text(
-                            asset.unitIsPrefix
-                                ? '${asset.unitLabel}${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)}'
-                                : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
-                            style: context.t.labelMedium?.copyWith(
-                                letterSpacing: 0,
-                                color: context.c.text58,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(tryFmt.format(totalTRY),
-                      style: context.t.numSmall.copyWith(
-                          fontSize: 15,
-                          color: context.c.text90)),
-                  if (hasPnl) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      '${isPos ? '+' : ''}₺${NumberFormat('#,###', 'tr_TR').format(gainLossTRY.abs().toInt())}',
-                      style: context.t.numSmall.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isPos ? context.c.gain : context.c.loss),
-                    ),
-                  ],
-                ],
-              ),
-            ],
           ),
         ),
       ),
