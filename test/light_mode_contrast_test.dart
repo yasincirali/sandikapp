@@ -262,6 +262,43 @@ void main() {
     });
   });
 
+  group('kaynak taraması — ham anlamsal renk', () {
+    test('Colors.green/red/orange gibi hazır tonlar kullanılmamalı', () {
+      // Bunlar temayı takip etmez. `Colors.green` (#4CAF50) light yüzeyde
+      // 2.78:1 verirken palet `gain`i 5.37:1 verir (signal_settings'te
+      // "ÖNERİLEN" çipi tam olarak bu yüzden okunmuyordu).
+      //
+      // Şeffaf siyah/beyaz (gölge, perde) bu kuralın dışındadır; onlar
+      // renk değil, ışık/gölge katmanıdır.
+      final offenders = <String>[];
+      final pattern = RegExp(
+        r'Colors\.(green|red|orange|blue|purple|teal|pink|yellow)'
+        r'(\[\d+\]|\.shade\d+)?\b',
+      );
+
+      for (final e in Directory('lib').listSync(recursive: true)) {
+        if (e is! File || !e.path.endsWith('.dart')) continue;
+        // Tema tanımının kendisi ham renk kullanmak ZORUNDA.
+        if (e.path.endsWith('sandik.dart') || e.path.endsWith('main.dart')) {
+          continue;
+        }
+        final src = e.readAsStringSync();
+        for (final m in pattern.allMatches(src)) {
+          final lineStart = src.lastIndexOf('\n', m.start) + 1;
+          final line = src.substring(lineStart, m.start);
+          if (line.trimLeft().startsWith('//')) continue; // yorum
+          final no = '\n'.allMatches(src.substring(0, m.start)).length + 1;
+          offenders.add('${e.path}:$no — ${m.group(0)}');
+        }
+      }
+
+      expect(offenders, isEmpty,
+          reason: 'Anlamsal renkler palet token\'ından gelmeli '
+              '(context.c.gain / .loss / .danger / .info).\n'
+              '${offenders.join('\n')}');
+    });
+  });
+
   group('kaynak taraması — çöken gradient deseni', () {
     test('hiçbir yerde [gold, amberText] gradient\'i yazılmamalı', () {
       final offenders = <String>[];

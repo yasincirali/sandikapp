@@ -741,40 +741,32 @@ class _IndicatorRow extends StatelessWidget {
                 ),
               ),
             ),
-            if (recommended && !IndicatorId.premium.contains(id))
+            // "ÖNERİLEN" çipi premium/normal ayrımından bağımsızdır; iki dal
+            // birebir aynı widget'ı kuruyordu. Tek çıkış noktası bırakıldı,
+            // premium'a özel olan yalnızca öndeki boşluk.
+            //
+            // Renk notu: burada sabit `Colors.green` (#4CAF50) vardı ve temayı
+            // takip etmiyordu — light yüzeyde 2.78:1. Palet `gain`i 5.37:1.
+            if (recommended) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.15),
+                  color: context.c.gain.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Text(
                   'ÖNERİLEN',
                   style: context.t.labelSmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: Colors.green,
+                    color: context.c.gain,
                     letterSpacing: 0.8,
                   ),
                 ),
               ),
+            ],
             if (IndicatorId.premium.contains(id)) ...[
-              if (recommended) const SizedBox(width: 6),
-              if (recommended)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                  child: Text(
-                    'ÖNERİLEN',
-                    style: context.t.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: Colors.green,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
+              // Boşluğu PREMIUM çipi kendi sahiplenir — "ÖNERİLEN" tarafına da
+              // koyarsak, ikisi birlikte göründüğünde araya çift boşluk girer.
               if (showPremiumChip && recommended) const SizedBox(width: 6),
               if (showPremiumChip)
                 Container(
