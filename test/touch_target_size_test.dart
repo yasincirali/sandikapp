@@ -92,7 +92,13 @@ void main() {
 
     for (final entity in Directory('lib').listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      final src = entity.readAsStringSync();
+      // Yorum satırları atlanır: kuralı AÇIKLAYAN notlar yasak ifadeyi
+      // bilerek anıyor ve ham metin araması onları ihlal sanıyordu.
+      final src = entity
+          .readAsStringSync()
+          .split('\n')
+          .where((l) => !l.trimLeft().startsWith('//'))
+          .join('\n');
       for (final m in pattern.allMatches(src)) {
         final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;
         offenders.add('${entity.path}:$line — ${m.group(0)}');

@@ -133,15 +133,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final initType = a?.type ?? c?.type ?? AssetType.hisse;
     final initSubCat = a?.subCategory ?? c?.subCategory;
     final initUnit = a?.unitType ?? c?.unitType ?? 'piece';
-    final initCurrency =
-        a?.currency ?? c?.currency ?? initType.defaultCurrency;
+    final initCurrency = a?.currency ?? c?.currency ?? initType.defaultCurrency;
 
     _name = TextEditingController(text: initName);
     _ticker = TextEditingController(text: initTicker);
-    _quantity =
-        TextEditingController(text: initQty > 0 ? _fmt(initQty) : '');
-    _price = TextEditingController(
-        text: initPrice > 0 ? _fmt(initPrice) : '');
+    _quantity = TextEditingController(text: initQty > 0 ? _fmt(initQty) : '');
+    _price = TextEditingController(text: initPrice > 0 ? _fmt(initPrice) : '');
     _notes = TextEditingController(text: a?.notes ?? '');
     _commission = TextEditingController(
         text: (a?.commission ?? 0) > 0 ? _fmt(a!.commission) : '');
@@ -321,12 +318,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
       );
 
+  /// Alan etiketi. Tek satır + kısaltma **varsayılan**: bu etiketler dar
+  /// kolonlarda (Miktar/Fiyat yan yana) ve büyük metin ayarında taşıyordu.
+  /// Çağıran ayrıca `Flexible` ile sarmalı — `overflow` yalnızca kısıt
+  /// verilmişse iş görür.
   Widget _fieldLabel(String text) => Text(
         text,
         style: context.t.bodyMedium?.copyWith(
           fontWeight: FontWeight.w600,
           color: context.c.text90,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       );
 
   @override
@@ -348,16 +351,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         surfaceTintColor: Colors.transparent,
         title: Text(
           title,
-          style: context.t.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: context.c.text90),
+          style: context.t.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
         ),
         actions: [
           if (!_isEditing && !widget.cartMode) ...[
             IconButton(
               tooltip: 'Toplu ekle',
-              icon: Icon(Icons.playlist_add_rounded,
-                  color: context.c.text58),
+              icon: Icon(Icons.playlist_add_rounded, color: context.c.text58),
               // Toplu ekleme başarıyla bittiğinde `true` döner; o zaman bu
               // ekran da kapanır ve kullanıcı portföye ulaşır. Aksi halde
               // arkada boş kalan bu formda mahsur kalıyordu.
@@ -372,8 +373,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             ),
             IconButton(
               tooltip: 'Sesli / Hızlı giriş',
-              icon: Icon(Icons.mic_none_rounded,
-                  color: context.c.text58),
+              icon: Icon(Icons.mic_none_rounded, color: context.c.text58),
               onPressed: _showQuickEntrySheet,
             ),
           ],
@@ -383,62 +383,63 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
         child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                children: [
-                  _sectionLabel('Varlık Türü'),
-                  const SizedBox(height: 10),
-                  _typeSelector(cs),
-                  const SizedBox(height: 22),
+          key: _formKey,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                  children: [
+                    _sectionLabel('Varlık Türü'),
+                    const SizedBox(height: 10),
+                    _typeSelector(cs),
+                    const SizedBox(height: 22),
 
-                  // ── Kimlik: Bağlama göre TEK giriş alanı ──────────────
-                  _sectionLabel(_identityLabel()),
-                  const SizedBox(height: 10),
-                  _identitySection(cs),
-                  const SizedBox(height: 22),
+                    // ── Kimlik: Bağlama göre TEK giriş alanı ──────────────
+                    _sectionLabel(_identityLabel()),
+                    const SizedBox(height: 10),
+                    _identitySection(cs),
+                    const SizedBox(height: 22),
 
-                  // ── Miktar + Fiyat yan yana ───────────────────────────
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _quantityBlock(cs)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _priceBlock(cs)),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  _quantityPresetsRow(cs),
-                  const SizedBox(height: 20),
+                    // ── Miktar + Fiyat yan yana ───────────────────────────
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _quantityBlock(cs)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _priceBlock(cs)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    _quantityPresetsRow(cs),
+                    const SizedBox(height: 20),
 
-                  // ── Toplam maliyet hero card ─────────────────────────
-                  _totalHero(cs),
-                  const SizedBox(height: 10),
+                    // ── Toplam maliyet hero card ─────────────────────────
+                    _totalHero(cs),
+                    const SizedBox(height: 10),
 
-                  // ── Tahmini birim fiyat preview ──────────────────────
-                  _pricePreviewCard(cs),
+                    // ── Tahmini birim fiyat preview ──────────────────────
+                    _pricePreviewCard(cs),
 
-                  // ── İşlem tarihi (chip) ──────────────────────────────
-                  _dateChip(cs),
-                  const SizedBox(height: 16),
+                    // ── İşlem tarihi (chip) ──────────────────────────────
+                    _dateChip(cs),
+                    const SizedBox(height: 16),
 
-                  // ── Komisyon / masraf ────────────────────────────────
-                  _commissionBlock(cs),
-                  const SizedBox(height: 16),
+                    // ── Komisyon / masraf ────────────────────────────────
+                    _commissionBlock(cs),
+                    const SizedBox(height: 16),
 
-                  // ── Notlar (collapsible) ─────────────────────────────
-                  _notesCollapsible(cs),
-                ],
+                    // ── Notlar (collapsible) ─────────────────────────────
+                    _notesCollapsible(cs),
+                  ],
+                ),
               ),
-            ),
-            _stickyBottomBar(saveLabel),
-          ],
+              _stickyBottomBar(saveLabel),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -464,12 +465,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       children: [
         _brandInput(
           controller: _name,
-          hint: _type == AssetType.emtia
-              ? 'Örn: Petrol (Brent)'
-              : 'Varlık adı',
-          validator: (v) => (v == null || v.trim().isEmpty)
-              ? 'Ad zorunlu'
-              : null,
+          hint: _type == AssetType.emtia ? 'Örn: Petrol (Brent)' : 'Varlık adı',
+          validator: (v) =>
+              (v == null || v.trim().isEmpty) ? 'Ad zorunlu' : null,
         ),
         const SizedBox(height: 8),
         _brandInput(
@@ -499,19 +497,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           children: [
             Expanded(
               child: Container(
-                  height: 1,
-                  color: context.c.text36.withValues(alpha: 0.3)),
+                  height: 1, color: context.c.text36.withValues(alpha: 0.3)),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text('veya listede yok',
-                  style: context.t.bodySmall
-                      ?.copyWith(color: context.c.text36)),
+            // Ayraç metni büyük font ayarında iki çizgiyi dışarı itiyordu.
+            // Çizgiler zaten `Expanded`; daralması gereken metindir.
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text('veya listede yok',
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text36),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
             ),
             Expanded(
               child: Container(
-                  height: 1,
-                  color: context.c.text36.withValues(alpha: 0.3)),
+                  height: 1, color: context.c.text36.withValues(alpha: 0.3)),
             ),
           ],
         ),
@@ -560,7 +562,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             _schedulePricePreview();
           },
           child: AnimatedContainer(
-            duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+            duration:
+                SandikMotion.of(context, const Duration(milliseconds: 160)),
             curve: SandikMotion.enter,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -569,16 +572,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   : context.c.surface1,
               borderRadius: BorderRadius.circular(SandikRadius.md),
               border: Border.all(
-                color: selected
-                    ? AssetType.altin.color
-                    : context.c.overlay,
+                color: selected ? AssetType.altin.color : context.c.overlay,
                 width: selected ? 1.4 : 1,
               ),
               boxShadow: selected
                   ? [
                       BoxShadow(
-                        color:
-                            AssetType.altin.color.withValues(alpha: 0.25),
+                        color: AssetType.altin.color.withValues(alpha: 0.25),
                         blurRadius: 14,
                         spreadRadius: -6,
                       ),
@@ -590,15 +590,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               children: [
                 Icon(Icons.star_rounded,
                     size: 14,
-                    color: selected
-                        ? AssetType.altin.color
-                        : context.c.text58),
+                    color: selected ? AssetType.altin.color : context.c.text58),
                 const SizedBox(width: 6),
                 Text(g.label,
                     style: context.t.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color:
-                            selected ? context.c.text90 : context.c.text58)),
+                        color: selected ? context.c.text90 : context.c.text58)),
               ],
             ),
           ),
@@ -635,13 +632,19 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Bu blok "Miktar" ile aynı Row'da `Expanded` içinde duruyor, yani
+        // ekranın ~yarısı kadar yer var. "Alış Fiyatı · opsiyonel" 375pt'de
+        // 138px taşıyordu — NORMAL metin boyutunda, büyük fontta değil.
         Row(
           children: [
-            _fieldLabel('Alış Fiyatı'),
+            Flexible(child: _fieldLabel('Alış Fiyatı')),
             const SizedBox(width: 6),
-            Text('· opsiyonel',
-                style: context.t.bodySmall
-                    ?.copyWith(color: context.c.text36)),
+            Flexible(
+              child: Text('· opsiyonel',
+                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -673,10 +676,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       children: [
         Row(
           children: [
-            _fieldLabel('Komisyon / Masraf'),
+            Flexible(child: _fieldLabel('Komisyon / Masraf')),
             const SizedBox(width: 6),
-            Text('· opsiyonel',
-                style: context.t.bodySmall?.copyWith(color: context.c.text36)),
+            Flexible(
+              child: Text('· opsiyonel',
+                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -710,22 +717,32 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   Widget _inlineCurrencyPicker() {
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: _currency,
-        isDense: true,
-        dropdownColor: context.c.surface2,
-        style: context.t.titleSmall?.copyWith(
-            color: context.c.amberText, fontWeight: FontWeight.w700),
-        icon: Icon(Icons.arrow_drop_down,
-            color: context.c.amberText, size: 18),
-        items: _currencies
-            .map((c) => DropdownMenuItem(
-                  value: c,
-                  child: Text(c),
-                ))
-            .toList(),
-        onChanged: (v) => setState(() => _currency = v ?? _currency),
+    // `DropdownButton` içeride kendi `Row`'unu kurar ve o Row daralamaz;
+    // 320pt × 3.0× ölçekte 10px taşıyordu. İçerik üç harflik bir para
+    // birimi kodu ("TRY") olduğu için ölçeği sınırlamak burada güvenli:
+    // metin yine büyür, ama alan kaybına yol açacak noktada durur.
+    //
+    // Bu, Dynamic Type'ı YOK SAYMAK değil — üst sınır koymaktır. Genel
+    // kural hâlâ geçerli: `TextScaler.noScaling` kullanılmaz.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.6,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _currency,
+          isDense: true,
+          dropdownColor: context.c.surface2,
+          style: context.t.titleSmall?.copyWith(
+              color: context.c.amberText, fontWeight: FontWeight.w700),
+          icon:
+              Icon(Icons.arrow_drop_down, color: context.c.amberText, size: 18),
+          items: _currencies
+              .map((c) => DropdownMenuItem(
+                    value: c,
+                    child: Text(c),
+                  ))
+              .toList(),
+          onChanged: (v) => setState(() => _currency = v ?? _currency),
+        ),
       ),
     );
   }
@@ -748,14 +765,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.calculate_outlined,
-                color: context.c.text36, size: 18),
+            Icon(Icons.calculate_outlined, color: context.c.text36, size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Miktar girince toplam maliyet burada görünecek.',
-                style: context.t.titleSmall
-                    ?.copyWith(color: context.c.text58),
+                style: context.t.titleSmall?.copyWith(color: context.c.text58),
               ),
             ),
           ],
@@ -788,9 +803,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             Expanded(
               child: Text(
                 msg,
-                style: context.t.titleSmall?.copyWith(
-                    color: context.c.text90,
-                    height: 1.35),
+                style: context.t.titleSmall
+                    ?.copyWith(color: context.c.text90, height: 1.35),
               ),
             ),
           ],
@@ -802,7 +816,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
     final total = qty * price;
     final fmt = NumberFormat.currency(
-        locale: 'tr_TR', symbol: _currency == 'TRY' ? '₺ ' : '', decimalDigits: 2);
+        locale: 'tr_TR',
+        symbol: _currency == 'TRY' ? '₺ ' : '',
+        decimalDigits: 2);
     final formatted = _currency == 'TRY'
         ? fmt.format(total)
         : '${NumberFormat('#,##0.##', 'tr_TR').format(total)} $_currency';
@@ -842,8 +858,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   )),
               const SizedBox(height: 4),
               Text('${_fmt(qty)} × ${_fmt(price)}',
-                  style: context.t.bodySmall
-                      ?.copyWith(color: context.c.text58)),
+                  style:
+                      context.t.bodySmall?.copyWith(color: context.c.text58)),
             ],
           ),
           const Spacer(),
@@ -918,8 +934,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -1001,8 +1016,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         }
       },
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -1019,15 +1033,25 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 size: 16,
                 color: isToday ? context.c.text58 : context.c.amberText),
             const SizedBox(width: 10),
-            Text('İşlem tarihi',
-                style: context.t.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: context.c.text90)),
+            // Etiket ve tarih değeri ikisi de esnek olmalı: dar ekranda
+            // (320pt) "İşlem tarihi" + "14 Mart 2026" 38px taşıyordu.
+            // `Spacer` boşluğu doldurur ama kimseyi daraltmaz.
+            Flexible(
+              child: Text('İşlem tarihi',
+                  style: context.t.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600, color: context.c.text90),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ),
             const Spacer(),
-            Text(label,
-                style: context.t.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: isToday ? context.c.text58 : context.c.amberText)),
+            Flexible(
+              child: Text(label,
+                  style: context.t.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isToday ? context.c.text58 : context.c.amberText),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+            ),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right_rounded,
                 size: 16,
@@ -1050,15 +1074,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(SandikRadius.md),
-            onTap: () =>
-                setState(() => _notesExpanded = !_notesExpanded),
+            onTap: () => setState(() => _notesExpanded = !_notesExpanded),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
-                  Icon(Icons.notes_rounded,
-                      size: 16, color: context.c.text58),
+                  Icon(Icons.notes_rounded, size: 16, color: context.c.text58),
                   const SizedBox(width: 10),
                   Text('Not ekle',
                       style: context.t.bodyMedium?.copyWith(
@@ -1100,8 +1121,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: TextFormField(
                 controller: _notes,
-                style: context.t.titleMedium
-                    ?.copyWith(color: context.c.text90),
+                style: context.t.titleMedium?.copyWith(color: context.c.text90),
                 maxLines: 3,
                 decoration: context.inputDecoration('Notlarınız...'),
                 onChanged: (_) => setState(() {}),
@@ -1122,8 +1142,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         decoration: BoxDecoration(
           color: context.c.background,
           border: Border(
-            top: BorderSide(
-                color: context.c.overlay, width: 1),
+            top: BorderSide(color: context.c.overlay, width: 1),
           ),
         ),
         child: SizedBox(
@@ -1145,8 +1164,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 : Text(
                     saveLabel,
                     style: context.t.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2),
+                        fontWeight: FontWeight.w800, letterSpacing: 0.2),
                   ),
           ),
         ),
@@ -1169,18 +1187,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }) {
     return TextFormField(
       controller: controller,
-      style: context.t.bodyLarge?.copyWith(
-          color: context.c.text90,
-          fontWeight: FontWeight.w500),
+      style: context.t.bodyLarge
+          ?.copyWith(color: context.c.text90, fontWeight: FontWeight.w500),
       decoration: context.inputDecoration(hint).copyWith(
-        suffixText: suffixText,
-        suffixStyle: context.t.titleSmall?.copyWith(
-            color: context.c.text58,
-            fontWeight: FontWeight.w600),
-        suffixIcon: suffix,
-        suffixIconConstraints:
-            const BoxConstraints(minWidth: 60, minHeight: 40),
-      ),
+            suffixText: suffixText,
+            suffixStyle: context.t.titleSmall?.copyWith(
+                color: context.c.text58, fontWeight: FontWeight.w600),
+            suffixIcon: suffix,
+            suffixIconConstraints:
+                const BoxConstraints(minWidth: 60, minHeight: 40),
+          ),
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       textCapitalization: textCapitalization,
@@ -1243,9 +1259,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       : context.c.surface1,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
-                    color: selected
-                        ? t.color
-                        : context.c.overlay,
+                    color: selected ? t.color : context.c.overlay,
                     width: selected ? 1.4 : 1,
                   ),
                   boxShadow: selected
@@ -1262,8 +1276,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(t.icon,
-                        size: 18,
-                        color: selected ? t.color : context.c.text58),
+                        size: 18, color: selected ? t.color : context.c.text58),
                     const SizedBox(width: 8),
                     Text(t.label,
                         style: context.t.bodyMedium?.copyWith(
@@ -1301,7 +1314,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 _schedulePricePreview();
               },
               child: AnimatedContainer(
-                duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+                duration:
+                    SandikMotion.of(context, const Duration(milliseconds: 160)),
                 curve: SandikMotion.enter,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
@@ -1310,16 +1324,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       : context.c.surface1,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(
-                    color: selected
-                        ? AssetType.doviz.color
-                        : context.c.overlay,
+                    color: selected ? AssetType.doviz.color : context.c.overlay,
                     width: selected ? 1.4 : 1,
                   ),
                   boxShadow: selected
                       ? [
                           BoxShadow(
-                            color: AssetType.doviz.color
-                                .withValues(alpha: 0.25),
+                            color:
+                                AssetType.doviz.color.withValues(alpha: 0.25),
                             blurRadius: 16,
                             spreadRadius: -6,
                           ),
@@ -1334,9 +1346,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       style: context.t.headlineLarge?.copyWith(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: selected
-                            ? AssetType.doviz.color
-                            : context.c.text90,
+                        color:
+                            selected ? AssetType.doviz.color : context.c.text90,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1344,9 +1355,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       opt.label,
                       style: context.t.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: selected
-                            ? AssetType.doviz.color
-                            : context.c.text58,
+                        color:
+                            selected ? AssetType.doviz.color : context.c.text58,
                         letterSpacing: 0.6,
                       ),
                     ),
@@ -1374,7 +1384,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _quantity.text = v),
               child: AnimatedContainer(
-                duration: SandikMotion.of(context, const Duration(milliseconds: 140)),
+                duration:
+                    SandikMotion.of(context, const Duration(milliseconds: 140)),
                 curve: SandikMotion.enter,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1396,7 +1407,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       v,
                       style: context.t.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: selected ? context.c.amberText : context.c.text58,
+                        color:
+                            selected ? context.c.amberText : context.c.text58,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -1617,22 +1629,32 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     }
 
     final normalized = text.replaceAll(RegExp(r'(?<=\d)\.(?=\d{3})'), '');
-    final numMatches = RegExp(r'(\d+([.,]\d+)?)').allMatches(normalized).toList();
+    final numMatches =
+        RegExp(r'(\d+([.,]\d+)?)').allMatches(normalized).toList();
     double qty = 0;
     double price = 0;
 
     if (numMatches.isNotEmpty) {
-      qty = double.tryParse(numMatches.first.group(1)!.replaceAll(',', '.')) ?? 0;
+      qty =
+          double.tryParse(numMatches.first.group(1)!.replaceAll(',', '.')) ?? 0;
     }
-    final priceHint = RegExp(r'(\d+([.,]\d+)?)\s*(lira|tl|₺)').firstMatch(normalized);
+    final priceHint =
+        RegExp(r'(\d+([.,]\d+)?)\s*(lira|tl|₺)').firstMatch(normalized);
     if (priceHint != null) {
       price = double.tryParse(priceHint.group(1)!.replaceAll(',', '.')) ?? 0;
     } else if (numMatches.length >= 2) {
-      price = double.tryParse(numMatches[1].group(1)!.replaceAll(',', '.')) ?? 0;
+      price =
+          double.tryParse(numMatches[1].group(1)!.replaceAll(',', '.')) ?? 0;
     }
 
     if (qty <= 0) return null;
-    return (type: detectedType, subCategory: detectedSub, qty: qty, price: price, raw: raw.trim());
+    return (
+      type: detectedType,
+      subCategory: detectedSub,
+      qty: qty,
+      price: price,
+      raw: raw.trim()
+    );
   }
 
   void _showQuickEntrySheet() {
@@ -1715,7 +1737,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           } catch (_) {}
         }
 
-        if (assetName.isEmpty) assetName = entry.subCategory ?? entry.type.label;
+        if (assetName.isEmpty) {
+          assetName = entry.subCategory ?? entry.type.label;
+        }
 
         await ref.read(portfolioProvider.notifier).addAsset(
               name: assetName,
@@ -1949,8 +1973,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       // net görünsün, "güncel geldi sandım" hissi olmasın.
       if (priceFromHistorical || priceFallbackToSpot) {
         final fmt = NumberFormat('#,##0.##', 'tr_TR');
-        final dateStr =
-            DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
+        final dateStr = DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
         final msg = priceFromHistorical
             ? '$dateStr kapanışı ${fmt.format(price)} $_currency olarak atandı'
             : '$dateStr için geçmiş fiyat bulunamadı — güncel fiyat '
@@ -2007,10 +2030,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
   void _updatePreviews(String text) {
     final lines = text.split('\n').where((l) => l.trim().isNotEmpty);
     setState(() {
-      _previews = lines
-          .map(widget.parseLine)
-          .whereType<_ParsedEntry>()
-          .toList();
+      _previews =
+          lines.map(widget.parseLine).whereType<_ParsedEntry>().toList();
     });
   }
 
@@ -2019,7 +2040,9 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
     final isMulti = _previews.length > 1;
     return Padding(
       padding: EdgeInsets.only(
-        left: 20, right: 20, top: 20,
+        left: 20,
+        right: 20,
+        top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
       child: Column(
@@ -2033,7 +2056,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
               Text(
                 'Hızlı Giriş',
                 style: context.t.headlineSmall?.copyWith(
-                  fontSize: 17, fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                   color: context.c.text90,
                 ),
               ),
@@ -2055,7 +2079,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
             textCapitalization: TextCapitalization.sentences,
             style: context.t.titleMedium?.copyWith(color: context.c.text90),
             decoration: InputDecoration(
-              hintText: '100 dolar\n10 gram altın 4500 lira\nGARAN 500 adet 105 lira',
+              hintText:
+                  '100 dolar\n10 gram altın 4500 lira\nGARAN 500 adet 105 lira',
               hintStyle:
                   context.t.bodyMedium?.copyWith(color: context.c.text36),
               filled: true,
@@ -2070,7 +2095,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(SandikRadius.md),
-                borderSide: BorderSide(color: context.c.amberFill.withValues(alpha: 0.6)),
+                borderSide: BorderSide(
+                    color: context.c.amberFill.withValues(alpha: 0.6)),
               ),
             ),
             onChanged: _updatePreviews,
@@ -2078,29 +2104,30 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
           if (_previews.isNotEmpty) ...[
             const SizedBox(height: 12),
             ...(_previews.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6, height: 6,
-                    decoration: BoxDecoration(
-                      color: e.type.color,
-                      shape: BoxShape.circle,
-                    ),
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: e.type.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${e.type.label}  ·  ${e.qty % 1 == 0 ? e.qty.toInt() : e.qty}'
+                          '${e.subCategory != null ? '  ${e.subCategory}' : ''}'
+                          '${e.price > 0 ? '  @ ${e.price % 1 == 0 ? e.price.toInt() : e.price} ₺' : '  (fiyat otomatik)'}',
+                          style: context.t.titleSmall
+                              ?.copyWith(color: context.c.text58),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${e.type.label}  ·  ${e.qty % 1 == 0 ? e.qty.toInt() : e.qty}'
-                      '${e.subCategory != null ? '  ${e.subCategory}' : ''}'
-                      '${e.price > 0 ? '  @ ${e.price % 1 == 0 ? e.price.toInt() : e.price} ₺' : '  (fiyat otomatik)'}',
-                      style: context.t.titleSmall
-                          ?.copyWith(color: context.c.text58),
-                    ),
-                  ),
-                ],
-              ),
-            ))),
+                ))),
           ],
           const SizedBox(height: 16),
           SizedBox(
@@ -2121,7 +2148,9 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                             if (mounted) setState(() => _saving = false);
                           }
                         },
-                        style: FilledButton.styleFrom(backgroundColor: context.c.amberFill, foregroundColor: context.c.onAmber),
+                        style: FilledButton.styleFrom(
+                            backgroundColor: context.c.amberFill,
+                            foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.playlist_add_check_rounded),
                         label: Text('${_previews.length} varlığı kaydet',
                             style: context.t.titleMedium
@@ -2131,7 +2160,9 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                         onPressed: _previews.isEmpty
                             ? null
                             : () => widget.onConfirmSingle(_previews.first),
-                        style: FilledButton.styleFrom(backgroundColor: context.c.amberFill, foregroundColor: context.c.onAmber),
+                        style: FilledButton.styleFrom(
+                            backgroundColor: context.c.amberFill,
+                            foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.check_rounded),
                         label: Text('Formu doldur',
                             style: context.t.titleMedium
@@ -2342,8 +2373,7 @@ class _TefasPickerState extends State<_TefasPicker> {
         // eklenip filtreye dâhil olur.
         final code = v.trim().toUpperCase();
         if (code.length >= 3 && code.length <= 6) {
-          final already =
-              (_funds ?? []).any((f) => f.code == code);
+          final already = (_funds ?? []).any((f) => f.code == code);
           if (!already) _tryLookup(code);
         }
       },

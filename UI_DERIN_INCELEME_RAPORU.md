@@ -15,11 +15,11 @@ gerçek yerleşim, gerçek metin ölçekleri)
 
 | # | Bulgu | Önem | Kanıt |
 |---|---|---|---|
-| 1 | **Büyük metin ayarında taşma** — 2 ekran | 🔴 YÜKSEK | Ölçüldü: 1.5×'te 61px, 3×'te 415px |
+| 1 | **Taşma** — 3 ekran, 7 yer (2'si normal font!) | 🔴 YÜKSEK | Ölçüldü: 1.0×'te 138px, 3×'te 415px |
 | 2 | Boşluk ölçeği fiilen kullanılmıyor (%92 ham sayı) | 🟠 ORTA | 493 ham / 44 token |
 | 3 | 66 kart kabuğu elle kuruluyor — ortak komponent yok | 🟠 ORTA | Sayıldı |
 | 4 | 6 ekranda taşma testi yok | 🟠 ORTA | 5 test / 11 büyük ekran |
-| 5 | Sabit yükseklikli butonlar (≤42pt) büyük fontta kırpar | 🟡 DÜŞÜK | Eşik ölçüldü: 2.5× |
+| 5 | ~~Sabit yükseklikli butonlar kırpar~~ | ❌ GEÇERSİZ | Hepsi kare ikon kutusuymuş |
 | 6 | `boldText` sistem ayarı yok sayılıyor | 🟡 DÜŞÜK | Kaynak |
 | 7 | Ölü ekran (`asset_detail_screen`) | 🟡 DÜŞÜK | 0 çağrı yeri |
 
@@ -161,16 +161,63 @@ Kapsanan: `home`, `charts` (kart), `leaderboard`, `performance`,
 Bu boşluk soyut değil: 1. maddedeki iki hata tam olarak kapsanmayan
 yerlerde çıktı ve bu incelemede **ilk denemede** bulundu.
 
+### ✅ `add_asset_screen` kapsama alındı — 5 taşma daha çıktı
+
+En büyük ekran (2.648 satır) teste bağlandı ve **beş** taşma buldu.
+İkisi **normal metin boyutunda** (1.0×), yani kullanıcı bunları şu anda
+görebiliyor:
+
+| Yer | Koşul | Taşma |
+|---|---|---|
+| `_priceBlock` "Alış Fiyatı · opsiyonel" | **1.0×** @375pt | 138px |
+| `_commissionBlock` "Komisyon / Masraf · opsiyonel" | **1.0×** @375pt | 50px |
+| İşlem tarihi satırı | 1.0× @320pt | 38px |
+| "veya listede yok" ayracı | 1.5×+ | — |
+| Para birimi dropdown'ı | 3.0× @320pt | 10px |
+
+İlk ikisi neden bu kadar büyük: `_priceBlock`, "Miktar" ile aynı `Row`'da
+`Expanded` içinde duruyor — ekranın yarısı kadar yeri var, etiket ise tam
+genişlik istiyordu.
+
+`_fieldLabel` yardımcısına `maxLines: 1` + `ellipsis` **varsayılan** olarak
+eklendi; böylece aynı hata diğer çağrı yerlerinde tekrarlanamaz.
+
+Para birimi dropdown'ı istisna: `DropdownButton` içeride daralamayan kendi
+`Row`'unu kurar. İçerik üç harflik kod ("TRY") olduğu için
+`MediaQuery.withClampedTextScaling(maxScaleFactor: 1.6)` kullanıldı —
+bu Dynamic Type'ı **yok saymak değil**, üst sınır koymaktır.
+
 **Not:** Mevcut testler yalnızca 320–430pt **genişlik** tarıyor, metin
 ölçeğini taramıyor. 1.0×'te hepsi temiz olduğu için bu hatalar
 görünmüyordu. Testlere ölçek ekseni eklenmeli.
 
 ---
 
-## 5. 🟡 Sabit yükseklikli butonlar
+## 5. ❌ GEÇERSİZ — "Sabit yükseklikli butonlar metni kırpar"
 
-13 buton sabit yükseklikli ve içinde metin var. **Ölçtüm** — hangi
-yükseklik hangi ölçekte kırpıyor (fontSize 15):
+**Bu madde yanlış çıktı. Düzeltmeye başlayınca ortaya çıktı.**
+
+Taramam 13 "sabit yükseklikli buton + metin" bildirmişti. Tek tek açınca
+beşinin de aslında **kare ikon kutusu** olduğu görüldü:
+
+```dart
+Container(
+  width: 40, height: 40,          // KARE — ikon kutusu
+  child: Icon(item.type.icon),    // metin DEĞİL
+)
+```
+
+Tarama, dokunulabilir widget'ın gövdesindeki *ilk* `height:` değerini
+butonun kendi yüksekliği sanıyordu; oysa o değer içerideki ikon
+kutusuna aitti. İkonlar Dynamic Type ile büyümez, dolayısıyla kırpılamaz.
+
+Daraltılmış tarama (kare olmayan + doğrudan `child: Text`) çalıştırıldı:
+**0 sonuç**. Yani üründe bu sınıfta bir hata yok.
+
+### Yine de duran doğru bilgi: eşik tablosu
+
+Ölçüm boşa gitmedi — ileride sabit yükseklikli bir metin kutusu
+yazılırsa eşik şudur (fontSize 15):
 
 | Kutu | 1.0× | 1.5× | 2.0× | 2.5× | 3.0× |
 |---|---|---|---|---|---|
@@ -181,15 +228,10 @@ yükseklik hangi ölçekte kırpıyor (fontSize 15):
 | 52pt | ok | ok | ok | ok | ok |
 
 Risk **≤42pt** kutularda ve yalnızca **2.5× üstünde** (iOS AX3+).
+52pt (login, onboarding, disclaimer) her ölçekte güvenli.
 
-Etkilenen: `settings_screen:680` (36pt), `bulk_add_asset:428` (40pt),
-`profile_screen:1017` (40pt), `quick_adjust_dialog:183` (40pt),
-`add_asset_screen:2582` (42pt).
-
-52pt butonlar (login, onboarding, disclaimer) **güvenli** — ölçüm bunu
-gösterdi, ilk tahminim yanlıştı (§7).
-
-**Düzeltme:** `height:` yerine `constraints: BoxConstraints(minHeight: …)`.
+Kural: metin saran kutuya `height:` verme; `constraints:
+BoxConstraints(minHeight: …)` kullan — kutu metinle birlikte büyür.
 
 ---
 
@@ -229,11 +271,10 @@ değil, test kurulum eksiği**. Rapora "temiz" diye yazmadım; ölçülemedi.
 
 | Sıra | İş | Gerekçe |
 |---|---|---|
-| 1 | §1 taşmaları düzelt | Kullanıcı şu an etkileniyor |
-| 2 | Mevcut taşma testlerine **metin ölçeği** ekseni ekle | Bu hataları en başta yakalardı |
-| 3 | `add_asset` + `portfolio_performance` taşma testi | En büyük kapsanmayan ekranlar |
+| 1 | ✅ §1 taşmaları düzelt | Kullanıcı şu an etkileniyor |
+| 2 | ✅ Taşma testine **metin ölçeği** ekseni ekle | Bu hataları en başta yakalardı |
+| 3 | ✅ `add_asset` taşma testi (5 hata buldu) | En büyük kapsanmayan ekran |
 | 4 | `SandikSectionHeader` komponenti | §1'in tekrarını önler |
-| 5 | §5 buton yükseklikleri → `minHeight` | Küçük, mekanik |
-| 6 | Boşluk ölçeğini gerçeğe uydur (§2) | Büyük ama düşük riskli |
+| 5 | Boşluk ölçeğini gerçeğe uydur (§2) | Büyük ama düşük riskli |
 
 §3 (SandikCard) ve §6 (boldText) daha büyük kararlar — ayrı ele alınmalı.

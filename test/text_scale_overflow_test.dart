@@ -7,6 +7,7 @@ import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/screens/add_asset_screen.dart';
 import 'package:portfoy_takip/screens/charts_screen.dart';
 import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
 
@@ -174,6 +175,25 @@ void main() {
           expect(err, isNull,
               reason: '${w.toInt()}pt / metin ölçeği $s: $err\n'
                   'Lejant çipi ekran genişliğini aşmamalı.');
+        });
+      }
+    }
+  });
+
+  // En büyük ekran (2.648 satır) ve taşma testi hiç yoktu. Form alanları
+  // Material ata gerektirdiği için `Scaffold` ile sarılır.
+  group('AddAssetScreen — metin ölçeği', () {
+    for (final w in widths) {
+      for (final s in scales) {
+        testWidgets('${w.toInt()}pt x$s taşmamalı', (t) async {
+          final err = await _pumpAndCatch(
+            t,
+            const Scaffold(body: AddAssetScreen()),
+            width: w,
+            scale: s,
+          );
+          expect(err, isNull,
+              reason: '${w.toInt()}pt / metin ölçeği $s: $err');
         });
       }
     }
