@@ -118,6 +118,17 @@ değil.
 - `paywall_enabled: false` — premium altyapısı (PremiumGate, paywall ekranı,
   Remote Config flag'leri) hazır ama `pubspec.yaml`'da IAP paketi YOK. Flag
   açılsa satın alma çalışmaz. Ayrıntı: `MONETIZATION_ROADMAP.md`.
+- `lib/screens/asset_detail_screen.dart` — **ölü kod** (bulundu 2026-08-10).
+  Hiçbir yerden `push` edilmiyor; sınıfa yapılan tek referans kendi tanımı,
+  testi de yok. Varlık satırı bunun yerine `PerformanceScreen`'e gidiyor.
+
+  Neden hemen silinmedi: dosya `PerformanceScreen`'e geçiş yapan bir alt
+  bölüm içeriyor (satır 274), yani bir zamanlar akışın parçasıymış. Silmek
+  ürün kararıdır — bu ekranın geri gelmesi planlanıyorsa yaşamalı.
+
+  Erteleme maliyeti: analyze/test bu dosyayı taramaya devam eder, refactor'lar
+  onu da günceller (nitekim kontrast ve dokunma hedefi düzeltmelerinde
+  **kullanıcının hiç göremeyeceği** kod da düzeltildi).
 
 ---
 

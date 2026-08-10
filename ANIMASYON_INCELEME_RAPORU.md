@@ -142,8 +142,26 @@ Bunun `_veriHazir()` mantığıyla birleştirilmesi gerekir (bkz.
 [splash_single_load_test.dart](test/splash_single_load_test.dart) — mevcut
 değişmez korunmalı).
 
-**Not:** Bu bir performans değişikliği; ölçüp doğrulamadan yapılmamalı.
-İstersen ayrı bir iş olarak ele alırım.
+### ✅ ÇÖZÜLDÜ (2026-08-10, `168a263`)
+
+Alt sınır **600 ms**'ye indirildi ve sihirli sayı `initState`ten çıkarılıp
+`_splashMinimum` sabitine alındı.
+
+Kod okununca tespit doğrulandı: `_splashDone` gerçekten `_veriHazir()`'dan
+**bağımsız bir taban** olarak çalışıyordu (`if (!_splashDone || ...)`), yani
+veri 400 ms'de gelse bile 1.8 sn bekleniyordu. Veri `_warmUpData()` ile
+splash sırasında paralel çekildiğinden bu süre yavaş ağı telafi etmiyor,
+yalnızca hızlı durumu yavaşlatıyordu.
+
+Veri bekleme kapısı ve 6 sn'lik emniyet supabı **korundu** —
+[splash_single_load_test.dart](test/splash_single_load_test.dart)
+değişmezi hâlâ geçiyor.
+
+**Ölçüm notu (dürüstlük payı):** `am start -W` yalnızca ilk frame'e
+(splash'in kendisine) kadar ölçüyor; splash → ana ekran geçişini
+kapsamıyor. Uygulama bu geçiş için zaman damgası basmadığından **kazanç
+logcat'ten sayısal olarak doğrulanamadı**. Emülatörde çökme/hata olmadığı
+doğrulandı; gerçek kazanç cihazda gözle görülmeli.
 
 ---
 
@@ -193,6 +211,27 @@ Hero eklemek onunla çakışabilir.
 **Öneri:** Zorunlu değil. Denemek istersen tek bir ekranda prototiplenip
 gerçek cihazda değerlendirilmeli.
 
+### ❌ KAPATILDI — dayanağı geçersiz (2026-08-10)
+
+Uygulamaya geçmeden önce iki uç incelendi ve **öneri kendi varsayımında
+hatalı çıktı**:
+
+1. **Raporun "detay ekranı" dediği yer ölü kod.**
+   [asset_detail_screen.dart](lib/screens/asset_detail_screen.dart) hiçbir
+   yerden `push` edilmiyor — sınıfa yapılan tek referans kendi tanımı.
+   Gerçek hedef `PerformanceScreen`.
+
+2. **Paylaşılan görsel öğe yok.** Raporda "ticker/tutar bloğu iki ekranda da
+   var" yazıyordu; doğru değil. `PerformanceScreen` varlığı yalnızca
+   **AppBar başlığı** olarak gösteriyor (ikon/logo/kart yok). Hero, iki
+   ekranda da bulunan somut bir nesnenin uçması demektir; liste satırındaki
+   metni AppBar başlığına uçurmak Cupertino'nun kaydırma geçişiyle çakışır
+   ve HIG #80'e ters düşer.
+
+Yani Hero için ortada **uçacak bir şey yok**. Bu madde, önce paylaşılan bir
+görsel kimlik (varlık ikonu/logosu) tasarlanırsa yeniden değerlendirilebilir
+— o zaman gerçek bir aday olur.
+
 ---
 
 ## Doğru yapılmış olanlar
@@ -223,11 +262,24 @@ Bunlar rapordan çıkarılmamalı — mevcut kalitenin kaydı:
 **Doğrulama:** `flutter analyze` 13 → 5 issue (yeni `const` fırsatları da
 temizlendi), 295 test geçiyor, emülatörde çalışıyor.
 
-## Açık kalanlar — senin kararın gerekli
+## Açık kalanlar
 
-- **Splash 1800ms** (madde 3): sabit gecikmeyi "en az X ms, veri hazırsa hemen
-  geç" modeline çevirmek. Ölçüm ve `_veriHazir()` mantığına dokunmak gerektiği
-  için ayrı ele alınmalı.
-- **Hero** (madde 5): varlık satırı → detay ekranı geçişi. Cupertino'nun kendi
-  geçişiyle çakışma riski var; tek ekranda prototipleyip gerçek cihazda
-  değerlendirmek lazım.
+**Yok — rapor kapandı (2026-08-10).**
+
+| # | Madde | Sonuç |
+|---|---|---|
+| 1 | Reduce-motion kapsamı | ✅ Çözüldü (%100) |
+| 2 | `AnimatedSwitcher` curve | ❌ Hatalı tespit |
+| 3 | Splash 1800 ms | ✅ Çözüldü → 600 ms (`168a263`) |
+| 4 | Duration ölçeği | ❌ Hatalı tespit |
+| 5 | Hero animasyonu | ❌ Dayanağı geçersiz — uçacak paylaşılan öğe yok |
+
+Beş maddenin **üçü** (2, 4, 5) incelendiğinde geçersiz çıktı. Bunları
+silmek yerine gerekçesiyle bırakıyorum: aynı yanlış tespitin ileride
+tekrar önerilmesini engeller.
+
+### Bu raporun dışında kalan iş
+
+- **Ölü kod:** [asset_detail_screen.dart](lib/screens/asset_detail_screen.dart)
+  hiçbir yerden çağrılmıyor. Silinmesi ayrı bir karar (kullanıcı onayı
+  gerektirir) — buraya değil `TECHNICAL_DEBT.md`'ye yazılmalı.
