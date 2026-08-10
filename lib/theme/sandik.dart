@@ -1205,6 +1205,136 @@ class SandikLogoutButton extends StatelessWidget {
   }
 }
 
+/// Standart kart kabuğu — yüzey + köşe + saç teli kenar.
+///
+/// **Neden gerekli:** denetimde (2026-08-10) 64 kart kabuğunun elle
+/// kurulduğu, 13 farklı varyasyona dağıldığı görüldü. Ama dağılım rastgele
+/// değildi — 24+13 kullanım (%58) tek bir şekle aitti ve kenar tanımlarının
+/// 18'i birebir `context.c.hairline` idi.
+///
+/// Elle kurmanın bedeli soyut değil: "başlık + sayaç rozeti" taşma hatası
+/// `performance_screen`'de düzeltildikten sonra `portfolio_performance_screen`'de
+/// **yeniden yazıldı**, çünkü paylaşılan bir kabuk yoktu.
+///
+/// Bu widget yalnızca **düz** kartı kapsar. Seçim/hata/vurgu gibi durum
+/// bildiren kenarlar (11 kullanım) bilinçli varyasyondur; onlar `Container`
+/// ile kurulmaya devam eder — hepsini tek API'ye sıkıştırmak parametre
+/// çorbası üretirdi.
+class SandikCard extends StatelessWidget {
+  const SandikCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(SandikSpace.md),
+    this.elevated = false,
+    this.bordered = true,
+    this.radius,
+    this.onTap,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  /// Seviye 2 yüzey (`surface2`) — hero kart için.
+  final bool elevated;
+
+  /// Saç teli kenar. Kartlar üst üste bindiğinde ayrım için gerekir;
+  /// zemine gömülü bloklarda kapatılabilir.
+  final bool bordered;
+
+  /// Varsayılan [SandikRadius.md] — kullanımın çoğunluğu bu.
+  final double? radius;
+
+  /// Verilirse kart dokunulabilir olur. Dokunma hedefi HIG #37 gereği
+  /// en az 44pt olmalı; kart zaten bundan büyüktür.
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final box = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: elevated ? context.c.surface2 : context.c.surface1,
+        borderRadius: BorderRadius.circular(radius ?? SandikRadius.md),
+        border: bordered ? Border.all(color: context.c.hairline) : null,
+      ),
+      child: child,
+    );
+    if (onTap == null) return box;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: box,
+    );
+  }
+}
+
+/// Bölüm başlığı + isteğe bağlı sayaç rozeti.
+///
+/// **Neden gerekli:** bu desen elle yazıldığında taşıyor. Aynı hata iki
+/// ekranda ayrı ayrı ortaya çıktı:
+/// - `performance_screen` "TEKNİK ANALİZ" (TECHNICAL_DEBT.md'de kayıtlı)
+/// - `portfolio_performance_screen` "TEKNİK SİNYALLER" (1.5×'te 61px,
+///   3×'te 415px taşıyordu)
+///
+/// Sebep her ikisinde de aynı: başlık `Flexible` değil, büyük metin
+/// ayarında genişleyip rozeti dışarı itiyor. Burada başlık daima esnek ve
+/// kısaltılabilir; rozet sabit kalır.
+class SandikSectionHeader extends StatelessWidget {
+  const SandikSectionHeader({
+    super.key,
+    required this.title,
+    this.count,
+    this.trailing,
+  });
+
+  final String title;
+
+  /// Verilirse başlığın yanında amber rozet gösterilir.
+  final int? count;
+
+  /// Sağa yaslanan aksiyon (ör. "Ayarla" bağlantısı).
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Flexible(
+          child: Text(
+            title,
+            style: context.t.labelLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: context.c.text58,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (count != null) ...[
+          const SizedBox(width: SandikSpace.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 7, vertical: SandikSpace.xxs),
+            decoration: BoxDecoration(
+              color: context.c.amberFill.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(SandikRadius.sm),
+            ),
+            child: Text(
+              '$count',
+              style: context.t.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: context.c.amberText,
+              ),
+            ),
+          ),
+        ],
+        if (trailing != null) ...[const Spacer(), trailing!],
+      ],
+    );
+  }
+}
+
 /// Tam ekran loading — gif + "sandık" yazısı. Ekran ilk açılışında kullan.
 ///
 /// Zemin [Sandik.background] ile aynı; GIF'in kendi arka planı şeffaf olduğu

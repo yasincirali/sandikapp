@@ -2243,32 +2243,13 @@ class _PortfolioSignalPanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            // Başlık ESNEK olmalı: büyük metin ayarında (Dynamic Type)
-            // genişleyip sayaç rozetini sağa itiyor ve satır taşıyordu —
-            // 1.5×'te 61px, 3×'te 415px (320pt'de 470px). Rozet sabit
-            // kalır, daralması gereken taraf başlıktır.
-            Flexible(
-              child: Text('TEKNİK SİNYALLER',
-                  style: context.t.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: context.c.text58),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                  color: context.c.amberFill.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(SandikRadius.sm)),
-              child: Text('${results.length}',
-                  style: context.t.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.amberText)),
-            ),
-          ],
+        // Elle kurulmuş başlık+rozet satırıydı ve büyük metin ayarında
+        // taşıyordu (1.5×'te 61px, 3×'te 415px). Aynı hata daha önce
+        // `performance_screen`'de de çıkmıştı — paylaşılan komponent
+        // olmadığı için iki kez yazılmıştı.
+        SandikSectionHeader(
+          title: 'TEKNİK SİNYALLER',
+          count: results.length,
         ),
         const SizedBox(height: 12),
         ...results.map((r) {

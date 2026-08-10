@@ -17,7 +17,7 @@ gerçek yerleşim, gerçek metin ölçekleri)
 |---|---|---|---|
 | 1 | **Taşma** — 3 ekran, 7 yer (2'si normal font!) | 🔴 YÜKSEK | Ölçüldü: 1.0×'te 138px, 3×'te 415px |
 | 2 | ✅ Boşluk ölçeği fiilen kullanılmıyor | ÇÖZÜLDÜ | Kapsam %37 → %84 |
-| 3 | 66 kart kabuğu elle kuruluyor — ortak komponent yok | 🟠 ORTA | Sayıldı |
+| 3 | ✅ Ortak kart/başlık komponenti yok | KISMEN | 64 kart, 13 varyasyon |
 | 4 | 6 ekranda taşma testi yok | 🟠 ORTA | 5 test / 11 büyük ekran |
 | 5 | ~~Sabit yükseklikli butonlar kırpar~~ | ❌ GEÇERSİZ | Hepsi kare ikon kutusuymuş |
 | 6 | ✅ `boldText` sistem ayarı yok sayılıyor | ÇÖZÜLDÜ | `context.t` |
@@ -159,6 +159,36 @@ iki ekranda ayrı ayrı yazıldı ve biri düzeltilince diğeri düzelmedi.
 
 **Ekran/widget oranı da bunu söylüyor:** 23.177 satır ekran koduna karşılık
 yalnızca 3.622 satır paylaşılan widget.
+
+### ✅ KISMEN ÇÖZÜLDÜ (2026-08-10)
+
+64 kart 13 varyasyona dağılmış görünüyordu ama dağılım rastgele değildi:
+**%58'i (37 kullanım) tek bir şekle** aitti ve kenar tanımlarının 18'i
+birebir `context.c.hairline` idi.
+
+İki komponent eklendi:
+
+- **`SandikCard`** — düz kart kabuğu (yüzey + köşe + saç teli kenar).
+  Seçim/hata/vurgu bildiren kenarlar (11 kullanım) **kapsam dışı**;
+  onlar bilinçli varyasyondur ve hepsini tek API'ye sıkıştırmak parametre
+  çorbası üretirdi.
+- **`SandikSectionHeader`** — başlık + sayaç rozeti. §1'deki hatanın
+  yapısal çözümü: başlık daima esnek ve kısaltılabilir.
+
+`portfolio_performance_screen`'deki elle kurulmuş başlık bu komponente
+çevrildi (26 satır → 4 satır).
+
+**64 kartın tamamı çevrilmedi — bilinçli.** Mekanik dönüşüm 60+ çağrı
+yerinde görsel farklar üretebilir (padding/kenar nüansları) ve emülatör
+render edemediği için gözle doğrulanamaz. Komponent yerinde; dönüşüm
+dosyalara dokunuldukça yapılmalı.
+
+`performance_screen`'deki "TEKNİK ANALİZ" başlığı da çevrilmedi: sayaç
+yerine metin alt bilgisi + trailing aksiyon içeriyor ve **zaten doğru
+korunmuş** durumda. Komponente uydurmak için komponenti bükmek gerekirdi.
+
+Regresyon: `sandik_card_test.dart` (8 test). Kanaryayla doğrulandı —
+başlıktaki `Flexible` kaldırılınca 3 test kırılıyor.
 
 ---
 
@@ -304,7 +334,17 @@ değil, test kurulum eksiği**. Rapora "temiz" diye yazmadım; ölçülemedi.
 | 1 | ✅ §1 taşmaları düzelt | Kullanıcı şu an etkileniyor |
 | 2 | ✅ Taşma testine **metin ölçeği** ekseni ekle | Bu hataları en başta yakalardı |
 | 3 | ✅ `add_asset` taşma testi (5 hata buldu) | En büyük kapsanmayan ekran |
-| 4 | `SandikSectionHeader` komponenti | §1'in tekrarını önler |
-| 5 | Boşluk ölçeğini gerçeğe uydur (§2) | Büyük ama düşük riskli |
+| 4 | ✅ `SandikSectionHeader` komponenti | §1'in tekrarını önler |
+| 5 | ✅ Boşluk ölçeğini gerçeğe uydur (§2) | Büyük ama düşük riskli |
+| 6 | ✅ `boldText` desteği (§6) | Erişilebilirlik boşluğu |
 
-§3 (SandikCard) ve §6 (boldText) daha büyük kararlar — ayrı ele alınmalı.
+## Kalan iş
+
+Raporun **tüm maddeleri kapandı.** Devam eden tek şey mekanik ve
+kademeli: 64 kart kabuğunun `SandikCard`'a çevrilmesi. Bu, dosyalara
+dokunuldukça yapılmalı — toplu dönüşüm gözle doğrulanamayacağı için
+(emülatör render edemiyor) riskli.
+
+**Gözle doğrulama borcu:** bu turdaki renk ve yerleşim düzeltmeleri
+testle sabit ama görsel olarak doğrulanmadı. Gerçek cihazda light mode +
+büyük metin ayarıyla bakılmalı.
