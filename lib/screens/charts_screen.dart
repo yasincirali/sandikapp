@@ -1,3 +1,5 @@
+import 'dart:async' show FutureOr;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
@@ -627,9 +629,12 @@ class _AssetList extends StatelessWidget {
   final String? currentUserId;
   final void Function(Position) onTap;
   final void Function(Position) onDelete;
-  final void Function(Position) onAdd;
-  final void Function(Position) onRemove;
-  final void Function(Position) onDividend;
+  // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
+  // KAPANDIKTAN sonra kapanabilsin diye tip `void` değil `FutureOr<void>`.
+  // `void` kalsaydı `await` beklemez, panel yine erken kapanırdı.
+  final FutureOr<void> Function(Position) onAdd;
+  final FutureOr<void> Function(Position) onRemove;
+  final FutureOr<void> Function(Position) onDividend;
 
   const _AssetList({
     required this.positions,
@@ -691,7 +696,9 @@ class _AssetList extends StatelessWidget {
 /// yükseklik ne olursa olsun taşma olmaz, yazı küçülerek sığar.
 Widget _rowAction(
   BuildContext context, {
-  required VoidCallback onPressed,
+  /// `Future` döndürebilir: dialog açan aksiyonlarda panel, dialog
+  /// KAPANDIKTAN sonra kapatılır (bkz. onTap).
+  required FutureOr<void> Function() onPressed,
   required Color background,
   required Color foreground,
   required IconData icon,
@@ -700,10 +707,18 @@ Widget _rowAction(
   return Expanded(
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        // Aksiyon paneli açık kalmasın — dokunulan satır kapanır.
-        Slidable.of(context)?.close();
-        onPressed();
+      onTap: () async {
+        // Panel kapanışı bir ANİMASYONDUR. Eskiden `close()` çağrılıp hemen
+        // ardından dialog açılıyordu; dialog açılış animasyonu araya girince
+        // kapanış yarıda kalıyor ve dialog kapandığında panel hâlâ açık
+        // duruyordu.
+        //
+        // Sıra tersine çevrildi: önce aksiyonun kendisi (dialog) beklenir,
+        // sonra panel kapatılır. `Slidable.of` referansı ÖNCEDEN alınır —
+        // await sonrası bu context artık geçerli olmayabilir.
+        final slidable = Slidable.of(context);
+        await onPressed();
+        slidable?.close();
       },
       child: Container(
         color: background,
@@ -896,9 +911,12 @@ class _AssetCard extends StatefulWidget {
   final bool canEdit;
   final void Function(Position) onTap;
   final void Function(Position) onDelete;
-  final void Function(Position) onAdd;
-  final void Function(Position) onRemove;
-  final void Function(Position) onDividend;
+  // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
+  // KAPANDIKTAN sonra kapanabilsin diye tip `void` değil `FutureOr<void>`.
+  // `void` kalsaydı `await` beklemez, panel yine erken kapanırdı.
+  final FutureOr<void> Function(Position) onAdd;
+  final FutureOr<void> Function(Position) onRemove;
+  final FutureOr<void> Function(Position) onDividend;
 
   const _AssetCard({
     super.key,
