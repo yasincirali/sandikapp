@@ -582,6 +582,24 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   bool? _disclaimerAccepted; // null = kontrol bekleniyor
   bool? _onboardingDone; // null = kontrol bekleniyor
   bool _splashDone = false;
+
+  /// Splash'in ekranda kalacağı **en az** süre.
+  ///
+  /// Bu bir veri bekleme süresi DEĞİL, marka karesinin göz tarafından
+  /// algılanması için gereken alt sınırdır. Veri hazır olsa bile bu süre
+  /// dolmadan geçilmez; süre dolduğunda veri hazırsa **hemen** geçilir.
+  ///
+  /// Eskiden 1800 ms idi ve `_veriHazir()` ile birlikte değil, ondan BAĞIMSIZ
+  /// bir taban olarak çalışıyordu: veri 400 ms'de gelse bile kullanıcı 1.8 sn
+  /// splash'e bakıyordu. Veri zaten `_warmUpData()` ile splash sırasında
+  /// paralel çekiliyor, dolayısıyla bu sürenin uzunluğu ağın yavaşlığını
+  /// telafi etmiyor — yalnızca hızlı durumu yavaşlatıyordu.
+  ///
+  /// 600 ms, "flash" hissi vermeyen ama beklemeye dönüşmeyen alt sınırdır
+  /// (bir logo karesinin algılanması ~400 ms, geçiş animasyonu 200 ms).
+  /// Ağ yavaşsa geçişi zaten `_veriHazir()` geciktirir; onun da emniyet supabı
+  /// `_dataWaitTimer` (6 sn).
+  static const _splashMinimum = Duration(milliseconds: 600);
   // Veri bekleme emniyet supabı — bu süre dolunca splash veriyi beklemeyi
   // bırakır ve ana ekrana geçer (HomeScreen kendi loading/hata durumunu
   // gösterir). Ağ koptuğunda kullanıcı splash'te kilitlenmesin.
@@ -652,7 +670,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 1800), () {
+    Future.delayed(_splashMinimum, () {
       if (mounted) setState(() => _splashDone = true);
     });
     // Emniyet supabı burada BAŞLATILMAZ — kullanıcı belli olunca
