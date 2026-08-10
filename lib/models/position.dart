@@ -212,6 +212,9 @@ double totalDividendTRY(Iterable<Asset> lots) {
   double total = 0;
   for (final l in lots) {
     if (!l.isDividend) continue;
+    // Silinmiş temettü cebe girmemiş sayılır — varlık kaydı tamamen
+    // kaldırıldıysa ona bağlı temettü de getiriden düşer.
+    if (l.isDeleted) continue;
     total += l.dividendTRY;
   }
   return total;
@@ -237,7 +240,10 @@ double ownerScopedTotalValue(
 List<Position> aggregatePositions(List<Asset> assets) {
   final map = <String, List<Asset>>{};
   for (final a in assets) {
-    if (a.isDeleteLog) continue;
+    // `isActive` iki şeyi birden eler: mezar taşları (deleteLog) ve
+    // yumuşak silinmiş lot'lar. Silinen kayıtlar hareket GEÇMİŞİNDE durur
+    // ama hiçbir miktara/tutara girmez.
+    if (!a.isActive) continue;
     map.putIfAbsent(positionKey(a), () => []).add(a);
   }
   final positions = <Position>[];

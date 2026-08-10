@@ -497,6 +497,12 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
 
   void _confirmDelete(BuildContext ctx) {
+    // Bu ekran aggregate edilmiş bir pozisyonla açılabiliyor; o durumda
+    // `widget.asset` sentetik bir görüntü nesnesidir (`id` = "pos:...") ve
+    // DB'de karşılığı yoktur. Silinecek gerçek kayıtlar `lots`'tur.
+    final lots =
+        (widget.lots ?? [widget.asset]).where((l) => !l.isDeleteLog).toList();
+    final multi = lots.length > 1;
     showDialog<void>(
       context: ctx,
       builder: (dlg) => AlertDialog(
@@ -507,7 +513,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('"${widget.asset.name}" kalıcı olarak silinsin mi?'),
+            Text(multi
+                ? '"${widget.asset.name}" için ${lots.length} işlem kaydı '
+                    '(alım/satım/temettü) kalıcı olarak silinsin mi?'
+                : '"${widget.asset.name}" kalıcı olarak silinsin mi?'),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -519,9 +528,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                         context.c.danger.withValues(alpha: 0.25)),
               ),
               child: const Text(
-                'Bu bir satış değil — kayıt tamamen silinir ve geçmiş '
-                'grafiğinden de düşer. Sattıysan bunun yerine "Çıkar" '
-                'kullan; realize kâr/zararın ve alım geçmişin korunur.',
+                'Bu bir satış değil — varlık portföyden çıkar, toplamlardan '
+                've geçmiş grafiğinden düşer. İşlem kayıtları "Portföy '
+                'Hareketleri"nde kalır. Sattıysan bunun yerine "Sat" kullan; '
+                'realize kâr/zararın hesaba dahil olur.',
                 style: TextStyle(fontSize: 12, height: 1.4),
               ),
             ),
@@ -541,7 +551,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
               try {
                 await ref
                     .read(portfolioProvider.notifier)
-                    .deleteAsset(widget.asset.id);
+                    .deletePositionLots(lots);
                 if (!mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(

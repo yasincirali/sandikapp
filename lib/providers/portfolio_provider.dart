@@ -81,17 +81,26 @@ class PortfolioState {
     }
   }
 
+  /// Hesaplara giren kayıtlar: yumuşak silinmemiş VE mezar taşı olmayan.
+  ///
+  /// [assets] HAM LEDGER'dır — hareket listesi onu olduğu gibi gösterir
+  /// (silinmiş bir varlığın Alım/Satım/Temettü geçmişi de görünsün diye).
+  /// Toplam/maliyet/getiri hesaplayan HER ŞEY bunun yerine bu görünümü
+  /// kullanmalı; aksi halde silinen varlık portföy değerine geri sızar.
+  List<Asset> get activeAssets =>
+      assets.where((a) => a.isActive).toList(growable: false);
+
   double get totalValue =>
-      assets.fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
+      activeAssets.fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
 
   /// Hem alım fiyatı hem güncel fiyatı bilinen varlıkların TRY maliyeti.
   /// currentPrice=0 olan varlıklar henüz fiyat çekilememiş demektir — dahil etme.
-  double get totalCost => assets
+  double get totalCost => activeAssets
       .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
       .fold(0, (s, a) => s + a.totalCostTRY);
 
   /// Aynı filtre: güncel değer hesabı da sadece fiyatı bilinen varlıkları kapsar.
-  double get _trackedValue => assets
+  double get _trackedValue => activeAssets
       .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
       .fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
 
@@ -172,7 +181,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     if (limit < (1 << 30)) {
       final existingKeys = <String>{};
       for (final a in currentState.assets) {
-        if (a.isBuy) {
+        // Silinmiş varlık kotayı işgal etmemeli — kullanıcı sildiği halde
+        // limite takılırdı.
+        if (a.isBuy && a.isActive) {
           existingKeys.add('${a.type.name}|${a.ticker}|${a.currency}');
         }
       }
@@ -382,53 +393,90 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// geri kalan lot'lar kaldığı için satır azalmış miktarla yeniden
   /// beliriyordu. Silme, kullanıcının gördüğü satırın tamamını kaldırmalı.
   ///
-  /// Her lot için [deleteAsset] ile aynı deleteLog kaydı üretilir — geçmiş
-  /// grafiği ve realize kâr/zarar hesabı bu loglara dayanır.
+  /// Silme işlemi başına TEK deleteLog kaydı yazılır — lot başına değil.
+  ///
+  /// Eskiden her lot için ayrı bir mezar taşı yazılıyordu; hareket listesi
+  /// ham ledger'a bağlanınca üç lot'lu bir varlığı silmek listeye üç ayrı
+  /// "Silindi" satırı bırakıyordu. Artık tek satır yazılır ve kaç kaydın
+  /// gittiği [Asset.deletedCount] içinde taşınır → "Silindi · 3 kayıt".
+  ///
+  /// Kaydın miktarı ve tutarı silinen POZİSYONUN neti üzerinden yazılır
+  /// (alımlar − satışlar), böylece hareket satırı "ne kadarlık varlık
+  /// gitti" sorusunu yanıtlar. Grafik ve toplamlar deleteLog'u zaten yok
+  /// sayar; bu alanlar yalnızca gösterim içindir.
   Future<void> deletePositionLots(List<Asset> lots) async {
     final ids = lots.map((l) => l.id).toSet();
     if (ids.isEmpty) return;
 
     final current = state.valueOrNull;
-    final logs = <Asset>[];
-    for (final lot in lots) {
-      // deleteLog satırlarının kendisi silinmez; onlar zaten kayıt değil iz.
-      if (lot.isDeleteLog) continue;
-      logs.add(Asset(
+
+    // Mezar taşları yeniden silinmez ve sayıma girmez.
+    final removed = lots.where((l) => !l.isDeleteLog).toList();
+    Asset? log;
+    if (removed.isNotEmpty) {
+      // Temsilci: en yeni ALIM (yoksa ilk kayıt) — isim/ticker/tür meta'sı
+      // buradan gelir.
+      final buys = removed.where((l) => l.isBuy).toList()
+        ..sort((a, b) => b.addedDate.compareTo(a.addedDate));
+      final rep = buys.isNotEmpty ? buys.first : removed.first;
+
+      // Net miktar ve net maliyet — satışlar düşülür, temettü miktara
+      // girmez (nakit hareketidir).
+      double netQty = 0;
+      double netCost = 0;
+      for (final l in removed) {
+        if (l.isDividend) continue;
+        if (l.isSell) {
+          netQty -= l.quantity;
+          netCost -= l.quantity * (l.sellPrice ?? l.purchasePrice);
+          continue;
+        }
+        netQty += l.quantity;
+        netCost += l.quantity * l.purchasePrice;
+      }
+      final unitPrice = netQty > 0 ? netCost / netQty : rep.purchasePrice;
+
+      log = Asset(
         id: _uuid.v4(),
-        userId: lot.userId,
-        name: lot.name,
-        ticker: lot.ticker,
-        type: lot.type,
-        quantity: lot.quantity,
-        purchasePrice: lot.purchasePrice,
-        currency: lot.currency,
-        notes: lot.notes,
-        isManualPrice: lot.isManualPrice,
-        subCategory: lot.subCategory,
-        unitType: lot.unitType,
-        purchaseFxRate: lot.purchaseFxRate,
-        currentPrice: lot.currentPrice,
-        lastUpdated: lot.lastUpdated,
+        userId: rep.userId,
+        name: rep.name,
+        ticker: rep.ticker,
+        type: rep.type,
+        quantity: netQty > 0 ? netQty : 0,
+        purchasePrice: unitPrice,
+        currency: rep.currency,
+        notes: rep.notes,
+        isManualPrice: rep.isManualPrice,
+        subCategory: rep.subCategory,
+        unitType: rep.unitType,
+        purchaseFxRate: rep.purchaseFxRate,
+        currentPrice: rep.currentPrice,
+        lastUpdated: rep.lastUpdated,
         kind: AssetKind.deleteLog,
-        refAssetId: lot.id,
-      ));
+        // Tek satır artık birden çok lot'u temsil ediyor; tek bir lot'a
+        // referans vermek yanıltıcı olurdu.
+        refAssetId: removed.length == 1 ? removed.first.id : null,
+        deletedCount: removed.length,
+      );
+
+      await SupabaseService.instance.insertAsset(log);
+      AnalyticsService.instance.logAssetDeleted(type: rep.type.name);
     }
 
-    for (final log in logs) {
-      await SupabaseService.instance.insertAsset(log);
-    }
-    if (logs.isNotEmpty) {
-      AnalyticsService.instance.logAssetDeleted(type: logs.first.type.name);
-    }
-    for (final id in ids) {
-      await SupabaseService.instance.deleteAsset(id);
-    }
+    // YUMUŞAK silme: lot'lar yerinde kalır, damgalanır. Fiziksel DELETE
+    // kullanılsaydı bu varlığın Alım/Satım/Temettü satırları hareket
+    // geçmişinden de silinirdi ve geriye yalnızca "Silindi" mezar taşı
+    // kalırdı — kullanıcı ne aldığını/sattığını okuyamazdı.
+    final stampedAt = DateTime.now();
+    await SupabaseService.instance
+        .softDeleteAssets(ids.toList(), stampedAt);
 
     if (current != null) {
       state = AsyncData(current.copyWith(
         assets: [
-          ...logs,
-          ...current.assets.where((a) => !ids.contains(a.id)),
+          if (log != null) log,
+          for (final a in current.assets)
+            if (ids.contains(a.id)) a.copyWithDeletedAt(stampedAt) else a,
         ],
       ));
     }
@@ -469,6 +517,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
     final symbols = <String>{'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'};
     for (final a in s.assets) {
+      // Silinmiş varlık için fiyat çekmek gereksiz ağ trafiğidir.
+      if (!a.isActive) continue;
       if (a.ticker.isNotEmpty && !a.isManualPrice) {
         symbols.add(a.ticker.toUpperCase());
       }

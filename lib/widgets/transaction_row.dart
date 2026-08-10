@@ -60,12 +60,24 @@ class TransactionRow extends StatelessWidget {
     // Yan fayda: "Satım" (5 harf), "Çıkarıldı"dan (9 harf) kısa. O etiket
     // 116pt'lik kolonda 19px taşıyordu (bkz. TECHNICAL_DEBT.md); artık
     // FittedBox küçültmek zorunda kalmıyor.
+    // Silme artık pozisyon başına TEK kayıttır ve kaç ledger satırının
+    // gittiğini taşır. Tek kayıt silindiyse sayı bilgi vermez ("Silindi ·
+    // 1 kayıt" gürültü olurdu); eski kayıtlarda `deletedCount` 0'dır, o da
+    // sayı bilinmiyor demektir. Her iki durumda düz "Silindi".
     final String kindLabel = isDelete
-        ? 'Silindi'
+        ? (asset.deletedCount > 1
+            ? 'Silindi · ${asset.deletedCount} kayıt'
+            : 'Silindi')
         : (isSell ? 'Satım' : (isDividend ? 'Temettü' : 'Alım'));
     final String sign = isSell || isDelete ? '−' : '+';
 
-    return Padding(
+    // Yumuşak silinmiş lot: kayıt geçmişte DURUR ama artık portföye
+    // dahil değil. Satırı soluklaştırıyoruz — okunabilir kalır, aktif
+    // işlemlerle karışmaz. Gizlemek yanlış olurdu: kullanıcı "ne aldım,
+    // ne sattım, sonra sildim" zincirini görebilmeli.
+    final bool isVoided = asset.isDeleted;
+
+    final row = Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
           padding: const EdgeInsets.all(14),
@@ -243,6 +255,41 @@ class TransactionRow extends StatelessWidget {
             ],
           ),
         ),
+    );
+
+    if (!isVoided) return row;
+
+    // Silinmiş kaydı yarı saydam göster + "silindi" rozeti. Opacity tek
+    // başına yetmez: renk körlüğü veya parlak ekranda fark edilmeyebilir,
+    // bu yüzden metinle de işaretliyoruz.
+    return Opacity(
+      opacity: 0.55,
+      child: Stack(
+        children: [
+          row,
+          Positioned(
+            left: 14,
+            top: 6,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: context.c.text58.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(SandikRadius.sm),
+              ),
+              child: Text(
+                'silindi',
+                style: context.t.labelSmall?.copyWith(
+                  fontSize: 9,
+                  letterSpacing: 0.2,
+                  fontWeight: FontWeight.w700,
+                  color: context.c.text58,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

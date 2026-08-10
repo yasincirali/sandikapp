@@ -147,6 +147,26 @@ class SupabaseService {
     );
   }
 
+  /// Yumuşak silme — satır kalır, `deleted_at` damgalanır.
+  ///
+  /// Varlık silmenin normal yolu budur. [deleteAsset] (fiziksel DELETE)
+  /// kaydı geçmişten de yok eder; hareket listesi ham ledger'dan
+  /// beslendiği için o varlığın Alım/Satım/Temettü satırlarını da
+  /// götürürdü.
+  Future<void> softDeleteAssets(List<String> ids, DateTime deletedAt) async {
+    if (ids.isEmpty) return;
+    await _log.log<void>(
+      source: 'SupabaseService.softDeleteAssets',
+      table: 'assets',
+      op: 'UPDATE',
+      request: {'ids': ids.length, 'deleted_at': deletedAt.toIso8601String()},
+      call: () => _db
+          .from('assets')
+          .update({'deleted_at': deletedAt.toUtc().toIso8601String()})
+          .inFilter('id', ids),
+    );
+  }
+
   Future<int> countAssetsForUser(String userId) async {
     final rows = await _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.countAssetsForUser',

@@ -869,12 +869,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // Portföy varlık sayısı değişince analytics user property'sini güncelle.
     // Analytics dashboard'ta cohort analizi için gerekli.
     ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (prev, next) {
+      // `isActive`: silinmiş lot'lar varlık sayısına girmemeli, yoksa
+      // kullanıcı varlığını sildikçe sayı yerinde kalır.
       final prevCount = prev?.valueOrNull?.assets
-              .where((a) => a.isBuy)
+              .where((a) => a.isBuy && a.isActive)
               .length ??
           -1;
-      final currCount =
-          next.valueOrNull?.assets.where((a) => a.isBuy).length ?? 0;
+      final currCount = next.valueOrNull?.assets
+              .where((a) => a.isBuy && a.isActive)
+              .length ??
+          0;
       if (prevCount != currCount) {
         AnalyticsService.instance.setUserProperty(
           name: 'asset_count',

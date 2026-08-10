@@ -249,7 +249,8 @@ class _PortfolioPerformanceScreenState
   /// yanlışlıkla "piyasa etkisi" sayılırdı. Temettü ve `deleteLog` akışa
   /// girmez (silinen varlık hiç var olmamış sayılır).
   static double _flowOf(Asset a) {
-    if (a.isDeleteLog) return 0;
+    // `isActive` hem mezar taşını hem yumuşak silinmiş lot'u eler.
+    if (!a.isActive) return 0;
     if (a.isBuy) return a.totalCostTRY;
     if (a.isSell) return -a.sellProceedsTRY;
     return 0;
@@ -350,7 +351,7 @@ class _PortfolioPerformanceScreenState
     // Aktif segment başlangıcı = ilk BUY lot tarihi. Sell/deleteLog dahil
     // edilirse edge case'lerde yanlış tarih seçilebilir; buy yoksa segment
     // zaten çizilmeyecek.
-    final buyLots = allAssets.where((a) => a.isBuy).toList();
+    final buyLots = allAssets.where((a) => a.isBuy && a.isActive).toList();
     if (buyLots.isEmpty) return [];
     final firstAssetDate =
         buyLots.map((a) => a.addedDate).reduce((a, b) => a.isBefore(b) ? a : b);
@@ -503,8 +504,10 @@ class _PortfolioPerformanceScreenState
                       // Filtreler hem düz listeye hem sahip gruplarına AYNI
                       // şekilde uygulanmalı; aksi halde grafik ile özet farklı
                       // varlık kümelerini gösterir.
+                      // `isActive`: mezar taşları VE yumuşak silinmiş lot'lar
+                      // grafiğe girmez — silinen varlık hiç olmamış sayılır.
                       bool keep(Asset a) =>
-                          !a.isDeleteLog &&
+                          a.isActive &&
                           (_typeFilter == null || a.type == _typeFilter);
 
                       targetAssets = targetAssets.where(keep).toList();
@@ -1864,7 +1867,7 @@ class _PortfolioPerformanceScreenState
                   final spotDayMs = DateTime(date.year, date.month, date.day)
                       .millisecondsSinceEpoch;
                   for (final a in assets) {
-                    if (a.isDeleteLog) continue;
+                    if (!a.isActive) continue;
                     final aDay = DateTime(a.addedDate.year, a.addedDate.month,
                             a.addedDate.day)
                         .millisecondsSinceEpoch;
@@ -2064,6 +2067,7 @@ class _PortfolioPerformanceScreenState
               double dayBuy = 0, daySell = 0;
               final txAssets = allTargetAssets ?? assets;
               for (final a in txAssets) {
+                if (!a.isActive) continue;
                 final addMid = DateTime(
                         a.addedDate.year, a.addedDate.month, a.addedDate.day)
                     .millisecondsSinceEpoch;
@@ -2170,6 +2174,7 @@ class _PortfolioPerformanceScreenState
     // yuvarlanır ve grafik X ekseni ile hizasız kalır.
     final Map<int, ({double buy, double sell})> perDay = {};
     for (final a in assets) {
+      if (!a.isActive) continue;
       final dayMidnight =
           DateTime(a.addedDate.year, a.addedDate.month, a.addedDate.day);
       final dayIdx = dayMidnight.difference(start).inMinutes ~/ (60 * 24);

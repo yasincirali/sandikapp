@@ -1934,6 +1934,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             refAssetId: a.refAssetId,
             sellPrice: a.sellPrice,
             commission: a.commission,
+            // Bu kopya kaydın TÜM alanlarını taşımalı; eksik bırakılan alan
+            // tarih düzenlemesinde sessizce sıfırlanır (temettü tutarı
+            // böyle kaybolurdu).
+            dividendAmount: a.dividendAmount,
+            deletedCount: a.deletedCount,
           );
           await ref.read(portfolioProvider.notifier).updateAsset(updated);
         } else {

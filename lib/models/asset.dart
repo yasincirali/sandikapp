@@ -84,6 +84,24 @@ class Asset {
   /// olarak kâr/zarara eklenir.
   double dividendAmount;
 
+  /// Bu silme işleminde kaldırılan ledger kaydı sayısı — yalnızca
+  /// `kind == deleteLog` satırlarında anlamlı.
+  ///
+  /// Silme artık lot başına değil, POZİSYON başına tek satır yazar; kaç
+  /// kaydın (alım + satım + temettü) gittiği burada taşınır. 0 → eski
+  /// kayıt, sayı bilinmiyor.
+  final int deletedCount;
+
+  /// Yumuşak silme damgası. NULL → aktif kayıt.
+  ///
+  /// Silme lot'ları FİZİKSEL olarak kaldırmaz; damgalar. Böylece varlığın
+  /// Alım/Satım/Temettü satırları hareket geçmişinde kalır ve kullanıcı
+  /// "ne aldım, ne sattım, sonra sildim" zincirini okuyabilir.
+  ///
+  /// Damgalı kayıtlar portföy toplamlarına, aggregate'e ve grafiğe
+  /// GİRMEZ — bkz. [isActive].
+  final DateTime? deletedAt;
+
   Asset({
     required this.id,
     required this.userId,
@@ -106,6 +124,8 @@ class Asset {
     this.sellPrice,
     this.commission = 0,
     this.dividendAmount = 0,
+    this.deletedCount = 0,
+    this.deletedAt,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
@@ -114,6 +134,16 @@ class Asset {
   bool get isSell => kind == AssetKind.sell;
   bool get isDeleteLog => kind == AssetKind.deleteLog;
   bool get isDividend => kind == AssetKind.dividend;
+
+  /// Yumuşak silinmiş mi? Damgalı kayıtlar hareket GEÇMİŞİNDE durur ama
+  /// hiçbir hesaba girmez.
+  bool get isDeleted => deletedAt != null;
+
+  /// Portföy hesaplarına giren kayıt: silinmemiş VE mezar taşı değil.
+  ///
+  /// Toplam, aggregate, grafik — hepsi bu filtreden geçmeli. Yalnızca
+  /// hareket listesi ham ledger'ı olduğu gibi gösterir.
+  bool get isActive => deletedAt == null && kind != AssetKind.deleteLog;
 
   /// Portföy net pozisyonuna katkı gösteren tek satırlar buy'lar. Sell'ler
   /// (negatif) ve delete_log'lar aggregator'da özel işlenir.
@@ -221,6 +251,38 @@ class Asset {
   /// Birim para birimden önce mi gelmeli? (Döviz sembolleri prefix, diğerleri suffix.)
   bool get unitIsPrefix => type == AssetType.doviz;
 
+  /// Yalnızca silme damgasını değiştiren kopya.
+  ///
+  /// Dar tutuldu: genel bir `copyWith` yerine tek amaçlı bir kopyacı,
+  /// çünkü Asset'i elle yeniden kurmak alan atlamaya çok müsait —
+  /// `dividendAmount` bir kez böyle düşmüştü. Buradaki liste TÜM alanları
+  /// taşır; yeni alan eklendiğinde buraya da eklenmeli.
+  Asset copyWithDeletedAt(DateTime? deletedAt) => Asset(
+        id: id,
+        userId: userId,
+        name: name,
+        ticker: ticker,
+        type: type,
+        quantity: quantity,
+        purchasePrice: purchasePrice,
+        currency: currency,
+        notes: notes,
+        subCategory: subCategory,
+        unitType: unitType,
+        purchaseFxRate: purchaseFxRate,
+        currentPrice: currentPrice,
+        lastUpdated: lastUpdated,
+        addedDate: addedDate,
+        isManualPrice: isManualPrice,
+        kind: kind,
+        refAssetId: refAssetId,
+        sellPrice: sellPrice,
+        commission: commission,
+        dividendAmount: dividendAmount,
+        deletedCount: deletedCount,
+        deletedAt: deletedAt,
+      );
+
   /// SQLite uyumlu map (partner kod payload'ı için kullanılır)
   Map<String, dynamic> toMap() => {
         'id': id,
@@ -289,6 +351,8 @@ class Asset {
         'sell_price': sellPrice,
         'commission': commission,
         'dividend_amount': dividendAmount,
+        'deleted_count': deletedCount,
+        'deleted_at': deletedAt?.toUtc().toIso8601String(),
       };
 
   factory Asset.fromSupabase(Map<String, dynamic> m) => Asset(
@@ -319,5 +383,12 @@ class Asset {
         commission: (m['commission'] as num?)?.toDouble() ?? 0,
         // Migration 0020 öncesi kayıtlarda sütun yok → 0.
         dividendAmount: (m['dividend_amount'] as num?)?.toDouble() ?? 0,
+        // Migration 0026 öncesi delete_log satırlarında sütun yok → 0,
+        // "sayı bilinmiyor" anlamına gelir.
+        deletedCount: (m['deleted_count'] as num?)?.toInt() ?? 0,
+        // Migration 0027 öncesi kayıtlarda sütun yok → null = aktif.
+        deletedAt: m['deleted_at'] != null
+            ? DateTime.parse(m['deleted_at'] as String)
+            : null,
       );
 }

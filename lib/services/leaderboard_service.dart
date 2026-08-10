@@ -125,6 +125,9 @@ class LeaderboardService {
               DateTime.fromMillisecondsSinceEpoch(startTs);
           double netCashFlow = 0;
           for (final a in assets) {
+            // Yumuşak silinmiş kayıt nakit akışına girmez — silinen varlık
+            // hiç alınmamış/satılmamış sayılır.
+            if (!a.isActive) continue;
             if (a.addedDate.isBefore(periodStart)) continue;
             if (a.addedDate.isAfter(now)) continue;
             if (a.isBuy) {
