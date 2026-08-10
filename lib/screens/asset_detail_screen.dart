@@ -576,8 +576,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 onPressed: () => Navigator.pop(dlg),
                 child: const Text('İptal')),
             FilledButton(
+              // `foregroundColor` verilmezse `onPrimary`e (amber için koyu
+              // ton) düşer ve kırmızı dolgu üstünde okunmaz.
               style: FilledButton.styleFrom(
-                  backgroundColor: context.c.danger),
+                  backgroundColor: context.c.danger,
+                  foregroundColor: context.c.onStatus),
               onPressed: () {
                 ref
                     .read(portfolioProvider.notifier)

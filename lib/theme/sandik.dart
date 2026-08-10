@@ -645,7 +645,11 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
     text20: Color(0x6BFFFFFF),
     gain: Color(0xFF3DB77F), // 5.73:1 (eski #2D9E6C → 4.30:1)
     loss: Color(0xFFFF6B52), // 5.17:1 (eski #E8503A → 3.90:1)
-    danger: Color(0xFFEF4444),
+    // Eski #EF4444 METİN olarak surface1 üzerinde yalnızca 3.86:1 veriyordu
+    // (AA 4.5). `gain`/`loss` denetimde düzeltilmişti ama `danger` atlanmıştı —
+    // bu ton "Sil" gibi geri alınamaz aksiyonları anlatıyor, en okunur olması
+    // gereken renk. #FF6B52 ile aynı aileden, 5.17:1.
+    danger: Color(0xFFFF6B52), // 5.17:1 (eski #EF4444 → 3.86:1)
     info: Color(0xFF4EA8DE),
     amberFill: Color(0xFFF5A623),
     amberText: Color(0xFFF5A623),

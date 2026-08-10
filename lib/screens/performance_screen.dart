@@ -534,7 +534,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: context.c.danger),
+                backgroundColor: context.c.danger,
+                foregroundColor: context.c.onStatus),
             onPressed: () async {
               Navigator.pop(dlg);
               try {

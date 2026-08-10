@@ -159,7 +159,9 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             child: const Text('İptal'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: ctx.c.danger),
+            style: FilledButton.styleFrom(
+                backgroundColor: ctx.c.danger,
+                foregroundColor: ctx.c.onStatus),
             onPressed: () async {
               Navigator.pop(dlg);
               try {
@@ -1085,7 +1087,15 @@ class _AssetCardState extends State<_AssetCard>
             motion: const DrawerMotion(),
             // Temettü yalnızca temettü ödeyen türlerde görünür → aksiyon
             // sayısı 2 veya 3 olabilir, pane genişliği de ona göre.
-            extentRatio: showsDividend ? 0.72 : 0.5,
+            //
+            // 0.72 fazlaydı: 375pt ekranda pane 270pt yer kaplıyor, geriye
+            // satır içeriğine 105pt kalıyordu ve varlık adı "AVOD 90 lot · H"
+            // gibi ortadan kesiliyordu. Aksiyonlar kaydırma sırasında hangi
+            // satırda olduğunu görebilmeyi engellememeli.
+            //
+            // 0.62'de her buton 78pt (HIG #37 minimumu 44pt), satıra 142pt
+            // kalıyor — hem etiketler sığıyor hem satır okunur kalıyor.
+            extentRatio: showsDividend ? 0.62 : 0.44,
             children: [
               // "Ekle/Çıkar" envanter dilidir; bu aksiyonlar ise FİYATLI
               // işlem kaydeder (alışta birim fiyat zorunlu, satışta güncel
@@ -1096,7 +1106,10 @@ class _AssetCardState extends State<_AssetCard>
                 context,
                 onPressed: () => onAdd(position),
                 background: context.c.gain,
-                foreground: context.c.text90,
+                // `text90` YÜZEY metnidir; renkli dolgu üstünde iki temada
+                // da kırılır (light 3.02:1, dark 2.54:1). Dolgu mürekkebi
+                // `onStatus` — light'ta beyaz, dark'ta koyu (5.37/5.73:1).
+                foreground: context.c.onStatus,
                 icon: Icons.trending_up_rounded,
                 label: 'Al',
               ),
@@ -1104,7 +1117,7 @@ class _AssetCardState extends State<_AssetCard>
                 context,
                 onPressed: () => onRemove(position),
                 background: context.c.loss.withValues(alpha: 0.85),
-                foreground: context.c.text90,
+                foreground: context.c.onStatus,
                 icon: Icons.trending_down_rounded,
                 label: 'Sat',
               ),
@@ -1133,7 +1146,9 @@ class _AssetCardState extends State<_AssetCard>
                 context,
                 onPressed: () => onDelete(position),
                 background: context.c.danger,
-                foreground: context.c.text90,
+                // `danger` de bir DOLGU; `loss` ile aynı parlaklık ailesinde
+                // olduğu için mürekkebi de aynı (`onStatus`).
+                foreground: context.c.onStatus,
                 icon: Icons.delete_outline_rounded,
                 label: 'Sil',
               ),

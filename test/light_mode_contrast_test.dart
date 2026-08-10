@@ -98,7 +98,54 @@ void main() {
         expect(_contrast(p.text90, p.gain), lessThan(4.5));
         expect(_contrast(p.text90, p.loss), lessThan(4.5));
       });
+
+      // `danger` "Sil" gibi geri alınamaz aksiyonları anlatır — en okunur
+      // olması gereken ton. Denetimde atlanmıştı: dark #EF4444 METİN olarak
+      // yüzey üzerinde 3.86:1 veriyordu.
+      test('$name: danger yüzey üstünde okunur', () {
+        final cr = _contrast(p.danger, p.surface1);
+        expect(cr, greaterThanOrEqualTo(4.5),
+            reason: '$name: ${cr.toStringAsFixed(2)}:1');
+      });
+      test('$name: onStatus / danger dolgusu AA geçer', () {
+        final cr = _contrast(p.onStatus, p.danger);
+        expect(cr, greaterThanOrEqualTo(4.5),
+            reason: '$name: ${cr.toStringAsFixed(2)}:1');
+      });
     }
+  });
+
+  group('kaynak taraması — yardımcı fonksiyona geçen dolgu/mürekkep', () {
+    test('background:/foreground: çifti yüzey metni taşımamalı', () {
+      // Bu deseni ilk tarama KAÇIRDI: `_rowAction(background: ..., foreground:
+      // ...)` gibi yardımcılarda dolgu ve mürekkep ayrı NAMED ARGÜMAN olarak
+      // geçiyor, yan yana yazılmıyor. Kaydırma aksiyonları (Al/Sat/Sil)
+      // tam olarak bu yüzden gözden kaçtı — light modda 2.87–3.02:1.
+      final offenders = <String>[];
+      final bg = RegExp(
+        r'background:\s*(?:ctx|context)\.c\.(gain|loss|danger)\b',
+      );
+
+      for (final e in Directory('lib').listSync(recursive: true)) {
+        if (e is! File || !e.path.endsWith('.dart')) continue;
+        final src = e.readAsStringSync();
+        for (final m in bg.allMatches(src)) {
+          // Aynı çağrının argüman listesinde `foreground:` ne veriyor?
+          final win = src.substring(
+              m.start, (m.end + 400).clamp(0, src.length));
+          final fg = RegExp(
+            r'foreground:\s*(?:ctx|context)\.c\.(text90|text58|onAmber)\b',
+          ).firstMatch(win);
+          if (fg == null) continue;
+          final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;
+          offenders.add('${e.path}:$line — ${m.group(0)} + ${fg.group(0)}');
+        }
+      }
+
+      expect(offenders, isEmpty,
+          reason: 'Renkli dolgu üstüne `onStatus` gelmeli.\n'
+              '${offenders.join('\n')}');
+    });
   });
 
   group('kaynak taraması — durum dolgusu üstünde yanlış mürekkep', () {

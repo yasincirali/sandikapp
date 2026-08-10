@@ -2296,19 +2296,28 @@ class _PortfolioSignalPanel extends ConsumerWidget {
                             Row(
                               children: [
                                 if (r.asset.showTicker) ...[
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: color.withValues(alpha: 0.18),
-                                      borderRadius: BorderRadius.circular(
-                                          SandikRadius.sm),
+                                  // Rozet de daralabilmeli: yalnızca ad
+                                  // `Flexible` iken büyük metin ayarında
+                                  // ticker rozeti satırı taşırıyordu (3×'te
+                                  // 94px). Ticker kısa olduğu için pratikte
+                                  // kırpılmaz, ama sınırı vardır.
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: color.withValues(alpha: 0.18),
+                                        borderRadius: BorderRadius.circular(
+                                            SandikRadius.sm),
+                                      ),
+                                      child: Text(r.asset.displayTicker!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: context.t.bodySmall?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                              color: color,
+                                              decoration: TextDecoration.none)),
                                     ),
-                                    child: Text(r.asset.displayTicker!,
-                                        style: context.t.bodySmall?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            color: color,
-                                            decoration: TextDecoration.none)),
                                   ),
                                   const SizedBox(width: 6),
                                 ],
