@@ -525,7 +525,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                 Text(
                   'sandık · ${LegalDocs._web}',
                   style:
-                      GoogleFonts.dmSans(fontSize: 11, color: Colors.white54),
+                      GoogleFonts.dmSans(fontSize: 11, color: context.c.text58),
                 ),
               ],
             ),
@@ -579,14 +579,14 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.keyboard_arrow_down_rounded,
-                        size: 16, color: Colors.white54),
+                    Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 16, color: context.c.text58),
                     const SizedBox(width: 4),
                     Text(
                       'Onaylamak için belgeyi sona kadar okuyun',
                       style: GoogleFonts.dmSans(
                         fontSize: 11,
-                        color: Colors.white54,
+                        color: context.c.text58,
                       ),
                     ),
                   ],

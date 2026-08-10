@@ -932,8 +932,8 @@ class _ActionIcon extends StatelessWidget {
       button: true,
       label: semanticLabel,
       child: Container(
-        width: 42,
-        height: 42,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: iconColor.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -973,8 +973,8 @@ class _ThemeToggleButton extends ConsumerWidget {
           showingLight ? 'Koyu temaya geç' : 'Açık temaya geç',
       onTap: () => ref.read(themeModeProvider.notifier).set(next),
       child: Container(
-        width: 42,
-        height: 42,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: context.c.text90.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(SandikRadius.md),

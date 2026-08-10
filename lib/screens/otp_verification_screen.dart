@@ -235,9 +235,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             ),
           ],
         ),
-        child: const Icon(
+        // Amber dolgunun üzerine gelen içerik rengi tanımı `onAmber`;
+        // sabit `black87` her iki temada da doğru olmuyordu.
+        child: Icon(
           Icons.mark_email_read_rounded,
-          color: Colors.black87,
+          color: context.c.onAmber,
           size: 36,
         ),
       ),

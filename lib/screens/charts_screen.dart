@@ -2,7 +2,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
-        Colors,
         RefreshIndicator,
         ScaffoldMessenger,
         SnackBar,
@@ -224,8 +223,8 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                               PortfolioPerformanceScreen(initialView: _view)),
                     ),
                     child: Container(
-                      width: 42,
-                      height: 42,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: context.c.overlay,
                         borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -1077,8 +1076,12 @@ class _AssetCardState extends State<_AssetCard>
                 _rowAction(
                   context,
                   onPressed: () => onDividend(position),
-                  background: context.c.amberText,
-                  foreground: Colors.black87,
+                  // Dolgu için `amberFill`, üstündeki içerik için `onAmber`.
+                  // Eskiden zemin `amberText` (METİN token'ı) + sabit
+                  // `black87` idi: light'ta ikisi de koyulaşıp 1.75:1'e
+                  // düşüyordu — buton yazısı okunmuyordu.
+                  background: context.c.amberFill,
+                  foreground: context.c.onAmber,
                   icon: Icons.savings_outlined,
                   label: 'Temettü',
                 ),
@@ -1123,9 +1126,12 @@ class _ExpandChevron extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
+      // Dokunma alanı 44×44 (HIG #37, High severity) — görsel ikon 32'de
+      // kalır. `Container` 32 iken parmakla ıskalanabiliyordu; büyütmek
+      // yerine ŞEFFAF dolgu ekliyoruz, böylece yerleşim değişmez.
       child: Container(
-        width: 32,
-        height: 32,
+        width: 44,
+        height: 44,
         alignment: Alignment.center,
         child: AnimatedRotation(
           turns: expanded ? 0.5 : 0.0,
@@ -1633,8 +1639,8 @@ class _SortButton extends StatelessWidget {
         }),
       ),
       child: Container(
-        width: 42,
-        height: 42,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: current != _SortOrder.valueDesc
               ? context.c.amberFill.withValues(alpha: 0.15)

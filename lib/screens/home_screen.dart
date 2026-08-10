@@ -955,8 +955,8 @@ class _SignalTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 42,
-              height: 42,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.18 * alphaFactor),
                 shape: BoxShape.circle,
@@ -1058,8 +1058,8 @@ class _BalanceToggleButton extends ConsumerWidget {
       onTap: () => ref.read(balanceHiddenProvider.notifier).set(!hidden),
       semanticLabel: hidden ? 'Bakiyeyi göster' : 'Bakiyeyi gizle',
       child: Container(
-        width: 42,
-        height: 42,
+        width: 44,
+        height: 44,
         decoration: context.chip(selected: hidden),
         child: Center(
           child: Icon(
@@ -1085,8 +1085,8 @@ class _HeaderIconButton extends StatelessWidget {
     return SandikTappable(
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
+        width: 44,
+        height: 44,
         decoration: context.chip(selected: false),
         child: Center(child: child),
       ),
@@ -1111,8 +1111,8 @@ class _SignalBadgeButton extends ConsumerWidget {
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 44,
+            height: 44,
             decoration: context.chip(selected: count > 0),
             child: Center(
               child: Icon(

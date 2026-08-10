@@ -114,6 +114,43 @@ void main() {
     }
   });
 
+  group('kaynak taraması — amber dolgu üstünde sabit metin', () {
+    test('amber zeminli buton/rozetlerde Colors.black* kullanılmamalı', () {
+      // `amberText`/`gold` METİN token'ıdır; light'ta koyulaşır. Onları
+      // DOLGU olarak kullanıp üstüne sabit `Colors.black87` koymak light
+      // modda 1.75:1 veriyordu (charts temettü butonu, OTP ikonu).
+      // Doğrusu: dolgu `amberFill`, içerik `onAmber`.
+      final offenders = <String>[];
+      final pattern = RegExp(
+        r'(background|backgroundColor|foreground|color)\s*:\s*Colors\.black\w*',
+      );
+
+      for (final e in Directory('lib').listSync(recursive: true)) {
+        if (e is! File || !e.path.endsWith('.dart')) continue;
+        final src = e.readAsStringSync();
+        for (final m in pattern.allMatches(src)) {
+          // Gölge/scrim/barrier meşrudur: onlar `withValues(alpha:)` ile
+          // yarı saydam kullanılır ve zemin rengi değil perde rengidir.
+          final tail = src.substring(
+              m.end, (m.end + 40).clamp(0, src.length));
+          if (tail.contains('withValues') || tail.contains('withOpacity')) {
+            continue;
+          }
+          final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;
+          offenders.add('${e.path}:$line — ${m.group(0)}');
+        }
+      }
+
+      expect(
+        offenders,
+        isEmpty,
+        reason: 'Opak `Colors.black*` tema ile değişmez. Amber/marka zemin '
+            'üstündeki içerik için `context.c.onAmber`, genel metin için '
+            '`context.c.text90/58` kullan.\n${offenders.join('\n')}',
+      );
+    });
+  });
+
   group('kaynak taraması — çöken gradient deseni', () {
     test('hiçbir yerde [gold, amberText] gradient\'i yazılmamalı', () {
       final offenders = <String>[];
