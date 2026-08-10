@@ -1757,7 +1757,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-    if (mounted) Navigator.pop(context);
+    // Hızlı giriş de bir kayıttır — `_save()` ile aynı sinyali döndürür.
+    if (mounted) Navigator.pop(context, true);
   }
 
   // ── Save ───────────────────────────────────────────────────────────────────
@@ -1997,7 +1998,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ),
         );
       }
-      Navigator.pop(context);
+      // `true`: çağıran (MainNavigationScreen) bunu "kayıt oldu" sinyali
+      // olarak kullanıp Portföy sekmesine geçer. Sonuçsuz `pop` edilirse
+      // kullanıcı hangi sekmedeyse orada kalır ve eklediği varlığı göremez.
+      Navigator.pop(context, true);
     }
   }
 }

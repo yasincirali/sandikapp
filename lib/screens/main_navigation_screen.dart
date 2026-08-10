@@ -59,18 +59,34 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     setState(() => _currentIndex = index);
   }
 
+  /// Portföy sekmesinin indeksi (`_screens` sırasına bağlı).
+  static const _portfolioTab = 1;
+
   Future<void> _showAddAsset() async {
     // fullscreenDialog: iOS'ta alttan-yukarı modal geçiş + "kapat" semantiği —
     // varlık ekleme bir görev akışı, hiyerarşik gezinme değil.
     // pushGuarded: FAB'a hızlı iki dokunuş iki AddAssetScreen açmasın.
-    await pushGuarded(
+    final added = await pushGuarded<bool>(
       context,
       adaptiveRoute(
         builder: (_) => const AddAssetScreen(),
         fullscreenDialog: true,
       ),
     );
-    if (mounted) ref.read(portfolioProvider.notifier).refreshPrices();
+    if (!mounted) return;
+
+    // Kayıt başarılıysa Portföy sekmesine geç. Eskiden hiçbir akış sekme
+    // değiştirmiyordu; kullanıcı hangi sekmedeyse oraya dönüyordu. Ana
+    // sekmedeyken FAB'dan varlık eklemek (tekli ya da toplu) kullanıcıyı
+    // Ana'da bırakıyor, eklenen varlık görünmüyordu.
+    //
+    // Tekli eklemede sorun fark edilmiyordu çünkü kullanıcı çoğunlukla
+    // zaten Portföy'de olup FAB'a basıyor. Toplu eklemeye ise Portföy'den
+    // girilse bile araya AddAssetScreen giriyor ve akış uzuyor.
+    if (added == true) {
+      setState(() => _currentIndex = _portfolioTab);
+    }
+    ref.read(portfolioProvider.notifier).refreshPrices();
   }
 
   Future<void> _confirmExit() async {
