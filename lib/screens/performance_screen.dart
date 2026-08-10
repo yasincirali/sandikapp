@@ -748,6 +748,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
         title: Text(
           'Performans: ${widget.asset.name}',
           style: context.t.headlineSmall?.copyWith(color: context.c.text90),
+          // Varlık adı kullanıcı girdisidir ve uzun olabilir ("Yapı Kredi
+          // Koray Gayrimenkul Yatırım Ortaklığı"). AppBar başlığı tek
+          // satırdır; koruma olmadan taşma çizgileri çıkar.
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         actions: [
           if (isOwnAsset && !widget.showBackButton)
