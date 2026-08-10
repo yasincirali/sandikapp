@@ -1143,7 +1143,9 @@ class _SignalBadgeButton extends ConsumerWidget {
                     style: context.t.labelSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0,
-                        color: context.c.text90),
+                        // `loss` DOLGU; üstüne yüzey metni (`text90`) değil
+                        // dolgu mürekkebi gelir — light modda 2.89:1 idi.
+                        color: context.c.onStatus),
                   ),
                 ),
               ),

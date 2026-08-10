@@ -82,7 +82,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: context.c.loss,
-          content: Text('Silinemedi: $e'),
+          content: Text('Silinemedi: $e',
+              style: TextStyle(color: context.c.onStatus)),
         ),
       );
     } finally {
@@ -110,7 +111,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: context.c.loss,
-          content: Text('Tetikleme başarısız: $e'),
+          content: Text('Tetikleme başarısız: $e',
+              style: TextStyle(color: context.c.onStatus)),
         ),
       );
     } finally {

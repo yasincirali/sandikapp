@@ -76,7 +76,10 @@ class _PartnershipRequestsScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Ortaklık kabul edildi.'),
+          // Renkli zeminde tema `contentTextStyle`'ı (text90) kullanılamaz —
+          // light modda 3.02:1 verir. Dolgu üstünün mürekkebi `onStatus`.
+          content: Text('Ortaklık kabul edildi.',
+              style: TextStyle(color: context.c.onStatus)),
           backgroundColor: context.c.gain,
         ),
       );
@@ -94,7 +97,8 @@ class _PartnershipRequestsScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Ortaklık isteği reddedildi.'),
+          content: Text('Ortaklık isteği reddedildi.',
+              style: TextStyle(color: context.c.onStatus)),
           backgroundColor: context.c.loss,
         ),
       );
@@ -291,7 +295,9 @@ class _ApprovalInviteCard extends StatelessWidget {
                   onPressed: onAccept,
                   style: FilledButton.styleFrom(
                     backgroundColor: context.c.gain,
-                    foregroundColor: context.c.onAmber,
+                    // `onAmber` amber içindir ve iki temada da koyudur;
+                    // light'ta koyu yeşil dolgu üstünde 3.02:1 veriyordu.
+                    foregroundColor: context.c.onStatus,
                   ),
                   child: const Text('Onayla'),
                 ),

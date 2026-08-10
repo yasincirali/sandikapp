@@ -187,7 +187,10 @@ class _DividendDialogState extends State<_DividendDialog> {
           child: const Text('İptal'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: context.c.gain),
+          style: FilledButton.styleFrom(
+            backgroundColor: context.c.gain,
+            foregroundColor: context.c.onStatus,
+          ),
           onPressed: _saving ? null : _save,
           // Buton kutusuna sığacak boyut verilmeli: CustomLoadingView
           // varsayılanı `large` ve 18pt'lik kutuyu taşırıyordu.

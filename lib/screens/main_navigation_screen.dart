@@ -103,7 +103,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   SandikHaptic.heavy.perform();
                   Navigator.pop(ctx, true);
                 },
-                style: FilledButton.styleFrom(backgroundColor: context.c.loss),
+                // `foregroundColor` verilmezse `onPrimary`e (= onAmber, koyu)
+                // düşer; light modda koyu kırmızı dolgu üstünde 3:1 altı kalır.
+                style: FilledButton.styleFrom(
+                  backgroundColor: context.c.loss,
+                  foregroundColor: context.c.onStatus,
+                ),
                 child: const Text('Çık'),
               ),
             ],

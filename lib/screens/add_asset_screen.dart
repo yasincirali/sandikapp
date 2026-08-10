@@ -1957,9 +1957,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 '${fmt.format(price)} $_currency atandı';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            // İki zemin İKİ farklı mürekkep ister: gain teması takip eder
+            // (`onStatus`), amber her iki temada da açıktır (`onAmber`).
             content: Text(msg,
-                style: context.t.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+                style: context.t.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: priceFromHistorical
+                      ? context.c.onStatus
+                      : context.c.onAmber,
+                )),
             backgroundColor: priceFromHistorical
                 ? context.c.gain.withValues(alpha: 0.9)
                 : context.c.amberFill.withValues(alpha: 0.9),

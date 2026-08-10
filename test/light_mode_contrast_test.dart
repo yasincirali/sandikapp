@@ -75,6 +75,117 @@ void main() {
     }
   });
 
+  group('durum dolgusu (gain/loss) — üstüne onStatus gelir', () {
+    // Amber'den farklı olarak gain/loss iki temada TERS parlaklıktadır:
+    // light'ta koyu (beyaz ister), dark'ta parlak (koyu ister). Bu yüzden
+    // tek bir sabit mürekkep iki temada birden çalışamaz.
+    for (final (name, p) in [('light', light), ('dark', dark)]) {
+      test('$name: onStatus / gain dolgusu AA geçer', () {
+        final cr = _contrast(p.onStatus, p.gain);
+        expect(cr, greaterThanOrEqualTo(4.5),
+            reason: '$name: ${cr.toStringAsFixed(2)}:1');
+      });
+      test('$name: onStatus / loss dolgusu AA geçer', () {
+        final cr = _contrast(p.onStatus, p.loss);
+        expect(cr, greaterThanOrEqualTo(4.5),
+            reason: '$name: ${cr.toStringAsFixed(2)}:1');
+      });
+
+      // Yanlış token'ların GERÇEKTEN kırık olduğunu doğrula. Bu olmadan
+      // yukarıdaki testler, biri onStatus'u text90'a eşitlerse sessizce
+      // geçmeye devam ederdi.
+      test('$name: text90 durum dolgusunda kalırsa AA\'yı geçemez', () {
+        expect(_contrast(p.text90, p.gain), lessThan(4.5));
+        expect(_contrast(p.text90, p.loss), lessThan(4.5));
+      });
+    }
+  });
+
+  group('kaynak taraması — durum dolgusu üstünde yanlış mürekkep', () {
+    test('gain/loss zeminli widget\'ta text90 veya onAmber kullanılmamalı', () {
+      // Denetimde (2026-08-10) 5 ihlal bulundu: iki SnackBar, bildirim
+      // rozeti, "Onayla" butonu, add_asset bilgi SnackBar'ı. Hepsi light
+      // modda 2.89–3.02:1 veriyordu.
+      final offenders = <String>[];
+      // OPAK dolgu arıyoruz. `context.c.gain.withValues(alpha: 0.18)` gibi
+      // soluk tint'ler bu kuralın DIŞINDADIR: onların üstüne doygun `gain`
+      // metni gelir ve bu doğru desendir (ilk taramada 12 yanlış alarmın
+      // çoğu buydu). Negatif look-ahead ripgrep'te yok ama Dart'ta var.
+      final fillPattern = RegExp(
+        r'(backgroundColor|foregroundColor|color)\s*:\s*'
+        r'context\.c\.(gain|loss)\b(?!\s*\.)',
+      );
+
+      for (final e in Directory('lib').listSync(recursive: true)) {
+        if (e is! File || !e.path.endsWith('.dart')) continue;
+        final src = e.readAsStringSync();
+        for (final m in fillPattern.allMatches(src)) {
+          // Yalnızca `backgroundColor` bir DOLGU bildirir. Düz `color:` bir
+          // ikonun/metnin kendi rengi de olabilir; onu ancak `BoxDecoration`
+          // içindeyse dolgu sayarız.
+          final isBg = m.group(1) == 'backgroundColor';
+          final before = src.substring((m.start - 120).clamp(0, src.length), m.start);
+          final inDecoration = before.contains('BoxDecoration(');
+          if (!isBg && !inDecoration) continue;
+
+          // Pencere, dolgunun ait olduğu widget çağrısının TAMAMI olmalı.
+          // Sabit karakter sayısı iki yönden de yanlıştı: 400 rozet desenini
+          // ıskalıyordu, 700 ise SnackBar'ı aşıp alakasız AppBar başlığını
+          // yakalıyordu. Ayrıca yalnızca ileri bakmak da yetmez — `content:`
+          // çoğu SnackBar'da `backgroundColor:`ten ÖNCE yazılır. O yüzden
+          // çevreleyen argüman listesinin iki ucunu da parantezle buluruz.
+          //
+          // `BoxDecoration` dolgusunda bir seviye YUKARI çıkmak gerekir:
+          // decoration'ın kendi parantezi `child:`ten önce kapanır, metin
+          // dışarıda kalır. Container(...) seviyesine çıkınca ikisi de aynı
+          // pencerede olur.
+          int openerOf(int pos) {
+            var up = 0;
+            for (var j = pos; j >= 0; j--) {
+              final ch = src[j];
+              if (ch == ')' || ch == ']') up++;
+              if (ch == '(' || ch == '[') {
+                if (up == 0) return j;
+                up--;
+              }
+            }
+            return 0;
+          }
+
+          var from = openerOf(m.start);
+          if (inDecoration) from = openerOf(from - 1);
+
+          var depth = 1;
+          var to = src.length;
+          for (var j = from + 1; j < src.length; j++) {
+            final ch = src[j];
+            if (ch == '(' || ch == '[') depth++;
+            if (ch == ')' || ch == ']') {
+              depth--;
+              if (depth == 0) {
+                to = j;
+                break;
+              }
+            }
+          }
+          final around = src.substring(from, to);
+          final bad = RegExp(
+            r'(color|foregroundColor)\s*:\s*context\.c\.(text90|onAmber)\b',
+          ).firstMatch(around);
+          if (bad == null) continue;
+          final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;
+          offenders.add('${e.path}:$line — ${m.group(0)} + ${bad.group(0)}');
+        }
+      }
+
+      expect(offenders, isEmpty,
+          reason: 'gain/loss DOLGU olarak kullanıldığında üstüne '
+              '`context.c.onStatus` gelmeli. `text90` yüzey metnidir, '
+              '`onAmber` amber içindir — ikisi de renkli dolguda kırılır.\n'
+              '${offenders.join('\n')}');
+    });
+  });
+
   group('metin token\'ları yüzey üzerinde okunur', () {
     for (final (name, p) in [('light', light), ('dark', dark)]) {
       test('$name: amberText / surface1', () {

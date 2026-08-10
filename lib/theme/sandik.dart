@@ -459,6 +459,7 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
     required this.amberText,
     required this.gold,
     required this.onAmber,
+    required this.onStatus,
     required this.hairline,
     required this.overlay,
     required this.cardShadow,
@@ -505,6 +506,21 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
   /// üzerinde yalnızca 1.87:1 verir (okunmaz); doğru eşleşme koyu marka
   /// yeşilidir.
   final Color onAmber;
+
+  /// [gain] / [loss] **dolgu olarak** kullanıldığında üstüne gelen metin/ikon.
+  ///
+  /// [onAmber] ile aynı tuzağı kapatır ama yönü temaya göre TERSİNİR, çünkü
+  /// amber'in aksine `gain`/`loss` iki temada farklı parlaklıktadır:
+  ///
+  /// | | zemin | `text90` ile | doğrusu |
+  /// |---|---|---|---|
+  /// | light | `#0F7A4E` koyu yeşil | 3.02:1 ✗ | beyaz → 5.37:1 |
+  /// | dark  | `#3DB77F` parlak yeşil | 2.54:1 ✗ | koyu → 5.73:1 |
+  ///
+  /// Yani sabit bir renk İKİ temada birden çalışamaz. Renkli zeminli
+  /// SnackBar/rozet yaparken `text90` bırakma — o metin rengi *yüzey* için
+  /// ayarlanmıştır, dolgu için değil.
+  final Color onStatus;
 
   /// Marka rozeti / seçili pill için amber gradient. Üstüne [onAmber] gelir.
   ///
@@ -558,6 +574,9 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
     amberText: Color(0xFFF5A623),
     gold: Color(0xFFF5C842),
     onAmber: Color(0xFF112E28), // koyu marka yeşili — 7.66:1
+    // Dark palette'te gain/loss PARLAK tonlardır; üstlerine koyu yazılır.
+    // Beyaz 2.54:1 / 2.81:1 verirdi. Koyu: 5.73:1 / 5.17:1.
+    onStatus: Color(0xFF112E28),
     hairline: Color(0x12FFFFFF), // beyaz %7
     overlay: Color(0x0BFFFFFF), // beyaz %4.5
     cardShadow: [],
@@ -592,6 +611,10 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
     amberText: Color(0xFF4A3618), // 10.98:1
     gold: Color(0xFF4A3618), // 10.98:1 — display sayılar da aynı tonda
     onAmber: Color(0xFF12241E), // 7.99:1
+    // Light palette'te gain/loss KOYU tonlardır (kendileri beyaz zeminde
+    // okunsun diye). Üstlerine beyaz gelir: 5.37:1 / 5.60:1.
+    // `text90` (#12241E) 3.02:1 / 2.89:1 verirdi.
+    onStatus: Color(0xFFFFFFFF),
     hairline: Color(0x17122419), // siyah %9
     overlay: Color(0xFFFFFFFF), // light'ta yükseklik = beyaz + gölge
     cardShadow: [
@@ -645,6 +668,7 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
     Color? amberText,
     Color? gold,
     Color? onAmber,
+    Color? onStatus,
     Color? hairline,
     Color? overlay,
     List<BoxShadow>? cardShadow,
@@ -665,6 +689,7 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
       amberText: amberText ?? this.amberText,
       gold: gold ?? this.gold,
       onAmber: onAmber ?? this.onAmber,
+      onStatus: onStatus ?? this.onStatus,
       hairline: hairline ?? this.hairline,
       overlay: overlay ?? this.overlay,
       cardShadow: cardShadow ?? this.cardShadow,
@@ -690,6 +715,7 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
       amberText: Color.lerp(amberText, other.amberText, t)!,
       gold: Color.lerp(gold, other.gold, t)!,
       onAmber: Color.lerp(onAmber, other.onAmber, t)!,
+      onStatus: Color.lerp(onStatus, other.onStatus, t)!,
       hairline: Color.lerp(hairline, other.hairline, t)!,
       overlay: Color.lerp(overlay, other.overlay, t)!,
       cardShadow:
