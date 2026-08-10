@@ -119,6 +119,13 @@ class HistoryService {
   /// "Şu anki portföyüm o zaman elimde olsaydı ne olurdu?" senaryosunu
   /// çizer. Bu modda arayan `assets` olarak aggregate edilmiş (net)
   /// display-asset listesini verir; buy/sell ayrımı olmaz.
+  ///
+  /// DİKKAT — simülasyon "hiç satmasaydım" DEĞİLDİR. Gelen liste zaten net
+  /// pozisyondur: 100 alıp 40 sattıysan simülasyon 60 adet üzerinden çizer,
+  /// satılan 40 hiç var olmamış sayılır. Senaryo "bu portföyü daha erken
+  /// kursaydım"dır. Bu bilinçli bir ürün kararıdır (kullanıcı onayı
+  /// 2026-08-10); davranış `test/simulation_semantics_test.dart` içinde
+  /// sabitlenmiştir — değiştirmeden önce o testi ve sahibini kontrol et.
   Future<Map<int, double>> getPortfolioHistory(
       List<Asset> assets, int periodDays,
       {bool simulate = false}) async {

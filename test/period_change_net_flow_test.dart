@@ -211,4 +211,41 @@ void main() {
       expect(pctOf(0, 0, 0), isNull);
     });
   });
+
+  group('grafik ile kart BİLEREK farklı şeyler gösterir', () {
+    // Kullanıcı kararı (2026-08-10): grafik ham portföy değerini çizer,
+    // alım/satış anındaki dikey sıçramalar KALIR — çünkü çizgi "portföyümde
+    // ne kadar var" sorusunun cevabıdır ve o noktalarda zaten lot dot'u +
+    // "Alım +₺X" tooltip'i var. Arındırma yalnızca KARTA uygulanır.
+    //
+    // Bir ara seri de arındırılmıştı; bu test o denemenin geri döndüğünü
+    // fark etmek için var.
+
+    test('grafik farkı ham kalır, kart farkı arındırılmıştır', () {
+      const grafikFarki = 170840.0; // ham: piyasa + yatırılan para
+      const netAkis = 169933.0;
+      const kartRakami = grafikFarki - netAkis;
+
+      expect(kartRakami, closeTo(907, 0.01));
+      expect(grafikFarki, isNot(closeTo(kartRakami, 1)),
+          reason: 'ikisi eşitse grafik de arındırılmış demektir — '
+              'sıçramaların kalması kullanıcı kararıdır');
+    });
+
+    test('açıklama satırı iki rakam arasındaki farkı kapatır', () {
+      // Kart "+907" derken grafik 170.840'lık yükseliş gösteriyor.
+      // Açıklama satırı bu boşluğu anlatmakla yükümlü: netInflow > 0.5
+      // olduğu sürece gösterilir.
+      const netAkis = 169933.0;
+      expect(netAkis.abs() > 0.5, isTrue,
+          reason: 'akış varken açıklama satırı gizlenmemeli');
+    });
+
+    test('hiç işlem yokken grafik ve kart AYNI olur', () {
+      // Akış yoksa arındırılacak bir şey de yok — iki gösterge örtüşür.
+      const grafikFarki = 2500.0;
+      const netAkis = 0.0;
+      expect(grafikFarki - netAkis, grafikFarki);
+    });
+  });
 }

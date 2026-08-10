@@ -225,6 +225,35 @@ class _PortfolioPerformanceScreenState
 
   // ── Logic ──────────────────────────────────────────────────────────────────
 
+  /// Seriyi para giriş/çıkışından arındırır.
+  ///
+  /// Ham seri PORTFÖY DEĞERİNİ çizer: kullanıcı 170.000 TL'lik alım yaptığında
+  /// çizgi o anda dikey bir duvar gibi zıplar. Bu zıplama bir kazanç değil,
+  /// sadece hesaba giren paradır — ama grafikte kazançtan ayırt edilemez.
+  /// Değişim kartı zaten net akıştan arındırılmış rakamı gösterdiği için
+  /// (bkz. `_buildPeriodChangeCard`) grafik arındırılmazsa ikisi çelişir:
+  /// kart "+907 TL" derken çizgi 170.000'lik sıçrama gösterir.
+  ///
+  /// Yöntem: her noktadan, O ANA KADAR biriken net akış çıkarılır. Böylece
+  /// alım anındaki basamak düzleşir, geriye yalnızca fiyat hareketi kalır.
+  /// Serinin başlangıç seviyesi korunur — kullanıcı "portföyüm neydi"
+  /// bağlamını kaybetmesin.
+  ///
+  /// Silinen varlıklar hiç var olmamış sayılır: `deleteLog` atlanır (orijinal
+  /// lot zaten DB'den silinmiştir).
+  /// Bir varlık satırının nakit akışına katkısı (TRY).
+  ///
+  /// Alım para GİRİŞİ (+), satış ÇIKIŞI (−). Satışta maliyet değil ele geçen
+  /// tutar kullanılır — kârla satılan pozisyonda ikisi farklıdır ve fark
+  /// yanlışlıkla "piyasa etkisi" sayılırdı. Temettü ve `deleteLog` akışa
+  /// girmez (silinen varlık hiç var olmamış sayılır).
+  static double _flowOf(Asset a) {
+    if (a.isDeleteLog) return 0;
+    if (a.isBuy) return a.totalCostTRY;
+    if (a.isSell) return -a.sellProceedsTRY;
+    return 0;
+  }
+
   List<TransactionSegment> _convertHistoryToSegments(
     Map<int, double> history,
     List<Asset> allAssets,
@@ -670,6 +699,18 @@ class _PortfolioPerformanceScreenState
       }
     }
 
+    // Grafik HAM portföy değerini çizer — arındırma YAPILMAZ.
+    //
+    // Bir ara seri para giriş/çıkışından arındırılıyordu (alım anındaki dikey
+    // sıçrama düzleşsin diye). Kullanıcı kararı: sıçramalar KALSIN. Gerekçesi
+    // sağlam — çizgi "portföyümde şu an ne kadar var" sorusunun cevabıdır ve
+    // alım/satış anındaki basamak gerçek bir olayı temsil eder. Ayrıca o
+    // noktalarda zaten lot dot'u + tooltip var ("Alım +₺X" / "Satış −₺Y"),
+    // yani sıçramanın sebebi grafiğin üstünde okunabiliyor.
+    //
+    // Yanıltıcı olan grafik değil, DEĞİŞİM KARTIYDI: o hâlâ net akıştan
+    // arındırılmış rakamı gösterir (bkz. `_buildPeriodChangeCard`), böylece
+    // "portföyüm ne kazandı?" sorusu doğru cevaplanır.
     final segments = _convertHistoryToSegments(
         historyMap, chartAssets, effectiveStart, endDate,
         currentTotalOverride: currentTotal,
@@ -1055,13 +1096,16 @@ class _PortfolioPerformanceScreenState
 
     final firstY = primary.spots.first.y;
     final lastY = primary.spots.last.y;
+
+    // Grafik HAM portföy değerini çizer (sıçramalar bilinçli — bkz. çizim
+    // tarafındaki not), dolayısıyla uçtan uca fark yatırılan parayı da
+    // içerir. Kart bunu ham göstermez.
     final grossChange = lastY - firstY;
 
-    // ── Dönem içi net para girişi ────────────────────────────────────────
+    // ── Dönem içi net akış ───────────────────────────────────────────────
     //
-    // Silinen varlıklar HİÇ VAR OLMAMIŞ sayılır: `deleteLog` mezar taşı
-    // atlanır ve orijinal lot zaten DB'den silinmiştir (bkz.
-    // `PortfolioNotifier.deleteAsset`), dolayısıyla listeye hiç gelmez.
+    // Silinen varlıklar HİÇ VAR OLMAMIŞ sayılır: `deleteLog` atlanır ve
+    // orijinal lot zaten DB'den silinmiştir (bkz. `deleteAsset`).
     double netInflow = 0;
     if (!_simulate) {
       final startMs = DateTime(start.year, start.month, start.day)
@@ -1070,31 +1114,23 @@ class _PortfolioPerformanceScreenState
           DateTime(end.year, end.month, end.day, 23, 59, 59)
               .millisecondsSinceEpoch;
       for (final a in targetAssets) {
-        if (a.isDeleteLog) continue;
         final ms = a.addedDate.millisecondsSinceEpoch;
         if (ms < startMs || ms > endMs) continue;
-        if (a.isBuy) {
-          netInflow += a.totalCostTRY;
-        } else if (a.isSell) {
-          // Satışta cebe giren para MALİYET değil, satış fiyatıdır.
-          netInflow -= a.sellProceedsTRY;
-        }
+        netInflow += _flowOf(a);
       }
     }
 
-    // ── Ana rakam: para giriş/çıkışından ARINDIRILMIŞ değişim ─────────────
+    // ── Ana rakam: para giriş/çıkışından ARINDIRILMIŞ değişim ────────────
     //
-    // Ham fark (`grossChange`) "portföyüm ne kazandı?" sorusunun cevabı
-    // DEĞİLDİR: içine dönem boyunca yatırdığın para da girer. Kullanıcı
-    // 173.736 TL'lik alım yaptığında hiçbir fiyat hareketi olmasa bile
-    // ekran "+173.736 TL (+%7,16)" yazıyordu — portföy o gün aslında değer
-    // kaybetmişken kazanç gösteriyordu.
+    // Ham fark "portföyüm ne kazandı?" sorusunun cevabı DEĞİLDİR: içine
+    // dönem boyunca yatırdığın para da girer. Kullanıcı 169.933 TL'lik alım
+    // yaptığında hiçbir fiyat hareketi olmasa bile ekran "+%7,16" yazıyordu
+    // — portföy o gün aslında değer kaybetmişken.
     //
-    // Doğru ölçü, net akışı düşmektir: sonuç yalnızca PİYASA etkisidir.
-    // (Fon endüstrisinde bunun rafine hâli time-weighted return'dür; akışın
-    // dönem içindeki zamanlamasını da ağırlıklandırır. Burada dönem başı/sonu
-    // iki noktayla çalıştığımız için basit net-akış düzeltmesi uygulanır —
-    // yön ve büyüklük doğru, gün-içi ağırlıklandırma yok.)
+    // Grafik ile kartın FARKLI şeyler göstermesi bilinçlidir:
+    //   • Grafik  → "portföyümde ne kadar var" (ham değer, sıçramalar dahil)
+    //   • Kart    → "portföyüm ne kazandı"     (yalnızca piyasa etkisi)
+    // Aradaki farkı aşağıdaki açıklama satırı kapatır.
     final change = grossChange - netInflow;
 
     // Yüzde tabanı: dönem başı değer + yatırılan para. Sadece `firstY`
@@ -1205,11 +1241,13 @@ class _PortfolioPerformanceScreenState
                     netInflow > 0
                         ? 'Bu dönemde ${tryFmt.format(netInflow)} tutarında alım '
                             'yapıldı. Yukarıdaki rakam yatırdığın parayı '
-                            'içermez — yalnızca piyasa hareketini gösterir '
-                            '(portföy toplamı ${tryFmt.format(grossChange)} arttı).'
+                            'içermez — yalnızca piyasa hareketini gösterir. '
+                            'Grafikteki yükseliş ${tryFmt.format(grossChange)}, '
+                            'çünkü portföy toplamı yeni alımlarla da büyüyor.'
                         : 'Bu dönemde ${tryFmt.format(netInflow.abs())} tutarında '
                             'satış yapıldı. Yukarıdaki rakam çıkardığın parayı '
-                            'içermez — yalnızca piyasa hareketini gösterir.',
+                            'içermez — yalnızca piyasa hareketini gösterir. '
+                            'Grafikteki düşüşün bir kısmı bu satıştan geliyor.',
                     style:
                         context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),
