@@ -18,6 +18,16 @@ class AuthException implements Exception {
   String toString() => message;
 }
 
+/// Rate limit'e takıldığında fırlatılır. Mesajın yanında **kalan
+/// saniyeyi** de taşır ki UI geri sayım gösterebilsin — yalnızca
+/// metin dönseydi ekran, süre dolduğunda kendini açamazdı.
+class RateLimitedException extends AuthException {
+  /// Tekrar denenebilmesi için kalan süre (saniye).
+  final int retryAfterSeconds;
+
+  const RateLimitedException(super.message, this.retryAfterSeconds);
+}
+
 class AuthService {
   static final AuthService instance = AuthService._();
   AuthService._();
@@ -617,11 +627,12 @@ class AuthService {
       }
 
       final errCode = _extractErrorCode(data);
-      await _recordAttempt(currentUserId);
-      throw AuthException(_translateInviteError(errCode));
+      await _recordIfFailedGuess(currentUserId, errCode);
+      throw _inviteException(errCode, data);
     } on FunctionException catch (e) {
-      await _recordAttempt(currentUserId);
-      throw AuthException(_translateInviteError(_extractErrorCode(e.details)));
+      final errCode = _extractErrorCode(e.details);
+      await _recordIfFailedGuess(currentUserId, errCode);
+      throw _inviteException(errCode, e.details);
     } on AuthException {
       rethrow;
     } catch (_) {
@@ -634,8 +645,36 @@ class AuthService {
     return '';
   }
 
-  String _translateInviteError(String code) {
+  /// Hata kodundan uygun istisnayı kurar. `rate_limited` durumunda
+  /// kalan saniyeyi de taşıyan [RateLimitedException] döner — UI
+  /// geri sayım gösterip süre dolunca alanı kendisi açabilsin diye.
+  AuthException _inviteException(String code, [dynamic data]) {
+    final message = _translateInviteError(code, data);
+    if (code == 'rate_limited') {
+      return RateLimitedException(message, _retryAfterSeconds(data));
+    }
+    return AuthException(message);
+  }
+
+  /// Sunucunun döndüğü `retry_after_seconds`; yoksa güvenli varsayılan.
+  int _retryAfterSeconds(dynamic data) {
+    if (data is Map && data['retry_after_seconds'] is num) {
+      final v = (data['retry_after_seconds'] as num).toInt();
+      if (v > 0) return v;
+    }
+    return 600;
+  }
+
+  String _translateInviteError(String code, [dynamic data]) {
     switch (code) {
+      case 'rate_limited':
+        // Sunucu taraflı limit (S1 fix). İstemcideki SharedPreferences
+        // sayacı yalnızca gereksiz ağ isteğini önleyen bir UX katmanıdır;
+        // gerçek sınır burada, sunucudan gelir.
+        return 'Çok fazla başarısız deneme. '
+            '${_formatRetryAfter(data)} sonra tekrar dene.';
+      case 'rate_limit_unavailable':
+        return 'Güvenlik kontrolü şu an yapılamıyor. Birazdan tekrar dene.';
       case 'invalid_code_format':
         return 'Kodu XXXXX-XXXXX biçiminde gir.';
       case 'invite_not_found_or_expired':
@@ -649,6 +688,25 @@ class AuthService {
       default:
         return 'Davet doğrulanamadı. Tekrar dene.';
     }
+  }
+
+  /// Saniyeyi okunabilir Türkçe süreye çevirir ("45 saniye", "3 dakika").
+  /// Dakikaya yukarı yuvarlar: aşağı yuvarlamak kullanıcıyı erken
+  /// denemeye itip yeni bir ret almasına yol açar.
+  static String _formatDuration(int seconds) {
+    if (seconds <= 60) return '$seconds saniye';
+    final minutes = (seconds / 60).ceil();
+    return '$minutes dakika';
+  }
+
+  /// Sunucunun döndüğü `retry_after_seconds` değerini okunabilir
+  /// Türkçe süreye çevirir. Değer yoksa güvenli varsayılan: 10 dakika.
+  String _formatRetryAfter(dynamic data) {
+    int? seconds;
+    if (data is Map && data['retry_after_seconds'] is num) {
+      seconds = (data['retry_after_seconds'] as num).toInt();
+    }
+    return _formatDuration(seconds ?? 600);
   }
 
   String _safe(Object e) {
@@ -723,11 +781,60 @@ class AuthService {
     }
   }
 
-  // ── Rate limiting (SharedPreferences — uygulama yeniden başlayınca sıfırlanmaz) ──
+  // ── Rate limiting (yalnızca UX katmanı) ─────────────────────────────────
+  //
+  // ⚠️ Bu sayaç bir GÜVENLİK sınırı DEĞİLDİR. SharedPreferences istemcide
+  // durur: uygulama verisi silinerek sıfırlanabilir, ya da Edge Function'a
+  // doğrudan istek atılarak tamamen atlanabilir. Tek işlevi, kilitli
+  // olduğu bilinen bir kullanıcı için gereksiz ağ isteğini önlemektir.
+  //
+  // Gerçek sınır sunucudadır: `check_and_record_rate_limit` RPC'si
+  // (migration 0028) ve onu çağıran `redeem-invite-code` Edge Function.
+  // Sunucu limiti aştığında 429 + `rate_limited` döner.
 
   static const _maxAttempts = 5;
   static const _windowMinutes = 10;
   static const _rlKeyPrefix = 'rl_attempts_';
+
+  /// Yerel sayaca göre kalan kilit süresi (saniye); kilit yoksa 0.
+  ///
+  /// Ekran ilk açıldığında geri sayımı kurabilmek için gerekir: kilit
+  /// önceki oturumda oluşmuşsa kullanıcı hiçbir şey denemeden de
+  /// kalan süreyi görebilmeli.
+  ///
+  /// NOT: Yalnızca yerel sayacı okur. Sunucudaki gerçek kilit daha
+  /// uzun olabilir; o durum ilk denemede 429 ile netleşir.
+  Future<int> partnerCodeLockRemainingSeconds(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getStringList('$_rlKeyPrefix${userId.hashCode}') ?? [];
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final windowMs = const Duration(minutes: _windowMinutes).inMilliseconds;
+    final recent = stored
+        .map((s) => int.tryParse(s))
+        .whereType<int>()
+        .where((ms) => ms >= now - windowMs)
+        .toList()
+      ..sort();
+    if (recent.length < _maxAttempts) return 0;
+    final remainingMs = (recent.first + windowMs) - now;
+    if (remainingMs <= 0) return 0;
+    return (remainingMs / 1000).ceil();
+  }
+
+  /// Yalnızca GERÇEK tahmin hatası sayacı artırır — sunucudaki
+  /// `recordFailedGuess` ile aynı ayrım (S8).
+  ///
+  /// `invite_not_found_or_expired` dışındaki hatalar kullanıcı
+  /// hatasıdır (kendi kodu, zaten ortak, zaten talep edilmiş): kod
+  /// DOĞRU bulunmuştur, saymak meşru kullanıcıyı kilitler.
+  /// `rate_limited` de sayılmaz — zaten kilitliyken sayacı büyütmek
+  /// pencereyi süresiz uzatırdı.
+  static const _countedErrorCodes = {'invite_not_found_or_expired'};
+
+  Future<void> _recordIfFailedGuess(String key, String errCode) async {
+    if (!_countedErrorCodes.contains(errCode)) return;
+    await _recordAttempt(key);
+  }
 
   Future<void> _recordAttempt(String key) async {
     final prefs = await SharedPreferences.getInstance();
@@ -741,17 +848,28 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     final prefKey = '$_rlKeyPrefix${key.hashCode}';
     final stored = prefs.getStringList(prefKey) ?? [];
-    final cutoff = DateTime.now()
-        .subtract(const Duration(minutes: _windowMinutes))
-        .millisecondsSinceEpoch;
-    final recent = stored.where((s) {
-      final ms = int.tryParse(s);
-      return ms != null && ms >= cutoff;
-    }).toList();
-    await prefs.setStringList(prefKey, recent);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final cutoff = now - const Duration(minutes: _windowMinutes).inMilliseconds;
+    final recent = stored
+        .map((s) => int.tryParse(s))
+        .whereType<int>()
+        .where((ms) => ms >= cutoff)
+        .toList()
+      ..sort();
+    await prefs.setStringList(
+        prefKey, recent.map((ms) => ms.toString()).toList());
+
     if (recent.length >= _maxAttempts) {
-      throw const AuthException(
-        'Çok fazla başarısız deneme. 10 dakika sonra tekrar deneyin.',
+      // Kalan süre = en eski denemenin pencereden düşmesine kalan zaman.
+      // Sabit "10 dakika" demek yanıltıcıydı: kullanıcı 9 dakika beklemiş
+      // olsa bile yine 10 dakika bekleyeceğini sanıyordu.
+      final windowMs = const Duration(minutes: _windowMinutes).inMilliseconds;
+      final remainingMs = (recent.first + windowMs) - now;
+      final seconds = (remainingMs / 1000).ceil().clamp(1, windowMs ~/ 1000);
+      throw RateLimitedException(
+        'Çok fazla başarısız deneme. '
+        '${_formatDuration(seconds)} sonra tekrar deneyin.',
+        seconds,
       );
     }
   }

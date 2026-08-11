@@ -133,12 +133,20 @@ enum SandikDialogKind { error, success, info }
 /// - Koyu yüzey (`Sandik.surface1`) + amber/loss/gain kenar highlight
 /// - Renkli ikon rozeti + başlık + mesaj + tek buton
 /// - Cupertino/Material scaffold ayrımı fark etmeksizin çalışır
+/// Her saniye yeniden çağrılarak canlı mesaj üretir. `null` dönerse
+/// dialog kendini kapatır (ör. geri sayım bitti).
+typedef LiveMessageBuilder = String? Function();
+
 Future<void> showSandikDialog({
   required BuildContext context,
   required SandikDialogKind kind,
   required String title,
   required String message,
   String actionLabel = 'Tamam',
+  /// Verilirse [message] yerine kullanılır ve saniyede bir tazelenir —
+  /// geri sayım gibi değişen içerikler için. `null` döndüğü an dialog
+  /// otomatik kapanır.
+  LiveMessageBuilder? liveMessage,
 }) {
   if (!context.mounted) return Future.value();
   // Renkler `context`ten okunur: bu dialog light modda da açılıyor ve
@@ -180,6 +188,7 @@ Future<void> showSandikDialog({
             title: title,
             message: message,
             actionLabel: actionLabel,
+            liveMessage: liveMessage,
           ),
         ),
       );
@@ -187,13 +196,14 @@ Future<void> showSandikDialog({
   );
 }
 
-class _SandikDialog extends StatelessWidget {
+class _SandikDialog extends StatefulWidget {
   const _SandikDialog({
     required this.accent,
     required this.icon,
     required this.title,
     required this.message,
     required this.actionLabel,
+    this.liveMessage,
   });
 
   final Color accent;
@@ -201,6 +211,46 @@ class _SandikDialog extends StatelessWidget {
   final String title;
   final String message;
   final String actionLabel;
+  final LiveMessageBuilder? liveMessage;
+
+  @override
+  State<_SandikDialog> createState() => _SandikDialogState();
+}
+
+class _SandikDialogState extends State<_SandikDialog> {
+  Timer? _ticker;
+  late String _message;
+
+  @override
+  void initState() {
+    super.initState();
+    _message = widget.liveMessage?.call() ?? widget.message;
+    if (widget.liveMessage != null) {
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+        final next = widget.liveMessage!();
+        if (!mounted) return;
+        if (next == null) {
+          // Geri sayım bitti — dialogu açık tutmanın anlamı yok.
+          _ticker?.cancel();
+          Navigator.of(context).maybePop();
+          return;
+        }
+        if (next != _message) setState(() => _message = next);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  Color get accent => widget.accent;
+  IconData get icon => widget.icon;
+  String get title => widget.title;
+  String get message => _message;
+  String get actionLabel => widget.actionLabel;
 
   @override
   Widget build(BuildContext context) {

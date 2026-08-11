@@ -14,6 +14,7 @@ import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
 import '../utils/friendly_error.dart';
+import '../utils/partner_code_formatter.dart';
 import 'settings_screen.dart';
 import '../widgets/leaderboard_hero_card.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -54,6 +55,13 @@ Future<void> _showPartnerMsg(
     await showAppInfo(context, title: 'Süresi Doldu', message: msg);
     return;
   }
+  // Rate limit bir arıza değil, geçici bekleme — mesaj kalan süreyi
+  // taşır ("... 4 dakika sonra tekrar deneyin"), bu yüzden genel
+  // "Bir sorun oluştu" başlığı yerine kendi başlığıyla gösterilir.
+  if (msg.contains('Çok fazla başarısız deneme')) {
+    await showAppInfo(context, title: 'Biraz Bekle', message: msg);
+    return;
+  }
   await showSandikDialog(
     context: context,
     kind: SandikDialogKind.error,
@@ -69,12 +77,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _submitting = false;
   bool _busy = false;
 
+  /// Rate limit bitiş anı ve saniyede bir tetiklenen geri sayım.
+  /// Kalan süre yalnızca hata diyaloğunda gösterilirse kullanıcı
+  /// diyaloğu kapattığı anda ne kadar bekleyeceğini unutur; bu yüzden
+  /// alanın altında canlı olarak da gösterilir.
+  DateTime? _rateLimitedUntil;
+  Timer? _rateLimitTicker;
+
   String? _pendingInviteId;
   String? _pendingPartnerName;
   Timer? _pollTimer;
 
   @override
+  void initState() {
+    super.initState();
+    _restoreRateLimitCountdown();
+  }
+
+  /// Kilit önceki oturumda oluşmuş olabilir; ekran açılır açılmaz
+  /// kalan süreyi göster (kullanıcı bir şey denemeden de görsün).
+  Future<void> _restoreRateLimitCountdown() async {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+    final remaining =
+        await AuthService.instance.partnerCodeLockRemainingSeconds(user.id);
+    if (!mounted || remaining <= 0) return;
+    _startRateLimitCountdown(remaining);
+  }
+
+  @override
   void dispose() {
+    _rateLimitTicker?.cancel();
     _codeCtrl.dispose();
     _pollTimer?.cancel();
     super.dispose();
@@ -108,7 +141,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _submitCode() async {
-    final code = _codeCtrl.text.trim();
+    // Formatter alanı zaten normalize eder; burada tekrar geçirmek
+    // programatik doldurma (yapıştırma, otomatik doldurma, test) gibi
+    // formatter'ı atlayan yolları da kapsar.
+    final code = PartnerCodeInputFormatter.format(_codeCtrl.text);
     if (code.isEmpty) return;
     setState(() {
       _submitting = true;
@@ -122,6 +158,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _pendingPartnerName = result.partnerName;
       });
       _startPolling(result.inviteId);
+    } on RateLimitedException catch (e) {
+      _startRateLimitCountdown(e.retryAfterSeconds);
+      if (mounted) {
+        // Dialog geri sayımı CANLI göstersin: sabit metin, kullanıcı
+        // dialogu okurken bile eskiyordu. Süre dolunca kendini kapatır.
+        await showSandikDialog(
+          context: context,
+          kind: SandikDialogKind.info,
+          title: 'Biraz Bekle',
+          message: e.toString(),
+          liveMessage: () {
+            final kalan = _rateLimitRemaining;
+            if (kalan <= 0) return null; // dialog kapanır
+            return 'Çok fazla başarısız deneme.\n'
+                '$_rateLimitLabel sonra tekrar deneyebilirsin.';
+          },
+        );
+      }
     } catch (e) {
       await _showMsg(e.toString(), isError: true);
     } finally {
@@ -132,6 +186,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         });
       }
     }
+  }
+
+  /// Rate limit geri sayımını başlatır. Süre dolunca alan kendiliğinden
+  /// açılır — kullanıcının ekrandan çıkıp girmesi gerekmez.
+  void _startRateLimitCountdown(int seconds) {
+    _rateLimitTicker?.cancel();
+    if (!mounted || seconds <= 0) return;
+    setState(() {
+      _rateLimitedUntil = DateTime.now().add(Duration(seconds: seconds));
+    });
+    _rateLimitTicker = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      if (_rateLimitRemaining <= 0) {
+        t.cancel();
+        setState(() => _rateLimitedUntil = null);
+      } else {
+        setState(() {}); // kalan süreyi tazele
+      }
+    });
+  }
+
+  /// Kalan saniye; kilit yoksa 0.
+  int get _rateLimitRemaining {
+    final until = _rateLimitedUntil;
+    if (until == null) return 0;
+    final remaining = until.difference(DateTime.now()).inSeconds;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  /// "4:05" / "45 saniye" biçiminde kalan süre etiketi.
+  String get _rateLimitLabel {
+    final s = _rateLimitRemaining;
+    if (s <= 60) return '$s saniye';
+    final dk = s ~/ 60;
+    final sn = s % 60;
+    return '$dk:${sn.toString().padLeft(2, '0')} dakika';
   }
 
   void _startPolling(String inviteId) {
@@ -492,7 +585,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
-                'Ortağınızın size gönderdiği kodu girin (örn: ABCDE-12345). Onay vermesi beklenir.',
+                // Örnek kod gerçek alfabeden seçilmeli: 0/1/I/O üretimde
+                // kullanılmıyor, "ABCDE-12345" hiç üretilemeyecek bir
+                // koddu ve kullanıcıyı yanıltıyordu.
+                'Ortağınızın size gönderdiği kodu girin (örn: KRHNJ-8P2SW). Onay vermesi beklenir.',
                 style: context.t.bodyMedium?.copyWith(color: context.c.text36),
               ),
               const SizedBox(height: 16),
@@ -501,6 +597,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ] else ...[
                 TextField(
                   controller: _codeCtrl,
+                  // Kilitliyken alan kapalı: kullanıcı boşuna yazıp
+                  // yeni bir ret almasın.
+                  enabled: _rateLimitRemaining == 0,
                   keyboardType: TextInputType.text,
                   textCapitalization: TextCapitalization.characters,
                   // Ortaklık kodu sözlükte olmayan bir dizidir; otomatik
@@ -508,26 +607,64 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   autocorrect: false,
                   enableSuggestions: false,
                   textInputAction: TextInputAction.done,
+                  // Tireyi kullanıcıdan beklemek "geçersiz format"
+                  // hatasının başlıca sebebiydi; artık otomatik eklenir
+                  // ve alfabe dışı karakterler süzülür.
+                  inputFormatters: [PartnerCodeInputFormatter()],
+                  onSubmitted: (_) {
+                    if (!_submitting) _submitCode();
+                  },
                   style: TextStyle(color: context.c.text90),
                   decoration: context.inputDecoration('XXXXX-XXXXX'),
                 ),
+                // Kilitliyken kalan süre canlı gösterilir; diyalog
+                // kapandıktan sonra da ne kadar bekleneceği görünür.
+                if (_rateLimitRemaining > 0) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      // Material ikon fontu paketleniyor; CupertinoIcons
+                      // burada tofu (boş kutu) olarak render ediliyordu.
+                      Icon(Icons.schedule_rounded,
+                          size: 15, color: context.c.text36),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Çok fazla deneme — $_rateLimitLabel sonra '
+                          'tekrar deneyebilirsin.',
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text36),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
                 CupertinoButton(
-                  onPressed: _submitting ? null : _submitCode,
+                  onPressed: (_submitting || _rateLimitRemaining > 0)
+                      ? null
+                      : _submitCode,
                   padding: EdgeInsets.zero,
                   child: Container(
                     height: 46,
                     decoration: BoxDecoration(
-                      color: _submitting
+                      color: (_submitting || _rateLimitRemaining > 0)
                           ? context.c.gain.withValues(alpha: 0.05)
                           : context.c.gain.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(SandikRadius.md),
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      _submitting ? 'Gönderiliyor...' : 'Ortaklık İste',
+                      _submitting
+                          ? 'Gönderiliyor...'
+                          : (_rateLimitRemaining > 0
+                              ? 'Bekle — $_rateLimitLabel'
+                              : 'Ortaklık İste'),
                       style: context.t.titleMedium?.copyWith(
-                          color: context.c.gain, fontWeight: FontWeight.w600),
+                          color: _rateLimitRemaining > 0
+                              ? context.c.text36
+                              : context.c.gain,
+                          fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
