@@ -108,14 +108,27 @@ Deno.serve(async (req: Request) => {
 
     // action === 'accept'
     // Çift partnership kontrolü
-    const { data: existing } = await admin
+    //
+    // GÜVENLİK: `.or()` şablon dizesi yerine parametrik `.in()` —
+    // gerekçe redeem-invite-code/index.ts içinde açıklandı
+    // (PostgREST filtre ifadesine değer enjeksiyonu).
+    const pair = [invite.from_user_id, invite.to_user_id]
+    const { data: existingRows, error: existingErr } = await admin
       .from('partnerships')
-      .select('id')
-      .or(
-        `and(user_id_1.eq.${invite.from_user_id},user_id_2.eq.${invite.to_user_id}),` +
-        `and(user_id_1.eq.${invite.to_user_id},user_id_2.eq.${invite.from_user_id})`,
-      )
-      .maybeSingle()
+      .select('id, user_id_1, user_id_2')
+      .in('user_id_1', pair)
+      .in('user_id_2', pair)
+
+    if (existingErr) {
+      console.error('Partnership lookup error:', existingErr)
+      return json({ error: 'lookup_failed' }, 500)
+    }
+
+    const existing = (existingRows ?? []).find(
+      (p) =>
+        (p.user_id_1 === invite.from_user_id && p.user_id_2 === invite.to_user_id) ||
+        (p.user_id_1 === invite.to_user_id && p.user_id_2 === invite.from_user_id),
+    )
 
     if (existing) {
       // Yine de daveti accepted olarak işaretle (UI tutarlılığı)

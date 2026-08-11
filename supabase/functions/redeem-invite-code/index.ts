@@ -72,6 +72,58 @@ Deno.serve(async (req: Request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
+    // 2b. SUNUCU TARAFLI RATE LIMIT (S1 fix)
+    //
+    // Önceden bu sınır yalnızca istemcide (SharedPreferences) vardı;
+    // uygulama verisini silmek veya bu endpoint'e doğrudan istek atmak
+    // limiti tamamen ortadan kaldırıyordu — davet kodları sınırsızca
+    // denenebiliyordu.
+    //
+    // Sayaç yalnızca KONTROL edilir; kayıt aşağıda, sadece gerçek bir
+    // tahmin başarısızlığında (kod bulunamadı) yapılır. Aksi halde
+    // kullanıcı hataları (kendi kodunu girme, zaten ortak olma) da
+    // brute-force denemesi gibi sayılır ve meşru kullanıcı kilitlenir
+    // (S8 — sahada gözlendi).
+    const { data: rlPeek, error: rlPeekErr } = await admin.rpc(
+      'peek_rate_limit',
+      {
+        p_subject: user.id,
+        p_scope: 'redeem_invite',
+        p_max_attempts: 5,
+        p_window_seconds: 600,
+      },
+    )
+
+    if (rlPeekErr) {
+      // Fail-closed: sayaç çalışmıyorsa brute-force'a açık kalmaktansa
+      // isteği reddet. Bu akış nadir kullanılır; kısa kesinti kabul edilebilir.
+      console.error('Rate limit check failed:', rlPeekErr)
+      return json({ error: 'rate_limit_unavailable' }, 503)
+    }
+
+    const rlRow = Array.isArray(rlPeek) ? rlPeek[0] : rlPeek
+    if (rlRow && rlRow.allowed === false) {
+      return json(
+        {
+          error: 'rate_limited',
+          retry_after_seconds: rlRow.retry_after_seconds ?? 600,
+        },
+        429,
+      )
+    }
+
+    /** Yalnızca gerçek tahmin başarısızlığında sayacı artırır. */
+    const recordFailedGuess = async () => {
+      try {
+        await admin.rpc('record_rate_limit_attempt', {
+          p_subject: user.id,
+          p_scope: 'redeem_invite',
+        })
+      } catch (e) {
+        console.error('record_rate_limit_attempt failed:', e)
+      }
+    }
+
     // 3. Daveti bul
     const { data: invite, error: inviteErr } = await admin
       .from('partner_invites')
@@ -85,8 +137,17 @@ Deno.serve(async (req: Request) => {
       console.error('Invite fetch error:', inviteErr)
       return json({ error: 'lookup_failed' }, 500)
     }
-    if (!invite) return json({ error: 'invite_not_found_or_expired' }, 404)
+    // BURASI gerçek tahmin başarısızlığı: girilen kod hiçbir geçerli
+    // davete karşılık gelmiyor. Brute-force yalnızca bu yoldan ilerler,
+    // dolayısıyla sayaç yalnızca burada artar.
+    if (!invite) {
+      await recordFailedGuess()
+      return json({ error: 'invite_not_found_or_expired' }, 404)
+    }
 
+    // Aşağıdakiler kullanıcı hatasıdır, tahmin değil: kod DOĞRU
+    // bulundu. Bunları saymak meşru kullanıcıyı kilitler ve saldırgana
+    // hiçbir maliyet yüklemez (zaten geçerli bir kodu var).
     if (invite.from_user_id === user.id) {
       return json({ error: 'cannot_use_own_code' }, 400)
     }
@@ -96,16 +157,38 @@ Deno.serve(async (req: Request) => {
     }
 
     // 4. Mevcut partnership kontrolü
-    const { data: existingPartnership } = await admin
+    //
+    // GÜVENLİK: Daha önce burada `.or()` içine şablon dizesiyle
+    // user.id / from_user_id gömülüyordu. `.or()` argümanı PostgREST
+    // tarafından bir FİLTRE İFADESİ olarak ayrıştırılır — SQL değil ama
+    // yine de bir dil. İçine virgül/parantez giren bir değer ifadeyi
+    // yeniden yazabilir (PostgREST filtre enjeksiyonu).
+    //
+    // Bu iki değer bugün doğrulanmış UUID'ler olduğu için sömürülebilir
+    // değildi; ancak kalıp kırılgan — kaynağı değişen ilk gün açık hale
+    // gelir. Enjeksiyonun mümkün olmadığı parametrik forma geçiyoruz:
+    // iki taraf da `.in()` ile verilir, eşleşme kodda kontrol edilir.
+    const pair = [user.id, invite.from_user_id]
+    const { data: existingPartnerships, error: partnershipErr } = await admin
       .from('partnerships')
-      .select('id')
-      .or(
-        `and(user_id_1.eq.${user.id},user_id_2.eq.${invite.from_user_id}),` +
-        `and(user_id_1.eq.${invite.from_user_id},user_id_2.eq.${user.id})`,
-      )
-      .maybeSingle()
+      .select('id, user_id_1, user_id_2')
+      .in('user_id_1', pair)
+      .in('user_id_2', pair)
 
-    if (existingPartnership) {
+    if (partnershipErr) {
+      console.error('Partnership lookup error:', partnershipErr)
+      return json({ error: 'lookup_failed' }, 500)
+    }
+
+    // `.in()` çapraz çarpım verir (ör. user_id_1 = user_id_2 = user.id
+    // gibi alakasız satırlar); gerçek eşleşmeyi burada süzüyoruz.
+    const alreadyPartners = (existingPartnerships ?? []).some(
+      (p) =>
+        (p.user_id_1 === user.id && p.user_id_2 === invite.from_user_id) ||
+        (p.user_id_1 === invite.from_user_id && p.user_id_2 === user.id),
+    )
+
+    if (alreadyPartners) {
       return json({ error: 'already_partners' }, 409)
     }
 
@@ -140,6 +223,19 @@ Deno.serve(async (req: Request) => {
       .select('display_name')
       .eq('id', invite.from_user_id)
       .maybeSingle()
+
+    // 8. Başarılı redeem — deneme sayacını sıfırla ki meşru kullanıcı
+    // birden fazla ortaklık kurarken birikmiş denemeler yüzünden
+    // kilitlenmesin.
+    try {
+      await admin.rpc('clear_rate_limit', {
+        p_subject: user.id,
+        p_scope: 'redeem_invite',
+      })
+    } catch (e) {
+      // Sayaç temizlenemezse işlem yine başarılı — sadece logla.
+      console.error('clear_rate_limit failed:', e)
+    }
 
     return json({
       invite_id: invite.id,
