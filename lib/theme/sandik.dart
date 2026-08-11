@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:math' as math;
 import 'dart:ui' show FontFeature, ImageFilter;
 import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoPageRoute;
 import 'package:flutter/material.dart';
@@ -1353,6 +1354,14 @@ class SandikLoadingScreen extends StatefulWidget {
   State<SandikLoadingScreen> createState() => _SandikLoadingScreenState();
 }
 
+/// GIF'in şeffaf kenar dolgusunu telafi eden çarpan (200/150).
+/// [CustomLoadingIndicator] ile bilinçli olarak aynıdır — açılıştaki görsel
+/// ile uygulama içi göstergenin oranı birebir tutsun diye.
+const double _gifOverdraw = 200 / 150;
+
+/// Geniş ekranda logonun tasarım ölçüsü; dar ekranda yukarıdan sınırlanır.
+const double _logoSize = 140;
+
 class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
   bool _showGif = false;
 
@@ -1368,11 +1377,16 @@ class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const size = SandikLoadingScreen._logoSize;
-    const drawSize = size * SandikLoadingScreen._gifOverdraw;
+    // Dar ekran / büyük yazı tipi telafisi: 140 sabit kalırsa küçük
+    // cihazlarda logo + wordmark dikeyde taşar. Kısa kenarın %36'sı ile
+    // sınırlanır, böylece geniş ekranda tasarım ölçüsünde (140) kalır,
+    // dar ekranda orantılı küçülür.
+    final shortestSide = MediaQuery.sizeOf(context).shortestSide;
+    final size = math.min(_logoSize, shortestSide * 0.36);
+    final drawSize = size * _gifOverdraw;
 
     return Scaffold(
-      backgroundColor: Sandik.background,
+      backgroundColor: context.c.background,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1413,7 +1427,9 @@ class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
               style: GoogleFonts.dmSans(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
-                color: Sandik.gold,
+                // Moda duyarlı: light palette'te `gold` koyu kahveye iner
+                // (10.98:1). Dark `gold` sabiti açık zeminde okunmuyordu.
+                color: context.c.gold,
                 letterSpacing: -0.5,
               ),
             ),
