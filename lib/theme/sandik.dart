@@ -1341,18 +1341,13 @@ class SandikSectionHeader extends StatelessWidget {
 
 /// Tam ekran loading — gif + "sandık" yazısı. Ekran ilk açılışında kullan.
 ///
-/// Zemin [Sandik.background] ile aynı; GIF'in kendi arka planı şeffaf olduğu
-/// için çerçeve/renk uyuşmazlığı oluşmaz. GIF içeriği 200×200 tuvalin
-/// ortasındaki 150×150'de durduğundan, görünen boyutu istenen ölçüye
-/// oturtmak için [_gifOverdraw] kadar büyütülüp ortalanır.
+/// Zemin moda duyarlıdır ([SandikPalette.background]); GIF'in kendi arka planı
+/// şeffaf olduğu için çerçeve/renk uyuşmazlığı oluşmaz. GIF ölçekleme mantığı
+/// (200×200 tuvalde 150×150 içerik → overdraw telafisi) [CustomLoadingIndicator]
+/// içinde tek yerde durur; burada tekrarlanmaz ki iki gösterge birbirinden
+/// ayrı düşmesin.
 class SandikLoadingScreen extends StatefulWidget {
   const SandikLoadingScreen({super.key});
-
-  /// GIF'in şeffaf kenar dolgusunu telafi eden çarpan (200/150).
-  /// Bu değer [CustomLoadingIndicator] ile bilinçli olarak aynıdır — açılıştaki
-  /// görsel ile uygulama içi göstergenin oranı birebir tutsun diye.
-  static const double _gifOverdraw = 200 / 150;
-  static const double _logoSize = 140;
 
   @override
   State<SandikLoadingScreen> createState() => _SandikLoadingScreenState();

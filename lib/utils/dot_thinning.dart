@@ -29,6 +29,7 @@ class DotThinner {
     double plotWidthPx = 340,
     double minSeparationPx = 14,
     Set<double> alwaysKeep = const {},
+    double? anchorSeparationPx,
   }) {
     final span = viewMaxX - viewMinX;
     if (span <= 0 || plotWidthPx <= 0) {
@@ -37,6 +38,15 @@ class DotThinner {
 
     // Piksel eşiğini veri birimine çevir — tek karşılaştırma yeter.
     final minSeparationData = minSeparationPx / plotWidthPx * span;
+
+    // Anchor (ilk nokta / "şimdi") çevresindeki yasak bölge AYRI ayarlanır.
+    // Normal eşikle aynı tutulduğunda, grafiğin sonuna yakın yapılan alımlar
+    // "şimdi" noktasının yakınına düştüğü için KALICI olarak gizleniyordu:
+    // zoom yapmak yardımcı olmuyor, çünkü viewport'un sağ kenarı ve dolayısıyla
+    // anchor her ölçekte orada duruyor. Daha küçük bir bölge, uçlardaki
+    // işlemleri görünür kılarken üst üste binmeyi hâlâ engelliyor.
+    final anchorSeparationData =
+        (anchorSeparationPx ?? minSeparationPx) / plotWidthPx * span;
 
     final inView = candidates
         .where((x) => x >= viewMinX && x <= viewMaxX)
@@ -53,7 +63,7 @@ class DotThinner {
 
     bool tooCloseToAnchor(double x) {
       for (final a in anchors) {
-        if ((x - a).abs() < minSeparationData) return true;
+        if ((x - a).abs() < anchorSeparationData) return true;
       }
       return false;
     }

@@ -1277,10 +1277,17 @@ class _PortfolioPerformanceScreenState
     // Segment imzası nokta SAYISI ile yetinmemeli — periyot/veri değişince
     // sayı aynı kalıp X aralığı kayabilir (örn. 30 günlük iki farklı
     // pencere). İlk/son X de anahtara giriyor ki bayat cache dönmesin.
+    //
+    // `id` tek başına yetmez: yumuşak silme `isActive`'i çevirir ama id'yi
+    // değiştirmez — anahtar sabit kalır ve silinen lot'un noktası cache'ten
+    // dönmeye devam ederdi. Aşağıdaki filtre alanları anahtara giriyor.
     final sig = StringBuffer()
       ..write(start.millisecondsSinceEpoch)
       ..write('|')
-      ..write(assets.map((a) => a.id).join(','));
+      ..write(assets
+          .map((a) =>
+              '${a.id}:${a.isActive ? 1 : 0}${a.isBuy ? 'b' : a.isSell ? 's' : 'x'}')
+          .join(','));
     for (final s in segments) {
       sig
         ..write('|')
@@ -1300,22 +1307,46 @@ class _PortfolioPerformanceScreenState
 
     // Varlıkların alım günlerini bir kez "gün damgası" set'ine indir; sonra
     // her spot için O(1) lookup. İç içe `assets.any(...)` taraması gitti.
-    final buyDays = <int>{};
+    //
+    // FİLTRE ŞART: bu set noktanın çizilip çizilmeyeceğine karar veriyor,
+    // dolayısıyla tooltip/crosshair'in "o gün işlem var mı" testiyle AYNI
+    // kümeden beslenmeli (bkz. `crosshairDetailsBuilder`). Filtresiz haliyle
+    // temettü kayıtları (ne buy ne sell), deleteLog mezar taşları ve yumuşak
+    // silinmiş lot'lar da nokta üretiyordu: grafikte nokta görünüyor, ama
+    // basınca "Alım/Satış" satırı çıkmıyordu.
+    // İşlem günlerini grafiğin X birimine (kesirli gün) çevir.
+    final startMidnight = DateTime(start.year, start.month, start.day);
+    final txXs = <double>[];
     for (final a in assets) {
+      if (!a.isActive) continue;
+      if (!a.isBuy && !a.isSell) continue;
       final d = a.addedDate;
-      buyDays.add(DateTime(d.year, d.month, d.day).millisecondsSinceEpoch);
+      final dayMidnight = DateTime(d.year, d.month, d.day);
+      txXs.add(dayMidnight.difference(startMidnight).inMinutes / (60.0 * 24.0));
     }
 
+    // ── İşlemi KAPSAYAN spot'a bağla, tam gün eşleşmesi ARAMA ──────────────
+    //
+    // Eski hâli `spot.günü == işlem.günü` eşitliği arıyordu ve 6A/1Y'de
+    // noktaların kaybolmasının sebebi buydu: o periyotlarda veri
+    // `ResolutionTier.weekly` gelir ve her nokta haftanın PAZARTESİSİNE snap
+    // edilir (bkz. `ResolutionTierMeta.normalizeTs`). Çarşamba yapılan alımın
+    // günü hiçbir spot'a eşit olmadığı için aday bile üretilmiyordu — yani
+    // seyreltme değil, noktanın kendisi hiç doğmuyordu. Aynı sorun 1H'de
+    // saatlik snap yüzünden hafta sonu/kapanış sonrası işlemlerde çıkıyordu.
+    //
+    // Artık her işlem, X'i kendisine eşit veya kendisinden küçük olan son
+    // spot'a (içine düştüğü bar'a) bağlanır.
     final keys = <double>{};
     for (final seg in segments) {
       if (seg.thickness <= 2.0) continue;
-      for (final spot in seg.spots) {
-        final dateAtSpot =
-            start.add(Duration(minutes: (spot.x * 24 * 60).round()));
-        final dayTs =
-            DateTime(dateAtSpot.year, dateAtSpot.month, dateAtSpot.day)
-                .millisecondsSinceEpoch;
-        if (buyDays.contains(dayTs)) keys.add(spot.x);
+      final spots = seg.spots;
+      if (spots.isEmpty) continue;
+      for (final txX in txXs) {
+        final i = coveringSpotIndex(spots, txX);
+        // -1: işlem serinin başlangıcından önce — o nokta grafikte yok.
+        if (i < 0) continue;
+        keys.add(spots[i].x);
       }
     }
 
@@ -1337,6 +1368,13 @@ class _PortfolioPerformanceScreenState
             child: Text('Veri yok', style: TextStyle(color: context.c.text36))),
       );
     }
+
+    // İşlem kaynağı — TEK TANIM. Hem nokta çizimi (`_buyDayKeys`) hem
+    // crosshair detayları bunu kullanır. İkisi ayrı listelerden beslendiğinde
+    // "grafikte nokta var ama basınca alım/satım yazmıyor" tutarsızlığı
+    // çıkıyordu: nokta `chartAssets`'ten, tooltip `allTargetAssets`'ten
+    // geliyordu ve simülasyonda `chartAssets` sentetik `addedDate` taşır.
+    final txAssets = allTargetAssets ?? assets;
 
     // Y ekseni scale'i — SADECE en kalın segmentin (aktif sarı çizgi)
     // değerlerine göre hesaplanır. Passive segment (alım öncesi 0 çizgisi)
@@ -1498,13 +1536,23 @@ class _PortfolioPerformanceScreenState
                 // yeniden hesaplanması saf israftı (spot × varlık döngüsü +
                 // her çift için DateTime aritmetiği). Artık segment/varlık
                 // kümesi başına bir kez hesaplanıp cache'leniyor.
-                candidates: _buyDayKeys(segments, assets, start),
+                //
+                // Kaynak liste crosshair ile AYNI olmalı (`txAssets`), aksi
+                // halde nokta bir kümeden, tooltip başka kümeden beslenir ve
+                // "noktası var ama işlemi yok" tutarsızlığı doğar.
+                candidates: _buyDayKeys(segments, txAssets, start),
                 viewMinX: viewMinX,
                 viewMaxX: viewMaxX,
                 // Grafik genişliği ~ekran - sağ Y rezervi (60px).
                 plotWidthPx: (MediaQuery.of(context).size.width - 60 - 40)
                     .clamp(120.0, 2000.0),
-                minSeparationPx: 16,
+                // Nokta çapı 8.5px'ten ~7.2px'e indi (r=3 + 1.2 halka), bu
+                // yüzden ayrım eşiği de 16'dan 11'e çekilebiliyor: daha az
+                // nokta gizlenir, üst üste binme yine olmaz.
+                minSeparationPx: 11,
+                // Uç noktalara yakın işlemler kalıcı olarak gizlenmesin —
+                // "şimdi" dot'u r=6 olduğu için 8px yeter (bkz. DotThinner).
+                anchorSeparationPx: 8,
                 // İlk ve son nokta her zaman görünür (anchor / "şimdi").
                 alwaysKeep: {
                   primarySeg.spots.first.x,
@@ -1803,11 +1851,16 @@ class _PortfolioPerformanceScreenState
                     strokeWidth: 2.5,
                   );
                 }
+                // Ortadaki işlem noktaları — "şimdi" noktasından belirgin
+                // şekilde küçük. Önceki 4.5px + 2px halka (toplam ~8.5px çap)
+                // yoğun alım yapılan aylarda çizgiyi boncuk dizisine
+                // çeviriyordu. Halka da inceltildi: küçük yarıçapta 2px'lik
+                // kenar dolgunun yarısını yiyip noktayı içi boş gösteriyordu.
                 return FlDotCirclePainter(
-                  radius: 4.5,
+                  radius: 3.0,
                   color: context.c.amberText,
                   strokeColor: context.c.text90,
-                  strokeWidth: 2,
+                  strokeWidth: 1.2,
                 );
               },
             ),
@@ -2065,7 +2118,6 @@ class _PortfolioPerformanceScreenState
               final spotDayMs = DateTime(date.year, date.month, date.day)
                   .millisecondsSinceEpoch;
               double dayBuy = 0, daySell = 0;
-              final txAssets = allTargetAssets ?? assets;
               for (final a in txAssets) {
                 if (!a.isActive) continue;
                 final addMid = DateTime(
@@ -2123,12 +2175,20 @@ class _PortfolioPerformanceScreenState
                   // Her bar için 2 spot'lu ayrı bir LineChartBarData → dikey
                   // çubuk. fl_chart'ın BarChart'ında X data-space değil, group
                   // index olduğu için sync viewport için LineChart hilesi kullanıyoruz.
+                  final chartMaxY = maxY == 0 ? 1.0 : maxY * 1.15;
+                  // En küçük çubuk bile görünür kalsın. Tek büyük alım
+                  // ölçeği belirlediğinde küçük işlemler 1px'in altına
+                  // düşüp "kırıntı" gibi görünüyordu — panelin %6'sı kadar
+                  // bir taban yüksekliği veriyoruz. Ölçek yine gerçek: bu
+                  // yalnızca ÇİZİM tabanı, `b.total` değeri değişmiyor.
+                  final minVisibleY = chartMaxY * 0.06;
                   final bars = <LineChartBarData>[];
                   for (final b in volumeBars) {
                     final buyPositive = b.buy >= b.sell;
                     final color = buyPositive ? context.c.gain : context.c.loss;
+                    final drawY = b.total < minVisibleY ? minVisibleY : b.total;
                     bars.add(LineChartBarData(
-                      spots: [FlSpot(b.x, 0), FlSpot(b.x, b.total)],
+                      spots: [FlSpot(b.x, 0), FlSpot(b.x, drawY)],
                       isCurved: false,
                       color: color.withValues(alpha: 0.85),
                       barWidth: 3,
@@ -2142,12 +2202,35 @@ class _PortfolioPerformanceScreenState
                       minX: vp.minX,
                       maxX: vp.maxX,
                       minY: 0,
-                      maxY: maxY == 0 ? 1 : maxY * 1.15,
+                      maxY: chartMaxY,
                       clipData: const FlClipData.all(),
                       lineTouchData: const LineTouchData(enabled: false),
                       gridData: const FlGridData(show: false),
                       borderData: FlBorderData(show: false),
-                      titlesData: const FlTitlesData(show: false),
+                      // ⚠️ Ana grafik sağda 60px'i Y-ekseni etiketlerine
+                      // ayırıyor (`rightTitles.reservedSize`). Bu panel hiç
+                      // rezerv ayırmazsa AYNI X değeri iki panelde farklı
+                      // piksele düşer — çubuklar fiyat grafiğine göre sağa
+                      // kayar. Etiketleri gizli ama aynı genişlikte bir
+                      // rezerv koyarak iki plot area'yı hizalıyoruz.
+                      titlesData: FlTitlesData(
+                        show: true,
+                        topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 60,
+                            // Etiket yok — yalnızca hizalama rezervi.
+                            getTitlesWidget: (_, __) =>
+                                const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
                       lineBarsData: bars,
                     ),
                     // Ana grafikle aynı motion token'ları — hacim paneli
@@ -2169,15 +2252,28 @@ class _PortfolioPerformanceScreenState
   /// birimde.
   List<_VolumeBar> _computeVolumeBars(List<Asset> assets, DateTime start) {
     // Ana chart'ın X birimi ile birebir aynı: kesirli gün (1 saat = 1/24).
-    // İşlemi kendi gününün ortasına (12:00) snap et — TradingView tarzı hacim
-    // çubuğu tarih çizgisinin üstüne düşer. `inDays` kullanılırsa tam sayıya
-    // yuvarlanır ve grafik X ekseni ile hizasız kalır.
+    //
+    // ⚠️ `start` bir DUVAR SAATİ damgasıdır (`endDate.subtract(days)`), yani
+    // içinde bugünün saati vardır — gece yarısı değildir. İşlem tarihleri ise
+    // gece yarısına normalize. İkisinin farkı bu yüzden negatif-kesirli çıkar
+    // ve `~/` sıfıra doğru kırptığı için çubuklar bir gün kayıyor, aynı güne
+    // düşenler tamamen eleniyordu ("kesik" görünen hacim paneli).
+    //
+    // Ana grafik bu hatayı yapmıyor: o `date.difference(startDate).inMinutes /
+    // (60*24)` ile KESİRLİ gün üretiyor. Hacim paneli de aynı tabana oturmalı,
+    // aksi halde iki panel farklı X uzayında çizilir.
+    final startMidnight = DateTime(start.year, start.month, start.day);
+    // Grafiğin X'i `start`'a göre; gece yarısı ile arasındaki kayma sabit.
+    final startOffsetDays =
+        startMidnight.difference(start).inMinutes / (60.0 * 24.0);
+
     final Map<int, ({double buy, double sell})> perDay = {};
     for (final a in assets) {
       if (!a.isActive) continue;
       final dayMidnight =
           DateTime(a.addedDate.year, a.addedDate.month, a.addedDate.day);
-      final dayIdx = dayMidnight.difference(start).inMinutes ~/ (60 * 24);
+      // Gece yarısı ↔ gece yarısı farkı — tam gün, kırpma sorunu yok.
+      final dayIdx = dayMidnight.difference(startMidnight).inDays;
       if (dayIdx < 0) continue;
       final prev = perDay[dayIdx] ?? (buy: 0.0, sell: 0.0);
       if (a.isBuy) {
@@ -2189,9 +2285,22 @@ class _PortfolioPerformanceScreenState
     final out = <_VolumeBar>[];
     perDay.forEach((day, tot) {
       if (tot.buy + tot.sell <= 0) return;
-      // Bar merkezi gün ortasına — tarih etiketinin altına düşer.
-      out.add(
-          _VolumeBar(x: day.toDouble() + 0.5, buy: tot.buy, sell: tot.sell));
+      // ⚠️ Çubuk GÜN ORTASINA (+0.5) DEĞİL, günün BAŞINA konur.
+      //
+      // Fiyat serisinin noktaları `ResolutionTier.normalizeTs` ile GECE
+      // YARISINA snap edilir (daily tier'da `DateTime(y, m, d)`), X ekseni
+      // tarih etiketleri de aynı anlara düşer. Çubuğu gün ortasına koymak
+      // onu fiyat noktasından yarım gün sağa kaydırıyordu — ekranda
+      // "çubuklar timeline ile örtüşmüyor" görüntüsünün sebebi buydu.
+      //
+      // `startOffsetDays` gece yarısı tabanını grafiğin `start` tabanına
+      // taşır; ikisi birlikte, çubuğu o günün fiyat noktasıyla BİREBİR
+      // aynı X'e oturtur.
+      out.add(_VolumeBar(
+        x: startOffsetDays + day.toDouble(),
+        buy: tot.buy,
+        sell: tot.sell,
+      ));
     });
     return out;
   }

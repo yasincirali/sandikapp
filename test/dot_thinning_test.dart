@@ -101,4 +101,73 @@ void main() {
       expect(t.shows(1.0), isTrue);
     });
   });
+
+  // ── anchorSeparationPx ───────────────────────────────────────────────────
+  //
+  // Regresyon: anchor ("şimdi" / ilk nokta) çevresindeki yasak bölge normal
+  // eşikle aynıydı. Grafiğin sonuna yakın yapılan alımlar bu bölgeye düştüğü
+  // için KALICI olarak gizleniyordu — zoom yardımcı olmuyordu, çünkü
+  // viewport'un sağ kenarı ve anchor her ölçekte orada duruyor.
+  group('anchor yasak bölgesi ayrı ayarlanabilir', () {
+    test('varsayılanda minSeparationPx ile aynı davranır (geriye uyum)', () {
+      // 100 birim / 1000px → 1 birim = 10px. 20px eşik = 2 birim.
+      final t = DotThinner.build(
+        candidates: const [98.5],
+        viewMinX: 0,
+        viewMaxX: 100,
+        plotWidthPx: 1000,
+        minSeparationPx: 20,
+        alwaysKeep: {100.0},
+      );
+      // 98.5 anchor'a 1.5 birim (15px) → 20px eşiğin altında, gizlenir.
+      expect(t.shows(98.5), isFalse);
+      expect(t.shows(100.0), isTrue, reason: 'anchor her zaman görünür');
+    });
+
+    test('daha küçük anchorSeparationPx uç noktaya yakın işlemi görünür kılar',
+        () {
+      final t = DotThinner.build(
+        candidates: const [98.5],
+        viewMinX: 0,
+        viewMaxX: 100,
+        plotWidthPx: 1000,
+        minSeparationPx: 20,
+        anchorSeparationPx: 8, // 0.8 birim
+        alwaysKeep: {100.0},
+      );
+      // 1.5 birim (15px) > 8px → artık görünür.
+      expect(t.shows(98.5), isTrue);
+      expect(t.shows(100.0), isTrue);
+    });
+
+    test('anchor üstüne binen nokta yine gizlenir', () {
+      final t = DotThinner.build(
+        candidates: const [99.95],
+        viewMinX: 0,
+        viewMaxX: 100,
+        plotWidthPx: 1000,
+        minSeparationPx: 11,
+        anchorSeparationPx: 8,
+        alwaysKeep: {100.0},
+      );
+      // 0.05 birim = 0.5px → 8px eşiğin çok altında, üst üste binerdi.
+      expect(t.shows(99.95), isFalse);
+    });
+
+    test('anchor eşiği normal aralık eşiğini etkilemez', () {
+      // Birbirine yakın iki aday, anchor'dan uzakta: minSeparationPx geçerli.
+      final t = DotThinner.build(
+        candidates: const [50.0, 50.5],
+        viewMinX: 0,
+        viewMaxX: 100,
+        plotWidthPx: 1000,
+        minSeparationPx: 20, // 2 birim
+        anchorSeparationPx: 8,
+        alwaysKeep: {100.0},
+      );
+      expect(t.shows(50.0), isTrue);
+      // 0.5 birim (5px) < 20px → hâlâ seyreltilir.
+      expect(t.shows(50.5), isFalse);
+    });
+  });
 }

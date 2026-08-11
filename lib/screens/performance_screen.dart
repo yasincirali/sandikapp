@@ -1022,21 +1022,52 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     // Lot marker'ları için: gün-hassasiyetli tarih → (isSell) map.
                     // Aynı güne birden fazla işlem düşerse buy önceliklidir
                     // (ek alım genelde daha anlamlı sinyal).
-                    final Map<int, bool> lotDayIsSell = {};
+                    // `isDeleteLog` tek başına yetmiyordu: yumuşak silinmiş
+                    // lot'lar (deletedAt != null) ve TEMETTÜ satırları da
+                    // nokta üretiyordu. Temettü bir alım/satım değil ve
+                    // miktara hiç dokunmaz — noktası olmamalı. `isActive`
+                    // mezar taşı + yumuşak silmeyi birlikte eler.
+                    //
+                    // Anahtar GERÇEK spot X'i (kesirli gün), tam sayı gün
+                    // DEĞİL. Eskiden `spot.x.toInt()` ile tam gün eşleşmesi
+                    // aranıyordu ve 6A/1Y'de noktalar kayboluyordu: o
+                    // periyotlarda veri `ResolutionTier.weekly` gelir ve her
+                    // nokta haftanın PAZARTESİSİNE snap edilir, dolayısıyla
+                    // çarşamba yapılan bir işlemin gün anahtarı hiçbir spot'a
+                    // denk gelmiyordu. Artık her işlem, içine düştüğü bar'a
+                    // (`coveringSpotIndex`) bağlanıyor.
+                    final Map<double, bool> lotDayIsSell = {};
                     final activeLots = widget.lots ?? [widget.asset];
+                    final startMidnight = DateTime(
+                        startDate.year, startDate.month, startDate.day);
+                    final primarySpots = segments
+                        .firstWhere((s) => !s.dashed && s.spots.isNotEmpty,
+                            orElse: () => TransactionSegment(
+                                  spots: const [],
+                                  lineColor: context.c.amberText,
+                                  areaGradientStart: Colors.transparent,
+                                  areaGradientEnd: Colors.transparent,
+                                  thickness: 3.5,
+                                ))
+                        .spots;
                     for (final lot in activeLots) {
-                      if (lot.isDeleteLog) continue;
+                      if (!lot.isActive) continue;
+                      if (!lot.isBuy && !lot.isSell) continue;
                       final d = DateTime(lot.addedDate.year,
                           lot.addedDate.month, lot.addedDate.day);
-                      if (d.isBefore(startDate)) continue;
-                      final dayKey = d.difference(startDate).inDays;
+                      if (d.isBefore(startMidnight)) continue;
+                      final txX =
+                          d.difference(startMidnight).inMinutes / (60.0 * 24.0);
+                      final i = coveringSpotIndex(primarySpots, txX);
+                      if (i < 0) continue;
+                      final key = primarySpots[i].x;
                       final isSell = lot.isSell;
                       // Buy varsa buy kalsın (override etme)
-                      if (lotDayIsSell.containsKey(dayKey) &&
-                          !lotDayIsSell[dayKey]!) {
+                      if (lotDayIsSell.containsKey(key) &&
+                          !lotDayIsSell[key]!) {
                         continue;
                       }
-                      lotDayIsSell[dayKey] = isSell;
+                      lotDayIsSell[key] = isSell;
                     }
 
                     // Y sınırlarını görünür X aralığındaki spot'lara göre
@@ -1305,12 +1336,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             // Builder içinde bırakılırsa her pinch/pan
                             // karesinde expand+map+where zinciri baştan
                             // kurulurdu. Bir kez hesapla.
-                            final dotCandidates = segments
-                                .expand((s) => s.spots)
-                                .map((sp) => sp.x)
-                                .where((x) =>
-                                    lotDayIsSell.containsKey(x.toInt()))
-                                .toList(growable: false);
+                            // Anahtarlar zaten gerçek spot X'leri — doğrudan
+                            // aday listesi olarak kullanılabilir.
+                            final dotCandidates =
+                                lotDayIsSell.keys.toList(growable: false);
                             return ZoomableChart(
                             fullMinX: focusMin,
                             fullMaxX: focusMax,
@@ -1343,7 +1372,13 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         60 -
                                         40)
                                     .clamp(120.0, 2000.0),
-                                minSeparationPx: 16,
+                                // Nokta çapı küçüldü (r=3 + 1.2 halka) →
+                                // ayrım eşiği de düşebilir: daha az nokta
+                                // gizlenir, üst üste binme yine olmaz.
+                                minSeparationPx: 11,
+                                // Uç noktalara (r=5.5) yakın işlemler kalıcı
+                                // olarak gizlenmesin — bkz. DotThinner.
+                                anchorSeparationPx: 8,
                                 alwaysKeep: {
                                   if (anchorSpot != null) anchorSpot.x,
                                   if (lastSpot != null) lastSpot.x,
@@ -1618,8 +1653,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                             spot.y == lastSpot.y) {
                                           return true;
                                         }
-                                        if (!lotDayIsSell
-                                            .containsKey(spot.x.toInt())) {
+                                        if (!lotDayIsSell.containsKey(spot.x)) {
                                           return false;
                                         }
                                         return dotThinner.shows(spot.x);
@@ -1650,16 +1684,21 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                           );
                                         }
                                         // Ek alım / satış marker'ları
-                                        final isSell =
-                                            lotDayIsSell[spot.x.toInt()];
+                                        final isSell = lotDayIsSell[spot.x];
                                         if (isSell != null) {
+                                          // Ortadaki işlem noktaları uçlardan
+                                          // (5.5px) belirgin biçimde küçük —
+                                          // yoğun işlem yapılan dönemde çizgi
+                                          // boncuk dizisine dönüşmesin. Halka
+                                          // da inceltildi: küçük yarıçapta 2px
+                                          // kenar içi boş gösteriyordu.
                                           return FlDotCirclePainter(
-                                            radius: 4.5,
+                                            radius: 3.0,
                                             color: isSell
                                                 ? context.c.loss
                                                 : context.c.gain,
                                             strokeColor: context.c.text90,
-                                            strokeWidth: 2,
+                                            strokeWidth: 1.2,
                                           );
                                         }
                                         return FlDotCirclePainter(
