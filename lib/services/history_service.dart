@@ -229,7 +229,7 @@ class HistoryService {
         }
 
         final xauTry = xauUsd * usdRate;
-        final gram22k = xauTry / 31.1035 * (22 / 24);
+        final gram22k = PriceService.gram22kFromXauTry(xauTry);
         goldHistory[dTs] = gram22k;
       }
     }
@@ -529,7 +529,7 @@ class HistoryService {
         final xauUsd = p.$2;
         double usdRate = closestOrNull(usdTrySlots, ts) ?? 40.0;
         final xauTry = xauUsd * usdRate;
-        final gram22k = xauTry / 31.1035 * (22 / 24);
+        final gram22k = PriceService.gram22kFromXauTry(xauTry);
         goldSlots[ts] = gram22k;
       }
     }
@@ -560,19 +560,11 @@ class HistoryService {
     }
 
     // Altın türü katsayısı (gram22k referansına göre).
-    double goldFactor(String ticker) {
-      switch (ticker) {
-        case 'ALTIN_CEYREK':
-          return 1.75;
-        case 'ALTIN_YARIM':
-          return 3.5;
-        case 'ALTIN_CUMHURIYET':
-        case 'ALTIN_ATA':
-          return 7.216;
-        default:
-          return 1.0;
-      }
-    }
+    // Ağırlık tablosu `PriceService`'te tutulur; buradaki yerel kopya
+    // ALTIN_RESAT'ı ATLIYORDU (tabloda 7.216 ile var ama switch'te yoktu),
+    // yani Reşat altını grafikte gram altın gibi çiziliyor ve pozisyon
+    // 7.216 kat düşük görünüyordu.
+    double goldFactor(String ticker) => PriceService.goldWeightFactor(ticker);
 
     final groupedPoints = <int, double>{};
 
@@ -811,22 +803,14 @@ class HistoryService {
       final xauUsd = entry.value;
       final usdRate = _closestOrNull(usdMap, ts) ?? 40.0;
       final xauTry = xauUsd * usdRate;
-      goldMap[ts] = xauTry / 31.1035 * (22 / 24);
+      goldMap[ts] = PriceService.gram22kFromXauTry(xauTry);
     }
 
-    double goldFactor(String ticker) {
-      switch (ticker) {
-        case 'ALTIN_CEYREK':
-          return 1.75;
-        case 'ALTIN_YARIM':
-          return 3.5;
-        case 'ALTIN_CUMHURIYET':
-        case 'ALTIN_ATA':
-          return 7.216;
-        default:
-          return 1.0;
-      }
-    }
+    // Ağırlık tablosu `PriceService`'te tutulur; buradaki yerel kopya
+    // ALTIN_RESAT'ı ATLIYORDU (tabloda 7.216 ile var ama switch'te yoktu),
+    // yani Reşat altını grafikte gram altın gibi çiziliyor ve pozisyon
+    // 7.216 kat düşük görünüyordu.
+    double goldFactor(String ticker) => PriceService.goldWeightFactor(ticker);
 
     // Signed quantity per slot
     double signedQtyOnSlot(Asset a, int slotTs) {
@@ -1014,4 +998,178 @@ class HistoryService {
   void clearTierCache() {
     _tierCache.clear();
   }
+
+  // ── Tek varlık geçmişi (karşılaştırma altyapısı) ──────────────────────────
+  //
+  // Buradan aşağısı PORTFÖYDEN BAĞIMSIZDIR: kullanıcının sahip olmadığı bir
+  // varlığın geçmişini de çeker. "THYAO alsaydım ne olurdu?" sorusunu
+  // yanıtlayan karşılaştırma ekranının veri katmanı.
+  //
+  // `getPortfolioHistory` ile arasındaki fark özet olarak:
+  //   portföy  → miktar × fiyat, lot geçmişi, TL toplam
+  //   buradaki → yalnızca FİYAT serisi, miktar kavramı yok
+  //
+  // Bu ayrım bilinçli: karşılaştırmada "ne kadarım vardı" sorusu anlamsızdır
+  // (kullanıcı o varlığa hiç sahip olmamış olabilir), sorulan şey saf getiri.
+
+  /// Tek bir sembolün TRY cinsinden fiyat serisini döner.
+  ///
+  /// Dönen map: `{ UNIX_MILLIS: TRY_FIYAT }` — boş map "veri yok" demektir
+  /// (ağ hatası ya da tanınmayan sembol); çağıran taraf bunu grafik çizmeme
+  /// kararına çevirmelidir.
+  ///
+  /// **Para birimi:** USD kote semboller (ör. `AAPL`) o günün USD/TRY kuruyla
+  /// çevrilir — sabit bugünkü kur değil. Aksi halde geçmiş getiri, kurdaki
+  /// hareketi hisseye mal ederdi.
+  ///
+  /// **Altın:** `ALTIN_*` sembolleri XAU/USD serisinden 22 ayar gram TRY'ye
+  /// çevrilir ve ürün ağırlığıyla (çeyrek, yarım...) ölçeklenir.
+  Future<Map<int, double>> getSymbolHistory(
+    String symbol, {
+    required int periodDays,
+  }) async {
+    final sym = symbol.trim().toUpperCase();
+    if (sym.isEmpty) return {};
+
+    final tier = _tierForPeriod(periodDays);
+    final range = _rangeForPeriod(periodDays);
+
+    Future<Map<int, double>> series(String s) async =>
+        _normalized(await _fetchSafe(s, range), tier);
+
+    // Altın: XAU/USD × USD/TRY → 22 ayar gram → ürün ağırlığı.
+    if (sym.startsWith('ALTIN_')) {
+      final results = await Future.wait([series('GC=F'), series('USDTRY=X')]);
+      final xau = results[0];
+      final usd = results[1];
+      final weight = PriceService.goldWeightFactor(sym);
+      final out = <int, double>{};
+      for (final e in xau.entries) {
+        final rate = _closestOrNull(usd, e.key);
+        // Kur bulunamazsa noktayı ATLA — sabit bir varsayılan kur (eski
+        // kodda 40.0) geçmişte tamamen uydurma bir TL fiyatı üretirdi.
+        if (rate == null) continue;
+        out[e.key] =
+            PriceService.gram22kFromXauTry(e.value * rate) * weight;
+      }
+      return out;
+    }
+
+    final raw = await series(sym);
+    if (raw.isEmpty) return {};
+
+    // TRY kote olanlar (BIST `.IS`, TEFAS fonları, `*TRY=X` pariteleri)
+    // doğrudan döner; kalanlar USD kabul edilip çevrilir.
+    if (_isTryQuoted(sym)) return raw;
+
+    final usd = await series('USDTRY=X');
+    if (usd.isEmpty) return {};
+    final out = <int, double>{};
+    for (final e in raw.entries) {
+      final rate = _closestOrNull(usd, e.key);
+      if (rate == null) continue;
+      out[e.key] = e.value * rate;
+    }
+    return out;
+  }
+
+  /// Sembol TRY cinsinden mi kote?
+  ///
+  /// BIST sembolleri `.IS` ile biter, TEFAS fonları `TEFAS:` önekli, TRY
+  /// pariteleri `TRY=X` ile biter. Kalan her şey (ABD hisseleri, emtia,
+  /// kripto) USD kabul edilir — Yahoo'nun varsayılanı budur.
+  static bool _isTryQuoted(String sym) =>
+      sym.endsWith('.IS') ||
+      sym.startsWith('TEFAS:') ||
+      sym.endsWith('TRY=X') ||
+      sym.startsWith('ALTIN_');
+
+  /// Periyoda uygun Yahoo range.
+  static String _rangeForPeriod(int days) {
+    if (days <= 7) return '5d';
+    if (days <= 30) return '1mo';
+    if (days <= 90) return '3mo';
+    if (days <= 365) return '1y';
+    return '5y';
+  }
+
+  /// Periyoda uygun çözünürlük katmanı.
+  static ResolutionTier _tierForPeriod(int days) {
+    if (days <= 2) return ResolutionTier.fiveMin;
+    if (days <= 30) return ResolutionTier.hourly;
+    if (days <= 365) return ResolutionTier.daily;
+    return ResolutionTier.weekly;
+  }
+
+  /// Ham noktaları tier'a göre bucket'lara indirger.
+  static Map<int, double> _normalized(
+      List<(int, double)> pts, ResolutionTier tier) {
+    final out = <int, double>{};
+    for (final p in pts) {
+      // Aynı bucket'a düşen sonraki nokta öncekini ezer → bucket'ın
+      // KAPANIŞ değeri kalır. Grafiklerde beklenen davranış budur.
+      out[tier.normalizeTs(p.$1)] = p.$2;
+    }
+    return out;
+  }
+
+  /// Önbellekli, hata yutan tek sembol çekimi.
+  Future<List<(int, double)>> _fetchSafe(String sym, String range) async {
+    final key = '${sym}_$range';
+    final cached = _cacheGet(key);
+    if (cached != null) return cached;
+    try {
+      final pts = await PriceService.instance.fetchHistory(sym, range);
+      if (pts.isNotEmpty) _cachePut(key, pts);
+      return pts;
+    } catch (e) {
+      if (kDebugMode) debugPrint('getSymbolHistory($sym) failed: $e');
+      return const [];
+    }
+  }
+}
+
+/// Bir serinin dönem başına göre normalize edilmiş getirisi.
+///
+/// Karşılaştırmanın temel taşı: farklı fiyat ölçeklerindeki varlıklar
+/// (₺12 bir hisse ile ₺4.800 bir altın) ancak yüzde cinsinden aynı
+/// grafikte anlamlı görünür.
+typedef NormalizedSeries = ({
+  /// `{ UNIX_MILLIS: YUZDE_DEGISIM }` — dönem başı `0.0`.
+  Map<int, double> points,
+
+  /// Dönem boyunca toplam getiri yüzdesi (son nokta).
+  double totalReturnPct,
+
+  /// Dönemdeki ilk ve son ham fiyat — "₺X → ₺Y" göstermek için.
+  double firstPrice,
+  double lastPrice,
+});
+
+/// Ham fiyat serisini dönem başı `%0` olacak şekilde normalize eder.
+///
+/// **Neden yüzde:** kullanıcının sahip OLMADIĞI bir varlık için alım fiyatı
+/// yoktur; "ne kadar kazandın" sorusu tanımsızdır. Tanımlı olan tek şey
+/// dönem boyunca fiyatın yüzde kaç değiştiğidir. Bu yüzden karşılaştırma
+/// her zaman dönem başını sıfır kabul eder.
+///
+/// İlk fiyat sıfır veya negatifse (bozuk veri) `null` döner — sıfıra bölme
+/// sonsuz yüzde üretir ve grafiği okunamaz hale getirirdi.
+NormalizedSeries? normalizeSeries(Map<int, double> raw) {
+  if (raw.length < 2) return null;
+  final keys = raw.keys.toList()..sort();
+  final first = raw[keys.first]!;
+  if (first <= 0) return null;
+
+  final points = <int, double>{};
+  for (final k in keys) {
+    points[k] = (raw[k]! - first) / first * 100.0;
+  }
+  final last = raw[keys.last]!;
+  return (
+    points: points,
+    totalReturnPct: (last - first) / first * 100.0,
+    firstPrice: first,
+    lastPrice: last,
+  );
 }

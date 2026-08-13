@@ -67,6 +67,29 @@ class PriceService {
     'ALTIN_RESAT': 7.216,
   };
 
+  /// Bir troy ons kaç gram — altın çevriminin sabiti.
+  static const _gramsPerTroyOunce = 31.1035;
+
+  /// Türkiye'de "gram altın" 22 ayar üzerinden fiyatlanır; XAU ise 24 ayar
+  /// saflıktadır. Bu oran saf ons fiyatını yerel gram fiyatına indirir.
+  static const _goldPurityFactor = 22 / 24;
+
+  /// Ons cinsinden XAU/TRY fiyatını **22 ayar gram** fiyatına çevirir.
+  ///
+  /// **Neden tek yerde:** bu formül geçmişte beş ayrı yere kopyalanmıştı
+  /// (iki `price_service`, üç `history_service`). Ayar oranı ya da ons
+  /// sabiti değişirse beşini birden düzeltmek gerekiyordu ve biri
+  /// kaçarsa canlı fiyat ile grafik sessizce ayrışırdı — kullanıcı aynı
+  /// altını iki ekranda iki farklı değerde görürdü.
+  ///
+  /// [xauTry] ons başına TRY fiyatı (yani XAU/USD × USD/TRY).
+  static double gram22kFromXauTry(double xauTry) =>
+      xauTry / _gramsPerTroyOunce * _goldPurityFactor;
+
+  /// Altın ürününün gram cinsinden ağırlık çarpanı (çeyrek, yarım, ata...).
+  /// Bilinmeyen sembolde 1.0 → gram altın gibi davranır.
+  static double goldWeightFactor(String symbol) => _goldWeights[symbol] ?? 1.0;
+
   static const _tefasPrefix = 'TEFAS:';
 
   // ── Public API ─────────────────────────────────────────────────────────────
@@ -285,7 +308,7 @@ class PriceService {
       throw Exception('GC=F unavailable');
     }
     final xauTry = xauUsd * usdTry;
-    final gram22k = xauTry / 31.1035 * (22 / 24);
+    final gram22k = gram22kFromXauTry(xauTry);
     return {
       for (final sym in goldSymbols)
         sym: YahooQuote(
@@ -430,8 +453,8 @@ class PriceService {
       }
       if (kDebugMode) debugPrint('[PriceService] historicalGold: xauTry=$xauTry');
       if (xauTry == null || xauTry <= 0) return null;
-      final gram22k = xauTry / 31.1035 * (22 / 24);
-      final result = gram22k * (_goldWeights[symbol] ?? 1.0);
+      final gram22k = gram22kFromXauTry(xauTry);
+      final result = gram22k * goldWeightFactor(symbol);
       if (kDebugMode) debugPrint('[PriceService] historicalGold: result=$result');
       return result;
     }
