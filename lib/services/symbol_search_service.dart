@@ -1,9 +1,34 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import '../models/asset_categories.dart';
+import 'tefas_service.dart';
+
+/// Portföy serilerinin sanal ticker önekleri.
+///
+/// Bunlar gerçek sembol DEĞİLDİR — fiyat servislerine gönderilmez.
+/// Karşılaştırma ekranı bu önekleri görünce seriyi `getSymbolHistory`
+/// yerine `getPortfolioHistory` ile hesaplar.
+///
+/// Sanal olmalarının sebebi: kullanıcının kendi portföyünün "fiyatı"
+/// piyasada kote değildir; lot'larından hesaplanır. Ama karşılaştırma
+/// grafiği için aynı arayüzden akmaları gerekir.
+abstract final class PortfolioSeries {
+  /// Yalnızca kullanıcının kendi varlıkları.
+  static const mine = 'PORTFOLIO:MINE';
+
+  /// Kullanıcı + tüm ortaklar.
+  static const together = 'PORTFOLIO:TOGETHER';
+
+  /// Belirli bir ortağın portföyü — `PORTFOLIO:PARTNER:<uuid>`.
+  static const partnerPrefix = 'PORTFOLIO:PARTNER:';
+
+  static bool isPortfolio(String ticker) => ticker.startsWith('PORTFOLIO:');
+
+  /// `PORTFOLIO:PARTNER:<uuid>` → `<uuid>`; değilse null.
+  static String? partnerIdOf(String ticker) => ticker.startsWith(partnerPrefix)
+      ? ticker.substring(partnerPrefix.length)
+      : null;
+}
 
 /// Arama sonucundaki tek bir sembol.
 @immutable
@@ -14,21 +39,13 @@ class SymbolHit {
   /// Kullanıcıya gösterilen ad — ör. `Türk Hava Yolları`.
   final String name;
 
-  /// Kısa köken etiketi — ör. `BIST`, `Altın`, `NASDAQ`.
+  /// Kısa köken etiketi — ör. `BIST`, `Fon`, `Altın`, `Emtia`.
   final String source;
-
-  /// Yerleşik listelerden mi geldi (aksi halde Yahoo aramasından)?
-  ///
-  /// UI bunu rozet olarak gösterir: yerleşik semboller için fiyat/geçmiş
-  /// desteği kanıtlıdır, Yahoo'dan gelen serbest sonuçlarda veri boş
-  /// çıkabilir.
-  final bool builtIn;
 
   const SymbolHit({
     required this.ticker,
     required this.name,
     required this.source,
-    this.builtIn = true,
   });
 
   @override
@@ -41,30 +58,29 @@ class SymbolHit {
 
 /// Karşılaştırmaya eklenecek varlığı bulur.
 ///
-/// İki katmanlı arar:
-///   1. **Yerleşik listeler** (`asset_categories.dart`) — BIST 100, altın
-///      ürünleri, emtia, döviz. Ticker formatları zaten doğru ve fiyat
-///      desteği kanıtlı.
-///   2. **Yahoo sembol araması** — yerleşikte yeterli sonuç yoksa devreye
-///      girer; dünyadaki her şeyi (AAPL, BTC-USD, XU100.IS) bulur.
+/// ## Kapsam: yalnızca Türkiye
+/// Arama bilinçli olarak **TR'de işlem gören** varlıklarla sınırlıdır —
+/// BIST hisseleri, TEFAS fonları, altın ürünleri, döviz ve BIST endeksleri.
+/// Yabancı hisse/kripto (AAPL, BTC-USD) LİSTELENMEZ: uygulamanın geri
+/// kalanı da TR odaklıdır ve o varlıkların portföye eklenmesi zaten
+/// desteklenmiyor; aramada çıkmaları kullanıcıyı ekleyemeyeceği bir
+/// şeye yönlendirirdi.
 ///
-/// Sıralama bilinçlidir: yerleşik sonuçlar ÖNCE gelir. Yahoo'nun resmî
-/// olmayan arama ucu bazen alakasız borsalardaki kopyaları öne atar
-/// (ör. `THYAO.IS` ararken Meksika kotasyonu); yerel liste bunu bastırır.
+/// **İstisna — küresel emtia referansları.** Ons altın, Brent petrol gibi
+/// semboller TR'de kote değildir ama yerel varlığın dayandığı fiyattır
+/// (gram altın onsa, akaryakıt Brent'e bağlıdır). Amaç yabancı borsada
+/// işlem yapmak değil, kıyas noktasını görmek — bu yüzden kalırlar.
+///
+/// ## Katmanlar
+///   1. **Yerleşik listeler** (`asset_categories.dart`) — BIST, altın,
+///      döviz, endeks, emtia. Ticker formatları doğru, fiyat desteği
+///      kanıtlı.
+///   2. **TEFAS fon listesi** — `TefasService` üzerinden, önbellekli.
+///   3. **TEFAS tek-fon sorgusu** — liste API'sinde görünmeyen
+///      kurucu-only fonlar (ALE, YLB gibi) için son çare.
 class SymbolSearchService {
   SymbolSearchService._();
   static final instance = SymbolSearchService._();
-
-  final _client = http.Client();
-
-  /// Yahoo araması bu eşiğin altında yerleşik sonuç varsa tetiklenir.
-  ///
-  /// Amaç: "GARAN" yazan kullanıcıyı ağa çıkarmadan yanıtlamak, ama
-  /// "AAPL" yazanı da boş bırakmamak.
-  static const _builtInSatisfiedAt = 6;
-
-  /// Yahoo yanıtı gecikirse arama tıkanmasın.
-  static const _netTimeout = Duration(seconds: 4);
 
   static final _cache = <String, List<SymbolHit>>{};
 
@@ -110,6 +126,25 @@ class SymbolSearchService {
       out.add(SymbolHit(ticker: ticker, name: name, source: 'Endeks'));
     });
 
+    // Küresel emtia referansları.
+    //
+    // Bunlar Türkiye'de kote DEĞİLDİR ama TR yatırımcısının fiilen takip
+    // ettiği kıyas noktalarıdır (ons altın gram altının, Brent akaryakıtın
+    // referansı). Yabancı HİSSE/kriptodan farkı bu: burada amaç yabancı
+    // borsada işlem yapmak değil, yerel varlığın dayandığı fiyatı görmek.
+    // `getSymbolHistory` bunları USD kabul edip o günün kuruyla TRY'ye
+    // çevirir.
+    const commodities = {
+      'GC=F': 'Altın (Ons)',
+      'SI=F': 'Gümüş (Ons)',
+      'BZ=F': 'Petrol (Brent)',
+      'CL=F': 'Petrol (WTI)',
+      'NG=F': 'Doğalgaz',
+    };
+    commodities.forEach((ticker, name) {
+      out.add(SymbolHit(ticker: ticker, name: name, source: 'Emtia'));
+    });
+
     return out;
   }
 
@@ -121,33 +156,105 @@ class SymbolSearchService {
     final cached = _cache[q];
     if (cached != null) return cached;
 
-    final local = _searchBuiltIn(q);
-    if (local.length >= _builtInSatisfiedAt) {
-      _cache[q] = local;
-      return local;
+    // Yerleşik listeler + TEFAS fonları PARALEL aranır.
+    //
+    // Fonlar ayrı bir katman çünkü kaynakları farklı: `bankFunds` sabiti
+    // yalnızca görünen ADLARI tutar, TEFAS kodu yoktur — fiyat/geçmiş
+    // çekmek için `TEFAS:AFA` gibi bir koda ihtiyaç var ve o yalnızca
+    // `TefasService`'in canlı listesinde bulunur. Sabit listeyi kullanmak
+    // aramada fon gösterip grafikte "veri yok" demeye yol açardı.
+    final results = await Future.wait([
+      Future.value(_searchBuiltIn(q)),
+      _searchFunds(q),
+    ]);
+    final local = <SymbolHit>[...results[0], ...results[1]];
+
+    // Sonuç yoksa ve sorgu bir fon koduna benziyorsa TEK-FON sorgusu.
+    //
+    // TEFAS'ın liste API'si bazı fonları döndürmez — kurucu-only para
+    // piyasası fonları (ALE, YLB gibi) listede yoktur ama Türkiye'de
+    // fiilen işlem görür ve tek tek sorulduğunda gelir. `add_asset`
+    // ekranı da aynı yolu kullanıyor; karşılaştırmada eksik olması
+    // kullanıcının kendi portföyündeki fonu arayamamasına yol açardı.
+    if (local.isEmpty && q.length >= 2 && q.length <= 6) {
+      final fund = await _lookupFund(q);
+      if (fund != null) {
+        final hit = [fund];
+        _cache[q] = hit;
+        return hit;
+      }
     }
 
-    // Yerleşikte az sonuç var → Yahoo'ya sor, sonuçları BİRLEŞTİR.
-    // Değiştirmek değil eklemek önemli: "ALTIN" araması yerel sonuçları
-    // korurken Yahoo'dan gelenleri de gösterebilmeli.
-    final remote = await _searchYahoo(q);
-    final merged = <SymbolHit>[
-      ...local,
-      // `SymbolHit` eşitliği ticker üzerinden — yerel sonuç varsa Yahoo
-      // kopyası elenir.
-      ...remote.where((r) => !local.contains(r)),
-    ];
-    _cache[q] = merged;
-    return merged;
+    _cache[q] = local;
+    return local;
+  }
+
+  /// TEFAS liste API'sinde görünmeyen bir fon kodunu tek tek sorar.
+  Future<SymbolHit?> _lookupFund(String code) async {
+    try {
+      final f = await TefasService.instance.lookupFund(code);
+      if (f == null) return null;
+      return SymbolHit(
+        ticker: 'TEFAS:${f.code}',
+        name: f.name,
+        source: 'Fon',
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('TEFAS tek-fon sorgusu başarısız: $e');
+      return null;
+    }
+  }
+
+  /// TEFAS fonlarında kod veya ada göre arar.
+  ///
+  /// `TefasService.fetchAllFunds` önbellekli: RAM'de taze liste varsa ya da
+  /// disk önbelleği 24 saatten yeniyse ağa HİÇ çıkmaz. İlk çağrıda liste
+  /// yoksa ağ turu olur; hata durumunda boş liste döner ve arama yalnızca
+  /// fonsuz devam eder — kullanıcı hisse/altın aramaya devam edebilmeli.
+  Future<List<SymbolHit>> _searchFunds(String q) async {
+    try {
+      final funds = await TefasService.instance.fetchAllFunds();
+      final hits = <SymbolHit>[];
+      for (final f in funds) {
+        final code = f.code.toUpperCase();
+        if (!code.contains(q) && !f.name.toUpperCase().contains(q)) continue;
+        hits.add(SymbolHit(
+          // Fiyat/geçmiş servisleri bu öneki bekler (bkz. PriceService).
+          ticker: 'TEFAS:${f.code}',
+          name: f.name,
+          source: 'Fon',
+        ));
+      }
+
+      // Kodu sorguyla başlayanlar öne — "AFA" araması AFA fonunu, adında
+      // "afa" geçen bir fondan önce göstermeli.
+      hits.sort((a, b) {
+        final ac = a.ticker.replaceFirst('TEFAS:', '');
+        final bc = b.ticker.replaceFirst('TEFAS:', '');
+        final aStarts = ac.startsWith(q) ? 0 : 1;
+        final bStarts = bc.startsWith(q) ? 0 : 1;
+        if (aStarts != bStarts) return aStarts - bStarts;
+        return ac.compareTo(bc);
+      });
+
+      // Fon sayısı binlerce; hepsini listelemek arama sayfasını boğar.
+      return hits.take(20).toList();
+    } catch (e) {
+      if (kDebugMode) debugPrint('TEFAS fon araması başarısız: $e');
+      return const [];
+    }
   }
 
   /// Sorgu boşken gösterilen öneriler — kullanıcıya "ne arayabilirim"
   /// fikri verir.
   List<SymbolHit> get defaults => const [
-        SymbolHit(ticker: 'XU100.IS', name: 'BIST 100 Endeksi', source: 'Endeks'),
-        SymbolHit(ticker: 'ALTIN_GRAM', name: '22 Ayar Gram Altın', source: 'Altın'),
+        SymbolHit(
+            ticker: 'XU100.IS', name: 'BIST 100 Endeksi', source: 'Endeks'),
+        SymbolHit(
+            ticker: 'ALTIN_GRAM', name: '22 Ayar Gram Altın', source: 'Altın'),
         SymbolHit(ticker: 'USDTRY=X', name: 'Amerikan Doları', source: 'Döviz'),
-        SymbolHit(ticker: 'THYAO.IS', name: 'Türk Hava Yolları', source: 'BIST'),
+        SymbolHit(
+            ticker: 'THYAO.IS', name: 'Türk Hava Yolları', source: 'BIST'),
         SymbolHit(ticker: 'GARAN.IS', name: 'Garanti BBVA', source: 'BIST'),
       ];
 
@@ -166,58 +273,6 @@ class SymbolSearchService {
       return a.ticker.compareTo(b.ticker);
     });
     return hits;
-  }
-
-  /// Yahoo'nun sembol arama ucu.
-  ///
-  /// **Resmî bir API değildir** — sözleşmesi habersiz değişebilir. Bu
-  /// yüzden her hata yutulur ve boş liste döner: serbest arama bir bonus,
-  /// yerleşik listeler asıl yoldur. Çökerse özellik çalışmaya devam eder,
-  /// yalnızca kapsamı daralır.
-  Future<List<SymbolHit>> _searchYahoo(String q) async {
-    try {
-      final uri = Uri.parse(
-        'https://query2.finance.yahoo.com/v1/finance/search'
-        '?q=${Uri.encodeQueryComponent(q)}&quotesCount=8&newsCount=0',
-      );
-      final res = await _client.get(uri, headers: const {
-        'User-Agent': 'Mozilla/5.0 (compatible; SandikApp/1.0)',
-      }).timeout(_netTimeout);
-
-      if (res.statusCode != 200) return const [];
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
-      final quotes = (body['quotes'] as List?) ?? const [];
-
-      final out = <SymbolHit>[];
-      for (final raw in quotes) {
-        final q = raw as Map<String, dynamic>;
-        final sym = (q['symbol'] as String?)?.trim();
-        if (sym == null || sym.isEmpty) continue;
-
-        // Yalnızca fiyat serisi olan tipler; `quoteType` "OPTION" veya
-        // "FUTURE" gelirse geçmiş çekimi anlamsız/boş olur.
-        final type = (q['quoteType'] as String?)?.toUpperCase() ?? '';
-        if (type != 'EQUITY' &&
-            type != 'ETF' &&
-            type != 'INDEX' &&
-            type != 'CURRENCY' &&
-            type != 'CRYPTOCURRENCY' &&
-            type != 'MUTUALFUND') {
-          continue;
-        }
-
-        out.add(SymbolHit(
-          ticker: sym,
-          name: (q['shortname'] ?? q['longname'] ?? sym) as String,
-          source: (q['exchDisp'] as String?) ?? type,
-          builtIn: false,
-        ));
-      }
-      return out;
-    } catch (e) {
-      if (kDebugMode) debugPrint('Yahoo sembol araması başarısız: $e');
-      return const [];
-    }
   }
 
   @visibleForTesting

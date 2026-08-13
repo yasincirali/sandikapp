@@ -72,11 +72,24 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   /// Sepetten düzenleme: mevcut sepet öğesinin değerlerini prefill için.
   final BulkCartItem? cartInitial;
 
+  /// Karşılaştırma ekranından gelen ön seçim — henüz sahip OLUNMAYAN bir
+  /// varlık için tür/ticker/ad hazır gelir, kullanıcı yalnızca miktar,
+  /// fiyat ve tarih girer.
+  ///
+  /// [editingAsset] ve [cartInitial]'dan farkı: onlar var olan bir kaydı
+  /// düzenler, bu ise YENİ kayıt için yalnızca kimlik alanlarını doldurur.
+  final String? prefillTicker;
+  final String? prefillName;
+  final AssetType? prefillType;
+
   const AddAssetScreen({
     super.key,
     this.editingAsset,
     this.cartMode = false,
     this.cartInitial,
+    this.prefillTicker,
+    this.prefillName,
+    this.prefillType,
   });
 
   @override
@@ -127,12 +140,22 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final a = widget.editingAsset;
     final c = widget.cartInitial;
 
-    final initName = a?.name ?? c?.name ?? '';
-    final initTicker = a?.ticker ?? c?.ticker ?? '';
+    // Prefill (karşılaştırma ekranından) en SONDA gelir: var olan bir kayıt
+    // düzenleniyorsa onun değerleri her zaman kazanır.
+    final initName = a?.name ?? c?.name ?? widget.prefillName ?? '';
+    final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
     final initQty = a?.quantity ?? c?.quantity ?? 0;
     final initPrice = a?.purchasePrice ?? c?.price ?? 0;
-    final initType = a?.type ?? c?.type ?? AssetType.hisse;
-    final initSubCat = a?.subCategory ?? c?.subCategory;
+    final initType =
+        a?.type ?? c?.type ?? widget.prefillType ?? AssetType.hisse;
+    // BIST prefill'inde alt kategori de kurulmalı, yoksa aşağıdaki
+    // `_bist100SelectedTicker` ataması tetiklenmez ve seçici boş açılır.
+    final initSubCat = a?.subCategory ??
+        c?.subCategory ??
+        (widget.prefillType == AssetType.hisse &&
+                (widget.prefillTicker?.endsWith('.IS') ?? false)
+            ? StockSubCategory.bist100.label
+            : null);
     final initUnit = a?.unitType ?? c?.unitType ?? 'piece';
     final initCurrency = a?.currency ?? c?.currency ?? initType.defaultCurrency;
 

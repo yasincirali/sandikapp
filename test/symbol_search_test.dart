@@ -85,19 +85,82 @@ void main() {
     });
   });
 
+  group('kapsam: yalnızca Türkiye', () {
+    test('emtia referansları KALIR — yerel varlığın dayandığı fiyat', () async {
+      // Ons altın gram altının, Brent akaryakıtın referansı. TR'de kote
+      // değiller ama kıyas noktası olarak anlamlılar.
+      final altin = await svc.search('Ons');
+      expect(altin.map((h) => h.ticker), contains('GC=F'));
+
+      final petrol = await svc.search('Brent');
+      expect(petrol.map((h) => h.ticker), contains('BZ=F'));
+    });
+
+    test('emtia sonuçları "Emtia" etiketiyle gelir', () async {
+      final r = await svc.search('Gümüş');
+      final hit = r.firstWhere((h) => h.ticker == 'SI=F');
+      expect(hit.source, 'Emtia');
+    });
+  });
+
   group('sonuç bulunamayan sorgu', () {
     test('anlamsız sorgu boş liste döner, patlamaz', () async {
-      // Yerleşikte yok → Yahoo denenir → testte ağ yok → boş.
+      // Yerleşikte yok; 6 karakterden uzun olduğu için fon lookup'ı da
+      // denenmez → boş.
       final r = await svc.search('ZZZQQQXYZ123');
       expect(r, isEmpty);
+    });
+
+    test('yabancı hisse LİSTELENMEZ — kapsam TR ile sınırlı', () async {
+      // Yahoo serbest araması kaldırıldı: kullanıcı portföye ekleyemeyeceği
+      // bir varlığa yönlendirilmemeli. Bu test kapsamı kilitler; Yahoo
+      // araması geri gelirse kırılır.
+      for (final q in ['AAPL', 'TESLA', 'NVIDIA']) {
+        final r = await svc.search(q);
+        expect(
+          r.where((h) => h.ticker == q || h.ticker.startsWith('$q.')),
+          isEmpty,
+          reason: '$q sonuçlarda çıkmamalı',
+        );
+      }
+    });
+  });
+
+  group('portföy serisi sanal ticker\'ları', () {
+    test('portföy serileri tanınır', () {
+      expect(PortfolioSeries.isPortfolio(PortfolioSeries.mine), isTrue);
+      expect(PortfolioSeries.isPortfolio(PortfolioSeries.together), isTrue);
+      expect(
+        PortfolioSeries.isPortfolio('${PortfolioSeries.partnerPrefix}abc-123'),
+        isTrue,
+      );
+    });
+
+    test('gerçek semboller portföy serisi SAYILMAZ', () {
+      // Yanlış sınıflandırma, hisseyi portföy hesabına sokardı.
+      expect(PortfolioSeries.isPortfolio('THYAO.IS'), isFalse);
+      expect(PortfolioSeries.isPortfolio('TEFAS:AFA'), isFalse);
+      expect(PortfolioSeries.isPortfolio('ALTIN_GRAM'), isFalse);
+    });
+
+    test('ortak id\'si önekten doğru çıkarılır', () {
+      expect(
+        PortfolioSeries.partnerIdOf('${PortfolioSeries.partnerPrefix}u-42'),
+        'u-42',
+      );
+    });
+
+    test('ortak olmayan seriden id çıkmaz', () {
+      expect(PortfolioSeries.partnerIdOf(PortfolioSeries.mine), isNull);
+      expect(PortfolioSeries.partnerIdOf('THYAO.IS'), isNull);
     });
   });
 
   group('SymbolHit eşitliği', () {
     test('ticker üzerinden eşitlik — kopya eleme buna dayanır', () {
       const a = SymbolHit(ticker: 'AAPL', name: 'Apple', source: 'NASDAQ');
-      const b = SymbolHit(
-          ticker: 'AAPL', name: 'Apple Inc.', source: 'Yahoo', builtIn: false);
+      const b =
+          SymbolHit(ticker: 'AAPL', name: 'Apple Inc.', source: 'BIST');
       expect(a, equals(b), reason: 'aynı ticker aynı varlıktır');
       expect({a, b}.length, 1);
     });

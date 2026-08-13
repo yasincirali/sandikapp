@@ -1,12 +1,20 @@
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/asset.dart';
+import '../models/asset_type.dart';
+import '../models/position.dart';
+import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/history_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../widgets/quick_adjust_dialog.dart';
+import 'add_asset_screen.dart';
 
 /// Varlık karşılaştırma — "almadığım şey ne yapardı?"
 ///
@@ -41,8 +49,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// Yüklenmekte olan semboller — satırda spinner göstermek için.
   final Set<String> _loading = {};
 
-  /// Veri çekilemeyen semboller. Yahoo'dan gelen serbest sonuçlarda
-  /// geçmiş boş olabilir; kullanıcı sebebini görmeli.
+  /// Veri çekilemeyen semboller — ağ hatası ya da seçilen periyotta iki
+  /// noktadan az veri. Kullanıcı boş bir çizgi yerine sebebini görmeli.
   final Set<String> _failed = {};
 
   int _periodIdx = 2;
@@ -84,6 +92,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     }
   }
 
+  /// Test kancası — arama sayfasını açmadan sembol eklemek için.
+  ///
+  /// Buton mantığı (Ekle vs Al/Sat) seriden bağımsızdır; testin ağ
+  /// çağrısına ya da bottom sheet etkileşimine ihtiyacı yok.
+  @visibleForTesting
+  Future<void> addForTest(SymbolHit hit) => _add(hit);
+
   Future<void> _add(SymbolHit hit) async {
     if (_selected.any((s) => s.ticker == hit.ticker)) return;
     // Beşten fazla seri grafiği okunamaz hale getirir; renk paleti de
@@ -100,8 +115,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   Future<void> _load(String ticker) async {
     final days = _periods[_periodIdx].days;
-    final raw = await HistoryService.instance
-        .getSymbolHistory(ticker, periodDays: days);
+
+    // Portföy serileri piyasada kote DEĞİLDİR — lot'lardan hesaplanır.
+    // Bu yüzden sembol geçmişi yerine portföy geçmişi yolundan geçerler.
+    final raw = PortfolioSeries.isPortfolio(ticker)
+        ? await _loadPortfolioSeries(ticker, days)
+        : await HistoryService.instance
+            .getSymbolHistory(ticker, periodDays: days);
     final norm = normalizeSeries(raw);
 
     if (!mounted) return;
@@ -115,6 +135,43 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         _series[ticker] = norm;
       }
     });
+  }
+
+  /// Portföy serisini lot'lardan hesaplar.
+  ///
+  /// `getPortfolioHistory` TL cinsinden TOPLAM DEĞER döner; [normalizeSeries]
+  /// bunu dönem başına göre yüzdeye çevirir. Böylece portföy, tek bir hisse
+  /// ile aynı düzlemde kıyaslanabilir.
+  ///
+  /// **Sahiplik sınırı korunur.** `PortfolioPerformanceScreen`'deki ile aynı
+  /// kural: "Birlikte" görünümünde kendi lot'larım ile ortağınkiler AYNI
+  /// listede akar ama `getPortfolioHistory` her lot'un kendi `addedDate` ve
+  /// alım/satım geçmişini ayrı yorumlar. Burada ek bir aggregate YAPILMAZ —
+  /// aynı ticker'ın iki sahipteki lot'unu tek havuzda toplamak kâr/zarar
+  /// hesabını bozar (bkz. aggregatePositionsByOwner).
+  Future<Map<int, double>> _loadPortfolioSeries(String ticker, int days) async {
+    final pState = ref.read(portfolioProvider).valueOrNull;
+    if (pState == null) return const {};
+
+    final partnerMap =
+        ref.read(allPartnerAssetsProvider).valueOrNull ?? const {};
+
+    final List<Asset> assets;
+    if (ticker == PortfolioSeries.mine) {
+      assets = pState.assets;
+    } else if (ticker == PortfolioSeries.together) {
+      assets = [pState.assets, ...partnerMap.values].expand((l) => l).toList();
+    } else {
+      final pid = PortfolioSeries.partnerIdOf(ticker);
+      assets = pid == null ? const [] : (partnerMap[pid] ?? const []);
+    }
+
+    // Mezar taşları ve yumuşak silinmiş lot'lar grafiğe girmez — silinen
+    // varlık hiç olmamış sayılır (performans ekranındaki `keep` ile aynı).
+    final active = assets.where((a) => a.isActive).toList();
+    if (active.isEmpty) return const {};
+
+    return HistoryService.instance.getPortfolioHistory(active, days);
   }
 
   void _remove(String ticker) {
@@ -368,8 +425,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     return Column(
       children: [
         for (var i = 0; i < _selected.length; i++)
-          _selectionRow(p, _selected[i], colors[i % colors.length],
-              owned.contains(_selected[i].ticker)),
+          _selectionRow(
+            p,
+            _selected[i],
+            colors[i % colors.length],
+            // Portföy serilerine bu rozet takılmaz: "Portföyüm" satırına
+            // "Portföyümde" yazmak anlamsız tekrar olurdu.
+            !PortfolioSeries.isPortfolio(_selected[i].ticker) &&
+                owned.contains(_selected[i].ticker),
+          ),
       ],
     );
   }
@@ -384,72 +448,184 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: context.surfaceCard(),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(width: 3, height: 30, color: color),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            children: [
+              Container(width: 3, height: 30, color: color),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Flexible(
-                      child: Text(hit.ticker,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: p.text90,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                    if (isOwned) ...[
-                      const SizedBox(width: 6),
-                      // Kullanıcının sahip olduğu varlıklar işaretlenir:
-                      // grafikte "benim" ile "olsaydı" ayrımı kritik.
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: p.amberFill.withValues(alpha: 0.18),
-                          borderRadius:
-                              BorderRadius.circular(SandikRadius.sm),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(_displayTicker(hit),
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: p.text90,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
                         ),
-                        child: Text('Portföyümde',
-                            style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: p.amberText)),
-                      ),
-                    ],
+                        if (isOwned) ...[
+                          const SizedBox(width: 6),
+                          // Kullanıcının sahip olduğu varlıklar işaretlenir:
+                          // grafikte "benim" ile "olsaydı" ayrımı kritik.
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: p.amberFill.withValues(alpha: 0.18),
+                              borderRadius:
+                                  BorderRadius.circular(SandikRadius.sm),
+                            ),
+                            child: Text('Portföyümde',
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: p.amberText)),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Text(hit.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: p.text58, fontSize: 11)),
                   ],
                 ),
-                Text(hit.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: p.text58, fontSize: 11)),
-              ],
+              ),
+              const SizedBox(width: 8),
+              if (isLoading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: p.amberFill),
+                )
+              else if (isFailed)
+                Text('veri yok',
+                    style: TextStyle(color: p.text36, fontSize: 11))
+              else if (norm != null)
+                _returnBadge(p, norm.totalReturnPct),
+              IconButton(
+                icon: Icon(Icons.close_rounded, size: 18, color: p.text36),
+                onPressed: () => _remove(hit.ticker),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          _actionRow(p, hit),
+        ],
+      ),
+    );
+  }
+
+  /// Satır altındaki işlem butonları.
+  ///
+  /// Portföy serilerinde gösterilmez — "Portföyüm"ü satın almak anlamsız.
+  /// Sahip olunan varlıkta **Al / Sat**, olmayanda **Ekle** çıkar.
+  Widget _actionRow(SandikPalette p, SymbolHit hit) {
+    if (PortfolioSeries.isPortfolio(hit.ticker)) {
+      return const SizedBox.shrink();
+    }
+
+    // Portföy henüz yüklenmediyse HİÇBİR buton gösterilmez.
+    //
+    // Düzeltilen hata: `valueOrNull` yükleme sırasında null döner ve
+    // `_positionFor` da null verir — yani sahip OLUNAN bir varlıkta bile
+    // "Portföyüme ekle" çıkıyordu. Kullanıcı ona basıp zaten sahip olduğu
+    // varlık için ikinci bir kayıt açardı. Yükleme bitene kadar beklemek
+    // yanlış butonu göstermekten iyidir.
+    if (ref.watch(portfolioProvider).valueOrNull == null) {
+      return const SizedBox.shrink();
+    }
+
+    final pos = _positionFor(hit.ticker);
+
+    if (pos == null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _openAdd(hit),
+            icon: const Icon(Icons.add_rounded, size: 16),
+            label: const Text('Portföyüme ekle'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: p.amberText,
+              side: BorderSide(color: p.hairline),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              textStyle:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _miniAction(
+              label: 'Al',
+              icon: Icons.trending_up_rounded,
+              // Dolgu üstündeki mürekkep `onStatus` — `text90` renkli
+              // zeminde iki temada da kırılıyor (bkz. charts_screen).
+              background: p.gain,
+              foreground: p.onStatus,
+              onPressed: () => _openAdjust(pos, QuickAdjustMode.add),
             ),
           ),
           const SizedBox(width: 8),
-          if (isLoading)
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: p.amberFill),
-            )
-          else if (isFailed)
-            Text('veri yok',
-                style: TextStyle(color: p.text36, fontSize: 11))
-          else if (norm != null)
-            _returnBadge(p, norm.totalReturnPct),
-          IconButton(
-            icon: Icon(Icons.close_rounded, size: 18, color: p.text36),
-            onPressed: () => _remove(hit.ticker),
-            visualDensity: VisualDensity.compact,
+          Expanded(
+            child: _miniAction(
+              label: 'Sat',
+              icon: Icons.trending_down_rounded,
+              background: p.loss.withValues(alpha: 0.85),
+              foreground: p.onStatus,
+              onPressed: () => _openAdjust(pos, QuickAdjustMode.remove),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _miniAction({
+    required String label,
+    required IconData icon,
+    required Color background,
+    required Color foreground,
+    required VoidCallback onPressed,
+  }) {
+    return FilledButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 15),
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        backgroundColor: background,
+        foregroundColor: foreground,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  /// Satırda gösterilecek etiket.
+  ///
+  /// Portföy serilerinin sanal ticker'ı (`PORTFOLIO:MINE`) kullanıcıya
+  /// gösterilmez; TEFAS öneki de gereksiz gürültüdür — fon kodu yeter.
+  String _displayTicker(SymbolHit hit) {
+    if (hit.ticker == PortfolioSeries.mine) return 'Portföyüm';
+    if (hit.ticker == PortfolioSeries.together) return 'Birlikte';
+    if (PortfolioSeries.partnerIdOf(hit.ticker) != null) {
+      return hit.name.split(' — ').first;
+    }
+    return hit.ticker.replaceFirst('TEFAS:', '');
   }
 
   /// Getiri rozeti — yön renkle BİRLİKTE ok işareti taşır (renk körlüğü).
@@ -459,8 +635,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(isPos ? '▲' : '▼',
-            style: TextStyle(color: color, fontSize: 9)),
+        Text(isPos ? '▲' : '▼', style: TextStyle(color: color, fontSize: 9)),
         const SizedBox(width: 3),
         Text(
           fmtPct(pct.abs(), digits: 2),
@@ -479,6 +654,81 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         .map((a) => a.ticker.toUpperCase())
         .where((t) => t.isNotEmpty)
         .toSet();
+  }
+
+  /// Sembolden varlık türünü çıkarır — `AddAssetScreen` prefill'i için.
+  ///
+  /// Ticker formatı türü belli eder: `.IS` BIST hissesi, `TEFAS:` fon,
+  /// `ALTIN_` altın ürünü, `TRY=X` döviz. Kalanlar (emtia vadelileri)
+  /// emtia sayılır.
+  static AssetType _typeOf(String ticker) {
+    if (ticker.startsWith('TEFAS:')) return AssetType.fon;
+    if (ticker.startsWith('ALTIN_')) return AssetType.altin;
+    if (ticker.endsWith('TRY=X')) return AssetType.doviz;
+    if (ticker.endsWith('.IS')) return AssetType.hisse;
+    return AssetType.emtia;
+  }
+
+  /// Portföyde bu ticker'a ait pozisyon (varsa) — Al/Sat için gerekir.
+  ///
+  /// `aggregatePositions` kullanılır: al/sat lot'ları netlenir, böylece
+  /// "Sat" diyaloğu doğru miktarı görür. Ortak lot'ları BURAYA girmez —
+  /// kullanıcı yalnızca kendi pozisyonunu satabilir.
+  Position? _positionFor(String ticker) {
+    final state = ref.read(portfolioProvider).valueOrNull;
+    if (state == null) return null;
+    final mine = state.activeAssets
+        .where((a) => a.ticker.toUpperCase() == ticker.toUpperCase())
+        .toList();
+    if (mine.isEmpty) return null;
+    final positions = aggregatePositions(mine);
+    if (positions.isEmpty) return null;
+    // Aynı ticker tek pozisyona düşer; yine de net miktarı sıfır olan
+    // (tamamı satılmış) pozisyon "sahip" sayılmamalı.
+    final pos = positions.first;
+    return pos.totalQuantity > 0 ? pos : null;
+  }
+
+  /// Portföyde olmayan varlığı ekleme akışı.
+  ///
+  /// Dönüşte seri YENİDEN ÇEKİLİR: kullanıcı varlığı eklediyse artık
+  /// "Portföyümde" rozetini hak eder ve portföy serileri de değişmiştir.
+  Future<void> _openAdd(SymbolHit hit) async {
+    await Navigator.push(
+      context,
+      adaptiveRoute(
+        builder: (_) => AddAssetScreen(
+          prefillTicker: hit.ticker,
+          prefillName: hit.name,
+          prefillType: _typeOf(hit.ticker),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    // Portföy değişmiş olabilir → rozetler ve portföy serileri tazelensin.
+    setState(() {});
+    for (final s in _selected) {
+      if (PortfolioSeries.isPortfolio(s.ticker)) {
+        unawaited(_load(s.ticker));
+      }
+    }
+  }
+
+  /// Sahip olunan varlık için hızlı al/sat.
+  Future<void> _openAdjust(Position pos, QuickAdjustMode mode) async {
+    await showQuickAdjustDialog(
+      context,
+      ref,
+      asset: pos.asDisplayAsset(),
+      mode: mode,
+    );
+    if (!mounted) return;
+    setState(() {});
+    for (final s in _selected) {
+      if (PortfolioSeries.isPortfolio(s.ticker)) {
+        unawaited(_load(s.ticker));
+      }
+    }
   }
 
   // ── Ekleme ────────────────────────────────────────────────────────────────
@@ -505,9 +755,43 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const _SymbolSearchSheet(),
+      builder: (_) => _SymbolSearchSheet(portfolioOptions: _portfolioOptions()),
     );
     if (hit != null) await _add(hit);
+  }
+
+  /// Karşılaştırmaya eklenebilecek PORTFÖY serileri.
+  ///
+  /// Bunlar aranabilir semboller değil, hesaplanan serilerdir; bu yüzden
+  /// arama sayfasının üstünde sabit bir bölüm olarak sunulurlar.
+  /// "Birlikte" yalnızca ortak varsa görünür — tek başına kullanan biri
+  /// için kendi portföyüyle aynı şeydir ve kafa karıştırır.
+  List<SymbolHit> _portfolioOptions() {
+    final out = <SymbolHit>[
+      const SymbolHit(
+        ticker: PortfolioSeries.mine,
+        name: 'Tüm varlıklarımın toplam getirisi',
+        source: 'Portföy',
+      ),
+    ];
+
+    final partners = ref.read(activePartnersProvider);
+    for (final p in partners) {
+      out.add(SymbolHit(
+        ticker: '${PortfolioSeries.partnerPrefix}${p.id}',
+        name: '${p.displayName} — tüm portföyü',
+        source: 'Ortak',
+      ));
+    }
+
+    if (partners.isNotEmpty) {
+      out.add(const SymbolHit(
+        ticker: PortfolioSeries.together,
+        name: 'Benim + ortaklarımın tümü',
+        source: 'Portföy',
+      ));
+    }
+    return out;
   }
 
   Widget _disclaimer(SandikPalette p) {
@@ -524,7 +808,10 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
 /// Sembol arama alt sayfası — yerleşik listeler + Yahoo serbest arama.
 class _SymbolSearchSheet extends StatefulWidget {
-  const _SymbolSearchSheet();
+  /// Portföy serileri — aranmaz, listenin üstünde sabit durur.
+  final List<SymbolHit> portfolioOptions;
+
+  const _SymbolSearchSheet({this.portfolioOptions = const []});
 
   @override
   State<_SymbolSearchSheet> createState() => _SymbolSearchSheetState();
@@ -553,6 +840,10 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
     super.dispose();
   }
 
+  /// Portföy bölümü yalnızca sorgu boşken gösterilir.
+  bool get _showPortfolio =>
+      widget.portfolioOptions.isNotEmpty && _ctrl.text.trim().isEmpty;
+
   Future<void> _search(String q) async {
     final mySeq = ++_seq;
     setState(() => _busy = true);
@@ -564,12 +855,54 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
     });
   }
 
+  Widget _sectionLabel(SandikPalette p, String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: p.text36,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+          ),
+        ),
+      );
+
+  Widget _tile(SandikPalette p, SymbolHit h, {bool isPortfolio = false}) {
+    return ListTile(
+      leading: isPortfolio
+          ? Icon(Icons.account_balance_wallet_rounded,
+              size: 20, color: p.amberText)
+          : null,
+      title: Text(
+        // Portföy serilerinde sanal ticker (PORTFOLIO:MINE) kullanıcıya
+        // gösterilmez — anlamsız bir teknik dize olurdu.
+        isPortfolio ? _portfolioTitle(h) : h.ticker,
+        style: TextStyle(
+            color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(h.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: p.text58, fontSize: 12)),
+      trailing: Text(h.source, style: TextStyle(color: p.text36, fontSize: 11)),
+      onTap: () => Navigator.pop(context, h),
+    );
+  }
+
+  String _portfolioTitle(SymbolHit h) {
+    if (h.ticker == PortfolioSeries.mine) return 'Portföyüm';
+    if (h.ticker == PortfolioSeries.together) return 'Birlikte';
+    // Ortak: adı `name` alanının ilk parçasında ("Ayşe — tüm portföyü").
+    return h.name.split(' — ').first;
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.c;
     return Padding(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.75,
         decoration: BoxDecoration(
@@ -608,34 +941,28 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                 ),
               ),
             ),
-            if (_busy) LinearProgressIndicator(color: p.amberFill, minHeight: 2),
+            if (_busy)
+              LinearProgressIndicator(color: p.amberFill, minHeight: 2),
             Expanded(
-              child: _results.isEmpty && !_busy
+              child: _results.isEmpty && !_busy && !_showPortfolio
                   ? Center(
                       child: Text('Sonuç bulunamadı',
                           style: TextStyle(color: p.text58)),
                     )
-                  : ListView.builder(
-                      itemCount: _results.length,
-                      itemBuilder: (_, i) {
-                        final h = _results[i];
-                        return ListTile(
-                          title: Text(h.ticker,
-                              style: TextStyle(
-                                  color: p.text90,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600)),
-                          subtitle: Text(h.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style:
-                                  TextStyle(color: p.text58, fontSize: 12)),
-                          trailing: Text(h.source,
-                              style: TextStyle(
-                                  color: p.text36, fontSize: 11)),
-                          onTap: () => Navigator.pop(context, h),
-                        );
-                      },
+                  : ListView(
+                      children: [
+                        // Portföy serileri yalnızca arama BOŞKEN görünür:
+                        // kullanıcı bir şey yazdığında sonuçların üstünü
+                        // işgal etmemeli.
+                        if (_showPortfolio) ...[
+                          _sectionLabel(p, 'PORTFÖYLER'),
+                          for (final h in widget.portfolioOptions)
+                            _tile(p, h, isPortfolio: true),
+                          if (_results.isNotEmpty)
+                            _sectionLabel(p, 'VARLIKLAR'),
+                        ],
+                        for (final h in _results) _tile(p, h),
+                      ],
                     ),
             ),
           ],
