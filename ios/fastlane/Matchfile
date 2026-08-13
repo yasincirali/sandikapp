@@ -1,7 +1,10 @@
 git_url(ENV["MATCH_GIT_URL"]) # private repo: sertifikaları saklar
 storage_mode("git")
 type("appstore")
-app_identifier(["com.sandik.app"])
+# Live Activity uzantısı AYRI bir bundle id'dir ve KENDİ provisioning
+# profilini ister. Buraya eklenmezse `match` uzantı için profil üretmez ve
+# build "No profiles for com.sandik.app.SandikWidget were found" ile kırılır.
+app_identifier(["com.sandik.app", "com.sandik.app.SandikWidget"])
 username(ENV["APPLE_ID"])
 git_basic_authorization(ENV["MATCH_GIT_BASIC_AUTH"]) # base64("x-access-token:GITHUB_PAT")
 readonly(ENV["MATCH_READONLY"] == "true")

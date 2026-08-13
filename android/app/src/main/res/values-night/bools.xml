@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark mode: zemin koyu → durum çubuğu ikonları AÇIK olmalı. -->
+    <bool name="sandik_light_status_bar">false</bool>
+</resources>

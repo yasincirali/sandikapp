@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../models/user_model.dart';
 import 'db_logger.dart';
+import 'home_widget_service.dart';
+import 'live_activity_service.dart';
 import 'supabase_service.dart';
 
 const _uuid = Uuid();
@@ -478,6 +480,14 @@ class AuthService {
       request: {},
       call: () => _client.auth.signOut(),
     );
+    // Ana ekran widget'ındaki bakiye temizlenmeli: widget verisi cihaz
+    // genelinde okunabilir bir depoda durur ve çıkış yapan kullanıcının
+    // toplam varlığı ana ekranda asılı kalırdı.
+    await HomeWidgetService.instance.clear();
+    // Kilit ekranındaki Live Activity de kapatılmalı — ana ekran
+    // widget'ıyla aynı gerekçe, daha da kritik: kilit ekranı telefon
+    // açılmadan görülür.
+    await LiveActivityService.instance.endAll();
     // Email'i cihazda bırak — sonraki girişte dolu gelsin
   }
 

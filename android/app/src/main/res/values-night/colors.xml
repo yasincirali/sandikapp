@@ -5,4 +5,13 @@
          ayrışırsa native splash ile Flutter splash arasında renk sıçraması
          görünür. -->
     <color name="sandik_background">#0A1E15</color>
+
+    <!-- Ana ekran widget'ı — dark mode. Değerler SandikPalette.dark ile
+         hizalı: surface1/text90/text36/gain. -->
+    <color name="widget_bg">#112E28</color>
+    <color name="widget_text_primary">#FFFFFF</color>
+    <color name="widget_text_muted">#8FA39B</color>
+    <color name="widget_gain">#3DB77F</color>
+    <color name="widget_loss">#FF6B52</color>
+    <color name="widget_pill_bg">#14FFFFFF</color>
 </resources>

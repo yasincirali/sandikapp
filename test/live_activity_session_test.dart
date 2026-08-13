@@ -1,0 +1,242 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/services/live_activity_service.dart';
+
+/// iOS Live Activity — seans yaşam döngüsü ve gizlilik değişmezleri.
+///
+/// Kilit ekranı, telefon AÇILMADAN görülebilen bir yüzeydir; buradaki
+/// gizlilik kuralı ana ekran widget'ınınkinden daha sıkıdır. İki şey
+/// kilitleniyor:
+///
+///   1. **Seans kapalıyken oturum açılmaz.** Live Activity olay tabanlıdır;
+///      7/24 açık duran bir oturum hem App Review riski hem de sistem
+///      tarafından 8 saatte sonlandırılan bir yüzey demektir.
+///   2. **Bakiye gizliyken gerçek rakam cihaza HİÇ gitmez.** Maskeleme
+///      sunum katmanında değil kaynakta yapılır.
+
+/// MethodChannel'ı yakalar — testte native ActivityKit yok.
+class _FakeLiveActivityChannel {
+  final List<({String method, Map<String, Object?> args})> calls = [];
+  bool supported = true;
+
+  static const _channel = MethodChannel('com.sandik.app/live_activity');
+
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_channel, (call) async {
+      if (call.method == 'isSupported') return supported;
+      calls.add((
+        method: call.method,
+        args: ((call.arguments as Map?) ?? {}).cast<String, Object?>(),
+      ));
+      return true;
+    });
+  }
+
+  void remove() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_channel, null);
+  }
+
+  /// Tutar taşıyan çağrıların tüm metin alanları — gizlilik taraması için.
+  Iterable<String> get allText => calls.expand(
+      (c) => c.args.values.whereType<String>());
+}
+
+PortfolioState _state() => PortfolioState(
+      assets: [
+        Asset(
+          id: 'a1',
+          userId: 'u1',
+          name: 'Türk Hava Yolları',
+          ticker: 'THYAO',
+          type: AssetType.hisse,
+          quantity: 100,
+          purchasePrice: 200,
+          currency: 'TRY',
+          notes: '',
+          isManualPrice: false,
+          currentPrice: 300,
+          addedDate: DateTime(2026, 1, 1),
+          kind: AssetKind.buy,
+        ),
+      ],
+      usdTry: 42.0,
+      eurTry: 46.0,
+      gbpTry: 54.0,
+    );
+
+/// Seans içi bir an — Salı 14:30.
+final _duringSession = DateTime(2026, 8, 11, 14, 30);
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late _FakeLiveActivityChannel channel;
+
+  setUpAll(() async {
+    await initializeDateFormatting('tr_TR');
+    // Servis platformu `defaultTargetPlatform` ile kontrol ediyor; testler
+    // masaüstünde koştuğu için iOS'a zorlanmalı, yoksa hepsi erken döner.
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+  });
+
+  tearDownAll(() => debugDefaultTargetPlatformOverride = null);
+
+  setUp(() {
+    channel = _FakeLiveActivityChannel()..install();
+    // Servis singleton — önceki testin `_sessionActive` durumu taşmasın.
+    LiveActivityService.instance.resetForTest();
+  });
+  tearDown(() => channel.remove());
+
+  group('seans saatleri', () {
+    test('hafta içi 10:00-18:10 arası AÇIK', () {
+      // Salı.
+      expect(LiveActivityService.isMarketOpen(DateTime(2026, 8, 11, 10, 0)),
+          isTrue);
+      expect(LiveActivityService.isMarketOpen(DateTime(2026, 8, 11, 14, 30)),
+          isTrue);
+      expect(LiveActivityService.isMarketOpen(DateTime(2026, 8, 11, 18, 9)),
+          isTrue);
+    });
+
+    test('açılıştan önce ve kapanıştan sonra KAPALI', () {
+      expect(LiveActivityService.isMarketOpen(DateTime(2026, 8, 11, 9, 59)),
+          isFalse);
+      // Kapanış anı dahil değil — 18:10'da seans bitmiştir.
+      expect(LiveActivityService.isMarketOpen(DateTime(2026, 8, 11, 18, 10)),
+          isFalse);
+      expect(LiveActivityService.isMarketOpen(DateTime(2026, 8, 11, 23, 0)),
+          isFalse);
+    });
+
+    test('hafta sonu her saat KAPALI', () {
+      // 2026-08-15 Cumartesi, 2026-08-16 Pazar.
+      expect(LiveActivityService.isMarketOpen(DateTime(2026, 8, 15, 14, 0)),
+          isFalse);
+      expect(LiveActivityService.isMarketOpen(DateTime(2026, 8, 16, 14, 0)),
+          isFalse);
+    });
+
+    test('sessionEnd o günün kapanışını verir', () {
+      expect(
+        LiveActivityService.sessionEnd(DateTime(2026, 8, 11, 10, 30)),
+        DateTime(2026, 8, 11, 18, 10),
+      );
+    });
+  });
+
+  group('oturum yaşam döngüsü', () {
+    test('seans açıkken START gönderilir', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+
+      expect(channel.calls.single.method, 'start');
+      expect(channel.calls.single.args['sessionName'], 'Piyasa Seansı');
+    });
+
+    test('seans KAPALIYKEN hiç oturum açılmaz', () async {
+      // Cumartesi.
+      await LiveActivityService.instance.sync(
+        _state(),
+        hideBalance: false,
+        now: DateTime(2026, 8, 15, 14, 0),
+      );
+
+      expect(channel.calls, isEmpty,
+          reason: 'seans dışında kilit ekranına hiçbir şey gitmemeli');
+    });
+
+    test('aynı içerik tekrar gönderilmez (pil/throttle)', () async {
+      final svc = LiveActivityService.instance;
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+
+      expect(channel.calls.length, 1,
+          reason: 'değişmeyen portföy için ikinci çağrı elenmeli');
+    });
+
+    test('endAll oturumu kapatır', () async {
+      await LiveActivityService.instance.endAll();
+      expect(channel.calls.single.method, 'endAll');
+    });
+  });
+
+  group('gizlilik değişmezi', () {
+    test('bakiye gizliyken GERÇEK RAKAM cihaza gitmez', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: true, now: _duringSession);
+
+      expect(channel.calls, isNotEmpty);
+
+      // Portföy: 100 × 300 = 30.000 TL değer, 10.000 TL kâr.
+      // Bu sayıların hiçbir biçimi gönderilen metinlerde geçmemeli.
+      for (final text in channel.allText) {
+        expect(text, isNot(contains('30.000')));
+        expect(text, isNot(contains('10.000')));
+        expect(text, isNot(contains('30000')));
+        expect(text, isNot(contains('10000')));
+      }
+
+      final args = channel.calls.first.args;
+      expect(args['isHidden'], isTrue);
+      expect(args['totalText'], '••••••');
+      expect(args['changeText'], '••••••');
+    });
+
+    test('gizliyken yön bilgisi de sızmaz', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: true, now: _duringSession);
+
+      // `isPositive` sabitlenir: kâr/zarar durumu renk üstünden okunamamalı.
+      expect(channel.calls.first.args['isPositive'], isTrue);
+    });
+
+    test('varlık listesi / ticker ASLA gönderilmez', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+
+      for (final text in channel.allText) {
+        expect(text, isNot(contains('THYAO')));
+        expect(text, isNot(contains('Türk Hava')));
+        expect(text, isNot(contains('u1')));
+        expect(text, isNot(contains('a1')));
+      }
+    });
+  });
+
+  group('biçimlendirme', () {
+    test('Türkçe para ve yüzde biçimi kullanılır', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+
+      final args = channel.calls.first.args;
+      // 100 × 300 = 30.000 TL → binlik ayracı nokta, ondalık virgül.
+      expect(args['totalText'], contains('₺'));
+      expect(args['totalText'], contains('30.000'));
+      expect(args['changePctText'], startsWith('%'));
+      // Kâr: +₺10.000,00
+      expect(args['changeText'], startsWith('+'));
+      expect(args['isPositive'], isTrue);
+      expect(args['isHidden'], isFalse);
+      // Saat HH:mm.
+      expect(args['updatedAtText'], matches(RegExp(r'^\d{2}:\d{2}$')));
+    });
+
+    test('seans bitişi staleDate olarak gönderilir', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+
+      expect(
+        channel.calls.first.args['sessionEndsAtMs'],
+        DateTime(2026, 8, 11, 18, 10).millisecondsSinceEpoch,
+      );
+    });
+  });
+}

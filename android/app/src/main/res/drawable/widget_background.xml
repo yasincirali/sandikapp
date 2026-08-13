@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Widget zemini — yuvarlatılmış kart.
+
+  Android 12+ ana ekran widget'ları için sistem köşe yarıçapı
+  (@android:dimen/system_app_widget_background_radius) önerir; eski
+  sürümlerde o kaynak yoktur, bu yüzden values-v31 altında ayrı bir
+  sürüm tanımlanır ve burada sabit değer kullanılır.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_bg" />
+    <corners android:radius="20dp" />
+</shape>

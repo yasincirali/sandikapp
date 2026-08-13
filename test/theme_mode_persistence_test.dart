@@ -46,14 +46,17 @@ void main() {
       expect(c.read(themeModeProvider), ThemeMode.dark);
     });
 
-    test('hiç kayıt yoksa varsayılan dark (dark-first marka)', () async {
+    test('hiç kayıt yoksa cihazı takip eder (system)', () async {
       final c = await containerWith({});
-      expect(c.read(themeModeProvider), ThemeMode.dark);
+      expect(c.read(themeModeProvider), ThemeMode.system,
+          reason: 'Seçim yapılmamışken dark dayatmak, cihazı light olan '
+              'kullanıcıya açılışta koyu splash gösteriyordu. Varsayılan '
+              'cihaz ayarını takip etmeli; marka tercihi bunu ezmemeli.');
     });
 
     test('bozuk/tanınmayan değer varsayılana düşer', () async {
       final c = await containerWith({'pref_theme_mode': 'neon'});
-      expect(c.read(themeModeProvider), ThemeMode.dark);
+      expect(c.read(themeModeProvider), ThemeMode.system);
     });
   });
 

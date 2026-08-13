@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sandık</string>
+
+    <!-- Ana ekran widget'ı -->
+    <string name="widget_total_label">TOPLAM NET VARLIK</string>
+    <string name="widget_name">Sandık Portföy</string>
+    <string name="widget_description">Toplam portföy değerini ve günlük getirini ana ekranda göster.</string>
+    <string name="widget_empty">Verileri görmek için uygulamayı aç</string>
 </resources>

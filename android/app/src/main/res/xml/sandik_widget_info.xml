@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Widget tanımı.
+
+  `updatePeriodMillis` 0'dır — sistem zamanlayıcısı EN AZ 30 dakikada bir
+  çalışır ve pili ciddi şekilde yer. Bunun yerine widget'ı uygulama
+  güncelliyor (`HomeWidgetService.update`, fiyat yenilendiğinde). Kullanıcı
+  uygulamayı açmadıysa veri bayat kalır; bu bilinçli bir denge — widget
+  "son bilinen değer"i gösterir ve üstünde güncelleme saati yazar.
+
+  `resizeMode` yatay+dikey: kullanıcı 2x1'den 4x2'ye kadar boyutlandırabilir.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="70dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/sandik_widget"
+    android:previewLayout="@layout/sandik_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_description" />

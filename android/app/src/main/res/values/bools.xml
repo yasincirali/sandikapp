@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light mode: zemin açık → durum çubuğu ikonları KOYU olmalı.
+         Dark karşılığı values-night/bools.xml içindedir.
+         values-v31/styles.xml bunu okur; oradaki LaunchTheme her iki modda
+         ortak olduğu için mod farkı ancak böyle bir kaynakla çözülür. -->
+    <bool name="sandik_light_status_bar">true</bool>
+</resources>

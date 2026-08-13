@@ -1439,7 +1439,10 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
   Future<List<TopGainerAllocation>> _fetch() =>
       LeaderboardService.instance.fetchTopGainersAllocation(
         periodDays: widget.periodDays,
-        topN: 5,
+        // Top 3. Sunucu bu değeri [n_min, n_max] = [3, 4] aralığına
+        // clamp eder (migration 0031) — buradaki sayı bir istek, güvenlik
+        // sınırı değil.
+        topN: 3,
       );
 
   String get _periodLabel {

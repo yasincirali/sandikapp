@@ -17,5 +17,14 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    // Live Activity köprüsü.
+    //
+    // Kayıt BURADA yapılır, `application(_:didFinishLaunching...)` içinde
+    // değil: bu proje implicit engine kullanıyor ve o noktada
+    // `window.rootViewController` henüz bir `FlutterViewController`
+    // olmayabilir. Engine bridge'in messenger'ı ise bu geri çağrımda
+    // hazır olduğu garanti edilir.
+    LiveActivityChannel.register(messenger: engineBridge.applicationBinaryMessenger)
   }
 }

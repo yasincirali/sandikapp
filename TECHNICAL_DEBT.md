@@ -5,7 +5,54 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-08-03
+**Son güncelleme:** 2026-08-13
+
+---
+
+## ⏸️ ERTELENDİ — Live Activity: resmî tatil takvimi
+
+**Karar tarihi:** 2026-08-13
+
+`LiveActivityService.isMarketOpen` yalnızca **hafta sonunu** eler; resmî
+tatiller bilinmez. Tatil gününde seans açılır ve kilit ekranı gün boyu
+sabit rakam gösterir.
+
+**Neden ertelendi:** Doğru bir tatil listesi takvim verisi ister (dinî
+bayramlar hicri takvime göre kayar, yarım günler var). **Yanlış** bir
+liste, listesizlikten daha kötüdür: seansı gerçek işlem gününde kapatır
+ve kullanıcı veriyi hiç göremez.
+
+**Ertelemenin maliyeti:** Düşük ve kozmetik. Tatilde fiyat değişmediği
+için banner zaten sabit durur, akşam 18:10'da kendiliğinden kapanır.
+Yanlış veri gösterilmez — yalnızca gereksiz bir yüzey açılır.
+
+**Ele alınma zamanı:** Sunucu tarafına bir "işlem günü" tablosu
+girdiğinde (push sinyalleri de aynı takvimden faydalanır). O zamana
+kadar `isMarketOpen` bu haliyle doğru davranır.
+
+---
+
+## ⏸️ ERTELENDİ — Live Activity: push ile güncelleme
+
+**Karar tarihi:** 2026-08-13
+
+Oturum şu an **yalnızca uygulama önplandayken** tazelenir
+(`LiveActivityBridge.start` → `pushType: nil`). Kullanıcı uygulamayı
+kapattığında kilit ekranındaki rakam son bilinen değerde donar; `staleDate`
+seans bitişine ayarlı olduğu için sistem onu "bayat" işaretler.
+
+**Neden ertelendi:** ActivityKit push'u ayrı bir APNs kanalı
+(`liveactivity` push type) ve her oturum için ayrı bir push token yönetimi
+ister. Mevcut push altyapısı (bkz. push sinyalleri) sinyal bildirimleri
+için kurulu; Live Activity token'ları farklı bir yaşam döngüsüne sahip.
+
+**Ertelemenin maliyeti:** Kullanıcı uygulamayı açmadan güncel rakam
+göremez. Yüzey yine de doğru davranır (bayat veriyi bayat gösterir,
+yanlış göstermez) ama "canlı" vaadi zayıflar.
+
+**Ele alınma zamanı:** Live Activity kullanıcıda karşılık bulursa.
+`pushType: .token` + `activity.pushTokenUpdates` dinleyicisi + sunucuda
+seans içi periyodik push gerekir.
 
 ---
 

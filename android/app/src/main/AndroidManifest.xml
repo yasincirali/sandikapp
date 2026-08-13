@@ -56,6 +56,21 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- Ana ekran widget'ı. `exported=true` zorunlu: widget'ı çizen ve
+             güncelleyen launcher başka bir uygulamadır. Yalnızca sistemin
+             yayınladığı APPWIDGET_UPDATE'i dinler. -->
+        <receiver
+            android:name=".SandikWidgetProvider"
+            android:label="@string/widget_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sandik_widget_info" />
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

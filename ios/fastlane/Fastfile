@@ -239,6 +239,22 @@ platform :ios do
       build_configurations: ["Release"]
     )
 
+    # 1c) Live Activity uzantısı AYRI hedef, AYRI bundle id, AYRI profil.
+    #
+    #     Ana uygulamanın profili uzantıyı kapsamaz; ayrı bir çağrı şart.
+    #     Atlanırsa archive adımı uzantıyı imzalayamaz ve
+    #     "No profiles for com.sandik.app.SandikWidget were found" ile kırılır.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Runner.xcodeproj",
+      team_id: ENV["APPLE_TEAM_ID"],
+      code_sign_identity: "Apple Distribution",
+      bundle_identifier: "com.sandik.app.SandikWidget",
+      profile_name: "match AppStore com.sandik.app.SandikWidget",
+      targets: ["SandikWidgetExtension"],
+      build_configurations: ["Release"]
+    )
+
     # 2a) Sürüm (marketing version) hâlâ build kabul ediyor mu?
     #
     #     App Store Connect bir sürümü gönderildikten/yayınlandıktan sonra
@@ -309,7 +325,11 @@ platform :ios do
       export_method: "app-store",
       export_options: {
         provisioningProfiles: {
-          "com.sandik.app" => "match AppStore com.sandik.app"
+          "com.sandik.app" => "match AppStore com.sandik.app",
+          # Uzantı da export haritasında olmalı; eksikse `gym` .ipa'yı
+          # paketlerken uzantı için profil bulamaz.
+          "com.sandik.app.SandikWidget" =>
+            "match AppStore com.sandik.app.SandikWidget"
         }
       },
       output_directory: "./build",

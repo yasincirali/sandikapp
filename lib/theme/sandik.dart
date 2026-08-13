@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' show FontFeature, ImageFilter;
 import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoPageRoute;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:flutter/services.dart' show HapticFeedback, SystemUiOverlayStyle;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -1385,7 +1385,7 @@ class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
     final size = math.min(_logoSize, shortestSide * 0.36);
     final drawSize = size * _gifOverdraw;
 
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: context.c.background,
       body: Center(
         child: Column(
@@ -1436,6 +1436,16 @@ class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
           ],
         ),
       ),
+    );
+
+    // Durum çubuğu ikonları splash zemininin TERSİ olmalı. Bu, AppBar'ı
+    // olmayan tek tam ekran — Material'ın kendi `systemOverlayStyle`
+    // mekanizması burada devreye girmediği için elle bildiriyoruz.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: context.isLight
+          ? SystemUiOverlayStyle.dark // açık zemin → koyu ikon
+          : SystemUiOverlayStyle.light, // koyu zemin → açık ikon
+      child: scaffold,
     );
   }
 }

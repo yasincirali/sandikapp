@@ -63,7 +63,14 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
       // Cache init edilmemişse (test, beklenmedik sıra) async'e düş.
       _loadAsync();
     }
-    return ThemeMode.dark; // sandık dark-first
+    // Tercih KAYDEDİLMEMİŞSE cihazı takip et. Eskiden burası `ThemeMode.dark`
+    // idi: cihazı light olan kullanıcı, ayarlara girip elle "açık" seçmediği
+    // sürece uygulamayı koyu görüyordu — splash dahil. Marka dark-first
+    // olabilir ama bu, sistem seçimini yok saymanın gerekçesi değil.
+    //
+    // Kullanıcının AÇIK tercihi bu satıra hiç ulaşmaz (yukarıda `parsed`
+    // döner); burası yalnızca "henüz seçim yapılmadı" hâlidir.
+    return ThemeMode.system;
   }
 
   /// Kayıtlı metni [ThemeMode]'a çevirir; tanınmayan/eksik değerde null.

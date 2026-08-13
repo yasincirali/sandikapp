@@ -4,5 +4,21 @@
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
+	<!--
+	  App Group — Runner ile SandikWidget uzantısının ortak kabı.
+
+	  `HomeWidgetService` (Dart) buraya yazar, WidgetKit uzantısı buradan okur.
+	  Bu anahtar YOKKEN iOS tarafı sessizce boş kalır: yazma hata vermez,
+	  uzantı yalnızca hiçbir şey göremez. Android bundan etkilenmez.
+
+	  Aynı grup kimliği ÜÇ yerde birebir aynı olmalı:
+	    1. burası,
+	    2. SandikWidget.entitlements,
+	    3. HomeWidgetService._appGroupId (Dart).
+	-->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.sandik.app</string>
+	</array>
 </dict>
 </plist>

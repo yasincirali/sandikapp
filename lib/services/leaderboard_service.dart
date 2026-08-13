@@ -322,7 +322,7 @@ class LeaderboardService {
   /// ticker YOK; sadece rank + roi% + tür yüzdeleri.
   Future<List<TopGainerAllocation>> fetchTopGainersAllocation({
     required int periodDays,
-    int topN = 5,
+    int topN = 3,
   }) async {
     try {
       final res = await Supabase.instance.client.rpc(
@@ -355,8 +355,8 @@ class LeaderboardService {
   }
 
   /// Caller'ın son 24 saatteki anonim genel sıralamasını döndürür.
-  /// k-anonymity (min 20 katılımcı) altında null döner — bu durumda UI
-  /// "Yakında" placeholder gösterir.
+  /// k-anonymity (min 8 katılımcı, bkz. migration 0031) altında null
+  /// döner — bu durumda UI "Yakında" placeholder gösterir.
   ///
   /// Dönen: (percentile 1-100, totalParticipants) veya null.
   Future<({int percentile, int total})?> fetchPercentile(

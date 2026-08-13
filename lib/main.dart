@@ -29,6 +29,8 @@ import 'services/remote_config_service.dart';
 import 'services/db_logger.dart';
 import 'services/disclaimer_service.dart';
 import 'services/fx_rate_migration_service.dart';
+import 'services/home_widget_service.dart';
+import 'services/live_activity_service.dart';
 import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
@@ -156,10 +158,13 @@ void main() async {
       anonKey: supabaseAnonKey,
     );
     await NotificationService.instance.init(navigatorKey: appNavigatorKey);
+    // Yalnızca zemini şeffaf yap. İkon parlaklığı BURADA sabitlenmez:
+    // `Brightness.light` (beyaz ikon) light temada açık zemin üzerinde
+    // okunmuyordu. İkon rengi tema ile birlikte değişmeli, bu yüzden
+    // `SandikLoadingScreen` ve AppBar'lar `systemOverlayStyle` üzerinden
+    // moda göre kendi değerini verir.
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
     ));
     runApp(const ProviderScope(child: SandikApp()));
   }, (error, stack) {
@@ -234,8 +239,9 @@ class SandikApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Tema modu kullanıcı tercihinden gelir (SharedPreferences'a yazılır).
-    // Varsayılan `ThemeMode.dark` — sandık dark-first bir markadır; sistem
-    // takibi kullanıcının açık seçimidir, dayatma değil.
+    // Tercih yoksa varsayılan `ThemeMode.system` — cihaz/IDE seçimi takip
+    // edilir. Marka dark-first'tür ama bu, seçim yapmamış kullanıcıya koyu
+    // tema dayatmanın gerekçesi değildi (splash dahil her şey koyu açılıyordu).
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
@@ -884,6 +890,36 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           name: 'asset_count',
           value: _bucketAssetCount(currCount),
         );
+      }
+
+      // Ana ekran widget'ını tazele.
+      //
+      // Burada dinlemenin sebebi: portföy state'i 10'dan fazla yerden
+      // yazılıyor (ekle/sil/sat/temettü/fiyat yenileme). Her birine tek tek
+      // çağrı koymak kaçınılmaz olarak birini atlar; tek dinleyici hepsini
+      // kapsar. Widget ikincil bir yüzey olduğu için await edilmez.
+      //
+      // `assets.isNotEmpty` koşulu ZORUNLU: uygulama açılırken portföy bir
+      // an boş state ile yayınlanıyor ve widget'a ₺0 yazılıyordu — kullanıcı
+      // ana ekranda bakiyesini bir anlığına SIFIR görüyordu. Gerçekten boş
+      // portföy ile "henüz yüklenmedi" bu katmandan ayırt edilemediği için
+      // güvenli taraf: yazma, son bilinen değer ekranda kalsın.
+      final snapshot = next.valueOrNull;
+      if (snapshot != null && snapshot.assets.isNotEmpty) {
+        final hideBalance = ref.read(balanceHiddenProvider);
+        unawaited(HomeWidgetService.instance.updateWithChart(
+          snapshot,
+          hideBalance: hideBalance,
+        ));
+        // iOS kilit ekranı / Dynamic Island. Aynı dinleyiciye bağlanır çünkü
+        // aynı gerekçe geçerli: portföy 10'dan fazla yerden yazılıyor ve
+        // her birine tek tek çağrı koymak kaçınılmaz olarak birini atlar.
+        // Servis kendi içinde seans saatini ve tekrar eden içeriği eler;
+        // burada koşul yok. Android'de kanal kayıtlı değildir, sessizce geçer.
+        unawaited(LiveActivityService.instance.sync(
+          snapshot,
+          hideBalance: hideBalance,
+        ));
       }
     });
 

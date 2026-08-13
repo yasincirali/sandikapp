@@ -7,4 +7,12 @@
 	<color name="ic_launcher_background">#0A1E15</color>
     <!-- Bildirim vurgu rengi (marka amber). Android ikonu bu renkle tonlar. -->
     <color name="sandik_notification_accent">#F5A623</color>
+    <!-- Ana ekran widget'ı — light mode. Değerler SandikPalette.light ile
+         hizalı: background/text90/text36/gain. Dark karşılığı values-night. -->
+    <color name="widget_bg">#FBFAF6</color>
+    <color name="widget_text_primary">#12241E</color>
+    <color name="widget_text_muted">#566761</color>
+    <color name="widget_gain">#0F7A4E</color>
+    <color name="widget_loss">#C0341F</color>
+    <color name="widget_pill_bg">#1412241E</color>
 </resources>

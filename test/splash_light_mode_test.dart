@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 
@@ -34,6 +35,28 @@ void main() {
 
   Color wordmarkColor(WidgetTester tester) {
     return tester.widget<Text>(find.text('sandık')).style!.color!;
+  }
+
+  /// Gerçek uygulama zinciri: cihaz parlaklığı → `ThemeMode.system` →
+  /// `MaterialApp.theme/darkTheme` → splash. Yukarıdaki [harness] temayı
+  /// doğrudan verdiği için bu zinciri ATLAR; asıl hata ise tam burada
+  /// yaşıyordu (tema modu `system` değil `dark` sabitiydi).
+  Widget systemHarness({required Brightness platformBrightness}) {
+    return MediaQuery(
+      data: MediaQueryData(platformBrightness: platformBrightness),
+      child: MaterialApp(
+        theme: ThemeData(
+          brightness: Brightness.light,
+          extensions: const [SandikPalette.light],
+        ),
+        darkTheme: ThemeData(
+          brightness: Brightness.dark,
+          extensions: const [SandikPalette.dark],
+        ),
+        themeMode: ThemeMode.system,
+        home: const SandikLoadingScreen(),
+      ),
+    );
   }
 
   group('açılış ekranı moda duyarlı', () {
@@ -70,6 +93,62 @@ void main() {
 
       expect(scaffoldBackground(tester), SandikPalette.dark.background);
       expect(wordmarkColor(tester), SandikPalette.dark.gold);
+    });
+  });
+
+  group('cihaz seçimini takip eder (system)', () {
+    testWidgets('cihaz LIGHT ise splash açık gelir', (tester) async {
+      await tester.pumpWidget(
+        systemHarness(platformBrightness: Brightness.light),
+      );
+
+      expect(
+        scaffoldBackground(tester),
+        SandikPalette.light.background,
+        reason: 'Kullanıcı şikâyeti: cihaz/IDE light iken splash koyu '
+            'açılıyordu. Tema modu varsayılanı `system` olmalı.',
+      );
+      expect(wordmarkColor(tester), SandikPalette.light.gold);
+    });
+
+    testWidgets('cihaz DARK ise splash koyu gelir', (tester) async {
+      await tester.pumpWidget(
+        systemHarness(platformBrightness: Brightness.dark),
+      );
+
+      expect(scaffoldBackground(tester), SandikPalette.dark.background);
+      expect(wordmarkColor(tester), SandikPalette.dark.gold);
+    });
+  });
+
+  group('durum çubuğu ikonları zeminle çelişmez', () {
+    /// Splash'in bildirdiği overlay style — `AnnotatedRegion` üzerinden.
+    SystemUiOverlayStyle declaredStyle(WidgetTester tester) {
+      final region = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+        find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+      );
+      return region.value;
+    }
+
+    testWidgets('light zeminde KOYU ikon istenir', (tester) async {
+      await tester.pumpWidget(
+        harness(brightness: Brightness.light, size: const Size(390, 844)),
+      );
+
+      expect(
+        declaredStyle(tester).statusBarIconBrightness,
+        Brightness.dark,
+        reason: 'Açık zemin üzerinde beyaz ikon okunmaz. main.dart eskiden '
+            'ikon parlaklığını global olarak `light`e sabitliyordu.',
+      );
+    });
+
+    testWidgets('dark zeminde AÇIK ikon istenir', (tester) async {
+      await tester.pumpWidget(
+        harness(brightness: Brightness.dark, size: const Size(390, 844)),
+      );
+
+      expect(declaredStyle(tester).statusBarIconBrightness, Brightness.light);
     });
   });
 

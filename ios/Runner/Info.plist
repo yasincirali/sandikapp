@@ -55,6 +55,13 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!--
+	  ActivityKit kapısı. Bu anahtar YOKSA `Activity.request` çalışma
+	  zamanında hata fırlatır ve Live Activity hiç başlamaz — derleme
+	  başarılı olduğu için hata ancak cihazda fark edilir.
+	-->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

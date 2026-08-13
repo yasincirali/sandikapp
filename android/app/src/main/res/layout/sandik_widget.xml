@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ana ekran widget'ı — portföy özeti + gün içi canlı grafik.
+
+  ## Tasarım kararı: grafik ZEMİN, metin ÜSTTE
+  Grafiği metnin altına ayrı bir satır olarak koymak widget'ı iki kata
+  böler ve dar yüksekliklerde (2x1) grafiğe yer kalmaz. Bunun yerine
+  sparkline arka plana yayılır, sayı onun üzerinde durur — hem küçük
+  boyutta çalışır hem "canlı" hissi verir.
+
+  Grafiğin PNG'si şeffaf zeminlidir ve alta hizalanır (`bottom`), böylece
+  çizgi kartın alt yarısında kalır ve üstteki tutarı boğmaz.
+
+  ## RemoteViews sınırı
+  Custom view çizilemez; grafik Flutter tarafında rasterize edilip
+  ImageView'a dosya olarak verilir (`HomeWidgetService._renderSparkline`).
+  Veri iki noktadan azsa native taraf ImageView'ı GONE yapar.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background">
+
+    <!-- Gün içi grafik — kartın alt yarısına yaslanır. -->
+    <!-- Grafik kartın alt yarısını doldurur. `layout_marginBottom` çizginin
+         köşe yuvarlaklığına girmesini, yatay margin ise kenara yapışmasını
+         engeller — grafik kartın İÇİNDE durmalı, kenarından taşmamalı. -->
+    <ImageView
+        android:id="@+id/widget_spark"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        android:scaleType="fitXY"
+        android:adjustViewBounds="false"
+        android:importantForAccessibility="no"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <!-- Üst şerit: etiket + canlı noktası -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/widget_label"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_total_label"
+                android:textColor="@color/widget_text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- "Canlı" rozeti: son güncelleme saati. Kullanıcı baktığı
+                 sayının ne kadar taze olduğunu bilmeli. -->
+            <TextView
+                android:id="@+id/widget_updated"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/widget_pill"
+                android:paddingStart="7dp"
+                android:paddingEnd="7dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:textColor="@color/widget_text_muted"
+                android:textSize="9sp"
+                android:maxLines="1" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_total"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:textColor="@color/widget_text_primary"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/widget_change"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:textColor="@color/widget_gain"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+</FrameLayout>
