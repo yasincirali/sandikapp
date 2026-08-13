@@ -14,7 +14,7 @@ import Foundation
 /// bozmamalı — bu yüzden metotlar `FlutterError` fırlatmak yerine `false`
 /// döner ve Dart tarafı sessizce geçer. `HomeWidgetService`'teki aynı
 /// yaklaşım burada da geçerli.
-@available(iOS 16.1, *)
+@available(iOS 17.0, *)
 enum LiveActivityBridge {
 
     /// Şu an yürüyen oturum. ActivityKit birden fazla oturuma izin verir
@@ -146,10 +146,12 @@ enum LiveActivityChannel {
         let channel = FlutterMethodChannel(name: name, binaryMessenger: messenger)
 
         channel.setMethodCallHandler { call, result in
-            // iOS 16.1 altında ActivityKit hiç yok. Uygulama minimumu 17.0
-            // olsa da bu kapı bırakılır: hedef ileride düşerse çökme değil,
-            // "desteklenmiyor" yanıtı döner.
-            guard #available(iOS 16.1, *) else {
+            // Kapı 17.0'da: `ActivityContent` ve
+            // `Activity.request(attributes:content:pushType:)` iOS 16.2+
+            // API'leridir, 16.1'de yoktur. Hedef minimumu zaten 17.0 olduğu
+            // için koşul pratikte hep doğru; kapı yine de bırakılır ki hedef
+            // ileride düşürülürse derleme kırılsın, sessizce çökmesin.
+            guard #available(iOS 17.0, *) else {
                 result(call.method == "isSupported" ? false : FlutterMethodNotImplemented)
                 return
             }
@@ -198,7 +200,7 @@ enum LiveActivityChannel {
     /// Zorunlu alan eksikse `nil` döner ve çağrı sessizce başarısız olur —
     /// yarım veriyle kilit ekranına boş alan basmaktansa hiç göstermemek
     /// yeğdir.
-    @available(iOS 16.1, *)
+    @available(iOS 17.0, *)
     private static func parseState(_ args: [String: Any]) -> SandikActivityAttributes.ContentState? {
         guard let total = args["totalText"] as? String,
               let change = args["changeText"] as? String,

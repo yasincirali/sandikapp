@@ -15,7 +15,7 @@ import WidgetKit
 /// Kazanç/kayıp yönü renkle BİRLİKTE her zaman ▲/▼ işareti taşır. Renk
 /// körlüğü bir yana, kilit ekranında Dynamic Island öğeleri çok küçüktür ve
 /// renk tek sinyal olamaz. `directionArrow` bunu tek yerde toplar.
-@available(iOS 16.1, *)
+@available(iOS 17.0, *)
 struct SandikLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SandikActivityAttributes.self) { context in
@@ -100,7 +100,7 @@ struct SandikLiveActivity: Widget {
 
 /// Yön işareti — kazanç/kayıp rengi tek başına anlam taşımasın diye
 /// TEK kaynaktan üretilir.
-@available(iOS 16.1, *)
+@available(iOS 17.0, *)
 func directionArrow(_ isPositive: Bool) -> String {
     isPositive ? "▲" : "▼"
 }
@@ -112,7 +112,7 @@ func directionArrow(_ isPositive: Bool) -> String {
 /// Sol sütun "ne kadarım var", sağ sütun "bugün ne oldu" sorusunu yanıtlar;
 /// aralarında hairline dikey ayraç. Bu ayrım bilinçli: kullanıcı gözünü
 /// kaydırmadan iki rakamı da okuyabilmeli.
-@available(iOS 16.1, *)
+@available(iOS 17.0, *)
 struct SandikLockScreenView: View {
     let context: ActivityViewContext<SandikActivityAttributes>
 
@@ -247,7 +247,7 @@ struct SandikLockScreenView: View {
 // MARK: - Değişim pill'i (Dynamic Island expanded alt satırı)
 
 /// `surface1` zeminli pill — "Bugün: ▲ +₺35.420,00 (%2,45)".
-@available(iOS 16.1, *)
+@available(iOS 17.0, *)
 struct SandikChangePill: View {
     let state: SandikActivityAttributes.ContentState
 

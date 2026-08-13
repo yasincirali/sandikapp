@@ -25,6 +25,10 @@ import UserNotifications
     // `window.rootViewController` henüz bir `FlutterViewController`
     // olmayabilir. Engine bridge'in messenger'ı ise bu geri çağrımda
     // hazır olduğu garanti edilir.
-    LiveActivityChannel.register(messenger: engineBridge.applicationBinaryMessenger)
+    // Messenger, bridge'in `applicationRegistrar`'ı üzerinden alınır
+    // (`FlutterApplicationRegistrar` → `FlutterBaseRegistrar.messenger()`).
+    // Bridge protokolünde doğrudan bir binary messenger özelliği YOKTUR —
+    // yalnızca `pluginRegistry` ve `applicationRegistrar` vardır.
+    LiveActivityChannel.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
 }

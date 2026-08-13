@@ -14,7 +14,7 @@ import Foundation
 /// Kullanıcı bakiyeyi gizlediyse ([isHidden]) tutar hiç gönderilmez —
 /// maskeleme sunum katmanında değil, KAYNAKTA yapılır ki veri cihazda
 /// hiç bulunmasın.
-@available(iOS 16.1, *)
+@available(iOS 17.0, *)
 struct SandikActivityAttributes: ActivityAttributes {
     /// Oturum boyunca DEĞİŞMEYEN alanlar.
     ///

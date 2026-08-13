@@ -10,10 +10,11 @@ import WidgetKit
 @main
 struct SandikWidgetBundle: WidgetBundle {
     var body: some Widget {
-        // Live Activity iOS 16.1+ ister. Hedef minimumu 17.0 olduğu için
-        // koşul pratikte hep doğrudur; `if #available` yine de bırakılır ki
-        // hedef ileride düşürülürse derleme kırılsın, sessizce boş kalmasın.
-        if #available(iOS 16.1, *) {
+        // Kullanılan ActivityKit API'leri (`ActivityContent`, `staleDate`)
+        // iOS 16.2+ ister; hedef minimumu 17.0. Koşul pratikte hep doğrudur
+        // ama bırakılır ki hedef ileride düşürülürse derleme kırılsın,
+        // uzantı sessizce boş kalmasın.
+        if #available(iOS 17.0, *) {
             SandikLiveActivity()
         }
     }
