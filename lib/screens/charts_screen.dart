@@ -34,6 +34,7 @@ import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/dividend_dialog.dart';
 import '../widgets/quick_adjust_dialog.dart';
+import 'comparison_screen.dart';
 import 'performance_screen.dart';
 import 'portfolio_performance_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -257,6 +258,32 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                         ),
                         child: Center(
                           child: Icon(Icons.show_chart_rounded,
+                              color: context.c.amberText, size: 22),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Karşılaştırma — portföyde OLMAYAN varlıkları da
+                    // kıyaslayan keşif aracı. Performans ekranından ayrı
+                    // durur: o "bende ne var", bu "almasaydım ne olurdu".
+                    CupertinoButton(
+                      minimumSize: Size.zero,
+                      padding: EdgeInsets.zero,
+                      onPressed: () => Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                            builder: (_) => const ComparisonScreen()),
+                      ),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: context.c.overlay,
+                          borderRadius: BorderRadius.circular(SandikRadius.md),
+                          border: Border.all(color: context.c.overlay),
+                        ),
+                        child: Center(
+                          child: Icon(Icons.compare_arrows_rounded,
                               color: context.c.amberText, size: 22),
                         ),
                       ),
