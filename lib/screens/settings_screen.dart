@@ -847,7 +847,8 @@ class _LiveActivityWindow extends ConsumerWidget {
         _SwitchTile(
           icon: Icons.weekend_outlined,
           title: 'Hafta sonu da göster',
-          subtitle: 'BIST hafta sonu kapalıdır; rakam sabit kalır.',
+          subtitle: 'Hafta sonu BIST kapalıdır; banner son kapanışı '
+              '"Piyasa kapalı" etiketiyle gösterir.',
           value: weekend,
           onChanged: (v) async {
             await ref.read(liveActivityWeekendProvider.notifier).set(v);

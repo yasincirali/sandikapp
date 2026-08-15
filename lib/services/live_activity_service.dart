@@ -73,8 +73,12 @@ class LiveActivityService {
   int startMinute = defaultStartMinute;
   int endMinute = defaultEndMinute;
 
-  /// Hafta sonu da gösterilsin mi?
-  bool includeWeekend = false;
+  /// Hafta sonu da gösterilsin mi? Varsayılan AÇIK.
+  ///
+  /// Hafta sonu BIST kapalıdır ama bu yüzeyi gizlemek için sebep değil:
+  /// banner "Piyasa kapalı" etiketiyle rakamın neden sabit olduğunu
+  /// zaten söylüyor. Kullanıcı hafta sonu da portföyünü görebilmeli.
+  bool includeWeekend = true;
 
   /// Supabase istemcisi — `auth_service` ile aynı desen.
   SupabaseClient get _db => Supabase.instance.client;
@@ -149,7 +153,7 @@ class LiveActivityService {
     // seçtiği saat aralığı sonrakine taşar ve sessizce yanlış sonuç verir.
     startMinute = defaultStartMinute;
     endMinute = defaultEndMinute;
-    includeWeekend = false;
+    includeWeekend = true;
     showAmountsOnLockScreen = false;
   }
 

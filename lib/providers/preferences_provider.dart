@@ -269,10 +269,14 @@ final liveActivityStartProvider = NotifierProvider<_IntPrefNotifier, int>(
 final liveActivityEndProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(_kLiveActivityEndKey, 18 * 60 + 10, perUser: true));
 
-/// Hafta sonu da gösterilsin mi? Varsayılan KAPALI — BIST kapalı olduğu
-/// için rakam donuk kalır ve kullanıcı "bozuk" sanır.
+/// Hafta sonu da gösterilsin mi? **Varsayılan AÇIK.**
+///
+/// Önceden kapalıydı ("BIST kapalı, rakam donuk kalır" gerekçesiyle) ama
+/// bu yanlış bir varsayımdı: kullanıcı hafta sonu da portföyünü görmek
+/// isteyebilir — banner zaten "Piyasa kapalı" etiketiyle rakamın neden
+/// sabit olduğunu söylüyor. Kısıtlamak yerine bilgilendirmek doğru olan.
 final liveActivityWeekendProvider = NotifierProvider<_BoolPrefNotifier, bool>(
-    () => _BoolPrefNotifier(_kLiveActivityWeekendKey, false, perUser: true));
+    () => _BoolPrefNotifier(_kLiveActivityWeekendKey, true, perUser: true));
 
 // ─── Premium (in-app purchase stub) ───────────────────────────────────────────
 // Şimdilik SharedPreferences ile local toggle. Gerçek IAP entegrasyonu

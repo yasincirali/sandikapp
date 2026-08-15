@@ -13,9 +13,10 @@ import 'package:portfoy_takip/services/live_activity_service.dart';
 /// gizlilik kuralı ana ekran widget'ınınkinden daha sıkıdır. İki şey
 /// kilitleniyor:
 ///
-///   1. **Seans kapalıyken oturum açılmaz.** Live Activity olay tabanlıdır;
-///      7/24 açık duran bir oturum hem App Review riski hem de sistem
-///      tarafından 8 saatte sonlandırılan bir yüzey demektir.
+///   1. **Gösterim penceresi dışında oturum açılmaz.** Pencere kullanıcı
+///      tarafından ayarlanabilir (varsayılan 10:00–18:10, hafta sonu
+///      dahil). Apple oturumu 8 saatte sonlandırdığı için gerçek 7/24
+///      mümkün değildir; `sessionEnd` iki sınırın erkenini alır.
 ///   2. **Bakiye gizliyken gerçek rakam cihaza HİÇ gitmez.** Maskeleme
 ///      sunum katmanında değil kaynakta yapılır.
 
@@ -139,9 +140,9 @@ void main() {
     setUp(() {
       svc = LiveActivityService.instance;
       // Her test varsayılandan başlasın — singleton, ayarlar taşar.
-      svc.startMinute = LiveActivityService.defaultStartMinute;
-      svc.endMinute = LiveActivityService.defaultEndMinute;
-      svc.includeWeekend = false;
+      // `resetForTest` tek kaynak: varsayılan değiştiğinde testler de
+      // otomatik takip eder, elle atama listesi bayatlamaz.
+      svc.resetForTest();
     });
 
     test('varsayılan pencere BIST seansıdır', () {
@@ -170,15 +171,24 @@ void main() {
       expect(svc.isWithinWindow(DateTime(2026, 8, 11, 15, 0)), isTrue);
     });
 
-    test('hafta sonu varsayılan olarak KAPALI', () {
-      svc.startMinute = 0;
-      svc.endMinute = 0; // 7/24 seçili olsa bile
-      expect(svc.isWithinWindow(DateTime(2026, 8, 15, 14, 0)), isFalse);
+    test('hafta sonu varsayılan olarak AÇIK', () {
+      // Kullanıcı kararı: hafta sonu BIST kapalı olsa da portföyünü
+      // görebilmeli. Banner "Piyasa kapalı" etiketiyle rakamın neden
+      // sabit olduğunu zaten söylüyor.
+      expect(svc.includeWeekend, isTrue);
+      expect(svc.isWithinWindow(DateTime(2026, 8, 15, 14, 0)), isTrue,
+          reason: 'Cumartesi 14:00 varsayılan pencerede');
     });
 
-    test('hafta sonu açılabilir', () {
-      svc.includeWeekend = true;
-      expect(svc.isWithinWindow(DateTime(2026, 8, 15, 14, 0)), isTrue);
+    test('hafta sonu kapatılabilir', () {
+      svc.includeWeekend = false;
+      expect(svc.isWithinWindow(DateTime(2026, 8, 15, 14, 0)), isFalse);
+      expect(svc.isWithinWindow(DateTime(2026, 8, 16, 14, 0)), isFalse);
+    });
+
+    test('hafta sonu kapalıyken hafta içi etkilenmez', () {
+      svc.includeWeekend = false;
+      expect(svc.isWithinWindow(DateTime(2026, 8, 11, 14, 0)), isTrue);
     });
   });
 
@@ -268,16 +278,19 @@ void main() {
       expect(channel.calls.single.args['sessionName'], 'Piyasa Seansı');
     });
 
-    test('seans KAPALIYKEN hiç oturum açılmaz', () async {
-      // Cumartesi.
+    test('gösterim penceresi DIŞINDA hiç oturum açılmaz', () async {
+      // Salı 23:00 — varsayılan pencere (10:00–18:10) dışında.
+      //
+      // Not: hafta sonu artık pencere dışı SAYILMAZ (varsayılan açık),
+      // bu yüzden gece saati kullanılıyor.
       await LiveActivityService.instance.sync(
         _state(),
         hideBalance: false,
-        now: DateTime(2026, 8, 15, 14, 0),
+        now: DateTime(2026, 8, 11, 23, 0),
       );
 
       expect(channel.calls, isEmpty,
-          reason: 'seans dışında kilit ekranına hiçbir şey gitmemeli');
+          reason: 'pencere dışında kilit ekranına hiçbir şey gitmemeli');
     });
 
     test('aynı içerik tekrar gönderilmez (pil/throttle)', () async {
