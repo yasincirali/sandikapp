@@ -46,6 +46,9 @@ const _kSignalNotificationsKey = 'pref_signal_notifications';
 const _kPartnerNotificationsKey = 'pref_partner_notifications';
 const _kBalanceHiddenKey = 'pref_balance_hidden';
 const _kLockScreenAmountsKey = 'pref_lockscreen_amounts';
+const _kLiveActivityStartKey = 'pref_live_activity_start_min';
+const _kLiveActivityEndKey = 'pref_live_activity_end_min';
+const _kLiveActivityWeekendKey = 'pref_live_activity_weekend';
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
@@ -129,6 +132,49 @@ Future<void> initPreferencesCache() async {
   _prefsSync = await SharedPreferences.getInstance();
 }
 
+/// Tamsayı tercih — [_BoolPrefNotifier] ile aynı desen.
+///
+/// Live Activity saat penceresi için eklendi; saat "dakika cinsinden gün
+/// başlangıcından ofset" olarak saklanır (ör. 10:00 → 600). Tek bir int
+/// hem saati hem dakikayı taşır ve karşılaştırması ucuzdur.
+class _IntPrefNotifier extends Notifier<int> {
+  final String key;
+  final int defaultValue;
+  final bool perUser;
+
+  _IntPrefNotifier(this.key, this.defaultValue, {this.perUser = false});
+
+  String get _key => perUser ? _userKey(key) : key;
+
+  @override
+  int build() {
+    final prefs = _prefsSync;
+    if (prefs != null) {
+      final v = prefs.getInt(_key);
+      if (v != null) return v;
+    } else {
+      _loadAsync();
+    }
+    return defaultValue;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getInt(_key);
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(int value) async {
+    state = value;
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setInt(_key, value);
+    } catch (_) {}
+  }
+}
+
 class _BoolPrefNotifier extends Notifier<bool> {
   final String key;
   final bool defaultValue;
@@ -202,6 +248,31 @@ final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 /// Kişiye özel: aynı cihazı paylaşan iki kullanıcının tercihi karışmasın.
 final lockScreenAmountsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kLockScreenAmountsKey, false, perUser: true));
+
+/// Live Activity penceresi — başlangıç/bitiş, gün içi DAKİKA cinsinden.
+///
+/// Varsayılan BIST seansı (10:00–18:10) ama kullanıcı değiştirebilir:
+/// yurt dışı piyasa takip eden ya da kriptoda gece hareket izleyen biri
+/// için sabit bir borsa saati anlamsızdır.
+///
+/// **Neden dakika:** tek bir int hem saati hem dakikayı taşır ve
+/// karşılaştırması ucuzdur (`600` = 10:00). İki ayrı tercih tutmak
+/// tutarsız duruma (bitiş < başlangıç) daha kolay düşerdi.
+///
+/// ⚠️ Apple oturumu **8 saat** sonra zorla kapatır. Daha geniş bir
+/// pencere seçilirse oturum otomatik yenilenir (bkz.
+/// `LiveActivityService.sessionEnd`), ama kullanıcı uygulamayı gün boyu
+/// hiç açmazsa banner yine de düşer — bu Apple'ın kuralı, aşılamaz.
+final liveActivityStartProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(_kLiveActivityStartKey, 10 * 60, perUser: true));
+
+final liveActivityEndProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(_kLiveActivityEndKey, 18 * 60 + 10, perUser: true));
+
+/// Hafta sonu da gösterilsin mi? Varsayılan KAPALI — BIST kapalı olduğu
+/// için rakam donuk kalır ve kullanıcı "bozuk" sanır.
+final liveActivityWeekendProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(_kLiveActivityWeekendKey, false, perUser: true));
 
 // ─── Premium (in-app purchase stub) ───────────────────────────────────────────
 // Şimdilik SharedPreferences ile local toggle. Gerçek IAP entegrasyonu

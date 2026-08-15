@@ -124,11 +124,138 @@ void main() {
           isFalse);
     });
 
-    test('sessionEnd o günün kapanışını verir', () {
+    test('sessionEnd varsayılan pencerede o günün kapanışını verir', () {
+      final svc = LiveActivityService.instance;
       expect(
-        LiveActivityService.sessionEnd(DateTime(2026, 8, 11, 10, 30)),
+        svc.sessionEnd(DateTime(2026, 8, 11, 10, 30)),
         DateTime(2026, 8, 11, 18, 10),
       );
+    });
+  });
+
+  group('ayarlanabilir gösterim penceresi', () {
+    late LiveActivityService svc;
+
+    setUp(() {
+      svc = LiveActivityService.instance;
+      // Her test varsayılandan başlasın — singleton, ayarlar taşar.
+      svc.startMinute = LiveActivityService.defaultStartMinute;
+      svc.endMinute = LiveActivityService.defaultEndMinute;
+      svc.includeWeekend = false;
+    });
+
+    test('varsayılan pencere BIST seansıdır', () {
+      expect(svc.isWithinWindow(DateTime(2026, 8, 11, 14, 0)), isTrue);
+      expect(svc.isWithinWindow(DateTime(2026, 8, 11, 22, 0)), isFalse);
+    });
+
+    test('kullanıcı geceyi kapsayan pencere seçebilir', () {
+      // 22:00–06:00 — gece yarısını SARAR. Naif start<=x<end
+      // karşılaştırması burada hiçbir zaman doğru olmazdı.
+      svc.startMinute = 22 * 60;
+      svc.endMinute = 6 * 60;
+
+      expect(svc.isWithinWindow(DateTime(2026, 8, 11, 23, 0)), isTrue,
+          reason: 'gece yarısından önce');
+      expect(svc.isWithinWindow(DateTime(2026, 8, 12, 2, 0)), isTrue,
+          reason: 'gece yarısından sonra');
+      expect(svc.isWithinWindow(DateTime(2026, 8, 11, 12, 0)), isFalse,
+          reason: 'öğlen pencere dışı');
+    });
+
+    test('başlangıç == bitiş → 7/24', () {
+      svc.startMinute = 0;
+      svc.endMinute = 0;
+      expect(svc.isWithinWindow(DateTime(2026, 8, 11, 3, 0)), isTrue);
+      expect(svc.isWithinWindow(DateTime(2026, 8, 11, 15, 0)), isTrue);
+    });
+
+    test('hafta sonu varsayılan olarak KAPALI', () {
+      svc.startMinute = 0;
+      svc.endMinute = 0; // 7/24 seçili olsa bile
+      expect(svc.isWithinWindow(DateTime(2026, 8, 15, 14, 0)), isFalse);
+    });
+
+    test('hafta sonu açılabilir', () {
+      svc.includeWeekend = true;
+      expect(svc.isWithinWindow(DateTime(2026, 8, 15, 14, 0)), isTrue);
+    });
+  });
+
+  group('Apple 8 saat limiti', () {
+    late LiveActivityService svc;
+
+    setUp(() {
+      svc = LiveActivityService.instance;
+      svc.startMinute = LiveActivityService.defaultStartMinute;
+      svc.endMinute = LiveActivityService.defaultEndMinute;
+      svc.includeWeekend = false;
+    });
+
+    test('7/24 pencerede oturum 8 saatle sınırlanır', () {
+      // Apple oturumu 8 saat sonra ZORLA kapatır; staleDate'i ondan
+      // sonraya koymak kullanıcıya "hâlâ canlı" yanılsaması verirdi.
+      svc.startMinute = 0;
+      svc.endMinute = 0;
+      final now = DateTime(2026, 8, 11, 9, 0);
+      expect(svc.sessionEnd(now), now.add(const Duration(hours: 8)));
+    });
+
+    test('geniş pencerede erken sınır kazanır', () {
+      // 08:00–23:00 = 15 saat; 8 saatlik limit daha erken.
+      svc.startMinute = 8 * 60;
+      svc.endMinute = 23 * 60;
+      final now = DateTime(2026, 8, 11, 9, 0);
+      expect(svc.sessionEnd(now), now.add(const Duration(hours: 8)));
+    });
+
+    test('dar pencerede takvim sınırı kazanır', () {
+      // 10:00–14:00; 12:00'de bakınca bitişe 2 saat var.
+      svc.startMinute = 10 * 60;
+      svc.endMinute = 14 * 60;
+      expect(
+        svc.sessionEnd(DateTime(2026, 8, 11, 12, 0)),
+        DateTime(2026, 8, 11, 14, 0),
+      );
+    });
+
+    test('geceyi saran pencerede bitiş YARINA taşınır', () {
+      svc.startMinute = 22 * 60;
+      svc.endMinute = 2 * 60;
+      // 23:00'te bakınca bitiş ertesi gün 02:00 olmalı — bugün 02:00
+      // çoktan geçti.
+      expect(
+        svc.sessionEnd(DateTime(2026, 8, 11, 23, 0)),
+        DateTime(2026, 8, 12, 2, 0),
+      );
+    });
+  });
+
+  group('piyasa kapalı etiketi', () {
+    test('gösterim penceresinden BAĞIMSIZ hesaplanır', () async {
+      final svc = LiveActivityService.instance;
+      // Kullanıcı 7/24 seçti — ama gece piyasa yine de kapalı.
+      svc.startMinute = 0;
+      svc.endMinute = 0;
+      svc.includeWeekend = true;
+      addTearDown(() {
+        svc.startMinute = LiveActivityService.defaultStartMinute;
+        svc.endMinute = LiveActivityService.defaultEndMinute;
+        svc.includeWeekend = false;
+      });
+
+      await svc.sync(_state(),
+          hideBalance: false, now: DateTime(2026, 8, 11, 23, 0));
+
+      expect(channel.calls, isNotEmpty, reason: '7/24 pencerede gösterilmeli');
+      expect(channel.calls.first.args['isMarketOpen'], isFalse,
+          reason: 'gece piyasa kapalı — banner bunu söylemeli');
+    });
+
+    test('seans içinde açık raporlanır', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+      expect(channel.calls.first.args['isMarketOpen'], isTrue);
     });
   });
 

@@ -79,6 +79,14 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// Kapalıyken tutar alanları kaynakta maskelenir; yüzde ve grafik
         /// görünmeye devam eder çünkü onlar portföy büyüklüğünü ele vermez.
         var showAmounts: Bool
+
+        /// BIST işlem saatleri içinde miyiz?
+        ///
+        /// Kullanıcının seçtiği GÖSTERİM penceresinden ayrıdır: 7/24
+        /// gösterim seçilse bile gece fiyat hareket etmez. Bu bayrak
+        /// olmadan donuk rakam "bozuk" gibi görünürdü — banner bunun
+        /// yerine "Piyasa kapalı" der ve canlılık noktası griye döner.
+        var isMarketOpen: Bool
     }
 
     /// Seans etiketi — ör. `BIST Seansı`. Oturum boyunca sabittir.

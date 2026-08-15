@@ -40,9 +40,13 @@ struct SandikLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text("Son: \(context.state.updatedAtText)")
+                    Text(context.state.isMarketOpen
+                         ? "Son: \(context.state.updatedAtText)"
+                         : "Kapalı • \(context.state.updatedAtText)")
                         .font(.sandikNumber(12, weight: .medium))
                         .foregroundStyle(SandikTheme.text58)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .padding(.trailing, 4)
                 }
 
@@ -167,16 +171,28 @@ struct SandikLockScreenView: View {
                 Spacer(minLength: 8)
 
                 HStack(spacing: 5) {
-                    // "Canlı" noktası — statik. Marka kuralı gereği yanıp
+                    // Canlılık noktası — statik. Marka kuralı gereği yanıp
                     // sönmez: kilit ekranında saatlerce duran bir yüzeyde
                     // titreşen nokta rahatsız edicidir ve pil yakar.
+                    //
+                    // Piyasa kapalıyken YEŞİL DEĞİL gri: yeşil nokta
+                    // "veri akıyor" demektir ve gece bu doğru değildir.
                     Circle()
-                        .fill(SandikTheme.gain)
+                        .fill(state.isMarketOpen
+                              ? SandikTheme.gain
+                              : SandikTheme.text36)
                         .frame(width: 6, height: 6)
 
-                    Text("Canlı • \(state.updatedAtText)")
+                    // Piyasa kapalıyken kullanıcı rakamın NEDEN
+                    // değişmediğini bilmeli; aksi halde donuk sayı
+                    // "uygulama bozuk" olarak okunur.
+                    Text(state.isMarketOpen
+                         ? "Canlı • \(state.updatedAtText)"
+                         : "Piyasa kapalı • \(state.updatedAtText)")
                         .font(.sandikNumber(11, weight: .medium))
                         .foregroundStyle(SandikTheme.text58)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
                 }
             }
 

@@ -68,10 +68,20 @@ where exists (
   select 1 from cron.job where jobname = 'live-activity-push'
 );
 
--- Hafta içi, seans saatlerinde, 5 dakikada bir.
+-- HER GÜN, HER SAAT, 5 dakikada bir.
+--
+-- Saat aralığı KASITLI OLARAK dar tutulmuyor: kullanıcı gösterim
+-- penceresini Ayarlar'dan değiştirebiliyor (gece piyasa izleyen ya da
+-- hafta sonu kripto takip eden biri için sabit BIST saati anlamsız).
+-- Cron'u BIST saatine kilitlemek, o kullanıcıların kilit ekranını
+-- sessizce donuk bırakırdı.
+--
+-- Maliyet endişesi yersiz: fonksiyon ilk iş olarak aktif oturum var mı
+-- diye bakar ve yoksa HTTP turu bile atmaz (yukarıdaki erken çıkış).
+-- Gece boyunca bu, saniyenin altında süren tek bir indeks sorgusudur.
 select cron.schedule(
   'live-activity-push',
-  '*/5 7-15 * * 1-5',
+  '*/5 * * * *',
   $$select trigger_live_activity_push()$$
 );
 

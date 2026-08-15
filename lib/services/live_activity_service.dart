@@ -47,15 +47,34 @@ class LiveActivityService {
   /// Kullanıcıya görünen seans adı.
   static const _sessionName = 'Piyasa Seansı';
 
-  /// BIST işlem saatleri (Türkiye saati). Seans bu aralıkta "açık" sayılır.
+  /// Varsayılan pencere — BIST işlem saatleri (dakika cinsinden).
+  static const defaultStartMinute = 10 * 60; // 10:00
+  static const defaultEndMinute = 18 * 60 + 10; // 18:10
+
+  /// BIST piyasa saatleri — "Piyasa kapalı" etiketi bu aralığa bakar.
   ///
-  /// Kapanış 18:10 — kapanış seansı dahil. Süre 8s 10dk; Apple'ın 8 saatlik
-  /// Live Activity limitine yakın ama kullanıcı uygulamayı gün içinde
-  /// açtığında oturum tazelendiği için pratikte sorun olmaz.
-  static const _openHour = 10;
-  static const _openMinute = 0;
-  static const _closeHour = 18;
-  static const _closeMinute = 10;
+  /// Kullanıcının seçtiği GÖSTERİM penceresinden ayrıdır: kullanıcı
+  /// 7/24 gösterim seçse bile gece fiyat değişmez ve banner bunu
+  /// söylemelidir, yoksa donuk rakam "bozuk" gibi görünür.
+  static const _marketOpenMinute = 10 * 60;
+  static const _marketCloseMinute = 18 * 60 + 10;
+
+  /// Apple'ın Live Activity oturum limiti.
+  ///
+  /// Sistem 8 saat sonra oturumu ZORLA kapatır. Kullanıcı daha geniş bir
+  /// pencere seçerse oturum bu süreyle sınırlanır ve uygulama her
+  /// açıldığında yenilenir. Aşılamaz — Apple'ın kuralı.
+  static const _maxSessionDuration = Duration(hours: 8);
+
+  /// Kullanıcının seçtiği gösterim penceresi (dakika, gün başından ofset).
+  ///
+  /// `main.dart` her senkronda tercihten günceller; servis Riverpod'a
+  /// bağlı olmadığı için (singleton) provider'ı kendisi okuyamaz.
+  int startMinute = defaultStartMinute;
+  int endMinute = defaultEndMinute;
+
+  /// Hafta sonu da gösterilsin mi?
+  bool includeWeekend = false;
 
   /// Supabase istemcisi — `auth_service` ile aynı desen.
   SupabaseClient get _db => Supabase.instance.client;
@@ -126,6 +145,12 @@ class LiveActivityService {
     _lastSummaryKey = null;
     _sparkline = null;
     _sparklineAt = null;
+    // Pencere ayarları da sıfırlanır: singleton olduğu için bir testin
+    // seçtiği saat aralığı sonrakine taşar ve sessizce yanlış sonuç verir.
+    startMinute = defaultStartMinute;
+    endMinute = defaultEndMinute;
+    includeWeekend = false;
+    showAmountsOnLockScreen = false;
   }
 
   /// Native taraftan gelen push token'ını dinlemeye başlar.
@@ -257,27 +282,73 @@ class LiveActivityService {
     return out;
   }
 
-  /// [now] anında piyasa seansı açık mı?
+  /// [now] anında Live Activity GÖSTERİLMELİ mi?
   ///
-  /// Hafta sonu kapalı. Resmî tatiller BURADA bilinmez — takvim gerektirir
-  /// ve yanlış bir tatil listesi seansı yanlış günde açmaktan daha kötüdür.
-  /// Tatilde açılan bir seans zararsızdır: fiyat değişmez, banner sabit
-  /// rakam gösterir ve akşam kapanır. (Bkz. TECHNICAL_DEBT.md)
+  /// Kullanıcının seçtiği pencereye bakar — piyasa saatlerine değil.
+  /// Gece de gösterim seçilebilir; o durumda banner "Piyasa kapalı"
+  /// etiketiyle son kapanışı gösterir (bkz. [isMarketOpen]).
+  ///
+  /// **Gece aşan pencere desteklenir:** başlangıç > bitiş ise (ör.
+  /// 22:00–06:00) aralık gece yarısını sarar. Naif bir `start <= x < end`
+  /// karşılaştırması böyle bir pencerede HİÇBİR ZAMAN doğru olmazdı.
+  ///
+  /// Resmî tatiller BURADA bilinmez — takvim gerektirir ve yanlış bir
+  /// tatil listesi, listesizlikten kötüdür. (Bkz. TECHNICAL_DEBT.md)
+  bool isWithinWindow(DateTime now) {
+    if (!includeWeekend &&
+        (now.weekday == DateTime.saturday ||
+            now.weekday == DateTime.sunday)) {
+      return false;
+    }
+
+    final mins = now.hour * 60 + now.minute;
+
+    // Tam gün (7/24) — başlangıç ve bitiş aynıysa kullanıcı sınır
+    // koymamış demektir.
+    if (startMinute == endMinute) return true;
+
+    if (startMinute < endMinute) {
+      return mins >= startMinute && mins < endMinute;
+    }
+    // Gece yarısını saran pencere: 22:00–06:00 gibi.
+    return mins >= startMinute || mins < endMinute;
+  }
+
+  /// BIST işlem saatleri içinde miyiz? Fiyatların gerçekten hareket
+  /// ettiği aralık.
+  ///
+  /// [isWithinWindow]'dan AYRI: kullanıcı 7/24 gösterim seçse bile gece
+  /// fiyat değişmez. Banner bunu söylemezse donuk rakam "bozuk" görünür.
   @visibleForTesting
   static bool isMarketOpen(DateTime now) {
     if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
       return false;
     }
-    final open = DateTime(now.year, now.month, now.day, _openHour, _openMinute);
-    final close =
-        DateTime(now.year, now.month, now.day, _closeHour, _closeMinute);
-    return !now.isBefore(open) && now.isBefore(close);
+    final mins = now.hour * 60 + now.minute;
+    return mins >= _marketOpenMinute && mins < _marketCloseMinute;
   }
 
-  /// Seansın o günkü bitiş anı — Live Activity'nin `staleDate`'i.
-  @visibleForTesting
-  static DateTime sessionEnd(DateTime now) =>
-      DateTime(now.year, now.month, now.day, _closeHour, _closeMinute);
+  /// Oturumun bitiş anı — Live Activity'nin `staleDate`'i.
+  ///
+  /// İki sınırın ERKEN olanı:
+  ///   * kullanıcının seçtiği pencerenin bitişi,
+  ///   * Apple'ın 8 saatlik oturum limiti.
+  ///
+  /// Limit aşılırsa sistem oturumu zaten kapatır; `staleDate`'i ondan
+  /// sonraya koymak kullanıcıya "hâlâ canlı" yanılsaması verirdi.
+  DateTime sessionEnd(DateTime now) {
+    final hardLimit = now.add(_maxSessionDuration);
+
+    // 7/24 pencerede takvim sınırı yok; yalnızca Apple limiti geçerli.
+    if (startMinute == endMinute) return hardLimit;
+
+    var end = DateTime(now.year, now.month, now.day)
+        .add(Duration(minutes: endMinute));
+    // Bitiş geçmişte kaldıysa (gece aşan pencere) yarına taşı.
+    if (!end.isAfter(now)) end = end.add(const Duration(days: 1));
+
+    return end.isBefore(hardLimit) ? end : hardLimit;
+  }
 
   /// Portföy her değiştiğinde çağrılır. Seans durumuna göre oturumu
   /// başlatır, tazeler veya kapatır.
@@ -295,7 +366,7 @@ class LiveActivityService {
 
       final ts = now ?? DateTime.now();
 
-      if (!isMarketOpen(ts)) {
+      if (!isWithinWindow(ts)) {
         // Seans kapandı: oturumu bitir. `immediate: false` — kullanıcı
         // kapanış rakamını kısa süre daha görebilsin.
         if (_sessionActive) {
@@ -378,6 +449,7 @@ class LiveActivityService {
         'sessionEndsAtMs': endsAt.millisecondsSinceEpoch,
         'sparkline': const <double>[],
         'showAmounts': false,
+        'isMarketOpen': isMarketOpen(now),
       };
     }
 
@@ -395,6 +467,10 @@ class LiveActivityService {
       // Normalize (0…1) — ham tutar taşımaz, yalnızca günün şekli.
       'sparkline': sparkline,
       'showAmounts': showAmountsOnLockScreen,
+      // Piyasa kapalıysa banner "Piyasa kapalı" der; kullanıcı rakamın
+      // neden değişmediğini bilir. Gösterim penceresinden AYRI bir
+      // kavram: 7/24 gösterim seçilse bile gece fiyat hareket etmez.
+      'isMarketOpen': isMarketOpen(now),
     };
   }
 

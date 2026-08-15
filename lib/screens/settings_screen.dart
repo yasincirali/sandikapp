@@ -435,6 +435,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 LiveActivityService.instance.showAmountsOnLockScreen = v;
               },
             ),
+            const _LiveActivityWindow(),
             const SizedBox(height: 28),
             const _SectionTitle('SOSYAL'),
             const SizedBox(height: 12),
@@ -746,6 +747,177 @@ class _SettingsTile extends StatelessWidget {
 }
 
 /// Açma/kapama anahtarlı ayar satırı.
+/// Live Activity gösterim penceresi — başlangıç/bitiş saati + hafta sonu.
+///
+/// Varsayılan BIST seansıdır (10:00–18:10) ama kullanıcı değiştirebilir:
+/// yurt dışı piyasa izleyen ya da gece hareket takip eden biri için sabit
+/// bir borsa saati anlamsızdır.
+///
+/// ⚠️ Apple oturumu **8 saat** sonra zorla kapatır. Daha geniş pencere
+/// seçilirse oturum uygulama her açıldığında yenilenir; kullanıcı gün boyu
+/// hiç açmazsa banner düşer. Bu Apple'ın kuralı, aşılamaz — bu yüzden
+/// arayüzde açıkça yazılır.
+class _LiveActivityWindow extends ConsumerWidget {
+  const _LiveActivityWindow();
+
+  static String _fmt(int minutes) {
+    final h = (minutes ~/ 60).toString().padLeft(2, '0');
+    final m = (minutes % 60).toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  Future<void> _pick(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isStart,
+  }) async {
+    final current = ref.read(
+        isStart ? liveActivityStartProvider : liveActivityEndProvider);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime:
+          TimeOfDay(hour: current ~/ 60, minute: current % 60),
+      helpText: isStart ? 'Başlangıç saati' : 'Bitiş saati',
+      builder: (ctx, child) => MediaQuery(
+        // 24 saat biçimi: TR kullanıcısı AM/PM beklemez.
+        data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (picked == null) return;
+
+    final mins = picked.hour * 60 + picked.minute;
+    final notifier = ref.read(
+        (isStart ? liveActivityStartProvider : liveActivityEndProvider)
+            .notifier);
+    await notifier.set(mins);
+
+    // Servise hemen aktar: kullanıcı saati değiştirince bir sonraki
+    // portföy güncellemesini beklemeden pencere geçerli olmalı.
+    final svc = LiveActivityService.instance;
+    svc.startMinute = ref.read(liveActivityStartProvider);
+    svc.endMinute = ref.read(liveActivityEndProvider);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final start = ref.watch(liveActivityStartProvider);
+    final end = ref.watch(liveActivityEndProvider);
+    final weekend = ref.watch(liveActivityWeekendProvider);
+    final p = context.c;
+
+    // Başlangıç == bitiş → kullanıcı sınır koymamış (7/24).
+    final isAllDay = start == end;
+    // Gece yarısını saran pencere (22:00–06:00) süreyi ters hesaplatır.
+    final spanMinutes =
+        isAllDay ? 1440 : (end > start ? end - start : 1440 - start + end);
+    final exceedsAppleLimit = spanMinutes > 8 * 60;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+          child: Text(
+            'Kilit ekranı gösterim aralığı',
+            style: TextStyle(
+                color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _TimeBox(
+                label: 'Başlangıç',
+                value: _fmt(start),
+                onTap: () => _pick(context, ref, isStart: true),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _TimeBox(
+                label: 'Bitiş',
+                value: _fmt(end),
+                onTap: () => _pick(context, ref, isStart: false),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        _SwitchTile(
+          icon: Icons.weekend_outlined,
+          title: 'Hafta sonu da göster',
+          subtitle: 'BIST hafta sonu kapalıdır; rakam sabit kalır.',
+          value: weekend,
+          onChanged: (v) async {
+            await ref.read(liveActivityWeekendProvider.notifier).set(v);
+            LiveActivityService.instance.includeWeekend = v;
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+          child: Text(
+            isAllDay
+                ? 'Başlangıç ve bitiş aynı — gün boyu gösterilir.'
+                : exceedsAppleLimit
+                    ? 'iOS, Live Activity oturumunu en fazla 8 saat açık '
+                        'tutar. Daha uzun aralıklarda uygulamayı açtıkça '
+                        'süre yenilenir; hiç açmazsanız kilit ekranından '
+                        'düşebilir.'
+                    : 'Piyasa kapalıyken son kapanış gösterilir.',
+            style: TextStyle(color: p.text36, fontSize: 11, height: 1.35),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Saat seçici kutusu — dokununca `showTimePicker` açar.
+class _TimeBox extends StatelessWidget {
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  const _TimeBox({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.c;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(SandikRadius.md),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: context.surfaceCard(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: TextStyle(color: p.text58, fontSize: 11)),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              // Tabular: iki kutu yan yana ve rakam genişliği değişirse
+              // hizalama kayar.
+              style: TextStyle(
+                color: p.text90,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SwitchTile extends StatelessWidget {
   final IconData icon;
   final String title;

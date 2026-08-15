@@ -276,7 +276,11 @@ enum LiveActivityChannel {
             sparkline: spark.count >= 2 ? spark : [],
             // Varsayılan KAPALI: bayrak eksikse tutar gösterilmez.
             // Gizlilik kararlarında güvenli taraf budur.
-            showAmounts: args["showAmounts"] as? Bool ?? false
+            showAmounts: args["showAmounts"] as? Bool ?? false,
+            // Varsayılan AÇIK: bayrak eksikse "Piyasa kapalı" etiketi
+            // gösterilmez. Yanlışlıkla "kapalı" demek, gerçekten canlı
+            // veriye bakan kullanıcıyı yanıltırdı.
+            isMarketOpen: args["isMarketOpen"] as? Bool ?? true
         )
     }
 }
