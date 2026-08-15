@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/tr_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -49,13 +50,16 @@ class LiveActivityService {
   /// Alan adları aynı kalırken anlamları değiştiği için gerekli:
   ///   * **v1** — `changeText`/`changePctText` ÖMÜRLÜK getiriydi
   ///     (varlığın alındığı günden bugüne, temettü dahil).
-  ///   * **v2** — günlük değişim (gün içi serinin ilk ve son noktası).
+  ///   * **v2** — günlük değişim, ama nakit akışından ARINDIRILMAMIŞ:
+  ///     gün içinde yapılan alım "kâr" gibi görünüyordu.
+  ///   * **v3** — nakit akışından arındırılmış günlük değişim;
+  ///     uygulamanın "Bugünkü değişim" kartıyla birebir aynı formül.
   ///
   /// Sunucu damgasız ya da eski damgalı satırı push ETMEZ: aksi halde
   /// uygulaması güncellenmiş bir kullanıcı, DB'de duran eski özet
-  /// yüzünden kilit ekranında ömürlük getiriyi "Bugün" diye görmeye
-  /// devam eder. Anlamı değişen her alanda bu sayı ARTIRILMALIDIR.
-  static const summarySchemaVersion = 2;
+  /// yüzünden kilit ekranında yanlış rakamı görmeye devam eder. Anlamı
+  /// değişen her alanda bu sayı ARTIRILMALIDIR.
+  static const summarySchemaVersion = 3;
 
   /// Kullanıcıya görünen seans adı.
   static const _sessionName = 'Piyasa Seansı';
@@ -122,6 +126,15 @@ class LiveActivityService {
   double? _dayOpenTRY;
   double? _dayLastTRY;
 
+  /// Bugün portföye giren net nakit (TRY) — alım (+), satış (−).
+  ///
+  /// **Neden gerekli:** ham uçtan uca fark "portföyüm ne kazandı?"
+  /// sorusunun cevabı DEĞİLDİR; içine bugün yatırdığınız para da girer.
+  /// 170.000 TL'lik bir alım, hiçbir fiyat hareketi olmasa bile kilit
+  /// ekranını "+%6,19 kâr" gösterirdi. Uygulamanın "Bugünkü değişim"
+  /// kartı bu tutarı çıkarıyor; kilit ekranı da çıkarmalı.
+  double _dayInflowTRY = 0;
+
   /// Sparkline en sık bu aralıkta tazelenir.
   ///
   /// 5 dakika, push döngüsünün (`0033_live_activity_cron.sql`) periyoduyla
@@ -173,6 +186,7 @@ class LiveActivityService {
     _sparklineAt = null;
     _dayOpenTRY = null;
     _dayLastTRY = null;
+    _dayInflowTRY = 0;
     // Pencere ayarları da sıfırlanır: singleton olduğu için bir testin
     // seçtiği saat aralığı sonrakine taşar ve sessizce yanlış sonuç verir.
     startMinute = defaultStartMinute;
@@ -291,6 +305,7 @@ class LiveActivityService {
         // rakamı aynı seriden çıksın, iki kaynak ayrışmasın.
         final values = _dayValues(series, now, state.totalValue);
         _dayOpenTRY = values.isEmpty ? null : values.first;
+        _dayInflowTRY = _todayInflow(state.assets, now);
         _sparkline = _normalize(values);
       } catch (e) {
         if (kDebugMode) debugPrint('Sparkline çekilemedi: $e');
@@ -355,6 +370,39 @@ class LiveActivityService {
     if (currentTotal > 0) values[values.length - 1] = currentTotal;
 
     return values;
+  }
+
+  /// Bugün eklenen lot'ların net nakit akışı (TRY).
+  ///
+  /// `portfolio_performance_screen._flowOf` ile BİREBİR aynı kural — ve
+  /// aynı kalmalı, yoksa kilit ekranı ile uygulamanın kartı farklı rakam
+  /// gösterir:
+  ///   * alım para GİRİŞİ (+), satışta ele geçen tutar ÇIKIŞ (−);
+  ///   * satışta maliyet değil `sellProceedsTRY` kullanılır — kârla
+  ///     satılan pozisyonda ikisi farklıdır ve fark yanlışlıkla "piyasa
+  ///     etkisi" sayılırdı;
+  ///   * temettü ve silinen lot akışa girmez (`isActive` ikisini de eler).
+  @visibleForTesting
+  static double todayInflow(List<Asset> assets, DateTime now) =>
+      _todayInflow(assets, now);
+
+  static double _todayInflow(List<Asset> assets, DateTime now) {
+    final dayStart = DateTime(now.year, now.month, now.day);
+    final dayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    var total = 0.0;
+    for (final a in assets) {
+      if (!a.isActive) continue;
+      if (a.addedDate.isBefore(dayStart) || a.addedDate.isAfter(dayEnd)) {
+        continue;
+      }
+      if (a.isBuy) {
+        total += a.totalCostTRY;
+      } else if (a.isSell) {
+        total -= a.sellProceedsTRY;
+      }
+    }
+    return total;
   }
 
   /// Ham TRY serisini 0…1 aralığına indirger — bkz. gizlilik notu.
@@ -560,8 +608,23 @@ class LiveActivityService {
     final open = _dayOpenTRY;
     final last = _dayLastTRY;
     if (open == null || last == null || open <= 0) return null;
-    final amount = last - open;
-    return (amount: amount, pct: amount / open * 100);
+
+    // Nakit akışından ARINDIR — uygulamanın kartıyla birebir aynı formül
+    // (`portfolio_performance_screen._buildPeriodChangeCard`).
+    //
+    // Ham uçtan uca fark bugün yatırılan parayı da içerir: kullanıcı sabah
+    // 170.000 TL'lik alım yaptığında hiçbir fiyat hareketi olmasa bile
+    // kilit ekranı "kâr" gösterirdi. Gerçek bir kullanıcıda uygulama
+    // %0,03 derken kilit ekranı %6,19 yazmasının sebebi buydu.
+    final amount = (last - open) - _dayInflowTRY;
+
+    // Yüzde tabanı: gün başı değer + bugün yatırılan para. Yalnızca `open`
+    // kullanmak, gün içinde portföyünü büyüten kullanıcıda yüzdeyi
+    // şişirirdi. (Kartla aynı taban.)
+    final base = open + (_dayInflowTRY > 0 ? _dayInflowTRY : 0);
+    if (base <= 0) return null;
+
+    return (amount: amount, pct: amount / base * 100);
   }
 
   /// Kilit ekranına gidecek özet. Gizlilik kuralı burada uygulanır.

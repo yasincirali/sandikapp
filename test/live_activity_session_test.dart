@@ -331,8 +331,8 @@ void main() {
     // uygulamasını güncellemiş kullanıcı, DB'de duran eski özet yüzünden
     // kilit ekranında ömürlük getiriyi "Bugün" diye görmeye devam eder.
 
-    test('güncel sürüm 2 — günlük değişim anlamı', () {
-      expect(LiveActivityService.summarySchemaVersion, 2);
+    test('güncel sürüm 3 — nakit akışından arındırılmış günlük değişim', () {
+      expect(LiveActivityService.summarySchemaVersion, 3);
     });
 
     test('sunucudaki sabitle aynı olmalı', () {
@@ -561,6 +561,59 @@ void main() {
       final args = channel.calls.first.args;
       expect(args['changeText'], '—');
       expect(args['changePctText'], '—');
+    });
+
+    test('bugün yapılan alım KÂR gibi görünmez', () {
+      // Gerçek kullanıcı hatası: uygulama %0,03 derken kilit ekranı
+      // %6,19 "kâr" gösteriyordu. Sebep, ham uçtan uca farkın bugün
+      // yatırılan parayı da içermesiydi — hiçbir fiyat hareketi olmasa
+      // bile alım tutarı "kazanç" sayılıyordu.
+      //
+      // `todayInflow` uygulamanın `_flowOf`'uyla aynı kuralı uygular;
+      // `_todayChange` bu tutarı farktan çıkarır.
+      final today = DateTime(2026, 8, 11, 14, 30);
+      final bought = Asset(
+        id: 'b1',
+        userId: 'u1',
+        name: 'Bugün Alınan',
+        ticker: 'YENI',
+        type: AssetType.hisse,
+        quantity: 100,
+        purchasePrice: 200,
+        currency: 'TRY',
+        notes: '',
+        isManualPrice: false,
+        currentPrice: 200,
+        addedDate: today,
+        kind: AssetKind.buy,
+      );
+
+      // 100 × 200 = 20.000 TL giriş.
+      expect(LiveActivityService.todayInflow([bought], today), 20000.0);
+    });
+
+    test('dünkü alım bugünün akışına GİRMEZ', () {
+      // Yalnızca BUGÜN eklenen lot'lar sayılır; dün alınan bir varlık
+      // bugünün değişimini etkilemez (o para dünkü gün başı değerinde
+      // zaten var).
+      final today = DateTime(2026, 8, 11, 14, 30);
+      final old = Asset(
+        id: 'o1',
+        userId: 'u1',
+        name: 'Dün Alınan',
+        ticker: 'ESKI',
+        type: AssetType.hisse,
+        quantity: 100,
+        purchasePrice: 200,
+        currency: 'TRY',
+        notes: '',
+        isManualPrice: false,
+        currentPrice: 220,
+        addedDate: DateTime(2026, 8, 10, 11, 0),
+        kind: AssetKind.buy,
+      );
+
+      expect(LiveActivityService.todayInflow([old], today), 0.0);
     });
 
     test('değişim gün içi serinin İLK ve SON noktasından çıkar', () {

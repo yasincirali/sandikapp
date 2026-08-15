@@ -29,9 +29,10 @@ const APNS_HOST =
 /// `live_activity_sessions.summary` içeriğinin beklenen ANLAM sürümü.
 ///
 /// `LiveActivityService.summarySchemaVersion` ile BİREBİR aynı olmalı.
-/// v1'de `changeText` ömürlük getiriydi, v2'de günlük değişim — alan
-/// adları aynı kaldığı için damgasız ayırt edilemez.
-const SUMMARY_SCHEMA_VERSION = 2;
+/// v1: ömürlük getiri · v2: günlük ama nakit akışından arındırılmamış ·
+/// v3: arındırılmış (uygulamanın kartıyla aynı). Alan adları üç sürümde
+/// de aynı kaldığı için damgasız ayırt edilemez.
+const SUMMARY_SCHEMA_VERSION = 3;
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
