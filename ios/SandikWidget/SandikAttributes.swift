@@ -55,6 +55,30 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// için değil, "seans sürüyor mu" kararını uzantıda da verebilmek
         /// için taşınır.
         var sessionEndsAt: Date
+
+        /// Gün içi portföy serisi — **normalize edilmiş** (0…1) noktalar.
+        ///
+        /// **Neden ham tutar değil:** kilit ekranı telefonu açmadan
+        /// görülebilir. Ham TL değerleri göndermek, `showAmounts` kapalıyken
+        /// bile portföy büyüklüğünü grafik ekseninden okunabilir kılardı.
+        /// Normalize seri yalnızca ŞEKLİ taşır: gün içinde yükseldi mi,
+        /// düştü mü. Tutar bilgisi cihazın bu yüzeyine hiç ulaşmaz.
+        ///
+        /// Boş dizi "grafik çizme" demektir (veri yok ya da tek nokta —
+        /// tek noktalı bir "çizgi" yanıltıcı olurdu).
+        var sparkline: [Double]
+
+        /// Tutarlar kilit ekranında gösterilsin mi?
+        ///
+        /// **iOS kilitli/açık ayrımı VERMEZ.** ActivityKit'te böyle bir
+        /// sinyal yoktur; aynı `ContentState` iki durumda da render edilir.
+        /// Bu yüzden "kilitliyken gizle, açılınca göster" davranışı teknik
+        /// olarak kurulamaz — bunun yerine kullanıcı tercihi taşınır
+        /// (Ayarlar → "Kilit ekranında tutarı göster", varsayılan KAPALI).
+        ///
+        /// Kapalıyken tutar alanları kaynakta maskelenir; yüzde ve grafik
+        /// görünmeye devam eder çünkü onlar portföy büyüklüğünü ele vermez.
+        var showAmounts: Bool
     }
 
     /// Seans etiketi — ör. `BIST Seansı`. Oturum boyunca sabittir.

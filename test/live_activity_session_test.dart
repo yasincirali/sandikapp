@@ -211,6 +211,67 @@ void main() {
     });
   });
 
+  group('kilit ekranı tutar gizleme', () {
+    // iOS kilitli/açık ayrımı VERMEZ (ActivityKit'te böyle bir sinyal
+    // yok). Bu yüzden "kilitliyken gizle" davranışı kurulamaz; yerine
+    // kullanıcı tercihi taşınır ve varsayılanı KAPALI'dır.
+
+    test('varsayılan KAPALI — tutar kilit ekranında görünmez', () async {
+      final svc = LiveActivityService.instance;
+      expect(svc.showAmountsOnLockScreen, isFalse,
+          reason: 'gizlilik kararlarında güvenli taraf');
+
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+      expect(channel.calls.first.args['showAmounts'], isFalse);
+    });
+
+    test('açıkken bayrak native tarafa geçer', () async {
+      final svc = LiveActivityService.instance;
+      svc.showAmountsOnLockScreen = true;
+      addTearDown(() => svc.showAmountsOnLockScreen = false);
+
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+      expect(channel.calls.first.args['showAmounts'], isTrue);
+    });
+
+    test('bakiye gizliyken tercih ne olursa olsun tutar gitmez', () async {
+      // İki ayrı mekanizma: `hideBalance` uygulama içi göz ikonu,
+      // `showAmounts` kilit ekranı tercihi. Göz ikonu daha güçlüdür.
+      final svc = LiveActivityService.instance;
+      svc.showAmountsOnLockScreen = true;
+      addTearDown(() => svc.showAmountsOnLockScreen = false);
+
+      await svc.sync(_state(), hideBalance: true, now: _duringSession);
+      final args = channel.calls.first.args;
+      expect(args['showAmounts'], isFalse);
+      expect(args['totalText'], '••••••');
+    });
+  });
+
+  group('sparkline', () {
+    test('normalize edilir — ham TUTAR taşımaz', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+
+      final spark = channel.calls.first.args['sparkline'] as List;
+      // Ağ yok → seri boş gelir; asıl kilitlenen değişmez şu: gelen her
+      // değer 0…1 aralığında olmalı, TL büyüklüğü ASLA sızmamalı.
+      for (final v in spark) {
+        expect(v, isA<num>());
+        expect(v as num, inInclusiveRange(0, 1));
+      }
+    });
+
+    test('bakiye gizliyken grafik HİÇ gönderilmez', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: true, now: _duringSession);
+
+      // Grafiğin şekli bile bir sinyaldir: gün içi yükseliş/düşüş
+      // deseni, tutar gizliyken de bilgi sızdırır.
+      expect(channel.calls.first.args['sparkline'], isEmpty);
+    });
+  });
+
   group('biçimlendirme', () {
     test('Türkçe para ve yüzde biçimi kullanılır', () async {
       await LiveActivityService.instance

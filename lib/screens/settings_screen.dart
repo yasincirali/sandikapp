@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/data_export_service.dart';
 import '../services/disclaimer_service.dart';
+import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
@@ -414,6 +415,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onChanged: (v) => ref
                   .read(partnerNotificationsProvider.notifier)
                   .set(v),
+            ),
+            const SizedBox(height: 28),
+            const _SectionTitle('GİZLİLİK'),
+            const SizedBox(height: 12),
+            _SwitchTile(
+              icon: Icons.lock_outline_rounded,
+              title: 'Kilit ekranında tutarı göster',
+              subtitle:
+                  'Kapalıyken kilit ekranında ve Dynamic Island\'da yalnızca '
+                  'günlük yüzde ve grafik görünür; tutarlar gizlenir. '
+                  'Telefonunuz kilitliyken portföy büyüklüğünüz görünmez.',
+              value: ref.watch(lockScreenAmountsProvider),
+              onChanged: (v) async {
+                await ref.read(lockScreenAmountsProvider.notifier).set(v);
+                // Servise hemen aktar: kullanıcı anahtarı çevirdiğinde
+                // bir sonraki portföy güncellemesini beklemeden kilit
+                // ekranı doğru davranmalı.
+                LiveActivityService.instance.showAmountsOnLockScreen = v;
+              },
             ),
             const SizedBox(height: 28),
             const _SectionTitle('SOSYAL'),

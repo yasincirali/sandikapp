@@ -45,6 +45,7 @@ const _kThemeModeKey = 'pref_theme_mode'; // 'system' | 'light' | 'dark'
 const _kSignalNotificationsKey = 'pref_signal_notifications';
 const _kPartnerNotificationsKey = 'pref_partner_notifications';
 const _kBalanceHiddenKey = 'pref_balance_hidden';
+const _kLockScreenAmountsKey = 'pref_lockscreen_amounts';
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
@@ -188,6 +189,19 @@ final partnerNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 
 final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kBalanceHiddenKey, false));
+
+/// Kilit ekranı Live Activity'sinde para tutarı gösterilsin mi?
+///
+/// **Varsayılan KAPALI.** Kilit ekranı telefon açılmadan görülebilen bir
+/// yüzeydir; tutar orada varsayılan olarak durmamalı. Kapalıyken günlük
+/// yüzde ve grafik yine görünür — ikisi de portföy BÜYÜKLÜĞÜNÜ ele vermez.
+///
+/// Not: iOS "kilitli mi, açık mı" bilgisini vermez (ActivityKit'te böyle
+/// bir sinyal yok), bu yüzden "kilitliyken gizle, açılınca göster"
+/// davranışı kurulamaz — tercih her iki durumda da geçerlidir.
+/// Kişiye özel: aynı cihazı paylaşan iki kullanıcının tercihi karışmasın.
+final lockScreenAmountsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(_kLockScreenAmountsKey, false, perUser: true));
 
 // ─── Premium (in-app purchase stub) ───────────────────────────────────────────
 // Şimdilik SharedPreferences ile local toggle. Gerçek IAP entegrasyonu

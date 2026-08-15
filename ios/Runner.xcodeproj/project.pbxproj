@@ -10,6 +10,7 @@
 		5A0D1K0000000000000010 /* SandikAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000002 /* SandikAttributes.swift */; };
 		5A0D1K0000000000000011 /* SandikTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000003 /* SandikTheme.swift */; };
 		5A0D1K0000000000000012 /* SandikLogoMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000004 /* SandikLogoMark.swift */; };
+		5A0D1K0000000000000033 /* SandikSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000034 /* SandikSparkline.swift */; };
 		5A0D1K0000000000000013 /* SandikLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000005 /* SandikLiveActivity.swift */; };
 		5A0D1K0000000000000014 /* SandikWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000006 /* SandikWidgetBundle.swift */; };
 		5A0D1K0000000000000015 /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000009 /* LiveActivityPlugin.swift */; };
@@ -71,6 +72,7 @@
 		5A0D1K0000000000000002 /* SandikAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikAttributes.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000003 /* SandikTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikTheme.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000004 /* SandikLogoMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLogoMark.swift; sourceTree = "<group>"; };
+		5A0D1K0000000000000034 /* SandikSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikSparkline.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000005 /* SandikLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLiveActivity.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000006 /* SandikWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikWidgetBundle.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				5A0D1K0000000000000002 /* SandikAttributes.swift */,
 				5A0D1K0000000000000003 /* SandikTheme.swift */,
 				5A0D1K0000000000000004 /* SandikLogoMark.swift */,
+				5A0D1K0000000000000034 /* SandikSparkline.swift */,
 				5A0D1K0000000000000005 /* SandikLiveActivity.swift */,
 				5A0D1K0000000000000006 /* SandikWidgetBundle.swift */,
 				5A0D1K0000000000000007 /* Info.plist */,
@@ -356,6 +359,7 @@
 				5A0D1K0000000000000013 /* SandikLiveActivity.swift in Sources */,
 				5A0D1K0000000000000011 /* SandikTheme.swift in Sources */,
 				5A0D1K0000000000000012 /* SandikLogoMark.swift in Sources */,
+				5A0D1K0000000000000033 /* SandikSparkline.swift in Sources */,
 				5A0D1K0000000000000010 /* SandikAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

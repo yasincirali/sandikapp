@@ -69,20 +69,51 @@ enum LiveActivityBridge {
                 // bayat rakam göstermez.
                 staleDate: state.sessionEndsAt
             )
-            current = try Activity.request(
+            let activity = try Activity.request(
                 attributes: attributes,
                 content: content,
-                // Push token istenmiyor: güncellemeler uygulama önplandayken
-                // yerel olarak yapılır. Push ile güncelleme ileride
-                // eklenirse burası `.token` olur (bkz. TECHNICAL_DEBT.md).
-                pushType: nil
+                // Push token İSTENİR: uygulama kapalıyken de kilit ekranı
+                // güncellenebilsin. `nil` iken oturum yalnızca uygulama
+                // önplandayken tazeleniyordu ve kullanıcı telefonu
+                // kilitleyince rakam donuyordu.
+                pushType: .token
             )
+            current = activity
+            observePushToken(activity)
             return true
         } catch {
             NSLog("[Sandik] Live Activity başlatılamadı: \(error.localizedDescription)")
             return false
         }
     }
+
+    /// Oturumun push token'ını dinler ve Dart'a iletir.
+    ///
+    /// **Token oturuma özeldir ve DEĞİŞEBİLİR.** ActivityKit her oturum için
+    /// ayrı bir token üretir; sistem gerektiğinde döndürür. Bu yüzden tek
+    /// seferlik okuma yetmez, akış boyunca dinlenir — kaçırılan bir
+    /// yenileme, sunucunun ölü token'a push atmasına ve kilit ekranının
+    /// sessizce donmasına yol açar.
+    ///
+    /// `Task` bilerek tutulmuyor: oturum bittiğinde `pushTokenUpdates`
+    /// akışı kendiliğinden kapanır.
+    private static func observePushToken(
+        _ activity: Activity<SandikActivityAttributes>
+    ) {
+        Task {
+            for await tokenData in activity.pushTokenUpdates {
+                // APNs token'ı ham byte'tır; sunucu hex bekler.
+                let hex = tokenData.map { String(format: "%02x", $0) }.joined()
+                await MainActor.run {
+                    onPushToken?(hex, activity.id)
+                }
+            }
+        }
+    }
+
+    /// Yeni push token geldiğinde çağrılır — `(tokenHex, activityId)`.
+    /// `LiveActivityChannel` bunu Dart tarafına iletir.
+    static var onPushToken: ((String, String) -> Void)?
 
     /// Yürüyen oturumun içeriğini tazeler. Oturum yoksa sessizce `false`.
     @discardableResult
@@ -144,6 +175,18 @@ enum LiveActivityChannel {
 
     static func register(messenger: FlutterBinaryMessenger) {
         let channel = FlutterMethodChannel(name: name, binaryMessenger: messenger)
+
+        // Push token geldiğinde Dart'a haber ver — Dart onu Supabase'e
+        // yazar. Köprü tek yönlü değildir: token asenkron ve gecikmeli
+        // gelir, `start` çağrısı çoktan dönmüş olur.
+        if #available(iOS 17.0, *) {
+            LiveActivityBridge.onPushToken = { token, activityId in
+                channel.invokeMethod("onPushToken", arguments: [
+                    "token": token,
+                    "activityId": activityId,
+                ])
+            }
+        }
 
         channel.setMethodCallHandler { call, result in
             // Kapı 17.0'da: `ActivityContent` ve
@@ -217,6 +260,11 @@ enum LiveActivityChannel {
         let endsAt = endsMs.map { Date(timeIntervalSince1970: Double($0) / 1000.0) }
             ?? Date().addingTimeInterval(3600)
 
+        // Sparkline normalize (0…1) gelir; ham tutar ASLA taşınmaz.
+        // Bozuk/eksik veri grafiği gizler, uydurma çizgi çizmez.
+        let spark = (args["sparkline"] as? [NSNumber])?.map { $0.doubleValue }
+            ?? []
+
         return SandikActivityAttributes.ContentState(
             totalText: total,
             changeText: change,
@@ -224,7 +272,11 @@ enum LiveActivityChannel {
             isPositive: isPositive,
             isHidden: args["isHidden"] as? Bool ?? false,
             updatedAtText: updatedAt,
-            sessionEndsAt: endsAt
+            sessionEndsAt: endsAt,
+            sparkline: spark.count >= 2 ? spark : [],
+            // Varsayılan KAPALI: bayrak eksikse tutar gösterilmez.
+            // Gizlilik kararlarında güvenli taraf budur.
+            showAmounts: args["showAmounts"] as? Bool ?? false
         )
     }
 }

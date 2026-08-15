@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 
 import '../providers/portfolio_provider.dart';
 import '../utils/tr_format.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'history_service.dart';
 
 /// iOS Live Activity — kilit ekranı + Dynamic Island "piyasa seansı" yüzeyi.
 ///
@@ -54,10 +57,39 @@ class LiveActivityService {
   static const _closeHour = 18;
   static const _closeMinute = 10;
 
+  /// Supabase istemcisi — `auth_service` ile aynı desen.
+  SupabaseClient get _db => Supabase.instance.client;
+
   bool _sessionActive = false;
 
   /// Son gönderilen içerik — aynı veriyi tekrar tekrar göndermemek için.
   String? _lastPayloadKey;
+
+  /// Native taraftan gelen push token dinleyicisi kuruldu mu?
+  bool _tokenListenerReady = false;
+
+  /// Son yazılan özet — sunucu bunu push'lar. Aynı özeti tekrar tekrar
+  /// yazmamak için tutulur (her fiyat tick'inde DB turu atmak israf).
+  String? _lastSummaryKey;
+
+  /// Gün içi seri — sparkline için. `updateWithChart` deseniyle aynı
+  /// gerekçe: her tick'te ağ turu atmak pahalı, seri önbelleklenir.
+  List<double>? _sparkline;
+  DateTime? _sparklineAt;
+
+  /// Sparkline en sık bu aralıkta tazelenir.
+  ///
+  /// 5 dakika, push döngüsünün (`0033_live_activity_cron.sql`) periyoduyla
+  /// hizalı: daha sık çekmek push'a yansımayacağı için boşuna olur.
+  static const _sparkMinInterval = Duration(minutes: 5);
+
+  /// Kilit ekranında tutar gösterilsin mi? (kullanıcı tercihi)
+  ///
+  /// **iOS kilitli/açık ayrımı VERMEZ** — ActivityKit'te böyle bir sinyal
+  /// yok, aynı içerik iki durumda da render edilir. Bu yüzden "kilitliyken
+  /// gizle" davranışı teknik olarak kurulamaz; yerine kullanıcı tercihi
+  /// taşınır. Varsayılan KAPALI: gizlilik kararlarında güvenli taraf.
+  bool showAmountsOnLockScreen = false;
 
   /// Platform desteği + kullanıcı izni.
   ///
@@ -91,6 +123,138 @@ class LiveActivityService {
   void resetForTest() {
     _sessionActive = false;
     _lastPayloadKey = null;
+    _lastSummaryKey = null;
+    _sparkline = null;
+    _sparklineAt = null;
+  }
+
+  /// Native taraftan gelen push token'ını dinlemeye başlar.
+  ///
+  /// **Neden dinleyici, tek seferlik okuma değil:** token oturum açıldıktan
+  /// SONRA asenkron gelir (`start` çoktan dönmüştür) ve oturum boyunca
+  /// yenilenebilir. Kaçırılan bir yenileme, sunucunun ölü token'a push
+  /// atmasına ve kilit ekranının sessizce donmasına yol açar.
+  void _ensureTokenListener() {
+    if (_tokenListenerReady) return;
+    _tokenListenerReady = true;
+
+    _channel.setMethodCallHandler((call) async {
+      if (call.method != 'onPushToken') return null;
+      try {
+        final args = (call.arguments as Map).cast<String, Object?>();
+        final token = args['token'] as String?;
+        final activityId = args['activityId'] as String?;
+        if (token == null || activityId == null) return null;
+        await _registerToken(token, activityId);
+      } catch (e) {
+        if (kDebugMode) debugPrint('Push token kaydı başarısız: $e');
+      }
+      return null;
+    });
+  }
+
+  /// Push token'ını sunucuya yazar — cron döngüsünün hedefi.
+  Future<void> _registerToken(String token, String activityId) async {
+    final user = _db.auth.currentUser;
+    if (user == null) return;
+
+    await _db.from('live_activity_sessions').upsert({
+      'token': token,
+      'user_id': user.id,
+      'activity_id': activityId,
+      'expires_at': sessionEnd(DateTime.now()).toIso8601String(),
+      'show_amounts': showAmountsOnLockScreen,
+      'updated_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Portföy özetini sunucuya yazar; push döngüsü bunu okur.
+  ///
+  /// **Neden sunucu hesaplamıyor:** portföy değeri lot toplama + döviz
+  /// çevrimi + altın dönüşümü ister ve bunların tamamı `HistoryService`
+  /// içinde yaşıyor. Sunucuda ikinci bir implementasyon iki kopyanın
+  /// ayrışması demekti — kullanıcı uygulamada bir rakam, kilit ekranında
+  /// başka bir rakam görürdü.
+  Future<void> _writeSummary(Map<String, dynamic> payload) async {
+    final user = _db.auth.currentUser;
+    if (user == null) return;
+
+    // Aynı özeti tekrar yazma — her fiyat tick'inde DB turu atmak israf.
+    final key = '${payload['totalText']}|${payload['changeText']}'
+        '|${payload['changePctText']}';
+    if (key == _lastSummaryKey) return;
+
+    await _db
+        .from('live_activity_sessions')
+        .update({
+          'summary': {
+            'totalText': payload['totalText'],
+            'changeText': payload['changeText'],
+            'changePctText': payload['changePctText'],
+            'isPositive': payload['isPositive'],
+            'sparkline': payload['sparkline'],
+          },
+          'show_amounts': showAmountsOnLockScreen,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('user_id', user.id);
+
+    _lastSummaryKey = key;
+  }
+
+  /// Gün içi seriyi 0…1 aralığına normalize eder.
+  ///
+  /// **Neden normalize:** kilit ekranı telefonu açmadan görülebilir. Ham TL
+  /// değerleri göndermek, tutar gizliyken bile portföy büyüklüğünü grafik
+  /// ekseninden okunabilir kılardı. Normalize seri yalnızca ŞEKLİ taşır.
+  ///
+  /// Nokta sayısı sınırlanır: kilit ekranındaki grafik ~130pt genişlikte,
+  /// 40'tan fazla nokta görsel olarak ayırt edilemez ve push gövdesini
+  /// (APNs 4KB sınırı) şişirir.
+  Future<List<double>> _buildSparkline(PortfolioState state) async {
+    final now = DateTime.now();
+    final due = _sparklineAt == null ||
+        now.difference(_sparklineAt!) >= _sparkMinInterval;
+
+    if (due) {
+      try {
+        _sparklineAt = now;
+        final series = await HistoryService.instance
+            .getPortfolioHistoryHourly(state.activeAssets, 24);
+        _sparkline = _normalize(series);
+      } catch (e) {
+        if (kDebugMode) debugPrint('Sparkline çekilemedi: $e');
+      }
+    }
+    return _sparkline ?? const [];
+  }
+
+  static List<double> _normalize(Map<int, double> series) {
+    if (series.length < 2) return const [];
+    final keys = series.keys.toList()..sort();
+    final values = [for (final k in keys) series[k]!];
+
+    final minV = values.reduce((a, b) => a < b ? a : b);
+    final maxV = values.reduce((a, b) => a > b ? a : b);
+    final span = (maxV - minV).abs();
+
+    // Düz çizgi (min == max): ortada yatay çiz. Sıfıra bölmeyi de önler.
+    if (span < 1e-9) return List.filled(values.length.clamp(2, 40), 0.5);
+
+    // Örnekleme: 40 noktadan fazlasını seyrelt.
+    const maxPoints = 40;
+    final step = values.length <= maxPoints
+        ? 1
+        : (values.length / maxPoints).ceil();
+
+    final out = <double>[];
+    for (var i = 0; i < values.length; i += step) {
+      out.add((values[i] - minV) / span);
+    }
+    // Son nokta her zaman dahil — grafiğin ucu güncel değeri göstermeli.
+    final lastNorm = (values.last - minV) / span;
+    if (out.isEmpty || (out.last - lastNorm).abs() > 1e-9) out.add(lastNorm);
+    return out;
   }
 
   /// [now] anında piyasa seansı açık mı?
@@ -127,6 +291,7 @@ class LiveActivityService {
   }) async {
     try {
       if (!await _isSupported()) return;
+      _ensureTokenListener();
 
       final ts = now ?? DateTime.now();
 
@@ -144,7 +309,17 @@ class LiveActivityService {
         return;
       }
 
-      final payload = _payload(state, hideBalance: hideBalance, now: ts);
+      // Sparkline seansta 5 dakikada bir tazelenir (push periyoduyla
+      // hizalı); aradaki çağrılar önbellekten okur.
+      final spark =
+          hideBalance ? const <double>[] : await _buildSparkline(state);
+
+      final payload = _payload(
+        state,
+        hideBalance: hideBalance,
+        now: ts,
+        sparkline: spark,
+      );
 
       // Aynı içerik tekrar gönderilmez.
       //
@@ -164,6 +339,14 @@ class LiveActivityService {
       if (ok) {
         _sessionActive = true;
         _lastPayloadKey = key;
+
+        // Özeti sunucuya yaz — push döngüsü (cron, 5 dk) bunu okuyup
+        // APNs'e gönderir. Böylece uygulama kapalıyken de kilit ekranı
+        // güncellenir. `await` EDİLMEZ: Live Activity ikincil bir yüzey,
+        // DB turu uygulamanın akışını bekletmemeli.
+        unawaited(_writeSummary(payload).catchError((Object e) {
+          if (kDebugMode) debugPrint('Özet yazılamadı: $e');
+        }));
       }
     } catch (e) {
       if (kDebugMode) debugPrint('LiveActivity sync failed: $e');
@@ -175,6 +358,7 @@ class LiveActivityService {
     PortfolioState state, {
     required bool hideBalance,
     required DateTime now,
+    List<double> sparkline = const [],
   }) {
     final isPos = state.gainLoss >= 0;
     final endsAt = sessionEnd(now);
@@ -183,7 +367,7 @@ class LiveActivityService {
     if (hideBalance) {
       // Tutar HİÇ üretilmez — maskelenmiş metin bile gerçek rakamı
       // taşımaz. Yön de sabitlenir: `isPositive` üstünden kâr/zarar
-      // durumu sızmasın.
+      // durumu sızmasın. Grafik de gitmez: şekli bile bir sinyaldir.
       return {
         'totalText': '••••••',
         'changeText': '••••••',
@@ -192,6 +376,8 @@ class LiveActivityService {
         'isHidden': true,
         'updatedAtText': updatedAt,
         'sessionEndsAtMs': endsAt.millisecondsSinceEpoch,
+        'sparkline': const <double>[],
+        'showAmounts': false,
       };
     }
 
@@ -206,6 +392,9 @@ class LiveActivityService {
       'isHidden': false,
       'updatedAtText': updatedAt,
       'sessionEndsAtMs': endsAt.millisecondsSinceEpoch,
+      // Normalize (0…1) — ham tutar taşımaz, yalnızca günün şekli.
+      'sparkline': sparkline,
+      'showAmounts': showAmountsOnLockScreen,
     };
   }
 

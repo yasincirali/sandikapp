@@ -32,27 +32,30 @@ kadar `isMarketOpen` bu haliyle doğru davranır.
 
 ---
 
-## ⏸️ ERTELENDİ — Live Activity: push ile güncelleme
+## ⏸️ ERTELENDİ — Live Activity: sunucu tarafı portföy hesabı
 
-**Karar tarihi:** 2026-08-13
+**Karar tarihi:** 2026-08-14 · **Karar:** kullanıcı
 
-Oturum şu an **yalnızca uygulama önplandayken** tazelenir
-(`LiveActivityBridge.start` → `pushType: nil`). Kullanıcı uygulamayı
-kapattığında kilit ekranındaki rakam son bilinen değerde donar; `staleDate`
-seans bitişine ayarlı olduğu için sistem onu "bayat" işaretler.
+Push döngüsü portföy özetini **istemcinin yazdığı** `summary` alanından
+okur (`live_activity_sessions.summary`). Sunucu portföy değerini kendisi
+HESAPLAMAZ.
 
-**Neden ertelendi:** ActivityKit push'u ayrı bir APNs kanalı
-(`liveactivity` push type) ve her oturum için ayrı bir push token yönetimi
-ister. Mevcut push altyapısı (bkz. push sinyalleri) sinyal bildirimleri
-için kurulu; Live Activity token'ları farklı bir yaşam döngüsüne sahip.
+**Neden böyle:** portföy değeri lot toplama + döviz çevrimi + altın
+dönüşümü ister ve bunların tamamı `HistoryService` içinde yaşıyor.
+Sunucuda ikinci bir implementasyon kurmak iki kopyanın ayrışması demekti —
+kullanıcı uygulamada bir rakam, kilit ekranında başka bir rakam görürdü.
+Bu sınıf hata bu projede zaten yaşandı: ons→gram formülünün beş kopyası
+vardı ve `ALTIN_RESAT` bir kopyada atlanmıştı (2026-08-14'te düzeltildi).
 
-**Ertelemenin maliyeti:** Kullanıcı uygulamayı açmadan güncel rakam
-göremez. Yüzey yine de doğru davranır (bayat veriyi bayat gösterir,
-yanlış göstermez) ama "canlı" vaadi zayıflar.
+**Ertelemenin maliyeti:** Kullanıcı gün boyu uygulamayı hiç açmazsa kilit
+ekranı son bilinen özeti gösterir. Yanlış veri değil, BAYAT veri —
+`staleDate` sistem tarafından işaretlenir ve kullanıcı güncel sanmaz.
+Pratikte kullanıcı gün içinde uygulamayı en az bir kez açıyor.
 
-**Ele alınma zamanı:** Live Activity kullanıcıda karşılık bulursa.
-`pushType: .token` + `activity.pushTokenUpdates` dinleyicisi + sunucuda
-seans içi periyodik push gerekir.
+**Ele alınma zamanı:** Kullanıcılar "kilit ekranı geride kalıyor" derse.
+Gerekenler: `intraday_prices` tablosu, 5 dk'lık fiyat çekme cron'u ve
+`portfolio_daily_summary` RPC'si (lot agg + FX + sparkline). Yapılırsa
+`HistoryService` ile ayrışmaması için ortak bir test kümesi şart.
 
 ---
 

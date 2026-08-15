@@ -916,6 +916,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // her birine tek tek çağrı koymak kaçınılmaz olarak birini atlar.
         // Servis kendi içinde seans saatini ve tekrar eden içeriği eler;
         // burada koşul yok. Android'de kanal kayıtlı değildir, sessizce geçer.
+        // Kilit ekranında tutar tercihi servise BURADA aktarılır: servis
+        // provider okuyamaz (Riverpod'a bağlı değil, singleton).
+        LiveActivityService.instance.showAmountsOnLockScreen =
+            ref.read(lockScreenAmountsProvider);
         unawaited(LiveActivityService.instance.sync(
           snapshot,
           hideBalance: hideBalance,

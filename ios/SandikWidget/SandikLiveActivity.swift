@@ -47,31 +47,66 @@ struct SandikLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.center) {
+                    // Kilit ekranıyla AYNI kural: tutar yalnızca kullanıcı
+                    // açıkça izin verdiyse. Dynamic Island da kilitliyken
+                    // görünür bir yüzeydir.
+                    let showsAmount =
+                        context.state.showAmounts && !context.state.isHidden
+
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("TOPLAM PORTFÖY DEĞERİ")
+                        Text(showsAmount ? "TOPLAM PORTFÖY DEĞERİ" : "BUGÜN")
                             .font(.sandikLabel(10, weight: .semibold))
                             // Küçük punto etiketlerde harf aralığı açılır;
                             // sıkışık kapitaller okunmaz.
                             .tracking(0.6)
                             .foregroundStyle(SandikTheme.text58)
 
-                        Text(context.state.totalText)
-                            .font(.sandikNumber(20, weight: .bold))
-                            // Başlık boyutlarında -0.01em sıkılaştırma.
-                            .tracking(-0.2)
-                            .foregroundStyle(SandikTheme.gold)
-                            .lineLimit(1)
-                            // Dar cihazlarda (mini) uzun tutar kırpılmasın;
-                            // küçülsün ama okunur kalsın.
-                            .minimumScaleFactor(0.75)
+                        if showsAmount {
+                            Text(context.state.totalText)
+                                .font(.sandikNumber(20, weight: .bold))
+                                // Başlık boyutlarında -0.01em sıkılaştırma.
+                                .tracking(-0.2)
+                                .foregroundStyle(SandikTheme.gold)
+                                .lineLimit(1)
+                                // Dar cihazlarda (mini) uzun tutar
+                                // kırpılmasın; küçülsün ama okunur kalsın.
+                                .minimumScaleFactor(0.75)
+                        } else {
+                            HStack(spacing: 5) {
+                                Text(directionArrow(context.state.isPositive))
+                                    .font(.sandikLabel(11, weight: .black))
+                                Text(context.state.changePctText)
+                                    .font(.sandikNumber(20, weight: .bold))
+                                    .tracking(-0.2)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.75)
+                            }
+                            .foregroundStyle(
+                                SandikTheme.statusColor(
+                                    isPositive: context.state.isPositive))
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 6)
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    SandikChangePill(state: context.state)
-                        .padding(.top, 4)
+                    VStack(spacing: 6) {
+                        // Gün içi grafik — tutar gizliyken de görünür.
+                        if !context.state.sparkline.isEmpty {
+                            SandikSparkline(
+                                points: context.state.sparkline,
+                                color: SandikTheme.statusColor(
+                                    isPositive: context.state.isPositive),
+                                // Dar alanda gradient dolgu gürültüye
+                                // dönüşüyor; yalnızca çizgi bırakılır.
+                                showsFill: false
+                            )
+                            .frame(height: 26)
+                        }
+                        SandikChangePill(state: context.state)
+                    }
+                    .padding(.top, 4)
                 }
 
             } compactLeading: {
@@ -145,9 +180,71 @@ struct SandikLockScreenView: View {
                 }
             }
 
-            // ---- İçerik: iki sütun + dikey ayraç ----
-            HStack(alignment: .top, spacing: 0) {
+            // ---- İçerik ----
+            //
+            // Düzen `showAmounts`'a göre DEĞİŞİR:
+            //   kapalı → günlük yüzde solda, grafik sağda (tutar hiç yok)
+            //   açık   → toplam + net kazanç iki sütun, grafik altta
+            //
+            // Yüzde ve grafik her iki durumda da görünür: ikisi de portföy
+            // BÜYÜKLÜĞÜNÜ ele vermez, yalnızca günün nasıl geçtiğini söyler.
+            if state.showAmounts && !state.isHidden {
+                amountsLayout
+            } else {
+                privateLayout
+            }
+        }
+        .padding(16)
+        .background(SandikTheme.background)
+        // Kilit ekranı çerçevesi — lg (20) + hairline kenar.
+        .clipShape(RoundedRectangle(cornerRadius: SandikTheme.radiusLg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: SandikTheme.radiusLg, style: .continuous)
+                .strokeBorder(SandikTheme.hairline, lineWidth: 1)
+        )
+        // Ekran okuyucu için tek, anlamlı cümle — parça parça okumak yerine.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary)
+    }
 
+    /// Gizli düzen — tutar YOK, yalnızca günlük yüzde + grafik.
+    ///
+    /// Varsayılan durum budur. Kullanıcı Ayarlar'dan açıkça izin vermedikçe
+    /// kilit ekranında para tutarı görünmez.
+    private var privateLayout: some View {
+        HStack(alignment: .center, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Bugün")
+                    .font(.sandikLabel(11, weight: .medium))
+                    .foregroundStyle(SandikTheme.text58)
+
+                HStack(spacing: 5) {
+                    Text(directionArrow(state.isPositive))
+                        .font(.sandikLabel(13, weight: .black))
+                    Text("\(signPrefix(state.isPositive))\(state.changePctText)")
+                        .font(.sandikNumber(24, weight: .bold))
+                        .tracking(-0.24)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+            }
+
+            Spacer(minLength: 0)
+
+            // Grafik sağda, dikey alanı doldurur.
+            SandikSparkline(
+                points: state.sparkline,
+                color: SandikTheme.statusColor(isPositive: state.isPositive)
+            )
+            .frame(width: 130, height: 44)
+        }
+    }
+
+    /// Tutarlı düzen — kullanıcı Ayarlar'dan açıkça izin verdiyse.
+    private var amountsLayout: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 0) {
                 // Sol: toplam portföy.
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Toplam Portföy")
@@ -178,52 +275,44 @@ struct SandikLockScreenView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
 
-                    if state.isHidden {
-                        Text("••••••")
+                    HStack(spacing: 4) {
+                        Text(directionArrow(state.isPositive))
+                            .font(.sandikLabel(11, weight: .black))
+                        Text(state.changeText)
                             .font(.sandikNumber(17, weight: .bold))
-                            .foregroundStyle(SandikTheme.text36)
-                    } else {
-                        HStack(spacing: 4) {
-                            Text(directionArrow(state.isPositive))
-                                .font(.sandikLabel(11, weight: .black))
-                            Text(state.changeText)
-                                .font(.sandikNumber(17, weight: .bold))
-                                .tracking(-0.17)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-                        .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
-
-                        // Yüzde rozeti — durum renginin çok düşük alfalı
-                        // zemini üstünde. Amber BURAYA konmaz: brief'e göre
-                        // amber yalnızca gerçekten vurgulanacak TEK öğe için.
-                        Text("\(signPrefix(state.isPositive))\(state.changePctText) Günlük")
-                            .font(.sandikNumber(10, weight: .semibold))
-                            .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(
-                                RoundedRectangle(cornerRadius: SandikTheme.radiusSm, style: .continuous)
-                                    .fill(SandikTheme.statusColor(isPositive: state.isPositive)
-                                        .opacity(0.14))
-                            )
-                            .padding(.top, 1)
+                            .tracking(-0.17)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
+                    .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+
+                    // Yüzde rozeti — durum renginin çok düşük alfalı zemini
+                    // üstünde. Amber BURAYA konmaz: brief'e göre amber
+                    // yalnızca gerçekten vurgulanacak TEK öğe için.
+                    Text("\(signPrefix(state.isPositive))\(state.changePctText) Günlük")
+                        .font(.sandikNumber(10, weight: .semibold))
+                        .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(
+                            RoundedRectangle(cornerRadius: SandikTheme.radiusSm, style: .continuous)
+                                .fill(SandikTheme.statusColor(isPositive: state.isPositive)
+                                    .opacity(0.14))
+                        )
+                        .padding(.top, 1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+
+            // Grafik altta, tam genişlik.
+            if !state.sparkline.isEmpty {
+                SandikSparkline(
+                    points: state.sparkline,
+                    color: SandikTheme.statusColor(isPositive: state.isPositive)
+                )
+                .frame(height: 32)
+            }
         }
-        .padding(16)
-        .background(SandikTheme.background)
-        // Kilit ekranı çerçevesi — lg (20) + hairline kenar.
-        .clipShape(RoundedRectangle(cornerRadius: SandikTheme.radiusLg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: SandikTheme.radiusLg, style: .continuous)
-                .strokeBorder(SandikTheme.hairline, lineWidth: 1)
-        )
-        // Ekran okuyucu için tek, anlamlı cümle — parça parça okumak yerine.
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilitySummary)
     }
 
     /// İşaret öneki — yüzde rozetinde `+%2,45` / `-%2,45` okunuşu için.
@@ -238,6 +327,15 @@ struct SandikLockScreenView: View {
             return "Sandık. Bakiye gizli."
         }
         let yon = state.isPositive ? "artış" : "düşüş"
+
+        // Tutar gizliyken sesli okuma da tutarı SÖYLEMEZ. Aksi halde
+        // ekranda gizlenen rakam VoiceOver'dan duyulurdu — kilit
+        // ekranında bu, gizlemenin tamamen anlamsızlaşması demek.
+        guard state.showAmounts else {
+            return "Sandık. Bugün yüzde \(state.changePctText) \(yon). "
+                + "Son güncelleme \(state.updatedAtText)."
+        }
+
         return "Sandık. Toplam portföy \(state.totalText). "
             + "Bugün \(state.changeText), yüzde \(state.changePctText) \(yon). "
             + "Son güncelleme \(state.updatedAtText)."
@@ -257,15 +355,12 @@ struct SandikChangePill: View {
                 .font(.sandikLabel(11, weight: .medium))
                 .foregroundStyle(SandikTheme.text58)
 
-            if state.isHidden {
-                Text("••••••")
-                    .font(.sandikNumber(13, weight: .bold))
-                    .foregroundStyle(SandikTheme.text36)
-            } else {
-                Text(directionArrow(state.isPositive))
-                    .font(.sandikLabel(10, weight: .black))
-                    .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+            Text(directionArrow(state.isPositive))
+                .font(.sandikLabel(10, weight: .black))
+                .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
 
+            // Tutar yalnızca izin verildiyse; yüzde her zaman görünür.
+            if state.showAmounts && !state.isHidden {
                 Text(state.changeText)
                     .font(.sandikNumber(13, weight: .bold))
                     .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
@@ -275,6 +370,10 @@ struct SandikChangePill: View {
                 Text("(\(state.changePctText))")
                     .font(.sandikNumber(12, weight: .medium))
                     .foregroundStyle(SandikTheme.text58)
+            } else {
+                Text(state.changePctText)
+                    .font(.sandikNumber(13, weight: .bold))
+                    .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
             }
 
             Spacer(minLength: 0)
