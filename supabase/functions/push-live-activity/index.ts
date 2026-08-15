@@ -26,6 +26,13 @@ const APNS_BUNDLE_ID = Deno.env.get('APNS_BUNDLE_ID') ?? 'com.sandik.app';
 const APNS_HOST =
   Deno.env.get('APNS_HOST') ?? 'api.push.apple.com';
 
+/// `live_activity_sessions.summary` içeriğinin beklenen ANLAM sürümü.
+///
+/// `LiveActivityService.summarySchemaVersion` ile BİREBİR aynı olmalı.
+/// v1'de `changeText` ömürlük getiriydi, v2'de günlük değişim — alan
+/// adları aynı kaldığı için damgasız ayırt edilemez.
+const SUMMARY_SCHEMA_VERSION = 2;
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -200,6 +207,10 @@ Deno.serve(async (request) => {
 
   let sent = 0;
   let removed = 0;
+  // Eski şema yüzünden atlanan oturumlar — teşhis için yanıta konur.
+  // Sürüm geçişinden sonra bu sayı sıfıra inmeli; inmiyorsa o kullanıcılar
+  // uygulamayı hiç açmıyor ve kilit ekranları donmuş demektir.
+  let skippedStale = 0;
   const deadTokens: string[] = [];
 
   for (const s of sessions) {
@@ -217,6 +228,21 @@ Deno.serve(async (request) => {
     // göstermez.
     const row = s.summary as Record<string, unknown> | null;
     if (!row) continue;
+
+    // Eski ANLAM sürümüyle yazılmış özeti push ETME.
+    //
+    // v1'de `changeText`/`changePctText` ÖMÜRLÜK getiriydi; v2'de günlük
+    // değişim. Alan adları aynı olduğu için içeriğe bakarak ayırt etmek
+    // mümkün değil — damga şart.
+    //
+    // Atlamak, yanlış rakam göstermekten iyidir: banner son doğru
+    // değerinde kalır ve kullanıcı uygulamayı bir kez açar açmaz istemci
+    // yeni özeti yazar. Push'lasaydık, uygulamasını güncellemiş kullanıcı
+    // kilit ekranında ömürlük getiriyi "Bugün" diye görmeye devam ederdi.
+    if (Number(row.schema ?? 1) < SUMMARY_SCHEMA_VERSION) {
+      skippedStale++;
+      continue;
+    }
 
     const isPositive = row.isPositive === true;
     const showAmounts = s.show_amounts === true;
@@ -277,7 +303,7 @@ Deno.serve(async (request) => {
   }
 
   return new Response(
-    JSON.stringify({ sent, removed, total: sessions.length }),
+    JSON.stringify({ sent, removed, skippedStale, total: sessions.length }),
     { headers: { 'content-type': 'application/json' } },
   );
 });

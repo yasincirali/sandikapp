@@ -44,6 +44,19 @@ class LiveActivityService {
   /// Native taraftaki `LiveActivityChannel.name` ile birebir aynı olmalı.
   static const _channel = MethodChannel('com.sandik.app/live_activity');
 
+  /// `live_activity_sessions.summary` içeriğinin ANLAM sürümü.
+  ///
+  /// Alan adları aynı kalırken anlamları değiştiği için gerekli:
+  ///   * **v1** — `changeText`/`changePctText` ÖMÜRLÜK getiriydi
+  ///     (varlığın alındığı günden bugüne, temettü dahil).
+  ///   * **v2** — günlük değişim (gün içi serinin ilk ve son noktası).
+  ///
+  /// Sunucu damgasız ya da eski damgalı satırı push ETMEZ: aksi halde
+  /// uygulaması güncellenmiş bir kullanıcı, DB'de duran eski özet
+  /// yüzünden kilit ekranında ömürlük getiriyi "Bugün" diye görmeye
+  /// devam eder. Anlamı değişen her alanda bu sayı ARTIRILMALIDIR.
+  static const summarySchemaVersion = 2;
+
   /// Kullanıcıya görünen seans adı.
   static const _sessionName = 'Piyasa Seansı';
 
@@ -238,6 +251,14 @@ class LiveActivityService {
             // oturumda eskimiş olur ve kilit ekranı dünün tarihini
             // gösterirdi — `updatedAtText` ile aynı gerekçe.
             'isMarketOpen': payload['isMarketOpen'],
+            // Özetin hangi ANLAM sürümüyle yazıldığı.
+            //
+            // v1'de `changeText` ÖMÜRLÜK getiriydi; v2'de günlük değişim.
+            // İki sürüm aynı alan adını farklı anlamda kullanıyor, bu
+            // yüzden sunucu ayırt edebilmeli: damgasız bir satır eski
+            // uygulamadan kalmadır ve push'lanırsa kullanıcı kilit
+            // ekranında yine ömürlük getiriyi "Bugün" diye görür.
+            'schema': summarySchemaVersion,
           },
           'show_amounts': showAmountsOnLockScreen,
           'updated_at': DateTime.now().toIso8601String(),
@@ -481,7 +502,33 @@ class LiveActivityService {
       // kısıtlanmaya (throttle) yol açar.
       final key = '${payload['totalText']}|${payload['changeText']}'
           '|${payload['isPositive']}|${payload['isHidden']}';
-      if (_sessionActive && key == _lastPayloadKey) return;
+      final unchanged = _sessionActive && key == _lastPayloadKey;
+
+      // Özeti sunucuya yaz — push döngüsü (cron, 5 dk) bunu okuyup APNs'e
+      // gönderir. Böylece uygulama kapalıyken de kilit ekranı güncellenir.
+      //
+      // **ActivityKit çağrısından ÖNCE ve ONDAN BAĞIMSIZ yazılır.** Eskiden
+      // yalnızca `ok == true` iken yazılıyordu ve iki durumda sessizce
+      // bayat kalıyordu:
+      //   * Oturum ölmüşse (Apple'ın 8 saat sınırı) `_invoke` false döner
+      //     ve özet HİÇ yazılmazdı — sunucu sonsuza kadar eski rakamı
+      //     push'lardı.
+      //   * Erken çıkışta (aşağıdaki `unchanged`) da yazılmazdı; oysa
+      //     ekrandaki metin aynı olsa bile DB'deki kayıt eski SÜRÜMDEN
+      //     kalma olabilir. Ömürlük getiriyi günlük diye gösteren hata
+      //     tam olarak böyle hayatta kaldı: uygulama güncellendi ama
+      //     kilit ekranı eski özetten beslenmeye devam etti.
+      //
+      // `_writeSummary` kendi içinde zaten tekrarı eliyor; buradan her
+      // senkronda çağırmak fazladan DB turu açmaz.
+      //
+      // `await` EDİLMEZ: Live Activity ikincil bir yüzey, DB turu
+      // uygulamanın akışını bekletmemeli.
+      unawaited(_writeSummary(payload).catchError((Object e) {
+        if (kDebugMode) debugPrint('Özet yazılamadı: $e');
+      }));
+
+      if (unchanged) return;
 
       final ok = await _invoke(
         _sessionActive ? 'update' : 'start',
@@ -491,14 +538,6 @@ class LiveActivityService {
       if (ok) {
         _sessionActive = true;
         _lastPayloadKey = key;
-
-        // Özeti sunucuya yaz — push döngüsü (cron, 5 dk) bunu okuyup
-        // APNs'e gönderir. Böylece uygulama kapalıyken de kilit ekranı
-        // güncellenir. `await` EDİLMEZ: Live Activity ikincil bir yüzey,
-        // DB turu uygulamanın akışını bekletmemeli.
-        unawaited(_writeSummary(payload).catchError((Object e) {
-          if (kDebugMode) debugPrint('Özet yazılamadı: $e');
-        }));
       }
     } catch (e) {
       if (kDebugMode) debugPrint('LiveActivity sync failed: $e');

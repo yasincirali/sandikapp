@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -305,6 +307,48 @@ void main() {
     test('endAll oturumu kapatır', () async {
       await LiveActivityService.instance.endAll();
       expect(channel.calls.single.method, 'endAll');
+    });
+
+    test('içerik aynı olsa bile sync çökmeden tamamlanır', () async {
+      // Özet yazımı artık ActivityKit çağrısından BAĞIMSIZ ve erken
+      // çıkıştan ÖNCE yapılıyor. Testte Supabase başlatılmadığı için
+      // `_writeSummary` fırlatır; `sync`'in bunu yutup normal akışa
+      // devam ettiğini kilitler (Live Activity ikincil yüzey — hiçbir
+      // hata uygulamanın akışını bozmamalı).
+      final svc = LiveActivityService.instance;
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+
+      expect(channel.calls.length, 1,
+          reason: 'değişmeyen portföy için ikinci ActivityKit çağrısı elenmeli');
+    });
+  });
+
+  group('özet şema sürümü', () {
+    // `live_activity_sessions.summary` alan ADLARI iki sürümde aynı ama
+    // ANLAMLARI farklı: v1'de `changeText` ömürlük getiriydi, v2'de
+    // günlük değişim. Damga olmadan sunucu ikisini ayırt edemez ve
+    // uygulamasını güncellemiş kullanıcı, DB'de duran eski özet yüzünden
+    // kilit ekranında ömürlük getiriyi "Bugün" diye görmeye devam eder.
+
+    test('güncel sürüm 2 — günlük değişim anlamı', () {
+      expect(LiveActivityService.summarySchemaVersion, 2);
+    });
+
+    test('sunucudaki sabitle aynı olmalı', () {
+      // Edge function'daki SUMMARY_SCHEMA_VERSION ile birebir aynı
+      // olmalı. Ayrışırlarsa ya tüm push'lar sessizce atlanır (sunucu
+      // ileride) ya da eski özetler push'lanır (istemci ileride).
+      final fn = File('supabase/functions/push-live-activity/index.ts')
+          .readAsStringSync();
+      final match =
+          RegExp(r'SUMMARY_SCHEMA_VERSION = (\d+)').firstMatch(fn);
+
+      expect(match, isNotNull,
+          reason: 'sunucu tarafındaki sabit bulunamadı');
+      expect(int.parse(match!.group(1)!),
+          LiveActivityService.summarySchemaVersion,
+          reason: 'istemci ve sunucu şema sürümü ayrışmış');
     });
   });
 
