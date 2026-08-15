@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kDebugMode, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -417,6 +418,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   .set(v),
             ),
             const SizedBox(height: 28),
+            // Live Activity ayarları kendi bölümünde durur.
+            //
+            // Önceden "GİZLİLİK" altındaydı ve kullanıcı bulamıyordu:
+            // iOS'ta özelliğin adı "Canlı Etkinlikler", Ayarlar'da ise
+            // hiçbir yerde bu kelime geçmiyordu. Kullanıcı gördüğü adla
+            // arar; bölüm başlığı o adla eşleşmeli.
+            //
+            // iOS-only: Android'de ActivityKit yok, kanal kayıtlı değil
+            // ve `sync` ilk satırda döner (bkz. LiveActivityService).
+            // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
+            if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+              const _SectionTitle('CANLI ETKİNLİK'),
+              const SizedBox(height: 12),
+              const _LiveActivitySection(),
+              const SizedBox(height: 28),
+            ],
             const _SectionTitle('GİZLİLİK'),
             const SizedBox(height: 12),
             _SwitchTile(
@@ -435,7 +452,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 LiveActivityService.instance.showAmountsOnLockScreen = v;
               },
             ),
-            const _LiveActivityWindow(),
             const SizedBox(height: 28),
             const _SectionTitle('SOSYAL'),
             const SizedBox(height: 12),
@@ -757,13 +773,41 @@ class _SettingsTile extends StatelessWidget {
 /// seçilirse oturum uygulama her açıldığında yenilenir; kullanıcı gün boyu
 /// hiç açmazsa banner düşer. Bu Apple'ın kuralı, aşılamaz — bu yüzden
 /// arayüzde açıkça yazılır.
-class _LiveActivityWindow extends ConsumerWidget {
-  const _LiveActivityWindow();
+class _LiveActivitySection extends ConsumerWidget {
+  const _LiveActivitySection();
+
+  /// BIST varsayılanı — "Gün boyu" kapatılınca buraya dönülür.
+  ///
+  /// Servisteki sabitlerden okunur, elle 10*60 yazılmaz: varsayılan
+  /// değişirse iki yerde birden değişmesi gereken bir kopya kalmasın.
+  static const _defaultStart = LiveActivityService.defaultStartMinute;
+  static const _defaultEnd = LiveActivityService.defaultEndMinute;
 
   static String _fmt(int minutes) {
     final h = (minutes ~/ 60).toString().padLeft(2, '0');
     final m = (minutes % 60).toString().padLeft(2, '0');
     return '$h:$m';
+  }
+
+  /// "Gün boyu göster" anahtarı.
+  ///
+  /// Başlangıç == bitiş kuralı zaten 7/24 anlamına geliyordu ama bu
+  /// KEŞFEDİLEBİLİR DEĞİLDİ: kullanıcının iki saat kutusunu aynı değere
+  /// getirmesi gerektiğini kendi başına bulması beklenemez. (Gerçek bir
+  /// kullanıcı bu yüzden özelliği hiç açamadı.) Anahtar aynı kuralı tek
+  /// dokunuşa indirir.
+  Future<void> _setAllDay(WidgetRef ref, bool allDay) async {
+    final start = allDay ? 0 : _defaultStart;
+    final end = allDay ? 0 : _defaultEnd;
+
+    await ref.read(liveActivityStartProvider.notifier).set(start);
+    await ref.read(liveActivityEndProvider.notifier).set(end);
+
+    // Servise hemen aktar — bir sonraki portföy güncellemesini beklemeden
+    // pencere geçerli olmalı.
+    final svc = LiveActivityService.instance;
+    svc.startMinute = start;
+    svc.endMinute = end;
   }
 
   Future<void> _pick(
@@ -813,36 +857,56 @@ class _LiveActivityWindow extends ConsumerWidget {
         isAllDay ? 1440 : (end > start ? end - start : 1440 - start + end);
     final exceedsAppleLimit = spanMinutes > 8 * 60;
 
+    // Şu an banner görünür olmalı mı? Servisin kendi kuralını kullanır —
+    // burada ikinci bir kopya kurmak, ayarın "görünecek" dediği ile
+    // servisin yaptığının sessizce ayrışması demekti.
+    final svc = LiveActivityService.instance;
+    final visibleNow = svc.isWithinWindow(DateTime.now());
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
-          child: Text(
-            'Kilit ekranı gösterim aralığı',
-            style: TextStyle(
-                color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
+        _SwitchTile(
+          icon: Icons.schedule_rounded,
+          title: 'Gün boyu göster',
+          subtitle: 'Kapalıyken yalnızca seçtiğin saat aralığında görünür.',
+          value: isAllDay,
+          onChanged: (v) => _setAllDay(ref, v),
+        ),
+
+        // Saat kutuları yalnızca "gün boyu" KAPALIYKEN anlamlı. Açıkken
+        // göstermek "bu saatler hâlâ geçerli mi?" sorusu doğurur.
+        if (!isAllDay) ...[
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+            child: Text(
+              'Gösterim aralığı',
+              style: TextStyle(
+                  color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
+            ),
           ),
-        ),
-        Row(
-          children: [
-            Expanded(
-              child: _TimeBox(
-                label: 'Başlangıç',
-                value: _fmt(start),
-                onTap: () => _pick(context, ref, isStart: true),
+          Row(
+            children: [
+              Expanded(
+                child: _TimeBox(
+                  label: 'Başlangıç',
+                  value: _fmt(start),
+                  onTap: () => _pick(context, ref, isStart: true),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _TimeBox(
-                label: 'Bitiş',
-                value: _fmt(end),
-                onTap: () => _pick(context, ref, isStart: false),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _TimeBox(
+                  label: 'Bitiş',
+                  value: _fmt(end),
+                  onTap: () => _pick(context, ref, isStart: false),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
+
         const SizedBox(height: 4),
         _SwitchTile(
           icon: Icons.weekend_outlined,
@@ -855,22 +919,70 @@ class _LiveActivityWindow extends ConsumerWidget {
             LiveActivityService.instance.includeWeekend = v;
           },
         ),
+
+        // ---- Durum satırı ----
+        //
+        // Pencere dışındayken kilit ekranında HİÇBİR ŞEY olmuyor ve
+        // kullanıcıya bunun sebebini söyleyen tek bir işaret yoktu:
+        // banner yok, hata yok, açıklama yok. Kullanıcı özelliği bozuk
+        // sanıyordu. Bu satır "şu an neden görünmüyor" sorusunu yanıtlar.
+        if (!visibleNow)
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: p.amberFill.withValues(alpha: 0.10),
+              borderRadius: SandikRadius.mdAll,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    color: p.amberText, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _whyHidden(start, end, weekend),
+                    style: TextStyle(
+                        color: p.text58, fontSize: 11, height: 1.35),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
           child: Text(
-            isAllDay
-                ? 'Başlangıç ve bitiş aynı — gün boyu gösterilir.'
-                : exceedsAppleLimit
-                    ? 'iOS, Live Activity oturumunu en fazla 8 saat açık '
-                        'tutar. Daha uzun aralıklarda uygulamayı açtıkça '
-                        'süre yenilenir; hiç açmazsanız kilit ekranından '
-                        'düşebilir.'
-                    : 'Piyasa kapalıyken son kapanış gösterilir.',
+            exceedsAppleLimit
+                ? 'iOS, Live Activity oturumunu en fazla 8 saat açık '
+                    'tutar. Uygulamayı açtıkça süre yenilenir; hiç '
+                    'açmazsanız kilit ekranından düşebilir.'
+                : 'Piyasa kapalıyken son kapanış gösterilir.',
             style: TextStyle(color: p.text36, fontSize: 11, height: 1.35),
           ),
         ),
       ],
     );
+  }
+
+  /// Banner şu an neden görünmüyor? Kullanıcının okuyabileceği tek cümle.
+  ///
+  /// Hafta sonu kontrolü ÖNCE gelir: cumartesi 14:00'te hem "hafta sonu
+  /// kapalı" hem "saat aralığı dışında" doğru olabilir ama kullanıcının
+  /// düzeltmesi gereken ayar hafta sonu anahtarıdır.
+  static String _whyHidden(int start, int end, bool weekend) {
+    final now = DateTime.now();
+    final isWeekend = now.weekday == DateTime.saturday ||
+        now.weekday == DateTime.sunday;
+
+    if (!weekend && isWeekend) {
+      return 'Şu an görünmüyor: hafta sonu gösterimi kapalı. '
+          'Açmak için yukarıdaki anahtarı kullanın.';
+    }
+    return 'Şu an görünmüyor: saat ${_fmt(start)}–${_fmt(end)} aralığının '
+        'dışındasınız. Banner ${_fmt(start)}\'da görünecek. Hemen görmek '
+        'için "Gün boyu göster"i açın.';
   }
 }
 
