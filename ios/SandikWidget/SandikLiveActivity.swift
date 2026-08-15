@@ -284,7 +284,8 @@ struct SandikLockScreenView: View {
             // Grafik sağda, dikey alanı doldurur.
             SandikSparkline(
                 points: state.sparkline,
-                color: SandikTheme.statusColor(isPositive: state.isPositive)
+                color: SandikTheme.statusColor(isPositive: state.isPositive),
+                isMarketOpen: state.isMarketOpen
             )
             .frame(width: 130, height: 44)
         }
@@ -363,7 +364,8 @@ struct SandikLockScreenView: View {
             if !state.sparkline.isEmpty {
                 SandikSparkline(
                     points: state.sparkline,
-                    color: SandikTheme.statusColor(isPositive: state.isPositive)
+                    color: SandikTheme.statusColor(isPositive: state.isPositive),
+                    isMarketOpen: state.isMarketOpen
                 )
                 .frame(height: 32)
             }
