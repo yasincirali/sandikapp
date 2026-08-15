@@ -51,6 +51,20 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// Son güncelleme — `HH:mm`, ör. `18:04`.
         var updatedAtText: String
 
+        /// Verinin ait olduğu gün — `d MMMM EEEE`, ör. `15 Ağustos Cuma`.
+        ///
+        /// **Neden saat tek başına yetmiyor:** Live Activity kilit ekranında
+        /// saatlerce durur ve gece yarısını geçebilir; sistem oturumu 8 saat
+        /// sonra kapatana kadar içerik ekranda kalır. Yalnızca `18:04` gören
+        /// kullanıcı bunun bugüne mi düne mi ait olduğunu bilemez.
+        ///
+        /// Gün adı dahildir: kullanıcı hafta sonu gösteriminde rakamın neden
+        /// hareketsiz olduğunu tarihten de okuyabilsin.
+        ///
+        /// Eski sürümlerden gelen oturumlar bu alanı taşımaz; bu yüzden
+        /// varsayılanı boştur ve boşken sunum tarafı satırı hiç çizmez.
+        var dateText: String = ""
+
         /// Seansın planlanan bitişi. Kilit ekranında geri sayım göstermek
         /// için değil, "seans sürüyor mu" kararını uzantıda da verebilmek
         /// için taşınır.
@@ -91,4 +105,17 @@ struct SandikActivityAttributes: ActivityAttributes {
 
     /// Seans etiketi — ör. `BIST Seansı`. Oturum boyunca sabittir.
     var sessionName: String
+}
+
+@available(iOS 17.0, *)
+extension SandikActivityAttributes.ContentState {
+    /// Günlük değişim gerçekten hesaplanabildi mi?
+    ///
+    /// Gün içi seri çekilemediğinde Dart tarafı uydurma bir rakam yerine
+    /// `"—"` gönderir (bkz. `LiveActivityService._todayChange`). Sunum
+    /// tarafı bunu bilmezse `▲ +—` gibi anlamsız bir dizi basar ve yeşil
+    /// renk "kazanç var" yanılgısı yaratır.
+    var hasChangeData: Bool {
+        changePctText != "—" && !changePctText.isEmpty
+    }
 }

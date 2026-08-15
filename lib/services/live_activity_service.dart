@@ -100,6 +100,15 @@ class LiveActivityService {
   List<double>? _sparkline;
   DateTime? _sparklineAt;
 
+  /// Gün içi serinin HAM (TRY) uçları — günlük kâr/zarar bunlardan çıkar.
+  ///
+  /// Normalize seri (0…1) yalnızca şekli taşır; tutar hesabı için ham
+  /// değerler gerekir. Sparkline ile AYNI çağrıdan doldurulur ki grafik
+  /// ile rakam asla ayrışmasın: kullanıcı çizginin başladığı ve bittiği
+  /// yeri görüp aradaki farkı rakamda okur.
+  double? _dayOpenTRY;
+  double? _dayLastTRY;
+
   /// Sparkline en sık bu aralıkta tazelenir.
   ///
   /// 5 dakika, push döngüsünün (`0033_live_activity_cron.sql`) periyoduyla
@@ -149,6 +158,8 @@ class LiveActivityService {
     _lastSummaryKey = null;
     _sparkline = null;
     _sparklineAt = null;
+    _dayOpenTRY = null;
+    _dayLastTRY = null;
     // Pencere ayarları da sıfırlanır: singleton olduğu için bir testin
     // seçtiği saat aralığı sonrakine taşar ve sessizce yanlış sonuç verir.
     startMinute = defaultStartMinute;
@@ -222,6 +233,11 @@ class LiveActivityService {
             'changePctText': payload['changePctText'],
             'isPositive': payload['isPositive'],
             'sparkline': payload['sparkline'],
+            // `dateText` BURAYA yazılmaz: push anında sunucu kendi
+            // üretir. İstemcinin yazdığı tarih gece yarısını geçen bir
+            // oturumda eskimiş olur ve kilit ekranı dünün tarihini
+            // gösterirdi — `updatedAtText` ile aynı gerekçe.
+            'isMarketOpen': payload['isMarketOpen'],
           },
           'show_amounts': showAmountsOnLockScreen,
           'updated_at': DateTime.now().toIso8601String(),
@@ -250,18 +266,79 @@ class LiveActivityService {
         _sparklineAt = now;
         final series = await HistoryService.instance
             .getPortfolioHistoryHourly(state.activeAssets, 24);
-        _sparkline = _normalize(series);
+        // Ham uçlar da BURADA saklanır: grafik ile günlük kâr/zarar
+        // rakamı aynı seriden çıksın, iki kaynak ayrışmasın.
+        final values = _dayValues(series, now, state.totalValue);
+        _dayOpenTRY = values.isEmpty ? null : values.first;
+        _sparkline = _normalize(values);
       } catch (e) {
         if (kDebugMode) debugPrint('Sparkline çekilemedi: $e');
       }
     }
+
+    // Serinin UCU her senkronda canlı toplama oturur — seri 5 dakikada
+    // bir tazelense de günlük rakam fiyat tick'iyle birlikte hareket
+    // etmeli. Aksi halde kilit ekranı 5 dakikalık basamaklarla güncellenir
+    // ve uygulama ile kilit ekranı aynı anda farklı rakam gösterir.
+    if (_dayOpenTRY != null && state.totalValue > 0) {
+      _dayLastTRY = state.totalValue;
+    }
+
     return _sparkline ?? const [];
   }
 
-  static List<double> _normalize(Map<int, double> series) {
-    if (series.length < 2) return const [];
+  /// Gün içi seriyi uygulamanın GÜNLÜK grafiğiyle birebir aynı kurallarla
+  /// ham (TRY) değer listesine indirger.
+  ///
+  /// Kurallar `portfolio_performance_screen._convertHistoryToSegments`
+  /// (intraday dalı) ile aynıdır ve aynı olmak ZORUNDADIR — kilit ekranıyla
+  /// uygulama farklı bir çizgi gösterirse kullanıcı hangisine güveneceğini
+  /// bilemez:
+  ///   1. Gelecekteki slotlar atılır (`ts > now`). Kaynak 24 saatlik grid
+  ///      üretir; günün geri kalanı henüz olmamıştır.
+  ///   2. `y <= 0` slotlar atlanır — borsa açılmadan önceki boş slotlar.
+  ///      Bunlar bırakılırsa normalize edilen aralık 0'dan başlar ve
+  ///      gerçek gün içi hareket düz bir çizgiye ezilir. (Kilit ekranındaki
+  ///      grafiğin "hep aynı" görünmesinin sebebi buydu.)
+  ///   3. Son nokta canlı toplama sabitlenir — grafiğin ucu her zaman
+  ///      "şu andaki portföy değeri" olmalı.
+  @visibleForTesting
+  static List<double> dayValues(
+    Map<int, double> series,
+    DateTime now,
+    double currentTotal,
+  ) =>
+      _dayValues(series, now, currentTotal);
+
+  static List<double> _dayValues(
+    Map<int, double> series,
+    DateTime now,
+    double currentTotal,
+  ) {
+    if (series.isEmpty) return const [];
+    final nowMs = now.millisecondsSinceEpoch;
     final keys = series.keys.toList()..sort();
-    final values = [for (final k in keys) series[k]!];
+
+    final values = <double>[];
+    for (final k in keys) {
+      if (k > nowMs) break;
+      final v = series[k]!;
+      if (v <= 0) continue;
+      values.add(v);
+    }
+    if (values.isEmpty) return const [];
+
+    // Grafiğin ucu canlı toplama oturur. Ekrandaki grafik bunu
+    // `currentTotalOverride` ile yapıyor; burada da aynısı yapılmazsa
+    // kilit ekranı son 5 dakikalık slotta donmuş görünür.
+    if (currentTotal > 0) values[values.length - 1] = currentTotal;
+
+    return values;
+  }
+
+  /// Ham TRY serisini 0…1 aralığına indirger — bkz. gizlilik notu.
+  static List<double> _normalize(List<double> values) {
+    if (values.length < 2) return const [];
 
     final minV = values.reduce((a, b) => a < b ? a : b);
     final maxV = values.reduce((a, b) => a > b ? a : b);
@@ -428,6 +505,26 @@ class LiveActivityService {
     }
   }
 
+  /// Bugünün kâr/zararı — tutar (TRY) ve oran (%).
+  ///
+  /// **Neden `state.gainLoss` DEĞİL:** o alan varlığın alındığı günden
+  /// bugüne TÜM getiridir (temettü dahil). Kilit ekranındaki etiketler
+  /// "Bugün" / "Bugünkü Net Kazanç" / "Günlük" diyor; oraya ömürlük
+  /// getiriyi basmak doğrudan yanlış bilgidir — kullanıcı %40'lık toplam
+  /// kazancı günlük hareket sanır.
+  ///
+  /// Gün içi serinin ilk ve son noktası kullanılır; uygulamanın "Bugünkü
+  /// değişim" kartıyla ([_buildPeriodChangeCard]) aynı mantık: son − ilk.
+  /// Seri yoksa (veri çekilemedi) `null` döner ve çağıran taraf yüzeyi
+  /// uydurma rakamla doldurmaz.
+  ({double amount, double pct})? _todayChange() {
+    final open = _dayOpenTRY;
+    final last = _dayLastTRY;
+    if (open == null || last == null || open <= 0) return null;
+    final amount = last - open;
+    return (amount: amount, pct: amount / open * 100);
+  }
+
   /// Kilit ekranına gidecek özet. Gizlilik kuralı burada uygulanır.
   Map<String, dynamic> _payload(
     PortfolioState state, {
@@ -435,9 +532,16 @@ class LiveActivityService {
     required DateTime now,
     List<double> sparkline = const [],
   }) {
-    final isPos = state.gainLoss >= 0;
+    final today = _todayChange();
+    // Gün içi seri yoksa yön bilgisi de yok — nötr (pozitif) varsayılır,
+    // aşağıda tutar/oran zaten "—" olarak gider.
+    final isPos = (today?.amount ?? 0) >= 0;
     final endsAt = sessionEnd(now);
     final updatedAt = DateFormat('HH:mm', 'tr_TR').format(now);
+    // Tarih kilit ekranında AÇIKÇA yazılır. Live Activity saatlerce
+    // durabilir ve gece yarısını geçebilir; yalnızca "14:32" gören
+    // kullanıcı hangi güne ait olduğunu bilemez.
+    final dateText = DateFormat('d MMMM EEEE', 'tr_TR').format(now);
 
     if (hideBalance) {
       // Tutar HİÇ üretilmez — maskelenmiş metin bile gerçek rakamı
@@ -450,6 +554,7 @@ class LiveActivityService {
         'isPositive': true,
         'isHidden': true,
         'updatedAtText': updatedAt,
+        'dateText': dateText,
         'sessionEndsAtMs': endsAt.millisecondsSinceEpoch,
         'sparkline': const <double>[],
         'showAmounts': false,
@@ -461,12 +566,17 @@ class LiveActivityService {
       // Türkçe biçim TEK yerde üretilir (tr_format) ve hazır metin olarak
       // gider; Swift tarafında ikinci bir biçimlendirici tutulmaz.
       'totalText': fmtTRY(state.totalValue, digits: 2),
-      'changeText':
-          '${isPos ? '+' : '-'}${fmtTRY(state.gainLoss.abs(), digits: 2)}',
-      'changePctText': fmtPct(state.gainLossPercentage.abs(), digits: 2),
+      // GÜNLÜK değişim — ömürlük getiri değil. Seri yoksa uydurma rakam
+      // yerine "—" gider; kilit ekranında yanlış sayı, sayısızlıktan kötü.
+      'changeText': today == null
+          ? '—'
+          : '${isPos ? '+' : '-'}${fmtTRY(today.amount.abs(), digits: 2)}',
+      'changePctText':
+          today == null ? '—' : fmtPct(today.pct.abs(), digits: 2),
       'isPositive': isPos,
       'isHidden': false,
       'updatedAtText': updatedAt,
+      'dateText': dateText,
       'sessionEndsAtMs': endsAt.millisecondsSinceEpoch,
       // Normalize (0…1) — ham tutar taşımaz, yalnızca günün şekli.
       'sparkline': sparkline,

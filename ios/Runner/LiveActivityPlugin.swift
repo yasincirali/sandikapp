@@ -272,6 +272,9 @@ enum LiveActivityChannel {
             isPositive: isPositive,
             isHidden: args["isHidden"] as? Bool ?? false,
             updatedAtText: updatedAt,
+            // Zorunlu DEĞİL: alan yoksa (eski Dart tarafı) tarih satırı
+            // hiç çizilmez, oturum yine de açılır.
+            dateText: args["dateText"] as? String ?? "",
             sessionEndsAt: endsAt,
             sparkline: spark.count >= 2 ? spark : [],
             // Varsayılan KAPALI: bayrak eksikse tutar gösterilmez.

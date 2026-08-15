@@ -32,9 +32,20 @@ struct SandikLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 7) {
                         SandikLogoMark(width: 22)
-                        Text("sandık")
-                            .font(.sandikLabel(15, weight: .semibold))
-                            .foregroundStyle(SandikTheme.gold)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("sandık")
+                                .font(.sandikLabel(15, weight: .semibold))
+                                .foregroundStyle(SandikTheme.gold)
+                            // Kilit ekranıyla aynı gerekçe: rakam hangi
+                            // güne ait, expanded görünümde de okunmalı.
+                            if !context.state.dateText.isEmpty {
+                                Text(context.state.dateText)
+                                    .font(.sandikLabel(9, weight: .medium))
+                                    .foregroundStyle(SandikTheme.text58)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                            }
+                        }
                     }
                     .padding(.leading, 4)
                 }
@@ -164,9 +175,23 @@ struct SandikLockScreenView: View {
             HStack(spacing: 8) {
                 SandikLogoMark(width: 24)
 
-                Text("Sandık")
-                    .font(.sandikLabel(15, weight: .semibold))
-                    .foregroundStyle(SandikTheme.text90)
+                // Marka adı + tarih tek blokta. Tarih ikincil bilgidir ve
+                // alt satıra iner: yüzeyin ana sorusu "bugün ne oldu",
+                // "hangi gün" değil — ama gece yarısını geçen bir oturumda
+                // rakamın hangi güne ait olduğu okunabilmeli.
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Sandık")
+                        .font(.sandikLabel(15, weight: .semibold))
+                        .foregroundStyle(SandikTheme.text90)
+
+                    if !state.dateText.isEmpty {
+                        Text(state.dateText)
+                            .font(.sandikLabel(10, weight: .medium))
+                            .foregroundStyle(SandikTheme.text58)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                }
 
                 Spacer(minLength: 8)
 
@@ -235,15 +260,23 @@ struct SandikLockScreenView: View {
                     .foregroundStyle(SandikTheme.text58)
 
                 HStack(spacing: 5) {
-                    Text(directionArrow(state.isPositive))
-                        .font(.sandikLabel(13, weight: .black))
-                    Text("\(signPrefix(state.isPositive))\(state.changePctText)")
+                    // Veri yoksa ok ve işaret basılmaz: `▲ +—` anlamsızdır
+                    // ve yeşil renk olmayan bir kazancı ima ederdi.
+                    if state.hasChangeData {
+                        Text(directionArrow(state.isPositive))
+                            .font(.sandikLabel(13, weight: .black))
+                    }
+                    Text(state.hasChangeData
+                         ? "\(signPrefix(state.isPositive))\(state.changePctText)"
+                         : "—")
                         .font(.sandikNumber(24, weight: .bold))
                         .tracking(-0.24)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
-                .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+                .foregroundStyle(state.hasChangeData
+                                 ? SandikTheme.statusColor(isPositive: state.isPositive)
+                                 : SandikTheme.text58)
             }
 
             Spacer(minLength: 0)
@@ -285,37 +318,43 @@ struct SandikLockScreenView: View {
 
                 // Sağ: bugünkü net kazanç.
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Bugünkü Net Kazanç")
+                    Text("Bugünkü Değişim")
                         .font(.sandikLabel(11, weight: .medium))
                         .foregroundStyle(SandikTheme.text58)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
 
                     HStack(spacing: 4) {
-                        Text(directionArrow(state.isPositive))
-                            .font(.sandikLabel(11, weight: .black))
+                        if state.hasChangeData {
+                            Text(directionArrow(state.isPositive))
+                                .font(.sandikLabel(11, weight: .black))
+                        }
                         Text(state.changeText)
                             .font(.sandikNumber(17, weight: .bold))
                             .tracking(-0.17)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
-                    .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+                    .foregroundStyle(state.hasChangeData
+                                     ? SandikTheme.statusColor(isPositive: state.isPositive)
+                                     : SandikTheme.text58)
 
                     // Yüzde rozeti — durum renginin çok düşük alfalı zemini
                     // üstünde. Amber BURAYA konmaz: brief'e göre amber
                     // yalnızca gerçekten vurgulanacak TEK öğe için.
-                    Text("\(signPrefix(state.isPositive))\(state.changePctText) Günlük")
-                        .font(.sandikNumber(10, weight: .semibold))
-                        .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(
-                            RoundedRectangle(cornerRadius: SandikTheme.radiusSm, style: .continuous)
-                                .fill(SandikTheme.statusColor(isPositive: state.isPositive)
-                                    .opacity(0.14))
-                        )
-                        .padding(.top, 1)
+                    if state.hasChangeData {
+                        Text("\(signPrefix(state.isPositive))\(state.changePctText) Günlük")
+                            .font(.sandikNumber(10, weight: .semibold))
+                            .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(
+                                RoundedRectangle(cornerRadius: SandikTheme.radiusSm, style: .continuous)
+                                    .fill(SandikTheme.statusColor(isPositive: state.isPositive)
+                                        .opacity(0.14))
+                            )
+                            .padding(.top, 1)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -343,16 +382,19 @@ struct SandikLockScreenView: View {
             return "Sandık. Bakiye gizli."
         }
         let yon = state.isPositive ? "artış" : "düşüş"
+        // Tarih okumanın BAŞINA girer: ekran okuyucu kullanıcısı yüzeye
+        // baktığında ilk duyması gereken şey verinin hangi güne ait olduğu.
+        let gun = state.dateText.isEmpty ? "" : "\(state.dateText). "
 
         // Tutar gizliyken sesli okuma da tutarı SÖYLEMEZ. Aksi halde
         // ekranda gizlenen rakam VoiceOver'dan duyulurdu — kilit
         // ekranında bu, gizlemenin tamamen anlamsızlaşması demek.
         guard state.showAmounts else {
-            return "Sandık. Bugün yüzde \(state.changePctText) \(yon). "
+            return "Sandık. \(gun)Bugün yüzde \(state.changePctText) \(yon). "
                 + "Son güncelleme \(state.updatedAtText)."
         }
 
-        return "Sandık. Toplam portföy \(state.totalText). "
+        return "Sandık. \(gun)Toplam portföy \(state.totalText). "
             + "Bugün \(state.changeText), yüzde \(state.changePctText) \(yon). "
             + "Son güncelleme \(state.updatedAtText)."
     }

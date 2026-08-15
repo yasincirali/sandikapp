@@ -413,7 +413,7 @@ void main() {
   });
 
   group('biçimlendirme', () {
-    test('Türkçe para ve yüzde biçimi kullanılır', () async {
+    test('Türkçe para biçimi kullanılır', () async {
       await LiveActivityService.instance
           .sync(_state(), hideBalance: false, now: _duringSession);
 
@@ -421,13 +421,27 @@ void main() {
       // 100 × 300 = 30.000 TL → binlik ayracı nokta, ondalık virgül.
       expect(args['totalText'], contains('₺'));
       expect(args['totalText'], contains('30.000'));
-      expect(args['changePctText'], startsWith('%'));
-      // Kâr: +₺10.000,00
-      expect(args['changeText'], startsWith('+'));
-      expect(args['isPositive'], isTrue);
       expect(args['isHidden'], isFalse);
       // Saat HH:mm.
       expect(args['updatedAtText'], matches(RegExp(r'^\d{2}:\d{2}$')));
+    });
+
+    test('tarih gönderilir — gün adı dahil', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+
+      // Live Activity gece yarısını geçebilir; yalnızca saat gören
+      // kullanıcı rakamın hangi güne ait olduğunu bilemez.
+      expect(channel.calls.first.args['dateText'], '11 Ağustos Salı');
+    });
+
+    test('bakiye gizliyken de tarih gönderilir', () async {
+      // Tarih portföy bilgisi DEĞİLDİR — gizlemek için sebep yok, ve
+      // olmadan kilit ekranı "hangi güne bakıyorum" sorusunu yanıtlayamaz.
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: true, now: _duringSession);
+
+      expect(channel.calls.first.args['dateText'], '11 Ağustos Salı');
     });
 
     test('seans bitişi staleDate olarak gönderilir', () async {
@@ -437,6 +451,148 @@ void main() {
       expect(
         channel.calls.first.args['sessionEndsAtMs'],
         DateTime(2026, 8, 11, 18, 10).millisecondsSinceEpoch,
+      );
+    });
+  });
+
+  group('günlük kâr/zarar', () {
+    // Kilit ekranındaki etiketler "Bugün" / "Bugünkü Değişim" / "Günlük"
+    // diyor. Oraya `state.gainLoss` (varlığın alındığı GÜNDEN BUGÜNE tüm
+    // getiri, temettü dahil) basılıyordu — kullanıcı %40'lık ömürlük
+    // kazancı günlük hareket sanıyordu.
+
+    test('ömürlük getiri günlük diye gösterilmez', () async {
+      // Portföy: 100 × 300 = 30.000 TL değer, maliyet 20.000 → ömürlük
+      // kâr 10.000 TL (%50). Bu rakam ESKİDEN kilit ekranına "Bugünkü Net
+      // Kazanç" olarak basılıyordu.
+      //
+      // Testte ağ yok; gün içi seri her slotta seed fiyata (currentPrice)
+      // düşer, yani gün DÜMDÜZ geçmiş sayılır → günlük değişim 0.
+      // Uygulamanın "Bugünkü değişim" kartı da bu durumda "Değişim yok"
+      // diyor; kilit ekranı da aynı şeyi söylemeli.
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+
+      // Ömürlük kâr hiçbir alanda geçmemeli.
+      for (final text in channel.allText) {
+        expect(text, isNot(contains('10.000')),
+            reason: 'ömürlük getiri günlük diye gösterilemez');
+        expect(text, isNot(contains('%50')));
+      }
+
+      final args = channel.calls.first.args;
+      expect(args['changePctText'], '%0,00',
+          reason: 'düz gün → sıfır değişim');
+    });
+
+    test('gün içi seri HİÇ yoksa uydurma rakam gitmez', () async {
+      // Varlığın `currentPrice`'ı da yoksa seed üretilemez → seri boş.
+      // Bu durumda ömürlük getiriye düşmek yanlış bilgi olurdu; "—" gider.
+      final noPrice = PortfolioState(
+        assets: [
+          Asset(
+            id: 'a1',
+            userId: 'u1',
+            name: 'Fiyatsız',
+            ticker: 'YOK',
+            type: AssetType.hisse,
+            quantity: 100,
+            purchasePrice: 200,
+            currency: 'TRY',
+            notes: '',
+            isManualPrice: false,
+            currentPrice: 0,
+            addedDate: DateTime(2026, 1, 1),
+            kind: AssetKind.buy,
+          ),
+        ],
+        usdTry: 42.0,
+        eurTry: 46.0,
+        gbpTry: 54.0,
+      );
+
+      await LiveActivityService.instance
+          .sync(noPrice, hideBalance: false, now: _duringSession);
+
+      final args = channel.calls.first.args;
+      expect(args['changeText'], '—');
+      expect(args['changePctText'], '—');
+    });
+
+    test('değişim gün içi serinin İLK ve SON noktasından çıkar', () {
+      // Uygulamanın "Bugünkü değişim" kartıyla aynı mantık: son − ilk.
+      final base = DateTime(2026, 8, 11, 10).millisecondsSinceEpoch;
+      final series = {
+        for (var i = 0; i < 5; i++) base + i * 5 * 60 * 1000: 1000.0 + i * 50,
+      };
+
+      final values = LiveActivityService.dayValues(
+          series, DateTime(2026, 8, 11, 14, 30), 0);
+
+      expect(values.first, 1000.0);
+      expect(values.last, 1200.0);
+    });
+  });
+
+  group('grafik — günlük grafikle aynı kurallar', () {
+    // Kilit ekranındaki sparkline ile uygulamadaki GÜNLÜK grafik aynı
+    // seriden ve aynı kurallarla çıkmalı; ayrışırlarsa kullanıcı hangisine
+    // güveneceğini bilemez.
+
+    final base = DateTime(2026, 8, 11, 0).millisecondsSinceEpoch;
+    int slot(int i) => base + i * 5 * 60 * 1000;
+
+    test('sıfır değerli slotlar atlanır', () {
+      // Borsa açılmadan önceki boş slotlar. Bırakılırsa normalize aralık
+      // 0'dan başlar ve gerçek gün içi hareket düz çizgiye ezilirdi —
+      // grafiğin "hep aynı" görünmesinin sebebi buydu.
+      final series = {
+        slot(0): 0.0,
+        slot(1): 0.0,
+        slot(2): 1000.0,
+        slot(3): 1100.0,
+      };
+
+      final values = LiveActivityService.dayValues(
+          series, DateTime(2026, 8, 11, 14, 30), 0);
+
+      expect(values, [1000.0, 1100.0]);
+    });
+
+    test('gelecekteki slotlar kırpılır', () {
+      // Kaynak 24 saatlik grid üretir; günün geri kalanı henüz olmamıştır.
+      final series = {
+        slot(120): 1000.0, // 10:00
+        slot(121): 1050.0, // 10:05
+        slot(200): 9999.0, // 16:40 — "şimdi"den sonra
+      };
+
+      final values = LiveActivityService.dayValues(
+          series, DateTime(2026, 8, 11, 10, 7), 0);
+
+      expect(values, [1000.0, 1050.0],
+          reason: 'olmamış bir saatin değeri grafiğe girmemeli');
+    });
+
+    test('son nokta canlı toplama sabitlenir', () {
+      // Ekrandaki grafik bunu `currentTotalOverride` ile yapıyor; burada
+      // yapılmazsa kilit ekranı son 5 dakikalık slotta donmuş görünür.
+      final series = {slot(120): 1000.0, slot(121): 1050.0};
+
+      final values = LiveActivityService.dayValues(
+          series, DateTime(2026, 8, 11, 10, 7), 1234.0);
+
+      expect(values.last, 1234.0);
+    });
+
+    test('hiç geçerli nokta yoksa boş döner', () {
+      final series = {slot(0): 0.0, slot(1): 0.0};
+
+      expect(
+        LiveActivityService.dayValues(
+            series, DateTime(2026, 8, 11, 14, 30), 0),
+        isEmpty,
+        reason: 'tek/hiç noktalı "çizgi" yanıltıcı olurdu',
       );
     });
   });

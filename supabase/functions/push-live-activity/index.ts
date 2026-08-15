@@ -82,6 +82,33 @@ function b64url(bytes: Uint8Array): string {
     .replace(/=+$/, '');
 }
 
+/// BIST işlem saatleri içinde miyiz? (Istanbul saatiyle 10:00–18:10, hafta içi)
+///
+/// `LiveActivityService.isMarketOpen` ile AYNI kuraldır ve aynı kalmalıdır:
+/// uygulama önplandayken istemci, kapalıyken sunucu karar verir; ikisi
+/// ayrışırsa aynı anda "Canlı" ve "Piyasa kapalı" gösterilebilir.
+///
+/// Resmî tatiller burada da bilinmez — takvim gerektirir ve yanlış bir
+/// tatil listesi listesizlikten kötüdür (bkz. TECHNICAL_DEBT.md).
+function isBistOpen(now = new Date()): boolean {
+  // `en-GB` + `Europe/Istanbul`: DST'yi runtime çözsün, elle ofset
+  // eklemek yaz saati uygulamasında sessizce bir saat kaydırırdı.
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Istanbul',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+  const weekday = get('weekday');
+  if (weekday === 'Sat' || weekday === 'Sun') return false;
+
+  const mins = Number(get('hour')) * 60 + Number(get('minute'));
+  return mins >= 10 * 60 && mins < 18 * 60 + 10;
+}
+
 /// Tek bir oturuma güncelleme gönderir.
 ///
 /// Dönen değer: `'ok'` | `'gone'` (token ölü, satır silinmeli) | `'error'`.
@@ -211,9 +238,23 @@ Deno.serve(async (request) => {
         minute: '2-digit',
         timeZone: 'Europe/Istanbul',
       }),
+      // Tarih de SUNUCUDA üretilir, `updatedAtText` ile aynı gerekçeyle:
+      // oturum gece yarısını geçebilir ve istemcinin yazdığı tarih o anda
+      // dünü gösterirdi. Gün adı dahil — "15 Ağustos Cuma".
+      dateText: new Date().toLocaleDateString('tr-TR', {
+        day: 'numeric',
+        month: 'long',
+        weekday: 'long',
+        timeZone: 'Europe/Istanbul',
+      }),
       sessionEndsAt: Math.floor(new Date(s.expires_at).getTime() / 1000),
       sparkline: Array.isArray(row.sparkline) ? row.sparkline : [],
       showAmounts,
+      // Piyasa durumu da push anına göre hesaplanır. Bu alan hiç
+      // gönderilmediği için istemci varsayılanı ("açık") devreye giriyordu
+      // ve gece yarısı push'lanan banner "Canlı" diyordu — donuk rakamla
+      // birlikte doğrudan yanlış bilgi.
+      isMarketOpen: isBistOpen(),
     };
 
     const result = await pushToSession(
