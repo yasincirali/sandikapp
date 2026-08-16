@@ -119,15 +119,80 @@ void main() {
   });
 
   group('bakiye görünürken', () {
-    test('toplam ve değişim yazılır', () async {
+    test('toplam yazılır', () async {
       await HomeWidgetService.instance
           .update(_stateWithValue(), hideBalance: false);
 
       expect(channel.saved['sandik_total'], contains('₺'));
       expect(channel.saved['sandik_has_data'], isTrue);
-      // 100 × (300-200) = +₺10.000, maliyet ₺20.000 → %50
-      expect(channel.saved['sandik_change'], contains('+'));
+      // 100 × ₺300 = ₺30.000 net varlık.
+      expect(channel.saved['sandik_total'], contains('30.000'));
+    });
+
+    test('gün içi seri YOKKEN değişim uydurulmaz', () async {
+      // Widget GÜNLÜK değişim gösterir. Seri olmadan günlük ölçüm
+      // yapılamaz ve rakam uydurulmaz.
+      //
+      // Eskiden burada `state.gainLoss` yazılıyordu — yani ÖMÜRLÜK getiri
+      // (100 × (300−200) = +₺10.000, %50) "bugün" diye gösteriliyordu.
+      // Kullanıcı %50'lik toplam kazancı günlük hareket sanıyordu.
+      await HomeWidgetService.instance
+          .update(_stateWithValue(), hideBalance: false);
+
+      expect(channel.saved['sandik_change'], '—');
+      expect(channel.saved['sandik_change'], isNot(contains('10.000')),
+          reason: 'ömürlük getiri "bugün" diye gösterilemez');
+    });
+
+    test('gün içi seri VARKEN günlük değişim yazılır', () async {
+      // Gün başı ₺28.000 → şimdi ₺30.000 (canlı toplam uca sabitlenir).
+      // Bugün alım yok, dolayısıyla net akış sıfır: değişim +₺2.000.
+      // Slotlar GEÇMİŞTE olmalı: `dayValues` gelecekteki slotları atar
+      // (kaynak 24 saatlik grid üretir, günün geri kalanı henüz olmamıştır).
+      final now = DateTime.now();
+      final series = {
+        now.subtract(const Duration(minutes: 20)).millisecondsSinceEpoch:
+            28000.0,
+        now.subtract(const Duration(minutes: 2)).millisecondsSinceEpoch:
+            29000.0,
+      };
+
+      await HomeWidgetService.instance.update(
+        _stateWithValue(),
+        hideBalance: false,
+        intraday: series,
+      );
+
+      final change = channel.saved['sandik_change'] as String;
+      expect(change, contains('+'));
+      expect(change, contains('2.000'),
+          reason: '30.000 − 28.000 = +₺2.000 günlük');
       expect(channel.saved['sandik_is_positive'], isTrue);
+
+      // Yüzde AYRI alana yazılır — kilit ekranındaki rozet düzeniyle
+      // aynı. Tek metinde birleştirmek iki yüzeyi ayrıştırıyordu.
+      final pct = channel.saved['sandik_change_pct'] as String;
+      expect(pct, contains('%'));
+      expect(pct, contains('Günlük'));
+      expect(change, isNot(contains('%')),
+          reason: 'yüzde tutar alanına girmemeli');
+    });
+
+    test('tarih ve piyasa durumu yazılır', () async {
+      await HomeWidgetService.instance
+          .update(_stateWithValue(), hideBalance: false);
+
+      // Tarih kilit ekranıyla aynı biçimde: "16 Ağustos Pazar".
+      final date = channel.saved['sandik_date'] as String;
+      expect(date, isNotEmpty);
+      // `\w` Türkçe harfleri kapsamaz (ğ, ü, ş, ı, ö, ç) — harf sınıfı
+      // açıkça yazılır, aksi halde doğru çıktı testi kırar.
+      expect(date, matches(RegExp(r'^\d{1,2} [A-Za-zÇĞİÖŞÜçğıöşü]+ '
+          r'[A-Za-zÇĞİÖŞÜçğıöşü]+$')),
+          reason: 'd MMMM EEEE biçimi — kilit ekranıyla aynı');
+
+      // Piyasa durumu canlılık noktasının rengini sürer.
+      expect(channel.saved['sandik_market_open'], isA<bool>());
     });
 
     test('widget yenileme sinyali gönderilir', () async {

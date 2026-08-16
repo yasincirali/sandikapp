@@ -53,6 +53,35 @@ String fmtTRYCompact(double value) {
   return '$sign₺${fmtNum(abs, digits: 0)}';
 }
 
+/// Grafik ekseni için tutar etiketi — iki sınır AYIRT EDİLEBİLİR olmalı.
+///
+/// [fmtTRYCompact] tek başına yetmiyor: milyonu iki ondalıkla kısaltıyor
+/// ve dar bir bantta iki sınır da aynı metne düşüyor (`₺2,49M` / `₺2,49M`).
+/// Böyle bir eksen "hangi aralıkta gezindi" sorusunu yanıtlamaz.
+///
+/// [span] eksenin toplam genişliğidir; ondalık sayısı ona göre seçilir:
+/// bant ne kadar darsa o kadar çok basamak gerekir. Üst sınır olarak 4
+/// ondalık: daha fazlası dar bir eksende okunmaz.
+String fmtTRYAxis(double value, double span) {
+  final abs = value.abs();
+  final sign = value < 0 ? '-' : '';
+
+  if (abs >= 1000000) {
+    final scaled = abs / 1000000;
+    // Bant milyon cinsinden ne kadar dar? 0,01M (10 bin TL) altındaki
+    // farklar iki ondalıkla görünmez olur.
+    final spanM = span / 1000000;
+    final digits = spanM >= 0.02 ? 2 : (spanM >= 0.002 ? 3 : 4);
+    return '$sign₺${fmtNum(scaled, digits: digits)}M';
+  }
+  if (abs >= 1000) {
+    final spanK = span / 1000;
+    final digits = spanK >= 0.2 ? 1 : 2;
+    return '$sign₺${fmtNum(abs / 1000, digits: digits)}K';
+  }
+  return '$sign₺${fmtNum(abs, digits: span < 10 ? 2 : 0)}';
+}
+
 /// Kullanıcının yazdığı sayıyı Türkçe biçime göre çözer.
 ///
 /// **Neden gerekli:** kod tabanında dört ayrı yerde

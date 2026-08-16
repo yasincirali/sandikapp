@@ -9,7 +9,7 @@ import '../providers/portfolio_provider.dart';
 import '../utils/tr_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'history_service.dart';
+import 'daily_summary.dart';
 
 /// iOS Live Activity — kilit ekranı + Dynamic Island "piyasa seansı" yüzeyi.
 ///
@@ -54,12 +54,27 @@ class LiveActivityService {
   ///     gün içinde yapılan alım "kâr" gibi görünüyordu.
   ///   * **v3** — nakit akışından arındırılmış günlük değişim;
   ///     uygulamanın "Bugünkü değişim" kartıyla birebir aynı formül.
+  ///   * **v4** — toplam ve günlük hesabın canlı ucu artık sahip kapsamlı
+  ///     aggregate'ten (`ownerScopedTotalValue`) okunur. v3'e kadar ham
+  ///     `state.totalValue` kullanılıyordu: `Asset.totalValue` işaretsiz
+  ///     olduğu için satış lot'ları düşülmek yerine EKLENİYORDU. Serinin
+  ///     diğer ucu (`HistoryService`) satışı `-quantity` sayıyordu, yani
+  ///     farkın iki ucu zıt işaret kuralı kullanıyordu — satış yapmış her
+  ///     kullanıcıda tutar, yüzde ve grafik birlikte yanlıştı.
+  ///   * **v5** — grafiğe tutar ekseni eklendi (`axisMinText`/`axisMaxText`)
+  ///     ve düz seri tespiti GÖRELİ eşiğe geçti. v4'e kadar mutlak `1e-9`
+  ///     kullanılıyordu: 2,5 milyonluk portföyde 5 kuruşluk fark "hareket"
+  ///     sayılıp 0…1 aralığının tamamına yayılıyor, düz bir günde grafiğin
+  ///     ucu tepeden dibe iniyordu.
+  ///   * **v6** — `isFlatChange` AÇIK alan olarak taşınır. v5'e kadar
+  ///     uzantı bunu metinden çıkarıyordu (`changePctText == "%0,00"`);
+  ///     biçimlendirme değişse çıkarım sessizce bozulurdu.
   ///
   /// Sunucu damgasız ya da eski damgalı satırı push ETMEZ: aksi halde
   /// uygulaması güncellenmiş bir kullanıcı, DB'de duran eski özet
   /// yüzünden kilit ekranında yanlış rakamı görmeye devam eder. Anlamı
   /// değişen her alanda bu sayı ARTIRILMALIDIR.
-  static const summarySchemaVersion = 3;
+  static const summarySchemaVersion = 6;
 
   /// Kullanıcıya görünen seans adı.
   static const _sessionName = 'Piyasa Seansı';
@@ -67,14 +82,6 @@ class LiveActivityService {
   /// Varsayılan pencere — BIST işlem saatleri (dakika cinsinden).
   static const defaultStartMinute = 10 * 60; // 10:00
   static const defaultEndMinute = 18 * 60 + 10; // 18:10
-
-  /// BIST piyasa saatleri — "Piyasa kapalı" etiketi bu aralığa bakar.
-  ///
-  /// Kullanıcının seçtiği GÖSTERİM penceresinden ayrıdır: kullanıcı
-  /// 7/24 gösterim seçse bile gece fiyat değişmez ve banner bunu
-  /// söylemelidir, yoksa donuk rakam "bozuk" gibi görünür.
-  static const _marketOpenMinute = 10 * 60;
-  static const _marketCloseMinute = 18 * 60 + 10;
 
   /// Apple'ın Live Activity oturum limiti.
   ///
@@ -112,34 +119,12 @@ class LiveActivityService {
   /// yazmamak için tutulur (her fiyat tick'inde DB turu atmak israf).
   String? _lastSummaryKey;
 
-  /// Gün içi seri — sparkline için. `updateWithChart` deseniyle aynı
-  /// gerekçe: her tick'te ağ turu atmak pahalı, seri önbelleklenir.
-  List<double>? _sparkline;
-  DateTime? _sparklineAt;
-
-  /// Gün içi serinin HAM (TRY) uçları — günlük kâr/zarar bunlardan çıkar.
+  /// Son hesaplanan günlük özet.
   ///
-  /// Normalize seri (0…1) yalnızca şekli taşır; tutar hesabı için ham
-  /// değerler gerekir. Sparkline ile AYNI çağrıdan doldurulur ki grafik
-  /// ile rakam asla ayrışmasın: kullanıcı çizginin başladığı ve bittiği
-  /// yeri görüp aradaki farkı rakamda okur.
-  double? _dayOpenTRY;
-  double? _dayLastTRY;
-
-  /// Bugün portföye giren net nakit (TRY) — alım (+), satış (−).
-  ///
-  /// **Neden gerekli:** ham uçtan uca fark "portföyüm ne kazandı?"
-  /// sorusunun cevabı DEĞİLDİR; içine bugün yatırdığınız para da girer.
-  /// 170.000 TL'lik bir alım, hiçbir fiyat hareketi olmasa bile kilit
-  /// ekranını "+%6,19 kâr" gösterirdi. Uygulamanın "Bugünkü değişim"
-  /// kartı bu tutarı çıkarıyor; kilit ekranı da çıkarmalı.
-  double _dayInflowTRY = 0;
-
-  /// Sparkline en sık bu aralıkta tazelenir.
-  ///
-  /// 5 dakika, push döngüsünün (`0033_live_activity_cron.sql`) periyoduyla
-  /// hizalı: daha sık çekmek push'a yansımayacağı için boşuna olur.
-  static const _sparkMinInterval = Duration(minutes: 5);
+  /// Hesap [DailySummary] içinde yaşar — ana ekran widget'ıyla ORTAK.
+  /// İki yüzey aynı kaynaktan beslenmezse kullanıcı kilit ekranıyla ana
+  /// ekranda farklı rakam görür.
+  DailySummary? _summary;
 
   /// Kilit ekranında tutar gösterilsin mi? (kullanıcı tercihi)
   ///
@@ -182,11 +167,8 @@ class LiveActivityService {
     _sessionActive = false;
     _lastPayloadKey = null;
     _lastSummaryKey = null;
-    _sparkline = null;
-    _sparklineAt = null;
-    _dayOpenTRY = null;
-    _dayLastTRY = null;
-    _dayInflowTRY = 0;
+    _summary = null;
+    IntradaySeriesCache.instance.clear();
     // Pencere ayarları da sıfırlanır: singleton olduğu için bir testin
     // seçtiği saat aralığı sonrakine taşar ve sessizce yanlış sonuç verir.
     startMinute = defaultStartMinute;
@@ -265,6 +247,11 @@ class LiveActivityService {
             // oturumda eskimiş olur ve kilit ekranı dünün tarihini
             // gösterirdi — `updatedAtText` ile aynı gerekçe.
             'isMarketOpen': payload['isMarketOpen'],
+            // Eksen etiketleri de saklanır; sunucu push anında bunları
+            // aynen iletir (gizlilik kapısı orada da uygulanır).
+            'axisMinText': payload['axisMinText'],
+            'axisMaxText': payload['axisMaxText'],
+            'isFlatChange': payload['isFlatChange'],
             // Özetin hangi ANLAM sürümüyle yazıldığı.
             //
             // v1'de `changeText` ÖMÜRLÜK getiriydi; v2'de günlük değişim.
@@ -282,128 +269,87 @@ class LiveActivityService {
     _lastSummaryKey = key;
   }
 
-  /// Gün içi seriyi 0…1 aralığına normalize eder.
+  /// Gün içi özeti tazeler ve kilit ekranı için normalize seriyi döner.
+  ///
+  /// Hesabın kendisi [DailySummary] içinde, ana ekran widget'ıyla ORTAK
+  /// yaşar. Seri de ortak önbellekten ([IntradaySeriesCache]) gelir: iki
+  /// yüzey ayrı ayrı çekseydi farklı anlarda tazelenip aynı anda FARKLI
+  /// rakam gösterirlerdi.
   ///
   /// **Neden normalize:** kilit ekranı telefonu açmadan görülebilir. Ham TL
   /// değerleri göndermek, tutar gizliyken bile portföy büyüklüğünü grafik
   /// ekseninden okunabilir kılardı. Normalize seri yalnızca ŞEKLİ taşır.
-  ///
-  /// Nokta sayısı sınırlanır: kilit ekranındaki grafik ~130pt genişlikte,
-  /// 40'tan fazla nokta görsel olarak ayırt edilemez ve push gövdesini
-  /// (APNs 4KB sınırı) şişirir.
   Future<List<double>> _buildSparkline(PortfolioState state) async {
     final now = DateTime.now();
-    final due = _sparklineAt == null ||
-        now.difference(_sparklineAt!) >= _sparkMinInterval;
-
-    if (due) {
-      try {
-        _sparklineAt = now;
-        final series = await HistoryService.instance
-            .getPortfolioHistoryHourly(state.activeAssets, 24);
-        // Ham uçlar da BURADA saklanır: grafik ile günlük kâr/zarar
-        // rakamı aynı seriden çıksın, iki kaynak ayrışmasın.
-        final values = _dayValues(series, now, state.totalValue);
-        _dayOpenTRY = values.isEmpty ? null : values.first;
-        _dayInflowTRY = _todayInflow(state.assets, now);
-        _sparkline = _normalize(values);
-      } catch (e) {
-        if (kDebugMode) debugPrint('Sparkline çekilemedi: $e');
-      }
-    }
-
-    // Serinin UCU her senkronda canlı toplama oturur — seri 5 dakikada
-    // bir tazelense de günlük rakam fiyat tick'iyle birlikte hareket
-    // etmeli. Aksi halde kilit ekranı 5 dakikalık basamaklarla güncellenir
-    // ve uygulama ile kilit ekranı aynı anda farklı rakam gösterir.
-    if (_dayOpenTRY != null && state.totalValue > 0) {
-      _dayLastTRY = state.totalValue;
-    }
-
-    return _sparkline ?? const [];
+    final series = await IntradaySeriesCache.instance.get(state, now: now);
+    _summary = DailySummary.from(state: state, series: series, now: now);
+    return _normalize(_summary!.sparkline);
   }
 
-  /// Gün içi seriyi uygulamanın GÜNLÜK grafiğiyle birebir aynı kurallarla
-  /// ham (TRY) değer listesine indirger.
+  /// Grafiğin tutar ekseni sınırları — üst ve alt kılavuz etiketi.
   ///
-  /// Kurallar `portfolio_performance_screen._convertHistoryToSegments`
-  /// (intraday dalı) ile aynıdır ve aynı olmak ZORUNDADIR — kilit ekranıyla
-  /// uygulama farklı bir çizgi gösterirse kullanıcı hangisine güveneceğini
-  /// bilemez:
-  ///   1. Gelecekteki slotlar atılır (`ts > now`). Kaynak 24 saatlik grid
-  ///      üretir; günün geri kalanı henüz olmamıştır.
-  ///   2. `y <= 0` slotlar atlanır — borsa açılmadan önceki boş slotlar.
-  ///      Bunlar bırakılırsa normalize edilen aralık 0'dan başlar ve
-  ///      gerçek gün içi hareket düz bir çizgiye ezilir. (Kilit ekranındaki
-  ///      grafiğin "hep aynı" görünmesinin sebebi buydu.)
-  ///   3. Son nokta canlı toplama sabitlenir — grafiğin ucu her zaman
-  ///      "şu andaki portföy değeri" olmalı.
+  /// Ham seriden üretilir ve sınırlar gerçek min/max'ın biraz DIŞINDADIR
+  /// (widget'taki çizimle aynı kural), böylece çizgi kılavuza değmez.
+  ///
+  /// **Gizlilik:** bu iki metin portföy BÜYÜKLÜĞÜNÜ doğrudan ele verir —
+  /// normalize seriyi göndermenin bütün gerekçesi buydu. Bu yüzden yalnızca
+  /// kullanıcı tutar göstermeye açıkça izin verdiyse üretilir; aksi halde
+  /// boş gider ve uzantı ekseni hiç çizmez.
+  ({String min, String max})? _axisBounds() {
+    if (!showAmountsOnLockScreen) return null;
+    final values = _summary?.sparkline ?? const <double>[];
+    if (values.length < 2) return null;
+
+    final rawMin = values.reduce((a, b) => a < b ? a : b);
+    final rawMax = values.reduce((a, b) => a > b ? a : b);
+
+    final double lo;
+    final double hi;
+    if (DailySummary.isVisuallyFlat(values)) {
+      // Düz seride yapay bant — iki etiket aynı rakamı göstermesin.
+      final pad = (rawMax.abs() * 0.001).clamp(1.0, double.infinity);
+      lo = rawMax - pad;
+      hi = rawMax + pad;
+    } else {
+      // Eksen bandına ASGARİ genişlik: portföyün %0,5'i — widget'la AYNI
+      // kural (bkz. `HomeWidgetService._renderSparkline`).
+      //
+      // Yalnızca veriye göre ölçeklenen bir eksen, yatay giden portföyde
+      // minicik dalgalanmayı tuvalin tamamına yayıyor ve rakamla çelişen
+      // bir "çöküş" gösteriyordu.
+      final span = rawMax - rawMin;
+      final minSpan = rawMax.abs() * 0.005;
+      final effective = span < minSpan ? minSpan : span;
+      final mid = (rawMax + rawMin) / 2;
+      final half = effective / 2 * 1.25;
+      lo = mid - half;
+      hi = mid + half;
+    }
+
+    return (min: fmtTRYAxis(lo, hi - lo), max: fmtTRYAxis(hi, hi - lo));
+  }
+
+  /// Kilit ekranı yalnızca kullanıcının KENDİ portföyünü gösterir.
+  /// Hesap ortak katmanda — bkz. [DailySummary.liveTotalTRY].
+  @visibleForTesting
+  static double liveTotalTRY(PortfolioState state) =>
+      DailySummary.liveTotalTRY(state);
+
+  /// Gün içi seriyi uygulamanın GÜNLÜK grafiğiyle aynı kurallarla ham (TRY)
+  /// değer listesine indirger — bkz. [DailySummary.dayValues].
   @visibleForTesting
   static List<double> dayValues(
     Map<int, double> series,
     DateTime now,
     double currentTotal,
   ) =>
-      _dayValues(series, now, currentTotal);
+      DailySummary.dayValues(series, now, currentTotal);
 
-  static List<double> _dayValues(
-    Map<int, double> series,
-    DateTime now,
-    double currentTotal,
-  ) {
-    if (series.isEmpty) return const [];
-    final nowMs = now.millisecondsSinceEpoch;
-    final keys = series.keys.toList()..sort();
-
-    final values = <double>[];
-    for (final k in keys) {
-      if (k > nowMs) break;
-      final v = series[k]!;
-      if (v <= 0) continue;
-      values.add(v);
-    }
-    if (values.isEmpty) return const [];
-
-    // Grafiğin ucu canlı toplama oturur. Ekrandaki grafik bunu
-    // `currentTotalOverride` ile yapıyor; burada da aynısı yapılmazsa
-    // kilit ekranı son 5 dakikalık slotta donmuş görünür.
-    if (currentTotal > 0) values[values.length - 1] = currentTotal;
-
-    return values;
-  }
-
-  /// Bugün eklenen lot'ların net nakit akışı (TRY).
-  ///
-  /// `portfolio_performance_screen._flowOf` ile BİREBİR aynı kural — ve
-  /// aynı kalmalı, yoksa kilit ekranı ile uygulamanın kartı farklı rakam
-  /// gösterir:
-  ///   * alım para GİRİŞİ (+), satışta ele geçen tutar ÇIKIŞ (−);
-  ///   * satışta maliyet değil `sellProceedsTRY` kullanılır — kârla
-  ///     satılan pozisyonda ikisi farklıdır ve fark yanlışlıkla "piyasa
-  ///     etkisi" sayılırdı;
-  ///   * temettü ve silinen lot akışa girmez (`isActive` ikisini de eler).
+  /// Bugün eklenen lot'ların net nakit akışı (TRY) —
+  /// bkz. [DailySummary.todayInflow].
   @visibleForTesting
   static double todayInflow(List<Asset> assets, DateTime now) =>
-      _todayInflow(assets, now);
-
-  static double _todayInflow(List<Asset> assets, DateTime now) {
-    final dayStart = DateTime(now.year, now.month, now.day);
-    final dayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
-
-    var total = 0.0;
-    for (final a in assets) {
-      if (!a.isActive) continue;
-      if (a.addedDate.isBefore(dayStart) || a.addedDate.isAfter(dayEnd)) {
-        continue;
-      }
-      if (a.isBuy) {
-        total += a.totalCostTRY;
-      } else if (a.isSell) {
-        total -= a.sellProceedsTRY;
-      }
-    }
-    return total;
-  }
+      DailySummary.todayInflow(assets, now);
 
   /// Ham TRY serisini 0…1 aralığına indirger — bkz. gizlilik notu.
   static List<double> _normalize(List<double> values) {
@@ -413,8 +359,28 @@ class LiveActivityService {
     final maxV = values.reduce((a, b) => a > b ? a : b);
     final span = (maxV - minV).abs();
 
-    // Düz çizgi (min == max): ortada yatay çiz. Sıfıra bölmeyi de önler.
-    if (span < 1e-9) return List.filled(values.length.clamp(2, 40), 0.5);
+    // Düz çizgi: ortada yatay çiz. Sıfıra bölmeyi de önler.
+    //
+    // Eşik GÖRELİDİR — mutlak `1e-9` büyük portföyde işe yaramıyordu.
+    // Gerçek vaka: ₺2.489.186,40 → ₺2.489.186,35 (5 kuruş). Eşiği aştığı
+    // için "hareket" sayılıyor ve bu 5 kuruş 0…1 aralığının TAMAMINA
+    // yayılıyordu: düz bir günde grafiğin ucu tepeden dibe iniyordu.
+    if (DailySummary.isVisuallyFlat(values)) {
+      return List.filled(values.length.clamp(2, 40), 0.5);
+    }
+
+    // Normalize aralığı EKSENLE aynı olmalı.
+    //
+    // Etiketler `_axisBounds` üzerinden asgari bant (%0,5) kuralını
+    // uyguluyor; çizgi ham min/max'a göre normalize edilirse ikisi
+    // ayrışır: kullanıcı "₺2,48M–₺2,49M" yazan bir eksende tuvali baştan
+    // başa dolduran bir çizgi görür. Aynı kural burada da uygulanır.
+    final minSpan = maxV.abs() * 0.005;
+    final effective = span < minSpan ? minSpan : span;
+    final mid = (maxV + minV) / 2;
+    final lo = mid - effective / 2 * 1.25;
+    final hi = mid + effective / 2 * 1.25;
+    final axisSpan = hi - lo;
 
     // Örnekleme: 40 noktadan fazlasını seyrelt.
     const maxPoints = 40;
@@ -424,10 +390,10 @@ class LiveActivityService {
 
     final out = <double>[];
     for (var i = 0; i < values.length; i += step) {
-      out.add((values[i] - minV) / span);
+      out.add((values[i] - lo) / axisSpan);
     }
     // Son nokta her zaman dahil — grafiğin ucu güncel değeri göstermeli.
-    final lastNorm = (values.last - minV) / span;
+    final lastNorm = (values.last - lo) / axisSpan;
     if (out.isEmpty || (out.last - lastNorm).abs() > 1e-9) out.add(lastNorm);
     return out;
   }
@@ -469,14 +435,10 @@ class LiveActivityService {
   ///
   /// [isWithinWindow]'dan AYRI: kullanıcı 7/24 gösterim seçse bile gece
   /// fiyat değişmez. Banner bunu söylemezse donuk rakam "bozuk" görünür.
+  /// Hesap ORTAK katmanda — ana ekran widget'ı da aynı kuralı kullanır
+  /// (bkz. [DailySummary.isMarketOpen]).
   @visibleForTesting
-  static bool isMarketOpen(DateTime now) {
-    if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
-      return false;
-    }
-    final mins = now.hour * 60 + now.minute;
-    return mins >= _marketOpenMinute && mins < _marketCloseMinute;
-  }
+  static bool isMarketOpen(DateTime now) => DailySummary.isMarketOpen(now);
 
   /// Oturumun bitiş anı — Live Activity'nin `staleDate`'i.
   ///
@@ -605,26 +567,9 @@ class LiveActivityService {
   /// Seri yoksa (veri çekilemedi) `null` döner ve çağıran taraf yüzeyi
   /// uydurma rakamla doldurmaz.
   ({double amount, double pct})? _todayChange() {
-    final open = _dayOpenTRY;
-    final last = _dayLastTRY;
-    if (open == null || last == null || open <= 0) return null;
-
-    // Nakit akışından ARINDIR — uygulamanın kartıyla birebir aynı formül
-    // (`portfolio_performance_screen._buildPeriodChangeCard`).
-    //
-    // Ham uçtan uca fark bugün yatırılan parayı da içerir: kullanıcı sabah
-    // 170.000 TL'lik alım yaptığında hiçbir fiyat hareketi olmasa bile
-    // kilit ekranı "kâr" gösterirdi. Gerçek bir kullanıcıda uygulama
-    // %0,03 derken kilit ekranı %6,19 yazmasının sebebi buydu.
-    final amount = (last - open) - _dayInflowTRY;
-
-    // Yüzde tabanı: gün başı değer + bugün yatırılan para. Yalnızca `open`
-    // kullanmak, gün içinde portföyünü büyüten kullanıcıda yüzdeyi
-    // şişirirdi. (Kartla aynı taban.)
-    final base = open + (_dayInflowTRY > 0 ? _dayInflowTRY : 0);
-    if (base <= 0) return null;
-
-    return (amount: amount, pct: amount / base * 100);
+    final s = _summary;
+    if (s == null || !s.hasChange) return null;
+    return (amount: s.changeTRY!, pct: s.changePct!);
   }
 
   /// Kilit ekranına gidecek özet. Gizlilik kuralı burada uygulanır.
@@ -638,6 +583,9 @@ class LiveActivityService {
     // Gün içi seri yoksa yön bilgisi de yok — nötr (pozitif) varsayılır,
     // aşağıda tutar/oran zaten "—" olarak gider.
     final isPos = (today?.amount ?? 0) >= 0;
+    // Ölçüldü ama sıfır: işaret ve yön sunumdan çıkarılır.
+    final isFlat = _summary?.isFlat ?? false;
+    final axis = _axisBounds();
     final endsAt = sessionEnd(now);
     final updatedAt = DateFormat('HH:mm', 'tr_TR').format(now);
     // Tarih kilit ekranında AÇIKÇA yazılır. Live Activity saatlerce
@@ -661,18 +609,32 @@ class LiveActivityService {
         'sparkline': const <double>[],
         'showAmounts': false,
         'isMarketOpen': isMarketOpen(now),
+        // Eksen etiketi portföy büyüklüğünü ele verir — gizliyken boş.
+        'axisMinText': '',
+        'axisMaxText': '',
+        'isFlatChange': false,
       };
     }
 
     return {
       // Türkçe biçim TEK yerde üretilir (tr_format) ve hazır metin olarak
       // gider; Swift tarafında ikinci bir biçimlendirici tutulmaz.
-      'totalText': fmtTRY(state.totalValue, digits: 2),
+      //
+      // Toplam da `_liveTotalTRY`'den okunur — günlük hesapla AYNI kaynak.
+      // `state.totalValue` işaretsiz ham toplamdır ve satış yapmış
+      // kullanıcıda portföyü olduğundan büyük gösterirdi.
+      'totalText': fmtTRY(DailySummary.liveTotalTRY(state), digits: 2),
       // GÜNLÜK değişim — ömürlük getiri değil. Seri yoksa uydurma rakam
       // yerine "—" gider; kilit ekranında yanlış sayı, sayısızlıktan kötü.
+      //
+      // Ölçüm sıfırsa işaret BASILMAZ: sıfır bir yön taşımaz ve kırmızı
+      // bir `-₺0,00` kullanıcı tarafından kayıp olarak okunur. Ana ekran
+      // widget'ıyla aynı kural (`DailySummary.isFlat`).
       'changeText': today == null
           ? '—'
-          : '${isPos ? '+' : '-'}${fmtTRY(today.amount.abs(), digits: 2)}',
+          : isFlat
+              ? fmtTRY(0, digits: 2)
+              : '${isPos ? '+' : '-'}${fmtTRY(today.amount.abs(), digits: 2)}',
       'changePctText':
           today == null ? '—' : fmtPct(today.pct.abs(), digits: 2),
       'isPositive': isPos,
@@ -687,6 +649,14 @@ class LiveActivityService {
       // neden değişmediğini bilir. Gösterim penceresinden AYRI bir
       // kavram: 7/24 gösterim seçilse bile gece fiyat hareket etmez.
       'isMarketOpen': isMarketOpen(now),
+      // Grafiğin tutar ekseni. Yalnızca tutar gösterimi açıkken dolu
+      // gelir — bkz. [_axisBounds] gizlilik notu.
+      'axisMinText': axis?.min ?? '',
+      'axisMaxText': axis?.max ?? '',
+      // Ölçüldü ama sıfır mı? Sunum tarafı yön/renk basmasın diye AÇIK
+      // gönderilir — metinden ("%0,00") çıkarmak biçim değişince sessizce
+      // bozulurdu.
+      'isFlatChange': isFlat,
     };
   }
 

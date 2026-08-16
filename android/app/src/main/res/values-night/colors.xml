@@ -14,4 +14,11 @@
     <color name="widget_gain">#3DB77F</color>
     <color name="widget_loss">#FF6B52</color>
     <color name="widget_pill_bg">#14FFFFFF</color>
+    <!-- Marka altını — SandikTheme.gold ile birebir aynı. -->
+    <color name="widget_gold">#F5C842</color>
+    <!-- Hairline ayraç — SandikTheme.hairline (beyaz @ %10). -->
+    <color name="widget_hairline">#1AFFFFFF</color>
+    <!-- Logo tonu — marka amber'i (SandikTheme.amber). Her iki modda aynı;
+         amber marka işaretinin rengidir, moda göre değişmez. -->
+    <color name="widget_logo_tint">#F5A623</color>
 </resources>

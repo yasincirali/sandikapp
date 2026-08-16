@@ -15,4 +15,14 @@
     <color name="widget_gain">#0F7A4E</color>
     <color name="widget_loss">#C0341F</color>
     <color name="widget_pill_bg">#1412241E</color>
+    <!-- Marka altını — kilit ekranında toplam tutar bu renkte yazılır
+         (SandikTheme.gold). İki yüzey aynı görünmeli. Light modda gold
+         (#F5C842) beyaz zeminde okunmaz; SandikPalette.light'ın amber
+         metin karşılığı kullanılır. -->
+    <color name="widget_gold">#8A5A00</color>
+    <!-- Hairline ayraç — beyaz @ %10'un light karşılığı. -->
+    <color name="widget_hairline">#1A12241E</color>
+    <!-- Logo tonu — marka amber'i (SandikTheme.amber). Her iki modda aynı;
+         amber marka işaretinin rengidir, moda göre değişmez. -->
+    <color name="widget_logo_tint">#F5A623</color>
 </resources>

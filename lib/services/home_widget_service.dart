@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../providers/portfolio_provider.dart';
 import '../utils/tr_format.dart';
-import 'history_service.dart';
+import 'daily_summary.dart';
 
 /// Telefonun ANA EKRANINDAKİ widget'a veri besler (uygulama dışı yüzey).
 ///
@@ -56,6 +56,23 @@ class HomeWidgetService {
   static const _kHasData = 'sandik_has_data';
   static const _kSparkline = 'sandik_sparkline';
   static const _kSparkPoints = 'sandik_spark_points';
+  /// Değişim ölçüldü ama SIFIR mı? Native taraf rengi buna göre nötrler.
+  ///
+  /// `sandik_is_positive` tek başına yetmez: sıfır bir YÖN taşımaz ama
+  /// bool iki değerden birini seçmek zorundadır ve hangisi seçilirse
+  /// seçilsin (yeşil ya da kırmızı) olmayan bir hareketi varmış gibi
+  /// gösterir. Kullanıcı "Değişim yok" yazısını KIRMIZI görüyordu.
+  static const _kIsFlat = 'sandik_is_flat';
+  /// Verinin ait olduğu gün — `d MMMM EEEE`. Kilit ekranıyla aynı biçim.
+  static const _kDate = 'sandik_date';
+  /// Yüzde rozeti metni — tutardan AYRI alan.
+  ///
+  /// Kilit ekranı ikisini ayrı öğe olarak gösteriyor (tutar büyük, yüzde
+  /// altında rozet). Tek bir metinde birleştirmek widget'ı ondan
+  /// ayrıştırıyordu.
+  static const _kChangePct = 'sandik_change_pct';
+  /// BIST işlem saatleri içinde miyiz? Canlılık noktasının rengini sürer.
+  static const _kMarketOpen = 'sandik_market_open';
 
   bool _initialized = false;
 
@@ -109,24 +126,83 @@ class HomeWidgetService {
       } else {
         final tryFmt = NumberFormat.currency(
             locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-        final isPos = state.gainLoss >= 0;
-        final pct = fmtPct(state.gainLossPercentage.abs(), digits: 2);
+
+        // Özet ORTAK katmandan gelir — kilit ekranıyla (Live Activity)
+        // birebir aynı hesap. İki yüzey ayrı ayrı hesaplarken üç yerde
+        // ayrışmıştı: burada ömürlük getiri "günlük" diye gösteriliyor,
+        // satış lot'ları toplama geri ekleniyor ve grafik sıfır slotlarla
+        // düzleştiriliyordu.
+        final summary = DailySummary.from(
+          state: state,
+          series: intraday ?? const {},
+          now: DateTime.now(),
+        );
+
+        // Yön GÜNLÜK değişimden okunur, ömürlük getiriden değil.
+        // Ölçüm yoksa ya da sıfırsa nötr kabul edilir.
+        final isPos = (summary.changeTRY ?? 0) >= 0;
 
         await HomeWidget.saveWidgetData<String>(
-            _kTotal, tryFmt.format(state.totalValue));
+            _kTotal, tryFmt.format(summary.totalTRY));
         await HomeWidget.saveWidgetData<String>(
           _kChange,
-          '${isPos ? '+' : '-'}${tryFmt.format(state.gainLoss.abs())}  $pct',
+          // Üç ayrı durum — kilit ekranıyla AYNI kural
+          // (bkz. LiveActivityService._payload):
+          //   ölçüm yok   → "—"      (uydurma sıfır yazılmaz)
+          //   ölçüm sıfır → "₺0"     (işaretSİZ; sıfır bir yön taşımaz ve
+          //                 kırmızı bir "-₺0" kayıp olarak okunur)
+          //   ölçüm var   → işaretli tutar
+          //
+          // Yüzde artık BURAYA girmez: ayrı bir rozet alanına yazılır
+          // (`_kChangePct`), kilit ekranındaki düzenle aynı.
+          !summary.hasChange
+              ? '—'
+              : summary.isFlat
+                  ? tryFmt.format(0)
+                  : '${isPos ? '+' : '-'}'
+                      '${tryFmt.format(summary.changeTRY!.abs())}',
         );
         await HomeWidget.saveWidgetData<bool>(_kIsPositive, isPos);
+        // Nötr durum: ölçüm yok ya da ölçüm sıfır. İkisinde de kâr/zarar
+        // rengi basılmamalı.
+        await HomeWidget.saveWidgetData<bool>(
+            _kIsFlat, !summary.hasChange || summary.isFlat);
+        // Yüzde rozeti — tutardan ayrı alan (kilit ekranıyla aynı düzen).
+        await HomeWidget.saveWidgetData<String>(
+          _kChangePct,
+          !summary.hasChange || summary.isFlat
+              ? ''
+              : '${isPos ? '+' : '-'}'
+                  '${fmtPct(summary.changePct!.abs(), digits: 2)} Günlük',
+        );
         await HomeWidget.saveWidgetData<bool>(_kHasData, true);
+        // Tarih — kilit ekranıyla AYNI biçim. Widget günlerce ekranda
+        // durur; rakamın hangi güne ait olduğu okunabilmeli.
+        await HomeWidget.saveWidgetData<String>(
+            _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
+        // Piyasa durumu — banner "Piyasa kapalı" derse kullanıcı rakamın
+        // neden değişmediğini bilir. Kilit ekranıyla AYNI kural.
+        await HomeWidget.saveWidgetData<bool>(
+            _kMarketOpen, DailySummary.isMarketOpen(DateTime.now()));
         await HomeWidget.saveWidgetData<String>(
             _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
 
         // Gün içi sparkline — grafik PNG olarak çizilip yola yazılır.
         // RemoteViews custom view çizemez, bu yüzden native taraf hazır
         // bir görsel alır.
-        await _writeSparkline(intraday, isPos: isPos);
+        //
+        // Ham seri DEĞİL, özetin işlenmiş serisi çizilir: sıfır slotlar
+        // atılmış ve son nokta canlı toplama sabitlenmiştir. Aksi halde
+        // grafik düz çizgiye ezilir ve "nabız" noktası 15 dakika geride
+        // kalırdı.
+        await _writeSparkline(
+          summary.sparkline,
+          isPos: isPos,
+          // Hareket yoksa çizgi de nötr çizilir: düz kırmızı bir çizgi
+          // "bugün kaybettim" diye okunur.
+          isFlat: !summary.hasChange || summary.isFlat,
+          isMarketOpen: DailySummary.isMarketOpen(DateTime.now()),
+        );
       }
 
       await _requestUpdate();
@@ -148,43 +224,23 @@ class HomeWidgetService {
     PortfolioState state, {
     required bool hideBalance,
   }) async {
-    final now = DateTime.now();
-    final due = _lastChartAt == null ||
-        now.difference(_lastChartAt!) >= _chartMinInterval;
-
-    // Bakiye gizliyken grafik zaten çizilmeyecek; boşuna ağ turu atma.
-    if (due && !hideBalance) {
-      try {
-        _lastChartAt = now;
-        _lastSeries = await HistoryService.instance
-            .getPortfolioHistoryHourly(state.activeAssets, 24);
-      } catch (e) {
-        if (kDebugMode) debugPrint('Widget chart fetch failed: $e');
-      }
-    }
-
-    // Seri ÖNBELLEKTEN geçirilir, doğrudan yerel değişkenden değil.
+    // Seri ORTAK önbellekten gelir — Live Activity ile aynı kaynak.
     //
-    // Düzeltilen hata: portföy açılışta arka arkaya birkaç kez yayınlanıyor.
-    // İlk çağrı grafiği çekmeye başlıyor (~1.5 sn), o bitmeden gelen ikinci
-    // çağrı `due=false` olduğu için grafiksiz yazıyordu ve prefs'te
-    // `spark_points=0` kalıyordu — grafik hiç görünmüyordu. Son bilinen seri
-    // saklanınca aradaki çağrılar da onu yazar.
-    await update(state, hideBalance: hideBalance, intraday: _lastSeries);
+    // İki yüzey ayrı ayrı önbelleklerse aynı veri için iki ağ turu atılır
+    // ve — daha kötüsü — farklı anlarda tazelenip aynı anda FARKLI rakam
+    // gösterirler. Kullanıcı kilit ekranıyla ana ekranı yan yana gördüğünde
+    // bu doğrudan "uygulama bozuk" demektir.
+    //
+    // Önbellek gün dönümünde koşulsuz düşer ve damgayı yalnızca başarılı
+    // fetch'te atar; ikisi de burada elle tekrarlanmaz.
+    //
+    // Bakiye gizliyken grafik zaten çizilmeyecek; boşuna ağ turu atma.
+    final series = hideBalance
+        ? const <int, double>{}
+        : await IntradaySeriesCache.instance.get(state);
+
+    await update(state, hideBalance: hideBalance, intraday: series);
   }
-
-  /// Gün içi grafiğin en sık yenilenme aralığı.
-  ///
-  /// 15 dakika, veri çözünürlüğüyle (5 dk slot) uyumlu ve pil/kota
-  /// açısından makul. Widget zaten "son bilinen değer" gösteriyor.
-  static const _chartMinInterval = Duration(minutes: 15);
-  DateTime? _lastChartAt;
-
-  /// Son başarıyla çekilen gün içi seri.
-  ///
-  /// Aralık dolmadan gelen güncellemeler bunu yeniden kullanır; aksi halde
-  /// grafiksiz yazan bir çağrı, grafiği olan yazının üstünü ezerdi.
-  Map<int, double>? _lastSeries;
 
   /// Gün içi seriyi sparkline PNG'sine çevirip yolunu paylaşımlı depoya yazar.
   ///
@@ -201,20 +257,23 @@ class HomeWidgetService {
   /// yetersizse grafiği gizleyip yerine boşluk bırakır (tek noktalı "çizgi"
   /// yanıltıcı olurdu).
   Future<void> _writeSparkline(
-    Map<int, double>? intraday, {
+    List<double> values, {
     required bool isPos,
+    bool isFlat = false,
+    bool isMarketOpen = true,
   }) async {
-    final series = (intraday ?? const <int, double>{}).entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-
     // İki noktadan az veri çizgi oluşturmaz.
-    if (series.length < 2) {
-      await HomeWidget.saveWidgetData<int>(_kSparkPoints, series.length);
+    if (values.length < 2) {
+      await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
       return;
     }
 
-    final values = series.map((e) => e.value).toList(growable: false);
-    final path = await _renderSparkline(values, isPos: isPos);
+    final path = await _renderSparkline(
+      values,
+      isPos: isPos,
+      isFlat: isFlat,
+      isMarketOpen: isMarketOpen,
+    );
     if (path != null) {
       await HomeWidget.saveWidgetData<String>(_kSparkline, path);
       await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
@@ -229,6 +288,8 @@ class HomeWidgetService {
   Future<String?> _renderSparkline(
     List<double> values, {
     required bool isPos,
+    bool isFlat = false,
+    bool isMarketOpen = true,
   }) async {
     try {
       // Piksel ölçüsü: widget dar bir şerit; 3x yoğunlukta çizip
@@ -245,10 +306,60 @@ class HomeWidgetService {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, w, h));
 
-      final minV = values.reduce((a, b) => a < b ? a : b);
-      final maxV = values.reduce((a, b) => a > b ? a : b);
-      // Düz çizgi (min == max) sıfıra bölmeyi tetikler; ortada yatay çiz.
-      final span = (maxV - minV).abs() < 1e-9 ? 1.0 : (maxV - minV);
+      final rawMin = values.reduce((a, b) => a < b ? a : b);
+      final rawMax = values.reduce((a, b) => a > b ? a : b);
+
+      // Düz seri: ortada yatay çiz.
+      //
+      // Eşik GÖRELİDİR — mutlak `1e-9` büyük portföyde işe yaramıyordu.
+      // Gerçek vaka: ₺2.489.186,40 → ₺2.489.186,35 (5 kuruş). Bu fark
+      // eşiği aştığı için "hareket" sayılıyor, normalize aralık 0,05'e
+      // oturuyor ve 5 kuruş tuvalin TAMAMINA yayılıyordu — düz bir günde
+      // grafiğin ucu tepeden dibe iniyordu.
+      final flat = DailySummary.isVisuallyFlat(values);
+
+      // Eksen sınırları: gerçek min/max'ın biraz DIŞI.
+      //
+      // Çizginin tuvalin kenarına yapışmaması için %8 pay bırakılır;
+      // etiketler de bu sınırları gösterir, böylece kullanıcı çizginin
+      // hangi tutar aralığında gezindiğini okuyabilir.
+      final double axisMin;
+      final double axisMax;
+      if (flat) {
+        // Düz seride yapay bir aralık üret — aksi halde etiketlerin ikisi
+        // de aynı rakamı gösterir ve eksen anlamsızlaşır. Değerin %0,1'i
+        // dar ama okunur bir bant verir.
+        final pad = (rawMax.abs() * 0.001).clamp(1.0, double.infinity);
+        axisMin = rawMax - pad;
+        axisMax = rawMax + pad;
+      } else {
+        // Eksen bandına ASGARİ genişlik: portföyün %0,5'i.
+        //
+        // **Neden gerekli:** eksen yalnızca veriye göre ölçeklenirse, gün
+        // boyu yatay giden bir portföydeki minicik dalgalanma tuvalin
+        // tamamına yayılır. Ölçülen gerçek vaka: ₺2,486M'lik portföyde
+        // kapanışa yakın ₺1.100'lük (%0,044) bir salınım — bant ₺4.000
+        // genişken grafiğin üçte birini kaplıyor ve "çöküş" gibi
+        // görünüyordu. Rakam +%0,04 derken grafik felaket gösteriyordu:
+        // ikisi aynı yüzeyde çelişiyor.
+        //
+        // %0,5 taban, günlük harekette anlamlı sayılabilecek en küçük
+        // ölçek. Gerçekten büyük bir hareket olduğunda (>%0,5) bant zaten
+        // veriye göre genişler ve taban devreye girmez.
+        final span = rawMax - rawMin;
+        final minSpan = rawMax.abs() * 0.005;
+        final effective = span < minSpan ? minSpan : span;
+
+        // Bandı verinin ORTASINA yerleştir — taban devredeyken çizgi
+        // yukarı/aşağı kaymasın.
+        final mid = (rawMax + rawMin) / 2;
+        // Pay %25 — çizgi tuvalin kenarına yapışmasın.
+        final half = effective / 2 * 1.25;
+        axisMin = mid - half;
+        axisMax = mid + half;
+      }
+      final span = (axisMax - axisMin).abs() < 1e-9 ? 1.0 : axisMax - axisMin;
+      final minV = axisMin;
 
       // Nabız göstergesinin yarıçapları (tuval ölçeğinde). Dolgu payları
       // bunlardan türetilir — sabitleri elle iki yerde tutmak, birini
@@ -265,9 +376,65 @@ class HomeWidgetService {
       // dışında kalıyordu. Nabzın yarıçapı yetiyor ama gösterge kartın
       // kenarına yapışık duruyordu; 1.6x ile nefes payı bırakılır.
       const padRight = pulseMaxR * 1.6;
-      const plotW = w - padRight;
-      double xAt(int i) => (i / (values.length - 1)) * plotW;
+      // SOL pay: eksen etiketleri (tutar) buraya yazılır. Çizgi
+      // etiketlerin üstünden geçmemeli, yoksa ikisi de okunmaz.
+      const padLeft = 150.0;
+      const plotW = w - padRight - padLeft;
+      double xAt(int i) => padLeft + (i / (values.length - 1)) * plotW;
       double yAt(double v) => h - padY - ((v - minV) / span) * (h - padY * 2);
+
+      // ── Eksen kılavuzları ────────────────────────────────────────────
+      //
+      // İki yatay çizgi: eksen üst ve alt sınırı. Sınırlar gerçek
+      // min/max'ın biraz DIŞINDA olduğu için çizgi onlara değmez ve
+      // kullanıcı hareketin hangi bantta gezindiğini görür.
+      //
+      // Grafik tutar ekseni OLMADAN "ne kadar oynadı" sorusunu
+      // yanıtlamıyordu: aynı görünen iki çizgiden biri 5 kuruşluk,
+      // diğeri 50.000 TL'lik hareket olabilir.
+      final guidePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = const Color(0xFF566761).withValues(alpha: 0.28);
+
+      // Eksen etiketi de DM Sans — kartın geri kalanı (ve uygulamanın
+      // tamamı) bu ailede. Sistem fontuna düşmek grafiği metinden
+      // görsel olarak ayırıyordu.
+      //
+      // `tnum` (tabular figures) uygulamanın sayı stilleriyle aynı kural
+      // (bkz. `sandik.dart` numSmall/numMedium): orantılı rakamlarda `1`
+      // ile `8` farklı genişliktedir ve eksen her tazelemede yatayda
+      // zıplar.
+      const labelFamily = 'DM Sans';
+      const tabular = [ui.FontFeature.tabularFigures()];
+
+      final labelStyle = ui.TextStyle(
+        color: const Color(0xFF566761).withValues(alpha: 0.85),
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        fontFamily: labelFamily,
+        fontFeatures: tabular,
+      );
+
+      void drawGuide(double value) {
+        final y = yAt(value);
+        canvas.drawLine(Offset(padLeft, y), Offset(w - padRight, y), guidePaint);
+
+        final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
+          textAlign: TextAlign.right,
+          fontSize: 22,
+          fontFamily: labelFamily,
+        ))
+          ..pushStyle(labelStyle)
+          ..addText(fmtTRYAxis(value, axisMax - axisMin));
+        final para = builder.build()
+          ..layout(const ui.ParagraphConstraints(width: padLeft - 14));
+        // Etiket çizginin ortasına hizalanır.
+        canvas.drawParagraph(para, Offset(0, y - para.height / 2));
+      }
+
+      drawGuide(axisMax);
+      drawGuide(axisMin);
 
       final line = Path()..moveTo(xAt(0), yAt(values.first));
       for (var i = 1; i < values.length; i++) {
@@ -276,7 +443,12 @@ class HomeWidgetService {
 
       // Marka renkleri — dark palet tonları (widget zemini koyu/açık olabilir
       // ama bu tonlar iki zeminde de okunur; kontrast testinde doğrulandı).
-      final color = isPos ? const Color(0xFF3DB77F) : const Color(0xFFFF6B52);
+      // Hareket yoksa nötr gri — kâr/zarar rengi olmayan bir yönü ima
+      // etmemeli. Kullanıcı düz bir çizgiyi kırmızı görünce "kaybettim"
+      // diye okuyordu.
+      final color = isFlat
+          ? const Color(0xFF8A9A94)
+          : (isPos ? const Color(0xFF3DB77F) : const Color(0xFFFF6B52));
 
       // Alan dolgusu: çizginin altını kapatan gradient.
       final fill = Path.from(line)
@@ -322,32 +494,32 @@ class HomeWidgetService {
       final lastY = yAt(values.last);
       final center = Offset(lastX, lastY);
 
-      // Faz: dakikaya bağlı, 0..1 arası. Her tazelemede halka farklı
-      // büyüklükte olur; ardışık iki güncelleme aynı görünmez.
-      final phase = (DateTime.now().minute % 6) / 6.0;
-      final pulseR = haloR + phase * (pulseMaxR - haloR);
-      final pulseAlpha = 0.26 * (1.0 - phase); // genişledikçe söner
-
-      // Dış nabız halkası — genişleyip sönen dalga.
-      canvas.drawCircle(
-        center,
-        pulseR,
-        Paint()..color = color.withValues(alpha: pulseAlpha),
-      );
-      // Sabit iç hale — nokta zeminden ayrışsın.
-      canvas.drawCircle(
-        center,
-        haloR,
-        Paint()..color = color.withValues(alpha: 0.30),
-      );
+      // Hale yalnızca piyasa AÇIKKEN — kilit ekranıyla aynı kural
+      // (bkz. SandikSparkline). Hale "veri akıyor" demektir ve gece bu
+      // doğru değildir; kapalıyken yalnızca sade bir nokta kalır.
+      //
+      // Nabız halkası KALDIRILDI: kilit ekranında yok ve iki yüzey aynı
+      // görünmeli. Ayrıca marka kuralı gereği bu yüzeylerde dikkat çekmeye
+      // çalışan hareketli öğe bulunmaz.
+      if (isMarketOpen) {
+        canvas.drawCircle(
+          center,
+          haloR,
+          Paint()..color = color.withValues(alpha: 0.26),
+        );
+      }
       // Beyaz yaka: koyu/açık iki zeminde de noktayı çizgiden ayırır.
       canvas.drawCircle(
         center,
         collarR,
         Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.92),
       );
-      // Çekirdek — anlık değerin kendisi.
-      canvas.drawCircle(center, coreR, Paint()..color = color);
+      // Çekirdek — anlık değerin kendisi. Kilit ekranıyla aynı kural:
+      // piyasa açıkken gain yeşili, kapalıyken gri.
+      final dotColor = isMarketOpen
+          ? const Color(0xFF3DB77F)
+          : const Color(0xFF8A9A94);
+      canvas.drawCircle(center, coreR, Paint()..color = dotColor);
 
       final image = await recorder.endRecording().toImage(w.toInt(), h.toInt());
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -368,7 +540,13 @@ class HomeWidgetService {
     await HomeWidget.saveWidgetData<String>(_kTotal, '••••••');
     await HomeWidget.saveWidgetData<String>(_kChange, '');
     await HomeWidget.saveWidgetData<bool>(_kIsPositive, true);
+    await HomeWidget.saveWidgetData<bool>(_kIsFlat, true);
+    await HomeWidget.saveWidgetData<String>(_kChangePct, '');
     await HomeWidget.saveWidgetData<bool>(_kHasData, true);
+    await HomeWidget.saveWidgetData<String>(
+        _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
+    await HomeWidget.saveWidgetData<bool>(
+        _kMarketOpen, DailySummary.isMarketOpen(DateTime.now()));
     await HomeWidget.saveWidgetData<String>(
         _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
   }
@@ -379,13 +557,16 @@ class HomeWidgetService {
     try {
       await _ensureInit();
       // Önbellek de sıfırlanmalı: aksi halde bir sonraki kullanıcı önceki
-      // hesabın gün içi grafiğini görürdü.
-      _lastSeries = null;
-      _lastChartAt = null;
+      // hesabın gün içi grafiğini görürdü. Önbellek ORTAK olduğu için
+      // Live Activity tarafı da bu temizlikten yararlanır.
+      IntradaySeriesCache.instance.clear();
 
       await HomeWidget.saveWidgetData<String>(_kTotal, '');
       await HomeWidget.saveWidgetData<String>(_kChange, '');
       await HomeWidget.saveWidgetData<bool>(_kHasData, false);
+      await HomeWidget.saveWidgetData<bool>(_kIsFlat, true);
+      await HomeWidget.saveWidgetData<String>(_kChangePct, '');
+      await HomeWidget.saveWidgetData<String>(_kDate, '');
       await HomeWidget.saveWidgetData<String>(_kUpdatedAt, '');
       await HomeWidget.saveWidgetData<int>(_kSparkPoints, 0);
       await _requestUpdate();

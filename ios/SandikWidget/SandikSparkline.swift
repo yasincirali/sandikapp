@@ -39,6 +39,26 @@ struct SandikSparkline: View {
     /// kullanıcı donuk veriyi canlı sanır.
     var isMarketOpen: Bool? = nil
 
+    /// Tutar ekseni kılavuzları — alt ve üst sınır etiketi.
+    ///
+    /// Boş bırakılırsa eksen HİÇ çizilmez. Tutar gizliyken Dart tarafı
+    /// zaten boş gönderir: eksen portföy büyüklüğünü ele verir ve
+    /// normalize seri göndermenin bütün gerekçesi buydu.
+    ///
+    /// Dar alanlarda (Dynamic Island) çağıran bilinçli olarak vermez —
+    /// 26pt yüksekliğinde bir grafikte iki etiket okunmaz, gürültü olur.
+    var axisMin: String? = nil
+    var axisMax: String? = nil
+
+    /// Eksen etiketlerine ayrılan sol şerit. Çizgi bu şeridin sağından
+    /// başlar, yoksa rakamların üstünden geçer ve ikisi de okunmaz.
+    private var axisInset: CGFloat { hasAxis ? 44 : 0 }
+
+    private var hasAxis: Bool {
+        guard let lo = axisMin, let hi = axisMax else { return false }
+        return !lo.isEmpty && !hi.isEmpty
+    }
+
     var body: some View {
         // `Canvas` kullanılıyor, `GeometryReader` + `Path` DEĞİL.
         //
@@ -59,10 +79,54 @@ struct SandikSparkline: View {
             // kırpılır. Nokta çizilmiyorsa pay da yok — grafik tüm
             // genişliği kullansın.
             let padRight: CGFloat = isMarketOpen == nil ? 0 : 5
-            let usableW = max(w - padRight, 1)
+            let plotX = axisInset
+            let usableW = max(w - padRight - plotX, 1)
+
+            // ---- Tutar ekseni kılavuzları ----
+            //
+            // İki yatay çizgi (üst/alt sınır) + hizalı etiketler. Sınırlar
+            // gerçek min/max'ın biraz DIŞINDA üretilir (Dart tarafında),
+            // böylece çizgi kılavuza değmez.
+            //
+            // Eksen olmadan grafik "ne kadar oynadı" sorusunu
+            // yanıtlamıyordu: aynı görünen iki çizgiden biri 5 kuruşluk,
+            // diğeri 50.000 TL'lik hareket olabilir.
+            if hasAxis, let lo = axisMin, let hi = axisMax {
+                let guideColor = SandikTheme.text36.opacity(0.55)
+
+                let guides: [(String, CGFloat)] = [
+                    (hi, padY),
+                    (lo, padY + usableH),
+                ]
+
+                for (label, y) in guides {
+                    var guide = Path()
+                    guide.move(to: CGPoint(x: plotX, y: y))
+                    guide.addLine(to: CGPoint(x: w - padRight, y: y))
+                    context.stroke(
+                        guide,
+                        with: .color(guideColor),
+                        style: StrokeStyle(lineWidth: 0.5)
+                    )
+
+                    // Etiket sağa yaslı, çizginin ortasına hizalı.
+                    //
+                    // `context.draw(_:at:anchor:)` kullanılıyor;
+                    // `resolve` + `measure` ile elle ölçüp ortalamaya gerek
+                    // yok ve anchor'lı çizim daha az API yüzeyi kullanır
+                    // (derleyemediğim bir hedefte risk azaltır).
+                    context.draw(
+                        Text(label)
+                            .font(.sandikNumber(7, weight: .medium))
+                            .foregroundColor(SandikTheme.text58),
+                        at: CGPoint(x: plotX - 4, y: y),
+                        anchor: .trailing
+                    )
+                }
+            }
 
             func point(_ i: Int) -> CGPoint {
-                let x = usableW * CGFloat(i) / CGFloat(points.count - 1)
+                let x = plotX + usableW * CGFloat(i) / CGFloat(points.count - 1)
                 // Normalize değer yukarı doğru artar; ekran koordinatı
                 // aşağı doğru artar → ters çevrilir.
                 let v = min(max(points[i], 0), 1)
@@ -78,8 +142,8 @@ struct SandikSparkline: View {
             if showsFill {
                 // Dolgu: çizginin altını kapatan dikey gradient.
                 var fill = line
-                fill.addLine(to: CGPoint(x: usableW, y: h))
-                fill.addLine(to: CGPoint(x: 0, y: h))
+                fill.addLine(to: CGPoint(x: plotX + usableW, y: h))
+                fill.addLine(to: CGPoint(x: plotX, y: h))
                 fill.closeSubpath()
 
                 context.fill(

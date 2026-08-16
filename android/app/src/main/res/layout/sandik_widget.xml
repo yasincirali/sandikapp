@@ -2,103 +2,246 @@
 <!--
   Ana ekran widget'ı — portföy özeti + gün içi canlı grafik.
 
-  ## Tasarım kararı: grafik ZEMİN, metin ÜSTTE
-  Grafiği metnin altına ayrı bir satır olarak koymak widget'ı iki kata
-  böler ve dar yüksekliklerde (2x1) grafiğe yer kalmaz. Bunun yerine
-  sparkline arka plana yayılır, sayı onun üzerinde durur — hem küçük
-  boyutta çalışır hem "canlı" hissi verir.
+  ## Tasarım: kilit ekranıyla (Live Activity) BİREBİR
+  Düzen `ios/SandikWidget/SandikLiveActivity.swift` içindeki
+  `SandikLockScreenView.amountsLayout` ile aynı yapıdadır ve öyle
+  kalmalıdır. İki yüzey aynı anda, yan yana görülebilir; farklı görünen
+  iki kart kullanıcıya iki ayrı uygulama gibi gelir.
 
-  Grafiğin PNG'si şeffaf zeminlidir ve alta hizalanır (`bottom`), böylece
-  çizgi kartın alt yarısında kalır ve üstteki tutarı boğmaz.
+    ┌──────────────────────────────────────────────┐
+    │ [logo] Sandık            ● Canlı • 21:51     │
+    │        16 Ağustos Pazar                      │
+    │                                              │
+    │ Toplam Portföy      │  Bugünkü Değişim       │
+    │ ₺2.489.186          │  ▲ +₺35.420            │
+    │                     │  [+%2,45 Günlük]       │
+    │                                              │
+    │ ────────── gün içi grafik ──────────         │
+    └──────────────────────────────────────────────┘
+
+  Sol sütun "ne kadarım var", sağ sütun "bugün ne oldu" sorusunu
+  yanıtlar; aralarında hairline dikey ayraç.
+
+  ## Grafik neden ARTIK zemin değil
+  Önce sparkline arka plana yayılıyordu (metnin altından geçiyordu).
+  Kilit ekranı grafiği ayrı bir blok olarak altta gösteriyor ve eksen
+  etiketleri eklendikten sonra zemine yayılan grafik okunmaz hâle geldi:
+  rakamlar metnin arkasında kalıyordu. Grafik artık kendi satırında.
 
   ## RemoteViews sınırı
   Custom view çizilemez; grafik Flutter tarafında rasterize edilip
   ImageView'a dosya olarak verilir (`HomeWidgetService._renderSparkline`).
   Veri iki noktadan azsa native taraf ImageView'ı GONE yapar.
 -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_background">
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="14dp">
 
-    <!-- Gün içi grafik — kartın alt yarısına yaslanır. -->
-    <!-- Grafik kartın alt yarısını doldurur. `layout_marginBottom` çizginin
-         köşe yuvarlaklığına girmesini, yatay margin ise kenara yapışmasını
-         engeller — grafik kartın İÇİNDE durmalı, kenarından taşmamalı. -->
-    <ImageView
-        android:id="@+id/widget_spark"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_gravity="bottom"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="10dp"
-        android:scaleType="fitXY"
-        android:adjustViewBounds="false"
-        android:importantForAccessibility="no"
-        android:contentDescription="@null" />
-
+    <!-- ── Başlık: kimlik + canlılık göstergesi ────────────────────── -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="14dp">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-        <!-- Üst şerit: etiket + canlı noktası -->
+        <ImageView
+            android:id="@+id/widget_logo"
+            android:layout_width="22dp"
+            android:layout_height="14dp"
+            android:layout_marginEnd="7dp"
+            android:src="@drawable/widget_logo"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
+
+        <!-- Marka adı + tarih tek blokta. Tarih ikincil bilgidir ve alt
+             satıra iner: yüzeyin ana sorusu "bugün ne oldu", "hangi gün"
+             değil — ama rakamın hangi güne ait olduğu okunabilmeli. -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/widget_label"
-                android:layout_width="0dp"
-                android:layout_weight="1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_brand"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="13sp"
+                android:fontFamily="@font/dm_sans_semibold"
+                android:letterSpacing="-0.01"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/widget_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_text_muted"
+                android:textSize="9sp"
+                android:fontFamily="@font/dm_sans_regular"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <!-- Canlılık noktası — piyasa açıkken gain, kapalıyken gri.
+             Yeşil nokta "veri akıyor" demektir ve gece bu doğru değil. -->
+        <ImageView
+            android:id="@+id/widget_live_dot"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:layout_marginEnd="5dp"
+            android:src="@drawable/widget_live_dot"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/widget_updated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_text_muted"
+            android:textSize="9sp"
+            android:fontFamily="@font/dm_sans_medium"
+            android:fontFeatureSettings="tnum"
+            android:maxLines="1" />
+    </LinearLayout>
+
+    <!-- ── İçerik: iki sütun + hairline ayraç ──────────────────────── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <!-- Sol: toplam portföy. -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/widget_total_label"
                 android:textColor="@color/widget_text_muted"
                 android:textSize="10sp"
-                android:textStyle="bold"
+                android:fontFamily="@font/dm_sans_medium"
+                android:letterSpacing="0.06"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
-            <!-- "Canlı" rozeti: son güncelleme saati. Kullanıcı baktığı
-                 sayının ne kadar taze olduğunu bilmeli. -->
+            <!-- Toplam GOLD renkte — kilit ekranıyla aynı. Marka kuralı:
+                 amber bir ZEMİN rengidir, gold display sayılar içindir. -->
             <TextView
-                android:id="@+id/widget_updated"
-                android:layout_width="wrap_content"
+                android:id="@+id/widget_total"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/widget_pill"
-                android:paddingStart="7dp"
-                android:paddingEnd="7dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
-                android:textColor="@color/widget_text_muted"
-                android:textSize="9sp"
-                android:maxLines="1" />
+                android:layout_marginTop="3dp"
+                android:textColor="@color/widget_gold"
+                android:textSize="19sp"
+                android:fontFamily="@font/dm_sans_bold"
+                android:letterSpacing="-0.03"
+                android:maxLines="1"
+                android:ellipsize="end" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/widget_total"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:textColor="@color/widget_text_primary"
-            android:textSize="25sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
+        <!-- Hairline dikey ayraç. -->
+        <!-- Ayraç `ImageView` ile çizilir, düz `View` ile DEĞİL.
+             RemoteViews yalnızca sabit bir view sınıfı listesini
+             destekler ve `View` o listede yoktur — kullanılırsa widget
+             hiç yüklenmez ("Can't load widget"). -->
+        <ImageView
+            android:id="@+id/widget_divider"
+            android:layout_width="1dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_divider"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
 
-        <TextView
-            android:id="@+id/widget_change"
-            android:layout_width="match_parent"
+        <!-- Sağ: bugünkü değişim. -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:textColor="@color/widget_gain"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_change_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_change_label"
+                android:textColor="@color/widget_text_muted"
+                android:textSize="10sp"
+                android:fontFamily="@font/dm_sans_medium"
+                android:letterSpacing="0.06"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Yön oku + tutar. Ok yalnızca gerçek hareket varken
+                 görünür (native taraf gizler): sıfır bir yön taşımaz. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/widget_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="3dp"
+                    android:textSize="10sp"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:maxLines="1" />
+
+                <TextView
+                    android:id="@+id/widget_change"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/dm_sans_bold"
+                    android:fontFeatureSettings="tnum"
+                    android:letterSpacing="-0.03"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+
+            <!-- Yüzde rozeti — durum renginin düşük alfalı zemini üstünde.
+                 Kilit ekranındaki "+%2,45 Günlük" rozetinin karşılığı. -->
+            <TextView
+                android:id="@+id/widget_change_pct"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/widget_change_badge"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:textSize="9sp"
+                android:fontFamily="@font/dm_sans_semibold"
+                android:fontFeatureSettings="tnum"
+                android:maxLines="1" />
+        </LinearLayout>
     </LinearLayout>
-</FrameLayout>
+
+    <!-- ── Gün içi grafik — tam genişlik, altta ────────────────────── -->
+    <ImageView
+        android:id="@+id/widget_spark"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="10dp"
+        android:scaleType="fitXY"
+        android:adjustViewBounds="false"
+        android:importantForAccessibility="no"
+        android:contentDescription="@null" />
+</LinearLayout>

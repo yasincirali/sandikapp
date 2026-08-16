@@ -3,7 +3,15 @@
     <string name="app_name">Sandık</string>
 
     <!-- Ana ekran widget'ı -->
-    <string name="widget_total_label">TOPLAM NET VARLIK</string>
+    <!-- Etiketler kilit ekranıyla (Live Activity) AYNI kelimeleri
+         kullanır: iki yüzey aynı şeyi farklı adlandırırsa kullanıcı
+         iki ayrı rakam gördüğünü sanır. -->
+    <string name="widget_brand">Sandık</string>
+    <string name="widget_total_label">Toplam Portföy</string>
+    <string name="widget_change_label">Bugünkü Değişim</string>
+    <!-- Piyasa durumu — nokta rengiyle birlikte okunur. -->
+    <string name="widget_live">Canlı</string>
+    <string name="widget_market_closed">Piyasa kapalı</string>
     <string name="widget_name">Sandık Portföy</string>
     <string name="widget_description">Toplam portföy değerini ve günlük getirini ana ekranda göster.</string>
     <string name="widget_empty">Verileri görmek için uygulamayı aç</string>

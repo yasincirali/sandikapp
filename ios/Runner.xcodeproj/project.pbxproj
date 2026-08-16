@@ -12,6 +12,11 @@
 		5A0D1K0000000000000012 /* SandikLogoMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000004 /* SandikLogoMark.swift */; };
 		5A0D1K0000000000000033 /* SandikSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000034 /* SandikSparkline.swift */; };
 		5A0D1K0000000000000013 /* SandikLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000005 /* SandikLiveActivity.swift */; };
+		5A0D1K0000000000000040 /* DMSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000041 /* DMSans-Regular.ttf */; };
+		5A0D1K0000000000000042 /* DMSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000043 /* DMSans-Medium.ttf */; };
+		5A0D1K0000000000000044 /* DMSans-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000045 /* DMSans-SemiBold.ttf */; };
+		5A0D1K0000000000000046 /* DMSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000047 /* DMSans-Bold.ttf */; };
+		5A0D1K0000000000000048 /* DMSans-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000049 /* DMSans-Black.ttf */; };
 		5A0D1K0000000000000014 /* SandikWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000006 /* SandikWidgetBundle.swift */; };
 		5A0D1K0000000000000015 /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000009 /* LiveActivityPlugin.swift */; };
 		5A0D1K0000000000000016 /* SandikAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000002 /* SandikAttributes.swift */; };
@@ -74,6 +79,11 @@
 		5A0D1K0000000000000004 /* SandikLogoMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLogoMark.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000034 /* SandikSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikSparkline.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000005 /* SandikLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLiveActivity.swift; sourceTree = "<group>"; };
+		5A0D1K0000000000000041 /* DMSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-Regular.ttf; path = Fonts/DMSans-Regular.ttf; sourceTree = "<group>"; };
+		5A0D1K0000000000000043 /* DMSans-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-Medium.ttf; path = Fonts/DMSans-Medium.ttf; sourceTree = "<group>"; };
+		5A0D1K0000000000000045 /* DMSans-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-SemiBold.ttf; path = Fonts/DMSans-SemiBold.ttf; sourceTree = "<group>"; };
+		5A0D1K0000000000000047 /* DMSans-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-Bold.ttf; path = Fonts/DMSans-Bold.ttf; sourceTree = "<group>"; };
+		5A0D1K0000000000000049 /* DMSans-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-Black.ttf; path = Fonts/DMSans-Black.ttf; sourceTree = "<group>"; };
 		5A0D1K0000000000000006 /* SandikWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikWidgetBundle.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5A0D1K0000000000000008 /* SandikWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SandikWidget.entitlements; sourceTree = "<group>"; };
@@ -125,6 +135,11 @@
 				5A0D1K0000000000000006 /* SandikWidgetBundle.swift */,
 				5A0D1K0000000000000007 /* Info.plist */,
 				5A0D1K0000000000000008 /* SandikWidget.entitlements */,
+				5A0D1K0000000000000041 /* DMSans-Regular.ttf */,
+				5A0D1K0000000000000043 /* DMSans-Medium.ttf */,
+				5A0D1K0000000000000045 /* DMSans-SemiBold.ttf */,
+				5A0D1K0000000000000047 /* DMSans-Bold.ttf */,
+				5A0D1K0000000000000049 /* DMSans-Black.ttf */,
 			);
 			path = SandikWidget;
 			sourceTree = "<group>";
@@ -293,6 +308,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5A0D1K0000000000000040 /* DMSans-Regular.ttf in Resources */,
+				5A0D1K0000000000000042 /* DMSans-Medium.ttf in Resources */,
+				5A0D1K0000000000000044 /* DMSans-SemiBold.ttf in Resources */,
+				5A0D1K0000000000000046 /* DMSans-Bold.ttf in Resources */,
+				5A0D1K0000000000000048 /* DMSans-Black.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

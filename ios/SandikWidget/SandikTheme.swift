@@ -84,6 +84,21 @@ enum SandikTheme {
 // MARK: - Tipografi
 
 extension Font {
+    /// DM Sans dosya adı — ağırlığa göre.
+    ///
+    /// Uzantı ana uygulamanın font kaydını MİRAS ALMAZ; dosyalar
+    /// `ios/SandikWidget/Fonts/` altında ve `Info.plist` içindeki
+    /// `UIAppFonts` listesinde kayıtlıdır.
+    private static func dmSansName(_ weight: Font.Weight) -> String {
+        switch weight {
+        case .black, .heavy: return "DMSans-Black"
+        case .bold: return "DMSans-Bold"
+        case .semibold: return "DMSans-SemiBold"
+        case .medium: return "DMSans-Medium"
+        default: return "DMSans-Regular"
+        }
+    }
+
     /// Finansal sayılar için tabular (sabit genişlikli) rakam.
     ///
     /// **Neden zorunlu:** Live Activity'de sayı dakikada bir güncellenir.
@@ -91,18 +106,17 @@ extension Font {
     /// rakamlar yatayda zıplar ve sakin durması gereken bir yüzey
     /// tedirgin edici olur. Marka için pazarlık konusu değildir.
     ///
-    /// DM Sans uzantıya gömülü DEĞİLSE sistem fontuna düşer — bu kasıtlı
-    /// bir kabul: `monospacedDigit()` sistem fontunda da tabular davranır,
-    /// yani font eksikse hizalama yine bozulmaz, yalnızca karakter
-    /// biçimi değişir. Font gömme adımı için bkz.
-    /// `docs/IOS_LIVE_ACTIVITY_KURULUM.md`.
+    /// `.custom(_:size:)` font bulunamazsa sessizce sistem fontuna düşer —
+    /// kasıtlı bir kabul: `monospacedDigit()` sistem fontunda da tabular
+    /// davranır, yani font eksikse hizalama yine bozulmaz, yalnızca
+    /// karakter biçimi değişir.
     static func sandikNumber(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-        .system(size: size, weight: weight, design: .default).monospacedDigit()
+        .custom(dmSansName(weight), size: size).monospacedDigit()
     }
 
     /// Etiket/başlık — sayı olmayan metin.
     static func sandikLabel(_ size: CGFloat, weight: Font.Weight = .medium) -> Font {
-        .system(size: size, weight: weight, design: .default)
+        .custom(dmSansName(weight), size: size)
     }
 }
 

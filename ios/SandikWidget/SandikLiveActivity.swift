@@ -111,8 +111,10 @@ struct SandikLiveActivity: Widget {
                         if !context.state.sparkline.isEmpty {
                             SandikSparkline(
                                 points: context.state.sparkline,
-                                color: SandikTheme.statusColor(
-                                    isPositive: context.state.isPositive),
+                                color: context.state.hasDirection
+                                    ? SandikTheme.statusColor(
+                                        isPositive: context.state.isPositive)
+                                    : SandikTheme.text58,
                                 // Dar alanda gradient dolgu gürültüye
                                 // dönüşüyor; yalnızca çizgi bırakılır.
                                 showsFill: false
@@ -136,7 +138,9 @@ struct SandikLiveActivity: Widget {
                     Text(context.state.isHidden ? "••" : context.state.changePctText)
                         .font(.sandikNumber(13, weight: .semibold))
                 }
-                .foregroundStyle(SandikTheme.statusColor(isPositive: context.state.isPositive))
+                .foregroundStyle(context.state.hasDirection
+                    ? SandikTheme.statusColor(isPositive: context.state.isPositive)
+                    : SandikTheme.text58)
 
             } minimal: {
                 // Minimal: birden fazla Live Activity yarıştığında görünür.
@@ -262,19 +266,21 @@ struct SandikLockScreenView: View {
                 HStack(spacing: 5) {
                     // Veri yoksa ok ve işaret basılmaz: `▲ +—` anlamsızdır
                     // ve yeşil renk olmayan bir kazancı ima ederdi.
-                    if state.hasChangeData {
+                    if state.hasDirection {
                         Text(directionArrow(state.isPositive))
                             .font(.sandikLabel(13, weight: .black))
                     }
                     Text(state.hasChangeData
-                         ? "\(signPrefix(state.isPositive))\(state.changePctText)"
+                         ? (state.isFlatChange
+                            ? state.changePctText
+                            : "\(signPrefix(state.isPositive))\(state.changePctText)")
                          : "—")
                         .font(.sandikNumber(24, weight: .bold))
                         .tracking(-0.24)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
-                .foregroundStyle(state.hasChangeData
+                .foregroundStyle(state.hasDirection
                                  ? SandikTheme.statusColor(isPositive: state.isPositive)
                                  : SandikTheme.text58)
             }
@@ -284,8 +290,14 @@ struct SandikLockScreenView: View {
             // Grafik sağda, dikey alanı doldurur.
             SandikSparkline(
                 points: state.sparkline,
-                color: SandikTheme.statusColor(isPositive: state.isPositive),
-                isMarketOpen: state.isMarketOpen
+                color: state.hasDirection
+                    ? SandikTheme.statusColor(isPositive: state.isPositive)
+                    : SandikTheme.text58,
+                isMarketOpen: state.isMarketOpen,
+                // Tutar gizliyken bu alanlar zaten boş gelir ve eksen
+                // çizilmez — grafiğin şekli görünmeye devam eder.
+                axisMin: state.axisMinText,
+                axisMax: state.axisMaxText
             )
             .frame(width: 130, height: 44)
         }
@@ -326,7 +338,7 @@ struct SandikLockScreenView: View {
                         .minimumScaleFactor(0.85)
 
                     HStack(spacing: 4) {
-                        if state.hasChangeData {
+                        if state.hasDirection {
                             Text(directionArrow(state.isPositive))
                                 .font(.sandikLabel(11, weight: .black))
                         }
@@ -336,14 +348,14 @@ struct SandikLockScreenView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
-                    .foregroundStyle(state.hasChangeData
+                    .foregroundStyle(state.hasDirection
                                      ? SandikTheme.statusColor(isPositive: state.isPositive)
                                      : SandikTheme.text58)
 
                     // Yüzde rozeti — durum renginin çok düşük alfalı zemini
                     // üstünde. Amber BURAYA konmaz: brief'e göre amber
                     // yalnızca gerçekten vurgulanacak TEK öğe için.
-                    if state.hasChangeData {
+                    if state.hasDirection {
                         Text("\(signPrefix(state.isPositive))\(state.changePctText) Günlük")
                             .font(.sandikNumber(10, weight: .semibold))
                             .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
@@ -364,8 +376,12 @@ struct SandikLockScreenView: View {
             if !state.sparkline.isEmpty {
                 SandikSparkline(
                     points: state.sparkline,
-                    color: SandikTheme.statusColor(isPositive: state.isPositive),
-                    isMarketOpen: state.isMarketOpen
+                    color: state.hasDirection
+                        ? SandikTheme.statusColor(isPositive: state.isPositive)
+                        : SandikTheme.text58,
+                    isMarketOpen: state.isMarketOpen,
+                    axisMin: state.axisMinText,
+                    axisMax: state.axisMaxText
                 )
                 .frame(height: 32)
             }
@@ -415,15 +431,21 @@ struct SandikChangePill: View {
                 .font(.sandikLabel(11, weight: .medium))
                 .foregroundStyle(SandikTheme.text58)
 
-            Text(directionArrow(state.isPositive))
-                .font(.sandikLabel(10, weight: .black))
-                .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+            // Yön oku yalnızca gerçek bir hareket varken. Sıfır değişimde
+            // ok basmak olmayan bir yönü ima eder.
+            if state.hasDirection {
+                Text(directionArrow(state.isPositive))
+                    .font(.sandikLabel(10, weight: .black))
+                    .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+            }
 
             // Tutar yalnızca izin verildiyse; yüzde her zaman görünür.
             if state.showAmounts && !state.isHidden {
                 Text(state.changeText)
                     .font(.sandikNumber(13, weight: .bold))
-                    .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+                    .foregroundStyle(state.hasDirection
+                        ? SandikTheme.statusColor(isPositive: state.isPositive)
+                        : SandikTheme.text58)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
 
@@ -433,7 +455,9 @@ struct SandikChangePill: View {
             } else {
                 Text(state.changePctText)
                     .font(.sandikNumber(13, weight: .bold))
-                    .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+                    .foregroundStyle(state.hasDirection
+                        ? SandikTheme.statusColor(isPositive: state.isPositive)
+                        : SandikTheme.text58)
             }
 
             Spacer(minLength: 0)

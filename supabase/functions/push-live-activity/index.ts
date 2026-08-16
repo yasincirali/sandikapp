@@ -30,9 +30,12 @@ const APNS_HOST =
 ///
 /// `LiveActivityService.summarySchemaVersion` ile BİREBİR aynı olmalı.
 /// v1: ömürlük getiri · v2: günlük ama nakit akışından arındırılmamış ·
-/// v3: arındırılmış (uygulamanın kartıyla aynı). Alan adları üç sürümde
-/// de aynı kaldığı için damgasız ayırt edilemez.
-const SUMMARY_SCHEMA_VERSION = 3;
+/// v3: arındırılmış (uygulamanın kartıyla aynı) · v4: canlı toplam sahip
+/// kapsamlı aggregate'ten okunur (v3'e kadar satış lot'ları toplamdan
+/// düşülmek yerine ekleniyordu) · v5: grafiğe tutar ekseni eklendi ve düz
+/// seri tespiti göreli eşiğe geçti · v6: `isFlatChange` açık alan oldu.
+/// Alan adları tüm sürümlerde aynı kaldığı için damgasız ayırt edilemez.
+const SUMMARY_SCHEMA_VERSION = 6;
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -254,7 +257,15 @@ Deno.serve(async (request) => {
     const contentState = {
       totalText: showAmounts ? String(row.totalText ?? '') : '••••••',
       changeText: showAmounts ? String(row.changeText ?? '') : '••••••',
-      changePctText: String(row.changePctText ?? '%0,00'),
+      // Veri yoksa `'—'` — ASLA `'%0,00'`.
+      //
+      // Sıfır bir ÖLÇÜMDÜR: "bugün portföy değişmedi" der. Ölçüm yokken
+      // sıfır basmak uydurmadır ve uzantı tarafındaki `hasChangeData`
+      // kontrolünü (bkz. SandikAttributes.swift) atlatır — kullanıcı
+      // yeşil bir "▲ +%0,00" görür ve bunu gerçek bir ölçüm sanır.
+      // İstemci de aynı durumda `'—'` gönderir; iki taraf aynı dili
+      // konuşmalı.
+      changePctText: String(row.changePctText ?? '—'),
       isPositive,
       isHidden: false,
       // Zaman damgası SUNUCUDA üretilir: istemcinin yazdığı saat, push
@@ -282,6 +293,15 @@ Deno.serve(async (request) => {
       // ve gece yarısı push'lanan banner "Canlı" diyordu — donuk rakamla
       // birlikte doğrudan yanlış bilgi.
       isMarketOpen: isBistOpen(),
+      // Grafiğin tutar ekseni. Tutar göstermeye izin YOKSA gönderilmez —
+      // eksen portföy büyüklüğünü doğrudan ele verir ve normalize seri
+      // göndermenin bütün gerekçesi buydu. Boş gelince uzantı ekseni
+      // hiç çizmez, grafiğin şekli görünmeye devam eder.
+      axisMinText: showAmounts ? String(row.axisMinText ?? '') : '',
+      axisMaxText: showAmounts ? String(row.axisMaxText ?? '') : '',
+      // Sıfır değişimde yön/renk bastırılır. Gizlilik kapısına TABİ
+      // DEĞİL: yalnızca "bugün hareket yok" bilgisi, tutar taşımaz.
+      isFlatChange: row.isFlatChange === true,
     };
 
     const result = await pushToSession(

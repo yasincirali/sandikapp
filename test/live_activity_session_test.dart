@@ -331,8 +331,61 @@ void main() {
     // uygulamasını güncellemiş kullanıcı, DB'de duran eski özet yüzünden
     // kilit ekranında ömürlük getiriyi "Bugün" diye görmeye devam eder.
 
-    test('güncel sürüm 3 — nakit akışından arındırılmış günlük değişim', () {
-      expect(LiveActivityService.summarySchemaVersion, 3);
+    test('güncel sürüm 6 — isFlatChange acik alan', () {
+      expect(LiveActivityService.summarySchemaVersion, 6);
+    });
+
+    test('payload alanları Swift ContentState ile birebir örtüşür', () {
+      // iOS uzantısı bu makinede DERLENMİYOR (Xcode yok) ve CI'da
+      // derleniyor. Dart tarafında eklenen bir alanın Swift karşılığı
+      // yoksa `ContentState` decode edilemez ve kilit ekranı SESSİZCE
+      // güncellenmez — çökme bile olmaz, banner eski değerde donar.
+      //
+      // Bu test sözleşmeyi metin düzeyinde kilitler: CI'daki derlemeden
+      // önce burada kırılır.
+      final swift =
+          File('ios/SandikWidget/SandikAttributes.swift').readAsStringSync();
+
+      // Payload'ın taşıdığı TÜM alanlar (gizli ve görünür dallar birlikte).
+      const alanlar = [
+        'totalText',
+        'changeText',
+        'changePctText',
+        'isPositive',
+        'isHidden',
+        'updatedAtText',
+        'dateText',
+        'sparkline',
+        'showAmounts',
+        'isMarketOpen',
+        'axisMinText',
+        'axisMaxText',
+        'isFlatChange',
+      ];
+
+      for (final alan in alanlar) {
+        // Tam ad eşleşmesi ŞART. `contains('var $alan')` yetmez: bir alan
+        // `isFlatChangeXX` diye yeniden adlandırılsa bile önek olarak
+        // eşleşir ve test sessizce geçerdi (denendi, geçti).
+        expect(
+          swift,
+          matches(RegExp(r'var\s+' + alan + r'\s*:')),
+          reason: '$alan Swift ContentState içinde tanımlı değil — '
+              'kilit ekranı bu push u decode edemez',
+        );
+      }
+    });
+
+    test('sunucu yeni alanları İLETİR', () {
+      // Sunucu push gövdesini kendi kuruyor; bir alanı iletmezse uzantı
+      // varsayılana düşer ve istemciyle ayrışır.
+      final fn = File('supabase/functions/push-live-activity/index.ts')
+          .readAsStringSync();
+
+      for (final alan in ['axisMinText', 'axisMaxText', 'isFlatChange']) {
+        expect(fn, contains(alan),
+            reason: '$alan sunucu tarafından iletilmiyor');
+      }
     });
 
     test('sunucudaki sabitle aynı olmalı', () {
@@ -693,4 +746,5 @@ void main() {
       );
     });
   });
+
 }

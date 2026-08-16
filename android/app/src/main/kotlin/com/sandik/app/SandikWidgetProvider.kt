@@ -4,6 +4,8 @@ import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.res.ColorStateList
+import android.os.Build
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -56,20 +58,105 @@ class SandikWidgetProvider : AppWidgetProvider() {
             if (hasData) {
                 val total = data.getString("sandik_total", "") ?: ""
                 val change = data.getString("sandik_change", "") ?: ""
+                val changePct = data.getString("sandik_change_pct", "") ?: ""
                 val isPositive = data.getBoolean("sandik_is_positive", true)
                 val updatedAt = data.getString("sandik_updated_at", "") ?: ""
+                val date = data.getString("sandik_date", "") ?: ""
+                val marketOpen = data.getBoolean("sandik_market_open", false)
 
                 views.setTextViewText(R.id.widget_total, total)
                 views.setTextViewText(R.id.widget_change, change)
-                views.setTextViewText(R.id.widget_updated, updatedAt)
+                views.setTextViewText(R.id.widget_date, date)
+
+                // Canlılık şeridi — kilit ekranıyla AYNI metin ve kural:
+                // "Canlı • 21:51" / "Piyasa kapalı • 21:51". Kullanıcı
+                // rakamın neden değişmediğini bilmeli, aksi halde donuk
+                // sayı "uygulama bozuk" olarak okunur.
+                val durum = context.getString(
+                    if (marketOpen) R.string.widget_live
+                    else R.string.widget_market_closed
+                )
+                views.setTextViewText(R.id.widget_updated, "$durum • $updatedAt")
+
+                // Nokta rengi: açıkken gain, kapalıyken gri. Yeşil nokta
+                // "veri akıyor" demektir ve gece bu doğru değildir.
+                views.setInt(
+                    R.id.widget_live_dot,
+                    "setColorFilter",
+                    context.getColor(
+                        if (marketOpen) R.color.widget_gain
+                        else R.color.widget_text_muted
+                    )
+                )
+
+                // Etiketler yalnızca gerçekten bir rakam varken görünür.
+                // Bakiye gizliyken değişim satırı boş gönderilir; etiket
+                // tek başına kalırsa kart başlık deyip altını boş bırakır.
+                views.setViewVisibility(
+                    R.id.widget_change_label,
+                    if (change.isEmpty()) View.GONE else View.VISIBLE
+                )
+                views.setViewVisibility(
+                    R.id.widget_divider,
+                    if (change.isEmpty()) View.GONE else View.VISIBLE
+                )
 
                 // Kâr/zarar rengi — moda duyarlı kaynaklardan okunur.
-                val changeColor = if (isPositive) {
-                    context.getColor(R.color.widget_gain)
-                } else {
-                    context.getColor(R.color.widget_loss)
+                //
+                // Hareket yoksa NÖTR: sıfır bir yön taşımaz ve kâr/zarar
+                // rengi basmak olmayan bir hareketi varmış gibi gösterir.
+                // "Değişim yok" yazısı kırmızı görünüyordu.
+                val isFlat = data.getBoolean("sandik_is_flat", false)
+                val changeColor = when {
+                    isFlat -> context.getColor(R.color.widget_text_muted)
+                    isPositive -> context.getColor(R.color.widget_gain)
+                    else -> context.getColor(R.color.widget_loss)
                 }
                 views.setTextColor(R.id.widget_change, changeColor)
+
+                // Yön oku — renge EK bir sinyal. Renk körlüğünde de okunur
+                // ve kilit ekranındaki ▲/▼ ile aynı işaret kullanılır.
+                // Hareket yoksa ok hiç basılmaz.
+                views.setTextViewText(
+                    R.id.widget_arrow,
+                    if (isPositive) "▲" else "▼"
+                )
+                views.setTextColor(R.id.widget_arrow, changeColor)
+                views.setViewVisibility(
+                    R.id.widget_arrow,
+                    if (isFlat || change.isEmpty()) View.GONE else View.VISIBLE
+                )
+
+                // Yüzde rozeti — durum renginin düşük alfalı zemini üstünde.
+                // Kilit ekranındaki "+%2,45 Günlük" rozetinin karşılığı.
+                views.setTextViewText(R.id.widget_change_pct, changePct)
+                views.setTextColor(R.id.widget_change_pct, changeColor)
+                // Rozet zemini TINT ile boyanır, `setBackgroundColor` ile
+                // DEĞİL: ikincisi yuvarlak köşeli drawable'ı düz bir
+                // dikdörtgenle değiştirir ve rozet kilit ekranındakine
+                // benzemez. Tint şekli korur, yalnızca rengi sürer.
+                // Rozet zemini TINT ile boyanır, `setBackgroundColor` ile
+                // DEĞİL: ikincisi yuvarlak köşeli drawable'ı düz bir
+                // dikdörtgenle değiştirir ve rozet kilit ekranındakine
+                // benzemez. Tint şekli korur, yalnızca rengi sürer.
+                //
+                // `setColorStateList` API 31'de geldi; altında rozet
+                // zemini varsayılan (nötr) kalır — şekli doğru, yalnızca
+                // rengi sabit. Metin rengi zaten durumu taşıyor.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    views.setColorStateList(
+                        R.id.widget_change_pct,
+                        "setBackgroundTintList",
+                        ColorStateList.valueOf(
+                            // %14 alfa — kilit ekranındaki rozetle aynı.
+                            (changeColor and 0x00FFFFFF) or (0x24 shl 24)
+                        )
+                    )
+                }
+                views.setViewVisibility(
+                    R.id.widget_change_pct,
+                    if (changePct.isEmpty()) View.GONE else View.VISIBLE
+                )
 
                 // Gün içi grafik. Flutter tarafı PNG'yi diske yazar ve yolunu
                 // paylaşımlı depoya koyar; iki noktadan az veri varsa çizim
@@ -97,6 +184,12 @@ class SandikWidgetProvider : AppWidgetProvider() {
                 )
                 views.setTextViewText(R.id.widget_change, "")
                 views.setTextViewText(R.id.widget_updated, "")
+                views.setTextViewText(R.id.widget_date, "")
+                views.setViewVisibility(R.id.widget_change_label, View.GONE)
+                views.setViewVisibility(R.id.widget_change_pct, View.GONE)
+                views.setViewVisibility(R.id.widget_arrow, View.GONE)
+                views.setViewVisibility(R.id.widget_divider, View.GONE)
+                views.setViewVisibility(R.id.widget_live_dot, View.GONE)
                 views.setViewVisibility(R.id.widget_spark, View.GONE)
             }
 

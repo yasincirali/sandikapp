@@ -19,6 +19,22 @@
 
 ---
 
+## ✅ (KAPANDI) DM Sans fontları — Xcode adımı GEREKMİYOR
+
+Fontlar `ios/SandikWidget/Fonts/` altına konuldu, `Info.plist`'e
+`UIAppFonts` kaydı yapıldı ve **`project.pbxproj` doğrudan düzenlenerek**
+SandikWidget hedefinin *Copy Bundle Resources* fazına eklendi.
+
+Yani Xcode açmana gerek yok — GitHub Actions'taki build fontları
+kendiliğinden paketleyecek.
+
+**TestFlight'ta doğrulama:** kilit ekranındaki "Sandık" yazısı ve rakamlar
+uygulamanın içindeki başlıklarla aynı karakter biçiminde olmalı. Sistem
+fontuna (SF Pro) düşmüş görünüyorsa `UIAppFonts` kaydı ya da hedef üyeliği
+bozulmuş demektir.
+
+---
+
 ## 🗄️ BEKLEYEN MIGRATION: `0027_soft_delete_lots.sql` (2026-08-11)
 
 **Ne:** `assets` tablosuna `deleted_at TIMESTAMPTZ` sütunu + aktif kayıtlar

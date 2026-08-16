@@ -26,6 +26,25 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!--
+	  DM Sans — uygulamanın marka fontu.
+
+	  Uzantı ana uygulamanın font kaydını MİRAS ALMAZ: her hedef kendi
+	  `UIAppFonts` listesini taşımak zorundadır. Bu liste olmadan
+	  `Font.custom("DMSans-...")` sessizce sistem fontuna düşer ve kilit
+	  ekranı uygulamadan farklı görünür.
+
+	  Dosyalar `ios/SandikWidget/Fonts/` altındadır ve SandikWidget
+	  hedefinin "Copy Bundle Resources" fazına eklenmelidir.
+	-->
+	<key>UIAppFonts</key>
+	<array>
+		<string>DMSans-Regular.ttf</string>
+		<string>DMSans-Medium.ttf</string>
+		<string>DMSans-SemiBold.ttf</string>
+		<string>DMSans-Bold.ttf</string>
+		<string>DMSans-Black.ttf</string>
+	</array>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

@@ -385,19 +385,7 @@ class HistoryService {
     // önceki-sonraki arası fark %1'den az olan tek-gün spike'ları temizle. Bu,
     // Yahoo'nun bazı sembollerdeki tek-gün eksik/geç verisinden gelen V-dip
     // artefaktlarını (gerçek trend olmadan) yumuşatır.
-    final sortedKeys = groupedPoints.keys.toList()..sort();
-    for (int i = 1; i < sortedKeys.length - 1; i++) {
-      final prev = groupedPoints[sortedKeys[i - 1]]!;
-      final cur = groupedPoints[sortedKeys[i]]!;
-      final next = groupedPoints[sortedKeys[i + 1]]!;
-      if (prev <= 0 || next <= 0) continue;
-      final devPrev = ((cur - prev) / prev).abs();
-      final devNext = ((cur - next) / next).abs();
-      final prevNextGap = ((next - prev) / prev).abs();
-      if (devPrev > 0.015 && devNext > 0.015 && prevNextGap < 0.01) {
-        groupedPoints[sortedKeys[i]] = (prev + next) / 2;
-      }
-    }
+    smoothSpikes(groupedPoints, deviation: 0.015, neighborGap: 0.01);
 
     return groupedPoints;
   }
@@ -637,10 +625,21 @@ class HistoryService {
       // O ASSET'İ yok say — tüm portföyü boşaltma.
       bool anyCovered = false;
 
+      // Bu slotta kaç pozisyon fiyatlanabildi / kaç pozisyon bekleniyor.
+      //
+      // Slotlar ancak AYNI pozisyon kümesini içeriyorsa karşılaştırılabilir.
+      // Kapanışa yakın bazı ticker'lar veri vermeyi keserken diğerleri
+      // devam ediyor; o slotta toplam daha AZ pozisyondan oluşuyor ve seri
+      // aşağı sıçrayıp bir sonraki slotta geri çıkıyordu (grafikte "W").
+      // Bu bir fiyat hareketi değil, EKSİK PORTFÖY.
+      var covered = 0;
+      var expected = 0;
+
       for (final a in assets) {
         try {
           final qty = signedQtyOnSlot(a, hourTs);
           if (qty == 0) continue;
+          expected++;
           double? v;
 
           if (a.type == AssetType.altin) {
@@ -679,6 +678,7 @@ class HistoryService {
           if (v != null) {
             total += v;
             anyCovered = true;
+            covered++;
           }
         } catch (_) {
           // Bu asset hesaplanamadı, diğerlerine devam et.
@@ -687,6 +687,18 @@ class HistoryService {
 
       if (!anyCovered) continue;
       if (total < 0) total = 0;
+
+      // EKSİK KAPSAMLI slot seriye GİRMEZ.
+      //
+      // Portföyün bir kısmı fiyatlanamadıysa bu slot diğerleriyle aynı
+      // şeyi ölçmüyor demektir; grafiğe koymak "portföyüm düştü" yalanını
+      // söyler. Slotu atlamak doğru davranıştır: çizgi bir önceki gerçek
+      // noktadan bir sonrakine gider ve gün içi hareketi olduğu gibi
+      // anlatır.
+      //
+      // `expected` sıfırsa (o an hiç pozisyon yok) bölme yapılmaz.
+      if (expected > 0 && covered < expected) continue;
+
       groupedPoints[hourTs] = total;
     }
 
@@ -712,6 +724,25 @@ class HistoryService {
         groupedPoints[lastKey] = liveTotal;
       }
     }
+
+    // Outlier smoothing — GÜNLÜK seride olanın gün içi karşılığı
+    // (bkz. `getPortfolioHistory` sonundaki aynı blok).
+    //
+    // Yahoo bazı sembollerde tek bir 5 dakikalık slotu eksik/geç
+    // döndürüyor. `pastOrNull` o slot için bir önceki fiyatı taşıyamadığında
+    // pozisyon anlık olarak eksik hesaplanıyor ve seri tek noktalık bir
+    // "V" çiziyor: aşağı iner, hemen geri çıkar. Gerçek bir fiyat hareketi
+    // değil, veri artefaktı.
+    //
+    // Günlük seri bunu zaten temizliyordu; gün içi seri temizlemiyordu ve
+    // artefakt widget grafiğinde dikey bir sıçrama olarak görünüyordu
+    // (uygulamanın GÜNLÜK sekmesinde görünmeyen bir sıçrama).
+    //
+    // Eşikler gün içi ölçeğe göre DARALTILDI: günlük seride %1,5 sapma
+    // anlamlıyken 5 dakikalık bir slotta portföyün %0,3'ü bile büyük bir
+    // harekettir. Komşular arası fark %0,2'den azsa (yani gerçek bir trend
+    // yoksa) ortadaki nokta iki komşunun ortalamasına çekilir.
+    smoothSpikes(groupedPoints, deviation: 0.003, neighborGap: 0.002);
 
     return groupedPoints;
   }
@@ -1172,4 +1203,44 @@ NormalizedSeries? normalizeSeries(Map<int, double> raw) {
     firstPrice: first,
     lastPrice: last,
   );
+}
+
+/// Tek noktalık "V" artefaktlarını temizler.
+///
+/// Yahoo bazı sembollerde tek bir slotu eksik/geç döndürüyor; o slotta
+/// pozisyon eksik hesaplanıyor ve seri aşağı inip hemen geri çıkıyor.
+/// Gerçek bir fiyat hareketi değil, veri artefaktı.
+///
+/// Bir nokta ancak ÜÇ koşulu birden sağlarsa düzeltilir:
+///   * iki komşusundan da [deviation] oranından fazla sapıyorsa,
+///   * komşuları birbirine [neighborGap] oranından yakınsa (yani gerçek
+///     bir trend YOKSA — trend varsa ortadaki nokta meşrudur).
+///
+/// Eşikler ölçeğe göre verilir: günlük seride %1,5 sapma anlamlıyken
+/// 5 dakikalık bir slotta portföyün %0,3'ü bile büyük bir haraket sayılır.
+///
+/// Uçlar (ilk ve son) DOKUNULMAZ: komşusu olmayan bir noktanın artefakt
+/// olup olmadığı bilinemez ve son nokta zaten canlı toplama sabitlenir.
+@visibleForTesting
+Map<int, double> smoothSpikes(
+  Map<int, double> points, {
+  required double deviation,
+  required double neighborGap,
+}) {
+  final keys = points.keys.toList()..sort();
+  for (int i = 1; i < keys.length - 1; i++) {
+    final prev = points[keys[i - 1]]!;
+    final cur = points[keys[i]]!;
+    final next = points[keys[i + 1]]!;
+    if (prev <= 0 || next <= 0) continue;
+    final devPrev = ((cur - prev) / prev).abs();
+    final devNext = ((cur - next) / next).abs();
+    final prevNextGap = ((next - prev) / prev).abs();
+    if (devPrev > deviation &&
+        devNext > deviation &&
+        prevNextGap < neighborGap) {
+      points[keys[i]] = (prev + next) / 2;
+    }
+  }
+  return points;
 }

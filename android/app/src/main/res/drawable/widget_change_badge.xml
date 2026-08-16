@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Yüzde rozeti zemini — kilit ekranındaki "+%2,45 Günlük" rozetinin
+  karşılığı (bkz. SandikLiveActivity.amountsLayout).
+
+  Zemin, durum renginin çok düşük alfalı hâlidir ve renk çalışma anında
+  sürülür. Amber BURAYA konmaz: brief'e göre amber yalnızca gerçekten
+  vurgulanacak TEK öğe için ayrılmıştır.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFFFFF" />
+    <corners android:radius="8dp" />
+</shape>

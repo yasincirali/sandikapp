@@ -94,6 +94,40 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// görünmeye devam eder çünkü onlar portföy büyüklüğünü ele vermez.
         var showAmounts: Bool
 
+        /// Grafiğin tutar ekseni — alt ve üst kılavuz etiketi.
+        ///
+        /// Sınırlar gerçek min/max'ın biraz DIŞINDADIR, böylece çizgi
+        /// kılavuza değmez ve kullanıcı hareketin hangi bantta gezindiğini
+        /// okuyabilir. Eksen olmadan "ne kadar oynadı" sorusu yanıtsız
+        /// kalıyordu: aynı görünen iki çizgiden biri 5 kuruşluk, diğeri
+        /// 50.000 TL'lik hareket olabilir.
+        ///
+        /// **Gizlilik:** bu iki metin portföy BÜYÜKLÜĞÜNÜ ele verir —
+        /// normalize seri göndermenin bütün gerekçesi buydu. Dart tarafı
+        /// yalnızca `showAmounts` açıkken doldurur; boşken sunum ekseni
+        /// hiç çizmez.
+        ///
+        /// Eski sürümlerden gelen oturumlar bu alanları taşımaz; bu yüzden
+        /// varsayılanları boştur.
+        var axisMinText: String = ""
+        var axisMaxText: String = ""
+
+        /// Değişim ölçüldü ama SIFIR mı?
+        ///
+        /// Sıfır bir YÖN taşımaz: yeşil bir `+₺0,00` ya da kırmızı bir
+        /// `-₺0,00` olmayan bir hareketi varmış gibi gösterir. Renk ve ok
+        /// bu bayrağa göre bastırılır.
+        ///
+        /// **Neden ayrı alan:** önce metinden çıkarılıyordu
+        /// (`changePctText == "%0,00"`). Biçimlendirme tek bir yerde bile
+        /// değişse (ondalık sayısı, boşluk, yüzde işaretinin yeri) çıkarım
+        /// sessizce yanlış sonuç verirdi. Dart tarafı bunu zaten
+        /// hesaplıyor (`DailySummary.isFlat`); taşımak türetmekten güvenli.
+        ///
+        /// Eski sürümlerden gelen oturumlar bu alanı taşımaz; varsayılan
+        /// `false` — yön gösterilir, eski davranış korunur.
+        var isFlatChange: Bool = false
+
         /// BIST işlem saatleri içinde miyiz?
         ///
         /// Kullanıcının seçtiği GÖSTERİM penceresinden ayrıdır: 7/24
@@ -117,5 +151,16 @@ extension SandikActivityAttributes.ContentState {
     /// renk "kazanç var" yanılgısı yaratır.
     var hasChangeData: Bool {
         changePctText != "—" && !changePctText.isEmpty
+    }
+
+    /// Sunumda kâr/zarar rengi kullanılmalı mı?
+    var hasDirection: Bool { hasChangeData && !isFlatChange }
+
+    /// Tutar ekseni çizilebilir mi?
+    ///
+    /// Tutar gizliyken Dart tarafı bu alanları boş gönderir; eksen o
+    /// durumda hiç çizilmez (grafiğin şekli görünmeye devam eder).
+    var hasAxis: Bool {
+        !axisMinText.isEmpty && !axisMaxText.isEmpty
     }
 }

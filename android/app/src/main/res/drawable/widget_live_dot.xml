@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Canlılık noktası — kilit ekranındaki (Live Activity) noktanın karşılığı.
+
+  Renk RemoteViews tarafından çalışma anında sürülür
+  (`setColorFilter`): piyasa açıkken gain, kapalıyken muted. Yeşil bir
+  nokta "veri akıyor" demektir ve gece bu doğru değildir.
+
+  Marka kuralı gereği yanıp SÖNMEZ: ana ekranda saatlerce duran bir
+  yüzeyde titreşen nokta rahatsız edicidir ve pil yakar.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#FFFFFF" />
+    <size android:width="6dp" android:height="6dp" />
+</shape>

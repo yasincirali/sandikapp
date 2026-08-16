@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hairline dikey ayraç — kilit ekranındaki iki sütunlu düzenin ayracıyla
+  aynı işlev: "ne kadarım var" ile "bugün ne oldu" görsel olarak ayrılır.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_hairline" />
+</shape>

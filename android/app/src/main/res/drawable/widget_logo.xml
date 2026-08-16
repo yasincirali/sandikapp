@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sandık logo işareti — `ios/SandikWidget/SandikLogoMark.swift` ile aynı
+  geometri (viewBox 80×50, aynı koordinatlar ve çizgi kalınlıkları).
+
+  İki yüzey aynı markayı taşımalı: kilit ekranındaki (Live Activity)
+  başlıkta bu işaret var, ana ekran widget'ında yoktu ve kart kime ait
+  olduğunu söylemiyordu.
+
+  Renk doğrudan path'lere gömülüdür (marka amber'i, SandikTheme.amber).
+  `android:tint` RemoteViews bağlamında güvenilir şekilde uygulanmıyor;
+  ayrıca amber marka işaretinin rengidir ve moda göre değişmez.
+
+  ## Neden elle yazılmış arc yok
+  İlk sürüm köşeleri `A` (elliptical arc) komutlarıyla çiziyordu ve
+  Android'in vector parser'ında kasa yatık bir dikdörtgene dönüşüyordu.
+  Yuvarlak köşeler artık `M/L` + `Q` (quadratic) ile kuruluyor: hem
+  parser'da güvenilir hem de SwiftUI'daki `roundedRect` ile aynı görsel
+  sonucu veriyor.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp"
+    android:height="16dp"
+    android:viewportWidth="80"
+    android:viewportHeight="50">
+
+    <!-- Dış gövde — sandığın kasası. r=10, (2,2)-(78,48). -->
+    <path
+        android:strokeColor="#F5A623"
+        android:strokeWidth="2.8"
+        android:strokeLineJoin="round"
+        android:pathData="M12,2 L68,2 Q78,2 78,12 L78,38 Q78,48 68,48 L12,48 Q2,48 2,38 L2,12 Q2,2 12,2 Z" />
+
+    <!-- İç kare — kilit haznesi. r=5, (9,10)-(39,40). -->
+    <path
+        android:strokeColor="#F5A623"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:pathData="M14,10 L34,10 Q39,10 39,15 L39,35 Q39,40 34,40 L14,40 Q9,40 9,35 L9,15 Q9,10 14,10 Z" />
+
+    <!-- Kıskaç kolu — yuvarlak uçlu çizgi. -->
+    <path
+        android:strokeColor="#F5A623"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M48,25 L72,25" />
+
+    <!-- Mafsal noktası — dolu daire, merkez (48,25) r=4.5. -->
+    <path
+        android:fillColor="#F5A623"
+        android:pathData="M48,20.5 Q52.5,20.5 52.5,25 Q52.5,29.5 48,29.5 Q43.5,29.5 43.5,25 Q43.5,20.5 48,20.5 Z" />
+</vector>
