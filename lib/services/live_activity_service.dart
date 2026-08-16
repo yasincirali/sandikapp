@@ -229,8 +229,16 @@ class LiveActivityService {
     if (user == null) return;
 
     // Aynı özeti tekrar yazma — her fiyat tick'inde DB turu atmak israf.
+    //
+    // Anahtar, SATIRA yazılan her alanı içermelidir. `show_amounts` ve
+    // eksen etiketleri de bu satırın parçası; anahtarda olmadıkları için
+    // kullanıcı tercihini değiştirdiğinde DB yazımı atlanıyor ve sunucu
+    // ESKİ tercihle push atmaya devam ediyordu. Uygulama önplandayken
+    // ActivityKit doğru görünümü basıyor, push gelince eskisine dönüyordu.
     final key = '${payload['totalText']}|${payload['changeText']}'
-        '|${payload['changePctText']}';
+        '|${payload['changePctText']}|${payload['showAmounts']}'
+        '|${payload['isFlatChange']}|${payload['axisMinText']}'
+        '|${payload['axisMaxText']}';
     if (key == _lastSummaryKey) return;
 
     await _db
@@ -510,8 +518,21 @@ class LiveActivityService {
       // çoğu zaman aynı kalıyor (ör. kuruş altı değişim). ActivityKit'e
       // gereksiz `update` göndermek pil yakar ve sistem tarafından
       // kısıtlanmaya (throttle) yol açar.
+      // Anahtar, GÖRÜNÜMÜ etkileyen HER alanı içermek zorundadır.
+      //
+      // Düzeltilen hata: `showAmounts` anahtarda yoktu. Kullanıcı
+      // Ayarlar'dan "Kilit ekranında tutarı göster"i çevirdiğinde metinler
+      // aynı kaldığı için anahtar değişmiyor, `update` atlanıyordu —
+      // tercih ancak tutar ya da yüzde kendiliğinden değişince devreye
+      // giriyordu. Kullanıcının gördüğü: anahtar "ya hep gösteriyor ya
+      // hiç göstermiyor".
+      //
+      // Eksen etiketleri de (`axisMinText`) `showAmounts`'a bağlı, yani
+      // aynı hatadan etkileniyordu.
       final key = '${payload['totalText']}|${payload['changeText']}'
-          '|${payload['isPositive']}|${payload['isHidden']}';
+          '|${payload['isPositive']}|${payload['isHidden']}'
+          '|${payload['showAmounts']}|${payload['isMarketOpen']}'
+          '|${payload['isFlatChange']}|${payload['axisMinText']}';
       final unchanged = _sessionActive && key == _lastPayloadKey;
 
       // Özeti sunucuya yaz — push döngüsü (cron, 5 dk) bunu okuyup APNs'e

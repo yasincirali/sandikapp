@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kDebugMode, TargetPlatform;
@@ -6,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/data_export_service.dart';
 import '../services/disclaimer_service.dart';
@@ -446,10 +449,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: ref.watch(lockScreenAmountsProvider),
               onChanged: (v) async {
                 await ref.read(lockScreenAmountsProvider.notifier).set(v);
-                // Servise hemen aktar: kullanıcı anahtarı çevirdiğinde
-                // bir sonraki portföy güncellemesini beklemeden kilit
-                // ekranı doğru davranmalı.
-                LiveActivityService.instance.showAmountsOnLockScreen = v;
+
+                // Servise aktar VE hemen senkronla.
+                //
+                // Alanı set etmek tek başına YETMİYORDU: `sync` yalnızca
+                // portföy state'i yayınlandığında çağrılıyor, yani tercih
+                // bir sonraki fiyat tick'ine kadar kilit ekranına
+                // yansımıyordu. Piyasa kapalıyken tick hiç gelmiyor ve
+                // anahtar hiç işe yaramıyormuş gibi görünüyordu.
+                final svc = LiveActivityService.instance;
+                svc.showAmountsOnLockScreen = v;
+
+                final snapshot = ref.read(portfolioProvider).valueOrNull;
+                if (snapshot != null) {
+                  unawaited(svc.sync(
+                    snapshot,
+                    hideBalance: ref.read(balanceHiddenProvider),
+                  ));
+                }
               },
             ),
             const SizedBox(height: 28),

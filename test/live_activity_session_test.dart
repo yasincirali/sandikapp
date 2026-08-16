@@ -483,6 +483,45 @@ void main() {
       expect(args['showAmounts'], isFalse);
       expect(args['totalText'], '••••••');
     });
+
+    test('tercih DEĞİŞİNCE kilit ekranı güncellenir', () async {
+      // Kullanıcının bulduğu hata: anahtar "ya hep gösteriyor ya hiç
+      // göstermiyor".
+      //
+      // Sebep tekrar-eleme anahtarıydı: `_lastPayloadKey` yalnızca
+      // metinleri ve `isHidden`'ı içeriyordu. Tercih çevrildiğinde
+      // metinler AYNI kaldığı için anahtar değişmiyor, `update` atlanıyor
+      // ve kilit ekranı eski görünümde kalıyordu.
+      final svc = LiveActivityService.instance;
+      addTearDown(() => svc.showAmountsOnLockScreen = false);
+
+      // İlk senkron — tercih KAPALI.
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+      expect(channel.calls.last.args['showAmounts'], isFalse);
+      final ilkCagriSayisi = channel.calls.length;
+
+      // Tercihi aç ve AYNI portföyle tekrar senkronla.
+      svc.showAmountsOnLockScreen = true;
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+
+      expect(channel.calls.length, greaterThan(ilkCagriSayisi),
+          reason: 'tercih değişti — update ATLANMAMALI');
+      expect(channel.calls.last.args['showAmounts'], isTrue);
+    });
+
+    test('tercih AYNI kalınca tekrar update gitmez', () async {
+      // Tekrar-eleme hâlâ çalışmalı: anahtarı genişletmek her tick'te
+      // ActivityKit çağrısı yapmak anlamına gelmemeli (pil + throttle).
+      final svc = LiveActivityService.instance;
+
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+      final ilk = channel.calls.length;
+
+      await svc.sync(_state(), hideBalance: false, now: _duringSession);
+
+      expect(channel.calls.length, ilk,
+          reason: 'değişmeyen içerik tekrar gönderilmemeli');
+    });
   });
 
   group('sparkline', () {
