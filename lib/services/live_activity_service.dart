@@ -223,6 +223,19 @@ class LiveActivityService {
       'show_amounts': showAmountsOnLockScreen,
       'updated_at': DateTime.now().toIso8601String(),
     });
+
+    // Tekrar-eleme anahtarını SIFIRLA — bu satırın `summary`'si henüz boş.
+    //
+    // `_lastSummaryKey` servis ömrüne bağlıdır, oturum ömrüne değil. Yeni
+    // bir token satırı açıldığında anahtar hâlâ ÖNCEKİ oturumun değerini
+    // tutuyordu; portföy o sırada değişmemişse `_writeSummary` erken dönüp
+    // yazmayı atlıyor ve satır `summary: null` kalıyordu.
+    //
+    // Sunucu şemasız satırı `skippedStale` sayıp atlar: kullanıcı yeni
+    // sürümü kurup uygulamayı açtığında token kaydoluyor ama kilit ekranı
+    // ilk fiyat değişimine kadar HİÇ beslenmiyordu. Piyasa kapalıyken bu
+    // "hiç" demektir.
+    _lastSummaryKey = null;
   }
 
   /// Portföy özetini sunucuya yazar; push döngüsü bunu okur.

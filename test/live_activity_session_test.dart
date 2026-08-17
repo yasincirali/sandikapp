@@ -629,6 +629,53 @@ void main() {
     });
   });
 
+  group('yeni oturum özeti', () {
+    test('_registerToken tekrar-eleme anahtarını SIFIRLAR', () {
+      // `_lastSummaryKey` SERVİS ömrüne bağlıdır, oturum ömrüne değil.
+      // Yeni bir token satırı açıldığında (`upsert`) o satırın `summary`
+      // alanı henüz boştur; anahtar sıfırlanmazsa hâlâ önceki oturumun
+      // değerini tutar ve portföy o sırada değişmemişse `_writeSummary`
+      // erken döner. Satır `summary: null` kalır.
+      //
+      // Sunucu şemasız satırı `skippedStale` sayıp atlar: kullanıcı yeni
+      // sürümü kurup uygulamayı açtığında token kaydolur ama kilit ekranı
+      // ilk fiyat değişimine kadar HİÇ beslenmez — piyasa kapalıyken bu
+      // "hiç" demektir.
+      //
+      // Gerçek vaka (2026-08-18): yeni TestFlight sürümü kurulduktan sonra
+      // oturum `summary: null` ile açıldı ve push'un çalışması için satırı
+      // elle doldurmak gerekti.
+      //
+      // DB yazımı burada doğrudan sınanamıyor (testlerde Supabase yok,
+      // yazma sessizce düşüyor), bu yüzden sözleşme KAYNAK düzeyinde
+      // kilitlenir.
+      final kaynak = File('lib/services/live_activity_service.dart')
+          .readAsStringSync();
+
+      final govde = RegExp(
+        r'Future<void> _registerToken\([^)]*\) async \{(.*?)\n  \}',
+        dotAll: true,
+      ).firstMatch(kaynak);
+
+      expect(govde, isNotNull, reason: '_registerToken gövdesi bulunamadı');
+
+      // Yorumlar elenir: anahtarı ANLATAN bir yorum satırı da eşleşir ve
+      // kod sıfırlamayı hiç yapmasa bile test geçerdi.
+      final kod = govde!
+          .group(1)!
+          .split('\n')
+          .where((l) => !l.trimLeft().startsWith('//'))
+          .join('\n');
+
+      expect(
+        kod,
+        contains('_lastSummaryKey = null'),
+        reason: '_registerToken tekrar-eleme anahtarını sıfırlamıyor — yeni '
+            'oturum summary:null kalır ve sunucu onu skippedStale sayar',
+      );
+    });
+  });
+
   group('sparkline', () {
     test('normalize edilir — ham TUTAR taşımaz', () async {
       await LiveActivityService.instance
