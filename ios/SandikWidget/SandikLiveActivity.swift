@@ -294,10 +294,12 @@ struct SandikLockScreenView: View {
                     ? SandikTheme.statusColor(isPositive: state.isPositive)
                     : SandikTheme.text58,
                 isMarketOpen: state.isMarketOpen,
-                // Tutar gizliyken bu alanlar zaten boş gelir ve eksen
-                // çizilmez — grafiğin şekli görünmeye devam eder.
+                // Tutar gizliyken bu alanlar BOŞ gelir: rakam yazılmaz
+                // ama kılavuz çizgileri yine çizilir. Çizgi bir büyüklük
+                // taşımaz, yalnızca grafiğin bandını gösterir.
                 axisMin: state.axisMinText,
-                axisMax: state.axisMaxText
+                axisMax: state.axisMaxText,
+                showsGuides: true
             )
             .frame(width: 130, height: 44)
         }
@@ -381,7 +383,8 @@ struct SandikLockScreenView: View {
                         : SandikTheme.text58,
                     isMarketOpen: state.isMarketOpen,
                     axisMin: state.axisMinText,
-                    axisMax: state.axisMaxText
+                    axisMax: state.axisMaxText,
+                    showsGuides: true
                 )
                 .frame(height: 32)
             }

@@ -39,22 +39,31 @@ struct SandikSparkline: View {
     /// kullanıcı donuk veriyi canlı sanır.
     var isMarketOpen: Bool? = nil
 
-    /// Tutar ekseni kılavuzları — alt ve üst sınır etiketi.
+    /// Tutar ekseni ETİKETLERİ — alt ve üst sınır.
     ///
-    /// Boş bırakılırsa eksen HİÇ çizilmez. Tutar gizliyken Dart tarafı
-    /// zaten boş gönderir: eksen portföy büyüklüğünü ele verir ve
-    /// normalize seri göndermenin bütün gerekçesi buydu.
-    ///
-    /// Dar alanlarda (Dynamic Island) çağıran bilinçli olarak vermez —
-    /// 26pt yüksekliğinde bir grafikte iki etiket okunmaz, gürültü olur.
+    /// Boş bırakılırsa yalnızca RAKAMLAR gizlenir; kılavuz çizgileri yine
+    /// çizilir (bkz. [showsGuides]). Tutar gizliyken Dart tarafı bunları
+    /// boş gönderir: rakam portföy büyüklüğünü ele verir ve normalize seri
+    /// göndermenin bütün gerekçesi buydu. Çizginin KENDİSİ ise bir
+    /// büyüklük taşımaz — yalnızca grafiğin nerede başlayıp bittiğini
+    /// gösterir.
     var axisMin: String? = nil
     var axisMax: String? = nil
 
-    /// Eksen etiketlerine ayrılan sol şerit. Çizgi bu şeridin sağından
-    /// başlar, yoksa rakamların üstünden geçer ve ikisi de okunmaz.
-    private var axisInset: CGFloat { hasAxis ? 44 : 0 }
+    /// Kılavuz çizgileri çizilsin mi?
+    ///
+    /// Dar alanlarda (Dynamic Island) çağıran kapatır: 26pt yüksekliğinde
+    /// bir grafikte iki yatay çizgi + veri çizgisi birbirine karışır.
+    var showsGuides: Bool = false
 
-    private var hasAxis: Bool {
+    /// Eksen etiketlerine ayrılan sol şerit.
+    ///
+    /// Yalnızca ETİKET varken pay bırakılır; çizgiler tek başınayken
+    /// grafik tüm genişliği kullanır (dar bir yüzeyde 44pt boşluk pahalı).
+    private var axisInset: CGFloat { hasLabels ? 44 : 0 }
+
+    /// Etiket metinleri geldi mi? (tutar gösterimi açık demektir)
+    private var hasLabels: Bool {
         guard let lo = axisMin, let hi = axisMax else { return false }
         return !lo.isEmpty && !hi.isEmpty
     }
@@ -91,12 +100,15 @@ struct SandikSparkline: View {
             // Eksen olmadan grafik "ne kadar oynadı" sorusunu
             // yanıtlamıyordu: aynı görünen iki çizgiden biri 5 kuruşluk,
             // diğeri 50.000 TL'lik hareket olabilir.
-            if hasAxis, let lo = axisMin, let hi = axisMax {
+            if showsGuides {
                 let guideColor = SandikTheme.text36.opacity(0.55)
 
-                let guides: [(String, CGFloat)] = [
-                    (hi, padY),
-                    (lo, padY + usableH),
+                // Etiket YOKSA da çizgiler çizilir: çizgi bir büyüklük
+                // taşımaz, yalnızca grafiğin bandını gösterir. Rakamı
+                // gizlemek ile bandı gizlemek AYRI kararlardır.
+                let guides: [(String?, CGFloat)] = [
+                    (hasLabels ? axisMax : nil, padY),
+                    (hasLabels ? axisMin : nil, padY + usableH),
                 ]
 
                 for (label, y) in guides {
@@ -115,13 +127,15 @@ struct SandikSparkline: View {
                     // `resolve` + `measure` ile elle ölçüp ortalamaya gerek
                     // yok ve anchor'lı çizim daha az API yüzeyi kullanır
                     // (derleyemediğim bir hedefte risk azaltır).
-                    context.draw(
-                        Text(label)
-                            .font(.sandikNumber(7, weight: .medium))
-                            .foregroundColor(SandikTheme.text58),
-                        at: CGPoint(x: plotX - 4, y: y),
-                        anchor: .trailing
-                    )
+                    if let label {
+                        context.draw(
+                            Text(label)
+                                .font(.sandikNumber(7, weight: .medium))
+                                .foregroundColor(SandikTheme.text58),
+                            at: CGPoint(x: plotX - 4, y: y),
+                            anchor: .trailing
+                        )
+                    }
                 }
             }
 
