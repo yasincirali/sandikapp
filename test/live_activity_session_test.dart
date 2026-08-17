@@ -442,6 +442,57 @@ void main() {
       }
     });
 
+    test('sunucunun gönderdiği HER anahtar Swift ContentState de vardır', () {
+      // Sözleşmenin ÜÇÜNCÜ yarısı — ve en sinsisi.
+      //
+      // Yukarıdaki testler "Dart'ın gönderdiği alan Swift'te var mı" diye
+      // sorar. Bu test tersini sorar: SUNUCUNUN uydurduğu bir anahtar
+      // Swift'te YOK ise ne olur?
+      //
+      // Gerçek vaka (2026-08-18): sunucu `sessionEndsAt` gönderiyordu,
+      // Swift'te alan aynı adla ama `Date` tipiyle duruyordu. Yerel yol
+      // JSON'dan GEÇMEDİĞİ için (plugin struct'ı doğrudan kurar) hata
+      // yalnızca push'ta ortaya çıktı: ActivityKit gövdeyi `Codable` ile
+      // çözerken zorunlu alanı okuyamayınca güncellemenin TAMAMINI attı.
+      // Banner kilit ekranında durmaya devam etti, rakamlar dondu, ne
+      // çökme ne log oluştu. APNs `200` döndüğü için sunucu tarafı da
+      // "başarılı" görünüyordu — teşhis edilebilecek hiçbir iz yoktu.
+      final fn = File('supabase/functions/push-live-activity/index.ts')
+          .readAsStringSync();
+      final swift =
+          File('ios/SandikWidget/SandikAttributes.swift').readAsStringSync();
+
+      // `const contentState = { ... };` gövdesini al.
+      final govde = RegExp(
+        r'const contentState = \{(.*?)\n    \};',
+        dotAll: true,
+      ).firstMatch(fn);
+      expect(govde, isNotNull, reason: 'contentState gövdesi bulunamadı');
+
+      // Yorumları ele — yorumdaki bir kelime anahtar sanılmasın.
+      final satirlar = govde!.group(1)!.split('\n').where(
+            (l) => !l.trimLeft().startsWith('//'),
+          );
+
+      // `anahtar:` biçimindeki üst düzey alan adları.
+      final anahtarlar = satirlar
+          .map((l) => RegExp(r'^\s{6}(\w+):').firstMatch(l)?.group(1))
+          .whereType<String>()
+          .toSet();
+
+      expect(anahtarlar, isNotEmpty, reason: 'hiç anahtar ayrıştırılamadı');
+
+      for (final anahtar in anahtarlar) {
+        expect(
+          swift,
+          matches(RegExp(r'var ' + anahtar + r'\s*:')),
+          reason: 'sunucu "$anahtar" gönderiyor ama Swift ContentState '
+              'içinde böyle bir alan YOK — ActivityKit tüm güncellemeyi '
+              'sessizce düşürür',
+        );
+      }
+    });
+
     test('sunucudaki sabitle aynı olmalı', () {
       // Edge function'daki SUMMARY_SCHEMA_VERSION ile birebir aynı
       // olmalı. Ayrışırlarsa ya tüm push'lar sessizce atlanır (sunucu

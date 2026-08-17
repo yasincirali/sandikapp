@@ -67,7 +67,7 @@ enum LiveActivityBridge {
                 // Sistem, seans bitiminde oturumu kendiliğinden "eskimiş"
                 // sayar. Kullanıcı uygulamayı hiç açmasa bile kilit ekranı
                 // bayat rakam göstermez.
-                staleDate: state.sessionEndsAt
+                staleDate: state.sessionEndsAtDate
             )
             let activity = try Activity.request(
                 attributes: attributes,
@@ -122,7 +122,7 @@ enum LiveActivityBridge {
 
         Task {
             await activity.update(
-                ActivityContent(state: state, staleDate: state.sessionEndsAt)
+                ActivityContent(state: state, staleDate: state.sessionEndsAtDate)
             )
         }
         return true
@@ -253,12 +253,11 @@ enum LiveActivityChannel {
             return nil
         }
 
-        // Dart `DateTime.millisecondsSinceEpoch` gönderir. Alan yoksa
-        // (ör. `end` çağrısı) şimdiden 1 saat sonrası varsayılır; staleDate
-        // olarak zararsız bir değerdir.
-        let endsMs = args["sessionEndsAtMs"] as? Int
-        let endsAt = endsMs.map { Date(timeIntervalSince1970: Double($0) / 1000.0) }
-            ?? Date().addingTimeInterval(3600)
+        // Dart `DateTime.millisecondsSinceEpoch` gönderir; tip UNIX SANİYESİ
+        // olarak taşınır (bkz. `ContentState.sessionEndsAtUnix`). Alan yoksa
+        // 0 kalır ve `sessionEndsAtDate` bir saat sonrasına düşer.
+        let endsUnix = (args["sessionEndsAtMs"] as? NSNumber)
+            .map { $0.doubleValue / 1000.0 } ?? 0
 
         // Sparkline normalize (0…1) gelir; ham tutar ASLA taşınmaz.
         // Bozuk/eksik veri grafiği gizler, uydurma çizgi çizmez.
@@ -275,7 +274,7 @@ enum LiveActivityChannel {
             // Zorunlu DEĞİL: alan yoksa (eski Dart tarafı) tarih satırı
             // hiç çizilmez, oturum yine de açılır.
             dateText: args["dateText"] as? String ?? "",
-            sessionEndsAt: endsAt,
+            sessionEndsAtUnix: endsUnix,
             sparkline: spark.count >= 2 ? spark : [],
             // Varsayılan KAPALI: bayrak eksikse tutar gösterilmez.
             // Gizlilik kararlarında güvenli taraf budur.

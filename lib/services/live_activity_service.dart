@@ -74,6 +74,14 @@ class LiveActivityService {
   /// uygulaması güncellenmiş bir kullanıcı, DB'de duran eski özet
   /// yüzünden kilit ekranında yanlış rakamı görmeye devam eder. Anlamı
   /// değişen her alanda bu sayı ARTIRILMALIDIR.
+  ///
+  /// **Neden ANLAM, alan adı değil:** 2026-08-18'de push gövdesindeki
+  /// `sessionEndsAt` → `sessionEndsAtUnix` olarak düzeltildi (Swift `Date`
+  /// çözümlemesi Unix saniyesini 2001 referansıyla okuyup 2056'ya taşıyordu).
+  /// Sürüm YÜKSELTİLMEDİ: rakamların anlamı değişmedi ve yükseltmek, DB'de
+  /// v6 yazan bütün oturumları `skippedStale` yapıp kullanıcı yeni sürümü
+  /// kurana kadar push'u tümden keserdi. Eski istemci yeni alanı tanımaz,
+  /// varsayılan 0'a düşer, `staleDate` bir saat sonrasına oturur — zararsız.
   static const summarySchemaVersion = 6;
 
   /// Kullanıcıya görünen seans adı.

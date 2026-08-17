@@ -68,7 +68,21 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// Seansın planlanan bitişi. Kilit ekranında geri sayım göstermek
         /// için değil, "seans sürüyor mu" kararını uzantıda da verebilmek
         /// için taşınır.
-        var sessionEndsAt: Date
+        ///
+        /// **Neden `Date` DEĞİL de saniye:** bu tip iki ayrı yoldan doldurulur
+        /// ve yalnızca biri JSON'dan geçer. Yerel güncellemede
+        /// `LiveActivityPlugin` struct'ı doğrudan kurar — çözümleme yoktur.
+        /// Push'ta ise ActivityKit gövdeyi `Codable` ile çözer ve Swift'in
+        /// varsayılan `Date` stratejisi (`.deferredToDate`) 2001 referanslı
+        /// ondalık bekler. Sunucu Unix saniyesi gönderince aynı sayı 2056
+        /// olarak okunuyordu; `staleDate` geleceğe kaçtığı için sistem
+        /// içeriği hiç bayatlamış saymıyordu.
+        ///
+        /// Ham `Double` taşımak bu belirsizliği tümden kaldırır: dönüşüm
+        /// [sessionEndsAtDate] içinde TEK bir yerde, açıkça Unix referansıyla
+        /// yapılır. Varsayılanı da vardır — alan bozuk ya da eksik gelse bile
+        /// çözümleme çökmez ve güncelleme sessizce düşmez.
+        var sessionEndsAtUnix: Double = 0
 
         /// Gün içi portföy serisi — **normalize edilmiş** (0…1) noktalar.
         ///
@@ -163,5 +177,17 @@ extension SandikActivityAttributes.ContentState {
     /// durumda hiç çizilmez (grafiğin şekli görünmeye devam eder).
     var hasAxis: Bool {
         !axisMinText.isEmpty && !axisMaxText.isEmpty
+    }
+
+    /// [sessionEndsAtUnix] alanının `Date` karşılığı — Unix referansı BURADA,
+    /// tek bir yerde uygulanır.
+    ///
+    /// Değer yoksa (0) `staleDate` olarak bir saat sonrası varsayılır:
+    /// geçmiş bir tarih içeriği anında bayat gösterirdi, uzak bir gelecek ise
+    /// hiç bayatlatmazdı. İkisi de sessiz yanlış davranış üretir.
+    var sessionEndsAtDate: Date {
+        sessionEndsAtUnix > 0
+            ? Date(timeIntervalSince1970: sessionEndsAtUnix)
+            : Date().addingTimeInterval(3600)
     }
 }

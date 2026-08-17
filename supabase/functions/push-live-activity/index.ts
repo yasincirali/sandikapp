@@ -301,7 +301,15 @@ Deno.serve(async (request) => {
         weekday: 'long',
         timeZone: 'Europe/Istanbul',
       }),
-      sessionEndsAt: Math.floor(new Date(s.expires_at).getTime() / 1000),
+      // UNIX SANİYESİ, `Date` değil.
+      //
+      // Önceden alan adı `sessionEndsAt` idi ve Swift tarafında tipi `Date`
+      // olduğu için ActivityKit bunu VARSAYILAN stratejiyle (2001 referanslı)
+      // çözüyordu: gönderdiğimiz Unix saniyesi cihazda 2056 olarak okunuyor,
+      // `staleDate` geleceğe kaçıyordu. Alan zorunlu olduğundan çözümleme
+      // hatası tüm güncellemeyi sessizce düşürüyordu — banner kilit ekranında
+      // duruyor ama rakamlar hiç değişmiyordu (çökme ve log YOK).
+      sessionEndsAtUnix: Math.floor(new Date(s.expires_at).getTime() / 1000),
       sparkline: Array.isArray(row.sparkline) ? row.sparkline : [],
       showAmounts,
       // Piyasa durumu da push anına göre hesaplanır. Bu alan hiç
