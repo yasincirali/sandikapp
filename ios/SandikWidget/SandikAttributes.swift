@@ -88,7 +88,8 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// sinyal yoktur; aynı `ContentState` iki durumda da render edilir.
         /// Bu yüzden "kilitliyken gizle, açılınca göster" davranışı teknik
         /// olarak kurulamaz — bunun yerine kullanıcı tercihi taşınır
-        /// (Ayarlar → "Kilit ekranında tutarı göster", varsayılan KAPALI).
+        /// (Ayarlar → Canlı Etkinlikler → Gizlilik → "Tutarları göster",
+        /// varsayılan KAPALI).
         ///
         /// Kapalıyken tutar alanları kaynakta maskelenir; yüzde ve grafik
         /// görünmeye devam eder çünkü onlar portföy büyüklüğünü ele vermez.

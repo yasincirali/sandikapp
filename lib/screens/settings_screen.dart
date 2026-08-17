@@ -397,6 +397,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const _ThemeModePicker(),
             const SizedBox(height: 24),
 
+            // -- BİLDİRİMLER ---------------------------------------
+            //
+            // Sinyalle ilgili İKİ ayar vardı ve iki ayrı bölümdeydi:
+            // bildirim anahtarı "BİLDİRİMLER"de, gösterge seçimi
+            // "SİNYALLER"de. Kullanıcı sinyalleri ayarlamak istediğinde
+            // ekranda iki farklı yere bakmak zorundaydı. Aynı özelliğin
+            // parçaları bir arada durur.
             const _SectionTitle('BİLDİRİMLER'),
             const SizedBox(height: 12),
             _SwitchTile(
@@ -411,6 +418,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 await syncSignalsEnabledPreference(ref);
               },
             ),
+            _SettingsTile(
+              icon: Icons.tune_rounded,
+              title: 'Sinyal ayarları',
+              subtitle: 'Her varlık türü için gösterge seçimi + Premium',
+              onTap: () => Navigator.push(
+                context,
+                adaptiveRoute(
+                    builder: (_) => const SignalSettingsScreen()),
+              ),
+            ),
             _SwitchTile(
               icon: Icons.people_outline_rounded,
               title: 'Ortaklık daveti bildirimleri',
@@ -421,56 +438,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   .set(v),
             ),
             const SizedBox(height: 28),
-            // Live Activity ayarları kendi bölümünde durur.
+
+            // -- CANLI ETKİNLİKLER ---------------------------------
             //
-            // Önceden "GİZLİLİK" altındaydı ve kullanıcı bulamıyordu:
-            // iOS'ta özelliğin adı "Canlı Etkinlikler", Ayarlar'da ise
-            // hiçbir yerde bu kelime geçmiyordu. Kullanıcı gördüğü adla
-            // arar; bölüm başlığı o adla eşleşmeli.
+            // Bölüm başlığı iOS'taki özellik adıyla EŞLEŞİR ("Canlı
+            // Etkinlikler"): kullanıcı gördüğü adla arar.
+            //
+            // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
+            // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
+            // Etkinlik'in ne göstereceğini belirler ve o özellik
+            // kapalıyken hiçbir şey ifade etmez. Android'in ayar
+            // kılavuzu da bunu söylüyor -- bir ayar, ait olduğu
+            // ÖZELLİĞİN altında durur.
             //
             // iOS-only: Android'de ActivityKit yok, kanal kayıtlı değil
             // ve `sync` ilk satırda döner (bkz. LiveActivityService).
             // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
             if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              const _SectionTitle('CANLI ETKİNLİK'),
+              const _SectionTitle('CANLI ETKİNLİKLER'),
               const SizedBox(height: 12),
               const _LiveActivitySection(),
               const SizedBox(height: 28),
             ],
-            const _SectionTitle('GİZLİLİK'),
-            const SizedBox(height: 12),
-            _SwitchTile(
-              icon: Icons.lock_outline_rounded,
-              title: 'Kilit ekranında tutarı göster',
-              subtitle:
-                  'Kapalıyken kilit ekranında ve Dynamic Island\'da yalnızca '
-                  'günlük yüzde ve grafik görünür; tutarlar gizlenir. '
-                  'Telefonunuz kilitliyken portföy büyüklüğünüz görünmez.',
-              value: ref.watch(lockScreenAmountsProvider),
-              onChanged: (v) async {
-                await ref.read(lockScreenAmountsProvider.notifier).set(v);
 
-                // Servise aktar VE hemen senkronla.
-                //
-                // Alanı set etmek tek başına YETMİYORDU: `sync` yalnızca
-                // portföy state'i yayınlandığında çağrılıyor, yani tercih
-                // bir sonraki fiyat tick'ine kadar kilit ekranına
-                // yansımıyordu. Piyasa kapalıyken tick hiç gelmiyor ve
-                // anahtar hiç işe yaramıyormuş gibi görünüyordu.
-                final svc = LiveActivityService.instance;
-                svc.showAmountsOnLockScreen = v;
-
-                final snapshot = ref.read(portfolioProvider).valueOrNull;
-                if (snapshot != null) {
-                  unawaited(svc.sync(
-                    snapshot,
-                    hideBalance: ref.read(balanceHiddenProvider),
-                  ));
-                }
-              },
-            ),
-            const SizedBox(height: 28),
-            const _SectionTitle('SOSYAL'),
+            // -- ORTAKLIK ------------------------------------------
+            //
+            // Tek satırlık "SOSYAL" bölümüydü; adı artık içeriğiyle
+            // eşleşiyor.
+            const _SectionTitle('ORTAKLIK'),
             const SizedBox(height: 12),
             _SwitchTile(
               icon: Icons.emoji_events_outlined,
@@ -482,19 +477,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: ref.watch(leaderboardOptInProvider),
               onChanged: (v) =>
                   ref.read(leaderboardOptInProvider.notifier).set(v),
-            ),
-            const SizedBox(height: 28),
-            const _SectionTitle('SİNYALLER'),
-            const SizedBox(height: 12),
-            _SettingsTile(
-              icon: Icons.tune_rounded,
-              title: 'Sinyal Ayarları',
-              subtitle: 'Her varlık türü için gösterge seçimi + Premium',
-              onTap: () => Navigator.push(
-                context,
-                adaptiveRoute(
-                    builder: (_) => const SignalSettingsScreen()),
-              ),
             ),
             const SizedBox(height: 28),
             const _SectionTitle('YASAL'),
@@ -626,6 +608,36 @@ class _SectionTitle extends StatelessWidget {
           // yardımcı metin eşiğini geçer, light modda okunmuyordu.
           color: context.c.text58,
           letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+}
+
+/// Bölüm İÇİ alt başlık — ör. "Canlı Etkinlikler > Gizlilik".
+///
+/// [_SectionTitle]'dan görsel olarak AYRIŞIR: küçük punto, harf aralığı
+/// yok, cümle düzeni (ALL CAPS değil). Aksi halde iki kademe aynı ağırlıkta
+/// okunur ve hiyerarşi kaybolur — kullanıcı alt başlığı yeni bir bölüm
+/// sanar.
+///
+/// Bir bölümde ikinci bir kırılım gerektiğinde kullanılır: Android'in ayar
+/// kılavuzu, yakından ilişkili ayarların grup başlığı almasını önerir.
+class _SubSectionTitle extends StatelessWidget {
+  final String text;
+  const _SubSectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      // Üstte belirgin boşluk: alt başlık kendinden ÖNCEKİ satırdan
+      // ayrılmalı, sonrakiyle birlikte okunmalı.
+      padding: const EdgeInsets.fromLTRB(8, 18, 8, 6),
+      child: Text(
+        text,
+        style: context.t.bodySmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: context.c.text58,
         ),
       ),
     );
@@ -934,6 +946,47 @@ class _LiveActivitySection extends ConsumerWidget {
           onChanged: (v) async {
             await ref.read(liveActivityWeekendProvider.notifier).set(v);
             LiveActivityService.instance.includeWeekend = v;
+          },
+        ),
+
+        // ---- Gizlilik alt başlığı ----
+        //
+        // Bölüm içinde İKİNCİ bir kırılım: "ne zaman görünsün"
+        // ayarlarından sonra "ne göstersin" ayarı gelir. Android'in ayar
+        // kılavuzu bunu öneriyor — yakından ilişkili ayarlar bir grupta
+        // toplanır ve grup başlığı alır.
+        //
+        // Anahtarın kendisi bir Canlı Etkinlik ayarıdır (bu yüzden bu
+        // bölümde), ama sonucu gizliliktir (bu yüzden alt başlık).
+        const _SubSectionTitle('Gizlilik'),
+        _SwitchTile(
+          icon: Icons.visibility_off_outlined,
+          title: 'Tutarları göster',
+          subtitle:
+              'Kapalıyken yalnızca günlük yüzde ve grafik görünür. '
+              'Kilit ekranı telefonunuz açılmadan görülebildiği için '
+              'varsayılan olarak kapalıdır.',
+          value: ref.watch(lockScreenAmountsProvider),
+          onChanged: (v) async {
+            await ref.read(lockScreenAmountsProvider.notifier).set(v);
+
+            // Servise aktar VE hemen senkronla.
+            //
+            // Alanı set etmek tek başına YETMİYORDU: `sync` yalnızca
+            // portföy state'i yayınlandığında çağrılıyor, yani tercih
+            // bir sonraki fiyat tick'ine kadar kilit ekranına
+            // yansımıyordu. Piyasa kapalıyken tick hiç gelmiyor ve
+            // anahtar hiç işe yaramıyormuş gibi görünüyordu.
+            final svc = LiveActivityService.instance;
+            svc.showAmountsOnLockScreen = v;
+
+            final snapshot = ref.read(portfolioProvider).valueOrNull;
+            if (snapshot != null) {
+              unawaited(svc.sync(
+                snapshot,
+                hideBalance: ref.read(balanceHiddenProvider),
+              ));
+            }
           },
         ),
 

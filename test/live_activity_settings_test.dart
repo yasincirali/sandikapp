@@ -9,7 +9,7 @@ import 'package:portfoy_takip/services/live_activity_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Ayarlar → CANLI ETKİNLİK bölümü.
+/// Ayarlar → CANLI ETKİNLİKLER bölümü.
 ///
 /// ## Neden bu testler var
 /// Gerçek bir kullanıcı bu özelliği **hiç açamadı**: ayar "GİZLİLİK"
@@ -98,7 +98,8 @@ void main() {
         await tester.pumpAndSettle();
 
         // Kullanıcı iOS'ta gördüğü adla arar; başlık o adla eşleşmeli.
-        expect(find.text('CANLI ETKİNLİK'), findsOneWidget,
+        // iOS'taki özelliğin adı ÇOĞUL: "Canlı Etkinlikler".
+        expect(find.text('CANLI ETKİNLİKLER'), findsOneWidget,
             reason: 'GİZLİLİK altına gömülüyse kullanıcı bulamıyor');
       });
     });
@@ -107,6 +108,125 @@ void main() {
       await runAsIOS(() async {
         await openSection(tester);
         expect(find.text('Gün boyu göster'), findsOneWidget);
+      });
+    });
+
+    testWidgets('tutar anahtarı BU bölümde, Gizlilik alt başlığı altında',
+        (tester) async {
+      // Anahtar önce ayrı bir "GİZLİLİK" bölümündeydi. Gizlilik onun
+      // SONUCU, konusu değil: anahtar Canlı Etkinlik'in ne göstereceğini
+      // belirler ve o özellik kapalıyken hiçbir şey ifade etmez.
+      await runAsIOS(() async {
+        await openSection(tester);
+
+        expect(find.text('Gizlilik'), findsOneWidget,
+            reason: 'bölüm içi alt başlık');
+        expect(find.text('Tutarları göster'), findsOneWidget);
+
+        // Eski, ayrı bölüm başlığı KALMAMALI.
+        expect(find.text('GİZLİLİK'), findsNothing,
+            reason: 'tek satırlık ayrı bölüm kaldırıldı');
+      });
+    });
+
+    testWidgets('Android da tutar anahtarı GÖSTERİLMEZ', (tester) async {
+      // Anahtar yalnızca Canlı Etkinlik'i etkiler; Android'de ActivityKit
+      // yok. Bölümle birlikte o da gizlenmeli — çalışmayan bir ayarı
+      // göstermek kullanıcıyı yanıltır.
+      await tester.pumpWidget(host());
+      await tester.pumpAndSettle();
+
+      expect(find.text('CANLI ETKİNLİKLER'), findsNothing);
+      expect(find.text('Tutarları göster'), findsNothing);
+    });
+  });
+
+  group('bilgi mimarisi', () {
+    // Ayarlar ekranı 10 bölüme kadar çıkmıştı ve bazıları TEK satırlıktı
+    // ("SOSYAL", "SİNYALLER", "GİZLİLİK"). Android'in ayar kılavuzu 10-15
+    // öğeden sonrasının bunaltıcı olduğunu ve yakından ilişkili ayarların
+    // gruplanması gerektiğini söylüyor.
+    //
+    // Burada kilitlenen: bölüm SAYISI ve SIRASI. Sıra rastgele değil —
+    // kullanıcının en sık dokunduğu ayarlar üstte, kalıcı/nadir olanlar
+    // (yasal, hesap) altta.
+
+    testWidgets('bölümler beklenen SIRADA', (tester) async {
+      await runAsIOS(() async {
+        await tester.pumpWidget(host());
+        await tester.pumpAndSettle();
+
+        const beklenen = [
+          'GÖRÜNÜM',
+          'BİLDİRİMLER',
+          'CANLI ETKİNLİKLER',
+          'ORTAKLIK',
+          'YASAL',
+          'DESTEK',
+          'HESAP',
+        ];
+
+        // `ListView` yalnızca GÖRÜNEN çocukları kurar, bu yüzden ekran
+        // dışındaki bölümler ağaçta yok. Test için ekranı çok uzun
+        // yapıyoruz — tek pump'ta tüm bölümler kurulur ve gerçek SIRA
+        // (dikey konum) okunabilir. Kaydırarak tek tek aramak yalnızca
+        // varlığı kanıtlar, sırayı kanıtlamaz.
+        tester.view.physicalSize = const Size(1200, 8000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        await tester.pumpAndSettle();
+
+        double? oncekiY;
+        for (final baslik in beklenen) {
+          final finder = find.text(baslik);
+          expect(finder, findsOneWidget, reason: '$baslik bölümü yok');
+
+          final y = tester.getTopLeft(finder).dy;
+          if (oncekiY != null) {
+            expect(y, greaterThan(oncekiY),
+                reason: '$baslik yanlış sırada');
+          }
+          oncekiY = y;
+        }
+      });
+    });
+
+    testWidgets('tek satırlık eski bölümler KALDIRILDI', (tester) async {
+      await runAsIOS(() async {
+        tester.view.physicalSize = const Size(1200, 8000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(host());
+        await tester.pumpAndSettle();
+
+        // Bunlar birer satır taşıyordu ve kendi başlıklarını hak
+        // etmiyordu; içerikleri ilgili bölümlere taşındı.
+        expect(find.text('SOSYAL'), findsNothing);
+        expect(find.text('SİNYALLER'), findsNothing);
+        expect(find.text('GİZLİLİK'), findsNothing);
+      });
+    });
+
+    testWidgets('sinyal ayarları bildirim anahtarıyla AYNI bölümde',
+        (tester) async {
+      // Aynı özelliğin iki parçası (bildirim anahtarı + gösterge seçimi)
+      // iki ayrı bölümdeydi; kullanıcı iki yere bakmak zorundaydı.
+      await runAsIOS(() async {
+        tester.view.physicalSize = const Size(1200, 8000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(host());
+        await tester.pumpAndSettle();
+
+        final bildirimler = tester.getTopLeft(find.text('BİLDİRİMLER')).dy;
+        final sinyalAyarlari =
+            tester.getTopLeft(find.text('Sinyal ayarları')).dy;
+        final sonrakiBolum =
+            tester.getTopLeft(find.text('CANLI ETKİNLİKLER')).dy;
+
+        expect(sinyalAyarlari, greaterThan(bildirimler));
+        expect(sinyalAyarlari, lessThan(sonrakiBolum),
+            reason: 'BİLDİRİMLER bölümünün İÇİNDE olmalı');
       });
     });
   });

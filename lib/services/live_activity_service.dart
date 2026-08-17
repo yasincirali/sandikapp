@@ -521,7 +521,7 @@ class LiveActivityService {
       // Anahtar, GÖRÜNÜMÜ etkileyen HER alanı içermek zorundadır.
       //
       // Düzeltilen hata: `showAmounts` anahtarda yoktu. Kullanıcı
-      // Ayarlar'dan "Kilit ekranında tutarı göster"i çevirdiğinde metinler
+      // Ayarlar'dan "Tutarları göster"i çevirdiğinde metinler
       // aynı kaldığı için anahtar değişmiyor, `update` atlanıyordu —
       // tercih ancak tutar ya da yüzde kendiliğinden değişince devreye
       // giriyordu. Kullanıcının gördüğü: anahtar "ya hep gösteriyor ya
