@@ -542,35 +542,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   : null,
               onTap: _deleting ? null : _confirmDeleteAccount,
             ),
-            // Debug-only: Crashlytics test
-            if (kDebugMode) ...[
+            // Push teşhisi debug kapısının DIŞINDA, admin'e açık.
+            //
+            // Bu ekranın tek işi zincirin neresinin koptuğunu göstermek ve
+            // zincir çoğunlukla TESTFLIGHT'ta kopuyor: APNs ortamı, gerçek
+            // cihaz izni, provisioning profile gibi şeyler debug build'de
+            // hiç sınanmaz. Debug'a kilitli bir teşhis aracı tam da ihtiyaç
+            // duyulan yerde kullanılamıyordu.
+            //
+            // Ekran KENDİNİ koruyor: teşhis RPC'leri admin-only ve admin
+            // olmayan hesaba "Bu hesap admin değil" diyor. Burada ikinci
+            // bir kapı kurmak (e-posta karşılaştırması gibi) yetki kuralını
+            // iki yere kopyalardı; ikisi ayrıştığında yanlış olan bu taraf
+            // olurdu. Salt okunur, token'ların kendisini göstermez.
+            ...[
               const SizedBox(height: 28),
               const _SectionTitle('GELİŞTİRİCİ'),
               const SizedBox(height: 12),
               _SettingsTile(
-                icon: Icons.bug_report_outlined,
-                title: 'Test Crash (debug-only)',
-                subtitle:
-                    'Crashlytics raporlamasını test etmek için uygulamayı çökertir',
-                destructive: true,
-                onTap: () {
-                  // Bilinçli olarak çökertiyoruz — Crashlytics dashboard'da görünmeli
-                  throw Exception('Test crash — kullanıcı tetikledi');
-                },
-              ),
-              const SizedBox(height: 8),
-              _SettingsTile(
                 icon: Icons.notifications_active_outlined,
-                title: 'Push Teşhisi (debug-only)',
+                title: 'Push Teşhisi',
                 subtitle:
-                    'cron → edge function → FCM zincirinin neresi kopuk, '
-                    'sunucudan sorgular',
+                    'cron → edge function → FCM zincirinin neresi kopuk; '
+                    'cihaz APNs/FCM token durumu',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => const PushDiagnosticsScreen(),
                   ),
                 ),
               ),
+              if (kDebugMode) ...[
+                const SizedBox(height: 8),
+                _SettingsTile(
+                  icon: Icons.bug_report_outlined,
+                  title: 'Test Crash (debug-only)',
+                  subtitle:
+                      'Crashlytics raporlamasını test etmek için uygulamayı çökertir',
+                  destructive: true,
+                  onTap: () {
+                    // Bilinçli olarak çökertiyoruz — Crashlytics dashboard'da görünmeli
+                    throw Exception('Test crash — kullanıcı tetikledi');
+                  },
+                ),
+              ],
             ],
             const SizedBox(height: 24),
             Padding(

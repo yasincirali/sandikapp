@@ -1,4 +1,6 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kDebugMode, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -33,6 +35,15 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   /// Bölüm bazlı hatalar — hepsi patlamadıysa sayfada uyarı olarak gösterilir.
   List<String> _kismiHatalar = const [];
   bool _tetikleniyor = false;
+
+  /// CİHAZ tarafı teşhisi — sunucu sorgularının göremediği halka.
+  ///
+  /// Sunucu yalnızca `user_push_tokens` tablosunu görür; satır YOKSA sebebi
+  /// söyleyemez. Oysa iOS'ta zincir üç ayrı noktada sessizce kopabilir:
+  /// izin verilmemiştir, APNs kaydı olmamıştır (`registerForRemoteNotifications`
+  /// çağrılmazsa `getAPNSToken()` hep null döner), ya da FCM token üretilmemiştir.
+  /// Üçü de aynı belirtiyi verir: "push gelmiyor".
+  Map<String, String> _cihaz = const {};
 
   /// Sinyal geçmişini siler — de-dup'ı sıfırlamak için.
   ///
@@ -200,6 +211,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       }
     }
 
+    final cihaz = await _cihazTeshisi();
+
     if (!mounted) return;
     setState(() {
       _jobs = jobs;
@@ -208,11 +221,64 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       _sinyaller = sinyaller;
       _tercihler = tercihler;
       _myTokenCount = tokenCount;
+      _cihaz = cihaz;
       // Hepsi patladıysa tam hata ekranı; kısmi hata sayfada gösterilir.
       _error = hatalar.length == 4 ? hatalar.join('\n\n') : null;
       _kismiHatalar = hatalar;
       _loading = false;
     });
+  }
+
+  /// Cihazdan APNs/FCM token durumunu okur.
+  ///
+  /// Token'ların KENDİSİ gösterilmez, yalnızca var/yok ve uzunluk: bu ekran
+  /// paylaşılabilir bir yüzey ve push token'ı cihaza mesaj göndermeye yarar.
+  ///
+  /// Her adım ayrı ayrı yakalanır — biri patlarsa diğerleri yine okunur,
+  /// çünkü hangisinin patladığı teşhisin ta kendisidir.
+  Future<Map<String, String>> _cihazTeshisi() async {
+    final sonuc = <String, String>{};
+
+    sonuc['Platform'] = defaultTargetPlatform == TargetPlatform.iOS
+        ? 'iOS'
+        : defaultTargetPlatform == TargetPlatform.android
+            ? 'Android'
+            : defaultTargetPlatform.name;
+
+    try {
+      final messaging = FirebaseMessaging.instance;
+
+      final settings = await messaging.getNotificationSettings();
+      sonuc['Bildirim izni'] = settings.authorizationStatus.name;
+
+      // iOS'a özgü: APNs token'ı olmadan FCM token ÜRETİLEMEZ. Null ise
+      // cihaz APNs'e hiç kayıt olmamıştır ve sorun buradadır — daha
+      // ilerideki halkalara bakmak zaman kaybı olur.
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        try {
+          final apns = await messaging.getAPNSToken();
+          sonuc['APNs token'] = (apns == null || apns.isEmpty)
+              ? 'YOK (null) ← zincir BURADA kopuyor'
+              : 'var (${apns.length} karakter)';
+        } catch (e) {
+          sonuc['APNs token'] = 'HATA: $e';
+        }
+      }
+
+      try {
+        final fcm = await messaging.getToken();
+        sonuc['FCM token'] = (fcm == null || fcm.isEmpty)
+            ? 'YOK (null)'
+            : 'var (${fcm.length} karakter)';
+      } catch (e) {
+        sonuc['FCM token'] = 'HATA: $e';
+      }
+    } catch (e) {
+      sonuc['Firebase'] = 'HATA: $e';
+    }
+
+    sonuc['Sunucuda kayıtlı'] = '${_myTokenCount ?? 0} token';
+    return sonuc;
   }
 
   /// Toplanan verilerden tek cümlelik teşhis üretir.
@@ -470,10 +536,15 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             '${r['created']}  •  HTTP ${r['status_code']}'
                 '${r['content'] != null && (r['content'] as String).isNotEmpty ? '\n   ↳ ${r['content']}' : ''}',
         ]),
+        // Sunucu yalnızca "kaç satır var" der; satır yoksa SEBEBİNİ
+        // söyleyemez. Cihaz tarafı okunmadan iOS'ta izin / APNs kaydı /
+        // FCM üretimi ayrımı yapılamaz — üçü de aynı belirtiyi verir.
         _bolum('4. CİHAZ TOKEN\'I', null, [
-          _myTokenCount == null
-              ? 'Oturum yok'
-              : '$_myTokenCount adet token kayıtlı',
+          for (final e in _cihaz.entries) '${e.key}: ${e.value}',
+          if (_cihaz.isEmpty)
+            _myTokenCount == null
+                ? 'Oturum yok'
+                : '$_myTokenCount adet token kayıtlı',
         ]),
         _bolum(
             '5. SUNUCUDAKİ TERCİHLER (ayarlar kaydediliyor mu?)',
