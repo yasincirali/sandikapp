@@ -49,9 +49,17 @@ create table if not exists live_activity_sessions (
 );
 
 -- Push döngüsü "şu an aktif oturumlar" sorgusunu atar.
+--
+-- KISMİ indeks (`where expires_at > now()`) KULLANILAMAZ: Postgres indeks
+-- koşulunda IMMUTABLE olmayan fonksiyon kabul etmez ve `now()` her çağrıda
+-- farklı değer döndürür (SQLSTATE 42P17). Zaten mantıken de yanlış olurdu —
+-- indeks predikatı YAZILDIĞI andaki `now()`'a göre sabitlenirdi ve zaman
+-- ilerledikçe yanlış satır kümesini kapsardı.
+--
+-- Düz indeks aynı işi görür: sorgudaki `expires_at > now()` filtresi için
+-- planlayıcı bu indeksi zaten aralık taraması olarak kullanır.
 create index if not exists live_activity_sessions_active_idx
-  on live_activity_sessions(expires_at)
-  where expires_at > now();
+  on live_activity_sessions(expires_at);
 
 create index if not exists live_activity_sessions_user_idx
   on live_activity_sessions(user_id);
