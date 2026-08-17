@@ -306,58 +306,20 @@ class HomeWidgetService {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, w, h));
 
-      final rawMin = values.reduce((a, b) => a < b ? a : b);
-      final rawMax = values.reduce((a, b) => a > b ? a : b);
 
-      // Düz seri: ortada yatay çiz.
+      // Eksen sınırları OKUNABİLİR (yuvarlak) değerlere oturtulur.
       //
-      // Eşik GÖRELİDİR — mutlak `1e-9` büyük portföyde işe yaramıyordu.
-      // Gerçek vaka: ₺2.489.186,40 → ₺2.489.186,35 (5 kuruş). Bu fark
-      // eşiği aştığı için "hareket" sayılıyor, normalize aralık 0,05'e
-      // oturuyor ve 5 kuruş tuvalin TAMAMINA yayılıyordu — düz bir günde
-      // grafiğin ucu tepeden dibe iniyordu.
-      final flat = DailySummary.isVisuallyFlat(values);
-
-      // Eksen sınırları: gerçek min/max'ın biraz DIŞI.
+      // Hesap ortak katmanda — kilit ekranı da aynı fonksiyonu kullanır,
+      // yoksa iki yüzey aynı portföy için farklı eksen gösterirdi.
+      // Sınırlar veriyi her zaman kapsar ve asgari bant kuralı orada
+      // uygulanır (bkz. `DailySummary.niceAxisBounds`).
       //
-      // Çizginin tuvalin kenarına yapışmaması için %8 pay bırakılır;
-      // etiketler de bu sınırları gösterir, böylece kullanıcı çizginin
-      // hangi tutar aralığında gezindiğini okuyabilir.
-      final double axisMin;
-      final double axisMax;
-      if (flat) {
-        // Düz seride yapay bir aralık üret — aksi halde etiketlerin ikisi
-        // de aynı rakamı gösterir ve eksen anlamsızlaşır. Değerin %0,1'i
-        // dar ama okunur bir bant verir.
-        final pad = (rawMax.abs() * 0.001).clamp(1.0, double.infinity);
-        axisMin = rawMax - pad;
-        axisMax = rawMax + pad;
-      } else {
-        // Eksen bandına ASGARİ genişlik: portföyün %0,5'i.
-        //
-        // **Neden gerekli:** eksen yalnızca veriye göre ölçeklenirse, gün
-        // boyu yatay giden bir portföydeki minicik dalgalanma tuvalin
-        // tamamına yayılır. Ölçülen gerçek vaka: ₺2,486M'lik portföyde
-        // kapanışa yakın ₺1.100'lük (%0,044) bir salınım — bant ₺4.000
-        // genişken grafiğin üçte birini kaplıyor ve "çöküş" gibi
-        // görünüyordu. Rakam +%0,04 derken grafik felaket gösteriyordu:
-        // ikisi aynı yüzeyde çelişiyor.
-        //
-        // %0,5 taban, günlük harekette anlamlı sayılabilecek en küçük
-        // ölçek. Gerçekten büyük bir hareket olduğunda (>%0,5) bant zaten
-        // veriye göre genişler ve taban devreye girmez.
-        final span = rawMax - rawMin;
-        final minSpan = rawMax.abs() * 0.005;
-        final effective = span < minSpan ? minSpan : span;
+      // Düz seride de aynı fonksiyon çalışır: asgari bant devreye girer
+      // ve iki etiket farklı rakam gösterir.
+      final bounds = DailySummary.niceAxisBounds(values);
+      final axisMin = bounds.min;
+      final axisMax = bounds.max;
 
-        // Bandı verinin ORTASINA yerleştir — taban devredeyken çizgi
-        // yukarı/aşağı kaymasın.
-        final mid = (rawMax + rawMin) / 2;
-        // Pay %25 — çizgi tuvalin kenarına yapışmasın.
-        final half = effective / 2 * 1.25;
-        axisMin = mid - half;
-        axisMax = mid + half;
-      }
       final span = (axisMax - axisMin).abs() < 1e-9 ? 1.0 : axisMax - axisMin;
       final minV = axisMin;
 

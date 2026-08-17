@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 
 import '../models/asset.dart';
@@ -87,6 +89,108 @@ class DailySummary {
   /// kullanıcı kırmızı gördüğünde "bugün kaybettim" diye okur.
   bool get isFlat =>
       hasChange && changeTRY!.abs().round() == 0 && changePct!.abs() < 0.005;
+
+  /// Grafiğin tutar ekseni sınırları — OKUNABİLİR (yuvarlak) değerlerde.
+  ///
+  /// **Neden ham min/max yetmiyor:** sınırlar doğrudan veriden alınınca
+  /// `₺2,4893M` / `₺2,4880M` gibi keyfi rakamlar çıkıyor. Kullanıcı bu
+  /// sayılardan bir şey çıkaramaz; eksen "hangi bandın içindeyim"
+  /// sorusunu ancak tahmin edilebilir basamaklarda yanıtlar.
+  ///
+  /// Yöntem "nice numbers" (Heckbert): aralık 1·10ⁿ, 2·10ⁿ, 2,5·10ⁿ ya da
+  /// 5·10ⁿ adımlarından birine yuvarlanır ve sınırlar o adımın katlarına
+  /// oturtulur. Grafik kütüphanelerinin (fl_chart, d3, matplotlib) hepsi
+  /// bu aileden bir kural kullanır.
+  ///
+  /// Sınırlar veriyi HER ZAMAN kapsar: alt sınır `min`'in altına, üst
+  /// sınır `max`'ın üstüne yuvarlanır — aksi halde çizgi eksenin dışına
+  /// taşar ve kırpılmış görünür.
+  ///
+  /// [minSpanRatio] eksen bandının en dar hâlini belirler (varsayılan
+  /// portföyün %0,5'i). Yalnızca veriye göre ölçeklenen bir eksen, yatay
+  /// giden portföydeki minicik dalgalanmayı tuvalin tamamına yayıyor ve
+  /// rakamla çelişen bir "çöküş" gösteriyordu.
+  static ({double min, double max}) niceAxisBounds(
+    List<double> values, {
+    double minSpanRatio = 0.005,
+  }) {
+    if (values.isEmpty) return (min: 0, max: 1);
+
+    final rawMin = values.reduce((a, b) => a < b ? a : b);
+    final rawMax = values.reduce((a, b) => a > b ? a : b);
+    final scale = rawMax.abs();
+
+    // Ham aralık + asgari bant + nefes payı (%25).
+    var span = (rawMax - rawMin).abs();
+    final minSpan = scale * minSpanRatio;
+    if (span < minSpan) span = minSpan;
+    if (span <= 0) span = scale > 0 ? scale * minSpanRatio : 1;
+    final padded = span * 1.25;
+
+    // Bandı verinin ortasına al, sonra yuvarlak adıma oturt.
+    //
+    // Adım bandın YARISI değil, `_tickCount`'a bölünmüş hâli üzerinden
+    // seçilir. Yarıyı vermek adımı gereğinden büyük yuvarlıyordu:
+    // ₺2.300'lük gerçek hareket ₺30.000'lik bir banda oturuyor ve çizgi
+    // düz görünüyordu — eksen okunabilir oluyor ama grafik bilgi
+    // taşımıyordu. Bant her zaman veriyi kapsar, sadece gereksiz yere
+    // genişlemez.
+    final mid = (rawMax + rawMin) / 2;
+    final step = _niceStep(padded / _tickCount);
+
+    // Alt sınır AŞAĞI, üst sınır YUKARI yuvarlanır — veri her zaman
+    // eksenin içinde kalmalı.
+    var lo = (( mid - padded / 2) / step).floor() * step;
+    var hi = ((mid + padded / 2) / step).ceil() * step;
+
+    // Yuvarlama sonrası veri yine de dışarıda kaldıysa bir adım genişlet.
+    // (Kayan nokta hatası ya da uç değerlerde olabilir.)
+    while (lo > rawMin) {
+      lo -= step;
+    }
+    while (hi < rawMax) {
+      hi += step;
+    }
+    // Dejenere durum: adım sıfıra düşerse bant kapanır ve sıfıra bölme
+    // riski doğar.
+    if (hi - lo < 1e-9) return (min: lo - 1, max: lo + 1);
+
+    return (min: lo, max: hi);
+  }
+
+  /// Eksende hedeflenen bölme sayısı.
+  ///
+  /// Yüzey iki kılavuz çizgisi (alt + üst) gösteriyor ama adım hesabı
+  /// daha ince bir ızgara varsayar: 4 bölme, bandı veriye yakın tutarken
+  /// sınırların yuvarlak kalmasını sağlar. Daha az bölme adımı büyütüp
+  /// bandı şişirir, daha çok bölme sınırları kesirli yapar.
+  static const _tickCount = 4;
+
+  /// Verilen büyüklüğe en yakın "okunabilir" adım — 1, 2, 2,5 ya da 5'in
+  /// 10 kuvvetiyle çarpımı.
+  ///
+  /// Kullanıcı bu basamakları zihninde kolayca ikiye/beşe bölebilir;
+  /// 3'lük ya da 7'lik adımlar okunmaz.
+  static double _niceStep(double rough) {
+    if (rough <= 0) return 1;
+    final exp = (math.log(rough) / math.ln10).floor();
+    final pow10 = math.pow(10, exp).toDouble();
+    final frac = rough / pow10; // 1 ≤ frac < 10
+
+    final double niceFrac;
+    if (frac <= 1) {
+      niceFrac = 1;
+    } else if (frac <= 2) {
+      niceFrac = 2;
+    } else if (frac <= 2.5) {
+      niceFrac = 2.5;
+    } else if (frac <= 5) {
+      niceFrac = 5;
+    } else {
+      niceFrac = 10;
+    }
+    return niceFrac * pow10;
+  }
 
   /// BIST işlem saatleri içinde miyiz? Fiyatların gerçekten hareket
   /// ettiği aralık (hafta içi 10:00–18:10).

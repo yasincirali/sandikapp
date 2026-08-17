@@ -66,6 +66,13 @@ String fmtTRYAxis(double value, double span) {
   final abs = value.abs();
   final sign = value < 0 ? '-' : '';
 
+  // Milyar — `Mr` kısaltmasıyla. Bu basamak eksikti ve 1,25 milyarlık bir
+  // portföy `₺1.250,00M` olarak yazılıyordu: hem uzun hem okunmuyor.
+  if (abs >= 1000000000) {
+    final spanMr = span / 1000000000;
+    final digits = spanMr >= 0.02 ? 2 : (spanMr >= 0.002 ? 3 : 4);
+    return '$sign₺${fmtNum(abs / 1000000000, digits: digits)}Mr';
+  }
   if (abs >= 1000000) {
     final scaled = abs / 1000000;
     // Bant milyon cinsinden ne kadar dar? 0,01M (10 bin TL) altındaki

@@ -308,33 +308,11 @@ class LiveActivityService {
     final values = _summary?.sparkline ?? const <double>[];
     if (values.length < 2) return null;
 
-    final rawMin = values.reduce((a, b) => a < b ? a : b);
-    final rawMax = values.reduce((a, b) => a > b ? a : b);
+    // Sınırlar ORTAK katmandan — widget'la birebir aynı eksen.
+    final b = DailySummary.niceAxisBounds(values);
+    final span = b.max - b.min;
 
-    final double lo;
-    final double hi;
-    if (DailySummary.isVisuallyFlat(values)) {
-      // Düz seride yapay bant — iki etiket aynı rakamı göstermesin.
-      final pad = (rawMax.abs() * 0.001).clamp(1.0, double.infinity);
-      lo = rawMax - pad;
-      hi = rawMax + pad;
-    } else {
-      // Eksen bandına ASGARİ genişlik: portföyün %0,5'i — widget'la AYNI
-      // kural (bkz. `HomeWidgetService._renderSparkline`).
-      //
-      // Yalnızca veriye göre ölçeklenen bir eksen, yatay giden portföyde
-      // minicik dalgalanmayı tuvalin tamamına yayıyor ve rakamla çelişen
-      // bir "çöküş" gösteriyordu.
-      final span = rawMax - rawMin;
-      final minSpan = rawMax.abs() * 0.005;
-      final effective = span < minSpan ? minSpan : span;
-      final mid = (rawMax + rawMin) / 2;
-      final half = effective / 2 * 1.25;
-      lo = mid - half;
-      hi = mid + half;
-    }
-
-    return (min: fmtTRYAxis(lo, hi - lo), max: fmtTRYAxis(hi, hi - lo));
+    return (min: fmtTRYAxis(b.min, span), max: fmtTRYAxis(b.max, span));
   }
 
   /// Kilit ekranı yalnızca kullanıcının KENDİ portföyünü gösterir.
@@ -363,10 +341,6 @@ class LiveActivityService {
   static List<double> _normalize(List<double> values) {
     if (values.length < 2) return const [];
 
-    final minV = values.reduce((a, b) => a < b ? a : b);
-    final maxV = values.reduce((a, b) => a > b ? a : b);
-    final span = (maxV - minV).abs();
-
     // Düz çizgi: ortada yatay çiz. Sıfıra bölmeyi de önler.
     //
     // Eşik GÖRELİDİR — mutlak `1e-9` büyük portföyde işe yaramıyordu.
@@ -379,16 +353,13 @@ class LiveActivityService {
 
     // Normalize aralığı EKSENLE aynı olmalı.
     //
-    // Etiketler `_axisBounds` üzerinden asgari bant (%0,5) kuralını
-    // uyguluyor; çizgi ham min/max'a göre normalize edilirse ikisi
-    // ayrışır: kullanıcı "₺2,48M–₺2,49M" yazan bir eksende tuvali baştan
-    // başa dolduran bir çizgi görür. Aynı kural burada da uygulanır.
-    final minSpan = maxV.abs() * 0.005;
-    final effective = span < minSpan ? minSpan : span;
-    final mid = (maxV + minV) / 2;
-    final lo = mid - effective / 2 * 1.25;
-    final hi = mid + effective / 2 * 1.25;
-    final axisSpan = hi - lo;
+    // Etiketler `_axisBounds` üzerinden `DailySummary.niceAxisBounds`
+    // kullanıyor; çizgi başka bir aralığa göre normalize edilirse ikisi
+    // ayrışır: kullanıcı "₺2,48M–₺2,50M" yazan bir eksende tuvali baştan
+    // başa dolduran bir çizgi görür. Aynı fonksiyondan okunur.
+    final bounds = DailySummary.niceAxisBounds(values);
+    final lo = bounds.min;
+    final axisSpan = bounds.max - bounds.min;
 
     // Örnekleme: 40 noktadan fazlasını seyrelt.
     const maxPoints = 40;
