@@ -159,11 +159,27 @@ async function pushToSession(
 
   if (res.ok) return 'ok';
 
-  // 410 Gone = token artık geçersiz (oturum kapandı).
-  // 400 + BadDeviceToken da aynı anlama gelir.
-  if (res.status === 410) return 'gone';
   const text = await res.text().catch(() => '');
-  if (res.status === 400 && text.includes('BadDeviceToken')) return 'gone';
+
+  // 410 Gone = token artık geçersiz (oturum kapandı) — NORMAL.
+  // 400 + BadDeviceToken = anahtar/ortam uyuşmazlığı — YAPILANDIRMA HATASI.
+  //
+  // İkisi de token'ı sildiriyor ama sebepleri tamamen farklı. Log'a
+  // ayrı ayrı yazılır: aksi halde "removed: 3" görülüp oturumların
+  // kendiliğinden kapandığı sanılır, oysa sandbox/production karışmış
+  // olabilir.
+  if (res.status === 410) {
+    console.log('APNs 410 Gone — oturum kapanmış (normal).');
+    return 'gone';
+  }
+  if (res.status === 400 && text.includes('BadDeviceToken')) {
+    console.error(
+      'APNs BadDeviceToken — token ile anahtar/ortam UYUŞMUYOR. '
+      + `APNS_HOST=${APNS_HOST}. TestFlight üretim token üretir; `
+      + 'anahtar Sandbox-only ise burada patlar.',
+    );
+    return 'gone';
+  }
 
   console.error(`APNs ${res.status}: ${text}`);
   return 'error';
