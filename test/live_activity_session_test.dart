@@ -376,6 +376,60 @@ void main() {
       }
     });
 
+    test('native plugin TÜM alanları ContentState e aktarır', () {
+      // Sözleşmenin İKİNCİ yarısı.
+      //
+      // `SandikAttributes.swift` alanı tanımlıyor olabilir ama
+      // `LiveActivityPlugin.swift` onu okumazsa Swift varsayılanına
+      // düşer — çökme olmaz, alan sessizce BOŞ gider.
+      //
+      // Gerçek vaka: `axisMinText`/`axisMaxText`/`isFlatChange` üçü de
+      // burada eksikti. Kullanıcı "Tutarları göster"i açtığında kılavuz
+      // çizgileri geliyor ama yanlarında hiçbir rakam görünmüyordu.
+      // Sunucu push'u doğru taşıyordu, bu yüzden hata yalnızca uygulama
+      // ÖNPLANDAYKEN ortaya çıkıyordu.
+      // YORUMLAR ELENİR. `contains('axisMinText')` yetmez: alanı
+      // anlatan bir yorum satırı da eşleşir ve kod onu okumasa bile test
+      // geçer (denendi, geçti). Aranan şey `args["alan"]` KULLANIMIDIR.
+      final plugin =
+          File('ios/Runner/LiveActivityPlugin.swift')
+              .readAsStringSync()
+              .split('\n')
+              .where((l) => !l.trimLeft().startsWith('//'))
+              .join('\n');
+
+      // Payload'ın taşıdığı alanların hepsi plugin tarafından okunmalı.
+      const alanlar = [
+        'totalText',
+        'changeText',
+        'changePctText',
+        'isPositive',
+        'isHidden',
+        'updatedAtText',
+        'dateText',
+        'sparkline',
+        'showAmounts',
+        'isMarketOpen',
+        'axisMinText',
+        'axisMaxText',
+        'isFlatChange',
+      ];
+
+      for (final alan in alanlar) {
+        // `args["alan"]` ya da `alan:` (initializer argümanı) olarak
+        // gerçekten KODDA geçmeli.
+        expect(
+          plugin,
+          anyOf(
+            contains('args["$alan"]'),
+            matches(RegExp('\\b$alan\\s*:')),
+          ),
+          reason: '$alan native plugin tarafından okunmuyor — '
+              'ContentState e boş gidiyor',
+        );
+      }
+    });
+
     test('sunucu yeni alanları İLETİR', () {
       // Sunucu push gövdesini kendi kuruyor; bir alanı iletmezse uzantı
       // varsayılana düşer ve istemciyle ayrışır.

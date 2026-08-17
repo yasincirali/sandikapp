@@ -280,6 +280,26 @@ enum LiveActivityChannel {
             // Varsayılan KAPALI: bayrak eksikse tutar gösterilmez.
             // Gizlilik kararlarında güvenli taraf budur.
             showAmounts: args["showAmounts"] as? Bool ?? false,
+            // Grafiğin tutar ekseni etiketleri.
+            //
+            // **Bu alanlar EKSİKTİ.** Dart tarafı gönderiyor ve sunucu
+            // push'u da taşıyor, ama burada okunmadığı için Swift
+            // varsayılanına (boş string) düşüyorlardı: kullanıcı
+            // "Tutarları göster"i açsa bile kılavuz çizgilerinin yanında
+            // hiçbir rakam görünmüyordu.
+            //
+            // Boş gelmesi MEŞRU bir durumdur (tutar gizli) — o zaman
+            // uzantı yalnızca çizgileri çizer, rakamı yazmaz.
+            //
+            // ⚠️ Argüman sırası `ContentState` alan sırasıyla AYNI olmak
+            // zorunda (memberwise initializer): showAmounts → axisMinText
+            // → axisMaxText → isFlatChange → isMarketOpen.
+            axisMinText: args["axisMinText"] as? String ?? "",
+            axisMaxText: args["axisMaxText"] as? String ?? "",
+            // Ölçüldü ama sıfır mı? Yön oku ve kâr/zarar rengi buna göre
+            // bastırılır. Varsayılan `false`: bayrak eksikse yön gösterilir
+            // (eski davranış korunur).
+            isFlatChange: args["isFlatChange"] as? Bool ?? false,
             // Varsayılan AÇIK: bayrak eksikse "Piyasa kapalı" etiketi
             // gösterilmez. Yanlışlıkla "kapalı" demek, gerçekten canlı
             // veriye bakan kullanıcıyı yanıltırdı.
