@@ -80,7 +80,7 @@
 		5A0D1K0000000000000004 /* SandikLogoMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLogoMark.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000034 /* SandikSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikSparkline.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000005 /* SandikLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLiveActivity.swift; sourceTree = "<group>"; };
-		5A0D1K0000000000000061 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		5A0D1K0000000000000061 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		5A0D1K0000000000000041 /* DMSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-Regular.ttf; path = Fonts/DMSans-Regular.ttf; sourceTree = "<group>"; };
 		5A0D1K0000000000000043 /* DMSans-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-Medium.ttf; path = Fonts/DMSans-Medium.ttf; sourceTree = "<group>"; };
 		5A0D1K0000000000000045 /* DMSans-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-SemiBold.ttf; path = Fonts/DMSans-SemiBold.ttf; sourceTree = "<group>"; };

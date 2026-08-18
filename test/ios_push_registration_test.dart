@@ -93,6 +93,30 @@ void main() {
         reason: 'GoogleService-Info.plist "Copy Bundle Resources" fazında '
             'değil — dosya referansı var ama pakete kopyalanmıyor',
       );
+
+      // PATH ÇİFTLENMESİ — build'i kıran gerçek hata (2026-08-19).
+      //
+      // Referans Runner grubunun içinde ve o grubun kendi `path = Runner`
+      // değeri var; Xcode ikisini BİRLEŞTİRİR. `path` alanına
+      // "Runner/GoogleService-Info.plist" yazmak yolu `Runner/Runner/...`
+      // yapar ve build şununla kırılır:
+      //   Build input file cannot be found: '.../ios/Runner/Runner/...'
+      //
+      // Kardeşleri (`Info.plist`, `AppDelegate.swift`) yalnızca dosya adı
+      // kullanır — doğru kalıp budur.
+      final fileRef = RegExp(
+        r'/\* GoogleService-Info\.plist \*/ = \{isa = PBXFileReference;[^}]*\}',
+      ).firstMatch(pbx);
+
+      expect(fileRef, isNotNull,
+          reason: 'GoogleService-Info.plist PBXFileReference kaydı yok');
+      expect(
+        fileRef!.group(0),
+        isNot(contains('Runner/GoogleService-Info.plist')),
+        reason: 'path ÇİFTLENMİŞ: referans zaten Runner grubunda (path = '
+            'Runner), yola tekrar "Runner/" eklemek Runner/Runner/... '
+            'üretir ve build "Build input file cannot be found" ile kırılır',
+      );
     });
 
     test('Info.plist remote-notification arka plan modunu tanımlar', () {
