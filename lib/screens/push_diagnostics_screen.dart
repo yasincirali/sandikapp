@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/remote_push_service.dart';
 import '../theme/sandik.dart';
 
 /// Push zinciri teşhis ekranı — **admin'e açık, release dahil**.
@@ -227,7 +228,23 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       }
     }
 
-    final cihaz = await _cihazTeshisi();
+    // Cihaz teşhisi ASLA sayfayı düşürmemeli.
+    //
+    // `_cihazTeshisi` fırlatırsa `_load` çöker, `setState` hiç çalışmaz ve
+    // ekran eski veride donar — kullanıcı bunu "cihaz bölümü yok" olarak
+    // görür ve eski build'de sandık. Ayrıca `getAPNSToken()` iOS'ta uzun
+    // süre bloklayabildiği için zaman aşımı şart.
+    Map<String, String> cihaz;
+    try {
+      cihaz = await _cihazTeshisi().timeout(
+        const Duration(seconds: 8),
+        onTimeout: () => {
+          'Cihaz teşhisi': 'ZAMAN AŞIMI (8 sn) — getAPNSToken() yanıt vermedi',
+        },
+      );
+    } catch (e) {
+      cihaz = {'Cihaz teşhisi': 'HATA: $e'};
+    }
 
     if (!mounted) return;
     setState(() {
@@ -289,6 +306,15 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             : 'var (${fcm.length} karakter)';
       } catch (e) {
         sonuc['FCM token'] = 'HATA: $e';
+      }
+
+      // Uygulama açılışındaki GERÇEK denemenin hatası. Buradaki çağrı
+      // başarılı olsa bile açılıştaki deneme patlamış olabilir (yarış
+      // durumu, APNs henüz hazır değilken) — token'ın neden yazılmadığını
+      // asıl bu satır açıklar.
+      final acilisHatasi = RemotePushService.instance.sonTokenHatasi;
+      if (acilisHatasi != null) {
+        sonuc['Açılıştaki hata'] = acilisHatasi;
       }
     } catch (e) {
       sonuc['Firebase'] = 'HATA: $e';

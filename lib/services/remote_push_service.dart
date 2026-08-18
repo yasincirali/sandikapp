@@ -37,6 +37,17 @@ class RemotePushService {
   StreamSubscription<RemoteMessage>? _foregroundSubscription;
   StreamSubscription<RemoteMessage>? _openedAppSubscription;
 
+  /// `getToken()` en son neden fırlattı — teşhis ekranı bunu gösterir.
+  ///
+  /// Bu hata normalde HİÇBİR yerde görünmüyordu: `start()` çağrısı
+  /// `_syncInviteDelivery` içinde `catch (_)` ile yutuluyor, Crashlytics
+  /// logları da yalnızca çökme olduğunda yükleniyor. Token'ın neden
+  /// yazılmadığı sorusu cevapsız kalıyordu.
+  String? _sonTokenHatasi;
+
+  /// Son `getToken()` hatası (varsa) — salt okunur teşhis.
+  String? get sonTokenHatasi => _sonTokenHatasi;
+
   /// Cron'dan (`analyze-signals` edge function) gelen `signal_analyze_request`
   /// data-message'ı yakalandığında çağrılır. App root'ta set edilir → içinde
   /// `signalProvider.notifier.analyzePortfolio(...)` çalıştırılır.
@@ -181,13 +192,31 @@ class RemotePushService {
       } catch (_) {}
       if (apnsToken != null && apnsToken.isNotEmpty) {
         for (int i = 0; i < 5; i++) {
-          token = await _messaging.getToken();
+          // `getToken()` KORUMASIZDI: fırlatırsa `start()` tümüyle çöker,
+          // `_syncToken` hiç çağrılmaz ve çağıran taraf hatayı yutar
+          // (`_syncInviteDelivery` → `catch (_)`) — token sessizce hiç
+          // yazılmaz. APNs token'ı ÜRETİLİYOR olmasına rağmen cihazın
+          // `user_push_tokens` tablosunda görünmemesi tam bu şekilde
+          // açıklanabilir; sebebi de log'a yazılıyor.
+          try {
+            token = await _messaging.getToken();
+          } catch (e) {
+            _sonTokenHatasi = e.toString();
+            try {
+              await FirebaseCrashlytics.instance
+                  .log('getToken() firlatti (deneme ${i + 1}): $e');
+            } catch (_) {}
+          }
           if (token != null && token.isNotEmpty) break;
           await Future.delayed(const Duration(seconds: 2));
         }
       }
     } else {
-      token = await _messaging.getToken();
+      try {
+        token = await _messaging.getToken();
+      } catch (e) {
+        _sonTokenHatasi = e.toString();
+      }
     }
     try {
       await FirebaseCrashlytics.instance.log(
