@@ -1,13 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kDebugMode, TargetPlatform;
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/sandik.dart';
 
-/// Push zinciri teşhis ekranı — **yalnızca debug build**.
+/// Push zinciri teşhis ekranı — **admin'e açık, release dahil**.
 ///
 /// Zincir: pg_cron → `trigger_analyze_signals` → net.http_post →
 /// analyze-signals edge function → FCM → cihaz.
@@ -15,7 +15,13 @@ import '../theme/sandik.dart';
 /// Bu ekran zincirin her halkasını ayrı ayrı sorgular; "push çalışmıyor"
 /// şikayetinde hangi halkanın koptuğunu tahmin etmek yerine görmeyi sağlar.
 /// Sunucu tarafı `0021_cron_health_diagnostics.sql` içindeki admin-only
-/// RPC'lerle okunur.
+/// RPC'lerle okunur; cihaz tarafı doğrudan FirebaseMessaging'den.
+///
+/// **Neden debug'a kilitli DEĞİL:** zincir ağırlıklı olarak TestFlight'ta
+/// kopuyor — APNs ortamı, provisioning profile ve gerçek cihaz izni debug
+/// build'de hiç sınanmaz. Kilitliyken araç tam ihtiyaç duyulan yerde
+/// "Yalnızca debug build" yazıyordu. Koruma `is_admin()` RPC'lerinde;
+/// ekran salt okunurdur ve token'ların kendisini göstermez.
 class PushDiagnosticsScreen extends StatefulWidget {
   const PushDiagnosticsScreen({super.key});
 
@@ -402,17 +408,18 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Güvenlik ağı: release build'de bu ekran hiç açılmamalı.
-    if (!kDebugMode) {
-      return Scaffold(
-        backgroundColor: context.c.background,
-        body: Center(
-          child: Text('Yalnızca debug build',
-              style: TextStyle(color: context.c.text58)),
-        ),
-      );
-    }
-
+    // NOT: burada `kDebugMode` kapısı VARDI ve ekranı işlevsiz kılıyordu.
+    //
+    // Bu ekranın tek amacı push zincirinin neresinin koptuğunu göstermek;
+    // zincir ise ağırlıklı olarak TESTFLIGHT'ta kopuyor (APNs ortamı,
+    // provisioning profile, gerçek cihaz izni). Bunların hiçbiri debug
+    // build'de sınanmadığı için araç tam ihtiyaç duyulan yerde "Yalnızca
+    // debug build" yazıyordu.
+    //
+    // Yerine GERÇEK koruma geçerli: teşhis RPC'leri `is_admin()` ile
+    // korunuyor (bkz. 0021_cron_health_diagnostics.sql) ve admin olmayan
+    // hesap aşağıda açıkça uyarılıyor. Ekran salt okunurdur ve token'ların
+    // kendisini değil yalnızca var/yok bilgisini gösterir.
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: AppBar(

@@ -67,7 +67,67 @@ void main() {
               'mesajları işlenmez');
     });
   });
+
+  group('push teşhis ekranı', () {
+    test('release build de ÇALIŞIR — kDebugMode ile kapatılmamış', () {
+      // Bu ekranın tek işi zincirin neresinin koptuğunu göstermek ve zincir
+      // ağırlıklı olarak TESTFLIGHT'ta kopuyor: APNs ortamı, provisioning
+      // profile, gerçek cihaz izni. Hiçbiri debug build'de sınanmaz.
+      //
+      // Gerçek vaka (2026-08-18): ayarlardaki giriş debug kapısından
+      // çıkarıldı ama ekranın KENDİ içindeki `if (!kDebugMode)` gözden
+      // kaçtı. TestFlight'ta menü göründü, açınca "Yalnızca debug build"
+      // yazdı — araç tam ihtiyaç duyulduğu anda işe yaramaz haldeydi.
+      //
+      // Koruma `is_admin()` RPC'lerinde (0021_cron_health_diagnostics.sql),
+      // build tipinde değil.
+      final kod = _dartYorumsuz(
+        File('lib/screens/push_diagnostics_screen.dart').readAsStringSync(),
+      );
+
+      expect(
+        kod,
+        isNot(contains('kDebugMode')),
+        reason: 'push teşhis ekranı kDebugMode ile kapatılmış — TestFlight\'ta '
+            'işe yaramaz, oysa teşhis edilecek hatalar TAM ORADA çıkıyor',
+      );
+    });
+
+    test('ayarlardaki giriş de release de görünür', () {
+      // Ekranın kendisi açık olsa bile menü girişi debug'a kilitliyse
+      // kullanıcı oraya ULAŞAMAZ. İki kapı da açık olmalı.
+      final kod = _dartYorumsuz(
+        File('lib/screens/settings_screen.dart').readAsStringSync(),
+      );
+
+      final girisSatiri = kod
+          .split('\n')
+          .indexWhere((l) => l.contains('PushDiagnosticsScreen'));
+      expect(girisSatiri, greaterThan(-1),
+          reason: 'ayarlarda push teşhisi girişi yok');
+
+      // Girişten önceki 15 satırda `if (kDebugMode)` varsa giriş gizlidir.
+      final oncekiler = kod
+          .split('\n')
+          .sublist((girisSatiri - 15).clamp(0, girisSatiri), girisSatiri)
+          .join('\n');
+
+      expect(
+        oncekiler,
+        isNot(contains('if (kDebugMode)')),
+        reason: 'push teşhisi menü girişi kDebugMode kapısının arkasında — '
+            'TestFlight\'ta ekrana ulaşılamaz',
+      );
+    });
+  });
 }
+
+/// Dart yorum satırlarını eler — Swift'teki `_yorumsuz` ile aynı gerekçe.
+String _dartYorumsuz(String kaynak) => kaynak
+    .split('\n')
+    .where((satir) => !satir.trimLeft().startsWith('//'))
+    .where((satir) => !satir.trimLeft().startsWith('///'))
+    .join('\n');
 
 /// Swift yorum satırlarını eler.
 ///
