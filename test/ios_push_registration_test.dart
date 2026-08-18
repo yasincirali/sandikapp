@@ -55,6 +55,46 @@ void main() {
               'dağıtımı üretim token üretir, sunucu bunu reddeder');
     });
 
+    test('GoogleService-Info.plist Xcode projesine KAYITLI', () {
+      // Dosyanın diskte olması YETMEZ — Xcode yalnızca `project.pbxproj`
+      // içinde kayıtlı dosyaları uygulama paketine kopyalar. Kayıt yoksa
+      // "Copy Bundle Resources" adımı çalışmaz, plist paketin dışında
+      // kalır ve `Firebase.initializeApp()` yapılandırmayı bulamaz:
+      //   [core/no-app] No Firebase App '[DEFAULT]' has been created
+      //
+      // Gerçek vaka (2026-08-19): CI dosyayı `ios/Runner/` altına yazıyordu
+      // (base64 secret'tan) ve dosya oradaydı, ama pbxproj'da HİÇ referansı
+      // yoktu. iOS'ta Firebase hiç başlamadı → FCM token üretilmedi →
+      // `user_push_tokens` tablosuna tek bir iOS satırı yazılmadı.
+      //
+      // Android bundan ETKİLENMEZ: Gradle `google-services.json`'ı dosya
+      // yolundan okur, açık kayıt istemez. Bu yüzden hata yalnızca iOS'ta
+      // ve yalnızca çalışma zamanında ortaya çıkar.
+      final pbx = File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+
+      expect(pbx, contains('GoogleService-Info.plist'),
+          reason: 'GoogleService-Info.plist Xcode projesine kayıtlı değil — '
+              'uygulama paketine kopyalanmaz ve iOS\'ta Firebase HİÇ başlamaz');
+
+      // Yalnızca dosya referansı yetmez; Resources build phase'ine de
+      // girmeli. Referans var ama faz yoksa dosya yine kopyalanmaz.
+      //
+      // `contains('... in Resources')` YETMEZ: aynı metin PBXBuildFile
+      // tanımında da geçer ve faz kaydı silinse bile eşleşir (denendi,
+      // geçti). Bu yüzden RESOURCES BLOĞUNUN İÇİNE bakılır.
+      final resourcesBlogu = RegExp(
+        r'isa = PBXResourcesBuildPhase;.*?files = \((.*?)\);',
+        dotAll: true,
+      ).allMatches(pbx).map((m) => m.group(1)!).join('\n');
+
+      expect(
+        resourcesBlogu,
+        contains('GoogleService-Info.plist in Resources'),
+        reason: 'GoogleService-Info.plist "Copy Bundle Resources" fazında '
+            'değil — dosya referansı var ama pakete kopyalanmıyor',
+      );
+    });
+
     test('Info.plist remote-notification arka plan modunu tanımlar', () {
       // Uygulama arka plandayken sessiz (data-only) mesajları işleyebilmek
       // için gerekir. `analyze-signals` bu yolu kullanıyor.
