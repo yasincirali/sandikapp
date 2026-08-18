@@ -37,6 +37,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   List<dynamic> _responses = const [];
   List<dynamic> _sinyaller = const [];
   List<dynamic> _tercihler = const [];
+  /// Kayıtlı token satırları — platformuyla birlikte (bkz. `_load`).
+  List<dynamic> _tokenlar = const [];
   int? _myTokenCount;
   /// Bölüm bazlı hatalar — hepsi patlamadıysa sayfada uyarı olarak gösterilir.
   List<String> _kismiHatalar = const [];
@@ -175,7 +177,13 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         () => db.rpc('push_http_responses', params: {'p_limit': 20}), hatalar);
 
     // Kendi push token'ımız kayıtlı mı — zincirin cihaz ucu.
+    //
+    // PLATFORM de okunur: yalnızca sayı ("2 token kayıtlı") yanıltıcıdır.
+    // Gerçek vaka — kullanıcı "TOKEN: 2" görüp iPhone'unun kayıtlı olduğunu
+    // sandı, oysa ikisi de Android'di ve iOS hiç yazılmamıştı. Sorunun ta
+    // kendisi sayının içinde gizlenmişti.
     int? tokenCount;
+    List<dynamic> tokenlar = const [];
     List<dynamic> sinyaller = const [];
     List<dynamic> tercihler = const [];
     final uid = db.auth.currentUser?.id;
@@ -183,9 +191,11 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       try {
         final rows = await db
             .from('user_push_tokens')
-            .select('token')
-            .eq('user_id', uid);
-        tokenCount = (rows as List).length;
+            .select('platform, updated_at')
+            .eq('user_id', uid)
+            .order('updated_at', ascending: false);
+        tokenlar = rows as List<dynamic>;
+        tokenCount = tokenlar.length;
       } catch (e) {
         hatalar.add('user_push_tokens: $e');
       }
@@ -226,6 +236,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       _responses = responses;
       _sinyaller = sinyaller;
       _tercihler = tercihler;
+      _tokenlar = tokenlar;
       _myTokenCount = tokenCount;
       _cihaz = cihaz;
       // Hepsi patladıysa tam hata ekranı; kısmi hata sayfada gösterilir.
@@ -359,8 +370,34 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     // bakılmazsa "passed_threshold:1, sent:0" tablosu (eşiği geçen sinyal
     // var ama hiç gönderim yok) sağlıklı sanılır — ilk teşhiste tam olarak
     // bu oldu. En yeni yanıtın gövdesini ayrıştırıp gerçeği söylüyoruz.
-    final sonYanit = _responses.isEmpty ? null : _responses.first;
+    // SADECE analyze-signals yanıtlarına bak.
+    //
+    // `net._http_response` tablosu TÜM cron'ların yanıtlarını taşıyor ve
+    // `live-activity-push` 5 dakikada bir çalıştığı için listeyi domine
+    // ediyor. Ayrım yapılmadığında ekran onun `{"sent":2}` çıktısını okuyup
+    // "zincir çalışıyor, 2 bildirim gönderildi" diyordu — oysa sinyal
+    // push'u hiç gönderilmemişti ve kullanıcının iPhone'u kayıtlı bile
+    // değildi. Yanlış teşhis, teşhissizlikten kötüdür.
+    //
+    // Ayırt edici işaret gövdede: analyze-signals `passed_threshold`
+    // döndürür, live-activity-push `skippedStale`.
+    final sinyalYanitlari = _responses.where((r) {
+      final c = r['content']?.toString() ?? '';
+      return c.contains('passed_threshold');
+    }).toList();
+
+    final sonYanit = sinyalYanitlari.isEmpty ? null : sinyalYanitlari.first;
     final govde = sonYanit?['content']?.toString() ?? '';
+
+    if (sonYanit == null && _responses.isNotEmpty) {
+      return (
+        baslik: 'Sinyal turu henüz çalışmamış',
+        detay: 'Kayıtlı yanıtların hepsi başka cron\'lara ait (çoğunlukla '
+            'live-activity-push, 5 dk\'da bir). analyze-signals saat başı '
+            've yalnızca bildirim penceresi içinde çalışır.',
+        renk: context.c.amberText,
+      );
+    }
     final passed = _sayiOku(govde, 'passed_threshold');
     final sent = _sayiOku(govde, 'sent');
     final failed = _sayiOku(govde, 'failed');
@@ -384,6 +421,27 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       );
     }
     if (sent != null && sent > 0) {
+      // Gönderim BAŞKA bir cihaza gitmiş olabilir. "Zincir çalışıyor"
+      // demeden önce BU cihazın kayıtlı olduğunu doğrula: aksi halde
+      // kullanıcı yeşil bir onay görüp kendi telefonunda neden bildirim
+      // olmadığını aramaya devam eder.
+      final buCihazKayitli = _tokenlar.isEmpty ||
+          _tokenlar.any((t) =>
+              t['platform'] ==
+              (defaultTargetPlatform == TargetPlatform.iOS
+                  ? 'ios'
+                  : 'android'));
+
+      if (!buCihazKayitli) {
+        return (
+          baslik: 'Gönderim var ama BU cihaza değil',
+          detay: '$sent bildirim gönderildi — hepsi başka cihazlara. '
+              'Bu cihazın platformu (${defaultTargetPlatform.name}) '
+              'sunucuda kayıtlı değil; 4. bölüme bakın.',
+          renk: context.c.loss,
+        );
+      }
+
       return (
         baslik: 'Zincir çalışıyor — $sent bildirim gönderildi',
         detay: 'Cron, edge function ve FCM sağlıklı. Cihaza düşmüyorsa '
@@ -548,10 +606,19 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         // FCM üretimi ayrımı yapılamaz — üçü de aynı belirtiyi verir.
         _bolum('4. CİHAZ TOKEN\'I', null, [
           for (final e in _cihaz.entries) '${e.key}: ${e.value}',
-          if (_cihaz.isEmpty)
-            _myTokenCount == null
-                ? 'Oturum yok'
-                : '$_myTokenCount adet token kayıtlı',
+          if (_cihaz.isEmpty && _myTokenCount == null) 'Oturum yok',
+          // Sunucudaki satırlar PLATFORMUYLA listelenir. Yalnızca sayı
+          // göstermek ("2 token kayıtlı") bu ekranın cevaplaması gereken
+          // soruyu — "bu cihaz kayıtlı mı?" — gizliyordu.
+          if (_tokenlar.isNotEmpty) ...[
+            '',
+            'Sunucudaki kayıtlar:',
+            for (final t in _tokenlar)
+              '  • ${t['platform']}  (${t['updated_at']?.toString().substring(0, 16) ?? '?'})',
+            if (!_tokenlar.any((t) => t['platform'] == 'ios') &&
+                defaultTargetPlatform == TargetPlatform.iOS)
+              '  ⚠ BU cihaz (iOS) kayıtlı DEĞİL — sinyal push\'u ulaşamaz',
+          ],
         ]),
         _bolum(
             '5. SUNUCUDAKİ TERCİHLER (ayarlar kaydediliyor mu?)',
