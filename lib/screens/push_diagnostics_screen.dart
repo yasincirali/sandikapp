@@ -750,7 +750,26 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       b.writeln('  ${r['created']} | ${r['status_code']} | '
           '${r['content'] ?? ''}');
     }
-    b.writeln('\nTOKEN: ${_myTokenCount ?? "?"}');
+    // CİHAZ bölümü — ekranla AYNI bilgi.
+    //
+    // Burası `TOKEN: 2` yazan tek satırdı ve ekranda gösterilen cihaz
+    // teşhisini (platform, izin, APNs/FCM token) HİÇ taşımıyordu. Teşhis
+    // çoğunlukla bu metin paylaşılarak okunduğu için, ekrana eklenen
+    // bilgi pratikte görünmüyordu: paylaşılan çıktıda cihaz bölümü
+    // olmayınca "eski build'desin" sanıldı ve üç tur boşa gitti.
+    //
+    // Kural: ekrana eklenen her teşhis satırı BURAYA da eklenmeli.
+    b.writeln('\n4. CİHAZ TOKEN\'I');
+    for (final e in _cihaz.entries) {
+      b.writeln('  ${e.key}: ${e.value}');
+    }
+    if (_cihaz.isEmpty) {
+      b.writeln('  (cihaz teşhisi okunamadı)');
+    }
+    b.writeln('  Sunucuda kayıtlı: ${_myTokenCount ?? "?"} token');
+    for (final t in _tokenlar) {
+      b.writeln('    • ${t['platform']}  (${t['updated_at']})');
+    }
     b.writeln('\nSUNUCUDAKİ TERCİHLER (${_tercihler.length}):');
     for (final p in _tercihler) {
       b.writeln('  ${p['asset_type']} | eşik=${p['threshold']} | '

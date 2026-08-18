@@ -93,6 +93,46 @@ void main() {
       );
     });
 
+    test('paylaşım metni cihaz teşhisini de taşır', () {
+      // Bu ekran pratikte METİN PAYLAŞILARAK okunuyor. Ekrana eklenen bir
+      // teşhis satırı paylaşım üreticisine eklenmezse, bilgi "yok" gibi
+      // görünür.
+      //
+      // Gerçek vaka (2026-08-18): cihaz bölümü (platform, izin, APNs/FCM
+      // token) ekrana eklendi ama paylaşım metninde tek satır `TOKEN: 2`
+      // kaldı. Paylaşılan çıktıda cihaz bölümü görünmeyince "eski
+      // build'desin" sanıldı ve üç tur boşa gitti — oysa kod cihazdaydı.
+      final kod = _dartYorumsuz(
+        File('lib/screens/push_diagnostics_screen.dart').readAsStringSync(),
+      );
+
+      // Paylaşım metnini üreten StringBuffer bloğu.
+      final paylasim = RegExp(
+        r"writeln\('=== PUSH TEŞHİSİ ===.*?return b\.toString\(\)",
+        dotAll: true,
+      ).firstMatch(kod);
+
+      expect(paylasim, isNotNull,
+          reason: 'paylaşım metni üreticisi bulunamadı');
+
+      // `contains('_cihaz')` YETMEZ: `if (_cihaz.isEmpty)` gibi bir kontrol
+      // de eşleşir ve satırlar hiç yazılmasa bile test geçer (denendi,
+      // geçti). Aranan şey alanların GERÇEKTEN yazıldığıdır — yani map
+      // üzerinde dönen bir döngü.
+      expect(
+        paylasim!.group(0),
+        matches(RegExp(r'for\s*\(\s*final\s+\w+\s+in\s+_cihaz\.entries')),
+        reason: 'paylaşım metni cihaz teşhisini YAZMIYOR — ekranda görünen '
+            'bilgi paylaşılan çıktıda kayboluyor',
+      );
+      expect(
+        paylasim.group(0),
+        matches(RegExp(r'for\s*\(\s*final\s+\w+\s+in\s+_tokenlar')),
+        reason: 'paylaşım metni token PLATFORMLARINI yazmıyor — yalnızca '
+            'sayı paylaşmak "hangi cihaz kayıtlı" sorusunu gizler',
+      );
+    });
+
     test('ayarlardaki giriş de release de görünür', () {
       // Ekranın kendisi açık olsa bile menü girişi debug'a kilitliyse
       // kullanıcı oraya ULAŞAMAZ. İki kapı da açık olmalı.
