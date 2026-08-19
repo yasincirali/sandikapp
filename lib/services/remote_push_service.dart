@@ -68,6 +68,26 @@ class RemotePushService {
 
     await _messaging.setAutoInitEnabled(true);
 
+    // iOS ÖN PLAN sunumu.
+    //
+    // iOS varsayılan olarak uygulama ön plandayken bildirim BANNER'INI
+    // göstermez — sessizce `onMessage`'a düşer. Android'de bu dal zaten elle
+    // ele alınıyor (`showSignalNotification`), ama iOS'ta sistemin kendi
+    // banner'ını açmak hem daha doğru görünür hem de sesi/rozeti sistem
+    // yönetir.
+    //
+    // `alert: true` olmadan kullanıcı uygulama açıkken hiçbir şey görmez ve
+    // bunu "push gelmiyor" diye okur.
+    if (Platform.isIOS) {
+      try {
+        await _messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      } catch (_) {}
+    }
+
     _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((token) async {
       final userId = _activeUserId;
       if (userId == null) return;
