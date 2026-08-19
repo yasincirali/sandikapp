@@ -325,22 +325,98 @@ function istanbulHour(now: Date): number {
 ///        Süre bazlı olması önemli — cron bir turu kaçırırsa bir sonrakinde
 ///        telafi edilir, slot bazlı olsa o gönderim tamamen kaybolurdu.
 ///      - twice_daily/daily: şu anki saat, seçilen saatlerden biri mi.
+/// Ardışık iki bildirim arasındaki asgari süre — ZIPLAMA bastırıcı.
+///
+/// Güven eşiğin hemen etrafında salınırsa sinyal AL → NÖTR → AL → NÖTR
+/// gidip gelir ve saf "değişti mi" kuralı her geçişte bildirim üretir:
+/// kullanıcı yarım saatte dört bildirim alır, içerik neredeyse aynıdır.
+const DEDUP_COOLDOWN_SAAT = 2;
+
+/// Sinyal DEĞİŞMESE bile hatırlatma aralığı.
+///
+/// Saf de-dup kalıcı sessizlik üretiyordu: sinyal SAT'ta takılı kalırsa
+/// süresiz hiçbir bildirim gitmez. 2026-08-09 → 08-18 arası tam bu yaşandı
+/// (dokuz gün sessizlik) ve sistem "bozuk" göründü. Durum sürüyorsa günde
+/// bir kez hatırlatmak hem bilgilendirir hem spam yapmaz.
+const DEDUP_TEKRAR_SAAT = 24;
+
+/// Aynı sinyalde "yeni bilgi" sayılan asgari güven artışı (puan).
+///
+/// SAT %50 ile SAT %85 aynı şey değildir; ikincisi göstergelerin çok daha
+/// güçlü uzlaştığını söyler. Saf de-dup bunu sessizce yutuyordu.
+/// Yalnızca ARTIŞ tetikler — güvenin düşmesi zaten daha zayıf bir sinyaldir
+/// ve kullanıcıyı uyandırmayı hak etmez.
+const DEDUP_GUVEN_SICRAMASI = 15;
+
 /// Bu sinyal için bildirim gönderilmeli mi? (de-dup kuralı)
 ///
-/// Kural: aynı varlık için aynı sinyal art arda bildirilmez. Sabah SAT
-/// verildiyse akşam yine SAT çıkarsa sessiz kalınır; NÖTR veya AL'a
-/// dönerse bildirilir.
+/// Üç mekanizma birlikte çalışır — alarm sistemlerinin (Alertmanager,
+/// PagerDuty) yerleşik kalıbı:
+///
+///   1. **Deduplication** — aynı sinyal art arda bildirilmez.
+///   2. **Cooldown** — sinyal değişse bile çok sık bildirilmez (zıplama).
+///   3. **Repeat interval** — sinyal değişmese bile durum sürüyorsa
+///      günde bir hatırlatılır.
+///
+/// Ek olarak: aynı sinyalde güven anlamlı biçimde SIÇRADIYSA bu yeni
+/// bilgidir ve cooldown dışında bildirilir.
 ///
 /// [oncekiSinyal] son PUSH EDİLEN sinyal (`signal_state`). Kullanıcının
 /// sildiği bildirim geçmişinden BAĞIMSIZDIR — geçmişe bakılsaydı liste
 /// temizlenince aynı sinyal yeniden gönderilirdi.
+///
+/// [oncekiGuven] / [sonBildirim] `null` ise "bilinmiyor" demektir (eski
+/// satırlar, migration 0038 öncesi). O durumda güvenli tarafa düşülür ve
+/// gönderilir: sessiz kalmaktansa bir kez fazla bildirmek yeğdir.
 export function shouldSendSignal(
   oncekiSinyal: string | undefined,
   yeniSinyal: string,
+  opts?: {
+    oncekiGuven?: number | null;
+    yeniGuven?: number;
+    sonBildirim?: Date | null;
+    simdi?: Date;
+  },
 ): boolean {
   // Hiç gönderilmemişse ilk bildirim gider.
   if (oncekiSinyal === undefined) return true;
-  return oncekiSinyal !== yeniSinyal;
+
+  const simdi = opts?.simdi ?? new Date();
+  const sonBildirim = opts?.sonBildirim ?? null;
+
+  // Zaman bilgisi yoksa eski davranışa düş (yalnızca "değişti mi").
+  const gecenSaat = sonBildirim === null
+    ? null
+    : (simdi.getTime() - sonBildirim.getTime()) / 3_600_000;
+
+  const degisti = oncekiSinyal !== yeniSinyal;
+
+  if (degisti) {
+    // Değişim VAR ama çok yakın zamanda bildirim yapıldıysa bastır —
+    // zıplamanın tek çaresi budur. Bilinmiyorsa gönder.
+    if (gecenSaat === null) return true;
+    return gecenSaat >= DEDUP_COOLDOWN_SAAT;
+  }
+
+  // Buradan sonrası: sinyal AYNI.
+  if (gecenSaat === null) return false;
+
+  // Durum sürüyor — günlük hatırlatma zamanı geldiyse bildir.
+  if (gecenSaat >= DEDUP_TEKRAR_SAAT) return true;
+
+  // Aynı sinyal ama güven anlamlı biçimde arttıysa bu yeni bilgidir.
+  const oncekiGuven = opts?.oncekiGuven;
+  const yeniGuven = opts?.yeniGuven;
+  if (
+    oncekiGuven != null && yeniGuven != null &&
+    yeniGuven - oncekiGuven >= DEDUP_GUVEN_SICRAMASI
+  ) {
+    // Sıçrama da cooldown'a tabidir; aksi halde eşik civarında salınan
+    // güven yeni bir spam kaynağı olur.
+    return gecenSaat >= DEDUP_COOLDOWN_SAAT;
+  }
+
+  return false;
 }
 
 export function shouldNotifyNow(
@@ -497,13 +573,30 @@ Deno.serve(async (request) => {
     // kontrol tüm ağır işten SONRA geliyordu. Artık durum önceden toplu
     // okunur; hem N+1 gider hem de kontrol erkene alınabilir.
     const lastSignalOf = new Map<string, string>(); // assetId → signal
+    // De-dup'ın zaman ve güven hafızası (migration 0038). Cooldown, günlük
+    // hatırlatma ve "güven sıçradı mı" kararları bunlardan hesaplanır.
+    const lastNotifiedOf = new Map<string, Date>();
+    const lastConfidenceOf = new Map<string, number>();
     {
       const { data: lastRows } = await admin
         .from('signal_state')
-        .select('asset_id, signal')
+        .select('asset_id, signal, notified_at, confidence')
         .in('user_id', userIds);
-      for (const r of (lastRows ?? []) as { asset_id: string; signal: string }[]) {
+      for (
+        const r of (lastRows ?? []) as {
+          asset_id: string;
+          signal: string;
+          notified_at: string | null;
+          confidence: number | null;
+        }[]
+      ) {
         lastSignalOf.set(r.asset_id, r.signal);
+        if (r.notified_at) {
+          lastNotifiedOf.set(r.asset_id, new Date(r.notified_at));
+        }
+        if (r.confidence != null) {
+          lastConfidenceOf.set(r.asset_id, Number(r.confidence));
+        }
       }
     }
 
@@ -556,7 +649,10 @@ Deno.serve(async (request) => {
     // güncellenecek. Set: aynı türde birden çok varlık varsa tek yazım.
     const notifiedPrefKeys = new Set<string>();
     // Başarıyla push edilen sinyaller — döngü sonunda signal_state'e yazılır.
-    const sentSignalOf = new Map<string, { userId: string; signal: string }>();
+    const sentSignalOf = new Map<
+      string,
+      { userId: string; signal: string; confidence: number }
+    >();
     const preview: Array<Record<string, unknown>> = [];
     // FCM'in reddettiği gönderimlerin sebebi. `failed > 0` olduğunda
     // "neden" sorusunu log'a bakmadan cevaplayabilmek için yanıta eklenir.
@@ -591,14 +687,21 @@ Deno.serve(async (request) => {
       if (summary.confidence < threshold) continue;
       passed++;
 
-      // De-dup: aynı varlık için son PUSH EDİLEN sinyalle aynıysa gönderme.
-      // Sabah SAT → akşam SAT: sessiz. NÖTR/AL'a dönerse: bildirim.
+      // De-dup: üç mekanizma birlikte (bkz. `shouldSendSignal`).
+      //   · aynı sinyal art arda bildirilmez,
+      //   · değişse bile cooldown içinde bildirilmez (zıplama bastırma),
+      //   · değişmese bile 24 saatte bir hatırlatılır ya da güven sıçradıysa
+      //     yeniden bildirilir.
       //
-      // Durum `signal_state`'ten toplu okundu (döngü içinde sorgu YOK) ve
-      // ilk kontrol analizden önce yapıldı; buraya yalnızca sinyali gerçekten
-      // değişmiş olanlar gelir. Bu ikinci kontrol yine de durur çünkü
-      // erken kontrol yalnızca "değişme İHTİMALİ yok" durumunu eleyebiliyor.
-      if (!shouldSendSignal(oncekiSinyal, summary.signal)) {
+      // Durum `signal_state`'ten toplu okundu (döngü içinde sorgu YOK).
+      if (
+        !shouldSendSignal(oncekiSinyal, summary.signal, {
+          oncekiGuven: lastConfidenceOf.get(asset.id) ?? null,
+          yeniGuven: summary.confidence,
+          sonBildirim: lastNotifiedOf.get(asset.id) ?? null,
+          simdi: now,
+        })
+      ) {
         skippedByDedup++;
         continue;
       }
@@ -690,6 +793,7 @@ Deno.serve(async (request) => {
           sentSignalOf.set(asset.id, {
             userId: asset.user_id,
             signal: summary.signal,
+            confidence: summary.confidence,
           });
         } else {
           failed++;
@@ -721,6 +825,9 @@ Deno.serve(async (request) => {
             p_asset_id: assetId,
             p_signal: v.signal,
             p_at: stamp,
+            // De-dup hafızası: cooldown/hatırlatma bu damgadan, "güven
+            // sıçradı mı" kararı bu değerden hesaplanır (migration 0038).
+            p_confidence: v.confidence,
           });
         } catch (_) { /* yut — bir sonraki turda telafi edilir */ }
       }

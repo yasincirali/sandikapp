@@ -179,3 +179,106 @@ Deno.test('ilk sinyal her zaman gönderilir', () => {
   assertEquals(shouldSendSignal(undefined, 'buy'), true);
   assertEquals(shouldSendSignal(undefined, 'sell'), true);
 });
+
+// ── De-dup: cooldown, tekrar aralığı, güven sıçraması ──────────────────────
+//
+// Saf "değişti mi" kuralı iki uçta birden yanlıştı:
+//   · sinyal sabit kalırsa SÜRESİZ sessizlik (2026-08-09 → 08-18: 9 gün),
+//   · eşik civarında salınırsa her geçişte bildirim (zıplama/spam).
+
+const T0 = new Date('2026-08-20T12:00:00Z');
+const saatOnce = (s: number) => new Date(T0.getTime() - s * 3_600_000);
+
+Deno.test('cooldown: sinyal değişse bile çok yakın bildirim bastırılır', () => {
+  // 30 dk önce bildirim yapıldı; sinyal değişti ama cooldown (2s) dolmadı.
+  assertEquals(
+    shouldSendSignal('buy', 'sell', {
+      sonBildirim: saatOnce(0.5),
+      simdi: T0,
+    }),
+    false,
+  );
+
+  // 3 saat geçmiş — artık gönderilir.
+  assertEquals(
+    shouldSendSignal('buy', 'sell', {
+      sonBildirim: saatOnce(3),
+      simdi: T0,
+    }),
+    true,
+  );
+});
+
+Deno.test('tekrar aralığı: aynı sinyal 24 saat sonra HATIRLATILIR', () => {
+  // Durum sürüyor ama gün dolmadı → sessiz.
+  assertEquals(
+    shouldSendSignal('sell', 'sell', {
+      sonBildirim: saatOnce(10),
+      simdi: T0,
+    }),
+    false,
+  );
+
+  // 25 saat geçti → hatırlatma. Bu olmadan kullanıcı süresiz sessizlikte
+  // kalıyordu ve sistemi "bozuk" sanıyordu.
+  assertEquals(
+    shouldSendSignal('sell', 'sell', {
+      sonBildirim: saatOnce(25),
+      simdi: T0,
+    }),
+    true,
+  );
+});
+
+Deno.test('güven sıçraması: aynı sinyal ama belirgin güçlenme bildirilir', () => {
+  // SAT %50 → SAT %85: göstergeler çok daha güçlü uzlaşmış, YENİ BİLGİ.
+  assertEquals(
+    shouldSendSignal('sell', 'sell', {
+      oncekiGuven: 50,
+      yeniGuven: 85,
+      sonBildirim: saatOnce(5),
+      simdi: T0,
+    }),
+    true,
+  );
+
+  // Küçük oynama (50 → 58) eşiğin altında — bildirilmez.
+  assertEquals(
+    shouldSendSignal('sell', 'sell', {
+      oncekiGuven: 50,
+      yeniGuven: 58,
+      sonBildirim: saatOnce(5),
+      simdi: T0,
+    }),
+    false,
+  );
+
+  // Güven DÜŞTÜYSE bildirilmez — daha zayıf sinyal kullanıcıyı uyandırmaz.
+  assertEquals(
+    shouldSendSignal('sell', 'sell', {
+      oncekiGuven: 85,
+      yeniGuven: 50,
+      sonBildirim: saatOnce(5),
+      simdi: T0,
+    }),
+    false,
+  );
+
+  // Sıçrama da cooldown'a tabi: 1 saat önce bildirildiyse beklenir.
+  assertEquals(
+    shouldSendSignal('sell', 'sell', {
+      oncekiGuven: 50,
+      yeniGuven: 90,
+      sonBildirim: saatOnce(1),
+      simdi: T0,
+    }),
+    false,
+  );
+});
+
+Deno.test('zaman bilgisi YOKSA eski davranışa düşer', () => {
+  // Migration 0038 öncesi satırlarda `notified_at` NULL. Sessiz kalmaktansa
+  // bir kez fazla bildirmek yeğdir; ama aynı sinyal yine bastırılır.
+  assertEquals(shouldSendSignal('buy', 'sell', {}), true);
+  assertEquals(shouldSendSignal('sell', 'sell', {}), false);
+});
