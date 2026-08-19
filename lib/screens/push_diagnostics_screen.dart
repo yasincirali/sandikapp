@@ -54,21 +54,30 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   /// Üçü de aynı belirtiyi verir: "push gelmiyor".
   Map<String, String> _cihaz = const {};
 
-  /// Sinyal geçmişini siler — de-dup'ı sıfırlamak için.
+  /// De-dup durumunu sıfırlar — aynı sinyaller yeniden gönderilebilsin.
   ///
-  /// Edge function aynı varlık için son sinyalle aynı olanı tekrar
-  /// göndermez; test ederken eski kayıtlar gönderimi engeller. Silme
-  /// kullanıcı verisine dokunduğu için onay ister.
+  /// **Hangi tablo:** de-dup kaynağı `signal_state`'tir, `signal_notifications`
+  /// DEĞİL. Edge function her varlığın son PUSH EDİLEN sinyalini
+  /// `signal_state`'te tutar ve yenisi aynıysa atlar (`skipped_by_dedup`).
+  ///
+  /// Bu buton önce yalnızca `signal_notifications`'ı siliyordu; o tablo
+  /// uygulama içi bildirim LİSTESİDİR ve de-dup'a hiç bakmaz. Sonuç:
+  /// kullanıcı "geçmişi temizle" diyor, liste boşalıyor, ama
+  /// `skipped_by_dedup` aynı kalıyor ve tek bir push bile çıkmıyordu —
+  /// ekranın kendi önerisi işe yaramıyordu (2026-08-19'da doğrulandı:
+  /// geçmiş 0 satırken bile 9 sinyal atlanıyordu).
   Future<void> _sinyalGecmisiniTemizle() async {
     final onay = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.c.surface2,
-        title: Text('Sinyal geçmişi silinsin mi?',
+        title: Text('De-dup sıfırlansın mı?',
             style: TextStyle(color: context.c.text90, fontSize: 17)),
         content: Text(
-          '${_sinyaller.length} kayıt silinecek. Uygulama içi bildirim '
-          'listesi de boşalır. Bu işlem geri alınamaz.',
+          'Son gönderilen sinyal durumu (signal_state) silinir; aynı '
+          'sinyaller bir sonraki turda YENİDEN gönderilir. Uygulama içi '
+          'bildirim listesi (${_sinyaller.length} kayıt) de boşalır. '
+          'Bu işlem geri alınamaz.',
           style: TextStyle(color: context.c.text58, fontSize: 13),
         ),
         actions: [
@@ -91,10 +100,15 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       final db = Supabase.instance.client;
       final uid = db.auth.currentUser?.id;
       if (uid == null) return;
+      // ÖNCE `signal_state`: de-dup'ın gerçek kaynağı burasıdır. Yalnızca
+      // `signal_notifications` silinirse liste boşalır ama gönderim yine
+      // atlanır — asıl şikayet ("push gelmiyor") sürer.
+      await db.from('signal_state').delete().eq('user_id', uid);
       await db.from('signal_notifications').delete().eq('user_id', uid);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sinyal geçmişi temizlendi')),
+        const SnackBar(
+            content: Text('De-dup sıfırlandı — sinyaller yeniden gönderilir')),
       );
       await _load();
     } catch (e) {
@@ -320,7 +334,9 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       sonuc['Firebase'] = 'HATA: $e';
     }
 
-    sonuc['Sunucuda kayıtlı'] = '${_myTokenCount ?? 0} token';
+    // `Sunucuda kayıtlı` BURADA yazılmaz: sunucu sayısı zaten `_tokenlar`
+    // listesiyle birlikte ayrıca basılıyor. İkisi de yazılınca paylaşım
+    // metninde satır çiftleniyordu.
     return sonuc;
   }
 
@@ -440,9 +456,11 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       return (
         baslik: 'Sinyal üretildi ama HİÇ GÖNDERİLMEDİ',
         detay: 'passed_threshold=$passed, sent=0, failed=0 — yani FCM\'e hiç '
-            'istek atılmadan atlandı. En olası sebep de-dup: aynı varlık '
-            'için son sinyal ile yenisi aynı. 5. bölümdeki geçmişi '
-            'temizleyip tekrar deneyin.',
+            'istek atılmadan atlandı. Sebep de-dup: her varlığın son '
+            'GÖNDERİLEN sinyali `signal_state`\'te tutulur ve yenisi aynıysa '
+            'atlanır. Aşağıdaki "De-dup sıfırla" düğmesi bunu temizler — '
+            'uygulama içi bildirim listesini silmek TEK BAŞINA yetmez, '
+            'o tablo de-dup\'a hiç bakmaz.',
         renk: context.c.loss,
       );
     }
@@ -670,13 +688,15 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             child: TextButton.icon(
               icon: const Icon(Icons.delete_outline_rounded, size: 16),
               style: TextButton.styleFrom(foregroundColor: context.c.loss),
-              label: const Text('Sinyal geçmişini temizle (de-dup sıfırla)'),
+              label: const Text('De-dup sıfırla (signal_state + geçmiş)'),
               onPressed: _tetikleniyor ? null : _sinyalGecmisiniTemizle,
             ),
           ),
           Text(
-            'Edge function son kayda bakıp aynı sinyali tekrar göndermez. '
-            'Test ederken bu kayıtlar gönderimi engeller.',
+            'Edge function her varlığın son GÖNDERİLEN sinyalini '
+            'signal_state\'te tutar ve yenisi aynıysa atlar. De-dup\'ın '
+            'kaynağı burasıdır — bildirim listesini silmek tek başına '
+            'gönderimi açmaz.',
             textAlign: TextAlign.center,
             style: TextStyle(color: context.c.text36, fontSize: 11, height: 1.4),
           ),
