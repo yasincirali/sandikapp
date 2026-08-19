@@ -296,6 +296,23 @@ Tüm bu URL'ler kodda referans veriliyor (`lib/screens/settings_screen.dart` ve 
 
 ---
 
+## 3.5 🛡️ MobSF — Yayın öncesi APK güvenlik taraması (önerilir)
+
+Mağazaya göndermeden önce derlenmiş APK/IPA'yı MobSF ile bir kez tara:
+binary'ye sır sızmış mı, manifest/imza sertleştirmesi doğru mu.
+
+- **CI'da otomatik:** `v*` tag push'unda `.github/workflows/mobsf-scan.yml`
+  çalışır ve `mobsf-report.json` artefaktını üretir. İstersen Actions
+  sekmesinden elle de tetikleyebilirsin (`workflow_dispatch`).
+- **İsteğe bağlı secret:** `MOBSF_API_KEY` (yoksa CI-yerel sabit kullanılır).
+- **Yerelde çalıştırma ve raporu okuma:** [`docs/security/mobsf.md`](docs/security/mobsf.md).
+
+⚠️ MobSF **Dart iş mantığını okuyamaz** — yalnızca kabuğu (manifest, native
+lib, gömülü string) denetler. Kaynak-seviyesi güvenlik incelemesi ayrıdır
+(bkz. `SECURITY_AUDIT_2026_08.md`). İkisi birbirini tamamlar.
+
+---
+
 ## 4. 🔐 RELEASE KEYSTORE OLUŞTUR (Play upload BLOKER)
 
 Bu **çok kritik** — keystore'u kaybedersen Play Store'a güncelleme yükleyemez, uygulamayı baştan yeni paket adıyla yayınlamak zorunda kalırsın. **Yedekle.**

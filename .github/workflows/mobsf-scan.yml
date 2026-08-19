@@ -1,0 +1,182 @@
+name: MobSF — APK güvenlik taraması
+
+# Yayın öncesi statik güvenlik kapısı.
+#
+# ── Ne yapar ──────────────────────────────────────────────────────────────
+# Release APK'yı MobSF (Mobile Security Framework) ile statik tarar ve
+# raporu artefakt olarak yükler. MobSF DERLENMİŞ ARTEFAKTI inceler:
+# AndroidManifest izinleri/exported bileşenler, cleartext trafik ayarı,
+# imza/sertifika, binary'ye SIZMIŞ sırlar (gömülü API anahtarı/token),
+# tracker kütüphaneleri ve genel sertleştirme eksikleri.
+#
+# ── Ne YAPMAZ (bilinçli sınır) ─────────────────────────────────────────────
+# Uygulamanın iş mantığı Dart → AOT `libapp.so` içinde makine kodudur;
+# MobSF bunu OKUYAMAZ. Yani bu tarama "kabuğu" (manifest, native lib,
+# kaynaklar, gömülü string) denetler, Dart kodunu değil. Dart/Supabase
+# kaynak-seviyesi güvenlik incelemesi ayrıdır (bkz. SECURITY_AUDIT_2026_08.md).
+#
+# ── Ne zaman çalışır ───────────────────────────────────────────────────────
+# `v*` tag push'unda (yayın adayı) ve elle (workflow_dispatch). Her main
+# push'unda çalıştırmak pahalı ve gereksiz — kapı yayın anına aittir.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: mobsf-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      # google-services.json repoda tutulmaz; secret'tan yazılır.
+      # (android-release.yml ile aynı desen.)
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON_BASE64 secret'ı tanımlı değil"
+            exit 1
+          fi
+          echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+
+      # Taranan APK, yayınlanan AAB'nin en yakın eşdeğeri olmalı: aynı
+      # dart-define'lar, aynı release yapılandırması (R8/minify). İmzasız
+      # debug key kabul edilir — MobSF imza yokluğunu bulgu olarak yazar
+      # ama gömülü sır / manifest denetimi imzadan bağımsız çalışır.
+      - name: Build release APK
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          echo "APK_PATH=$(ls build/app/outputs/flutter-apk/app-release.apk)" >> "$GITHUB_ENV"
+
+      # MobSF'i Docker ile ayağa kaldır. Statik tarama için REST API yeter;
+      # dynamic analiz (emülatör) bu kapının kapsamında değil.
+      - name: Start MobSF
+        run: |
+          docker run --rm -d --name mobsf -p 8000:8000 \
+            -e MOBSF_API_KEY="${{ secrets.MOBSF_API_KEY || 'ci-local-key' }}" \
+            opensecurity/mobile-security-framework-mobsf:latest
+          echo "MobSF başlatılıyor, hazır olması bekleniyor…"
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8000/ >/dev/null 2>&1; then
+              echo "MobSF hazır (${i}. denemede)."
+              break
+            fi
+            sleep 5
+            if [ "$i" -eq 60 ]; then
+              echo "::error::MobSF 5 dakikada ayağa kalkmadı"
+              docker logs mobsf || true
+              exit 1
+            fi
+          done
+
+      # Upload → Scan → JSON rapor. API anahtarı MobSF konteynerine verdiğimiz
+      # değerle aynı olmalı.
+      - name: Scan APK with MobSF
+        env:
+          MOBSF_API_KEY: ${{ secrets.MOBSF_API_KEY || 'ci-local-key' }}
+        run: |
+          set -euo pipefail
+          echo "Yüklenen APK: $APK_PATH"
+
+          UPLOAD=$(curl -sf -F "file=@${APK_PATH}" \
+            http://localhost:8000/api/v1/upload \
+            -H "Authorization: ${MOBSF_API_KEY}")
+          echo "Upload yanıtı: $UPLOAD"
+
+          HASH=$(echo "$UPLOAD" | python3 -c 'import sys,json; print(json.load(sys.stdin)["hash"])')
+          SCAN_TYPE=$(echo "$UPLOAD" | python3 -c 'import sys,json; print(json.load(sys.stdin)["scan_type"])')
+
+          curl -sf -X POST http://localhost:8000/api/v1/scan \
+            -H "Authorization: ${MOBSF_API_KEY}" \
+            -d "hash=${HASH}&scan_type=${SCAN_TYPE}" >/dev/null
+          echo "Tarama tamamlandı, rapor çekiliyor…"
+
+          curl -sf -X POST http://localhost:8000/api/v1/report_json \
+            -H "Authorization: ${MOBSF_API_KEY}" \
+            -d "hash=${HASH}" -o mobsf-report.json
+          echo "MOBSF_HASH=${HASH}" >> "$GITHUB_ENV"
+
+      # Kapı mantığı. MobSF'in `security_score`'u ve bulgu sayaçlarını okur.
+      # HIGH bulgu → kırıl; skor eşiğin altındaysa → kırıl. Eşik bilinçli
+      # olarak yumuşak başlatıldı (60): ilk turda mevcut bulgular görülüp
+      # sınıflandırılsın, sonra sıkılaştırılır (bkz. docs/security/mobsf.md).
+      - name: Evaluate results
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+
+          with open("mobsf-report.json") as f:
+              r = json.load(f)
+
+          # MobSF sürümleri arasında alan adları oynayabildiği için savunmacı oku.
+          appsec = r.get("appsec", {})
+          score = appsec.get("security_score", r.get("security_score"))
+          high = appsec.get("high", [])
+          # Manifest ve kod analizlerindeki HIGH sayısı (varsa).
+          def sev_count(section, sev):
+              d = r.get(section, {})
+              return sum(1 for v in d.values() if isinstance(v, dict) and str(v.get("severity","")).lower()==sev)
+
+          manifest_high = sev_count("manifest_analysis", "high")
+          code_high = sev_count("code_analysis", "high")
+          n_high = (len(high) if isinstance(high, list) else 0) + manifest_high + code_high
+
+          print(f"MobSF security_score = {score}")
+          print(f"HIGH bulgu sayısı ≈ {n_high} (appsec:{len(high) if isinstance(high,list) else 0} manifest:{manifest_high} code:{code_high})")
+
+          THRESHOLD = int(os.environ.get("MOBSF_MIN_SCORE", "60"))
+          failed = False
+          if isinstance(score, (int, float)) and score < THRESHOLD:
+              print(f"::error::security_score {score} < eşik {THRESHOLD}")
+              failed = True
+          if n_high > 0:
+              print(f"::warning::{n_high} HIGH bulgu var — mobsf-report.json artefaktını incele")
+              # İlk turda HIGH'ı uyarı tut; skoru kapı yap. Sınıflandırma
+              # sonrası bu satırı `failed = True` yaparak sertleştir.
+
+          sys.exit(1 if failed else 0)
+          PY
+        env:
+          MOBSF_MIN_SCORE: '60'
+
+      - name: Upload MobSF report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobsf-report
+          retention-days: 30
+          if-no-files-found: warn
+          path: mobsf-report.json
+
+      - name: Stop MobSF
+        if: always()
+        run: docker stop mobsf || true

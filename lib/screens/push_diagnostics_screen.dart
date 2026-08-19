@@ -103,12 +103,31 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       // ÖNCE `signal_state`: de-dup'ın gerçek kaynağı burasıdır. Yalnızca
       // `signal_notifications` silinirse liste boşalır ama gönderim yine
       // atlanır — asıl şikayet ("push gelmiyor") sürer.
-      await db.from('signal_state').delete().eq('user_id', uid);
+      //
+      // `.select()` EKLİ: RLS reddi hata FIRLATMAZ, yalnızca sıfır satır
+      // etkiler. Dönen listeyi saymazsak "sıfırlandı" der ve hiçbir şey
+      // silmemiş oluruz — `signal_state` politikasız olduğu için tam olarak
+      // bu yaşandı (bkz. migration 0035).
+      final silinen = await db
+          .from('signal_state')
+          .delete()
+          .eq('user_id', uid)
+          .select('user_id') as List<dynamic>;
+
       await db.from('signal_notifications').delete().eq('user_id', uid);
       if (!mounted) return;
+
+      final vardi = _sinyaller.isNotEmpty || silinen.isNotEmpty;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('De-dup sıfırlandı — sinyaller yeniden gönderilir')),
+        SnackBar(
+          backgroundColor: silinen.isEmpty && vardi ? context.c.loss : null,
+          content: Text(
+            silinen.isEmpty && vardi
+                ? 'signal_state SİLİNEMEDİ (RLS?) — de-dup sürüyor'
+                : 'De-dup sıfırlandı (${silinen.length} satır) — '
+                    'sinyaller yeniden gönderilir',
+          ),
+        ),
       );
       await _load();
     } catch (e) {
