@@ -126,33 +126,73 @@ async function createAccessToken(serviceAccount: ServiceAccount) {
 // "Yatırım tavsiyesi değildir" ibaresi eklenir — client'taki
 // `NotificationService.sendSignalNotification` ile aynı dil.
 
+/// Bildirim başlığındaki kısa varlık etiketi.
+///
+/// Kilit ekranı başlığı tek satırdır ve fon adları buna sığmaz
+/// ("YAPI KREDİ PORTFÖY YABANCI TEKNOLOJİ SEKTÖRÜ HİSSE SENEDİ FONU" gibi).
+/// İşletim sistemine bırakılırsa ortadan keser ve AYIRT EDİCİ kısım —
+/// yön okunun hemen yanındaki asıl bilgi — kaybolur.
+///
+/// Ticker kullanılır ama HAM haliyle değil: kaynak ön ekleri kullanıcıya
+/// hiçbir şey ifade etmez, hatta teknik bir hata gibi görünür.
+///   `TEFAS:AFO` → `AFO`      (fon kodu)
+///   `AGHOL.IS`  → `AGHOL`    (BIST kodu)
+///   `EURTRY=X`  → adına düş  (kod değil, kur çifti — "Euro" daha anlaşılır)
+export function shortLabel(assetName: string, ticker: string): string {
+  const t = (ticker ?? '').trim();
+
+  // Kur çiftleri kod olarak okunmaz; adı zaten kısa ve nettir ("Euro").
+  if (t.endsWith('=X') || t === '') return assetName;
+
+  const sade = t.includes(':') ? t.split(':').pop()! : t.replace(/\.IS$/i, '');
+
+  // Sadeleşmiş kod boş ya da anlamsız kısaysa ada güven.
+  return sade.length >= 2 ? sade : assetName;
+}
+
 function buildMessage(
   assetName: string,
   signal: SignalType,
   buyCount: number,
   sellCount: number,
+  ticker = '',
 ): { title: string; body: string } {
   const total = buyCount + sellCount;
   const disclaimer = 'Yatırım tavsiyesi değildir.';
+  const etiket = shortLabel(assetName, ticker);
 
-  // Üç durum da AYRI ele alınmalı. Eskiden yalnızca `isBuy` bakılıyordu ve
-  // "buy değilse aşağı trend" varsayılıyordu; nötr sinyaller push
-  // gönderilmediği sürece bu görünmüyordu. Nötr push açıldığında kullanıcı
-  // kararsız piyasada "Aşağı trend" bildirimi alırdı — yanlış bilgi.
+  // Yön OKU başlıkta, en solda.
+  //
+  // Kilit ekranında bildirimler yığın halinde görünür ve kullanıcı önce
+  // sol kenarı tarar. Ok, metni okumadan önce yönü verir — emoji yerine
+  // ▲▼ tercih edildi: finansal ciddiyeti korur, her yazı tipinde aynı
+  // görünür ve VoiceOver bunu "yukarı üçgen" diye okur (emoji'nin uzun
+  // sesli adı yerine).
+  //
+  // Yön RENKLE anlatılmaz — bildirim yüzeyinde renk kontrolü yoktur.
+  // Bu, uygulamadaki "kazanç/kayıp yalnızca renkle anlatılamaz" kuralının
+  // aynısıdır.
+  const total2 = total > 0 ? total : 1;
+
   if (signal === 'neutral') {
     return {
-      title: `Kararsız görünüm: ${assetName}`,
-      body: `Göstergeler net bir yön vermiyor ` +
-        `(${buyCount} yukarı / ${sellCount} aşağı). ${disclaimer}`,
+      title: `◆ ${etiket} · yön belirsiz`,
+      body: `Göstergeler bölünmüş: ${buyCount} yukarı, ${sellCount} aşağı. ` +
+        disclaimer,
     };
   }
 
   const isBuy = signal === 'buy';
+  const lehte = isBuy ? buyCount : sellCount;
+  // Güven oranı gövdede AÇIKÇA verilir. "Çoğunluğu yukarı yönlü" ifadesi
+  // 4/6 ile 6/6 arasındaki farkı gizliyordu; kullanıcı zayıf bir sinyali
+  // güçlü sanabilirdi.
+  const yuzde = Math.round((lehte / total2) * 100);
+
   return {
-    title: isBuy ? `Yukarı trend: ${assetName}` : `Aşağı trend: ${assetName}`,
-    body: isBuy
-      ? `Göstergelerin çoğunluğu yukarı yönlü (${buyCount}/${total}). ${disclaimer}`
-      : `Göstergelerin çoğunluğu aşağı yönlü (${sellCount}/${total}). ${disclaimer}`,
+    title: isBuy ? `▲ ${etiket} · yukarı yönlü` : `▼ ${etiket} · aşağı yönlü`,
+    body: `${lehte}/${total} gösterge ${isBuy ? 'yukarı' : 'aşağı'} · ` +
+      `güven %${yuzde}. ${disclaimer}`,
   };
 }
 
@@ -568,6 +608,7 @@ Deno.serve(async (request) => {
         summary.signal,
         summary.buyCount,
         summary.sellCount,
+        asset.ticker,
       );
 
       // dry-run: HİÇBİR yan etki bırakma.
