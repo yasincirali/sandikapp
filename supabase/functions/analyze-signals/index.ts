@@ -399,7 +399,16 @@ export function shouldSendSignal(
   }
 
   // Buradan sonrası: sinyal AYNI.
-  if (gecenSaat === null) return false;
+  //
+  // Damga yoksa GÖNDER. Burası bir kez `false` döndürülerek kuruldu ve
+  // üretimde kilitlenme yarattı: `notified_at` yalnızca başarılı gönderimde
+  // yazılır, dolayısıyla "damga yok → gönderme" demek "damga hiç oluşmaz →
+  // bir daha asla gönderme" demekti. 24 saatlik hatırlatma da dahil hiçbir
+  // kural devreye giremiyordu.
+  //
+  // Bir kez fazla bildirmek süresiz sessizlikten iyidir; üstelik o tek
+  // gönderim damgayı yazar ve satır normal rejime döner.
+  if (gecenSaat === null) return true;
 
   // Durum sürüyor — günlük hatırlatma zamanı geldiyse bildir.
   if (gecenSaat >= DEDUP_TEKRAR_SAAT) return true;

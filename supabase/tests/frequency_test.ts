@@ -161,10 +161,22 @@ Deno.test('kullanıcı penceresi daraltılabilir', () => {
 // Kullanıcı isteği: "sabah SAT verdiyse, akşam yine SAT verdiğinde push
 // gelmemeli, ancak nötr ya da AL'a dönerse vermeli."
 
+// Sabit bir "şimdi" ve ondan geriye saat üreten yardımcı. `const` hoist
+// edilmediği için tanımlar ilk kullanımdan ÖNCE durmalı.
+const T0 = new Date('2026-08-20T12:00:00Z');
+const saatOnce = (s: number) => new Date(T0.getTime() - s * 3_600_000);
+
 Deno.test('aynı sinyal tekrar ederse gönderilmez', () => {
-  assertEquals(shouldSendSignal('sell', 'sell'), false);
-  assertEquals(shouldSendSignal('buy', 'buy'), false);
-  assertEquals(shouldSendSignal('neutral', 'neutral'), false);
+  // Asıl de-dup güvencesi: damga VAR ve tekrar aralığı dolmamışsa sustur.
+  //
+  // Damga bilinçli olarak veriliyor — `opts` olmadan çağırmak "hiç
+  // bildirilmemiş" anlamına gelir ve o dal artık GÖNDER tarafındadır
+  // (bkz. "zaman bilgisi YOKSA..." testi). İkisini karıştırmak kilitlenme
+  // yaratmıştı; bu test damgalı hâli korur.
+  const damga = { sonBildirim: saatOnce(3), simdi: T0 };
+  assertEquals(shouldSendSignal('sell', 'sell', damga), false);
+  assertEquals(shouldSendSignal('buy', 'buy', damga), false);
+  assertEquals(shouldSendSignal('neutral', 'neutral', damga), false);
 });
 
 Deno.test('sinyal değişince gönderilir', () => {
@@ -185,9 +197,6 @@ Deno.test('ilk sinyal her zaman gönderilir', () => {
 // Saf "değişti mi" kuralı iki uçta birden yanlıştı:
 //   · sinyal sabit kalırsa SÜRESİZ sessizlik (2026-08-09 → 08-18: 9 gün),
 //   · eşik civarında salınırsa her geçişte bildirim (zıplama/spam).
-
-const T0 = new Date('2026-08-20T12:00:00Z');
-const saatOnce = (s: number) => new Date(T0.getTime() - s * 3_600_000);
 
 Deno.test('cooldown: sinyal değişse bile çok yakın bildirim bastırılır', () => {
   // 30 dk önce bildirim yapıldı; sinyal değişti ama cooldown (2s) dolmadı.
@@ -276,9 +285,19 @@ Deno.test('güven sıçraması: aynı sinyal ama belirgin güçlenme bildirilir'
   );
 });
 
-Deno.test('zaman bilgisi YOKSA eski davranışa düşer', () => {
-  // Migration 0038 öncesi satırlarda `notified_at` NULL. Sessiz kalmaktansa
-  // bir kez fazla bildirmek yeğdir; ama aynı sinyal yine bastırılır.
+Deno.test('zaman bilgisi YOKSA bildirim gider (kilitlenme olmaz)', () => {
+  // Migration 0038 ÖNCESİ yazılmış satırlarda `notified_at` NULL kalır.
+  //
+  // Bu dal bir kez yanlış kuruldu ve üretimde tam bir kilitlenme yarattı
+  // (2026-08-20): aynı sinyalde NULL → `false` dönüyordu, yani "bildirme".
+  // Ama `notified_at` YALNIZCA başarılı gönderimde yazılır. Gönderim
+  // olmadığı için damga hiç oluşmuyor, damga olmadığı için gönderim hiç
+  // olmuyor — kendi kendini besleyen bir döngü. 24 saatlik hatırlatma
+  // dahil hiçbir kural devreye giremiyordu.
+  //
+  // Doğrusu: damga YOKSA bir kez gönder. O gönderim damgayı yazar ve satır
+  // normal cooldown/hatırlatma rejimine girer. Bir fazla bildirim, süresiz
+  // sessizlikten iyidir.
   assertEquals(shouldSendSignal('buy', 'sell', {}), true);
-  assertEquals(shouldSendSignal('sell', 'sell', {}), false);
+  assertEquals(shouldSendSignal('sell', 'sell', {}), true);
 });
