@@ -4,6 +4,7 @@ import '../models/asset_type.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../services/analytics_service.dart';
+import '../services/history_service.dart';
 import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
@@ -65,9 +66,22 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
       final enabledIds = indicatorPrefs.forType(asset.type);
       if (enabledIds.isEmpty) continue;
 
+      // GERÇEK fiyat geçmişi şart. Boş liste verilirse
+      // `TechnicalAnalysisService.analyze` `_simulate()`'e düşer ve `Random`
+      // ile UYDURMA fiyat üretir — bu yol sinyali DB'ye yazdığı için
+      // kullanıcıya sahte bir "AL/SAT" gösterirdi. Sunucu tarafı bu tuzağı
+      // zaten kapatmış durumda (yeterli veri yoksa varlığı atlar).
+      final priceMap = await HistoryService.instance
+          .getSymbolHistory(asset.ticker, periodDays: 180)
+          .catchError((_) => <int, double>{});
+      final sortedTs = priceMap.keys.toList()..sort();
+      final prices = [for (final t in sortedTs) priceMap[t]!];
+      // Göstergelerin çoğu 20-26 nokta ister; 30 altı güvenilir değil.
+      if (prices.length < 30) continue;
+
       final indicators = TechnicalAnalysisService.analyze(
         asset,
-        const [],
+        prices,
         enabledIds: enabledIds,
         premiumUnlocked: premium,
       );

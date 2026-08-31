@@ -428,6 +428,60 @@ export function shouldSendSignal(
   return false;
 }
 
+/// Aynı ürünün birden çok alım lot'unu TEK sinyal birimine indirger.
+///
+/// ## Neden gerekli
+/// `assets` bir **lot** tablosudur: aynı hisseyi iki kez alan kullanıcının
+/// iki ayrı satırı (iki ayrı `id`) olur. Uygulama bunları ekranda
+/// `positionKey` ile birleştirir, ama push tarafı birleştirmiyordu:
+/// döngü lot başına dönüyor, de-dup da `asset_id` ile anahtarlanıyordu
+/// (`signal_state` PK = `(user_id, asset_id)`). Sonuç: iki lot = iki
+/// bağımsız de-dup satırı, ikisi de diğerinden habersiz "bunu daha önce
+/// göndermedim" diyordu.
+///
+/// Üstelik iki lot aynı ticker'a ait olduğu için fiyat serisi de aynıydı
+/// (`histories.get(symbol)`) → aynı gösterge → aynı sinyal → aynı güven.
+/// Kullanıcı aynı saniyede birbirinin kopyası iki bildirim alıyordu.
+/// Belirtisi: "3 kez alım yaptığım varlık için 3 push geldi."
+///
+/// ## Anahtar neden `user_id|type|symbol`
+/// Sinyal ÜRETİMİ yalnızca çözümlenen fiyat sembolüne bakar; maliyet bazı,
+/// miktar ve alım tarihi analize hiç girmez. Dolayısıyla aynı sembolü
+/// paylaşan iki lot **zorunlu olarak** aynı sinyali üretir — birleştirme
+/// bilgi kaybetmez.
+///
+/// `positionKey`'den (`type|ticker|currency`) farklı olarak `currency`
+/// kullanılmaz: sunucu sorgusu o sütunu çekmiyor ve farklı para birimi
+/// aynı sembolü paylaşıyorsa analiz sonucu yine aynıdır (fiyat serisi tek).
+///
+/// `user_id` anahtarın PARÇASIDIR ve kaldırılmamalıdır: aynı hisseye sahip
+/// iki kullanıcı tek gruba düşerse yalnızca birine bildirim gider. Bu,
+/// ortaklık tarafındaki "farklı sahiplerin lot'ları asla tek havuzda
+/// toplanmaz" değişmezinin push tarafındaki karşılığıdır.
+///
+/// ## Temsilci seçimi
+/// Grubun en küçük `id`'li lot'u temsilcidir. Deterministik olması şart:
+/// temsilci `signal_state` satırının anahtarı ve push'un derin bağlantısı
+/// (`assetId`) olur. Tur başına değişseydi de-dup hafızası her turda başka
+/// satıra yazılır ve tekrar çift bildirim üretirdi.
+export function collapseLotsToPositions<T extends { id: string; user_id: string; type: string }>(
+  assets: T[],
+  symbolOf: (a: T) => string | undefined,
+): T[] {
+  const temsilci = new Map<string, T>();
+  for (const a of assets) {
+    const sym = symbolOf(a);
+    // Sembolü çözülemeyen lot gruplanamaz; döngü zaten onu eleyecek.
+    if (!sym) continue;
+    const key = `${a.user_id}|${a.type}|${sym}`;
+    const mevcut = temsilci.get(key);
+    if (mevcut === undefined || a.id < mevcut.id) {
+      temsilci.set(key, a);
+    }
+  }
+  return [...temsilci.values()];
+}
+
 export function shouldNotifyNow(
   pref: {
     frequency?: SignalFrequency;
@@ -640,6 +694,19 @@ Deno.serve(async (request) => {
       symbols.add(sym);
     }
 
+    // ── 4d) Lot → pozisyon indirgemesi ────────────────────────────────────
+    //
+    // Aynı üründen birden çok kez alım yapıldıysa TEK bildirim gitmeli.
+    // Bu satır olmadan döngü lot başına döner ve kullanıcı aynı varlık için
+    // alım sayısı kadar kopya push alır (bkz. `collapseLotsToPositions`).
+    const pozisyonlar = collapseLotsToPositions(
+      aktifAssets,
+      (a) => symbolOf.get(a.id),
+    );
+    // Kaç lot birleşti — teşhiste "neden beklediğimden az bildirim geldi"
+    // sorusunun cevabı. Sıfırdan büyükse birleştirme fiilen çalışmıştır.
+    const collapsedLots = aktifAssets.length - pozisyonlar.length;
+
     const histories = await loadPriceHistories(admin, symbols);
 
     // ── 5) Analiz + de-dup ──────────────────────────────────────────────────
@@ -667,9 +734,11 @@ Deno.serve(async (request) => {
     // "neden" sorusunu log'a bakmadan cevaplayabilmek için yanıta eklenir.
     const errors: string[] = [];
 
-    // `aktifAssets`: signals_enabled ve sıklık/pencere filtresi YUKARIDA
-    // uygulandı (fiyat çekiminden önce). Burada tekrar kontrol edilmez.
-    for (const asset of aktifAssets) {
+    // `pozisyonlar`: signals_enabled ve sıklık/pencere filtresi YUKARIDA
+    // uygulandı (fiyat çekiminden önce), ardından aynı ürünün lot'ları TEK
+    // temsilciye indirgendi. Döngü lot başına DEĞİL pozisyon başına döner —
+    // aksi halde birden çok alım yapılan varlık için kopya push gider.
+    for (const asset of pozisyonlar) {
       const symbol = symbolOf.get(asset.id);
       if (!symbol) continue;
       const prices = histories.get(symbol);
@@ -867,6 +936,10 @@ Deno.serve(async (request) => {
       skipped_by_dedup: skippedByDedup,
       users: userIds.length,
       assets: assets.length,
+      // Aynı ürünün fazladan lot'ları (birleştirilenler). >0 ise kullanıcı
+      // o varlıktan birden çok kez alım yapmış ve tek bildirim gitmiştir.
+      collapsed_lots: collapsedLots,
+      positions: pozisyonlar.length,
       symbols: symbols.size,
       histories: histories.size,
       evaluated,

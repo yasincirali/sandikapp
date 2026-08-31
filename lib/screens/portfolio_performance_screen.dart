@@ -10,10 +10,8 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/user_model.dart';
-import '../models/technical_signal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
-import '../services/technical_analysis_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -824,7 +822,27 @@ class _PortfolioPerformanceScreenState
                 intraday: isIntraday, allTargetAssets: targetAssets),
           ),
         const SizedBox(height: 24),
-        _PortfolioSignalPanel(assets: targetAssets),
+        // Tür bazlı kâr/zarar dökümü — seçili dönem ve sekmeye göre.
+        _TypeBreakdownCard(
+          ownerLots: ownerLots,
+          start: effectiveStart,
+          end: endDate,
+          simulate: _simulate,
+          intraday: isIntraday,
+          // Gün içi sekmesinde `days` 0'dır; tür serisi için 1 güne düş
+          // (getPortfolioHistory 0 gün ile tek nokta döndürür ve kart hiç
+          // görünmezdi).
+          periodDays: _periods[_selectedPeriodIdx].days == 0
+              ? 1
+              : _periods[_selectedPeriodIdx].days,
+          toTRY: pState.toTRY,
+        ),
+        // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
+        // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
+        // ekranında gösterilir. Bu panel senkron çalıştığı için gerçek fiyat
+        // geçmişi çekemiyordu; uydurma seriye düşmesi engellendikten sonra
+        // (bkz. `analyze(..., allowSimulation)`) zaten kalıcı olarak
+        // "sinyal yok" gösteriyordu — yer kaplayan ölü bir yüzeydi.
         const SizedBox(height: 12),
         const DisclaimerWidget(),
         const SizedBox(height: 16),
@@ -1120,23 +1138,28 @@ class _PortfolioPerformanceScreenState
       }
     }
 
-    // ── Ana rakam: para giriş/çıkışından ARINDIRILMIŞ değişim ────────────
+    // ── Ana rakam: BİRİKİM değişimi — (son − ilk) / ilk ──────────────────
     //
-    // Ham fark "portföyüm ne kazandı?" sorusunun cevabı DEĞİLDİR: içine
-    // dönem boyunca yatırdığın para da girer. Kullanıcı 169.933 TL'lik alım
-    // yaptığında hiçbir fiyat hareketi olmasa bile ekran "+%7,16" yazıyordu
-    // — portföy o gün aslında değer kaybetmişken.
+    // Kart, grafiğin ucundan ucuna olan HAM farkı gösterir; alımlar düşülmez.
+    // Yani "portföyüm ne kazandı" değil, **"birikimim ne kadar büyüdü"**
+    // sorusunu yanıtlar. Dönem içinde alım yapıldıysa bu rakam simülasyon
+    // sekmesinden belirgin biçimde YÜKSEK çıkar — aradaki fark yatırılan
+    // paradır ve kullanıcı bunu görmek ister (kullanıcı kararı, 2026-08-31).
     //
-    // Grafik ile kartın FARKLI şeyler göstermesi bilinçlidir:
-    //   • Grafik  → "portföyümde ne kadar var" (ham değer, sıçramalar dahil)
-    //   • Kart    → "portföyüm ne kazandı"     (yalnızca piyasa etkisi)
-    // Aradaki farkı aşağıdaki açıklama satırı kapatır.
-    final change = grossChange - netInflow;
+    // Formül iki sekmede de aynıdır; fark girdide:
+    //   • Gerçek     → miktar alım anında artar, seri basamak yapar
+    //   • Simülasyon → bugünkü net pozisyon sabit, basamak yok
+    //
+    // ⚠️ Bu rakam KAZANÇ DEĞİLDİR. Düz seyreden bir fona 100.000 TL
+    // yatırıldığında kart +%100 yazar. Bu yüzden başlık "birikim" der ve
+    // aşağıdaki not satırı, ne kadarının alımdan geldiğini AÇIKÇA söyler.
+    // Etiket olmadan bu rakam "kazandım" diye okunurdu.
+    final change = grossChange;
 
-    // Yüzde tabanı: dönem başı değer + yatırılan para. Sadece `firstY`
-    // kullanmak, dönem içinde portföyünü ikiye katlayan kullanıcıda yüzdeyi
-    // şişirirdi.
-    final pctBase = firstY + (netInflow > 0 ? netInflow : 0);
+    // Yüzde tabanı dönem başı değerdir — (son − ilk) / ilk.
+    // `netInflow` tabana EKLENMEZ: eklenirse alımın etkisi payda üzerinden
+    // geri sönümlenir ve "birikim büyüdü" bilgisi kaybolurdu.
+    final pctBase = firstY;
     final pct = pctBase > 0 ? (change / pctBase) * 100 : null;
     final positive = change >= 0;
 
@@ -1150,10 +1173,24 @@ class _PortfolioPerformanceScreenState
     final tryFmt =
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
     final periodLabel = _periods[_selectedPeriodIdx].label;
-    final dateFmt = DateFormat('d MMM', 'tr_TR');
+    // Yıl, iki uç FARKLI yıla düşüyorsa yazılır.
+    //
+    // Sabit `d MMM` biçimi 1Y periyodunda "31 Ağu → 31 Ağu" üretiyordu:
+    // aralık doğruydu (2025 → 2026) ama yıl gizlendiği için aynı güne
+    // bakılıyormuş gibi görünüyordu. Kısa periyotlarda yıl gereksiz
+    // gürültüdür, o yüzden koşullu.
+    final dateFmt = DateFormat(
+      start.year == end.year ? 'd MMM' : 'd MMM y',
+      'tr_TR',
+    );
+    // Başlık "birikim" der: rakam alımları İÇERİR, dolayısıyla saf getiri
+    // değildir. Simülasyonda miktar sabit olduğu için orada birikim etkisi
+    // yoktur ve etiket sade kalır.
     final title = intraday
-        ? 'Bugünkü değişim'
-        : '$periodLabel değişim${_simulate ? ' · simülasyon' : ''}';
+        ? 'Bugünkü birikim değişimi'
+        : _simulate
+            ? '$periodLabel değişim · simülasyon'
+            : '$periodLabel birikim değişimi';
 
     return Container(
       padding:
@@ -1162,8 +1199,12 @@ class _PortfolioPerformanceScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Başlık "1A birikim değişimi · simülasyon" gibi uzayabiliyor;
+          // 320pt'de tek satıra sığmalı (taşma testi bunu kovalıyor).
           Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: context.t.titleSmall?.copyWith(color: context.c.text58),
           ),
           const SizedBox(height: SandikSpace.sm),
@@ -1225,10 +1266,10 @@ class _PortfolioPerformanceScreenState
                 : '${dateFmt.format(start)} → ${dateFmt.format(end)}',
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
-          // Ana rakam artık ARINDIRILMIŞ. Not satırı bunu açıklar: kullanıcı
-          // portföy toplamının çok daha fazla arttığını görüp "rakam neden
-          // küçük?" diye sormasın. Eski metin ("değişimin bir kısmı yeni
-          // yatırımdan geliyor") artık yanlış olurdu — o kısım zaten düşüldü.
+          // Ana rakam artık alımları İÇERİYOR. Not satırı bu yüzden ters
+          // yöne çalışır: kullanıcı "+%100 kazandım" sanmasın diye ne
+          // kadarının yatırılan paradan, ne kadarının piyasadan geldiğini
+          // ayırır. Etiket tek başına yetmez — sayının kaynağı yazılmalı.
           if (netInflow.abs() > 0.5) ...[
             const SizedBox(height: SandikSpace.sm),
             Row(
@@ -1241,14 +1282,13 @@ class _PortfolioPerformanceScreenState
                   child: Text(
                     netInflow > 0
                         ? 'Bu dönemde ${tryFmt.format(netInflow)} tutarında alım '
-                            'yapıldı. Yukarıdaki rakam yatırdığın parayı '
-                            'içermez — yalnızca piyasa hareketini gösterir. '
-                            'Grafikteki yükseliş ${tryFmt.format(grossChange)}, '
-                            'çünkü portföy toplamı yeni alımlarla da büyüyor.'
+                            'yapıldı ve yukarıdaki rakam bunu İÇERİR. '
+                            'Yalnızca piyasa hareketi: '
+                            '${tryFmt.format(grossChange - netInflow)}.'
                         : 'Bu dönemde ${tryFmt.format(netInflow.abs())} tutarında '
-                            'satış yapıldı. Yukarıdaki rakam çıkardığın parayı '
-                            'içermez — yalnızca piyasa hareketini gösterir. '
-                            'Grafikteki düşüşün bir kısmı bu satıştan geliyor.',
+                            'satış yapıldı ve yukarıdaki rakam bunu İÇERİR. '
+                            'Yalnızca piyasa hareketi: '
+                            '${tryFmt.format(grossChange - netInflow)}.',
                     style:
                         context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),
@@ -1272,7 +1312,8 @@ class _PortfolioPerformanceScreenState
   String? _buyDayKeysCacheKey;
 
   Set<double> _buyDayKeys(
-      List<TransactionSegment> segments, List<Asset> assets, DateTime start) {
+      List<TransactionSegment> segments, List<Asset> assets, DateTime start,
+      {required bool intraday}) {
     // Cache anahtarı: başlangıç + varlık kimlikleri + segment imzası.
     // Segment imzası nokta SAYISI ile yetinmemeli — periyot/veri değişince
     // sayı aynı kalıp X aralığı kayabilir (örn. 30 günlük iki farklı
@@ -1281,7 +1322,11 @@ class _PortfolioPerformanceScreenState
     // `id` tek başına yetmez: yumuşak silme `isActive`'i çevirir ama id'yi
     // değiştirmez — anahtar sabit kalır ve silinen lot'un noktası cache'ten
     // dönmeye devam ederdi. Aşağıdaki filtre alanları anahtara giriyor.
+    // `intraday` anahtara GİRER: aynı segment kümesi için gün içi mod saati
+    // korur, diğer modlar gece yarısına kırpar. Anahtarda olmasaydı sekme
+    // değişince bayat X'ler dönerdi.
     final sig = StringBuffer()
+      ..write(intraday ? 'i|' : 'd|')
       ..write(start.millisecondsSinceEpoch)
       ..write('|')
       ..write(assets
@@ -1321,8 +1366,17 @@ class _PortfolioPerformanceScreenState
       if (!a.isActive) continue;
       if (!a.isBuy && !a.isSell) continue;
       final d = a.addedDate;
-      final dayMidnight = DateTime(d.year, d.month, d.day);
-      txXs.add(dayMidnight.difference(startMidnight).inMinutes / (60.0 * 24.0));
+      // Gün içi ("GÜNLÜK") seride SAAT KORUNUR.
+      //
+      // Burada eskiden koşulsuz `DateTime(d.year, d.month, d.day)` vardı —
+      // işlemin saati kırpılıp gece yarısına çekiliyordu. Günlük/haftalık
+      // seride bu doğrudur (bar zaten güne snap edilir), ama gün içi seride
+      // 5 dakikalık slotlarla çalışılır: 14:00'te yapılan alım 00:00'a
+      // düşünce grafiğin görünür aralığının DIŞINA çıkıyor ve nokta hiç
+      // doğmuyordu. Sıçramanın ölçek yüzünden görünmediği durumda
+      // (tüm portföy görünümü) geriye hiçbir işaret kalmıyordu.
+      final anchor = intraday ? d : DateTime(d.year, d.month, d.day);
+      txXs.add(anchor.difference(startMidnight).inMinutes / (60.0 * 24.0));
     }
 
     // ── İşlemi KAPSAYAN spot'a bağla, tam gün eşleşmesi ARAMA ──────────────
@@ -1524,7 +1578,11 @@ class _PortfolioPerformanceScreenState
       // tek bir yığın gibi görünüyordu. Aynı X uzayında minimum 16px mesafe
       // şartı koyuyoruz; zoom yapıldıkça viewport daralır, noktalar açılır
       // ve gizlenenler tek tek ortaya çıkar.
-      final DotThinner dotThinner = intraday || _simulate
+      // Simülasyonda işlem noktası YOKTUR (miktar tüm dönem sabit sayılır,
+      // "o gün alım yapıldı" bilgisi o modelde anlamsız). Gün içi seride ise
+      // noktalar GÖSTERİLİR: sıçrama tüm portföy ölçeğinde görünmediğinde
+      // işlemin izini taşıyan tek şey odur.
+      final DotThinner dotThinner = _simulate
           ? DotThinner.build(
               candidates: const [],
               viewMinX: viewMinX,
@@ -1540,7 +1598,8 @@ class _PortfolioPerformanceScreenState
                 // Kaynak liste crosshair ile AYNI olmalı (`txAssets`), aksi
                 // halde nokta bir kümeden, tooltip başka kümeden beslenir ve
                 // "noktası var ama işlemi yok" tutarsızlığı doğar.
-                candidates: _buyDayKeys(segments, txAssets, start),
+                candidates:
+                    _buyDayKeys(segments, txAssets, start, intraday: intraday),
                 viewMinX: viewMinX,
                 viewMaxX: viewMaxX,
                 // Grafik genişliği ~ekran - sağ Y rezervi (60px).
@@ -1805,8 +1864,17 @@ class _PortfolioPerformanceScreenState
                 // aralıklı yüzlerce nokta olduğu için hepsini işaretlemek
                 // grafiği bulanıklaştırır).
                 if (intraday) {
-                  // Trading hissiyatı: sadece "şimdi" noktası görünsün.
-                  return spot.x == lastX;
+                  // "Şimdi" noktası her zaman görünür.
+                  if (spot.x == lastX) return true;
+                  // Gün içi İŞLEM noktaları da görünür.
+                  //
+                  // Sebep: sıçramanın görünürlüğü mutlak tutara değil ORANA
+                  // bağlı. Tüm portföy görünümünde küçük bir alım Y ekseninde
+                  // kaybolur (500.000 TL'nin %1'i düz görünür), tür filtresi
+                  // uygulanınca aynı alım belirgin basamak olur. Nokta,
+                  // sıçrama görünmediğinde bile "burada işlem yapıldı"
+                  // bilgisini taşır ve tooltip'e bağlanır.
+                  return dotThinner.shows(spot.x);
                 }
                 // İlk/son nokta her zaman görünür; alım dot'ları ise
                 // piksel bazlı seyreltmeden geçer (bkz. `dotThinner`) —
@@ -2314,209 +2382,277 @@ class _VolumeBar {
   double get total => buy + sell;
 }
 
-// ── Portfolio Sinyal Paneli ───────────────────────────────────────────────────
+// ── Tür bazlı kâr/zarar dökümü ───────────────────────────────────────────────
 
-class _PortfolioSignalPanel extends ConsumerWidget {
-  final List<Asset> assets;
-  const _PortfolioSignalPanel({required this.assets});
+/// Seçili dönem ve sekmeye göre HER VARLIK TÜRÜNÜN kâr/zararı.
+///
+/// Üstteki değişim kartı portföyün TOPLAMINI verir; bu kart onu türlere
+/// ayırır — "kazanç altından mı geldi, hisseden mi?" sorusunu yanıtlar.
+///
+/// **Rakam SEÇİLİ DÖNEME aittir**, ömürlük getiri değildir:
+/// `(dönem sonu değer − dönem başı değer) / dönem başı değer`.
+/// Üstteki birikim kartıyla aynı formül, yalnızca tür tür ayrılmış hâli.
+/// İlk sürümde `totalValue − totalCostTRY` kullanılıyordu; o ÖMÜRLÜK kârdır
+/// ve periyot değiştirilse bile hiç değişmiyordu (kullanıcı yakaladı).
+///
+/// **Sahiplik sınırı korunur:** her sahip kendi içinde aggregate edilir
+/// (`aggregatePositionsByOwner`). Havuzlanırsa aynı hisseye sahip iki ortak
+/// tek pozisyona düşer ve toplam, tekil sekmelerin toplamını tutmaz.
+///
+/// **Gerçek vs simülasyon:**
+///   · Gerçek     → dönem içi alım/satım tutarı ayrıca gösterilir
+///   · Simülasyon → miktar tüm dönem sabit sayıldığı için işlem satırı YOK
+class _TypeBreakdownCard extends StatefulWidget {
+  final List<List<Asset>> ownerLots;
+  final DateTime start;
+  final DateTime end;
+  final bool simulate;
+  final bool intraday;
+  final int periodDays;
+  final double Function(double, String) toTRY;
+
+  const _TypeBreakdownCard({
+    required this.ownerLots,
+    required this.start,
+    required this.end,
+    required this.simulate,
+    required this.intraday,
+    required this.periodDays,
+    required this.toTRY,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (assets.isEmpty) return const SizedBox.shrink();
+  State<_TypeBreakdownCard> createState() => _TypeBreakdownCardState();
+}
 
-    // Her varlığı analiz et, sadece AL/SAT olanları göster
-    final results = assets
-        .map((asset) {
-          final indicators = TechnicalAnalysisService.analyze(asset, []);
-          final summary = TechnicalAnalysisService.summarize(indicators);
-          return (asset: asset, indicators: indicators, summary: summary);
-        })
-        .where((r) => r.summary.signal != SignalType.neutral)
-        .toList();
+class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
+  /// tür → (dönem başı değer, dönem sonu değer)
+  Future<Map<AssetType, ({double first, double last})>>? _future;
+  String? _key;
 
-    if (results.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.check_circle_outline_rounded,
-                color: context.c.gain, size: 20),
-            const SizedBox(width: 12),
-            Text('Güçlü sinyal yok — portföy nötr bölgede',
-                style: context.t.bodyMedium?.copyWith(color: context.c.text58)),
-          ],
-        ),
-      );
+  /// Tür başına dönem serisi çek.
+  ///
+  /// Her tür için ayrı `getPortfolioHistory` çağrısı yapılır; fiyat serileri
+  /// `PriceService` önbelleğinden paylaşıldığı için ek ağ maliyeti sembol
+  /// başına tek seferdir, tür sayısıyla çarpılmaz.
+  Future<Map<AssetType, ({double first, double last})>> _load() {
+    // Anahtar: dönem + mod + lot kimlikleri. Biri değişince yeniden çekilir,
+    // aksi halde her setState (sekme, tick) yeni fetch başlatırdı.
+    final ids = [
+      for (final lots in widget.ownerLots)
+        for (final a in lots)
+          if (a.isActive) a.id
+    ]..sort();
+    final key = '${widget.periodDays}|${widget.simulate}|${ids.join(',')}';
+    if (_key == key && _future != null) return _future!;
+    _key = key;
+
+    _future = () async {
+      // Tür başına ham lot listesi — grafiğin kullandığı listenin aynısı.
+      final byType = <AssetType, List<Asset>>{};
+      for (final lots in widget.ownerLots) {
+        for (final a in lots) {
+          if (!a.isActive) continue;
+          if (a.type == AssetType.mevduat) continue; // fiyat serisi yok
+          byType.putIfAbsent(a.type, () => []).add(a);
+        }
+      }
+
+      final out = <AssetType, ({double first, double last})>{};
+      for (final e in byType.entries) {
+        // Simülasyonda net pozisyon tüm döneme yayılır — grafikle aynı girdi.
+        final assets = widget.simulate
+            ? aggregatePositionsByOwner([e.value])
+                .map((p) => p.asDisplayAsset())
+                .toList()
+            : e.value;
+        try {
+          final map = await HistoryService.instance.getPortfolioHistory(
+            assets,
+            widget.periodDays,
+            simulate: widget.simulate,
+          );
+          if (map.length < 2) continue;
+          final ts = map.keys.toList()..sort();
+          final first = map[ts.first]!;
+          final last = map[ts.last]!;
+          if (first <= 0) continue;
+          out[e.key] = (first: first, last: last);
+        } catch (_) {
+          // Bu tür çekilemedi — diğerlerini göstermeye devam et.
+        }
+      }
+      return out;
+    }();
+    return _future!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Dönem içi alım/satım — yalnızca gerçek modda anlamlı.
+    final flowOf = <AssetType, double>{};
+    if (!widget.simulate) {
+      final startMs = DateTime(
+              widget.start.year, widget.start.month, widget.start.day)
+          .millisecondsSinceEpoch;
+      final endMs = DateTime(
+              widget.end.year, widget.end.month, widget.end.day, 23, 59, 59)
+          .millisecondsSinceEpoch;
+      for (final lots in widget.ownerLots) {
+        for (final a in lots) {
+          if (!a.isActive) continue;
+          final ms = a.addedDate.millisecondsSinceEpoch;
+          if (ms < startMs || ms > endMs) continue;
+          final f = a.isBuy
+              ? a.totalCostTRY
+              : a.isSell
+                  ? -a.sellProceedsTRY
+                  : 0.0;
+          if (f != 0) flowOf[a.type] = (flowOf[a.type] ?? 0) + f;
+        }
+      }
     }
 
-    return Column(
+    final tryFmt =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+
+    return FutureBuilder<Map<AssetType, ({double first, double last})>>(
+      future: _load(),
+      builder: (context, snap) {
+        final data = snap.data ?? const {};
+        if (snap.connectionState == ConnectionState.waiting && data.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        if (data.isEmpty) return const SizedBox.shrink();
+
+        // Dönem değişimi büyükten küçüğe — en çok kazandıran üstte.
+        final types = data.keys.toList()
+          ..sort((a, b) => (data[b]!.last - data[b]!.first)
+              .compareTo(data[a]!.last - data[a]!.first));
+
+        return Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.md, vertical: 14),
+          decoration: context.surfaceCard(radius: SandikRadius.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'TÜRE GÖRE DEĞİŞİM',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.t.labelSmall?.copyWith(
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w700,
+                  color: context.c.text36,
+                ),
+              ),
+              const SizedBox(height: SandikSpace.sm),
+              for (final t in types) ...[
+                _row(
+                  context,
+                  t,
+                  tryFmt,
+                  value: data[t]!.last,
+                  cost: data[t]!.first,
+                  flow: flowOf[t] ?? 0,
+                ),
+                if (t != types.last) const SizedBox(height: 10),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _row(
+    BuildContext context,
+    AssetType t,
+    NumberFormat tryFmt, {
+    required double value,
+    required double cost,
+    required double flow,
+  }) {
+    final pnl = value - cost;
+    final pct = cost > 0 ? (pnl / cost) * 100 : null;
+
+    // Yuvarlanmış tutar sıfırsa nötr renk — yeşil "kazanç var" yanılgısı
+    // yaratır. Ekranın geri kalanıyla aynı kural.
+    final isFlat = pnl.abs().round() == 0 && (pct?.abs() ?? 0) < 0.005;
+    final color = isFlat
+        ? context.c.text36
+        : (pnl >= 0 ? context.c.gain : context.c.loss);
+
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Elle kurulmuş başlık+rozet satırıydı ve büyük metin ayarında
-        // taşıyordu (1.5×'te 61px, 3×'te 415px). Aynı hata daha önce
-        // `performance_screen`'de de çıkmıştı — paylaşılan komponent
-        // olmadığı için iki kez yazılmıştı.
-        SandikSectionHeader(
-          title: 'TEKNİK SİNYALLER',
-          count: results.length,
+        // Tür rozeti — renk tek başına bilgi taşımaz, etiket her zaman var.
+        Container(
+          width: 8,
+          height: 8,
+          margin: const EdgeInsets.only(top: 5, right: 8),
+          decoration: BoxDecoration(color: t.color, shape: BoxShape.circle),
         ),
-        const SizedBox(height: 12),
-        ...results.map((r) {
-          final isBuy = r.summary.signal == SignalType.buy;
-          final color = isBuy ? context.c.gain : context.c.loss;
-          final label = isBuy ? 'AL' : 'SAT';
-          final count = isBuy ? r.summary.buyCount : r.summary.sellCount;
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: Border.all(
-                    color: color.withValues(alpha: 0.22), width: 1.5),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                t.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.t.bodyMedium
+                    ?.copyWith(color: context.c.text90),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Başlık satırı
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                            isBuy
-                                ? Icons.trending_up_rounded
-                                : Icons.trending_down_rounded,
-                            color: color,
-                            size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                if (r.asset.showTicker) ...[
-                                  // Rozet de daralabilmeli: yalnızca ad
-                                  // `Flexible` iken büyük metin ayarında
-                                  // ticker rozeti satırı taşırıyordu (3×'te
-                                  // 94px). Ticker kısa olduğu için pratikte
-                                  // kırpılmaz, ama sınırı vardır.
-                                  Flexible(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: color.withValues(alpha: 0.18),
-                                        borderRadius: BorderRadius.circular(
-                                            SandikRadius.sm),
-                                      ),
-                                      child: Text(r.asset.displayTicker!,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: context.t.bodySmall?.copyWith(
-                                              fontWeight: FontWeight.w800,
-                                              color: color,
-                                              decoration: TextDecoration.none)),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                ],
-                                Flexible(
-                                  child: Text(r.asset.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: context.t.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: context.c.text90,
-                                          decoration: TextDecoration.none)),
-                                ),
-                              ],
-                            ),
-                            Text(r.asset.type.label,
-                                style: context.t.bodySmall?.copyWith(
-                                    color: context.c.text36,
-                                    decoration: TextDecoration.none)),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(SandikRadius.sm),
-                        ),
-                        child: Text(label,
-                            style: context.t.numSmall.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: color,
-                                letterSpacing: 0.5)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Gösterge özeti
-                  Row(
-                    children: r.indicators.map((ind) {
-                      final c = ind.signal == SignalType.buy
-                          ? context.c.gain
-                          : ind.signal == SignalType.sell
-                              ? context.c.loss
-                              : context.c.text36;
-                      return Expanded(
-                        child: Column(
-                          children: [
-                            Container(
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: c,
-                                borderRadius:
-                                    BorderRadius.circular(SandikRadius.sm),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              ind.name.split(' ').first,
-                              style: context.t.labelSmall?.copyWith(
-                                  letterSpacing: 0,
-                                  color: c,
-                                  fontWeight: FontWeight.w600,
-                                  decoration: TextDecoration.none),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 8),
+              // Gerçek modda dönem içi işlem varsa belirt. Simülasyonda bu
+              // satır hiç çıkmaz — orada miktar sabit sayılır.
+              if (!widget.simulate && flow.abs() > 0.5)
+                Text(
+                  flow > 0
+                      ? 'Dönem içi alım ${tryFmt.format(flow)}'
+                      : 'Dönem içi satış ${tryFmt.format(flow.abs())}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.bodySmall?.copyWith(
+                      color: context.c.text36, fontSize: 11),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Tutar + yüzde. FittedBox: milyonluk portföyde dar ekranda punto
+        // düşsün, satır kırılmasın.
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  isFlat
+                      ? '—'
+                      : '${pnl >= 0 ? '+' : '−'}${tryFmt.format(pnl.abs())}',
+                  maxLines: 1,
+                  style: context.t.numSmall
+                      .copyWith(color: color, fontWeight: FontWeight.w700),
+                ),
+                if (pct != null && !isFlat)
                   Text(
-                    '$count/5 gösterge $label diyor  ·  ${fmtPct(r.summary.confidence, digits: 0)} güven',
-                    style:
-                        context.t.bodySmall?.copyWith(color: context.c.text58),
+                    fmtPct(pct.abs(), digits: 2),
+                    maxLines: 1,
+                    style: context.t.numSmall.copyWith(
+                        color: color.withValues(alpha: 0.85), fontSize: 10),
                   ),
-                ],
-              ),
+              ],
             ),
-          );
-        }),
+          ),
+        ),
       ],
     );
   }
+
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

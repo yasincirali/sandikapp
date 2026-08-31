@@ -400,7 +400,26 @@ class TechnicalAnalysisService {
     List<double> priceHistory, {
     Set<String>? enabledIds,
     bool premiumUnlocked = false,
+    /// Fiyat geçmişi boşken UYDURMA seri üretilsin mi? Varsayılan `false`.
+    /// Yalnızca demo/önizleme yüzeyleri için `true` verilmeli — gerçek
+    /// sinyal üreten hiçbir yol bunu açmamalı.
+    bool allowSimulation = false,
   }) {
+    // ⚠️ SİMÜLASYONA DÜŞME — yalnızca AÇIKÇA istendiğinde.
+    //
+    // Burada eskiden koşulsuz `priceHistory.isNotEmpty ? ... : _simulate(asset)`
+    // vardı. `_simulate` `Random` ile UYDURMA fiyat üretir; boş liste veren
+    // her çağıran farkında olmadan sahte veriden sinyal hesaplıyordu.
+    // İki gerçek çağıran da (`performance_screen` paneli ve
+    // `signal_provider.analyzePortfolio`) `const []` geçiyordu — yani
+    // ekrandaki sinyal ve DB'ye yazılan sinyal rastgeleydi. Sunucudan gelen
+    // push ise GERÇEK piyasa serisinden üretildiği için ikisi çelişiyordu:
+    // push "yukarı yönlü" derken ekran "SAT" gösteriyordu (2026-08-31).
+    //
+    // Artık varsayılan davranış: veri yoksa BOŞ liste döndür (sinyal yok).
+    // Sunucu tarafındaki kural da budur — bkz. `technical_analysis_test.ts`
+    // → "fiyat geçmişi yoksa sinyal üretilmez (simülasyona düşmez)".
+    if (priceHistory.isEmpty && !allowSimulation) return const [];
     final prices = priceHistory.isNotEmpty ? priceHistory : _simulate(asset);
     final ids = enabledIds ?? defaultEnabledFor(asset.type);
 

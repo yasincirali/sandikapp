@@ -261,7 +261,13 @@ class HistoryService {
       // sayılır. Kayıt ledger'da durur (hareket geçmişi için) ama miktarı
       // hiçbir günde sayılmaz.
       if (a.isDeleted) return 0.0;
-      if (simulate) return a.quantity;
+      // Simülasyonda arayan NET (aggregate) liste verir, yani sell lot
+      // beklenmez. Yine de işaret korunur: kardeş fonksiyon
+      // `getPortfolioHistoryAtResolution.signedQtyOnSlot` bunu zaten
+      // yapıyordu ve iki kopyanın ayrışması bu projede yaşanmış bir hata
+      // sınıfıdır. Ham lot listesi yanlışlıkla verilirse satılan miktar
+      // burada EKLENİR ve portföy olduğundan büyük görünürdü.
+      if (simulate) return a.isSell ? -a.quantity : a.quantity;
       final addedTs = normalizeTs(a.addedDate.millisecondsSinceEpoch);
       if (addedTs > dayTs) return 0.0;
       return a.isSell ? -a.quantity : a.quantity;

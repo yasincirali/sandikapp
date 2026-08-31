@@ -2,18 +2,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 
-/// Dönem değişimi para giriş/çıkışından ARINDIRILMALI.
+/// Piyasa etkisi = `grossChange − netInflow` (para akışından arındırılmış).
 ///
-/// Kullanıcı şikâyeti (2026-08-10): "aldıklarımı satmama/silmeme rağmen
-/// günlük değişim artıyor". Sebep, ekranın ham portföy farkını göstermesiydi:
+/// ⚠️ **KAPSAM DEĞİŞTİ (2026-08-31).** Bu dosyadaki aritmetik artık kartın
+/// ANA rakamı değildir. Kullanıcı kararıyla kart, gerçek sekmesinde de
+/// `(son − ilk) / ilk` (BİRİKİM değişimi) gösteriyor — alımlar düşülmüyor,
+/// çünkü kullanıcı birikimindeki artışı görmek istiyor.
+/// Kart formülünün testleri: `simulation_semantics_test.dart` →
+/// "kart formülü — birikim değişimi".
 ///
-///   change = dönem sonu değer − dönem başı değer
+/// Buradaki hesap YAŞAMAYA DEVAM EDİYOR: kartın not satırı "yalnızca piyasa
+/// hareketi: X" derken bu ayrımı kullanıyor. Yani birikim rakamının ne
+/// kadarının yatırılan paradan geldiğini bu aritmetik söylüyor ve
+/// "+%100 kazandım" yanılgısını kapatan şey bu.
 ///
-/// Bu fark yatırılan parayı da içerir. Gerçek vakada portföy o gün 3.803 TL
-/// DEĞER KAYBETMİŞKEN ekran "+169.933 TL (+%7,16)" yazıyordu, çünkü gün içinde
-/// 173.736 TL'lik alım yapılmıştı.
-///
-/// Doğru ölçü: `grossChange − netInflow` → yalnızca piyasa etkisi.
+/// Kökeni — kullanıcı şikâyeti (2026-08-10): "aldıklarımı satmama/silmeme
+/// rağmen günlük değişim artıyor". Gerçek vakada portföy o gün 3.803 TL
+/// DEĞER KAYBETMİŞKEN ekran "+169.933 TL (+%7,16)" yazıyordu, çünkü gün
+/// içinde 173.736 TL'lik alım yapılmıştı. O gün ana rakam arındırıldı;
+/// bugün ana rakam yine ham, ama yanında bu ayrım AÇIKÇA yazılıyor.
 ///
 /// Buradaki testler ekranın kullandığı saf aritmetiği yeniden üretir
 /// (`_buildPeriodChangeCard` private ve widget ağacına bağlı; formülü

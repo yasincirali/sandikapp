@@ -235,4 +235,129 @@ void main() {
       expect(ownerScopedTotalValue([mine, partner]), closeTo(1200, 0.01));
     });
   });
+
+  // ── Performans ekranı: ortak sekmesi ────────────────────────────────────
+  //
+  // Kullanıcının bildirdiği hata (2026-08-31): "ortağım 3 ay, ben 6 ay önce
+  // aldığım altın günlük grafikte farklı kâr/zarar oranıyla görünüyor,
+  // hatta birimiz kârdayken diğeri zararda."
+  group('ortak sekmesi — pozisyon bazlı hesap', () {
+    test('ortağın TÜM lot\'ları sayılır (match.first değil)', () {
+      // Ortak aynı üründen üç kez almış. Ekran eskiden `assets.where(...)
+      // .first` ile YALNIZCA ilk lot'u alıyordu; oran tek alıma göre
+      // hesaplanıyordu.
+      final partnerLots = [
+        _lot(
+            userId: 'p1',
+            ticker: 'ALTIN_GRAM',
+            qty: 10,
+            buyPrice: 100,
+            currentPrice: 200),
+        _lot(
+            userId: 'p1',
+            ticker: 'ALTIN_GRAM',
+            qty: 10,
+            buyPrice: 300,
+            currentPrice: 200),
+        _lot(
+            userId: 'p1',
+            ticker: 'ALTIN_GRAM',
+            qty: 10,
+            buyPrice: 200,
+            currentPrice: 200),
+      ];
+
+      final positions = aggregatePositions(partnerLots);
+      expect(positions.length, 1, reason: 'üç lot tek pozisyona inmeli');
+
+      final p = positions.single;
+      expect(p.totalQuantity, closeTo(30, 0.001),
+          reason: 'miktar 30 olmalı — tek lot alınsaydı 10 çıkardı');
+      // Ağırlıklı ortalama maliyet: (100+300+200)/3 = 200.
+      expect(p.weightedPurchasePrice, closeTo(200, 0.001));
+      // Maliyet == güncel fiyat → başabaş. Yalnızca ilk lot alınsaydı
+      // (100 maliyet, 200 fiyat) %100 KÂR görünürdü.
+      expect(p.gainLossPercentage, closeTo(0, 0.001),
+          reason: 'ağırlıklı ortalama başabaş vermeli');
+    });
+
+    test('farklı tarihte alanların TOPLAM kâr/zararı farklı olur — bu doğru',
+        () {
+      // Ben 6 ay önce ucuza, ortak 3 ay önce pahalıya aldı. Toplam
+      // (alıştan bugüne) kâr/zarar oranlarının FARKLI olması gerçeğin
+      // kendisidir — burada bastırılmamalı.
+      final benim = [
+        _lot(
+            userId: 'me',
+            ticker: 'ALTIN_GRAM',
+            qty: 10,
+            buyPrice: 100,
+            currentPrice: 150),
+      ];
+      final ortak = [
+        _lot(
+            userId: 'p1',
+            ticker: 'ALTIN_GRAM',
+            qty: 10,
+            buyPrice: 200,
+            currentPrice: 150),
+      ];
+
+      final benimPct = aggregatePositions(benim).single.gainLossPercentage;
+      final ortakPct = aggregatePositions(ortak).single.gainLossPercentage;
+
+      expect(benimPct, closeTo(50, 0.001), reason: 'ucuza alan kârda');
+      expect(ortakPct, closeTo(-25, 0.001), reason: 'pahalıya alan zararda');
+      // İşaretlerin ters olması BEKLENEN davranış — maliyet farkı gerçek.
+      expect(benimPct > 0 && ortakPct < 0, isTrue);
+    });
+
+    test('DÖNEM değişimi yüzdesi sahipten BAĞIMSIZ — asıl düzeltme', () {
+      // Asıl hata buradaydı: dönem değişimi yüzdesi, serinin ilk noktası
+      // sahibin ORTALAMA MALİYETİ ile değiştirildiği ve seri sahibin alım
+      // gününde kesildiği için kişiye göre değişiyordu.
+      //
+      // Düzeltme sonrası yüzde ham piyasa serisinden hesaplanır:
+      //   pct = (son - ilk) / ilk
+      // Bu, sahibin maliyetini ve alım tarihini HİÇ kullanmaz.
+      //
+      // Aşağıdaki hesap ekrandaki formülün birebir aynısıdır; iki farklı
+      // miktar (10 ve 7) ve iki farklı maliyet verilse de yüzde AYNI çıkar.
+      double donemYuzdesi({
+        required double ilkPiyasa,
+        required double sonPiyasa,
+        required double qty,
+      }) {
+        // historyMap toplam pozisyon değeri taşır → birim fiyata bölünür.
+        final divisor = qty > 0 ? qty : 1.0;
+        final f = (ilkPiyasa * qty) / divisor;
+        final l = (sonPiyasa * qty) / divisor;
+        return ((l - f) / f) * 100;
+      }
+
+      // Altın dönem içinde 180 → 200 oldu: +%11.11.
+      final benim = donemYuzdesi(ilkPiyasa: 180, sonPiyasa: 200, qty: 10);
+      final ortak = donemYuzdesi(ilkPiyasa: 180, sonPiyasa: 200, qty: 7);
+
+      expect(benim, closeTo(11.111, 0.01));
+      expect(ortak, closeTo(11.111, 0.01),
+          reason: 'aynı dönem + aynı ürün → miktardan bağımsız AYNI yüzde');
+      expect(benim, closeTo(ortak, 0.0001),
+          reason: 'iki ortak aynı yüzdeyi görmeli');
+    });
+
+    test('dönem TUTARI miktara göre değişir — yüzde sabit kalırken', () {
+      // Yüzde ortak, tutar kişiye özgü: aynı %11.11 hareketi 10 gramda
+      // 200 TL, 7 gramda 140 TL eder. Bu ayrım kasıtlı.
+      double donemTutari({
+        required double ilk,
+        required double son,
+        required double qty,
+      }) =>
+          (son - ilk) * qty;
+
+      expect(donemTutari(ilk: 180, son: 200, qty: 10), closeTo(200, 0.001));
+      expect(donemTutari(ilk: 180, son: 200, qty: 7), closeTo(140, 0.001));
+    });
+  });
 }

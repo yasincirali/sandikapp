@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
@@ -74,8 +75,25 @@ PortfolioState _state() => PortfolioState(
       gbpTry: 54.0,
     );
 
-/// Seans içi bir an — Salı 14:30.
-final _duringSession = DateTime(2026, 8, 11, 14, 30);
+/// Seans içi bir an — hafta içi bir günün 14:30'u.
+///
+/// **BUGÜNE göre hesaplanır, sabit tarih DEĞİL.** Önceden
+/// `DateTime(2026, 8, 11, 14, 30)` sabitiydi ve tarih geçince test kendi
+/// kendine kırıldı: gün içi seri `DateTime.now()` ile üretiliyor, yani
+/// "bugün" ile karşılaştırılan an geçmişte kalınca seri boş dönüyor ve
+/// yüzde "%0,00" yerine "—" oluyordu. Kod doğruydu, fikstür bayattı.
+///
+/// Hafta sonu kaydırması şart: `isMarketOpen` Cts/Paz'ı eler, o günlerde
+/// seans hiç açılmaz ve seans-içi varsayan testler düşer.
+final _duringSession = () {
+  var d = DateTime.now();
+  if (d.weekday == DateTime.saturday) {
+    d = d.subtract(const Duration(days: 1));
+  } else if (d.weekday == DateTime.sunday) {
+    d = d.subtract(const Duration(days: 2));
+  }
+  return DateTime(d.year, d.month, d.day, 14, 30);
+}();
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -720,7 +738,8 @@ void main() {
 
       // Live Activity gece yarısını geçebilir; yalnızca saat gören
       // kullanıcı rakamın hangi güne ait olduğunu bilemez.
-      expect(channel.calls.first.args['dateText'], '11 Ağustos Salı');
+      expect(channel.calls.first.args['dateText'],
+          DateFormat('d MMMM EEEE', 'tr_TR').format(_duringSession));
     });
 
     test('bakiye gizliyken de tarih gönderilir', () async {
@@ -729,7 +748,8 @@ void main() {
       await LiveActivityService.instance
           .sync(_state(), hideBalance: true, now: _duringSession);
 
-      expect(channel.calls.first.args['dateText'], '11 Ağustos Salı');
+      expect(channel.calls.first.args['dateText'],
+          DateFormat('d MMMM EEEE', 'tr_TR').format(_duringSession));
     });
 
     test('seans bitişi staleDate olarak gönderilir', () async {
@@ -738,7 +758,9 @@ void main() {
 
       expect(
         channel.calls.first.args['sessionEndsAtMs'],
-        DateTime(2026, 8, 11, 18, 10).millisecondsSinceEpoch,
+        DateTime(_duringSession.year, _duringSession.month,
+                _duringSession.day, 18, 10)
+            .millisecondsSinceEpoch,
       );
     });
   });

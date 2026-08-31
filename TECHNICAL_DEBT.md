@@ -148,6 +148,40 @@ sustur.
 
 ---
 
+## 🟡 AÇIK — `signal_state` hâlâ lot başına anahtarlı
+
+**Karar tarihi:** 2026-08-31
+
+Aynı üründen birden çok alım yapan kullanıcı, o varlık için alım sayısı
+kadar **kopya push** alıyordu. Sebep veri modeliydi: `assets` bir lot
+tablosu, `signal_state` PK'sı `(user_id, asset_id)`. İki lot = iki bağımsız
+de-dup satırı; ikisi de diğerinden habersiz "bunu göndermedim" diyordu.
+Fiyat serisi ortak olduğu için ikisi de aynı sinyali üretiyordu.
+
+**Yapılan düzeltme:** Analiz döngüsü artık lot değil **pozisyon** üzerinde
+dönüyor — `collapseLotsToPositions` lot'ları `user_id|type|symbol` ile
+tek temsilciye (en küçük `id`) indirger. Migration GEREKMEDİ: temsilcinin
+`asset_id`'si `signal_state` anahtarı olarak kullanılmaya devam ediyor,
+şema değişmedi.
+
+**Kalan borç:** Şema hâlâ lot başına anahtarlı. Temsilci lot **silinirse**
+(yumuşak silme sonrası aktif lot listesinden düşerse) o pozisyon yeni bir
+temsilciye geçer ve de-dup hafızası sıfırlanır — kullanıcı o varlık için
+bir kez fazladan bildirim alabilir. Tek seferlik ve zararsız; sessizlikten
+iyidir (aynı gerekçe `notified_at === null` dalında da geçerli).
+
+**Ele alınma zamanı:** `signal_state`'i pozisyon anahtarıyla yeniden
+anahtarlamak gerekirse — yani kullanıcılar "varlık silince tekrar bildirim
+geldi" derse. O zaman PK `(user_id, position_key)` olur ve mevcut satırların
+taşınması gerekir.
+
+**Test notu:** `supabase/tests/lot_collapse_test.ts`. Birim testleri
+fonksiyonu doğrular ama **çağrıldığını doğrulamaz** — sabotajla ölçüldü:
+döngü `aktifAssets`'e geri alındığında 8 testin 8'i de geçti. Bu yüzden
+dosyada ayrıca kaynak metni denetleyen bir "wiring" testi var.
+
+---
+
 ## 🟡 AÇIK — Riverpod ile setState karışımı
 
 Ekranlarda **147 `setState`** çağrısı. Yerel arayüz durumu (açık/kapalı

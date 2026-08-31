@@ -5,7 +5,7 @@
       "args": []
     },
     "dart": {
-      "command": "dart",
+      "command": "C:\\flutter\\bin\\dart.bat",
       "args": ["mcp-server", "--force-roots-fallback"]
     },
     "ui-ux-pro-mcp": {

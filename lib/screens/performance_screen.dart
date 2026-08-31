@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -51,6 +52,37 @@ class _TechnicalSignalPanel extends ConsumerStatefulWidget {
 }
 
 class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
+  /// GERÇEK fiyat geçmişi. Boş liste `analyze`'ı simülasyona düşürdüğü için
+  /// bu future çözülene kadar panel "hesaplanıyor" gösterir.
+  Future<List<double>>? _pricesFuture;
+  String? _pricesKey;
+
+  /// Push bildirimiyle AYNI kaynaktan besleme: sunucu sinyali gerçek piyasa
+  /// serisinden üretir, bu panel de öyle yapmalı.
+  ///
+  /// **Bug (2026-08-31):** panel `analyze(asset, const [])` çağırıyordu.
+  /// `TechnicalAnalysisService.analyze` boş seri gelince `_simulate()`'e
+  /// düşer — `Random` ile UYDURMA fiyat üretir. Yani ekrandaki sinyal
+  /// rastgele veriden hesaplanıyordu. Push "yukarı yönlü" derken ekranın
+  /// "SAT" göstermesinin sebebi buydu: iki taraf farklı sayılara bakıyordu.
+  /// Sunucu tarafında bu tuzak zaten kapalı (`fiyat geçmişi yoksa sinyal
+  /// üretilmez (simülasyona düşmez)` testi).
+  Future<List<double>> _loadPrices() {
+    final a = widget.asset;
+    final key = '${a.ticker}|${a.type.name}|${a.subCategory ?? ''}';
+    if (_pricesKey == key && _pricesFuture != null) return _pricesFuture!;
+    _pricesKey = key;
+    // Göstergelerin çoğu 100+ nokta ister (MACD 26, Bollinger 20, ADX 14×2).
+    // 180 gün hepsini rahatça besler.
+    _pricesFuture = HistoryService.instance
+        .getSymbolHistory(a.ticker, periodDays: 180)
+        .then((map) {
+      final keys = map.keys.toList()..sort();
+      return [for (final k in keys) map[k]!];
+    }).catchError((_) => <double>[]);
+    return _pricesFuture!;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
@@ -59,9 +91,82 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
     final enabledIds = prefs[widget.asset.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.asset.type);
 
+    return FutureBuilder<List<double>>(
+      future: _loadPrices(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return _panelShell(
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: context.c.amberFill,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Expanded + ellipsis: dar ekranda (320pt) satır taşmasın.
+                Expanded(
+                  child: Text('Göstergeler hesaplanıyor…',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58)),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final prices = snap.data ?? const <double>[];
+        // Fiyat geçmişi YOKSA sinyal üretme — uydurma veriyle sinyal
+        // göstermektense hiç göstermemek doğru. Sunucu da aynısını yapar.
+        if (prices.length < 30) {
+          return _panelShell(
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    size: 16, color: context.c.text36),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Bu varlık için yeterli fiyat geçmişi yok — '
+                    'teknik gösterge hesaplanamıyor.',
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return _buildPanel(context, prices, enabledIds, premium);
+      },
+    );
+  }
+
+  Widget _panelShell({required Widget child}) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.c.surface1,
+          borderRadius: BorderRadius.circular(SandikRadius.md),
+          border: Border.all(color: context.c.hairline),
+        ),
+        child: child,
+      );
+
+  Widget _buildPanel(
+    BuildContext context,
+    List<double> prices,
+    Set<String> enabledIds,
+    bool premium,
+  ) {
     final indicators = TechnicalAnalysisService.analyze(
       widget.asset,
-      const [],
+      prices,
       enabledIds: enabledIds,
       premiumUnlocked: premium,
     );
@@ -571,24 +676,43 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     );
   }
 
+  /// Bir sahibin lot'ları arasından BU ekranın varlığına karşılık gelen
+  /// pozisyonu döndürür — yoksa `null`.
+  ///
+  /// **Neden `firstWhere` değil.** Burada eskiden `assets.where(...).first`
+  /// vardı ve sahibin YALNIZCA İLK lot'unu alıyordu. Kendi tarafımızda
+  /// `widget.asset` `aggregatePositions`'tan gelen bir pozisyon temsilcisidir
+  /// (ağırlıklı ortalama maliyet, toplam miktar); ortak tarafında ise tek bir
+  /// lot'tu. Aynı değişken, iki farklı anlam → aynı üründe iki farklı
+  /// kâr/zarar. Ortak birden çok kez alım yaptıysa oranı yalnızca bir
+  /// alımına göre hesaplanıyordu.
+  ///
+  /// `aggregatePositions` sahip başına AYRI çağrılır: farklı sahiplerin
+  /// lot'ları asla tek havuzda toplanmaz (bkz. `aggregatePositionsByOwner`
+  /// açıklaması) — aksi halde iki kişinin aynı hissesi tek pozisyonda
+  /// birleşir ve toplam değer tek kişinin fiyatıyla hesaplanırdı.
+  Position? _positionOf(List<Asset> ownerLots) {
+    final hedef = positionKey(widget.asset);
+    for (final p in aggregatePositions(ownerLots)) {
+      if (p.key == hedef) return p;
+    }
+    return null;
+  }
+
   double get _currentQuantity {
     if (_view == '') return widget.asset.quantity;
 
     final allAssetsMap = ref.read(allPartnerAssetsProvider).valueOrNull ?? {};
 
     if (_view != null) {
-      final assets = allAssetsMap[_view] ?? [];
-      final match = assets.where((a) => a.ticker == widget.asset.ticker);
-      return match.isNotEmpty ? match.first.quantity : 0;
+      return _positionOf(allAssetsMap[_view] ?? [])?.totalQuantity ?? 0;
     }
 
     // Tümü
     double total = widget.asset.quantity;
     final activePartners = ref.read(activePartnersProvider);
     for (final p in activePartners) {
-      final assets = allAssetsMap[p.id] ?? [];
-      final match = assets.where((a) => a.ticker == widget.asset.ticker);
-      if (match.isNotEmpty) total += match.first.quantity;
+      total += _positionOf(allAssetsMap[p.id] ?? [])?.totalQuantity ?? 0;
     }
     return total;
   }
@@ -801,18 +925,14 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 if (!widget.showBackButton)
                   allPartnerAssetsAsync.maybeWhen(
                     data: (allAssetsMap) {
-                      final matchingPartners = <AppUser>[];
-                      final matchingAssets = <Asset>[];
-
-                      for (final p in activePartners) {
-                        final assets = allAssetsMap[p.id] ?? [];
-                        final match = assets
-                            .where((a) => a.ticker == widget.asset.ticker);
-                        if (match.isNotEmpty) {
-                          matchingPartners.add(p);
-                          matchingAssets.add(match.first);
-                        }
-                      }
+                      // Sekme yalnızca bu ürüne SAHİP ortaklar için çıkar.
+                      // Eşleşme `ticker` ile değil `positionKey` ile yapılır:
+                      // altın türleri (Gram/Çeyrek/Reşat) `subCategory` ile
+                      // ayrışır ve ticker eşleşmesi farklı türleri aynı sayardı.
+                      final matchingPartners = <AppUser>[
+                        for (final p in activePartners)
+                          if (_positionOf(allAssetsMap[p.id] ?? []) != null) p,
+                      ];
 
                       if (matchingPartners.isEmpty) {
                         return const SizedBox.shrink();
@@ -986,27 +1106,43 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                       }
                     }
                     // Seçili periyodun değişimi — HAM fiyat serisinden.
-                    // activeSeg normalize/log dönüşümü almış olabilir; oradan
-                    // okumak yüzdeyi bozar. rawSegments her zaman TRY birim
-                    // fiyattır.
-                    final rawActiveSeg = rawSegments.firstWhere(
-                      (s) => !s.dashed && s.spots.isNotEmpty,
-                      orElse: () => TransactionSegment(
-                        spots: const [],
-                        lineColor: context.c.amberText,
-                        areaGradientStart: Colors.transparent,
-                        areaGradientEnd: Colors.transparent,
-                        thickness: 3.5,
-                      ),
-                    );
                     double? periodChangeTRY;
                     double? periodChangePct;
-                    if (rawActiveSeg.spots.length >= 2) {
-                      final f = rawActiveSeg.spots.first.y;
-                      final l = rawActiveSeg.spots.last.y;
-                      // Birim fiyat farkı × elde tutulan miktar = dönem etkisi.
-                      periodChangeTRY = (l - f) * qty;
-                      if (f > 0) periodChangePct = ((l - f) / f) * 100;
+                    {
+                      // DÖNEM DEĞİŞİMİ SAHİPTEN BAĞIMSIZ OLMALI.
+                      //
+                      // Bu yüzde "bu üründe bu dönemde ne oldu" sorusunu
+                      // yanıtlar; "ben ne kadar kazandım" sorusunu DEĞİL.
+                      // Dolayısıyla iki ortak aynı ürüne aynı dönemde
+                      // baktığında AYNI yüzdeyi görmelidir — alım tarihleri
+                      // farklı olsa bile.
+                      //
+                      // `rawActiveSeg` bu iş için KULLANILAMAZ, çünkü
+                      // `_convertHistoryToSegments` onu sahibe göre bozar:
+                      //   · seri sahibin alım gününde kesilir (`isBefore`
+                      //     kontrolü) → 6 ay önce alan ile 3 ay önce alan
+                      //     farklı noktadan başlar,
+                      //   · ilk nokta piyasa fiyatı yerine sahibin ORTALAMA
+                      //     MALİYETİ ile değiştirilir (anchor).
+                      // İkisi birleşince bölen (`f`) sahibin maliyeti olur ve
+                      // yüzde kişiye göre değişir; hatta biri kârda diğeri
+                      // zararda görünür. Kullanıcı bunu altında yakaladı.
+                      //
+                      // Ham `historyMap` ise saf piyasa serisidir: sahibin
+                      // alım tarihinden ve maliyetinden etkilenmez.
+                      final sortedTs = historyMap.keys.toList()..sort();
+                      if (sortedTs.length >= 2) {
+                        // `historyMap` toplam pozisyon değeri taşır; birim
+                        // fiyata inmek için miktara bölünür. Oran alındığı
+                        // için bölen sadeleşir — yüzde miktardan bağımsızdır.
+                        final divisor = qty > 0 ? qty : 1.0;
+                        final f = historyMap[sortedTs.first]! / divisor;
+                        final l = historyMap[sortedTs.last]! / divisor;
+                        // Tutar ise sahibe özgüdür: aynı yüzde hareketi,
+                        // elde tutulan miktara göre farklı TL eder.
+                        periodChangeTRY = (l - f) * qty;
+                        if (f > 0) periodChangePct = ((l - f) / f) * 100;
+                      }
                     }
 
                     final anchorY = anchorSpot?.y ?? 0.0;

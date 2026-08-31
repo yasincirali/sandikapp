@@ -140,7 +140,6 @@ void main() {
     bool showsLotDots(bool simulate) => !simulate;
     bool showsAnchorLine(bool simulate, bool intraday) =>
         !simulate && !intraday;
-    bool stripsCashFlows(bool simulate) => !simulate;
     bool computesNetInflow(bool simulate) => !simulate;
 
     test('lot noktaları yalnızca gerçek modda', () {
@@ -149,21 +148,90 @@ void main() {
           reason: 'simülasyonda gerçek bir alım anı yok');
     });
 
+    test('lot noktaları GÜN İÇİ seride de görünür', () {
+      // Değişti (2026-08-31): eskiden gün içi seride yalnızca "şimdi"
+      // noktası çiziliyordu. Ama sıçramanın görünürlüğü ORANA bağlı —
+      // tüm portföy ölçeğinde küçük bir alım Y ekseninde kaybolur. Nokta,
+      // sıçrama görünmediğinde işlemin izini taşıyan tek şeydir.
+      expect(showsLotDots(false), isTrue);
+    });
+
     test('anchor çizgisi yalnızca gerçek modda (intraday hariç)', () {
       expect(showsAnchorLine(false, false), isTrue);
       expect(showsAnchorLine(true, false), isFalse);
       expect(showsAnchorLine(false, true), isFalse);
     });
 
-    test('nakit akışı arındırması simülasyonda UYGULANMAZ', () {
-      expect(stripsCashFlows(false), isTrue);
-      expect(stripsCashFlows(true), isFalse,
-          reason: 'simülasyonda para girişi kavramı yok — miktar zaten sabit, '
-              'düzeltilecek bir basamak oluşmaz');
+    test('netInflow yalnızca gerçek modda hesaplanır', () {
+      // netInflow artık ana rakamdan DÜŞÜLMÜYOR (bkz. aşağıdaki grup),
+      // ama not satırında "ne kadarı piyasa hareketi" ayrımı için hâlâ
+      // gerekli. Simülasyonda para girişi kavramı yok.
+      expect(computesNetInflow(false), isTrue);
+      expect(computesNetInflow(true), isFalse);
+    });
+  });
+
+  // ── Kart formülü: BİRİKİM değişimi ──────────────────────────────────────
+  //
+  // Kullanıcı kararı (2026-08-31): gerçek sekmesindeki kart da simülasyondaki
+  // gibi (son − ilk) / ilk göstersin. Böylece dönem içinde alım yapıldığında
+  // rakam simülasyondan YÜKSEK çıkar ve birikim artışı görünür olur.
+  //
+  // Önceki davranış `grossChange − netInflow` idi ("yalnızca piyasa etkisi").
+  // O rakam artık ana sayı değil, not satırında ikincil bilgi olarak duruyor.
+  group('kart formülü — birikim değişimi', () {
+    /// Ekrandaki hesabın birebir aynısı.
+    ({double change, double? pct}) kart({
+      required double firstY,
+      required double lastY,
+    }) {
+      final change = lastY - firstY;
+      final pct = firstY > 0 ? (change / firstY) * 100 : null;
+      return (change: change, pct: pct);
+    }
+
+    test('formül (son − ilk) / ilk', () {
+      final r = kart(firstY: 1000, lastY: 1200);
+      expect(r.change, closeTo(200, 0.001));
+      expect(r.pct, closeTo(20, 0.001));
     });
 
-    test('netInflow simülasyonda hesaplanmaz', () {
-      expect(computesNetInflow(true), isFalse);
+    test('dönem içi alım rakamı YÜKSELTİR — birikim görünür', () {
+      // Düz seyreden fona 1000 TL yatırıldı: fiyat hiç hareket etmedi.
+      // Birikim %100 büyüdü ve kart bunu göstermeli.
+      final r = kart(firstY: 1000, lastY: 2000);
+      expect(r.pct, closeTo(100, 0.001),
+          reason: 'alım birikimi büyüttü — rakam bunu içermeli');
+    });
+
+    test('gerçek sekmesi simülasyondan YÜKSEK çıkar (alım varsa)', () {
+      // Aynı dönem, aynı ürün. Simülasyonda miktar sabit (fiyat +%10),
+      // gerçekte ise ortada alım var.
+      final simulasyon = kart(firstY: 1000, lastY: 1100);
+      final gercek = kart(firstY: 1000, lastY: 2100); // +1000 alım, +%10 fiyat
+      expect(gercek.pct! > simulasyon.pct!, isTrue,
+          reason: 'aradaki fark yatırılan paradır — kullanıcı bunu görmek '
+              'istiyor');
+    });
+
+    test('alım yoksa iki sekme AYNI yüzdeyi verir', () {
+      final simulasyon = kart(firstY: 1000, lastY: 1100);
+      final gercek = kart(firstY: 1000, lastY: 1100);
+      expect(gercek.pct, closeTo(simulasyon.pct!, 0.0001));
+    });
+
+    test('not satırı için piyasa etkisi ayrı hesaplanır', () {
+      // Ana rakam birikimi gösterirken, not satırı saf piyasa hareketini
+      // söyler — "+%100 kazandım" yanılgısını kapatan şey budur.
+      const grossChange = 1000.0; // 1000 → 2000
+      const netInflow = 1000.0; // tamamı alımdan
+      expect(grossChange - netInflow, closeTo(0, 0.001),
+          reason: 'piyasa hiç hareket etmedi, not satırı bunu söylemeli');
+    });
+
+    test('dönem başı sıfırsa yüzde hesaplanmaz', () {
+      final r = kart(firstY: 0, lastY: 500);
+      expect(r.pct, isNull, reason: 'sıfıra bölme yok');
     });
   });
 }

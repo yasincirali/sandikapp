@@ -597,6 +597,23 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         }
       }
 
+      // Fiyatlanmış ortak listesini DOĞRUDAN yaz.
+      //
+      // Burada eskiden `allPartnerAssetsProvider.notifier.reload()` çağrılıyordu
+      // ve o metot varlıkları DB'den YENİDEN çekiyordu — yukarıdaki fiyat
+      // güncellemesini olduğu gibi çöpe atarak. Ortak lot'ları DB'de
+      // `current_price` alanını taşır ama o alan yalnızca SAHİBİ uygulamayı
+      // açtığında güncellenir (RLS başkasının yazmasını engeller). Sonuç:
+      // ortağın varlıkları BAYAT fiyatla kalıyordu.
+      //
+      // Altında görünür olmasının sebebi: altın `currentPrice`'ı gram22k×kat
+      // ile türetilir ve hızlı oynar. Grafik serisi ise fiyatı geçmiş
+      // serisinden hesapladığı için GÜNCELDİ; yalnızca serinin son noktası
+      // (canlı toplam) bayat kalıyordu. Simülasyonda tüm dönem bugünkü net
+      // pozisyonla çizildiğinden bu sapma yüzdeye birebir yansıyor ve
+      // "aynı altın, farklı kâr/zarar" olarak görünüyordu.
+      ref.read(allPartnerAssetsProvider.notifier).setAssets(partnerAssetsMap);
+
       final finalState = nextState.copyWith(
         assets: updated,
         isLoading: false,
@@ -605,9 +622,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       state = AsyncData(finalState);
 
-      if (activePartners.isNotEmpty) {
-        await ref.read(allPartnerAssetsProvider.notifier).reload();
-      }
+      // NOT: Burada `allPartnerAssetsProvider.reload()` ÇAĞRILMAZ. O metot
+      // DB'den yeniden çeker ve yukarıda uygulanan canlı fiyatları geri alır.
+      // Fiyatlanmış liste zaten `setAssets` ile yazıldı.
 
       // Snapshot kaydet
       final userId = ref.read(authProvider).valueOrNull?.id ?? '';
@@ -680,6 +697,17 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
       );
     }
     return map;
+  }
+
+  /// Fiyatlanmış ortak listesini doğrudan yaz — DB'den YENİDEN ÇEKMEDEN.
+  ///
+  /// `refreshPrices` ortak lot'larının `currentPrice`'ını bellekte canlı
+  /// kotasyonla günceller (RLS yüzünden DB'ye yazamaz). Ardından [reload]
+  /// çağrılırsa o emek boşa gider: `fetchByUser` DB'deki BAYAT `current_price`
+  /// değerini geri getirir ve ortağın varlıkları eski fiyatla görünür.
+  /// Bu metot, hesaplanmış listeyi olduğu gibi state'e koyar.
+  void setAssets(Map<String, List<Asset>> assets) {
+    state = AsyncData(assets);
   }
 
   // Manuel yenileme — refreshPrices() tarafından çağrılır
