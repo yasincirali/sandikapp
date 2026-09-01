@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart';
 import 'price_service.dart';
 
 /// Grafik çözünürlük seviyeleri. Zoom yaptıkça daha ince tier'a düşer.
@@ -61,6 +62,49 @@ extension ResolutionTierMeta on ResolutionTier {
     if (viewportDays < 180) return ResolutionTier.daily;
     return ResolutionTier.weekly;
   }
+}
+
+/// Portföy değer serisi + aynı serinin tür ve pozisyon bazında dağılımı.
+///
+/// **Değişmez (iki seviyeli):** her `ts` için
+///   `total[ts] == Σ byType[t]![ts]` ve
+///   `byType[t]![ts] == Σ byPosition[k]![ts]` (k, türü `t` olan pozisyonlar).
+/// Kayan nokta toplama hatası payı dışında birebir. Üç alan da AYNI döngüde
+/// üretilir; bu yüzden tür dökümü portföy toplamını, ürün dökümü de tür
+/// toplamını her zaman tutar.
+/// Bkz. [HistoryService.getPortfolioHistoryBreakdownAtResolution].
+class PortfolioHistoryBreakdown {
+  /// ts → toplam portföy değeri (TRY).
+  final Map<int, double> total;
+
+  /// tür → (ts → o türün o slot'taki değeri, TRY).
+  /// Yalnızca o slot'ta fiilen değeri olan türler bulunur.
+  final Map<AssetType, Map<int, double>> byType;
+
+  /// `positionKey` → (ts → o pozisyonun o slot'taki değeri, TRY).
+  ///
+  /// Anahtar `positionKey`'dir, ticker DEĞİL: altın türleri (Gram/Çeyrek/
+  /// Yarım/Reşat) aynı `GC=F` serisinden türetilir ama farklı ağırlık
+  /// katsayısı taşır — ticker ile gruplansaydı hepsi tek satırda toplanır ve
+  /// "çeyrek mi gram mı kazandırdı" sorusu cevapsız kalırdı.
+  final Map<String, Map<int, double>> byPosition;
+
+  /// `positionKey` → o pozisyonun ait olduğu tür. Ürün satırlarını doğru
+  /// başlığın altına yerleştirmek için.
+  final Map<String, AssetType> positionType;
+
+  const PortfolioHistoryBreakdown({
+    required this.total,
+    required this.byType,
+    required this.byPosition,
+    required this.positionType,
+  });
+
+  const PortfolioHistoryBreakdown.empty()
+      : total = const {},
+        byType = const {},
+        byPosition = const {},
+        positionType = const {};
 }
 
 class HistoryService {
@@ -431,6 +475,21 @@ class HistoryService {
   /// gerçek çözünürlük 5 dakikadır (12x saatlik). Veri kaynağı borsa saatleri
   /// dışı slotlar için son bilinen fiyatı yayar (`_getClosestPrice`).
   Future<Map<int, double>> getPortfolioHistoryHourly(
+          List<Asset> assets, int hours) async =>
+      (await getPortfolioHistoryHourlyBreakdown(assets, hours)).total;
+
+  /// [getPortfolioHistoryHourly] ile AYNI hesap — ek olarak tür/pozisyon
+  /// dağılımını da döndürür.
+  ///
+  /// Gün içi ("GÜNLÜK") sekmesinde tür dökümü kartı bunu kullanır. Kart bu
+  /// sekmede eskiden HİÇ görünmüyordu: diğer periyotlar
+  /// `getPortfolioHistoryBreakdownAtResolution`'dan dağılım alıyordu, gün içi
+  /// yolu ise ayrı olan bu servise gidiyor ve dağılım taşımıyordu.
+  ///
+  /// Değişmez diğer yolla aynı ve aynı gerekçeyle: toplam ve dağılım TEK
+  /// döngüde birikir, ayrı geçişte hesaplanırsa toplamlar ayrışır.
+  /// Bkz. [PortfolioHistoryBreakdown].
+  Future<PortfolioHistoryBreakdown> getPortfolioHistoryHourlyBreakdown(
       List<Asset> assets, int hours) async {
     const range = '1d';
     const slotMinutes = 5;
@@ -561,6 +620,10 @@ class HistoryService {
     double goldFactor(String ticker) => PriceService.goldWeightFactor(ticker);
 
     final groupedPoints = <int, double>{};
+    // Tür/pozisyon dağılımı — `groupedPoints` ile AYNI döngüde birikir.
+    final byType = <AssetType, Map<int, double>>{};
+    final byPosition = <String, Map<int, double>>{};
+    final positionType = <String, AssetType>{};
 
     // Bugünün 00:00'ından başlayarak 5 dakikalık grid üret.
     final dayStart = DateTime(now.year, now.month, now.day);
@@ -641,6 +704,12 @@ class HistoryService {
       var covered = 0;
       var expected = 0;
 
+      // Bu slot'un tür/pozisyon kırılımı. `total`a giren her `v` buraya da
+      // girer; slot seriye alınmazsa dağılıma da yazılmaz (aşağıdaki
+      // `continue` dalları) — böylece toplamlar ayrışamaz.
+      final slotByType = <AssetType, double>{};
+      final slotByPosition = <String, double>{};
+
       for (final a in assets) {
         try {
           final qty = signedQtyOnSlot(a, hourTs);
@@ -683,6 +752,10 @@ class HistoryService {
 
           if (v != null) {
             total += v;
+            slotByType[a.type] = (slotByType[a.type] ?? 0) + v;
+            final pk = positionKey(a);
+            slotByPosition[pk] = (slotByPosition[pk] ?? 0) + v;
+            positionType[pk] = a.type;
             anyCovered = true;
             covered++;
           }
@@ -692,7 +765,13 @@ class HistoryService {
       }
 
       if (!anyCovered) continue;
-      if (total < 0) total = 0;
+      // Negatif toplam kırpılırsa dağılım da düşer — aksi halde
+      // `Σ byType != total` olur (aynı kural günlük seride de var).
+      if (total < 0) {
+        total = 0;
+        slotByType.clear();
+        slotByPosition.clear();
+      }
 
       // EKSİK KAPSAMLI slot seriye GİRMEZ.
       //
@@ -706,13 +785,33 @@ class HistoryService {
       if (expected > 0 && covered < expected) continue;
 
       groupedPoints[hourTs] = total;
+      for (final e in slotByType.entries) {
+        (byType[e.key] ??= <int, double>{})[hourTs] = e.value;
+      }
+      for (final e in slotByPosition.entries) {
+        (byPosition[e.key] ??= <int, double>{})[hourTs] = e.value;
+      }
     }
 
     // Son slotu anlık portföy toplamı ile hizala — grafiğin bitiş noktası
     // her zaman ana ekrandaki toplamla eşleşsin. currentPrice=0 olan
     // varlıklar (kurucu-fon vs.) hesap dışı, diğerleri toplama girer.
     if (groupedPoints.isNotEmpty) {
+      // Canlı toplam TÜR VE POZİSYON BAZINDA hesaplanır — tek bir toplam
+      // çarpanı YETMEZ.
+      //
+      // Önce toplam ezilip dağılım `liveTotal / before` oranıyla ölçekleniyordu.
+      // Bu, bir türdeki hareketi TÜM türlere yayıyordu: altın %2 düşünce
+      // fiyatı hiç değişmemiş fon da ekranda düşmüş görünüyordu
+      // (ölçüldü: fon 25.000 → 16.716, oysa fon fiyatı sabitti).
+      // Kullanıcının gördüğü "alttaki satırlar üsttekiyle senkron değil"
+      // şikâyetinin kaynağı buydu — toplam tutuyordu ama satırlar yalandı.
+      //
+      // Doğrusu: her varlığın canlı değerini kendi türüne/pozisyonuna yazmak.
+      // Toplam yine `Σ tür` olur, ama her tür KENDİ gerçek değerini taşır.
       double liveTotal = 0.0;
+      final liveByType = <AssetType, double>{};
+      final liveByPosition = <String, double>{};
       for (final a in assets) {
         if (a.isDeleteLog) continue;
         final qty = signedQtyOnSlot(a, nowTs);
@@ -723,11 +822,32 @@ class HistoryService {
             : 40.0;
         final tryPrice =
             a.currency == 'USD' ? a.currentPrice * liveUsd : a.currentPrice;
-        liveTotal += tryPrice * qty;
+        final v = tryPrice * qty;
+        liveTotal += v;
+        liveByType[a.type] = (liveByType[a.type] ?? 0) + v;
+        final pk = positionKey(a);
+        liveByPosition[pk] = (liveByPosition[pk] ?? 0) + v;
+        positionType[pk] = a.type;
       }
       if (liveTotal > 0) {
         final lastKey = groupedPoints.keys.reduce((a, b) => a > b ? a : b);
         groupedPoints[lastKey] = liveTotal;
+        // Son slotta dağılımı canlı değerlerle DEĞİŞTİR (ölçekleme değil).
+        // `liveTotal == Σ liveByType` olduğu için değişmez korunur.
+        for (final e in liveByType.entries) {
+          (byType[e.key] ??= <int, double>{})[lastKey] = e.value;
+        }
+        for (final e in liveByPosition.entries) {
+          (byPosition[e.key] ??= <int, double>{})[lastKey] = e.value;
+        }
+        // Canlı hesapta yer almayan (currentPrice<=0) tür/pozisyon son
+        // slotta ARTIK YOK — eski ham değeri bırakmak toplamı şişirirdi.
+        for (final e in byType.entries) {
+          if (!liveByType.containsKey(e.key)) e.value.remove(lastKey);
+        }
+        for (final e in byPosition.entries) {
+          if (!liveByPosition.containsKey(e.key)) e.value.remove(lastKey);
+        }
       }
     }
 
@@ -748,9 +868,30 @@ class HistoryService {
     // anlamlıyken 5 dakikalık bir slotta portföyün %0,3'ü bile büyük bir
     // harekettir. Komşular arası fark %0,2'den azsa (yani gerçek bir trend
     // yoksa) ortadaki nokta iki komşunun ortalamasına çekilir.
-    smoothSpikes(groupedPoints, deviation: 0.003, neighborGap: 0.002);
+    final smoothed = <int, double>{};
+    smoothSpikes(groupedPoints,
+        deviation: 0.003, neighborGap: 0.002, changed: smoothed);
+    // Düzeltilen slot'larda dağılımı da aynı oranda ölçekle (bkz. `changed`).
+    for (final ts in smoothed.keys) {
+      final before = smoothed[ts]!;
+      if (before <= 0) continue;
+      final factor = groupedPoints[ts]! / before;
+      for (final series in byType.values) {
+        final v = series[ts];
+        if (v != null) series[ts] = v * factor;
+      }
+      for (final series in byPosition.values) {
+        final v = series[ts];
+        if (v != null) series[ts] = v * factor;
+      }
+    }
 
-    return groupedPoints;
+    return PortfolioHistoryBreakdown(
+      total: groupedPoints,
+      byType: byType,
+      byPosition: byPosition,
+      positionType: positionType,
+    );
   }
 
   // ── Tier-bazlı çözünürlük (zoom-aware) ────────────────────────────────────
@@ -791,8 +932,38 @@ class HistoryService {
     required DateTime to,
     required ResolutionTier tier,
     bool simulate = false,
+  }) async =>
+      (await getPortfolioHistoryBreakdownAtResolution(
+        assets: assets,
+        from: from,
+        to: to,
+        tier: tier,
+        simulate: simulate,
+      ))
+          .total;
+
+  /// [getPortfolioHistoryAtResolution] ile AYNI hesap — ek olarak her slot'un
+  /// tür bazında dağılımını da döndürür.
+  ///
+  /// ## Neden tek fonksiyon
+  /// Tür dökümü eskiden ayrı bir `getPortfolioHistory` çağrısıyla, tür başına
+  /// bağımsız hesaplanıyordu. İki hesap farklı pencere, farklı tier ve farklı
+  /// "kapsanan slot" kümesi ürettiği için **türlerin toplamı üst kartın
+  /// toplamını tutmuyordu** (kullanıcı yakaladı, 2026-09-01).
+  ///
+  /// Burada dağılım, toplamı üreten döngünün İÇİNDE biriktirilir:
+  /// `total[ts] == Σ byType[t]![ts]` her slot için **yapısal olarak** doğrudur
+  /// — iki ayrı kod yolunun tesadüfen aynı sonucu vermesine bel bağlanmaz.
+  /// Bir slot toplama giriyorsa dağılımına da girer; girmiyorsa ikisinde de
+  /// yoktur.
+  Future<PortfolioHistoryBreakdown> getPortfolioHistoryBreakdownAtResolution({
+    required List<Asset> assets,
+    required DateTime from,
+    required DateTime to,
+    required ResolutionTier tier,
+    bool simulate = false,
   }) async {
-    if (assets.isEmpty) return {};
+    if (assets.isEmpty) return const PortfolioHistoryBreakdown.empty();
 
     final normalizedFrom = tier.normalizeTs(from.millisecondsSinceEpoch);
     final normalizedTo = tier.normalizeTs(to.millisecondsSinceEpoch);
@@ -871,6 +1042,11 @@ class HistoryService {
 
     // Grid: from..to arası tier step'inde tüm slot'lar
     final result = <int, double>{};
+    // Tür ve pozisyon dağılımı — `result` ile AYNI döngüde birikir
+    // (bkz. sınıf notu). Ayrı bir geçişte hesaplanırsa toplamlar ayrışır.
+    final byType = <AssetType, Map<int, double>>{};
+    final byPosition = <String, Map<int, double>>{};
+    final positionType = <String, AssetType>{};
     final stepMs = _tierStepMs(tier);
     int cursor = normalizedFrom;
     while (cursor <= normalizedTo) {
@@ -887,6 +1063,10 @@ class HistoryService {
 
       double total = 0.0;
       bool anyCovered = false;
+      // Bu slot'un tür ve pozisyon kırılımı. `total`a giren her `v` ikisine
+      // de girer — tek yerden beslendikleri için toplamları ayrışamaz.
+      final slotByType = <AssetType, double>{};
+      final slotByPosition = <String, double>{};
       for (final a in assets) {
         final qty = signedQtyOnSlot(a, cursor);
         if (qty == 0) continue;
@@ -926,11 +1106,34 @@ class HistoryService {
         // etsin. Aksi halde tek eksik varlık için tüm grafik boş kalır.
         if (v == null) continue;
         total += v;
+        slotByType[a.type] = (slotByType[a.type] ?? 0) + v;
+        // Aynı ürünün farklı lot'ları tek satırda toplanır (ekrandaki
+        // pozisyon kavramıyla aynı), ama SAHİP ayrımı korunur: `positionKey`
+        // sahip taşımadığı için burada ortakların aynı hissesi tek satıra
+        // düşer — bu kart zaten sekme başına ayrı çizilir, sekme içinde
+        // birleşmeleri doğrudur.
+        final pk = positionKey(a);
+        slotByPosition[pk] = (slotByPosition[pk] ?? 0) + v;
+        positionType[pk] = a.type;
         anyCovered = true;
       }
       if (anyCovered) {
-        if (total < 0) total = 0;
+        // Negatif toplam kırpılırsa dağılım da AYNI ORANDA kırpılmalı;
+        // aksi halde `Σ byType != total` olur ve tür dökümü üst kartı
+        // tutmaz. Pratikte buraya nadiren düşülür (satış lot'ları alımı
+        // aşarsa), ama değişmez koşulsuz korunmalı.
+        if (total < 0) {
+          total = 0;
+          slotByType.clear();
+          slotByPosition.clear();
+        }
         result[cursor] = total;
+        for (final e in slotByType.entries) {
+          (byType[e.key] ??= <int, double>{})[cursor] = e.value;
+        }
+        for (final e in slotByPosition.entries) {
+          (byPosition[e.key] ??= <int, double>{})[cursor] = e.value;
+        }
       }
       cursor += stepMs;
     }
@@ -938,16 +1141,44 @@ class HistoryService {
     // Outlier smoothing: tek nokta V-dip artefaktları (Yahoo veri gecikmesi
     // veya eksik slot) yumuşat. Komşu iki nokta birbirine yakınken ortadaki
     // >%1.5 sapıyorsa yerine ortalama koy.
-    _smoothOutliers(result);
+    //
+    // Düzeltilen slot'lar geri bildirilir: smoothing YALNIZCA `result`u
+    // değiştirir, dağılıma dokunmazsa `Σ byType != total` olur ve tür dökümü
+    // üst kartı tutmaz. Aşağıda dağılım aynı oranda ölçeklenir.
+    final smoothed = _smoothOutliers(result);
+    for (final ts in smoothed.keys) {
+      final before = smoothed[ts]!;
+      final after = result[ts]!;
+      // Sıfırdan ölçeklenemez; o slot'ta dağılım zaten anlamsızdır.
+      if (before <= 0) continue;
+      final factor = after / before;
+      for (final series in byType.values) {
+        final v = series[ts];
+        if (v != null) series[ts] = v * factor;
+      }
+      for (final series in byPosition.values) {
+        final v = series[ts];
+        if (v != null) series[ts] = v * factor;
+      }
+    }
 
-    return result;
+    return PortfolioHistoryBreakdown(
+      total: result,
+      byType: byType,
+      byPosition: byPosition,
+      positionType: positionType,
+    );
   }
 
   /// In-place outlier smoothing — tek nokta V-dip / N-tepe artefaktlarını
   /// komşuların ortalamasıyla değiştirir. Gerçek trendleri (komşular arası
   /// da büyük fark) korur.
-  void _smoothOutliers(Map<int, double> points) {
-    if (points.length < 3) return;
+  /// Değiştirilen slot'ları `ts → ÖNCEKİ değer` olarak döndürür. Çağıran bu
+  /// bilgiyle tür dağılımını aynı oranda ölçekler; aksi halde toplam düzeltilip
+  /// dağılım ham kalır ve `Σ byType != total` olur.
+  Map<int, double> _smoothOutliers(Map<int, double> points) {
+    final changed = <int, double>{};
+    if (points.length < 3) return changed;
     final keys = points.keys.toList()..sort();
     for (int i = 1; i < keys.length - 1; i++) {
       final prev = points[keys[i - 1]]!;
@@ -958,9 +1189,11 @@ class HistoryService {
       final devNext = ((cur - next) / next).abs();
       final prevNextGap = ((next - prev) / prev).abs();
       if (devPrev > 0.015 && devNext > 0.015 && prevNextGap < 0.01) {
+        changed[keys[i]] = cur;
         points[keys[i]] = (prev + next) / 2;
       }
     }
+    return changed;
   }
 
   int _tierStepMs(ResolutionTier tier) => switch (tier) {
@@ -1232,6 +1465,10 @@ Map<int, double> smoothSpikes(
   Map<int, double> points, {
   required double deviation,
   required double neighborGap,
+  /// Düzeltilen slot'ların ÖNCEKİ değerleri buraya yazılır (ts → eski değer).
+  /// Çağıran bununla tür/pozisyon dağılımını aynı oranda ölçekler; aksi halde
+  /// toplam düzeltilip dağılım ham kalır ve `Σ byType != total` olur.
+  Map<int, double>? changed,
 }) {
   final keys = points.keys.toList()..sort();
   for (int i = 1; i < keys.length - 1; i++) {
@@ -1245,6 +1482,7 @@ Map<int, double> smoothSpikes(
     if (devPrev > deviation &&
         devNext > deviation &&
         prevNextGap < neighborGap) {
+      changed?[keys[i]] = cur;
       points[keys[i]] = (prev + next) / 2;
     }
   }

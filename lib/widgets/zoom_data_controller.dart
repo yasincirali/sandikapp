@@ -42,6 +42,13 @@ class ZoomDataController extends ChangeNotifier {
   ResolutionTier _tier = ResolutionTier.daily;
 
   Map<int, double> _data = const {};
+  /// `_data` ile AYNI istekten gelen tür/pozisyon dağılımı.
+  ///
+  /// Tür dökümü kartı eskiden kendi `getPortfolioHistory` çağrısını yapıyordu;
+  /// farklı pencere ve tier kullandığı için türlerin toplamı grafiğin
+  /// toplamını tutmuyordu. Artık ikisi tek yanıttan besleniyor.
+  PortfolioHistoryBreakdown _breakdown =
+      const PortfolioHistoryBreakdown.empty();
   bool _loading = false;
   /// `_data` başka bir filtreden devralınan tohum veri mi? Doğruysa grafik
   /// gösterilir ama "bu henüz seçtiğin filtrenin verisi değil" diye soluk
@@ -56,6 +63,11 @@ class ZoomDataController extends ChangeNotifier {
   bool _disposed = false;
 
   Map<int, double> get data => _data;
+
+  /// `data` ile aynı istekten gelen tür/pozisyon dağılımı — tür dökümü kartı
+  /// bunu kullanır. Tohum (seed) veride dağılım YOKTUR: tohum başka bir
+  /// filtreye aittir ve dağılımı bu filtrenin toplamını tutmaz.
+  PortfolioHistoryBreakdown get breakdown => _breakdown;
   bool get loading => _loading;
 
   /// Ekrandaki veri devralınan tohum mu (henüz bu filtrenin gerçek sonucu
@@ -133,8 +145,8 @@ class ZoomDataController extends ChangeNotifier {
     });
     _graceTimer = graceTimer;
     try {
-      final result =
-          await HistoryService.instance.getPortfolioHistoryAtResolution(
+      final result = await HistoryService.instance
+          .getPortfolioHistoryBreakdownAtResolution(
         assets: assets,
         from: _from,
         to: _to,
@@ -143,7 +155,10 @@ class ZoomDataController extends ChangeNotifier {
       );
       // Sıra numarası eşleşmezse (viewport arada değişti) bu sonucu at.
       if (mySeq != _requestSeq) return;
-      _data = result;
+      _data = result.total;
+      // Toplam ve dağılım DAİMA birlikte atanır — ayrı atanırsa bir kare
+      // boyunca eski dağılım yeni toplamla eşleşir ve tür dökümü tutmaz.
+      _breakdown = result;
       _recomputeDataBounds();
       _stale = false;
     } catch (_) {

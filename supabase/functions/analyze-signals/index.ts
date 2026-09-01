@@ -464,6 +464,55 @@ export function shouldSendSignal(
 /// temsilci `signal_state` satırının anahtarı ve push'un derin bağlantısı
 /// (`assetId`) olur. Tur başına değişseydi de-dup hafızası her turda başka
 /// satıra yazılır ve tekrar çift bildirim üretirdi.
+/// Cihaz başına TEK (en taze) token bırakır — `user_id → token[]`.
+///
+/// ## Neden gerekli
+/// Gönderim döngüsü kullanıcının HER token'ına ayrı push atar. Aynı fiziksel
+/// cihaz zamanla birden çok token üretir (FCM rotasyonu: yeniden kurulum,
+/// veri temizleme, uygulama güncellemesi) ve eski satırlar tabloda kalır —
+/// istemci onları yalnızca bellekteki `_currentToken` doluyken siliyordu,
+/// uygulama yeniden başlayınca o alan null olur. Sonuç: kullanıcı tek sinyal
+/// için aynı telefonda birden çok bildirim alır.
+///
+/// `collapseLotsToPositions` lot çoklanmasını çözer; bu fonksiyon CİHAZ
+/// çoklanmasını çözer. İkisi farklı katmanlardır, biri diğerinin yerine
+/// geçmez.
+///
+/// ## Gruplama anahtarı
+/// `device_id` varsa o kullanılır (istemcinin `shared_preferences`'ta tuttuğu
+/// kalıcı kimlik). Yoksa `platform`'a düşülür: eski sürüm istemciler ve
+/// migration öncesi satırlar `device_id` taşımaz, ama aynı kullanıcının aynı
+/// platformdaki satırları büyük olasılıkla aynı cihazdır.
+///
+/// En TAZE `updated_at` kazanır — FCM rotasyonda eskisini geçersiz kılar.
+export function dedupeTokensByDevice(
+  rows: {
+    token: string;
+    user_id: string;
+    device_id?: string | null;
+    platform?: string | null;
+    updated_at?: string | null;
+  }[],
+): { tokensByUser: Map<string, string[]>; skipped: number } {
+  const enTaze = new Map<string, { token: string; at: number; uid: string }>();
+  for (const r of rows) {
+    const dev = r.device_id ?? `platform:${r.platform ?? 'unknown'}`;
+    const key = `${r.user_id}|${dev}`;
+    const at = r.updated_at ? new Date(r.updated_at).getTime() : 0;
+    const mevcut = enTaze.get(key);
+    if (mevcut === undefined || at > mevcut.at) {
+      enTaze.set(key, { token: r.token, at, uid: r.user_id });
+    }
+  }
+  const tokensByUser = new Map<string, string[]>();
+  for (const v of enTaze.values()) {
+    const list = tokensByUser.get(v.uid) ?? [];
+    list.push(v.token);
+    tokensByUser.set(v.uid, list);
+  }
+  return { tokensByUser, skipped: rows.length - enTaze.size };
+}
+
 export function collapseLotsToPositions<T extends { id: string; user_id: string; type: string }>(
   assets: T[],
   symbolOf: (a: T) => string | undefined,
@@ -585,19 +634,32 @@ Deno.serve(async (request) => {
     // Token'ı olmayan kullanıcıyı analiz etmenin anlamı yok.
     const { data: tokenRows, error: tokenError } = await admin
       .from('user_push_tokens')
-      .select('token, user_id');
+      .select('token, user_id, device_id, platform, updated_at');
     if (tokenError) throw new Error(`Push tokenlari alinamadi: ${tokenError.message}`);
     if (!tokenRows || tokenRows.length === 0) {
       return jsonResponse({ ok: true, reason: 'Kayitli push token yok.', sent: 0 });
     }
 
-    const tokensByUser = new Map<string, string[]>();
-    for (const r of tokenRows) {
-      const uid = r.user_id as string;
-      const list = tokensByUser.get(uid) ?? [];
-      list.push(r.token as string);
-      tokensByUser.set(uid, list);
-    }
+    // Cihaz başına TEK token — aynı telefona kopya push gitmesin.
+    //
+    // Gönderim döngüsü kullanıcının HER token'ına ayrı push atar. Aynı cihaz
+    // zamanla birden çok token üretir (FCM rotasyonu: yeniden kurulum, veri
+    // temizleme, güncelleme) ve eski satırlar tabloda kalırsa kullanıcı tek
+    // sinyal için birden çok bildirim alır. Kullanıcının bildirdiği çoklanma
+    // buydu; `collapseLotsToPositions` lot tarafını zaten çözmüştü.
+    //
+    // İstemci artık `device_id` yazıyor ve kendi eski satırlarını siliyor
+    // (bkz. `upsertPushToken`), ama BU FİLTRE YİNE DE GEREKLİ:
+    //   · eski sürümdeki istemciler `device_id` yazmıyor,
+    //   · migration öncesi satırların `device_id`'si null,
+    //   · kullanıcı güncellemeyi alana kadar çoklanma sürerdi.
+    // Sunucu tarafı savunma, istemci sürümünden bağımsız çalışır.
+    //
+    // `device_id` null olan satırlar `platform` ile gruplanır: aynı kullanıcı
+    // + aynı platform büyük olasılıkla aynı cihazdır. En TAZE token kazanır —
+    // FCM rotasyonda eskisini geçersiz kılar.
+    const { tokensByUser, skipped: skippedStaleTokens } =
+      dedupeTokensByDevice(tokenRows);
     const userIds = [...tokensByUser.keys()];
 
     // ── 2) Varlıklar ────────────────────────────────────────────────────────
@@ -940,6 +1002,9 @@ Deno.serve(async (request) => {
       // o varlıktan birden çok kez alım yapmış ve tek bildirim gitmiştir.
       collapsed_lots: collapsedLots,
       positions: pozisyonlar.length,
+      // Cihaz başına elenen bayat token sayısı. >0 ise kullanıcı aynı
+      // telefonda kopya bildirim ALMAMIŞTIR (bkz. `enTazeToken`).
+      skipped_stale_tokens: skippedStaleTokens,
       symbols: symbols.size,
       histories: histories.size,
       evaluated,

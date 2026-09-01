@@ -352,6 +352,7 @@ Tasarım ve komponent envanteri: `LIGHT_MODE_TASARIM_RAPORU.md`.
 
 | Tarih | İş | Commit |
 |---|---|---|
+| 2026-09-01 | Gün içi sekmesinde tür dökümü (`getPortfolioHistoryHourlyBreakdown`) | commit bekliyor |
 | 2026-08-03 | Ortak polling'i lifecycle'a bağla (900→240 istek/saat) | `2a956e4` |
 | 2026-08-03 | History cache'e LRU + TTL | `2a956e4` |
 | 2026-08-03 | Android AAB release pipeline | `b514c5a` |

@@ -175,22 +175,26 @@ class _PortfolioPerformanceScreenState
   // ortak sekmesi, 30 sn'lik tick) YENİ bir future üretiyordu; FutureBuilder
   // yeni future'ı waiting sayıp grafiği söküyordu. Aynı varlık kümesi için
   // aynı future yeniden kullanılır.
-  Future<Map<int, double>>? _intradayFuture;
+  // Dağılımı da taşır: gün içi sekmesinde tür dökümü kartı bu future'dan
+  // beslenir. Eskiden yalnızca toplam seri (`Map<int,double>`) çekiliyordu ve
+  // kart bu sekmede HİÇ görünmüyordu.
+  Future<PortfolioHistoryBreakdown>? _intradayFuture;
   String? _intradayKey;
   // Son başarılı intraday sonucu. Future yenilendiğinde (30 sn'lik tick veya
   // varlık kümesi değişimi) snapshot bir kare boyunca null olur; bu alan
   // sayesinde grafik o karede boşalmaz.
-  Map<int, double>? _lastIntradayData;
+  PortfolioHistoryBreakdown? _lastIntradayData;
 
-  Future<Map<int, double>> _intradayHistory(List<Asset> chartAssets) {
+  Future<PortfolioHistoryBreakdown> _intradayHistory(
+      List<Asset> chartAssets) {
     final key = chartAssets.map((a) => a.id).join(',');
     if (_intradayKey == key && _intradayFuture != null) return _intradayFuture!;
     _intradayKey = key;
-    _intradayFuture =
-        HistoryService.instance.getPortfolioHistoryHourly(chartAssets, 24)
-          ..then((v) {
-            if (mounted && v.isNotEmpty) _lastIntradayData = v;
-          });
+    _intradayFuture = HistoryService.instance
+        .getPortfolioHistoryHourlyBreakdown(chartAssets, 24)
+      ..then((v) {
+        if (mounted && v.total.isNotEmpty) _lastIntradayData = v;
+      });
     return _intradayFuture!;
   }
 
@@ -574,7 +578,7 @@ class _PortfolioPerformanceScreenState
                         // içinde memoize edilir; aksi halde her setState
                         // (tip/ortak filtresi, 30sn tick) yeni bir fetch
                         // başlatıp grafiği baştan yüklemeye sokuyordu.
-                        return FutureBuilder<Map<int, double>>(
+                        return FutureBuilder<PortfolioHistoryBreakdown>(
                           future: _intradayHistory(chartAssets),
                           builder: (context, snapshot) {
                             final loading = snapshot.connectionState ==
@@ -584,7 +588,7 @@ class _PortfolioPerformanceScreenState
                             // çevirmesin.
                             final data = snapshot.data ?? _lastIntradayData;
                             return _buildChartWithData(
-                              data ?? const {},
+                              data?.total ?? const {},
                               targetAssets,
                               filteredOwnerLots,
                               chartAssets,
@@ -595,6 +599,9 @@ class _PortfolioPerformanceScreenState
                               activePartners,
                               waiting: loading,
                               hasData: data != null,
+                              // Tür dökümü artık gün içinde de beslenir.
+                              breakdown: data ??
+                                  const PortfolioHistoryBreakdown.empty(),
                             );
                           },
                         );
@@ -607,6 +614,14 @@ class _PortfolioPerformanceScreenState
                           final historyMap = controller?.data ?? const {};
                           final waiting = controller?.loading ?? false;
                           final stale = controller?.stale ?? false;
+                          // Tohum veri başka bir filtreye ait: toplamı bu
+                          // filtreye ait dağılımla eşleşmez. Bayatken dökümü
+                          // hiç gösterme — yanlış bir kırılım göstermektense
+                          // boş bırakmak doğru.
+                          final breakdown = stale
+                              ? const PortfolioHistoryBreakdown.empty()
+                              : (controller?.breakdown ??
+                                  const PortfolioHistoryBreakdown.empty());
                           return _buildChartWithData(
                             historyMap,
                             targetAssets,
@@ -626,6 +641,7 @@ class _PortfolioPerformanceScreenState
                             // Spinner SADECE hiç veri yokken (ilk açılış).
                             hasData: historyMap.isNotEmpty,
                             stale: stale,
+                            breakdown: breakdown,
                           );
                         },
                       );
@@ -664,6 +680,12 @@ class _PortfolioPerformanceScreenState
     required bool waiting,
     required bool hasData,
     bool stale = false,
+    /// `historyMap` ile AYNI istekten gelen tür/pozisyon dağılımı — tür dökümü
+    /// kartını besler. Her iki veri yolu da doldurur: diğer periyotlar
+    /// `getPortfolioHistoryBreakdownAtResolution`, gün içi ise
+    /// `getPortfolioHistoryHourlyBreakdown`.
+    PortfolioHistoryBreakdown breakdown =
+        const PortfolioHistoryBreakdown.empty(),
   }) {
     // Ana ekranla birebir aynı TRY hesabı: targetAssets grafik için ham buy
     // lot'ları içeriyor (satılan miktarı geçmişte düşürmemek için). Ancak
@@ -823,20 +845,20 @@ class _PortfolioPerformanceScreenState
           ),
         const SizedBox(height: 24),
         // Tür bazlı kâr/zarar dökümü — seçili dönem ve sekmeye göre.
-        _TypeBreakdownCard(
-          ownerLots: ownerLots,
-          start: effectiveStart,
-          end: endDate,
-          simulate: _simulate,
-          intraday: isIntraday,
-          // Gün içi sekmesinde `days` 0'dır; tür serisi için 1 güne düş
-          // (getPortfolioHistory 0 gün ile tek nokta döndürür ve kart hiç
-          // görünmezdi).
-          periodDays: _periods[_selectedPeriodIdx].days == 0
-              ? 1
-              : _periods[_selectedPeriodIdx].days,
-          toTRY: pState.toTRY,
-        ),
+        //
+        // Üst kartla AYNI iki sayıdan (`_periodEndpoints`) ve AYNI istekten
+        // gelen dağılımdan beslenir; satırların toplamı bu yüzden üst rakamı
+        // tutar. Endpoint yoksa üst kart da çizilmiyordur — döküm de çıkmaz.
+        if (_periodEndpoints(segments) case final ep?)
+          _TypeBreakdownCard(
+            breakdown: breakdown,
+            totalFirst: ep.first,
+            totalLast: ep.last,
+            ownerLots: ownerLots,
+            start: effectiveStart,
+            end: endDate,
+            simulate: _simulate,
+          ),
         // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
         // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
         // ekranında gösterilir. Bu panel senkron çalıştığı için gerçek fiyat
@@ -1098,6 +1120,21 @@ class _PortfolioPerformanceScreenState
   /// getiriden yüksek çıkar (yatırılan para da farka dahildir). Rakamı
   /// değiştirmeyip altına net giriş tutarını yazıyoruz — kullanıcı farkın
   /// ne kadarının kendi parası olduğunu görebilsin.
+  /// Üst kartın okuduğu dönem başı/sonu değeri — `null` ise çizilecek yok.
+  ///
+  /// Tür dökümü kartı da BUNU kullanır: iki kart aynı iki sayıdan beslenmezse
+  /// satırların toplamı üst rakamı tutmaz (bkz. `_TypeBreakdownCard`).
+  ({double first, double last})? _periodEndpoints(
+      List<TransactionSegment> segments) {
+    if (segments.isEmpty) return null;
+    // Y değerleri en kalın (aktif) segmentten okunur — passive segment
+    // alım öncesi 0 çizgisidir, değişime karışmamalı.
+    final primary =
+        segments.reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
+    if (primary.spots.length < 2) return null;
+    return (first: primary.spots.first.y, last: primary.spots.last.y);
+  }
+
   Widget _buildPeriodChangeCard(
     List<TransactionSegment> segments,
     DateTime start,
@@ -1105,16 +1142,11 @@ class _PortfolioPerformanceScreenState
     List<Asset> targetAssets, {
     required bool intraday,
   }) {
-    if (segments.isEmpty) return const SizedBox.shrink();
+    final ep = _periodEndpoints(segments);
+    if (ep == null) return const SizedBox.shrink();
 
-    // Y değerleri en kalın (aktif) segmentten okunur — passive segment
-    // alım öncesi 0 çizgisidir, değişime karışmamalı.
-    final primary =
-        segments.reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
-    if (primary.spots.length < 2) return const SizedBox.shrink();
-
-    final firstY = primary.spots.first.y;
-    final lastY = primary.spots.last.y;
+    final firstY = ep.first;
+    final lastY = ep.last;
 
     // Grafik HAM portföy değerini çizer (sıçramalar bilinçli — bkz. çizim
     // tarafındaki not), dolayısıyla uçtan uca fark yatırılan parayı da
@@ -2384,195 +2416,458 @@ class _VolumeBar {
 
 // ── Tür bazlı kâr/zarar dökümü ───────────────────────────────────────────────
 
-/// Seçili dönem ve sekmeye göre HER VARLIK TÜRÜNÜN kâr/zararı.
+/// Seçili dönem ve sekmeye göre HER VARLIK TÜRÜNÜN — ve açıldığında o türün
+/// içindeki HER ÜRÜNÜN — dönem değişimi.
 ///
-/// Üstteki değişim kartı portföyün TOPLAMINI verir; bu kart onu türlere
-/// ayırır — "kazanç altından mı geldi, hisseden mi?" sorusunu yanıtlar.
+/// ## Değişmez: satırların toplamı üst kartı TUTAR
+/// Üstteki değişim kartı portföyün toplamını verir; bu kart onu önce türlere,
+/// tür açıldığında ürünlere ayırır. Üç seviye de **aynı seriden** okur:
 ///
-/// **Rakam SEÇİLİ DÖNEME aittir**, ömürlük getiri değildir:
-/// `(dönem sonu değer − dönem başı değer) / dönem başı değer`.
-/// Üstteki birikim kartıyla aynı formül, yalnızca tür tür ayrılmış hâli.
-/// İlk sürümde `totalValue − totalCostTRY` kullanılıyordu; o ÖMÜRLÜK kârdır
-/// ve periyot değiştirilse bile hiç değişmiyordu (kullanıcı yakaladı).
+///   üst kart     → `segments` (historyMap → _convertHistoryToSegments)
+///   tür satırı   → `breakdown.byType[t]`
+///   ürün satırı  → `breakdown.byPosition[k]`
 ///
-/// **Sahiplik sınırı korunur:** her sahip kendi içinde aggregate edilir
-/// (`aggregatePositionsByOwner`). Havuzlanırsa aynı hisseye sahip iki ortak
-/// tek pozisyona düşer ve toplam, tekil sekmelerin toplamını tutmaz.
+/// `HistoryService.getPortfolioHistoryBreakdownAtResolution` üçünü de TEK
+/// döngüde üretir, yani `Σ ürün == tür` ve `Σ tür == toplam` yapısal olarak
+/// doğrudur.
 ///
-/// **Gerçek vs simülasyon:**
-///   · Gerçek     → dönem içi alım/satım tutarı ayrıca gösterilir
-///   · Simülasyon → miktar tüm dönem sabit sayıldığı için işlem satırı YOK
+/// **Bug geçmişi (2026-09-01).** Bu kart eskiden tür başına AYRI bir
+/// `getPortfolioHistory(assets, periodDays)` çağırıyordu. O yol üst karttan
+/// beş noktada ayrışıyordu ve toplamlar hiçbir zaman tutmuyordu:
+///   1. üst kartın son noktası canlı toplamla eziliyor (`currentTotalOverride`),
+///      dökümde böyle bir override yoktu;
+///   2. üst kart seriyi ilk alım gününe kırpıyor (`firstAssetMidnight`),
+///      döküm dönem başından başlıyordu;
+///   3. üst kart `effectiveStart` penceresini, döküm ham `periodDays`
+///      penceresini kullanıyordu;
+///   4. mevduat dökümden tamamen çıkarılmıştı ama üst kartın toplamındaydı;
+///   5. dönem başı değeri 0 olan tür (dönem içinde ilk kez alınan varlık)
+///      sessizce düşürülüyordu.
+/// Hepsi tek kökten geliyordu: iki kart iki farklı veri kaynağı kullanıyordu.
+/// Çözüm tek kaynağa indirgemek oldu — yamalarla hizalamak değil.
+///
+/// ## Formül
+/// Her seviyede aynı: tutar `son − ilk`, oran `(son − ilk) / ilk`.
+///
+/// ## Her varlık KENDİ kategorisinde — sentetik satır yok
+/// Sentetik bir "Diğer" satırı **kullanılmaz** (kullanıcı kararı, 2026-09-01).
+/// İki sebeple:
+///   1. `AssetType.diger` zaten gerçek bir kategori ("Diğer", mor). Sentetik
+///      bir satıra aynı adı vermek, biri gerçek biri hesap artığı iki satır
+///      üretir ve doğrudan yanlış bilgi verirdi.
+///   2. Kategorisiz bakiye diye bir şey yok: `mevduat` ve `diger` dahil her
+///      varlık `currentPrice` dalından değer alır ve kendi türüne yazılır.
+///
+/// Üst kartla tür serileri arasındaki küçük fark (üst kartın son noktası
+/// canlı toplamla ezilir, seriler ham gelir) gerçek bir kategori değil, aynı
+/// varlıkların birkaç dakikalık fiyat farkıdır — `_calibrate` onu türlerin
+/// ağırlığınca dağıtır. `Σ satır == üst kart` yine korunur.
 class _TypeBreakdownCard extends StatefulWidget {
+  /// Grafiğin çizdiği seriyle AYNI istekten gelen dağılım.
+  final PortfolioHistoryBreakdown breakdown;
+
+  /// Üst kartın gösterdiği dönem başı/sonu değerleri. Döküm bunlara
+  /// kalibre edilir — bkz. `_rows`.
+  final double totalFirst;
+  final double totalLast;
+
   final List<List<Asset>> ownerLots;
   final DateTime start;
   final DateTime end;
   final bool simulate;
-  final bool intraday;
-  final int periodDays;
-  final double Function(double, String) toTRY;
 
   const _TypeBreakdownCard({
+    required this.breakdown,
+    required this.totalFirst,
+    required this.totalLast,
     required this.ownerLots,
     required this.start,
     required this.end,
     required this.simulate,
-    required this.intraday,
-    required this.periodDays,
-    required this.toTRY,
   });
 
   @override
   State<_TypeBreakdownCard> createState() => _TypeBreakdownCardState();
 }
 
+/// Tek bir döküm satırı — tür ya da ürün.
+class _BreakdownRow {
+  final String label;
+  final double first;
+  final double last;
+
+  /// Dönem içi net alım/satım (TRY). Yalnızca gerçek modda dolar.
+  final double flow;
+
+  const _BreakdownRow({
+    required this.label,
+    required this.first,
+    required this.last,
+    this.flow = 0,
+  });
+
+  double get change => last - first;
+  double? get pct => first > 0 ? (change / first) * 100 : null;
+}
+
 class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
-  /// tür → (dönem başı değer, dönem sonu değer)
-  Future<Map<AssetType, ({double first, double last})>>? _future;
-  String? _key;
+  /// Açık tür başlıkları. Varsayılan kapalı — kart uzun olmasın.
+  final Set<AssetType> _expanded = {};
 
-  /// Tür başına dönem serisi çek.
+  /// Bir serinin dönem başı ve sonu değeri.
   ///
-  /// Her tür için ayrı `getPortfolioHistory` çağrısı yapılır; fiyat serileri
-  /// `PriceService` önbelleğinden paylaşıldığı için ek ağ maliyeti sembol
-  /// başına tek seferdir, tür sayısıyla çarpılmaz.
-  Future<Map<AssetType, ({double first, double last})>> _load() {
-    // Anahtar: dönem + mod + lot kimlikleri. Biri değişince yeniden çekilir,
-    // aksi halde her setState (sekme, tick) yeni fetch başlatırdı.
-    final ids = [
-      for (final lots in widget.ownerLots)
-        for (final a in lots)
-          if (a.isActive) a.id
-    ]..sort();
-    final key = '${widget.periodDays}|${widget.simulate}|${ids.join(',')}';
-    if (_key == key && _future != null) return _future!;
-    _key = key;
+  /// `null` dönerse o seri çizilemez (tek nokta ya da hiç nokta). Üst kartla
+  /// aynı kural: iki nokta yoksa değişim tanımsızdır.
+  ({double first, double last})? _endpoints(Map<int, double>? series) {
+    if (series == null || series.length < 2) return null;
+    final ts = series.keys.toList()..sort();
+    return (first: series[ts.first]!, last: series[ts.last]!);
+  }
 
-    _future = () async {
-      // Tür başına ham lot listesi — grafiğin kullandığı listenin aynısı.
-      final byType = <AssetType, List<Asset>>{};
-      for (final lots in widget.ownerLots) {
-        for (final a in lots) {
-          if (!a.isActive) continue;
-          if (a.type == AssetType.mevduat) continue; // fiyat serisi yok
-          byType.putIfAbsent(a.type, () => []).add(a);
-        }
+  /// Dönem içi net para akışı — tür bazında.
+  ///
+  /// Not satırı için: kullanıcı "+%100" görünce ne kadarının kendi parası
+  /// olduğunu bilmeli. Simülasyonda miktar sabit sayıldığı için akış yoktur.
+  Map<AssetType, double> _flowByType() {
+    final out = <AssetType, double>{};
+    if (widget.simulate) return out;
+    final startMs =
+        DateTime(widget.start.year, widget.start.month, widget.start.day)
+            .millisecondsSinceEpoch;
+    final endMs = DateTime(
+            widget.end.year, widget.end.month, widget.end.day, 23, 59, 59)
+        .millisecondsSinceEpoch;
+    for (final lots in widget.ownerLots) {
+      for (final a in lots) {
+        if (!a.isActive) continue;
+        final ms = a.addedDate.millisecondsSinceEpoch;
+        if (ms < startMs || ms > endMs) continue;
+        final f = a.isBuy
+            ? a.totalCostTRY
+            : a.isSell
+                ? -a.sellProceedsTRY
+                : 0.0;
+        if (f != 0) out[a.type] = (out[a.type] ?? 0) + f;
       }
+    }
+    return out;
+  }
 
-      final out = <AssetType, ({double first, double last})>{};
-      for (final e in byType.entries) {
-        // Simülasyonda net pozisyon tüm döneme yayılır — grafikle aynı girdi.
-        final assets = widget.simulate
-            ? aggregatePositionsByOwner([e.value])
-                .map((p) => p.asDisplayAsset())
-                .toList()
-            : e.value;
-        try {
-          final map = await HistoryService.instance.getPortfolioHistory(
-            assets,
-            widget.periodDays,
-            simulate: widget.simulate,
-          );
-          if (map.length < 2) continue;
-          final ts = map.keys.toList()..sort();
-          final first = map[ts.first]!;
-          final last = map[ts.last]!;
-          if (first <= 0) continue;
-          out[e.key] = (first: first, last: last);
-        } catch (_) {
-          // Bu tür çekilemedi — diğerlerini göstermeye devam et.
-        }
+  /// Tür satırları + her türün altındaki ürün satırları.
+  ///
+  /// ## "Diğer" satırı ve kalibrasyon
+  /// Tür serilerinin toplamı üst kartın rakamını genellikle tutar ama HER
+  /// ZAMAN değil: üst kart son noktayı canlı toplamla eziyor
+  /// (`currentTotalOverride`) ve mevduat gibi fiyat serisi olmayan varlıklar
+  /// hiçbir tür serisinde yer almıyor. Aradaki artık **"Diğer"** satırına
+  /// yazılır. Böylece satırların toplamı üst kartı **tanım gereği** tutar:
+  /// artık ne kadarsa o kadar, sıfırsa satır hiç çıkmaz.
+  (List<({AssetType type, _BreakdownRow row})>, Map<AssetType, List<_BreakdownRow>>)
+      _rows() {
+    final flowOf = _flowByType();
+    final typeRows = <({AssetType type, _BreakdownRow row})>[];
+    final childrenOf = <AssetType, List<_BreakdownRow>>{};
+
+    double sumFirst = 0;
+    double sumLast = 0;
+
+    for (final e in widget.breakdown.byType.entries) {
+      final ep = _endpoints(e.value);
+      if (ep == null) continue;
+      sumFirst += ep.first;
+      sumLast += ep.last;
+      typeRows.add((
+        type: e.key,
+        row: _BreakdownRow(
+          label: e.key.label,
+          first: ep.first,
+          last: ep.last,
+          flow: flowOf[e.key] ?? 0,
+        ),
+      ));
+
+      // Ürün satırları — aynı türe ait pozisyonlar.
+      final kids = <_BreakdownRow>[];
+      for (final p in widget.breakdown.byPosition.entries) {
+        if (widget.breakdown.positionType[p.key] != e.key) continue;
+        final pep = _endpoints(p.value);
+        if (pep == null) continue;
+        kids.add(_BreakdownRow(
+          label: _positionLabel(p.key, e.key),
+          first: pep.first,
+          last: pep.last,
+        ));
       }
-      return out;
-    }();
-    return _future!;
+      kids.sort((a, b) => b.change.compareTo(a.change));
+      if (kids.isNotEmpty) childrenOf[e.key] = kids;
+    }
+
+    // ── Artığı ORANSAL dağıt — sahte satır AÇMA ──────────────────────────
+    //
+    // Tür serilerinin toplamı üst kartı birebir tutmayabilir: üst kartın son
+    // noktası canlı toplamla eziliyor (`currentTotalOverride`), tür serileri
+    // ise ham seriden geliyor. Aradaki fark gerçek bir kategori DEĞİLDİR —
+    // aynı varlıkların bir kaç dakikalık fiyat farkıdır.
+    //
+    // Eskiden bu artık "Diğer" adlı sentetik bir satıra yazılıyordu. İki
+    // sebeple yanlıştı:
+    //   1. `AssetType.diger` ZATEN var ("Diğer", mor) — kullanıcının gerçek
+    //      bir kategorisi. Aynı adı taşıyan iki satır, biri gerçek biri
+    //      hesap artığı, doğrudan yanlış bilgi verirdi.
+    //   2. Her varlık zaten bir kategoriye ait; `mevduat` ve `diger` dahil
+    //      hepsi `currentPrice` dalından değer alıyor. Kategorisiz bakiye
+    //      diye bir şey yok.
+    //
+    // Doğrusu: artığı türlerin AĞIRLIĞINCA dağıtmak. Böylece
+    // `Σ satır == üst kart` korunur ve fazladan kavram uydurulmaz.
+    _calibrate(typeRows, childrenOf, sumFirst, sumLast);
+
+    // En çok kazandıran üstte.
+    typeRows.sort((a, b) => b.row.change.compareTo(a.row.change));
+    return (typeRows, childrenOf);
+  }
+
+  /// Tür (ve ürün) satırlarını üst kartın uçlarına oransal olarak kalibre eder.
+  ///
+  /// Ölçek çarpanı `üstKart / serilerToplamı`. Her satır kendi ağırlığınca pay
+  /// alır, dolayısıyla satırların toplamı üst kartı tutar ama satırlar arası
+  /// oranlar (yani hangi tür ne kadar kazandırdı) hiç bozulmaz.
+  ///
+  /// Ürün satırları da AYNI çarpanla ölçeklenir — aksi halde bir tür açıldığında
+  /// içindekilerin toplamı başlığı tutmazdı.
+  void _calibrate(
+    List<({AssetType type, _BreakdownRow row})> rows,
+    Map<AssetType, List<_BreakdownRow>> childrenOf,
+    double sumFirst,
+    double sumLast,
+  ) {
+    // Sıfıra bölünemez; seri yoksa kalibre edilecek bir şey de yok.
+    var kFirst = sumFirst.abs() > 0.01 ? widget.totalFirst / sumFirst : 1.0;
+    var kLast = sumLast.abs() > 0.01 ? widget.totalLast / sumLast : 1.0;
+
+    // ⚠️ ÇAPRAZ BULAŞMA SINIRI.
+    //
+    // Kalibrasyon TEK bir çarpanla çalışır: bir türdeki sapmayı tüm türlere
+    // yayar. Küçük artıklarda (üst kart `pState.toTRY` kurlarını, servis
+    // kendi kurunu kullanır — binde birkaç fark) bu zararsızdır ve toplamı
+    // tutturur. Ama çarpan 1'den belirgin uzaklaşırsa satırlar YALAN söyler:
+    // fiyatı hiç değişmemiş bir tür, başka bir tür oynadığı için oynamış
+    // görünür. Bu hata gün içi serisinde ölçüldü (fon 25.000 → 16.716) ve
+    // orada canlı değerleri tür bazında hesaplayarak kökten çözüldü.
+    //
+    // Burada kalan artık küçük olmalı; büyükse kalibre ETME. Toplamda birkaç
+    // TL sapma göstermek, her satırı yanlış göstermekten iyidir.
+    const maxSapma = 0.02; // %2
+    if ((kFirst - 1).abs() > maxSapma) kFirst = 1.0;
+    if ((kLast - 1).abs() > maxSapma) kLast = 1.0;
+
+    // Çarpan 1'e çok yakınsa dokunma — kayan nokta gürültüsüyle oynamayalım.
+    if ((kFirst - 1).abs() < 1e-9 && (kLast - 1).abs() < 1e-9) return;
+
+    _BreakdownRow scaled(_BreakdownRow r) => _BreakdownRow(
+          label: r.label,
+          first: r.first * kFirst,
+          last: r.last * kLast,
+          flow: r.flow,
+        );
+
+    for (var i = 0; i < rows.length; i++) {
+      rows[i] = (type: rows[i].type, row: scaled(rows[i].row));
+    }
+    for (final e in childrenOf.entries) {
+      childrenOf[e.key] = [for (final k in e.value) scaled(k)];
+    }
+  }
+
+  /// `positionKey` insan-okunur etikete çevrilir.
+  ///
+  /// Anahtar `type|core|currency` biçimindedir (bkz. `positionKey`); `core`
+  /// altında `sub:` öneki altın/döviz alt kategorisini, `name:` öneki
+  /// ticker'sız varlığın adını taşır. Ham anahtarı ekrana basmak
+  /// "altin|sub:çeyrek|TRY" gibi bir şey gösterirdi.
+  String _positionLabel(String key, AssetType type) {
+    final parts = key.split('|');
+    var core = parts.length > 1 ? parts[1] : key;
+    if (core.startsWith('sub:')) core = core.substring(4);
+    if (core.startsWith('name:')) core = core.substring(5);
+    if (core.isEmpty) return type.label;
+    // Alt kategoriler küçük harfle saklanır (`positionKey`), ticker'lar büyük.
+    // İlk harfi büyüterek "çeyrek" → "Çeyrek" yapıyoruz; ticker'a dokunmaz.
+    return core.length > 1
+        ? core[0].toUpperCase() + core.substring(1)
+        : core.toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Dönem içi alım/satım — yalnızca gerçek modda anlamlı.
-    final flowOf = <AssetType, double>{};
-    if (!widget.simulate) {
-      final startMs = DateTime(
-              widget.start.year, widget.start.month, widget.start.day)
-          .millisecondsSinceEpoch;
-      final endMs = DateTime(
-              widget.end.year, widget.end.month, widget.end.day, 23, 59, 59)
-          .millisecondsSinceEpoch;
-      for (final lots in widget.ownerLots) {
-        for (final a in lots) {
-          if (!a.isActive) continue;
-          final ms = a.addedDate.millisecondsSinceEpoch;
-          if (ms < startMs || ms > endMs) continue;
-          final f = a.isBuy
-              ? a.totalCostTRY
-              : a.isSell
-                  ? -a.sellProceedsTRY
-                  : 0.0;
-          if (f != 0) flowOf[a.type] = (flowOf[a.type] ?? 0) + f;
-        }
-      }
-    }
+    final (typeRows, childrenOf) = _rows();
+    if (typeRows.isEmpty) return const SizedBox.shrink();
 
     final tryFmt =
         NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
 
-    return FutureBuilder<Map<AssetType, ({double first, double last})>>(
-      future: _load(),
-      builder: (context, snap) {
-        final data = snap.data ?? const {};
-        if (snap.connectionState == ConnectionState.waiting && data.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        if (data.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: SandikSpace.md, vertical: 14),
+      decoration: context.surfaceCard(radius: SandikRadius.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'TÜRE GÖRE DEĞİŞİM',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.labelSmall?.copyWith(
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w700,
+              color: context.c.text36,
+            ),
+          ),
+          const SizedBox(height: SandikSpace.sm),
+          for (final entry in typeRows) ...[
+            _typeTile(context, entry.type, entry.row, childrenOf, tryFmt),
+            if (entry != typeRows.last) const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    );
+  }
 
-        // Dönem değişimi büyükten küçüğe — en çok kazandıran üstte.
-        final types = data.keys.toList()
-          ..sort((a, b) => (data[b]!.last - data[b]!.first)
-              .compareTo(data[a]!.last - data[a]!.first));
+  /// Tür satırı — ürünü varsa dokunulabilir ve açılır.
+  Widget _typeTile(
+    BuildContext context,
+    AssetType type,
+    _BreakdownRow row,
+    Map<AssetType, List<_BreakdownRow>> childrenOf,
+    NumberFormat tryFmt,
+  ) {
+    // Ürünü olan HER tür açılır — döviz, mevduat, "Diğer" dahil (kullanıcı
+    // kararı, 2026-09-01).
+    //
+    // Eskiden eşik `kids.length > 1` idi: tek ürünlü tür açılmıyordu, çünkü
+    // "kendi kopyasını göstermek bilgi katmaz" diye düşünülmüştü. Ama bu
+    // *tutarlılığı* bozuyordu — Apple'ın "familiarity" ilkesi: aynı görünen
+    // şeyler aynı davranmalı. Kullanıcı bir satırın açılıp açılmayacağını
+    // önceden kestiremiyordu, üstelik tek ürünlü satır o ürünün ADINI
+    // (ör. hangi fon olduğunu) göstermiyordu — bu bilgi kayıptı.
+    final kids = childrenOf[type] ?? const <_BreakdownRow>[];
+    final canExpand = kids.isNotEmpty;
+    final isOpen = _expanded.contains(type);
 
-        return Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: SandikSpace.md, vertical: 14),
-          decoration: context.surfaceCard(radius: SandikRadius.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'TÜRE GÖRE DEĞİŞİM',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.labelSmall?.copyWith(
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text36,
+    final header = _row(
+      context,
+      tryFmt,
+      label: row.label,
+      dotColor: type.color,
+      value: row.last,
+      cost: row.first,
+      flow: row.flow,
+      // Chevron GİDİLECEK yönü işaret eder (Apple: "hint in the direction of
+      // the gesture"). Kapalıyken sağa bakar — "burada devamı var"; açıkken
+      // 90° dönüp aşağıyı gösterir, yani içeriğin çıktığı yönü. Ara kareler
+      // sonucu telegraflar, körlemesine interpolasyon yapmaz.
+      trailing: canExpand
+          ? AnimatedRotation(
+              turns: isOpen ? 0.25 : 0,
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
+              child: Icon(Icons.chevron_right_rounded,
+                  size: 18,
+                  // Açıkken biraz belirginleşir: hangi başlığın açık olduğu
+                  // renkten de okunur, yalnızca açıdan değil.
+                  color: isOpen ? context.c.text58 : context.c.text36),
+            )
+          : null,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (canExpand)
+          // `SandikTappable`: basma geri bildirimi (scale), haptic ve
+          // `Semantics(button: true)` bir arada. Ham `GestureDetector`
+          // bunların HİÇBİRİNİ vermiyordu — dokunulabilir bir satırın
+          // dokunulduğunu belli etmemesi ekranın geri kalanıyla da çelişiyordu.
+          SandikTappable(
+            semanticLabel: isOpen
+                ? '${row.label}, açık. Kapatmak için çift dokun.'
+                : '${row.label}, kapalı. İçindeki ürünleri görmek için '
+                    'çift dokun.',
+            onTap: () => setState(() {
+              if (!_expanded.remove(type)) _expanded.add(type);
+            }),
+            // 44pt dokunma hedefi: satır kendi başına ~36pt, dikey 6+6 ile
+            // eşiğe çıkar (HIG minimumu). `ConstrainedBox` büyük metin
+            // ayarında satır zaten uzadığında fazladan yer kaplamaz.
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: header,
+              ),
+            ),
+          )
+        else
+          header,
+        // ── Ürün satırları ────────────────────────────────────────────────
+        //
+        // **Uzamsal süreklilik (Apple).** "Bir şey nasıl kayboluyorsa oradan
+        // geri gelmeli." Ürünler başlığın ALTINDAN doğar: `align: -1.0` ile
+        // üst kenardan açılır, düz bir opacity geçişi değil. Kapanırken de
+        // aynı yolu izler — çıkış ve giriş simetriktir, yoksa içerik bir
+        // yerden gelip başka yere gidiyormuş gibi kopuk hissedilir.
+        //
+        // `ClipRect` şart: açılırken taşan kısım başlığın üstüne binmesin.
+        ClipRect(
+          child: AnimatedAlign(
+            alignment: Alignment.topCenter,
+            heightFactor: isOpen ? 1.0 : 0.0,
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.enter,
+            child: AnimatedOpacity(
+              opacity: isOpen ? 1.0 : 0.0,
+              // Opaklık boyuttan biraz HIZLI kapanır: kapanırken içerik önce
+              // soluklaşır, sonra yer kapanır — ters sırada olsaydı boş bir
+              // beyaz alan bir an görünürdü.
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, top: 8),
+                child: Column(
+                  children: [
+                    for (final k in kids) ...[
+                      _row(
+                        context,
+                        tryFmt,
+                        label: k.label,
+                        dotColor: type.color.withValues(alpha: 0.45),
+                        value: k.last,
+                        cost: k.first,
+                        flow: 0,
+                        dense: true,
+                      ),
+                      if (k != kids.last) const SizedBox(height: 8),
+                    ],
+                  ],
                 ),
               ),
-              const SizedBox(height: SandikSpace.sm),
-              for (final t in types) ...[
-                _row(
-                  context,
-                  t,
-                  tryFmt,
-                  value: data[t]!.last,
-                  cost: data[t]!.first,
-                  flow: flowOf[t] ?? 0,
-                ),
-                if (t != types.last) const SizedBox(height: 10),
-              ],
-            ],
+            ),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
   Widget _row(
     BuildContext context,
-    AssetType t,
     NumberFormat tryFmt, {
+    required String label,
+    required Color dotColor,
     required double value,
     required double cost,
     required double flow,
+    Widget? trailing,
+    bool dense = false,
   }) {
     final pnl = value - cost;
     final pct = cost > 0 ? (pnl / cost) * 100 : null;
@@ -2584,26 +2879,82 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
         ? context.c.text36
         : (pnl >= 0 ? context.c.gain : context.c.loss);
 
+    // Ekran okuyucu için tek parça cümle — `portfolio_summary_widget` ile aynı
+    // kalıp. Parçalı okunursa "Altın", "+₺12.500", "%3,20" diye üç kopuk
+    // duyuru olur ve yön bilgisi (kazanç mı kayıp mı) YALNIZCA renkte kalırdı;
+    // renk tek başına bilgi taşıyamaz. Sayıların işareti görsel tarafta bu
+    // rolü üstlenir ("+" / "−"), burada kelimeyle söylüyoruz.
+    final semanticLabel = [
+      label,
+      if (isFlat)
+        'değişim yok'
+      else ...[
+        '${pnl >= 0 ? 'kazanç' : 'kayıp'} ${tryFmt.format(pnl.abs())}',
+        if (pct != null) fmtPct(pct.abs(), digits: 2),
+      ],
+      if (!widget.simulate && flow.abs() > 0.5)
+        flow > 0
+            ? 'dönem içi alım ${tryFmt.format(flow)}'
+            : 'dönem içi satış ${tryFmt.format(flow.abs())}',
+    ].join(', ');
+
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: ExcludeSemantics(
+        child: _rowVisual(
+          context,
+          tryFmt,
+          label: label,
+          dotColor: dotColor,
+          flow: flow,
+          trailing: trailing,
+          dense: dense,
+          pnl: pnl,
+          pct: pct,
+          isFlat: isFlat,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  /// Satırın görsel gövdesi — semantik sarmalayıcıdan ayrı tutulur ki
+  /// `ExcludeSemantics` altındaki ağaç sade kalsın.
+  Widget _rowVisual(
+    BuildContext context,
+    NumberFormat tryFmt, {
+    required String label,
+    required Color dotColor,
+    required double flow,
+    required Widget? trailing,
+    required bool dense,
+    required double pnl,
+    required double? pct,
+    required bool isFlat,
+    required Color color,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Tür rozeti — renk tek başına bilgi taşımaz, etiket her zaman var.
+        // Tür/ürün rozeti — renk tek başına bilgi taşımaz, etiket her zaman var.
         Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.only(top: 5, right: 8),
-          decoration: BoxDecoration(color: t.color, shape: BoxShape.circle),
+          width: dense ? 6 : 8,
+          height: dense ? 6 : 8,
+          margin: EdgeInsets.only(top: dense ? 6 : 5, right: 8),
+          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
         ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                t.label,
+                label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: context.t.bodyMedium
-                    ?.copyWith(color: context.c.text90),
+                style: dense
+                    ? context.t.bodySmall?.copyWith(color: context.c.text58)
+                    : context.t.bodyMedium?.copyWith(color: context.c.text90),
               ),
               // Gerçek modda dönem içi işlem varsa belirt. Simülasyonda bu
               // satır hiç çıkmaz — orada miktar sabit sayılır.
@@ -2614,8 +2965,8 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
                       : 'Dönem içi satış ${tryFmt.format(flow.abs())}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.t.bodySmall?.copyWith(
-                      color: context.c.text36, fontSize: 11),
+                  style: context.t.bodySmall
+                      ?.copyWith(color: context.c.text36, fontSize: 11),
                 ),
             ],
           ),
@@ -2635,8 +2986,10 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
                       ? '—'
                       : '${pnl >= 0 ? '+' : '−'}${tryFmt.format(pnl.abs())}',
                   maxLines: 1,
-                  style: context.t.numSmall
-                      .copyWith(color: color, fontWeight: FontWeight.w700),
+                  style: context.t.numSmall.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                      fontSize: dense ? 12 : null),
                 ),
                 if (pct != null && !isFlat)
                   Text(
@@ -2649,10 +3002,13 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
             ),
           ),
         ),
+        if (trailing != null) ...[
+          const SizedBox(width: 4),
+          trailing,
+        ],
       ],
     );
   }
-
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

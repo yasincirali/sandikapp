@@ -18,6 +18,14 @@ import 'package:portfoy_takip/models/asset_type.dart';
 ///
 /// Kart widget'ı private olduğu için hesabın kendisi burada yeniden üretilir
 /// (ekrandaki `_TypeBreakdownCardState` ile birebir aynı formüller).
+///
+/// ⚠️ **Bu dosya yalnızca ARİTMETİĞİ kilitler, veri kaynağını DEĞİL.**
+/// Kartın asıl hatası formülde değil, kartın üst karttan farklı bir seriden
+/// beslenmesindeydi: türlerin toplamı üst kartın rakamını tutmuyordu
+/// (kullanıcı yakaladı, 2026-09-01). Buradaki testler o hatayı göremezdi —
+/// ikisi de aynı formülü kullanıyordu, girdileri farklıydı.
+/// Toplama değişmezini `breakdown_sums_to_total_test.dart` kilitler ve o
+/// testler servisin GERÇEK çıktısını denetler, formülü yeniden üretmez.
 
 Asset _lot({
   required String userId,
