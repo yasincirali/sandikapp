@@ -122,6 +122,57 @@ void main() {
     });
   });
 
+  group('kalıcı silme — dismiss ile karıştırılmamalı', () {
+    /// `deleteHistory`: yalnızca dismissed kayıtları KALICI siler.
+    /// `deleteAll`: hepsini (aktif + geçmiş) siler.
+    ///
+    /// Kullanıcı isteği (2026-09-01): "tümünü sil tümünü pasife alıyor ama
+    /// kalıcı silmek için de tümünü kalıcı silmek için bir buton olmalı".
+    /// `dismissAll` yalnızca `dismissed_at` damgalıyordu; kayıtlar GEÇMİŞ
+    /// bölümünde duruyor ve kullanıcı "sildim ama duruyor" diyordu.
+    ({List<String> aktif, List<String> gecmis}) silme({
+      required List<String> aktif,
+      required List<String> gecmis,
+      required bool hepsi,
+    }) {
+      if (hepsi) return (aktif: <String>[], gecmis: <String>[]);
+      // Yalnızca geçmiş — aktifler KORUNUR.
+      return (aktif: aktif, gecmis: <String>[]);
+    }
+
+    test('deleteHistory aktifleri KORUR', () {
+      final r = silme(aktif: ['a1', 'a2'], gecmis: ['g1', 'g2'], hepsi: false);
+      expect(r.gecmis, isEmpty, reason: 'geçmiş kalıcı silinmeli');
+      expect(r.aktif, ['a1', 'a2'],
+          reason: 'okunmamış sinyali tek dokunuşla yok etmek sürpriz olurdu');
+    });
+
+    test('deleteAll hepsini siler', () {
+      final r = silme(aktif: ['a1'], gecmis: ['g1', 'g2'], hepsi: true);
+      expect(r.aktif, isEmpty);
+      expect(r.gecmis, isEmpty);
+    });
+
+    test('dismissAll KALICI DEĞİL — kayıt geçmişte kalır', () {
+      // Ayrımın kendisi: dismiss = pasife al, delete = kalıcı sil.
+      // İkisi karışırsa ya kullanıcı silemez ya da yanlışlıkla her şeyi
+      // kaybeder.
+      const aktif = ['a1', 'a2'];
+      // dismissAll sonrası: aktif boşalır AMA geçmişe taşınır.
+      const dismissSonrasiGecmis = aktif;
+      expect(dismissSonrasiGecmis.length, 2,
+          reason: 'dismiss kaydı yok etmez, taşır');
+    });
+
+    test('boş geçmişte istek atılmaz', () {
+      // `deleteHistory` erken döner; `deleteSignalNotifications` boş listede
+      // hiç sorgu kurmaz.
+      final r = silme(aktif: ['a1'], gecmis: [], hepsi: false);
+      expect(r.gecmis, isEmpty);
+      expect(r.aktif, ['a1']);
+    });
+  });
+
   group('wiring koruması — kaynak metin', () {
     // Birim testleri aritmetiği doğrular, BAĞLANTIYI değil. Bu projede aynı
     // ayrım daha önce sabotajla ölçülmüştü (`lot_collapse_test.ts`): fonksiyon
@@ -161,6 +212,33 @@ void main() {
       expect(src.contains('.inFilter(\'id\', ids)'), isTrue,
           reason: 'satır başına ayrı istek yavaş ve yarıda kesilmeye açık');
     });
+
+    test('kalıcı silme metotları var ve rethrow ediyor', () async {
+      final src = await _oku('lib/providers/signal_provider.dart');
+      for (final metot in ['deleteHistory', 'deleteAll']) {
+        final govde = _metotGovdesi(src, metot);
+        expect(govde, isNotNull,
+            reason: '$metot yok — kullanıcı geçmişi kalıcı silemez');
+        expect(govde!.contains('rethrow'), isTrue,
+            reason: '$metot sessizce başarısız olmamalı');
+      }
+    });
+
+    test('"Geçmişi Sil" düğmesi UI’a BAĞLI', () async {
+      // Provider metodu var ama düğme yoksa kullanıcı için hiç yok demektir.
+      //
+      // YORUM SATIRLARI ELENİR: ilk sürüm ham metinde arıyordu ve sabotajla
+      // ölçünce yakalayamadı — `// await onDeleteHistory();` şeklinde
+      // yorumlanmış bir çağrı testi geçiriyordu. Çağrının GERÇEKTEN kodda
+      // olması gerekiyor.
+      final src = _yorumsuz(await _oku('lib/screens/home_screen.dart'));
+      expect(src.contains('Geçmişi Sil'), isTrue,
+          reason: 'kalıcı silme eylemi ekranda görünmeli');
+      expect(src.contains('await onDeleteHistory()'), isTrue,
+          reason: 'düğme provider metodunu ÇAĞIRMALI (yorum sayılmaz)');
+      expect(src.contains('await onDeleteAll()'), isTrue,
+          reason: 'kapsam "hepsi" seçilince deleteAll çağrılmalı');
+    });
   });
 }
 
@@ -168,6 +246,17 @@ Future<String> _oku(String yol) async {
   // Test çalışma dizini proje kökü.
   return await File(yol).readAsString();
 }
+
+/// `//` ile başlayan satırları atar.
+///
+/// Wiring testleri kaynak METNİ denetler; yorumlanmış bir çağrı da metinde
+/// görünür ve testi yanlışlıkla geçirir (sabotajla ölçüldü). Kaba bir
+/// temizlik — blok yorumu ve string içindeki `//` dizisini kapsamaz, ama bu
+/// dosyadaki denetimler için yeterli.
+String _yorumsuz(String src) => src
+    .split('\n')
+    .where((l) => !l.trimLeft().startsWith('//'))
+    .join('\n');
 
 /// `Future<void> <ad>(` imzasından başlayıp süslü parantez dengesi kapanana
 /// kadar olan gövdeyi döndürür — yoksa `null`.

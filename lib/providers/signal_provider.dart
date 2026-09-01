@@ -225,6 +225,53 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
       rethrow;
     }
   }
+
+  /// GEÇMİŞTEKİ kayıtları KALICI siler.
+  ///
+  /// [dismissAll]'dan farkı: o yalnızca `dismissed_at` damgalar ve kayıtlar
+  /// GEÇMİŞ bölümünde durmaya devam eder. Bu metot satırları tamamen kaldırır
+  /// — kullanıcı "tümünü temizle" dedikten sonra listenin gerçekten boşalmasını
+  /// bekliyordu (kullanıcı isteği, 2026-09-01).
+  ///
+  /// Yalnızca dismissed kayıtları hedefler: aktif (henüz okunmamış) bir sinyali
+  /// tek dokunuşla yok etmek sürpriz olurdu. Aktifleri silmek için önce
+  /// [dismissAll], sonra bu.
+  Future<void> deleteHistory() async {
+    final current = state.valueOrNull ?? const [];
+    final history =
+        current.where((a) => a.isDismissed && a.id != null).toList();
+    if (history.isEmpty) return;
+
+    final silinecek = {for (final a in history) a.id!};
+    state = AsyncData(
+        current.where((a) => a.id == null || !silinecek.contains(a.id)).toList());
+
+    try {
+      await SupabaseService.instance
+          .deleteSignalNotifications(silinecek.toList());
+    } catch (e) {
+      state = AsyncData(current);
+      rethrow;
+    }
+  }
+
+  /// HEPSİNİ (aktif + geçmiş) kalıcı siler.
+  ///
+  /// Çanı tamamen boşaltır. En yıkıcı işlem olduğu için çağıran taraf onay
+  /// almalıdır.
+  Future<void> deleteAll() async {
+    final current = state.valueOrNull ?? const [];
+    final hepsi = [for (final a in current) if (a.id != null) a.id!];
+    if (hepsi.isEmpty) return;
+
+    state = const AsyncData([]);
+    try {
+      await SupabaseService.instance.deleteSignalNotifications(hepsi);
+    } catch (e) {
+      state = AsyncData(current);
+      rethrow;
+    }
+  }
 }
 
 final signalProvider =

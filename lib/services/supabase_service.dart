@@ -932,6 +932,22 @@ class SupabaseService {
     );
   }
 
+  /// Birden çok bildirimi TEK istekte KALICI siler.
+  ///
+  /// [dismissSignalNotifications] yalnızca `dismissed_at` damgalar (kayıt
+  /// GEÇMİŞ bölümünde durmaya devam eder); bu metot satırı tamamen kaldırır.
+  Future<void> deleteSignalNotifications(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _log.log<void>(
+      source: 'SupabaseService.deleteSignalNotifications',
+      table: 'signal_notifications',
+      op: 'DELETE',
+      request: {'ids': ids.length},
+      call: () =>
+          _db.from('signal_notifications').delete().inFilter('id', ids),
+    );
+  }
+
   Future<void> deleteSignalNotification(String id) async {
     await _log.log<void>(
       source: 'SupabaseService.deleteSignalNotification',

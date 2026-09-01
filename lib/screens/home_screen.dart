@@ -70,6 +70,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onDismiss: (id) => ref.read(signalProvider.notifier).dismiss(id),
         onDelete: (id) => ref.read(signalProvider.notifier).delete(id),
         onDismissAll: () => ref.read(signalProvider.notifier).dismissAll(),
+        onDeleteHistory: () =>
+            ref.read(signalProvider.notifier).deleteHistory(),
+        onDeleteAll: () => ref.read(signalProvider.notifier).deleteAll(),
         onTap: (alert) {
           Navigator.pop(context);
           AnalyticsService.instance.logSignalViewed(
@@ -801,12 +804,21 @@ class _SignalsBottomSheet extends ConsumerWidget {
   final Future<void> Function(String id) onDismiss;
   final Future<void> Function(String id) onDelete;
   final Future<void> Function() onDismissAll;
+
+  /// GEÇMİŞİ kalıcı siler (dismiss edilmiş kayıtlar).
+  final Future<void> Function() onDeleteHistory;
+
+  /// HEPSİNİ (aktif + geçmiş) kalıcı siler.
+  final Future<void> Function() onDeleteAll;
+
   final void Function(SignalAlert alert) onTap;
 
   const _SignalsBottomSheet({
     required this.onDismiss,
     required this.onDelete,
     required this.onDismissAll,
+    required this.onDeleteHistory,
+    required this.onDeleteAll,
     required this.onTap,
   });
 
@@ -821,6 +833,80 @@ class _SignalsBottomSheet extends ConsumerWidget {
         content: const Text('Bildirim silinemedi. Bağlantını kontrol et.'),
         behavior: SnackBarBehavior.floating,
         backgroundColor: context.c.loss,
+      ),
+    );
+  }
+
+  /// Yıkıcı toplu işlemler için onay.
+  ///
+  /// HIG "forgiveness": geri alınamaz ve çok satırı etkileyen işlem onay ister.
+  /// Tekil silmede onay YOKTUR — her dokunuşta diyalog çıkarmak kullanıcıyı
+  /// onaya körleştirir ve asıl tehlikeli anda da "Tamam"a basar.
+  static Future<bool> _onayAl(
+    BuildContext context, {
+    required String baslik,
+    required String mesaj,
+    required String eylem,
+  }) async {
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(baslik),
+        content: Text(mesaj),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(eylem, style: TextStyle(color: context.c.loss)),
+          ),
+        ],
+      ),
+    );
+    return onay == true;
+  }
+
+  /// Kalıcı silmenin KAPSAMINI sorar.
+  ///
+  /// `true` → hepsi (aktif + geçmiş), `false` → yalnızca geçmiş,
+  /// `null` → vazgeçildi.
+  ///
+  /// Yalnızca aktif sinyal DE varken sorulur. Aktif yoksa iki seçenek aynı
+  /// şeyi yapar ve gereksiz bir soru olur (HIG: her karar kullanıcının
+  /// dikkatinden harcar).
+  ///
+  /// Varsayılan yıkıcı olmayan seçenektir: liste sırasında "Yalnızca geçmiş"
+  /// önce gelir, "Hepsini sil" en yıkıcı olduğu için kırmızıdır.
+  static Future<bool?> _kapsamSor(
+    BuildContext context, {
+    required int gecmis,
+    required int aktif,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Kalıcı sil'),
+        content: Text(
+          'Geçmişte $gecmis, aktif $aktif bildirim var. '
+          'Ne silinsin?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Yalnızca geçmiş'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Hepsini sil ($gecmis+$aktif)',
+                style: TextStyle(color: context.c.loss)),
+          ),
+        ],
       ),
     );
   }
@@ -907,7 +993,10 @@ class _SignalsBottomSheet extends ConsumerWidget {
                         ),
                       ),
                     const Spacer(),
-                    if (signals.isNotEmpty)
+                    // Aktif sinyal varsa "Temizle" (pasife al). Hepsi zaten
+                    // geçmişteyse bu buton anlamsız — orada "Geçmişi Sil"
+                    // devreye girer (aşağıda, GEÇMİŞ başlığının yanında).
+                    if (active.isNotEmpty)
                       SandikTappable(
                         semanticLabel: 'Tüm sinyalleri temizle',
                         // Toplu ve geri alınamaz bir işlem: HIG "forgiveness"
@@ -918,28 +1007,20 @@ class _SignalsBottomSheet extends ConsumerWidget {
                         // silme işleminin sonucunu beklemeden çağrılıyordu ve
                         // hata olsa bile kullanıcı temizlenmiş sanıyordu.
                         onTap: () async {
-                          final onay = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Tümünü temizle'),
-                              content: Text(
-                                '${active.length} bildirim listeden '
-                                'kaldırılacak. Geri alınamaz.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Vazgeç'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: Text('Temizle',
-                                      style: TextStyle(color: context.c.loss)),
-                                ),
-                              ],
-                            ),
+                          final onay = await _onayAl(
+                            context,
+                            baslik: 'Tümünü temizle',
+                            // "Kaldırılacak" DEĞİL "geçmişe taşınacak":
+                            // bu işlem kalıcı silmez, kayıtlar GEÇMİŞ
+                            // bölümünde durur. Eski metin kullanıcıya
+                            // silineceklerini söylüyordu ve bu yüzden
+                            // "sildim ama duruyor" hissi doğuyordu.
+                            mesaj: '${active.length} bildirim geçmişe '
+                                'taşınacak. Kalıcı silmek için geçmişteki '
+                                '"Geçmişi Sil" düğmesini kullan.',
+                            eylem: 'Temizle',
                           );
-                          if (onay != true) return;
+                          if (!onay) return;
                           try {
                             await onDismissAll();
                             if (context.mounted) Navigator.pop(context);
@@ -999,15 +1080,92 @@ class _SignalsBottomSheet extends ConsumerWidget {
                           ],
                           if (history.isNotEmpty) ...[
                             const SizedBox(height: SandikSpace.xs),
+                            // Başlık + KALICI SİLME.
+                            //
+                            // "Tümünü Temizle" yalnızca `dismissed_at`
+                            // damgalar; kayıtlar burada durmaya devam eder ve
+                            // kullanıcı "sildim ama duruyor" diyordu
+                            // (kullanıcı isteği, 2026-09-01). Kalıcı silme
+                            // eylemi, sildiği şeyin YANINDA durmalı — ayrı bir
+                            // menüye gömülürse bulunamaz.
                             Padding(
                               padding: const EdgeInsets.fromLTRB(4, 6, 4, 8),
-                              child: Text(
-                                'GEÇMİŞ',
-                                style: context.t.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 1.2,
-                                    color: context.c.text58,
-                                    decoration: TextDecoration.none),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'GEÇMİŞ',
+                                    style: context.t.labelMedium?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.2,
+                                        color: context.c.text58,
+                                        decoration: TextDecoration.none),
+                                  ),
+                                  const Spacer(),
+                                  SandikTappable(
+                                    semanticLabel:
+                                        'Geçmişteki ${history.length} bildirimi '
+                                        'kalıcı olarak sil',
+                                    onTap: () async {
+                                      // Aktif sinyal de varsa kullanıcıya
+                                      // KAPSAM sorulur: yalnızca geçmiş mi,
+                                      // yoksa çanı tamamen boşalt mı.
+                                      // Aktif yoksa soru anlamsız — düz onay.
+                                      final hepsiniSil = active.isEmpty
+                                          ? false
+                                          : await _kapsamSor(
+                                              context,
+                                              gecmis: history.length,
+                                              aktif: active.length,
+                                            );
+                                      if (hepsiniSil == null) return;
+                                      if (!context.mounted) return;
+                                      if (!hepsiniSil) {
+                                        final onay = await _onayAl(
+                                          context,
+                                          baslik: 'Geçmişi sil',
+                                          mesaj: '${history.length} bildirim '
+                                              'KALICI olarak silinecek. '
+                                              'Geri alınamaz.',
+                                          eylem: 'Kalıcı Sil',
+                                        );
+                                        if (!onay) return;
+                                      }
+                                      try {
+                                        if (hepsiniSil) {
+                                          await onDeleteAll();
+                                        } else {
+                                          await onDeleteHistory();
+                                        }
+                                      } catch (_) {
+                                        if (context.mounted) {
+                                          _hataGoster(context);
+                                        }
+                                      }
+                                    },
+                                    // 44pt dokunma hedefi: metin ~18pt,
+                                    // dikey padding ile eşiğe çıkar.
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 12),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.delete_outline_rounded,
+                                              size: 15, color: context.c.loss),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Geçmişi Sil',
+                                            style: context.t.titleSmall
+                                                ?.copyWith(
+                                                    color: context.c.loss,
+                                                    decoration:
+                                                        TextDecoration.none),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             for (final a in history) ...[
