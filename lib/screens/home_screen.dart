@@ -54,13 +54,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _scrollToSignals() {
-    final signals = ref.read(signalProvider).valueOrNull ?? const [];
+    // NOT: Liste sheet'e PARAMETRE OLARAK GEÇİLMEZ.
+    //
+    // Eskiden `ref.read(...)` ile anlık kopya geçiliyordu ve sheet
+    // `StatelessWidget`'tı. Sheet ayrı bir route olduğu için provider
+    // güncellemeleri ona hiç ulaşmıyordu: kullanıcı bir bildirimi silince
+    // sunucuda silinse bile LİSTE EKRANDA DEĞİŞMİYORDU. "Silmiyor"
+    // şikâyetinin görünür sebebi buydu.
+    // Sheet artık `ConsumerWidget` ve provider'ı kendisi izliyor.
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _SignalsBottomSheet(
-        signals: signals,
         onDismiss: (id) => ref.read(signalProvider.notifier).dismiss(id),
         onDelete: (id) => ref.read(signalProvider.notifier).delete(id),
         onDismissAll: () => ref.read(signalProvider.notifier).dismissAll(),
@@ -784,23 +790,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 // ── Sinyaller Bottom Sheet ────────────────────────────────────────────────────
 
-class _SignalsBottomSheet extends StatelessWidget {
-  final List<SignalAlert> signals;
-  final void Function(String id) onDismiss;
-  final void Function(String id) onDelete;
-  final VoidCallback onDismissAll;
+/// Bildirim çanı sayfası.
+///
+/// **`ConsumerWidget` olmak ZORUNDA.** Sheet ayrı bir route'ta yaşar; listeyi
+/// parametre olarak alsaydı (eski hâli) provider güncellemeleri ona ulaşmaz ve
+/// silinen bildirim ekranda durmaya devam ederdi.
+class _SignalsBottomSheet extends ConsumerWidget {
+  /// Geriye `Future` döndürürler: başarısızlık çağırana ulaşmalı ki kullanıcı
+  /// "silindi" sanmasın (bkz. `SignalNotifier.dismiss`).
+  final Future<void> Function(String id) onDismiss;
+  final Future<void> Function(String id) onDelete;
+  final Future<void> Function() onDismissAll;
   final void Function(SignalAlert alert) onTap;
 
   const _SignalsBottomSheet({
-    required this.signals,
     required this.onDismiss,
     required this.onDelete,
     required this.onDismissAll,
     required this.onTap,
   });
 
+  /// Başarısız silmeyi kullanıcıya SÖYLE.
+  ///
+  /// Sessiz başarısızlık en kötü seçenek: kullanıcı sildiğini sanır, uygulama
+  /// yeniden açılınca kayıt geri gelir ve uygulamaya güveni sarsılır.
+  static void _hataGoster(BuildContext context) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Bildirim silinemedi. Bağlantını kontrol et.'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: context.c.loss,
+      ),
+    );
+  }
+
+  /// Silme çağrısını sarar: başarısızlıkta kullanıcıya haber verir.
+  ///
+  /// Provider iyimser güncelleme yapıp hata durumunda state'i geri alır
+  /// (bkz. `SignalNotifier.dismiss`), yani satır ekrana geri döner. Buradaki
+  /// görev o geri dönüşü AÇIKLAMAK — satırın sessizce geri gelmesi kullanıcıya
+  /// bir hata gibi görünürdü.
+  VoidCallback _guarded(BuildContext context, Future<void> Function() action) {
+    return () async {
+      try {
+        await action();
+      } catch (_) {
+        if (context.mounted) _hataGoster(context);
+      }
+    };
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final signals = ref.watch(signalProvider).valueOrNull ?? const [];
     final active = signals.where((a) => !a.isDismissed).toList();
     final history = signals.where((a) => a.isDismissed).toList();
     return DefaultTextStyle(
@@ -867,9 +910,42 @@ class _SignalsBottomSheet extends StatelessWidget {
                     if (signals.isNotEmpty)
                       SandikTappable(
                         semanticLabel: 'Tüm sinyalleri temizle',
-                        onTap: () {
-                          onDismissAll();
-                          Navigator.pop(context);
+                        // Toplu ve geri alınamaz bir işlem: HIG "forgiveness"
+                        // ilkesi onay ister. Tek satır silmede onay yok
+                        // (aşırıya kaçmamak için), ama "tümü" farklıdır.
+                        //
+                        // Sheet ARTIK HEMEN KAPANMIYOR: eskiden `Navigator.pop`
+                        // silme işleminin sonucunu beklemeden çağrılıyordu ve
+                        // hata olsa bile kullanıcı temizlenmiş sanıyordu.
+                        onTap: () async {
+                          final onay = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Tümünü temizle'),
+                              content: Text(
+                                '${active.length} bildirim listeden '
+                                'kaldırılacak. Geri alınamaz.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Vazgeç'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: Text('Temizle',
+                                      style: TextStyle(color: context.c.loss)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (onay != true) return;
+                          try {
+                            await onDismissAll();
+                            if (context.mounted) Navigator.pop(context);
+                          } catch (_) {
+                            if (context.mounted) _hataGoster(context);
+                          }
                         },
                         child: Text(
                           'Tümünü Temizle',
@@ -913,10 +989,10 @@ class _SignalsBottomSheet extends StatelessWidget {
                               faded: false,
                               onTap: () => onTap(a),
                               onDismiss: a.id != null
-                                  ? () => onDismiss(a.id!)
+                                  ? _guarded(context, () => onDismiss(a.id!))
                                   : null,
                               onDelete: a.id != null
-                                  ? () => onDelete(a.id!)
+                                  ? _guarded(context, () => onDelete(a.id!))
                                   : null,
                             ),
                             const SizedBox(height: SandikSpace.sm),
@@ -941,7 +1017,7 @@ class _SignalsBottomSheet extends StatelessWidget {
                                 onTap: () => onTap(a),
                                 onDismiss: null,
                                 onDelete: a.id != null
-                                    ? () => onDelete(a.id!)
+                                    ? _guarded(context, () => onDelete(a.id!))
                                     : null,
                               ),
                               const SizedBox(height: SandikSpace.sm),

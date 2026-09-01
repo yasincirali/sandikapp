@@ -913,6 +913,25 @@ class SupabaseService {
     );
   }
 
+  /// Birden çok bildirimi TEK istekte dismiss eder.
+  ///
+  /// "Tümünü sil" eskiden satır başına ayrı `update` atıyordu: 20 bildirim =
+  /// 20 istek. Yavaş olmasının yanında yarıda kesilmeye de açıktı — bir kısmı
+  /// silinip bir kısmı kalabiliyordu. `in_` filtresiyle tek atomik istek.
+  Future<void> dismissSignalNotifications(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _log.log<void>(
+      source: 'SupabaseService.dismissSignalNotifications',
+      table: 'signal_notifications',
+      op: 'UPDATE',
+      request: {'ids': ids.length, 'dismissed_at': 'now()'},
+      call: () => _db
+          .from('signal_notifications')
+          .update({'dismissed_at': DateTime.now().toIso8601String()})
+          .inFilter('id', ids),
+    );
+  }
+
   Future<void> deleteSignalNotification(String id) async {
     await _log.log<void>(
       source: 'SupabaseService.deleteSignalNotification',

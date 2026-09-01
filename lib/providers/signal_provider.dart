@@ -152,6 +152,15 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
 
   /// Kullanıcı bildirim geçmişinden bir kaydı sildi.
   /// Statü değişmedikçe yeniden push atılmaz.
+  ///
+  /// **İyimser (optimistic) güncelleme + geri alma.** Satır önce ekrandan
+  /// düşer (dokunma anında tepki), sunucu reddederse GERİ GELİR ve hata
+  /// fırlatılır — çağıran kullanıcıya söyleyebilsin.
+  ///
+  /// Eskiden `catch (_) {}` ile hata yutuluyor, ardından state yine de
+  /// "silindi" olarak yazılıyordu: sunucuda silinmemiş bir kayıt ekranda
+  /// silinmiş görünüyor, uygulama yeniden açılınca geri geliyordu.
+  /// Kullanıcının "silmiyor" dediği davranış buydu — sessiz başarısızlık.
   Future<void> dismiss(String id) async {
     final current = state.valueOrNull ?? const [];
     final alert = current.where((a) => a.id == id).firstOrNull;
@@ -159,37 +168,62 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
       AnalyticsService.instance
           .logSignalDismissed(ticker: alert.assetTicker);
     }
-    try {
-      await SupabaseService.instance.dismissSignalNotification(id);
-    } catch (_) {}
+
+    // İyimser: önce ekrandan düş.
     state = AsyncData([
       for (final a in current)
         if (a.id == id) a.copyWith(dismissedAt: DateTime.now()) else a,
     ]);
+
+    try {
+      await SupabaseService.instance.dismissSignalNotification(id);
+    } catch (e) {
+      // Sunucu reddetti — ekranı ESKİ haline al, yalan söyleme.
+      state = AsyncData(current);
+      rethrow;
+    }
   }
 
   /// Kalıcı sil (kullanıcı long-press veya delete ile).
+  ///
+  /// [dismiss] ile aynı iyimser + geri alma sözleşmesi.
   Future<void> delete(String id) async {
-    try {
-      await SupabaseService.instance.deleteSignalNotification(id);
-    } catch (_) {}
     final current = state.valueOrNull ?? const [];
     state = AsyncData(current.where((a) => a.id != id).toList());
+    try {
+      await SupabaseService.instance.deleteSignalNotification(id);
+    } catch (e) {
+      state = AsyncData(current);
+      rethrow;
+    }
   }
 
   /// Tümünü dismiss et (bell sheet'teki "Tümünü sil" butonu için).
+  ///
+  /// **Kısmi başarı diye bir şey YOK.** Herhangi biri başarısız olursa tüm
+  /// liste eski haline döner ve hata fırlatılır. Eskiden her satır ayrı
+  /// `try/catch` içindeydi ve hepsi yutuluyordu: yarısı silinip yarısı
+  /// kalabiliyor, ekran ise hepsini silinmiş gösteriyordu.
   Future<void> dismissAll() async {
     final current = state.valueOrNull ?? const [];
-    final active = current.where((a) => !a.isDismissed && a.id != null);
-    for (final a in active) {
-      try {
-        await SupabaseService.instance.dismissSignalNotification(a.id!);
-      } catch (_) {}
-    }
+    final active =
+        current.where((a) => !a.isDismissed && a.id != null).toList();
+    if (active.isEmpty) return;
+
     state = AsyncData([
       for (final a in current)
         if (!a.isDismissed) a.copyWith(dismissedAt: DateTime.now()) else a,
     ]);
+
+    try {
+      // Sırayla değil TOPLU: N satır için N istek atmak yavaş ve yarıda
+      // kesilmeye açıktı.
+      await SupabaseService.instance
+          .dismissSignalNotifications([for (final a in active) a.id!]);
+    } catch (e) {
+      state = AsyncData(current);
+      rethrow;
+    }
   }
 }
 
