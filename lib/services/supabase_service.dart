@@ -424,11 +424,35 @@ class SupabaseService {
 
   // ── Push tokens ───────────────────────────────────────────────────────────
 
+  /// Push token'ını yazar — cihaz başına TEK satır kalacak şekilde.
+  ///
+  /// [deviceId] verildiyse aynı cihazın ESKİ token satırları önce silinir.
+  /// Bu olmadan FCM token rotasyonu (yeniden kurulum, veri temizleme) tabloya
+  /// her seferinde bir satır daha ekliyordu ve edge function kullanıcının her
+  /// token'ına ayrı push gönderdiği için kullanıcı aynı telefonda tek sinyal
+  /// için birden çok bildirim alıyordu.
+  ///
+  /// Silme işlemi upsert'ten ÖNCE ve yeni token hariç tutularak yapılır:
+  /// sonra yapılsaydı az önce yazdığımız satırı silerdi.
   Future<void> upsertPushToken({
     required String userId,
     required String token,
     required String platform,
+    String? deviceId,
   }) async {
+    if (deviceId != null && deviceId.isNotEmpty) {
+      // Aynı cihazın bayat token'ları. Hata yutulur: temizlik yapılamasa bile
+      // yeni token yazılmalı — bildirim almamak, fazladan bildirimden kötüdür.
+      try {
+        await _db
+            .from('user_push_tokens')
+            .delete()
+            .eq('user_id', userId)
+            .eq('device_id', deviceId)
+            .neq('token', token);
+      } catch (_) {}
+    }
+
     await _log.log<void>(
       source: 'SupabaseService.upsertPushToken',
       table: 'user_push_tokens',
@@ -439,6 +463,7 @@ class SupabaseService {
           'user_id': userId,
           'token': token,
           'platform': platform,
+          if (deviceId != null && deviceId.isNotEmpty) 'device_id': deviceId,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         },
         onConflict: 'token',

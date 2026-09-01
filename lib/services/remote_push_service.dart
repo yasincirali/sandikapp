@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+import 'dart:math' show Random;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'notification_service.dart';
 import 'supabase_service.dart';
@@ -271,6 +273,37 @@ class RemotePushService {
     _openedAppSubscription = null;
   }
 
+  /// `shared_preferences` anahtarı — cihaz kimliği burada KALICI durur.
+  static const _deviceIdKey = 'push_device_id';
+
+  /// Cihaz başına kalıcı kimlik. Yoksa üretilir ve saklanır.
+  ///
+  /// **Neden gerekli.** FCM token'ı rotasyona uğrar (yeniden kurulum, veri
+  /// temizleme, uzun süre kullanılmama). Eski satır tabloda kalırsa kullanıcı
+  /// AYNI telefonda her rotasyon için bir fazla push alır — "tek sinyal, üç
+  /// bildirim" şikâyetinin kaynağı buydu.
+  ///
+  /// `_currentToken` bu işi göremez: yalnızca bellekte durur, uygulama
+  /// yeniden başlayınca `null` olur ve eski satır asla silinmez.
+  ///
+  /// Kimlik anonimdir — rastgele üretilir, cihazın donanım kimliğiyle
+  /// ilişkisi yoktur. Uygulama silinince kaybolur; o durumda sunucudaki
+  /// `(user_id, device_id)` tekilliği yeni kimlikle yeni satır açar, ama eski
+  /// token zaten FCM tarafından geçersiz kılınmış olur.
+  Future<String> _deviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString(_deviceIdKey);
+    if (existing != null && existing.isNotEmpty) return existing;
+    // `Random.secure()` — çakışma olasılığı pratikte sıfır. Kriptografik bir
+    // sır değil, yalnızca ayırt edici bir etiket.
+    final r = Random.secure();
+    final id = List.generate(16, (_) => r.nextInt(256))
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    await prefs.setString(_deviceIdKey, id);
+    return id;
+  }
+
   Future<void> _syncToken(String userId, String token) async {
     if (_currentToken != null &&
         _currentToken != token &&
@@ -282,10 +315,20 @@ class RemotePushService {
       }
     }
 
+    // Cihaz kimliği okunamazsa (prefs hatası) token yine yazılır: bildirim
+    // almamaktansa fazladan bildirim almak yeğdir. Sunucudaki tekillik
+    // kısıtı `device_id is not null` koşullu olduğu için bu satır kısıtı
+    // tetiklemez.
+    String? deviceId;
+    try {
+      deviceId = await _deviceId();
+    } catch (_) {}
+
     await SupabaseService.instance.upsertPushToken(
       userId: userId,
       token: token,
       platform: _platformName,
+      deviceId: deviceId,
     );
     _currentToken = token;
   }
