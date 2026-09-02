@@ -4,6 +4,7 @@ import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
 import '../models/signal_preference.dart';
 import '../models/user_model.dart';
+import '../models/watchlist_item.dart';
 import 'db_logger.dart';
 
 /// Tüm Supabase veri erişimi bu sınıf üzerinden geçer.
@@ -834,6 +835,54 @@ class SupabaseService {
   // ── Signal Notifications ─────────────────────────────────────────────────
 
   /// Kullanıcı için son N gün içindeki (default 30) tüm sinyalleri getir.
+  // ── Takip listesi ─────────────────────────────────────────────────────────
+  //
+  // `watchlist` tablosu `assets`'ten AYRIDIR ve öyle kalmalıdır: takip edilen
+  // varlık hiçbir portföy toplamına girmez (bkz. `0043_watchlist.sql`).
+  // Buradaki hiçbir metot `assets` tablosuna dokunmaz.
+
+  Future<List<WatchlistItem>> fetchWatchlist({required String userId}) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchWatchlist',
+      table: 'watchlist',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('watchlist')
+          .select()
+          .eq('user_id', userId)
+          .order('added_at', ascending: false),
+    );
+    return rows.map<WatchlistItem>((r) => WatchlistItem.fromMap(r)).toList();
+  }
+
+  /// Takibe alır ve eklenen satırı döndürür.
+  ///
+  /// Sunucudaki unique index (`watchlist_user_asset_uidx`) aynı varlığın iki
+  /// kez eklenmesini engeller; çakışmada PostgREST hata fırlatır ve çağıran
+  /// bunu kullanıcıya "zaten takipte" olarak gösterir.
+  Future<WatchlistItem> addToWatchlist(WatchlistItem item) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.addToWatchlist',
+      table: 'watchlist',
+      op: 'INSERT',
+      request: {'ticker': item.ticker, 'type': item.type.name},
+      call: () => _db.from('watchlist').insert(item.toInsertMap()).select(),
+    );
+    if (rows.isEmpty) return item;
+    return WatchlistItem.fromMap(rows.first);
+  }
+
+  Future<void> removeFromWatchlist(String id) async {
+    await _log.log<void>(
+      source: 'SupabaseService.removeFromWatchlist',
+      table: 'watchlist',
+      op: 'DELETE',
+      request: {'id': id},
+      call: () => _db.from('watchlist').delete().eq('id', id),
+    );
+  }
+
   Future<List<SignalAlert>> fetchSignalNotifications({
     required String userId,
     int limit = 100,
