@@ -342,6 +342,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(width: SandikSpace.sm),
                   const _BalanceToggleButton(),
                   const SizedBox(width: SandikSpace.sm),
+                  // NOT: Takip listesi düğmesi bilerek BURADA DEĞİL.
+                  // Bu satır dört düğmeyle zaten taşıyordu (yukarıdaki
+                  // Flexible+FittedBox o taşmanın çaresi). Beşinciyi eklemek
+                  // HIG'in "navigation bar'ı düğmeyle doldurma" kuralını
+                  // (Severity: High) çiğniyordu. Takip listesi bir VARLIK
+                  // LİSTESİDİR; yeri Portföy sekmesinin gövdesi
+                  // (`charts_screen.dart`), üst bar değil.
                   _SignalBadgeButton(onTap: _scrollToSignals),
                   const SizedBox(width: SandikSpace.sm),
                   SandikLogoutButton(

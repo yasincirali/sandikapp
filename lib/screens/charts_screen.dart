@@ -36,7 +36,8 @@ import '../widgets/dividend_dialog.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'comparison_screen.dart';
 import 'performance_screen.dart';
-import 'portfolio_performance_screen.dart';
+import 'watchlist_screen.dart';
+import '../providers/watchlist_provider.dart';
 import '../widgets/custom_loading_indicator.dart';
 
 enum _SortOrder {
@@ -239,30 +240,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       onChanged: (o) => setState(() => _sortOrder = o),
                     ),
                     const SizedBox(width: 8),
-                    CupertinoButton(
-                      minimumSize: Size.zero,
-                      padding: EdgeInsets.zero,
-                      onPressed: () => Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                            builder: (_) =>
-                                PortfolioPerformanceScreen(initialView: _view)),
-                      ),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: context.c.overlay,
-                          borderRadius: BorderRadius.circular(SandikRadius.md),
-                          border: Border.all(color: context.c.overlay),
-                        ),
-                        child: Center(
-                          child: Icon(Icons.show_chart_rounded,
-                              color: context.c.amberText, size: 22),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+                    // NOT: Performans ekranına giden düğme KALDIRILDI —
+                    // alt gezinme çubuğunda zaten "Performans" sekmesi var ve
+                    // aynı ekranı açıyordu. Bu satır dört kontrol taşıyordu.
+                    //
+                    // Kaybedilen tek şey: düğme `initialView: _view` geçirip
+                    // Portföy'deki ortak seçimini taşıyordu; sekme her zaman
+                    // varsayılanla ("Ben") açılır. Kullanıcı seçimi performans
+                    // ekranında yeniden yapabilir.
                     // Karşılaştırma — portföyde OLMAYAN varlıkları da
                     // kıyaslayan keşif aracı. Performans ekranından ayrı
                     // durur: o "bende ne var", bu "almasaydım ne olurdu".
@@ -429,6 +414,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                                   ],
                                 );
                               })(partnerAssetsAsync.valueOrNull!)),
+                        // Takip listesi girişi — sahip OLDUKLARIN'ın hemen
+                        // altında. "Sahip olduklarım" ile "izlediklerim" aynı
+                        // zihinsel kategoridedir (varlık listesi), bu yüzden
+                        // komşu dururlar; ama araya ayraç girer ve bu satır
+                        // toplamların ALTINDA kalır — izlenen varlığın hiçbir
+                        // toplama girmediği yerleşimden de okunur.
+                        const SizedBox(height: 32),
+                        const _WatchlistEntry(),
                       ],
                     ),
                   ),
@@ -436,6 +429,91 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Takip Listesi Girişi ─────────────────────────────────────────────────────
+
+/// Portföy listesinin altındaki takip listesi satırı.
+///
+/// ## Neden burada (üst barda ikon DEĞİL)
+/// Önce Ana ekranın üst barına ikon olarak konmuştu. Orası zaten dört
+/// düğmeyle taşıyordu — satırdaki `Flexible`+`FittedBox` sarmalayıcısı o
+/// taşmanın çaresi olarak eklenmişti. Beşinci düğme HIG'in navigation bar
+/// kuralını çiğniyordu ("Don't overcrowd with too many buttons", Severity:
+/// High). Portföy ekranının üst barı da dört kontrol taşıyor; oraya taşımak
+/// sorunu yalnızca yer değiştirirdi.
+///
+/// Takip listesi bir İKON değil, bir VARLIK LİSTESİDİR. Doğru yeri, sahip
+/// olunan varlıkların bittiği yer: aynı zihinsel kategori, komşu konum.
+///
+/// ## Neden liste burada AÇILMIYOR
+/// Satır yalnızca bir giriş; içerik tam sayfada açılır. Takip listesini bu
+/// ekrana gömmek iki farklı veri kümesini (sahip olunan / izlenen) tek
+/// kaydırma alanında birleştirirdi — kullanıcı ikisinin toplamının ekranın
+/// üstündeki bakiyeye girdiğini sanabilirdi. Bu ekranın DEĞİŞMEZİ toplamların
+/// yalnızca `assets`'ten gelmesidir.
+class _WatchlistEntry extends ConsumerWidget {
+  const _WatchlistEntry();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(watchlistCountProvider);
+
+    return SandikTappable(
+      semanticLabel: count > 0
+          ? 'Takip listesi, $count varlık. Portföye dahil değil.'
+          : 'Takip listesi, boş',
+      onTap: () => pushGuarded(
+        context,
+        adaptiveRoute(builder: (_) => const WatchlistScreen()),
+      ),
+      child: Container(
+        // 44pt HIG dokunma hedefi.
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(SandikRadius.md),
+          // Dolgu YOK, yalnızca kenarlık: portföy satırları dolu zeminli.
+          // Görsel ağırlık farkı "bu sahip olduğun bir şey değil" der.
+          border: Border.all(color: context.c.amberFill.withValues(alpha: 0.30)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              count > 0 ? Icons.visibility_rounded : Icons.visibility_outlined,
+              size: 20,
+              color: context.c.amberText,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Takip Listesi',
+                    style: context.t.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600, color: context.c.text90),
+                  ),
+                  Text(
+                    count > 0
+                        ? '$count varlık · portföye dahil değil'
+                        : 'Almadan önce izle',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text36, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right_rounded,
+                size: 20, color: context.c.text36),
+          ],
         ),
       ),
     );
