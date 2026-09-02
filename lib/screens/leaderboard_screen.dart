@@ -183,6 +183,18 @@ class _RoiInfoSheet extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const _InfoBlock(
+              icon: Icons.savings_outlined,
+              title: 'Para yatırmak sıralamayı değiştirmez',
+              body: 'Ölçülen tek şey, varlıklarının piyasada ne kadar değer '
+                  'kazandığı. Dönem içinde yaptığın alım ve satımlar oranı '
+                  'ETKİLEMEZ.\n\n'
+                  'Hesap, bugünkü varlıklarını dönem başından beri tutmuşsun '
+                  'gibi yapılır. Bu yüzden portföyünü büyütmek getirini '
+                  'yükseltmez — 1 lot da tutsan 10.000 lot da tutsan aynı '
+                  'yüzdeyi görürsün.',
+            ),
+            const SizedBox(height: 12),
+            const _InfoBlock(
               icon: Icons.groups_outlined,
               title: 'Herkes aynı şekilde ölçülür',
               body: 'Sen ve ortakların aynı formülle, aynı anda, aynı '
@@ -222,10 +234,10 @@ class _RoiInfoSheet extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              'Hesap, bugünkü varlıklarını dönem başından beri tutmuş '
-              'gibi yapılır; dönem içindeki alım/satımlar sonucu '
-              'çarpıtmasın diye. Fiyat geçmişi bulunamayan portföyler '
-              'sıralamada gösterilmez.',
+              'Dönem içinde bir varlığı tamamen satıp yerine başkasını '
+              'aldıysan, sonuç "yeni varlığı dönem başından beri tutsaydın" '
+              'senaryosunu gösterir. Fiyat geçmişi bulunamayan portföyler '
+              'sıralamada yer almaz.',
               style: context.t.labelMedium?.copyWith(
                 letterSpacing: 0,
                 color: context.c.text36,

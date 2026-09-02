@@ -39,11 +39,36 @@ class TopGainerAllocation {
 /// yüzde kaç değişti?" Seri `getPortfolioHistory(..., simulate: true)` ile
 /// üretilir: bugünkü net pozisyon dönemin tamamına yayılır.
 ///
-/// ## Neden simülasyon
-/// Gerçek geçmiş modunda bir lot'un `addedDate`'inden önceki slotlara 0
-/// yazılır. Dönem başı 0 olunca bölme tanımsız kalır ve dönem içinde alım
-/// yapan HERKES sıralamadan düşerdi. Simülasyon herkesi aynı pencerede
-/// ölçer. (Takip listesi grafiği de aynı gerekçeyle simülasyon kullanıyor.)
+/// ## Neden simülasyon — ölçtüğümüz şey SAF PİYASA HAREKETİ
+/// Simülasyon, bugünkü net pozisyonu dönemin tamamına yayar. Bunun doğrudan
+/// sonucu: **dönem içindeki alım/satımlar oranı ETKİLEMEZ.** Ölçüldü:
+///
+/// ```
+///   A: 10 adet, hiç dokunmadı        → ilk 3238, son 3000 → −%7,34
+///   B: 10 adet + 15 gün önce 10 daha → ilk 6475, son 6000 → −%7,34
+///   C: 20 al, 10 sat (net 10)                             → −%7,34
+///   D: 1 adet / 10.000 adet                               → −%7,34
+/// ```
+///
+/// Para yatırmak, çekmek ya da portföyü büyütmek sıralamayı değiştirmez;
+/// yalnızca piyasanın o varlıklara ne yaptığı ölçülür. Yarışın sorusu budur:
+/// "kim daha çok para koydu" değil, "kimin portföyü daha çok değer kazandı".
+///
+/// Gerçek geçmiş modu bunu YAPAMAZDI: `addedDate`'ten önceki slotlara 0
+/// yazıldığı için dönem içinde alım yapan herkes ya sıralamadan düşerdi
+/// (dönem başı 0 → bölme tanımsız) ya da yeni para girişi getiri gibi
+/// görünürdü. (Takip listesi grafiği de aynı gerekçeyle simülasyon kullanıyor.)
+///
+/// ## Kabul edilen sınır: varlık DEĞİŞTİRME
+/// Simülasyon bugünkü kompozisyonu geçmişe yansıtır. Dönem içinde A'yı satıp
+/// B aldıysan, sonuç "hep B tutsaydım" senaryosudur — gerçekleşen getirin
+/// değil. Ölçüldü: 15 gün önce THYAO→GARAN geçen biri ile hep GARAN tutan
+/// biri aynı çıkıyor (%127,62).
+///
+/// Bu bilinçli bir tercih: alternatifi zaman ağırlıklı getiri (TWR) olurdu
+/// ve o da her lot için tarihsel nakit akışı ister; veri modeli taşımıyor.
+/// Ayrıca TWR'de dönem içi işlem YİNE oranı etkilemezdi, sadece daha doğru
+/// bir "ne zaman neye sahiptin" ağırlıklandırması yapardı.
 ///
 /// ## Neden tek formül (2026-09-02'de düzeltildi)
 /// Önceki hesap İKİ ayrı formül kullanıyordu ve hangisinin çalıştığı KİŞİYE

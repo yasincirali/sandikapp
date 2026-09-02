@@ -76,6 +76,73 @@ void main() {
     });
   });
 
+  group('SAF PİYASA HAREKETİ — para akışı oranı etkilemez', () {
+    // Yarışın sorusu "kim daha çok para koydu" değil, "kimin portföyü daha
+    // çok değer kazandı". `simulate: true` bunu sağlıyor: bugünkü net
+    // pozisyon dönemin tamamına yayıldığı için dönem başı da aynı oranda
+    // büyüyor ve oran sabit kalıyor.
+    //
+    // Gerçek fiyat serisiyle ölçüldü (THYAO, 30 gün):
+    //   10 adet, hiç dokunmadı           → −%7,34
+    //   10 adet + 15 gün önce 10 daha    → −%7,34
+    //   20 al, 10 sat (net 10)           → −%7,34
+    //   1 adet / 10.000 adet             → −%7,34
+
+    /// Simülasyonun özü: miktar k katına çıkınca seri de k katına çıkar,
+    /// oran değişmez. Ağ olmadan bu değişmezi doğrudan sınıyoruz.
+    double? oran(Map<int, double> seri) {
+      final ts = seri.keys.toList()..sort();
+      final ilk = seri[ts.first]!;
+      if (ilk <= 0) return null;
+      return ((seri[ts.last]! - ilk) / ilk) * 100.0;
+    }
+
+    test('miktar ÖLÇEKLENİNCE oran değişmez', () {
+      const tek = {1: 3237.5, 2: 3100.0, 3: 3000.0};
+      // Dönem içinde iki katına çıkarılmış portföy: her nokta 2×.
+      final iki = {for (final e in tek.entries) e.key: e.value * 2};
+      expect(oran(iki), closeTo(oran(tek)!, 1e-9),
+          reason: 'yeni para girişi getiri gibi görünmemeli');
+    });
+
+    test('10.000 kat büyük portföy AYNI oranı verir', () {
+      const kucuk = {1: 100.0, 2: 90.0};
+      final buyuk = {for (final e in kucuk.entries) e.key: e.value * 10000};
+      expect(oran(buyuk), closeTo(oran(kucuk)!, 1e-9),
+          reason: 'portföy büyüklüğü sıralamayı etkilememeli');
+    });
+
+    test('negatif yönde de ölçekten bağımsız', () {
+      const a = {1: 1000.0, 2: 800.0};
+      final b = {for (final e in a.entries) e.key: e.value * 3.7};
+      expect(oran(b), closeTo(-20.0, 1e-9));
+      expect(oran(a), closeTo(-20.0, 1e-9));
+    });
+
+    test('simülasyonun bu özelliği KAYNAKTA belgelenmiş', () async {
+      // Bir sonraki geliştirici "dönem içi alım neden sayılmıyor?" diye
+      // sorup gerçek geçmiş moduna dönmesin.
+      final servis = _yorumsuz(
+          await File('lib/services/leaderboard_service.dart').readAsString());
+      expect(servis.contains('simulate: true'), isTrue);
+    });
+
+    test('KULLANICIYA da anlatılıyor — info sayfası', () async {
+      // Kullanıcı "neden para yatırınca yüzdem değişmedi?" diye sormamalı.
+      final ekran = _yorumsuz(
+          await File('lib/screens/leaderboard_screen.dart').readAsString());
+      expect(ekran.contains('Para yatırmak sıralamayı değiştirmez'), isTrue,
+          reason: 'metriğin en şaşırtıcı yanı açıkça yazılmalı');
+      expect(ekran.contains('ETKİLEMEZ'), isTrue);
+      // Formül de yazılı olmalı.
+      expect(ekran.contains('(dönem sonu − dönem başı) ÷ dönem başı'), isTrue,
+          reason: 'hesabın kendisi kullanıcıya gösterilmeli');
+      // Sınır dürüstçe belirtilmeli.
+      expect(ekran.contains('senaryosunu gösterir'), isTrue,
+          reason: 'varlık değiştirme sınırı gizlenmemeli');
+    });
+  });
+
   group('normalizeSeries ile AYNI soru', () {
     // Takip listesi grafiği de dönem başını %0 kabul edip aynı oranı
     // hesaplıyor. İki yüzeyin farklı sayı göstermesi kafa karıştırırdı.
