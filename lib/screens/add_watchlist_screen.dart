@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
@@ -11,21 +13,25 @@ import 'package:flutter/material.dart'
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/watchlist_provider.dart';
-import '../services/tefas_service.dart';
+import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import 'paywall_screen.dart';
 
 /// Takibe alınacak varlığı seçme ekranı.
 ///
-/// Arama kaynakları `add_asset_screen` ile AYNI: `bist100StocksMap`,
-/// `TefasService.fetchAllFunds`, `goldTickerMap`. İki ekranın farklı varlık
-/// kümesi göstermesi "neden orada var burada yok" sorusunu doğururdu.
+/// Arama, karşılaştırma ekranıyla AYNI `SymbolSearchService` üzerinden
+/// yapılır: BIST hisseleri, TEFAS fonları (kurucu-only fonlar dahil),
+/// altın ürünleri, döviz, **endeksler** ve **emtia**.
+///
+/// Eskiden bu ekran kendi listesini tutuyordu ve iki ekran ayrışmıştı —
+/// endeksler (XU100/XU030) ile emtia (ons altın, gümüş, Brent/WTI petrol,
+/// doğalgaz) takip listesine HİÇ eklenemiyordu. Tek kaynak bu ayrışmayı
+/// yapısal olarak engelliyor.
 ///
 /// **Portföyde olan varlık ayrı grupta ve pasif gösterilir** — aynı şeyi hem
 /// sahiplenip hem takip etmenin anlamı yok, ama gizlemek de yanlış olurdu
@@ -70,95 +76,116 @@ class _Candidate {
 class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
   final _ctrl = TextEditingController();
   String _q = '';
-  List<TefasFund> _funds = const [];
-  bool _fundsLoading = true;
+  List<_Candidate> _results = const [];
+  bool _loading = true;
+
+  /// Yalnızca EN SON aramanın sonucu uygulanır.
+  ///
+  /// Kullanıcı hızlı yazarken istekler sırasız dönebilir; sayaç olmadan
+  /// eski bir sorgunun sonucu yenisinin üstüne yazılabilirdi.
+  int _seq = 0;
+
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _loadFunds();
-  }
-
-  Future<void> _loadFunds() async {
-    try {
-      final list = await TefasService.instance.fetchAllFunds();
-      if (mounted) {
-        setState(() {
-          _funds = list;
-          _fundsLoading = false;
-        });
-      }
-    } catch (_) {
-      // Fon listesi çekilemedi — hisse/döviz/altın aramaya devam edilir.
-      if (mounted) setState(() => _fundsLoading = false);
-    }
+    _ara(''); // boş sorgu → popüler öneriler
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _ctrl.dispose();
     super.dispose();
   }
 
-  /// Tüm kaynaklardan arama. Boş sorguda hisse listesiyle başlanır —
-  /// boş ekran yerine hemen gezilebilir bir liste.
-  List<_Candidate> get _results {
-    final q = _q.trim().toLowerCase();
-    final out = <_Candidate>[];
+  void _sorguDegisti(String v) {
+    setState(() => _q = v);
+    // 250 ms: her tuş vuruşunda TEFAS'a gitmemek için. Yerleşik listeler
+    // zaten bellekte ama fon araması ağa çıkabiliyor.
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 250), () => _ara(v));
+  }
 
-    bool hit(String a, String b) =>
-        q.isEmpty || a.toLowerCase().contains(q) || b.toLowerCase().contains(q);
+  Future<void> _ara(String q) async {
+    final id = ++_seq;
+    if (mounted) setState(() => _loading = true);
+    try {
+      final hits = await SymbolSearchService.instance.search(q);
+      if (!mounted || id != _seq) return;
+      setState(() {
+        _results = [
+          for (final h in hits)
+            if (_toCandidate(h) case final c?) c,
+        ];
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted || id != _seq) return;
+      // Arama başarısızsa liste boş kalır; kullanıcı yeniden yazabilir.
+      setState(() => _loading = false);
+    }
+  }
 
-    for (final e in bist100StocksMap.entries) {
-      if (hit(e.key, e.value)) {
-        out.add(_Candidate(
-            ticker: e.key,
-            name: e.value,
-            type: AssetType.hisse,
-            currency: 'TRY'));
-      }
-    }
-    for (final f in _funds) {
-      if (hit(f.code, f.name)) {
-        out.add(_Candidate(
-            ticker: 'TEFAS:${f.code}',
-            name: f.name,
-            type: AssetType.fon,
-            currency: 'TRY'));
-      }
-    }
-    for (final e in goldTickerMap.entries) {
-      if (hit(e.value, e.key)) {
-        out.add(_Candidate(
-          ticker: e.value,
-          name: e.key,
-          type: AssetType.altin,
-          subCategory: e.key,
-          // Ons altın Yahoo'dan USD gelir; gram/çeyrek TRY.
-          currency: e.value == 'XAUUSD=X' ? 'USD' : 'TRY',
-        ));
-      }
-    }
-    const doviz = [
-      (t: 'USDTRY=X', n: 'ABD Doları', s: 'USD'),
-      (t: 'EURTRY=X', n: 'Euro', s: 'EUR'),
-      (t: 'GBPTRY=X', n: 'İngiliz Sterlini', s: 'GBP'),
-    ];
-    for (final d in doviz) {
-      if (hit(d.s, d.n)) {
-        out.add(_Candidate(
-          ticker: d.t,
-          name: d.n,
-          type: AssetType.doviz,
-          subCategory: d.s,
-          // Kur çiftinin fiyatı TRY cinsindendir (USDTRY=X → ₺).
-          currency: 'TRY',
-        ));
-      }
-    }
+  /// Arama sonucunu `SymbolHit` → `_Candidate` olarak çevirir.
+  ///
+  /// Kaynak `SymbolSearchService` — karşılaştırma ekranıyla AYNI servis.
+  /// Kendi listesini tutmak, iki ekranın farklı varlık kümesi göstermesine
+  /// yol açıyordu: takip listesinde endeksler (XU100/XU030) ve emtia
+  /// (ons altın, gümüş, Brent/WTI petrol, doğalgaz) HİÇ çıkmıyordu, ayrıca
+  /// TEFAS'ın liste API'sinde görünmeyen kurucu-only fonlar (ALE, YLB)
+  /// aranamıyordu.
+  ///
+  /// Tür ve para birimi ticker biçiminden çıkarılır — `SymbolHit` bunları
+  /// taşımaz çünkü karşılaştırma ekranının ihtiyacı yok.
+  static _Candidate? _toCandidate(SymbolHit h) {
+    // Portföy serileri (PORTFOLIO:*) sanal tickerlardır; takip edilemezler.
+    if (PortfolioSeries.isPortfolio(h.ticker)) return null;
 
-    // Uzun listeyi kırp — 60 sonuç zaten kaydırılamayacak kadar çok.
-    return out.take(60).toList();
+    final t = h.ticker;
+
+    if (t.startsWith('TEFAS:')) {
+      return _Candidate(
+          ticker: t, name: h.name, type: AssetType.fon, currency: 'TRY');
+    }
+    if (t.startsWith('ALTIN_')) {
+      return _Candidate(
+        ticker: t,
+        name: h.name,
+        type: AssetType.altin,
+        subCategory: h.name,
+        currency: 'TRY',
+      );
+    }
+    if (t == 'XAUUSD=X') {
+      // Ons altın Yahoo'dan USD gelir.
+      return _Candidate(
+        ticker: t,
+        name: h.name,
+        type: AssetType.altin,
+        subCategory: h.name,
+        currency: 'USD',
+      );
+    }
+    if (t.endsWith('TRY=X')) {
+      // Kur çiftinin fiyatı TRY cinsindendir (USDTRY=X → ₺).
+      return _Candidate(
+        ticker: t,
+        name: h.name,
+        type: AssetType.doviz,
+        subCategory: t.replaceAll('TRY=X', ''), // USD / EUR / GBP
+        currency: 'TRY',
+      );
+    }
+    if (t.endsWith('=F')) {
+      // Emtia vadelileri USD kote; `getSymbolHistory` günün kuruyla çevirir.
+      return _Candidate(
+          ticker: t, name: h.name, type: AssetType.emtia, currency: 'USD');
+    }
+    // Kalanlar BIST: hisseler ve endeksler (`XU100.IS`).
+    return _Candidate(
+        ticker: t, name: h.name, type: AssetType.hisse, currency: 'TRY');
   }
 
   @override
@@ -191,10 +218,10 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
               children: [
                 _header(context),
                 _searchField(context),
-                if (_fundsLoading)
+                if (_loading)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
-                    child: Text('Fon listesi yükleniyor…',
+                    child: Text('Aranıyor…',
                         style: context.t.bodySmall
                             ?.copyWith(color: context.c.text36)),
                   ),
@@ -202,11 +229,13 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                     children: [
-                      if (available.isEmpty && inPortfolio.isEmpty)
+                      if (available.isEmpty && inPortfolio.isEmpty && !_loading)
                         Padding(
                           padding: const EdgeInsets.only(top: 40),
                           child: Text(
-                            'Sonuç yok.',
+                            _q.trim().isEmpty
+                                ? 'Aramak için yazmaya başla.'
+                                : '"${_q.trim()}" için sonuç yok.',
                             textAlign: TextAlign.center,
                             style: context.t.bodyMedium
                                 ?.copyWith(color: context.c.text58),
@@ -276,8 +305,8 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: CupertinoTextField(
           controller: _ctrl,
-          onChanged: (v) => setState(() => _q = v),
-          placeholder: 'Hisse, fon, döviz veya altın ara',
+          onChanged: _sorguDegisti,
+          placeholder: 'Hisse, fon, endeks, emtia, döviz veya altın ara',
           placeholderStyle:
               context.t.bodyMedium?.copyWith(color: context.c.text36),
           style: context.t.bodyMedium?.copyWith(color: context.c.text90),
