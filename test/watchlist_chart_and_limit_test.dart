@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
@@ -252,6 +253,117 @@ void main() {
           isTrue,
           reason: 'ham seri doğrudan normalize edilirse tek bir bozuk sembol '
               'tüm kıyas çizgisini düşürür');
+    });
+  });
+
+  group('Y ekseni — etiketler çakışmaz', () {
+    // ## Bug (üretimde görüldü): "+15%" ile "+16%" üst üste bindi
+    //
+    // `fl_chart`'a `interval` verilmezse aralığı kendisi seçiyor ve dar
+    // bantlarda etiketleri birbirine değecek kadar sıkıştırabiliyor. Ayrıca
+    // ham `span/n` adımı yuvarlak olmadığı için okunması zor değerler
+    // çıkıyordu.
+    //
+    // Çözüm `portfolio_performance_screen`'deki desenin aynısı: adımı
+    // 1/2/2,5/5/10 tabanına yuvarla, sınırları o adımın katına oturt.
+
+    /// Verilen eksende üretilecek etiket metinleri.
+    List<String> etiketler(
+        ({double min, double max, double interval, int ondalik}) e) {
+      final out = <String>[];
+      for (var v = e.min; v <= e.max + 1e-9; v += e.interval) {
+        final r = (v / e.interval).round() * e.interval;
+        out.add('${r >= 0 ? '+' : ''}${r.toStringAsFixed(e.ondalik)}%');
+      }
+      return out;
+    }
+
+    test('görseldeki durum artık çakışmıyor', () {
+      // Ekran görüntüsündeki bant: yaklaşık −1% .. +16%, pay eklenmiş hâli.
+      final e = yuzdeEkseni(-3.31, 18.51);
+      final ets = etiketler(e);
+      expect(ets.toSet().length, ets.length,
+          reason: 'her etiket benzersiz olmalı: $ets');
+      expect(e.interval, 10.0, reason: 'adım yuvarlak olmalı');
+    });
+
+    test('etiketler HER bantta benzersiz', () {
+      const bantlar = [
+        (-3.31, 18.51),
+        (-0.5, 16.2),
+        (0.0, 0.8),
+        (-0.05, 0.05),
+        (-40.0, 120.0),
+        (2.0, 2.4),
+      ];
+      for (final (alt, ust) in bantlar) {
+        final ets = etiketler(yuzdeEkseni(alt, ust));
+        expect(ets.toSet().length, ets.length,
+            reason: 'bant $alt..$ust için çakışma: $ets');
+      }
+    });
+
+    test('veri HER ZAMAN eksenin içinde kalır', () {
+      // En kritik değişmez: sınır veriyi kesiyorsa çizgi kırpılır ve
+      // grafik yalan söyler. (`nice_axis_test` ile aynı kural.)
+      const bantlar = [
+        (-3.31, 18.51),
+        (0.0, 0.8),
+        (-40.0, 120.0),
+        (-0.05, 0.05),
+      ];
+      for (final (alt, ust) in bantlar) {
+        final e = yuzdeEkseni(alt, ust);
+        expect(e.min, lessThanOrEqualTo(alt + 1e-9),
+            reason: 'alt sınır veriyi kesiyor: $alt..$ust');
+        expect(e.max, greaterThanOrEqualTo(ust - 1e-9),
+            reason: 'üst sınır veriyi kesiyor: $alt..$ust');
+      }
+    });
+
+    test('adım 1/2/2,5/5/10 tabanına oturur', () {
+      for (final (alt, ust) in const [
+        (-3.31, 18.51),
+        (0.0, 100.0),
+        (0.0, 3.0),
+      ]) {
+        final adim = yuzdeEkseni(alt, ust).interval;
+        // Adımı 10'un kuvvetine böl; 1/2/2,5/5/10'dan biri çıkmalı.
+        final us =
+            math.pow(10, (math.log(adim) / math.ln10).floor()).toDouble();
+        final oran = adim / us;
+        expect([1.0, 2.0, 2.5, 5.0, 10.0].any((x) => (x - oran).abs() < 1e-9),
+            isTrue,
+            reason: 'adım yuvarlak değil: $adim (oran $oran)');
+      }
+    });
+
+    test('dar bantta ONDALIK gösterilir', () {
+      // Adım 1'den küçükken tam sayı etiketi tekrar ederdi ("+0%, +0%").
+      final e = yuzdeEkseni(0.0, 0.8);
+      expect(e.ondalik, greaterThan(0),
+          reason: 'adım ${e.interval} için tam sayı etiket yetersiz');
+    });
+
+    test('geniş bantta ondalık YOK — gürültü olurdu', () {
+      expect(yuzdeEkseni(-40.0, 120.0).ondalik, 0);
+    });
+
+    test('düz seri (min == max) çökmez', () {
+      final e = yuzdeEkseni(5.0, 5.0);
+      expect(e.max, greaterThan(e.min));
+      expect(e.interval, greaterThan(0));
+    });
+
+    test('grafik bu ekseni KULLANIR', () async {
+      // Fonksiyon doğru olsa da bağlanmazsa bug sürerdi.
+      final chart = _yorumsuz(
+          await File('lib/widgets/watchlist_chart.dart').readAsString());
+      expect(chart.contains('yuzdeEkseni('), isTrue);
+      expect(chart.contains('interval: eksen.interval'), isTrue,
+          reason: 'adım fl_chart\'a açıkça verilmezse kendi seçer');
+      expect(chart.contains('horizontalInterval: eksen.interval'), isTrue,
+          reason: 'ızgara çizgileri etiketlerle aynı adımda olmalı');
     });
   });
 

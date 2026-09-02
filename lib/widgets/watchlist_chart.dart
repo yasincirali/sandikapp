@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -164,14 +166,22 @@ class WatchlistChart extends StatelessWidget {
     final span = (maxY - minY).abs() < 1e-9 ? 1.0 : (maxY - minY);
     final pad = span * 0.12;
 
+    // Eksen sınırları ve adımı YUVARLAK sayılara oturtulur.
+    //
+    // Aksi halde `fl_chart` aralığı kendi seçiyor ve dar bantlarda etiketler
+    // birbirine değecek kadar sıkışıyordu (üretimde görüldü: "+15%" ile
+    // "+16%" üst üste bindi). `portfolio_performance_screen` aynı sorunu
+    // aynı yöntemle çözüyor — burada da o desen uygulanıyor.
+    final eksen = yuzdeEkseni(minY - pad, maxY + pad);
+
     return SizedBox(
       height: 210,
       child: LineChart(
         LineChartData(
           minX: minX,
           maxX: maxX,
-          minY: minY - pad,
-          maxY: maxY + pad,
+          minY: eksen.min,
+          maxY: eksen.max,
           lineBarsData: bars,
           // Sıfır çizgisi = dönem başı. Olmadan yüzdelerin neye göre
           // okunacağı belirsiz kalır.
@@ -188,6 +198,9 @@ class WatchlistChart extends StatelessWidget {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
+            // Izgara çizgileri etiketlerle AYNI adımda olmalı; ayrışırsa
+            // çizgiler etiketsiz, etiketler çizgisiz kalır.
+            horizontalInterval: eksen.interval,
             getDrawingHorizontalLine: (_) =>
                 FlLine(color: p.hairline, strokeWidth: 1),
           ),
@@ -203,10 +216,19 @@ class WatchlistChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 42,
-                getTitlesWidget: (value, meta) => Text(
-                  '${value >= 0 ? '+' : ''}${value.toStringAsFixed(0)}%',
-                  style: TextStyle(fontSize: 10, color: p.text58),
-                ),
+                // Adım AÇIKÇA verilir — verilmezse fl_chart kendi seçer ve
+                // dar bantlarda etiketleri üst üste bindirir.
+                interval: eksen.interval,
+                getTitlesWidget: (value, meta) {
+                  // Kayan nokta hatası: 15.000000000000002 gibi değerler
+                  // ondalık gösterimde "15,0" yerine gürültü üretir.
+                  final v = (value / eksen.interval).round() * eksen.interval;
+                  return Text(
+                    '${v >= 0 ? '+' : ''}'
+                    '${v.toStringAsFixed(eksen.ondalik).replaceAll('.', ',')}%',
+                    style: TextStyle(fontSize: 10, color: p.text58),
+                  );
+                },
               ),
             ),
           ),
@@ -249,6 +271,65 @@ class WatchlistChart extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Yüzde ekseni için yuvarlak sınırlar + adım.
+///
+/// ## Neden gerekli
+/// `fl_chart`'a `interval` verilmezse aralığı kendisi seçer ve dar bantlarda
+/// etiketleri birbirine değecek kadar sıkıştırabiliyor (üretimde görüldü:
+/// "+15%" ile "+16%" üst üste bindi). Ayrıca ham `span/n` adımı yuvarlak
+/// olmadığı için "+3%, +6%, +9%" yerine "+2,7%, +5,4%" gibi okunması zor
+/// değerler çıkabiliyor.
+///
+/// Çözüm `portfolio_performance_screen`'deki desenin aynısı: adımı
+/// 1/2/2,5/5/10 tabanına yuvarla, sınırları o adımın katına oturt. Böylece
+/// hem etiketler seyrek kalır hem de yuvarlak sayılara denk gelir.
+///
+/// [hedefBolme] kaç aralık istendiği (etiket sayısı = bölme + 1). 210pt'lik
+/// bir grafikte 4 bölme = 5 etiket; daha fazlası sıkışık görünüyor.
+///
+/// **Veri her zaman eksenin içinde kalır**: sınırlar dışa doğru yuvarlanır
+/// (`floor`/`ceil`), asla veriyi kesecek şekilde içeri değil.
+({double min, double max, double interval, int ondalik}) yuzdeEkseni(
+  double alt,
+  double ust, {
+  int hedefBolme = 4,
+}) {
+  // Dejenere aralık: tek noktalı ya da düz seri.
+  if (!(ust > alt)) {
+    final merkez = alt;
+    return (min: merkez - 1, max: merkez + 1, interval: 1, ondalik: 0);
+  }
+
+  final hamAdim = (ust - alt) / hedefBolme;
+
+  // 1/2/2,5/5/10 × 10ⁿ tabanına yuvarla (Heckbert "nice numbers").
+  final us = math.pow(10, (math.log(hamAdim) / math.ln10).floor()).toDouble();
+  final oran = hamAdim / us;
+  final double carpan;
+  if (oran <= 1) {
+    carpan = 1;
+  } else if (oran <= 2) {
+    carpan = 2;
+  } else if (oran <= 2.5) {
+    carpan = 2.5;
+  } else if (oran <= 5) {
+    carpan = 5;
+  } else {
+    carpan = 10;
+  }
+  final adim = carpan * us;
+
+  // Sınırlar adımın katına — DIŞA doğru, veri kırpılmasın.
+  final yeniAlt = (alt / adim).floor() * adim;
+  final yeniUst = (ust / adim).ceil() * adim;
+
+  // Adım 1'den küçükse tam sayı etiketi tekrar eder ("+0%, +0%, +1%").
+  // O durumda ondalık göster.
+  final ondalik = adim >= 1 ? 0 : (adim >= 0.1 ? 1 : 2);
+
+  return (min: yeniAlt, max: yeniUst, interval: adim, ondalik: ondalik);
 }
 
 /// Bir seriye dokunulduğunda yeni odak ne olmalı?
