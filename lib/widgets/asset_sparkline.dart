@@ -94,6 +94,43 @@ class _AssetSparklineState extends State<AssetSparkline> {
   }
 }
 
+/// Normalize edilmiş bir seriyi çizen kutu — [Asset] İSTEMEZ.
+///
+/// [AssetSparkline] veriyi kendi yükler (sahip olunan varlık için); bu widget
+/// ise hazır seriyi alır. Takip listesi tarafı fiyatları kendi provider'ından
+/// aldığı için ikinci bir yükleyiciye ihtiyaç duymuyor — aynı çizim kodu
+/// kopyalanmadan paylaşılıyor.
+class SparklineChart extends StatelessWidget {
+  const SparklineChart({
+    super.key,
+    required this.series,
+    required this.color,
+    this.width = 56,
+    this.height = 24,
+  });
+
+  /// 0..1 aralığında normalize edilmiş değerler.
+  final List<double> series;
+  final Color color;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    if (series.length < 2) return SizedBox(width: width, height: height);
+    return SizedBox(
+      width: width,
+      height: height,
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: _SparklinePainter(series: series, color: color),
+          isComplex: false,
+        ),
+      ),
+    );
+  }
+}
+
 class _SparklinePainter extends CustomPainter {
   _SparklinePainter({required this.series, required this.color});
 

@@ -31,12 +31,12 @@ class IndicatorId {
   static const premium = <String>{adx, williamsR, cci};
 
   static Set<String> recommendedFor(AssetType type) => switch (type) {
-        AssetType.hisse  => {rsi, macd, bollinger, stochastic, adx},
-        AssetType.fon    => {ema, rsi, macd},
-        AssetType.altin  => {rsi, bollinger, ema, cci},
-        AssetType.doviz  => {ema, rsi, williamsR, stochastic},
-        AssetType.emtia  => {rsi, macd, bollinger, cci, adx},
-        _                => {},
+        AssetType.hisse => {rsi, macd, bollinger, stochastic, adx},
+        AssetType.fon => {ema, rsi, macd},
+        AssetType.altin => {rsi, bollinger, ema, cci},
+        AssetType.doviz => {ema, rsi, williamsR, stochastic},
+        AssetType.emtia => {rsi, macd, bollinger, cci, adx},
+        _ => {},
       };
 
   static String labelOf(String id) {
@@ -69,8 +69,9 @@ class TechnicalAnalysisService {
     if (prices.isEmpty) return 0;
     final len = min(prices.length, period * 3);
     final sub = prices.sublist(prices.length - len);
-    double ema = sub.sublist(0, min(period, sub.length)).reduce((a, b) => a + b) /
-        min(period, sub.length);
+    double ema =
+        sub.sublist(0, min(period, sub.length)).reduce((a, b) => a + b) /
+            min(period, sub.length);
     final k = 2.0 / (period + 1);
     for (int i = min(period, sub.length); i < sub.length; i++) {
       ema = sub[i] * k + ema * (1 - k);
@@ -79,7 +80,7 @@ class TechnicalAnalysisService {
   }
 
   /// Basit hareketli ortalama serisi. İlk (period-1) elemanı NaN döner —
-/// grafik overlay çizerken bu noktalar atlanır.
+  /// grafik overlay çizerken bu noktalar atlanır.
   static List<double> smaSeries(List<double> prices, int period) {
     final n = prices.length;
     final out = List<double>.filled(n, double.nan);
@@ -103,7 +104,9 @@ class TechnicalAnalysisService {
     final label = 'RSI ($period)';
     if (prices.length < period + 1) {
       return TechnicalIndicator(
-          name: label, value: 50, signal: SignalType.neutral,
+          name: label,
+          value: 50,
+          signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -135,7 +138,8 @@ class TechnicalAnalysisService {
             ? 'Aşırı alım bölgesi (${fmtNum(value, digits: 1)})'
             : 'Nötr bölge (${fmtNum(value, digits: 1)})';
 
-    return TechnicalIndicator(name: label, value: value, signal: signal, description: desc);
+    return TechnicalIndicator(
+        name: label, value: value, signal: signal, description: desc);
   }
 
   // ── 2. MACD ───────────────────────────────────────────────────────────────
@@ -148,7 +152,9 @@ class TechnicalAnalysisService {
 
     if (prices.length < slow + sig) {
       return TechnicalIndicator(
-          name: label, value: 0, signal: SignalType.neutral,
+          name: label,
+          value: 0,
+          signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -162,9 +168,11 @@ class TechnicalAnalysisService {
     final signalLine = _ema(macdSeries, sig);
     final histogram = macdLine - signalLine;
 
-    final signal = histogram > 0 ? SignalType.buy
-        : histogram < 0 ? SignalType.sell
-        : SignalType.neutral;
+    final signal = histogram > 0
+        ? SignalType.buy
+        : histogram < 0
+            ? SignalType.sell
+            : SignalType.neutral;
 
     final desc = histogram > 0
         ? 'MACD çizgisi sinyal üzerinde (+${fmtNum(histogram, digits: 2)})'
@@ -172,35 +180,43 @@ class TechnicalAnalysisService {
             ? 'MACD çizgisi sinyal altında (${fmtNum(histogram, digits: 2)})'
             : 'Kesişim noktasında';
 
-    return TechnicalIndicator(name: label, value: histogram, signal: signal, description: desc);
+    return TechnicalIndicator(
+        name: label, value: histogram, signal: signal, description: desc);
   }
 
   // ── 3. Bollinger Bantları ─────────────────────────────────────────────────
 
-  static TechnicalIndicator bollingerBands(List<double> prices, AssetType type) {
+  static TechnicalIndicator bollingerBands(
+      List<double> prices, AssetType type) {
     final period = type == AssetType.altin ? 14 : 20;
     final mult = type == AssetType.doviz ? 1.5 : 2.0;
     final label = 'Bollinger ($period, $multσ)';
 
     if (prices.length < period) {
       return TechnicalIndicator(
-          name: label, value: 50, signal: SignalType.neutral,
+          name: label,
+          value: 50,
+          signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
     final recent = prices.sublist(prices.length - period);
     final sma = recent.reduce((a, b) => a + b) / period;
-    final variance = recent.map((p) => pow(p - sma, 2)).reduce((a, b) => a + b) / period;
+    final variance =
+        recent.map((p) => pow(p - sma, 2)).reduce((a, b) => a + b) / period;
     final stdDev = sqrt(variance);
     final upper = sma + stdDev * mult;
     final lower = sma - stdDev * mult;
     final current = prices.last;
 
-    final pctB = (upper - lower) > 0 ? (current - lower) / (upper - lower) : 0.5;
+    final pctB =
+        (upper - lower) > 0 ? (current - lower) / (upper - lower) : 0.5;
 
-    final signal = current < lower ? SignalType.buy
-        : current > upper ? SignalType.sell
-        : SignalType.neutral;
+    final signal = current < lower
+        ? SignalType.buy
+        : current > upper
+            ? SignalType.sell
+            : SignalType.neutral;
 
     final desc = current < lower
         ? 'Alt bantın altında — potansiyel dönüş'
@@ -208,23 +224,37 @@ class TechnicalAnalysisService {
             ? 'Üst bantın üzerinde — potansiyel düzeltme'
             : '%B: ${fmtNum(pctB * 100, digits: 0)} (bant içi)';
 
-    return TechnicalIndicator(name: label, value: pctB * 100, signal: signal, description: desc);
+    return TechnicalIndicator(
+        name: label, value: pctB * 100, signal: signal, description: desc);
   }
 
   // ── 4. Hareketli Ortalama (EMA Kesişimi) ─────────────────────────────────
 
   static TechnicalIndicator movingAverage(List<double> prices, AssetType type) {
     final int shortP, longP;
-    if (type == AssetType.hisse) { shortP = 20; longP = 50; }
-    else if (type == AssetType.fon) { shortP = 10; longP = 30; }
-    else if (type == AssetType.altin) { shortP = 14; longP = 40; }
-    else if (type == AssetType.doviz) { shortP = 7; longP = 21; }
-    else { shortP = 20; longP = 50; }
+    if (type == AssetType.hisse) {
+      shortP = 20;
+      longP = 50;
+    } else if (type == AssetType.fon) {
+      shortP = 10;
+      longP = 30;
+    } else if (type == AssetType.altin) {
+      shortP = 14;
+      longP = 40;
+    } else if (type == AssetType.doviz) {
+      shortP = 7;
+      longP = 21;
+    } else {
+      shortP = 20;
+      longP = 50;
+    }
     final label = 'EMA Kesişim ($shortP/$longP)';
 
     if (prices.length < longP) {
       return TechnicalIndicator(
-          name: label, value: 0, signal: SignalType.neutral,
+          name: label,
+          value: 0,
+          signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -233,9 +263,11 @@ class TechnicalAnalysisService {
     final current = prices.last;
     final diff = ((shortEma - longEma) / longEma * 100);
 
-    final signal = shortEma > longEma && current > shortEma ? SignalType.buy
-        : shortEma < longEma && current < shortEma ? SignalType.sell
-        : SignalType.neutral;
+    final signal = shortEma > longEma && current > shortEma
+        ? SignalType.buy
+        : shortEma < longEma && current < shortEma
+            ? SignalType.sell
+            : SignalType.neutral;
 
     final desc = shortEma > longEma
         ? 'EMA$shortP > EMA$longP — yükseliş trendi'
@@ -243,7 +275,8 @@ class TechnicalAnalysisService {
             ? 'EMA$shortP < EMA$longP — düşüş trendi'
             : 'Ortalamalarda kesişim bölgesi';
 
-    return TechnicalIndicator(name: label, value: diff, signal: signal, description: desc);
+    return TechnicalIndicator(
+        name: label, value: diff, signal: signal, description: desc);
   }
 
   // ── 5. Stokastik Osilatör ─────────────────────────────────────────────────
@@ -256,7 +289,9 @@ class TechnicalAnalysisService {
 
     if (prices.length < period) {
       return TechnicalIndicator(
-          name: label, value: 50, signal: SignalType.neutral,
+          name: label,
+          value: 50,
+          signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -267,9 +302,11 @@ class TechnicalAnalysisService {
     final range = highest - lowest;
     final k = range == 0 ? 50.0 : ((current - lowest) / range) * 100;
 
-    final signal = k < oversold ? SignalType.buy
-        : k > overbought ? SignalType.sell
-        : SignalType.neutral;
+    final signal = k < oversold
+        ? SignalType.buy
+        : k > overbought
+            ? SignalType.sell
+            : SignalType.neutral;
 
     final desc = k < oversold
         ? 'Aşırı satım (%K: ${fmtNum(k, digits: 1)})'
@@ -277,7 +314,8 @@ class TechnicalAnalysisService {
             ? 'Aşırı alım (%K: ${fmtNum(k, digits: 1)})'
             : 'Nötr bölge (%K: ${fmtNum(k, digits: 1)})';
 
-    return TechnicalIndicator(name: label, value: k, signal: signal, description: desc);
+    return TechnicalIndicator(
+        name: label, value: k, signal: signal, description: desc);
   }
 
   // ── 6. ADX — trend gücü (PREMIUM) ─────────────────────────────────────────
@@ -291,7 +329,9 @@ class TechnicalAnalysisService {
 
     if (prices.length < period + 1) {
       return TechnicalIndicator(
-          name: label, value: 0, signal: SignalType.neutral,
+          name: label,
+          value: 0,
+          signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -308,7 +348,9 @@ class TechnicalAnalysisService {
     }
     if (sumRange == 0) {
       return TechnicalIndicator(
-          name: label, value: 0, signal: SignalType.neutral,
+          name: label,
+          value: 0,
+          signal: SignalType.neutral,
           description: 'Yatay (trend yok)');
     }
     final directional = ((sumUp - sumDown).abs() / sumRange) * 100;
@@ -323,7 +365,8 @@ class TechnicalAnalysisService {
             ? 'Trend başlıyor (${fmtNum(directional, digits: 0)})'
             : 'Zayıf trend (${fmtNum(directional, digits: 0)})';
 
-    return TechnicalIndicator(name: label, value: directional, signal: signal, description: desc);
+    return TechnicalIndicator(
+        name: label, value: directional, signal: signal, description: desc);
   }
 
   // ── 7. Williams %R — aşırı alım/satım osilatörü (PREMIUM) ─────────────────
@@ -334,7 +377,9 @@ class TechnicalAnalysisService {
 
     if (prices.length < period) {
       return TechnicalIndicator(
-          name: label, value: -50, signal: SignalType.neutral,
+          name: label,
+          value: -50,
+          signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
@@ -345,9 +390,11 @@ class TechnicalAnalysisService {
     final range = highest - lowest;
     final wr = range == 0 ? -50.0 : ((highest - current) / range) * -100;
 
-    final signal = wr < -80 ? SignalType.buy
-        : wr > -20 ? SignalType.sell
-        : SignalType.neutral;
+    final signal = wr < -80
+        ? SignalType.buy
+        : wr > -20
+            ? SignalType.sell
+            : SignalType.neutral;
 
     final desc = wr < -80
         ? 'Aşırı satım (${fmtNum(wr, digits: 0)})'
@@ -355,7 +402,8 @@ class TechnicalAnalysisService {
             ? 'Aşırı alım (${fmtNum(wr, digits: 0)})'
             : 'Nötr bölge (${fmtNum(wr, digits: 0)})';
 
-    return TechnicalIndicator(name: label, value: wr, signal: signal, description: desc);
+    return TechnicalIndicator(
+        name: label, value: wr, signal: signal, description: desc);
   }
 
   // ── 8. CCI (Commodity Channel Index) (PREMIUM) ────────────────────────────
@@ -366,19 +414,24 @@ class TechnicalAnalysisService {
 
     if (prices.length < period) {
       return TechnicalIndicator(
-          name: label, value: 0, signal: SignalType.neutral,
+          name: label,
+          value: 0,
+          signal: SignalType.neutral,
           description: 'Yetersiz veri');
     }
 
     final recent = prices.sublist(prices.length - period);
     final sma = recent.reduce((a, b) => a + b) / period;
-    final meanDev = recent.map((p) => (p - sma).abs()).reduce((a, b) => a + b) / period;
+    final meanDev =
+        recent.map((p) => (p - sma).abs()).reduce((a, b) => a + b) / period;
     final current = prices.last;
     final value = meanDev == 0 ? 0.0 : (current - sma) / (0.015 * meanDev);
 
-    final signal = value < -100 ? SignalType.buy
-        : value > 100 ? SignalType.sell
-        : SignalType.neutral;
+    final signal = value < -100
+        ? SignalType.buy
+        : value > 100
+            ? SignalType.sell
+            : SignalType.neutral;
 
     final desc = value < -100
         ? 'Aşırı satım (${fmtNum(value, digits: 0)})'
@@ -386,7 +439,8 @@ class TechnicalAnalysisService {
             ? 'Aşırı alım (${fmtNum(value, digits: 0)})'
             : 'Nötr bölge (${fmtNum(value, digits: 0)})';
 
-    return TechnicalIndicator(name: label, value: value, signal: signal, description: desc);
+    return TechnicalIndicator(
+        name: label, value: value, signal: signal, description: desc);
   }
 
   // ── Ana analiz fonksiyonu ─────────────────────────────────────────────────
@@ -400,6 +454,7 @@ class TechnicalAnalysisService {
     List<double> priceHistory, {
     Set<String>? enabledIds,
     bool premiumUnlocked = false,
+
     /// Fiyat geçmişi boşken UYDURMA seri üretilsin mi? Varsayılan `false`.
     /// Yalnızca demo/önizleme yüzeyleri için `true` verilmeli — gerçek
     /// sinyal üreten hiçbir yol bunu açmamalı.
@@ -421,12 +476,40 @@ class TechnicalAnalysisService {
     // → "fiyat geçmişi yoksa sinyal üretilmez (simülasyona düşmez)".
     if (priceHistory.isEmpty && !allowSimulation) return const [];
     final prices = priceHistory.isNotEmpty ? priceHistory : _simulate(asset);
-    final ids = enabledIds ?? defaultEnabledFor(asset.type);
+    return analyzeSeries(
+      prices,
+      asset.type,
+      enabledIds: enabledIds,
+      premiumUnlocked: premiumUnlocked,
+    );
+  }
+
+  /// Göstergeleri YALNIZCA fiyat serisi + varlık türünden hesaplar.
+  ///
+  /// [analyze] ile aynı matematik; farkı bir [Asset] İSTEMEMESİ. Göstergelerin
+  /// hiçbiri miktar, alış fiyatı veya alış tarihi kullanmaz — yalnızca kapanış
+  /// serisini ve eşikleri belirleyen türü okurlar. [analyze] zaten bu metoda
+  /// devrediyor, yani iki yüzey tek koddan besleniyor.
+  ///
+  /// Bu ayrım takip listesi için gerekli: izlenen varlığın `Asset`'i YOKTUR
+  /// (miktarı ve maliyeti yoktur). Sahte bir `Asset` üretmek, o nesnenin
+  /// yanlışlıkla bir portföy toplamına girmesi riskini doğururdu — bkz.
+  /// `watchlist_isolation_test.dart`.
+  ///
+  /// Boş seride boş liste döner: uydurma veriden gösterge üretilmez.
+  static List<TechnicalIndicator> analyzeSeries(
+    List<double> prices,
+    AssetType type, {
+    Set<String>? enabledIds,
+    bool premiumUnlocked = false,
+  }) {
+    if (prices.isEmpty) return const [];
+    final ids = enabledIds ?? defaultEnabledFor(type);
 
     final result = <TechnicalIndicator>[];
     for (final id in ids) {
       if (IndicatorId.premium.contains(id) && !premiumUnlocked) continue;
-      final ind = _computeById(id, prices, asset.type);
+      final ind = _computeById(id, prices, type);
       if (ind != null) result.add(ind);
     }
     return result;
@@ -478,10 +561,10 @@ class TechnicalAnalysisService {
 
     final vol = switch (asset.type) {
       AssetType.hisse => 0.022,
-      AssetType.fon   => 0.010,
+      AssetType.fon => 0.010,
       AssetType.altin => 0.013,
       AssetType.doviz => 0.007,
-      _               => 0.018,
+      _ => 0.018,
     };
 
     final dirSeed = rng.nextDouble();
@@ -525,17 +608,29 @@ class TechnicalAnalysisService {
     final total = indicators.length;
 
     if (total == 0) {
-      return (signal: SignalType.neutral, buyCount: 0, sellCount: 0, confidence: 0.0);
+      return (
+        signal: SignalType.neutral,
+        buyCount: 0,
+        sellCount: 0,
+        confidence: 0.0
+      );
     }
     final buyRatio = buy / total;
     final sellRatio = sell / total;
 
-    final signal = buyRatio >= 0.6 ? SignalType.buy
-        : sellRatio >= 0.6 ? SignalType.sell
-        : SignalType.neutral;
+    final signal = buyRatio >= 0.6
+        ? SignalType.buy
+        : sellRatio >= 0.6
+            ? SignalType.sell
+            : SignalType.neutral;
 
     final confidence = max(buyRatio, sellRatio) * 100;
 
-    return (signal: signal, buyCount: buy, sellCount: sell, confidence: confidence);
+    return (
+      signal: signal,
+      buyCount: buy,
+      sellCount: sell,
+      confidence: confidence
+    );
   }
 }

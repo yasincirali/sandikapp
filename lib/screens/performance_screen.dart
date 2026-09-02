@@ -42,16 +42,40 @@ class GoldTransaction {
 
 // ── Teknik Sinyal Paneli ─────────────────────────────────────────────────────
 
-class _TechnicalSignalPanel extends ConsumerStatefulWidget {
-  final Asset asset;
-  const _TechnicalSignalPanel({required this.asset});
+/// Teknik gösterge paneli.
+///
+/// **Bir `Asset` İSTEMEZ** — yalnızca sembol, tür ve alt kategori. Göstergeler
+/// miktar/maliyet okumaz; sahiplikle ilgisi yoktur. Bu sayede aynı panel hem
+/// sahip olunan varlıkta (`PerformanceScreen`) hem de yalnızca izlenen
+/// varlıkta (`WatchlistDetailScreen`) kullanılabiliyor — panelin ~400 satırlık
+/// gösterge arayüzü kopyalanmadan.
+class TechnicalSignalPanel extends ConsumerStatefulWidget {
+  final String ticker;
+  final AssetType type;
+  final String? subCategory;
+
+  const TechnicalSignalPanel({
+    super.key,
+    required this.ticker,
+    required this.type,
+    this.subCategory,
+  });
+
+  /// Sahip olunan bir varlıktan kurar — çağrı yerlerini kısaltır.
+  TechnicalSignalPanel.forAsset(Asset asset, {Key? key})
+      : this(
+          key: key,
+          ticker: asset.ticker,
+          type: asset.type,
+          subCategory: asset.subCategory,
+        );
 
   @override
-  ConsumerState<_TechnicalSignalPanel> createState() =>
+  ConsumerState<TechnicalSignalPanel> createState() =>
       _TechnicalSignalPanelState();
 }
 
-class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
+class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   /// GERÇEK fiyat geçmişi. Boş liste `analyze`'ı simülasyona düşürdüğü için
   /// bu future çözülene kadar panel "hesaplanıyor" gösterir.
   Future<List<double>>? _pricesFuture;
@@ -68,14 +92,14 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
   /// Sunucu tarafında bu tuzak zaten kapalı (`fiyat geçmişi yoksa sinyal
   /// üretilmez (simülasyona düşmez)` testi).
   Future<List<double>> _loadPrices() {
-    final a = widget.asset;
-    final key = '${a.ticker}|${a.type.name}|${a.subCategory ?? ''}';
+    final key = '${widget.ticker}|${widget.type.name}|'
+        '${widget.subCategory ?? ''}';
     if (_pricesKey == key && _pricesFuture != null) return _pricesFuture!;
     _pricesKey = key;
     // Göstergelerin çoğu 100+ nokta ister (MACD 26, Bollinger 20, ADX 14×2).
     // 180 gün hepsini rahatça besler.
     _pricesFuture = HistoryService.instance
-        .getSymbolHistory(a.ticker, periodDays: 180)
+        .getSymbolHistory(widget.ticker, periodDays: 180)
         .then((map) {
       final keys = map.keys.toList()..sort();
       return [for (final k in keys) map[k]!];
@@ -88,8 +112,8 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
     // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
     final prefs = ref.watch(indicatorPrefsProvider);
     final premium = ref.watch(premiumUnlockedProvider);
-    final enabledIds = prefs[widget.asset.type] ??
-        TechnicalAnalysisService.defaultEnabledFor(widget.asset.type);
+    final enabledIds = prefs[widget.type] ??
+        TechnicalAnalysisService.defaultEnabledFor(widget.type);
 
     return FutureBuilder<List<double>>(
       future: _loadPrices(),
@@ -164,9 +188,9 @@ class _TechnicalSignalPanelState extends ConsumerState<_TechnicalSignalPanel> {
     Set<String> enabledIds,
     bool premium,
   ) {
-    final indicators = TechnicalAnalysisService.analyze(
-      widget.asset,
+    final indicators = TechnicalAnalysisService.analyzeSeries(
       prices,
+      widget.type,
       enabledIds: enabledIds,
       premiumUnlocked: premium,
     );
@@ -2013,7 +2037,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 ),
                 const SizedBox(height: 24),
                 if (widget.asset.type != AssetType.mevduat)
-                  _TechnicalSignalPanel(asset: widget.asset),
+                  TechnicalSignalPanel.forAsset(widget.asset),
               ],
             ),
           ),
