@@ -15,8 +15,7 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
   @override
-  ConsumerState<LeaderboardScreen> createState() =>
-      _LeaderboardScreenState();
+  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
 
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
@@ -34,8 +33,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final me = ref.watch(authProvider).valueOrNull;
     final activePartners = ref.watch(activePartnersProvider);
     final myAssets = ref.watch(portfolioProvider).valueOrNull?.assets ?? [];
-    final partnerAssets =
-        ref.watch(allPartnerAssetsProvider).valueOrNull ?? {};
+    final partnerAssets = ref.watch(allPartnerAssetsProvider).valueOrNull ?? {};
     final pState = ref.watch(portfolioProvider).valueOrNull;
 
     return Scaffold(
@@ -45,15 +43,13 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         elevation: 0,
         title: Text(
           'Yarış',
-          style: context.t.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: context.c.text90),
+          style: context.t.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
         ),
         actions: [
-          // Yarıştaki getiri ile Performans ekranındaki yüzde farklı
-          // formüllerdir (dönemsel + para akışı düzeltmeli vs. toplam
-          // maliyete göre). Kullanıcı ikisini yan yana görünce "hangisi
-          // doğru?" diye soruyor — açıklama burada.
+          // Yarıştaki getiri (dönemsel) ile Performans ekranındaki yüzde
+          // (ilk alımdan bugüne toplam) farklı sorulardır. Kullanıcı ikisini
+          // yan yana görünce "hangisi doğru?" diye soruyor — açıklama burada.
           IconButton(
             icon: Icon(Icons.info_outline_rounded,
                 color: context.c.text58, size: 22),
@@ -74,18 +70,16 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       body: SafeArea(
         child: !optIn
             ? _OptInPrompt(
-                onEnable: () => ref
-                    .read(leaderboardOptInProvider.notifier)
-                    .set(true),
+                onEnable: () =>
+                    ref.read(leaderboardOptInProvider.notifier).set(true),
               )
             : Column(
                 children: [
                   _PeriodBar(
                     selected: _periodIdx,
                     onChange: (i) => setState(() => _periodIdx = i),
-                    periods: _periods
-                        .map((p) => p.label)
-                        .toList(growable: false),
+                    periods:
+                        _periods.map((p) => p.label).toList(growable: false),
                   ),
                   Expanded(
                     child: activePartners.isEmpty
@@ -117,12 +111,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         horizontal: 20, vertical: 12),
                     child: Text(
                       activePartners.isEmpty
-                          ? 'Getiri seçili döneme göre hesaplanır; para '
-                              'giriş/çıkışı hariç tutulur. Sıralamalar ve '
+                          ? 'Getiri, seçili dönemin başı ile sonu '
+                              'karşılaştırılarak hesaplanır. Sıralamalar ve '
                               'dağılımlar anonimdir — kimlik, miktar ve TL '
                               'bilgisi asla paylaşılmaz.'
-                          : 'Ortak sıralaması seçili dönemin getirisidir '
-                              '(%) — para giriş/çıkışı hariç. Kimsenin '
+                          : 'Sıralama, seçili dönemin getirisidir (%). '
+                              'Herkes aynı formülle ölçülür; kimsenin '
                               'varlık listesi görünmez.',
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
@@ -140,12 +134,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
 
 /// "Getiri nasıl hesaplanıyor?" açıklaması.
 ///
-/// Yarıştaki ROI ile Performans ekranındaki kâr/zarar yüzdesi kasıtlı olarak
-/// FARKLI metriklerdir; kullanıcı ikisini karşılaştırınca hata sanıyor.
-/// Formüller:
-///   Yarış      → (bugünkü değer − dönem başı değer − net para akışı)
-///                / dönem başı değer × 100   [LeaderboardService.computeROI]
-///   Performans → (bugünkü değer − toplam maliyet) / toplam maliyet × 100
+/// Yarış metriği seçili dönemin getirisidir:
+///
+///     (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
+///
+/// Performans ekranındaki yüzdeden FARKLIDIR (o, ilk alımdan bugüne toplam
+/// kâr/zarardır) — bu sayfa farkı açıklar.
 class _RoiInfoSheet extends StatelessWidget {
   const _RoiInfoSheet();
 
@@ -180,20 +174,21 @@ class _RoiInfoSheet extends StatelessWidget {
             const SizedBox(height: 14),
             const _InfoBlock(
               icon: Icons.emoji_events_outlined,
-              title: 'Yarıştaki getiri — dönemsel',
-              body: 'Seçtiğin dönemin başındaki portföy değerine göre '
-                  'hesaplanır. Dönem içinde yatırdığın yeni para ve '
-                  'çektiğin tutar sonuçtan düşülür.\n\n'
-                  'Böylece sıralama "kim daha çok para yatırdı" değil, '
-                  '"kim parasını daha iyi değerlendirdi" sorusunu ölçer.',
+              title: 'Seçili dönemin getirisi',
+              body: 'Portföyünün dönem sonundaki değeri, dönem başındaki '
+                  'değeriyle karşılaştırılır:\n\n'
+                  '(dönem sonu − dönem başı) ÷ dönem başı\n\n'
+                  'Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan '
+                  'değiştirir.',
             ),
             const SizedBox(height: 12),
             const _InfoBlock(
-              icon: Icons.show_chart_rounded,
-              title: 'Performans ekranındaki yüzde — toplam',
-              body: 'Varlığın bugünkü değerini ödediğin toplam maliyetle '
-                  'karşılaştırır. Dönem ayrımı yoktur, ilk aldığın günden '
-                  'bugüne kadarki kâr/zararını gösterir.',
+              icon: Icons.groups_outlined,
+              title: 'Herkes aynı şekilde ölçülür',
+              body: 'Sen ve ortakların aynı formülle, aynı anda, aynı '
+                  'fiyatlarla hesaplanırsınız.\n\n'
+                  'Ortağının uygulamayı açmasını beklemene gerek yok — '
+                  'hesap bu cihazda yapılır.',
             ),
             const SizedBox(height: 16),
             Container(
@@ -212,11 +207,10 @@ class _RoiInfoSheet extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'İki sayının farklı olması normaldir — aynı portföyün '
-                      'iki ayrı ölçüsüdür. Örnek: bir yıl önce 100.000 ₺\'ye '
-                      'alıp bugün 150.000 ₺ olan portföyde Performans +%50 '
-                      'gösterir; portföy 30 gün önce 145.000 ₺ ise "30 gün" '
-                      'yarışındaki getirin +%3,4\'tür.',
+                      'Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden '
+                      'FARKLI olabilir — orası ilk alımından bugüne olan '
+                      'toplam kâr/zararı gösterir, burası ise yalnızca '
+                      'seçtiğin dönemde ne olduğunu.',
                       style: context.t.bodySmall?.copyWith(
                         color: context.c.text90,
                         height: 1.45,
@@ -228,9 +222,10 @@ class _RoiInfoSheet extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              'Dönem başına ait fiyat geçmişi bulunamazsa yarış getirisi de '
-              'toplam kâr/zarar yöntemine düşer; bu durumda iki sayı aynı '
-              'çıkabilir.',
+              'Hesap, bugünkü varlıklarını dönem başından beri tutmuş '
+              'gibi yapılır; dönem içindeki alım/satımlar sonucu '
+              'çarpıtmasın diye. Fiyat geçmişi bulunamayan portföyler '
+              'sıralamada gösterilmez.',
               style: context.t.labelMedium?.copyWith(
                 letterSpacing: 0,
                 color: context.c.text36,
@@ -336,8 +331,8 @@ class _OptInPrompt extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: context.c.amberFill,
                 foregroundColor: context.c.onAmber,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               child: const Text('Yarış\'a katıl'),
             ),
@@ -449,13 +444,11 @@ class _SoloPanelState extends State<_SoloPanel> {
           _SoloRoiCard(roi: _myRoi, computing: _computing),
           const SizedBox(height: 14),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               color: context.c.surface1,
               borderRadius: BorderRadius.circular(SandikRadius.md),
-              border:
-                  Border.all(color: context.c.hairline),
+              border: Border.all(color: context.c.hairline),
             ),
             child: Row(
               children: [
@@ -570,8 +563,7 @@ class _SoloRoiCard extends StatelessWidget {
               ],
             ),
           ),
-          if (computing)
-            const CustomLoadingIndicator(size: 18),
+          if (computing) const CustomLoadingIndicator(size: 18),
         ],
       ),
     );
@@ -603,8 +595,7 @@ class _PeriodBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.c.overlay,
           borderRadius: BorderRadius.circular(SandikRadius.lg),
-          border:
-              Border.all(color: context.c.hairline),
+          border: Border.all(color: context.c.hairline),
         ),
         child: Row(
           children: List.generate(periods.length, (i) {
@@ -614,10 +605,10 @@ class _PeriodBar extends StatelessWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: () => onChange(i),
                 child: AnimatedContainer(
-                  duration: SandikMotion.of(context, const Duration(milliseconds: 220)),
+                  duration: SandikMotion.of(
+                      context, const Duration(milliseconds: 220)),
                   curve: Curves.easeOutCubic,
-                  margin: EdgeInsets.symmetric(
-                      horizontal: active ? 0 : 2),
+                  margin: EdgeInsets.symmetric(horizontal: active ? 0 : 2),
                   decoration: BoxDecoration(
                     // Seçili pill bir YÜZEY — dolgu token'ı kullanılır.
                     // (Eskiden `[gold, amberText]` idi; ikisi de metin
@@ -628,8 +619,8 @@ class _PeriodBar extends StatelessWidget {
                     boxShadow: active
                         ? [
                             BoxShadow(
-                              color: context.c.amberFill
-                                  .withValues(alpha: 0.35),
+                              color:
+                                  context.c.amberFill.withValues(alpha: 0.35),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             ),
@@ -642,8 +633,7 @@ class _PeriodBar extends StatelessWidget {
                       curve: SandikMotion.enter,
                       style: context.t.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w800,
-                        color:
-                            active ? context.c.onAmber : context.c.text58,
+                        color: active ? context.c.onAmber : context.c.text58,
                         letterSpacing: 0.6,
                       ),
                       child: Text(periods[i]),
@@ -762,10 +752,22 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   }
 
   Future<List<_LeaderboardRow>> _compute() async {
-    // Kendi ROI'mizi lokal hesapla → Supabase'e upload et → sonra hem
-    // kendimizin hem partnerların ROI'sini TEK OTORİTE olan Supabase
-    // snapshot tablosundan oku. Böylece iki cihaz her zaman aynı sayıyı
-    // görür. Tick her 15 sn'de bu döngüyü tekrar eder → canlı hissi.
+    // Herkesin kâr/zararı BU CİHAZDA hesaplanır — kimsenin uygulamayı
+    // açması beklenmez.
+    //
+    // Eskiden ortakların değeri Supabase snapshot'ından okunuyordu ve o
+    // snapshot'ı yalnızca ortağın KENDİ cihazı yazabiliyordu. Sonuç:
+    //   · ortak uygulamayı hiç açmadıysa → yarışta değeri YOK,
+    //   · eski sürümde açtıysa → eski formülle yazılmış bayat değer,
+    //   · bugün açmadıysa → dünkü fiyatlarla hesaplanmış değer.
+    //
+    // Oysa ortağın lot'ları `allPartnerAssetsProvider` ile zaten burada ve
+    // `refreshPrices` onların `currentPrice`'ını canlı kotasyonla
+    // güncelliyor. Yerel hesap üçünü birden çözer: herkes aynı anda, aynı
+    // fiyatlarla, aynı formülle ölçülür.
+    //
+    // Snapshot upload'ı SÜRÜYOR — global yüzdelik dilim (`get_percentile_
+    // bucket`) ve top-gainers özellikleri onu okuyor.
     final me = widget.me;
     double? myRoi;
     if (me != null) {
@@ -800,9 +802,6 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       }
     }
 
-    final partnerRois = await LeaderboardService.instance
-        .fetchPartnerRois(widget.periodDays);
-
     final rows = <_LeaderboardRow>[];
     if (me != null) {
       rows.add(_LeaderboardRow(
@@ -812,13 +811,21 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         roi: myRoi,
       ));
     }
-    for (final p in widget.partners) {
-      final entry = partnerRois[p.id];
+    // Ortakların getirisi paralel hesaplanır — her biri kendi fiyat serisini
+    // çekiyor; sırayla beklemek ortak sayısıyla doğru orantılı gecikme
+    // yaratırdı. `HistoryService` sembol başına önbellekli, yani aynı hisseye
+    // sahip iki ortak tek istek eder.
+    final partnerRois = await Future.wait(
+      widget.partners.map((p) => LeaderboardService.instance.donemGetirisiPct(
+          widget.partnerAssets[p.id] ?? const [], widget.periodDays)),
+    );
+    for (var i = 0; i < widget.partners.length; i++) {
+      final p = widget.partners[i];
       rows.add(_LeaderboardRow(
         userId: p.id,
         displayName: p.displayName,
         isMe: false,
-        roi: entry?.roi,
+        roi: partnerRois[i],
       ));
     }
 
@@ -836,8 +843,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     return FutureBuilder<List<_LeaderboardRow>>(
       future: _future,
       builder: (context, snap) {
-        final isLoading =
-            snap.connectionState == ConnectionState.waiting;
+        final isLoading = snap.connectionState == ConnectionState.waiting;
         // Öncelik: fresh Future data > stale cache > spinner
         final rows = snap.data ?? _staleRows;
         if (rows == null) {
@@ -852,10 +858,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
           );
         }
         // Leader ROI + maxAbsRoi — bar normalize için
-        final validRois = rows
-            .where((r) => r.roi != null)
-            .map((r) => r.roi!)
-            .toList();
+        final validRois =
+            rows.where((r) => r.roi != null).map((r) => r.roi!).toList();
         final leaderRoi = validRois.isEmpty ? null : validRois.first;
         final maxAbsRoi = validRois.isEmpty
             ? null
@@ -953,16 +957,13 @@ class _LeaderRow extends StatelessWidget {
     }
 
     // Bar oranı: max(|roi|) baz alınır, negatif ROI için bar yok
-    final barRatio = (roi != null &&
-            roi >= 0 &&
-            maxAbsRoi != null &&
-            maxAbsRoi! > 0.01)
-        ? (roi / maxAbsRoi!).clamp(0.0, 1.0)
-        : 0.0;
+    final barRatio =
+        (roi != null && roi >= 0 && maxAbsRoi != null && maxAbsRoi! > 0.01)
+            ? (roi / maxAbsRoi!).clamp(0.0, 1.0)
+            : 0.0;
 
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: isMe
             ? context.c.amberFill.withValues(alpha: 0.10)
@@ -1019,9 +1020,9 @@ class _LeaderRow extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color:
-                                  context.c.gold.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(SandikRadius.sm),
+                              color: context.c.gold.withValues(alpha: 0.18),
+                              borderRadius:
+                                  BorderRadius.circular(SandikRadius.sm),
                             ),
                             child: Text(
                               'LİDER',
@@ -1186,8 +1187,7 @@ class _GlobalPercentileTeaser extends StatefulWidget {
       _GlobalPercentileTeaserState();
 }
 
-class _GlobalPercentileTeaserState
-    extends State<_GlobalPercentileTeaser> {
+class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
   late Future<_BestPercentile?> _future;
   Timer? _liveTick;
   static const _livePeriod = Duration(seconds: 30);
@@ -1251,8 +1251,7 @@ class _GlobalPercentileTeaserState
 
   Widget _shell({required Widget child}) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -1263,8 +1262,7 @@ class _GlobalPercentileTeaserState
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border:
-            Border.all(color: context.c.hairline),
+        border: Border.all(color: context.c.hairline),
       ),
       child: child,
     );
@@ -1511,7 +1509,8 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
             children: [
               _rankStrip(rows),
               const SizedBox(height: 12),
-              _AllocationDetail(row: rows[_expandedIdx.clamp(0, rows.length - 1)]),
+              _AllocationDetail(
+                  row: rows[_expandedIdx.clamp(0, rows.length - 1)]),
             ],
           ),
       ],
@@ -1611,8 +1610,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
             child: AnimatedContainer(
               duration: SandikMotion.stateOf(context),
               curve: SandikMotion.enter,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: selected
                     ? context.c.gold.withValues(alpha: 0.16)
@@ -1853,5 +1851,3 @@ class _Badge extends StatelessWidget {
     );
   }
 }
-
-

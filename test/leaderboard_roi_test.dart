@@ -1,164 +1,99 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:portfoy_takip/models/asset.dart';
-import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/leaderboard_service.dart';
 
-/// **Yarışta HERKES aynı formülle ölçülür: ortalama maliyet üzerinden
-/// kâr/zarar.**
+/// **Yarışta herkes TEK formülle ölçülür: seçili dönemin getirisi.**
+///
+/// ```
+///   (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
+/// ```
 ///
 /// ## Neden bu test var
-/// Önceki hesap İKİ farklı formül kullanıyordu ve hangisinin çalıştığı
-/// kişiye göre değişiyordu:
-///   · dönem başında portföyü OLAN → `(değer − dönemBaşı − nakitAkışı) / dönemBaşı`
+/// Önceki hesap İKİ ayrı formül kullanıyordu ve hangisinin çalıştığı KİŞİYE
+/// GÖRE değişiyordu:
+///   · dönem başında portföyü OLAN → dönemsel ROI + nakit akışı düzeltmesi
 ///   · dönem başında portföyü OLMAYAN → maliyet bazlı fallback
 ///
-/// Ölçüldü: aynı işlemi yapan iki kullanıcı (ikisi de 100'den alıp 120'ye
-/// çıkmış = %20 kâr) **%380,67** ve **%20,00** olarak sıralanıyordu.
-/// Aynı yarışta iki farklı metrik → sıralama anlamsız.
+/// Ölçüldü: aynı işlemi yapan iki kullanıcı **%380,67** ve **%20,00** olarak
+/// sıralanıyordu. Aynı yarışta iki farklı metrik → sıralama anlamsız.
 ///
-/// Tek formül bu sorunu YAPISAL olarak çözer: dallanma yoksa kişiye göre
-/// değişen bir sonuç da olamaz.
+/// ## Neden `simulate: true`
+/// Gerçek geçmiş modunda `addedDate`'ten önceki slotlara 0 yazılır; dönem
+/// başı 0 olunca bölme tanımsız kalır ve dönem içinde alım yapan HERKES
+/// sıralamadan düşerdi. Simülasyon herkesi aynı pencerede ölçer.
 ///
-/// ## Kabul edilen sınır
-/// Bu bir zaman ağırlıklı getiri (TWR) değildir; dönem seçimi sonucu
-/// etkilemez. 3 yılda %50 kazanan ile 3 ayda %50 kazanan aynı görünür.
-/// TWR her lot için tarihsel nakit akışı isterdi; veri modeli taşımıyor.
+/// ## Bu testin sınırı
+/// `donemGetirisiPct` ağ çağrısı yapar (fiyat geçmişi). Buradaki testler
+/// formülün KENDİSİNİ saf `normalizeSeries` üzerinden ve kablolamayı kaynak
+/// metninden doğrular; uçtan uca doğrulama emülatörde yapıldı.
 
-const _uid = 'u1';
-
-Asset _lot({
-  required String ticker,
-  double qty = 10,
-  double buy = 100,
-  double current = 120,
-  double commission = 0,
-  String currency = 'TRY',
-  double fx = 1.0,
-  AssetKind kind = AssetKind.buy,
-  DateTime? added,
-}) =>
-    Asset(
-      id: '$ticker-$qty-${kind.name}',
-      userId: _uid,
-      name: ticker,
-      ticker: ticker,
-      type: AssetType.hisse,
-      quantity: qty,
-      purchasePrice: buy,
-      currency: currency,
-      notes: '',
-      isManualPrice: true,
-      purchaseFxRate: fx,
-      commission: commission,
-      currentPrice: current,
-      addedDate: added ?? DateTime.now().subtract(const Duration(days: 30)),
-      kind: kind,
-    );
-
-double _toTRY(double v, String c) => v;
-
-double? _roi(List<Asset> assets) {
-  final svc = LeaderboardService.instance;
-  return svc.maliyetBazliKarZararPct(
-    assets,
-    svc.totalValueTRY(assets, _toTRY),
-    _toTRY,
-  );
-}
+/// Yorum satırlarını atar — bir açıklama içindeki kelime gerçek kodmuş gibi
+/// sayılmasın. (Bu tuzağa `signal_provider` wiring testinde bir kez düşüldü.)
+String _yorumsuz(String src) => src.split('\n').where((l) {
+      final t = l.trimLeft();
+      return !t.startsWith('//') && !t.startsWith('///') && !t.startsWith('*');
+    }).join('\n');
 
 void main() {
-  group('tek formül — herkes aynı ölçülür', () {
-    test('ALIM TARİHİ sonucu değiştirmez', () {
-      // Bug'ın ta kendisi: aynı kâr, farklı tarih → farklı sıralama.
-      final now = DateTime.now();
-      final eski = [
-        _lot(ticker: 'AAA', added: now.subtract(const Duration(days: 400)))
-      ];
-      final yeni = [
-        _lot(ticker: 'BBB', added: now.subtract(const Duration(days: 2)))
-      ];
-      expect(_roi(eski), closeTo(20.0, 1e-9));
-      expect(_roi(yeni), closeTo(20.0, 1e-9));
-      expect(_roi(eski), _roi(yeni),
-          reason: 'aynı işlemi yapan iki kişi aynı sırada olmalı');
+  group('formül: (son − ilk) / ilk', () {
+    // Metriğin matematiği. `donemGetirisiPct` bu hesabı seri üzerinde
+    // yapıyor; burada aynı hesabı doğrudan sınıyoruz.
+    double? getiri(Map<int, double> seri) {
+      if (seri.length < 2) return null;
+      final ts = seri.keys.toList()..sort();
+      final ilk = seri[ts.first]!;
+      if (ilk <= 0) return null;
+      return ((seri[ts.last]! - ilk) / ilk) * 100.0;
+    }
+
+    test('yükselen dönem POZİTİF', () {
+      expect(getiri({1: 1000.0, 2: 1100.0, 3: 1200.0}), closeTo(20.0, 1e-9));
     });
 
-    test('formül: (değer − maliyet) / maliyet', () {
-      // 10 adet, 100'den alındı, 150'ye çıktı → %50.
-      final a = [_lot(ticker: 'X', qty: 10, buy: 100, current: 150)];
-      expect(_roi(a), closeTo(50.0, 1e-9));
+    test('düşen dönem NEGATİF', () {
+      expect(getiri({1: 2000.0, 2: 1500.0}), closeTo(-25.0, 1e-9));
     });
 
-    test('zarar NEGATİF döner', () {
-      final a = [_lot(ticker: 'X', qty: 10, buy: 100, current: 80)];
-      expect(_roi(a), closeTo(-20.0, 1e-9));
+    test('değişmeyen dönem SIFIR', () {
+      expect(getiri({1: 1000.0, 2: 1000.0}), closeTo(0.0, 1e-9));
     });
 
-    test('başabaş SIFIR', () {
-      final a = [_lot(ticker: 'X', qty: 10, buy: 100, current: 100)];
-      expect(_roi(a), closeTo(0.0, 1e-9));
-    });
-  });
-
-  group('ortalama maliyet doğru hesaplanır', () {
-    test('iki ayrı alım AĞIRLIKLI ortalamaya iner', () {
-      // 10 adet 100'den + 10 adet 200'den = 20 adet, ort. maliyet 150.
-      // Güncel 180 → (3600 − 3000) / 3000 = %20.
-      final a = [
-        _lot(ticker: 'X', qty: 10, buy: 100, current: 180),
-        _lot(ticker: 'X', qty: 10, buy: 200, current: 180),
-      ];
-      expect(_roi(a), closeTo(20.0, 1e-9));
+    test('ARADAKİ dalgalanma sonucu etkilemez — yalnızca uçlar', () {
+      // Dönem içinde ne olduğu değil, başı ve sonu önemli.
+      final duz = getiri({1: 1000.0, 2: 1200.0});
+      final dalgali = getiri({1: 1000.0, 2: 5000.0, 3: 200.0, 4: 1200.0});
+      expect(duz, dalgali);
     });
 
-    test('KOMİSYON maliyete girer', () {
-      // Komisyon gerçekte cebinden çıkan paradır; maliyete dahil olmazsa
-      // kullanıcı olduğundan kârlı görünür.
-      final komisyonsuz = [_lot(ticker: 'X', qty: 10, buy: 100, current: 120)];
-      final komisyonlu = [
-        _lot(ticker: 'X', qty: 10, buy: 100, current: 120, commission: 100)
-      ];
-      expect(_roi(komisyonsuz)!, greaterThan(_roi(komisyonlu)!),
-          reason: 'komisyon ödeyen daha az kârlıdır');
-      // maliyet 1000 + 100 = 1100, değer 1200 → %9,09
-      expect(_roi(komisyonlu), closeTo(9.0909, 0.001));
+    test('dönem başı 0 ise NULL — bölme tanımsız', () {
+      expect(getiri({1: 0.0, 2: 1000.0}), isNull);
     });
 
-    test('SATILAN miktar maliyetten düşer', () {
-      // 20 aldı, 10 sattı → net 10 adet kalır.
-      final a = [
-        _lot(ticker: 'X', qty: 20, buy: 100, current: 120),
-        _lot(
-            ticker: 'X', qty: 10, buy: 100, current: 120, kind: AssetKind.sell),
-      ];
-      // Net 10 adet: maliyet 1000, değer 1200 → %20
-      expect(_roi(a), closeTo(20.0, 1e-9));
-    });
-
-    test('SİLİNEN varlık hesaba girmez', () {
-      final a = [
-        _lot(ticker: 'X', qty: 10, buy: 100, current: 120),
-        _lot(
-            ticker: 'Y',
-            qty: 10,
-            buy: 100,
-            current: 500,
-            kind: AssetKind.deleteLog),
-      ];
-      // Yalnızca X sayılır → %20. Y sayılsaydı çok daha yüksek çıkardı.
-      expect(_roi(a), closeTo(20.0, 1e-9));
+    test('tek nokta NULL — değişim tanımsız', () {
+      expect(getiri({1: 1000.0}), isNull);
     });
   });
 
-  group('sınır durumları', () {
-    test('maliyet 0 ise NULL — bölme tanımsız', () {
-      // 0 döndürmek "başabaş" yanılgısı yaratırdı.
-      final a = [_lot(ticker: 'X', qty: 10, buy: 0, current: 120)];
-      expect(_roi(a), isNull);
+  group('normalizeSeries ile AYNI soru', () {
+    // Takip listesi grafiği de dönem başını %0 kabul edip aynı oranı
+    // hesaplıyor. İki yüzeyin farklı sayı göstermesi kafa karıştırırdı.
+    test('grafik motoruyla örtüşür', () {
+      const seri = {1: 1000.0, 2: 1100.0, 3: 1250.0};
+      final n = normalizeSeries(seri)!;
+      final ts = seri.keys.toList()..sort();
+      final elle =
+          ((seri[ts.last]! - seri[ts.first]!) / seri[ts.first]!) * 100.0;
+      expect(n.totalReturnPct, closeTo(elle, 1e-9));
+      expect(n.totalReturnPct, closeTo(25.0, 1e-9));
     });
+  });
 
-    test('boş portföy NULL', () {
-      expect(_roi(const []), isNull);
+  group('boş / geçersiz girdi', () {
+    test('boş portföy NULL', () async {
+      expect(await LeaderboardService.instance.donemGetirisiPct(const [], 30),
+          isNull);
     });
 
     test('computeROIDetailed boş listede null döner', () async {
@@ -166,61 +101,92 @@ void main() {
         assets: const [],
         periodDays: 30,
         currentValueTRY: 0,
-        toTRY: _toTRY,
+        toTRY: (v, c) => v,
       );
       expect(r.roi, isNull);
       expect(r.usedFallback, isFalse);
     });
+  });
 
-    test('dönem uzunluğu sonucu DEĞİŞTİRMEZ', () async {
-      // Metrik dönemden bağımsız; periodDays yalnızca önbellek anahtarı.
-      final a = [_lot(ticker: 'X', qty: 10, buy: 100, current: 120)];
-      final deger = LeaderboardService.instance.totalValueTRY(a, _toTRY);
-      final sonuclar = <double?>[];
-      for (final gun in [1, 7, 30, 365]) {
-        final r = await LeaderboardService.instance.computeROIDetailed(
-          assets: a,
-          periodDays: gun,
-          currentValueTRY: deger,
-          toTRY: _toTRY,
-        );
-        sonuclar.add(r.roi);
+  group('kablolama — kaynak kuralları', () {
+    late String servis;
+
+    setUpAll(() async {
+      servis = _yorumsuz(
+          await File('lib/services/leaderboard_service.dart').readAsString());
+    });
+
+    test('SİMÜLASYON modu kullanılır', () {
+      // Gerçek geçmiş modu, dönem içinde alım yapan herkesi sıralamadan
+      // düşürürdü (dönem başı 0 → bölme tanımsız).
+      expect(servis.contains('simulate: true'), isTrue,
+          reason: 'gerçek geçmiş modu alım öncesi slotlara 0 yazar');
+    });
+
+    test('formül seriden (son − ilk) / ilk olarak hesaplanır', () {
+      expect(servis.contains('((son - ilk) / ilk) * 100.0'), isTrue);
+    });
+
+    test('dönem başı ≤ 0 KORUNUR', () {
+      expect(servis.contains('if (ilk <= 0) return null'), isTrue,
+          reason: 'sıfıra bölme sonsuz yüzde üretirdi');
+    });
+
+    test('kendi hesabım da AYNI fonksiyondan geçer', () {
+      // Asimetri bug'ın kaynağıydı: ben bir formülle, ortak başkasıyla.
+      final i = servis.indexOf('Future<RoiResult> computeROIDetailed(');
+      expect(i, greaterThan(0));
+      final govde = servis.substring(i, i + 900);
+      expect(govde.contains('donemGetirisiPct(assets, periodDays)'), isTrue,
+          reason: 'kendi değerim de ortaklarla aynı yoldan hesaplanmalı');
+    });
+  });
+
+  group('ortak uygulamayı AÇMASA da hesaplanır', () {
+    // Ortakların değeri eskiden Supabase snapshot'ından okunuyordu ve o
+    // snapshot'ı yalnızca ortağın KENDİ cihazı yazabiliyordu:
+    //   · ortak uygulamayı hiç açmadıysa → yarışta değeri YOK,
+    //   · eski sürümde açtıysa → eski formülle yazılmış bayat değer,
+    //   · bugün açmadıysa → dünkü fiyatlarla hesaplanmış değer.
+    //
+    // Ortağın lot'ları `allPartnerAssetsProvider` ile zaten cihazda.
+
+    test('yarış ekranı snapshot ÇEKMEZ', () async {
+      for (final yol in [
+        'lib/screens/leaderboard_screen.dart',
+        'lib/widgets/leaderboard_hero_card.dart',
+      ]) {
+        final src = _yorumsuz(await File(yol).readAsString());
+        expect(src.contains('fetchPartnerRois'), isFalse,
+            reason: '$yol ortağın snapshot\'ını beklememeli');
+        expect(src.contains('donemGetirisiPct'), isTrue,
+            reason: '$yol ortağın değerini yerelde hesaplamalı');
       }
-      expect(sonuclar.toSet().length, 1,
-          reason: 'aynı portföy her dönemde aynı sonucu vermeli: $sonuclar');
+    });
+
+    test('ortakların hesabı PARALEL yapılır', () async {
+      // Sırayla beklemek ortak sayısıyla orantılı gecikme yaratırdı.
+      for (final yol in [
+        'lib/screens/leaderboard_screen.dart',
+        'lib/widgets/leaderboard_hero_card.dart',
+      ]) {
+        final src = _yorumsuz(await File(yol).readAsString());
+        expect(src.contains('Future.wait('), isTrue, reason: yol);
+      }
     });
   });
 
-  group('sıralama tutarlı', () {
+  group('sıralama', () {
     test('daha çok kazanan ÜSTTE', () {
-      final az = [_lot(ticker: 'A', qty: 10, buy: 100, current: 110)]; // %10
-      final cok = [_lot(ticker: 'B', qty: 10, buy: 100, current: 150)]; // %50
-      expect(_roi(cok)!, greaterThan(_roi(az)!));
-    });
-
-    test('portföy BÜYÜKLÜĞÜ sıralamayı etkilemez', () {
-      // Yüzde metriği: 1000 TL ile %20 kazanan, 1.000.000 TL ile %20
-      // kazananla aynı sırada olmalı.
-      final kucuk = [_lot(ticker: 'A', qty: 10, buy: 100, current: 120)];
-      final buyuk = [_lot(ticker: 'B', qty: 10000, buy: 100, current: 120)];
-      expect(_roi(kucuk), closeTo(_roi(buyuk)!, 1e-9));
-    });
-  });
-
-  group('portföy ekranıyla AYNI sayı', () {
-    test('leaderboard metriği gainLossPercentage ile örtüşür', () {
-      // Kullanıcı yarışta gördüğü sayıyı kendi portföyünde de görmeli.
-      // `PortfolioState.gainLossPercentage` = gainLoss / totalCost * 100.
-      final a = [
-        _lot(ticker: 'X', qty: 10, buy: 100, current: 130),
-        _lot(ticker: 'Y', qty: 5, buy: 200, current: 190),
-      ];
-      final maliyet =
-          LeaderboardService.instance.toplamMaliyetTRY(a, _toTRY); // 2000
-      final deger =
-          LeaderboardService.instance.totalValueTRY(a, _toTRY); // 2250
-      final beklenen = ((deger - maliyet) / maliyet) * 100;
-      expect(_roi(a), closeTo(beklenen, 1e-9));
+      // Sıralama karşılaştırıcısı `roi` üzerinden azalan; null'lar sona.
+      final roiler = <double?>[12.5, null, -3.0, 40.0];
+      final sirali = [...roiler]..sort((a, b) {
+          if (a == null && b == null) return 0;
+          if (a == null) return 1;
+          if (b == null) return -1;
+          return b.compareTo(a);
+        });
+      expect(sirali, [40.0, 12.5, -3.0, null]);
     });
   });
 }

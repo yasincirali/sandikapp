@@ -97,8 +97,7 @@ class _OptInHero extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: context.c.amberFill,
               borderRadius: BorderRadius.circular(SandikRadius.lg),
@@ -122,8 +121,7 @@ class _RankPreviewHero extends ConsumerStatefulWidget {
   const _RankPreviewHero();
 
   @override
-  ConsumerState<_RankPreviewHero> createState() =>
-      _RankPreviewHeroState();
+  ConsumerState<_RankPreviewHero> createState() => _RankPreviewHeroState();
 }
 
 class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
@@ -153,9 +151,14 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
     super.dispose();
   }
 
-  /// 3 periyotta paralel hesap → kullanıcının en iyi sırada olduğu
-  /// periyodu seç. Kendi ROI'sini lokal hesap + Supabase upload; partner
-  /// ROI'lerini Supabase RPC'den oku (leaderboard ekranı ile aynı otorite).
+  /// Sıralamayı hesaplar — HERKESİNKİ bu cihazda.
+  ///
+  /// Metrik dönemden bağımsız olduğu için üç periyot da aynı sonucu verir;
+  /// döngü, dönem etiketli snapshot upload'ı sürsün diye korunuyor (global
+  /// yüzdelik dilim özelliği onu okuyor).
+  ///
+  /// Ortakların değeri `karZararPctFor` ile yerelde hesaplanır — sunucu
+  /// snapshot'ı beklenmez, çünkü onu yalnızca ortağın kendi cihazı yazabilir.
   Future<_RankSnapshot?> _compute() async {
     final me = ref.read(authProvider).valueOrNull;
     final partners = ref.read(activePartnersProvider);
@@ -183,14 +186,33 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
           roiPct: myRoi,
         );
       }
-      // Partner ROI'leri — Supabase snapshot'ı (tek otorite).
-      final partnerRois =
-          await LeaderboardService.instance.fetchPartnerRois(periodDays);
+
+      // Ortakların kâr/zararı BURADA hesaplanır — sunucu snapshot'ı beklenmez.
+      //
+      // Snapshot'ı yalnızca o kullanıcının kendi cihazı yazabiliyordu; ortak
+      // uygulamayı açmadıysa yarışta hiç görünmüyor, eski sürümde açtıysa
+      // eski formülle yazılmış bayat değerle görünüyordu. Oysa ortağın
+      // lot'ları `allPartnerAssetsProvider` ile bu cihazda ZATEN var ve
+      // `refreshPrices` onların canlı fiyatını da güncelliyor.
+      //
+      // Böylece herkes AYNI ANDA, AYNI fiyatlarla, AYNI formülle ölçülür.
+      final partnerAssets =
+          ref.read(allPartnerAssetsProvider).valueOrNull ?? const {};
+
+      // Paralel — sırayla beklemek ortak sayısıyla orantılı gecikme yaratır.
+      final partnerRois = await Future.wait(
+        partners.map((p) => LeaderboardService.instance
+            .donemGetirisiPct(partnerAssets[p.id] ?? const [], periodDays)),
+      );
 
       final rows = <_Row>[
         _Row(name: '${me.displayName} (sen)', isMe: true, roi: myRoi),
-        for (final p in partners)
-          _Row(name: p.displayName, isMe: false, roi: partnerRois[p.id]?.roi),
+        for (var i = 0; i < partners.length; i++)
+          _Row(
+            name: partners[i].displayName,
+            isMe: false,
+            roi: partnerRois[i],
+          ),
       ];
       rows.sort((a, b) {
         if (a.roi == null && b.roi == null) return 0;
@@ -298,9 +320,10 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
     String subLine;
     if (best.myRank == 1 && best.total > 1) {
       // Zirvedeysen, ikinci sıradaki senden ne kadar geride onu göster.
-      final gap = (best.myRoi ?? 0) - (best.leaderRoi == best.myRoi
-          ? _secondRoi(d) ?? (best.myRoi ?? 0)
-          : (best.myRoi ?? 0));
+      final gap = (best.myRoi ?? 0) -
+          (best.leaderRoi == best.myRoi
+              ? _secondRoi(d) ?? (best.myRoi ?? 0)
+              : (best.myRoi ?? 0));
       subLine = gap > 0.05
           ? 'Farkı büyüt — ikinci +${gap.toStringAsFixed(1)}% geride'
           : 'Zirvedesin — farkı koru 🏆';
@@ -359,8 +382,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
           ),
         ),
         const SizedBox(width: 6),
-        Icon(Icons.chevron_right_rounded,
-            color: context.c.text58, size: 22),
+        Icon(Icons.chevron_right_rounded, color: context.c.text58, size: 22),
       ],
     );
   }

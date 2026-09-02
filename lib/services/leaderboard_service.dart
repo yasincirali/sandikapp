@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
+import 'history_service.dart';
 
 /// Kâr/zarar hesabı sonucu.
 ///
@@ -28,37 +29,36 @@ class TopGainerAllocation {
   });
 }
 
-/// Leaderboard sıralaması: **ortalama maliyet üzerinden kâr/zarar yüzdesi.**
+/// Leaderboard sıralaması: **seçili dönemin getirisi.**
 ///
 /// ```
-///   kâr/zarar% = (güncel değer − toplam maliyet) / toplam maliyet × 100
+///   getiri% = (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
 /// ```
 ///
-/// Toplam maliyet, `aggregatePositions` ile hesaplanan AĞIRLIKLI ORTALAMA
-/// maliyettir: komisyonlar dahil, her lot'un alım anındaki kuruyla. Yani
-/// kullanıcının portföy ekranında gördüğü sayının aynısı
-/// (`PortfolioState.gainLossPercentage`).
+/// Takip listesi grafiğindeki `normalizeSeries` ile AYNI soru — "bu dönemde
+/// yüzde kaç değişti?" Seri `getPortfolioHistory(..., simulate: true)` ile
+/// üretilir: bugünkü net pozisyon dönemin tamamına yayılır.
 ///
-/// ## Neden dönem bazlı ROI değil (2026-09-02'de değiştirildi)
-/// Önceki hesap iki farklı formül kullanıyordu ve hangisinin çalıştığı
-/// KİŞİYE GÖRE değişiyordu:
-///   · dönem başında portföyü OLAN → `(değer − dönemBaşı − nakitAkışı) / dönemBaşı`
+/// ## Neden simülasyon
+/// Gerçek geçmiş modunda bir lot'un `addedDate`'inden önceki slotlara 0
+/// yazılır. Dönem başı 0 olunca bölme tanımsız kalır ve dönem içinde alım
+/// yapan HERKES sıralamadan düşerdi. Simülasyon herkesi aynı pencerede
+/// ölçer. (Takip listesi grafiği de aynı gerekçeyle simülasyon kullanıyor.)
+///
+/// ## Neden tek formül (2026-09-02'de düzeltildi)
+/// Önceki hesap İKİ ayrı formül kullanıyordu ve hangisinin çalıştığı KİŞİYE
+/// GÖRE değişiyordu:
+///   · dönem başında portföyü OLAN → dönemsel ROI + nakit akışı düzeltmesi
 ///   · dönem başında portföyü OLMAYAN → maliyet bazlı fallback
 ///
-/// Ölçüldü: aynı işlemi yapan iki kullanıcı (ikisi de 100'den alıp 120'ye
-/// çıkmış, yani %20 kâr) **%380,67** ve **%20,00** olarak sıralanıyordu.
-/// Aynı yarışta iki farklı metrik, dolayısıyla sıralama anlamsızdı.
+/// Ölçüldü: aynı işlemi yapan iki kullanıcı **%380,67** ve **%20,00** olarak
+/// sıralanıyordu. Aynı yarışta iki farklı metrik → sıralama anlamsız.
+/// Dallanma kaldırıldı; artık herkes tek yoldan geçiyor.
 ///
-/// Tek formül bu sorunu YAPISAL olarak çözer: dallanma yoksa kişiye göre
-/// değişen bir sonuç da olamaz. Herkes aynı soruya cevap verir —
-/// "yatırdığın paraya göre ne kadar kazandın?"
-///
-/// ## Kabul edilen sınır
-/// Bu bir ZAMAN AĞIRLIKLI getiri (TWR) DEĞİLDİR; dönem seçimi sonucu
-/// etkilemez. 3 yılda %50 kazanan ile 3 ayda %50 kazanan aynı görünür.
-/// TWR doğru cevap olurdu ama her lot için tarihsel nakit akışı gerektirir;
-/// mevcut veri modeli bunu taşımıyor. Basit ve HERKES İÇİN AYNI olan bir
-/// metrik, karmaşık ama kişiye göre değişen bir metrikten iyidir.
+/// ## Herkes bu cihazda hesaplanır
+/// Ortağın lot'ları `allPartnerAssetsProvider` ile zaten burada. Sunucu
+/// snapshot'ını beklemek, ortak uygulamayı açmadıysa onu yarıştan
+/// düşürüyordu — bkz. [donemGetirisiPct].
 class LeaderboardService {
   static final LeaderboardService instance = LeaderboardService._();
   LeaderboardService._();
@@ -78,19 +78,18 @@ class LeaderboardService {
     return _roiCache['$userId|$periodDays']?.roi;
   }
 
-  /// Bir kullanıcının kâr/zarar yüzdesi — **ortalama maliyet üzerinden.**
+  /// Bir kullanıcının SEÇİLİ DÖNEMDEKİ getirisi.
   ///
   /// ```
-  ///   (güncel değer − toplam maliyet) / toplam maliyet × 100
+  ///   (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
   /// ```
   ///
-  /// [periodDays] artık hesabı ETKİLEMEZ; yalnızca önbellek anahtarı ve
-  /// sunucudaki snapshot'ın dönem etiketi için taşınır. Sıralama, herkesin
-  /// tüm varlıklarının ağırlıklı ortalama maliyetine göre yapılır — kim ne
-  /// zaman almış olursa olsun aynı soruya cevap verir.
+  /// [currentValueTRY] ve [toTRY] artık KULLANILMIYOR (imza geriye dönük
+  /// uyumluluk için duruyor): değer de dönem başı da aynı fiyat serisinden
+  /// gelir, yani iki ayrı kaynak yok. Bu projede iki kaynak kullanmak tekrar
+  /// eden bir hata sınıfı.
   ///
-  /// Maliyeti bilinmeyen (0) portföy için `null` döner: bölme tanımsızdır ve
-  /// 0 göstermek "başabaş" yanılgısı yaratırdı.
+  /// Herkes — ben ve ortaklar — [donemGetirisiPct] üzerinden geçer.
   Future<RoiResult> computeROIDetailed({
     required List<Asset> assets,
     required int periodDays,
@@ -103,14 +102,12 @@ class LeaderboardService {
     }
 
     final ck = cacheKey == null ? null : '$cacheKey|$periodDays';
-    final result = maliyetBazliKarZararPct(assets, currentValueTRY, toTRY);
+    final result = await donemGetirisiPct(assets, periodDays);
 
     if (kDebugMode) {
       // ignore: avoid_print
       print('[LeaderboardService.computeROI] user=${cacheKey ?? "?"} '
-          'current=${currentValueTRY.toStringAsFixed(0)} '
-          'cost=${toplamMaliyetTRY(assets, toTRY).toStringAsFixed(0)} '
-          '=> ${result?.toStringAsFixed(2) ?? "null"}%');
+          'periodDays=$periodDays => ${result?.toStringAsFixed(2) ?? "null"}%');
     }
 
     if (ck != null) {
@@ -120,34 +117,52 @@ class LeaderboardService {
     return RoiResult(roi: result, usedFallback: false);
   }
 
-  /// Net pozisyonların ağırlıklı ortalama maliyeti (TRY).
+  /// Bir varlık listesinin SEÇİLİ DÖNEMDEKİ getirisi.
   ///
-  /// `aggregatePositions` kullanılır: sell lot'ları buy miktarından düşer,
-  /// silinmiş kayıtlar elenir. Her pozisyonun maliyeti kendi alım kuruyla
-  /// TRY'ye çevrilir (bankacılık standardı — bugünkü kurla değil).
-  double toplamMaliyetTRY(
+  /// ```
+  ///   (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
+  /// ```
+  ///
+  /// Takip listesi grafiğindeki `normalizeSeries` ile AYNI soru: "bu dönemde
+  /// yüzde kaç değişti?" Seri `getPortfolioHistory(..., simulate: true)` ile
+  /// üretilir — bugünkü net pozisyon dönemin tamamına yayılır.
+  ///
+  /// ## Neden `simulate: true`
+  /// Gerçek geçmiş modunda bir lot'un `addedDate`'inden önceki slotlara 0
+  /// yazılır; dönem başı 0 olunca bölme tanımsız kalır ve dönem içinde alım
+  /// yapan herkes sıralamadan düşerdi. Simülasyon, herkesi aynı pencerede
+  /// ölçer — "bu varlıkları dönem başından beri tutsaydım" senaryosu.
+  /// (Takip listesi grafiği de aynı gerekçeyle simülasyon kullanıyor.)
+  ///
+  /// ## Ortaklar için de aynı yol
+  /// Ortağın lot'ları `allPartnerAssetsProvider` üzerinden bu cihazda ZATEN
+  /// var ve `refreshPrices` `currentPrice`'ı canlı kotasyonla güncelliyor
+  /// (RLS DB'ye yazmayı engellese de bellekte günceller). Sunucu snapshot'ı
+  /// beklemek üç soruna yol açıyordu:
+  ///   · ortak uygulamayı hiç açmadıysa → yarışta değeri YOK,
+  ///   · eski sürümde açtıysa → eski formülle yazılmış BAYAT değer,
+  ///   · bugün açmadıysa → dünkü fiyatlarla hesaplanmış değer.
+  ///
+  /// Dönem başı ≤ 0 ise `null` — bölme tanımsız.
+  Future<double?> donemGetirisiPct(
     List<Asset> assets,
-    double Function(double, String) toTRY,
-  ) =>
-      aggregatePositions(assets)
-          .map((p) => p.asDisplayAsset())
-          .fold<double>(0, (s, a) => s + toTRY(a.totalCost, a.currency));
-
-  /// Ortalama maliyet üzerinden kâr/zarar yüzdesi.
-  ///
-  /// Saf fonksiyon — leaderboard'un TEK metriği. Portföy ekranındaki
-  /// `PortfolioState.gainLossPercentage` ile aynı soruyu yanıtlar, yani
-  /// kullanıcı yarışta gördüğü sayıyı kendi portföyünde de görür.
-  ///
-  /// Maliyet 0 veya negatifse `null` — bölme tanımsız.
-  double? maliyetBazliKarZararPct(
-    List<Asset> assets,
-    double currentValueTRY,
-    double Function(double, String) toTRY,
-  ) {
-    final maliyet = toplamMaliyetTRY(assets, toTRY);
-    if (maliyet <= 0) return null;
-    return ((currentValueTRY - maliyet) / maliyet) * 100.0;
+    int periodDays,
+  ) async {
+    if (assets.isEmpty) return null;
+    try {
+      final seri = await HistoryService.instance
+          .getPortfolioHistory(assets, periodDays, simulate: true);
+      if (seri.length < 2) return null;
+      final ts = seri.keys.toList()..sort();
+      final ilk = seri[ts.first]!;
+      final son = seri[ts.last]!;
+      if (ilk <= 0) return null;
+      return ((son - ilk) / ilk) * 100.0;
+    } catch (_) {
+      // Fiyat geçmişi alınamadı — "veri yok" olarak göster. Uydurma bir
+      // sayı basmak sıralamayı sessizce bozardı.
+      return null;
+    }
   }
 
   /// Backwards-compat: eski call site'lar sadece double? bekliyor.
@@ -216,9 +231,18 @@ class LeaderboardService {
   }
 
   /// Aktif ortakların son ROI snapshot'larını Supabase'ten çeker.
-  /// Her cihaz bu değeri okuyacak → iki cihaz aynı satırı görür (hesap
-  /// tutarsızlığı biter). Snapshot atmayan partner map'te olmaz —
-  /// caller onu "veri yok" olarak gösterir.
+  ///
+  /// **ŞU AN KULLANILMIYOR** (2026-09-02). Yarış ekranı ortakların kâr/zararını
+  /// artık YERELDE hesaplıyor (`karZararPctFor`), çünkü ortağın lot'ları
+  /// `allPartnerAssetsProvider` üzerinden zaten cihazda ve canlı fiyatlarla
+  /// güncel. Snapshot'a bağlı kalmak üç soruna yol açıyordu:
+  ///   · ortak uygulamayı hiç açmadıysa → yarışta değeri YOK,
+  ///   · eski sürümde açtıysa → eski formülle yazılmış bayat değer,
+  ///   · bugün açmadıysa → dünkü fiyatlarla hesaplanmış değer.
+  ///
+  /// Silinmedi: RPC sunucuda duruyor ve ortak sayısı cihazda tutulamayacak
+  /// kadar büyürse (ya da ortak lot'ları gizlenirse) sunucu tarafı sıralamaya
+  /// dönmek gerekebilir.
   ///
   /// Dönen map: partnerUserId → (roi%, snapshot'ın atıldığı zaman).
   Future<Map<String, ({double roi, DateTime updatedAt})>> fetchPartnerRois(
