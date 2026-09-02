@@ -143,6 +143,118 @@ void main() {
     });
   });
 
+  group('portföy çizgisi kesintisiz — simülasyon modu', () {
+    // ## Bug (üretimde görüldü): portföy çizgisi kesik çiziliyordu
+    //
+    // Gerçek geçmiş modunda `getPortfolioHistory`, bir lot'un `addedDate`'inden
+    // önceki slotlara 0 yazar. Ölçüldü: 30 günlük dönem + 10 gün önce alınan
+    // varlık → 31 noktanın 20'si sıfır, `normalizeSeries` NULL döndü.
+    // Aradaki bir sıfır ise seriyi −%100'e çakıp geri çıkarıyordu.
+    //
+    // ## Çözüm: `simulate: true`
+    // Alım tarihleri yok sayılır, bugünkü net pozisyon dönemin tamamına
+    // yayılır (performans ekranındaki "simülasyon" sekmesiyle AYNI bayrak).
+    // Ölçüldü: aynı senaryoda 31 nokta, 0 sıfır, seri geçerli.
+    //
+    // Asıl gerekçe KIYAS ADALETİ: izlenen varlıklar dönemin tamamı boyunca
+    // çiziliyor. Portföyü yalnızca sahip olunan günlerde çizmek iki tarafı
+    // farklı pencerelerde ölçmek olurdu.
+    //
+    // Bunun bir yorumu var ve kullanıcıya AÇIKÇA söyleniyor (grafik altı not).
+
+    test('sağlayıcı SİMÜLASYON modunu kullanır', () async {
+      final provider = _yorumsuz(
+          await File('lib/providers/watchlist_provider.dart').readAsString());
+      expect(provider.contains('simulate: true'), isTrue,
+          reason: 'gerçek geçmiş modu alım öncesi slotlara 0 yazar ve '
+              'kıyas çizgisini bozar');
+    });
+
+    test('senaryo olduğu kullanıcıya YAZIYLA söylenir', () async {
+      // Kullanıcı bu çizgiyi "gerçekleşmiş getirim" sanmamalı.
+      final ekran = _yorumsuz(
+          await File('lib/screens/watchlist_screen.dart').readAsString());
+      expect(ekran.contains('senaryosudur'), isTrue,
+          reason: 'simülasyon olduğu belirtilmezse yanıltıcı olur');
+      expect(ekran.contains('gerçekleşmiş getirin değildir'), isTrue);
+    });
+
+    test('baştaki sıfırlar ATILIR', () {
+      final r = portfoyunVarOlduguSlotlar({
+        1: 0.0,
+        2: 0.0,
+        3: 0.0,
+        4: 1000.0,
+        5: 1100.0,
+      });
+      expect(r.keys.toList(), [4, 5],
+          reason: 'portföyün var olmadığı slotlar seriye girmemeli');
+    });
+
+    test('düzeltme sonrası seri ÇİZİLEBİLİR', () {
+      // Bug'ın asıl belirtisi: normalize null dönüyordu.
+      final ham = {1: 0.0, 2: 0.0, 3: 1000.0, 4: 1200.0};
+      expect(normalizeSeries(ham), isNull,
+          reason: 'ham seride ilk değer 0 → çizilemez (bug)');
+
+      final n = normalizeSeries(portfoyunVarOlduguSlotlar(ham));
+      expect(n, isNotNull, reason: 'temizlenmiş seri çizilebilmeli');
+      expect(n!.totalReturnPct, closeTo(20.0, 1e-9),
+          reason: 'kıyas portföyün gerçekten var olduğu ilk andan başlar');
+    });
+
+    test('ORTADAKİ sıfır KORUNUR — gerçek bir olay olabilir', () {
+      // Tüm varlıklar satıldıysa portföy gerçekten 0'dır. Bunu atmak
+      // grafiği yalan söyletirdi.
+      final r = portfoyunVarOlduguSlotlar({
+        1: 1000.0,
+        2: 0.0,
+        3: 1200.0,
+      });
+      expect(r.keys.toList(), [1, 2, 3]);
+      expect(r[2], 0.0, reason: 'ortadaki sıfır gerçek veridir');
+    });
+
+    test('sıfırla başlayıp ortada da sıfır olan seri', () {
+      // Baştakiler atılır, ortadaki kalır.
+      final r = portfoyunVarOlduguSlotlar({
+        1: 0.0,
+        2: 500.0,
+        3: 0.0,
+        4: 800.0,
+      });
+      expect(r.keys.toList(), [2, 3, 4]);
+    });
+
+    test('hiç pozitif değer yoksa BOŞ döner', () {
+      // Portföy dönem boyunca hiç var olmamış — çizilecek bir şey yok.
+      final r = portfoyunVarOlduguSlotlar({1: 0.0, 2: 0.0});
+      expect(r, isEmpty);
+      expect(normalizeSeries(r), isNull);
+    });
+
+    test('sıfır içermeyen seri DEĞİŞMEZ', () {
+      final girdi = {1: 100.0, 2: 110.0, 3: 105.0};
+      expect(portfoyunVarOlduguSlotlar(girdi), girdi);
+    });
+
+    test('boş seri çökmez', () {
+      expect(portfoyunVarOlduguSlotlar(const {}), isEmpty);
+    });
+
+    test('güvenlik ağı da UYGULANIR', () async {
+      // Simülasyon normalde sıfır üretmez, ama bir sembolün fiyat geçmişi
+      // hiç gelmezse `_flatFallback` 0 verebilir. İki koruma birlikte çalışır.
+      final provider = _yorumsuz(
+          await File('lib/providers/watchlist_provider.dart').readAsString());
+      expect(
+          provider.contains('normalizeSeries(portfoyunVarOlduguSlotlar(raw))'),
+          isTrue,
+          reason: 'ham seri doğrudan normalize edilirse tek bir bozuk sembol '
+              'tüm kıyas çizgisini düşürür');
+    });
+  });
+
   group('çizgiye dokunma — odak', () {
     test('odak yokken dokunulan seri odağa gelir', () {
       expect(yeniOdak(mevcut: null, dokunulan: 'GARAN'), 'GARAN');

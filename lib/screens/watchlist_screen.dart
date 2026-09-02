@@ -343,6 +343,31 @@ class _ChartCard extends ConsumerWidget {
                           ref.read(watchlistFocusProvider.notifier).state = k,
                     ),
                   ),
+                  // Portföy çizgisi bir SENARYO; bunu söylememek yanıltıcı
+                  // olurdu. Kullanıcı "%12 kazanmışım" diye okumamalı.
+                  if (series.containsKey(WatchlistChart.portfolioSeriesKey))
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 0, 0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline_rounded,
+                              size: 12, color: context.c.text36),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '$portfolioLabel çizgisi, bugünkü varlıklarını '
+                              'dönem başından beri tutsaydın senaryosudur — '
+                              'gerçekleşmiş getirin değildir.',
+                              style: context.t.bodySmall?.copyWith(
+                                  color: context.c.text36,
+                                  fontSize: 10,
+                                  height: 1.4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               );
             },

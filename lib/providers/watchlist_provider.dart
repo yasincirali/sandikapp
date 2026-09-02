@@ -24,6 +24,37 @@ class WatchlistLimitException implements Exception {
       'Ücretsiz planda en fazla $limit varlık takip edilebilir.';
 }
 
+/// Güvenlik ağı: seride kalan baştaki sıfırları atar.
+///
+/// Kıyas çizgisi `simulate: true` ile üretilir (bkz. `watchlistChartProvider`),
+/// yani `addedDate` yok sayılır ve sıfır slot BEKLENMEZ. Yine de bir sembolün
+/// fiyat geçmişi hiç gelmezse `_flatFallback` 0 üretebiliyor; o durumda seri
+/// yüzdeye çevrilirken bozulur:
+///   · dönem başı 0 ise `normalizeSeries` **null** döner → çizgi hiç çizilmez,
+///   · aradaki 0 seriyi **−%100'e** çakıp geri çıkarır → dikey uçurum.
+///
+/// **Yalnızca BAŞTAKİ sıfırlar atılır.** Ortadaki bir sıfır gerçek bir olay
+/// olabilir (tüm varlıklar satıldı); onu atmak grafiği yalan söyletirdi.
+Map<int, double> portfoyunVarOlduguSlotlar(Map<int, double> raw) {
+  if (raw.isEmpty) return raw;
+  final ts = raw.keys.toList()..sort();
+
+  // Sıfırdan büyük İLK slotu bul.
+  var basla = -1;
+  for (var i = 0; i < ts.length; i++) {
+    if (raw[ts[i]]! > 0) {
+      basla = i;
+      break;
+    }
+  }
+  // Hiç pozitif değer yok — çizilecek bir şey yok.
+  if (basla < 0) return const {};
+
+  return {
+    for (var i = basla; i < ts.length; i++) ts[i]: raw[ts[i]]!,
+  };
+}
+
 /// Kıyas çizgisine hangi varlıklar girer?
 ///
 /// `ModernTabSelector` sözleşmesi:
@@ -296,8 +327,27 @@ final watchlistChartProvider =
     );
 
     if (all.isNotEmpty) {
-      final raw = await HistoryService.instance.getPortfolioHistory(all, days);
-      final norm = normalizeSeries(raw);
+      // `simulate: true` — alım tarihleri YOK SAYILIR: bugünkü net pozisyon
+      // dönemin tamamı boyunca elde tutulmuş kabul edilir. Performans
+      // ekranındaki "simülasyon" sekmesiyle AYNI bayrak, aynı anlam.
+      //
+      // ## Neden gerçek geçmiş değil
+      // Gerçek modda `addedDate`'ten önceki slotlara 0 yazılır ve kıyas
+      // çizgisi bozulur: dönem başı 0 ise seri çizilemez, aradaki 0 ise
+      // −%100'e çakılır (ölçüldü: 30 günlük dönem + 10 gün önce alınan
+      // varlık → 31 noktanın 20'si sıfır).
+      //
+      // Daha önemlisi: KIYAS ADALETİ. İzlenen varlıklar dönemin tamamı
+      // boyunca çiziliyor. Portföyü yalnızca sahip olunan günlerde çizmek
+      // iki tarafı farklı pencerelerde ölçmek olurdu — "izlediklerim
+      // portföyümden iyi mi gidiyor" sorusu ancak aynı pencerede anlamlı.
+      //
+      // Bunun bir yorumu var ve kullanıcıya AÇIKÇA söylenmeli (grafik
+      // altındaki not): bu çizgi "bu varlıkları dönem başından beri
+      // tutsaydım" senaryosudur, gerçekleşmiş getirin değildir.
+      final raw = await HistoryService.instance
+          .getPortfolioHistory(all, days, simulate: true);
+      final norm = normalizeSeries(portfoyunVarOlduguSlotlar(raw));
       if (norm != null) out[WatchlistChart.portfolioSeriesKey] = norm;
     }
   } catch (e) {
