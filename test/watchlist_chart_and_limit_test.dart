@@ -1,0 +1,414 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/providers/watchlist_provider.dart';
+import 'package:portfoy_takip/services/history_service.dart';
+import 'package:portfoy_takip/widgets/watchlist_chart.dart';
+
+/// Takip listesi grafiği + free tier limiti.
+///
+/// ## Grafik: neden yüzde
+/// `comparison_screen` ile AYNI motor (`normalizeSeries`) kullanılıyor.
+/// Ham fiyatla çizmek anlamsız olurdu: ₺12'lik hisse ile ₺4.800'lük altın
+/// aynı eksende görünmez. Yüzde ayrıca takip listesinin doğasına uygun —
+/// sahip olmadığın varlığın "kazancı" tanımsızdır.
+///
+/// ## Limit: neden paywall kapalıyken uygulanmaz
+/// `paywall_enabled` şu an `false`. Limiti koşulsuz uygulamak, satın
+/// alınabilir bir premium yokken kullanıcıyı 5 varlıkta durdurup ÇIKIŞSIZ
+/// bırakırdı. `assetLimitProvider` de aynı kalıbı izliyor.
+
+/// Kıyas seçici testleri için basit bir lot. Yalnızca `ticker` ayırt edici;
+/// `kiyasVarliklari` varlığın içeriğine değil SAHİBİNE göre seçim yapar.
+Asset _lot(String ticker) => Asset(
+      id: ticker,
+      userId: 'u',
+      name: ticker,
+      ticker: ticker,
+      type: AssetType.hisse,
+      quantity: 1,
+      purchasePrice: 10,
+      currency: 'TRY',
+      notes: '',
+      isManualPrice: false,
+      currentPrice: 12,
+      addedDate: DateTime(2026, 1, 1),
+    );
+
+String _yorumsuz(String src) => src.split('\n').where((l) {
+      final t = l.trimLeft();
+      return !t.startsWith('//') && !t.startsWith('///') && !t.startsWith('*');
+    }).join('\n');
+
+void main() {
+  group('normalizeSeries — grafiğin motoru', () {
+    test('dönem başı %0 kabul edilir', () {
+      final n = normalizeSeries({1: 100.0, 2: 110.0, 3: 120.0});
+      expect(n, isNotNull);
+      expect(n!.points[1], closeTo(0.0, 1e-9),
+          reason: 'ilk nokta her zaman sıfır olmalı — kıyasın referansı');
+      expect(n.points[2], closeTo(10.0, 1e-9));
+      expect(n.points[3], closeTo(20.0, 1e-9));
+      expect(n.totalReturnPct, closeTo(20.0, 1e-9));
+    });
+
+    test('farklı fiyat ÖLÇEKLERİ aynı eksende kıyaslanabilir', () {
+      // Grafiğin varlık sebebi: ₺12 hisse ile ₺4.800 altın aynı yüzdeyi
+      // yaparsa çizgileri ÜST ÜSTE gelmeli.
+      final ucuz = normalizeSeries({1: 12.0, 2: 13.2})!;
+      final pahali = normalizeSeries({1: 4800.0, 2: 5280.0})!;
+      expect(ucuz.totalReturnPct, closeTo(pahali.totalReturnPct, 1e-9),
+          reason: 'ikisi de %10 kazandı — grafikte aynı yükseklikte olmalı');
+    });
+
+    test('düşen seri negatif yüzde verir', () {
+      final n = normalizeSeries({1: 200.0, 2: 150.0})!;
+      expect(n.totalReturnPct, closeTo(-25.0, 1e-9));
+    });
+
+    test('tek nokta çizilemez — null döner', () {
+      expect(normalizeSeries({1: 100.0}), isNull);
+      expect(normalizeSeries(const {}), isNull);
+    });
+
+    test('ilk fiyat sıfırsa null — sonsuz yüzde üretmez', () {
+      // Sıfıra bölme grafiği okunamaz hale getirirdi.
+      expect(normalizeSeries({1: 0.0, 2: 100.0}), isNull);
+      expect(normalizeSeries({1: -5.0, 2: 100.0}), isNull);
+    });
+  });
+
+  group('grafik kaynak kuralları', () {
+    late String provider;
+    late String chart;
+
+    setUpAll(() async {
+      provider = _yorumsuz(
+          await File('lib/providers/watchlist_provider.dart').readAsString());
+      chart = _yorumsuz(
+          await File('lib/widgets/watchlist_chart.dart').readAsString());
+    });
+
+    test('karşılaştırma ekranıyla AYNI motoru kullanır', () {
+      expect(provider.contains('normalizeSeries'), isTrue,
+          reason: 'ikinci bir normalize implementasyonu yazmak, iki ekranın '
+              'aynı veriyi farklı göstermesine yol açardı');
+    });
+
+    test('portföy serisi grafiğe KIYAS olarak eklenir', () {
+      expect(provider.contains('getPortfolioHistory'), isTrue);
+      expect(provider.contains('portfolioSeriesKey'), isTrue,
+          reason: 'portföy sabit bir anahtarla gelir; grafik onu ayrı çizer');
+    });
+
+    test('ortaklar portföy serisine dahil', () {
+      // Kullanıcı "benim ve ortaklarımla birlikte olan portföyüm" istedi.
+      expect(provider.contains('allPartnerAssetsProvider'), isTrue);
+      expect(provider.contains('activePartnersProvider'), isTrue,
+          reason: 'yalnızca AKTİF ortaklar sayılmalı');
+    });
+
+    test('kıyas çizgisinin adı SEÇİME göre değişir', () async {
+      // Bir ortak seçiliyken "Portföyüm" yazmak YANLIŞ bilgi olurdu.
+      final ekran = _yorumsuz(
+          await File('lib/screens/watchlist_screen.dart').readAsString());
+      expect(ekran.contains('String _portfolioLabel('), isTrue);
+      expect(ekran.contains("if (view == null) return 'Birlikte'"), isTrue);
+      expect(ekran.contains("if (view == '') return 'Portföyüm'"), isTrue);
+      // Grafik sabit metin YAZMAMALI — etiketi dışarıdan almalı.
+      expect(chart.contains("'Portföyüm'"), isFalse,
+          reason: 'etiket seçime bağlı; grafikte sabitlenirse ortak '
+              'seçildiğinde yanlış ad görünür');
+      expect(chart.contains('portfolioLabel'), isTrue);
+    });
+
+    test('seçici ortak YOKKA çizilmez', () async {
+      // Tek seçenekli seçici karar verecek bir şey sunmaz, yer kaplar.
+      final ekran = _yorumsuz(
+          await File('lib/screens/watchlist_screen.dart').readAsString());
+      expect(ekran.contains('if (partners.isNotEmpty)'), isTrue);
+    });
+
+    test('portföy çizgisi görsel olarak AYIRT EDİLİR', () {
+      // Renk tek başına yeterli değil; kalınlık da farklı olmalı.
+      expect(chart.contains('isPortfolio ? 3 : 1.8'), isTrue,
+          reason: 'kıyas çizgisi kalınlıktan da okunmalı');
+    });
+
+    test('sıfır çizgisi (dönem başı) çizilir', () {
+      expect(chart.contains('HorizontalLine'), isTrue,
+          reason: 'yüzdelerin neye göre okunacağı görünür olmalı');
+    });
+  });
+
+  group('çizgiye dokunma — odak', () {
+    test('odak yokken dokunulan seri odağa gelir', () {
+      expect(yeniOdak(mevcut: null, dokunulan: 'GARAN'), 'GARAN');
+    });
+
+    test('AYNI seriye tekrar dokunmak odağı KALDIRIR', () {
+      // Çıkış yolu: kullanıcı odaktan çıkmak için başka yer aramamalı.
+      // Donut grafikteki `_touchedIndex` deseninin aynısı.
+      expect(yeniOdak(mevcut: 'GARAN', dokunulan: 'GARAN'), isNull);
+    });
+
+    test('BAŞKA seriye dokunmak odağı taşır', () {
+      expect(yeniOdak(mevcut: 'GARAN', dokunulan: 'ALARK'), 'ALARK');
+    });
+
+    test('portföy çizgisine de odaklanılabilir', () {
+      const k = WatchlistChart.portfolioSeriesKey;
+      expect(yeniOdak(mevcut: null, dokunulan: k), k);
+      expect(yeniOdak(mevcut: k, dokunulan: k), isNull);
+    });
+
+    test('odak FİLTRE DEĞİL — diğer seriler grafikte kalır', () async {
+      // En kritik kural: odaklanmak diğer çizgileri KALDIRMAZ, soluklaştırır.
+      // Kaldırmak kıyası yok ederdi — "bu varlık iyi mi gidiyor" sorusunun
+      // cevabı ancak diğerleri görünürken vardır.
+      final chart = _yorumsuz(
+          await File('lib/widgets/watchlist_chart.dart').readAsString());
+      expect(chart.contains('withValues(alpha: 0.18)'), isTrue,
+          reason: 'odak dışı seriler soluklaşmalı');
+      // Seri listesini odağa göre süzen bir kod OLMAMALI.
+      expect(chart.contains('where((k) => k == focused'), isFalse);
+      expect(chart.contains('if (focused != null && key != focused) continue'),
+          isFalse,
+          reason: 'odak dışı seri atlanırsa kıyas kaybolur');
+    });
+
+    test('odaktaki seri KALINLAŞIR — renk tek işaret değil', () async {
+      final chart = _yorumsuz(
+          await File('lib/widgets/watchlist_chart.dart').readAsString());
+      expect(chart.contains('buOdakta ?'), isTrue,
+          reason: 'soluklaşmaya ek olarak kalınlık da değişmeli');
+    });
+
+    test('bayat odak temizlenir', () async {
+      // Varlık takipten çıkarılmış ya da yeni dönemde serisi gelmemiş
+      // olabilir. Bayat anahtar tutulursa TÜM seriler soluk kalır.
+      final ekran = _yorumsuz(
+          await File('lib/screens/watchlist_screen.dart').readAsString());
+      expect(ekran.contains('series.containsKey(focused)'), isTrue,
+          reason: 'odak yalnızca var olan bir seriye işaret edebilir');
+    });
+  });
+
+  group('kıyas seçici — kimin portföyü', () {
+    // `ModernTabSelector` sözleşmesi: '' = Ben, uuid = o ortak,
+    // null = Birlikte. Uygulamanın geri kalanıyla aynı; ayrı bir sözleşme
+    // uydurmak kullanıcıya iki farklı seçici dili öğretirdi.
+    final benim = [_lot('BEN1'), _lot('BEN2')];
+    final ortakA = [_lot('A1')];
+    final ortakB = [_lot('B1'), _lot('B2')];
+    final harita = {'a': ortakA, 'b': ortakB};
+
+    test('Ben — yalnızca kendi varlıkların', () {
+      final r = kiyasVarliklari(
+        view: '',
+        myAssets: benim,
+        partnerAssets: harita,
+        activePartnerIds: {'a', 'b'},
+      );
+      expect(r.map((e) => e.ticker), ['BEN1', 'BEN2'],
+          reason: 'ortak varlıkları kendi kıyasıma karışmamalı');
+    });
+
+    test('Tek ortak — yalnızca o ortağın varlıkları', () {
+      final r = kiyasVarliklari(
+        view: 'b',
+        myAssets: benim,
+        partnerAssets: harita,
+        activePartnerIds: {'a', 'b'},
+      );
+      expect(r.map((e) => e.ticker), ['B1', 'B2'],
+          reason: 'ortak seçiliyken benim varlıklarım girmemeli');
+    });
+
+    test('Birlikte — ben + tüm aktif ortaklar', () {
+      final r = kiyasVarliklari(
+        view: null,
+        myAssets: benim,
+        partnerAssets: harita,
+        activePartnerIds: {'a', 'b'},
+      );
+      expect(r.length, 5, reason: '2 benim + 1 A + 2 B');
+      expect(
+          r.map((e) => e.ticker).toSet(), {'BEN1', 'BEN2', 'A1', 'B1', 'B2'});
+    });
+
+    test('PASİF ortaklık Birlikte hesabına GİRMEZ', () {
+      // Harita pasifleşmiş ortağın verisini hâlâ taşıyor olabilir;
+      // `activePartnerIds` tek doğruluk kaynağıdır.
+      final r = kiyasVarliklari(
+        view: null,
+        myAssets: benim,
+        partnerAssets: harita,
+        activePartnerIds: {'a'}, // b pasifleşti
+      );
+      expect(r.map((e) => e.ticker).toSet(), {'BEN1', 'BEN2', 'A1'},
+          reason: 'pasif ortağın (b) verisi kıyas çizgisine sızmamalı');
+      // Not: `startsWith('B')` ile bakmak YANLIŞ olurdu — 'BEN1' de B ile
+      // başlıyor. Ortak B'nin lot'ları tam adlarıyla aranır.
+      expect(r.any((e) => e.ticker == 'B1' || e.ticker == 'B2'), isFalse);
+    });
+
+    test('pasif ortak DOĞRUDAN seçilse bile boş döner', () {
+      final r = kiyasVarliklari(
+        view: 'b',
+        myAssets: benim,
+        partnerAssets: harita,
+        activePartnerIds: {'a'},
+      );
+      expect(r, isEmpty,
+          reason: 'seçici pasif ortağı listelemez ama state bayat kalabilir');
+    });
+
+    test('bilinmeyen ortak id — boş, çökmez', () {
+      final r = kiyasVarliklari(
+        view: 'yok',
+        myAssets: benim,
+        partnerAssets: harita,
+        activePartnerIds: {'a', 'b'},
+      );
+      expect(r, isEmpty);
+    });
+
+    test('ortak yokken Birlikte == Ben', () {
+      final birlikte = kiyasVarliklari(
+        view: null,
+        myAssets: benim,
+        partnerAssets: const {},
+        activePartnerIds: const {},
+      );
+      expect(birlikte.map((e) => e.ticker), ['BEN1', 'BEN2']);
+    });
+  });
+
+  group('takip listesi limiti', () {
+    late String prefs;
+    late String provider;
+
+    setUpAll(() async {
+      prefs = _yorumsuz(
+          await File('lib/providers/preferences_provider.dart').readAsString());
+      provider = _yorumsuz(
+          await File('lib/providers/watchlist_provider.dart').readAsString());
+    });
+
+    test('paywall KAPALIYKEN limit uygulanmaz', () {
+      // En kritik kural: `paywall_enabled=false` iken kullanıcı 5 varlıkta
+      // durdurulup çıkışsız bırakılmamalı — satın alınacak bir şey yok.
+      final i = prefs.indexOf('watchlistLimitProvider');
+      expect(i, greaterThan(0), reason: 'limit provider\'ı tanımlı olmalı');
+      final govde = prefs.substring(i, i + 500);
+      expect(govde.contains('paywallVisibleProvider'), isTrue);
+      expect(govde.contains('if (!paywallOn) return 1 << 30'), isTrue,
+          reason: 'paywall kapalıyken sınırsız — assetLimitProvider ile '
+              'aynı kalıp');
+    });
+
+    test('premium kullanıcıda limit yok', () {
+      final i = prefs.indexOf('watchlistLimitProvider');
+      final govde = prefs.substring(i, i + 500);
+      expect(govde.contains('effectivePremiumProvider'), isTrue);
+      expect(govde.contains('if (premium) return 1 << 30'), isTrue);
+    });
+
+    test('limit Remote Config\'ten okunur — sabit kodlanmaz', () {
+      final i = prefs.indexOf('watchlistLimitProvider');
+      final govde = prefs.substring(i, i + 500);
+      expect(govde.contains('freeWatchlistLimit'), isTrue,
+          reason: 'limit yayın sonrası ayarlanabilmeli');
+      // Varsayılan 5 — kullanıcının istediği değer.
+      expect(
+          _yorumsuz(File('lib/services/remote_config_service.dart')
+                  .readAsStringSync())
+              .contains("'free_watchlist_limit': 5"),
+          isTrue);
+    });
+
+    test('limit PROVIDER\'da uygulanır — UI\'da değil', () {
+      // Tek giriş noktası varsayımı kırılgandır (derin bağlantı, ileride
+      // "portföyden takibe al" akışı). Kural notifier'da durursa baypas
+      // edilemez; `portfolio_provider` de aynı gerekçeyle böyle yapıyor.
+      final i = provider.indexOf('Future<void> add(');
+      expect(i, greaterThan(0));
+      final govde = provider.substring(i, i + 900);
+      expect(govde.contains('watchlistLimitProvider'), isTrue,
+          reason: 'limit ekleme metodunun İÇİNDE kontrol edilmeli');
+      expect(govde.contains('WatchlistLimitException'), isTrue);
+    });
+
+    // NOT: Aşağıdaki testler kaynak metnine DEĞİL davranışa bakar.
+    //
+    // İlk sürümde bu kural `govde.contains('zatenVar')` ile denetleniyordu.
+    // Sabotajla ölçüldüğünde YETERSİZ çıktı: `final zatenVar = false;`
+    // yazıldığında (yani kural tamamen bozulduğunda) test hâlâ geçiyordu —
+    // değişken adı duruyordu ama hiçbir şey yapmıyordu. Karar saf bir
+    // fonksiyona (`watchlistLimitiAsiliyorMu`) çıkarıldı ve gerçek girdi
+    // kombinasyonlarıyla sınanıyor.
+
+    test('limit dolu değilken ekleme geçer', () {
+      expect(
+          watchlistLimitiAsiliyorMu(
+              mevcutSayi: 3, zatenTakipte: false, limit: 5),
+          isFalse);
+    });
+
+    test('limit dolduğunda YENİ varlık engellenir', () {
+      expect(
+          watchlistLimitiAsiliyorMu(
+              mevcutSayi: 5, zatenTakipte: false, limit: 5),
+          isTrue);
+    });
+
+    test('zaten takipteki varlık kotayı ARTIRMAZ', () {
+      // Limit dolu olsa BİLE, var olan kaydı yeniden eklemek engellenmemeli:
+      // sunucudaki unique index onu zaten reddediyor, kullanıcıya "limit
+      // doldu" demek yanlış sebep göstermek olurdu.
+      expect(
+          watchlistLimitiAsiliyorMu(
+              mevcutSayi: 5, zatenTakipte: true, limit: 5),
+          isFalse,
+          reason: 'aynı varlığı yeniden eklemek limite takılmamalı');
+    });
+
+    test('paywall kapalı / premium (sonsuz limit) asla engellemez', () {
+      expect(
+          watchlistLimitiAsiliyorMu(
+              mevcutSayi: 9999, zatenTakipte: false, limit: 1 << 30),
+          isFalse,
+          reason: 'satın alınacak premium yokken kullanıcı durdurulmamalı');
+    });
+
+    test('limitin üstüne çıkılmışsa da engellenir', () {
+      // Sunucudan limitin üstünde kayıt gelebilir (limit sonradan düşürüldü).
+      // Bu durumda YENİ ekleme yine engellenmeli.
+      expect(
+          watchlistLimitiAsiliyorMu(
+              mevcutSayi: 7, zatenTakipte: false, limit: 5),
+          isTrue);
+    });
+
+    test('limit hatası ağ hatasından AYRI tiptedir', () {
+      // Genel `Exception` fırlatmak, ekleme ekranında "bağlantını kontrol et"
+      // gibi YANLIŞ bir mesaj gösterilmesine yol açardı.
+      expect(provider.contains('class WatchlistLimitException'), isTrue);
+      expect(provider.contains('final int limit'), isTrue,
+          reason: 'mesajda limitin kaç olduğu yazılabilmeli');
+    });
+
+    test('ekleme ekranı limit hatasında ÇIKIŞ YOLU sunar', () async {
+      final ekle = _yorumsuz(
+          await File('lib/screens/add_watchlist_screen.dart').readAsString());
+      expect(ekle.contains('on WatchlistLimitException'), isTrue,
+          reason: 'limit hatası ayrı yakalanmalı');
+      expect(ekle.contains('PaywallScreen.show'), isTrue,
+          reason: 'kullanıcıya ne yapabileceği söylenmeli — '
+              '"eklenemedi" deyip bırakmak çıkışsız bırakır');
+    });
+  });
+}

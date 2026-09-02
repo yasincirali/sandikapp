@@ -43,6 +43,11 @@ class RemoteConfigService {
     // gerçek ürün konumlanmasına göre azalt.
     'free_asset_limit': 20,
 
+    // Free tier takip listesi limiti. Portföy limitinden AYRI: takip etmek
+    // sahip olmaktan daha ucuz bir eylem, kullanıcı daha çok deneme yapar.
+    // Sunucuya yazılmadan önce istemcide kontrol edilir.
+    'free_watchlist_limit': 5,
+
     // Paywall UI variant'ı ('A' | 'B'). A/B test için.
     'paywall_variant': 'A',
 
@@ -107,6 +112,10 @@ class RemoteConfigService {
   int get freeAssetLimit =>
       _rc?.getInt('free_asset_limit') ?? _defaults['free_asset_limit'] as int;
 
+  int get freeWatchlistLimit =>
+      _rc?.getInt('free_watchlist_limit') ??
+      _defaults['free_watchlist_limit'] as int;
+
   String get paywallVariant =>
       _rc?.getString('paywall_variant') ??
       _defaults['paywall_variant'] as String;
@@ -124,8 +133,7 @@ class RemoteConfigService {
       _defaults['free_signal_slots_per_day'] as int;
 
   bool get depositsEnabled =>
-      _rc?.getBool('deposits_enabled') ??
-      _defaults['deposits_enabled'] as bool;
+      _rc?.getBool('deposits_enabled') ?? _defaults['deposits_enabled'] as bool;
 
   /// UI chip'leri / filtre listeleri için: `depositsEnabled=false` iken
   /// mevduat türünü listeden düşer. `AssetType.values` yerine bunu kullan.

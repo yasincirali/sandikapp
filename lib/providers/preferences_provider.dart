@@ -324,14 +324,27 @@ final assetLimitProvider = Provider<int>((ref) {
   return RemoteConfigService.instance.freeAssetLimit;
 });
 
+/// Free tier takip listesi limiti — `assetLimitProvider` ile AYNI kalıp.
+///
+/// **Paywall kapalıyken sınırsız.** `paywall_enabled` şu an `false`; limiti
+/// koşulsuz uygulamak, satın alınabilir bir premium yokken kullanıcıyı 5
+/// varlıkta durdurup çıkışsız bırakırdı. Paywall açıldığında limit kendiliğinden
+/// devreye girer — burada değişiklik gerekmez.
+final watchlistLimitProvider = Provider<int>((ref) {
+  final paywallOn = ref.watch(paywallVisibleProvider);
+  if (!paywallOn) return 1 << 30;
+  final premium = ref.watch(effectivePremiumProvider);
+  if (premium) return 1 << 30;
+  return RemoteConfigService.instance.freeWatchlistLimit;
+});
+
 // ─── Per-category göstergeler ─────────────────────────────────────────────────
 // Kullanıcı her varlık türü için hangi göstergelerin sinyal üretmesini istediğini
 // seçebilir. Kalıcı: SharedPreferences.
 
 const _kIndicatorPrefsKey = 'pref_indicators_by_type_v1';
 
-class IndicatorPrefsNotifier
-    extends Notifier<Map<AssetType, Set<String>>> {
+class IndicatorPrefsNotifier extends Notifier<Map<AssetType, Set<String>>> {
   @override
   Map<AssetType, Set<String>> build() {
     _load();
@@ -580,8 +593,10 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final freqRaw = prefs.getStringList(_userKey(_kSignalFrequencyKey)) ?? const [];
-      final hoursRaw = prefs.getStringList(_userKey(_kSignalHoursKey)) ?? const [];
+      final freqRaw =
+          prefs.getStringList(_userKey(_kSignalFrequencyKey)) ?? const [];
+      final hoursRaw =
+          prefs.getStringList(_userKey(_kSignalHoursKey)) ?? const [];
 
       final freqByType = <AssetType, SignalFrequency>{};
       for (final e in freqRaw) {
@@ -620,7 +635,9 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(
         _userKey(_kSignalFrequencyKey),
-        state.entries.map((e) => '${e.key.name}:${e.value.frequency.id}').toList(),
+        state.entries
+            .map((e) => '${e.key.name}:${e.value.frequency.id}')
+            .toList(),
       );
       await prefs.setStringList(
         _userKey(_kSignalHoursKey),
@@ -668,7 +685,10 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
   ) async {
     state = {
       ...state,
-      type: (frequency: freq, hours: hours.isEmpty ? kDefaultSchedule.hours : hours),
+      type: (
+        frequency: freq,
+        hours: hours.isEmpty ? kDefaultSchedule.hours : hours
+      ),
     };
     await _persist();
   }
@@ -762,7 +782,9 @@ Future<void> syncSignalPreferencesOnLogin(WidgetRef ref) async {
     final neutral = remote.any((r) => r.neutralPush);
     final enabled = remote.any((r) => r.signalsEnabled);
     await ref.read(signalNeutralPushProvider.notifier).applyFromServer(neutral);
-    await ref.read(signalNotificationsProvider.notifier).applyFromServer(enabled);
+    await ref
+        .read(signalNotificationsProvider.notifier)
+        .applyFromServer(enabled);
   } catch (_) {
     // Ağ hatasında yerel tercihler geçerli kalır.
   }
