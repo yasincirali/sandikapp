@@ -2,23 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
-import 'history_service.dart';
 
-/// Leaderboard için "dönem sonu değeri vs dönem başı değeri" bazlı basit
-/// ROI hesabı. Kesin TWR değil — MVP için yeterli metrik.
+/// Kâr/zarar hesabı sonucu.
 ///
-/// Formül:
-///   startValue = period başındaki portföy değeri (o günkü market price × o
-///                gün elinde bulunan quantity)
-///   endValue   = bugünkü portföy değeri
-///   roi%       = (endValue - startValue - netCashFlow) / max(startValue, epsilon) × 100
-///
-/// netCashFlow: period içinde yapılan (buy TRY) - (sell TRY) — deposit
-/// etkisini ROI'den çıkarır ki büyük yatırım yapan biri "daha iyi
-/// performans göstermiş" gibi görünmesin.
-/// ROI hesabı sonucu — değer ve fallback bayrağı birlikte. usedFallback=true
-/// ise UI "tahmini" işareti gösterebilir; hesap history yerine unrealized
-/// PnL'den yapılmıştır.
+/// [usedFallback] her zaman `false` — tek formül var, ikinci bir yol yok.
+/// Alan çağrı yerlerini kırmamak için duruyor; yeni kod buna BAKMAMALI.
+/// (Eskiden UI "tahmini" rozeti için kullanılacaktı ama hiç bağlanmadı.)
 class RoiResult {
   final double? roi;
   final bool usedFallback;
@@ -29,6 +18,7 @@ class RoiResult {
 class TopGainerAllocation {
   final int rank;
   final double roiPct;
+
   /// Tür bazlı yüzde, örn. {"hisse": 45.2, "doviz": 30.1, ...}. Sum ≈ 100.
   final Map<String, double> allocation;
   const TopGainerAllocation({
@@ -38,6 +28,37 @@ class TopGainerAllocation {
   });
 }
 
+/// Leaderboard sıralaması: **ortalama maliyet üzerinden kâr/zarar yüzdesi.**
+///
+/// ```
+///   kâr/zarar% = (güncel değer − toplam maliyet) / toplam maliyet × 100
+/// ```
+///
+/// Toplam maliyet, `aggregatePositions` ile hesaplanan AĞIRLIKLI ORTALAMA
+/// maliyettir: komisyonlar dahil, her lot'un alım anındaki kuruyla. Yani
+/// kullanıcının portföy ekranında gördüğü sayının aynısı
+/// (`PortfolioState.gainLossPercentage`).
+///
+/// ## Neden dönem bazlı ROI değil (2026-09-02'de değiştirildi)
+/// Önceki hesap iki farklı formül kullanıyordu ve hangisinin çalıştığı
+/// KİŞİYE GÖRE değişiyordu:
+///   · dönem başında portföyü OLAN → `(değer − dönemBaşı − nakitAkışı) / dönemBaşı`
+///   · dönem başında portföyü OLMAYAN → maliyet bazlı fallback
+///
+/// Ölçüldü: aynı işlemi yapan iki kullanıcı (ikisi de 100'den alıp 120'ye
+/// çıkmış, yani %20 kâr) **%380,67** ve **%20,00** olarak sıralanıyordu.
+/// Aynı yarışta iki farklı metrik, dolayısıyla sıralama anlamsızdı.
+///
+/// Tek formül bu sorunu YAPISAL olarak çözer: dallanma yoksa kişiye göre
+/// değişen bir sonuç da olamaz. Herkes aynı soruya cevap verir —
+/// "yatırdığın paraya göre ne kadar kazandın?"
+///
+/// ## Kabul edilen sınır
+/// Bu bir ZAMAN AĞIRLIKLI getiri (TWR) DEĞİLDİR; dönem seçimi sonucu
+/// etkilemez. 3 yılda %50 kazanan ile 3 ayda %50 kazanan aynı görünür.
+/// TWR doğru cevap olurdu ama her lot için tarihsel nakit akışı gerektirir;
+/// mevcut veri modeli bunu taşımıyor. Basit ve HERKES İÇİN AYNI olan bir
+/// metrik, karmaşık ama kişiye göre değişen bir metrikten iyidir.
 class LeaderboardService {
   static final LeaderboardService instance = LeaderboardService._();
   LeaderboardService._();
@@ -57,24 +78,19 @@ class LeaderboardService {
     return _roiCache['$userId|$periodDays']?.roi;
   }
 
-  /// Bir kullanıcının portföy assets'ini alıp verilen periyotta ROI% döner.
+  /// Bir kullanıcının kâr/zarar yüzdesi — **ortalama maliyet üzerinden.**
   ///
-  /// Formül:
-  ///   ROI% = (currentValue - startValue - netCashFlow) / startValue × 100
+  /// ```
+  ///   (güncel değer − toplam maliyet) / toplam maliyet × 100
+  /// ```
   ///
-  /// Nerede:
-  ///   - startValue = dönem başındaki portföy değeri (TL, o günkü fiyatlarla)
-  ///   - currentValue = bugünkü portföy değeri (TL)
-  ///   - netCashFlow = dönem içinde eklenen yeni sermaye eksi çekim:
-  ///        + isBuy: satın alım TL maliyeti (deposit)
-  ///        - isSell: satış geliri (sellPrice × quantity × FX)  — DİKKAT:
-  ///          maliyet DEĞİL, satış geliri kullanılır. Aksi halde kârlı
-  ///          satış "çekilmiş sermaye" olarak eksik sayılır ve ROI düşük
-  ///          hesaplanır.
+  /// [periodDays] artık hesabı ETKİLEMEZ; yalnızca önbellek anahtarı ve
+  /// sunucudaki snapshot'ın dönem etiketi için taşınır. Sıralama, herkesin
+  /// tüm varlıklarının ağırlıklı ortalama maliyetine göre yapılır — kim ne
+  /// zaman almış olursa olsun aynı soruya cevap verir.
   ///
-  /// History fetch başarısız ya da dönem başı değer 0 ise unrealized PnL%'ye
-  /// fallback yapar ([usedFallback] = true olarak dönerse UI "tahmini"
-  /// göstergesi koyabilir).
+  /// Maliyeti bilinmeyen (0) portföy için `null` döner: bölme tanımsızdır ve
+  /// 0 göstermek "başabaş" yanılgısı yaratırdı.
   Future<RoiResult> computeROIDetailed({
     required List<Asset> assets,
     required int periodDays,
@@ -87,89 +103,51 @@ class LeaderboardService {
     }
 
     final ck = cacheKey == null ? null : '$cacheKey|$periodDays';
-
-    // Unrealized PnL fallback — net pozisyonun toplam maliyetine göre.
-    final totalCostTRY = aggregatePositions(assets)
-        .map((p) => p.asDisplayAsset())
-        .fold<double>(0, (s, a) => s + toTRY(a.totalCost, a.currency));
-    double? fallbackPnlPct() {
-      if (totalCostTRY <= 0) return null;
-      return ((currentValueTRY - totalCostTRY) / totalCostTRY) * 100.0;
-    }
-
-    double? result;
-    bool usedFallback = false;
-    String? diagnostic;
-
-    try {
-      final history = await HistoryService.instance
-          .getPortfolioHistory(assets, periodDays);
-      if (history.isEmpty) {
-        result = fallbackPnlPct();
-        usedFallback = true;
-        diagnostic =
-            'history=empty periodDays=$periodDays → unrealized PnL fallback';
-      } else {
-        final entries = history.entries.toList()
-          ..sort((a, b) => a.key.compareTo(b.key));
-        final startValue = entries.first.value;
-        if (startValue <= 0) {
-          result = fallbackPnlPct();
-          usedFallback = true;
-          diagnostic =
-              'startValue=$startValue (dönem başında portföy boş) → fallback';
-        } else {
-          final startTs = entries.first.key;
-          final now = DateTime.now();
-          final periodStart =
-              DateTime.fromMillisecondsSinceEpoch(startTs);
-          double netCashFlow = 0;
-          for (final a in assets) {
-            // Yumuşak silinmiş kayıt nakit akışına girmez — silinen varlık
-            // hiç alınmamış/satılmamış sayılır.
-            if (!a.isActive) continue;
-            if (a.addedDate.isBefore(periodStart)) continue;
-            if (a.addedDate.isAfter(now)) continue;
-            if (a.isBuy) {
-              // Alım maliyeti — asset üzerindeki purchaseFxRate ile TL.
-              netCashFlow += a.totalCostTRY;
-            } else if (a.isSell) {
-              // Satış geliri — sellPrice ile hesaplanır (maliyet DEĞİL).
-              // sellPrice varsa onu, yoksa purchasePrice'a fallback.
-              // TL'ye çevirme için bugünkü FX kullanılır (satış anındaki
-              // tarihsel FX'i persist etmiyoruz; approximation).
-              final unitPrice = a.sellPrice ?? a.purchasePrice;
-              final saleProceedsTRY =
-                  toTRY(unitPrice * a.quantity, a.currency);
-              netCashFlow -= saleProceedsTRY;
-            }
-          }
-          final adjustedGain = currentValueTRY - startValue - netCashFlow;
-          result = (adjustedGain / startValue) * 100.0;
-          diagnostic =
-              'startValue=${startValue.toStringAsFixed(0)} '
-              'current=${currentValueTRY.toStringAsFixed(0)} '
-              'netCashFlow=${netCashFlow.toStringAsFixed(0)} '
-              'periodDays=$periodDays historyPoints=${history.length}';
-        }
-      }
-    } catch (e) {
-      result = fallbackPnlPct();
-      usedFallback = true;
-      diagnostic = 'exception=$e → unrealized PnL fallback';
-    }
+    final result = maliyetBazliKarZararPct(assets, currentValueTRY, toTRY);
 
     if (kDebugMode) {
       // ignore: avoid_print
-      print('[LeaderboardService.computeROI] '
-          'user=${cacheKey ?? "?"} $diagnostic '
-          '=> roi=${result?.toStringAsFixed(2) ?? "null"}%');
+      print('[LeaderboardService.computeROI] user=${cacheKey ?? "?"} '
+          'current=${currentValueTRY.toStringAsFixed(0)} '
+          'cost=${toplamMaliyetTRY(assets, toTRY).toStringAsFixed(0)} '
+          '=> ${result?.toStringAsFixed(2) ?? "null"}%');
     }
 
     if (ck != null) {
       _roiCache[ck] = (at: DateTime.now(), roi: result);
     }
-    return RoiResult(roi: result, usedFallback: usedFallback);
+    // Tek formül var; "tahmini" diye ayrı bir hâl yok.
+    return RoiResult(roi: result, usedFallback: false);
+  }
+
+  /// Net pozisyonların ağırlıklı ortalama maliyeti (TRY).
+  ///
+  /// `aggregatePositions` kullanılır: sell lot'ları buy miktarından düşer,
+  /// silinmiş kayıtlar elenir. Her pozisyonun maliyeti kendi alım kuruyla
+  /// TRY'ye çevrilir (bankacılık standardı — bugünkü kurla değil).
+  double toplamMaliyetTRY(
+    List<Asset> assets,
+    double Function(double, String) toTRY,
+  ) =>
+      aggregatePositions(assets)
+          .map((p) => p.asDisplayAsset())
+          .fold<double>(0, (s, a) => s + toTRY(a.totalCost, a.currency));
+
+  /// Ortalama maliyet üzerinden kâr/zarar yüzdesi.
+  ///
+  /// Saf fonksiyon — leaderboard'un TEK metriği. Portföy ekranındaki
+  /// `PortfolioState.gainLossPercentage` ile aynı soruyu yanıtlar, yani
+  /// kullanıcı yarışta gördüğü sayıyı kendi portföyünde de görür.
+  ///
+  /// Maliyet 0 veya negatifse `null` — bölme tanımsız.
+  double? maliyetBazliKarZararPct(
+    List<Asset> assets,
+    double currentValueTRY,
+    double Function(double, String) toTRY,
+  ) {
+    final maliyet = toplamMaliyetTRY(assets, toTRY);
+    if (maliyet <= 0) return null;
+    return ((currentValueTRY - maliyet) / maliyet) * 100.0;
   }
 
   /// Backwards-compat: eski call site'lar sadece double? bekliyor.
@@ -243,8 +221,8 @@ class LeaderboardService {
   /// caller onu "veri yok" olarak gösterir.
   ///
   /// Dönen map: partnerUserId → (roi%, snapshot'ın atıldığı zaman).
-  Future<Map<String, ({double roi, DateTime updatedAt})>>
-      fetchPartnerRois(int periodDays) async {
+  Future<Map<String, ({double roi, DateTime updatedAt})>> fetchPartnerRois(
+      int periodDays) async {
     try {
       final res = await Supabase.instance.client.rpc(
         'get_partner_rois',
@@ -359,11 +337,10 @@ class LeaderboardService {
   /// döner — bu durumda UI "Yakında" placeholder gösterir.
   ///
   /// Dönen: (percentile 1-100, totalParticipants) veya null.
-  Future<({int percentile, int total})?> fetchPercentile(
-      int periodDays) async {
+  Future<({int percentile, int total})?> fetchPercentile(int periodDays) async {
     try {
-      final result = await Supabase.instance.client
-          .rpc('get_percentile_bucket', params: {
+      final result =
+          await Supabase.instance.client.rpc('get_percentile_bucket', params: {
         'p_period_days': periodDays,
       });
       if (result == null) return null;
