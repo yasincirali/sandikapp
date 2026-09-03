@@ -84,11 +84,16 @@ void main() {
       // `getSymbolHistory` interval i KATMANDAN alır. Katman "5 dakikalık"
       // derken range bir haftalıksa Yahoo isteği reddeder ya da kaba veri
       // döner; ikisi de sessiz bozulmadır.
+      // `1wk` + `6mo`/`1y` ikilisi Yahoo'ya karşı DOĞRULANDI (2026-09-03):
+      // range=6mo&interval=1wk → 28 nokta, granularity `1wk`
+      // range=1y&interval=1wk  → 54 nokta, granularity `1wk`
+      // Katman `pickForSpan`'e devredildiğinde bu ikili ortaya çıktı; kabul
+      // edilmeden önce gerçek API ile denendi.
       const uyumlu = <String, Set<String>>{
         '5m': {'1d'},
         '1h': {'5d', '1mo'},
         '1d': {'1mo', '3mo', '6mo', '1y'},
-        '1wk': {'5y'},
+        '1wk': {'6mo', '1y', '5y'},
       };
 
       for (final p in watchlistPeriods) {

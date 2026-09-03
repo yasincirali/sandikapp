@@ -520,6 +520,61 @@ void main() {
       }
     });
 
+    test('HER dönemde çözünürlük performans ekranıyla AYNI', () async {
+      // Kullanıcı: "tüm zaman aralıklarında performans ekranındaki
+      // sıklıklarda gösterilmeli, tüm varlıklar."
+      //
+      // Ölçülen ayrışma (düzeltme öncesi):
+      //   6A → performans HAFTALIK, takip GÜNLÜK
+      //   1Y → performans HAFTALIK, takip GÜNLÜK
+      // GÜNLÜK/1H/1A zaten uyumluydu.
+      //
+      // Tek kaynak `ResolutionTierMeta.pickForSpan`; hem sembol katmanı
+      // (`tierForPeriod`) hem portföy çizgisi ondan besleniyor.
+      for (final p in watchlistPeriods) {
+        final beklenen = ResolutionTierMeta.pickForSpan(p.days.toDouble());
+
+        expect(HistoryService.tierForPeriod(p.days), beklenen,
+            reason: '${p.label}: izlenen varlıklar '
+                '${HistoryService.tierForPeriod(p.days).name} çiziliyor, '
+                'performans ekranı ${beklenen.name}');
+      }
+    });
+
+    test('uzun dönemde portföy çizgisi HAFTALIK ızgarada', () async {
+      // Davranışsal doğrulama: 1Y'de günlük ızgara 365 nokta üretirdi.
+      final simdi = DateTime.now();
+      final seri =
+          await HistoryService.instance.getPortfolioHistoryAtResolution(
+        assets: [lot(simdi.subtract(const Duration(days: 500)))],
+        from: simdi.subtract(const Duration(days: 365)),
+        to: simdi,
+        tier: ResolutionTierMeta.pickForSpan(365),
+        simulate: true,
+      );
+
+      expect(seri.length, lessThan(120),
+          reason: '1Y serisi ${seri.length} nokta — haftalık ızgarada '
+              '~52 olmalı, günlük ızgarada 365');
+
+      final ts = seri.keys.toList()..sort();
+      if (ts.length > 1) {
+        expect(Duration(milliseconds: ts[1] - ts[0]).inDays, 7,
+            reason: 'slot aralığı haftalık olmalı');
+      }
+    });
+
+    test('sağlayıcı UZUN dönemde de ortak servisi KULLANIR', () async {
+      final src =
+          await File('lib/providers/watchlist_provider.dart').readAsString();
+
+      expect(src.contains('getPortfolioHistoryAtResolution('), isTrue,
+          reason: 'uzun dönemler performans ekranıyla aynı servisten '
+              'beslenmeli');
+      expect(src.contains('pickForSpan('), isTrue,
+          reason: 'tier ortak merdivenden gelmeli');
+    });
+
     test('sağlayıcı GÜNLÜK te gün içi servisini KULLANIR', () async {
       // Cebir doğru olsa da provider hâlâ saatlik yolu çağırıyorsa düzeltme
       // kullanıcıya ulaşmaz.

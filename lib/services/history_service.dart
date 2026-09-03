@@ -1483,13 +1483,23 @@ class HistoryService {
   /// interval'le geldiğiyle uyumlu olmalı (`PriceService._intervalFor`).
   /// Eskiden `days<=2` beş dakikalık bucket'a çekiyordu ama range `'5d'`
   /// olduğu için gelen veri saatlikti — bucket'lama boşa çalışıyordu.
+  ///
+  /// **Karar [ResolutionTierMeta.pickForSpan]'e devredildi.** Burada ayrı bir
+  /// merdiven duruyordu ve performans ekranının kullandığıyla ayrışmıştı:
+  /// 6A ve 1Y'de performans ekranı HAFTALIK çizerken takip listesi GÜNLÜK
+  /// çiziyordu. Aynı portföyün aynı dönemi iki ekranda iki farklı sıklıkta
+  /// görünüyordu (kullanıcı bulgusu: "tüm zaman aralıklarında performans
+  /// ekranındaki sıklıklarda gösterilmeli"). İki merdiven tutmak bu projede
+  /// tekrar eden hata sınıfı; tek kaynağa indirildi.
+  ///
+  /// `pickForSpan` hedefi ~30-300 nokta: 1Y'de günlük 365 nokta fazla
+  /// yoğun, haftalık 52 nokta doğru ölçek. 6A haftalıkta 26 noktaya iner —
+  /// hedefin biraz altında ama iki ekranın AYNI şeyi göstermesi bundan daha
+  /// önemli; ayrıca zoom yapıldığında viewport daralınca `pickForSpan`
+  /// otomatik olarak daha ince katmana geçer.
   @visibleForTesting
-  static ResolutionTier tierForPeriod(int days) {
-    if (days <= 1) return ResolutionTier.fiveMin;
-    if (days <= 7) return ResolutionTier.hourly;
-    if (days <= 365) return ResolutionTier.daily;
-    return ResolutionTier.weekly;
-  }
+  static ResolutionTier tierForPeriod(int days) =>
+      ResolutionTierMeta.pickForSpan(days.toDouble());
 
   /// Seriyi son [days] güne kırpar.
   ///

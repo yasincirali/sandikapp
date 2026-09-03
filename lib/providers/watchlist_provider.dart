@@ -488,10 +488,25 @@ final watchlistChartProvider =
       // Not: intraday servisi `simulate` bayrağı almaz — gün içi pencerede
       // alım tarihi zaten bugünden önce olduğu için simülasyonun düzelttiği
       // "addedDate öncesi sıfır slot" sorunu bu pencerede oluşmaz.
+      //
+      // ## Uzun dönemler de AYNI motordan
+      // `getPortfolioHistory` kendi ızgarasını kuruyordu ve 6A/1Y'de GÜNLÜK
+      // çiziyordu; performans ekranı ise `pickForSpan` gereği HAFTALIK.
+      // Aynı portföyün aynı dönemi iki ekranda farklı sıklıkta görünüyordu.
+      // `getPortfolioHistoryAtResolution` performans ekranının kullandığı
+      // servisin ta kendisi — tier'ı da ortak merdivenden alıyoruz.
+      final simdi = DateTime.now();
       final raw = days <= 1
           ? await HistoryService.instance.getPortfolioHistoryHourly(all, 24)
-          : await HistoryService.instance
-              .getPortfolioHistory(all, days, simulate: true);
+          : await HistoryService.instance.getPortfolioHistoryAtResolution(
+              assets: all,
+              from: simdi.subtract(Duration(days: days)),
+              to: simdi,
+              // `tierForPeriod` @visibleForTesting; ortak kaynağın kendisi
+              // olan `pickForSpan` doğrudan çağrılır — ikisi aynı kararı verir.
+              tier: ResolutionTierMeta.pickForSpan(days.toDouble()),
+              simulate: true,
+            );
       final temiz = portfoyunVarOlduguSlotlar(raw);
       if (temiz.isNotEmpty) ham[WatchlistChart.portfolioSeriesKey] = temiz;
     }
