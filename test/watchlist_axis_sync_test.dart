@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
 import 'package:portfoy_takip/services/history_service.dart';
+import 'package:portfoy_takip/widgets/watchlist_chart.dart';
 
 /// **Aynı grafikteki her seri AYNI pencereden gelmeli.**
 ///
@@ -189,6 +192,141 @@ void main() {
       expect(slotlar.length, greaterThan(25),
           reason: '30 günlük ızgara ${slotlar.length} nokta — hafta sonu '
               'eleniyor olmamalı');
+    });
+  });
+
+  group('ORTAK PENCERE — seriler aynı anda başlar ve biter', () {
+    // ## Bulgu (kullanıcı ekran görüntüsü, GÜNLÜK sekmesi)
+    // Takip grafiğinin alt ekseni "10:50 · 22:25 · 10:00 · 21:35" gösteriyordu:
+    // aralıklar eşitti ama SPAN 46 saatti — GÜNLÜK sekmesinde olmaması gereken
+    // bir genişlik. Karşılaştır ekranı aynı sorunu göstermiyordu.
+    //
+    // ## Kök neden
+    // `clipToPeriod` her seriyi KENDİ son veri noktasına çapalar. Tek seri için
+    // doğru (hafta sonu son seansı korur), aynı grafikte üç seri için yıkıcı:
+    //   · USDTRY=X 7/24 tikler        → penceresi "şimdi"de biter
+    //   · BIST hissesi 18:00'de durur → penceresi seans kapanışında biter
+    //   · portföy ızgarası            → son iş gününe çapalanır
+    // Üç farklı pencere birleşince eksen 54 saate kadar çıkıyor ve hisse
+    // grafiğin solundan 12 saat SONRA başlıyordu (ölçüldü).
+
+    int ms(DateTime d) => d.millisecondsSinceEpoch;
+
+    /// Hafta sonu senaryosu: forex tikliyor, borsa Cuma kapanmış.
+    Map<String, Map<int, double>> haftaSonu() => {
+          'USDTRY=X': {
+            for (var i = 0; i <= 576; i++)
+              ms(DateTime(2026, 9, 5, 21, 35)
+                  .subtract(Duration(minutes: 5 * i))): 40.0 + i * 0.001,
+          },
+          'ALE': {
+            for (var i = 0; i <= 200; i++)
+              ms(DateTime(2026, 9, 4, 18).subtract(Duration(minutes: 5 * i))):
+                  10.0 + i * 0.01,
+          },
+          WatchlistChart.portfolioSeriesKey: {
+            for (var i = 0; i <= 48; i++)
+              ms(DateTime(2026, 9, 4, 15).subtract(Duration(hours: i))):
+                  1000.0 + i,
+          },
+        };
+
+    ({int span, int seriSayisi, Set<int> bitisler}) olc(
+        Map<String, Map<int, double>> h) {
+      final tum = <int>[];
+      final bitisler = <int>{};
+      for (final s in h.values) {
+        tum.addAll(s.keys);
+        bitisler.add(s.keys.reduce((a, b) => a > b ? a : b));
+      }
+      tum.sort();
+      return (
+        span: tum.last - tum.first,
+        seriSayisi: h.length,
+        bitisler: bitisler,
+      );
+    }
+
+    test('eksen SPANI dönemi aşmaz', () {
+      // Asıl bulgu. Kırpma olmadan 54 saate çıkıyordu.
+      final o = olc(ortakPencereyeHizala(haftaSonu(), 1));
+      final saat = Duration(milliseconds: o.span).inHours;
+
+      expect(saat, lessThanOrEqualTo(24),
+          reason: 'GÜNLÜK ekseni $saat saat — "GÜNLÜK" etiketiyle iki günlük '
+              'pencere gösteriliyor');
+    });
+
+    test('tüm seriler AYNI anda biter', () {
+      // Kullanıcının "bitiş alanları sorunlu" bulgusu. Seriler farklı
+      // anlarda bitiyorsa grafiğin sağ ucu basamaklı görünür.
+      final o = olc(ortakPencereyeHizala(haftaSonu(), 1));
+
+      expect(o.bitisler.length, 1,
+          reason: 'seriler ${o.bitisler.length} farklı anda bitiyor — '
+              'ortak pencere uygulanmamış');
+    });
+
+    test('hiçbir seri DÜŞMEZ', () {
+      // İlk denememde pencereyi en GEÇ son noktaya çapalamıştım; hafta sonu
+      // senaryosunda BIST hissesi ile portföy pencereye hiç düşmüyor ve
+      // grafikte tek çizgi kalıyordu. Seri kaybetmek, düzeltmeye çalıştığımız
+      // hizasızlıktan daha kötü.
+      final o = olc(ortakPencereyeHizala(haftaSonu(), 1));
+
+      expect(o.seriSayisi, 3,
+          reason: 'başlangıçta üç seri vardı, ${o.seriSayisi} kaldı — '
+              'pencere çapası bir seriyi tamamen dışarıda bırakıyor');
+    });
+
+    test('pencere dışındaki noktalar atılır', () {
+      final h = ortakPencereyeHizala(haftaSonu(), 1);
+      final bas =
+          h.values.expand((s) => s.keys).reduce((a, b) => a < b ? a : b);
+
+      for (final e in h.entries) {
+        for (final k in e.value.keys) {
+          expect(k, greaterThanOrEqualTo(bas),
+              reason: '${e.key} pencerenin solunda nokta taşıyor');
+        }
+      }
+    });
+
+    test('iki noktadan az kalan seri düşer', () {
+      // `normalizeSeries` iki noktanın altında null döner; tek noktalı bir
+      // seriyi taşımak grafikte çizilmeyen bir anahtar bırakırdı.
+      final h = ortakPencereyeHizala({
+        'UZUN': {
+          for (var i = 0; i <= 48; i++)
+            ms(DateTime(2026, 9, 4, 15).subtract(Duration(hours: i))): 100.0,
+        },
+        // Penceresi dolduran seriden ÇOK önce biten tek noktalı seri.
+        'TEK': {ms(DateTime(2026, 9, 4, 15)): 50.0},
+      }, 1);
+
+      for (final e in h.entries) {
+        expect(e.value.length, greaterThanOrEqualTo(2),
+            reason: '${e.key} tek noktayla taşınıyor');
+      }
+    });
+
+    test('boş girdi boş çıktı verir — çökmez', () {
+      expect(ortakPencereyeHizala(const {}, 1), isEmpty);
+      expect(ortakPencereyeHizala({'A': const {}}, 1), isEmpty);
+    });
+
+    test('normalize KIRPMADAN SONRA yapılır', () async {
+      // Sıra değişmezi: yüzde tabanı serinin ilk noktasıdır. Önce normalize
+      // edilseydi her seri kendi penceresinin başına göre ölçülür, ortak
+      // pencereye kırpma da tabanı düzeltmezdi — kıyas anlamsızlaşırdı.
+      final src =
+          await File('lib/providers/watchlist_provider.dart').readAsString();
+      final hizala = src.indexOf('ortakPencereyeHizala(ham, days)');
+      final normalize = src.indexOf('normalizeSeries(e.value)');
+
+      expect(hizala, greaterThan(0));
+      expect(normalize, greaterThan(hizala),
+          reason: 'normalize, hizalamadan ÖNCE çağrılıyor');
     });
   });
 

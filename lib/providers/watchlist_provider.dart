@@ -55,6 +55,76 @@ Map<int, double> portfoyunVarOlduguSlotlar(Map<int, double> raw) {
   };
 }
 
+/// Grafikteki TÜM serileri ORTAK bir zaman penceresine hizalar.
+///
+/// ## Neden gerekli
+/// `clipToPeriod` her seriyi kendi SON veri noktasına çapalar. Bu tek bir
+/// seri için doğru (hafta sonu son seansı korur) ama aynı grafikteki farklı
+/// varlıklar için pencereleri AYIRIR:
+///   · USDTRY=X 7/24 tikler → penceresi "şimdi"de biter,
+///   · bir BIST hissesi seans kapanışında durur → penceresi 18:00'de biter,
+///   · portföy ızgarası son iş gününe çapalanır.
+///
+/// Ölçüldü: GÜNLÜK sekmesinde üç seri birleşince eksen **54 saate** çıkıyor
+/// ve BIST hissesi grafiğin solundan **12 saat sonra** başlıyordu — kullanıcı
+/// ekran görüntüsündeki "başlangıç ve bitiş alanları sorunlu" bulgusu buydu.
+/// Karşılaştır ekranında sorun görünmüyor çünkü orada dönemler ≥ 1 hafta ve
+/// tek günlük çapa farkı 30 günlük bir eksende göze çarpmıyor.
+///
+/// ## Kural
+/// Pencerenin SONU, serilerin son noktalarının **en ERKENİ**dir; başı
+/// `son − periodDays`. Her seri bu pencereye kırpılır.
+///
+/// **Neden en geç değil (ölçüldü):** hafta sonu USDTRY=X tiklemeye devam
+/// ederken BIST hissesi Cuma 18:00'de durur. Pencere en GEÇ noktaya
+/// çapalanırsa 24 saatlik pencere Cumartesi'ye kayar ve hisse ile portföy
+/// serisi pencereye HİÇ düşmez — grafikte tek çizgi kalırdı. Seri kaybetmek,
+/// düzeltmeye çalıştığımız hizasızlıktan daha kötü.
+///
+/// En erken sona çapalamak en fazla bir seansın en güncel ucunu kırpar ama
+/// TÜM serileri aynı pencerede, kesintisiz tutar — grafiğin sorusu zaten
+/// "aynı pencerede kim ne yaptı".
+///
+/// **Seriler kırpılmadan ÖNCE normalize edilmemeli**: yüzde tabanı serinin
+/// ilk noktasıdır, o nokta pencere dışındaysa taban da yanlış olur.
+///
+/// Saf fonksiyon — provider olmadan doğrudan test edilir.
+Map<String, Map<int, double>> ortakPencereyeHizala(
+  Map<String, Map<int, double>> seriler,
+  int periodDays,
+) {
+  final doluOlanlar = {
+    for (final e in seriler.entries)
+      if (e.value.isNotEmpty) e.key: e.value,
+  };
+  if (doluOlanlar.isEmpty) return const {};
+
+  int sonNoktasi(Map<int, double> s) => s.keys.reduce((a, b) => a > b ? a : b);
+
+  // En ERKEN son nokta — gerekçe yukarıda.
+  var son = sonNoktasi(doluOlanlar.values.first);
+  for (final s in doluOlanlar.values) {
+    final k = sonNoktasi(s);
+    if (k < son) son = k;
+  }
+  final bas = son - Duration(days: periodDays).inMilliseconds;
+
+  final out = <String, Map<int, double>>{};
+  for (final e in doluOlanlar.entries) {
+    // Pencerenin İKİ ucu da kapatılır. Yalnızca başı kırpmak yetmez: daha
+    // uzun tiklemeye devam eden bir seri ekseni sağa doğru genişletir ve
+    // hizasızlık öteki uçta geri gelirdi.
+    final kirpili = <int, double>{
+      for (final p in e.value.entries)
+        if (p.key >= bas && p.key <= son) p.key: p.value,
+    };
+    // İki noktadan azı çizilemez (`normalizeSeries` null döner); pencereye
+    // hiç düşmeyen seriyi de taşımanın anlamı yok.
+    if (kirpili.length >= 2) out[e.key] = kirpili;
+  }
+  return out;
+}
+
 /// Kıyas çizgisine hangi varlıklar girer?
 ///
 /// `ModernTabSelector` sözleşmesi:
@@ -298,7 +368,10 @@ final watchlistChartProvider =
   final periodIdx = ref.watch(watchlistPeriodProvider);
   final days = watchlistPeriods[periodIdx].days;
 
-  final out = <String, NormalizedSeries>{};
+  // HAM seriler önce toplanır, normalize SONRA yapılır: yüzde tabanı serinin
+  // ilk noktasıdır ve ortak pencereye kırpma o noktayı değiştirir. Önce
+  // normalize etmek her seriyi kendi penceresinin başına göre ölçerdi.
+  final ham = <String, Map<int, double>>{};
 
   // ── Takip edilen varlıklar ────────────────────────────────────────────────
   // Paralel çekilir; `HistoryService` sembol başına önbelleklidir.
@@ -306,14 +379,14 @@ final watchlistChartProvider =
     try {
       final raw = await HistoryService.instance
           .getSymbolHistory(item.ticker, periodDays: days);
-      return (label: item.chartLabel, norm: normalizeSeries(raw));
+      return (label: item.chartLabel, raw: raw);
     } catch (_) {
       // Tek bir sembolün düşmesi grafiğin tamamını götürmemeli.
-      return (label: item.chartLabel, norm: null);
+      return (label: item.chartLabel, raw: const <int, double>{});
     }
   });
   for (final r in await Future.wait(futures)) {
-    if (r.norm != null) out[r.label] = r.norm!;
+    if (r.raw.isNotEmpty) ham[r.label] = r.raw;
   }
 
   // ── Portföy (kendi + ortaklar) ────────────────────────────────────────────
@@ -356,8 +429,8 @@ final watchlistChartProvider =
       // tutsaydım" senaryosudur, gerçekleşmiş getirin değildir.
       final raw = await HistoryService.instance
           .getPortfolioHistory(all, days, simulate: true);
-      final norm = normalizeSeries(portfoyunVarOlduguSlotlar(raw));
-      if (norm != null) out[WatchlistChart.portfolioSeriesKey] = norm;
+      final temiz = portfoyunVarOlduguSlotlar(raw);
+      if (temiz.isNotEmpty) ham[WatchlistChart.portfolioSeriesKey] = temiz;
     }
   } catch (e) {
     // Portföy serisi çizilemezse grafik takip varlıklarıyla DEVAM eder —
@@ -366,6 +439,14 @@ final watchlistChartProvider =
     if (kDebugMode) debugPrint('[watchlist-chart] portföy serisi yok: $e');
   }
 
+  // Tüm seriler ORTAK pencereye hizalanır, normalize SONRA yapılır. Sıra
+  // önemli: her seri kendi penceresinde normalize edilseydi yüzde tabanları
+  // farklı anlara denk gelir ve kıyas anlamsızlaşırdı.
+  final out = <String, NormalizedSeries>{};
+  for (final e in ortakPencereyeHizala(ham, days).entries) {
+    final norm = normalizeSeries(e.value);
+    if (norm != null) out[e.key] = norm;
+  }
   return out;
 });
 

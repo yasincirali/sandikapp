@@ -256,11 +256,32 @@ void main() {
       // hiç gelmezse `_flatFallback` 0 verebilir. İki koruma birlikte çalışır.
       final provider = _yorumsuz(
           await File('lib/providers/watchlist_provider.dart').readAsString());
-      expect(
-          provider.contains('normalizeSeries(portfoyunVarOlduguSlotlar(raw))'),
-          isTrue,
-          reason: 'ham seri doğrudan normalize edilirse tek bir bozuk sembol '
-              'tüm kıyas çizgisini düşürür');
+      // Tek bir metin kalıbı aranmıyor: seriler artık ORTAK PENCEREYE
+      // hizalandıktan SONRA normalize ediliyor, yani `portfoyunVarOlduguSlotlar`
+      // ile `normalizeSeries` aynı ifadede değil. Korunan şey ikisinin de
+      // portföy serisi üzerinde çalışmaya DEVAM etmesi.
+      expect(provider.contains('portfoyunVarOlduguSlotlar(raw)'), isTrue,
+          reason: 'baştaki sıfırlar atılmazsa tek bozuk sembol kıyas '
+              'çizgisini düşürür');
+      expect(provider.contains('normalizeSeries('), isTrue);
+    });
+
+    test('güvenlik ağı DAVRANIŞI korunur', () {
+      // Kaynak metni yerine sonucu denetler: baştaki sıfırlar atılmalı,
+      // ortadaki bir sıfır (tüm varlıklar satıldı) KORUNMALI.
+      final temiz = portfoyunVarOlduguSlotlar({
+        1: 0.0,
+        2: 0.0,
+        3: 100.0,
+        4: 0.0,
+        5: 120.0,
+      });
+
+      expect(temiz.containsKey(1), isFalse, reason: 'baştaki sıfır atılmalı');
+      expect(temiz.containsKey(2), isFalse);
+      expect(temiz[3], 100.0);
+      expect(temiz.containsKey(4), isTrue,
+          reason: 'ortadaki sıfır gerçek bir olay olabilir — atılmamalı');
     });
   });
 

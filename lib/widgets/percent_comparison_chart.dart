@@ -107,21 +107,35 @@ class PercentComparisonChart extends StatelessWidget {
       // `leftTitles.reservedSize` ile AYNI olmak zorunda.
       plotPaddingLeft: _yEkseniGenisligi,
       crosshairSnapX: (x) {
-        // Odaktaki seri varsa ona, yoksa ilk seriye snap et: crosshair
-        // dikey çizgisi ile tooltip aynı noktaya otursun.
+        // En yoğun seriye snap: dikey çizgi gerçek bir veri noktasına otursun,
+        // aradaki boşluğa değil.
         final spots = ciz.snapSpots;
         if (spots.isEmpty) return x;
         final clamped = x.clamp(spots.first.x, spots.last.x);
-        return spots[nearestSpotIndex(spots, clamped)].x;
+        // `_degerAt` ve `crosshairLabelBuilder` ile AYNI arama — üçü ayrışırsa
+        // dikey çizgi bir noktayı, etiket başka bir noktayı gösterir.
+        final i = coveringSpotIndex(spots, clamped);
+        return spots[i < 0 ? 0 : i].x;
       },
       crosshairLabelBuilder: (x) {
         final spots = ciz.snapSpots;
         if (spots.isEmpty) return null;
-        final s = spots[nearestSpotIndex(spots, x)];
-        final tarih = DateTime.fromMillisecondsSinceEpoch(x.round());
+        // Değer ile TARİH aynı noktadan okunur. Eskiden yüzde en yakın
+        // noktadan, tarih ise ham `x`'ten geliyordu; snap sonrası ikisi
+        // birbirini tutuyordu ama snap noktası ile ham `x` arasındaki fark
+        // kadar tarih kayabiliyordu. Tek kaynak = tutarlılık garantisi.
+        final i = coveringSpotIndex(spots, x);
+        final s = spots[i < 0 ? 0 : i];
+        final tarih = DateTime.fromMillisecondsSinceEpoch(s.x.round());
+        // Gün içi seride tarih tek başına yetmez — saat de gösterilmeli,
+        // yoksa "4 Eyl 2026" etiketi 288 noktanın hepsi için aynı görünür.
+        final span = ciz.maxX - ciz.minX;
+        final bicim = span < const Duration(days: 2).inMilliseconds
+            ? DateFormat('d MMM HH:mm', 'tr_TR')
+            : DateFormat('d MMM yyyy', 'tr_TR');
         return (
           fmtPct(s.y, digits: 1, showSign: true),
-          DateFormat('d MMM yyyy', 'tr_TR').format(tarih),
+          bicim.format(tarih),
         );
       },
       // Crosshair açıkken her serinin o andaki değeri listelenir — kıyasın
@@ -153,15 +167,26 @@ class PercentComparisonChart extends StatelessWidget {
         ),
       );
 
-  /// Serinin [x] anındaki (en yakın noktadaki) yüzdesi.
+  /// Serinin [x] anındaki yüzdesi — [x]'i KAPSAYAN noktadan.
   ///
-  /// Noktalar zaten X'e göre sıralı olduğu için ikili arama kullanılır —
-  /// crosshair parmak her kaydığında ve HER seri için çağrılıyor; doğrusal
-  /// tarama beş seri × iki yüz noktada kare başına gözle görülür bir maliyet
-  /// olurdu.
+  /// **"En yakın" DEĞİL "kapsayan".** Seriler farklı yoğunlukta olabiliyor:
+  /// USDTRY=X GÜNLÜK'te 5 dakikada bir tikler, bir TEFAS fonu günde bir fiyat
+  /// açıklar. Crosshair en uzun seriye snap ettiği için, seyrek serilerde
+  /// "en yakın" nokta İLERİDE olabiliyordu — kullanıcı 06:00'a basarken
+  /// 12:00'nin değeri gösteriliyor, üstelik üstteki tarih göstergesi 06:00
+  /// yazıyordu (ölçüldü: en kötü sapma 11 sa 55 dk).
+  ///
+  /// Kapsayan nokta (`spot.x <= x` olan son nokta) bu tutarsızlığı kaldırır:
+  /// gösterilen değer her zaman o ana kadar BİLİNEN son değerdir — fiyat
+  /// grafiklerinin standart okuması. İşlem noktalarında da aynı gerekçeyle
+  /// `coveringSpotIndex` kullanılıyor.
+  ///
+  /// [x] serinin ilk noktasından önceyse `null` — o seri henüz başlamamıştır
+  /// ve uydurma bir değer göstermek yanlış olurdu.
   double? _degerAt(List<FlSpot> spots, double x) {
     if (spots.isEmpty) return null;
-    return spots[nearestSpotIndex(spots, x)].y;
+    final i = coveringSpotIndex(spots, x);
+    return i < 0 ? null : spots[i].y;
   }
 
   /// Bar'ları ve eksen sınırlarını tek geçişte hazırlar.
