@@ -72,18 +72,36 @@ Map<int, double> portfoyunVarOlduguSlotlar(Map<int, double> raw) {
 /// tek günlük çapa farkı 30 günlük bir eksende göze çarpmıyor.
 ///
 /// ## Kural
-/// Pencerenin SONU, serilerin son noktalarının **en ERKENİ**dir; başı
-/// `son − periodDays`. Her seri bu pencereye kırpılır.
+/// Pencere **EN GEÇ** son noktaya çapalanır: `son = max(tüm son noktalar)`,
+/// `baş = son − periodDays`. Her seri bu pencereye kırpılır **ve** iki ucu
+/// da kendi bilinen değeriyle DOLDURULUR.
 ///
-/// **Neden en geç değil (ölçüldü):** hafta sonu USDTRY=X tiklemeye devam
-/// ederken BIST hissesi Cuma 18:00'de durur. Pencere en GEÇ noktaya
-/// çapalanırsa 24 saatlik pencere Cumartesi'ye kayar ve hisse ile portföy
-/// serisi pencereye HİÇ düşmez — grafikte tek çizgi kalırdı. Seri kaybetmek,
-/// düzeltmeye çalıştığımız hizasızlıktan daha kötü.
+/// ### Neden "en erken son nokta" değil (bu hata bir kez yapıldı)
+/// Önce pencereyi en ERKEN son noktaya çapalamıştım — hafta sonu BIST
+/// hissesinin serisi pencereye hiç düşmesin diye. Ama bu, kapanış saatinden
+/// SONRA veri üreten serileri (USDTRY=X gece de tikler) **tamamen siliyordu**:
+/// pencere 18:00'de kapanınca USD'nin 18:00 sonrası noktalarından yalnızca
+/// biri kalıyor, iki noktanın altına düşen seri düşürülüyordu. Ölçüldü:
+/// üç serilik bir grafikte USDTRY=X grafikten tümüyle kayboldu.
+/// Bir seriyi silmek, hizalamak için ödenecek bedel değildir.
 ///
-/// En erken sona çapalamak en fazla bir seansın en güncel ucunu kırpar ama
-/// TÜM serileri aynı pencerede, kesintisiz tutar — grafiğin sorusu zaten
-/// "aynı pencerede kim ne yaptı".
+/// ### Neden doldurma şart
+/// Kırpma tek başına başlangıçları hizalamaz: bir BIST hissesinin verisi
+/// 10:00'da başlar, USDTRY=X gece boyunca tikler. Pencerenin solu 20:00 olsa
+/// bile hisse hâlâ ekranın %64'ünden sonra başlıyordu — kullanıcının
+/// "başlangıç noktaları farklı yerlerden başlıyor" bulgusu tam olarak buydu.
+///
+/// Doldurma kuralı:
+///   · Seri pencerenin başından SONRA başlıyorsa, başa **ilk bilinen değeri**
+///     yazılır — "o an bu fiyattaydı" değil, "henüz hareket yok" anlamında;
+///     yüzde tabanı zaten bu ilk değerdir, yani çizgi %0'dan düz başlar ve
+///     hiçbir sahte kazanç/kayıp üretilmez.
+///   · Seri pencerenin sonundan ÖNCE bitiyorsa, sona **son bilinen değeri**
+///     yazılır (borsa kapandı, fiyat donmuş kabul edilir — TradingView'in
+///     kapalı seans davranışı).
+///
+/// Böylece HER seri aynı anda başlar, aynı anda biter; crosshair de eksenin
+/// tamamında değer bulur (bkz. `zoomable_chart`'ın snap clamp'i).
 ///
 /// **Seriler kırpılmadan ÖNCE normalize edilmemeli**: yüzde tabanı serinin
 /// ilk noktasıdır, o nokta pencere dışındaysa taban da yanlış olur.
@@ -99,27 +117,54 @@ Map<String, Map<int, double>> ortakPencereyeHizala(
   };
   if (doluOlanlar.isEmpty) return const {};
 
-  int sonNoktasi(Map<int, double> s) => s.keys.reduce((a, b) => a > b ? a : b);
-
-  // En ERKEN son nokta — gerekçe yukarıda.
-  var son = sonNoktasi(doluOlanlar.values.first);
+  // Pencerenin sonu: EN GEÇ son nokta — en güncel veri asla kırpılmaz.
+  var son = doluOlanlar.values.first.keys.first;
   for (final s in doluOlanlar.values) {
-    final k = sonNoktasi(s);
-    if (k < son) son = k;
+    for (final k in s.keys) {
+      if (k > son) son = k;
+    }
   }
   final bas = son - Duration(days: periodDays).inMilliseconds;
 
   final out = <String, Map<int, double>>{};
   for (final e in doluOlanlar.entries) {
-    // Pencerenin İKİ ucu da kapatılır. Yalnızca başı kırpmak yetmez: daha
-    // uzun tiklemeye devam eden bir seri ekseni sağa doğru genişletir ve
-    // hizasızlık öteki uçta geri gelirdi.
+    final ts = e.value.keys.toList()..sort();
+
+    // Pencere içindeki noktalar.
     final kirpili = <int, double>{
-      for (final p in e.value.entries)
-        if (p.key >= bas && p.key <= son) p.key: p.value,
+      for (final k in ts)
+        if (k >= bas && k <= son) k: e.value[k]!,
     };
-    // İki noktadan azı çizilemez (`normalizeSeries` null döner); pencereye
-    // hiç düşmeyen seriyi de taşımanın anlamı yok.
+
+    // Pencerenin solunda kalan SON değer — doldurma bunu kullanır. Serinin
+    // ilk noktasını değil: pencereden önce veri varsa doğru başlangıç
+    // değeri odur (yüzde tabanı da o olmalı).
+    double? oncekiDeger;
+    for (final k in ts) {
+      if (k <= bas) {
+        oncekiDeger = e.value[k]!;
+      } else {
+        break;
+      }
+    }
+
+    if (kirpili.isEmpty && oncekiDeger == null) continue;
+
+    // Sol uç: pencere başında değer yoksa doldur.
+    if (!kirpili.containsKey(bas)) {
+      final ilk = oncekiDeger ??
+          (kirpili.isNotEmpty
+              ? kirpili[kirpili.keys.reduce((a, b) => a < b ? a : b)]!
+              : null);
+      if (ilk != null) kirpili[bas] = ilk;
+    }
+
+    // Sağ uç: seri erken bitmişse son bilinen değerle uzat.
+    if (!kirpili.containsKey(son) && kirpili.isNotEmpty) {
+      final sonAnahtar = kirpili.keys.reduce((a, b) => a > b ? a : b);
+      kirpili[son] = kirpili[sonAnahtar]!;
+    }
+
     if (kirpili.length >= 2) out[e.key] = kirpili;
   }
   return out;

@@ -268,15 +268,92 @@ void main() {
     });
 
     test('hiçbir seri DÜŞMEZ', () {
-      // İlk denememde pencereyi en GEÇ son noktaya çapalamıştım; hafta sonu
-      // senaryosunda BIST hissesi ile portföy pencereye hiç düşmüyor ve
-      // grafikte tek çizgi kalıyordu. Seri kaybetmek, düzeltmeye çalıştığımız
-      // hizasızlıktan daha kötü.
       final o = olc(ortakPencereyeHizala(haftaSonu(), 1));
 
       expect(o.seriSayisi, 3,
           reason: 'başlangıçta üç seri vardı, ${o.seriSayisi} kaldı — '
               'pencere çapası bir seriyi tamamen dışarıda bırakıyor');
+    });
+
+    test('KAPANIŞ SONRASI tikleyen seri silinmez', () {
+      // Bu hatayı bir kez YAPTIM: pencereyi en ERKEN son noktaya çapalamak,
+      // kapanıştan sonra veri üreten serileri siliyordu. BIST 18:00'de
+      // kapanıyor, USDTRY=X gece tiklemeye devam ediyor → USD'nin pencereye
+      // giren nokta sayısı 1'e düşüyor ve seri düşürülüyordu.
+      // Ölçüldü: üç serilik grafikte USDTRY=X tümüyle kayboldu.
+      final h = ortakPencereyeHizala({
+        'ALE': {
+          for (var i = 0; i <= 96; i++)
+            ms(DateTime(2026, 9, 4, 10).add(Duration(minutes: 5 * i))):
+                10.0 + i * 0.001,
+        },
+        'USDTRY=X': {
+          for (var i = 0; i <= 24; i++)
+            ms(DateTime(2026, 9, 4, 20).subtract(Duration(minutes: 5 * i))):
+                40.0,
+        },
+      }, 1);
+
+      expect(h.keys, containsAll(<String>['ALE', 'USDTRY=X']),
+          reason: 'kapanıştan sonra tikleyen seri grafikten silindi: '
+              '${h.keys.toList()}');
+    });
+
+    test('tüm seriler AYNI anda BAŞLAR', () {
+      // Kullanıcının ikinci turdaki bulgusu: "hâlâ başlangıç noktaları farklı
+      // yerlerden başlıyor". Kırpma tek başına yetmiyordu — bir BIST hissesi
+      // 10:00'da başlarken USDTRY=X gece boyunca tikliyor, hisse ekranın
+      // %64'ünden sonra başlıyordu. Uçlar bilinen değerle DOLDURULUR.
+      final h = ortakPencereyeHizala({
+        'ALE': {
+          for (var i = 0; i <= 96; i++)
+            ms(DateTime(2026, 9, 4, 10).add(Duration(minutes: 5 * i))):
+                10.0 + i * 0.001,
+        },
+        'USDTRY=X': {
+          for (var i = 0; i <= 288; i++)
+            ms(DateTime(2026, 9, 4, 20).subtract(Duration(minutes: 5 * i))):
+                40.0,
+        },
+        WatchlistChart.portfolioSeriesKey: {
+          for (var i = 0; i <= 24; i++)
+            ms(DateTime(2026, 9, 4, 20).subtract(Duration(hours: i))): 1000.0,
+        },
+      }, 1);
+
+      final baslar = <int>{};
+      for (final s in h.values) {
+        baslar.add(s.keys.reduce((a, b) => a < b ? a : b));
+      }
+
+      expect(baslar.length, 1,
+          reason: 'seriler ${baslar.length} farklı noktadan başlıyor — '
+              'grafikte kimi soldan kimi ortadan başlar');
+    });
+
+    test('doldurma SAHTE getiri üretmez', () {
+      // Doldurma bir yalan söylememeli: seans öncesine ilk bilinen değer
+      // yazılır, yani çizgi %0'dan düz başlar. Toplam getiri DEĞİŞMEZ.
+      final ale = <int, double>{
+        for (var i = 0; i <= 96; i++)
+          ms(DateTime(2026, 9, 4, 10).add(Duration(minutes: 5 * i))):
+              10.0 + i * (0.5 / 96),
+      };
+      final gercek = normalizeSeries(ale)!;
+
+      final h = ortakPencereyeHizala({
+        'ALE': ale,
+        'USDTRY=X': {
+          for (var i = 0; i <= 288; i++)
+            ms(DateTime(2026, 9, 4, 20).subtract(Duration(minutes: 5 * i))):
+                40.0,
+        },
+      }, 1);
+      final hizali = normalizeSeries(h['ALE']!)!;
+
+      expect(hizali.totalReturnPct, closeTo(gercek.totalReturnPct, 1e-9),
+          reason: 'doldurma getiriyi değiştirdi: gerçek '
+              '%${gercek.totalReturnPct} → %${hizali.totalReturnPct}');
     });
 
     test('pencere dışındaki noktalar atılır', () {

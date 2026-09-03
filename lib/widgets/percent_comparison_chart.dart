@@ -111,11 +111,19 @@ class PercentComparisonChart extends StatelessWidget {
         // aradaki boşluğa değil.
         final spots = ciz.snapSpots;
         if (spots.isEmpty) return x;
-        final clamped = x.clamp(spots.first.x, spots.last.x);
+        // **Clamp EKSENE, snap serisine DEĞİL.** Snap serisi ekseni tam
+        // kaplamayabilir (BIST hissesi yalnızca seans saatlerini kapsar,
+        // eksen ise geceyi de içerir). Seriye clamp'lemek ekseninin bir
+        // bölümünü ÖLÜ BÖLGEYE çeviriyordu: kullanıcı sola dokunduğunda
+        // crosshair 14 saat sağa zıplıyor ve grafiğin %64'ünde hiç
+        // gezdirilemiyordu — "tüm grafiğin üzerinde gezdiremiyorum" bulgusu.
+        final clamped = x.clamp(ciz.minX, ciz.maxX);
         // `_degerAt` ve `crosshairLabelBuilder` ile AYNI arama — üçü ayrışırsa
         // dikey çizgi bir noktayı, etiket başka bir noktayı gösterir.
         final i = coveringSpotIndex(spots, clamped);
-        return spots[i < 0 ? 0 : i].x;
+        // Eksenin başı snap serisinden önceyse ham konumu koru: zıplatmak
+        // yerine çizgi parmağın altında kalsın.
+        return i < 0 ? clamped : spots[i].x;
       },
       crosshairLabelBuilder: (x) {
         final spots = ciz.snapSpots;
@@ -125,7 +133,17 @@ class PercentComparisonChart extends StatelessWidget {
         // birbirini tutuyordu ama snap noktası ile ham `x` arasındaki fark
         // kadar tarih kayabiliyordu. Tek kaynak = tutarlılık garantisi.
         final i = coveringSpotIndex(spots, x);
-        final s = spots[i < 0 ? 0 : i];
+        // Snap serisi henüz başlamamışsa yüzde göstermek uydurma olurdu;
+        // tarih yine de gösterilir — kullanıcı nereye baktığını bilmeli.
+        if (i < 0) {
+          final t = DateTime.fromMillisecondsSinceEpoch(x.round());
+          final span = ciz.maxX - ciz.minX;
+          final b = span < const Duration(days: 2).inMilliseconds
+              ? DateFormat('d MMM HH:mm', 'tr_TR')
+              : DateFormat('d MMM yyyy', 'tr_TR');
+          return ('—', b.format(t));
+        }
+        final s = spots[i];
         final tarih = DateTime.fromMillisecondsSinceEpoch(s.x.round());
         // Gün içi seride tarih tek başına yetmez — saat de gösterilmeli,
         // yoksa "4 Eyl 2026" etiketi 288 noktanın hepsi için aynı görünür.

@@ -185,6 +185,98 @@ void main() {
     });
   });
 
+  group('crosshair EKSENİN TAMAMINDA gezer', () {
+    // ## Bulgu
+    // "üstüne basılı tutunca da garip bir yere kadar görebiliyorum, tüm
+    // grafiğin üzerinde gezdiremiyorum"
+    //
+    // ## Kök neden
+    // `crosshairSnapX` konumu SNAP SERİSİNE clamp'liyordu:
+    //   `x.clamp(spots.first.x, spots.last.x)`
+    // Snap serisi ekseni tam kaplamayabilir — bir BIST hissesi yalnızca
+    // seans saatlerini kapsar, eksen ise geceyi de içerir. Seriye clamp
+    // eksenin bir bölümünü ÖLÜ BÖLGEYE çeviriyordu.
+    //
+    // Ölçüldü: eksenin %64'ü ulaşılamaz, sola dokunulduğunda crosshair
+    // 14 saat sağa zıplıyordu.
+    //
+    // ## Kural
+    // Clamp EKSENE yapılır (`ciz.minX`/`ciz.maxX`). Snap serisi o noktadan
+    // önce başlıyorsa ham konum korunur — zıplatmak yerine çizgi parmağın
+    // altında kalır.
+
+    test('snap serisi ekseni kaplamasa da ölü bölge yok', () {
+      // Snap serisi eksenin yalnızca sağ %36'sını kaplıyor.
+      final eksenMin = ms(DateTime(2026, 9, 3, 20)).toDouble();
+      final eksenMax = ms(DateTime(2026, 9, 4, 18)).toDouble();
+      final snap = [
+        for (var i = 0; i <= 96; i++)
+          FlSpot(
+              ms(DateTime(2026, 9, 4, 10).add(Duration(minutes: 5 * i)))
+                  .toDouble(),
+              i.toDouble()),
+      ];
+
+      var ulasilamaz = 0;
+      for (var p = 0.0; p <= 1.0; p += 0.01) {
+        final x = eksenMin + (eksenMax - eksenMin) * p;
+        // Üretimdeki kural: eksene clamp, sonra kapsayan nokta; öncesindeyse
+        // ham konum.
+        final clamped = x.clamp(eksenMin, eksenMax);
+        final i = coveringSpotIndex(snap, clamped);
+        final snapX = i < 0 ? clamped : snap[i].x;
+        // Bir snap adımından (5 dk) fazla sapma = ulaşılamayan konum.
+        if ((snapX - x).abs() > const Duration(minutes: 5).inMilliseconds) {
+          ulasilamaz++;
+        }
+      }
+
+      expect(ulasilamaz, 0,
+          reason: 'eksenin $ulasilamaz/101 konumuna crosshair ulaşamıyor');
+    });
+
+    test('SERİYE clamp bu hatayı yapardı — karşılaştırma', () {
+      // Düzeltmenin gerekçesini belgeler.
+      final eksenMin = ms(DateTime(2026, 9, 3, 20)).toDouble();
+      final eksenMax = ms(DateTime(2026, 9, 4, 18)).toDouble();
+      final snap = [
+        for (var i = 0; i <= 96; i++)
+          FlSpot(
+              ms(DateTime(2026, 9, 4, 10).add(Duration(minutes: 5 * i)))
+                  .toDouble(),
+              i.toDouble()),
+      ];
+
+      var ulasilamaz = 0;
+      for (var p = 0.0; p <= 1.0; p += 0.01) {
+        final x = eksenMin + (eksenMax - eksenMin) * p;
+        final eski = x.clamp(snap.first.x, snap.last.x);
+        if ((eski - x).abs() > const Duration(minutes: 5).inMilliseconds) {
+          ulasilamaz++;
+        }
+      }
+
+      expect(ulasilamaz, greaterThan(30),
+          reason: 'seriye clamp ölü bölge yaratmalıydı; yaratmıyorsa test '
+              'verisi artık bu hatayı temsil etmiyor');
+    });
+
+    test('widget EKSENE clamp eder', () {
+      // Cebir doğru olsa da widget hâlâ seriye clamp ediyorsa düzeltme
+      // kullanıcıya ulaşmaz.
+      final src =
+          File('lib/widgets/percent_comparison_chart.dart').readAsStringSync();
+      final i = src.indexOf('crosshairSnapX:');
+      final j = src.indexOf('crosshairLabelBuilder:', i);
+      final govde = src.substring(i, j);
+
+      expect(govde.contains('ciz.minX'), isTrue,
+          reason: 'clamp eksene yapılmalı');
+      expect(govde.contains('spots.first.x, spots.last.x'), isFalse,
+          reason: 'seriye clamp ölü bölge yaratır');
+    });
+  });
+
   group('boş ve tek noktalı seriler çökmez', () {
     test('boş seri -1', () {
       expect(coveringSpotIndex(const [], 123), -1);
