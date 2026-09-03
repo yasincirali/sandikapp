@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
@@ -92,6 +93,13 @@ Future<void> _addSymbol(WidgetTester tester, SymbolHit hit) async {
 }
 
 void main() {
+  // Grafiğin zaman ekseni Türkçe tarih basıyor; locale verisi
+  // uygulamada `main.dart` içinde yükleniyor, widget testinde
+  // burada. (Kod tabanındaki yerleşik desen.)
+  setUpAll(() async {
+    await initializeDateFormatting('tr_TR');
+  });
+
   const thyao =
       SymbolHit(ticker: 'THYAO.IS', name: 'Türk Hava Yolları', source: 'BIST');
   const garan =

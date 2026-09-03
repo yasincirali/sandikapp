@@ -22,13 +22,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// Kaynak metnine bakar, piksel ölçmez — `leaderboard_overflow_test` gibi
 /// gerçek bir pump testi bu iki kuralı yakalayamaz, çünkü ikisi de "eksik
 /// olan şey" hakkında. Amaç regresyonu kilitlemek.
-String _yorumsuz(String src) => src
-    .split('\n')
-    .where((l) {
+String _yorumsuz(String src) => src.split('\n').where((l) {
       final t = l.trimLeft();
       return !t.startsWith('//') && !t.startsWith('///') && !t.startsWith('*');
-    })
-    .join('\n');
+    }).join('\n');
 
 void main() {
   late String ekran;
@@ -67,7 +64,8 @@ void main() {
 
   group('ortağı olmayan kullanıcı Yarış ekranına girebilir', () {
     test('partner boşken kart GİZLENMEZ', () {
-      expect(kart.contains('if (partners.isEmpty) return const SizedBox.shrink()'),
+      expect(
+          kart.contains('if (partners.isEmpty) return const SizedBox.shrink()'),
           isFalse,
           reason: 'kart kaybolunca LeaderboardScreen e giden yol kalmıyor');
     });

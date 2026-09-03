@@ -29,16 +29,13 @@ import 'package:portfoy_takip/utils/theme_resolution.dart';
 /// render edemiyor — bkz. CLAUDE.md). Burada doğrulanan: çözüm cebiri, Dart
 /// payload'ı ve native tarafın bayrağı gerçekten okuduğu. Görsel doğrulama
 /// gerçek cihazda yapılır.
-String _yorumsuz(String src) => src
-    .split('\n')
-    .where((l) {
+String _yorumsuz(String src) => src.split('\n').where((l) {
       final t = l.trimLeft();
       return !t.startsWith('//') &&
           !t.startsWith('///') &&
           !t.startsWith('*') &&
           !t.startsWith('<!--');
-    })
-    .join('\n');
+    }).join('\n');
 
 void main() {
   // `resolveThemeIsLightNow` binding üzerinden platformu okuyor; düz bir
@@ -54,10 +51,10 @@ void main() {
     });
 
     test('Sistem cihazın görünümüne düşer', () {
-      expect(resolveThemeIsLightWith(ThemeMode.system, Brightness.light),
-          isTrue);
-      expect(resolveThemeIsLightWith(ThemeMode.system, Brightness.dark),
-          isFalse);
+      expect(
+          resolveThemeIsLightWith(ThemeMode.system, Brightness.light), isTrue);
+      expect(
+          resolveThemeIsLightWith(ThemeMode.system, Brightness.dark), isFalse);
     });
 
     test('bağlamsız çözüm platformdan okur', () {
@@ -118,8 +115,9 @@ void main() {
     test('Swift paleti bayraktan seçiliyor', () async {
       final tema = _yorumsuz(
           await File('ios/SandikWidget/SandikTheme.swift').readAsString());
-      final view = _yorumsuz(await File('ios/SandikWidget/SandikLiveActivity.swift')
-          .readAsString());
+      final view = _yorumsuz(
+          await File('ios/SandikWidget/SandikLiveActivity.swift')
+              .readAsString());
 
       expect(tema.contains('static let light = SandikPalette('), isTrue,
           reason: 'açık palet tanımlı olmalı');
@@ -159,8 +157,9 @@ void main() {
     });
 
     test('moddan bağımsız palet kaynağı var', () async {
-      final xml = await File('android/app/src/main/res/values/widget_palette.xml')
-          .readAsString();
+      final xml =
+          await File('android/app/src/main/res/values/widget_palette.xml')
+              .readAsString();
       for (final ad in const [
         'widget_bg_light',
         'widget_bg_dark',

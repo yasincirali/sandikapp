@@ -391,26 +391,29 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         children: [
           Row(
             children: [
-              // Renk şeridine dokunmak seriye odaklanır — takip listesindeki
-              // lejant çipleriyle AYNI sözleşme. İnce bir çizgiye nişan almak
-              // zordur; 44pt'lik bir hedef çok daha kolaydır ve aynı işi iki
-              // yoldan yapabilmek dokunma isabetini artırır.
-              SandikTappable(
-                semanticLabel: buOdakta
-                    ? '${_displayTicker(hit)} odağını kaldır'
-                    : '${_displayTicker(hit)} serisine odaklan',
-                onTap: () => setState(() =>
-                    _focused = yeniOdak(mevcut: _focused, dokunulan: hit.ticker)),
-                child: SizedBox(
-                  width: 20,
-                  height: 44,
-                  child: Center(
-                    child: Container(width: 3, height: 30, color: color),
-                  ),
-                ),
-              ),
+              // Renk şeridi + varlık adı, seriye ODAKLANMA hedefidir —
+              // takip listesindeki lejant çipleriyle aynı sözleşme.
+              //
+              // Hedef bilinçli olarak GENİŞ: yalnızca 3px'lik renk şeridi
+              // dokunulabilir olsaydı nişan almak zorlaşırdı ve HIG'in 44pt
+              // kuralı çiğnenirdi (bkz. `touch_target_size_test`). Satırın
+              // adı taşıyan bütün sol yarısı hedeftir.
               Expanded(
-                child: Column(
+                child: SandikTappable(
+                  semanticLabel: buOdakta
+                      ? '${_displayTicker(hit)} odağını kaldır'
+                      : '${_displayTicker(hit)} serisine odaklan',
+                  onTap: () => setState(() => _focused =
+                      yeniOdak(mevcut: _focused, dokunulan: hit.ticker)),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        Container(width: 3, height: 30, color: color),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -448,6 +451,11 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: p.text58, fontSize: 11)),
                   ],
+                ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),

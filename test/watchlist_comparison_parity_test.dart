@@ -13,13 +13,10 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// ## Kapsam dışı
 /// "Ekstre" sekmesi kullanıcının isteğiyle atlandı.
-String _yorumsuz(String src) => src
-    .split('\n')
-    .where((l) {
+String _yorumsuz(String src) => src.split('\n').where((l) {
       final t = l.trimLeft();
       return !t.startsWith('//') && !t.startsWith('///') && !t.startsWith('*');
-    })
-    .join('\n');
+    }).join('\n');
 
 Future<String> _oku(String yol) async =>
     _yorumsuz(await File(yol).readAsString());

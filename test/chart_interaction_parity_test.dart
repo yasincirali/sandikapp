@@ -31,13 +31,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// Kaynak metnine bakar, jest simüle etmez. `RawGestureDetector` arena
 /// davranışı gerçek cihazda doğrulanır; buradaki amaç "bir ekran sessizce
 /// kendi grafiğini çizmeye dönmesin".
-String _yorumsuz(String src) => src
-    .split('\n')
-    .where((l) {
+String _yorumsuz(String src) => src.split('\n').where((l) {
       final t = l.trimLeft();
       return !t.startsWith('//') && !t.startsWith('///') && !t.startsWith('*');
-    })
-    .join('\n');
+    }).join('\n');
 
 Future<String> _oku(String yol) async =>
     _yorumsuz(await File(yol).readAsString());

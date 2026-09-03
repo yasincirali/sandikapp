@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/screens/comparison_screen.dart';
 
 /// Karşılaştırma ekranı — çizim ve boş durum.
@@ -17,6 +18,13 @@ Widget _wrap(Widget child) => ProviderScope(
     );
 
 void main() {
+  // Grafiğin zaman ekseni Türkçe tarih basıyor; locale verisi
+  // uygulamada `main.dart` içinde yükleniyor, widget testinde
+  // burada. (Kod tabanındaki yerleşik desen.)
+  setUpAll(() async {
+    await initializeDateFormatting('tr_TR');
+  });
+
   testWidgets('boş durumda açılır ve çökmez', (tester) async {
     await tester.pumpWidget(_wrap(const ComparisonScreen()));
     await tester.pump();

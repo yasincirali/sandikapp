@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../providers/portfolio_provider.dart';
+import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'daily_summary.dart';
 
@@ -91,30 +92,18 @@ class HomeWidgetService {
   /// bugünkü davranış korunur.
   bool themeIsLight = false;
 
-  /// Sparkline PNG'sinin renkleri.
+  /// Sparkline PNG'sinin renkleri — uygulamanın seçili temasına göre.
   ///
   /// Bu grafik Dart tarafında rasterize ediliyor, yani XML kaynaklarından
   /// beslenmiyor. Eskiden sabit dark tonlardı ve açık temada widget'ın kendi
   /// renkleriyle ayrışıyordu: XML `widget_gain` `#0F7A4E` iken çizgi
-  /// `#3DB77F` çiziliyordu. Değerler `lib/theme/sandik.dart` içindeki
-  /// `SandikPalette.dark` / `.light` token'larından kopyalanmıştır —
-  /// tema dosyasında bir token değişirse burası da değişmeli.
-  ({Color gain, Color loss, Color flat, Color guide, Color label})
-      get _sparkPalette => themeIsLight
-          ? (
-              gain: const Color(0xFF0F7A4E),
-              loss: const Color(0xFFC0341F),
-              flat: const Color(0xFF6B7A74),
-              guide: const Color(0xFF6B7A74),
-              label: const Color(0xFF4A5A54),
-            )
-          : (
-              gain: const Color(0xFF3DB77F),
-              loss: const Color(0xFFFF6B52),
-              flat: const Color(0xFF8A9A94),
-              guide: const Color(0xFF566761),
-              label: const Color(0xFF566761),
-            );
+  /// `#3DB77F` çiziliyordu.
+  ///
+  /// Değerler KOPYALANMAZ, doğrudan `SandikPalette`'ten okunur. Elle senkron
+  /// tutulan ikinci bir kopya, tam da burada yaşanan ayrışmanın kaynağıydı —
+  /// ve `design_token_leak_test` bu sınıf sızıntıyı zaten yasaklıyor.
+  SandikPalette get _sparkPalette =>
+      themeIsLight ? SandikPalette.light : SandikPalette.dark;
 
   bool _initialized = false;
 
@@ -403,7 +392,7 @@ class HomeWidgetService {
       final guidePaint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5
-        ..color = _sparkPalette.guide.withValues(alpha: 0.28);
+        ..color = _sparkPalette.text36.withValues(alpha: 0.28);
 
       // Eksen etiketi de DM Sans — kartın geri kalanı (ve uygulamanın
       // tamamı) bu ailede. Sistem fontuna düşmek grafiği metinden
@@ -417,7 +406,7 @@ class HomeWidgetService {
       const tabular = [ui.FontFeature.tabularFigures()];
 
       final labelStyle = ui.TextStyle(
-        color: _sparkPalette.label.withValues(alpha: 0.85),
+        color: _sparkPalette.text36.withValues(alpha: 0.85),
         fontSize: 22,
         fontWeight: FontWeight.w600,
         fontFamily: labelFamily,
@@ -454,8 +443,10 @@ class HomeWidgetService {
       // etmemeli. Kullanıcı düz bir çizgiyi kırmızı görünce "kaybettim"
       // diye okuyordu.
       final palet = _sparkPalette;
+      // Nötr ton `text36`: Android tarafındaki `widget_text_muted` ile aynı
+      // token — "hareket yok" iki yüzeyde de aynı renkte okunmalı.
       final color =
-          isFlat ? palet.flat : (isPos ? palet.gain : palet.loss);
+          isFlat ? palet.text36 : (isPos ? palet.gain : palet.loss);
 
       // Alan dolgusu: çizginin altını kapatan gradient.
       final fill = Path.from(line)
@@ -524,7 +515,7 @@ class HomeWidgetService {
       // Çekirdek — anlık değerin kendisi. Kilit ekranıyla aynı kural:
       // piyasa açıkken gain yeşili, kapalıyken gri.
       final dotColor =
-          isMarketOpen ? _sparkPalette.gain : _sparkPalette.flat;
+          isMarketOpen ? _sparkPalette.gain : _sparkPalette.text36;
       canvas.drawCircle(center, coreR, Paint()..color = dotColor);
 
       final image = await recorder.endRecording().toImage(w.toInt(), h.toInt());

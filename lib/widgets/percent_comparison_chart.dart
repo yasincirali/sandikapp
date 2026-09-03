@@ -129,9 +129,11 @@ class PercentComparisonChart extends StatelessWidget {
       crosshairDetailsBuilder: (x) => [
         for (var i = 0; i < ciz.cizilenler.length; i++)
           if (_degerAt(ciz.bars[i].spots, x) case final y?)
-            ('${labelOf(ciz.cizilenler[i])}  '
-                '${fmtPct(y, digits: 1, showSign: true)}',
-                colorOf(ciz.cizilenler[i])),
+            (
+              '${labelOf(ciz.cizilenler[i])}  '
+                  '${fmtPct(y, digits: 1, showSign: true)}',
+              colorOf(ciz.cizilenler[i])
+            ),
       ],
       builder: (minX, maxX) => _data(p, ciz, minX, maxX),
     );

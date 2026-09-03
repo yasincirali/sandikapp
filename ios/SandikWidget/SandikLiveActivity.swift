@@ -25,7 +25,11 @@ struct SandikLiveActivity: Widget {
             let palette = SandikPalette.resolved(isLight: context.state.isLightTheme)
 
             // ---- Kilit ekranı / banner ----
-            SandikLockScreenView(context: context)
+            //
+            // Açık `return`: kapanış artık çok ifadeli (yukarıdaki `let`).
+            // Result builder'lı bir kapanışta da geçerlidir ve tek bir View
+            // döndürdüğümüz için davranış aynı kalır.
+            return SandikLockScreenView(context: context)
                 // Sistem, arka planı kendi materyaliyle boyamasın: marka
                 // zemini yeşildir, nötr siyah kullanılmaz.
                 .activityBackgroundTint(palette.background)

@@ -20,13 +20,10 @@ import 'package:portfoy_takip/utils/chart_axis.dart';
 /// Karşılaştır ekranı kendi eksenini ayrı çizdiği için düzeltmeden
 /// faydalanmadı. Cebir `lib/utils/chart_axis.dart`'a taşındı; bu test iki
 /// ekranın da ondan beslendiğini kilitler.
-String _yorumsuz(String src) => src
-    .split('\n')
-    .where((l) {
+String _yorumsuz(String src) => src.split('\n').where((l) {
       final t = l.trimLeft();
       return !t.startsWith('//') && !t.startsWith('///') && !t.startsWith('*');
-    })
-    .join('\n');
+    }).join('\n');
 
 /// Verilen eksende basılacak etiket metinleri.
 List<String> _etiketler(

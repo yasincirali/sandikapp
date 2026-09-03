@@ -503,8 +503,10 @@ class _Row extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    // 44×44 HIG dokunma hedefi; ikon küçük kalır, dolgu
+                    // şeffaftır (bkz. `touch_target_size_test`).
                     child: SizedBox(
-                      width: 36,
+                      width: 44,
                       height: 44,
                       child: Icon(Icons.add_circle_outline_rounded,
                           size: 20, color: context.c.amberText),

@@ -1414,8 +1414,8 @@ class HistoryService {
   /// **Neden gerekli:** range her zaman dönemden geniştir (Yahoo yalnızca
   /// belirli range'leri kabul eder). Kırpılmazsa etiket ile veri ayrışır —
   /// "GÜNLÜK" yazıp beş günü, "1H" yazıp bir ayı gösterirdik. Dönem başı
-  /// yüzdesi serinin İLK noktasından hesaplandığı için (`watchlist_provider`)
-  /// bu doğrudan yanlış bir rakam demekti.
+  /// yüzdesi serinin İLK noktasından hesaplandığı için bu, çağıran her
+  /// yüzeyde doğrudan yanlış bir rakam demekti.
   ///
   /// **Pencere `now`'a değil SON VERİ NOKTASINA çapalanır.** Borsa hafta
   /// sonu ve tatilde kapalıdır; `now`'dan geriye saymak Pazar günü "GÜNLÜK"

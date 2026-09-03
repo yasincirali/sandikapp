@@ -102,9 +102,8 @@ void main() {
 
   group('kırpma — clipToPeriod', () {
     /// `gunOnce` gün önceki bir zaman damgası.
-    int ts(int gunOnce) => DateTime.now()
-        .subtract(Duration(days: gunOnce))
-        .millisecondsSinceEpoch;
+    int ts(int gunOnce) =>
+        DateTime.now().subtract(Duration(days: gunOnce)).millisecondsSinceEpoch;
 
     test('pencere dışındaki noktalar atılır', () {
       final seri = {
