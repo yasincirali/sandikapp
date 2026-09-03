@@ -916,8 +916,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // tercihini değil. Kullanıcı uygulamayı "Açık" yapıp cihazı koyu
         // bıraktığında istenen açık palettir; bu ayrımı yalnızca burası
         // bilebilir.
-        final isLightTheme =
-            resolveThemeIsLight(context, ref.read(themeModeProvider));
+        // Bağlamsız çözüm: bu bir `ref.listen` geri çağrısı, build değil.
+        final isLightTheme = resolveThemeIsLightNow(ref.read(themeModeProvider));
         HomeWidgetService.instance.themeIsLight = isLightTheme;
         unawaited(HomeWidgetService.instance.updateWithChart(
           snapshot,

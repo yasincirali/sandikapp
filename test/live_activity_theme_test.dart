@@ -41,6 +41,10 @@ String _yorumsuz(String src) => src
     .join('\n');
 
 void main() {
+  // `resolveThemeIsLightNow` binding üzerinden platformu okuyor; düz bir
+  // `test()` bloğunda binding kendiliğinden kurulmaz.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('tema çözümü', () {
     test('Açık ve Koyu doğrudan çözülür', () {
       expect(resolveThemeIsLightWith(ThemeMode.light, Brightness.dark), isTrue,
@@ -56,18 +60,16 @@ void main() {
           isFalse);
     });
 
-    testWidgets('context ile çözüm MediaQuery yi okur', (tester) async {
-      late bool sonuc;
-      await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(platformBrightness: Brightness.light),
-          child: Builder(builder: (context) {
-            sonuc = resolveThemeIsLight(context, ThemeMode.system);
-            return const SizedBox.shrink();
-          }),
-        ),
-      );
-      expect(sonuc, isTrue);
+    test('bağlamsız çözüm platformdan okur', () {
+      // `resolveThemeIsLightNow` iki çağrı yerinde de build DIŞINDAN
+      // çalışıyor; MediaQuery bağımlılığı kaydetmemesi bilinçli.
+      final beklenen =
+          WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+              Brightness.light;
+      expect(resolveThemeIsLightNow(ThemeMode.system), beklenen);
+      expect(resolveThemeIsLightNow(ThemeMode.light), isTrue,
+          reason: 'açık tercih platformdan bağımsız');
+      expect(resolveThemeIsLightNow(ThemeMode.dark), isFalse);
     });
   });
 

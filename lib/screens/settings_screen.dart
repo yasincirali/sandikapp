@@ -697,7 +697,7 @@ class _ThemeModePicker extends ConsumerWidget {
                   // itilmezse widget bir sonraki portföy tazelemesine kadar
                   // eski temada kalırdı — kullanıcı ayarı değiştirip ana
                   // ekrana çıktığında değişmemiş görürdü.
-                  final isLight = resolveThemeIsLight(context, mode);
+                  final isLight = resolveThemeIsLightNow(mode);
                   LiveActivityService.instance.themeIsLight = isLight;
                   unawaited(HomeWidgetService.instance.applyTheme(isLight));
                 },

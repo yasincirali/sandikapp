@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart';
+// `ThemeMode` material katmanında tanımlı; `widgets.dart` yetmez.
+import 'package:flutter/material.dart';
 
 /// Kullanıcının tema tercihini SOMUT bir aydınlık/karanlık kararına çevirir.
 ///
@@ -17,15 +18,26 @@ import 'package:flutter/widgets.dart';
 /// geldiğini yalnızca Dart tarafı bilir. Karar burada verilir, native tarafa
 /// çözülmüş bir bool gider.
 ///
-/// [ThemeMode.system] seçiliyse cihazın görünümüne düşülür; bu da
-/// `MediaQuery.platformBrightnessOf` ile okunur — `Theme.of(context)` DEĞİL,
-/// çünkü o zaten çözülmüş sonucu verir ve bu fonksiyon tam olarak o çözümü
-/// yapıyor.
-bool resolveThemeIsLight(BuildContext context, ThemeMode mode) =>
-    resolveThemeIsLightWith(mode, MediaQuery.platformBrightnessOf(context));
+/// [ThemeMode.system] seçiliyse cihazın görünümüne düşülür.
+///
+/// ## Neden `MediaQuery` değil
+/// Bu fonksiyonun iki çağrı yeri de build DIŞINDA: bir `ref.listen` geri
+/// çağrısı (`main.dart`) ve bir `onTap` (`settings_screen.dart`).
+/// `MediaQuery.platformBrightnessOf` bir InheritedWidget bağımlılığı KAYDEDER
+/// ve build ağacının dışında çağrılması kırılgandır — element o sırada
+/// sökülmüş olabilir. Platform doğrudan okunur; değer aynıdır, tek fark
+/// testlerdeki `MediaQuery` geçersiz kılmalarını görmemesidir. Saf karar
+/// tablosu [resolveThemeIsLightWith] ile test edilir.
+///
+/// `Theme.of(context)` de doğru araç DEĞİLDİR: o zaten çözülmüş sonucu verir
+/// ve bu fonksiyon tam olarak o çözümü yapıyor.
+bool resolveThemeIsLightNow(ThemeMode mode) => resolveThemeIsLightWith(
+      mode,
+      WidgetsBinding.instance.platformDispatcher.platformBrightness,
+    );
 
-/// [resolveThemeIsLight]'ın context istemeyen hâli — cihaz görünümü dışarıdan
-/// verilir. Servis ve testlerde widget ağacı kurmadan kullanılır.
+/// [resolveThemeIsLightNow]'ın cihaz görünümü dışarıdan verilen hâli.
+/// Testlerde ve saf karar tablosunu doğrularken kullanılır.
 bool resolveThemeIsLightWith(ThemeMode mode, Brightness platformBrightness) {
   switch (mode) {
     case ThemeMode.light:

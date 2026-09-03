@@ -266,7 +266,12 @@ final watchlistProvider =
   WatchlistNotifier.new,
 );
 
-/// Takip listesindeki varlık sayısı — üst bar ikonundaki rozet için.
+/// Takip listesindeki varlık sayısı — Portföy ekranındaki
+/// `Varlıklarım | Takip Listesi` sekmesinin rozeti için.
+///
+/// Sekme, altındaki içerik görünmezken ne olduğunu söylemeli: boş bir
+/// listeyle dolu bir liste arasındaki fark, dokunmaya değip değmeyeceğini
+/// söyler.
 final watchlistCountProvider = Provider<int>((ref) {
   return (ref.watch(watchlistProvider).valueOrNull ?? const []).length;
 });
