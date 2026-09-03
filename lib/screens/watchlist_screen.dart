@@ -26,6 +26,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/watchlist_chart.dart';
+import 'add_asset_screen.dart';
 import 'add_watchlist_screen.dart';
 import 'watchlist_detail_screen.dart';
 
@@ -531,6 +532,34 @@ class _Row extends ConsumerWidget {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // "Portföyüme ekle" — Karşılaştır ekranındaki `_actionRow`
+                  // ile aynı eylem, aynı ön doldurma.
+                  //
+                  // Takip listesinin varlık sebebi "almayı düşündüğüm şey";
+                  // almaya karar verince kullanıcıyı arama ekranına geri
+                  // gönderip aynı varlığı ikinci kez aratmak gereksizdi.
+                  // Al/Sat burada YOK: takip edilen varlık tanımı gereği
+                  // portföyde değildir (iki küme yapısal olarak ayrık).
+                  SandikTappable(
+                    semanticLabel: '${item.displayLabel} portföyüme ekle',
+                    onTap: () => Navigator.push(
+                      context,
+                      adaptiveRoute(
+                        builder: (_) => AddAssetScreen(
+                          prefillTicker: item.ticker,
+                          prefillName: item.name,
+                          prefillType: item.type,
+                        ),
+                      ),
+                    ),
+                    child: SizedBox(
+                      width: 36,
+                      height: 44,
+                      child: Icon(Icons.add_circle_outline_rounded,
+                          size: 20, color: context.c.amberText),
                     ),
                   ),
                 ],

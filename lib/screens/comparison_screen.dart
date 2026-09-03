@@ -758,6 +758,64 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 }
 
+/// Arama sayfasının `Varlıklar | Ortaklar` seçicisi.
+///
+/// Periyot seçicisiyle AYNI dil — aynı sayfada iki farklı segment biçimi
+/// görmek "bunlar farklı türde kontroller mi?" sorusunu doğururdu.
+class _SheetTabs extends StatelessWidget {
+  const _SheetTabs({required this.selected, required this.onChanged});
+
+  final int selected;
+  final ValueChanged<int> onChanged;
+
+  static const _labels = ['Varlıklar', 'Ortaklar'];
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.c;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: p.overlay,
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < _labels.length; i++)
+            Expanded(
+              child: GestureDetector(
+                // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın —
+                // yalnızca metnin üstü hedef olsaydı isabet zorlaşırdı.
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (i == selected) return;
+                  SandikHaptic.selection.perform();
+                  onChanged(i);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: i == selected ? p.amberFill : Colors.transparent,
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  ),
+                  child: Text(
+                    _labels[i],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: i == selected ? p.onAmber : p.text58,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Arama sayfası ───────────────────────────────────────────────────────────
 
 /// Sembol arama alt sayfası — yerleşik listeler + Yahoo serbest arama.
@@ -794,9 +852,13 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
     super.dispose();
   }
 
-  /// Portföy bölümü yalnızca sorgu boşken gösterilir.
-  bool get _showPortfolio =>
-      widget.portfolioOptions.isNotEmpty && _ctrl.text.trim().isEmpty;
+  /// Seçili sekme: 0 = Varlıklar, 1 = Ortaklar.
+  ///
+  /// Ortak portföyleri eskiden arama sonuçlarının üstünde bir bölümdü ve
+  /// **yalnızca sorgu boşken** görünüyordu — kullanıcı bir harf yazar yazmaz
+  /// kayboluyorlardı. Oysa "ortağımın portföyüyle kıyasla" bir arama değil,
+  /// ayrı bir seçim: kendi sekmesini hak ediyor.
+  int _tab = 0;
 
   Future<void> _search(String q) async {
     final mySeq = ++_seq;
@@ -875,50 +937,69 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _ctrl,
-                autofocus: true,
-                onChanged: _search,
-                style: TextStyle(color: p.text90),
-                decoration: InputDecoration(
-                  hintText: 'Hisse, fon, altın veya endeks ara',
-                  hintStyle: TextStyle(color: p.text36, fontSize: 14),
-                  prefixIcon: Icon(Icons.search_rounded, color: p.text58),
-                  filled: true,
-                  fillColor: p.overlay,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                    borderSide: BorderSide.none,
+            // Sekme yalnızca kıyaslanabilecek bir portföy VARSA çizilir:
+            // tek seçenekli bir seçici karar verecek bir şey sunmaz.
+            if (widget.portfolioOptions.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: _SheetTabs(
+                  selected: _tab,
+                  onChanged: (i) => setState(() => _tab = i),
+                ),
+              ),
+            if (_tab == 0) ...[
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _ctrl,
+                  autofocus: true,
+                  onChanged: _search,
+                  style: TextStyle(color: p.text90),
+                  decoration: InputDecoration(
+                    hintText: 'Hisse, fon, altın veya endeks ara',
+                    hintStyle: TextStyle(color: p.text36, fontSize: 14),
+                    prefixIcon: Icon(Icons.search_rounded, color: p.text58),
+                    filled: true,
+                    fillColor: p.overlay,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
-            ),
-            if (_busy)
-              LinearProgressIndicator(color: p.amberFill, minHeight: 2),
-            Expanded(
-              child: _results.isEmpty && !_busy && !_showPortfolio
-                  ? Center(
-                      child: Text('Sonuç bulunamadı',
-                          style: TextStyle(color: p.text58)),
-                    )
-                  : ListView(
-                      children: [
-                        // Portföy serileri yalnızca arama BOŞKEN görünür:
-                        // kullanıcı bir şey yazdığında sonuçların üstünü
-                        // işgal etmemeli.
-                        if (_showPortfolio) ...[
-                          _sectionLabel(p, 'PORTFÖYLER'),
-                          for (final h in widget.portfolioOptions)
-                            _tile(p, h, isPortfolio: true),
-                          if (_results.isNotEmpty)
-                            _sectionLabel(p, 'VARLIKLAR'),
-                        ],
-                        for (final h in _results) _tile(p, h),
-                      ],
+              if (_busy)
+                LinearProgressIndicator(color: p.amberFill, minHeight: 2),
+              Expanded(
+                child: _results.isEmpty && !_busy
+                    ? Center(
+                        child: Text('Sonuç bulunamadı',
+                            style: TextStyle(color: p.text58)),
+                      )
+                    : ListView(
+                        children: [for (final h in _results) _tile(p, h)],
+                      ),
+              ),
+            ] else
+              Expanded(
+                child: ListView(
+                  children: [
+                    _sectionLabel(p, 'PORTFÖYLER'),
+                    for (final h in widget.portfolioOptions)
+                      _tile(p, h, isPortfolio: true),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      child: Text(
+                        'Portföyler hesaplanan serilerdir — piyasada kote '
+                        'değiller. Getirileri, tıpkı bir varlık gibi dönem '
+                        'başına göre yüzde olarak çizilir.',
+                        style:
+                            TextStyle(color: p.text36, fontSize: 11, height: 1.4),
+                      ),
                     ),
-            ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
