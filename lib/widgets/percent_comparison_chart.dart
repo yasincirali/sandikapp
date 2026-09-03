@@ -133,7 +133,7 @@ class PercentComparisonChart extends StatelessWidget {
                 '${fmtPct(y, digits: 1, showSign: true)}',
                 colorOf(ciz.cizilenler[i])),
       ],
-      builder: (minX, maxX) => _data(context, p, ciz, minX, maxX),
+      builder: (minX, maxX) => _data(p, ciz, minX, maxX),
     );
   }
 
@@ -237,8 +237,8 @@ class PercentComparisonChart extends StatelessWidget {
     );
   }
 
-  LineChartData _data(BuildContext context, SandikPalette p, _CizimVerisi ciz,
-      double minX, double maxX) {
+  LineChartData _data(
+      SandikPalette p, _CizimVerisi ciz, double minX, double maxX) {
     final eksen = ciz.eksen;
     final span = maxX - minX;
 
