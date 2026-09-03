@@ -292,7 +292,86 @@ void main() {
       final ets = etiketler(e);
       expect(ets.toSet().length, ets.length,
           reason: 'her etiket benzersiz olmalı: $ets');
-      expect(e.interval, 10.0, reason: 'adım yuvarlak olmalı');
+
+      // Adım YUVARLAK olmalı — ama hangi yuvarlak sayı olduğu sabitlenmez.
+      // Burada eskiden `10.0` bekleniyordu; o değer adımın daima YUKARI
+      // yuvarlanmasının sonucuydu ve ekseni iki etikete düşürüyordu
+      // (kenar etiketleri çizilmediği için "+0%, +10%" kalıyordu). Adım artık
+      // en yakın adaya yuvarlanıyor ve bu bant 5.0 veriyor — dört etiket.
+      // Testin asıl koruduğu şey ÇAKIŞMAMA; tek bir adım değerini çakmak
+      // eksenin okunabilirliğini iyileştiren her değişikliği kırardı.
+      final us =
+          math.pow(10, (math.log(e.interval) / math.ln10).floor()).toDouble();
+      final oran = e.interval / us;
+      expect([1.0, 2.0, 2.5, 5.0, 10.0].any((x) => (x - oran).abs() < 1e-9),
+          isTrue,
+          reason: 'adım yuvarlak değil: ${e.interval}');
+    });
+
+    test('eksende YETERİNCE etiket kalır', () {
+      // Çakışmama tek başına yetmiyor: adım daima yukarı yuvarlanırken
+      // etiketler çakışmıyordu ama eksende yalnızca İKİ tanesi kalıyordu
+      // (ölçüldü: %-5..%15 → "+0%, +10%"; %0..%3 → "+0%, +2%"). İki etiketli
+      // bir eksen ızgarayı okunaksız yapar — çizginin nereye denk geldiği
+      // kestirilemez.
+      //
+      // fl_chart kenardaki iki etiketi çizmez (`value <= meta.min ||
+      // value >= meta.max`), yani GÖRÜNEN sayı toplamdan iki eksiktir.
+      const bantlar = [
+        (-0.2, 1.5), // kullanıcı ekran görüntüsü
+        (-0.3, 3.0),
+        (-5.0, 15.0),
+        (-20.0, 60.0),
+        (-40.0, 120.0),
+        (-3.31, 18.51),
+      ];
+
+      for (final (alt, ust) in bantlar) {
+        final e = yuzdeEkseni(alt, ust);
+        final gorunen = etiketler(e).length - 2;
+        expect(gorunen, greaterThanOrEqualTo(3),
+            reason: 'bant $alt..$ust için yalnızca $gorunen görünür etiket '
+                '(adım ${e.interval}) — eksen okunmaz');
+      }
+    });
+
+    test('etiket ADIMLARI eşit görünür', () {
+      // Ondalık basamak adımı tam gösteremezse ardışık etiketler eşit
+      // aralıklı görünmez: 0,025'lik adım iki basamakla
+      // "-0,03 / 0,00 / +0,03" diye yuvarlanıyordu — yazılan farklar 0,03 iken
+      // gerçek adım 0,025; ızgara çizgileriyle etiketler ayrışıyordu.
+      //
+      // Sınır: etiketler en çok 3 basamak yazar. 0,0025 gibi bir adım bu
+      // biçimde kayıpsız gösterilemez — o bant ±%0,005'ten dar, yani pratikte
+      // düz çizgi. Orada korunan şey eşit ARALIK değil, ÇAKIŞMAMA (aşağıdaki
+      // "etiketler HER bantta benzersiz" testi).
+      for (final (alt, ust) in const [
+        (-0.05, 0.05),
+        (-0.2, 1.5),
+        (0.0, 0.8),
+        (-5.0, 15.0),
+        (-40.0, 120.0),
+      ]) {
+        final e = yuzdeEkseni(alt, ust);
+        final yazilan = double.parse(e.interval.toStringAsFixed(e.ondalik));
+        expect(yazilan, closeTo(e.interval, 1e-9),
+            reason: 'adım ${e.interval} ${e.ondalik} basamakla "$yazilan" '
+                'olarak yazılıyor — etiket aralıkları eşit görünmez');
+      }
+    });
+
+    test('aşırı dar bantta bile etiketler ÇAKIŞMAZ', () {
+      // Zoom sonuna kadar açıldığında bant ±%0,001'e kadar iner. Adım tabanı
+      // olmadan etiketler aynı metne yuvarlanıyordu ("−0,001 / −0,001").
+      for (final (alt, ust) in const [
+        (-0.001, 0.001),
+        (-0.0001, 0.0001),
+        (-0.005, 0.005),
+      ]) {
+        final ets = etiketler(yuzdeEkseni(alt, ust));
+        expect(ets.toSet().length, ets.length,
+            reason: 'bant $alt..$ust için çakışma: $ets');
+      }
     });
 
     test('etiketler HER bantta benzersiz', () {

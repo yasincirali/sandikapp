@@ -42,21 +42,36 @@ import 'dart:math' as math;
   final hamAdim = (ust - alt) / hedefBolme;
 
   // 1/2/2,5/5/10 × 10ⁿ tabanına yuvarla (Heckbert "nice numbers").
+  //
+  // **En YAKIN adaya yuvarlanır, yukarı DEĞİL.** Eskiden her aday `<=` ile
+  // taranıyordu, yani adım daima yukarı yuvarlanıyordu; ham adım 6,2 iken
+  // 10'a çıkıyordu (%61 büyüme). Adım büyüdükçe bölme sayısı düşüyor, üstelik
+  // sınırlar da dışa yuvarlandığı için bir bölme daha eriyordu. Sonuç: eksende
+  // yalnızca İKİ etiket kalıyordu (ölçüldü: %-5..%15 bandı → "+0%, +10%";
+  // %0..%3 → "+0%, +2%"). Kenar etiketleri zaten çizilmediği için
+  // `hedefBolme=4` gerçekte 2 etiket demekti.
+  //
+  // En yakına yuvarlamak Heckbert'in özgün "nice numbers" davranışıdır ve
+  // hedeflenen bölme sayısını korur.
   final us = math.pow(10, (math.log(hamAdim) / math.ln10).floor()).toDouble();
   final oran = hamAdim / us;
-  final double carpan;
-  if (oran <= 1) {
-    carpan = 1;
-  } else if (oran <= 2) {
-    carpan = 2;
-  } else if (oran <= 2.5) {
-    carpan = 2.5;
-  } else if (oran <= 5) {
-    carpan = 5;
-  } else {
-    carpan = 10;
+  const adaylar = [1.0, 2.0, 2.5, 5.0, 10.0];
+  var carpan = adaylar.first;
+  var enIyiFark = double.infinity;
+  for (final a in adaylar) {
+    // Oransal fark: 1→2 ile 5→10 aynı ağırlıkta değerlendirilsin.
+    final fark = (math.log(a) - math.log(oran)).abs();
+    if (fark < enIyiFark) {
+      enIyiFark = fark;
+      carpan = a;
+    }
   }
-  final adim = carpan * us;
+  // Etiketler en çok 3 basamakla yazılır (daha fazlası dar eksende okunmaz),
+  // bu yüzden adım da 0,001'in altına inemez — inerse ardışık etiketler aynı
+  // metne yuvarlanır ve eksen "−0,001 / −0,001 / 0,000" gibi çakışır
+  // (ölçüldü: ±%0,001 bandı). Bu kadar dar bir bant zaten düz çizgidir;
+  // ızgarayı seyrekleştirmek bilgi kaybetmez.
+  final adim = math.max(carpan * us, 0.001);
 
   // Sınırlar adımın katına — DIŞA doğru, veri kırpılmasın.
   final yeniAlt = (alt / adim).floor() * adim;
@@ -64,7 +79,16 @@ import 'dart:math' as math;
 
   // Adım 1'den küçükse tam sayı etiketi tekrar eder ("+0%, +0%, +1%").
   // O durumda ondalık göster.
-  final ondalik = adim >= 1 ? 0 : (adim >= 0.1 ? 1 : 2);
+  //
+  // Basamak sayısı adımı TAM göstermeye yetmeli: 0,025'lik bir adım iki
+  // basamakla "0,03" diye yuvarlanır ve ardışık etiketler arasındaki fark
+  // eşit görünmez. Adımın kendisi kayıpsız yazılana kadar basamak eklenir
+  // (en çok 3 — daha fazlası dar eksende okunmaz).
+  var ondalik = adim >= 1 ? 0 : (adim >= 0.1 ? 1 : 2);
+  while (ondalik < 3 &&
+      (double.parse(adim.toStringAsFixed(ondalik)) - adim).abs() > 1e-9) {
+    ondalik++;
+  }
 
   return (min: yeniAlt, max: yeniUst, interval: adim, ondalik: ondalik);
 }

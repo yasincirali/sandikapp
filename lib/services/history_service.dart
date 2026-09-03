@@ -48,10 +48,10 @@ extension ResolutionTierMeta on ResolutionTier {
       case ResolutionTier.weekly:
         // Haftanın pazartesi 00:00'ına snap
         final wd = d.weekday; // 1..7
-        final monday = DateTime(d.year, d.month, d.day)
-            .subtract(Duration(days: wd - 1));
+        final monday =
+            DateTime(d.year, d.month, d.day).subtract(Duration(days: wd - 1));
         return monday.millisecondsSinceEpoch;
-      }
+    }
   }
 
   /// Görünen aralığın gün cinsinden genişliğine göre optimal tier seçimi.
@@ -182,19 +182,18 @@ class HistoryService {
     // Eski merdivende iki delik vardı — 91-180 gün `'3mo'`e (90 gün) düşüyor,
     // 365 günün üstü de `'1y'`de kalıyordu. `getSymbolHistory` ile aynı
     // aileden hata; ikisi de kapatıldı.
-    final range = periodDays > 365
-        ? '5y'
-        : periodDays > 180
-            ? '1y'
-            : periodDays > 90
-                ? '6mo'
-                : periodDays > 60
-                    ? '3mo'
-                    : periodDays > 20
-                        ? '1mo'
-                        : hourly
-                            ? '5d'
-                            : '1mo';
+    //
+    // **Merdiven artık [rangeForPeriod] ile ORTAK.** Burada ayrı bir kopya
+    // duruyordu ve `getSymbolHistory`'ninkiyle ayrışmıştı: GÜNLÜK'te sembol
+    // `'1d'` çekerken portföy `'5d'`, 1H'de sembol `'1mo'` çekerken portföy
+    // yine `'5d'` çekiyordu. Aynı grafikte iki seri iki farklı pencereden
+    // geliyordu (ölçüldü: GÜNLÜK'te 96 saatlik kayma). İki kopya tutmak bu
+    // projede tekrar eden hata sınıfı; tek kaynağa indirildi.
+    final range = rangeForPeriod(periodDays);
+    // Testler bu değeri ağa çıkmadan denetler — `range` yerel bir değişken
+    // olduğu sürece merdivenin yeniden ayrışması hiçbir testle yakalanamıyordu
+    // (sabotaj denendi, tüm testler geçti).
+    debugSonKullanilanRange = range;
 
     // Haftalık'ta saat başına, diğerlerinde gece yarısına normalize.
     int normalizeTs(int ms) {
@@ -242,10 +241,12 @@ class HistoryService {
     //
     // Not: altın hesabı USD serisine bağımlı — ikisi paralel ÇEKİLİR ama
     // dönüşüm her ikisi de geldikten sonra yapılır (sıra korunur).
-    final usdFuture =
-        needsUsd ? getHistorySafe('USDTRY=X') : Future.value(const <(int, double)>[]);
-    final goldFuture =
-        needsGold ? getHistorySafe('GC=F') : Future.value(const <(int, double)>[]);
+    final usdFuture = needsUsd
+        ? getHistorySafe('USDTRY=X')
+        : Future.value(const <(int, double)>[]);
+    final goldFuture = needsGold
+        ? getHistorySafe('GC=F')
+        : Future.value(const <(int, double)>[]);
 
     // Çekilecek benzersiz ticker'ları önce topla — aynı ticker'ın birden çok
     // lot'u varsa tek istek yapılsın.
@@ -329,24 +330,22 @@ class HistoryService {
 
     // -- Toparlama ve Hizalama --
     // Haftalık'ta saat başına, diğerlerinde gün başına grid oluştur.
-    final startMs =
-        now.subtract(Duration(days: periodDays)).millisecondsSinceEpoch;
-    final int stepMinutes = hourly ? 60 : 24 * 60;
-    final int totalSteps = hourly ? periodDays * 24 : periodDays;
-    for (int i = totalSteps; i >= 0; i--) {
-      final slotDate =
-          now.subtract(Duration(minutes: i * stepMinutes));
-      final dayTs = normalizeTs(slotDate.millisecondsSinceEpoch);
-      if (dayTs < normalizeTs(startMs)) continue;
-      // Haftalık (saatlik) grid'de hafta sonlarını atla — trading apps'lerde
-      // görüldüğü gibi Cts/Paz plato'sunu göstermeyelim. Diğer dönemlerde
-      // (aylık, yıllık vs) gün grid'i kalır: haftada 5 nokta vs 7 çok
-      // farklı değil.
-      if (hourly) {
-        final wd = slotDate.weekday; // 6=Cts, 7=Paz
-        if (wd == DateTime.saturday || wd == DateTime.sunday) continue;
-      }
-
+    //
+    // **Grid `now`'a değil son İŞ GÜNÜNE çapalanır.** Saatlik grid hafta sonu
+    // slotlarını atlar (aşağıdaki `weekday` kontrolü); pencere `now`'dan
+    // geriye sayınca Pazar günü "GÜNLÜK" seçildiğinde 24 slotun tamamı Cts/Paz
+    // oluyor ve portföy çizgisi TAMAMEN kayboluyordu (ölçüldü: Pazar → 0 slot,
+    // Cumartesi → 9 slot). Aynı anda takip varlıkları Cuma seansını
+    // gösteriyordu, çünkü `clipToPeriod` son VERİ noktasına çapalanır.
+    // İki seri aynı grafikte farklı pencerelerden geliyordu.
+    //
+    // Çapayı son iş gününe almak `clipToPeriod`'un hafta sonu kuralıyla aynı
+    // anlamı verir: "son bir günlük hareket" = son seans.
+    for (final dayTs in gridSlotlari(
+      now: now,
+      periodDays: periodDays,
+      hourly: hourly,
+    )) {
       double dayTotalValue = 0.0;
 
       for (final a in assets) {
@@ -447,7 +446,15 @@ class HistoryService {
     // artefaktlarını (gerçek trend olmadan) yumuşatır.
     smoothSpikes(groupedPoints, deviation: 0.015, neighborGap: 0.01);
 
-    return groupedPoints;
+    // Takip/karşılaştırma serileriyle AYNI kırpma. Grid zaten `periodDays`
+    // adım üretiyor, ama kırpma iki şeyi garanti eder:
+    //   · pencere sembol serileriyle bire bir aynı kuralla kapanır
+    //     (`clipToPeriod` son veri noktasına çapalanır),
+    //   · yüzde tabanı dönem içinde kalır. Kırpma yokken GÜNLÜK'te portföy
+    //     çizgisi dönem başına göre değil BEŞ GÜN öncesine göre normalize
+    //     oluyordu; ölçülen hata %1,00 yerine %10,02 (9 puan) idi ve aynı
+    //     yanlış rakam açıklama satırına da yazılıyordu.
+    return clipToPeriod(groupedPoints, periodDays);
   }
 
   double _getClosestPrice(
@@ -464,6 +471,84 @@ class HistoryService {
     if (idx >= 0) return map[sortedKeys[idx]]!;
     // Geçmişte yoksa gelecekteki en yakın ilk günü dön
     return map[sortedKeys.first]!;
+  }
+
+  /// [getPortfolioHistory]'nin son çağrıda kullandığı Yahoo range'i.
+  ///
+  /// Yalnızca test gözlemi içindir; üretimde okunmaz. Var olma sebebi:
+  /// `range` yerel bir değişken olduğu için portföy merdiveninin sembol
+  /// merdiveninden yeniden ayrışması ağa çıkmayan hiçbir testle
+  /// yakalanamıyordu (sabotaj denendi, tüm testler geçti).
+  @visibleForTesting
+  static String? debugSonKullanilanRange;
+
+  /// Portföy serisinin zaman ızgarası — `{ normalize edilmiş UNIX_MILLIS }`,
+  /// eskiden yeniye sıralı.
+  ///
+  /// Saf fonksiyon ([now] dışarıdan verilir) olmasının SEBEBİ var: hafta sonu
+  /// davranışı yalnızca Cumartesi/Pazar günü ortaya çıkıyor. Izgara
+  /// `getPortfolioHistory`'nin içinde `DateTime.now()` ile kurulduğu sürece
+  /// o dal hafta içi koşan bir testte HİÇ çalışmaz — nitekim ilk yazılan
+  /// koruma testi, çapa sabote edildiğinde de geçiyordu (Cuma günü koşuldu).
+  /// Izgarayı ayırmak "Pazar günü ne olur" sorusunu doğrudan sorulabilir yapar.
+  ///
+  /// ## Kurallar
+  /// · Saatlik ızgara (dönem ≤ 7 gün) hafta sonu slotlarını ATLAR — Cts/Paz
+  ///   platosu trading uygulamalarında gösterilmez.
+  /// · Bu yüzden pencere de hafta sonundan BAŞLAYAMAZ: [_sonIsGunu] ile son
+  ///   iş gününe çapalanır. Aksi halde Pazar günü "GÜNLÜK" seçildiğinde
+  ///   24 slotun tamamı elenir ve seri boş döner (ölçüldü: Pazar → 0 slot).
+  /// · Günlük ızgara (dönem > 7 gün) hafta sonunu ELEMEZ; haftada 5 nokta ile
+  ///   7 nokta arasındaki fark uzun dönemde önemsiz.
+  @visibleForTesting
+  static List<int> gridSlotlari({
+    required DateTime now,
+    required int periodDays,
+    required bool hourly,
+  }) {
+    int normalizeTs(int ms) {
+      final d = DateTime.fromMillisecondsSinceEpoch(ms);
+      if (hourly) {
+        return DateTime(d.year, d.month, d.day, d.hour).millisecondsSinceEpoch;
+      }
+      return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
+    }
+
+    final gridNow = hourly ? _sonIsGunu(now) : now;
+    final startMs =
+        gridNow.subtract(Duration(days: periodDays)).millisecondsSinceEpoch;
+    final stepMinutes = hourly ? 60 : 24 * 60;
+    final totalSteps = hourly ? periodDays * 24 : periodDays;
+
+    final out = <int>[];
+    for (var i = totalSteps; i >= 0; i--) {
+      final slotDate = gridNow.subtract(Duration(minutes: i * stepMinutes));
+      final dayTs = normalizeTs(slotDate.millisecondsSinceEpoch);
+      if (dayTs < normalizeTs(startMs)) continue;
+      if (hourly) {
+        final wd = slotDate.weekday; // 6=Cts, 7=Paz
+        if (wd == DateTime.saturday || wd == DateTime.sunday) continue;
+      }
+      out.add(dayTs);
+    }
+    return out;
+  }
+
+  /// [d] hafta sonuna düşüyorsa bir önceki Cuma'ya (aynı saatte) çeker.
+  ///
+  /// Saatlik grid hafta sonu slotlarını atladığı için pencerenin kendisi de
+  /// hafta sonundan başlamamalı — yoksa pencere boşa düşer ve çizgi kaybolur.
+  /// Borsa tatilleri KAPSANMAZ: tatil takvimi yok, ve tatilde pencere bir
+  /// seans dar kalır ama boşalmaz (Cuma verisi hâlâ pencerede).
+  @visibleForTesting
+  static DateTime sonIsGunu(DateTime d) => _sonIsGunu(d);
+
+  static DateTime _sonIsGunu(DateTime d) {
+    var out = d;
+    while (out.weekday == DateTime.saturday || out.weekday == DateTime.sunday) {
+      out = out.subtract(const Duration(days: 1));
+    }
+    return out;
   }
 
   /// Gerçek geçmiş veri yoksa currentPrice'ı sabit kullan (simülasyon yok).
@@ -561,10 +646,12 @@ class HistoryService {
 
     // Tüm semboller tek seferde başlatılır — gerekçe için `getPortfolioHistory`
     // içindeki aynı bloğun açıklamasına bak.
-    final usdFuture =
-        needsUsd ? getHistorySafe('USDTRY=X') : Future.value(const <(int, double)>[]);
-    final goldFuture =
-        needsGold ? getHistorySafe('GC=F') : Future.value(const <(int, double)>[]);
+    final usdFuture = needsUsd
+        ? getHistorySafe('USDTRY=X')
+        : Future.value(const <(int, double)>[]);
+    final goldFuture = needsGold
+        ? getHistorySafe('GC=F')
+        : Future.value(const <(int, double)>[]);
 
     final tickerFutures = <String, Future<List<(int, double)>>>{};
     for (final a in assets) {
@@ -676,8 +763,7 @@ class HistoryService {
         if (unitLocal != null) {
           if (a.currency == 'USD') {
             final usdSeed = usdTrySlots.isNotEmpty
-                ? usdTrySlots[
-                    usdTrySlots.keys.reduce((x, y) => x < y ? x : y)]!
+                ? usdTrySlots[usdTrySlots.keys.reduce((x, y) => x < y ? x : y)]!
                 : 40.0;
             unitTRY = unitLocal * usdSeed;
           } else {
@@ -827,9 +913,7 @@ class HistoryService {
         final qty = signedQtyOnSlot(a, nowTs);
         if (qty == 0) continue;
         if (a.currentPrice <= 0) continue;
-        final liveUsd = usdTrySlots.isNotEmpty
-            ? usdTrySlots.values.last
-            : 40.0;
+        final liveUsd = usdTrySlots.isNotEmpty ? usdTrySlots.values.last : 40.0;
         final tryPrice =
             a.currency == 'USD' ? a.currentPrice * liveUsd : a.currentPrice;
         final v = tryPrice * qty;
@@ -1106,9 +1190,8 @@ class HistoryService {
         // artık nadiren buraya düşülür çünkü _closestOrNull mevcut serideki
         // herhangi bir noktayı bulur.
         if (v == null && a.currentPrice > 0) {
-          final seedPrice = a.currency == 'USD'
-              ? a.currentPrice * 40.0
-              : a.currentPrice;
+          final seedPrice =
+              a.currency == 'USD' ? a.currentPrice * 40.0 : a.currentPrice;
           v = seedPrice * qty;
         }
         // Bir asset için hiç fiyat yoksa (kurucu-fon YLB(0.00) gibi) O
@@ -1333,8 +1416,7 @@ class HistoryService {
         // Kur bulunamazsa noktayı ATLA — sabit bir varsayılan kur (eski
         // kodda 40.0) geçmişte tamamen uydurma bir TL fiyatı üretirdi.
         if (rate == null) continue;
-        out[e.key] =
-            PriceService.gram22kFromXauTry(e.value * rate) * weight;
+        out[e.key] = PriceService.gram22kFromXauTry(e.value * rate) * weight;
       }
       // Kırpma ÇEVRİMDEN SONRA yapılır: önce kırpsaydık USD/TRY serisinde
       // eşleşecek komşu nokta kalmayabilir ve `_closestOrNull` kenardaki
@@ -1546,6 +1628,7 @@ Map<int, double> smoothSpikes(
   Map<int, double> points, {
   required double deviation,
   required double neighborGap,
+
   /// Düzeltilen slot'ların ÖNCEKİ değerleri buraya yazılır (ts → eski değer).
   /// Çağıran bununla tür/pozisyon dağılımını aynı oranda ölçekler; aksi halde
   /// toplam düzeltilip dağılım ham kalır ve `Σ byType != total` olur.
