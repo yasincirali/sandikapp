@@ -92,7 +92,13 @@ class SignalSettingsScreen extends ConsumerWidget {
                     ),
                     Switch.adaptive(
                       value: neutralPush,
-                      activeColor: context.c.amberText,
+                      // TRACK, thumb DEĞİL. `Switch.adaptive` iOS'ta
+                      // `CupertinoSwitch` çizer ve orada "açık" rengi
+                      // track'tir; `activeThumbColor` amber bir topuzla
+                      // varsayılan yeşil bir track üretirdi. Ayarlar
+                      // ekranındaki anahtar da `activeTrackColor` kullanıyor —
+                      // iki anahtar aynı görünmeli.
+                      activeTrackColor: context.c.amberText,
                       onChanged: (v) async {
                         await ref
                             .read(signalNeutralPushProvider.notifier)

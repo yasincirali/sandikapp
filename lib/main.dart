@@ -420,7 +420,7 @@ class SandikApp extends ConsumerWidget {
         color: p.surface1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.05), width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -428,7 +428,7 @@ class SandikApp extends ConsumerWidget {
       // Input
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Colors.white.withValues(alpha: 0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
@@ -494,7 +494,7 @@ class SandikApp extends ConsumerWidget {
 
       // Chip
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.white.withOpacity(0.05),
+        backgroundColor: Colors.white.withValues(alpha: 0.05),
         selectedColor: p.amberFill,
         labelStyle:
             GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500),
@@ -505,7 +505,7 @@ class SandikApp extends ConsumerWidget {
 
       // Divider
       dividerTheme: DividerThemeData(
-        color: Colors.white.withOpacity(0.07),
+        color: Colors.white.withValues(alpha: 0.07),
         thickness: 1,
         space: 1,
       ),

@@ -168,7 +168,11 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
       final items =
           await SupabaseService.instance.fetchWatchlist(userId: user.id);
       if (items.isEmpty) return const [];
-      return _withPrices(items, watchlistPeriods[periodIdx].days);
+      // `await` ZORUNLU: await olmadan döndürülen future'ın hatası aşağıdaki
+      // `catch`'e DÜŞMEZ. O durumda provider hata durumuna geçer ve takip
+      // listesi, boş liste yerine hata ekranı gösterirdi — koruma yazıldığı
+      // gibi çalışmıyordu.
+      return await _withPrices(items, watchlistPeriods[periodIdx].days);
     } catch (_) {
       return const [];
     }
