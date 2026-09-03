@@ -105,6 +105,22 @@ class LiveActivityService {
   int startMinute = defaultStartMinute;
   int endMinute = defaultEndMinute;
 
+  /// Kilit ekranı AÇIK temada mı çizilsin?
+  ///
+  /// Kullanıcının uygulama içi tema tercihi ("Sistem / Açık / Koyu")
+  /// çözülmüş hâliyle buraya itilir — `startMinute` ve `showAmountsOnLockScreen`
+  /// ile aynı desen; servis singleton olduğu için provider'ı kendisi okuyamaz.
+  ///
+  /// **"Sistem" burada ÇÖZÜLMÜŞ gelir.** Kilit ekranı uzantısı ana uygulamanın
+  /// tercihini göremez ve `@Environment(\.colorScheme)` cihazın görünümünü
+  /// söyler, uygulamanınkini değil. Kullanıcı uygulamayı "Açık" yapıp cihazı
+  /// koyu bıraktığında istenen açık palettir; bu ayrımı yalnızca Dart tarafı
+  /// bilebilir.
+  ///
+  /// Varsayılan `false` (koyu): tercih henüz itilmemişken bugünkü davranış
+  /// korunur.
+  bool themeIsLight = false;
+
   /// Hafta sonu da gösterilsin mi? Varsayılan AÇIK.
   ///
   /// Hafta sonu BIST kapalıdır ama bu yüzeyi gizlemek için sebep değil:
@@ -182,6 +198,7 @@ class LiveActivityService {
     startMinute = defaultStartMinute;
     endMinute = defaultEndMinute;
     includeWeekend = true;
+    themeIsLight = false;
     showAmountsOnLockScreen = false;
   }
 
@@ -259,7 +276,7 @@ class LiveActivityService {
     final key = '${payload['totalText']}|${payload['changeText']}'
         '|${payload['changePctText']}|${payload['showAmounts']}'
         '|${payload['isFlatChange']}|${payload['axisMinText']}'
-        '|${payload['axisMaxText']}';
+        '|${payload['axisMaxText']}|${payload['isLightTheme']}';
     if (key == _lastSummaryKey) return;
 
     await _db
@@ -281,6 +298,14 @@ class LiveActivityService {
             'axisMinText': payload['axisMinText'],
             'axisMaxText': payload['axisMaxText'],
             'isFlatChange': payload['isFlatChange'],
+            // Uygulamanın seçili teması — sunucu bunu aynen iletir.
+            //
+            // Anahtara da girer (yukarı bkz.): tema tek başına değiştiğinde
+            // rakamlar aynı kalır, anahtarda olmasaydı yazma atlanır ve
+            // sunucu ESKİ tema ile push atmaya devam ederdi. Uygulama
+            // önplandayken ActivityKit doğru paleti basar, push gelince
+            // eskisine dönerdi — `show_amounts` ile birebir aynı hata.
+            'isLightTheme': payload['isLightTheme'],
             // Özetin hangi ANLAM sürümüyle yazıldığı.
             //
             // v1'de `changeText` ÖMÜRLÜK getiriydi; v2'de günlük değişim.
@@ -521,10 +546,14 @@ class LiveActivityService {
       //
       // Eksen etiketleri de (`axisMinText`) `showAmounts`'a bağlı, yani
       // aynı hatadan etkileniyordu.
+      // Tema de aynı sınıfa girer: kullanıcı Ayarlar'dan Açık/Koyu
+      // çevirdiğinde metinler değişmez, anahtarda olmasaydı `update`
+      // atlanır ve kilit ekranı eski palette kalırdı.
       final key = '${payload['totalText']}|${payload['changeText']}'
           '|${payload['isPositive']}|${payload['isHidden']}'
           '|${payload['showAmounts']}|${payload['isMarketOpen']}'
-          '|${payload['isFlatChange']}|${payload['axisMinText']}';
+          '|${payload['isFlatChange']}|${payload['axisMinText']}'
+          '|${payload['isLightTheme']}';
       final unchanged = _sessionActive && key == _lastPayloadKey;
 
       // Özeti sunucuya yaz — push döngüsü (cron, 5 dk) bunu okuyup APNs'e
@@ -626,6 +655,7 @@ class LiveActivityService {
         'axisMinText': '',
         'axisMaxText': '',
         'isFlatChange': false,
+        'isLightTheme': themeIsLight,
       };
     }
 
@@ -670,6 +700,19 @@ class LiveActivityService {
       // gönderilir — metinden ("%0,00") çıkarmak biçim değişince sessizce
       // bozulurdu.
       'isFlatChange': isFlat,
+      // Kilit ekranı uygulamanın SEÇİLİ temasını izler.
+      //
+      // Uzantı ana uygulamanın tercihini göremez; `@Environment(\.colorScheme)`
+      // cihazın görünümünü söyler, uygulamanınkini değil. Kullanıcı uygulamayı
+      // "Açık" yapıp cihazı koyu bıraktığında istenen açık palettir, bu ayrımı
+      // yalnızca burası bilebilir — bu yüzden çözülmüş bir bool gider.
+      //
+      // Şema sürümü YÜKSELTİLMEDİ: mevcut alanların hiçbirinin anlamı
+      // değişmedi. Yükseltmek DB'de v6 yazan bütün oturumları
+      // `skippedStale` yapıp kullanıcı yeni sürümü kurana kadar push'u
+      // tümden keserdi. Eski istemci bu alanı tanımaz, varsayılan koyu
+      // paletle çizer — bugünkü davranış.
+      'isLightTheme': themeIsLight,
     };
   }
 

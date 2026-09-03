@@ -33,7 +33,14 @@
   ImageView'a dosya olarak verilir (`HomeWidgetService._renderSparkline`).
   Veri iki noktadan azsa native taraf ImageView'ı GONE yapar.
 -->
+<!--
+  Kök zemin + metin renkleri BURADAKİ değerlerde kalmaz: `SandikWidgetProvider`
+  hepsini uygulamanın tema tercihine göre yeniden basar (bkz.
+  `values/widget_palette.xml`). Buradaki değerler yalnızca ilk çizimden önceki
+  ve Studio önizlemesindeki hâldir.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"

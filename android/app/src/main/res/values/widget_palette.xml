@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ana ekran widget'ının AÇIK ve KOYU paletleri — moddan BAĞIMSIZ.
+
+  ## Neden `values-night` yetmiyor
+  `values` ↔ `values-night` ayrımı SİSTEMİN karanlık moduna göre seçilir.
+  Widget bugüne kadar onu izliyordu; oysa kullanıcı uygulama içinde ayrı bir
+  tema seçebiliyor (Sistem / Açık / Koyu). Uygulamayı "Açık" yapıp cihazı koyu
+  bırakan kullanıcıda widget koyu kalıyordu — kullanıcı bulgusu buydu.
+
+  Bu dosyadaki renkler hiçbir moda göre seçilmez; hangisinin kullanılacağına
+  `SandikWidgetProvider` karar verir ve kararı Dart'tan gelen
+  `sandik_is_light_theme` bayrağından okur.
+
+  Değerler `lib/theme/sandik.dart` içindeki `SandikPalette.light` / `.dark`
+  token'larıyla hizalıdır; orada bir token değişirse burası da değişmeli.
+-->
+<resources>
+    <!-- Açık palet — SandikPalette.light -->
+    <color name="widget_bg_light">#FBFAF6</color>
+    <color name="widget_text_primary_light">#12241E</color>
+    <color name="widget_text_muted_light">#566761</color>
+    <color name="widget_gain_light">#0F7A4E</color>
+    <color name="widget_loss_light">#C0341F</color>
+    <color name="widget_pill_bg_light">#1412241E</color>
+    <!-- Light modda gold (#F5C842) beyaz zeminde okunmaz; amber metin
+         karşılığı kullanılır. -->
+    <color name="widget_gold_light">#8A5A00</color>
+    <color name="widget_hairline_light">#1A12241E</color>
+
+    <!-- Koyu palet — SandikPalette.dark -->
+    <color name="widget_bg_dark">#112E28</color>
+    <color name="widget_text_primary_dark">#FFFFFF</color>
+    <color name="widget_text_muted_dark">#8FA39B</color>
+    <color name="widget_gain_dark">#3DB77F</color>
+    <color name="widget_loss_dark">#FF6B52</color>
+    <color name="widget_pill_bg_dark">#14FFFFFF</color>
+    <color name="widget_gold_dark">#F5C842</color>
+    <color name="widget_hairline_dark">#1AFFFFFF</color>
+</resources>

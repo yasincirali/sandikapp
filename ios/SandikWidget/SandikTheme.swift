@@ -1,69 +1,131 @@
 import SwiftUI
 
-/// `lib/theme/sandik.dart` içindeki ÜRETİM token'larının Swift kopyası.
+/// Tek bir palet — koyu ya da açık.
 ///
-/// Değerler tahmin değildir; her biri Dart tarafındaki karşılığından
-/// okunmuştur (satır referansları aşağıda). Bu dosya elle senkron tutulur —
-/// Dart'ta bir token değişirse burası da değişmeli.
+/// Değerler `lib/theme/sandik.dart` içindeki `SandikPalette.dark` ve
+/// `SandikPalette.light` token'larından okunmuştur (satır referansları
+/// aşağıda). Bu dosya elle senkron tutulur — Dart'ta bir token değişirse
+/// burası da değişmeli.
 ///
 /// **Palet dışı renk eklenmemelidir.** Marka brief'i bunu açıkça yasaklar;
 /// yeni bir tona ihtiyaç varsa önce `sandik.dart` içinde tanımlanır.
-enum SandikTheme {
+struct SandikPalette {
 
-    // MARK: - Yüzeyler (dark — Live Activity çoğunlukla bu modda görünür)
+    // MARK: - Yüzeyler
 
-    /// Seviye 0 — ekran zemini. `sandik.dart:929`
-    static let background = Color(hex: 0x0A1E15)
-    /// Seviye 1 — kart, liste satırı, pill zemini. `sandik.dart:930`
-    static let surface1 = Color(hex: 0x112E28)
-    /// Seviye 2 — hero kart / elevated yüzey. `sandik.dart:931`
-    static let surface2 = Color(hex: 0x1A3D2E)
+    /// Seviye 0 — ekran zemini.
+    let background: Color
+    /// Seviye 1 — kart, liste satırı, pill zemini.
+    let surface1: Color
+    /// Seviye 2 — hero kart / elevated yüzey.
+    let surface2: Color
 
     // MARK: - Marka
 
-    /// Ana marka rengi — logo ikonu, vurgu. `sandik.dart:934`
+    /// Ana marka rengi — logo ikonu, vurgu.
     ///
     /// ⚠️ ASLA doğrudan metin rengi yapılmaz: beyaz/açık zeminde 1.94:1
     /// kontrast verir. Bir ZEMİN rengidir; üstüne `onAmber` gelir.
-    static let amber = Color(hex: 0xF5A623)
+    let amber: Color
 
-    /// Display sayılar ve wordmark. `sandik.dart:935`
-    ///
-    /// Koyu marka zemininde (`background`) okunur; amber'in aksine büyük
-    /// punto display rakamlarda metin olarak kullanılabilir.
-    static let gold = Color(hex: 0xF5C842)
+    /// Display sayılar ve wordmark.
+    let gold: Color
 
-    /// Amber zemin üstündeki metin — 7.66:1. `sandik.dart:658`
-    ///
-    /// Not: marka brief'i bunu `#12241E` olarak yazar ama üretimdeki değer
-    /// `#112E28`'dir. Kod kaynaktır; brief eski kalmış.
-    static let onAmber = Color(hex: 0x112E28)
+    /// Amber zemin üstündeki metin.
+    let onAmber: Color
 
     // MARK: - Durum
 
-    /// Artış / kâr — 5.73:1. `sandik.dart:945`
-    static let gain = Color(hex: 0x3DB77F)
-    /// Düşüş / zarar — 5.17:1. `sandik.dart:946`
-    static let loss = Color(hex: 0xFF6B52)
+    /// Artış / kâr.
+    let gain: Color
+    /// Düşüş / zarar.
+    let loss: Color
 
     // MARK: - Metin tonları
-    //
-    // ⚠️ Token adları alfa değeriyle UYUŞMAZ (marka brief'inde de not
-    // düşülmüş): `text36` aslında %58, `text20` ise %42'dir. Yani `text36`,
-    // `text58`'den daha soluk DEĞİLDİR. Hiyerarşi kurarken isme değil
-    // gerçek değere bakılır. Pratikte üç kademe vardır: %88 → %55 → %42.
 
-    /// Ana başlık, birincil sayı — beyaz @ %88.
-    static let text90 = Color.white.opacity(0.88)
-    /// İkincil etiket — beyaz @ %55.
-    static let text58 = Color.white.opacity(0.55)
-    /// Yardımcı metin — beyaz @ %58.
-    static let text36 = Color.white.opacity(0.58)
-    /// Devre dışı — beyaz @ %42.
-    static let text20 = Color.white.opacity(0.42)
+    /// Ana başlık, birincil sayı.
+    let text90: Color
+    /// İkincil etiket.
+    let text58: Color
+    /// Yardımcı metin.
+    let text36: Color
+    /// Devre dışı.
+    let text20: Color
 
-    /// Hairline ayraç — beyaz @ %10.
-    static let hairline = Color.white.opacity(0.10)
+    /// Hairline ayraç.
+    let hairline: Color
+
+    /// Yöne göre durum rengi. Renk TEK BAŞINA anlam taşımamalı —
+    /// çağıran taraf ayrıca ▲/▼ işareti göstermek zorundadır.
+    func statusColor(isPositive: Bool) -> Color {
+        isPositive ? gain : loss
+    }
+
+    // MARK: - Hazır paletler
+
+    /// Koyu palet — `sandik.dart:636-665`.
+    ///
+    /// Metin tonlarındaki not: token adları alfa değeriyle UYUŞMAZ (marka
+    /// brief'inde de düşülmüş). `text36` aslında %58, `text20` ise %42'dir.
+    /// Yani `text36`, `text58`'den daha soluk DEĞİLDİR. Hiyerarşi kurarken
+    /// isme değil gerçek değere bakılır: %88 → %55 → %42.
+    static let dark = SandikPalette(
+        background: Color(hex: 0x0A1E15),   // sandik.dart:929
+        surface1:   Color(hex: 0x112E28),   // sandik.dart:930
+        surface2:   Color(hex: 0x1A3D2E),   // sandik.dart:931
+        amber:      Color(hex: 0xF5A623),   // sandik.dart:934
+        gold:       Color(hex: 0xF5C842),   // sandik.dart:935
+        onAmber:    Color(hex: 0x112E28),   // sandik.dart:658 — 7.66:1
+        gain:       Color(hex: 0x3DB77F),   // sandik.dart:945 — 5.73:1
+        loss:       Color(hex: 0xFF6B52),   // sandik.dart:946 — 5.17:1
+        text90:     Color.white.opacity(0.88),
+        text58:     Color.white.opacity(0.55),
+        text36:     Color.white.opacity(0.58),
+        text20:     Color.white.opacity(0.42),
+        hairline:   Color.white.opacity(0.10)
+    )
+
+    /// Açık palet — `sandik.dart:673-715`.
+    ///
+    /// `amber` iki modda AYNI kalır (CTA zemini), ama `gold` ve `onAmber`
+    /// koyulaşır: açık zeminde altın sarısı metin okunmaz.
+    static let light = SandikPalette(
+        background: Color(hex: 0xF4F1EA),
+        surface1:   Color(hex: 0xFBFAF6),
+        surface2:   Color(hex: 0xFFFFFF),
+        amber:      Color(hex: 0xF5A623),
+        gold:       Color(hex: 0x4A3618),
+        onAmber:    Color(hex: 0x112E28),
+        gain:       Color(hex: 0x0F7A4E),
+        loss:       Color(hex: 0xC0341F),
+        text90:     Color.black.opacity(0.88),
+        text58:     Color.black.opacity(0.58),
+        text36:     Color.black.opacity(0.55),
+        text20:     Color.black.opacity(0.42),
+        hairline:   Color.black.opacity(0.10)
+    )
+
+    /// Dart tarafından gelen çözülmüş bayrağa göre palet.
+    ///
+    /// Bayrak `@Environment(\.colorScheme)`'in YERİNE geçer: uzantı cihazın
+    /// görünümünü görebilir ama uygulamanın tema tercihini göremez, oysa
+    /// istenen ikincisidir.
+    static func resolved(isLight: Bool) -> SandikPalette {
+        isLight ? .light : .dark
+    }
+}
+
+/// Moddan bağımsız sabitler.
+enum SandikTheme {
+
+    // MARK: - Marka
+
+    /// Ana marka rengi — iki modda da AYNI (`sandik.dart:934` / `:684`).
+    ///
+    /// Bir CTA/vurgu ZEMİNİDİR; açık paletde bile değişmez çünkü üstüne gelen
+    /// mürekkep (`onAmber`) koyudur. Metin rengi olarak ASLA kullanılmaz:
+    /// beyaz zeminde 1.94:1 kontrast verir.
+    static let amber = SandikPalette.dark.amber
 
     // MARK: - Köşe yarıçapı
 
@@ -73,12 +135,6 @@ enum SandikTheme {
     static let radiusMd: CGFloat = 14
     /// Kilit ekranı ana çerçevesi, sheet.
     static let radiusLg: CGFloat = 20
-
-    /// Yöne göre durum rengi. Renk TEK BAŞINA anlam taşımamalı —
-    /// çağıran taraf ayrıca ▲/▼ işareti göstermek zorundadır.
-    static func statusColor(isPositive: Bool) -> Color {
-        isPositive ? gain : loss
-    }
 }
 
 // MARK: - Tipografi

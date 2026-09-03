@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Widget zemini, AÇIK palet. Koyu karşılığı `widget_background_dark.xml`.
+
+  İkisi ayrı dosya çünkü hangisinin çizileceğine SİSTEM değil, uygulamanın
+  tema tercihi karar verir (bkz. `values/widget_palette.xml`); seçim
+  `SandikWidgetProvider` içinde `setBackgroundResource` ile yapılır.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_bg_light" />
+    <corners android:radius="20dp" />
+</shape>

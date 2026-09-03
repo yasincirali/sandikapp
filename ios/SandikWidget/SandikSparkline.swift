@@ -20,6 +20,13 @@ struct SandikSparkline: View {
     /// Normalize edilmiş noktalar (0…1). İki noktadan az ise çizilmez.
     let points: [Double]
 
+    /// Uygulamanın seçili temasına göre palet.
+    ///
+    /// Kılavuz çizgisi, eksen etiketi ve canlılık noktası buradan gelir;
+    /// çizginin kendi rengi (`color`) çağıran tarafından verilir. Varsayılan
+    /// koyu — eski çağıranlar bugünkü görünümü korur.
+    var palette: SandikPalette = .dark
+
     /// Çizgi rengi — kazanç/kayıp durumuna göre çağıran belirler.
     let color: Color
 
@@ -101,7 +108,7 @@ struct SandikSparkline: View {
             // yanıtlamıyordu: aynı görünen iki çizgiden biri 5 kuruşluk,
             // diğeri 50.000 TL'lik hareket olabilir.
             if showsGuides {
-                let guideColor = SandikTheme.text36.opacity(0.55)
+                let guideColor = palette.text36.opacity(0.55)
 
                 // Etiket YOKSA da çizgiler çizilir: çizgi bir büyüklük
                 // taşımaz, yalnızca grafiğin bandını gösterir. Rakamı
@@ -131,7 +138,7 @@ struct SandikSparkline: View {
                         context.draw(
                             Text(label)
                                 .font(.sandikNumber(7, weight: .medium))
-                                .foregroundColor(SandikTheme.text58),
+                                .foregroundColor(palette.text58),
                             at: CGPoint(x: plotX - 4, y: y),
                             anchor: .trailing
                         )
@@ -192,7 +199,7 @@ struct SandikSparkline: View {
             // hale "veri akıyor" demektir ve gece bu doğru değildir.
             if let isOpen = isMarketOpen {
                 let tip = point(points.count - 1)
-                let dotColor = isOpen ? SandikTheme.gain : SandikTheme.text36
+                let dotColor = isOpen ? palette.gain : palette.text36
 
                 if isOpen {
                     // Hale: noktanın etrafında düşük alfalı yumuşak daire.
@@ -214,7 +221,7 @@ struct SandikSparkline: View {
                     x: tip.x - r, y: tip.y - r, width: r * 2, height: r * 2)
                 context.stroke(
                     Path(ellipseIn: dotRect.insetBy(dx: -1.1, dy: -1.1)),
-                    with: .color(SandikTheme.background),
+                    with: .color(palette.background),
                     lineWidth: 1.6
                 )
                 context.fill(Path(ellipseIn: dotRect), with: .color(dotColor))

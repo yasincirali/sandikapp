@@ -12,9 +12,11 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/data_export_service.dart';
 import '../services/disclaimer_service.dart';
+import '../services/home_widget_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/theme_resolution.dart';
 import 'legal_doc_screen.dart';
 import 'push_diagnostics_screen.dart';
 import 'signal_settings_screen.dart';
@@ -685,8 +687,20 @@ class _ThemeModePicker extends ConsumerWidget {
             Expanded(
               child: SandikTappable(
                 semanticLabel: '$label tema',
-                onTap: () =>
-                    ref.read(themeModeProvider.notifier).set(mode),
+                onTap: () {
+                  ref.read(themeModeProvider.notifier).set(mode);
+                  // Uygulama DIŞI yüzeyler de hemen dönsün.
+                  //
+                  // Bunlar servis singleton'ları üzerinden beslenir ve
+                  // provider okuyamazlar; tercih dışarıdan itilir (kilit
+                  // ekranı saat/tutar ayarlarındaki desenin aynısı). Burada
+                  // itilmezse widget bir sonraki portföy tazelemesine kadar
+                  // eski temada kalırdı — kullanıcı ayarı değiştirip ana
+                  // ekrana çıktığında değişmemiş görürdü.
+                  final isLight = resolveThemeIsLight(context, mode);
+                  LiveActivityService.instance.themeIsLight = isLight;
+                  unawaited(HomeWidgetService.instance.applyTheme(isLight));
+                },
                 child: AnimatedContainer(
                   duration: SandikMotion.stateOf(context),
                   curve: SandikMotion.enter,

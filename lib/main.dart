@@ -36,6 +36,7 @@ import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
 import 'theme/sandik.dart';
+import 'utils/theme_resolution.dart';
 import 'widgets/sandik_error_view.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
@@ -907,6 +908,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       final snapshot = next.valueOrNull;
       if (snapshot != null && snapshot.assets.isNotEmpty) {
         final hideBalance = ref.read(balanceHiddenProvider);
+        // Tema tercihi native yüzeylere BURADA aktarılır — tutar tercihiyle
+        // aynı desen ve aynı sebep: servisler singleton, provider okuyamaz.
+        //
+        // "Sistem" burada ÇÖZÜLÜR: kilit ekranı uzantısı ve ana ekran
+        // widget'ı yalnızca CİHAZIN görünümünü görebilir, uygulamanın
+        // tercihini değil. Kullanıcı uygulamayı "Açık" yapıp cihazı koyu
+        // bıraktığında istenen açık palettir; bu ayrımı yalnızca burası
+        // bilebilir.
+        final isLightTheme =
+            resolveThemeIsLight(context, ref.read(themeModeProvider));
+        HomeWidgetService.instance.themeIsLight = isLightTheme;
         unawaited(HomeWidgetService.instance.updateWithChart(
           snapshot,
           hideBalance: hideBalance,
@@ -919,6 +931,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Kilit ekranında tutar tercihi servise BURADA aktarılır: servis
         // provider okuyamaz (Riverpod'a bağlı değil, singleton).
         final la = LiveActivityService.instance;
+        la.themeIsLight = isLightTheme;
         la.showAmountsOnLockScreen = ref.read(lockScreenAmountsProvider);
         la.startMinute = ref.read(liveActivityStartProvider);
         la.endMinute = ref.read(liveActivityEndProvider);

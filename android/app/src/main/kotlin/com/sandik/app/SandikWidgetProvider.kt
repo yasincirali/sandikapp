@@ -27,6 +27,35 @@ import java.io.File
  */
 class SandikWidgetProvider : AppWidgetProvider() {
 
+    /**
+     * Widget paleti — uygulamanın SEÇİLİ temasına göre.
+     *
+     * `values` ↔ `values-night` ayrımı SİSTEMİN karanlık modunu izler;
+     * kullanıcı ise uygulama içinde ayrı bir tema seçebiliyor
+     * (Sistem / Açık / Koyu). Uygulamayı "Açık" yapıp cihazı koyu bırakan
+     * kullanıcıda widget koyu kalıyordu.
+     *
+     * Karar Dart tarafında verilir ve `sandik_is_light_theme` anahtarıyla
+     * çözülmüş bir bool olarak gelir ("Sistem" orada cihazın görünümüne
+     * çözülür). Burada yalnızca uygulanır.
+     */
+    private class Palette(isLight: Boolean) {
+        val background = if (isLight) R.drawable.widget_background_light
+                         else R.drawable.widget_background_dark
+        val textPrimary = if (isLight) R.color.widget_text_primary_light
+                          else R.color.widget_text_primary_dark
+        val textMuted = if (isLight) R.color.widget_text_muted_light
+                        else R.color.widget_text_muted_dark
+        val gain = if (isLight) R.color.widget_gain_light
+                   else R.color.widget_gain_dark
+        val loss = if (isLight) R.color.widget_loss_light
+                   else R.color.widget_loss_dark
+        val gold = if (isLight) R.color.widget_gold_light
+                   else R.color.widget_gold_dark
+        val hairline = if (isLight) R.color.widget_hairline_light
+                       else R.color.widget_hairline_dark
+    }
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -50,8 +79,30 @@ class SandikWidgetProvider : AppWidgetProvider() {
     ) {
         val data = HomeWidgetPlugin.getData(context)
 
+        // Varsayılan KOYU: bayrak henüz yazılmamışsa (eski sürümden gelen
+        // kurulum) bugüne kadarki görünüm korunur.
+        val palette = Palette(data.getBoolean("sandik_is_light_theme", false))
+
         appWidgetIds.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.sandik_widget)
+
+            // Zemin ve moda duyarlı metinler XML'deki değerlerin ÜSTÜNE
+            // yeniden basılır: XML kaynak seçimi sistemin moduna bakar,
+            // biz uygulamanın tercihini istiyoruz.
+            views.setInt(R.id.widget_root, "setBackgroundResource", palette.background)
+            views.setTextColor(R.id.widget_total, context.getColor(palette.gold))
+            views.setTextColor(R.id.widget_date, context.getColor(palette.textMuted))
+            views.setTextColor(R.id.widget_updated, context.getColor(palette.textMuted))
+            views.setTextColor(
+                R.id.widget_change_label, context.getColor(palette.textMuted))
+            // Ayraç bir `ImageView`'ın `src`'si; `setColorFilter` ile boyanır
+            // (canlılık noktasıyla aynı teknik). Kendi drawable'ı hâlâ
+            // `values-night`'a bakıyordu, yani tek başına SİSTEMİ izliyordu.
+            views.setInt(
+                R.id.widget_divider,
+                "setColorFilter",
+                context.getColor(palette.hairline)
+            )
 
             val hasData = data.getBoolean("sandik_has_data", false)
 
@@ -84,8 +135,7 @@ class SandikWidgetProvider : AppWidgetProvider() {
                     R.id.widget_live_dot,
                     "setColorFilter",
                     context.getColor(
-                        if (marketOpen) R.color.widget_gain
-                        else R.color.widget_text_muted
+                        if (marketOpen) palette.gain else palette.textMuted
                     )
                 )
 
@@ -108,9 +158,9 @@ class SandikWidgetProvider : AppWidgetProvider() {
                 // "Değişim yok" yazısı kırmızı görünüyordu.
                 val isFlat = data.getBoolean("sandik_is_flat", false)
                 val changeColor = when {
-                    isFlat -> context.getColor(R.color.widget_text_muted)
-                    isPositive -> context.getColor(R.color.widget_gain)
-                    else -> context.getColor(R.color.widget_loss)
+                    isFlat -> context.getColor(palette.textMuted)
+                    isPositive -> context.getColor(palette.gain)
+                    else -> context.getColor(palette.loss)
                 }
                 views.setTextColor(R.id.widget_change, changeColor)
 
@@ -182,6 +232,10 @@ class SandikWidgetProvider : AppWidgetProvider() {
                     R.id.widget_total,
                     context.getString(R.string.widget_empty)
                 )
+                // Boş durumda tutar alanı bir YÖNLENDİRME metnidir, marka
+                // altını değil — okunabilir metin rengine döner.
+                views.setTextColor(
+                    R.id.widget_total, context.getColor(palette.textPrimary))
                 views.setTextViewText(R.id.widget_change, "")
                 views.setTextViewText(R.id.widget_updated, "")
                 views.setTextViewText(R.id.widget_date, "")

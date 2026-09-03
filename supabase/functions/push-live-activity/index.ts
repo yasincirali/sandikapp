@@ -326,6 +326,14 @@ Deno.serve(async (request) => {
       // Sıfır değişimde yön/renk bastırılır. Gizlilik kapısına TABİ
       // DEĞİL: yalnızca "bugün hareket yok" bilgisi, tutar taşımaz.
       isFlatChange: row.isFlatChange === true,
+      // Uygulamanın SEÇİLİ teması. İstemcinin yazdığı özetten olduğu gibi
+      // taşınır — sunucu tema bilmez ve bilmemeli.
+      //
+      // Alan yoksa (eski istemcinin yazdığı satır) `false`: koyu palet,
+      // yani bugüne kadarki davranış. Şema sürümü bu yüzden
+      // YÜKSELTİLMEDİ — mevcut alanların anlamı değişmedi, yükseltmek
+      // v6 yazan bütün oturumları bayat sayıp push'u tümden keserdi.
+      isLightTheme: row.isLightTheme === true,
     };
 
     const result = await pushToSession(

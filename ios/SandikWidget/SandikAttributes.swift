@@ -150,6 +150,18 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// olmadan donuk rakam "bozuk" gibi görünürdü — banner bunun
         /// yerine "Piyasa kapalı" der ve canlılık noktası griye döner.
         var isMarketOpen: Bool
+
+        /// Uygulamanın SEÇİLİ teması açık mı?
+        ///
+        /// **`@Environment(\.colorScheme)` bu soruyu YANITLAYAMAZ.** O,
+        /// cihazın görünümünü söyler — uygulamanınkini değil. Kullanıcı
+        /// uygulamayı "Açık" yapıp cihazı koyu bıraktığında istenen açık
+        /// palettir; bu ayrımı yalnızca Dart tarafı bilir ve "Sistem"
+        /// tercihini de orada çözer (bkz. `utils/theme_resolution.dart`).
+        ///
+        /// Eski sürümlerden gelen oturumlar bu alanı taşımaz; varsayılan
+        /// `false` — koyu palet, yani bugüne kadarki davranış.
+        var isLightTheme: Bool = false
     }
 
     /// Seans etiketi — ör. `BIST Seansı`. Oturum boyunca sabittir.

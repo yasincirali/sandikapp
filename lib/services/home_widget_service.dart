@@ -74,6 +74,48 @@ class HomeWidgetService {
   /// BIST işlem saatleri içinde miyiz? Canlılık noktasının rengini sürer.
   static const _kMarketOpen = 'sandik_market_open';
 
+  /// Uygulamanın SEÇİLİ teması açık mı? Native taraf paleti buna göre seçer.
+  ///
+  /// Android widget'ı bugüne kadar `res/values` ↔ `values-night` ile
+  /// **sistemin** karanlık modunu izliyordu; uygulamanın tercihini değil.
+  /// Kullanıcı uygulamayı "Açık" yapıp cihazı koyu bıraktığında widget koyu
+  /// kalıyordu — kullanıcı bulgusu buydu. Bu bayrak tercihi çözülmüş hâliyle
+  /// taşır ("Sistem" seçiliyse cihazın görünümüne çözülür).
+  static const _kIsLightTheme = 'sandik_is_light_theme';
+
+  /// Uygulamanın çözülmüş tema tercihi.
+  ///
+  /// `LiveActivityService.themeIsLight` ile aynı desen ve aynı gerekçe:
+  /// servis singleton olduğu için provider'ı kendisi okuyamaz, tercih
+  /// dışarıdan itilir. Varsayılan `false` (koyu) — tercih henüz itilmemişken
+  /// bugünkü davranış korunur.
+  bool themeIsLight = false;
+
+  /// Sparkline PNG'sinin renkleri.
+  ///
+  /// Bu grafik Dart tarafında rasterize ediliyor, yani XML kaynaklarından
+  /// beslenmiyor. Eskiden sabit dark tonlardı ve açık temada widget'ın kendi
+  /// renkleriyle ayrışıyordu: XML `widget_gain` `#0F7A4E` iken çizgi
+  /// `#3DB77F` çiziliyordu. Değerler `lib/theme/sandik.dart` içindeki
+  /// `SandikPalette.dark` / `.light` token'larından kopyalanmıştır —
+  /// tema dosyasında bir token değişirse burası da değişmeli.
+  ({Color gain, Color loss, Color flat, Color guide, Color label})
+      get _sparkPalette => themeIsLight
+          ? (
+              gain: const Color(0xFF0F7A4E),
+              loss: const Color(0xFFC0341F),
+              flat: const Color(0xFF6B7A74),
+              guide: const Color(0xFF6B7A74),
+              label: const Color(0xFF4A5A54),
+            )
+          : (
+              gain: const Color(0xFF3DB77F),
+              loss: const Color(0xFFFF6B52),
+              flat: const Color(0xFF8A9A94),
+              guide: const Color(0xFF566761),
+              label: const Color(0xFF566761),
+            );
+
   bool _initialized = false;
 
   Future<void> _ensureInit() async {
@@ -117,6 +159,10 @@ class HomeWidgetService {
   }) async {
     try {
       await _ensureInit();
+
+      // Tema, bakiye gizli olsun olmasın YAZILIR: gizli durumda da widget
+      // çiziliyor ve o da uygulamanın temasını izlemeli.
+      await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
 
       if (hideBalance) {
         // Kullanıcı bakiyeyi uygulama içinde gizlemişse ana ekranda
@@ -357,7 +403,7 @@ class HomeWidgetService {
       final guidePaint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5
-        ..color = const Color(0xFF566761).withValues(alpha: 0.28);
+        ..color = _sparkPalette.guide.withValues(alpha: 0.28);
 
       // Eksen etiketi de DM Sans — kartın geri kalanı (ve uygulamanın
       // tamamı) bu ailede. Sistem fontuna düşmek grafiği metinden
@@ -371,7 +417,7 @@ class HomeWidgetService {
       const tabular = [ui.FontFeature.tabularFigures()];
 
       final labelStyle = ui.TextStyle(
-        color: const Color(0xFF566761).withValues(alpha: 0.85),
+        color: _sparkPalette.label.withValues(alpha: 0.85),
         fontSize: 22,
         fontWeight: FontWeight.w600,
         fontFamily: labelFamily,
@@ -403,14 +449,13 @@ class HomeWidgetService {
         line.lineTo(xAt(i), yAt(values[i]));
       }
 
-      // Marka renkleri — dark palet tonları (widget zemini koyu/açık olabilir
-      // ama bu tonlar iki zeminde de okunur; kontrast testinde doğrulandı).
+      // Marka renkleri, SEÇİLİ temaya göre (bkz. `_sparkPalette`).
       // Hareket yoksa nötr gri — kâr/zarar rengi olmayan bir yönü ima
       // etmemeli. Kullanıcı düz bir çizgiyi kırmızı görünce "kaybettim"
       // diye okuyordu.
-      final color = isFlat
-          ? const Color(0xFF8A9A94)
-          : (isPos ? const Color(0xFF3DB77F) : const Color(0xFFFF6B52));
+      final palet = _sparkPalette;
+      final color =
+          isFlat ? palet.flat : (isPos ? palet.gain : palet.loss);
 
       // Alan dolgusu: çizginin altını kapatan gradient.
       final fill = Path.from(line)
@@ -478,9 +523,8 @@ class HomeWidgetService {
       );
       // Çekirdek — anlık değerin kendisi. Kilit ekranıyla aynı kural:
       // piyasa açıkken gain yeşili, kapalıyken gri.
-      final dotColor = isMarketOpen
-          ? const Color(0xFF3DB77F)
-          : const Color(0xFF8A9A94);
+      final dotColor =
+          isMarketOpen ? _sparkPalette.gain : _sparkPalette.flat;
       canvas.drawCircle(center, coreR, Paint()..color = dotColor);
 
       final image = await recorder.endRecording().toImage(w.toInt(), h.toInt());
@@ -511,6 +555,27 @@ class HomeWidgetService {
         _kMarketOpen, DailySummary.isMarketOpen(DateTime.now()));
     await HomeWidget.saveWidgetData<String>(
         _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
+  }
+
+  /// Tema tercihini yazar ve widget'ı hemen yeniler.
+  ///
+  /// Ayarlardan tema değiştirildiğinde çağrılır. Portföy verisi burada
+  /// yeniden yazılmaz — yalnızca palet bayrağı değişir; onsuz widget bir
+  /// sonraki portföy tazelemesine kadar eski temada kalır ve kullanıcı
+  /// ayarı değiştirip ana ekrana çıktığında hiçbir şey değişmemiş görür.
+  ///
+  /// Sparkline PNG'si de yeniden çizilmez: bir sonraki [update] doğru
+  /// paletle çizecek. Grafik tonları iki zeminde de okunur, aradaki kısa
+  /// süre görsel bir tutarsızlık yaratmaz.
+  Future<void> applyTheme(bool isLight) async {
+    themeIsLight = isLight;
+    try {
+      await _ensureInit();
+      await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, isLight);
+      await _requestUpdate();
+    } catch (e) {
+      if (kDebugMode) debugPrint('HomeWidget applyTheme failed: $e');
+    }
   }
 
   /// Oturum kapanışında çağrılır — çıkan kullanıcının bakiyesi ana ekranda

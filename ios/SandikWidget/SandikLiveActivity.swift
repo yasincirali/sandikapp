@@ -19,15 +19,22 @@ import WidgetKit
 struct SandikLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SandikActivityAttributes.self) { context in
+            // Palet, Dart tarafından ÇÖZÜLMÜŞ gelen tema bayrağından seçilir.
+            // `@Environment(\.colorScheme)` burada yanlış cevabı verirdi:
+            // cihazın görünümünü söyler, uygulamanın tercihini değil.
+            let palette = SandikPalette.resolved(isLight: context.state.isLightTheme)
+
             // ---- Kilit ekranı / banner ----
             SandikLockScreenView(context: context)
                 // Sistem, arka planı kendi materyaliyle boyamasın: marka
                 // zemini yeşildir, nötr siyah kullanılmaz.
-                .activityBackgroundTint(SandikTheme.background)
+                .activityBackgroundTint(palette.background)
                 .activitySystemActionForegroundColor(SandikTheme.amber)
 
         } dynamicIsland: { context in
-            DynamicIsland {
+            let palette = SandikPalette.resolved(isLight: context.state.isLightTheme)
+
+            return DynamicIsland {
                 // ---- Expanded (basılı tutunca) ----
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 7) {
@@ -35,13 +42,13 @@ struct SandikLiveActivity: Widget {
                         VStack(alignment: .leading, spacing: 0) {
                             Text("sandık")
                                 .font(.sandikLabel(15, weight: .semibold))
-                                .foregroundStyle(SandikTheme.gold)
+                                .foregroundStyle(palette.gold)
                             // Kilit ekranıyla aynı gerekçe: rakam hangi
                             // güne ait, expanded görünümde de okunmalı.
                             if !context.state.dateText.isEmpty {
                                 Text(context.state.dateText)
                                     .font(.sandikLabel(9, weight: .medium))
-                                    .foregroundStyle(SandikTheme.text58)
+                                    .foregroundStyle(palette.text58)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
                             }
@@ -55,7 +62,7 @@ struct SandikLiveActivity: Widget {
                          ? "Son: \(context.state.updatedAtText)"
                          : "Kapalı • \(context.state.updatedAtText)")
                         .font(.sandikNumber(12, weight: .medium))
-                        .foregroundStyle(SandikTheme.text58)
+                        .foregroundStyle(palette.text58)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .padding(.trailing, 4)
@@ -74,14 +81,14 @@ struct SandikLiveActivity: Widget {
                             // Küçük punto etiketlerde harf aralığı açılır;
                             // sıkışık kapitaller okunmaz.
                             .tracking(0.6)
-                            .foregroundStyle(SandikTheme.text58)
+                            .foregroundStyle(palette.text58)
 
                         if showsAmount {
                             Text(context.state.totalText)
                                 .font(.sandikNumber(20, weight: .bold))
                                 // Başlık boyutlarında -0.01em sıkılaştırma.
                                 .tracking(-0.2)
-                                .foregroundStyle(SandikTheme.gold)
+                                .foregroundStyle(palette.gold)
                                 .lineLimit(1)
                                 // Dar cihazlarda (mini) uzun tutar
                                 // kırpılmasın; küçülsün ama okunur kalsın.
@@ -97,7 +104,7 @@ struct SandikLiveActivity: Widget {
                                     .minimumScaleFactor(0.75)
                             }
                             .foregroundStyle(
-                                SandikTheme.statusColor(
+                                palette.statusColor(
                                     isPositive: context.state.isPositive))
                         }
                     }
@@ -111,10 +118,11 @@ struct SandikLiveActivity: Widget {
                         if !context.state.sparkline.isEmpty {
                             SandikSparkline(
                                 points: context.state.sparkline,
+                                palette: palette,
                                 color: context.state.hasDirection
-                                    ? SandikTheme.statusColor(
+                                    ? palette.statusColor(
                                         isPositive: context.state.isPositive)
-                                    : SandikTheme.text58,
+                                    : palette.text58,
                                 // Dar alanda gradient dolgu gürültüye
                                 // dönüşüyor; yalnızca çizgi bırakılır.
                                 showsFill: false
@@ -139,8 +147,8 @@ struct SandikLiveActivity: Widget {
                         .font(.sandikNumber(13, weight: .semibold))
                 }
                 .foregroundStyle(context.state.hasDirection
-                    ? SandikTheme.statusColor(isPositive: context.state.isPositive)
-                    : SandikTheme.text58)
+                    ? palette.statusColor(isPositive: context.state.isPositive)
+                    : palette.text58)
 
             } minimal: {
                 // Minimal: birden fazla Live Activity yarıştığında görünür.
@@ -170,6 +178,11 @@ func directionArrow(_ isPositive: Bool) -> String {
 struct SandikLockScreenView: View {
     let context: ActivityViewContext<SandikActivityAttributes>
 
+    /// Uygulamanın seçili teması. Bkz. `ContentState.isLightTheme`.
+    private var palette: SandikPalette {
+        SandikPalette.resolved(isLight: context.state.isLightTheme)
+    }
+
     private var state: SandikActivityAttributes.ContentState { context.state }
 
     var body: some View {
@@ -186,12 +199,12 @@ struct SandikLockScreenView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Sandık")
                         .font(.sandikLabel(15, weight: .semibold))
-                        .foregroundStyle(SandikTheme.text90)
+                        .foregroundStyle(palette.text90)
 
                     if !state.dateText.isEmpty {
                         Text(state.dateText)
                             .font(.sandikLabel(10, weight: .medium))
-                            .foregroundStyle(SandikTheme.text58)
+                            .foregroundStyle(palette.text58)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
@@ -208,8 +221,8 @@ struct SandikLockScreenView: View {
                     // "veri akıyor" demektir ve gece bu doğru değildir.
                     Circle()
                         .fill(state.isMarketOpen
-                              ? SandikTheme.gain
-                              : SandikTheme.text36)
+                              ? palette.gain
+                              : palette.text36)
                         .frame(width: 6, height: 6)
 
                     // Piyasa kapalıyken kullanıcı rakamın NEDEN
@@ -219,7 +232,7 @@ struct SandikLockScreenView: View {
                          ? "Canlı • \(state.updatedAtText)"
                          : "Piyasa kapalı • \(state.updatedAtText)")
                         .font(.sandikNumber(11, weight: .medium))
-                        .foregroundStyle(SandikTheme.text58)
+                        .foregroundStyle(palette.text58)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
                 }
@@ -240,12 +253,12 @@ struct SandikLockScreenView: View {
             }
         }
         .padding(16)
-        .background(SandikTheme.background)
+        .background(palette.background)
         // Kilit ekranı çerçevesi — lg (20) + hairline kenar.
         .clipShape(RoundedRectangle(cornerRadius: SandikTheme.radiusLg, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: SandikTheme.radiusLg, style: .continuous)
-                .strokeBorder(SandikTheme.hairline, lineWidth: 1)
+                .strokeBorder(palette.hairline, lineWidth: 1)
         )
         // Ekran okuyucu için tek, anlamlı cümle — parça parça okumak yerine.
         .accessibilityElement(children: .ignore)
@@ -261,7 +274,7 @@ struct SandikLockScreenView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Bugün")
                     .font(.sandikLabel(11, weight: .medium))
-                    .foregroundStyle(SandikTheme.text58)
+                    .foregroundStyle(palette.text58)
 
                 HStack(spacing: 5) {
                     // Veri yoksa ok ve işaret basılmaz: `▲ +—` anlamsızdır
@@ -281,8 +294,8 @@ struct SandikLockScreenView: View {
                         .minimumScaleFactor(0.7)
                 }
                 .foregroundStyle(state.hasDirection
-                                 ? SandikTheme.statusColor(isPositive: state.isPositive)
-                                 : SandikTheme.text58)
+                                 ? palette.statusColor(isPositive: state.isPositive)
+                                 : palette.text58)
             }
 
             Spacer(minLength: 0)
@@ -290,9 +303,10 @@ struct SandikLockScreenView: View {
             // Grafik sağda, dikey alanı doldurur.
             SandikSparkline(
                 points: state.sparkline,
+                palette: palette,
                 color: state.hasDirection
-                    ? SandikTheme.statusColor(isPositive: state.isPositive)
-                    : SandikTheme.text58,
+                    ? palette.statusColor(isPositive: state.isPositive)
+                    : palette.text58,
                 isMarketOpen: state.isMarketOpen,
                 // Tutar gizliyken bu alanlar BOŞ gelir: rakam yazılmaz
                 // ama kılavuz çizgileri yine çizilir. Çizgi bir büyüklük
@@ -313,12 +327,12 @@ struct SandikLockScreenView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Toplam Portföy")
                         .font(.sandikLabel(11, weight: .medium))
-                        .foregroundStyle(SandikTheme.text58)
+                        .foregroundStyle(palette.text58)
 
                     Text(state.totalText)
                         .font(.sandikNumber(19, weight: .bold))
                         .tracking(-0.19)
-                        .foregroundStyle(SandikTheme.gold)
+                        .foregroundStyle(palette.gold)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
@@ -326,7 +340,7 @@ struct SandikLockScreenView: View {
 
                 // Hairline dikey ayraç.
                 Rectangle()
-                    .fill(SandikTheme.hairline)
+                    .fill(palette.hairline)
                     .frame(width: 1)
                     .frame(maxHeight: 46)
                     .padding(.horizontal, 14)
@@ -335,7 +349,7 @@ struct SandikLockScreenView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Bugünkü Değişim")
                         .font(.sandikLabel(11, weight: .medium))
-                        .foregroundStyle(SandikTheme.text58)
+                        .foregroundStyle(palette.text58)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
 
@@ -351,8 +365,8 @@ struct SandikLockScreenView: View {
                             .minimumScaleFactor(0.7)
                     }
                     .foregroundStyle(state.hasDirection
-                                     ? SandikTheme.statusColor(isPositive: state.isPositive)
-                                     : SandikTheme.text58)
+                                     ? palette.statusColor(isPositive: state.isPositive)
+                                     : palette.text58)
 
                     // Yüzde rozeti — durum renginin çok düşük alfalı zemini
                     // üstünde. Amber BURAYA konmaz: brief'e göre amber
@@ -360,12 +374,12 @@ struct SandikLockScreenView: View {
                     if state.hasDirection {
                         Text("\(signPrefix(state.isPositive))\(state.changePctText) Günlük")
                             .font(.sandikNumber(10, weight: .semibold))
-                            .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+                            .foregroundStyle(palette.statusColor(isPositive: state.isPositive))
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
                             .background(
                                 RoundedRectangle(cornerRadius: SandikTheme.radiusSm, style: .continuous)
-                                    .fill(SandikTheme.statusColor(isPositive: state.isPositive)
+                                    .fill(palette.statusColor(isPositive: state.isPositive)
                                         .opacity(0.14))
                             )
                             .padding(.top, 1)
@@ -378,9 +392,10 @@ struct SandikLockScreenView: View {
             if !state.sparkline.isEmpty {
                 SandikSparkline(
                     points: state.sparkline,
+                    palette: palette,
                     color: state.hasDirection
-                        ? SandikTheme.statusColor(isPositive: state.isPositive)
-                        : SandikTheme.text58,
+                        ? palette.statusColor(isPositive: state.isPositive)
+                        : palette.text58,
                     isMarketOpen: state.isMarketOpen,
                     axisMin: state.axisMinText,
                     axisMax: state.axisMaxText,
@@ -428,18 +443,22 @@ struct SandikLockScreenView: View {
 struct SandikChangePill: View {
     let state: SandikActivityAttributes.ContentState
 
+    private var palette: SandikPalette {
+        SandikPalette.resolved(isLight: state.isLightTheme)
+    }
+
     var body: some View {
         HStack(spacing: 6) {
             Text("Bugün")
                 .font(.sandikLabel(11, weight: .medium))
-                .foregroundStyle(SandikTheme.text58)
+                .foregroundStyle(palette.text58)
 
             // Yön oku yalnızca gerçek bir hareket varken. Sıfır değişimde
             // ok basmak olmayan bir yönü ima eder.
             if state.hasDirection {
                 Text(directionArrow(state.isPositive))
                     .font(.sandikLabel(10, weight: .black))
-                    .foregroundStyle(SandikTheme.statusColor(isPositive: state.isPositive))
+                    .foregroundStyle(palette.statusColor(isPositive: state.isPositive))
             }
 
             // Tutar yalnızca izin verildiyse; yüzde her zaman görünür.
@@ -447,20 +466,20 @@ struct SandikChangePill: View {
                 Text(state.changeText)
                     .font(.sandikNumber(13, weight: .bold))
                     .foregroundStyle(state.hasDirection
-                        ? SandikTheme.statusColor(isPositive: state.isPositive)
-                        : SandikTheme.text58)
+                        ? palette.statusColor(isPositive: state.isPositive)
+                        : palette.text58)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
 
                 Text("(\(state.changePctText))")
                     .font(.sandikNumber(12, weight: .medium))
-                    .foregroundStyle(SandikTheme.text58)
+                    .foregroundStyle(palette.text58)
             } else {
                 Text(state.changePctText)
                     .font(.sandikNumber(13, weight: .bold))
                     .foregroundStyle(state.hasDirection
-                        ? SandikTheme.statusColor(isPositive: state.isPositive)
-                        : SandikTheme.text58)
+                        ? palette.statusColor(isPositive: state.isPositive)
+                        : palette.text58)
             }
 
             Spacer(minLength: 0)
@@ -470,7 +489,7 @@ struct SandikChangePill: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: SandikTheme.radiusMd, style: .continuous)
-                .fill(SandikTheme.surface1)
+                .fill(palette.surface1)
         )
     }
 }
