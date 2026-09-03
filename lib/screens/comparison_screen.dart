@@ -12,6 +12,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/history_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'add_asset_screen.dart';
@@ -321,6 +322,17 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     final span = (maxY - minY).abs() < 1e-9 ? 1.0 : (maxY - minY);
     final pad = span * 0.12;
 
+    // Eksen sınırları ve adımı YUVARLAK sayılara oturtulur.
+    //
+    // Bu grafik `interval` vermeden çiziliyordu; `fl_chart` adımı kendi
+    // seçince ham banttan türeyen ondalık bir sayı çıkıyor, etiket de
+    // `toStringAsFixed(0)` ile tam sayıya yuvarlandığı için ardışık FARKLI
+    // tick'ler AYNI metne düşüyordu — "+0%, +0%, +1%, +1%". İki mevduat fonu
+    // gibi dar bantlı (±%0,5) bir kıyasta eksenin tamamı "+0%" oluyordu.
+    //
+    // `yuzdeEkseni` aynı hatayı takip grafiğinde çözmüştü; artık ortak.
+    final eksen = yuzdeEkseni(minY - pad, maxY + pad);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
       decoration: context.surfaceCard(),
@@ -329,8 +341,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         LineChartData(
           minX: minX,
           maxX: maxX,
-          minY: minY - pad,
-          maxY: maxY + pad,
+          minY: eksen.min,
+          maxY: eksen.max,
           lineBarsData: bars,
           // Sıfır çizgisi: "dönem başı" referansı görünür olmalı, yoksa
           // yüzdeler neye göre okunacağı belirsiz kalır.
@@ -347,6 +359,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
+            // Izgara çizgileri etiketlerle AYNI adımda olmalı; ayrışırsa
+            // çizgiler etiketsiz, etiketler çizgisiz kalır.
+            horizontalInterval: eksen.interval,
             getDrawingHorizontalLine: (_) =>
                 FlLine(color: p.hairline, strokeWidth: 1),
           ),
@@ -362,10 +377,23 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 44,
-                getTitlesWidget: (value, meta) => Text(
-                  '${value >= 0 ? '+' : ''}${value.toStringAsFixed(0)}%',
-                  style: TextStyle(fontSize: 10, color: p.text58),
-                ),
+                // Adım AÇIKÇA verilir — verilmezse fl_chart kendi seçer ve
+                // dar bantlarda etiketler tekrar eder.
+                interval: eksen.interval,
+                getTitlesWidget: (value, meta) {
+                  // Kenar etiketleri kırpılır ve komşusuyla üst üste biner.
+                  if (value <= meta.min || value >= meta.max) {
+                    return const SizedBox.shrink();
+                  }
+                  // Kayan nokta hatası: 15.000000000000002 gibi değerler
+                  // ondalık gösterimde "15,0" yerine gürültü üretir.
+                  final v = (value / eksen.interval).round() * eksen.interval;
+                  return Text(
+                    '${v >= 0 ? '+' : ''}'
+                    '${v.toStringAsFixed(eksen.ondalik).replaceAll('.', ',')}%',
+                    style: TextStyle(fontSize: 10, color: p.text58),
+                  );
+                },
               ),
             ),
           ),
