@@ -88,8 +88,10 @@ void main() {
     setUpAll(() async {
       provider = _yorumsuz(
           await File('lib/providers/watchlist_provider.dart').readAsString());
-      chart = _yorumsuz(
-          await File('lib/widgets/watchlist_chart.dart').readAsString());
+      // Grafiğin gövdesi Karşılaştır ekranıyla PAYLAŞILAN widget'a taşındı;
+      // kaynak denetimleri artık orayı okur (bkz. chart_interaction_parity).
+      chart = _yorumsuz(await File('lib/widgets/percent_comparison_chart.dart')
+          .readAsString());
     });
 
     test('karşılaştırma ekranıyla AYNI motoru kullanır', () {
@@ -122,7 +124,13 @@ void main() {
       expect(chart.contains("'Portföyüm'"), isFalse,
           reason: 'etiket seçime bağlı; grafikte sabitlenirse ortak '
               'seçildiğinde yanlış ad görünür');
-      expect(chart.contains('portfolioLabel'), isTrue);
+      // Ortak grafik etiketi bir geri çağrıyla dışarıdan alır; `WatchlistChart`
+      // de ona `portfolioLabel`'ı geçirir.
+      expect(chart.contains('labelOf'), isTrue,
+          reason: 'etiket dışarıdan gelmeli');
+      final sarmalayici = _yorumsuz(
+          await File('lib/widgets/watchlist_chart.dart').readAsString());
+      expect(sarmalayici.contains('portfolioLabel'), isTrue);
     });
 
     test('seçici ortak YOKKA çizilmez', () async {
@@ -134,7 +142,7 @@ void main() {
 
     test('portföy çizgisi görsel olarak AYIRT EDİLİR', () {
       // Renk tek başına yeterli değil; kalınlık da farklı olmalı.
-      expect(chart.contains('isPortfolio ? 3 : 1.8'), isTrue,
+      expect(chart.contains('vurgulu ? 3 : 1.8'), isTrue,
           reason: 'kıyas çizgisi kalınlıktan da okunmalı');
     });
 
@@ -358,7 +366,8 @@ void main() {
     test('grafik bu ekseni KULLANIR', () async {
       // Fonksiyon doğru olsa da bağlanmazsa bug sürerdi.
       final chart = _yorumsuz(
-          await File('lib/widgets/watchlist_chart.dart').readAsString());
+          await File('lib/widgets/percent_comparison_chart.dart')
+              .readAsString());
       expect(chart.contains('yuzdeEkseni('), isTrue);
       expect(chart.contains('interval: eksen.interval'), isTrue,
           reason: 'adım fl_chart\'a açıkça verilmezse kendi seçer');
@@ -393,7 +402,8 @@ void main() {
       // Kaldırmak kıyası yok ederdi — "bu varlık iyi mi gidiyor" sorusunun
       // cevabı ancak diğerleri görünürken vardır.
       final chart = _yorumsuz(
-          await File('lib/widgets/watchlist_chart.dart').readAsString());
+          await File('lib/widgets/percent_comparison_chart.dart')
+              .readAsString());
       expect(chart.contains('withValues(alpha: 0.18)'), isTrue,
           reason: 'odak dışı seriler soluklaşmalı');
       // Seri listesini odağa göre süzen bir kod OLMAMALI.
@@ -405,7 +415,8 @@ void main() {
 
     test('odaktaki seri KALINLAŞIR — renk tek işaret değil', () async {
       final chart = _yorumsuz(
-          await File('lib/widgets/watchlist_chart.dart').readAsString());
+          await File('lib/widgets/percent_comparison_chart.dart')
+              .readAsString());
       expect(chart.contains('buOdakta ?'), isTrue,
           reason: 'soluklaşmaya ek olarak kalınlık da değişmeli');
     });

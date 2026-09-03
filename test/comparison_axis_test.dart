@@ -74,12 +74,13 @@ void main() {
     });
   });
 
-  group('karşılaştırma ekranı bu ekseni KULLANIR', () {
+  group('grafik bu ekseni KULLANIR', () {
+    // Karşılaştır ve Takip aynı widget'ı çiziyor; denetim orada.
     late String ekran;
 
     setUpAll(() async {
-      ekran = _yorumsuz(
-          await File('lib/screens/comparison_screen.dart').readAsString());
+      ekran = _yorumsuz(await File('lib/widgets/percent_comparison_chart.dart')
+          .readAsString());
     });
 
     test('yuzdeEkseni çağrılıyor', () {
@@ -99,6 +100,15 @@ void main() {
       expect(ekran.contains('maxY: eksen.max'), isTrue);
       expect(ekran.contains('minY: minY - pad'), isFalse,
           reason: 'ham sınırlar tick leri yuvarlak sayılara oturtmuyordu');
+    });
+
+    test('Karşılaştır ekranı kendi eksenini ÇİZMEZ', () async {
+      // Kopya eksen, kopya hata demekti: düzeltme takip grafiğinde yapılmış,
+      // burada unutulmuştu.
+      final karsilastir = _yorumsuz(
+          await File('lib/screens/comparison_screen.dart').readAsString());
+      expect(karsilastir.contains('SideTitles('), isFalse,
+          reason: 'eksen ortak widget ta kurulur');
     });
 
     test('etiket tam sayıya yuvarlanmıyor', () {

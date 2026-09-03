@@ -392,7 +392,12 @@ class _PortfolioDetailScreenState extends ConsumerState<PortfolioDetailScreen> {
             final isActive = seg.thickness > 2.0;
             return LineChartBarData(
               spots: seg.spots,
-              isCurved: true,
+              // Uygulamadaki TÜM çizgi grafiklerle aynı: eğri interpolasyon
+              // veride olmayan tepe ve dip uydurur. Bir fiyat/değer
+              // grafiğinde bu yanıltıcıdır — kullanıcı gerçekte olmamış bir
+              // zirveyi okur. Diğer grafikler zaten `false` çiziyordu; tek
+              // istisna burasıydı.
+              isCurved: false,
               color: seg.lineColor,
               barWidth: seg.thickness,
               isStrokeCapRound: true,

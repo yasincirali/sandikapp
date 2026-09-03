@@ -1986,7 +1986,13 @@ class _PortfolioPerformanceScreenState
         // çizgi + pill (fiyat/tarih/getiri/hareketler) gösterir. Tooltip ve
         // crosshair paralel çalışınca X hesabı farklı olup değerler
         // uyumsuz görünüyordu — tek kaynağa çektik.
+        //
+        // `enabled: false` de şart: `handleBuiltInTouches` yalnızca tooltip'i
+        // kapatır, dokunma işleme katmanı açık kalır. `performance_screen`
+        // ikisini birden veriyordu, burası vermiyordu — aynı jest iki ekranda
+        // farklı davranıyordu.
         lineTouchData: LineTouchData(
+          enabled: false,
           handleBuiltInTouches: false,
           touchTooltipData: LineTouchTooltipData(
             getTooltipColor: (_) => context.c.surface2,

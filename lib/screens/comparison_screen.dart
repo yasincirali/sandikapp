@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,6 +13,7 @@ import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
+import '../widgets/percent_comparison_chart.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'add_asset_screen.dart';
 
@@ -46,6 +46,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   /// Her sembolün normalize serisi. Sembol eklendiğinde doldurulur.
   final Map<String, NormalizedSeries> _series = {};
+
+  /// Odaklanılan serinin anahtarı — `null` ise odak yok.
+  ///
+  /// Odak bir FİLTRE DEĞİL: diğer seriler soluklaşır ama ekranda KALIR.
+  /// Kaldırmak kıyası yok ederdi. Takip listesindeki grafikle aynı sözleşme;
+  /// iki ekran aynı jesti aynı sonuçla karşılamalı.
+  String? _focused;
 
   /// Yüklenmekte olan semboller — satırda spinner göstermek için.
   final Set<String> _loading = {};
@@ -181,6 +188,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       _series.remove(ticker);
       _loading.remove(ticker);
       _failed.remove(ticker);
+      // Odak silinen seride kalırsa grafik "bir şeye odaklı" görünür ama
+      // hiçbir çizgi tam renkte olmaz — hepsi soluk kalır.
+      if (_focused == ticker) _focused = null;
     });
   }
 
@@ -274,8 +284,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   Widget _chartCard(SandikPalette p) {
     if (_selected.isEmpty) return _emptyState(p);
 
-    final ready = _series.entries.toList();
-    if (ready.isEmpty) {
+    if (_series.isEmpty) {
       return SizedBox(
         height: 260,
         child: Center(
@@ -284,136 +293,32 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       );
     }
 
-    // Tüm serilerin ortak zaman ekseni: en erken ve en geç nokta.
-    var minX = double.infinity;
-    var maxX = double.negativeInfinity;
-    var minY = double.infinity;
-    var maxY = double.negativeInfinity;
-
     final colors = _seriesColors(p);
-    final bars = <LineChartBarData>[];
 
-    for (final entry in ready) {
-      final idx = _selected.indexWhere((s) => s.ticker == entry.key);
-      if (idx < 0) continue;
-      final keys = entry.value.points.keys.toList()..sort();
-      final spots = <FlSpot>[];
-      for (final k in keys) {
-        final x = k.toDouble();
-        final y = entry.value.points[k]!;
-        spots.add(FlSpot(x, y));
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-      bars.add(LineChartBarData(
-        spots: spots,
-        color: colors[idx % colors.length],
-        barWidth: 2,
-        isCurved: false,
-        dotData: const FlDotData(show: false),
-      ));
-    }
-
-    if (bars.isEmpty) return _emptyState(p);
-
-    // Y ekseninde nefes payı; düz çizgide (minY == maxY) sıfıra bölme olmasın.
-    final span = (maxY - minY).abs() < 1e-9 ? 1.0 : (maxY - minY);
-    final pad = span * 0.12;
-
-    // Eksen sınırları ve adımı YUVARLAK sayılara oturtulur.
-    //
-    // Bu grafik `interval` vermeden çiziliyordu; `fl_chart` adımı kendi
-    // seçince ham banttan türeyen ondalık bir sayı çıkıyor, etiket de
-    // `toStringAsFixed(0)` ile tam sayıya yuvarlandığı için ardışık FARKLI
-    // tick'ler AYNI metne düşüyordu — "+0%, +0%, +1%, +1%". İki mevduat fonu
-    // gibi dar bantlı (±%0,5) bir kıyasta eksenin tamamı "+0%" oluyordu.
-    //
-    // `yuzdeEkseni` aynı hatayı takip grafiğinde çözmüştü; artık ortak.
-    final eksen = yuzdeEkseni(minY - pad, maxY + pad);
+    // Renk SEÇİM sırasından gelir, çizim sırasından değil: bir sembol
+    // yüklenirken diğerleri çizilirse renkler yer değiştirmemeli.
+    int seciliIndeks(String ticker) =>
+        _selected.indexWhere((s) => s.ticker == ticker);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
       decoration: context.surfaceCard(),
-      height: 280,
-      child: LineChart(
-        LineChartData(
-          minX: minX,
-          maxX: maxX,
-          minY: eksen.min,
-          maxY: eksen.max,
-          lineBarsData: bars,
-          // Sıfır çizgisi: "dönem başı" referansı görünür olmalı, yoksa
-          // yüzdeler neye göre okunacağı belirsiz kalır.
-          extraLinesData: ExtraLinesData(
-            horizontalLines: [
-              HorizontalLine(
-                y: 0,
-                color: p.text36.withValues(alpha: 0.4),
-                strokeWidth: 1,
-                dashArray: [4, 4],
-              ),
-            ],
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            // Izgara çizgileri etiketlerle AYNI adımda olmalı; ayrışırsa
-            // çizgiler etiketsiz, etiketler çizgisiz kalır.
-            horizontalInterval: eksen.interval,
-            getDrawingHorizontalLine: (_) =>
-                FlLine(color: p.hairline, strokeWidth: 1),
-          ),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 44,
-                // Adım AÇIKÇA verilir — verilmezse fl_chart kendi seçer ve
-                // dar bantlarda etiketler tekrar eder.
-                interval: eksen.interval,
-                getTitlesWidget: (value, meta) {
-                  // Kenar etiketleri kırpılır ve komşusuyla üst üste biner.
-                  if (value <= meta.min || value >= meta.max) {
-                    return const SizedBox.shrink();
-                  }
-                  // Kayan nokta hatası: 15.000000000000002 gibi değerler
-                  // ondalık gösterimde "15,0" yerine gürültü üretir.
-                  final v = (value / eksen.interval).round() * eksen.interval;
-                  return Text(
-                    '${v >= 0 ? '+' : ''}'
-                    '${v.toStringAsFixed(eksen.ondalik).replaceAll('.', ',')}%',
-                    style: TextStyle(fontSize: 10, color: p.text58),
-                  );
-                },
-              ),
-            ),
-          ),
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => p.surface2,
-              getTooltipItems: (spots) => spots.map((s) {
-                final hit = _selected[s.barIndex % _selected.length];
-                return LineTooltipItem(
-                  '${hit.ticker}  ${fmtPct(s.y, digits: 1, showSign: true)}',
-                  TextStyle(
-                    color: colors[s.barIndex % colors.length],
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
+      child: PercentComparisonChart(
+        series: _series,
+        // Seçim sırası korunur — kullanıcının eklediği sıra grafikteki
+        // katman sırasıyla aynı olsun.
+        order: _selected.map((s) => s.ticker).toList(),
+        focused: _focused,
+        onFocusChanged: (k) => setState(() => _focused = k),
+        height: 260,
+        colorOf: (key) {
+          final i = seciliIndeks(key);
+          return colors[(i < 0 ? 0 : i) % colors.length];
+        },
+        labelOf: (key) {
+          final i = seciliIndeks(key);
+          return i < 0 ? key : _selected[i].ticker;
+        },
       ),
     );
   }
@@ -471,18 +376,39 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     final norm = _series[hit.ticker];
     final isLoading = _loading.contains(hit.ticker);
     final isFailed = _failed.contains(hit.ticker);
+    final buOdakta = _focused == hit.ticker;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: context.surfaceCard(),
+      decoration: context.surfaceCard().copyWith(
+            // Odaktaki satır kenarlığıyla da işaretlenir — grafikteki
+            // solukluk tek başına hangi satırın odakta olduğunu söylemez.
+            border: buOdakta ? Border.all(color: color, width: 1.5) : null,
+          ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Container(width: 3, height: 30, color: color),
-              const SizedBox(width: 10),
+              // Renk şeridine dokunmak seriye odaklanır — takip listesindeki
+              // lejant çipleriyle AYNI sözleşme. İnce bir çizgiye nişan almak
+              // zordur; 44pt'lik bir hedef çok daha kolaydır ve aynı işi iki
+              // yoldan yapabilmek dokunma isabetini artırır.
+              SandikTappable(
+                semanticLabel: buOdakta
+                    ? '${_displayTicker(hit)} odağını kaldır'
+                    : '${_displayTicker(hit)} serisine odaklan',
+                onTap: () => setState(() =>
+                    _focused = yeniOdak(mevcut: _focused, dokunulan: hit.ticker)),
+                child: SizedBox(
+                  width: 20,
+                  height: 44,
+                  child: Center(
+                    child: Container(width: 3, height: 30, color: color),
+                  ),
+                ),
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

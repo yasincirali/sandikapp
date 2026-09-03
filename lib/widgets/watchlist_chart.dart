@@ -1,10 +1,10 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
+import 'percent_comparison_chart.dart';
 
 // `yuzdeEkseni` ve `yeniOdak` bu dosyadan çıkarıldı ama buradan import
 // eden çağıranlar (ve testler) kırılmasın diye yeniden dışa verilir.
@@ -32,7 +32,6 @@ class WatchlistChart extends StatelessWidget {
   const WatchlistChart({
     super.key,
     required this.series,
-    required this.periodLabel,
     required this.portfolioLabel,
     this.focused,
     this.onFocusChanged,
@@ -53,7 +52,6 @@ class WatchlistChart extends StatelessWidget {
   /// `etiket → normalize edilmiş seri`. Portföy serisi [portfolioKey]
   /// anahtarıyla gelir.
   final Map<String, NormalizedSeries> series;
-  final String periodLabel;
 
   /// Kıyas çizgisinin adı — seçime göre değişir ("Portföyüm", "Birlikte",
   /// ortağın adı). Sabit "Portföyüm" yazmak, bir ortak seçiliyken YANLIŞ
@@ -80,198 +78,27 @@ class WatchlistChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.c;
 
-    if (series.isEmpty) {
-      return SizedBox(
-        height: 200,
-        child: Center(
-          child: Text(
-            'Grafik için yeterli fiyat geçmişi yok.',
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
-          ),
-        ),
-      );
-    }
-
-    var minX = double.infinity;
-    var maxX = double.negativeInfinity;
-    var minY = double.infinity;
-    var maxY = double.negativeInfinity;
-
-    final palette = _palette(p);
-    final bars = <LineChartBarData>[];
-    // Tooltip'te hangi barın hangi varlık olduğunu bulmak için sıra bilgisi.
-    final barLabels = <String>[];
-    // Dokunulan barı seri anahtarına çevirmek için — `bars` ile aynı sıra.
-    final barKeys = <String>[];
-
-    // Takip serileri önce, portföy EN SON eklenir — fl_chart son barı en üste
-    // çizer, yani kıyas çizgisi diğerlerinin altında kalmaz.
+    // Takip serileri önce, portföy EN SON — fl_chart son barı en üste çizer,
+    // yani kıyas çizgisi diğerlerinin altında kalmaz.
     final watchKeys = series.keys.where((k) => k != portfolioKey).toList()
       ..sort();
-    final ordered = [
+    final order = [
       ...watchKeys,
       if (series.containsKey(portfolioKey)) portfolioKey,
     ];
 
-    for (final key in ordered) {
-      final norm = series[key]!;
-      final isPortfolio = key == portfolioKey;
-      final keys = norm.points.keys.toList()..sort();
-      final spots = <FlSpot>[];
-      for (final k in keys) {
-        final x = k.toDouble();
-        final y = norm.points[k]!;
-        spots.add(FlSpot(x, y));
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-      if (spots.length < 2) continue;
+    final palette = _palette(p);
 
-      final temelRenk = isPortfolio
+    return PercentComparisonChart(
+      series: series,
+      order: order,
+      emphasizedKey: portfolioKey,
+      focused: focused,
+      onFocusChanged: onFocusChanged,
+      colorOf: (key) => key == portfolioKey
           ? p.amberText
-          : palette[watchKeys.indexOf(key) % palette.length];
-      final odakVar = focused != null;
-      final buOdakta = focused == key;
-
-      bars.add(LineChartBarData(
-        spots: spots,
-        // Odaktaki seri tam renkte; diğerleri soluklaşır ama KALIR —
-        // kıyas ancak diğerleri görünürken anlamlıdır.
-        color: odakVar && !buOdakta
-            ? temelRenk.withValues(alpha: 0.18)
-            : temelRenk,
-        // Portföy belirgin biçimde kalın: kıyas noktası olduğu çizgi
-        // kalınlığından da okunmalı, yalnızca renkten değil. Odaklanılan seri
-        // ayrıca kalınlaşır — soluklaşan renge ek ikinci bir işaret.
-        barWidth: buOdakta ? (isPortfolio ? 4 : 3) : (isPortfolio ? 3 : 1.8),
-        isCurved: false,
-        dotData: const FlDotData(show: false),
-      ));
-      barLabels.add(isPortfolio ? portfolioLabel : key);
-      barKeys.add(key);
-    }
-
-    if (bars.isEmpty) {
-      return SizedBox(
-        height: 200,
-        child: Center(
-          child: Text(
-            'Grafik için yeterli fiyat geçmişi yok.',
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
-          ),
-        ),
-      );
-    }
-
-    // Y ekseninde nefes payı; düz çizgide (minY == maxY) sıfıra bölme olmasın.
-    final span = (maxY - minY).abs() < 1e-9 ? 1.0 : (maxY - minY);
-    final pad = span * 0.12;
-
-    // Eksen sınırları ve adımı YUVARLAK sayılara oturtulur.
-    //
-    // Aksi halde `fl_chart` aralığı kendi seçiyor ve dar bantlarda etiketler
-    // birbirine değecek kadar sıkışıyordu (üretimde görüldü: "+15%" ile
-    // "+16%" üst üste bindi). `portfolio_performance_screen` aynı sorunu
-    // aynı yöntemle çözüyor — burada da o desen uygulanıyor.
-    final eksen = yuzdeEkseni(minY - pad, maxY + pad);
-
-    return SizedBox(
-      height: 210,
-      child: LineChart(
-        LineChartData(
-          minX: minX,
-          maxX: maxX,
-          minY: eksen.min,
-          maxY: eksen.max,
-          lineBarsData: bars,
-          // Sıfır çizgisi = dönem başı. Olmadan yüzdelerin neye göre
-          // okunacağı belirsiz kalır.
-          extraLinesData: ExtraLinesData(
-            horizontalLines: [
-              HorizontalLine(
-                y: 0,
-                color: p.text36.withValues(alpha: 0.4),
-                strokeWidth: 1,
-                dashArray: [4, 4],
-              ),
-            ],
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            // Izgara çizgileri etiketlerle AYNI adımda olmalı; ayrışırsa
-            // çizgiler etiketsiz, etiketler çizgisiz kalır.
-            horizontalInterval: eksen.interval,
-            getDrawingHorizontalLine: (_) =>
-                FlLine(color: p.hairline, strokeWidth: 1),
-          ),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 42,
-                // Adım AÇIKÇA verilir — verilmezse fl_chart kendi seçer ve
-                // dar bantlarda etiketleri üst üste bindirir.
-                interval: eksen.interval,
-                getTitlesWidget: (value, meta) {
-                  // Kayan nokta hatası: 15.000000000000002 gibi değerler
-                  // ondalık gösterimde "15,0" yerine gürültü üretir.
-                  final v = (value / eksen.interval).round() * eksen.interval;
-                  return Text(
-                    '${v >= 0 ? '+' : ''}'
-                    '${v.toStringAsFixed(eksen.ondalik).replaceAll('.', ',')}%',
-                    style: TextStyle(fontSize: 10, color: p.text58),
-                  );
-                },
-              ),
-            ),
-          ),
-          lineTouchData: LineTouchData(
-            // Çizgiye dokunmak o seriye ODAKLANIR; aynısına tekrar dokunmak
-            // odağı kaldırır. `charts_screen`'deki donut `touchCallback`
-            // deseninin aynısı — kullanıcı iki grafikte aynı davranışı görsün.
-            touchCallback: (event, response) {
-              if (onFocusChanged == null) return;
-              // Yalnızca TAP: sürükleme tooltip gezdirmek içindir, her
-              // hareket odağı değiştirseydi grafik okunamaz hale gelirdi.
-              if (event is! FlTapUpEvent) return;
-              final spots = response?.lineBarSpots;
-              if (spots == null || spots.isEmpty) {
-                // Boşluğa dokunma odağı temizler — çıkış yolu her zaman açık.
-                onFocusChanged!(null);
-                return;
-              }
-              final i = spots.first.barIndex;
-              if (i < 0 || i >= barKeys.length) return;
-              onFocusChanged!(yeniOdak(mevcut: focused, dokunulan: barKeys[i]));
-            },
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => p.surface2,
-              getTooltipItems: (spots) => spots.map((s) {
-                final label =
-                    s.barIndex < barLabels.length ? barLabels[s.barIndex] : '';
-                return LineTooltipItem(
-                  '$label  ${fmtPct(s.y, digits: 1, showSign: true)}',
-                  TextStyle(
-                    color: bars[s.barIndex].color ?? p.text90,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ),
+          : palette[watchKeys.indexOf(key) % palette.length],
+      labelOf: (key) => key == portfolioKey ? portfolioLabel : key,
     );
   }
 }

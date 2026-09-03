@@ -325,7 +325,6 @@ class _ChartCard extends ConsumerWidget {
                 children: [
                   WatchlistChart(
                     series: series,
-                    periodLabel: periodLabel,
                     portfolioLabel: portfolioLabel,
                     focused: gecerliOdak,
                     onFocusChanged: (k) =>
