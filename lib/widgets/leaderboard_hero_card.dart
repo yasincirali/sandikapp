@@ -13,8 +13,8 @@ import 'custom_loading_indicator.dart';
 ///
 /// 3 durum:
 /// - Opt-in kapalı: "Yarış'a katıl" CTA + değer önerisi
-/// - Opt-in açık ama partner yok: "Ortak ekle" nudge (ortaklık akışı zaten
-///   üstte var, o yüzden kısa)
+/// - Opt-in açık ama partner yok: "Gör" CTA — `LeaderboardScreen`'in solo
+///   paneline götürür (kendi dönem getirisi + küresel dilim)
 /// - Opt-in açık + partner var: kısa preview — rank + hemen üstünde/altında
 ///   olan yarışmacı, "Sıralamayı gör" CTA
 ///
@@ -28,8 +28,79 @@ class LeaderboardHeroCard extends ConsumerWidget {
     final partners = ref.watch(activePartnersProvider);
 
     if (!optIn) return _OptInHero(ref: ref);
-    if (partners.isEmpty) return const SizedBox.shrink();
+    // Ortağı olmayan kullanıcı da Yarış ekranına GİREBİLMELİ.
+    //
+    // Burası eskiden `SizedBox.shrink()` idi: kullanıcı "Katıl"a bastığı anda
+    // kart kayboluyordu ve geriye hiçbir giriş noktası kalmıyordu — performans
+    // ekranındaki chip de ortak şartı arıyor. Oysa `LeaderboardScreen` tam bu
+    // durum için bir `_SoloPanel` çiziyor (kendi dönem getirisi, küresel
+    // yüzdelik dilim, en çok kazandıranlar). Yazılmış ama ulaşılamayan bir
+    // ekrandı; katılma eyleminin ödülü kartın yok olması olamaz.
+    if (partners.isEmpty) return const _SoloHero();
     return const _RankPreviewHero();
+  }
+}
+
+/// Opt-in açık ama ortak yok: kendi getirini gör + ortak ekleme daveti.
+class _SoloHero extends StatelessWidget {
+  const _SoloHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return _HeroShell(
+      onTap: () => Navigator.push(
+        context,
+        adaptiveRoute(builder: (_) => const LeaderboardScreen()),
+      ),
+      child: Row(
+        children: [
+          _TrophyBadge(),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Yarış',
+                  style: context.t.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: context.c.text90,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Henüz ortağın yok. Kendi dönem getirini ve küresel '
+                  'dilimini şimdiden görebilirsin.',
+                  style: context.t.bodySmall?.copyWith(
+                    fontSize: 11.5,
+                    color: context.c.text58,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: context.c.amberFill,
+              borderRadius: BorderRadius.circular(SandikRadius.lg),
+            ),
+            child: Text(
+              'Gör',
+              style: context.t.bodySmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: context.c.onAmber,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

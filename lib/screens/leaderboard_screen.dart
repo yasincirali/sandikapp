@@ -163,15 +163,43 @@ class _RoiInfoSheet extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 18),
-            Text(
-              'Getiri nasıl hesaplanıyor?',
-              style: context.t.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: context.c.text90,
-              ),
-            ),
             const SizedBox(height: 14),
+            // Başlık + KAPAT.
+            //
+            // Sheet'in tek kapanma yolu aşağı sürüklemekti: yukarıdaki tutamak
+            // dekoratif bir `Container` (dokunma dinlemez) ve
+            // `isScrollControlled: true` + uzun içerik yüzünden ekranın
+            // neredeyse tamamı kaplandığı için "dışarı dokun" alanı da bir
+            // şeride iniyordu. Açık bir çıkış düğmesi şart.
+            //
+            // Desen `paywall_screen.dart` ve `fullscreen_chart_route.dart` ile
+            // aynı: `Icons.close_rounded`, 44pt hedef.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Getiri nasıl hesaplanıyor?',
+                    style: context.t.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.c.text90,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SandikTappable(
+                  semanticLabel: 'Kapat',
+                  onTap: () => Navigator.of(context).pop(),
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Icon(Icons.close_rounded,
+                        size: 22, color: context.c.text58),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             const _InfoBlock(
               icon: Icons.emoji_events_outlined,
               title: 'Seçili dönemin getirisi',
