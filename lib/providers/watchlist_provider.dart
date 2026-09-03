@@ -472,8 +472,26 @@ final watchlistChartProvider =
       // Bunun bir yorumu var ve kullanıcıya AÇIKÇA söylenmeli (grafik
       // altındaki not): bu çizgi "bu varlıkları dönem başından beri
       // tutsaydım" senaryosudur, gerçekleşmiş getirin değildir.
-      final raw = await HistoryService.instance
-          .getPortfolioHistory(all, days, simulate: true);
+      //
+      // ## GÜNLÜK: performans ekranıyla AYNI motor
+      // Gün içi sekmesinde `getPortfolioHistory(_, 1)` SAATLİK ızgara üretir
+      // (24 saatlik pencerede 25 nokta). Performans ekranının GÜNLÜK sekmesi
+      // ise `getPortfolioHistoryHourlyBreakdown(_, 24)` ile **5 dakikalık**
+      // çözünürlük çiziyor. Aynı portföyün aynı günü iki ekranda iki farklı
+      // sıklıkta görünüyordu — ölçüldü: 60 dk'ya karşı 5 dk slot aralığı.
+      //
+      // Kullanıcı bulgusu: "portföyüm performans ekranında günlük grafikte
+      // nasıl gözüküyorsa o şekilde gözükmeli, sıklığı vs." İki ekranın aynı
+      // soruya aynı cevabı vermesi gerekir; bu yüzden gün içi yolu ORTAK
+      // servise bağlandı.
+      //
+      // Not: intraday servisi `simulate` bayrağı almaz — gün içi pencerede
+      // alım tarihi zaten bugünden önce olduğu için simülasyonun düzelttiği
+      // "addedDate öncesi sıfır slot" sorunu bu pencerede oluşmaz.
+      final raw = days <= 1
+          ? await HistoryService.instance.getPortfolioHistoryHourly(all, 24)
+          : await HistoryService.instance
+              .getPortfolioHistory(all, days, simulate: true);
       final temiz = portfoyunVarOlduguSlotlar(raw);
       if (temiz.isNotEmpty) ham[WatchlistChart.portfolioSeriesKey] = temiz;
     }

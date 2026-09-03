@@ -485,6 +485,54 @@ void main() {
       }
     });
 
+    test('GÜNLÜK portföy serisi PERFORMANS ekranıyla AYNI', () async {
+      // Kullanıcı bulgusu: "portföyüm performans ekranında günlük grafikte
+      // nasıl gözüküyorsa o şekilde gözükmeli, sıklığı vs."
+      //
+      // Ölçülen fark: takip listesi `getPortfolioHistory(_, 1)` ile SAATLİK
+      // ızgara (60 dk slot, 25 nokta) çiziyordu; performans ekranı ise
+      // `getPortfolioHistoryHourlyBreakdown(_, 24)` ile 5 DAKİKALIK
+      // çözünürlük. Aynı portföyün aynı günü iki ekranda iki farklı
+      // sıklıkta görünüyordu.
+      //
+      // İzlenen varlıklar GÜNLÜK'te zaten `ResolutionTier.fiveMin`; kaba olan
+      // yalnızca kıyas çizgisiydi.
+      final lotlar = [lot(DateTime.now().subtract(const Duration(days: 90)))];
+
+      final performans = (await HistoryService.instance
+              .getPortfolioHistoryHourlyBreakdown(lotlar, 24))
+          .total;
+      final takip =
+          await HistoryService.instance.getPortfolioHistoryHourly(lotlar, 24);
+
+      expect(takip.keys.toSet(), performans.keys.toSet(),
+          reason: 'iki ekran aynı günü farklı ızgarada çiziyor');
+
+      // Çözünürlük gerçekten 5 dakika mı?
+      final ts = takip.keys.toList()..sort();
+      if (ts.length > 1) {
+        final araliklar = <int>{
+          for (var i = 1; i < ts.length; i++)
+            Duration(milliseconds: ts[i] - ts[i - 1]).inMinutes,
+        };
+        expect(araliklar, everyElement(lessThanOrEqualTo(5)),
+            reason: 'slot aralıkları $araliklar — 5 dakikalık olmalı');
+      }
+    });
+
+    test('sağlayıcı GÜNLÜK te gün içi servisini KULLANIR', () async {
+      // Cebir doğru olsa da provider hâlâ saatlik yolu çağırıyorsa düzeltme
+      // kullanıcıya ulaşmaz.
+      final src =
+          await File('lib/providers/watchlist_provider.dart').readAsString();
+
+      expect(src.contains('getPortfolioHistoryHourly('), isTrue,
+          reason: 'GÜNLÜK sekmesi performans ekranıyla aynı motoru '
+              'kullanmalı');
+      expect(src.contains('days <= 1'), isTrue,
+          reason: 'gün içi dalı dönem koşuluyla ayrılmalı');
+    });
+
     test('1A serisi de dönemi aşmaz', () async {
       final seri = await HistoryService.instance.getPortfolioHistory(
           [lot(DateTime.now().subtract(const Duration(days: 400)))], 30);
