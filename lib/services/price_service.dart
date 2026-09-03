@@ -659,12 +659,22 @@ class PriceService {
     return points;
   }
 
+  /// Range'e uygun varsayılan interval.
+  ///
+  /// `6mo` eskiden `1wk` idi: altı ay için haftalık çözünürlük fazla kabaydı
+  /// ve `1y` ile aynı adımı verdiği için iki dönem birbirinden ayırt
+  /// edilemiyordu. Günlük adım altı ayda ~125 nokta üretir — grafik için
+  /// uygun, ağ için ucuz.
+  ///
+  /// Not: çağıran interval'i kendisi belirleyebilir
+  /// ([fetchHistoryAtInterval]); `HistoryService.getSymbolHistory` bunu
+  /// çözünürlük katmanından türetir ve bu eşlemeye hiç uğramaz.
   String _intervalFor(String range) => switch (range) {
         '1d' => '5m',
         '5d' => '1h',
         '1mo' => '1d',
         '3mo' => '1d',
-        '6mo' => '1wk',
+        '6mo' => '1d',
         '1y' => '1wk',
         _ => '1d',
       };

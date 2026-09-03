@@ -176,15 +176,25 @@ class HistoryService {
     // Haftalık (7 gün) → saatlik veri: `5d` range + `1h` interval.
     // Diğer dönemler günlük veya haftalık.
     final bool hourly = periodDays <= 7;
-    final range = periodDays > 100
-        ? '1y'
-        : periodDays > 60
-            ? '3mo'
-            : periodDays > 20
-                ? '1mo'
-                : hourly
-                    ? '5d'
-                    : '1mo';
+
+    // Range dönemi KAPSAMAK zorunda: dar bir range portföy çizgisini sessizce
+    // kırpar ve grafik, seçilen dönemin yalnızca sağ dilimini gösterir.
+    // Eski merdivende iki delik vardı — 91-180 gün `'3mo'`e (90 gün) düşüyor,
+    // 365 günün üstü de `'1y'`de kalıyordu. `getSymbolHistory` ile aynı
+    // aileden hata; ikisi de kapatıldı.
+    final range = periodDays > 365
+        ? '5y'
+        : periodDays > 180
+            ? '1y'
+            : periodDays > 90
+                ? '6mo'
+                : periodDays > 60
+                    ? '3mo'
+                    : periodDays > 20
+                        ? '1mo'
+                        : hourly
+                            ? '5d'
+                            : '1mo';
 
     // Haftalık'ta saat başına, diğerlerinde gece yarısına normalize.
     int normalizeTs(int ms) {
@@ -1301,11 +1311,15 @@ class HistoryService {
     final sym = symbol.trim().toUpperCase();
     if (sym.isEmpty) return {};
 
-    final tier = _tierForPeriod(periodDays);
-    final range = _rangeForPeriod(periodDays);
+    final tier = tierForPeriod(periodDays);
+    final range = rangeForPeriod(periodDays);
 
+    // Interval'i KATMAN belirler, range değil. Eskiden interval
+    // `PriceService._intervalFor(range)`'dan türüyordu ve katmanla
+    // çelişebiliyordu: `days<=2` beş dakikalık bucket isterken ağdan saatlik
+    // veri geliyordu. Tek karar noktası olsun diye interval açıkça geçilir.
     Future<Map<int, double>> series(String s) async =>
-        _normalized(await _fetchSafe(s, range), tier);
+        _normalized(await _fetchSafe(s, range, tier.yahooInterval), tier);
 
     // Altın: XAU/USD × USD/TRY → 22 ayar gram → ürün ağırlığı.
     if (sym.startsWith('ALTIN_')) {
@@ -1322,7 +1336,10 @@ class HistoryService {
         out[e.key] =
             PriceService.gram22kFromXauTry(e.value * rate) * weight;
       }
-      return out;
+      // Kırpma ÇEVRİMDEN SONRA yapılır: önce kırpsaydık USD/TRY serisinde
+      // eşleşecek komşu nokta kalmayabilir ve `_closestOrNull` kenardaki
+      // noktaları düşürürdü.
+      return clipToPeriod(out, periodDays);
     }
 
     final raw = await series(sym);
@@ -1330,7 +1347,7 @@ class HistoryService {
 
     // TRY kote olanlar (BIST `.IS`, TEFAS fonları, `*TRY=X` pariteleri)
     // doğrudan döner; kalanlar USD kabul edilip çevrilir.
-    if (_isTryQuoted(sym)) return raw;
+    if (_isTryQuoted(sym)) return clipToPeriod(raw, periodDays);
 
     final usd = await series('USDTRY=X');
     if (usd.isEmpty) return {};
@@ -1340,7 +1357,7 @@ class HistoryService {
       if (rate == null) continue;
       out[e.key] = e.value * rate;
     }
-    return out;
+    return clipToPeriod(out, periodDays);
   }
 
   /// Sembol TRY cinsinden mi kote?
@@ -1355,20 +1372,79 @@ class HistoryService {
       sym.startsWith('ALTIN_');
 
   /// Periyoda uygun Yahoo range.
-  static String _rangeForPeriod(int days) {
-    if (days <= 7) return '5d';
+  ///
+  /// **Merdiven eksiksiz olmak ZORUNDA.** Eskiden `'1d'` ve `'6mo'` hiç
+  /// üretilmiyordu; `days<=7` doğrudan `'5d'`e, `days<=365` doğrudan `'1y'`e
+  /// düşüyordu. Sonuç ölçülmüş iki hataydı:
+  ///   · "GÜNLÜK" (1 gün) beş günlük değişimi gösteriyordu,
+  ///   · "6A" (180 gün) ile "1Y" (365 gün) aynı range'e düştüğü için —
+  ///     önbellek anahtarı da `'${sym}_$range'` olduğundan — BİREBİR aynı
+  ///     seriyi döndürüyordu. İki sekme arasında hiçbir rakam değişmiyordu.
+  ///
+  /// Yahoo'da `7d` diye bir range yok; 1 haftalık dönem `'1mo'` çekip
+  /// [clipToPeriod] ile kırpılarak elde edilir. Range'in dönemden GENİŞ
+  /// olması sorun değil, DAR olması veri kaybıdır.
+  @visibleForTesting
+  static String rangeForPeriod(int days) {
+    if (days <= 1) return '1d';
+    if (days <= 5) return '5d';
     if (days <= 30) return '1mo';
     if (days <= 90) return '3mo';
+    if (days <= 180) return '6mo';
     if (days <= 365) return '1y';
     return '5y';
   }
 
   /// Periyoda uygun çözünürlük katmanı.
-  static ResolutionTier _tierForPeriod(int days) {
-    if (days <= 2) return ResolutionTier.fiveMin;
-    if (days <= 30) return ResolutionTier.hourly;
+  ///
+  /// Katman, [rangeForPeriod]'un seçtiği range'in Yahoo'dan GERÇEKTE hangi
+  /// interval'le geldiğiyle uyumlu olmalı (`PriceService._intervalFor`).
+  /// Eskiden `days<=2` beş dakikalık bucket'a çekiyordu ama range `'5d'`
+  /// olduğu için gelen veri saatlikti — bucket'lama boşa çalışıyordu.
+  @visibleForTesting
+  static ResolutionTier tierForPeriod(int days) {
+    if (days <= 1) return ResolutionTier.fiveMin;
+    if (days <= 7) return ResolutionTier.hourly;
     if (days <= 365) return ResolutionTier.daily;
     return ResolutionTier.weekly;
+  }
+
+  /// Seriyi son [days] güne kırpar.
+  ///
+  /// **Neden gerekli:** range her zaman dönemden geniştir (Yahoo yalnızca
+  /// belirli range'leri kabul eder). Kırpılmazsa etiket ile veri ayrışır —
+  /// "GÜNLÜK" yazıp beş günü, "1H" yazıp bir ayı gösterirdik. Dönem başı
+  /// yüzdesi serinin İLK noktasından hesaplandığı için (`watchlist_provider`)
+  /// bu doğrudan yanlış bir rakam demekti.
+  ///
+  /// **Pencere `now`'a değil SON VERİ NOKTASINA çapalanır.** Borsa hafta
+  /// sonu ve tatilde kapalıdır; `now`'dan geriye saymak Pazar günü "GÜNLÜK"
+  /// seçildiğinde Cuma seansının tamamını pencerenin dışında bırakır ve
+  /// grafik boşalırdı. Son noktadan geriye saymak, kapalı günlerde de bir
+  /// seans dolusu veri gösterir — istenen "son bir günlük hareket" anlamı
+  /// zaten budur.
+  ///
+  /// Kırpma yine de iki noktanın altına düşürüyorsa **son iki nokta** döner,
+  /// ham serinin tamamı değil: günde tek fiyat açıklayan TEFAS fonlarında
+  /// pencereye tek fiyat düşer ve `normalizeSeries` iki noktanın altında
+  /// `null` verip varlığı grafikten sessizce siler. Ham seriye dönmek ise
+  /// "GÜNLÜK" etiketiyle bir aylık değişim göstermek olurdu — kaçındığımız
+  /// hatanın tam kendisi.
+  @visibleForTesting
+  static Map<int, double> clipToPeriod(Map<int, double> series, int days) {
+    if (series.length < 2) return series;
+
+    final keys = series.keys.toList()..sort();
+    final cutoff = keys.last - Duration(days: days).inMilliseconds;
+
+    final out = <int, double>{
+      for (final e in series.entries)
+        if (e.key >= cutoff) e.key: e.value,
+    };
+    if (out.length >= 2) return out;
+
+    final son = keys.sublist(keys.length - 2);
+    return {for (final k in son) k: series[k]!};
   }
 
   /// Ham noktaları tier'a göre bucket'lara indirger.
@@ -1384,12 +1460,17 @@ class HistoryService {
   }
 
   /// Önbellekli, hata yutan tek sembol çekimi.
-  Future<List<(int, double)>> _fetchSafe(String sym, String range) async {
-    final key = '${sym}_$range';
+  ///
+  /// Anahtara interval de girer: aynı range farklı çözünürlükle istenebilir
+  /// ve iki çekim birbirini ezmemelidir.
+  Future<List<(int, double)>> _fetchSafe(
+      String sym, String range, String interval) async {
+    final key = '${sym}_${range}_$interval';
     final cached = _cacheGet(key);
     if (cached != null) return cached;
     try {
-      final pts = await PriceService.instance.fetchHistory(sym, range);
+      final pts = await PriceService.instance
+          .fetchHistoryAtInterval(sym, range, interval);
       if (pts.isNotEmpty) _cachePut(key, pts);
       return pts;
     } catch (e) {
