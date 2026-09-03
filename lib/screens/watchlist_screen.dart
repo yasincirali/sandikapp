@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
         Icons,
-        Material,
         Colors,
         Dismissible,
         DismissDirection,
@@ -11,7 +10,6 @@ import 'package:flutter/material.dart'
         SnackBarAction,
         SnackBarBehavior;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../models/asset_type.dart';
@@ -32,13 +30,21 @@ import 'watchlist_detail_screen.dart';
 
 /// Takip listesinin GÖVDESİ — dönem seçici · grafik · liste · dipnot.
 ///
-/// Kendi başına bir sayfa değil: hem tam sayfa [WatchlistScreen] hem de
-/// Portföy ekranının "Takip Listesi" sekmesi bunu gösterir. Tek kopya
-/// olmasının sebebi ikisinin ayrışmaması — giriş noktası değişse de listenin
-/// kendisi her yerde aynı olmalı.
+/// ## Neden bir "Screen" değil
+/// Giriş noktası Portföy ekranının üstündeki `Varlıklarım | Takip Listesi`
+/// segmentidir (bkz. `charts_screen.dart`); tam sayfa bir `WatchlistScreen`
+/// vardı ama segmentten sonra ona giden hiçbir yol kalmadı ve kaldırıldı.
+/// Ulaşılamayan bir route bakım yükünden başka bir şey değildir — bu ekranın
+/// kendi geçmişinde de yaşandı (bkz. `leaderboard_screen`'in solo paneli).
+///
+/// Dosya adı `watchlist_screen.dart` olarak kaldı: takip yüzeyinin tamamı
+/// (gövde, satır, grafik kartı, boş durum) burada yaşıyor ve dosyayı
+/// adlandıran şey ekran sınıfı değil, o yüzey.
 ///
 /// Dikey alanı sınırlı bir ebeveyn ister (`Expanded` içine konur): içindeki
-/// liste kendi kaydırmasını yönetir.
+/// liste kendi kaydırmasını yönetir. Sarmalayan ağaçta bir `Material` ve
+/// `ScaffoldMessenger` bulunmalı — satırlar `Dismissible` ve `SnackBar`
+/// kullanıyor. Portföy ekranı ikisini de sağlıyor.
 ///
 /// ## Değişmez
 /// Buradaki hiçbir değer portföy toplamına, kâr/zarara, tür dökümüne veya
@@ -69,93 +75,6 @@ class WatchlistBody extends ConsumerWidget {
       ],
     );
   }
-}
-
-/// Takip listesi — sahip OLMADIĞIN, yalnızca izlediğin varlıklar.
-///
-/// ## Bu sayfa ne zaman görünür
-/// Asıl giriş noktası artık Portföy ekranının üstündeki
-/// `Varlıklarım | Takip Listesi` segmentidir (bkz. `charts_screen.dart`).
-/// Bu tam sayfa, doğrudan `push` edilen yollar için korunuyor.
-///
-/// ## Neden Ana ekranda değil
-/// Ana ekranda zaten beş katman var: hero özet · ortak seçici · tür çipleri ·
-/// varlık listesi · hareketler. Oraya bir segment daha koymak ÜÇÜNCÜ yatay
-/// seçici olurdu. Portföy ekranında ise segment EN ÜSTTE duruyor ve ortak
-/// seçici onun altındaki dalın içinde kalıyor — ikisi asla yan yana çizilmez.
-class WatchlistScreen extends ConsumerWidget {
-  const WatchlistScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTextStyle(
-      style: GoogleFonts.dmSans(
-          color: context.c.text90, decoration: TextDecoration.none),
-      child: CupertinoPageScaffold(
-        backgroundColor: context.c.background,
-        // Material: SnackBar ve InkWell'in çalışabilmesi için (Cupertino
-        // scaffold tek başına ScaffoldMessenger sağlamaz).
-        child: Material(
-          color: Colors.transparent,
-          child: SafeArea(
-            child: Column(
-              children: [
-                _header(context),
-                const Expanded(child: WatchlistBody()),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _header(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-        child: Row(
-          children: [
-            SizedBox(
-              // Ölçek içi (`SandikSpace`); dokunma hedefi `height: 44`.
-              width: 32,
-              height: 44,
-              child: CupertinoButton(
-                minimumSize: Size.zero,
-                padding: EdgeInsets.zero,
-                alignment: Alignment.centerLeft,
-                onPressed: () => Navigator.pop(context),
-                child: Icon(Icons.arrow_back_ios_new_rounded,
-                    size: 20, color: context.c.text90),
-              ),
-            ),
-            Expanded(
-              child: Text(
-                'Takip Listesi',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700, color: context.c.text90),
-              ),
-            ),
-            SandikTappable(
-              semanticLabel: 'Takibe varlık ekle',
-              onTap: () => pushGuarded(
-                context,
-                adaptiveRoute(
-                  builder: (_) => const AddWatchlistScreen(),
-                  fullscreenDialog: true,
-                ),
-              ),
-              // 44pt dokunma hedefi.
-              child: SizedBox(
-                width: 44,
-                height: 44,
-                child: Icon(Icons.add_rounded,
-                    size: 24, color: context.c.amberText),
-              ),
-            ),
-          ],
-        ),
-      );
 }
 
 /// Dönem seçici — `portfolio_performance_screen.dart`'taki `_buildPeriodToggle`

@@ -72,7 +72,7 @@ void main() {
       expect(home.contains('_WatchlistBadgeButton'), isFalse,
           reason: 'Ana ekranın üst barı zaten dört düğmeyle taşıyordu; '
               'beşincisi marka logosunu sessizce daraltır');
-      expect(home.contains('WatchlistScreen'), isFalse,
+      expect(home.contains('WatchlistBody'), isFalse,
           reason: 'Ana ekran takip listesine giriş noktası SUNMAZ — '
               'giriş Portföy sekmesindedir');
     });
@@ -93,9 +93,8 @@ void main() {
 
     test('alt gezinme çubuğuna BEŞİNCİ sekme eklenmemiş', () {
       // Bar zaten Ana·Portföy·[+]·Performans·Profil ile dolu.
-      expect(nav.contains('WatchlistScreen'), isFalse,
+      expect(nav.contains('WatchlistBody'), isFalse,
           reason: 'beşinci sekme aynı HIG kuralına girer');
-      expect(nav.contains('WatchlistBody'), isFalse);
 
       // Sekme sayısı sabit: dört `_navItem(<indeks>` çağrısı + bir FAB.
       // (Tanımın kendisi `_navItem(int index` olduğu için rakam eşleşmez.)
@@ -145,18 +144,24 @@ void main() {
     });
   });
 
-  group('gövde tek kopya', () {
-    test('tam sayfa ile sekme AYNI gövdeyi gösterir', () async {
+  group('gövde tek yerde', () {
+    test('takip yüzeyi tek bir gövde widget ında', () async {
       // İki kopya olsaydı biri düzelirken öteki bozuk kalırdı — bu projede
       // tekrar eden bir hata sınıfı (bkz. eksen düzeltmesi).
       final watchlist = _yorumsuz(
           await File('lib/screens/watchlist_screen.dart').readAsString());
       expect(watchlist.contains('class WatchlistBody'), isTrue);
-      expect(watchlist.contains('const Expanded(child: WatchlistBody())'),
-          isTrue,
-          reason: 'tam sayfa da aynı gövdeyi kullanmalı');
       expect(charts.contains('const Expanded(child: WatchlistBody())'), isTrue,
-          reason: 'sekme de aynı gövdeyi kullanmalı');
+          reason: 'sekme bu gövdeyi kullanmalı');
+    });
+
+    test('ULAŞILAMAYAN tam sayfa route u kalmadı', () async {
+      // Segment geldikten sonra `WatchlistScreen`'e giden hiçbir yol
+      // kalmamıştı. Ulaşılamayan bir route bakım yükünden başka bir şey
+      // değildir; kaldırıldı.
+      final watchlist = _yorumsuz(
+          await File('lib/screens/watchlist_screen.dart').readAsString());
+      expect(watchlist.contains('class WatchlistScreen'), isFalse);
     });
 
     test('sekmeden de varlık EKLENEBİLİR', () async {
