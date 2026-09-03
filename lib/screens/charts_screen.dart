@@ -61,6 +61,20 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   AssetType? _filteredType;
   _SortOrder _sortOrder = _SortOrder.valueDesc;
 
+  /// Gövde sekmesi: 0 = Varlıklarım, 1 = Takip Listesi.
+  ///
+  /// Takip listesi eskiden bu ekranın EN DİBİNDE, uzun bir listenin altında
+  /// 32pt boşluktan sonra duran bir satırdı — kullanıcı bulgusu "daha görünür
+  /// bir yerde olmalı" idi. Alt gezinme çubuğu ise dolu
+  /// (Ana·Portföy·[+]·Performans·Profil); beşinci bir sekme HIG'in
+  /// "Don't overcrowd with too many buttons" kuralına girerdi ve bu kısıt
+  /// `test/watchlist_placement_test.dart`'ta ölçülmüş bir karar olarak duruyor.
+  ///
+  /// Segment gövdenin EN ÜSTÜNDE: bir dokunuşla görünür, üst bar
+  /// kalabalıklaşmaz. Ortak seçici "Varlıklarım" dalının İÇİNDE kalır —
+  /// iki yatay seçici asla yan yana çizilmez.
+  int _bodyTab = 0;
+
   List<Position> _applyPositionSortOrder(
       List<Position> list, PortfolioState pState) {
     switch (_sortOrder) {
@@ -280,7 +294,24 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                   ],
                 ),
               ),
+              // ── Gövde sekmesi ─────────────────────────────────────────────
+              // Takip listesinin giriş noktası. Gövdenin en üstünde durur;
+              // üst bar (sırala · karşılaştır · çıkış) kalabalıklaşmaz.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: _BodyTabs(
+                  selected: _bodyTab,
+                  count: ref.watch(watchlistCountProvider),
+                  onChanged: (i) => setState(() => _bodyTab = i),
+                ),
+              ),
               // ── Body ──────────────────────────────────────────────────────
+              if (_bodyTab == 1)
+                // Takip listesi ayrı bir veri kümesi: bu ekranın hiçbir
+                // toplamına girmez. Portföy özeti "Varlıklarım" dalının
+                // içinde kaldığı için değişmez korunuyor.
+                const Expanded(child: WatchlistBody())
+              else
               Expanded(
                 child: pStateAsync.when(
                   loading: () => const SandikLoadingScreen(),
@@ -414,14 +445,6 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                                   ],
                                 );
                               })(partnerAssetsAsync.valueOrNull!)),
-                        // Takip listesi girişi — sahip OLDUKLARIN'ın hemen
-                        // altında. "Sahip olduklarım" ile "izlediklerim" aynı
-                        // zihinsel kategoridedir (varlık listesi), bu yüzden
-                        // komşu dururlar; ama araya ayraç girer ve bu satır
-                        // toplamların ALTINDA kalır — izlenen varlığın hiçbir
-                        // toplama girmediği yerleşimden de okunur.
-                        const SizedBox(height: 32),
-                        const _WatchlistEntry(),
                       ],
                     ),
                   ),
@@ -435,85 +458,127 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   }
 }
 
-// ── Takip Listesi Girişi ─────────────────────────────────────────────────────
+// ── Gövde sekmesi ───────────────────────────────────────────────────────────
 
-/// Portföy listesinin altındaki takip listesi satırı.
+/// `Varlıklarım | Takip Listesi` seçicisi.
 ///
-/// ## Neden burada (üst barda ikon DEĞİL)
-/// Önce Ana ekranın üst barına ikon olarak konmuştu. Orası zaten dört
-/// düğmeyle taşıyordu — satırdaki `Flexible`+`FittedBox` sarmalayıcısı o
-/// taşmanın çaresi olarak eklenmişti. Beşinci düğme HIG'in navigation bar
-/// kuralını çiğniyordu ("Don't overcrowd with too many buttons", Severity:
-/// High). Portföy ekranının üst barı da dört kontrol taşıyor; oraya taşımak
-/// sorunu yalnızca yer değiştirirdi.
+/// ## Neden burada (üst barda ikon DEĞİL, alt barda sekme DEĞİL)
+/// Takip listesi ilk olarak Ana ekranın üst barına ikon olarak kondu. Orası
+/// zaten dört düğme taşıyordu ve satır o hâliyle bile taşıyordu: marka
+/// rozetinin `Flexible`+`FittedBox` sarmalayıcısı 17px'lik bir taşmayı
+/// kapatmak için eklenmişti. Beşinci düğme HIG'in navigation bar kuralını
+/// çiğniyordu ("Don't overcrowd with too many buttons" — Severity: High).
+/// Portföy'ün üst barı da üç kontrol taşıyor; oraya taşımak sorunu yalnızca
+/// yer değiştirirdi.
 ///
-/// Takip listesi bir İKON değil, bir VARLIK LİSTESİDİR. Doğru yeri, sahip
-/// olunan varlıkların bittiği yer: aynı zihinsel kategori, komşu konum.
+/// Sonra listenin EN DİBİNE, 32pt boşluktan sonra bir satır olarak kondu.
+/// Orada kimse bulamadı — kullanıcı bulgusu bunun üzerine geldi.
 ///
-/// ## Neden liste burada AÇILMIYOR
-/// Satır yalnızca bir giriş; içerik tam sayfada açılır. Takip listesini bu
-/// ekrana gömmek iki farklı veri kümesini (sahip olunan / izlenen) tek
-/// kaydırma alanında birleştirirdi — kullanıcı ikisinin toplamının ekranın
-/// üstündeki bakiyeye girdiğini sanabilirdi. Bu ekranın DEĞİŞMEZİ toplamların
-/// yalnızca `assets`'ten gelmesidir.
-class _WatchlistEntry extends ConsumerWidget {
-  const _WatchlistEntry();
+/// Alt gezinme çubuğuna beşinci sekme de olmaz: bar zaten
+/// Ana·Portföy·[+]·Performans·Profil ile dolu ve aynı HIG kuralına girer.
+///
+/// Geriye kalan doğru yer gövdenin EN ÜSTÜ: bir dokunuşla görünür, hiçbir
+/// bar kalabalıklaşmaz, ve ortak seçici "Varlıklarım" dalının içinde kaldığı
+/// için iki yatay seçici asla yan yana çizilmez.
+///
+/// ## Neden sayı rozeti var
+/// Sekme, altındaki içerik görünmediğinde ne olduğunu söylemeli. Boş bir
+/// takip listesiyle dolu bir liste arasındaki farkı sekmeye dokunmadan
+/// görmek, dokunmaya değip değmeyeceğini söyler.
+class _BodyTabs extends StatelessWidget {
+  const _BodyTabs({
+    required this.selected,
+    required this.count,
+    required this.onChanged,
+  });
+
+  final int selected;
+  final int count;
+  final ValueChanged<int> onChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(watchlistCountProvider);
-
-    return SandikTappable(
-      semanticLabel: count > 0
-          ? 'Takip listesi, $count varlık. Portföye dahil değil.'
-          : 'Takip listesi, boş',
-      onTap: () => pushGuarded(
-        context,
-        adaptiveRoute(builder: (_) => const WatchlistScreen()),
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: context.c.overlay,
+        borderRadius: BorderRadius.circular(SandikRadius.md),
       ),
-      child: Container(
-        // 44pt HIG dokunma hedefi.
-        constraints: const BoxConstraints(minHeight: 44),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          // Dolgu YOK, yalnızca kenarlık: portföy satırları dolu zeminli.
-          // Görsel ağırlık farkı "bu sahip olduğun bir şey değil" der.
-          border: Border.all(color: context.c.amberFill.withValues(alpha: 0.30)),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              count > 0 ? Icons.visibility_rounded : Icons.visibility_outlined,
-              size: 20,
-              color: context.c.amberText,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        children: [
+          _tab(context, 0, 'Varlıklarım', null),
+          _tab(context, 1, 'Takip Listesi', count > 0 ? count : null),
+        ],
+      ),
+    );
+  }
+
+  Widget _tab(BuildContext context, int i, String label, int? rozet) {
+    final secili = i == selected;
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: secili,
+        label: rozet == null ? label : '$label, $rozet varlık',
+        child: ExcludeSemantics(
+          child: GestureDetector(
+            // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın.
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (secili) return;
+              SandikHaptic.selection.perform();
+              onChanged(i);
+            },
+            child: Container(
+              // 44pt HIG dokunma hedefi.
+              constraints: const BoxConstraints(minHeight: 36),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                // Seçili değilken dolgu YOK — `Colors` bu dosyada import
+                // edilmiyor (material yalnızca `show` listesiyle geliyor).
+                color: secili ? context.c.amberFill : null,
+                borderRadius: BorderRadius.circular(SandikRadius.sm),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Takip Listesi',
-                    style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600, color: context.c.text90),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: context.t.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: secili ? context.c.onAmber : context.c.text58,
+                      ),
+                    ),
                   ),
-                  Text(
-                    count > 0
-                        ? '$count varlık · portföye dahil değil'
-                        : 'Almadan önce izle',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.t.bodySmall
-                        ?.copyWith(color: context.c.text36, fontSize: 11),
-                  ),
+                  if (rozet != null) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: secili
+                            ? context.c.onAmber.withValues(alpha: 0.18)
+                            : context.c.amberFill.withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
+                      ),
+                      child: Text(
+                        '$rozet',
+                        style: context.t.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color:
+                              secili ? context.c.onAmber : context.c.amberText,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(Icons.chevron_right_rounded,
-                size: 20, color: context.c.text36),
-          ],
+          ),
         ),
       ),
     );

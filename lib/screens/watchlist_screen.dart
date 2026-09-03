@@ -30,28 +30,64 @@ import 'add_asset_screen.dart';
 import 'add_watchlist_screen.dart';
 import 'watchlist_detail_screen.dart';
 
-/// Takip listesi — sahip OLMADIĞIN, yalnızca izlediğin varlıklar.
+/// Takip listesinin GÖVDESİ — dönem seçici · grafik · liste · dipnot.
 ///
-/// ## Neden kendi sayfası (Ana ekranda segment değil)
-/// Ana ekranda zaten beş katman var: hero özet · ortak seçici · tür çipleri ·
-/// varlık listesi · hareketler. Oraya bir segment daha koymak ÜÇÜNCÜ yatay
-/// seçici olurdu. Dahası mantık çakışırdı: ortak seçici aynı verinin
-/// filtresidir, takip listesi ise FARKLI bir veri kümesi — ikisini üst üste
-/// koymak "hangi seçici neyi filtreliyor" sorusunu doğurur.
+/// Kendi başına bir sayfa değil: hem tam sayfa [WatchlistScreen] hem de
+/// Portföy ekranının "Takip Listesi" sekmesi bunu gösterir. Tek kopya
+/// olmasının sebebi ikisinin ayrışmaması — giriş noktası değişse de listenin
+/// kendisi her yerde aynı olmalı.
 ///
-/// Bunun yerine üst barda bir ikon (çan deseninin aynısı) ve tam sayfa.
-/// Ana ekran hiç değişmez.
+/// Dikey alanı sınırlı bir ebeveyn ister (`Expanded` içine konur): içindeki
+/// liste kendi kaydırmasını yönetir.
 ///
 /// ## Değişmez
 /// Buradaki hiçbir değer portföy toplamına, kâr/zarara, tür dökümüne veya
 /// grafik serisine girmez. `watchlist` tablosu `assets`'ten ayrıdır.
-class WatchlistScreen extends ConsumerWidget {
-  const WatchlistScreen({super.key});
+class WatchlistBody extends ConsumerWidget {
+  const WatchlistBody({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(watchlistProvider);
 
+    return Column(
+      children: [
+        const _PeriodToggle(),
+        const SizedBox(height: SandikSpace.sm),
+        Expanded(
+          child: async.when(
+            loading: () => const CustomLoadingView(),
+            error: (e, _) => SandikErrorView(
+              error: e,
+              onRetry: () => ref.invalidate(watchlistProvider),
+            ),
+            data: (items) =>
+                items.isEmpty ? const _EmptyState() : _List(items: items),
+          ),
+        ),
+        const _FooterNote(),
+      ],
+    );
+  }
+}
+
+/// Takip listesi — sahip OLMADIĞIN, yalnızca izlediğin varlıklar.
+///
+/// ## Bu sayfa ne zaman görünür
+/// Asıl giriş noktası artık Portföy ekranının üstündeki
+/// `Varlıklarım | Takip Listesi` segmentidir (bkz. `charts_screen.dart`).
+/// Bu tam sayfa, doğrudan `push` edilen yollar için korunuyor.
+///
+/// ## Neden Ana ekranda değil
+/// Ana ekranda zaten beş katman var: hero özet · ortak seçici · tür çipleri ·
+/// varlık listesi · hareketler. Oraya bir segment daha koymak ÜÇÜNCÜ yatay
+/// seçici olurdu. Portföy ekranında ise segment EN ÜSTTE duruyor ve ortak
+/// seçici onun altındaki dalın içinde kalıyor — ikisi asla yan yana çizilmez.
+class WatchlistScreen extends ConsumerWidget {
+  const WatchlistScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(
           color: context.c.text90, decoration: TextDecoration.none),
@@ -65,21 +101,7 @@ class WatchlistScreen extends ConsumerWidget {
             child: Column(
               children: [
                 _header(context),
-                const _PeriodToggle(),
-                const SizedBox(height: SandikSpace.sm),
-                Expanded(
-                  child: async.when(
-                    loading: () => const CustomLoadingView(),
-                    error: (e, _) => SandikErrorView(
-                      error: e,
-                      onRetry: () => ref.invalidate(watchlistProvider),
-                    ),
-                    data: (items) => items.isEmpty
-                        ? const _EmptyState()
-                        : _List(items: items),
-                  ),
-                ),
-                const _FooterNote(),
+                const Expanded(child: WatchlistBody()),
               ],
             ),
           ),
@@ -204,8 +226,8 @@ class _List extends ConsumerWidget {
 
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-      // +2: grafik kartı ve sayı başlığı.
-      itemCount: items.length + 2,
+      // +3: grafik kartı, sayı başlığı ve sondaki ekleme satırı.
+      itemCount: items.length + 3,
       separatorBuilder: (_, __) => const SizedBox(height: SandikSpace.sm),
       itemBuilder: (context, i) {
         // Grafik listeyle BİRLİKTE kayar (üstte sabit değil): dar ekranda
@@ -223,6 +245,13 @@ class _List extends ConsumerWidget {
             ),
           );
         }
+        // Ekleme satırı listenin SONUNDA.
+        //
+        // Gövde artık Portföy ekranının bir sekmesi olarak da gösteriliyor ve
+        // orada tam sayfanın üst barı (dolayısıyla oradaki "+" düğmesi) yok.
+        // Ekleme yolu listenin kendisinde olmalı, yoksa dolu bir takip
+        // listesine ikinci bir varlık eklemenin hiçbir yolu kalmıyor.
+        if (i == items.length + 2) return const _AddRow();
         return _Row(item: items[i - 2]);
       },
     );
@@ -688,6 +717,48 @@ class _EmptyState extends StatelessWidget {
 }
 
 /// En kritik ayrımı sürekli görünür tutar.
+/// Listenin sonundaki "Takibe varlık ekle" satırı.
+class _AddRow extends StatelessWidget {
+  const _AddRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return SandikTappable(
+      semanticLabel: 'Takibe varlık ekle',
+      onTap: () => pushGuarded(
+        context,
+        adaptiveRoute(
+          builder: (_) => const AddWatchlistScreen(),
+          fullscreenDialog: true,
+        ),
+      ),
+      child: Container(
+        // 44pt HIG dokunma hedefi.
+        constraints: const BoxConstraints(minHeight: 44),
+        margin: const EdgeInsets.only(top: 4),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(SandikRadius.md),
+          border:
+              Border.all(color: context.c.amberFill.withValues(alpha: 0.30)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add_rounded, size: 18, color: context.c.amberText),
+            const SizedBox(width: 8),
+            Text(
+              'Takibe varlık ekle',
+              style: context.t.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600, color: context.c.amberText),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _FooterNote extends StatelessWidget {
   const _FooterNote();
 
