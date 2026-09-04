@@ -5,7 +5,31 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-08-13
+**Son güncelleme:** 2026-09-04
+
+---
+
+## ⏸️ ERTELENDİ — `seyreltSpots` çağıransız duruyor
+
+**Karar tarihi:** 2026-09-04 · **Karar:** kullanıcı
+
+`lib/utils/series_downsample.dart` içindeki `seyreltSpots` artık üretimde
+hiçbir yerden çağrılmıyor. Tek çağıranı `percent_comparison_chart` idi;
+kullanıcı çizim sıklığının performans ekranıyla **birebir** olmasını
+isteyince kaldırıldı — performans ekranı çizgiyi hiç seyreltmez, sıklığı
+yalnızca `ResolutionTier` belirler.
+
+**Neden silinmedi:** kural (kova başına min+max koruyarak seyreltme, dış
+zarfı bozmadan) doğru ve beş testle korunuyor. Tier'sız ham bir seri
+çizmek gerekirse (örn. ileride bir CSV/içe aktarma grafiği) cevabı budur;
+silinip yeniden yazılması, aynı tuzağa (naif her-n'inci-nokta seyreltme,
+sıçramayı gizler) yeniden düşme riski taşır.
+
+**Ertelemenin maliyeti:** ~60 satır ölü kod + 5 test. Çalışma zamanına
+sıfır etki.
+
+**Ele alınma zamanı:** bir sonraki grafik temizliğinde hâlâ çağıranı
+yoksa testleriyle birlikte silinsin.
 
 ---
 

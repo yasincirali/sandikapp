@@ -10,6 +10,7 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_line_width.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
@@ -1781,16 +1782,12 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               .map((seg) {
                                 // Trading estetiği: dönem uzadıkça ince
                                 // çizgi, kısa dönemde biraz belirgin.
+                                // Merdiven `chart_line_width.dart`'ta —
+                                // takip/karşılaştır grafiği de aynı
+                                // fonksiyonu çağırır.
                                 final periodDays = _periods[_selectedPeriodIdx].days;
-                                final baseWidth = periodDays <= 7
-                                    ? 2.0
-                                    : periodDays <= 30
-                                        ? 2.4
-                                        : periodDays <= 90
-                                            ? 2.0
-                                            : periodDays <= 180
-                                                ? 1.8
-                                                : 1.5;
+                                final baseWidth =
+                                    donemCizgiKalinligi(periodDays);
                                 final effective = seg.dashed ? seg.thickness : baseWidth;
                                 return LineChartBarData(
                                     spots: seg.spots,

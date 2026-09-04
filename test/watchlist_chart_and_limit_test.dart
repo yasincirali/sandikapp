@@ -6,6 +6,7 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
 import 'package:portfoy_takip/services/history_service.dart';
+import 'package:portfoy_takip/utils/chart_line_width.dart';
 import 'package:portfoy_takip/widgets/watchlist_chart.dart';
 
 /// Takip listesi grafiği + free tier limiti.
@@ -142,8 +143,26 @@ void main() {
 
     test('portföy çizgisi görsel olarak AYIRT EDİLİR', () {
       // Renk tek başına yeterli değil; kalınlık da farklı olmalı.
-      expect(chart.contains('vurgulu ? 3 : 1.8'), isTrue,
+      //
+      // Kalınlık artık SABİT değil (eskiden 'vurgulu ? 3 : 1.8'): dönemle
+      // birlikte değişiyor ve merdiven performans ekranıyla ortak
+      // (`chart_line_width.dart`). Denetlenen değişmez aynı kaldı — kıyas
+      // çizgisi diğerlerinden kalın çizilir — ama artık her dönemde.
+      expect(chart.contains('kiyasCizgiKalinligi('), isTrue,
           reason: 'kıyas çizgisi kalınlıktan da okunmalı');
+      expect(chart.contains('vurgulu: vurgulu'), isTrue,
+          reason: 'vurgu bayrağı kalınlığa geçmeli');
+      expect(vurguKalinlikArtisi, greaterThanOrEqualTo(1.0),
+          reason: '1px altındaki fark telefonda gözle seçilmiyor');
+      for (final gun in [1, 7, 30, 180, 365]) {
+        expect(
+          kiyasCizgiKalinligi(periodDays: gun, vurgulu: true, odakta: false),
+          greaterThan(
+              kiyasCizgiKalinligi(
+                  periodDays: gun, vurgulu: false, odakta: false)),
+          reason: '$gun günlük dönemde kıyas çizgisi ayrışmıyor',
+        );
+      }
     });
 
     test('sıfır çizgisi (dönem başı) çizilir', () {
@@ -517,8 +536,14 @@ void main() {
       final chart = _yorumsuz(
           await File('lib/widgets/percent_comparison_chart.dart')
               .readAsString());
-      expect(chart.contains('buOdakta ?'), isTrue,
+      expect(chart.contains('odakta: buOdakta'), isTrue,
           reason: 'soluklaşmaya ek olarak kalınlık da değişmeli');
+      expect(odakKalinlikArtisi, greaterThan(0.0));
+      expect(
+        kiyasCizgiKalinligi(periodDays: 30, vurgulu: false, odakta: true),
+        greaterThan(
+            kiyasCizgiKalinligi(periodDays: 30, vurgulu: false, odakta: false)),
+      );
     });
 
     test('bayat odak temizlenir', () async {

@@ -21,6 +21,14 @@ import 'package:fl_chart/fl_chart.dart';
 ///
 /// [hedefNokta] kabaca çizim alanının piksel genişliği kadar verilmelidir.
 /// Bu değerin altındaki seriler olduğu gibi döner.
+///
+/// ## Şu an ÇAĞIRANI YOK (bilinçli)
+/// `percent_comparison_chart` bunu kullanıyordu; kullanıcı sıklığın performans
+/// ekranıyla BİREBİR olmasını isteyince çağrı kaldırıldı — performans ekranı
+/// çizgiyi hiç seyreltmez, sıklığı yalnızca `ResolutionTier` belirler.
+/// Fonksiyon ve testleri duruyor: kural (zarfı bozmadan seyreltme) hâlâ
+/// doğru ve bir gün ham (tier'sız) bir seri çizmek gerekirse cevabı budur.
+/// Silinirse gerekçesiyle birlikte silinsin.
 List<FlSpot> seyreltSpots(List<FlSpot> spots, int hedefNokta) {
   if (hedefNokta < 4 || spots.length <= hedefNokta) return spots;
 

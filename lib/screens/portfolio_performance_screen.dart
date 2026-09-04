@@ -13,6 +13,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_line_width.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
@@ -1829,18 +1830,15 @@ class _PortfolioPerformanceScreenState
           // Nokta yoğunluğu arttıkça çizgi inceltilir — intraday ve haftalık
           // (saatlik) yüzlerce nokta içerir, kalın çizgi zigzag'i yutar.
           // Trading uygulamalarındaki gibi ince ve okunaklı bir hat için:
+          //
+          // Merdivenin kendisi `chart_line_width.dart`'ta: takip/karşılaştır
+          // grafiği de AYNI fonksiyonu çağırıyor. Kopyalanmış üç merdiven,
+          // iki ekranın aynı dönemi farklı kalınlıkta çizmesinin sebebiydi.
+          //
+          // Gün içi sekmesi `days: 0` taşır; fonksiyon `<= 1` dalında zaten
+          // gün içi kalınlığını verir, ayrıca `intraday` sormaya gerek yok.
           final periodDays = _periods[_selectedPeriodIdx].days;
-          final activeBarWidth = intraday
-              ? 1.6
-              : periodDays <= 7
-                  ? 2.0
-                  : periodDays <= 30
-                      ? 2.4
-                      : periodDays <= 90
-                          ? 2.0
-                          : periodDays <= 180
-                              ? 1.8
-                              : 1.5;
+          final activeBarWidth = donemCizgiKalinligi(periodDays);
           final effectiveBarWidth = isActive ? activeBarWidth : seg.thickness;
           // İlk/son X'i closure dışında bir kez oku. Bu callback'ler
           // fl_chart tarafından NOKTA BAŞINA çağrılıyor; içeride

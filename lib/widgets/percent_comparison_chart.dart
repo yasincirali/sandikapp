@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_axis.dart';
-import '../utils/series_downsample.dart';
+import '../utils/chart_line_width.dart';
 import '../utils/spot_lookup.dart';
 import '../utils/tr_format.dart';
 import 'zoomable_chart.dart';
@@ -108,168 +108,112 @@ class PercentComparisonChart extends StatelessWidget {
     final ciz = _hazirla();
     if (ciz == null) return _bosDurum(context);
 
-    return LayoutBuilder(builder: (context, kisit) {
-      // Seyreltme hedefi GERÇEK çizim genişliğinden hesaplanır; sabit bir
-      // sayı dar telefonda çok yoğun, geniş ekranda gereksiz kaba olurdu.
-      final hedefNokta = hedefNoktaSayisi(
-        kisitGenisligi: kisit.maxWidth,
-        periodDays: periodDays,
-      );
-
-      return ZoomableChart(
-        height: height,
-        fullMinX: ciz.minX,
-        fullMaxX: ciz.maxX,
-        bottomAxisHeight: _bottomAxisHeight,
-        // Sol Y ekseni rezervi — crosshair'in etiket bandına girmemesi için
-        // `leftTitles.reservedSize` ile AYNI olmak zorunda.
-        plotPaddingLeft: _yEkseniGenisligi,
-        crosshairSnapX: (x) {
-          // En yoğun seriye snap: dikey çizgi gerçek bir veri noktasına otursun,
-          // aradaki boşluğa değil.
-          final spots = ciz.snapSpots;
-          if (spots.isEmpty) return x;
-          // **Clamp EKSENE, snap serisine DEĞİL.** Snap serisi ekseni tam
-          // kaplamayabilir (BIST hissesi yalnızca seans saatlerini kapsar,
-          // eksen ise geceyi de içerir). Seriye clamp'lemek ekseninin bir
-          // bölümünü ÖLÜ BÖLGEYE çeviriyordu: kullanıcı sola dokunduğunda
-          // crosshair 14 saat sağa zıplıyor ve grafiğin %64'ünde hiç
-          // gezdirilemiyordu — "tüm grafiğin üzerinde gezdiremiyorum" bulgusu.
-          final clamped = x.clamp(ciz.minX, ciz.maxX);
-          // `_degerAt` ve `crosshairLabelBuilder` ile AYNI arama — üçü ayrışırsa
-          // dikey çizgi bir noktayı, etiket başka bir noktayı gösterir.
-          final i = coveringSpotIndex(spots, clamped);
-          // Eksenin başı snap serisinden önceyse ham konumu koru: zıplatmak
-          // yerine çizgi parmağın altında kalsın.
-          return i < 0 ? clamped : spots[i].x;
-        },
-        crosshairLabelBuilder: (x) {
-          final spots = ciz.snapSpots;
-          if (spots.isEmpty) return null;
-          // Değer ile TARİH aynı noktadan okunur. Eskiden yüzde en yakın
-          // noktadan, tarih ise ham `x`'ten geliyordu; snap sonrası ikisi
-          // birbirini tutuyordu ama snap noktası ile ham `x` arasındaki fark
-          // kadar tarih kayabiliyordu. Tek kaynak = tutarlılık garantisi.
-          final i = coveringSpotIndex(spots, x);
-          // Snap serisi henüz başlamamışsa yüzde göstermek uydurma olurdu;
-          // tarih yine de gösterilir — kullanıcı nereye baktığını bilmeli.
-          if (i < 0) {
-            final t = DateTime.fromMillisecondsSinceEpoch(x.round());
-            final span = ciz.maxX - ciz.minX;
-            final b = span < const Duration(days: 2).inMilliseconds
-                ? DateFormat('d MMM HH:mm', 'tr_TR')
-                : DateFormat('d MMM yyyy', 'tr_TR');
-            return ('—', b.format(t));
-          }
-          final s = spots[i];
-          final tarih = DateTime.fromMillisecondsSinceEpoch(s.x.round());
-          // Gün içi seride tarih tek başına yetmez — saat de gösterilmeli,
-          // yoksa "4 Eyl 2026" etiketi 288 noktanın hepsi için aynı görünür.
+    // Not: burada bir zamanlar `LayoutBuilder` vardı — piksel bazlı seyreltme
+    // gerçek çizim genişliğini bilmek zorundaydı. Seyreltme kalkınca kısıtı
+    // okumaya gerek kalmadı; [ZoomableChart] zaten kendi `LayoutBuilder`ını
+    // kuruyor.
+    return ZoomableChart(
+      height: height,
+      fullMinX: ciz.minX,
+      fullMaxX: ciz.maxX,
+      bottomAxisHeight: _bottomAxisHeight,
+      // Sol Y ekseni rezervi — crosshair'in etiket bandına girmemesi için
+      // `leftTitles.reservedSize` ile AYNI olmak zorunda.
+      plotPaddingLeft: _yEkseniGenisligi,
+      crosshairSnapX: (x) {
+        // En yoğun seriye snap: dikey çizgi gerçek bir veri noktasına otursun,
+        // aradaki boşluğa değil.
+        final spots = ciz.snapSpots;
+        if (spots.isEmpty) return x;
+        // **Clamp EKSENE, snap serisine DEĞİL.** Snap serisi ekseni tam
+        // kaplamayabilir (BIST hissesi yalnızca seans saatlerini kapsar,
+        // eksen ise geceyi de içerir). Seriye clamp'lemek ekseninin bir
+        // bölümünü ÖLÜ BÖLGEYE çeviriyordu: kullanıcı sola dokunduğunda
+        // crosshair 14 saat sağa zıplıyor ve grafiğin %64'ünde hiç
+        // gezdirilemiyordu — "tüm grafiğin üzerinde gezdiremiyorum" bulgusu.
+        final clamped = x.clamp(ciz.minX, ciz.maxX);
+        // `_degerAt` ve `crosshairLabelBuilder` ile AYNI arama — üçü ayrışırsa
+        // dikey çizgi bir noktayı, etiket başka bir noktayı gösterir.
+        final i = coveringSpotIndex(spots, clamped);
+        // Eksenin başı snap serisinden önceyse ham konumu koru: zıplatmak
+        // yerine çizgi parmağın altında kalsın.
+        return i < 0 ? clamped : spots[i].x;
+      },
+      crosshairLabelBuilder: (x) {
+        final spots = ciz.snapSpots;
+        if (spots.isEmpty) return null;
+        // Değer ile TARİH aynı noktadan okunur. Eskiden yüzde en yakın
+        // noktadan, tarih ise ham `x`'ten geliyordu; snap sonrası ikisi
+        // birbirini tutuyordu ama snap noktası ile ham `x` arasındaki fark
+        // kadar tarih kayabiliyordu. Tek kaynak = tutarlılık garantisi.
+        final i = coveringSpotIndex(spots, x);
+        // Snap serisi henüz başlamamışsa yüzde göstermek uydurma olurdu;
+        // tarih yine de gösterilir — kullanıcı nereye baktığını bilmeli.
+        if (i < 0) {
+          final t = DateTime.fromMillisecondsSinceEpoch(x.round());
           final span = ciz.maxX - ciz.minX;
-          final bicim = span < const Duration(days: 2).inMilliseconds
+          final b = span < const Duration(days: 2).inMilliseconds
               ? DateFormat('d MMM HH:mm', 'tr_TR')
               : DateFormat('d MMM yyyy', 'tr_TR');
-          return (
-            fmtPct(s.y, digits: 1, showSign: true),
-            bicim.format(tarih),
-          );
-        },
-        // Crosshair açıkken her serinin o andaki değeri listelenir — kıyasın
-        // asıl sorusu "şu tarihte kim neredeydi".
-        crosshairDetailsBuilder: (x) => [
-          for (var i = 0; i < ciz.cizilenler.length; i++)
-            if (_degerAt(ciz.bars[i].spots, x) case final y?)
-              (
-                '${labelOf(ciz.cizilenler[i])}  '
-                    '${fmtPct(y, digits: 1, showSign: true)}',
-                colorOf(ciz.cizilenler[i])
-              ),
-        ],
-        builder: (minX, maxX) => _data(p, ciz, minX, maxX, hedefNokta),
-      );
-    });
+          return ('—', b.format(t));
+        }
+        final s = spots[i];
+        final tarih = DateTime.fromMillisecondsSinceEpoch(s.x.round());
+        // Gün içi seride tarih tek başına yetmez — saat de gösterilmeli,
+        // yoksa "4 Eyl 2026" etiketi 288 noktanın hepsi için aynı görünür.
+        final span = ciz.maxX - ciz.minX;
+        final bicim = span < const Duration(days: 2).inMilliseconds
+            ? DateFormat('d MMM HH:mm', 'tr_TR')
+            : DateFormat('d MMM yyyy', 'tr_TR');
+        return (
+          fmtPct(s.y, digits: 1, showSign: true),
+          bicim.format(tarih),
+        );
+      },
+      // Crosshair açıkken her serinin o andaki değeri listelenir — kıyasın
+      // asıl sorusu "şu tarihte kim neredeydi".
+      crosshairDetailsBuilder: (x) => [
+        for (var i = 0; i < ciz.cizilenler.length; i++)
+          if (_degerAt(ciz.bars[i].spots, x) case final y?)
+            (
+              '${labelOf(ciz.cizilenler[i])}  '
+                  '${fmtPct(y, digits: 1, showSign: true)}',
+              colorOf(ciz.cizilenler[i])
+            ),
+      ],
+      builder: (minX, maxX) => _data(p, ciz, minX, maxX),
+    );
   }
 
   /// `leftTitles.reservedSize` ile aynı — ikisi ayrışırsa crosshair etiket
   /// bandının içine girer.
   static const _yEkseniGenisligi = 42.0;
 
-  /// İki komşu nokta arasında bırakılacak asgari yatay mesafe (piksel).
+  /// Viewport'a düşen noktalar — **seyreltilmeden**.
   ///
-  /// **Neden sabit bir nokta sayısı değil.** Önce sabit 160 nokta hedefi
-  /// vardı; telefonun ~300px'lik çizim alanında bu, nokta başına 1,9px
-  /// demekti — 5 dakikalık gün içi seride (288 nokta) neredeyse hiç
-  /// seyreltme yapmıyor, çizgi kendi üstüne binerek karalamaya dönüşüyordu.
-  /// Ölçüldü: GÜNLÜK sekmesinde 288 nokta → 160 nokta, yani %44 azalma;
-  /// 3px kuralıyla aynı seri ~100 noktaya iner ve zikzak açılır.
+  /// ## Neden seyreltme YOK
+  /// Burada bir zamanlar piksel bazlı bir seyreltme vardı (3px kuralı, gün
+  /// içinde 7px) ve GÜNLÜK seriyi 288 noktadan ~42'ye indiriyordu. Performans
+  /// ekranı ise aynı günü aynı genişlikte **288 noktanın tamamıyla** çiziyor:
+  /// çizgi orada hiç seyreltilmez, sıklığı yalnızca [ResolutionTier] belirler.
+  /// Aynı portföyün aynı günü iki ekranda iki farklı çözünürlükte
+  /// görünüyordu — kullanıcı bulgusu: "zaman aralığı seçildiğinde data
+  /// çizilirken sıklık değeri de performans ekranındaki charttaki gibi
+  /// birebir olmalı."
   ///
-  /// Hedef gerçek genişlikten hesaplandığı için tablet/yatay modda otomatik
-  /// olarak daha çok detay gösterilir — sabit sayı orada tersine, gereksiz
-  /// bilgi kaybı demekti.
+  /// Sıklık artık TEK yerden gelir: `ResolutionTierMeta.pickForSpan` (gün içi
+  /// 5 dk · 1H saatlik · 1A/6A günlük · 1Y haftalık). Grafik katmanı o kararı
+  /// ikinci kez ezmez; ezmesi, iki ekranın ayrışmasının tek sebebiydi.
   ///
-  /// 3px: fl_chart çizgiyi 1,8–4px kalınlıkta çiziyor, yani bundan sık
-  /// noktalar çizginin kendi kalınlığının içinde kalır.
-  static const _pikselBasinaNokta = 3.0;
-
-  /// GÜNLÜK için aynı kuralın seyreltilmiş hâli.
+  /// Okunurluk artık ÇİZGİ KALINLIĞIYLA sağlanır ([donemCizgiKalinligi]):
+  /// yoğun dönemlerde çizgi incelir, seyrek dönemlerde kalınlaşır — performans
+  /// ekranının kuralının aynısı.
   ///
-  /// **Neden gün içi AYRI:** diğer dönemler günlük/haftalık kapanış taşır ve
-  /// 3px kuralıyla zaten okunur çıkıyor (kullanıcı: "diğerleri düzgün
-  /// çalışıyor"). Gün içi seri 5 dakikalıktır ve taşıdığı dalgalanmanın
-  /// büyük kısmı alım-satım gürültüsüdür; aynı kural orada ~100 zikzak
-  /// üretiyor ve çizgi tarak gibi görünüyordu.
-  ///
-  /// **Seyreltme çizgiyi DÜZLEŞTİRMEZ.** `seyreltSpots` her kova için en
-  /// düşük ve en yüksek noktayı korur — dış zarf birebir aynı kalır, yalnızca
-  /// aradaki okunamayan salınım azalır. Kasıtlı: fiyat grafiğini yumuşatmak,
-  /// veride gerçekten olan bir sıçramayı gizlemek demektir.
-  ///
-  /// 7px ~300px'lik telefon çizim alanında ~42 nokta demek; 5 dakikalık
-  /// tam günde (288 nokta) her kova ~14 dakikayı temsil eder. Zoom
-  /// yapıldıkça pencere daralır ve detay geri gelir.
-  static const _gunIciPikselBasinaNokta = 7.0;
-
-  /// Çizim alanı genişliği okunamadığında (sonsuz constraint) varsayılan.
-  static const _varsayilanGenislik = 360.0;
-
-  /// Viewport'a kaç nokta serpiştirileceği.
-  ///
-  /// `build` içine gömülü bir ifade olarak duruyordu ve o hâliyle hiçbir
-  /// testle denetlenemiyordu: gün içi kuralının sessizce kaybolması ya da
-  /// diğer dönemlerle eşitlenmesi fark edilmezdi. Saf fonksiyon olarak
-  /// ayrılması kuralı doğrudan sorulabilir yapar.
-  ///
-  /// [kisitGenisligi] LayoutBuilder'ın verdiği ham genişliktir; Y ekseni
-  /// rezervi burada düşülür.
-  ///
-  /// Alt sınır 20: dar bir telefonda gün içi kuralı 40'a kırpılsaydı kural
-  /// pratikte devre dışı kalırdı (300px/7 ≈ 43, 200px/7 ≈ 29).
-  /// `seyreltSpots` 4'ün altında zaten seyreltme yapmıyor.
-  @visibleForTesting
-  static int hedefNoktaSayisi({
-    required double kisitGenisligi,
-    required int periodDays,
-  }) {
-    final cizimGenisligi =
-        (kisitGenisligi.isFinite ? kisitGenisligi : _varsayilanGenislik) -
-            _yEkseniGenisligi;
-    // Gün içi seri diğerlerinden çok daha sık örneklenir; aralık kuralı da
-    // o yüzden döneme bağlı (bkz. [_gunIciPikselBasinaNokta]).
-    final aralik =
-        periodDays <= 1 ? _gunIciPikselBasinaNokta : _pikselBasinaNokta;
-    return (cizimGenisligi / aralik).round().clamp(20, 400);
-  }
-
-  /// Viewport'a düşen noktalar, ekran yoğunluğuna indirgenmiş.
-  ///
-  /// Seyreltme HER VIEWPORT için yeniden yapılır: zoom yapıldıkça aynı
-  /// pencereye daha az ham nokta düşer ve detay geri gelir — `ZoomableChart`
-  /// ile `DotThinner`'ın zaten verdiği söz.
-  ///
-  /// Kenarların bir dışındaki nokta korunur; aksi halde çizgi grafiğin
-  /// kenarına ulaşmadan biter.
+  /// Kırpma kalıyor: viewport dışındaki noktaları fl_chart'a vermek zoom'da
+  /// gereksiz iş demek. Kenarların bir DIŞINDAKİ nokta korunur, aksi halde
+  /// çizgi grafiğin kenarına ulaşmadan biter.
   static List<FlSpot> _gorunurSpots(
-      List<FlSpot> tam, double minX, double maxX, int hedefNokta) {
+      List<FlSpot> tam, double minX, double maxX) {
     if (tam.length < 2) return tam;
 
     var bas = 0;
@@ -281,7 +225,7 @@ class PercentComparisonChart extends StatelessWidget {
       son--;
     }
 
-    return seyreltSpots(tam.sublist(bas, son + 1), hedefNokta);
+    return tam.sublist(bas, son + 1);
   }
 
   Widget _bosDurum(BuildContext context) => SizedBox(
@@ -364,7 +308,19 @@ class PercentComparisonChart extends StatelessWidget {
         color: odakVar && !buOdakta
             ? temelRenk.withValues(alpha: 0.18)
             : temelRenk,
-        barWidth: buOdakta ? (vurgulu ? 4 : 3) : (vurgulu ? 3 : 1.8),
+        // **Kalınlık DÖNEME bağlı** — performans ekranıyla birebir aynı
+        // merdiven ([donemCizgiKalinligi]). Eskiden sabitti (1,8 / vurgulu 3)
+        // ve gün içi 288 noktalık seride komşu noktaların arasını doldurup
+        // zikzağı yutuyordu; 1Y'nin 52 noktalık serisinde ise aynı kalınlık
+        // gereksiz cılız kalıyordu.
+        //
+        // Vurgu (kıyas çizgisi) ve odak bu tabanın ÜSTÜNE eklenir, yani
+        // hiyerarşi her dönemde korunur.
+        barWidth: kiyasCizgiKalinligi(
+          periodDays: periodDays,
+          vurgulu: vurgulu,
+          odakta: buOdakta,
+        ),
         // Tüm çizgi grafiklerde AYNI: eğri interpolasyon veride olmayan
         // tepe ve dip uydurur, fiyat grafiğinde bu yanıltıcıdır.
         isCurved: false,
@@ -398,8 +354,8 @@ class PercentComparisonChart extends StatelessWidget {
     );
   }
 
-  LineChartData _data(SandikPalette p, _CizimVerisi ciz, double minX,
-      double maxX, int hedefNokta) {
+  LineChartData _data(
+      SandikPalette p, _CizimVerisi ciz, double minX, double maxX) {
     final eksen = ciz.eksen;
     final span = maxX - minX;
 
@@ -408,11 +364,24 @@ class PercentComparisonChart extends StatelessWidget {
       maxX: maxX,
       minY: eksen.min,
       maxY: eksen.max,
+      // **Çizim kendi kutusunun dışına taşmaz.** `LineChart` bir
+      // ImplicitlyAnimatedWidget: pan/pinch sırasında eski ve yeni
+      // `LineChartData` arasında lerp'liyor ve ara karelerde noktalar anlık
+      // olarak minY/maxY'nin dışına düşebiliyor. Clip yokken o karelerde
+      // çizgiler Y ekseni etiketlerinin ve ızgaranın üstüne basıyordu
+      // (kullanıcı ekran görüntüsü: yeşil çizgi "+10,0%" etiketini kesiyor).
+      //
+      // Stack'in `Clip.hardEdge`'i yalnızca KARTIN dışına taşmayı engelliyor;
+      // çizim alanının kendi sınırını fl_chart'a bu bayrak söyler. Performans
+      // ekranlarının ikisi de aynı bayrağı taşıyor — grafikler burada da
+      // birebir aynı davranır.
+      clipData: const FlClipData.all(),
       // Bar'lar TAM çözünürlükte tutulur (crosshair gerçek veriye snap etsin),
-      // çizime giderken viewport'a kırpılıp seyreltilir.
+      // çizime giderken yalnızca viewport'a kırpılır — seyreltme YOK
+      // (bkz. [_gorunurSpots]).
       lineBarsData: [
         for (final b in ciz.bars)
-          b.copyWith(spots: _gorunurSpots(b.spots, minX, maxX, hedefNokta)),
+          b.copyWith(spots: _gorunurSpots(b.spots, minX, maxX)),
       ],
       // Sıfır çizgisi = dönem başı. Olmadan yüzdelerin neye göre okunacağı
       // belirsiz kalır.

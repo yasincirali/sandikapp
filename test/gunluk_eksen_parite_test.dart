@@ -8,7 +8,7 @@ import 'package:portfoy_takip/providers/watchlist_provider.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/utils/chart_axis.dart';
-import 'package:portfoy_takip/utils/series_downsample.dart';
+import 'package:portfoy_takip/utils/chart_line_width.dart';
 import 'package:portfoy_takip/widgets/watchlist_chart.dart';
 
 /// **Takip listesinin GÜNLÜK ekseni, performans ekranının GÜNLÜK ekseniyle
@@ -248,37 +248,34 @@ void main() {
     });
   });
 
-  group('nokta yoğunluğu — çizgi kendi üstüne binmez', () {
-    test('hedef GENİŞLİKTEN hesaplanır, sabit değil', () async {
-      // Sabit 160 nokta, ~300px'lik telefon çizim alanında nokta başına
-      // 1,9px demekti; 5 dakikalık gün içi seri (288 nokta) neredeyse hiç
-      // seyrelmiyordu.
+  group('nokta sıklığı — performans ekranıyla birebir', () {
+    // Buradaki eski iki test piksel bazlı seyreltmeyi savunuyordu (288 nokta
+    // → ~100). Kullanıcı sonradan sıklığın performans ekranıyla BİREBİR
+    // olmasını istedi; performans ekranı çizgiyi hiç seyreltmez, sıklığı
+    // yalnızca `ResolutionTier` belirler. Grafik katmanının o kararı ikinci
+    // kez ezmesi, iki ekranın aynı günü farklı çözünürlükte göstermesinin
+    // tek sebebiydi.
+    test('grafik katmanı ResolutionTier kararını ezmiyor', () async {
       final src =
-          await File('lib/widgets/percent_comparison_chart.dart').readAsString();
+          (await File('lib/widgets/percent_comparison_chart.dart').readAsString())
+              .split('\n')
+              .where((l) => !l.trimLeft().startsWith('//'))
+              .where((l) => !l.trimLeft().startsWith('///'))
+              .join('\n');
 
+      expect(src.contains('seyreltSpots('), isFalse,
+          reason: 'çizim yolunda seyreltme geri gelmiş');
+      expect(src.contains('_pikselBasinaNokta'), isFalse,
+          reason: 'piksel bazlı nokta hedefi geri gelmiş');
       expect(src.contains('_hedefNokta = 160'), isFalse,
           reason: 'sabit nokta hedefi geri gelmiş');
-      expect(src.contains('_pikselBasinaNokta'), isTrue,
-          reason: 'hedef piksel mesafesinden türetilmeli');
-      expect(src.contains('LayoutBuilder'), isTrue,
-          reason: 'gerçek çizim genişliği olmadan piksel kuralı uygulanamaz');
     });
 
-    test('gün içi seri okunur yoğunluğa iner', () {
-      // 288 nokta (5 dk × 24 sa) → ~300px çizim alanı, 3px kuralı ile 100.
-      final gun = [
-        for (var i = 0; i < 288; i++)
-          FlSpot(i.toDouble(), (i % 11).toDouble())
-      ];
-      final k = seyreltSpots(gun, 100);
-
-      expect(k.length, lessThanOrEqualTo(110));
-      expect(k.length, greaterThan(60),
-          reason: 'fazla seyreltmek hareketi siler');
-      // Ortalama nokta aralığı en az 2,5px olmalı.
-      expect(300 / k.length, greaterThanOrEqualTo(2.5),
-          reason: 'nokta başına ${(300 / k.length).toStringAsFixed(1)}px — '
-              'çizgi kendi kalınlığının içinde kalır');
+    test('okunurluk kalınlıktan gelir — dönemle değişir', () {
+      // Seyreltme kalktığına göre yoğun serinin okunur kalmasını sağlayan
+      // tek şey ince çizgi. Kural kaybolursa GÜNLÜK yine tarak görünür.
+      expect(donemCizgiKalinligi(1), lessThan(donemCizgiKalinligi(30)));
+      expect(donemCizgiKalinligi(365), lessThan(donemCizgiKalinligi(30)));
     });
   });
 
