@@ -124,7 +124,27 @@ Map<String, Map<int, double>> ortakPencereyeHizala(
       if (k > son) son = k;
     }
   }
-  final bas = son - Duration(days: periodDays).inMilliseconds;
+  // **GÜNLÜK bir TAKVİM GÜNÜDÜR — kayan 24 saat değil.**
+  //
+  // `clipToPeriod` sembol serilerini zaten günün 00:00'ına kırpıyordu, ama
+  // pencere burada yeniden 24 saate açılınca o kırpma GERİ ALINIYORDU: her
+  // seri pencerenin soluna kendi ilk değeriyle doldurulduğu için ekranın
+  // solunda düz, sahte bir bölüm doğuyordu ve alt eksende DÜNÜN saatleri
+  // yazıyordu. Ölçüldü: saat 14:30'da eksen "dün 14:30 → bugün 14:30" ve
+  // ilk %39,6'sı gece yarısından önceye düşen düz çizgi. Performans ekranı
+  // ise aynı günü 00:00'dan çizer.
+  //
+  // Çapa `now` değil SON NOKTANIN GÜNÜ — `clipToPeriod` ile aynı kural:
+  // borsa hafta sonu kapalıdır, `now`'dan saymak Pazar günü bugünün boş
+  // gününü çizip Cuma seansını dışarıda bırakırdı.
+  final int bas;
+  if (periodDays <= 1) {
+    final sonGun = DateTime.fromMillisecondsSinceEpoch(son);
+    bas = DateTime(sonGun.year, sonGun.month, sonGun.day)
+        .millisecondsSinceEpoch;
+  } else {
+    bas = son - Duration(days: periodDays).inMilliseconds;
+  }
 
   final out = <String, Map<int, double>>{};
   for (final e in doluOlanlar.entries) {

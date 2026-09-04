@@ -50,6 +50,7 @@ class PercentComparisonChart extends StatelessWidget {
     required this.order,
     required this.colorOf,
     required this.labelOf,
+    required this.periodDays,
     this.emphasizedKey,
     this.focused,
     this.onFocusChanged,
@@ -71,6 +72,14 @@ class PercentComparisonChart extends StatelessWidget {
 
   /// Tooltip ve crosshair'de görünen ad.
   final String Function(String key) labelOf;
+
+  /// Seçili dönemin gün sayısı — X ekseninin penceresini ve adımını belirler.
+  ///
+  /// **Veriden ÇIKARILAMAZ.** GÜNLÜK ekseni son veri noktasının ötesine,
+  /// günün sonuna kadar uzar (bkz. [gunIciEksenSonuDk]); serinin kapladığı
+  /// aralığa bakarak "bu bir gün mü" diye tahmin etmek sabah 09:00'da
+  /// 9 saatlik bir pencere üretirdi. Dönemi bilen taraf çağırandır.
+  final int periodDays;
 
   /// Kalın çizilecek seri (portföy kıyas çizgisi). Kıyas noktası olduğu
   /// çizgi kalınlığından da okunmalı, yalnızca renkten değil.
@@ -99,91 +108,113 @@ class PercentComparisonChart extends StatelessWidget {
     final ciz = _hazirla();
     if (ciz == null) return _bosDurum(context);
 
-    return ZoomableChart(
-      height: height,
-      fullMinX: ciz.minX,
-      fullMaxX: ciz.maxX,
-      bottomAxisHeight: _bottomAxisHeight,
-      // Sol Y ekseni rezervi — crosshair'in etiket bandına girmemesi için
-      // `leftTitles.reservedSize` ile AYNI olmak zorunda.
-      plotPaddingLeft: _yEkseniGenisligi,
-      crosshairSnapX: (x) {
-        // En yoğun seriye snap: dikey çizgi gerçek bir veri noktasına otursun,
-        // aradaki boşluğa değil.
-        final spots = ciz.snapSpots;
-        if (spots.isEmpty) return x;
-        // **Clamp EKSENE, snap serisine DEĞİL.** Snap serisi ekseni tam
-        // kaplamayabilir (BIST hissesi yalnızca seans saatlerini kapsar,
-        // eksen ise geceyi de içerir). Seriye clamp'lemek ekseninin bir
-        // bölümünü ÖLÜ BÖLGEYE çeviriyordu: kullanıcı sola dokunduğunda
-        // crosshair 14 saat sağa zıplıyor ve grafiğin %64'ünde hiç
-        // gezdirilemiyordu — "tüm grafiğin üzerinde gezdiremiyorum" bulgusu.
-        final clamped = x.clamp(ciz.minX, ciz.maxX);
-        // `_degerAt` ve `crosshairLabelBuilder` ile AYNI arama — üçü ayrışırsa
-        // dikey çizgi bir noktayı, etiket başka bir noktayı gösterir.
-        final i = coveringSpotIndex(spots, clamped);
-        // Eksenin başı snap serisinden önceyse ham konumu koru: zıplatmak
-        // yerine çizgi parmağın altında kalsın.
-        return i < 0 ? clamped : spots[i].x;
-      },
-      crosshairLabelBuilder: (x) {
-        final spots = ciz.snapSpots;
-        if (spots.isEmpty) return null;
-        // Değer ile TARİH aynı noktadan okunur. Eskiden yüzde en yakın
-        // noktadan, tarih ise ham `x`'ten geliyordu; snap sonrası ikisi
-        // birbirini tutuyordu ama snap noktası ile ham `x` arasındaki fark
-        // kadar tarih kayabiliyordu. Tek kaynak = tutarlılık garantisi.
-        final i = coveringSpotIndex(spots, x);
-        // Snap serisi henüz başlamamışsa yüzde göstermek uydurma olurdu;
-        // tarih yine de gösterilir — kullanıcı nereye baktığını bilmeli.
-        if (i < 0) {
-          final t = DateTime.fromMillisecondsSinceEpoch(x.round());
+    return LayoutBuilder(builder: (context, kisit) {
+      // Seyreltme hedefi GERÇEK çizim genişliğinden hesaplanır; sabit bir
+      // sayı dar telefonda çok yoğun, geniş ekranda gereksiz kaba olurdu.
+      final cizimGenisligi = (kisit.maxWidth.isFinite
+              ? kisit.maxWidth
+              : _varsayilanGenislik) -
+          _yEkseniGenisligi;
+      final hedefNokta =
+          (cizimGenisligi / _pikselBasinaNokta).round().clamp(40, 400);
+
+      return ZoomableChart(
+        height: height,
+        fullMinX: ciz.minX,
+        fullMaxX: ciz.maxX,
+        bottomAxisHeight: _bottomAxisHeight,
+        // Sol Y ekseni rezervi — crosshair'in etiket bandına girmemesi için
+        // `leftTitles.reservedSize` ile AYNI olmak zorunda.
+        plotPaddingLeft: _yEkseniGenisligi,
+        crosshairSnapX: (x) {
+          // En yoğun seriye snap: dikey çizgi gerçek bir veri noktasına otursun,
+          // aradaki boşluğa değil.
+          final spots = ciz.snapSpots;
+          if (spots.isEmpty) return x;
+          // **Clamp EKSENE, snap serisine DEĞİL.** Snap serisi ekseni tam
+          // kaplamayabilir (BIST hissesi yalnızca seans saatlerini kapsar,
+          // eksen ise geceyi de içerir). Seriye clamp'lemek ekseninin bir
+          // bölümünü ÖLÜ BÖLGEYE çeviriyordu: kullanıcı sola dokunduğunda
+          // crosshair 14 saat sağa zıplıyor ve grafiğin %64'ünde hiç
+          // gezdirilemiyordu — "tüm grafiğin üzerinde gezdiremiyorum" bulgusu.
+          final clamped = x.clamp(ciz.minX, ciz.maxX);
+          // `_degerAt` ve `crosshairLabelBuilder` ile AYNI arama — üçü ayrışırsa
+          // dikey çizgi bir noktayı, etiket başka bir noktayı gösterir.
+          final i = coveringSpotIndex(spots, clamped);
+          // Eksenin başı snap serisinden önceyse ham konumu koru: zıplatmak
+          // yerine çizgi parmağın altında kalsın.
+          return i < 0 ? clamped : spots[i].x;
+        },
+        crosshairLabelBuilder: (x) {
+          final spots = ciz.snapSpots;
+          if (spots.isEmpty) return null;
+          // Değer ile TARİH aynı noktadan okunur. Eskiden yüzde en yakın
+          // noktadan, tarih ise ham `x`'ten geliyordu; snap sonrası ikisi
+          // birbirini tutuyordu ama snap noktası ile ham `x` arasındaki fark
+          // kadar tarih kayabiliyordu. Tek kaynak = tutarlılık garantisi.
+          final i = coveringSpotIndex(spots, x);
+          // Snap serisi henüz başlamamışsa yüzde göstermek uydurma olurdu;
+          // tarih yine de gösterilir — kullanıcı nereye baktığını bilmeli.
+          if (i < 0) {
+            final t = DateTime.fromMillisecondsSinceEpoch(x.round());
+            final span = ciz.maxX - ciz.minX;
+            final b = span < const Duration(days: 2).inMilliseconds
+                ? DateFormat('d MMM HH:mm', 'tr_TR')
+                : DateFormat('d MMM yyyy', 'tr_TR');
+            return ('—', b.format(t));
+          }
+          final s = spots[i];
+          final tarih = DateTime.fromMillisecondsSinceEpoch(s.x.round());
+          // Gün içi seride tarih tek başına yetmez — saat de gösterilmeli,
+          // yoksa "4 Eyl 2026" etiketi 288 noktanın hepsi için aynı görünür.
           final span = ciz.maxX - ciz.minX;
-          final b = span < const Duration(days: 2).inMilliseconds
+          final bicim = span < const Duration(days: 2).inMilliseconds
               ? DateFormat('d MMM HH:mm', 'tr_TR')
               : DateFormat('d MMM yyyy', 'tr_TR');
-          return ('—', b.format(t));
-        }
-        final s = spots[i];
-        final tarih = DateTime.fromMillisecondsSinceEpoch(s.x.round());
-        // Gün içi seride tarih tek başına yetmez — saat de gösterilmeli,
-        // yoksa "4 Eyl 2026" etiketi 288 noktanın hepsi için aynı görünür.
-        final span = ciz.maxX - ciz.minX;
-        final bicim = span < const Duration(days: 2).inMilliseconds
-            ? DateFormat('d MMM HH:mm', 'tr_TR')
-            : DateFormat('d MMM yyyy', 'tr_TR');
-        return (
-          fmtPct(s.y, digits: 1, showSign: true),
-          bicim.format(tarih),
-        );
-      },
-      // Crosshair açıkken her serinin o andaki değeri listelenir — kıyasın
-      // asıl sorusu "şu tarihte kim neredeydi".
-      crosshairDetailsBuilder: (x) => [
-        for (var i = 0; i < ciz.cizilenler.length; i++)
-          if (_degerAt(ciz.bars[i].spots, x) case final y?)
-            (
-              '${labelOf(ciz.cizilenler[i])}  '
-                  '${fmtPct(y, digits: 1, showSign: true)}',
-              colorOf(ciz.cizilenler[i])
-            ),
-      ],
-      builder: (minX, maxX) => _data(p, ciz, minX, maxX),
-    );
+          return (
+            fmtPct(s.y, digits: 1, showSign: true),
+            bicim.format(tarih),
+          );
+        },
+        // Crosshair açıkken her serinin o andaki değeri listelenir — kıyasın
+        // asıl sorusu "şu tarihte kim neredeydi".
+        crosshairDetailsBuilder: (x) => [
+          for (var i = 0; i < ciz.cizilenler.length; i++)
+            if (_degerAt(ciz.bars[i].spots, x) case final y?)
+              (
+                '${labelOf(ciz.cizilenler[i])}  '
+                    '${fmtPct(y, digits: 1, showSign: true)}',
+                colorOf(ciz.cizilenler[i])
+              ),
+        ],
+        builder: (minX, maxX) => _data(p, ciz, minX, maxX, hedefNokta),
+      );
+    });
   }
 
   /// `leftTitles.reservedSize` ile aynı — ikisi ayrışırsa crosshair etiket
   /// bandının içine girer.
   static const _yEkseniGenisligi = 42.0;
 
-  /// Çizim alanına yayılacak azami nokta sayısı.
+  /// İki komşu nokta arasında bırakılacak asgari yatay mesafe (piksel).
   ///
-  /// Telefonda grafiğin plot alanı ~320px. 5 dakikalık seri bir günde ~288,
-  /// bir haftada ~2000 nokta taşır; hepsi çizilince çizgi kendi üstüne
-  /// binerek karalamaya dönüşüyordu. Min/max koruyan seyreltme sonrası bu
-  /// sayı ~80 kova demek — zarf birebir korunur, aradaki okunamayan salınım
-  /// seyrelir (bkz. `seyreltSpots`).
-  static const _hedefNokta = 160;
+  /// **Neden sabit bir nokta sayısı değil.** Önce sabit 160 nokta hedefi
+  /// vardı; telefonun ~300px'lik çizim alanında bu, nokta başına 1,9px
+  /// demekti — 5 dakikalık gün içi seride (288 nokta) neredeyse hiç
+  /// seyreltme yapmıyor, çizgi kendi üstüne binerek karalamaya dönüşüyordu.
+  /// Ölçüldü: GÜNLÜK sekmesinde 288 nokta → 160 nokta, yani %44 azalma;
+  /// 3px kuralıyla aynı seri ~100 noktaya iner ve zikzak açılır.
+  ///
+  /// Hedef gerçek genişlikten hesaplandığı için tablet/yatay modda otomatik
+  /// olarak daha çok detay gösterilir — sabit sayı orada tersine, gereksiz
+  /// bilgi kaybı demekti.
+  ///
+  /// 3px: fl_chart çizgiyi 1,8–4px kalınlıkta çiziyor, yani bundan sık
+  /// noktalar çizginin kendi kalınlığının içinde kalır.
+  static const _pikselBasinaNokta = 3.0;
+
+  /// Çizim alanı genişliği okunamadığında (sonsuz constraint) varsayılan.
+  static const _varsayilanGenislik = 360.0;
 
   /// Viewport'a düşen noktalar, ekran yoğunluğuna indirgenmiş.
   ///
@@ -194,7 +225,7 @@ class PercentComparisonChart extends StatelessWidget {
   /// Kenarların bir dışındaki nokta korunur; aksi halde çizgi grafiğin
   /// kenarına ulaşmadan biter.
   static List<FlSpot> _gorunurSpots(
-      List<FlSpot> tam, double minX, double maxX) {
+      List<FlSpot> tam, double minX, double maxX, int hedefNokta) {
     if (tam.length < 2) return tam;
 
     var bas = 0;
@@ -206,7 +237,7 @@ class PercentComparisonChart extends StatelessWidget {
       son--;
     }
 
-    return seyreltSpots(tam.sublist(bas, son + 1), _hedefNokta);
+    return seyreltSpots(tam.sublist(bas, son + 1), hedefNokta);
   }
 
   Widget _bosDurum(BuildContext context) => SizedBox(
@@ -310,14 +341,21 @@ class PercentComparisonChart extends StatelessWidget {
       bars: bars,
       cizilenler: cizilenler,
       snapSpots: snapSpots,
-      minX: minX,
-      maxX: maxX,
+      // **Eksen veriden DEĞİL dönemden türetilir.** Veri aralığına oturtmak
+      // GÜNLÜK sekmesinde ekseni gün ilerledikçe büyüyen bir pencereye
+      // çeviriyordu (sabah 09:00'da 9 saat, akşam 18:00'de 18 saat) ve
+      // performans ekranının sabit 00:00 → 24:00 ölçeğiyle ayrışıyordu.
+      eksenX: zamanEkseni(
+        ilkMs: minX,
+        sonMs: maxX,
+        periodDays: periodDays,
+      ),
       eksen: yuzdeEkseni(minY - pad, maxY + pad),
     );
   }
 
-  LineChartData _data(
-      SandikPalette p, _CizimVerisi ciz, double minX, double maxX) {
+  LineChartData _data(SandikPalette p, _CizimVerisi ciz, double minX,
+      double maxX, int hedefNokta) {
     final eksen = ciz.eksen;
     final span = maxX - minX;
 
@@ -330,7 +368,7 @@ class PercentComparisonChart extends StatelessWidget {
       // çizime giderken viewport'a kırpılıp seyreltilir.
       lineBarsData: [
         for (final b in ciz.bars)
-          b.copyWith(spots: _gorunurSpots(b.spots, minX, maxX)),
+          b.copyWith(spots: _gorunurSpots(b.spots, minX, maxX, hedefNokta)),
       ],
       // Sıfır çizgisi = dönem başı. Olmadan yüzdelerin neye göre okunacağı
       // belirsiz kalır.
@@ -344,9 +382,21 @@ class PercentComparisonChart extends StatelessWidget {
           ),
         ],
       ),
+      // Tick'lerin nereye oturacağını belirler. fl_chart varsayılan olarak
+      // 0'ı (1970-01-01 UTC) taban alıp adımın katlarını işaretler; epoch
+      // milisaniye uzayında bu, UTC+3'te "03:00 · 07:00 · 11:00" gibi kayık
+      // etiketler demekti. Taban gün başına alınınca tick'ler performans
+      // ekranındaki gibi 00:00 · 04:00 · 08:00'a oturur.
+      baselineX: ciz.eksenX.baseline,
       gridData: FlGridData(
         show: true,
-        drawVerticalLine: false,
+        // Gün içi seride dikey ızgara VAR — performans ekranının GÜNLÜK
+        // sekmesiyle aynı: saat dilimleri okunur bir referans verir. Uzun
+        // dönemlerde çizgiler veriyi bastırdığı için kapalı kalır.
+        drawVerticalLine: ciz.eksenX.gunIci,
+        verticalInterval: ciz.eksenX.interval,
+        getDrawingVerticalLine: (_) =>
+            FlLine(color: p.hairline, strokeWidth: 1),
         // Izgara çizgileri etiketlerle AYNI adımda olmalı; ayrışırsa çizgiler
         // etiketsiz, etiketler çizgisiz kalır.
         horizontalInterval: eksen.interval,
@@ -362,21 +412,27 @@ class PercentComparisonChart extends StatelessWidget {
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: _bottomAxisHeight,
-            // Dört etiket: daha fazlası dar ekranda üst üste biniyor.
-            interval: span <= 0 ? null : span / 4,
+            // **Adım ham `span / 4` DEĞİL.** Ham bölme, eksenin başladığı
+            // rastgele ana kilitleniyordu: GÜNLÜK sekmesinde etiketler
+            // "14:30 · 20:30 · 02:30 · 08:30" okunuyordu. Performans ekranı
+            // aynı günü 4 saatlik yuvarlak adımlarla çiziyor; kural artık
+            // ortak (`zamanEkseni`).
+            interval: ciz.eksenX.interval,
             getTitlesWidget: (value, meta) {
-              if (value <= meta.min || value >= meta.max) {
+              // Kenar payı performans ekranıyla aynı (%6). Salt
+              // `value <= meta.min` kontrolü zoom'da yetmiyordu: adım artık
+              // sınırlara denk gelmediği için kenara bir tık uzak bir tick
+              // etiketi çizim alanının dışına taşıyordu.
+              if (eksenKenarinda(value, meta.min, meta.max)) {
                 return const SizedBox.shrink();
               }
               final t = DateTime.fromMillisecondsSinceEpoch(value.round());
-              // Bir günden kısa aralıkta tarih tekrar eder; saat göster.
-              final bicim = span < const Duration(days: 2).inMilliseconds
-                  ? DateFormat('HH:mm', 'tr_TR')
-                  : DateFormat('d MMM', 'tr_TR');
               return Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  bicim.format(t),
+                  zamanEtiketi(t,
+                      spanGun: span / const Duration(days: 1).inMilliseconds,
+                      gunIci: ciz.eksenX.gunIci),
                   style: TextStyle(fontSize: 9, color: p.text36),
                 ),
               );
@@ -458,8 +514,7 @@ class _CizimVerisi {
     required this.bars,
     required this.cizilenler,
     required this.snapSpots,
-    required this.minX,
-    required this.maxX,
+    required this.eksenX,
     required this.eksen,
   });
 
@@ -471,7 +526,18 @@ class _CizimVerisi {
   /// Crosshair'in snap edeceği referans seri.
   final List<FlSpot> snapSpots;
 
-  final double minX;
-  final double maxX;
+  /// Zaman ekseni — pencere, adım ve tick hizası. Veri aralığından DEĞİL,
+  /// dönemden türetilir (bkz. [zamanEkseni]).
+  final ({
+    double min,
+    double max,
+    double interval,
+    double baseline,
+    bool gunIci
+  }) eksenX;
+
+  double get minX => eksenX.min;
+  double get maxX => eksenX.max;
+
   final ({double min, double max, double interval, int ondalik}) eksen;
 }
