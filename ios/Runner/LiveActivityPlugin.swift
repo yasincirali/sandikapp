@@ -292,7 +292,7 @@ enum LiveActivityChannel {
             //
             // ⚠️ Argüman sırası `ContentState` alan sırasıyla AYNI olmak
             // zorunda (memberwise initializer): showAmounts → axisMinText
-            // → axisMaxText → isFlatChange → isMarketOpen.
+            // → axisMaxText → isFlatChange → isMarketOpen → isLightTheme.
             axisMinText: args["axisMinText"] as? String ?? "",
             axisMaxText: args["axisMaxText"] as? String ?? "",
             // Ölçüldü ama sıfır mı? Yön oku ve kâr/zarar rengi buna göre
@@ -302,7 +302,19 @@ enum LiveActivityChannel {
             // Varsayılan AÇIK: bayrak eksikse "Piyasa kapalı" etiketi
             // gösterilmez. Yanlışlıkla "kapalı" demek, gerçekten canlı
             // veriye bakan kullanıcıyı yanıltırdı.
-            isMarketOpen: args["isMarketOpen"] as? Bool ?? true
+            isMarketOpen: args["isMarketOpen"] as? Bool ?? true,
+            // **Bu alan EKSİKTİ.** Dart tarafı gönderiyor ve sunucu push'u
+            // da taşıyor, ama burada okunmadığı için memberwise
+            // initializer'ın varsayılanına (`false` = koyu) düşüyordu.
+            //
+            // Sonuç görünür bir tutarsızlıktı: aynı banner'ı sunucu push'u
+            // doğru palette, uygulamanın kendi güncellemesi ise HER ZAMAN
+            // koyu çiziyordu. Uygulama açıkken tema hiç uygulanmıyor,
+            // beş dakikada bir gelen push'ta bir anlığına düzeliyordu.
+            //
+            // Varsayılan `false` (koyu) korunur: bayrak eksikse bugüne
+            // kadarki davranış.
+            isLightTheme: args["isLightTheme"] as? Bool ?? false
         )
     }
 }

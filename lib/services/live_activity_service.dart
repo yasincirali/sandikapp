@@ -131,6 +131,13 @@ class LiveActivityService {
   /// Supabase istemcisi — `auth_service` ile aynı desen.
   SupabaseClient get _db => Supabase.instance.client;
 
+  /// Kilit ekranında BİZİM açtığımız bir oturum yürüyor mu?
+  ///
+  /// Yalnızca bir ipucudur, doğruluk kaynağı DEĞİL: tek gerçek kaynak
+  /// ActivityKit'in kendi kaydıdır (`LiveActivityPlugin.resolveCurrent`).
+  /// Kullanıcı banner'ı kilit ekranından kaydırıp attığında sistem oturumu
+  /// kapatır ama bu bayrak `true` kalır — bu yüzden `false` dönen her
+  /// `update` sonrasında düşürülür (bkz. [sync]).
   bool _sessionActive = false;
 
   /// Son gönderilen içerik — aynı veriyi tekrar tekrar göndermemek için.
@@ -590,6 +597,24 @@ class LiveActivityService {
       if (ok) {
         _sessionActive = true;
         _lastPayloadKey = key;
+      } else if (_sessionActive) {
+        // **`update` başarısızsa oturum ARTIK YOK.** Native taraf yalnızca
+        // tek bir sebeple `false` döner: ActivityKit'te aktif oturum
+        // bulunamadı (`LiveActivityPlugin.update` → `resolveCurrent()` nil).
+        //
+        // Kullanıcı banner'ı kilit ekranından kaydırıp attığında tam olarak
+        // bu olur. Bayrak `true` kaldığı sürece bir sonraki senkron yine
+        // `'update'` çağırır, o da yine `false` döner: **banner bir daha
+        // asla açılmaz.** Uygulama tamamen kapatılıp açılana kadar (bayrak
+        // bellekte yaşar) kilit ekranı boş kalıyordu — kullanıcı bulgusu
+        // "silince bir daha da gelmedi" buydu.
+        //
+        // Bayrağı düşürmek bir sonraki senkronu `'start'`a çevirir ve
+        // oturum kendiliğinden geri gelir. `_lastPayloadKey` de sıfırlanır:
+        // aksi halde `unchanged` erken çıkışı yeni `'start'`ı da yutardı,
+        // çünkü içerik gerçekten değişmemiş olabilir.
+        _sessionActive = false;
+        _lastPayloadKey = null;
       }
     } catch (e) {
       if (kDebugMode) debugPrint('LiveActivity sync failed: $e');
