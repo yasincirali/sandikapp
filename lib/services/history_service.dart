@@ -1501,7 +1501,7 @@ class HistoryService {
   static ResolutionTier tierForPeriod(int days) =>
       ResolutionTierMeta.pickForSpan(days.toDouble());
 
-  /// Seriyi son [days] güne kırpar.
+  /// Seriyi seçili döneme kırpar.
   ///
   /// **Neden gerekli:** range her zaman dönemden geniştir (Yahoo yalnızca
   /// belirli range'leri kabul eder). Kırpılmazsa etiket ile veri ayrışır —
@@ -1509,12 +1509,14 @@ class HistoryService {
   /// yüzdesi serinin İLK noktasından hesaplandığı için bu, çağıran her
   /// yüzeyde doğrudan yanlış bir rakam demekti.
   ///
+  /// **`days == 1` TAKVİM GÜNÜ, diğerleri kayan penceredir.** Ayrım aşağıda
+  /// gerekçelendirildi; kısacası "bugün ne oldu" sorusunun tabanı bugünün
+  /// açılışıdır, 24 saat öncesi değil.
+  ///
   /// **Pencere `now`'a değil SON VERİ NOKTASINA çapalanır.** Borsa hafta
   /// sonu ve tatilde kapalıdır; `now`'dan geriye saymak Pazar günü "GÜNLÜK"
   /// seçildiğinde Cuma seansının tamamını pencerenin dışında bırakır ve
-  /// grafik boşalırdı. Son noktadan geriye saymak, kapalı günlerde de bir
-  /// seans dolusu veri gösterir — istenen "son bir günlük hareket" anlamı
-  /// zaten budur.
+  /// grafik boşalırdı.
   ///
   /// Kırpma yine de iki noktanın altına düşürüyorsa **son iki nokta** döner,
   /// ham serinin tamamı değil: günde tek fiyat açıklayan TEFAS fonlarında
@@ -1527,7 +1529,33 @@ class HistoryService {
     if (series.length < 2) return series;
 
     final keys = series.keys.toList()..sort();
-    final cutoff = keys.last - Duration(days: days).inMilliseconds;
+
+    // **"GÜNLÜK" bir TAKVİM GÜNÜDÜR, kayan 24 saat değil.**
+    //
+    // Kayan pencere döviz gibi 7/24 işlem gören sembollerde dünün öğleden
+    // sonrasını da içine alıyordu: eksen "15:37 · 21:18 · 02:59 · 08:41"
+    // okunuyor ve dönem başı %0 referansı DÜNE düşüyordu. Kullanıcının
+    // sorduğu soru "bugün ne oldu"; cevabın tabanı da bugünün açılışı olmalı.
+    //
+    // Bu, uygulamanın geri kalanının zaten kullandığı tanım:
+    // `getPortfolioHistoryHourlyBreakdown` gün içi grid'ini bugünün
+    // 00:00'ından kurar ve `DailySummary` gece yarısını geçen bir önbelleği
+    // koşulsuz düşürür — tam da "bugünkü değişim aslında dünden bugüne farkı
+    // gösterir" durumuna düşmemek için. Takip listesi bu konvansiyonun
+    // dışında kalmıştı.
+    //
+    // Çapa `now` değil SON NOKTANIN GÜNÜ: borsa hafta sonu ve tatilde
+    // kapalıdır, `now`'dan saymak Pazar günü boş bir grafik verirdi. Son
+    // noktanın günü işlem gününde zaten bugündür (00:00 → şimdi); kapalı
+    // günlerde son seansın tamamını gösterir.
+    final int cutoff;
+    if (days <= 1) {
+      final sonGun = DateTime.fromMillisecondsSinceEpoch(keys.last);
+      cutoff =
+          DateTime(sonGun.year, sonGun.month, sonGun.day).millisecondsSinceEpoch;
+    } else {
+      cutoff = keys.last - Duration(days: days).inMilliseconds;
+    }
 
     final out = <int, double>{
       for (final e in series.entries)
