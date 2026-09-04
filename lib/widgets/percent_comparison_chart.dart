@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_axis.dart';
+import '../utils/series_downsample.dart';
 import '../utils/spot_lookup.dart';
 import '../utils/tr_format.dart';
 import 'zoomable_chart.dart';
@@ -175,6 +176,39 @@ class PercentComparisonChart extends StatelessWidget {
   /// bandının içine girer.
   static const _yEkseniGenisligi = 42.0;
 
+  /// Çizim alanına yayılacak azami nokta sayısı.
+  ///
+  /// Telefonda grafiğin plot alanı ~320px. 5 dakikalık seri bir günde ~288,
+  /// bir haftada ~2000 nokta taşır; hepsi çizilince çizgi kendi üstüne
+  /// binerek karalamaya dönüşüyordu. Min/max koruyan seyreltme sonrası bu
+  /// sayı ~80 kova demek — zarf birebir korunur, aradaki okunamayan salınım
+  /// seyrelir (bkz. `seyreltSpots`).
+  static const _hedefNokta = 160;
+
+  /// Viewport'a düşen noktalar, ekran yoğunluğuna indirgenmiş.
+  ///
+  /// Seyreltme HER VIEWPORT için yeniden yapılır: zoom yapıldıkça aynı
+  /// pencereye daha az ham nokta düşer ve detay geri gelir — `ZoomableChart`
+  /// ile `DotThinner`'ın zaten verdiği söz.
+  ///
+  /// Kenarların bir dışındaki nokta korunur; aksi halde çizgi grafiğin
+  /// kenarına ulaşmadan biter.
+  static List<FlSpot> _gorunurSpots(
+      List<FlSpot> tam, double minX, double maxX) {
+    if (tam.length < 2) return tam;
+
+    var bas = 0;
+    while (bas + 1 < tam.length && tam[bas + 1].x < minX) {
+      bas++;
+    }
+    var son = tam.length - 1;
+    while (son > bas && tam[son - 1].x > maxX) {
+      son--;
+    }
+
+    return seyreltSpots(tam.sublist(bas, son + 1), _hedefNokta);
+  }
+
   Widget _bosDurum(BuildContext context) => SizedBox(
         height: _bosDurumYuksekligi,
         child: Center(
@@ -292,7 +326,12 @@ class PercentComparisonChart extends StatelessWidget {
       maxX: maxX,
       minY: eksen.min,
       maxY: eksen.max,
-      lineBarsData: ciz.bars,
+      // Bar'lar TAM çözünürlükte tutulur (crosshair gerçek veriye snap etsin),
+      // çizime giderken viewport'a kırpılıp seyreltilir.
+      lineBarsData: [
+        for (final b in ciz.bars)
+          b.copyWith(spots: _gorunurSpots(b.spots, minX, maxX)),
+      ],
       // Sıfır çizgisi = dönem başı. Olmadan yüzdelerin neye göre okunacağı
       // belirsiz kalır.
       extraLinesData: ExtraLinesData(
