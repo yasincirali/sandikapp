@@ -170,6 +170,71 @@ struct SandikActivityAttributes: ActivityAttributes {
 
 @available(iOS 17.0, *)
 extension SandikActivityAttributes.ContentState {
+
+    /// Eksik alana TOLERANSLI çözümleme.
+    ///
+    /// **Neden elle yazıldı:** Swift'in sentezlediği `init(from:)` alan
+    /// varsayılanlarını KULLANMAZ. `var isLightTheme: Bool = false` yazmak
+    /// yalnızca memberwise initializer'ı etkiler; çözümleme hâlâ
+    /// `decode(_:forKey:)` çağırır ve anahtar yoksa `keyNotFound` FIRLATIR.
+    /// Bu dosyadaki "alan yoksa varsayılan devreye girer" notları o yüzden
+    /// çözümleme yolunda geçerli değildi.
+    ///
+    /// Pratikte ısırdığı yer uygulama güncellemesidir: ActivityKit yürüyen
+    /// bir oturumun `ContentState`'ini saklar. Eski sürümün yazdığı kayıtta
+    /// yeni alan yoktur; güncellemeden sonra yeni ikili onu çözemez, oturum
+    /// render edilemez ve kilit ekranında iskelet/placeholder görünür.
+    /// Kullanıcı bulgusu ("loading ekranları gelmeye başladı") bu sınıfa
+    /// uyuyor.
+    ///
+    /// Sunucu her alanı gönderdiği için push yolunda eksik anahtar oluşmaz;
+    /// bu yüzden hata yalnızca güncelleme sınırında görülür ve alan
+    /// eklendikçe TEKRAR EDER. Toleransı tipin kendisine yazmak, bir
+    /// sonraki alan eklendiğinde aynı kırılmayı önler.
+    ///
+    /// Varsayılanlar alan bildirimlerindekilerle ve
+    /// `LiveActivityPlugin.parseState`'teki `??` değerleriyle AYNI olmak
+    /// zorunda — üç yer ayrışırsa aynı eksik alan üç yüzeyde üç farklı
+    /// davranış üretir.
+    ///
+    /// Extension'da durmasının sebebi: initializer'ı ana gövdeye yazmak
+    /// memberwise initializer'ı bastırır ve `parseState` derlenmez.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Bunlar olmadan gösterilecek bir şey yok — eksikse çözümleme
+        // gerçekten başarısız olmalı, uydurma metin basmaktansa.
+        totalText = try c.decode(String.self, forKey: .totalText)
+        changeText = try c.decode(String.self, forKey: .changeText)
+        changePctText = try c.decode(String.self, forKey: .changePctText)
+        isPositive = try c.decode(Bool.self, forKey: .isPositive)
+        updatedAtText = try c.decode(String.self, forKey: .updatedAtText)
+
+        // Gerisi toleranslı. Gizlilik kapısı olanlarda güvenli taraf
+        // seçilir: `isHidden` yoksa gizleme, `showAmounts` yoksa GÖSTERME.
+        isHidden = try c.decodeIfPresent(Bool.self, forKey: .isHidden) ?? false
+        showAmounts =
+            try c.decodeIfPresent(Bool.self, forKey: .showAmounts) ?? false
+        dateText = try c.decodeIfPresent(String.self, forKey: .dateText) ?? ""
+        sessionEndsAtUnix =
+            try c.decodeIfPresent(Double.self, forKey: .sessionEndsAtUnix) ?? 0
+        sparkline =
+            try c.decodeIfPresent([Double].self, forKey: .sparkline) ?? []
+        axisMinText =
+            try c.decodeIfPresent(String.self, forKey: .axisMinText) ?? ""
+        axisMaxText =
+            try c.decodeIfPresent(String.self, forKey: .axisMaxText) ?? ""
+        isFlatChange =
+            try c.decodeIfPresent(Bool.self, forKey: .isFlatChange) ?? false
+        // Varsayılan AÇIK: yanlışlıkla "Piyasa kapalı" demek, gerçekten
+        // canlı veriye bakan kullanıcıyı yanıltır.
+        isMarketOpen =
+            try c.decodeIfPresent(Bool.self, forKey: .isMarketOpen) ?? true
+        // Varsayılan KOYU — bugüne kadarki davranış.
+        isLightTheme =
+            try c.decodeIfPresent(Bool.self, forKey: .isLightTheme) ?? false
+    }
+
     /// Günlük değişim gerçekten hesaplanabildi mi?
     ///
     /// Gün içi seri çekilemediğinde Dart tarafı uydurma bir rakam yerine
