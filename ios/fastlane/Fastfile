@@ -117,6 +117,56 @@ def next_open_version(version, api_key)
   )
 end
 
+# ── TestFlight "What to Test" metni ──────────────────────────────────────────
+#
+# **Her build'de FARKLI olmalı.**
+#
+# `whats_new.txt` sürümler arası nadiren değişir ve build numarası ASC'den
+# gelen timestamp benzeri bir sayıdır. Sonuç: TestFlight listesinde iki ardışık
+# build birebir aynı görünüyordu — aynı sürüm (1.1.4), aynı sürüm notu, tek
+# fark build numarasının SON HANESİ (ölçüldü: 1785274296 → 1785274297).
+# Kullanıcı yeni build'in gelip gelmediğini ayırt edemiyordu.
+#
+# Çözüm: sürüm notlarının altına o build'in KİMLİĞİ eklenir — build numarası,
+# commit'in kısa SHA'sı ve commit başlığı. Böylece TestFlight'ta her satır
+# hangi değişikliği taşıdığını kendisi söyler.
+#
+# `whats_new.txt` DOSYASI DEĞİŞMEZ: kimlik satırı yalnızca upload sırasında,
+# bellekte eklenir. O dosya mağaza sürüm notudur; build kimliği oraya girerse
+# App Store'a sızar.
+CHANGELOG_LIMIT = 4000 # App Store Connect "What to Test" üst sınırı
+
+def testflight_changelog(build_number)
+  # `encoding: "UTF-8"` ŞART: dosya "•" madde imleriyle başlıyor ve runner'ın
+  # locale'i UTF-8 değilse `File.read` içeriği US-ASCII etiketler — `strip`
+  # bile "invalid byte sequence" ile patlar (bu container'da birebir üretildi).
+  # Eski kod bunu taşıyordu; GitHub macOS runner'ının UTF-8 locale'i gizliyordu.
+  notes = File.read("../../store_listing/en-US/whats_new.txt", encoding: "UTF-8")
+              .scrub("").strip
+
+  kimlik = begin
+    # `force_encoding` + `scrub`: runner'ın locale'i UTF-8 değilse backtick
+    # çıktısı US-ASCII etiketli gelir. Türkçe başlıklı bir commit'te bu, UTF-8
+    # literal ile birleştirilirken Encoding::CompatibilityError fırlatır ve
+    # başlık sessizce kaybolurdu (rescue yakalar ama kimlik satırı yarım kalır).
+    sha = sh("git rev-parse --short HEAD", log: false)
+            .to_s.force_encoding("UTF-8").scrub("").strip
+    subject = sh("git log -1 --pretty=%s", log: false)
+                .to_s.force_encoding("UTF-8").scrub("").strip
+    # Tek satır ve makul uzunlukta tut — TestFlight bu alanı dar gösterir.
+    subject = "#{subject[0, 157]}..." if subject.length > 160
+    ["Build #{build_number} · #{sha}", subject].reject(&:empty?).join("\n")
+  rescue StandardError => e
+    # Git okunamazsa (sığ klon, repo dışı çalıştırma) build numarası tek
+    # başına yine ayırt edicidir — upload'ı bunun için düşürmeyiz.
+    UI.important("Commit bilgisi okunamadı (#{e.class}) — yalnızca build no yazılıyor.")
+    "Build #{build_number}"
+  end
+
+  full = "#{notes}\n\n———\n#{kimlik}"
+  full.length > CHANGELOG_LIMIT ? full[0, CHANGELOG_LIMIT] : full
+end
+
 platform :ios do
   # ─────────────────────────────────────────────────────────────────────────
   # setup_match_certificates
@@ -348,7 +398,7 @@ platform :ios do
       api_key: api_key,
       ipa: "./build/sandik.ipa",
       skip_waiting_for_build_processing: true,
-      changelog: File.read("../../store_listing/en-US/whats_new.txt").strip
+      changelog: testflight_changelog(next_build_number)
     )
 
     UI.success("Build #{next_build_number} TestFlight'a upload edildi 🚀")
