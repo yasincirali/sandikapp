@@ -97,6 +97,23 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_READONLY: "true"
           FASTLANE_HIDE_CHANGELOG: "1"
+          # `xcodebuild -showBuildSettings` için fastlane'in varsayılanı
+          # 3 saniye taban + 4 deneme. Soğuk bir runner'da Flutter + ~40
+          # CocoaPods hedefi taşıyan workspace bu sürede ayarlarını
+          # döndüremiyor ve `build_app` daha ARCHIVE'a başlamadan düşüyor:
+          #
+          #   [!] xcodebuild -showBuildSettings timed out after 4 retries
+          #       with a base timeout of 3
+          #
+          # (run 33906688791, build_app 105 sn'de patladı; bir önceki
+          # çalıştırmada aynı adım 268 sn sürüp BAŞARILI olmuştu — yani
+          # sınır runner'ın o anki hızına göre gelip gidiyor.)
+          #
+          # Değişkenlerin adını fastlane'in kendi hata mesajı veriyor.
+          # Yükseltmek yalnızca BEKLEME tavanını büyütür: ayarlar erken
+          # dönerse beklenmez, yani hızlı çalıştırmalar yavaşlamaz.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "180"
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: "5"
         run: bundle exec fastlane beta
 
       # Fastlane, sürüm TestFlight'a kapalıysa pubspec.yaml'daki patch'i
