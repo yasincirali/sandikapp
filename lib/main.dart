@@ -420,7 +420,10 @@ class SandikApp extends ConsumerWidget {
         color: p.surface1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.05), width: 1),
+          // Paletten: dark'ta beyaz %7, light'ta siyah %9. Sabit beyaz
+          // kenarlık AÇIK TEMADA görünmezdi — kart zeminden hiç ayrılmıyor,
+          // arayüz "kutuları kaybolmuş" gibi okunuyordu.
+          side: BorderSide(color: p.hairline, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -428,7 +431,10 @@ class SandikApp extends ConsumerWidget {
       // Input
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        // Dolgu da yön değiştirir: dark'ta zeminin üstüne beyaz overlay,
+        // light'ta düz beyaz. Sabit beyaz %5 açık zeminde görünmediği için
+        // metin alanları çerçevesiz ve dolgusuz kalıyordu.
+        fillColor: p.overlay,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
@@ -494,7 +500,9 @@ class SandikApp extends ConsumerWidget {
 
       // Chip
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.white.withValues(alpha: 0.05),
+        // Kart dolgusuyla aynı token — chip de bir yüzeydir. Sabit beyaz
+        // %5 açık temada zeminle aynı görünüyordu.
+        backgroundColor: p.overlay,
         selectedColor: p.amberFill,
         labelStyle:
             GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500),
@@ -505,7 +513,9 @@ class SandikApp extends ConsumerWidget {
 
       // Divider
       dividerTheme: DividerThemeData(
-        color: Colors.white.withValues(alpha: 0.07),
+        // Ayraç = hairline. Sabit beyaz %7 açık temada tamamen
+        // görünmezdi; listeler ayraçsız, tek blok hâlinde okunuyordu.
+        color: p.hairline,
         thickness: 1,
         space: 1,
       ),
