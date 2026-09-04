@@ -157,10 +157,16 @@ void main() {
       // Pazar günü "GÜNLÜK" seçildiğinde son seans Cuma'dadır. `now`'dan
       // geriye sayan bir kırpma Cuma'nın tamamını dışarıda bırakır ve grafik
       // boşalır; son noktadan geriye saymak bir seans dolusu veri bırakır.
+      // Çapa BİR KEZ okunur. Eskiden `ts(3)` üç kez ayrı ayrı çağrılıyordu ve
+      // her çağrı `DateTime.now()`'a gidiyordu; aralarında milisaniye
+      // geçtiğinde noktalar birbirine göre kayıyor, kırpma penceresi bir
+      // noktayı dışarıda bırakıyordu. Tam paket koşumunda kırılıp tek başına
+      // geçen bir test bu yüzden ortaya çıktı (gece yarısını geçen koşum).
+      final acilis = ts(3);
       final cuma = {
-        ts(3): 100.0, // Cuma açılış
-        ts(3) + 3600 * 1000: 101.0,
-        ts(3) + 7200 * 1000: 102.0,
+        acilis: 100.0, // Cuma açılış
+        acilis + 3600 * 1000: 101.0,
+        acilis + 7200 * 1000: 102.0,
       };
 
       final k = HistoryService.clipToPeriod(cuma, 1);

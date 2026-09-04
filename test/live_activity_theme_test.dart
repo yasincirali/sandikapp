@@ -126,19 +126,52 @@ void main() {
           reason: 'görünüm paleti bayraktan seçmeli');
     });
 
-    test('Swift SİSTEM görünümünü sormuyor', () {
-      // `@Environment(\.colorScheme)` yanlış cevabı verir: cihazın
-      // görünümünü söyler, uygulamanın tercihini değil.
-      // (Doğrudan dosya okuması — yorumlar ayıklanır.)
+    test('Swift SİSTEM görünümünü SORMUYOR (ama YAZIYOR)', () {
+      // İki farklı şey var ve bu test eskiden ikisini karıştırıyordu:
+      //
+      //   OKUMAK  → `@Environment(\.colorScheme) var ...` YASAK. Cihazın
+      //             görünümünü söyler, uygulamanın tercihini değil.
+      //   YAZMAK  → `.environment(\.colorScheme, ...)` ZORUNLU. Bkz. altta.
+      //
+      // Test her `colorScheme` geçişini yasaklıyordu; bu yüzden gerçek
+      // hatayı yakalayamadı ve düzeltmeyi de engelliyordu.
       final dosyalar = Directory('ios/SandikWidget')
           .listSync()
           .whereType<File>()
           .where((f) => f.path.endsWith('.swift'));
       for (final f in dosyalar) {
         final src = _yorumsuz(f.readAsStringSync());
-        expect(src.contains('colorScheme'), isFalse,
-            reason: '${f.path} sistem görünümünü soruyor');
+        expect(src.contains(r'@Environment(\.colorScheme)'), isFalse,
+            reason: '${f.path} sistem görünümünü OKUYOR');
       }
+    });
+
+    test('Swift görünüm şemasını bayrağa SABİTLİYOR', () {
+      // ## Bug (kullanıcı bulgusu)
+      // "dark mode'a alınca canlı aktivite light oluyor, light'a alınca dark."
+      //
+      // ## Neden oluyordu
+      // Zincirin HER halkası doğruydu — Dart `resolveThemeIsLightNow`,
+      // payload'daki `isLightTheme`, Swift `SandikPalette.resolved`, hatta
+      // paletlerin renk değerleri. Ama uzantı CİHAZIN görünümünü miras
+      // alıyor ve SwiftUI sisteme uyarlanan katmanları (materyal,
+      // `activityBackgroundTint` üzerine binen chrome, vibrancy) o mirasa
+      // göre çözüyordu. Palet "koyu" derken sistem "cihaz koyu, o hâlde
+      // üstüne açık chrome" diyordu.
+      //
+      // Yani hata bir eşleme hatası DEĞİL, çözülmüş kararın sisteme
+      // bildirilmemesiydi — bu yüzden dosya dosya okuyarak bulunamıyordu.
+      final view = _yorumsuz(
+          File('ios/SandikWidget/SandikLiveActivity.swift').readAsStringSync());
+
+      final yazimlar =
+          RegExp(r'\.environment\(\s*\\\.colorScheme').allMatches(view).length;
+
+      expect(yazimlar, 2,
+          reason: 'kilit ekranı banner\'ı ve Dynamic Island — ikisi de '
+              'şemayı sabitlemeli, bulunan: $yazimlar');
+      expect(view.contains('isLightTheme ? .light : .dark'), isTrue,
+          reason: 'şema TERS bağlanırsa hata aynen geri gelir');
     });
 
     test('Android widget uygulama tercihini okuyor', () async {

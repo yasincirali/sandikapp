@@ -34,6 +34,25 @@ struct SandikLiveActivity: Widget {
                 // zemini yeşildir, nötr siyah kullanılmaz.
                 .activityBackgroundTint(palette.background)
                 .activitySystemActionForegroundColor(SandikTheme.amber)
+                // **Görünüm şeması SABİTLENİR — yoksa tema TERS görünür.**
+                //
+                // Palet doğru seçiliyor ama uzantı CİHAZIN görünümünü miras
+                // alıyor. SwiftUI de sisteme uyarlanan her şeyi (materyal
+                // katmanları, `activityBackgroundTint`'in üzerine bindirdiği
+                // chrome, vibrancy) o mirasa göre çözüyor. Cihaz koyuyken
+                // sistem bizim zeminimizi açıyor, açıkken koyultuyordu:
+                // kullanıcı bulgusu "koyu moda alınca canlı aktivite açık
+                // oluyor, açık moda alınca koyu" tam olarak buydu.
+                //
+                // `isLightTheme` zaten Dart tarafında ÇÖZÜLMÜŞ karardır
+                // ("Sistem" dahil, bkz. `utils/theme_resolution.dart`);
+                // şemayı ona bağlamak paletle sistemin aynı şeyi söylemesini
+                // sağlar. `@Environment(\.colorScheme)` OKUMUYORUZ — burada
+                // yazıyoruz.
+                .environment(
+                    \.colorScheme,
+                    context.state.isLightTheme ? .light : .dark
+                )
 
         } dynamicIsland: { context in
             let palette = SandikPalette.resolved(isLight: context.state.isLightTheme)
@@ -160,6 +179,17 @@ struct SandikLiveActivity: Widget {
                 SandikLogoMark(width: 16)
             }
             .keylineTint(SandikTheme.amber)
+            // Kilit ekranı banner'ıyla AYNI gerekçe (yukarı bkz.): genişletilmiş
+            // bölgeler de aynı paletten besleniyor ve sistem uyarlamalı
+            // katmanları cihazın görünümüne göre çözüyordu.
+            //
+            // Dynamic Island'ın KENDİ zemini her zaman siyah donanım bölgesidir
+            // ve tema bayrağından etkilenmez; sabitlenen şey içerideki
+            // materyal/vibrancy çözümüdür, ada'nın rengi değil.
+            .environment(
+                \.colorScheme,
+                context.state.isLightTheme ? .light : .dark
+            )
         }
     }
 }
