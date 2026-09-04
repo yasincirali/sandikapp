@@ -366,7 +366,20 @@ class _ZoomableChartState extends State<ZoomableChart> {
       return SizedBox(
         height: widget.height,
         child: Stack(
-          clipBehavior: Clip.none,
+          // **Çizim kendi kutusunun DIŞINA taşamaz.**
+          //
+          // `Clip.none` gerekçesizdi ve pinch sırasında görünür bir hataya
+          // yol açıyordu: `LineChart` bir ImplicitlyAnimatedWidget, jest
+          // boyunca eski `LineChartData` ile yenisi arasında lerp'liyor ve
+          // ara karelerde min/max sınırları anlık olarak hedefin dışına
+          // çıkabiliyor. Clip yokken o karelerdeki çizgi kartın dışına,
+          // başlığın ve dönem seçicinin üstüne basıyordu (kullanıcı
+          // ekran görüntüsü, GÜNLÜK sekmesi).
+          //
+          // Stack'in Flutter varsayılanı zaten `Clip.hardEdge`; burada
+          // taşmadan yararlanan bir çocuk YOK — crosshair çizgisi, pill ve
+          // Sıfırla çipi hepsi kutunun içinde konumlanıyor.
+          clipBehavior: Clip.hardEdge,
           children: [
             // Alt: LineChart (tooltip'i için touch handler kendi içinde çalışır)
             //
@@ -535,7 +548,10 @@ class _CrosshairOverlay extends StatelessWidget {
       child: IgnorePointer(
         child: LayoutBuilder(builder: (context, c) {
           return Stack(
-            clipBehavior: Clip.none,
+            // Crosshair katmanı da kırpılır — dikey çizgi ve pill kutunun
+            // içinde konumlanıyor, taşmaya ihtiyaç duyan çocuk yok. Üstteki
+            // Stack ile aynı gerekçe.
+            clipBehavior: Clip.hardEdge,
             children: [
               // Dikey dashed çizgi — dokunulan X'te
               Positioned(

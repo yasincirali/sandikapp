@@ -111,12 +111,10 @@ class PercentComparisonChart extends StatelessWidget {
     return LayoutBuilder(builder: (context, kisit) {
       // Seyreltme hedefi GERÇEK çizim genişliğinden hesaplanır; sabit bir
       // sayı dar telefonda çok yoğun, geniş ekranda gereksiz kaba olurdu.
-      final cizimGenisligi = (kisit.maxWidth.isFinite
-              ? kisit.maxWidth
-              : _varsayilanGenislik) -
-          _yEkseniGenisligi;
-      final hedefNokta =
-          (cizimGenisligi / _pikselBasinaNokta).round().clamp(40, 400);
+      final hedefNokta = hedefNoktaSayisi(
+        kisitGenisligi: kisit.maxWidth,
+        periodDays: periodDays,
+      );
 
       return ZoomableChart(
         height: height,
@@ -213,8 +211,54 @@ class PercentComparisonChart extends StatelessWidget {
   /// noktalar çizginin kendi kalınlığının içinde kalır.
   static const _pikselBasinaNokta = 3.0;
 
+  /// GÜNLÜK için aynı kuralın seyreltilmiş hâli.
+  ///
+  /// **Neden gün içi AYRI:** diğer dönemler günlük/haftalık kapanış taşır ve
+  /// 3px kuralıyla zaten okunur çıkıyor (kullanıcı: "diğerleri düzgün
+  /// çalışıyor"). Gün içi seri 5 dakikalıktır ve taşıdığı dalgalanmanın
+  /// büyük kısmı alım-satım gürültüsüdür; aynı kural orada ~100 zikzak
+  /// üretiyor ve çizgi tarak gibi görünüyordu.
+  ///
+  /// **Seyreltme çizgiyi DÜZLEŞTİRMEZ.** `seyreltSpots` her kova için en
+  /// düşük ve en yüksek noktayı korur — dış zarf birebir aynı kalır, yalnızca
+  /// aradaki okunamayan salınım azalır. Kasıtlı: fiyat grafiğini yumuşatmak,
+  /// veride gerçekten olan bir sıçramayı gizlemek demektir.
+  ///
+  /// 7px ~300px'lik telefon çizim alanında ~42 nokta demek; 5 dakikalık
+  /// tam günde (288 nokta) her kova ~14 dakikayı temsil eder. Zoom
+  /// yapıldıkça pencere daralır ve detay geri gelir.
+  static const _gunIciPikselBasinaNokta = 7.0;
+
   /// Çizim alanı genişliği okunamadığında (sonsuz constraint) varsayılan.
   static const _varsayilanGenislik = 360.0;
+
+  /// Viewport'a kaç nokta serpiştirileceği.
+  ///
+  /// `build` içine gömülü bir ifade olarak duruyordu ve o hâliyle hiçbir
+  /// testle denetlenemiyordu: gün içi kuralının sessizce kaybolması ya da
+  /// diğer dönemlerle eşitlenmesi fark edilmezdi. Saf fonksiyon olarak
+  /// ayrılması kuralı doğrudan sorulabilir yapar.
+  ///
+  /// [kisitGenisligi] LayoutBuilder'ın verdiği ham genişliktir; Y ekseni
+  /// rezervi burada düşülür.
+  ///
+  /// Alt sınır 20: dar bir telefonda gün içi kuralı 40'a kırpılsaydı kural
+  /// pratikte devre dışı kalırdı (300px/7 ≈ 43, 200px/7 ≈ 29).
+  /// `seyreltSpots` 4'ün altında zaten seyreltme yapmıyor.
+  @visibleForTesting
+  static int hedefNoktaSayisi({
+    required double kisitGenisligi,
+    required int periodDays,
+  }) {
+    final cizimGenisligi =
+        (kisitGenisligi.isFinite ? kisitGenisligi : _varsayilanGenislik) -
+            _yEkseniGenisligi;
+    // Gün içi seri diğerlerinden çok daha sık örneklenir; aralık kuralı da
+    // o yüzden döneme bağlı (bkz. [_gunIciPikselBasinaNokta]).
+    final aralik =
+        periodDays <= 1 ? _gunIciPikselBasinaNokta : _pikselBasinaNokta;
+    return (cizimGenisligi / aralik).round().clamp(20, 400);
+  }
 
   /// Viewport'a düşen noktalar, ekran yoğunluğuna indirgenmiş.
   ///
