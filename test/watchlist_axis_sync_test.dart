@@ -88,10 +88,17 @@ void main() {
     test('yüzde tabanı dönem İÇİNDE kalır', () {
       // Asıl zarar buydu: kırpılmamış seri dönem dışındaki bir noktaya göre
       // normalize oluyor, grafik de açıklama da yanlış rakam gösteriyordu.
+      //
+      // **GÜNLÜK bir TAKVİM GÜNÜ olduğu için taban gece yarısıdır**, 24 saat
+      // öncesi değil (kullanıcı bulgusu: "saat 11.31 ise gece 00.00 ile 11.32
+      // aralığı gösterilmeli"). Bu test o iki tabanı birbirinden ayırt eder:
+      // kayan pencereye geri dönülürse rakam %1'e çıkar ve test düşer.
       final now = DateTime(2026, 9, 4, 18);
       int ms(DateTime d) => d.millisecondsSinceEpoch;
 
-      // Son 1 günde %1, önceki 4 günde %9 kazanmış bir portföy.
+      // Son 1 günde %1, önceki 4 günde %9 kazanmış bir portföy. Kazanç saat
+      // başına düzgün dağıldığı için gece yarısından bu yana olan bölümü
+      // 18/24 = %0,75'tir.
       final ham = <int, double>{};
       for (var i = 0; i <= 120; i++) {
         ham[ms(now.subtract(Duration(hours: i)))] = i <= 24
@@ -102,9 +109,15 @@ void main() {
       final kirpisiz = normalizeSeries(ham)!;
       final kirpili = normalizeSeries(HistoryService.clipToPeriod(ham, 1))!;
 
-      expect(kirpili.totalReturnPct, closeTo(1.0, 0.05),
-          reason:
-              'GÜNLÜK sekmesinde gösterilen oran son bir günün oranı olmalı');
+      // Pencerenin BAŞI gece yarısı — asıl iddia bu, oran onun sonucu.
+      final ts = HistoryService.clipToPeriod(ham, 1).keys.toList()..sort();
+      final bas = DateTime.fromMillisecondsSinceEpoch(ts.first);
+      expect(bas, DateTime(2026, 9, 4),
+          reason: 'GÜNLÜK penceresi bugünün 00:00\'ından başlamalı');
+
+      expect(kirpili.totalReturnPct, closeTo(0.748, 0.01),
+          reason: 'GÜNLÜK sekmesinde gösterilen oran GÜN İÇİNDEKİ orandır; '
+              '%1 çıkması kayan 24 saatlik pencereye dönüldüğü anlamına gelir');
       expect(kirpisiz.totalReturnPct, greaterThan(9.0),
           reason: 'kırpılmamış serinin hatalı olduğu ölçüldü — bu satır '
               'hatanın büyüklüğünü belgeler');
@@ -505,8 +518,26 @@ void main() {
       final takip =
           await HistoryService.instance.getPortfolioHistoryHourly(lotlar, 24);
 
-      expect(takip.keys.toSet(), performans.keys.toSet(),
-          reason: 'iki ekran aynı günü farklı ızgarada çiziyor');
+      // **Karşılaştırma ORTAK pencerede yapılır.** Her iki ızgara da `now`'a
+      // kadar uzuyor; iki çağrı arasında 5 dakikalık bir slot sınırı
+      // geçilirse ikincisine fazladan bir slot düşer ve küme eşitliği
+      // rastgele düşer (tam paket koşusunda 07:15:00'ı geçerken ölçüldü;
+      // aynı test tek başına geçiyordu). Ortak sona kadar kırpmak yarışı
+      // kaldırır ama korumayı bırakmaz: ızgaranın ŞEKLİ ayrışırsa fark
+      // sonda değil ortada çıkar ve test yine düşer.
+      final pKeys = performans.keys.toSet();
+      final tKeys = takip.keys.toSet();
+      expect(pKeys.isEmpty, tKeys.isEmpty,
+          reason: 'bir ekran veri üretirken diğeri boş kaldı');
+      if (pKeys.isNotEmpty) {
+        final ortakSon = [
+          pKeys.reduce((a, b) => a > b ? a : b),
+          tKeys.reduce((a, b) => a > b ? a : b),
+        ].reduce((a, b) => a < b ? a : b);
+        expect(tKeys.where((t) => t <= ortakSon).toSet(),
+            pKeys.where((t) => t <= ortakSon).toSet(),
+            reason: 'iki ekran aynı günü farklı ızgarada çiziyor');
+      }
 
       // Çözünürlük gerçekten 5 dakika mı?
       final ts = takip.keys.toList()..sort();
