@@ -33,6 +33,7 @@ class WatchlistChart extends StatelessWidget {
     super.key,
     required this.series,
     required this.portfolioLabel,
+    required this.periodDays,
     this.focused,
     this.onFocusChanged,
     this.portfolioKey = _portfolioKey,
@@ -59,6 +60,13 @@ class WatchlistChart extends StatelessWidget {
   final String portfolioLabel;
 
   final String portfolioKey;
+
+  /// Seçili dönemin gün sayısı (`watchlistPeriods[...].days`).
+  ///
+  /// X ekseninin penceresi buradan gelir; seriden çıkarılamaz çünkü GÜNLÜK
+  /// ekseni son veri noktasının ötesine, günün sonuna kadar uzar — performans
+  /// ekranındaki gün içi grafiğin ölçeğiyle aynı olsun diye.
+  final int periodDays;
 
   /// Portföy serisinin sabit anahtarı — çağıran taraf da bunu kullanır.
   static const _portfolioKey = '__portfoy__';
@@ -92,6 +100,7 @@ class WatchlistChart extends StatelessWidget {
     return PercentComparisonChart(
       series: series,
       order: order,
+      periodDays: periodDays,
       emphasizedKey: portfolioKey,
       focused: focused,
       onFocusChanged: onFocusChanged,

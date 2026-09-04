@@ -275,6 +275,9 @@ class _ChartCard extends ConsumerWidget {
                   WatchlistChart(
                     series: series,
                     portfolioLabel: portfolioLabel,
+                    periodDays:
+                        watchlistPeriods[ref.watch(watchlistPeriodProvider)]
+                            .days,
                     focused: gecerliOdak,
                     onFocusChanged: (k) =>
                         ref.read(watchlistFocusProvider.notifier).state = k,

@@ -305,6 +305,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       decoration: context.surfaceCard(),
       child: PercentComparisonChart(
         series: _series,
+        periodDays: _periods[_periodIdx].days,
         // Seçim sırası korunur — kullanıcının eklediği sıra grafikteki
         // katman sırasıyla aynı olsun.
         order: _selected.map((s) => s.ticker).toList(),

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show Colors, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
@@ -14,6 +13,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
+import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
@@ -1085,31 +1085,6 @@ class _PortfolioPerformanceScreenState
   /// TRY değeri için okunabilir kısa etiket (₺1,2M / ₺450K / ₺900)
   String _fmtY(double val) => fmtTRYCompact(val);
 
-  /// Y ekseni interval'i için "nice number" — TradingView tarzı okunması
-  /// kolay yuvarlak sayı. 1-2-5-10 tabanında hızlı bulur.
-  double _niceRoundNumber(double raw) {
-    if (raw <= 0) return 1;
-    final exponent = (raw > 0 ? raw : 1.0).abs();
-    final magnitude = _pow10((_log10(exponent)).floor());
-    final normalized = raw / magnitude;
-    double nice;
-    if (normalized <= 1) {
-      nice = 1;
-    } else if (normalized <= 2) {
-      nice = 2;
-    } else if (normalized <= 2.5) {
-      nice = 2.5;
-    } else if (normalized <= 5) {
-      nice = 5;
-    } else {
-      nice = 10;
-    }
-    return nice * magnitude;
-  }
-
-  double _log10(double x) => (x <= 0) ? 0 : (math.log(x) / math.ln10);
-  double _pow10(int n) => math.pow(10, n).toDouble();
-
   /// Seçili periyodun değişim özeti — grafiğin hemen üstünde.
   ///
   /// Değişim = son değer − ilk değer (ham fark). Grafikteki iki uçla birebir
@@ -1510,7 +1485,7 @@ class _PortfolioPerformanceScreenState
       // 50000/100000 gibi. Chart üzerindeki grid line'lar da bu yuvarlak
       // değerlere denk gelir, Y label'lar temiz görünür.
       final rawInterval = (outMaxY - outMinY) / 4;
-      final niceInterval = _niceRoundNumber(rawInterval);
+      final niceInterval = yuvarlakAdim(rawInterval);
       // Interval yuvarlanınca minY/maxY'yi de yuvarla ki labellar tam denk.
       final niceMin = (outMinY / niceInterval).floor() * niceInterval;
       final niceMax = (outMaxY / niceInterval).ceil() * niceInterval;
@@ -1535,10 +1510,11 @@ class _PortfolioPerformanceScreenState
       // %82'sinde olacak şekilde fullMaxX'i genişletiyoruz. Alt sınır
       // 1440 (tam gün) — sabahın ilk saatlerinde grafiğin çok dar
       // görünmesini engeller.
+      // Kural `chart_axis.dart`'ta — takip listesi grafiği de aynı
+      // fonksiyondan besleniyor. İki ekran aynı günü aynı ölçekte çizmeli;
+      // kopyalandığında biri düzelirken öteki geride kalıyordu.
       final now = DateTime.now();
-      final nowMin = (now.hour * 60 + now.minute).toDouble();
-      final needed = nowMin > 0 ? nowMin / 0.82 : 240.0;
-      fullMaxX = needed > 1440.0 ? needed : 1440.0;
+      fullMaxX = gunIciEksenSonuDk((now.hour * 60 + now.minute).toDouble());
     } else {
       // Kesirli gün — saatlik veride son X ~6.83, integer olsa 7 kalırdı
       // ve son nokta grafiğin sağında boşta kalırdı.
@@ -1601,8 +1577,8 @@ class _PortfolioPerformanceScreenState
       // X ekseni için uygun aralık. Intraday'de 4 saatlik (240 dk) etiketler
       // → 00:00 / 04:00 / 08:00 / 12:00 / 16:00 / 20:00 gibi.
       final xInterval = intraday
-          ? 240.0
-          : _niceRoundNumber((viewMaxX - viewMinX) / 5)
+          ? gunIciEksenAdimiDk
+          : yuvarlakAdim((viewMaxX - viewMinX) / 5)
               .clamp(1.0, double.infinity);
 
       // Alım dot'ları için piksel bazlı seyreltme. Arka arkaya yapılan
@@ -1661,7 +1637,7 @@ class _PortfolioPerformanceScreenState
         gridData: FlGridData(
           show: true,
           drawVerticalLine: intraday,
-          verticalInterval: intraday ? 240 : null,
+          verticalInterval: intraday ? gunIciEksenAdimiDk : null,
           horizontalInterval: yInterval,
           getDrawingHorizontalLine: (_) => FlLine(
             color: context.c.overlay,
@@ -1808,30 +1784,21 @@ class _PortfolioPerformanceScreenState
                 // Dinamik format — dar viewport'ta gün+ay, geniş
                 // viewport'ta (365+ gün) sadece "MMM yy". Çok dar (<3 gün)
                 // görünümde saat de göster.
-                String nonIntradayLabel(double v) {
-                  final d = start.add(Duration(minutes: (v * 24 * 60).round()));
-                  final span = (meta.max - meta.min).abs();
-                  final showYearOnly = span > 400;
-                  final showTime = span < 3;
-                  final showYear =
-                      !showYearOnly && d.year != DateTime.now().year;
-                  if (showYearOnly) {
-                    return DateFormat('MMM yy', 'tr_TR').format(d);
-                  }
-                  if (showTime) {
-                    return DateFormat('d MMM HH:mm', 'tr_TR').format(d);
-                  }
-                  return DateFormat(showYear ? 'd MMM yy' : 'd MMM', 'tr_TR')
-                      .format(d);
-                }
-
-                final label = intraday
-                    ? () {
-                        final h = (val ~/ 60).clamp(0, 23);
-                        final m = (val % 60).toInt();
-                        return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
-                      }()
-                    : nonIntradayLabel(val);
+                // Biçim kuralı `chart_axis.dart`'ta — takip listesi grafiği
+                // de aynı fonksiyonu çağırır.
+                //
+                // Gün içi etiket eskiden dakikadan elle kuruluyor ve saat
+                // `clamp(0, 23)` ile sıkıştırılıyordu: eksen günü aştığında
+                // (19:41'den sonra, bkz. `gunIciEksenSonuDk`) gece yarısı
+                // tick'i "00:00" yerine "23:00" yazıyor, yani var olmayan bir
+                // saati işaretliyordu.
+                final label = zamanEtiketi(
+                  intraday
+                      ? start.add(Duration(minutes: val.round()))
+                      : start.add(Duration(minutes: (val * 24 * 60).round())),
+                  spanGun: (meta.max - meta.min).abs(),
+                  gunIci: intraday,
+                );
                 return Padding(
                   padding: const EdgeInsets.only(top: 10),
                   // Sabit genişlik + ortalama: fl_chart etiketi tick'te
