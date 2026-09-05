@@ -165,13 +165,34 @@ void main() {
           File('ios/SandikWidget/SandikLiveActivity.swift').readAsStringSync());
 
       final yazimlar =
-          RegExp(r'\.environment\(\s*\\\.colorScheme').allMatches(view).length;
+          RegExp(r'\.environment\(\s*\\\.colorScheme').allMatches(view);
 
-      expect(yazimlar, 2,
-          reason: 'kilit ekranı banner\'ı ve Dynamic Island — ikisi de '
-              'şemayı sabitlemeli, bulunan: $yazimlar');
+      expect(yazimlar.length, 1,
+          reason: 'şema TEK yerde — kilit ekranı banner\'ında — sabitlenmeli, '
+              'bulunan: ${yazimlar.length}');
       expect(view.contains('isLightTheme ? .light : .dark'), isTrue,
           reason: 'şema TERS bağlanırsa hata aynen geri gelir');
+
+      // ## Neden yalnızca kilit ekranı?
+      //
+      // Bu test önce Dynamic Island'da da bir sabitleme ARIYORDU ve build
+      // #97'yi kırdı: `DynamicIsland` bir `View` değil, `.environment(...)`
+      // kabul etmez ("Value of type 'DynamicIsland' has no member
+      // 'environment'"). Dart testleri Swift'i DERLEMEDİĞİ için bu ancak
+      // CI'da görüldü — testin kendisi derlenemeyen bir kodu şart koşuyordu.
+      //
+      // Ada'nın ayrıca ihtiyacı da yok: zemini her zaman siyah donanım
+      // bölgesidir, sistem oraya `activityBackgroundTint` üzerine chrome
+      // bindirmez ve içerideki her renk paletten açıkça gelir.
+      //
+      // Sabitleme kilit ekranı kapanışında kalmalı — `dynamicIsland:`
+      // etiketinden SONRAYA kayarsa derleme yine kırılır.
+      final adaBaslangici = view.indexOf('dynamicIsland:');
+      expect(adaBaslangici, greaterThan(0),
+          reason: 'dynamicIsland kapanışı bulunamadı — test kör kalmasın');
+      expect(yazimlar.single.start, lessThan(adaBaslangici),
+          reason: 'şema sabitlemesi kilit ekranı kapanışında olmalı; '
+              'DynamicIsland üzerine uygulanırsa Swift derlenmez');
     });
 
     test('Android widget uygulama tercihini okuyor', () async {

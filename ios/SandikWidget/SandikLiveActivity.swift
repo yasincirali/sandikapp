@@ -26,10 +26,10 @@ struct SandikLiveActivity: Widget {
 
             // ---- Kilit ekranı / banner ----
             //
-            // Açık `return`: kapanış artık çok ifadeli (yukarıdaki `let`).
-            // Result builder'lı bir kapanışta da geçerlidir ve tek bir View
-            // döndürdüğümüz için davranış aynı kalır.
-            return SandikLockScreenView(context: context)
+            // Açık `return` YOK: bu kapanış `@ViewBuilder`'lı ve tek bir
+            // görünüm üretiyor. Yukarıdaki `let` bir bildirimdir, result
+            // builder onu olduğu gibi geçirir.
+            SandikLockScreenView(context: context)
                 // Sistem, arka planı kendi materyaliyle boyamasın: marka
                 // zemini yeşildir, nötr siyah kullanılmaz.
                 .activityBackgroundTint(palette.background)
@@ -179,17 +179,22 @@ struct SandikLiveActivity: Widget {
                 SandikLogoMark(width: 16)
             }
             .keylineTint(SandikTheme.amber)
-            // Kilit ekranı banner'ıyla AYNI gerekçe (yukarı bkz.): genişletilmiş
-            // bölgeler de aynı paletten besleniyor ve sistem uyarlamalı
-            // katmanları cihazın görünümüne göre çözüyordu.
+            // ŞEMA BURAYA SABİTLENMEZ — iki ayrı nedenle.
             //
-            // Dynamic Island'ın KENDİ zemini her zaman siyah donanım bölgesidir
-            // ve tema bayrağından etkilenmez; sabitlenen şey içerideki
-            // materyal/vibrancy çözümüdür, ada'nın rengi değil.
-            .environment(
-                \.colorScheme,
-                context.state.isLightTheme ? .light : .dark
-            )
+            // 1. `DynamicIsland` bir `View` DEĞİL; `.environment(...)` gibi
+            //    görünüm değiştiricileri kabul etmez. Denemek derlemeyi
+            //    kırar ("Value of type 'DynamicIsland' has no member
+            //    'environment'", build #97) — Dart testleri Swift'i
+            //    derlemediği için bu ancak CI'da görülür.
+            //
+            // 2. Gerek de yok. Kilit ekranında sistem, `activityBackgroundTint`
+            //    üzerine kendi uyarlamalı chrome'unu bindirir; ada'da böyle bir
+            //    katman yoktur — zemin her zaman siyah donanım bölgesidir ve
+            //    buradaki HER renk paletten açıkça geliyor (`palette.gold`,
+            //    `palette.text58`, `statusColor`). Materyal, vibrancy ya da
+            //    `.primary`/`.secondary` gibi şemaya duyarlı tek bir öğe yok.
+            //    Şemayı zorla açığa çekmek, siyah ada üzerinde koyu chrome
+            //    isteyip görünürlüğü BOZMA riski taşırdı.
         }
     }
 }
