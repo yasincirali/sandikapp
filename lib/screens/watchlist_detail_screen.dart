@@ -13,6 +13,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/disclaimer_widget.dart';
 import 'performance_screen.dart' show TechnicalSignalPanel;
 
 /// Takip edilen bir varlığın detay ekranı — fiyat + teknik göstergeler.
@@ -111,12 +112,19 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
                       // Takip listesinin ASIL değeri burada: sahip olmadığın
                       // varlık için de teknik göstergeler hesaplanır. Panel bir
                       // `Asset` istemiyor (bkz. `TechnicalSignalPanel`).
-                      if (item.type != AssetType.mevduat)
+                      if (item.type != AssetType.mevduat) ...[
                         TechnicalSignalPanel(
                           ticker: item.ticker,
                           type: item.type,
                           subCategory: item.subCategory,
                         ),
+                        // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
+                        // taşır (bkz. performance_screen, home_screen).
+                        // Panel koşullu olduğu için ibare de aynı koşulun
+                        // içinde: sinyal yoksa uyarı da görünmez.
+                        const SizedBox(height: SandikSpace.sm),
+                        const DisclaimerWidget(),
+                      ],
                       const SizedBox(height: SandikSpace.lg),
                       const _FooterNote(),
                     ],

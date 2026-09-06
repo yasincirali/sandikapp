@@ -135,6 +135,32 @@ void main() {
     });
   });
 
+  group('yasal ibare', () {
+    // Play'in Financial Services politikası, yatırım/portföy içeriği sunan
+    // uygulamalarda yerel mevzuatın istediği açıklamaları şart koşuyor;
+    // Türkiye'de AL/SAT yönlendirmesi yatırım danışmanlığı sayılabilir.
+    // Bu yüzden sinyal gösteren HER yüzeyde ibare bulunmalı — panel bu
+    // ekrana 2026-09-06'da ibaresiz eklenmişti.
+    test('sinyal paneli gösteren ekran DisclaimerWidget de gösterir', () {
+      expect(detay.contains('TechnicalSignalPanel'), isTrue,
+          reason: 'bu test panelin varlığını varsayar; panel kaldırıldıysa '
+              'ibare kuralı da bu ekran için anlamsızlaşır');
+      expect(detay.contains('DisclaimerWidget'), isTrue,
+          reason: 'AL/SAT sinyali gösterilen yüzeyde "yatırım tavsiyesi '
+              'değildir" ibaresi zorunlu (bkz. performance_screen, '
+              'home_screen, signal_settings_screen)');
+    });
+
+    test('ibare panelle aynı koşulun içinde durur', () {
+      final i = detay.indexOf('TechnicalSignalPanel(');
+      final j = detay.indexOf('DisclaimerWidget');
+      expect(i, greaterThan(-1));
+      expect(j, greaterThan(i),
+          reason: 'ibare panelden SONRA gelmeli; panel gizlendiğinde '
+              'tek başına kalan bir uyarı kutusu kafa karıştırır');
+    });
+  });
+
   group('liste satırı detayı açar', () {
     test('satır dokunulabilir ve detay ekranını açar', () async {
       final liste = _yorumsuz(

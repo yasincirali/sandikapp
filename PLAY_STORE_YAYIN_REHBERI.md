@@ -303,9 +303,13 @@ ayrıca detay veriyor. sandık için işaretlemen gerekenler ve gerekçeleri:
   `TECHNICAL_SIGNALS_IMPLEMENTATION.md`). Bir incelemeci bunu "yatırım
   tavsiyesi" sayabilir; Türkiye'de yatırım danışmanlığı SPK izni gerektirir.
   **Alınacak önlem — üçü birden:**
-  1. Sinyal ekranında ve sinyal bildiriminde görünür bir uyarı: "Yatırım
-     tavsiyesi değildir; teknik göstergelerin otomatik hesabıdır."
-     (`legal/` metinlerindeki disclaimer'ın aynısı, ekranın kendisinde.)
+  1. ✅ **Tamam (2026-09-06).** Uyarı artık sinyal gösteren her yüzeyde:
+     ana ekran, performans, portföy performansı, sinyal ayarları ve
+     (bu tur eklendi) **takip detay ekranı**. Push bildiriminin gövdesi de
+     "Yatırım tavsiyesi değildir." ile bitiyor — hem istemcide
+     (`notification_service.dart`) hem sunucuda (`analyze-signals/index.ts`).
+     Yeni bir sinyal yüzeyi eklenirse ibare de eklenmeli;
+     `test/watchlist_detail_test.dart` bu kuralı kilitliyor.
   2. Mağaza açıklamasındaki uyarı satırını koru (şu an `full_description.txt`
      sonunda var ✅).
   3. Formda "kişiselleştirilmiş tavsiye" sorusuna **hayır** derken
