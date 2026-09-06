@@ -18,9 +18,9 @@ tarayıcıda ve elden yapacakların.
 | Alan | Durum |
 |---|---|
 | Uygulama kodu, imza altyapısı, R8, CI | ✅ Hazır |
-| Mağaza metinleri (TR + EN) | ✅ Hazır (bir uyarı var, bkz. §6.4) |
+| Mağaza metinleri (TR + EN) | ✅ TR metni App Store ile birebir hizalandı (§6.4, §12) · EN için ASC'de karşılığı var mı? |
 | Hukuki belgeler + web sayfaları | ✅ Hazır (URL'leri doğrula, §3.2) |
-| Data Safety envanteri | ✅ Yazılı — **1 satır eksik** (Advertising ID, §5.3) |
+| Data Safety envanteri | ✅ Yazılı · Advertising ID sorusu kapandı — izin manifest'ten düşürüldü (§5.3) |
 | Release keystore | ❌ **SENDE** — yoksa hiçbir şey yüklenemez |
 | Play Console hesabı + doğrulama | ❌ **SENDE** — finans uygulaması olduğu için hesap tipi kritik (§1) |
 | Ekran görüntüleri | ⚠️ Var ama **Play formatına uymuyor** (2,17:1 > 2:1 sınırı) — yeniden üretilecek (§6.2) |
@@ -261,8 +261,12 @@ Sonuç 0 değilse iki seçeneğin var:
 **(b) Beyan et** — Data Safety → Device or other IDs → "Advertising ID"
 kutusunu işaretle, amaç: Analytics.
 
-Karar ver, sonra `DATA_SAFETY_FORM.md`'yi de aynı yönde güncelle ki gelecek
-sürümlerde tutarlı kalsın.
+**✅ Karar verildi (2026-09-06): (a) uygulandı.** iOS tarafında izleme kapalı
+(`PrivacyInfo.xcprivacy` → `NSPrivacyTracking=false`), dolayısıyla iki mağazada
+aynı beyanı verebilmek için Android'de de reklam kimliği kullanılmıyor.
+`AndroidManifest.xml`'e `tools:node="remove"` eklendi; Data Safety'de
+**Advertising ID işaretlenmeyecek**. Build sonrası yukarıdaki `grep` ile
+iznin gerçekten düştüğünü doğrula.
 
 ### 5.4 Financial features declaration — **bu uygulama için zorunlu**
 Artık Play'deki *her* uygulama bu formu dolduruyor; finansal özelliği olanlar
@@ -339,14 +343,22 @@ Yok, üretilmeli. İçerik: koyu yeşil marka zemini (#0A1E15), sandık logosu,
 kısa bir slogan ("Gerçek kâr/zarar, tek ekranda"). Metni kenarlardan uzak
 tut — Play bazı yerleşimlerde kırpıyor. Canva/Figma ile 20 dakikalık iş.
 
-### 6.4 ⚠️ Metin uyarısı — `full_description.txt` içindeki "ARAMA" bölümü
-TR açıklamanın sonunda "Sandık / sandık / SANDIK / Sandik / sandik" yazım
-varyantlarını sayan bir bölüm var. App Store'da sorun çıkarmadı, ama Play'in
-mağaza listesi (spam/metadata) politikası anahtar kelime tekrarına **daha
-sert**: alakasız veya tekrarlayan anahtar kelime listeleri uygulamanın
-listelenmesini engelleyebiliyor. İlk yayında bu bölümü **çıkarmanı**
-öneririm; uygulama yayına girdikten sonra arama performansını ölçüp gerekirse
-tek bir doğal cümle olarak geri eklersin.
+### 6.4 ✅ Metinler App Store ile hizalandı
+`store_listing/tr-TR/full_description.txt` artık `APP_STORE_1.1.3.md`
+içindeki App Store açıklamasının **aynısı**. Bununla birlikte eski metindeki
+"ARAMA" bölümü (Sandık/sandik/SANDIK varyant listesi) de kalktı — Play'in
+metadata politikası anahtar kelime tekrarına App Store'dan sert davranıyor,
+App Store metnindeki tek satırlık doğal cümle (`Uygulamayı ararken "sandik"
+veya "sandık" — ikisi de bizi bulur.`) aynı işi politika riski olmadan
+görüyor.
+
+Tek bilinçli fark: App Store metnindeki **sabit satır kırılmaları
+kaldırıldı** (paragraflar tek satır). İki mağaza da metni olduğu gibi
+basıyor; sabit kırılmalar dar ekranda metni tırtıklı gösteriyor. Kelimeler
+birebir aynı. Aynı düzeltmeyi bir sonraki sürümde ASC'de de yapmanı
+öneririm.
+
+Detaylı eşleme tablosu: §12.
 
 ### 6.5 Mağaza ayarları
 - Kategori: **Finans** (App category: Finance)
@@ -463,11 +475,116 @@ tester'lardan bloklayıcı geri bildirim yok.
    placeholder'lar tek commit'te dolar)
 3. **Domain:** `yasincirali.github.io/sandikapp` ile mi devam, yoksa
    `sandik.app` alınacak mı? (Kodda ve Console'da aynı olmalı)
-4. **AD_ID:** izni kaldıralım mı (§5.3-a), yoksa Data Safety'de beyan mı
-   edelim (§5.3-b)?
-5. **"ARAMA" bölümü:** TR açıklamadan çıkarayım mı? (§6.4)
-6. **Sinyal uyarısı:** sinyal ekranına/bildirimine görünür "yatırım tavsiyesi
+4. **Sinyal uyarısı:** sinyal ekranına/bildirimine görünür "yatırım tavsiyesi
    değildir" satırını ekleyeyim mi? (§5.4)
+5. **ASC'deki beyanlar** (§12.4): App Privacy'de işaretli veri tipleri, yaş
+   sınırı anket cevapları, subtitle, support URL, demo hesabı ve inceleme
+   notu. Bunları söylersen Play formlarını birebir aynı dolduracak şekilde
+   hazırlarım ve `PrivacyInfo.xcprivacy`'deki boş beyanı da (§12.5) aynı
+   envanterle doldururum.
+6. **EN yerelleştirmesi:** App Store'da İngilizce listing var mı? Varsa
+   `en-US/full_description.txt`'i de onunla hizalayayım.
+
+> ✅ Şu iki soru "App Store ile birebir olsun" kararınla kapandı:
+> **AD_ID** izni manifest'ten düşürüldü (iOS'ta izleme kapalı olduğu için) ve
+> TR açıklama App Store metniyle değiştirildi ("ARAMA" bölümü kalktı).
+
+---
+
+## 12. App Store ↔ Play birebir eşleme
+
+**Kural:** App Store Connect'te (ASC) ne beyan edildiyse Play'de de aynısı
+beyan edilir. İki mağazanın aynı uygulama için farklı şey söylemesi hem
+politika riski (bir mağazadaki beyan diğerinde delil olur) hem de bakım
+yükü.
+
+**Ama "birebir" her alanda mümkün değil** — iki mağaza aynı soruları
+sormuyor. Üç grup var:
+
+### 12.1 Aynen kopyalanacak alanlar
+
+| App Store Connect | Play Console | Değer / kaynak |
+|---|---|---|
+| App Name (30) | Store listing → App name (30) | `Sandık: Portföy Takibi` — `store_listing/tr-TR/title.txt` |
+| Description (4000) | Full description (4000) | ✅ **Bu tur hizalandı:** `store_listing/tr-TR/full_description.txt` artık `APP_STORE_1.1.3.md`'deki metnin aynısı |
+| What's New (4000) | What's new (**500**) | İçerik aynı, Play'de kısaltılmış: `whats_new.txt` |
+| Support URL | Store settings → Web sitesi | ASC'deki URL'in aynısı |
+| Privacy Policy URL | App content → Privacy policy | `…/sandikapp/privacy` |
+| Primary Category: Finance | App category: **Finans** | Aynı |
+| Sign-in required + demo hesabı | App access | **Aynı demo hesabı, aynı şifre** (§5.2) |
+| In-App Purchases: yok | Uygulama içi satın alma: hayır | `paywall_enabled=false` |
+| Copyright / geliştirici adı | Developer name | Tüzel kişilik kararıyla aynı (§1) |
+
+### 12.2 Soru farklı, cevap aynı olmalı — taksonomi eşlemesi
+
+**Apple App Privacy (nutrition label) → Play Data Safety.**
+ASC'de işaretlenen her veri tipinin Play karşılığı:
+
+| Apple veri tipi | Play veri tipi | Not |
+|---|---|---|
+| Contact Info → Email Address | Personal info → Email address | Zorunlu, hesap yönetimi |
+| Contact Info → Name | Personal info → Name | Ortak sıralamasında görünen ad |
+| Identifiers → User ID | Personal info → User IDs | Supabase UUID |
+| Financial Info → Other Financial Info | Financial info → Other financial info | Portföy kayıtları |
+| Usage Data → Product Interaction | App activity → App interactions | Firebase Analytics |
+| Diagnostics → Crash Data | App info & performance → Crash logs | Crashlytics |
+| Diagnostics → Performance Data | App info & performance → Diagnostics | — |
+| User Content → Other User Content | App activity → Other user-generated content | Varlık notları |
+| Identifiers → Device ID | Device or other IDs | FCM push token |
+| **Tracking: No** (`NSPrivacyTracking=false`) | **Data shared with third parties: No** + reklam kimliği yok | ✅ Bu tur manifest'ten `AD_ID` izni düşürüldü — artık iki mağaza aynı şeyi söylüyor |
+
+Play'in Apple'da karşılığı olmayan **üç ek sorusu** var, cevapları:
+- *Veriler aktarımda şifreleniyor mu?* → **Evet** (TLS 1.2+)
+- *Kullanıcı verisinin silinmesini isteyebiliyor mu?* → **Evet**, uygulama içi + `…/data-deletion`
+- *Veri toplama zorunlu mu / isteğe bağlı mı?* → Çekirdek veriler zorunlu; Yarış **opt-in**
+
+Apple'ın "Linked to You / Not Linked to You" ayrımının Play'de karşılığı
+yok — Play "collected" ve "shared" diye sorar; her satırda **collected: evet,
+shared: hayır** işaretlenir (üçüncü taraflar işleyen/processor konumunda,
+`DATA_SAFETY_FORM.md`'de listeli).
+
+**Yaş sınırı.** Apple'da tek bir etiket seçilir; Play'de IARC anketi
+doldurulur ve etiketi anket üretir. Etiketler aynı çıkmayabilir — **doğru
+olan, anket cevaplarının ASC'de verilen cevaplarla tutarlı olması**:
+- Kumar / gerçek para oyunu: **hayır** ("Yarış" ödülsüz ve bahissiz)
+- Şiddet, cinsellik, madde: **hayır**
+- Kısıtlanmamış web erişimi: **hayır** (uygulama içi tarayıcı yok)
+- Kullanıcılar arası iletişim: ortak daveti var → ASC'de ne dendiyse aynısı
+- Target audience: **18+** (ASC'de 17+/18+ seçildiyse karşılığı budur)
+
+### 12.3 Karşılığı olmayan alanlar (Play'de girilmez)
+
+| App Store Connect | Play'de durumu |
+|---|---|
+| Keywords (100 karakter) | **Yok.** Play açıklamayı indeksler. `sandik` yazımı, açıklamanın son satırındaki doğal cümleyle karşılanıyor — ayrıca anahtar kelime listesi **eklenmez** (§6.4) |
+| Promotional Text (170) | Yok. En yakın alan Short description (80) ama işlevi farklı |
+| Subtitle (30) | Short description (80) — birebir değil; ASC'deki subtitle'ı buraya genişleterek yaz |
+| Export compliance (`ITSAppUsesNonExemptEncryption=false`) | Play'de form yok; ABD ihracat beyanı yayıncı sözleşmesinde |
+| App Review Notes | Play'de karşılığı "App access" açıklaması — ASC'deki notun aynısını yaz |
+
+### 12.4 ASC'den okuyup bana/Console'a taşıman gerekenler
+
+Bunlar repoda yok, yalnızca App Store Connect'te duruyor. Console'a
+girmeden önce ASC'yi açıp not al:
+
+- [ ] **App Privacy** bölümündeki işaretli veri tipleri (§12.2 tablosuyla karşılaştır)
+- [ ] **Age Rating** anket cevapları
+- [ ] **Subtitle** ve **Support/Marketing URL**
+- [ ] **App Review** → demo hesabı e-posta/şifre ve inceleme notu
+- [ ] **EN yerelleştirmesi var mı** — varsa `store_listing/en-US/full_description.txt`'i de onunla hizalayalım (şu an bağımsız yazılmış bir metin)
+
+### 12.5 ⚠️ Bu tur çıkan tutarsızlık: `PrivacyInfo.xcprivacy`
+
+`ios/Runner/PrivacyInfo.xcprivacy` içinde `NSPrivacyCollectedDataTypes`
+**boş bir dizi** — yani "hiçbir veri toplanmıyor" diyor. Oysa uygulama
+e-posta, ad, portföy kaydı ve çökme günlüğü topluyor; ASC'deki App Privacy
+bölümünde bunlar beyan edilmiş olmalı. Manifest dosyası ile ASC beyanı
+çelişiyorsa Apple bunu inceleme sırasında sorabiliyor.
+
+Play tarafını ASC beyanıyla hizalarken bu dosyayı da doldurmak gerekiyor.
+`DATA_SAFETY_FORM.md`'deki envanteri kaynak alıp doldurabilirim — ama önce
+ASC'de fiilen ne işaretlendiğini söylemen lazım ki üç yer (ASC, xcprivacy,
+Play) aynı şeyi söylesin.
 
 ---
 

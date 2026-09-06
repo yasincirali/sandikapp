@@ -1,6 +1,9 @@
 # Google Play Data Safety Form — sandık
 
-> Play Console → Uygulama içeriği → Veri güvenliği bölümüne kopyalanacak referans. Aşağıdaki satırları formda ilgili checkbox'lara işaretle. Her satır "veri toplanır", "veri paylaşılır" vb. kutucuklarında Play Console'un istediği format.
+> Play Console → Uygulama içeriği → Veri güvenliği bölümüne kopyalanacak referans.
+> **App Store Connect'teki App Privacy beyanıyla birebir aynı olmalıdır** —
+> Apple veri tipleri ile Play karşılıklarının eşleme tablosu:
+> [`PLAY_STORE_YAYIN_REHBERI.md` §12.2](../PLAY_STORE_YAYIN_REHBERI.md#122-soru-farklı-cevap-aynı-olmalı--taksonomi-eşlemesi). Aşağıdaki satırları formda ilgili checkbox'lara işaretle. Her satır "veri toplanır", "veri paylaşılır" vb. kutucuklarında Play Console'un istediği format.
 
 ## Data collection & sharing summary
 
@@ -43,6 +46,7 @@
 | Data type | Collected | Shared | Optional | Purpose |
 |---|---|---|---|---|
 | Device or other IDs | ✅ | ❌ | Required | FCM push notification token (for partnership invites and signal notifications) |
+| **Advertising ID** | ❌ | — | — | **Not collected.** `firebase_analytics` normally merges `com.google.android.gms.permission.AD_ID` into the manifest; it is explicitly removed (`tools:node="remove"` in `android/app/src/main/AndroidManifest.xml`). This matches the iOS declaration (`PrivacyInfo.xcprivacy` → `NSPrivacyTracking=false`). Verify after each build: the merged manifest must contain no `AD_ID` entry. |
 
 ## Special note: Anonymous aggregated data (leaderboard/competition)
 

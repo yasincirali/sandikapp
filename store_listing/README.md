@@ -32,9 +32,9 @@ store_listing/
 - [ ] `feature_graphic.png` — 1024x500 banner (sandık logosu + koyu zemin + slogan)
 - [ ] `icon.png` — 512x512, 32-bit PNG, alfa kanalsız
       (kaynak: `../assets/images/sandik_icon.png`, 1024x1024)
-- [ ] `tr-TR/full_description.txt` sonundaki "ARAMA" bölümünü ilk yayında
-      çıkar — Play'in metadata politikası anahtar kelime tekrarına App
-      Store'dan daha sert (rehber §6.4)
+- [x] `tr-TR/full_description.txt` App Store açıklamasıyla birebir hizalandı
+      (kaynak: `APP_STORE_1.1.3.md`); eski "ARAMA" varyant listesi kalktı.
+      Alan alan eşleme tablosu: rehber §12
 - [x] Hukuki sayfalar yayında: `https://yasincirali.github.io/sandikapp/privacy`
       (`docs/` → GitHub Pages). Console'a girmeden önce tarayıcıda açıp doğrula.
 
