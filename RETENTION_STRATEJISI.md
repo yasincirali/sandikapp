@@ -85,6 +85,37 @@ logPercentileViewed({required int bucket});
 `asset_count_bucket` (0/1-3/4-10/10+), `has_widget`, `push_enabled`, `has_partner`,
 `primary_asset_type`, `install_week`.
 
+### Sprint 0 — uygulanan (2026-09-06)
+
+| Ne | Nerede | Durum |
+|---|---|---|
+| Tutunma event yüzeyi (13 metot) | `lib/services/analytics_service.dart` | ✅ |
+| Cihaz defteri: kurulum günü, aktif gün, tek seferlik eşikler | `lib/services/retention_tracker.dart` *(yeni)* | ✅ |
+| Soğuk açılış + öne dönüş kaydı | `lib/main.dart` | ✅ |
+| Aktivasyon eşikleri (`first_asset`, `three_assets`) | `lib/providers/portfolio_provider.dart` | ✅ |
+| Push izni sonucu (Android) | `lib/services/notification_service.dart` | ✅ |
+| Bildirim açılma (`push_opened`) | `lib/services/notification_service.dart` | ✅ |
+| Birim testler (16 senaryo) | `test/retention_tracker_test.dart` *(yeni)* | ✅ |
+| Push izni sonucu (iOS) | — | ⛔ bkz. `TECHNICAL_DEBT.md` |
+| Widget kurulum + dokunuş atfı | — | ⛔ native iş, Sprint 1 §B |
+
+**Firebase ayrılmış ad tuzağı:** `session_start`, `notification_open`,
+`notification_receive`, `first_open` Firebase'in kendi kullandığı adlar —
+bu adlarla özel event göndermek otomatik toplananla karışır. Bu yüzden
+sırasıyla `app_launch`, `push_opened`, `activation_milestone` kullanıldı.
+Yeni event eklerken ayrılmış adlar listesini kontrol et.
+
+**Ölçüm kararları:**
+- Kısa arka plan dönüşleri (30 dk altı) yeni açılış SAYILMAZ — yoksa
+  telefonu cebe koyup çıkarmak günlük açılış metriğini şişirir. Bildirimden
+  dönüş bu kurala takılmaz; o gerçek bir açılıştır.
+- Aktivasyon eşikleri **bir kez** gönderilir; tekrar, "ilk varlığını ekleyen
+  kullanıcı sayısı"nı kullanıcı başına birden çok kez artırırdı.
+- "Üç varlık" eşiği lot değil **distinct pozisyon** sayar — aynı hisseye üç
+  kez ekleme yapan kullanıcı çeşitlenmiş sayılmamalı.
+- Gün farkı takvim gününden hesaplanır (UTC normalize), 24 saatten değil:
+  D1 kohortu takvim günü üzerinden tanımlıdır ve yaz saati geçişinde kaymaz.
+
 ### Guardrail metrikleri (bunlar bozuluyorsa mekanik zararlıdır)
 - Push opt-out oranı (haftalık) — %2/hafta üstü alarm
 - Uygulama silme (uninstall) — Firebase `app_remove`

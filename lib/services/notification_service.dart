@@ -11,6 +11,8 @@ import '../providers/portfolio_provider.dart';
 import '../screens/partnership_requests_screen.dart';
 import '../screens/performance_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
+import 'analytics_service.dart';
+import 'retention_tracker.dart';
 
 const _kSignalNotificationsKey = 'pref_signal_notifications';
 const _kPartnerNotificationsKey = 'pref_partner_notifications';
@@ -132,11 +134,27 @@ class NotificationService {
   }
 
   /// Bildirim iznini kullanıcıya sor. Onboarding tamamlandıktan sonra çağır.
-  Future<void> requestPermission() async {
+  ///
+  /// [promptContext] iznin NEREDE istendiği — aynı prompt'un farklı
+  /// yerlerdeki kabul oranını karşılaştırabilmek için ölçülür. İzin oranı
+  /// tutunmanın en büyük tek kaldıracı olduğu için sonucu kaydedilir.
+  ///
+  /// **iOS ölçülmez.** Orada izin `init()` içindeki `requestAlertPermission`
+  /// ile daha önce istenmiş oluyor; buradan ikinci bir çağrı yapılmıyor ve
+  /// sonuç bilinmiyor. Uydurulmuş bir değer yazmak, iOS kabul oranını
+  /// olduğundan iyi ya da kötü gösterirdi. iOS tarafı `checkPermissions()`
+  /// ile ayrıca ele alınmalı.
+  Future<void> requestPermission({String promptContext = 'unknown'}) async {
     if (!_initialized) await init();
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.requestNotificationsPermission();
+    if (androidPlugin == null) return;
+    final granted = await androidPlugin.requestNotificationsPermission();
+    if (granted == null) return; // platform yanıt vermedi — tahmin yürütme
+    await RetentionTracker.instance.recordPushPermission(
+      granted: granted,
+      promptContext: promptContext,
+    );
   }
 
   Future<void> sendSignalNotification({
@@ -352,6 +370,16 @@ class NotificationService {
 
   void _handleNotificationPayload(String? payload) {
     if (payload == null) return;
+
+    // Dokunulan bildirimin tipi — hangi bildirim tipinin gerçekten
+    // açıldığını ölçmek, hangisinin kapatılmayı hak ettiğini söyler.
+    AnalyticsService.instance.logPushOpened(
+      type: payload.startsWith(_signalPayloadPrefix)
+          ? signalAlertType
+          : payload.startsWith(_partnerInvitePayloadPrefix)
+              ? partnerInviteType
+              : 'other',
+    );
 
     if (payload.startsWith(_signalPayloadPrefix)) {
       final assetId = payload.substring(_signalPayloadPrefix.length);

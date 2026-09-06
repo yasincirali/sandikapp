@@ -29,7 +29,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     });
     // UE1: Bildirim iznini onboarding sonrasına ertele — uygulama açılır açılmaz değil
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) NotificationService.instance.requestPermission();
+      if (mounted) {
+        NotificationService.instance
+            .requestPermission(promptContext: 'post_onboarding_delay');
+      }
     });
   }
 

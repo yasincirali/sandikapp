@@ -5,7 +5,59 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-04
+**Son güncelleme:** 2026-09-06
+
+---
+
+## 🟠 AÇIK — iOS bildirim izni ölçülemiyor
+
+**Karar tarihi:** 2026-09-06 · Sprint 0 (tutunma ölçümü)
+
+`NotificationService.requestPermission` artık izin sonucunu
+`RetentionTracker.recordPushPermission` ile kaydediyor — **ama yalnızca
+Android'de.** iOS'ta izin `init()` içindeki `requestAlertPermission: true`
+ile daha önce isteniyor; bu metot orada ikinci bir çağrı yapmıyor ve
+sonucu bilmiyor.
+
+**Neden şimdi çözülmedi:** `flutter_local_notifications` v18'de
+`IOSFlutterLocalNotificationsPlugin.checkPermissions()` var, ancak bu
+oturumda Flutter kurulu olmadığı için API imzası derlenerek
+doğrulanamadı. Doğrulanmamış bir çağrı yazıp "ölçüyoruz" demek,
+ölçmemekten kötü olurdu.
+
+**Ertelemenin maliyeti:** push opt-in oranı yalnızca Android için biliniyor.
+iOS payı büyükse (TestFlight/App Store dağıtımı var) izin funnel'ı yarım
+görünür ve §1'deki "push izni oranı" sorusu iOS'ta hâlâ cevapsız.
+
+**Ele alınma zamanı:** Flutter erişimi olan ilk turda — `checkPermissions()`
+imzası doğrulanıp uygulama açılışında bir kez okunsun; sonuç
+`recordPushPermission(promptContext: 'ios_check')` ile yazılsın.
+
+---
+
+## 🟠 AÇIK — Widget kurulum ve dokunuş atfı native tarafta yok
+
+**Karar tarihi:** 2026-09-06 · Sprint 0 (tutunma ölçümü)
+
+`AnalyticsService.logWidgetInstalled` / `logWidgetTapped` ve
+`RetentionTracker.recordWidgetTap` yazıldı ama **çağıranı yok**: native
+widget'lar bir tıklama hedefi tanımlamıyor (iOS `widgetURL`, Android
+`PendingIntent`), dolayısıyla `HomeWidget.widgetClicked` akışı hiç
+yayınlamıyor.
+
+**Neden şimdi yapılmadı:** iş Dart tarafında bitmiyor — WidgetKit ve
+AppWidgetProvider tarafına dokunmayı gerektiriyor ve bu, tutundurma
+planındaki "widget funnel'ı" (Sprint 1, §B) kaleminin kendisi.
+`HomeWidget.getInstalledWidgets()` ile kurulum sayısı okunabilir ama API
+bu oturumda derlenerek doğrulanamadı.
+
+**Ertelemenin maliyeti:** widget'ın tutunmaya katkısı ölçülemiyor; kurulum
+oranı ve dokunuş kaynaklı açılışlar `app_launch` içinde `cold` olarak
+görünüyor, yani widget'ın etkisi organik açılışa yazılıyor.
+
+**Ele alınma zamanı:** Sprint 1, widget funnel'ı işiyle birlikte —
+`sandik://widget/home` deep link'i + `HomeWidget.widgetClicked` aboneliği
++ `recordLaunch(source: 'widget')`.
 
 ---
 

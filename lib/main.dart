@@ -35,6 +35,7 @@ import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
+import 'services/retention_tracker.dart';
 import 'theme/sandik.dart';
 import 'utils/theme_resolution.dart';
 import 'widgets/sandik_error_view.dart';
@@ -74,6 +75,13 @@ Future<void> _initDeferredServices() async {
     ('RemotePushService', () => RemotePushService.instance.init()),
     ('AnalyticsService', () => AnalyticsService.instance.init()),
     ('RemoteConfigService', () => RemoteConfigService.instance.init()),
+    // AnalyticsService'ten SONRA: kurulum günü yazılırken ve ilk açılış
+    // event'i giderken gönderici hazır olmalı, yoksa uygulamanın ömrü
+    // boyunca bir kez üretilen bu event sessizce düşerdi.
+    ('RetentionTracker', () async {
+      await RetentionTracker.instance.init();
+      await RetentionTracker.instance.recordLaunch(source: 'cold');
+    }),
   ]) {
     try {
       await step.$2();
@@ -858,6 +866,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         ref.read(authProvider.notifier).logout();
       } else {
         _backgroundedAt = null;
+        // Öne dönüş açılış olarak sayılır; servis kısa arka plan
+        // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
+        unawaited(RetentionTracker.instance.recordLaunch(source: 'resume'));
         // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
         // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
         // devam etsin, elle "Tekrar Dene"ye basmak zorunda kalmasın.
