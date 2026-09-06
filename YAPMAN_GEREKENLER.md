@@ -35,6 +35,18 @@ bozulmuş demektir.
 
 ---
 
+## 📅 BEKLEYEN DEPLOY: TÜİK Enflasyon Kancası (2026-09-06)
+
+1. `supabase functions deploy calendar-nudge`
+2. `supabase secrets set CALENDAR_NUDGE_CRON_SECRET="<uzun-rastgele>"`
+3. Vault → `calendar_nudge_cron_secret` = aynı string
+4. Migration: `supabase/migrations/0048_calendar_nudge.sql`
+
+**TÜFE endeksi dolu değilse bildirim gitmez** (aşağıdaki maddeye bak).
+Ayrıntı: `supabase/functions/calendar-nudge/README.md`
+
+---
+
 ## 🔔 BEKLEYEN DEPLOY: Fiyat Alarmları (2026-09-06)
 
 Kod hazır; kullanıcı Ayarlar → "Fiyat alarmları"ndan kurabiliyor ama

@@ -35,6 +35,27 @@ imzası doğrulanıp uygulama açılışında bir kez okunsun; sonuç
 
 ---
 
+## 🟡 AÇIK — Takvim kancasında gönderim defteri yok
+
+**Karar tarihi:** 2026-09-06 · Sprint 2
+
+`calendar-nudge` her ayın 3'ünde koşuyor ama TÜFE endeksi elle
+dolduruluyor. Veri o gün girilmemişse fonksiyon sessizce hiçbir şey
+göndermiyor ve o ayın kancası tamamen kaçıyor.
+
+Yeniden deneme cron'u (ayın 4'ü) yazıldı ama **kapalı bırakıldı**: gönderim
+defteri olmadan, veri 3'ünde zamanında girilirse iki bildirim giderdi.
+
+**Ertelemenin maliyeti:** veri geç girilen aylarda kanca kaçar. Kaçırılan
+bir kanca, çift bildirimden ucuz — bu yüzden bilinçli seçim.
+
+**Ele alınma zamanı:** `daily_brief_log` gibi bir `calendar_nudge_log`
+tablosu (user_id yok, `occasion` + `period` yeter) eklenince yeniden deneme
+cron'u açılabilir. Ya da TÜFE çekimi otomatikleşirse sorun kendiliğinden
+kalkar.
+
+---
+
 ## 🟡 AÇIK — TÜFE endeksi elle dolduruluyor
 
 **Karar tarihi:** 2026-09-06 · Sprint 2

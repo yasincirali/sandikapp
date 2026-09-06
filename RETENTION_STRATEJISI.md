@@ -205,7 +205,8 @@ kez sormaz.
 | TÜFE endeks verisi | — | `inflation_index` tablosu | ⛔ **boş** — elle doldurulacak |
 | **Fiyat alarmları** | `free_price_alert_limit` | `supabase/functions/check-price-alerts/`, `0046_price_alerts.sql`, `lib/screens/price_alerts_screen.dart` *(yeni)* | ✅ |
 | **Kilometre taşları** | `milestones_enabled` | `lib/services/milestone_service.dart`, `milestone_repository.dart`, `lib/widgets/milestone_sheet.dart` *(yeni)*, `0047_milestones.sql` | ✅ |
-| Takvim kancaları (TÜİK günü, maaş günü…) | — | — | ⛔ |
+| **Takvim kancası: TÜİK enflasyon günü** | cron | `supabase/functions/calendar-nudge/`, `0048_calendar_nudge.sql` | ✅ |
+| Takvim kancaları: maaş günü, bayram, temettü, beyanname | — | — | ⛔ |
 
 **Endeks değerleri bilerek doldurulmadı.** Yanlış bir TÜFE, portföy
 getirisini olduğundan iyi ya da kötü gösterir; kullanıcı bunu TÜİK'in
@@ -257,6 +258,16 @@ büyüktür, yani 100 bin eşiği yerine 25 bin kutlanırdı. Ayrı bir sayısal
 **Altın adedi ADET üzerinden sayılıyor**, gram karşılığı üzerinden değil:
 "10 çeyreğin oldu" kullanıcının kafasındaki birimdir ve dönüşüm hatası
 taşımaz. Küsurat aşağı yuvarlanır — 4,9 çeyrek 5 sayılmaz.
+
+**Takvim kancası ulusal rakamı taşır, kişisel olanı değil.** "Enflasyon
+aylık %2,49 · yıllık %40,12" der; "senin portföyün %X" demek uydurma olurdu
+— kişiye özel hesap sunucuda yok. Kullanıcı uygulamayı açtığında reel getiri
+rozeti zaten karşılıyor. Bir test bu iddiayı da kilitliyor.
+
+**Maaş günü kancası yapılmadı:** kullanıcının hangi güne (1'i mi 15'i mi)
+maaş aldığını tutan bir tercih alanı gerekiyor ve o alan yok. Herkese aynı
+gün göndermek, kancanın tek dayanağı olan "gerçekten o gün oluyor"
+niteliğini yok ederdi.
 
 **Sıra kasıtlı:** reel getiri şeridi percentile'den ÖNCE. "Eridim mi?"
 sorusu "başkalarına göre nerdeyim?" sorusundan önce gelir — biri alım gücü,
