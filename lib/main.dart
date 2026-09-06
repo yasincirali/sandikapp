@@ -80,7 +80,13 @@ Future<void> _initDeferredServices() async {
     // boyunca bir kez üretilen bu event sessizce düşerdi.
     ('RetentionTracker', () async {
       await RetentionTracker.instance.init();
-      await RetentionTracker.instance.recordLaunch(source: 'cold');
+      // Kaynak, açılış YAZILMADAN ÖNCE belirlenir: önce 'cold' yazıp sonra
+      // widget atfını eklemek aynı açılışı iki kez saydırırdı.
+      final widgetten = await HomeWidgetService.instance.launchedFromWidget();
+      await RetentionTracker.instance
+          .recordLaunch(source: widgetten ? 'widget' : 'cold');
+      // Uygulama açıkken widget'a dokunulması ayrı bir akıştan gelir.
+      await HomeWidgetService.instance.startClickAttribution();
     }),
   ]) {
     try {
@@ -912,6 +918,24 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           name: 'asset_count',
           value: _bucketAssetCount(currCount),
         );
+      }
+
+      // Bildirim iznini İLK VARLIK EKLENDİKTEN SONRA iste (Remote Config).
+      //
+      // Neden burada: bu dinleyici zaten portföyün her yazımını görüyor ve
+      // izin istemek bir servis çağrısı — ekranların hiçbirine yeni bağımlılık
+      // eklemiyor.
+      //
+      // `prev != null` ŞART: soğuk açılışta önceki state yoktur ve sayaç
+      // -1'den gelir; bu kontrol olmadan portföyü dolu her kullanıcıya
+      // uygulama her açılışta izin sormuş olurdu. Yalnızca oturum İÇİNDE
+      // 0'dan 1'e geçiş gerçek bir "ilk varlık" anıdır.
+      if (RemoteConfigService.instance.pushPromptAfterFirstAsset &&
+          prev != null &&
+          prevCount == 0 &&
+          currCount >= 1) {
+        NotificationService.instance
+            .requestPermission(promptContext: 'after_first_asset');
       }
 
       // Ana ekran widget'ını tazele.

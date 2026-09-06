@@ -23,10 +23,13 @@ uygulama planı ve kod dokunuş noktalarıyla.
 3. **Uygulamanın kendisi değil, veri açığı geri getirir.** Kullanıcıyı geri çağıran şey
    "gel bak" değil, **"senin portföyünde şu oldu"**. Kişiselleştirilmiş insight push'u
    ile jenerik hatırlatma arasındaki fark, açılma oranında kat farkıdır.
-4. **En büyük kullanılmayan varlığın: widget + k-anonim percentile RPC.** İkisi de
-   kodda hazır, ikisi de retention motoru olarak kullanılmıyor. Widget izin gerektirmeyen
-   ikinci bir bildirim kanalıdır; percentile RPC "senin gibi yatırımcılara göre nerdesin"
-   demenin altyapısıdır.
+4. **İki yüzey yarım kalmış: widget ve percentile.** Percentile RPC yazılmış ve
+   Yarış ekranında teaser olarak *kullanılıyor* — ama oraya kullanıcı bilerek gider,
+   yani zaten gelmiş olanı görür; ana ekranda yok ve hiç ölçülmüyor. Widget ise
+   yalnızca **Android'de** var: `HomeWidgetService` iOS'u destekliyor ama
+   `SandikWidgetBundle.swift` sadece Live Activity içeriyor, WidgetKit görünümü
+   hiç yazılmamış. *(Düzeltme 2026-09-06: bu maddenin ilk hâli ikisini de "hiç
+   kullanılmıyor" ve widget'ı "Android + iOS" diye yazıyordu.)*
 5. **Türkiye'ye özel takvim senin en savunulabilir diferansiyatörün:** her ayın 3'ü TÜİK
    enflasyon açıklaması, maaş günü, bayram-altın mevsimi, Mart beyanname. Bunlar
    uydurma bildirim sebebi değil, **ulusal dikkat anları**.
@@ -116,6 +119,48 @@ Yeni event eklerken ayrılmış adlar listesini kontrol et.
 - Gün farkı takvim gününden hesaplanır (UTC normalize), 24 saatten değil:
   D1 kohortu takvim günü üzerinden tanımlıdır ve yaz saati geçişinde kaymaz.
 
+### Sprint 1 — uygulanan (2026-09-06)
+
+Üçü de **Remote Config bayrağı arkasında ve kapalı doğar.** Sprint 0'ın taban
+çizgisi birikmeden açılırlarsa etkileri ölçülemez — "öncesi" verisi olmadan
+öncesi/sonrası karşılaştırması yapılamaz.
+
+| Ne | Bayrak | Nerede | Durum |
+|---|---|---|---|
+| Ana ekran yüzdelik dilim şeridi + ölçüm | `percentile_strip_enabled` | `lib/widgets/percentile_strip.dart` *(yeni)*, `home_screen.dart` | ✅ |
+| Widget dokunuş atfı (Android) | — | `SandikWidgetProvider.kt`, `home_widget_service.dart`, `main.dart` | ✅ |
+| Bildirim izni: ilk varlık sonrası | `push_prompt_after_first_asset` | `main.dart`, `main_navigation_screen.dart` | ✅ |
+| Widget kurulum önerisi | `widget_prompt_enabled` | — | ⛔ bayrak var, UI yok |
+| Sabah brifingi push | — | — | ⛔ Edge Function + cron yazılmadı |
+| iOS ana ekran widget'ı | — | — | ⛔ WidgetKit görünümü hiç yok |
+
+**Şeridin üç kapısı:** Remote Config bayrağı, kullanıcının yarış opt-in'i,
+sunucudaki k-anonimlik eşiği. Üçünden biri kapalıysa şerit **hiç çizilmez** —
+"yakında" plaseholderi ana ekranda yer işgal etmeye değmez. Dolgu widget'ın
+içindedir; dışarıda olsaydı gizliyken bile boşluk bırakırdı.
+
+**Şerit snapshot'ı kendisi tazeler.** `get_percentile_bucket` yalnızca son 24
+saatte snapshot atmış kullanıcıları karşılaştırıyor ve yükleme eskiden sadece
+Yarış ekranında yapılıyordu. Şerit ona bağlı kalsaydı yalnızca "bugün Yarış'a
+uğramış" kullanıcıda çalışırdı — yani pratikte hiç görünmezdi.
+
+**Dil kararı:** "İlk %X'tesin" yerine "senin gibi yatırımcıların %Y'sinden iyi
+getirdin". Aynı sayı, daha az yarışmacı çerçeve — ve §9'daki "işlemi değil
+birikimi ödüllendir" ilkesiyle tutarlı. Tutar hiçbir yerde gösterilmiyor.
+
+**Widget atfı neden gerekliydi:** Android widget'ı dokunulunca uygulamayı zaten
+açıyordu ama düz bir launch intent'le — Dart tarafı açılışın widget'tan
+geldiğini bilmiyordu, dolayısıyla widget kaynaklı her açılış analytics'te
+organik (`cold`) görünüyor ve widget'ın katkısı ölçülemiyordu. Artık
+`HomeWidgetLaunchIntent` bir URI taşıyor ve açılış kaynağı **yazılmadan önce**
+belirleniyor (önce `cold` yazıp sonra `widget` eklemek aynı açılışı iki kez
+saydırırdı).
+
+**İzin isteminin iki kolu birbirini dışlar:** bayrak açıkken ana ekrandaki
+2 saniyelik istem devre dışı kalır. İkisi birden çalışsaydı kullanıcı izni
+ilkinde reddeder ve bağlamlı istem hiç gösterilemezdi — Android izni ikinci
+kez sormaz.
+
 ### Guardrail metrikleri (bunlar bozuluyorsa mekanik zararlıdır)
 - Push opt-out oranı (haftalık) — %2/hafta üstü alarm
 - Uygulama silme (uninstall) — Firebase `app_remove`
@@ -182,9 +227,9 @@ ve tam bu yüzden açtırıyor.
 | FCM + payload routing | `lib/services/notification_service.dart` | Yeni bildirim tipleri aynı yola takılır |
 | **pg_cron kurulu** | `supabase/migrations/0033_live_activity_cron.sql` | Yeni zamanlanmış iş marjinal maliyet |
 | Edge Functions (6 adet) | `supabase/functions/` | `analyze-signals` deseni kopyalanabilir |
-| Home widget (601 satır, sparkline) | `lib/services/home_widget_service.dart` | **İzin gerektirmeyen 2. kanal** |
+| Home widget (601 satır, sparkline) — **yalnızca Android** | `lib/services/home_widget_service.dart` | **İzin gerektirmeyen 2. kanal** |
 | iOS Live Activity (764 satır) | `lib/services/live_activity_service.dart` | Seans boyu kilit ekranında varlık |
-| **k-anonim percentile RPC (k≥20)** | `supabase/migrations/0012_leaderboard_snapshots.sql` | "Senin gibi yatırımcılara göre" — **hazır, kullanılmıyor** |
+| **k-anonim percentile RPC** (k 20→8, bkz. 0031) | `0012_leaderboard_snapshots.sql` | Yarış ekranında teaser var; **ana ekranda yok, ölçülmüyor** |
 | `snapshots` (user_id, ts, JSONB) | `supabase_schema.sql:40` | Recap/özet için ham veri |
 | Partner/aile paylaşımı | `partnerships`, `partner_invites` | Referral ve sosyal bağ |
 | Watchlist | `0043_watchlist.sql` | Alarm için doğal yer |

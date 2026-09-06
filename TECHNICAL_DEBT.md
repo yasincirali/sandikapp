@@ -35,29 +35,54 @@ imzası doğrulanıp uygulama açılışında bir kez okunsun; sonuç
 
 ---
 
-## 🟠 AÇIK — Widget kurulum ve dokunuş atfı native tarafta yok
+## 🟠 AÇIK — iOS ana ekran widget'ı hiç yok
 
-**Karar tarihi:** 2026-09-06 · Sprint 0 (tutunma ölçümü)
+**Karar tarihi:** 2026-09-06 · Sprint 1
 
-`AnalyticsService.logWidgetInstalled` / `logWidgetTapped` ve
-`RetentionTracker.recordWidgetTap` yazıldı ama **çağıranı yok**: native
-widget'lar bir tıklama hedefi tanımlamıyor (iOS `widgetURL`, Android
-`PendingIntent`), dolayısıyla `HomeWidget.widgetClicked` akışı hiç
-yayınlamıyor.
+`HomeWidgetService` iOS'u destekliyor gibi görünüyor: app group kuruluyor,
+`kind = "SandikWidget"` için veri yazılıyor, sparkline PNG'si üretiliyor.
+Ama `ios/SandikWidget/SandikWidgetBundle.swift` yalnızca `SandikLiveActivity()`
+içeriyor — **WidgetKit görünümü hiç yazılmamış.** Yani iOS'ta yazılan veriyi
+okuyan bir widget yok.
 
-**Neden şimdi yapılmadı:** iş Dart tarafında bitmiyor — WidgetKit ve
-AppWidgetProvider tarafına dokunmayı gerektiriyor ve bu, tutundurma
-planındaki "widget funnel'ı" (Sprint 1, §B) kaleminin kendisi.
-`HomeWidget.getInstalledWidgets()` ile kurulum sayısı okunabilir ama API
-bu oturumda derlenerek doğrulanamadı.
+**Neden şimdi yapılmadı:** Xcode olmadan yazılacak, derlenemeyecek ve
+görülemeyecek bir SwiftUI görünümü demek. Live Activity'nin 764 satırlık
+mevcut uygulaması, bu ekibin WidgetKit tarafında ciddi bir çıta koyduğunu
+gösteriyor; körlemesine yazılmış bir görünüm o çıtanın altında kalır.
 
-**Ertelemenin maliyeti:** widget'ın tutunmaya katkısı ölçülemiyor; kurulum
-oranı ve dokunuş kaynaklı açılışlar `app_launch` içinde `cold` olarak
-görünüyor, yani widget'ın etkisi organik açılışa yazılıyor.
+**Ertelemenin maliyeti:** iOS kullanıcılarında ikinci (izin gerektirmeyen)
+tutundurma kanalı YOK. `home_widget_service.dart`'ın iOS yolu ölü kod
+çalıştırıyor — her portföy güncellemesinde kimsenin okumadığı prefs'e yazıp
+PNG üretiyor.
 
-**Ele alınma zamanı:** Sprint 1, widget funnel'ı işiyle birlikte —
-`sandik://widget/home` deep link'i + `HomeWidget.widgetClicked` aboneliği
-+ `recordLaunch(source: 'widget')`.
+**Ele alınma zamanı:** Sprint 1'in widget funnel'ı ancak iOS görünümü
+yazıldıktan sonra iki platformda anlamlı. Android tarafı hazır ve atıflı.
+
+---
+
+## 🟡 AÇIK — `HomeWidgetLaunchIntent` derlenerek doğrulanmadı
+
+**Karar tarihi:** 2026-09-06 · Sprint 1
+
+Android widget'ının tıklama hedefi `HomeWidgetLaunchIntent.getActivity(...)`
+ile kuruldu (`SandikWidgetProvider.kt`). Paket ad alanı doğru olduğu
+biliniyor — aynı dosya zaten `es.antonborri.home_widget.HomeWidgetPlugin`
+import ediyor — ama `HomeWidgetLaunchIntent` sınıfının bu sürümde var olduğu
+ve imzasının `(Context, Class<*>, Uri?)` olduğu **derlenerek
+doğrulanmadı**: bu oturumda Flutter/Gradle yoktu.
+
+**Riski:** yanlışsa Android derlemesi kırılır. Tek satırlık düzeltme, ama
+sessiz değil — ilk `flutter build apk` anında görülür.
+
+**Ertelemenin maliyeti:** yok; doğrulama ilk derlemede bedava geliyor.
+
+**Ele alınma zamanı:** ilk `flutter build apk` / `deploy_emulators.sh`
+turunda. Kırılırsa: `home_widget` paketinin Android kaynağında sınıf adını
+kontrol et.
+
+**Kalan iş:** `HomeWidget.getInstalledWidgets()` ile widget KURULUM sayısı
+hâlâ okunmuyor (`logWidgetInstalled` çağıransız). Dokunuş atfı çalışıyor,
+kurulum oranı ölçülmüyor.
 
 ---
 

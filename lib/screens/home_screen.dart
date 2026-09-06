@@ -17,6 +17,7 @@ import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/portfolio_summary_widget.dart';
+import '../widgets/percentile_strip.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_error_view.dart';
@@ -408,6 +409,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ),
+          // Anonim yüzdelik dilim şeridi.
+          //
+          // ORTAK görünümünde gizlenir: şerit KULLANICININ kendi dilimini
+          // anlatır, ortağın portföyüne bakarken göstermek hangi portföyden
+          // bahsedildiğini belirsizleştirir. Kendi kendini kapatan bir
+          // widget (bayrak/opt-in/k-anonimlik) olduğu için burada başka
+          // koşul yok.
+          if (!(_view != null && _view!.isNotEmpty))
+            SliverToBoxAdapter(
+              child: PercentileStrip(
+                myAssets: myState.assets,
+                toTRY: myState.toTRY,
+                padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+              ),
+            ),
           // Mini cards
           SliverToBoxAdapter(
             child: Padding(
