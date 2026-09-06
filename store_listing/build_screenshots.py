@@ -13,9 +13,11 @@ Kullanım:
 Girdi : screenshots/raw/NN_ad.png   (sıra numarasına göre eşleşir)
 Çıktı : screenshots/out/<boyut>/NN_ad.png
 
-Boyutlar App Store Connect'in kabul ettiği ölçülerdir:
-    1242x2688  (6.5")
-    1284x2778  (6.7")
+Boyutlar:
+    1242x2688  App Store (6.5")
+    1284x2778  App Store (6.7")
+    1080x1920  Google Play telefon (Play en fazla 2:1 orana izin
+               verir; App Store boyutları bu sınırın dışında kalır)
 
 Font: assets/fonts/ altındaki DM Sans — uygulamanın kendi yazı tipi,
 marka tutarlılığı için.
@@ -48,7 +50,15 @@ SUBTLE = (255, 255, 255, 150)
 # Ölçüldü: ortak sekmesindeki pasif etiket rengi (soluk gri-yeşil).
 TAB_GREY = (108, 120, 115)
 
-TARGETS = [(1242, 2688), (1284, 2778)]
+# Çıktı boyutları.
+#   1242x2688 / 1284x2778 → App Store Connect (6.5" / 6.7")
+#   1080x1920             → Google Play telefon
+#
+# Play'in App Store'dan ayrıldığı yer: en-boy oranı en fazla 2:1 olabilir
+# (uzun kenar, kısa kenarın iki katından fazla olamaz) ve her kenar
+# 320-3840 px arasında kalmalı. App Store boyutları 2,16:1 olduğu için
+# Play yüklemede reddeder — o yüzden ayrı bir 16:9 hedefi var.
+TARGETS = [(1242, 2688), (1284, 2778), (1080, 1920)]
 
 # Ham görüntünün üstünden kırpılacak oran (durum çubuğu). 0 = kırpma yok.
 # Ekran görüntülerinde saat/pil görünmesini istemiyorsanız 0.035 deneyin.
