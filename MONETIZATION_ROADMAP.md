@@ -310,6 +310,12 @@ Cron-tabanlı sinyal bildirimi altyapısı devrede:
 ### 🎮 FAZ 3: Engagement & Retention (2 hafta)
 **Amaç:** Kullanıcı geri gelsin, streak oluştursun, viral olsun.
 
+> **Güncelleme (2026-09-06):** Bu bölümün kanıta dayalı, önceliklendirilmiş ve
+> koda bağlanmış hâli [RETENTION_STRATEJISI.md](RETENTION_STRATEJISI.md)'de.
+> Özellikle streak tasarımı orada değişti: ham "giriş serisi" yerine veri
+> bütünlüğü / katkı / partner serisi öneriliyor (gerekçe: hollow engagement ve
+> Barber & Odean bulguları).
+
 #### 3.1 Streak Sistemi
 **Metrik:** Kullanıcı ardışık gün sayısı (app açma + en az bir işlem)
 
