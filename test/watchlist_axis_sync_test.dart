@@ -462,19 +462,29 @@ void main() {
               've kıyas çizgisi grafikten kaybolur');
     });
 
-    test('dönen seri seçilen dönemi AŞMAZ', () async {
+    test('dönen seri seçilen dönemi AŞMAZ — SEANS saati olarak', () async {
       // Kırpmanın gerçekten uygulandığını servisin çıktısından doğrular.
       // Kırpma kaldırılırsa GÜNLÜK'te beş günlük seri döner ve portföy
       // çizgisi izlenen varlıkların soluna taşar.
+      //
+      // ## Ölçü TAKVİM saati DEĞİL, NOKTA SAYISI
+      // Bu test eskiden `genislik.inHours <= 24` diyordu ve Pazartesi
+      // koşulduğunda kırılıyordu: saatlik ızgara hafta sonu slotlarını
+      // atladığı için 25 SEANS saati 72 TAKVİM saatine yayılıyor
+      // (Cuma 00:00 → Pazartesi 00:00). İki koşul aynı anda sağlanamaz.
+      //
+      // Doğru değişmez nokta sayısıdır: "GÜNLÜK" bir günlük HAREKETİ
+      // gösterir ve piyasa kapalıyken hareket yoktur. Takvim genişliğini
+      // sabitlemek, hafta sonunu grafikte düz bir plato olarak çizmeyi
+      // zorunlu kılardı — bilinçli olarak istemediğimiz şey.
       final seri = await HistoryService.instance.getPortfolioHistory(
           [lot(DateTime.now().subtract(const Duration(days: 90)))], 1);
 
-      final ts = seri.keys.toList()..sort();
-      final genislik = Duration(milliseconds: ts.last - ts.first);
-
-      expect(genislik.inHours, lessThanOrEqualTo(24),
-          reason:
-              'GÜNLÜK penceresi ${genislik.inHours} saat — bir günü aşıyor');
+      expect(seri.length, lessThanOrEqualTo(26),
+          reason: 'GÜNLÜK serisi ${seri.length} nokta — saatlik ızgarada '
+              'en çok 25 (+1 tolerans) olmalı');
+      expect(seri.length, greaterThanOrEqualTo(2),
+          reason: 'iki noktanın altında çizgi çizilemez');
     });
 
     test('portföy ve sembol AYNI range i çeker', () async {

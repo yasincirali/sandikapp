@@ -515,21 +515,45 @@ class HistoryService {
     }
 
     final gridNow = hourly ? _sonIsGunu(now) : now;
-    final startMs =
-        gridNow.subtract(Duration(days: periodDays)).millisecondsSinceEpoch;
     final stepMinutes = hourly ? 60 : 24 * 60;
     final totalSteps = hourly ? periodDays * 24 : periodDays;
 
     final out = <int>[];
     for (var i = totalSteps; i >= 0; i--) {
       final slotDate = gridNow.subtract(Duration(minutes: i * stepMinutes));
-      final dayTs = normalizeTs(slotDate.millisecondsSinceEpoch);
-      if (dayTs < normalizeTs(startMs)) continue;
       if (hourly) {
         final wd = slotDate.weekday; // 6=Cts, 7=Paz
         if (wd == DateTime.saturday || wd == DateTime.sunday) continue;
       }
-      out.add(dayTs);
+      out.add(normalizeTs(slotDate.millisecondsSinceEpoch));
+    }
+
+    // **Hafta sonu elenince pencere KISALIR — geriye doğru tamamlanır.**
+    //
+    // `_sonIsGunu` yalnızca `now`'un kendisi hafta sonundaysa çapayı çeker;
+    // pencerenin hafta sonuna UZANMASINI karşılamaz. Pazartesi 00:10'da
+    // ölçüldü: 24 saatlik pencerenin tamamı Pazar'a düşüyor, hepsi eleniyor
+    // ve geriye TEK slot kalıyordu — `normalizeSeries` iki noktanın altında
+    // null döner, yani portföy çizgisi yine kayboluyordu. Cuma akşamı
+    // koşulduğunda görünmeyen, Pazartesi sabahı ortaya çıkan bir hata.
+    //
+    // Çözüm: hedef slot sayısına ulaşana kadar iş günlerinde geriye yürü.
+    // Böylece "son 24 saat" değil "son 24 SEANS SAATİ" çizilir — grafiğin
+    // sorusu zaten piyasanın açık olduğu zamanla ilgili.
+    if (hourly && out.length < totalSteps + 1) {
+      var slotDate = gridNow.subtract(Duration(minutes: totalSteps * stepMinutes));
+      // Üst sınır: sonsuz döngüye karşı güvenlik ağı (tatil zinciri olsa
+      // bile iki haftada hedefe ulaşılır).
+      final sinir = totalSteps * 3 + 14;
+      var adim = 0;
+      while (out.length < totalSteps + 1 && adim < sinir) {
+        slotDate = slotDate.subtract(Duration(minutes: stepMinutes));
+        adim++;
+        final wd = slotDate.weekday;
+        if (wd == DateTime.saturday || wd == DateTime.sunday) continue;
+        out.add(normalizeTs(slotDate.millisecondsSinceEpoch));
+      }
+      out.sort();
     }
     return out;
   }

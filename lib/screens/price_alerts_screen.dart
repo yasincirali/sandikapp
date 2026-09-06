@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/asset.dart';
 import '../models/price_alert.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';

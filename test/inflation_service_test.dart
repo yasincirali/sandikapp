@@ -27,8 +27,16 @@ void main() {
     test('endeks oranından tek bölmeyle hesaplanır', () {
       // Aylık yüzdeleri birbiriyle çarpmak her ay bir yuvarlama hatası
       // eklerdi; endeks değeri saklanmasının sebebi bu.
-      expect(InflationService.changePct(endeks, ay(2025, 9), ay(2026, 9)), 50.0);
-      expect(InflationService.changePct(endeks, ay(2026, 3), ay(2026, 9)), 20.0);
+      //
+      // `closeTo` ZORUNLU, `equals` değil: 150/125 ikili tabanda tam
+      // gösterilemiyor ve sonuç 19.999999999999996 çıkıyor (150/100 ise
+      // tesadüfen tam 50.0 veriyor — testi yazarken bu farkı gizlemişti).
+      // Yuvarlama hatasının BÜYÜKLÜĞÜ denetleniyor; tam eşitlik beklemek
+      // kayan nokta aritmetiğinde doğru bir değişmez değil.
+      expect(InflationService.changePct(endeks, ay(2025, 9), ay(2026, 9)),
+          closeTo(50.0, 1e-9));
+      expect(InflationService.changePct(endeks, ay(2026, 3), ay(2026, 9)),
+          closeTo(20.0, 1e-9));
     });
 
     test('gün alanı fark etmez — uçlar ay başına indirgenir', () {

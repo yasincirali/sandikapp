@@ -42,6 +42,14 @@ class WidgetInstallSheet extends StatelessWidget {
     if (!context.mounted) return;
     await RetentionTracker.instance.markActivation(_gosterildiIsareti);
 
+    // İkinci kontrol ZORUNLU: yukarıdaki `markActivation` bir `await`'tir ve
+    // o sırada ekran kapanmış olabilir. `context`'i await sonrası kullanmak
+    // sökülmüş bir element üzerinde çalışmak demektir (analyzer:
+    // `use_build_context_synchronously`). İşaret zaten harcandığı için
+    // burada dönmek doğru: öneri bir sonraki uygun anda değil, hiç
+    // gösterilmez — tek seferlik hakkın anlamı budur.
+    if (!context.mounted) return;
+
     AnalyticsService.instance.logScreenView(screenName: 'widget_install_sheet');
     await showModalBottomSheet<void>(
       context: context,
