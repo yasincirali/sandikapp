@@ -68,6 +68,38 @@ class RemoteConfigService {
     // kayıtlı mevduatlar okunmaya/gösterilmeye devam eder. Feature stabilize
     // olup store release'e dahil edilince Firebase Console'dan true yapılacak.
     'deposits_enabled': false,
+
+    // ── Tutundurma (Sprint 1) ────────────────────────────────────────────
+    // Üçü de KAPALI doğar. Sprint 0'ın taban çizgisi (en az 2 hafta) birikmeden
+    // açılırlarsa etkileri ölçülemez: öncesi/sonrası karşılaştırması için
+    // "öncesi" verisi olmak zorunda.
+
+    // Ana ekranda anonim yüzdelik dilim şeridi. Yalnızca yarış opt-in'i
+    // açık olan kullanıcıya görünür; k-anonimlik eşiği sunucuda.
+    'percentile_strip_enabled': false,
+
+    // İlk varlık eklendikten sonra ana ekran widget'ı önerisi.
+    'widget_prompt_enabled': false,
+
+    // Bildirim izni ne zaman istensin?
+    // false → eski davranış: ana ekran açıldıktan 2 sn sonra.
+    // true  → ilk varlık eklendikten sonra ("ASELS hareket ederse haber
+    //         verelim mi?"). Bağlamlı istemin kabul oranını yükseltmesi
+    //         beklenir; iki kol `prompt_context` ile ayrışır.
+    'push_prompt_after_first_asset': false,
+
+    // Reel getiri (TÜFE) rozeti. `inflation_index` tablosu boşken zaten
+    // hiçbir şey çizilmez; bayrak veri geldikten sonra kademeli açmak için.
+    'real_return_enabled': false,
+
+    // Free tier fiyat alarmı limiti. Alarm kullanıcının KENDİ istediği
+    // bildirim olduğu için cömert bir sınır: 3 alarm gündelik kullanımı
+    // karşılar, üstü premium için doğal bir kanca.
+    'free_price_alert_limit': 3,
+
+    // Kilometre taşı kutlamaları. Ayda en fazla bir kutlama yapılır;
+    // bayrak, tonun kullanıcıda karşılık bulup bulmadığını ölçmek için.
+    'milestones_enabled': false,
   };
 
   Future<void> init() async {
@@ -134,6 +166,30 @@ class RemoteConfigService {
 
   bool get depositsEnabled =>
       _rc?.getBool('deposits_enabled') ?? _defaults['deposits_enabled'] as bool;
+
+  bool get percentileStripEnabled =>
+      _rc?.getBool('percentile_strip_enabled') ??
+      _defaults['percentile_strip_enabled'] as bool;
+
+  bool get widgetPromptEnabled =>
+      _rc?.getBool('widget_prompt_enabled') ??
+      _defaults['widget_prompt_enabled'] as bool;
+
+  bool get pushPromptAfterFirstAsset =>
+      _rc?.getBool('push_prompt_after_first_asset') ??
+      _defaults['push_prompt_after_first_asset'] as bool;
+
+  bool get realReturnEnabled =>
+      _rc?.getBool('real_return_enabled') ??
+      _defaults['real_return_enabled'] as bool;
+
+  int get freePriceAlertLimit =>
+      _rc?.getInt('free_price_alert_limit') ??
+      _defaults['free_price_alert_limit'] as int;
+
+  bool get milestonesEnabled =>
+      _rc?.getBool('milestones_enabled') ??
+      _defaults['milestones_enabled'] as bool;
 
   /// UI chip'leri / filtre listeleri için: `depositsEnabled=false` iken
   /// mevduat türünü listeden düşer. `AssetType.values` yerine bunu kullan.

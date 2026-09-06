@@ -121,4 +121,122 @@ class AnalyticsService {
         'screen_view',
         {'screen_name': screenName, 'screen_class': screenName},
       );
+
+  // ══ Tutunma ölçümü ═══════════════════════════════════════════════════════
+  //
+  // Durum tutan taraf [RetentionTracker]'dır; buradaki metotlar yalnızca
+  // gönderir. Tekrar eleme, kurulum tarihi ve "bir kez" mantığı orada.
+  //
+  // İSİMLENDİRME UYARISI — Firebase bazı event adlarını kendisi kullanır ve
+  // bu adlarla gönderilen özel event'ler ya reddedilir ya da otomatik
+  // toplananla karışır. Bu yüzden bilerek şu adlardan KAÇINILDI:
+  //   session_start → app_launch
+  //   notification_open / notification_receive → push_opened
+  //   first_open → activation_milestone (milestone: first_asset)
+  // Yeni event eklerken Firebase'in ayrılmış adlar listesini kontrol et.
+
+  // ── Ritim ───────────────────────────────────────────────────────────────
+  /// [source]: cold | resume | push | widget | live_activity
+  Future<void> logAppLaunch({
+    required String source,
+    required int daysSinceInstall,
+  }) =>
+      _log('app_launch', {
+        'source': source,
+        'days_since_install': daysSinceInstall,
+      });
+
+  Future<void> logSessionDepth({
+    required int screensViewed,
+    required int secondsActive,
+  }) =>
+      _log('session_depth', {
+        'screens_viewed': screensViewed,
+        'seconds_active': secondsActive,
+      });
+
+  /// [kind]: data_freshness | monthly_contribution | partner
+  Future<void> logStreakDay({
+    required String kind,
+    required int currentStreak,
+  }) =>
+      _log('streak_day', {'kind': kind, 'current_streak': currentStreak});
+
+  // ── Aktivasyon ──────────────────────────────────────────────────────────
+  /// [milestone]: first_asset | three_assets | push_granted | widget_used |
+  /// first_week_survived
+  Future<void> logActivationMilestone({
+    required String milestone,
+    required int daysSinceInstall,
+  }) =>
+      _log('activation_milestone', {
+        'milestone': milestone,
+        'days_since_install': daysSinceInstall,
+      });
+
+  // ── Bildirim yaşam döngüsü ──────────────────────────────────────────────
+  /// `granted` int olarak gönderilir: Firebase bool parametreyi saklamaz,
+  /// dashboard'da 0/1 ile filtrelemek gerekir.
+  Future<void> logPushPermission({
+    required bool granted,
+    required String promptContext,
+  }) =>
+      _log('push_permission', {
+        'granted': granted ? 1 : 0,
+        'prompt_context': promptContext,
+      });
+
+  /// [type]: signal_alert | partner_invite | daily_brief | price_alert
+  Future<void> logPushOpened({required String type, int? minutesSinceSent}) =>
+      _log('push_opened', {
+        'type': type,
+        if (minutesSinceSent != null) 'minutes_since_sent': minutesSinceSent,
+      });
+
+  Future<void> logNotificationPrefChanged({
+    required String channel,
+    required bool enabled,
+  }) =>
+      _log('notification_pref_changed', {
+        'channel': channel,
+        'enabled': enabled ? 1 : 0,
+      });
+
+  // ── Widget yüzeyleri ────────────────────────────────────────────────────
+  Future<void> logWidgetInstalled({
+    required String platform,
+    required String size,
+  }) =>
+      _log('widget_installed', {'platform': platform, 'size': size});
+
+  /// [surface]: home_widget | lock_widget | live_activity
+  Future<void> logWidgetTapped({required String surface}) =>
+      _log('widget_tapped', {'surface': surface});
+
+  // ── Değer anları ────────────────────────────────────────────────────────
+  /// [kind]: portfolio_value | gold_count | portfolio_age | diversification
+  Future<void> logMilestoneReached({
+    required String kind,
+    required String value,
+  }) =>
+      _log('milestone_reached', {'kind': kind, 'value': value});
+
+  Future<void> logPercentileViewed({
+    required int bucket,
+    required int periodDays,
+  }) =>
+      _log('percentile_viewed', {
+        'bucket': bucket,
+        'period_days': periodDays,
+      });
+
+  /// [period]: monthly | yearly
+  Future<void> logRecapViewed({required String period}) =>
+      _log('recap_viewed', {'period': period});
+
+  Future<void> logRecapShared({
+    required String period,
+    required String channel,
+  }) =>
+      _log('recap_shared', {'period': period, 'channel': channel});
 }

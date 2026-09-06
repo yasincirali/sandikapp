@@ -5,7 +5,172 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-04
+**Son güncelleme:** 2026-09-06
+
+---
+
+## 🟠 AÇIK — iOS bildirim izni ölçülemiyor
+
+**Karar tarihi:** 2026-09-06 · Sprint 0 (tutunma ölçümü)
+
+`NotificationService.requestPermission` artık izin sonucunu
+`RetentionTracker.recordPushPermission` ile kaydediyor — **ama yalnızca
+Android'de.** iOS'ta izin `init()` içindeki `requestAlertPermission: true`
+ile daha önce isteniyor; bu metot orada ikinci bir çağrı yapmıyor ve
+sonucu bilmiyor.
+
+**Neden şimdi çözülmedi:** `flutter_local_notifications` v18'de
+`IOSFlutterLocalNotificationsPlugin.checkPermissions()` var, ancak bu
+oturumda Flutter kurulu olmadığı için API imzası derlenerek
+doğrulanamadı. Doğrulanmamış bir çağrı yazıp "ölçüyoruz" demek,
+ölçmemekten kötü olurdu.
+
+**Ertelemenin maliyeti:** push opt-in oranı yalnızca Android için biliniyor.
+iOS payı büyükse (TestFlight/App Store dağıtımı var) izin funnel'ı yarım
+görünür ve §1'deki "push izni oranı" sorusu iOS'ta hâlâ cevapsız.
+
+**Ele alınma zamanı:** Flutter erişimi olan ilk turda — `checkPermissions()`
+imzası doğrulanıp uygulama açılışında bir kez okunsun; sonuç
+`recordPushPermission(promptContext: 'ios_check')` ile yazılsın.
+
+---
+
+## 🟡 AÇIK — Takvim kancasında gönderim defteri yok
+
+**Karar tarihi:** 2026-09-06 · Sprint 2
+
+`calendar-nudge` her ayın 3'ünde koşuyor ama TÜFE endeksi elle
+dolduruluyor. Veri o gün girilmemişse fonksiyon sessizce hiçbir şey
+göndermiyor ve o ayın kancası tamamen kaçıyor.
+
+Yeniden deneme cron'u (ayın 4'ü) yazıldı ama **kapalı bırakıldı**: gönderim
+defteri olmadan, veri 3'ünde zamanında girilirse iki bildirim giderdi.
+
+**Ertelemenin maliyeti:** veri geç girilen aylarda kanca kaçar. Kaçırılan
+bir kanca, çift bildirimden ucuz — bu yüzden bilinçli seçim.
+
+**Ele alınma zamanı:** `daily_brief_log` gibi bir `calendar_nudge_log`
+tablosu (user_id yok, `occasion` + `period` yeter) eklenince yeniden deneme
+cron'u açılabilir. Ya da TÜFE çekimi otomatikleşirse sorun kendiliğinden
+kalkar.
+
+---
+
+## 🟡 AÇIK — TÜFE endeksi elle dolduruluyor
+
+**Karar tarihi:** 2026-09-06 · Sprint 2
+
+`inflation_index` tablosuna satırlar elle giriliyor (bkz.
+YAPMAN_GEREKENLER.md). TCMB EVDS'den çeken bir Edge Function yazılabilirdi
+ama EVDS API anahtarı gerektiriyor ve anahtar bu oturumda yoktu — uçtan uca
+denenemeyecek bir entegrasyon yazmak, elle girişten daha az güvenilir olurdu.
+
+**Ertelemenin maliyeti:** her ayın 3'ünde bir satır eklenmesi gerekiyor.
+Unutulursa rozet sessizce eskimeye başlar: hesap son AÇIKLANMIŞ aya
+dayandığı için yanlış sayı göstermez, ama pencere geriye kayar.
+
+**Ele alınma zamanı:** EVDS anahtarı alındığında. `fetch-inflation` Edge
+Function + aylık cron (`0 8 3 * *` UTC = TR 11:00, açıklamadan bir saat
+sonra), `analyze-signals` cron deseniyle aynı.
+
+---
+
+## 🟡 AÇIK — Push yardımcıları iki fonksiyonda kopya
+
+**Karar tarihi:** 2026-09-06 · Sprint 1
+
+`daily-brief` yazılırken JWT imzalama ve FCM gönderimi
+`supabase/functions/_shared/fcm.ts`'e çıkarıldı. Ama `analyze-signals` hâlâ
+**kendi kopyasını** kullanıyor: `createAccessToken`, `sendPush`, `shortLabel`
+ve `dedupeTokensByDevice` (daily-brief'teki karşılığı `collapseTokens`).
+
+**Neden şimdi birleştirilmedi:** `analyze-signals` çalışan ve dağıtılmış
+1021 satırlık bir fonksiyon; bu oturumda Deno yoktu, yani taşımanın
+doğruluğu koşularak gösterilemezdi. Sinyal bildirimleri kullanıcının aldığı
+ana bildirim — onu körlemesine düzenlemek kabul edilebilir bir risk değil.
+
+**Ertelemenin maliyeti:** iki kopya zamanla ayrışır. Somut senaryo: FCM
+gönderim gövdesine bir alan eklenir (ör. `apns-collapse-id`), yalnızca
+birine yazılır ve iki bildirim tipi farklı davranır.
+
+**Ele alınma zamanı:** `analyze-signals`'a bir sonraki dokunuşta, `deno test
+supabase/tests/` yeşilken. `_shared/fcm.ts` API'si hazır bekliyor.
+
+---
+
+## ✅ KAPANDI — `analyze-signals` silinmiş lot'lar için bildirim atıyordu
+
+**Kapanış:** 2026-09-06 · Sprint 1
+
+`assets` sorgusunda `deleted_at IS NULL` filtresi yoktu. Silme 0027'den beri
+fiziksel değil damgalı olduğu için, kullanıcı bir lot'u sildikten sonra da
+onun için teknik sinyal bildirimi almaya devam ediyordu.
+
+Tek satırla kapandı (`.is('deleted_at', null)`). Aynı filtre `daily-brief`'te
+baştan var.
+
+---
+
+## ✅ KAPANDI — iOS ana ekran widget'ı yazıldı
+
+**Kapanış:** 2026-09-06 · Sprint 1
+
+`ios/SandikWidget/SandikHomeWidget.swift` eklendi, `SandikWidgetBundle`'a
+kaydedildi ve `project.pbxproj`'a dört giriş açıldı (PBXBuildFile,
+PBXFileReference, grup, Sources fazı — id'ler `...0062`/`...0063`).
+
+Çözülen asıl sorun veri yoluydu: sparkline PNG'si
+`getApplicationSupportDirectory()` altına yazılıyor, yani uygulamanın KENDİ
+kabına — uzantı ayrı sandbox'ta ve o yolu okuyamaz. iOS'a artık görsel değil
+ham seri gönderiliyor (`sandik_spark_series`, paylaşımlı UserDefaults) ve
+eğri `SandikSparkline` ile uzantıda çiziliyor.
+
+**Kalan risk:** Swift ve pbxproj bu oturumda DERLENMEDİ (Xcode yok).
+Bkz. aşağıdaki madde.
+
+---
+
+## 🟡 AÇIK — Swift widget ve pbxproj derlenerek doğrulanmadı
+
+**Karar tarihi:** 2026-09-06 · Sprint 1
+
+`SandikHomeWidget.swift` (257 satır) ve `project.pbxproj`'daki dört giriş
+elle yazıldı; bu ortamda Xcode olmadığı için derlenmedi.
+
+**Riski:** pbxproj bozuksa **tüm iOS build'i** kırılır — Kotlin tarafındaki
+tek satırlık riskten daha büyük. Girişler mevcut `SandikSparkline.swift`
+deseninin birebir kopyası ve id'ler çakışmıyor (en yüksek kullanılan
+`...0061`), ama doğrulama ilk build'e kalıyor.
+
+**Ele alınma zamanı:** ilk `flutter build ios` ya da GitHub Actions turunda.
+Kırılırsa dört girişi de geri almak yeterli — widget dosyası hedefe dahil
+olmaz, uygulama derlenir.
+
+---
+
+## 🟡 AÇIK — `HomeWidgetLaunchIntent` derlenerek doğrulanmadı
+
+**Karar tarihi:** 2026-09-06 · Sprint 1
+
+Android widget'ının tıklama hedefi `HomeWidgetLaunchIntent.getActivity(...)`
+ile kuruldu (`SandikWidgetProvider.kt`). Paket ad alanı doğru olduğu
+biliniyor — aynı dosya zaten `es.antonborri.home_widget.HomeWidgetPlugin`
+import ediyor — ama `HomeWidgetLaunchIntent` sınıfının bu sürümde var olduğu
+ve imzasının `(Context, Class<*>, Uri?)` olduğu **derlenerek
+doğrulanmadı**: bu oturumda Flutter/Gradle yoktu.
+
+**Riski:** yanlışsa Android derlemesi kırılır. Tek satırlık düzeltme, ama
+sessiz değil — ilk `flutter build apk` anında görülür.
+
+**Ertelemenin maliyeti:** yok; doğrulama ilk derlemede bedava geliyor.
+
+**Ele alınma zamanı:** ilk `flutter build apk` / `deploy_emulators.sh`
+turunda. Kırılırsa: `home_widget` paketinin Android kaynağında sınıf adını
+kontrol et.
+
+**Kalan iş:** `HomeWidget.getInstalledWidgets()` ile widget KURULUM sayısı
+hâlâ okunmuyor (`logWidgetInstalled` çağıransız). Dokunuş atfı çalışıyor,
+kurulum oranı ölçülmüyor.
 
 ---
 

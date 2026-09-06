@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -11,6 +12,7 @@ import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'daily_summary.dart';
+import 'retention_tracker.dart';
 
 /// Telefonun ANA EKRANINDAKİ widget'a veri besler (uygulama dışı yüzey).
 ///
@@ -57,6 +59,15 @@ class HomeWidgetService {
   static const _kHasData = 'sandik_has_data';
   static const _kSparkline = 'sandik_sparkline';
   static const _kSparkPoints = 'sandik_spark_points';
+
+  /// Sparkline'ın HAM (0…1 normalize) serisi — virgülle ayrık.
+  ///
+  /// Android PNG okur (`_kSparkline`), iOS ise SwiftUI ile kendi çizer.
+  /// Sebep teknik: PNG `getApplicationSupportDirectory()` altına yazılıyor,
+  /// bu da uygulamanın KENDİ kabı; widget uzantısı ayrı sandbox'ta ve o
+  /// yolu okuyamaz. Paylaşımlı `UserDefaults` (app group) ise ikisine de
+  /// açık, bu yüzden iOS'a görsel değil SAYI gönderilir.
+  static const _kSparkSeries = 'sandik_spark_series';
   /// Değişim ölçüldü ama SIFIR mı? Native taraf rengi buna göre nötrler.
   ///
   /// `sandik_is_positive` tek başına yetmez: sıfır bir YÖN taşımaz ama
@@ -104,6 +115,61 @@ class HomeWidgetService {
   /// ve `design_token_leak_test` bu sınıf sızıntıyı zaten yasaklıyor.
   SandikPalette get _sparkPalette =>
       themeIsLight ? SandikPalette.light : SandikPalette.dark;
+
+  /// Widget dokunuşunun taşıdığı URI.
+  ///
+  /// Kotlin tarafındaki `SandikWidgetProvider.WIDGET_CLICK_URI` ile BİREBİR
+  /// aynı olmalı — atıf bu eşleşmeye dayanıyor. Değeri değiştirirken iki
+  /// dosya birlikte güncellenmeli.
+  static const widgetClickUri = 'sandik://widget/home';
+
+  StreamSubscription<Uri?>? _clickSub;
+  bool _clickAttributionStarted = false;
+
+  /// Uygulama widget'a dokunularak mı açıldı?
+  ///
+  /// Soğuk açılışta BİR KEZ, açılış kaynağı kaydedilmeden önce sorulmalı:
+  /// önce `cold` yazıp sonra `widget` eklemek aynı açılışı iki kez sayardı.
+  Future<bool> launchedFromWidget() async {
+    try {
+      await _ensureInit();
+      final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+      if (uri == null) return false;
+      await RetentionTracker.instance.recordWidgetTap(surface: 'home_widget');
+      return true;
+    } catch (e) {
+      if (kDebugMode) debugPrint('launchedFromWidget failed: $e');
+      return false;
+    }
+  }
+
+  /// Uygulama AÇIKKEN widget'a dokunulmasını dinler.
+  ///
+  /// [launchedFromWidget] yalnızca soğuk açılışı kapsar; kullanıcı uygulamayı
+  /// arka plana alıp widget'tan geri döndüğünde olay bu akıştan gelir.
+  Future<void> startClickAttribution() async {
+    if (_clickAttributionStarted) return;
+    _clickAttributionStarted = true;
+    try {
+      await _ensureInit();
+      _clickSub = HomeWidget.widgetClicked.listen((uri) {
+        if (uri == null) return;
+        unawaited(RetentionTracker.instance
+            .recordWidgetTap(surface: 'home_widget'));
+        unawaited(RetentionTracker.instance.recordLaunch(source: 'widget'));
+      });
+    } catch (e) {
+      // Widget atfı ikincil bir ölçüm — kurulamazsa uygulama etkilenmez.
+      if (kDebugMode) debugPrint('startClickAttribution failed: $e');
+    }
+  }
+
+  /// Testler için aboneliği bırakır.
+  Future<void> stopClickAttribution() async {
+    await _clickSub?.cancel();
+    _clickSub = null;
+    _clickAttributionStarted = false;
+  }
 
   bool _initialized = false;
 
@@ -300,6 +366,9 @@ class HomeWidgetService {
     // İki noktadan az veri çizgi oluşturmaz.
     if (values.length < 2) {
       await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
+      // Seri de temizlenir: kalsaydı iOS widget'ı bugün ölçüm yokken
+      // DÜNÜN eğrisini çizmeye devam ederdi.
+      await HomeWidget.saveWidgetData<String>(_kSparkSeries, '');
       return;
     }
 
@@ -313,6 +382,16 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>(_kSparkline, path);
       await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
     }
+
+    // iOS için ham seri. Normalize ORTAK katmanda yapılır ki kilit ekranı
+    // ile ana ekran widget'ı aynı portföy için aynı eğriyi çizsin.
+    // Üç ondalık yeter: seri 0…1 aralığında ve çizim birkaç yüz piksel
+    // genişliğinde — daha fazlası yalnızca anahtarı şişirir.
+    final seri = DailySummary.normalizeForSparkline(values);
+    await HomeWidget.saveWidgetData<String>(
+      _kSparkSeries,
+      seri.map((v) => v.toStringAsFixed(3)).join(','),
+    );
   }
 
   /// Sparkline'ı çizip PNG olarak diske yazar; dosya yolunu döner.
@@ -534,6 +613,9 @@ class HomeWidgetService {
 
   /// Bakiye gizliyken: tutar yazılmaz, widget "gizli" durumunu gösterir.
   Future<void> _writeHidden() async {
+    // Seri temizlenir: kalsaydı tutar gizliyken bile eğri portföyün
+    // gün içi hareketini ele verirdi.
+    await HomeWidget.saveWidgetData<String>(_kSparkSeries, '');
     await HomeWidget.saveWidgetData<String>(_kTotal, '••••••');
     await HomeWidget.saveWidgetData<String>(_kChange, '');
     await HomeWidget.saveWidgetData<bool>(_kIsPositive, true);

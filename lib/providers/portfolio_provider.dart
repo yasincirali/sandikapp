@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
@@ -8,6 +10,7 @@ import '../services/deposit_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/price_service.dart';
+import '../services/retention_tracker.dart';
 import '../services/sparkline_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
@@ -226,6 +229,21 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       type: type.name,
       subCategory: subCategory,
     );
+
+    // Aktivasyon eşikleri: ilk varlık ve üçüncü varlık D30 tutunmanın en
+    // güçlü tahmincileri. Servis tekrarı kendi eler, buradan koşulsuz
+    // çağrılır. Silinmiş lot sayılmaz — kullanıcı silip yeniden eklediğinde
+    // eşik zaten bir kez işaretlenmiş olur.
+    // Lot değil DISTINCT pozisyon sayılır: aynı hisseye üç kez ekleme yapan
+    // kullanıcı "üç varlık" eşiğini geçmiş sayılmamalı — limit kapısıyla
+    // (yukarıda) aynı anahtar formülü kullanılır.
+    final pozisyonlar = <String>{'${type.name}|$ticker|$currency'};
+    for (final a in currentState.assets) {
+      if (a.isBuy && a.isActive) {
+        pozisyonlar.add('${a.type.name}|${a.ticker}|${a.currency}');
+      }
+    }
+    unawaited(RetentionTracker.instance.recordAssetCount(pozisyonlar.length));
 
     final current = state.valueOrNull;
     if (current != null) {

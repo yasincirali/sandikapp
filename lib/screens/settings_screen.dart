@@ -19,6 +19,7 @@ import '../utils/friendly_error.dart';
 import '../utils/theme_resolution.dart';
 import 'legal_doc_screen.dart';
 import 'push_diagnostics_screen.dart';
+import 'price_alerts_screen.dart';
 import 'signal_settings_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 
@@ -428,6 +429,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 context,
                 adaptiveRoute(
                     builder: (_) => const SignalSettingsScreen()),
+              ),
+            ),
+            _SettingsTile(
+              icon: Icons.add_alert_outlined,
+              title: 'Fiyat alarmları',
+              subtitle: 'Hedef fiyata gelince haber ver',
+              onTap: () => Navigator.push(
+                context,
+                adaptiveRoute(builder: (_) => const PriceAlertsScreen()),
               ),
             ),
             _SwitchTile(

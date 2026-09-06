@@ -9,6 +9,7 @@ import 'profile_screen.dart';
 import 'add_asset_screen.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/notification_service.dart';
+import '../services/remote_config_service.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -28,9 +29,20 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       if (mounted) ref.read(portfolioProvider.notifier).refreshPrices();
     });
     // UE1: Bildirim iznini onboarding sonrasına ertele — uygulama açılır açılmaz değil
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) NotificationService.instance.requestPermission();
-    });
+    //
+    // `push_prompt_after_first_asset` açıkken bu kol DEVRE DIŞI: izin o zaman
+    // ilk varlık eklendikten sonra, bağlamıyla birlikte isteniyor
+    // (bkz. main.dart portföy dinleyicisi). İki kol aynı anda çalışırsa
+    // kullanıcı izni burada reddeder ve bağlamlı istem hiç gösterilemez —
+    // Android izni ikinci kez sormaz.
+    if (!RemoteConfigService.instance.pushPromptAfterFirstAsset) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          NotificationService.instance
+              .requestPermission(promptContext: 'post_onboarding_delay');
+        }
+      });
+    }
   }
 
   final List<Widget> _screens = [

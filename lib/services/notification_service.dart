@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart'
     show Color, GlobalKey, NavigatorState;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -11,6 +13,8 @@ import '../providers/portfolio_provider.dart';
 import '../screens/partnership_requests_screen.dart';
 import '../screens/performance_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
+import 'analytics_service.dart';
+import 'retention_tracker.dart';
 
 const _kSignalNotificationsKey = 'pref_signal_notifications';
 const _kPartnerNotificationsKey = 'pref_partner_notifications';
@@ -35,6 +39,8 @@ class NotificationService {
   /// → FCM `data.type`). Uygulama ÖN PLANDAYKEN Android `notification`
   /// payload'ını sistem göstermez; bu tipi görünce bildirimi biz basarız.
   static const signalAlertType = 'signal_alert';
+  static const dailyBriefType = 'daily_brief';
+  static const priceAlertType = 'price_alert';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
 
@@ -129,14 +135,62 @@ class NotificationService {
         importance: Importance.max,
       ),
     );
+
+    // Fiyat alarmları (sunucudan FCM ile gelir).
+    //
+    // AYRI kanal ve YÜKSEK önem: bu, kullanıcının KENDİSİNİN kurduğu tek
+    // bildirim. Brifingi kapatan biri alarmlarını açık tutabilmeli, ve
+    // istediği bir bildirimin sessizce bildirim gölgesine düşmesi
+    // beklentiyi bozar.
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'alert_channel',
+        'Fiyat Alarmlari',
+        description: 'Kurdugunuz fiyat hedefine ulasildiginda',
+        importance: Importance.high,
+      ),
+    );
+
+    // Sabah brifingi (sunucudan FCM ile gelir).
+    //
+    // AYRI kanal olması kasıtlı: kullanıcı brifingi kapatıp sinyalleri açık
+    // tutabilmeli. Tek kanal, tek "kapat" düğmesi demek olurdu ve
+    // rahatsız olan kullanıcı bütün bildirimleri birden kaybederdi.
+    //
+    // `defaultImportance`: brifing bilgilendirir, uyarmaz — ses ve
+    // kesme (heads-up) hak etmiyor.
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'brief_channel',
+        'Gunluk Brifing',
+        description: 'Portfoyunuzdeki gunluk hareket ozeti',
+        importance: Importance.defaultImportance,
+      ),
+    );
   }
 
   /// Bildirim iznini kullanıcıya sor. Onboarding tamamlandıktan sonra çağır.
-  Future<void> requestPermission() async {
+  ///
+  /// [promptContext] iznin NEREDE istendiği — aynı prompt'un farklı
+  /// yerlerdeki kabul oranını karşılaştırabilmek için ölçülür. İzin oranı
+  /// tutunmanın en büyük tek kaldıracı olduğu için sonucu kaydedilir.
+  ///
+  /// **iOS ölçülmez.** Orada izin `init()` içindeki `requestAlertPermission`
+  /// ile daha önce istenmiş oluyor; buradan ikinci bir çağrı yapılmıyor ve
+  /// sonuç bilinmiyor. Uydurulmuş bir değer yazmak, iOS kabul oranını
+  /// olduğundan iyi ya da kötü gösterirdi. iOS tarafı `checkPermissions()`
+  /// ile ayrıca ele alınmalı.
+  Future<void> requestPermission({String promptContext = 'unknown'}) async {
     if (!_initialized) await init();
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.requestNotificationsPermission();
+    if (androidPlugin == null) return;
+    final granted = await androidPlugin.requestNotificationsPermission();
+    if (granted == null) return; // platform yanıt vermedi — tahmin yürütme
+    await RetentionTracker.instance.recordPushPermission(
+      granted: granted,
+      promptContext: promptContext,
+    );
   }
 
   Future<void> sendSignalNotification({
@@ -327,8 +381,40 @@ class NotificationService {
     );
   }
 
-  void handleRemoteMessageData(Map<String, dynamic> data) {
+  /// Uzak bildirime dokunulduğunda çalışır.
+  ///
+  /// [fromColdStart] uygulamanın bu bildirimle SIFIRDAN açıldığını söyler
+  /// (`getInitialMessage`). O durumda açılış kaydı YAPILMAZ: soğuk açılış
+  /// zaten `_initDeferredServices` içinde bir kez yazılıyor ve buradan
+  /// ikinci bir kayıt aynı açılışı çift saydırırdı. Sıcak açılışta
+  /// (`onMessageOpenedApp`) böyle bir çakışma yok, kaynak `push` yazılır.
+  void handleRemoteMessageData(
+    Map<String, dynamic> data, {
+    bool fromColdStart = false,
+  }) {
     final type = data['type']?.toString();
+
+    // Hangi bildirim tipinin gerçekten açıldığını ölçmek, hangisinin
+    // kapatılmayı hak ettiğini söyler (bkz. RETENTION_STRATEJISI.md §7:
+    // dört hafta boyunca açılma oranı %3'ün altında kalan tip kapatılır).
+    //
+    // Sessiz tetikleyiciler ölçüme girmez: kullanıcı onlara dokunmuyor.
+    if (type != null && type != signalAnalyzeRequestType) {
+      AnalyticsService.instance.logPushOpened(type: type);
+      if (!fromColdStart) {
+        unawaited(RetentionTracker.instance.recordLaunch(source: 'push'));
+      }
+    }
+
+    // Brifingin varış yeri ana ekrandır — uygulamanın açılması yeterli,
+    // ayrıca bir yere yönlendirilmez. Bildirim tek bir varlığa değil
+    // portföyün geneline dair.
+    if (type == dailyBriefType) return;
+
+    // Fiyat alarmı da ana ekranda bırakılır. Alarm ekranına yönlendirmek
+    // yanlış olurdu: kullanıcı fiyatı öğrenmek için geliyor, alarm listesini
+    // yönetmek için değil.
+    if (type == priceAlertType) return;
 
     // Sinyal bildirimine dokunulduğunda o varlığın performans ekranı açılır
     // (grafiğin altında teknik sinyal paneli var — kullanıcının bildirimden
@@ -352,6 +438,16 @@ class NotificationService {
 
   void _handleNotificationPayload(String? payload) {
     if (payload == null) return;
+
+    // Dokunulan bildirimin tipi — hangi bildirim tipinin gerçekten
+    // açıldığını ölçmek, hangisinin kapatılmayı hak ettiğini söyler.
+    AnalyticsService.instance.logPushOpened(
+      type: payload.startsWith(_signalPayloadPrefix)
+          ? signalAlertType
+          : payload.startsWith(_partnerInvitePayloadPrefix)
+              ? partnerInviteType
+              : 'other',
+    );
 
     if (payload.startsWith(_signalPayloadPrefix)) {
       final assetId = payload.substring(_signalPayloadPrefix.length);

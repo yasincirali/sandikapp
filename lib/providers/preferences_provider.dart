@@ -324,6 +324,18 @@ final assetLimitProvider = Provider<int>((ref) {
   return RemoteConfigService.instance.freeAssetLimit;
 });
 
+/// Free tier fiyat alarmı limiti — `assetLimitProvider` ile AYNI kalıp.
+///
+/// Paywall kapalıyken sınırsız: satın alınabilir bir premium yokken
+/// kullanıcıyı üçüncü alarmda durdurmak çıkışsız bir duvar olurdu.
+final priceAlertLimitProvider = Provider<int>((ref) {
+  final paywallOn = ref.watch(paywallVisibleProvider);
+  if (!paywallOn) return 1 << 30;
+  final premium = ref.watch(effectivePremiumProvider);
+  if (premium) return 1 << 30;
+  return RemoteConfigService.instance.freePriceAlertLimit;
+});
+
 /// Free tier takip listesi limiti — `assetLimitProvider` ile AYNI kalıp.
 ///
 /// **Paywall kapalıyken sınırsız.** `paywall_enabled` şu an `false`; limiti

@@ -26,6 +26,7 @@ import 'screens/onboarding_screen.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
+import 'services/daily_summary.dart';
 import 'services/db_logger.dart';
 import 'services/disclaimer_service.dart';
 import 'services/fx_rate_migration_service.dart';
@@ -35,9 +36,14 @@ import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
+import 'services/milestone_repository.dart';
+import 'services/milestone_service.dart';
+import 'services/retention_tracker.dart';
 import 'theme/sandik.dart';
 import 'utils/theme_resolution.dart';
 import 'widgets/sandik_error_view.dart';
+import 'widgets/milestone_sheet.dart';
+import 'widgets/widget_install_sheet.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -74,6 +80,19 @@ Future<void> _initDeferredServices() async {
     ('RemotePushService', () => RemotePushService.instance.init()),
     ('AnalyticsService', () => AnalyticsService.instance.init()),
     ('RemoteConfigService', () => RemoteConfigService.instance.init()),
+    // AnalyticsService'ten SONRA: kurulum günü yazılırken ve ilk açılış
+    // event'i giderken gönderici hazır olmalı, yoksa uygulamanın ömrü
+    // boyunca bir kez üretilen bu event sessizce düşerdi.
+    ('RetentionTracker', () async {
+      await RetentionTracker.instance.init();
+      // Kaynak, açılış YAZILMADAN ÖNCE belirlenir: önce 'cold' yazıp sonra
+      // widget atfını eklemek aynı açılışı iki kez saydırırdı.
+      final widgetten = await HomeWidgetService.instance.launchedFromWidget();
+      await RetentionTracker.instance
+          .recordLaunch(source: widgetten ? 'widget' : 'cold');
+      // Uygulama açıkken widget'a dokunulması ayrı bir akıştan gelir.
+      await HomeWidgetService.instance.startClickAttribution();
+    }),
   ]) {
     try {
       await step.$2();
@@ -819,6 +838,46 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
   /// GA4 user property için varlık sayısını bucket'a çevir (sayı yerine
   /// audience segmentation daha kolay olur).
+  /// Yeni geçilen kilometre taşlarını kaydeder ve gerekiyorsa kutlar.
+  ///
+  /// Ayda en fazla BİR kutlama yapılır: kutlamanın değeri seyrekliğinden
+  /// gelir. Eşikler yine de KAYDEDİLİR — kutlanmasa da geçilmiş sayılır,
+  /// yoksa aylar sonra aynı eşik yeniden "yeni" görünürdü.
+  Future<void> _kilometreTasiKontrol(PortfolioState state) async {
+    if (!RemoteConfigService.instance.milestonesEnabled) return;
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) return;
+
+    final gecilenler = MilestoneService.evaluate(
+      assets: state.assets,
+      totalTRY: DailySummary.liveTotalTRY(state),
+      now: DateTime.now(),
+    );
+    if (gecilenler.isEmpty) return;
+
+    final repo = MilestoneRepository.instance;
+    final onceden = await repo.fetchReached(user.id);
+    // Okuma hatasında hiçbir şey kutlanmaz (bkz. fetchReached).
+    if (onceden.contains('__hata__')) return;
+
+    final yeniler = gecilenler
+        .where((m) => !onceden.contains('${m.kind}:${m.value}'))
+        .toList();
+    if (yeniler.isEmpty) return;
+
+    await repo.recordReached(user.id, yeniler);
+
+    if (!await MilestoneRepository.canCelebrate()) return;
+    final secilen = MilestoneService.pickOne(yeniler);
+    if (secilen == null || !mounted) return;
+
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null) return;
+    await MilestoneRepository.markCelebrated();
+    await repo.markShown(user.id, secilen);
+    if (ctx.mounted) await MilestoneSheet.show(ctx, secilen);
+  }
+
   String _bucketAssetCount(int n) {
     if (n == 0) return '0';
     if (n <= 5) return '1-5';
@@ -858,6 +917,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         ref.read(authProvider.notifier).logout();
       } else {
         _backgroundedAt = null;
+        // Öne dönüş açılış olarak sayılır; servis kısa arka plan
+        // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
+        unawaited(RetentionTracker.instance.recordLaunch(source: 'resume'));
         // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
         // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
         // devam etsin, elle "Tekrar Dene"ye basmak zorunda kalmasın.
@@ -901,6 +963,48 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           name: 'asset_count',
           value: _bucketAssetCount(currCount),
         );
+      }
+
+      // Bildirim iznini İLK VARLIK EKLENDİKTEN SONRA iste (Remote Config).
+      //
+      // Neden burada: bu dinleyici zaten portföyün her yazımını görüyor ve
+      // izin istemek bir servis çağrısı — ekranların hiçbirine yeni bağımlılık
+      // eklemiyor.
+      //
+      // `prev != null` ŞART: soğuk açılışta önceki state yoktur ve sayaç
+      // -1'den gelir; bu kontrol olmadan portföyü dolu her kullanıcıya
+      // uygulama her açılışta izin sormuş olurdu. Yalnızca oturum İÇİNDE
+      // 0'dan 1'e geçiş gerçek bir "ilk varlık" anıdır.
+      final ilkVarlikEklendi = prev != null && prevCount == 0 && currCount >= 1;
+
+      if (RemoteConfigService.instance.pushPromptAfterFirstAsset &&
+          ilkVarlikEklendi) {
+        NotificationService.instance
+            .requestPermission(promptContext: 'after_first_asset');
+      }
+
+      // Widget kurulum önerisi — aynı an, ama izin isteminden SONRA.
+      //
+      // Sıra önemli: ikisi de aynı karede tetiklenirse sistem izin diyaloğu
+      // sheet'in üstüne biner ve kullanıcı iki soruyu birden görür. Sheet
+      // bir kare geciktirilir; izin diyaloğu o ana kadar ekrana gelmiş olur.
+      // Sheet kendi koşullarını (bayrak, tek seferlik işaret) kendi kontrol
+      // eder, burada ek koşul yok.
+      if (ilkVarlikEklendi) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final ctx = appNavigatorKey.currentContext;
+          if (ctx != null) unawaited(WidgetInstallSheet.maybeShow(ctx));
+        });
+      }
+
+      // Kilometre taşları — portföy her değiştiğinde değerlendirilir.
+      //
+      // Burada dinlemenin sebebi widget güncellemesiyle aynı: portföy
+      // 10'dan fazla yerden yazılıyor ve her birine tek tek çağrı koymak
+      // kaçınılmaz olarak birini atlar.
+      final snapshotMs = next.valueOrNull;
+      if (snapshotMs != null && snapshotMs.assets.isNotEmpty) {
+        unawaited(_kilometreTasiKontrol(snapshotMs));
       }
 
       // Ana ekran widget'ını tazele.

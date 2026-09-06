@@ -42,6 +42,104 @@ bozulmuş demektir.
 
 ---
 
+## 📅 BEKLEYEN DEPLOY: TÜİK Enflasyon Kancası (2026-09-06)
+
+1. `supabase functions deploy calendar-nudge`
+2. `supabase secrets set CALENDAR_NUDGE_CRON_SECRET="<uzun-rastgele>"`
+3. Vault → `calendar_nudge_cron_secret` = aynı string
+4. Migration: `supabase/migrations/0048_calendar_nudge.sql`
+
+**TÜFE endeksi dolu değilse bildirim gitmez** (aşağıdaki maddeye bak).
+Ayrıntı: `supabase/functions/calendar-nudge/README.md`
+
+---
+
+## 🔔 BEKLEYEN DEPLOY: Fiyat Alarmları (2026-09-06)
+
+Kod hazır; kullanıcı Ayarlar → "Fiyat alarmları"ndan kurabiliyor ama
+**sunucu değerlendirmesi devreye girmeden hiçbir alarm çalmaz.**
+
+1. `supabase functions deploy check-price-alerts`
+2. `supabase secrets set PRICE_ALERTS_CRON_SECRET="<uzun-rastgele>"`
+3. Vault → `price_alerts_cron_secret` = 2. adımdaki string'in **aynısı**
+4. Migration: `supabase/migrations/0046_price_alerts.sql`
+
+Kuru koşu (kimseye bildirim gitmez):
+
+```bash
+curl -X POST "https://<proje>.supabase.co/functions/v1/check-price-alerts" \
+  -H "Authorization: Bearer $PRICE_ALERTS_CRON_SECRET" \
+  -H "Content-Type: application/json" -d '{"dry_run": true}'
+```
+
+Ayrıntı: `supabase/functions/check-price-alerts/README.md`
+
+---
+
+## 📉 VERİ GEREKİYOR: TÜFE endeksi (2026-09-06)
+
+Reel getiri rozeti ("enflasyonun 6,4 puan önündesin") kodda hazır ama
+**`inflation_index` tablosu BOŞ doğuyor** ve boşken rozet hiç görünmüyor.
+
+**Endeks değerlerini bilerek doldurmadım:** yanlış bir TÜFE, portföy
+getirisini olduğundan iyi ya da kötü gösterir; kullanıcı bunu TÜİK'in
+açıkladığı rakamla karşılaştırınca uygulamaya güveni gider. Doğrulanmamış
+sayıyı finansal bir hesaba gömmektense özelliği kapalı bırakmak doğrusu.
+
+**Ne gerekiyor:** ayda bir satır — `period` (ayın ilk günü) + `tufe_index`
+(endeks DEĞERİ, yüzde değil).
+
+**Kaynak:** TCMB EVDS → `TP.FG.J0` serisi (TÜFE genel endeks).
+EVDS ücretsiz ama API anahtarı istiyor: evds2.tcmb.gov.tr → üye ol →
+Profil → API Anahtarı.
+
+**En az kaç ay lazım:** rozet 365 günlük pencere kullanıyor, yani **13 ay**
+(başlangıç ayı + son açıklanan ay). Daha azıyla hesap null döner.
+
+```sql
+-- Örnek (değerleri EVDS'den al, buradaki sayılar YER TUTUCUDUR):
+insert into public.inflation_index (period, tufe_index) values
+  ('2025-09-01', 0000.00),
+  ('2025-10-01', 0000.00)
+  -- ...
+on conflict (period) do update set tufe_index = excluded.tufe_index;
+```
+
+Migration: `supabase/migrations/0045_inflation_index.sql`
+Sonra Remote Config → `real_return_enabled` → `true`.
+
+**Aylık bakım:** TÜİK her ayın 3'ünde 10:00'da açıklıyor; o gün bir satır
+eklenmeli. İleride EVDS'den çeken bir Edge Function yazılabilir
+(TECHNICAL_DEBT'e not düşüldü).
+
+---
+
+## 📨 BEKLEYEN DEPLOY: Sabah Brifingi (2026-09-06)
+
+Kod hazır ama **hiçbir kullanıcıya bildirim gitmez** — aşağıdaki dört adım
+elden yapılmadan cron tetiklenmez.
+
+1. **Fonksiyonu dağıt:** `supabase functions deploy daily-brief`
+2. **Secret:** `supabase secrets set DAILY_BRIEF_CRON_SECRET="<uzun-rastgele>"`
+   (FCM_PROJECT_ID ve FCM_SERVICE_ACCOUNT_JSON zaten var, aynıları kullanılır)
+3. **Vault:** Supabase Dashboard → Vault → `daily_brief_cron_secret` adıyla
+   **2. adımdaki string'in birebir aynısı**. Eşleşmezse fonksiyon 401 döner.
+4. **Migration:** `supabase/migrations/0044_daily_brief.sql`
+   (tablo + cron + tetikleyici)
+
+**Önce kuru koşu yap** — kimseye bildirim gitmeden kaç kişiye gideceğini
+söyler:
+
+```bash
+curl -X POST "https://<proje>.supabase.co/functions/v1/daily-brief" \
+  -H "Authorization: Bearer $DAILY_BRIEF_CRON_SECRET" \
+  -H "Content-Type: application/json" -d '{"dry_run": true}'
+```
+
+Ayrıntı: `supabase/functions/daily-brief/README.md`
+
+---
+
 ## 🗄️ BEKLEYEN MIGRATION: `0027_soft_delete_lots.sql` (2026-08-11)
 
 **Ne:** `assets` tablosuna `deleted_at TIMESTAMPTZ` sütunu + aktif kayıtlar

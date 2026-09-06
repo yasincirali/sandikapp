@@ -1,16 +1,16 @@
 package com.sandik.app
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.res.ColorStateList
 import android.os.Build
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.view.View
 import android.widget.RemoteViews
+import android.net.Uri
+import es.antonborri.home_widget.HomeWidgetLaunchIntent
 import es.antonborri.home_widget.HomeWidgetPlugin
 import java.io.File
 
@@ -26,6 +26,15 @@ import java.io.File
  * baktığı sayının ne kadar taze olduğunu bilmeli.
  */
 class SandikWidgetProvider : AppWidgetProvider() {
+
+    companion object {
+        /**
+         * Widget dokunuşunun taşıdığı URI. Dart tarafındaki
+         * `HomeWidgetService.widgetClickUri` ile BİREBİR aynı olmalı —
+         * atıf bu eşleşmeye dayanıyor.
+         */
+        const val WIDGET_CLICK_URI = "sandik://widget/home"
+    }
 
     /**
      * Widget paleti — uygulamanın SEÇİLİ temasına göre.
@@ -248,18 +257,22 @@ class SandikWidgetProvider : AppWidgetProvider() {
             }
 
             // Widget'a dokunmak uygulamayı açar.
-            val launch = context.packageManager
-                .getLaunchIntentForPackage(context.packageName)
-                ?.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP }
-            if (launch != null) {
-                val pending = PendingIntent.getActivity(
-                    context,
-                    0,
-                    launch,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                views.setOnClickPendingIntent(R.id.widget_total, pending)
-            }
+            //
+            // Eskiden düz bir launch intent'ti: uygulama açılıyordu ama
+            // Dart tarafı açılışın widget'tan geldiğini BİLMİYORDU, yani
+            // widget kaynaklı her açılış analytics'te organik ("cold")
+            // görünüyordu ve widget'ın tutundurmaya katkısı ölçülemiyordu.
+            //
+            // `HomeWidgetLaunchIntent` aynı işi yapar ama URI'yi taşır;
+            // Flutter tarafında `HomeWidget.widgetClicked` /
+            // `initiallyLaunchedFromHomeWidget()` bu URI'yi görür
+            // (bkz. main.dart → _widgetAtfiniDinle).
+            val pending = HomeWidgetLaunchIntent.getActivity(
+                context,
+                MainActivity::class.java,
+                Uri.parse(WIDGET_CLICK_URI)
+            )
+            views.setOnClickPendingIntent(R.id.widget_total, pending)
 
             appWidgetManager.updateAppWidget(widgetId, views)
         }

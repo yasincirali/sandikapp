@@ -344,7 +344,7 @@ class LiveActivityService {
     final now = DateTime.now();
     final series = await IntradaySeriesCache.instance.get(state, now: now);
     _summary = DailySummary.from(state: state, series: series, now: now);
-    return _normalize(_summary!.sparkline);
+    return DailySummary.normalizeForSparkline(_summary!.sparkline);
   }
 
   /// Grafiğin tutar ekseni sınırları — üst ve alt kılavuz etiketi.
@@ -391,44 +391,6 @@ class LiveActivityService {
       DailySummary.todayInflow(assets, now);
 
   /// Ham TRY serisini 0…1 aralığına indirger — bkz. gizlilik notu.
-  static List<double> _normalize(List<double> values) {
-    if (values.length < 2) return const [];
-
-    // Düz çizgi: ortada yatay çiz. Sıfıra bölmeyi de önler.
-    //
-    // Eşik GÖRELİDİR — mutlak `1e-9` büyük portföyde işe yaramıyordu.
-    // Gerçek vaka: ₺2.489.186,40 → ₺2.489.186,35 (5 kuruş). Eşiği aştığı
-    // için "hareket" sayılıyor ve bu 5 kuruş 0…1 aralığının TAMAMINA
-    // yayılıyordu: düz bir günde grafiğin ucu tepeden dibe iniyordu.
-    if (DailySummary.isVisuallyFlat(values)) {
-      return List.filled(values.length.clamp(2, 40), 0.5);
-    }
-
-    // Normalize aralığı EKSENLE aynı olmalı.
-    //
-    // Etiketler `_axisBounds` üzerinden `DailySummary.niceAxisBounds`
-    // kullanıyor; çizgi başka bir aralığa göre normalize edilirse ikisi
-    // ayrışır: kullanıcı "₺2,48M–₺2,50M" yazan bir eksende tuvali baştan
-    // başa dolduran bir çizgi görür. Aynı fonksiyondan okunur.
-    final bounds = DailySummary.niceAxisBounds(values);
-    final lo = bounds.min;
-    final axisSpan = bounds.max - bounds.min;
-
-    // Örnekleme: 40 noktadan fazlasını seyrelt.
-    const maxPoints = 40;
-    final step = values.length <= maxPoints
-        ? 1
-        : (values.length / maxPoints).ceil();
-
-    final out = <double>[];
-    for (var i = 0; i < values.length; i += step) {
-      out.add((values[i] - lo) / axisSpan);
-    }
-    // Son nokta her zaman dahil — grafiğin ucu güncel değeri göstermeli.
-    final lastNorm = (values.last - lo) / axisSpan;
-    if (out.isEmpty || (out.last - lastNorm).abs() > 1e-9) out.add(lastNorm);
-    return out;
-  }
 
   /// [now] anında Live Activity GÖSTERİLMELİ mi?
   ///
