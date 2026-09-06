@@ -328,6 +328,7 @@ ayrıca detay veriyor. sandık için işaretlemen gerekenler ve gerekçeleri:
 | Government app | Hayır |
 | Data deletion | In-app: ✅ Profil → Ayarlar → Hesabımı Sil · Web: `…/data-deletion` |
 | Health apps / VPN / vs. | Hayır |
+| **Ülkeler ve bölgeler** | **Yalnızca Türkiye** — sürüm oluştururken seçilir. Hukuki taahhüt: `legal/en/GDPR_NOTICE.md` uygulamanın AB/AEA'da sunulmadığını beyan ediyor (§7.2). App Store Connect'teki ülke listesi de aynı olmalı |
 
 ---
 
@@ -425,12 +426,15 @@ Ardından gerçek cihazda: hesap aç → varlık ekle → varlığı sil → hes
 | Web | https://yasincirali.github.io/sandikapp |
 | DPO | Atanmamıştır; veri koruma iletişimi yukarıdaki e-posta |
 
-**🟠 Kalan tek karar — AB temsilcisi (GDPR Md. 27).** `legal/en/GDPR_NOTICE.md`
-içinde hâlâ bir placeholder duruyor. Uygulamayı AB ülkelerine de dağıtacaksan
-Md. 27 temsilcisi atanması gerekebilir (istisnalar var: arızi işleme, özel
-nitelikli veri yok, düşük risk). Play Console'da dağıtımı **yalnızca Türkiye**
-seçersen bu satır "AB'de hizmet sunulmamaktadır" olarak kapanır. Hangisi
-olduğunu söyle, metni ona göre yazayım.
+**✅ (KAPANDI 2026-09-06) AB temsilcisi (GDPR Md. 27).** Dağıtım **yalnızca
+Türkiye** olarak kararlaştırıldı. `legal/en/GDPR_NOTICE.md` buna göre yazıldı:
+temsilci atanmıyor, gerekçesi (uygulama AB/AEA'da sunulmuyor) belgede açıkça
+yazılı ve "dağıtım AB'ye genişletilirse önceden temsilci atanacaktır" taahhüdü
+eklendi.
+
+> ⚠️ **Bu artık yazılı bir taahhüt.** Play Console'da (ve App Store
+> Connect'te) ülke seçimini yalnızca Türkiye tutman gerekiyor; ileride başka
+> bir ülkeye açarsan önce bu belge güncellenmeli. Ayarın yeri: §5.5.
 
 **Not:** Adres şehir düzeyinde ("İstanbul, Türkiye"). Play, kişisel hesaplarda
 geliştirici adresini mağaza sayfasında **herkese açık** gösteriyor; oraya açık

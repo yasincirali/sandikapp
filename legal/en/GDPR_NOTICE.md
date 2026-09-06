@@ -13,10 +13,18 @@
 
 - **Address:** `Istanbul, Türkiye`
 - **Email:** `sandikapp.destek@gmail.com`
-- **EU representative (Art. 27):** `[EU REPRESENTATIVE — required if you have no EU establishment AND offer services to EU residents]`
+- **EU representative (Art. 27):** Not appointed — see the distribution note below.
 - **Data Protection Officer (Art. 37):** Not appointed. Data protection contact: `sandikapp.destek@gmail.com`
 
-> **Note for Turkish-only operators:** If you process EU resident data on a regular basis (offering services to EU citizens, monitoring their behavior), you must appoint an EU representative under Art. 27 unless an exemption applies (occasional processing, no large-scale special-category data, low risk to rights and freedoms). Consult legal counsel.
+> **Distribution note.** The App is distributed **only in Türkiye**: its
+> availability on Google Play and the App Store is restricted to the Turkish
+> storefront, and it is not offered or marketed to data subjects in the
+> EU/EEA. On that basis no representative is designated under Art. 27, which
+> applies to controllers offering goods or services to data subjects in the
+> Union. This notice is provided for transparency and for EU/EEA residents
+> who use the App while in Türkiye. **If distribution is extended to any
+> EU/EEA country, an Art. 27 representative will be designated beforehand**
+> and this section updated.
 
 ---
 
@@ -158,7 +166,7 @@ Material changes will be communicated via in-app notification and email at least
 |---|---|
 | Controller | `Yasin Çıralı` — `sandikapp.destek@gmail.com` |
 | Data Protection Officer (if appointed) | `Not appointed — inquiries to sandikapp.destek@gmail.com` |
-| EU Representative (Art. 27) | `[EU REP NAME, ADDRESS]` |
+| EU Representative (Art. 27) | Not designated — distribution limited to Türkiye (see §1) |
 
 ---
 
