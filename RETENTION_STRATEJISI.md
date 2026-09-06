@@ -204,7 +204,7 @@ kez sormaz.
 | Reel getiri (TÜFE) rozeti | `real_return_enabled` | `lib/services/inflation_service.dart`, `lib/widgets/real_return_strip.dart` *(yeni)*, `0045_inflation_index.sql` | ✅ kod |
 | TÜFE endeks verisi | — | `inflation_index` tablosu | ⛔ **boş** — elle doldurulacak |
 | **Fiyat alarmları** | `free_price_alert_limit` | `supabase/functions/check-price-alerts/`, `0046_price_alerts.sql`, `lib/screens/price_alerts_screen.dart` *(yeni)* | ✅ |
-| Kilometre taşları | — | — | ⛔ |
+| **Kilometre taşları** | `milestones_enabled` | `lib/services/milestone_service.dart`, `milestone_repository.dart`, `lib/widgets/milestone_sheet.dart` *(yeni)*, `0047_milestones.sql` | ✅ |
 | Takvim kancaları (TÜİK günü, maaş günü…) | — | — | ⛔ |
 
 **Endeks değerleri bilerek doldurulmadı.** Yanlış bir TÜFE, portföy
@@ -240,6 +240,23 @@ fonksiyon ve testli.
 yarım saatte bir bildirim üretirdi. Damga bildirimden ÖNCE yazılır: ters
 sırada, push gidip damga yazılamazsa kullanıcı her turda aynı bildirimi
 alırdı — geri alınamaz olan bu.
+
+**Kilometre taşlarında ilke koda gömüldü.** Eşiklerin hiçbiri bir işleme
+bağlı değil: portföy değeri, altın adedi, portföy yaşı, çeşitlendirme. Bir
+test bunu kilitliyor — üretilen eşik türleri sabit bir kümenin dışına
+çıkarsa kırılır, yani "bugün işlem yaptın" gibi bir kalem eklemek bilinçli
+bir karar olmak zorunda. Gerekçe §9'da: Robinhood'un işlem-başına konfetisi
+7,5M$'lık uzlaşmayla bitti ve Barber & Odean verisi işlem sıklığını
+ödüllendirmenin kullanıcıya zarar verdiğini gösteriyor.
+
+**Yol boyunca yakalanan hata:** kutlanacak eşiği seçen `pickOne`, eşik
+kimliğini METİN olarak sıralıyordu — `'25000'` metin olarak `'100000'`den
+büyüktür, yani 100 bin eşiği yerine 25 bin kutlanırdı. Ayrı bir sayısal
+`rank` alanı eklendi ve test yazıldı.
+
+**Altın adedi ADET üzerinden sayılıyor**, gram karşılığı üzerinden değil:
+"10 çeyreğin oldu" kullanıcının kafasındaki birimdir ve dönüşüm hatası
+taşımaz. Küsurat aşağı yuvarlanır — 4,9 çeyrek 5 sayılmaz.
 
 **Sıra kasıtlı:** reel getiri şeridi percentile'den ÖNCE. "Eridim mi?"
 sorusu "başkalarına göre nerdeyim?" sorusundan önce gelir — biri alım gücü,

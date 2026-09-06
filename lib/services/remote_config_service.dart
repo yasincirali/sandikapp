@@ -96,6 +96,10 @@ class RemoteConfigService {
     // bildirim olduğu için cömert bir sınır: 3 alarm gündelik kullanımı
     // karşılar, üstü premium için doğal bir kanca.
     'free_price_alert_limit': 3,
+
+    // Kilometre taşı kutlamaları. Ayda en fazla bir kutlama yapılır;
+    // bayrak, tonun kullanıcıda karşılık bulup bulmadığını ölçmek için.
+    'milestones_enabled': false,
   };
 
   Future<void> init() async {
@@ -182,6 +186,10 @@ class RemoteConfigService {
   int get freePriceAlertLimit =>
       _rc?.getInt('free_price_alert_limit') ??
       _defaults['free_price_alert_limit'] as int;
+
+  bool get milestonesEnabled =>
+      _rc?.getBool('milestones_enabled') ??
+      _defaults['milestones_enabled'] as bool;
 
   /// UI chip'leri / filtre listeleri için: `depositsEnabled=false` iken
   /// mevduat türünü listeden düşer. `AssetType.values` yerine bunu kullan.
