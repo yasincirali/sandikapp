@@ -35,6 +35,44 @@ bozulmuş demektir.
 
 ---
 
+## 📉 VERİ GEREKİYOR: TÜFE endeksi (2026-09-06)
+
+Reel getiri rozeti ("enflasyonun 6,4 puan önündesin") kodda hazır ama
+**`inflation_index` tablosu BOŞ doğuyor** ve boşken rozet hiç görünmüyor.
+
+**Endeks değerlerini bilerek doldurmadım:** yanlış bir TÜFE, portföy
+getirisini olduğundan iyi ya da kötü gösterir; kullanıcı bunu TÜİK'in
+açıkladığı rakamla karşılaştırınca uygulamaya güveni gider. Doğrulanmamış
+sayıyı finansal bir hesaba gömmektense özelliği kapalı bırakmak doğrusu.
+
+**Ne gerekiyor:** ayda bir satır — `period` (ayın ilk günü) + `tufe_index`
+(endeks DEĞERİ, yüzde değil).
+
+**Kaynak:** TCMB EVDS → `TP.FG.J0` serisi (TÜFE genel endeks).
+EVDS ücretsiz ama API anahtarı istiyor: evds2.tcmb.gov.tr → üye ol →
+Profil → API Anahtarı.
+
+**En az kaç ay lazım:** rozet 365 günlük pencere kullanıyor, yani **13 ay**
+(başlangıç ayı + son açıklanan ay). Daha azıyla hesap null döner.
+
+```sql
+-- Örnek (değerleri EVDS'den al, buradaki sayılar YER TUTUCUDUR):
+insert into public.inflation_index (period, tufe_index) values
+  ('2025-09-01', 0000.00),
+  ('2025-10-01', 0000.00)
+  -- ...
+on conflict (period) do update set tufe_index = excluded.tufe_index;
+```
+
+Migration: `supabase/migrations/0045_inflation_index.sql`
+Sonra Remote Config → `real_return_enabled` → `true`.
+
+**Aylık bakım:** TÜİK her ayın 3'ünde 10:00'da açıklıyor; o gün bir satır
+eklenmeli. İleride EVDS'den çeken bir Edge Function yazılabilir
+(TECHNICAL_DEBT'e not düşüldü).
+
+---
+
 ## 📨 BEKLEYEN DEPLOY: Sabah Brifingi (2026-09-06)
 
 Kod hazır ama **hiçbir kullanıcıya bildirim gitmez** — aşağıdaki dört adım

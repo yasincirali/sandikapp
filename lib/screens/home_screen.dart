@@ -18,6 +18,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/percentile_strip.dart';
+import '../widgets/real_return_strip.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_error_view.dart';
@@ -416,7 +417,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // bahsedildiğini belirsizleştirir. Kendi kendini kapatan bir
           // widget (bayrak/opt-in/k-anonimlik) olduğu için burada başka
           // koşul yok.
-          if (!(_view != null && _view!.isNotEmpty))
+          if (!(_view != null && _view!.isNotEmpty)) ...[
+            // Reel getiri percentile'den ÖNCE gelir: "eridim mi?" sorusu
+            // "başkalarına göre nerdeyim?" sorusundan önce gelir — biri
+            // alım gücü, diğeri sosyal karşılaştırma.
+            SliverToBoxAdapter(
+              child: RealReturnStrip(
+                myAssets: myState.assets,
+                toTRY: myState.toTRY,
+                padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+              ),
+            ),
             SliverToBoxAdapter(
               child: PercentileStrip(
                 myAssets: myState.assets,
@@ -424,6 +435,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
               ),
             ),
+          ],
           // Mini cards
           SliverToBoxAdapter(
             child: Padding(

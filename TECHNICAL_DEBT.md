@@ -35,6 +35,25 @@ imzası doğrulanıp uygulama açılışında bir kez okunsun; sonuç
 
 ---
 
+## 🟡 AÇIK — TÜFE endeksi elle dolduruluyor
+
+**Karar tarihi:** 2026-09-06 · Sprint 2
+
+`inflation_index` tablosuna satırlar elle giriliyor (bkz.
+YAPMAN_GEREKENLER.md). TCMB EVDS'den çeken bir Edge Function yazılabilirdi
+ama EVDS API anahtarı gerektiriyor ve anahtar bu oturumda yoktu — uçtan uca
+denenemeyecek bir entegrasyon yazmak, elle girişten daha az güvenilir olurdu.
+
+**Ertelemenin maliyeti:** her ayın 3'ünde bir satır eklenmesi gerekiyor.
+Unutulursa rozet sessizce eskimeye başlar: hesap son AÇIKLANMIŞ aya
+dayandığı için yanlış sayı göstermez, ama pencere geriye kayar.
+
+**Ele alınma zamanı:** EVDS anahtarı alındığında. `fetch-inflation` Edge
+Function + aylık cron (`0 8 3 * *` UTC = TR 11:00, açıklamadan bir saat
+sonra), `analyze-signals` cron deseniyle aynı.
+
+---
+
 ## 🟡 AÇIK — Push yardımcıları iki fonksiyonda kopya
 
 **Karar tarihi:** 2026-09-06 · Sprint 1

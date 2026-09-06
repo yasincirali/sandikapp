@@ -197,6 +197,37 @@ diyaloğu sheet'in üstüne binmesin.
 ilkinde reddeder ve bağlamlı istem hiç gösterilemezdi — Android izni ikinci
 kez sormaz.
 
+### Sprint 2 — başladı (2026-09-06)
+
+| Ne | Bayrak | Nerede | Durum |
+|---|---|---|---|
+| Reel getiri (TÜFE) rozeti | `real_return_enabled` | `lib/services/inflation_service.dart`, `lib/widgets/real_return_strip.dart` *(yeni)*, `0045_inflation_index.sql` | ✅ kod |
+| TÜFE endeks verisi | — | `inflation_index` tablosu | ⛔ **boş** — elle doldurulacak |
+| Fiyat alarmları | — | — | ⛔ |
+| Kilometre taşları | — | — | ⛔ |
+| Takvim kancaları (TÜİK günü, maaş günü…) | — | — | ⛔ |
+
+**Endeks değerleri bilerek doldurulmadı.** Yanlış bir TÜFE, portföy
+getirisini olduğundan iyi ya da kötü gösterir; kullanıcı bunu TÜİK'in
+açıkladığı rakamla karşılaştırdığında uygulamaya güveni gider. §1'deki
+"yanlış ölçüm, ölçüm yokluğundan kötüdür" kuralı burada da geçerli, üstelik
+sonucu kullanıcıya görünür. Tablo boşken rozet hiç çizilmiyor; doldurma
+yönergesi `YAPMAN_GEREKENLER.md`'de.
+
+**Endeks DEĞERİ saklanıyor, aylık yüzde değil.** İki tarih arası enflasyon
+tek bölmeyle çıkıyor (`son / ilk - 1`); yüzde saklansaydı aradaki bütün
+ayları çarpmak gerekir ve her ay bir yuvarlama hatası eklenirdi.
+
+**Rozet "puan farkı" gösteriyor, bileşik reel getiri değil.** Gündelik dilde
+okunan sayı bu ("TÜFE'yi 6,4 puan geçti"). İkisi yüksek enflasyonda ayrışır
+— %46,4 nominal / %40 enflasyonda puan farkı 6,4 ama alım gücü artışı ~%4,6
+— bu yüzden `realReturnPct` de serviste duruyor ve testlerle kilitli.
+Rozetin sağında ham iki sayı da veriliyor: kullanıcı farkı doğrulayabilmeli.
+
+**Sıra kasıtlı:** reel getiri şeridi percentile'den ÖNCE. "Eridim mi?"
+sorusu "başkalarına göre nerdeyim?" sorusundan önce gelir — biri alım gücü,
+diğeri sosyal karşılaştırma.
+
 ### Guardrail metrikleri (bunlar bozuluyorsa mekanik zararlıdır)
 - Push opt-out oranı (haftalık) — %2/hafta üstü alarm
 - Uygulama silme (uninstall) — Firebase `app_remove`

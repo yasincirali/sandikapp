@@ -87,6 +87,10 @@ class RemoteConfigService {
     //         verelim mi?"). Bağlamlı istemin kabul oranını yükseltmesi
     //         beklenir; iki kol `prompt_context` ile ayrışır.
     'push_prompt_after_first_asset': false,
+
+    // Reel getiri (TÜFE) rozeti. `inflation_index` tablosu boşken zaten
+    // hiçbir şey çizilmez; bayrak veri geldikten sonra kademeli açmak için.
+    'real_return_enabled': false,
   };
 
   Future<void> init() async {
@@ -165,6 +169,10 @@ class RemoteConfigService {
   bool get pushPromptAfterFirstAsset =>
       _rc?.getBool('push_prompt_after_first_asset') ??
       _defaults['push_prompt_after_first_asset'] as bool;
+
+  bool get realReturnEnabled =>
+      _rc?.getBool('real_return_enabled') ??
+      _defaults['real_return_enabled'] as bool;
 
   /// UI chip'leri / filtre listeleri için: `depositsEnabled=false` iken
   /// mevduat türünü listeden düşer. `AssetType.values` yerine bunu kullan.
