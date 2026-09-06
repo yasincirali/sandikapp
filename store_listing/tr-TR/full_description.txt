@@ -1,47 +1,53 @@
-Sandık, tüm yatırımlarını tek bir yerden yönetmeni sağlayan kişisel portföy takip uygulamasıdır.
+Altın mı, dolar mı, hisse mi daha çok kazandırdı? sandık hepsini tek ekranda toplar ve sana tek bir şeyi net söyler: gerçekte ne kadar kazandın.
 
-Sandık ile hisse senedi, yatırım fonu, döviz, altın ve emtia varlıklarını tek ekranda topla; sandığını her açtığında portföyünün güncel durumunu gör.
+Çoğu takip uygulaması alış fiyatını bugünkü fiyattan çıkarır ve buna "kâr" der. sandık komisyonu maliyete ekler, aldığın temettüyü kazanca yazar. Gördüğün rakam, cebindeki rakamdır.
 
-TEMEL ÖZELLİKLER
+NE TAKİP EDEBİLİRSİN
 
-• Hisse senedi, yatırım fonu, döviz, altın ve emtia varlıklarını ekle
-• Fiyatlar otomatik güncellenir; manuel fiyat da girebilirsin
-• Toplam değer, kâr/zarar ve dağılım grafiğini anlık gör
-• Geçmiş performansını TradingView tarzı profesyonel grafik ile takip et — pinch zoom, crosshair, dinamik zaman aralıkları
-• Portföyünü aile üyeleri veya iş ortaklarınla güvenli paylaş
-• İstediğin zaman ortaklığı sonlandır
+• Hisse senedi ve yatırım fonu
+• Döviz — USD, EUR, GBP
+• Altın ve gümüş
+• Emtia
+• Fiyatlar otomatik güncellenir; istersen kendi fiyatını girersin
 
-YARIŞ (Opsiyonel)
+GERÇEK KÂR/ZARAR
 
-• Ortaklarınla getiri sıralamasında rekabet et
-• Anonim genel sıralamada tüm Sandık kullanıcıları arasındaki yerini gör
-• "Zirvedeki portföyler" ile en çok kazananların dağılım pattern'ini keşfet — kimlik, miktar, TL bilgisi asla paylaşılmaz
-• KVKK uyumlu, sadece opt-in — istediğin zaman kapatabilirsin
+• Alım komisyonu maliyete dahil edilir
+• Nakit temettüler kazanca yazılır
+• Geçmiş tarihli alımları girebilirsin — portföyün doğru tarihten başlar
+• Döviz varlıklarda alım günündeki kur kullanılır
 
-GÜVENLİK & GİZLİLİK
+PERFORMANS
 
-• Tüm veriler şifreli bulut depolama ile korunur
-• Uygulama ekran görüntüsü ve görev yöneticisine karşı otomatik olarak gizlenir
-• KVKK ve GDPR uyumlu veri işleme
-• Yarış özelliği k-anonimlik ilkesiyle çalışır (min. 20 katılımcı)
-• İstediğin zaman hesabını ve tüm verini sil
+• Portföy geçmişini profesyonel grafikle incele — pinch zoom, crosshair
+• Gün, hafta, ay, yıl — istediğin aralıkta getiri
+• Hangi varlık ne kadar katkı yaptı, tek tek gör
+• Dağılım grafiğiyle ağırlığını dengele
 
-KULLANIM KOLAYLIĞI
+ORTAK PORTFÖY
 
-• Hızlı varlık ekleme akışı (geçmiş tarihli alım desteği ile)
-• Toplu varlık ekleme sepeti
-• Bakiye gizleme özelliği
-• Karanlık tema, göz dostu arayüz
-• Türkçe tarih ve para formatları
+• Eşinle, ailenle veya iş ortağınla aynı portföyü takip et
+• Herkesin katkısı ve getirisi ayrı ayrı hesaplanır
+• İstediğin an ortaklığı sonlandır
 
-Sandığını aç, yatırımlarını takip et.
+YARIŞ (isteğe bağlı)
 
-ARAMA
+• Ortaklarınla getiri sıralamasında yarış
+• Anonim genel sıralamada yerini gör
+• Kimlik, tutar ve TL bilgisi asla paylaşılmaz
+• Tamamen opt-in — istediğin zaman kapat
 
-Uygulamayı ararken Sandık, sandık, SANDIK, Sandik veya sandik yazabilirsin —
-hepsi Sandık portföy takip uygulamasına ulaşır. Ayrıca "sandık portföy",
-"sandık borsa", "sandık yatırım" ve "sandık hisse takip" aramalarında da
-bizi bulabilirsin.
+GİZLİLİK
+
+• Verilerin şifreli olarak saklanır
+• Uygulama görev yöneticisinde otomatik gizlenir
+• Bakiyeni tek dokunuşla gizle
+• Hesabını ve tüm verini istediğin an sil
+• KVKK ve GDPR uyumlu
+
+Sandığını aç, ne kazandığını gör.
+
+Uygulamayı ararken "sandik" veya "sandık" — ikisi de bizi bulur.
 
 ---
-Yatırım tavsiyeleri içermez. Gösterilen veriler bilgi amaçlıdır; yatırım kararlarınızda profesyonel danışmanlık alınız.
+sandık yatırım tavsiyesi vermez. Gösterilen veriler bilgi amaçlıdır; yatırım kararlarınızda profesyonel danışmanlık alınız.

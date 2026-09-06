@@ -1,6 +1,13 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
 **Tarih:** 2026-05-11
+> **📱 Android/Play tarafı için güncel dosya:**
+> [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
+> Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
+> Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
+> boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
+> yeni rehber geçerlidir.
+
 **Kapsam:** Yayın öncesi senin elden yapman gereken işler. Kod tarafı (Faz 1) tamam; bu liste deploy + hukuki + ticari adımları içerir.
 
 ---
