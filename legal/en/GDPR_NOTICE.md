@@ -14,7 +14,7 @@
 - **Address:** `Istanbul, Türkiye`
 - **Email:** `sandikapp.destek@gmail.com`
 - **EU representative (Art. 27):** `[EU REPRESENTATIVE — required if you have no EU establishment AND offer services to EU residents]`
-- **Data Protection Officer (Art. 37):** `[DPO NAME / EMAIL — appointed if required]`
+- **Data Protection Officer (Art. 37):** Not appointed. Data protection contact: `sandikapp.destek@gmail.com`
 
 > **Note for Turkish-only operators:** If you process EU resident data on a regular basis (offering services to EU citizens, monitoring their behavior), you must appoint an EU representative under Art. 27 unless an exemption applies (occasional processing, no large-scale special-category data, low risk to rights and freedoms). Consult legal counsel.
 

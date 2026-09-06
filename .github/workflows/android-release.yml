@@ -9,6 +9,10 @@ name: Android — Release AAB
 #
 # Elle tetiklenir (workflow_dispatch) veya `v*` tag'i push edilince çalışır:
 # her main push'unda imzalı sürüm üretmenin anlamı yok.
+#
+# ⚠️ Artefakt 30 gün sonra siliniyor. Yayınlanan HER sürümün `symbols/`
+# klasörünü indirip arşivle — Dart karartması açık olduğu için o sürümün
+# çökme kayıtları başka türlü çözülemez.
 
 on:
   workflow_dispatch:
@@ -90,12 +94,19 @@ jobs:
       - name: Test
         run: flutter test
 
+      # --obfuscate Dart sembol adlarını karartır; --split-debug-info onları
+      # ayrı dosyaya yazar. İkisi birlikte zorunlu. Karartma olmadan APK'dan
+      # sınıf/metot adları düz metin okunabiliyor (PRODUCTION_STATUS S5).
+      # Sonuç: Crashlytics'e düşen Dart stack trace'leri okunamaz hale gelir —
+      # aşağıdaki symbols artefaktını sürüm bazında SAKLA:
+      #   flutter symbolize -i crash.txt -d symbols/app.android-arm64.symbols
       - name: Build AAB
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           flutter build appbundle --release \
+            --obfuscate --split-debug-info=build/symbols \
             --dart-define=SUPABASE_URL=$SUPABASE_URL \
             --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
@@ -108,6 +119,7 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           flutter build apk --release --split-per-abi \
+            --obfuscate --split-debug-info=build/symbols \
             --dart-define=SUPABASE_URL=$SUPABASE_URL \
             --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
@@ -123,6 +135,7 @@ jobs:
             build/app/outputs/bundle/release/*.aab
             build/app/outputs/flutter-apk/*.apk
             build/app/outputs/mapping/release/mapping.txt
+            build/symbols/**
 
       - name: Boyut özeti
         run: |
