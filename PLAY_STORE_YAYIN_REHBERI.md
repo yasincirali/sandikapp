@@ -19,10 +19,10 @@ tarayıcıda ve elden yapacakların.
 |---|---|
 | Uygulama kodu, imza altyapısı, R8, CI | ✅ Hazır |
 | Mağaza metinleri (TR + EN) | ✅ TR metni App Store ile birebir hizalandı (§6.4, §12) · EN için ASC'de karşılığı var mı? |
-| Hukuki belgeler + web sayfaları | ✅ Hazır (URL'leri doğrula, §3.2) |
+| Hukuki belgeler + web sayfaları | ✅ Bu tur onarıldı: bozuk kodlama düzeltildi, placeholder'lar dolduruldu (§7.2) |
 | Data Safety envanteri | ✅ Yazılı · Advertising ID sorusu kapandı — izin manifest'ten düşürüldü (§5.3) |
 | Release keystore | ❌ **SENDE** — yoksa hiçbir şey yüklenemez |
-| Play Console hesabı + doğrulama | ❌ **SENDE** — finans uygulaması olduğu için hesap tipi kritik (§1) |
+| Play Console hesabı + doğrulama | 🔄 **Kişisel hesap açıldı**, kimlik doğrulaması Google'da bekliyor (§1) |
 | Ekran görüntüleri | ⚠️ Var ama **Play formatına uymuyor** (2,17:1 > 2:1 sınırı) — yeniden üretilecek (§6.2) |
 | Feature graphic (1024×500) + ikon (512×512) | ❌ Yok — üretilecek (§6.1, §6.3) |
 | Supabase `0027_soft_delete_lots.sql` migration | ❌ Uygulanmadı — **Play "hesap silme" şartını kırar** (§7.1) |
@@ -33,6 +33,24 @@ doğrulama → keystore → görseller → Console beyanları → kapalı test.
 ---
 
 ## 1. Hesap tipi kararı — ilk ve en pahalı karar
+
+> **✅ KARAR (2026-09-06): Kişisel hesap.** Şirket olmadığı için kuruluş
+> hesabı (D‑U‑N‑S zorunlu) bir seçenek değil. Sonuçları:
+> **(a)** 12 testçi × kesintisiz 14 gün kapalı test **zorunlu** (§8.2) —
+> takvimin en uzun kalemi, testçi toplamaya bugünden başla.
+> **(b)** Play'de görünen geliştirici adı gerçek kişi: **Yasin Çıralı**;
+> hukuki belgelerdeki veri sorumlusu da bu (§7.2).
+> **(c)** Google'ın "finansal ürün/hizmet sağlayanlar kuruluş hesabı
+> seçmeli" yönergesi bankacılık, kredi, hisse alım-satımı, yatırım fonu,
+> kripto cüzdanı/borsası sayıyor — sandık bunların hiçbirini yapmıyor,
+> sadece takip ediyor. Savunulabilir ama garanti değil; Financial features
+> beyanında (§5.4) Google karar verecek. Riski düşürmek için sinyal
+> uyarılarını görünür tut.
+
+> **Hesap kurulum durumu:** kimlik belgeleri yüklendi, Google doğruluyor
+> (birkaç gün). Kalan iki görev: Play Console **mobil uygulamasına** o
+> hesapla giriş (cihaz doğrulaması) ve ardından telefon doğrulaması —
+> telefon adımı kimlik onayı bitmeden açılmıyor.
 
 Play, uygulamayı **kişisel** ya da **kuruluş (organization)** hesabından
 yayınlamana izin veriyor. sandık bir finans uygulaması olduğu için bu karar
@@ -379,11 +397,40 @@ supabase db push   # ya da Dashboard → SQL Editor
 ```
 Ardından gerçek cihazda: hesap aç → varlık ekle → varlığı sil → hesabı sil.
 
-### 7.2 🟠 Legal belgelerdeki placeholder'lar
-`legal/README.md` hâlâ `[ŞİRKET ADI]` / `[ADRES]` kalıplarını işaret ediyor.
-Tüzel kişilik kararı (§1) verilince tek commit'te doldurulur — veri sorumlusu
-kim olacaksa gerçek ad/adres oraya yazılmalı. Reviewer gizlilik politikasını
-açıp boş placeholder görürse red gelir.
+### 7.2 ✅ (KAPANDI) Hukuki belgeler — kodlama onarımı + placeholder'lar
+2026-09-06'da iki sorun birden kapatıldı:
+
+1. **Bozuk kodlama.** `legal/tr/` altındaki beş Türkçe belge ve bunlardan
+   üretilen yayındaki HTML sayfaları çift kodlanmıştı — "Kişisel Verilerin
+   Korunması" yerine "KiÅŸisel Verilerin KorunmasÄ±" görünüyordu. Play
+   incelemecisinin tıkladığı gizlilik politikası sayfası buydu. Onarıldı
+   (2.121 karakter), `docs/` yeniden üretildi.
+2. **Placeholder'lar.** `[ŞİRKET ADI]`, `[AÇIK ADRES]`, `[VERGİ NO]`,
+   `[VERBİS NO]`, `[KEP ADRESİ]`, `[İLETİŞİM E-POSTA]`, `[YETKİLİ MAHKEME]`,
+   `[WEB SİTESİ]` dolduruldu; yayınlanan sayfalarda görünen "TODO" uyarı
+   kutuları kaldırıldı. Kullanılan değerler:
+
+| Alan | Değer |
+|---|---|
+| Veri sorumlusu | Yasin Çıralı (bireysel geliştirici) |
+| Adres | İstanbul, Türkiye |
+| E-posta | sandikapp.destek@gmail.com |
+| Vergi No / KEP | Yok (bireysel geliştirici) |
+| VERBİS | Kayıtlı değil — ticari faaliyet başlangıcında yapılacak |
+| Yetkili mahkeme | İstanbul Anadolu Mahkemeleri ve İcra Daireleri |
+| Web | https://yasincirali.github.io/sandikapp |
+| DPO | Atanmamıştır; veri koruma iletişimi yukarıdaki e-posta |
+
+**🟠 Kalan tek karar — AB temsilcisi (GDPR Md. 27).** `legal/en/GDPR_NOTICE.md`
+içinde hâlâ bir placeholder duruyor. Uygulamayı AB ülkelerine de dağıtacaksan
+Md. 27 temsilcisi atanması gerekebilir (istisnalar var: arızi işleme, özel
+nitelikli veri yok, düşük risk). Play Console'da dağıtımı **yalnızca Türkiye**
+seçersen bu satır "AB'de hizmet sunulmamaktadır" olarak kapanır. Hangisi
+olduğunu söyle, metni ona göre yazayım.
+
+**Not:** Adres şehir düzeyinde ("İstanbul, Türkiye"). Play, kişisel hesaplarda
+geliştirici adresini mağaza sayfasında **herkese açık** gösteriyor; oraya açık
+adres girmen istenirse hukuki belgelerdeki adresi de onunla eşitleyelim.
 
 ### 7.3 🟡 Firebase Android uygulaması kayıtlı mı
 CI `GOOGLE_SERVICES_JSON_BASE64` bekliyor. Firebase Console'da
@@ -469,10 +516,10 @@ tester'lardan bloklayıcı geri bildirim yok.
 
 Şunları netleştirirsen kalan kod/doküman işlerini tek seferde bitiririm:
 
-1. **Hesap tipi:** kişisel mi, kuruluş mu? (Financial features beyanının tonu
-   ve kapalı test takvimi buna bağlı)
-2. **Veri sorumlusu:** hangi ad/unvan + adres yazılacak? (9 hukuki belgedeki
-   placeholder'lar tek commit'te dolar)
+1. **12 testçi:** kapalı test için 12 kişilik listeyi kim oluşturacak?
+   (Gmail adresleri + Android cihaz; 14 gün kesintisiz opt-in gerekiyor)
+2. **Dağıtım ülkeleri:** yalnızca Türkiye mi, AB dahil global mi? (GDPR Md. 27
+   temsilcisi satırı buna bağlı — §7.2)
 3. **Domain:** `yasincirali.github.io/sandikapp` ile mi devam, yoksa
    `sandik.app` alınacak mı? (Kodda ve Console'da aynı olmalı)
 4. **Sinyal uyarısı:** sinyal ekranına/bildirimine görünür "yatırım tavsiyesi

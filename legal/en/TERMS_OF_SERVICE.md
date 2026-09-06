@@ -4,8 +4,6 @@
 **Last updated:** May 11, 2026
 **Version:** 1.0
 
-> **TODO:** Fill in `Yasin Çıralı`, `Istanbul, Türkiye`, `sandikapp.destek@gmail.com`, `Istanbul Anatolian Courts and Enforcement Offices`.
-
 ---
 
 ## 1. Parties and Acceptance
@@ -194,7 +192,7 @@ If any provision of these Terms is held invalid, the remaining provisions remain
 ## 17. Governing Law and Jurisdiction
 
 - **Governing law:** Laws of the Republic of Türkiye
-- **Jurisdiction:** `[GOVERNING COURT — e.g., Istanbul Anatolian Consumer Courts]`
+- **Jurisdiction:** `Istanbul Anatolian Courts and Enforcement Offices`
 
 For users with consumer status, the courts of their place of residence also have jurisdiction under TKHK.
 

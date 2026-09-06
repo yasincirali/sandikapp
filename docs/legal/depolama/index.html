@@ -60,109 +60,109 @@ button:hover { opacity: 0.9; }
   <div class="logo">S</div>
   <div class="brand">sandık<small>Depolama</small></div>
 </header>
-<p>﻿# Ã‡erez ve Yerel Depolama PolitikasÄ± â€” sandÄ±k</p>
-<p><strong>YÃ¼rÃ¼rlÃ¼k tarihi:</strong> 11 MayÄ±s 2026
-<strong>SÃ¼rÃ¼m:</strong> 1.0</p>
+<p>﻿# Çerez ve Yerel Depolama Politikası — sandık</p>
+<p><strong>Yürürlük tarihi:</strong> 11 Mayıs 2026
+<strong>Sürüm:</strong> 1.0</p>
 <hr />
 <h2>1. Genel</h2>
-<p><strong>sandÄ±k</strong> mobil bir uygulamadÄ±r ve geleneksel web Ã§erezleri (HTTP cookies) <strong>kullanmaz</strong>. Bu politika, uygulamanÄ±n cihazÄ±nÄ±zda kullandÄ±ÄŸÄ± yerel depolama mekanizmalarÄ±nÄ± aÃ§Ä±klar ve KVKK + GDPR + ePrivacy Direktifi (2002/58/EC) uyumluluÄŸunu saÄŸlar.</p>
+<p><strong>sandık</strong> mobil bir uygulamadır ve geleneksel web çerezleri (HTTP cookies) <strong>kullanmaz</strong>. Bu politika, uygulamanın cihazınızda kullandığı yerel depolama mekanizmalarını açıklar ve KVKK + GDPR + ePrivacy Direktifi (2002/58/EC) uyumluluğunu sağlar.</p>
 <hr />
-<h2>2. KullanÄ±lan Yerel Depolama TÃ¼rleri</h2>
+<h2>2. Kullanılan Yerel Depolama Türleri</h2>
 <h3>2.1 SharedPreferences (Android) / NSUserDefaults (iOS)</h3>
-<p>Ä°ÅŸletim sisteminin saÄŸladÄ±ÄŸÄ± kÃ¼Ã§Ã¼k key-value deposu. Ä°Ã§inde tutulan veriler:</p>
+<p>İşletim sisteminin sağladığı küçük key-value deposu. İçinde tutulan veriler:</p>
 <table>
 <thead>
 <tr>
 <th>Anahtar</th>
-<th>Ä°Ã§erik</th>
-<th>AmaÃ§</th>
-<th>Saklama sÃ¼resi</th>
+<th>İçerik</th>
+<th>Amaç</th>
+<th>Saklama süresi</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>last_login_email</code></td>
-<td>KullanÄ±cÄ± isterse kayÄ±tlÄ± e-posta</td>
-<td>"Beni hatÄ±rla" Ã¶zelliÄŸi</td>
-<td>KullanÄ±cÄ± silene kadar</td>
+<td>Kullanıcı isterse kayıtlı e-posta</td>
+<td>"Beni hatırla" özelliği</td>
+<td>Kullanıcı silene kadar</td>
 </tr>
 <tr>
 <td><code>theme_mode</code></td>
 <td>Tema tercihi (dark/light/system)</td>
-<td>UI ayarÄ±</td>
+<td>UI ayarı</td>
 <td>Uninstall'a kadar</td>
 </tr>
 <tr>
 <td><code>disclaimer_accepted_v1.0</code></td>
 <td>Disclaimer onay durumu</td>
-<td>Tekrar gÃ¶stermemek</td>
-<td>Disclaimer sÃ¼rÃ¼mÃ¼ deÄŸiÅŸene kadar</td>
+<td>Tekrar göstermemek</td>
+<td>Disclaimer sürümü değişene kadar</td>
 </tr>
 <tr>
 <td><code>notification_enabled</code></td>
-<td>Bildirim aÃ§Ä±k/kapalÄ±</td>
-<td>KullanÄ±cÄ± tercihi</td>
+<td>Bildirim açık/kapalı</td>
+<td>Kullanıcı tercihi</td>
 <td>Uninstall'a kadar</td>
 </tr>
 </tbody>
 </table>
-<p><strong>KiÅŸisel veri iÃ§ermez</strong> veya yalnÄ±zca kullanÄ±cÄ±nÄ±n aÃ§Ä±kÃ§a izin verdiÄŸi e-posta'yÄ± iÃ§erir.</p>
+<p><strong>Kişisel veri içermez</strong> veya yalnızca kullanıcının açıkça izin verdiği e-posta'yı içerir.</p>
 <h3>2.2 Supabase Auth Session Token</h3>
-<p>Supabase SDK, oturum tokenlarÄ±nÄ± otomatik olarak gÃ¼venli bir ÅŸekilde saklar:</p>
+<p>Supabase SDK, oturum tokenlarını otomatik olarak güvenli bir şekilde saklar:</p>
 <ul>
-<li><strong>JWT access token:</strong> 1 saat geÃ§erli</li>
-<li><strong>Refresh token:</strong> 7 gÃ¼n geÃ§erli, otomatik yenilenir</li>
+<li><strong>JWT access token:</strong> 1 saat geçerli</li>
+<li><strong>Refresh token:</strong> 7 gün geçerli, otomatik yenilenir</li>
 <li><strong>Saklama yeri:</strong> Android'de <code>EncryptedSharedPreferences</code>, iOS'ta Keychain</li>
 </ul>
-<p>Bu token'lar oturum aÃ§ma iÃ§in <strong>zorunludur</strong> (sÃ¶zleÅŸmenin ifasÄ± â€” KVKK 5(2)(c) / GDPR 6(1)(b)). KullanÄ±cÄ± izni gerektirmez.</p>
-<h3>2.3 SQLite Yerel VeritabanÄ± (sqflite cache)</h3>
-<p>Performans iÃ§in bazÄ± veriler cihaz Ã¼zerinde Ã¶nbelleÄŸe alÄ±nÄ±r:</p>
+<p>Bu token'lar oturum açma için <strong>zorunludur</strong> (sözleşmenin ifası — KVKK 5(2)(c) / GDPR 6(1)(b)). Kullanıcı izni gerektirmez.</p>
+<h3>2.3 SQLite Yerel Veritabanı (sqflite cache)</h3>
+<p>Performans için bazı veriler cihaz üzerinde önbelleğe alınır:</p>
 <ul>
-<li>Son fiyat bilgileri (geÃ§ici cache)</li>
-<li>GÃ¶rsel asset'ler</li>
+<li>Son fiyat bilgileri (geçici cache)</li>
+<li>Görsel asset'ler</li>
 </ul>
-<p><strong>HiÃ§bir kiÅŸisel veri</strong> SQLite'da kalÄ±cÄ± saklanmaz; tÃ¼m asÄ±l veri Supabase'dedir.</p>
+<p><strong>Hiçbir kişisel veri</strong> SQLite'da kalıcı saklanmaz; tüm asıl veri Supabase'dedir.</p>
 <h3>2.4 Push Notification Token (FCM)</h3>
-<p>Firebase Cloud Messaging, cihazÄ±nÄ±za Ã¶zel bir token Ã¼retir. Bu token:</p>
+<p>Firebase Cloud Messaging, cihazınıza özel bir token üretir. Bu token:</p>
 <ul>
-<li>YalnÄ±zca bildirim gÃ¶ndermek iÃ§in kullanÄ±lÄ±r</li>
-<li>KullanÄ±cÄ±nÄ±n <strong>aÃ§Ä±k rÄ±za</strong> vermesiyle Supabase'e kaydedilir</li>
+<li>Yalnızca bildirim göndermek için kullanılır</li>
+<li>Kullanıcının <strong>açık rıza</strong> vermesiyle Supabase'e kaydedilir</li>
 <li>Logout veya uninstall'da silinir</li>
 </ul>
 <hr />
-<h2>3. KullanÄ±lmayan Mekanizmalar</h2>
-<p>AÅŸaÄŸÄ±dakileri <strong>kullanmÄ±yoruz</strong>:</p>
+<h2>3. Kullanılmayan Mekanizmalar</h2>
+<p>Aşağıdakileri <strong>kullanmıyoruz</strong>:</p>
 <ul>
-<li>âŒ HTTP Ã§erezleri (cookies)</li>
-<li>âŒ Web tracking pixel'leri</li>
-<li>âŒ ÃœÃ§Ã¼ncÃ¼ taraf reklam SDK'larÄ± (Google AdMob, Facebook Audience, AppLovin, vb. â€” yok)</li>
-<li>âŒ ÃœÃ§Ã¼ncÃ¼ taraf analitik SDK'larÄ± (Mixpanel, Amplitude, Segment, Adjust, AppsFlyer, vb. â€” yok)</li>
-<li>âŒ Cross-app tracking (IDFA, GAID kullanÄ±mÄ± yok)</li>
-<li>âŒ Web view iÃ§inde third-party content</li>
+<li>❌ HTTP çerezleri (cookies)</li>
+<li>❌ Web tracking pixel'leri</li>
+<li>❌ Üçüncü taraf reklam SDK'ları (Google AdMob, Facebook Audience, AppLovin, vb. — yok)</li>
+<li>❌ Üçüncü taraf analitik SDK'ları (Mixpanel, Amplitude, Segment, Adjust, AppsFlyer, vb. — yok)</li>
+<li>❌ Cross-app tracking (IDFA, GAID kullanımı yok)</li>
+<li>❌ Web view içinde third-party content</li>
 </ul>
 <hr />
-<h2>4. ePrivacy Direktifi ("Cookie YasasÄ±")</h2>
-<p>ePrivacy Direktifi (2002/58/EC) ve TÃ¼rkiye Elektronik HaberleÅŸme Kanunu Madde 51 kapsamÄ±nda, "kesinlikle gerekli olmayan" izleme/depolama iÃ§in <strong>kullanÄ±cÄ± rÄ±zasÄ±</strong> gerekir.</p>
-<p>sandÄ±k'Ä±n kullandÄ±ÄŸÄ± tÃ¼m yerel depolama mekanizmalarÄ± <strong>hizmetin saÄŸlanmasÄ± iÃ§in kesinlikle gereklidir</strong> veya kullanÄ±cÄ±nÄ±n aÃ§Ä±k tercihiyle (theme, "Beni hatÄ±rla", notification) etkinleÅŸtirilir. Bu nedenle ek bir "Ã§erez bildirimi banner'Ä±" gerekmez.</p>
+<h2>4. ePrivacy Direktifi ("Cookie Yasası")</h2>
+<p>ePrivacy Direktifi (2002/58/EC) ve Türkiye Elektronik Haberleşme Kanunu Madde 51 kapsamında, "kesinlikle gerekli olmayan" izleme/depolama için <strong>kullanıcı rızası</strong> gerekir.</p>
+<p>sandık'ın kullandığı tüm yerel depolama mekanizmaları <strong>hizmetin sağlanması için kesinlikle gereklidir</strong> veya kullanıcının açık tercihiyle (theme, "Beni hatırla", notification) etkinleştirilir. Bu nedenle ek bir "çerez bildirimi banner'ı" gerekmez.</p>
 <hr />
 <h2>5. Verilerinizi Cihazdan Silme</h2>
-<h3>5.1 Uygulama Ä°Ã§inden</h3>
+<h3>5.1 Uygulama İçinden</h3>
 <ul>
-<li><strong>Logout:</strong> Profile â†’ Ã‡Ä±kÄ±ÅŸ Yap (oturum tokenÄ± silinir; yerel cache temizlenir)</li>
-<li><strong>Hesap silme:</strong> Profile â†’ Ayarlar â†’ HesabÄ±mÄ± Sil (tÃ¼m yerel + sunucu verisi silinir)</li>
+<li><strong>Logout:</strong> Profile → Çıkış Yap (oturum tokenı silinir; yerel cache temizlenir)</li>
+<li><strong>Hesap silme:</strong> Profile → Ayarlar → Hesabımı Sil (tüm yerel + sunucu verisi silinir)</li>
 </ul>
-<h3>5.2 Ä°ÅŸletim Sistemi Ãœzerinden</h3>
+<h3>5.2 İşletim Sistemi Üzerinden</h3>
 <ul>
-<li><strong>Android:</strong> Ayarlar â†’ Uygulamalar â†’ sandÄ±k â†’ Depolama â†’ Verileri Temizle</li>
-<li><strong>iOS:</strong> Ayarlar â†’ Genel â†’ iPhone Depolama â†’ sandÄ±k â†’ UygulamayÄ± Sil</li>
+<li><strong>Android:</strong> Ayarlar → Uygulamalar → sandık → Depolama → Verileri Temizle</li>
+<li><strong>iOS:</strong> Ayarlar → Genel → iPhone Depolama → sandık → Uygulamayı Sil</li>
 </ul>
-<p>Uninstall, cihaz Ã¼zerindeki <strong>tÃ¼m yerel depolamayÄ± siler</strong>. Ancak Supabase'deki sunucu verisi durur â€” onu silmek iÃ§in ayrÄ±ca hesap silme akÄ±ÅŸÄ±nÄ± kullanÄ±n.</p>
+<p>Uninstall, cihaz üzerindeki <strong>tüm yerel depolamayı siler</strong>. Ancak Supabase'deki sunucu verisi durur — onu silmek için ayrıca hesap silme akışını kullanın.</p>
 <hr />
-<h2>6. DeÄŸiÅŸiklikler</h2>
-<p>Bu politikada deÄŸiÅŸiklik yapÄ±lÄ±rsa "SÃ¼rÃ¼m" numarasÄ± artÄ±rÄ±lÄ±r ve uygulama iÃ§i bildirim gÃ¶sterilir.</p>
+<h2>6. Değişiklikler</h2>
+<p>Bu politikada değişiklik yapılırsa "Sürüm" numarası artırılır ve uygulama içi bildirim gösterilir.</p>
 <hr />
-<h2>7. Ä°letiÅŸim</h2>
-<p>Yerel depolamayla ilgili sorular iÃ§in: <code>[Ä°LETÄ°ÅÄ°M E-POSTA]</code></p>
+<h2>7. İletişim</h2>
+<p>Yerel depolamayla ilgili sorular için: <code>sandikapp.destek@gmail.com</code></p>
 <footer>
   sandık — <a href="/sandikapp/">Ana Sayfa</a> · <a href="/sandikapp/privacy">Gizlilik</a> · <a href="/sandikapp/terms">Kullanım</a> · <a href="/sandikapp/data-deletion">Hesap Silme</a>
 </footer>
