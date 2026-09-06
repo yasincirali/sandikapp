@@ -425,4 +425,68 @@ void main() {
       expect(s.sparkline.last, s.totalTRY);
     });
   });
+  // ── Sparkline normalizasyonu ────────────────────────────────────────────
+  //
+  // 2026-09-06'da `LiveActivityService._normalize`den buraya taşındı: iOS
+  // ana ekran widget'ı da aynı eğriyi çizmek zorunda (kilit ekranıyla yan
+  // yana görülüyorlar). İki kopya normalize etseydi aynı portföy iki yerde
+  // farklı bir eğri gösterirdi — bu dosyanın var oluş sebebi tam olarak bu.
+  group('normalizeForSparkline', () {
+    test('iki noktadan az veri boş döner — çizgi oluşmaz', () {
+      expect(DailySummary.normalizeForSparkline(const []), isEmpty);
+      expect(DailySummary.normalizeForSparkline(const [5.0]), isEmpty);
+    });
+
+    test('görsel olarak düz seri ortada yatay çizilir', () {
+      // Gerçek vaka: ₺2.489.186,40 → ₺2.489.186,35 (5 kuruş). Mutlak eşik
+      // bunu "hareket" sayıyor ve 5 kuruş 0…1 aralığının TAMAMINA
+      // yayılıyordu: düz bir günde grafiğin ucu tepeden dibe iniyordu.
+      final out = DailySummary.normalizeForSparkline(
+        const [2489186.40, 2489186.38, 2489186.35],
+      );
+      expect(out, isNotEmpty);
+      expect(out.every((v) => v == 0.5), isTrue,
+          reason: 'düz seri tek bir yatay çizgi olmalı');
+    });
+
+    test('değerler 0…1 aralığında kalır', () {
+      final out = DailySummary.normalizeForSparkline(
+        const [100.0, 140.0, 90.0, 175.0, 120.0],
+      );
+      expect(out.every((v) => v >= 0.0 && v <= 1.0), isTrue,
+          reason: 'eksen sınırları seriyi kapsamalı');
+    });
+
+    test('40 noktadan uzun seri seyreltilir', () {
+      final uzun = List<double>.generate(500, (i) => 100.0 + i);
+      final out = DailySummary.normalizeForSparkline(uzun);
+      expect(out.length, lessThanOrEqualTo(41),
+          reason: '40 örnek + garantili son nokta');
+    });
+
+    test('son nokta HER ZAMAN dahildir', () {
+      // Grafiğin ucu güncel değeri göstermek zorunda; seyreltme adımı
+      // son noktayı atlarsa çizgi geçmişte kalır.
+      final uzun = List<double>.generate(101, (i) => 100.0 + i);
+      final out = DailySummary.normalizeForSparkline(uzun);
+      expect(out.last, closeTo(
+        (uzun.last - DailySummary.niceAxisBounds(uzun).min) /
+            (DailySummary.niceAxisBounds(uzun).max -
+                DailySummary.niceAxisBounds(uzun).min),
+        1e-9,
+      ));
+    });
+
+    test('normalizasyon EKSEN sınırlarıyla aynı aralığı kullanır', () {
+      // Çizgi başka bir aralığa göre normalize edilirse etiketlerle
+      // ayrışır: kullanıcı "₺2,48M–₺2,50M" yazan bir eksende tuvali
+      // baştan başa dolduran bir çizgi görür.
+      const seri = [1000.0, 1500.0, 1200.0];
+      final bounds = DailySummary.niceAxisBounds(seri);
+      final out = DailySummary.normalizeForSparkline(seri);
+      expect(out.first,
+          closeTo((seri.first - bounds.min) / (bounds.max - bounds.min), 1e-9));
+    });
+  });
+
 }

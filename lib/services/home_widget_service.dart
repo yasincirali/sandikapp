@@ -59,6 +59,15 @@ class HomeWidgetService {
   static const _kHasData = 'sandik_has_data';
   static const _kSparkline = 'sandik_sparkline';
   static const _kSparkPoints = 'sandik_spark_points';
+
+  /// Sparkline'ın HAM (0…1 normalize) serisi — virgülle ayrık.
+  ///
+  /// Android PNG okur (`_kSparkline`), iOS ise SwiftUI ile kendi çizer.
+  /// Sebep teknik: PNG `getApplicationSupportDirectory()` altına yazılıyor,
+  /// bu da uygulamanın KENDİ kabı; widget uzantısı ayrı sandbox'ta ve o
+  /// yolu okuyamaz. Paylaşımlı `UserDefaults` (app group) ise ikisine de
+  /// açık, bu yüzden iOS'a görsel değil SAYI gönderilir.
+  static const _kSparkSeries = 'sandik_spark_series';
   /// Değişim ölçüldü ama SIFIR mı? Native taraf rengi buna göre nötrler.
   ///
   /// `sandik_is_positive` tek başına yetmez: sıfır bir YÖN taşımaz ama
@@ -357,6 +366,9 @@ class HomeWidgetService {
     // İki noktadan az veri çizgi oluşturmaz.
     if (values.length < 2) {
       await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
+      // Seri de temizlenir: kalsaydı iOS widget'ı bugün ölçüm yokken
+      // DÜNÜN eğrisini çizmeye devam ederdi.
+      await HomeWidget.saveWidgetData<String>(_kSparkSeries, '');
       return;
     }
 
@@ -370,6 +382,16 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>(_kSparkline, path);
       await HomeWidget.saveWidgetData<int>(_kSparkPoints, values.length);
     }
+
+    // iOS için ham seri. Normalize ORTAK katmanda yapılır ki kilit ekranı
+    // ile ana ekran widget'ı aynı portföy için aynı eğriyi çizsin.
+    // Üç ondalık yeter: seri 0…1 aralığında ve çizim birkaç yüz piksel
+    // genişliğinde — daha fazlası yalnızca anahtarı şişirir.
+    final seri = DailySummary.normalizeForSparkline(values);
+    await HomeWidget.saveWidgetData<String>(
+      _kSparkSeries,
+      seri.map((v) => v.toStringAsFixed(3)).join(','),
+    );
   }
 
   /// Sparkline'ı çizip PNG olarak diske yazar; dosya yolunu döner.
@@ -591,6 +613,9 @@ class HomeWidgetService {
 
   /// Bakiye gizliyken: tutar yazılmaz, widget "gizli" durumunu gösterir.
   Future<void> _writeHidden() async {
+    // Seri temizlenir: kalsaydı tutar gizliyken bile eğri portföyün
+    // gün içi hareketini ele verirdi.
+    await HomeWidget.saveWidgetData<String>(_kSparkSeries, '');
     await HomeWidget.saveWidgetData<String>(_kTotal, '••••••');
     await HomeWidget.saveWidgetData<String>(_kChange, '');
     await HomeWidget.saveWidgetData<bool>(_kIsPositive, true);

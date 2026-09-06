@@ -71,28 +71,40 @@ baştan var.
 
 ---
 
-## 🟠 AÇIK — iOS ana ekran widget'ı hiç yok
+## ✅ KAPANDI — iOS ana ekran widget'ı yazıldı
+
+**Kapanış:** 2026-09-06 · Sprint 1
+
+`ios/SandikWidget/SandikHomeWidget.swift` eklendi, `SandikWidgetBundle`'a
+kaydedildi ve `project.pbxproj`'a dört giriş açıldı (PBXBuildFile,
+PBXFileReference, grup, Sources fazı — id'ler `...0062`/`...0063`).
+
+Çözülen asıl sorun veri yoluydu: sparkline PNG'si
+`getApplicationSupportDirectory()` altına yazılıyor, yani uygulamanın KENDİ
+kabına — uzantı ayrı sandbox'ta ve o yolu okuyamaz. iOS'a artık görsel değil
+ham seri gönderiliyor (`sandik_spark_series`, paylaşımlı UserDefaults) ve
+eğri `SandikSparkline` ile uzantıda çiziliyor.
+
+**Kalan risk:** Swift ve pbxproj bu oturumda DERLENMEDİ (Xcode yok).
+Bkz. aşağıdaki madde.
+
+---
+
+## 🟡 AÇIK — Swift widget ve pbxproj derlenerek doğrulanmadı
 
 **Karar tarihi:** 2026-09-06 · Sprint 1
 
-`HomeWidgetService` iOS'u destekliyor gibi görünüyor: app group kuruluyor,
-`kind = "SandikWidget"` için veri yazılıyor, sparkline PNG'si üretiliyor.
-Ama `ios/SandikWidget/SandikWidgetBundle.swift` yalnızca `SandikLiveActivity()`
-içeriyor — **WidgetKit görünümü hiç yazılmamış.** Yani iOS'ta yazılan veriyi
-okuyan bir widget yok.
+`SandikHomeWidget.swift` (257 satır) ve `project.pbxproj`'daki dört giriş
+elle yazıldı; bu ortamda Xcode olmadığı için derlenmedi.
 
-**Neden şimdi yapılmadı:** Xcode olmadan yazılacak, derlenemeyecek ve
-görülemeyecek bir SwiftUI görünümü demek. Live Activity'nin 764 satırlık
-mevcut uygulaması, bu ekibin WidgetKit tarafında ciddi bir çıta koyduğunu
-gösteriyor; körlemesine yazılmış bir görünüm o çıtanın altında kalır.
+**Riski:** pbxproj bozuksa **tüm iOS build'i** kırılır — Kotlin tarafındaki
+tek satırlık riskten daha büyük. Girişler mevcut `SandikSparkline.swift`
+deseninin birebir kopyası ve id'ler çakışmıyor (en yüksek kullanılan
+`...0061`), ama doğrulama ilk build'e kalıyor.
 
-**Ertelemenin maliyeti:** iOS kullanıcılarında ikinci (izin gerektirmeyen)
-tutundurma kanalı YOK. `home_widget_service.dart`'ın iOS yolu ölü kod
-çalıştırıyor — her portföy güncellemesinde kimsenin okumadığı prefs'e yazıp
-PNG üretiyor.
-
-**Ele alınma zamanı:** Sprint 1'in widget funnel'ı ancak iOS görünümü
-yazıldıktan sonra iki platformda anlamlı. Android tarafı hazır ve atıflı.
+**Ele alınma zamanı:** ilk `flutter build ios` ya da GitHub Actions turunda.
+Kırılırsa dört girişi de geri almak yeterli — widget dosyası hedefe dahil
+olmaz, uygulama derlenir.
 
 ---
 

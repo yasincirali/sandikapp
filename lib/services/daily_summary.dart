@@ -166,6 +166,50 @@ class DailySummary {
   /// bandı şişirir, daha çok bölme sınırları kesirli yapar.
   static const _tickCount = 4;
 
+  /// Sparkline çizimi için 0…1 aralığına normalize edilmiş seri.
+  ///
+  /// ORTAK katmanda durur çünkü iki yüzey de aynı eğriyi çizmek zorunda:
+  /// kilit ekranı (Live Activity) ve iOS ana ekran widget'ı. Ayrı ayrı
+  /// normalize edilseydi aynı portföy iki yerde farklı görünürdü.
+  static List<double> normalizeForSparkline(List<double> values) {
+    if (values.length < 2) return const [];
+
+    // Düz çizgi: ortada yatay çiz. Sıfıra bölmeyi de önler.
+    //
+    // Eşik GÖRELİDİR — mutlak `1e-9` büyük portföyde işe yaramıyordu.
+    // Gerçek vaka: ₺2.489.186,40 → ₺2.489.186,35 (5 kuruş). Eşiği aştığı
+    // için "hareket" sayılıyor ve bu 5 kuruş 0…1 aralığının TAMAMINA
+    // yayılıyordu: düz bir günde grafiğin ucu tepeden dibe iniyordu.
+    if (isVisuallyFlat(values)) {
+      return List.filled(values.length.clamp(2, 40), 0.5);
+    }
+
+    // Normalize aralığı EKSENLE aynı olmalı.
+    //
+    // Etiketler `_axisBounds` üzerinden `niceAxisBounds`
+    // kullanıyor; çizgi başka bir aralığa göre normalize edilirse ikisi
+    // ayrışır: kullanıcı "₺2,48M–₺2,50M" yazan bir eksende tuvali baştan
+    // başa dolduran bir çizgi görür. Aynı fonksiyondan okunur.
+    final bounds = niceAxisBounds(values);
+    final lo = bounds.min;
+    final axisSpan = bounds.max - bounds.min;
+
+    // Örnekleme: 40 noktadan fazlasını seyrelt.
+    const maxPoints = 40;
+    final step = values.length <= maxPoints
+        ? 1
+        : (values.length / maxPoints).ceil();
+
+    final out = <double>[];
+    for (var i = 0; i < values.length; i += step) {
+      out.add((values[i] - lo) / axisSpan);
+    }
+    // Son nokta her zaman dahil — grafiğin ucu güncel değeri göstermeli.
+    final lastNorm = (values.last - lo) / axisSpan;
+    if (out.isEmpty || (out.last - lastNorm).abs() > 1e-9) out.add(lastNorm);
+    return out;
+  }
+
   /// Verilen büyüklüğe en yakın "okunabilir" adım — 1, 2, 2,5 ya da 5'in
   /// 10 kuvvetiyle çarpımı.
   ///

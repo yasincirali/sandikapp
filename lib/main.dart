@@ -39,6 +39,7 @@ import 'services/retention_tracker.dart';
 import 'theme/sandik.dart';
 import 'utils/theme_resolution.dart';
 import 'widgets/sandik_error_view.dart';
+import 'widgets/widget_install_sheet.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -930,12 +931,26 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // -1'den gelir; bu kontrol olmadan portföyü dolu her kullanıcıya
       // uygulama her açılışta izin sormuş olurdu. Yalnızca oturum İÇİNDE
       // 0'dan 1'e geçiş gerçek bir "ilk varlık" anıdır.
+      final ilkVarlikEklendi = prev != null && prevCount == 0 && currCount >= 1;
+
       if (RemoteConfigService.instance.pushPromptAfterFirstAsset &&
-          prev != null &&
-          prevCount == 0 &&
-          currCount >= 1) {
+          ilkVarlikEklendi) {
         NotificationService.instance
             .requestPermission(promptContext: 'after_first_asset');
+      }
+
+      // Widget kurulum önerisi — aynı an, ama izin isteminden SONRA.
+      //
+      // Sıra önemli: ikisi de aynı karede tetiklenirse sistem izin diyaloğu
+      // sheet'in üstüne biner ve kullanıcı iki soruyu birden görür. Sheet
+      // bir kare geciktirilir; izin diyaloğu o ana kadar ekrana gelmiş olur.
+      // Sheet kendi koşullarını (bayrak, tek seferlik işaret) kendi kontrol
+      // eder, burada ek koşul yok.
+      if (ilkVarlikEklendi) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final ctx = appNavigatorKey.currentContext;
+          if (ctx != null) unawaited(WidgetInstallSheet.maybeShow(ctx));
+        });
       }
 
       // Ana ekran widget'ını tazele.

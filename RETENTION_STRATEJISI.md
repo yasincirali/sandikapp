@@ -131,8 +131,8 @@ Yeni event eklerken ayrılmış adlar listesini kontrol et.
 | Widget dokunuş atfı (Android) | — | `SandikWidgetProvider.kt`, `home_widget_service.dart`, `main.dart` | ✅ |
 | Bildirim izni: ilk varlık sonrası | `push_prompt_after_first_asset` | `main.dart`, `main_navigation_screen.dart` | ✅ |
 | **Sabah brifingi push** | cron (`daily-brief`) | `supabase/functions/daily-brief/`, `0044_daily_brief.sql` | ✅ |
-| Widget kurulum önerisi | `widget_prompt_enabled` | — | ⛔ bayrak var, UI yok |
-| iOS ana ekran widget'ı | — | — | ⛔ WidgetKit görünümü hiç yok |
+| Widget kurulum önerisi | `widget_prompt_enabled` | `lib/widgets/widget_install_sheet.dart` *(yeni)* | ✅ |
+| **iOS ana ekran widget'ı** | — | `ios/SandikWidget/SandikHomeWidget.swift` *(yeni)* | ✅ derlenmedi |
 
 **Şeridin üç kapısı:** Remote Config bayrağı, kullanıcının yarış opt-in'i,
 sunucudaki k-anonimlik eşiği. Üçünden biri kapalıysa şerit **hiç çizilmez** —
@@ -176,6 +176,21 @@ tablosu da aynı güne ikinci bildirimi engelliyor.
 **Yan bulgu — kapatıldı:** `analyze-signals` silinmiş lot'ları filtrelemiyordu
 (`deleted_at IS NULL` yoktu), yani kullanıcı sildiği varlık için hâlâ sinyal
 bildirimi alıyordu. Tek satırla düzeltildi.
+
+**iOS widget'ı PNG değil, çizim.** Android hazır bir PNG okur çünkü
+`RemoteViews` özel görünüm çizemez. iOS'ta bu yol kapalıydı: PNG
+`getApplicationSupportDirectory()` altına yazılıyor — uygulamanın *kendi*
+kabı — ve uzantı ayrı sandbox'ta o yolu göremiyor. Çözüm, paylaşımlı
+`UserDefaults` (app group) üzerinden görsel değil **sayı** göndermek; eğri
+`SandikSparkline` ile uzantıda çizilir. Bunun için normalize hesabı
+`LiveActivityService`'ten `DailySummary`'ye taşındı: kilit ekranı ve ana
+ekran widget'ı yan yana görülebiliyor, iki ayrı normalize aynı portföy için
+iki farklı eğri demek olurdu (`surface_parity_test` bunu kilitliyor).
+
+**Widget önerisi ilk varlıktan sonra çıkar, önce değil.** Öncesinde widget
+boş görünürdü ("—") ve kullanıcı işe yaramadığını düşünüp kaldırırdı. Bir
+kez gösterilir; izin isteminden bir kare sonra açılır ki sistem izin
+diyaloğu sheet'in üstüne binmesin.
 
 **İzin isteminin iki kolu birbirini dışlar:** bayrak açıkken ana ekrandaki
 2 saniyelik istem devre dışı kalır. İkisi birden çalışsaydı kullanıcı izni

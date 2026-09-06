@@ -11,6 +11,7 @@
 		5A0D1K0000000000000011 /* SandikTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000003 /* SandikTheme.swift */; };
 		5A0D1K0000000000000012 /* SandikLogoMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000004 /* SandikLogoMark.swift */; };
 		5A0D1K0000000000000033 /* SandikSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000034 /* SandikSparkline.swift */; };
+		5A0D1K0000000000000062 /* SandikHomeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000063 /* SandikHomeWidget.swift */; };
 		5A0D1K0000000000000013 /* SandikLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000005 /* SandikLiveActivity.swift */; };
 		5A0D1K0000000000000060 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000061 /* GoogleService-Info.plist */; };
 		5A0D1K0000000000000040 /* DMSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5A0D1K0000000000000041 /* DMSans-Regular.ttf */; };
@@ -79,6 +80,7 @@
 		5A0D1K0000000000000003 /* SandikTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikTheme.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000004 /* SandikLogoMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLogoMark.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000034 /* SandikSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikSparkline.swift; sourceTree = "<group>"; };
+		5A0D1K0000000000000063 /* SandikHomeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikHomeWidget.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000005 /* SandikLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandikLiveActivity.swift; sourceTree = "<group>"; };
 		5A0D1K0000000000000061 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		5A0D1K0000000000000041 /* DMSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = DMSans-Regular.ttf; path = Fonts/DMSans-Regular.ttf; sourceTree = "<group>"; };
@@ -133,6 +135,7 @@
 				5A0D1K0000000000000003 /* SandikTheme.swift */,
 				5A0D1K0000000000000004 /* SandikLogoMark.swift */,
 				5A0D1K0000000000000034 /* SandikSparkline.swift */,
+				5A0D1K0000000000000063 /* SandikHomeWidget.swift */,
 				5A0D1K0000000000000005 /* SandikLiveActivity.swift */,
 				5A0D1K0000000000000006 /* SandikWidgetBundle.swift */,
 				5A0D1K0000000000000007 /* Info.plist */,
@@ -384,6 +387,7 @@
 				5A0D1K0000000000000011 /* SandikTheme.swift in Sources */,
 				5A0D1K0000000000000012 /* SandikLogoMark.swift in Sources */,
 				5A0D1K0000000000000033 /* SandikSparkline.swift in Sources */,
+				5A0D1K0000000000000062 /* SandikHomeWidget.swift in Sources */,
 				5A0D1K0000000000000010 /* SandikAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
