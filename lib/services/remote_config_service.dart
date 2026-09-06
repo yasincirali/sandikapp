@@ -70,27 +70,40 @@ class RemoteConfigService {
     'deposits_enabled': false,
 
     // ── Tutundurma (Sprint 1) ────────────────────────────────────────────
-    // Üçü de KAPALI doğar. Sprint 0'ın taban çizgisi (en az 2 hafta) birikmeden
-    // açılırlarsa etkileri ölçülemez: öncesi/sonrası karşılaştırması için
-    // "öncesi" verisi olmak zorunda.
+    // TestFlight'ta görünür olmaları için AÇIK doğuyorlar (2026-09-07,
+    // kullanıcı kararı). Önceki hâl: hepsi kapalıydı ve Sprint 0'ın taban
+    // çizgisi birikene kadar Firebase Console'dan açılmaları bekleniyordu.
+    //
+    // ⚠️ Bunun BEDELİ: bu değerler `setDefaults` ile yükleniyor, yani Firebase
+    // Console'da o anahtar tanımlı DEĞİLSE varsayılan kazanır. Artık bir
+    // özelliği geri kapatmanın iki yolu var — Console'a anahtarı `false`
+    // olarak eklemek (uygulama yeniden yayımlanmadan çalışır, tercih edilen)
+    // ya da yeni sürüm çıkmak. Uzaktan kapatma yeteneği KAYBOLMADI, ama
+    // artık Console'da anahtarın var olmasına bağlı.
+    //
+    // ⚠️ A/B ölçümü: kapalı/açık kollarının karşılaştırması için "öncesi"
+    // verisi gerekiyordu; hepsi birden açıldığı için Sprint 1'in etkisi
+    // taban çizgisine karşı ölçülemeyecek.
 
     // Ana ekranda anonim yüzdelik dilim şeridi. Yalnızca yarış opt-in'i
     // açık olan kullanıcıya görünür; k-anonimlik eşiği sunucuda.
-    'percentile_strip_enabled': false,
+    'percentile_strip_enabled': true,
 
     // İlk varlık eklendikten sonra ana ekran widget'ı önerisi.
-    'widget_prompt_enabled': false,
+    'widget_prompt_enabled': true,
 
     // Bildirim izni ne zaman istensin?
     // false → eski davranış: ana ekran açıldıktan 2 sn sonra.
     // true  → ilk varlık eklendikten sonra ("ASELS hareket ederse haber
     //         verelim mi?"). Bağlamlı istemin kabul oranını yükseltmesi
     //         beklenir; iki kol `prompt_context` ile ayrışır.
-    'push_prompt_after_first_asset': false,
+    'push_prompt_after_first_asset': true,
 
     // Reel getiri (TÜFE) rozeti. `inflation_index` tablosu boşken zaten
-    // hiçbir şey çizilmez; bayrak veri geldikten sonra kademeli açmak için.
-    'real_return_enabled': false,
+    // hiçbir şey çizilmez — bayrak açık olsa bile tablo doldurulmadan rozet
+    // GÖRÜNMEZ. Bu bir hata değil, kasıtlı: doğrulanmamış bir TÜFE değeri
+    // finansal hesabı yanlış gösterirdi (bkz. YAPMAN_GEREKENLER.md).
+    'real_return_enabled': true,
 
     // Free tier fiyat alarmı limiti. Alarm kullanıcının KENDİ istediği
     // bildirim olduğu için cömert bir sınır: 3 alarm gündelik kullanımı
@@ -99,7 +112,7 @@ class RemoteConfigService {
 
     // Kilometre taşı kutlamaları. Ayda en fazla bir kutlama yapılır;
     // bayrak, tonun kullanıcıda karşılık bulup bulmadığını ölçmek için.
-    'milestones_enabled': false,
+    'milestones_enabled': true,
   };
 
   Future<void> init() async {

@@ -12,6 +12,68 @@
 
 ---
 
+## 🔑 VAULT ADIMI — üç cron sırrı (2026-09-07)
+
+Üç Edge Function dağıtıldı ve `supabase secrets` tarafı yazıldı. **Kalan tek
+adım Vault.** Cron tetikleyicileri sırrı Vault'tan okuyup Bearer token olarak
+gönderiyor; Vault'ta karşılığı yoksa fonksiyon **401** döner ve hiçbir
+bildirim gitmez.
+
+Sırların gerçek değerleri repoya YAZILMADI (bu dosya git'te izleniyor).
+Değerler şurada:
+`%LOCALAPPDATA%\Temp\claude\c--projects-PortfoyTakip\<oturum>\scratchpad\`
+→ `pa.txt` (price alerts), `cn.txt` (calendar nudge), `db.txt` (daily brief).
+
+Supabase Dashboard → SQL Editor'da, `<...>` yerlerine o dosyaların içeriğini
+koyarak çalıştır:
+
+```sql
+-- Mükerrer kayıt YARATMA: 0034'te belgelendiği gibi vault.create_secret
+-- her çağrıda YENİ satır ekler ve 0046/0048'deki okuma `order by`
+-- içermediği için hangisinin okunacağı garanti değildir.
+-- Bu blok varsa günceller, yoksa oluşturur.
+do $$
+declare
+  s record;
+begin
+  for s in
+    select * from (values
+      ('price_alerts_cron_secret',   '<pa.txt icerigi>'),
+      ('calendar_nudge_cron_secret', '<cn.txt icerigi>'),
+      ('daily_brief_cron_secret',    '<db.txt icerigi>')
+    ) as t(nm, val)
+  loop
+    if exists (select 1 from vault.secrets where name = s.nm) then
+      perform vault.update_secret(
+        (select id from vault.secrets where name = s.nm order by created_at desc limit 1),
+        s.val, s.nm, null);
+    else
+      perform vault.create_secret(s.val, s.nm, null);
+    end if;
+  end loop;
+end $$;
+
+-- Doğrulama: her ad için TEK satır olmalı.
+select name, count(*) from vault.decrypted_secrets
+ where name in ('price_alerts_cron_secret','calendar_nudge_cron_secret',
+                'daily_brief_cron_secret')
+ group by name;
+```
+
+Sonra kuru koşu yap (kimseye bildirim gitmez) — `<secret>` yerine ilgili
+dosyanın içeriği:
+
+```bash
+curl -X POST "https://ybdbzouzhzwthjgwlbmk.supabase.co/functions/v1/check-price-alerts" \
+  -H "Authorization: Bearer <pa.txt>" \
+  -H "Content-Type: application/json" -d '{"dry_run": true}'
+```
+
+`200` + kaç kişiye gideceği dönerse kurulum tamamdır; `401` dönerse Vault
+değeri `supabase secrets` değeriyle eşleşmiyordur.
+
+---
+
 ## 📊 GENEL DURUM
 
 ✅ **Bende biten kod işleri:**
@@ -42,27 +104,28 @@ bozulmuş demektir.
 
 ---
 
-## 📅 BEKLEYEN DEPLOY: TÜİK Enflasyon Kancası (2026-09-06)
+## 📅 KISMEN TAMAM: TÜİK Enflasyon Kancası (2026-09-07)
 
-1. `supabase functions deploy calendar-nudge`
-2. `supabase secrets set CALENDAR_NUDGE_CRON_SECRET="<uzun-rastgele>"`
-3. Vault → `calendar_nudge_cron_secret` = aynı string
-4. Migration: `supabase/migrations/0048_calendar_nudge.sql`
+1. ✅ `supabase functions deploy calendar-nudge` — dağıtıldı
+2. ✅ `supabase secrets set CALENDAR_NUDGE_CRON_SECRET` — yazıldı
+3. ⬜ **KALDI —** Vault → `calendar_nudge_cron_secret` (bkz. aşağıdaki
+   "VAULT ADIMI" bölümü; bu yapılmadan cron 401 alır)
+4. ✅ Migration `0048_calendar_nudge.sql` — koşuldu
 
 **TÜFE endeksi dolu değilse bildirim gitmez** (aşağıdaki maddeye bak).
 Ayrıntı: `supabase/functions/calendar-nudge/README.md`
 
 ---
 
-## 🔔 BEKLEYEN DEPLOY: Fiyat Alarmları (2026-09-06)
+## 🔔 KISMEN TAMAM: Fiyat Alarmları (2026-09-07)
 
 Kod hazır; kullanıcı Ayarlar → "Fiyat alarmları"ndan kurabiliyor ama
-**sunucu değerlendirmesi devreye girmeden hiçbir alarm çalmaz.**
+**Vault adımı yapılmadan hâlâ hiçbir alarm çalmaz.**
 
-1. `supabase functions deploy check-price-alerts`
-2. `supabase secrets set PRICE_ALERTS_CRON_SECRET="<uzun-rastgele>"`
-3. Vault → `price_alerts_cron_secret` = 2. adımdaki string'in **aynısı**
-4. Migration: `supabase/migrations/0046_price_alerts.sql`
+1. ✅ `supabase functions deploy check-price-alerts` — dağıtıldı
+2. ✅ `supabase secrets set PRICE_ALERTS_CRON_SECRET` — yazıldı
+3. ⬜ **KALDI —** Vault → `price_alerts_cron_secret` (bkz. "VAULT ADIMI")
+4. ✅ Migration `0046_price_alerts.sql` — koşuldu
 
 Kuru koşu (kimseye bildirim gitmez):
 
@@ -114,18 +177,15 @@ eklenmeli. İleride EVDS'den çeken bir Edge Function yazılabilir
 
 ---
 
-## 📨 BEKLEYEN DEPLOY: Sabah Brifingi (2026-09-06)
+## 📨 KISMEN TAMAM: Sabah Brifingi (2026-09-07)
 
-Kod hazır ama **hiçbir kullanıcıya bildirim gitmez** — aşağıdaki dört adım
-elden yapılmadan cron tetiklenmez.
+**Vault adımı yapılmadan hiçbir kullanıcıya bildirim gitmez.**
 
-1. **Fonksiyonu dağıt:** `supabase functions deploy daily-brief`
-2. **Secret:** `supabase secrets set DAILY_BRIEF_CRON_SECRET="<uzun-rastgele>"`
-   (FCM_PROJECT_ID ve FCM_SERVICE_ACCOUNT_JSON zaten var, aynıları kullanılır)
-3. **Vault:** Supabase Dashboard → Vault → `daily_brief_cron_secret` adıyla
-   **2. adımdaki string'in birebir aynısı**. Eşleşmezse fonksiyon 401 döner.
-4. **Migration:** `supabase/migrations/0044_daily_brief.sql`
-   (tablo + cron + tetikleyici)
+1. ✅ `supabase functions deploy daily-brief` — dağıtıldı
+2. ✅ `supabase secrets set DAILY_BRIEF_CRON_SECRET` — yazıldı
+   (FCM_PROJECT_ID ve FCM_SERVICE_ACCOUNT_JSON zaten vardı)
+3. ⬜ **KALDI —** Vault → `daily_brief_cron_secret` (bkz. "VAULT ADIMI")
+4. ✅ Migration `0044_daily_brief.sql` — koşuldu
 
 **Önce kuru koşu yap** — kimseye bildirim gitmeden kaç kişiye gideceğini
 söyler:
