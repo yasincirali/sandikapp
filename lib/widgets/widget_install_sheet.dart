@@ -33,11 +33,14 @@ class WidgetInstallSheet extends StatelessWidget {
   static Future<void> maybeShow(BuildContext context) async {
     if (!RemoteConfigService.instance.widgetPromptEnabled) return;
     if (!Platform.isIOS && !Platform.isAndroid) return;
-    // `markActivation` idempotenttir: ilk çağrıda true, sonrakilerde false.
-    final ilkKez =
-        await RetentionTracker.instance.markActivation(_gosterildiIsareti);
-    if (!ilkKez) return;
+    if (await RetentionTracker.instance.hasActivation(_gosterildiIsareti)) {
+      return;
+    }
+    // İşaret, gösterime KARAR VERİLDİKTEN sonra harcanır. Önce işaretleyip
+    // sonra `context.mounted` kontrolüne takılsaydık tek seferlik hak
+    // sessizce yanardı ve öneri hiç gösterilmezdi.
     if (!context.mounted) return;
+    await RetentionTracker.instance.markActivation(_gosterildiIsareti);
 
     AnalyticsService.instance.logScreenView(screenName: 'widget_install_sheet');
     await showModalBottomSheet<void>(
