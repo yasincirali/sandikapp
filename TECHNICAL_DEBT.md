@@ -35,6 +35,42 @@ imzası doğrulanıp uygulama açılışında bir kez okunsun; sonuç
 
 ---
 
+## 🟡 AÇIK — Push yardımcıları iki fonksiyonda kopya
+
+**Karar tarihi:** 2026-09-06 · Sprint 1
+
+`daily-brief` yazılırken JWT imzalama ve FCM gönderimi
+`supabase/functions/_shared/fcm.ts`'e çıkarıldı. Ama `analyze-signals` hâlâ
+**kendi kopyasını** kullanıyor: `createAccessToken`, `sendPush`, `shortLabel`
+ve `dedupeTokensByDevice` (daily-brief'teki karşılığı `collapseTokens`).
+
+**Neden şimdi birleştirilmedi:** `analyze-signals` çalışan ve dağıtılmış
+1021 satırlık bir fonksiyon; bu oturumda Deno yoktu, yani taşımanın
+doğruluğu koşularak gösterilemezdi. Sinyal bildirimleri kullanıcının aldığı
+ana bildirim — onu körlemesine düzenlemek kabul edilebilir bir risk değil.
+
+**Ertelemenin maliyeti:** iki kopya zamanla ayrışır. Somut senaryo: FCM
+gönderim gövdesine bir alan eklenir (ör. `apns-collapse-id`), yalnızca
+birine yazılır ve iki bildirim tipi farklı davranır.
+
+**Ele alınma zamanı:** `analyze-signals`'a bir sonraki dokunuşta, `deno test
+supabase/tests/` yeşilken. `_shared/fcm.ts` API'si hazır bekliyor.
+
+---
+
+## ✅ KAPANDI — `analyze-signals` silinmiş lot'lar için bildirim atıyordu
+
+**Kapanış:** 2026-09-06 · Sprint 1
+
+`assets` sorgusunda `deleted_at IS NULL` filtresi yoktu. Silme 0027'den beri
+fiziksel değil damgalı olduğu için, kullanıcı bir lot'u sildikten sonra da
+onun için teknik sinyal bildirimi almaya devam ediyordu.
+
+Tek satırla kapandı (`.is('deleted_at', null)`). Aynı filtre `daily-brief`'te
+baştan var.
+
+---
+
 ## 🟠 AÇIK — iOS ana ekran widget'ı hiç yok
 
 **Karar tarihi:** 2026-09-06 · Sprint 1

@@ -130,8 +130,8 @@ Yeni event eklerken ayrılmış adlar listesini kontrol et.
 | Ana ekran yüzdelik dilim şeridi + ölçüm | `percentile_strip_enabled` | `lib/widgets/percentile_strip.dart` *(yeni)*, `home_screen.dart` | ✅ |
 | Widget dokunuş atfı (Android) | — | `SandikWidgetProvider.kt`, `home_widget_service.dart`, `main.dart` | ✅ |
 | Bildirim izni: ilk varlık sonrası | `push_prompt_after_first_asset` | `main.dart`, `main_navigation_screen.dart` | ✅ |
+| **Sabah brifingi push** | cron (`daily-brief`) | `supabase/functions/daily-brief/`, `0044_daily_brief.sql` | ✅ |
 | Widget kurulum önerisi | `widget_prompt_enabled` | — | ⛔ bayrak var, UI yok |
-| Sabah brifingi push | — | — | ⛔ Edge Function + cron yazılmadı |
 | iOS ana ekran widget'ı | — | — | ⛔ WidgetKit görünümü hiç yok |
 
 **Şeridin üç kapısı:** Remote Config bayrağı, kullanıcının yarış opt-in'i,
@@ -155,6 +155,27 @@ organik (`cold`) görünüyor ve widget'ın katkısı ölçülemiyordu. Artık
 `HomeWidgetLaunchIntent` bir URI taşıyor ve açılış kaynağı **yazılmadan önce**
 belirleniyor (önce `cold` yazıp sonra `widget` eklemek aynı açılışı iki kez
 saydırırdı).
+
+**Sabah brifingi v1 bilerek dar tutuldu.** "Portföyün %X arttı" *demiyor*,
+"portföyünde en çok hareket eden hisse şu" diyor. Sebep doğruluk: portföy
+yüzdesi için her varlığı TRY'ye çevirmek gerekir ve canlı kur sunucuda yok;
+üstelik altın serisi `GC=F` (ons/USD) olarak çözülüyor — onun günlük yüzdesi
+TRY gram altınınki değildir (arada USD/TRY var). Yanlış bir yüzde, hiç
+bildirim göndermemekten kötüdür: kullanıcı sayıyı uygulamadakiyle
+karşılaştırır. BIST hissesinde bu tuzak yok, seri de holding de TRY.
+Kapsamı genişletmek önce sunucuya kur modeli koymayı gerektiriyor.
+
+**Brifing "son kapanışta" der, "bugün" değil.** 09:45'te BIST açılmamıştır ve
+fiyat cache'i günlük kapanış tutar; serinin son noktası bir önceki işlem
+günüdür. "Dün" demek pazartesi yanlış olurdu (son kapanış cuma).
+
+**Eşik %1,5.** Altındaki günlerde bildirim gitmez — "%0,3 yükseldi" §7'deki
+haftalık 5 bildirimlik bütçeyi hiçbir şey söylemeden harcar. `daily_brief_log`
+tablosu da aynı güne ikinci bildirimi engelliyor.
+
+**Yan bulgu — kapatıldı:** `analyze-signals` silinmiş lot'ları filtrelemiyordu
+(`deleted_at IS NULL` yoktu), yani kullanıcı sildiği varlık için hâlâ sinyal
+bildirimi alıyordu. Tek satırla düzeltildi.
 
 **İzin isteminin iki kolu birbirini dışlar:** bayrak açıkken ana ekrandaki
 2 saniyelik istem devre dışı kalır. İkisi birden çalışsaydı kullanıcı izni

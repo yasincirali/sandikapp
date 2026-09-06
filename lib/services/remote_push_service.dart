@@ -156,8 +156,10 @@ class RemotePushService {
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
       Future<void>.microtask(
-        () => NotificationService.instance
-            .handleRemoteMessageData(initialMessage.data),
+        () => NotificationService.instance.handleRemoteMessageData(
+          initialMessage.data,
+          fromColdStart: true,
+        ),
       );
     }
 

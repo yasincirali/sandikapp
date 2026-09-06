@@ -666,7 +666,11 @@ Deno.serve(async (request) => {
     const { data: assetRows, error: assetError } = await admin
       .from('assets')
       .select('id, user_id, name, ticker, type, is_manual_price, kind')
-      .in('user_id', userIds);
+      .in('user_id', userIds)
+      // Silme fiziksel değil, damgalıdır (bkz. 0027_soft_delete_lots).
+      // Bu filtre yokken kullanıcı SİLDİĞİ lot için sinyal bildirimi
+      // almaya devam ediyordu.
+      .is('deleted_at', null);
     if (assetError) throw new Error(`Varliklar alinamadi: ${assetError.message}`);
 
     // Yalnızca aktif alım lot'ları; manuel fiyatlılar için geçmiş yok.

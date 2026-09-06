@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart'
     show Color, GlobalKey, NavigatorState;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -37,6 +39,7 @@ class NotificationService {
   /// → FCM `data.type`). Uygulama ÖN PLANDAYKEN Android `notification`
   /// payload'ını sistem göstermez; bu tipi görünce bildirimi biz basarız.
   static const signalAlertType = 'signal_alert';
+  static const dailyBriefType = 'daily_brief';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
 
@@ -129,6 +132,23 @@ class NotificationService {
         'Ortaklik Bildirimleri',
         description: 'Yeni ortaklik onay istekleri',
         importance: Importance.max,
+      ),
+    );
+
+    // Sabah brifingi (sunucudan FCM ile gelir).
+    //
+    // AYRI kanal olması kasıtlı: kullanıcı brifingi kapatıp sinyalleri açık
+    // tutabilmeli. Tek kanal, tek "kapat" düğmesi demek olurdu ve
+    // rahatsız olan kullanıcı bütün bildirimleri birden kaybederdi.
+    //
+    // `defaultImportance`: brifing bilgilendirir, uyarmaz — ses ve
+    // kesme (heads-up) hak etmiyor.
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'brief_channel',
+        'Gunluk Brifing',
+        description: 'Portfoyunuzdeki gunluk hareket ozeti',
+        importance: Importance.defaultImportance,
       ),
     );
   }
@@ -345,8 +365,35 @@ class NotificationService {
     );
   }
 
-  void handleRemoteMessageData(Map<String, dynamic> data) {
+  /// Uzak bildirime dokunulduğunda çalışır.
+  ///
+  /// [fromColdStart] uygulamanın bu bildirimle SIFIRDAN açıldığını söyler
+  /// (`getInitialMessage`). O durumda açılış kaydı YAPILMAZ: soğuk açılış
+  /// zaten `_initDeferredServices` içinde bir kez yazılıyor ve buradan
+  /// ikinci bir kayıt aynı açılışı çift saydırırdı. Sıcak açılışta
+  /// (`onMessageOpenedApp`) böyle bir çakışma yok, kaynak `push` yazılır.
+  void handleRemoteMessageData(
+    Map<String, dynamic> data, {
+    bool fromColdStart = false,
+  }) {
     final type = data['type']?.toString();
+
+    // Hangi bildirim tipinin gerçekten açıldığını ölçmek, hangisinin
+    // kapatılmayı hak ettiğini söyler (bkz. RETENTION_STRATEJISI.md §7:
+    // dört hafta boyunca açılma oranı %3'ün altında kalan tip kapatılır).
+    //
+    // Sessiz tetikleyiciler ölçüme girmez: kullanıcı onlara dokunmuyor.
+    if (type != null && type != signalAnalyzeRequestType) {
+      AnalyticsService.instance.logPushOpened(type: type);
+      if (!fromColdStart) {
+        unawaited(RetentionTracker.instance.recordLaunch(source: 'push'));
+      }
+    }
+
+    // Brifingin varış yeri ana ekrandır — uygulamanın açılması yeterli,
+    // ayrıca bir yere yönlendirilmez. Bildirim tek bir varlığa değil
+    // portföyün geneline dair.
+    if (type == dailyBriefType) return;
 
     // Sinyal bildirimine dokunulduğunda o varlığın performans ekranı açılır
     // (grafiğin altında teknik sinyal paneli var — kullanıcının bildirimden

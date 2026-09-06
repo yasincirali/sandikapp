@@ -35,6 +35,32 @@ bozulmuş demektir.
 
 ---
 
+## 📨 BEKLEYEN DEPLOY: Sabah Brifingi (2026-09-06)
+
+Kod hazır ama **hiçbir kullanıcıya bildirim gitmez** — aşağıdaki dört adım
+elden yapılmadan cron tetiklenmez.
+
+1. **Fonksiyonu dağıt:** `supabase functions deploy daily-brief`
+2. **Secret:** `supabase secrets set DAILY_BRIEF_CRON_SECRET="<uzun-rastgele>"`
+   (FCM_PROJECT_ID ve FCM_SERVICE_ACCOUNT_JSON zaten var, aynıları kullanılır)
+3. **Vault:** Supabase Dashboard → Vault → `daily_brief_cron_secret` adıyla
+   **2. adımdaki string'in birebir aynısı**. Eşleşmezse fonksiyon 401 döner.
+4. **Migration:** `supabase/migrations/0044_daily_brief.sql`
+   (tablo + cron + tetikleyici)
+
+**Önce kuru koşu yap** — kimseye bildirim gitmeden kaç kişiye gideceğini
+söyler:
+
+```bash
+curl -X POST "https://<proje>.supabase.co/functions/v1/daily-brief" \
+  -H "Authorization: Bearer $DAILY_BRIEF_CRON_SECRET" \
+  -H "Content-Type: application/json" -d '{"dry_run": true}'
+```
+
+Ayrıntı: `supabase/functions/daily-brief/README.md`
+
+---
+
 ## 🗄️ BEKLEYEN MIGRATION: `0027_soft_delete_lots.sql` (2026-08-11)
 
 **Ne:** `assets` tablosuna `deleted_at TIMESTAMPTZ` sütunu + aktif kayıtlar
