@@ -203,7 +203,7 @@ kez sormaz.
 |---|---|---|---|
 | Reel getiri (TÜFE) rozeti | `real_return_enabled` | `lib/services/inflation_service.dart`, `lib/widgets/real_return_strip.dart` *(yeni)*, `0045_inflation_index.sql` | ✅ kod |
 | TÜFE endeks verisi | — | `inflation_index` tablosu | ⛔ **boş** — elle doldurulacak |
-| Fiyat alarmları | — | — | ⛔ |
+| **Fiyat alarmları** | `free_price_alert_limit` | `supabase/functions/check-price-alerts/`, `0046_price_alerts.sql`, `lib/screens/price_alerts_screen.dart` *(yeni)* | ✅ |
 | Kilometre taşları | — | — | ⛔ |
 | Takvim kancaları (TÜİK günü, maaş günü…) | — | — | ⛔ |
 
@@ -223,6 +223,23 @@ okunan sayı bu ("TÜFE'yi 6,4 puan geçti"). İkisi yüksek enflasyonda ayrış
 — %46,4 nominal / %40 enflasyonda puan farkı 6,4 ama alım gücü artışı ~%4,6
 — bu yüzden `realReturnPct` de serviste duruyor ve testlerle kilitli.
 Rozetin sağında ham iki sayı da veriliyor: kullanıcı farkı doğrulayabilmeli.
+
+**Fiyat alarmı, kaynağı istemciyle aynı tutmak zorunda.** Altın ve döviz
+için `truncgil`, geri kalanı için Yahoo — yani uygulamanın kendi kaynakları.
+Farklı bir kaynak kullansaydık kullanıcı ekranda 5.401 görürken 5.400
+alarmının çalışmadığını fark eder ve haklı olarak "bozuk" derdi. Aynı sebeple
+`price_history.ts` kullanılmadı: o modül günlük kapanış tutuyor ve 12 saatlik
+cache'i var; "gram altın 5.400 olunca" diyen kullanıcı ertesi günü beklemez.
+
+**En sinsi hata kaynağı sayı biçimiydi.** truncgil "5.412,37" gönderiyor;
+düz `parseFloat` bunu **5.412** okur — bin katı hatalı bir fiyat ve sessizce
+yanlış tetiklenen bir alarm. `parseTruncgilNumber` bunun için ayrı bir
+fonksiyon ve testli.
+
+**Alarm tek atış.** Hedefin etrafında salınan bir fiyat, tekrar eden alarmda
+yarım saatte bir bildirim üretirdi. Damga bildirimden ÖNCE yazılır: ters
+sırada, push gidip damga yazılamazsa kullanıcı her turda aynı bildirimi
+alırdı — geri alınamaz olan bu.
 
 **Sıra kasıtlı:** reel getiri şeridi percentile'den ÖNCE. "Eridim mi?"
 sorusu "başkalarına göre nerdeyim?" sorusundan önce gelir — biri alım gücü,

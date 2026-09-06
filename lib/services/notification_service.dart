@@ -40,6 +40,7 @@ class NotificationService {
   /// payload'ını sistem göstermez; bu tipi görünce bildirimi biz basarız.
   static const signalAlertType = 'signal_alert';
   static const dailyBriefType = 'daily_brief';
+  static const priceAlertType = 'price_alert';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
 
@@ -132,6 +133,21 @@ class NotificationService {
         'Ortaklik Bildirimleri',
         description: 'Yeni ortaklik onay istekleri',
         importance: Importance.max,
+      ),
+    );
+
+    // Fiyat alarmları (sunucudan FCM ile gelir).
+    //
+    // AYRI kanal ve YÜKSEK önem: bu, kullanıcının KENDİSİNİN kurduğu tek
+    // bildirim. Brifingi kapatan biri alarmlarını açık tutabilmeli, ve
+    // istediği bir bildirimin sessizce bildirim gölgesine düşmesi
+    // beklentiyi bozar.
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'alert_channel',
+        'Fiyat Alarmlari',
+        description: 'Kurdugunuz fiyat hedefine ulasildiginda',
+        importance: Importance.high,
       ),
     );
 
@@ -394,6 +410,11 @@ class NotificationService {
     // ayrıca bir yere yönlendirilmez. Bildirim tek bir varlığa değil
     // portföyün geneline dair.
     if (type == dailyBriefType) return;
+
+    // Fiyat alarmı da ana ekranda bırakılır. Alarm ekranına yönlendirmek
+    // yanlış olurdu: kullanıcı fiyatı öğrenmek için geliyor, alarm listesini
+    // yönetmek için değil.
+    if (type == priceAlertType) return;
 
     // Sinyal bildirimine dokunulduğunda o varlığın performans ekranı açılır
     // (grafiğin altında teknik sinyal paneli var — kullanıcının bildirimden

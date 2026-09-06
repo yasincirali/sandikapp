@@ -91,6 +91,11 @@ class RemoteConfigService {
     // Reel getiri (TÜFE) rozeti. `inflation_index` tablosu boşken zaten
     // hiçbir şey çizilmez; bayrak veri geldikten sonra kademeli açmak için.
     'real_return_enabled': false,
+
+    // Free tier fiyat alarmı limiti. Alarm kullanıcının KENDİ istediği
+    // bildirim olduğu için cömert bir sınır: 3 alarm gündelik kullanımı
+    // karşılar, üstü premium için doğal bir kanca.
+    'free_price_alert_limit': 3,
   };
 
   Future<void> init() async {
@@ -173,6 +178,10 @@ class RemoteConfigService {
   bool get realReturnEnabled =>
       _rc?.getBool('real_return_enabled') ??
       _defaults['real_return_enabled'] as bool;
+
+  int get freePriceAlertLimit =>
+      _rc?.getInt('free_price_alert_limit') ??
+      _defaults['free_price_alert_limit'] as int;
 
   /// UI chip'leri / filtre listeleri için: `depositsEnabled=false` iken
   /// mevduat türünü listeden düşer. `AssetType.values` yerine bunu kullan.

@@ -35,6 +35,28 @@ bozulmuş demektir.
 
 ---
 
+## 🔔 BEKLEYEN DEPLOY: Fiyat Alarmları (2026-09-06)
+
+Kod hazır; kullanıcı Ayarlar → "Fiyat alarmları"ndan kurabiliyor ama
+**sunucu değerlendirmesi devreye girmeden hiçbir alarm çalmaz.**
+
+1. `supabase functions deploy check-price-alerts`
+2. `supabase secrets set PRICE_ALERTS_CRON_SECRET="<uzun-rastgele>"`
+3. Vault → `price_alerts_cron_secret` = 2. adımdaki string'in **aynısı**
+4. Migration: `supabase/migrations/0046_price_alerts.sql`
+
+Kuru koşu (kimseye bildirim gitmez):
+
+```bash
+curl -X POST "https://<proje>.supabase.co/functions/v1/check-price-alerts" \
+  -H "Authorization: Bearer $PRICE_ALERTS_CRON_SECRET" \
+  -H "Content-Type: application/json" -d '{"dry_run": true}'
+```
+
+Ayrıntı: `supabase/functions/check-price-alerts/README.md`
+
+---
+
 ## 📉 VERİ GEREKİYOR: TÜFE endeksi (2026-09-06)
 
 Reel getiri rozeti ("enflasyonun 6,4 puan önündesin") kodda hazır ama
