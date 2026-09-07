@@ -14,6 +14,7 @@
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
   buildBriefMessage,
+  buildPartnerMessage,
   collapseTokens,
   lastChangePct,
 } from '../functions/daily-brief/index.ts';
@@ -128,4 +129,50 @@ Deno.test('farklı kullanıcılar birbirini elemez', () => {
     { token: 'b', user_id: 'u2', device_id: null, platform: 'android', updated_at: '2026-09-01T00:00:00Z' },
   ]);
   assertEquals(out.length, 2);
+});
+
+// ── buildPartnerMessage ─────────────────────────────────────────────────────
+//
+// Ortak hareketi brifingin SÖZÜNÜ alır (ayrı push değil — bildirim bütçesi
+// günde tek proaktif mesaja izin veriyor, bkz. RETENTION_STRATEJISI.md §7).
+
+Deno.test('tek ekleme: sayı yazılmaz', () => {
+  assertEquals(
+    buildPartnerMessage('Ayşe', 1).title,
+    'Ayşe portföyüne ekleme yaptı',
+  );
+});
+
+Deno.test('çok ekleme: sayı yazılır', () => {
+  assertEquals(
+    buildPartnerMessage('Ayşe', 3).title,
+    'Ayşe portföyüne 3 ekleme yaptı',
+  );
+});
+
+Deno.test('ad boşsa nötr ifadeye düşer', () => {
+  assertEquals(
+    buildPartnerMessage('', 1).title,
+    'Ortağın portföyüne ekleme yaptı',
+  );
+  assertEquals(
+    buildPartnerMessage('   ', 2).title,
+    'Ortağın portföyüne 2 ekleme yaptı',
+  );
+});
+
+Deno.test('NE eklendiği söylenmez — kilit ekranı mahremiyeti', () => {
+  // Varlık adı bildirimde geçseydi omzunun üstünden bakan biri ortağın ne
+  // aldığını görürdü. Uygulama içinde görünen bir bilgi, kilit ekranında
+  // görünmek zorunda değil.
+  const m = buildPartnerMessage('Ayşe', 2);
+  const s = `${m.title} ${m.body}`.toLowerCase();
+  for (const yasak of ['altın', 'hisse', 'dolar', 'asels', 'gram', '₺']) {
+    assertEquals(s.includes(yasak), false, `sızıntı: ${yasak}`);
+  }
+});
+
+Deno.test('tutar ya da miktar sızmaz', () => {
+  const m = buildPartnerMessage('Ayşe', 2);
+  assertEquals(/\d+[.,]\d/.test(`${m.title}${m.body}`), false);
 });

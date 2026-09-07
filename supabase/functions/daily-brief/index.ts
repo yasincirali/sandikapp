@@ -25,6 +25,17 @@
 // BIST hissesi bu tuzakların dışında: Yahoo serisi de holding de TRY.
 // Kapsamı genişletmek, önce sunucu tarafına kur modeli koymayı gerektirir.
 //
+// ── ORTAK HAREKETİ: neden ayrı bir push değil ───────────────────────────────
+// Ortağın portföyüne ekleme yapması, "en çok hareket eden hissen"den daha
+// güçlü bir kanca: sosyal bağ bireysel mekaniklerin hepsinden güçlü.
+// Ama AYRI bir bildirim olarak gönderilmiyor, çünkü bildirim bütçesi günde
+// tek proaktif push'a izin veriyor (bkz. RETENTION_STRATEJISI.md §7) ve
+// ortak günde beş lot eklerse beş push demek olurdu. Brifing zaten günde
+// bir kez konuşuyor; ortak hareketi varsa SÖZÜ O ALIR.
+//
+// Mahremiyet: yeni bilgi açılmıyor — ortağın lot'ları zaten karşı tarafta
+// görünüyor. Yine de alıcının kapatma hakkı var: `profiles.partner_activity_push`.
+//
 // ── Neden "son kapanış" ─────────────────────────────────────────────────────
 // 09:45'te BIST açılmamıştır ve `price_history_cache` günlük kapanış tutar;
 // serinin son noktası bir önceki işlem günüdür. "Dün" demek pazartesi günü
@@ -114,6 +125,25 @@ export function buildBriefMessage(
       `${yukari ? 'yükseldi' : 'düştü'}`,
     body: `Portföyünde en çok hareket eden hisse. ${kalan}` +
       'Yatırım tavsiyesi değildir.',
+  };
+}
+
+/// Ortak hareketi mesajı.
+///
+/// Ne EKLENDİĞİ söylenmez, yalnızca ekleme YAPILDIĞI. Varlık adı bildirimde
+/// geçseydi kilit ekranında omzunun üstünden bakan biri ortağın ne aldığını
+/// görürdü; uygulama içinde zaten görünen bir bilgi, kilit ekranında
+/// görünmek zorunda değil.
+export function buildPartnerMessage(
+  partnerName: string,
+  eklemeSayisi: number,
+): { title: string; body: string } {
+  const ad = partnerName.trim().length > 0 ? partnerName.trim() : 'Ortağın';
+  return {
+    title: eklemeSayisi === 1
+      ? `${ad} portföyüne ekleme yaptı`
+      : `${ad} portföyüne ${eklemeSayisi} ekleme yaptı`,
+    body: 'Ortak portföyünüzdeki değişimi sandık\'ta görebilirsin.',
   };
 }
 
@@ -265,6 +295,84 @@ Deno.serve(async (request) => {
       }
     }
 
+    // ── 5b) Ortak hareketi ──────────────────────────────────────────────────
+    //
+    // Ortak dün portföyüne ekleme yaptıysa brifingin SÖZÜNÜ o alır: sosyal
+    // kanca, "en çok hareket eden hissen"den güçlü. Ayrı bir push değil —
+    // bildirim bütçesi günde tek proaktif mesaja izin veriyor.
+    const ortakHareketi = new Map<string, { ad: string; adet: number }>();
+    try {
+      const { data: profilRows } = await admin
+        .from('profiles')
+        .select('id, display_name, partner_activity_push')
+        .in('id', userIds);
+      const profiller = new Map<string, { ad: string; ister: boolean }>();
+      for (const p of (profilRows ?? []) as Array<Record<string, unknown>>) {
+        profiller.set(String(p.id), {
+          ad: String(p.display_name ?? ''),
+          // Sütun eski kayıtlarda null olabilir; varsayılan AÇIK.
+          ister: p.partner_activity_push !== false,
+        });
+      }
+
+      const { data: esRows } = await admin
+        .from('partnerships')
+        .select('user_id_1, user_id_2')
+        .eq('active', true)
+        .or(`user_id_1.in.(${userIds.join(',')}),user_id_2.in.(${userIds.join(',')})`);
+
+      // alıcı → ortak listesi
+      const ortaklar = new Map<string, string[]>();
+      for (const r of (esRows ?? []) as Array<Record<string, unknown>>) {
+        const a1 = String(r.user_id_1);
+        const a2 = String(r.user_id_2);
+        for (const [alici, ortak] of [[a1, a2], [a2, a1]]) {
+          if (!userIds.includes(alici)) continue;
+          const liste = ortaklar.get(alici);
+          if (liste) liste.push(ortak); else ortaklar.set(alici, [ortak]);
+        }
+      }
+
+      const tumOrtaklar = [...new Set([...ortaklar.values()].flat())];
+      if (tumOrtaklar.length > 0) {
+        // Son 24 saatte eklenen aktif alım lot'ları.
+        const dun = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: yeniLotlar } = await admin
+          .from('assets')
+          .select('user_id')
+          .in('user_id', tumOrtaklar)
+          .eq('kind', 'buy')
+          .is('deleted_at', null)
+          .gte('added_date', dun);
+
+        const sayac = new Map<string, number>();
+        for (const r of (yeniLotlar ?? []) as Array<Record<string, unknown>>) {
+          const u = String(r.user_id);
+          sayac.set(u, (sayac.get(u) ?? 0) + 1);
+        }
+
+        for (const [alici, liste] of ortaklar) {
+          if (profiller.get(alici)?.ister === false) continue;
+          for (const ortak of liste) {
+            const adet = sayac.get(ortak) ?? 0;
+            if (adet === 0) continue;
+            const onceki = ortakHareketi.get(alici);
+            // Birden çok ortak hareket ettiyse en ÇOK ekleyeni anlat —
+            // hepsini saymak bildirimi rapora çevirirdi.
+            if (!onceki || adet > onceki.adet) {
+              ortakHareketi.set(alici, {
+                ad: profiller.get(ortak)?.ad ?? '',
+                adet,
+              });
+            }
+          }
+        }
+      }
+    } catch (_) {
+      // Ortak hareketi ikincil bir zenginleştirme — sorgulanamazsa brifing
+      // yine de hisse mesajıyla gider.
+    }
+
     // ── 6) Gönderim ─────────────────────────────────────────────────────────
     const accessToken = dryRun
       ? ''
@@ -276,19 +384,36 @@ Deno.serve(async (request) => {
     let skippedQuiet = 0;
     const failures: string[] = [];
 
+    let partnerSayisi = 0;
     for (const tokenRow of tokens) {
+      if (zatenGonderildi.has(tokenRow.user_id)) continue;
+
+      // Ortak hareketi VARSA sözü o alır ve hareket eşiği aranmaz:
+      // "ortağın ekleme yaptı" kendi başına bir haber, fiyat hareketine
+      // bağlı değil. Bu aynı zamanda hiç hissesi olmayan (yalnız altın
+      // tutan) kullanıcının da brifing almasını sağlar.
+      const ortak = ortakHareketi.get(tokenRow.user_id);
       const aday = kullaniciAdaylari.get(tokenRow.user_id);
-      if (!aday) continue;
-      if (Math.abs(aday.en.changePct) < minMovePct) {
-        skippedQuiet += 1;
-        continue;
+
+      // Hareket eşiği YALNIZCA hisse mesajına uygulanır. "Ortağın ekleme
+      // yaptı" kendi başına bir haber; fiyat hareketine bağlı değil.
+      if (!ortak) {
+        if (!aday) continue;
+        if (Math.abs(aday.en.changePct) < minMovePct) {
+          skippedQuiet += 1;
+          continue;
+        }
       }
 
-      const mesaj = buildBriefMessage(
-        aday.en.label,
-        aday.en.changePct,
-        Math.max(0, aday.toplam - 1),
-      );
+      const variant = ortak ? 'partner' : 'mover';
+      const mesaj = ortak
+        ? buildPartnerMessage(ortak.ad, ortak.adet)
+        : buildBriefMessage(
+          aday!.en.label,
+          aday!.en.changePct,
+          Math.max(0, aday!.toplam - 1),
+        );
+      if (ortak) partnerSayisi += 1;
 
       if (dryRun) {
         sent += 1;
@@ -302,7 +427,7 @@ Deno.serve(async (request) => {
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
-        data: { type: 'daily_brief', sent_on: bugun },
+        data: { type: 'daily_brief', sent_on: bugun, variant },
       });
 
       if (r.ok) {
@@ -329,6 +454,7 @@ Deno.serve(async (request) => {
       sent,
       skipped_quiet: skippedQuiet,
       candidates: kullaniciAdaylari.size,
+      partner_variant: partnerSayisi,
       dry_run: dryRun,
       failures: failures.slice(0, 5),
     });

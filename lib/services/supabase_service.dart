@@ -80,6 +80,40 @@ class SupabaseService {
     );
   }
 
+  /// Ortak hareketinin günlük brifingde anılıp anılmayacağı.
+  ///
+  /// Tercih SUNUCUDA tutulur (`profiles`) çünkü brifingi üreten edge
+  /// function okuyor; cihaz tercihleri (SharedPreferences) oradan görünmez.
+  ///
+  /// Okuma hatasında `true` döner: bu bildirim yeni bir bilgi açmıyor
+  /// (ortağın lot'ları zaten karşı tarafta görünür), o yüzden varsayılan
+  /// açık olmak güvenli. Ağ hatası yüzünden anahtarın kapalı görünmesi,
+  /// kullanıcıya "kapattım" yanılgısı verirdi.
+  Future<bool> getPartnerActivityPush(String userId) async {
+    try {
+      final row = await _db
+          .from('profiles')
+          .select('partner_activity_push')
+          .eq('id', userId)
+          .maybeSingle();
+      return row?['partner_activity_push'] != false;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> setPartnerActivityPush(String userId, bool enabled) async {
+    await _log.log<void>(
+      source: 'SupabaseService.setPartnerActivityPush',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'partner_activity_push': enabled},
+      call: () => _db
+          .from('profiles')
+          .update({'partner_activity_push': enabled}).eq('id', userId),
+    );
+  }
+
   Future<List<AppUser>> getProfilesByIds(List<String> ids) async {
     if (ids.isEmpty) return [];
     // Her profili ayrı ayrı çek — inFilter RLS policy'siyle bazen uyumsuz davranır

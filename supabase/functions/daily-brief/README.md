@@ -30,6 +30,31 @@ Kapsamı genişletmek önce sunucu tarafına kur modeli koymayı gerektirir.
 serinin son noktası bir önceki **işlem günü**dür. "Dün" demek pazartesi
 yanlış olurdu (son kapanış cuma). "Son kapanışta" her gün doğrudur.
 
+## Ortak hareketi — brifingin ikinci kolu
+
+Kullanıcının ortağı son 24 saatte portföyüne ekleme yaptıysa brifingin
+**sözünü o alır**: sosyal kanca, "en çok hareket eden hissen"den güçlü.
+
+**Neden ayrı bir push değil:** bildirim bütçesi günde tek proaktif mesaja
+izin veriyor ve ortak günde beş lot eklerse beş push demek olurdu. Brifing
+zaten günde bir kez konuşuyor.
+
+**Hareket eşiği bu kola uygulanmaz.** "Ortağın ekleme yaptı" kendi başına
+bir haber, fiyat hareketine bağlı değil. Yan etkisi olumlu: hiç hissesi
+olmayan (yalnız altın tutan) kullanıcı da brifing alabiliyor.
+
+**Ne eklendiği söylenmez**, yalnızca ekleme yapıldığı. Varlık adı bildirimde
+geçseydi kilit ekranında omzunun üstünden bakan biri ortağın ne aldığını
+görürdü; uygulama içinde zaten görünen bir bilgi, kilit ekranında görünmek
+zorunda değil.
+
+**Kapatma:** `profiles.partner_activity_push` (Ayarlar → Ortak hareketi
+bildirimleri). Alıcının tercihi — bildirim yeni bir bilgi açmıyor, ortağın
+lot'ları zaten karşı tarafta görünüyor.
+
+Dönen gövdedeki `partner_variant`, kaç kullanıcıya bu kolun gittiğini söyler.
+FCM `data.variant` alanı da `partner` / `mover` olarak işaretlenir.
+
 ## Bildirim bütçesi
 
 - Hareket eşiği **%1,5** (`min_move_pct` ile geçersiz kılınabilir). Altındaki

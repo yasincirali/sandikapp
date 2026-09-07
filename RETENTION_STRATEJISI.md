@@ -273,6 +273,33 @@ niteliğini yok ederdi.
 sorusu "başkalarına göre nerdeyim?" sorusundan önce gelir — biri alım gücü,
 diğeri sosyal karşılaştırma.
 
+### Sprint 3 — başladı (2026-09-07)
+
+| Ne | Nerede | Durum |
+|---|---|---|
+| **Ortak hareketi bildirimi** | `daily-brief` ikinci kol, `0049_partner_activity_push.sql`, Ayarlar anahtarı | ✅ |
+| Ortak kilometre taşı | — | ⛔ |
+| Streak (veri bütünlüğü / katkı / partner) | — | ⛔ |
+| Aylık + yıllık recap | — | ⛔ |
+
+**Ayrı push YAPILMADI.** §7'de kendi koyduğum kural günde tek proaktif
+bildirime izin veriyor; ortak günde beş lot eklerse beş push demek olurdu.
+Bunun yerine brifingin ikinci kolu oldu: ortak hareketi varsa **sözü o alır**,
+çünkü sosyal kanca "en çok hareket eden hissen"den güçlü.
+
+**Hareket eşiği bu kola uygulanmıyor** — "ortağın ekleme yaptı" kendi başına
+bir haber, fiyat hareketine bağlı değil. Yan etkisi olumlu: hiç hissesi
+olmayan, yalnız altın tutan kullanıcı da artık brifing alabiliyor (v1'in
+"yalnızca hisse" kapsamı bu kolda gevşiyor).
+
+**Ne eklendiği söylenmiyor**, yalnızca ekleme yapıldığı. Varlık adı bildirimde
+geçseydi kilit ekranında omzunun üstünden bakan biri ortağın ne aldığını
+görürdü. Bir test bu sızıntıyı kilitliyor.
+
+**Kapatma alıcıda.** Bildirim yeni bir bilgi açmıyor — ortağın lot'ları zaten
+karşı tarafta görünüyor — ama bildirimi istemeyen kullanıcı ortaklığı bozmak
+zorunda kalmadan susturabilmeli. Anahtar yalnızca aktif ortağı olana gösterilir.
+
 ### Guardrail metrikleri (bunlar bozuluyorsa mekanik zararlıdır)
 - Push opt-out oranı (haftalık) — %2/hafta üstü alarm
 - Uygulama silme (uninstall) — Firebase `app_remove`

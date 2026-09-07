@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-06
+**Son güncelleme:** 2026-09-07
 
 ---
 
@@ -142,35 +142,26 @@ tek satırlık riskten daha büyük. Girişler mevcut `SandikSparkline.swift`
 deseninin birebir kopyası ve id'ler çakışmıyor (en yüksek kullanılan
 `...0061`), ama doğrulama ilk build'e kalıyor.
 
-**Ele alınma zamanı:** ilk `flutter build ios` ya da GitHub Actions turunda.
-Kırılırsa dört girişi de geri almak yeterli — widget dosyası hedefe dahil
-olmaz, uygulama derlenir.
+**Ele alınma zamanı:** ilk `ios-testflight.yml` turunda. Android tarafı
+2026-09-07'de derlenerek doğrulandı ama bu iOS için hiçbir şey söylemez —
+`project.pbxproj` yalnızca Xcode build'inde okunuyor.
+
+Kırılırsa dört girişi de geri almak yeterli: widget dosyası hedefe dahil
+olmaz ve uygulama derlenir, yalnızca iOS ana ekran widget'ı görünmez.
 
 ---
 
-## 🟡 AÇIK — `HomeWidgetLaunchIntent` derlenerek doğrulanmadı
+## ✅ KAPANDI — `HomeWidgetLaunchIntent` doğrulandı
 
-**Karar tarihi:** 2026-09-06 · Sprint 1
+**Kapanış:** 2026-09-07
 
-Android widget'ının tıklama hedefi `HomeWidgetLaunchIntent.getActivity(...)`
-ile kuruldu (`SandikWidgetProvider.kt`). Paket ad alanı doğru olduğu
-biliniyor — aynı dosya zaten `es.antonborri.home_widget.HomeWidgetPlugin`
-import ediyor — ama `HomeWidgetLaunchIntent` sınıfının bu sürümde var olduğu
-ve imzasının `(Context, Class<*>, Uri?)` olduğu **derlenerek
-doğrulanmadı**: bu oturumda Flutter/Gradle yoktu.
+Android APK derlendi ve her iki emülatörde çalıştı (bkz. 8d47d8f). Kotlin
+derlenmeden APK üretilemeyeceği için `HomeWidgetLaunchIntent.getActivity`
+imzası ve `es.antonborri.home_widget` paket yolu doğrulanmış oldu.
 
-**Riski:** yanlışsa Android derlemesi kırılır. Tek satırlık düzeltme, ama
-sessiz değil — ilk `flutter build apk` anında görülür.
-
-**Ertelemenin maliyeti:** yok; doğrulama ilk derlemede bedava geliyor.
-
-**Ele alınma zamanı:** ilk `flutter build apk` / `deploy_emulators.sh`
-turunda. Kırılırsa: `home_widget` paketinin Android kaynağında sınıf adını
-kontrol et.
-
-**Kalan iş:** `HomeWidget.getInstalledWidgets()` ile widget KURULUM sayısı
-hâlâ okunmuyor (`logWidgetInstalled` çağıransız). Dokunuş atfı çalışıyor,
-kurulum oranı ölçülmüyor.
+**Kalan iş bu maddede değil:** widget dokunuşunun analytics'e `app_launch
+source=widget` olarak DÜŞTÜĞÜ ayrıca gözlenmeli — derlenmesi çalıştığını
+kanıtlamaz. Emülatör test listesinde 15. madde.
 
 ---
 

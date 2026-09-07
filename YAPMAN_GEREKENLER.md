@@ -12,6 +12,21 @@
 
 ---
 
+## 🗄️ BEKLEYEN MIGRATION: `0049_partner_activity_push.sql` (2026-09-07)
+
+`profiles` tablosuna `partner_activity_push` sütunu ekler. Çalıştırılmazsa:
+Ayarlar'daki "Ortak hareketi bildirimleri" anahtarı yazmaya çalışır ve hata
+verir; günlük brifing de ortak kolunu hiç açamaz (sorgu düşer, brifing
+sessizce hisse mesajına döner).
+
+Tek satır, geri alınabilir:
+```sql
+alter table public.profiles
+  add column if not exists partner_activity_push boolean not null default true;
+```
+
+---
+
 ## 🔑 VAULT ADIMI — üç cron sırrı (2026-09-07)
 
 Üç Edge Function dağıtıldı ve `supabase secrets` tarafı yazıldı. **Kalan tek

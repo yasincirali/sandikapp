@@ -13,6 +13,7 @@ import '../providers/preferences_provider.dart';
 import '../services/data_export_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/home_widget_service.dart';
+import '../services/supabase_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
@@ -449,6 +450,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   .read(partnerNotificationsProvider.notifier)
                   .set(v),
             ),
+            // Ortağı OLMAYAN kullanıcıya gösterilmez: kapatacak bir şeyi
+            // yokken sunulan anahtar, ayar listesini uzatmaktan başka işe
+            // yaramaz ve "bu ne?" sorusu doğurur.
+            if (ref.watch(activePartnersProvider).isNotEmpty)
+              const _PartnerActivitySwitch(),
             const SizedBox(height: 28),
 
             // -- CANLI ETKİNLİKLER ---------------------------------
@@ -1135,6 +1141,70 @@ class _TimeBox extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Ortak hareketinin günlük brifingde anılması.
+///
+/// Tercih SUNUCUDA (`profiles.partner_activity_push`) çünkü brifingi üreten
+/// edge function okuyor; cihaz tercihleri oradan görünmez. Bu yüzden diğer
+/// anahtarlar gibi bir `_BoolPrefNotifier` değil — ağ okuması gerektiriyor.
+///
+/// **Mahremiyet notu:** bu bildirim yeni bir bilgi açmaz; ortağın lot'ları
+/// zaten karşı tarafta görünüyor. Anahtar, bilgiyi değil BİLDİRİMİ kapatır.
+class _PartnerActivitySwitch extends ConsumerStatefulWidget {
+  const _PartnerActivitySwitch();
+
+  @override
+  ConsumerState<_PartnerActivitySwitch> createState() =>
+      _PartnerActivitySwitchState();
+}
+
+class _PartnerActivitySwitchState
+    extends ConsumerState<_PartnerActivitySwitch> {
+  /// null = henüz okunmadı. Okuma bitene kadar anahtar AÇIK görünür çünkü
+  /// sunucu varsayılanı da açık; "kapalı → açık" sıçraması yanıltırdı.
+  bool? _deger;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _oku());
+  }
+
+  Future<void> _oku() async {
+    final me = ref.read(authProvider).valueOrNull;
+    if (me == null) return;
+    final v = await SupabaseService.instance.getPartnerActivityPush(me.id);
+    if (mounted) setState(() => _deger = v);
+  }
+
+  Future<void> _yaz(bool v) async {
+    final me = ref.read(authProvider).valueOrNull;
+    if (me == null) return;
+    final onceki = _deger;
+    // İyimser güncelleme: anahtar hemen hareket etsin, hata olursa geri alsın.
+    setState(() => _deger = v);
+    try {
+      await SupabaseService.instance.setPartnerActivityPush(me.id, v);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _deger = onceki);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ayar kaydedilemedi, tekrar dene.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SwitchTile(
+      icon: Icons.favorite_border_rounded,
+      title: 'Ortak hareketi bildirimleri',
+      subtitle: 'Ortağın portföyüne ekleme yaptığında günlük özette an',
+      value: _deger ?? true,
+      onChanged: _yaz,
     );
   }
 }
