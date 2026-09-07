@@ -93,18 +93,30 @@ class PortfolioHistoryBreakdown {
   /// başlığın altına yerleştirmek için.
   final Map<String, AssetType> positionType;
 
+  /// Gün içi seride ÇİZİLEN günün 00:00'ı. Diğer periyotlarda `null`.
+  ///
+  /// Neden var: "GÜNLÜK" sekmesi her zaman BUGÜNÜ çizmez. Pazar günü Yahoo'nun
+  /// `range=1d` yanıtı Cuma seansını döndürür; ızgara bugüne kurulsaydı o
+  /// noktalar bugünün slotlarına yayılır ve grafik 00:00'dan şu ana kadar
+  /// DÜMDÜZ bir çizgi olurdu (ölçüldü: hafta sonu → tek fiyat, 288 slot).
+  /// Bu alan, çizilen günü ekrana bildirir: X ekseni, saat etiketleri ve
+  /// "şimdi" işareti o güne göre kurulur.
+  final DateTime? seansGunu;
+
   const PortfolioHistoryBreakdown({
     required this.total,
     required this.byType,
     required this.byPosition,
     required this.positionType,
+    this.seansGunu,
   });
 
   const PortfolioHistoryBreakdown.empty()
       : total = const {},
         byType = const {},
         byPosition = const {},
-        positionType = const {};
+        positionType = const {},
+        seansGunu = null;
 }
 
 class HistoryService {
@@ -567,6 +579,39 @@ class HistoryService {
   @visibleForTesting
   static DateTime sonIsGunu(DateTime d) => _sonIsGunu(d);
 
+  /// Gün içi grafiğin ÇİZECEĞİ günün 00:00'ı.
+  ///
+  /// [enSonVeriTs] çekilen gün içi serilerdeki EN YENİ zaman damgası
+  /// (hiç veri yoksa `null`).
+  ///
+  /// ## Neden bugün olmayabilir
+  /// Piyasa kapalıyken (hafta sonu, resmî tatil) Yahoo'nun `range=1d`
+  /// yanıtı SON SEANSA aittir. Izgara bugüne kurulursa `pastOrNull` o
+  /// seansın kapanışını bugünün 288 slotunun tamamına yayar ve grafik
+  /// DÜMDÜZ bir çizgi olur — kullanıcının Pazar günü bildirdiği belirti
+  /// buydu ("data alınamıyor olabilir mi, dümdüz çizgi sebebi nedir").
+  /// Doğrusu: veri hangi güne aitse o günü çizmek; trading uygulamalarının
+  /// hafta sonunda gösterdiği şey Cuma seansıdır.
+  ///
+  /// ## Neden saf fonksiyon
+  /// Hafta sonu davranışı yalnızca Cumartesi/Pazar ortaya çıkar. Karar
+  /// `getPortfolioHistoryHourlyBreakdown` içinde `DateTime.now()` ile
+  /// verildiği sürece hafta içi koşan hiçbir test o dalı çalıştıramaz —
+  /// `gridSlotlari` de aynı sebeple ayrılmıştı.
+  @visibleForTesting
+  static DateTime seansGunu({
+    required DateTime now,
+    required int? enSonVeriTs,
+  }) {
+    final bugun = DateTime(now.year, now.month, now.day);
+    if (enSonVeriTs == null) return bugun;
+    final d = DateTime.fromMillisecondsSinceEpoch(enSonVeriTs);
+    final veriGunu = DateTime(d.year, d.month, d.day);
+    // Gelecek tarihli veri (saat dilimi kayması) bugüne çekilir — ileri
+    // bir güne ızgara kurmak boş grafik demek olurdu.
+    return veriGunu.isBefore(bugun) ? veriGunu : bugun;
+  }
+
   static DateTime _sonIsGunu(DateTime d) {
     var out = d;
     while (out.weekday == DateTime.saturday || out.weekday == DateTime.sunday) {
@@ -718,6 +763,37 @@ class HistoryService {
       tickerSlots[entry.key] = map;
     }
 
+    // ── Çizilecek SEANS günü ────────────────────────────────────────────────
+    //
+    // "GÜNLÜK" sekmesi her zaman bugünü çizemez. Piyasa kapalıyken (hafta
+    // sonu, resmî tatil, ve gün başında açılıştan önce) Yahoo'nun
+    // `range=1d` yanıtı SON SEANSA aittir. Izgara bugüne kurulursa
+    // `pastOrNull` o son seansın kapanışını bugünün 288 slotunun tamamına
+    // yayar → grafik dümdüz bir çizgi olur. Kullanıcının gördüğü buydu
+    // (Pazar günü bildirildi): "data alınamıyor olabilir mi, dümdüz çizgi".
+    //
+    // Doğrusu: veri hangi güne aitse O GÜNÜ çiz. Böylece hafta sonunda
+    // Cuma seansının gerçek gün içi hareketi görünür — trading
+    // uygulamalarının standart davranışı.
+    final bugun = DateTime(now.year, now.month, now.day);
+    int? enSonVeriTs;
+    void enSonuIzle(Map<int, double> m) {
+      if (m.isEmpty) return;
+      final k = m.keys.reduce((x, y) => x > y ? x : y);
+      if (enSonVeriTs == null || k > enSonVeriTs!) enSonVeriTs = k;
+    }
+
+    for (final m in tickerSlots.values) {
+      enSonuIzle(m);
+    }
+    enSonuIzle(goldSlots);
+    enSonuIzle(usdTrySlots);
+
+    final dayStart = seansGunu(now: now, enSonVeriTs: enSonVeriTs);
+    // Bugün dışında bir seans çiziliyor mu?
+    final gecmisSeans = dayStart.isBefore(bugun);
+    final seansSonuTs = gecmisSeans ? normalizeSlot(enSonVeriTs!) : null;
+
     // Slot-bazlı işaretli miktar. Bugünkü zaman dilimlerinde:
     // buy addedDate <= slot ise +qty, sell addedDate <= slot ise -qty.
     double signedQtyOnSlot(Asset a, int slotTs) {
@@ -728,8 +804,14 @@ class HistoryService {
       // sayılır. Kayıt ledger'da durur (hareket geçmişi için) ama miktarı
       // hiçbir günde sayılmaz.
       if (a.isDeleted) return 0.0;
-      final addedTs = normalizeSlot(a.addedDate.millisecondsSinceEpoch);
-      if (addedTs > slotTs) return 0.0;
+      // GEÇMİŞ seans çizilirken tarih kapısı UYGULANMAZ: elde ŞU ANKİ
+      // pozisyon vardır ve soru "elimdeki portföy son seansta ne yaptı".
+      // Kapı uygulansaydı hafta sonu yapılan bir alım Cuma seansına hiç
+      // girmez, grafiğin son noktası ana ekrandaki toplamla tutmazdı.
+      if (!gecmisSeans) {
+        final addedTs = normalizeSlot(a.addedDate.millisecondsSinceEpoch);
+        if (addedTs > slotTs) return 0.0;
+      }
       return a.isSell ? -a.quantity : a.quantity;
     }
 
@@ -745,11 +827,17 @@ class HistoryService {
     final byType = <AssetType, Map<int, double>>{};
     final byPosition = <String, Map<int, double>>{};
     final positionType = <String, AssetType>{};
+    // Gerçek gün içi fiyatın göründüğü İLK slot (seans açılışı). Döngüden
+    // sonra bundan öncesi atılır — bkz. "Seans ÖNCESİ düz plato".
+    int? ilkGercekTs;
 
-    // Bugünün 00:00'ından başlayarak 5 dakikalık grid üret.
-    final dayStart = DateTime(now.year, now.month, now.day);
+    // Seans gününün 00:00'ından başlayarak 5 dakikalık grid üret.
+    // (`dayStart` yukarıda belirlendi — bugün ya da son seans günü.)
     final slotCount = hours * (60 ~/ slotMinutes); // 24h → 288 slot
-    final nowTs = normalizeSlot(now.millisecondsSinceEpoch);
+    // Serinin sağ ucu: bugünü çizerken ŞU AN, geçmiş seansı çizerken o
+    // seansın son verisi. İkincisinde "şimdi"ye kadar uzatmak, kapanıştan
+    // sonraki tüm slotlara kapanış fiyatını yayıp yine düz kuyruk üretirdi.
+    final nowTs = seansSonuTs ?? normalizeSlot(now.millisecondsSinceEpoch);
 
     // Her varlık için "seed" fiyatı — intraday veri henüz gelmediği
     // slotlarda kullanılır (dünkü kapanış proxy'si). Böylece bir varlığın
@@ -830,6 +918,11 @@ class HistoryService {
       final slotByType = <AssetType, double>{};
       final slotByPosition = <String, double>{};
 
+      // Bu slotta EN AZ BİR varlık gerçek gün içi fiyatla değerlendi mi?
+      // Seed (dünkü kapanış proxy'si) gerçek veri sayılmaz — seans
+      // açılmadan önceki slotların hepsi seed'dir ve aynı değeri taşır.
+      var slotGercekVeri = false;
+
       for (final a in assets) {
         try {
           final qty = signedQtyOnSlot(a, hourTs);
@@ -841,6 +934,7 @@ class HistoryService {
             final gram = pastOrNull(goldSlots, hourTs);
             if (gram != null) {
               v = gram * goldFactor(a.ticker) * qty;
+              slotGercekVeri = true;
             }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
@@ -854,6 +948,7 @@ class HistoryService {
                 p *= usdRate;
               }
               v = p * qty;
+              slotGercekVeri = true;
             }
           }
           // Fon (TEFAS) intraday NAV yayınlamıyor — o gün için sabit
@@ -904,12 +999,38 @@ class HistoryService {
       // `expected` sıfırsa (o an hiç pozisyon yok) bölme yapılmaz.
       if (expected > 0 && covered < expected) continue;
 
+      if (slotGercekVeri) ilkGercekTs ??= hourTs;
+
       groupedPoints[hourTs] = total;
       for (final e in slotByType.entries) {
         (byType[e.key] ??= <int, double>{})[hourTs] = e.value;
       }
       for (final e in slotByPosition.entries) {
         (byPosition[e.key] ??= <int, double>{})[hourTs] = e.value;
+      }
+    }
+
+    // ── Seans ÖNCESİ düz plato atılır ───────────────────────────────────────
+    //
+    // Borsa 10:00'da açılır; 00:00–10:00 arasındaki 120 slotun tamamı seed
+    // fiyatıyla (dünkü kapanış proxy'si) doldurulur ve BİREBİR aynı değeri
+    // taşır. Grafiğin yatay ekseninin yarısından fazlası bu düz platoydu;
+    // gerçek seans hareketi sağ tarafa sıkışıyor ve çizgi "dümdüz"
+    // görünüyordu.
+    //
+    // Seed'in kendisi KALIR — amacı, verisi geç gelen TEK bir varlığın
+    // dik sıçrama yaratmasını önlemek. Atılan yalnızca, HİÇBİR varlığın
+    // gerçek gün içi fiyatı olmayan baştaki slotlardır.
+    //
+    // `ilkGercekTs` null ise (yalnızca TEFAS fonu olan portföy — gün içi NAV
+    // yayınlanmaz) hiçbir şey atılmaz: düz çizgi, boş grafikten iyidir.
+    if (ilkGercekTs != null) {
+      groupedPoints.removeWhere((ts, _) => ts < ilkGercekTs!);
+      for (final series in byType.values) {
+        series.removeWhere((ts, _) => ts < ilkGercekTs!);
+      }
+      for (final series in byPosition.values) {
+        series.removeWhere((ts, _) => ts < ilkGercekTs!);
       }
     }
 
@@ -1009,6 +1130,9 @@ class HistoryService {
       byType: byType,
       byPosition: byPosition,
       positionType: positionType,
+      // Ekran X eksenini bu güne göre kurar; bugün olmak ZORUNDA değil
+      // (hafta sonu/tatil → son seans günü).
+      seansGunu: dayStart,
     );
   }
 

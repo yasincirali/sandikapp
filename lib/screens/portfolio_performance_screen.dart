@@ -276,6 +276,13 @@ class _PortfolioPerformanceScreenState
     if (intraday) {
       final sortedTs = history.keys.toList()..sort();
       final nowMs = DateTime.now().millisecondsSinceEpoch;
+      // Çizilen gün bugün mü? Piyasa kapalıyken seri SON SEANSA aittir
+      // (bkz. `PortfolioHistoryBreakdown.seansGunu`) ve "şimdi" bu eksende
+      // günler ötesine düşer — canlı uç noktası oraya EKLENEMEZ.
+      final simdiDt = DateTime.fromMillisecondsSinceEpoch(nowMs);
+      final bugunMu = startDate.year == simdiDt.year &&
+          startDate.month == simdiDt.month &&
+          startDate.day == simdiDt.day;
       final spots = <FlSpot>[];
       double? lastNonZero;
       for (final ts in sortedTs) {
@@ -289,15 +296,16 @@ class _PortfolioPerformanceScreenState
         spots.add(FlSpot(minutes, y));
       }
       // Şu an'ı canlı toplamla sabitle — grafiğin son noktası her zaman
-      // "şu andaki portföy değeri" olur.
-      if (currentTotalOverride != null && currentTotalOverride > 0) {
+      // "şu andaki portföy değeri" olur. Yalnızca BUGÜN çizilirken:
+      // geçmiş seansta "şimdi" o günün ekseninde yok, seri kapanışta biter.
+      if (bugunMu && currentTotalOverride != null && currentTotalOverride > 0) {
         final nowMinutes = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
         if (spots.isNotEmpty && (nowMinutes - spots.last.x).abs() < 5) {
           spots[spots.length - 1] = FlSpot(nowMinutes, currentTotalOverride);
         } else {
           spots.add(FlSpot(nowMinutes, currentTotalOverride));
         }
-      } else if (lastNonZero != null && spots.isNotEmpty) {
+      } else if (bugunMu && lastNonZero != null && spots.isNotEmpty) {
         final nowMinutes = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
         if ((nowMinutes - spots.last.x).abs() >= 5) {
           spots.add(FlSpot(nowMinutes, lastNonZero));
@@ -588,12 +596,17 @@ class _PortfolioPerformanceScreenState
                             // 30 sn'lik tick her seferinde grafiği spinner'a
                             // çevirmesin.
                             final data = snapshot.data ?? _lastIntradayData;
+                            // X ekseni ÇİZİLEN günün 00:00'ına kurulur —
+                            // bugün olmak zorunda değil. Hafta sonu ve
+                            // tatilde son seans (ör. Cuma) çizilir; eksen
+                            // bugüne kurulsaydı o seansın noktaları bugünün
+                            // slotlarına yayılıp düz çizgi üretirdi.
                             return _buildChartWithData(
                               data?.total ?? const {},
                               targetAssets,
                               filteredOwnerLots,
                               chartAssets,
-                              startDate,
+                              data?.seansGunu ?? startDate,
                               endDate,
                               isIntraday,
                               pState,
@@ -1194,8 +1207,17 @@ class _PortfolioPerformanceScreenState
     // Başlık "birikim" der: rakam alımları İÇERİR, dolayısıyla saf getiri
     // değildir. Simülasyonda miktar sabit olduğu için orada birikim etkisi
     // yoktur ve etiket sade kalır.
+    // Gün içi kart BUGÜNÜ anlatmayabilir: piyasa kapalıyken grafik son
+    // seansı çizer (bkz. `PortfolioHistoryBreakdown.seansGunu`). Başlık
+    // "Bugünkü" derken Cuma'nın rakamını göstermek düpedüz yanlış bilgidir.
+    final simdi = DateTime.now();
+    final gunIciBugun = start.year == simdi.year &&
+        start.month == simdi.month &&
+        start.day == simdi.day;
     final title = intraday
-        ? 'Bugünkü birikim değişimi'
+        ? (gunIciBugun
+            ? 'Bugünkü birikim değişimi'
+            : '${DateFormat('d MMMM', 'tr_TR').format(start)} birikim değişimi')
         : _simulate
             ? '$periodLabel değişim · simülasyon'
             : '$periodLabel birikim değişimi';
@@ -1270,7 +1292,9 @@ class _PortfolioPerformanceScreenState
           const SizedBox(height: SandikSpace.sm),
           Text(
             intraday
-                ? 'Bugün'
+                ? (gunIciBugun
+                    ? 'Bugün'
+                    : '${dateFmt.format(start)} · son seans')
                 : '${dateFmt.format(start)} → ${dateFmt.format(end)}',
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
@@ -1465,37 +1489,42 @@ class _PortfolioPerformanceScreenState
       if (minY == double.infinity) minY = 0;
       if (maxY == -double.infinity) maxY = 1000;
       final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
-      final dataMinY = minY;
-      final dataMaxY = maxY;
-      final dataRange = (dataMaxY - dataMinY).clamp(1.0, double.infinity);
-      final minSpread = (avgY * 0.08).clamp(1.0, double.infinity);
-      final effectiveRange = dataRange < minSpread ? minSpread : dataRange;
-      final yPadding = effectiveRange * 0.15;
-      double outMaxY = (avgY + effectiveRange / 2) + yPadding;
-      double outMinY =
-          (avgY - effectiveRange / 2 - yPadding).clamp(0, double.infinity);
-      final endpointPad = effectiveRange * 0.10;
-      if (dataMinY - endpointPad < outMinY) {
-        outMinY = (dataMinY - endpointPad).clamp(0, double.infinity);
-      }
-      if (dataMaxY + endpointPad > outMaxY) {
-        outMaxY = dataMaxY + endpointPad;
-      }
-      // TradingView tarzı "nice numbers": interval'ı okunması kolay
-      // yuvarlak sayıya oturt. Ham 137592/4=34398 gibi rakam yerine 25000/
-      // 50000/100000 gibi. Chart üzerindeki grid line'lar da bu yuvarlak
-      // değerlere denk gelir, Y label'lar temiz görünür.
-      final rawInterval = (outMaxY - outMinY) / 4;
-      final niceInterval = yuvarlakAdim(rawInterval);
-      // Interval yuvarlanınca minY/maxY'yi de yuvarla ki labellar tam denk.
-      final niceMin = (outMinY / niceInterval).floor() * niceInterval;
-      final niceMax = (outMaxY / niceInterval).ceil() * niceInterval;
-      return (
-        minY: niceMin.clamp(0.0, double.infinity),
-        maxY: niceMax,
-        interval: niceInterval,
+      // Bandın cebri `chart_axis.dart`'ta — saf ve testli.
+      //
+      // Asgari bant oranı gün içinde ÇOK DARDIR (%0,5). Bir portföyün
+      // günlük hareketi tipik olarak ±%0,5–2'dir; buradaki eski %8'lik
+      // taban o hareketi grafik yüksekliğinin onda birine sıkıştırıyor ve
+      // seans boyunca gerçek dalgalanma varken çizgi DÜMDÜZ görünüyordu
+      // (kullanıcı bildirimi 2026-09-07: "yüksek precision ile göstermesi
+      // gerekirdi"). Widget/Live Activity grafiği aynı dersi daha önce
+      // öğrenmiş ve %0,5'e inmişti; artık iki yüzey tek sabitten besleniyor.
+      //
+      // Uzun periyotlarda %8 nadiren bağlayıcıdır (bir ay zaten daha çok
+      // oynar) — orada dokunulmadı.
+      return gorunurYBandi(
+        dataMinY: minY,
+        dataMaxY: maxY,
+        avgY: avgY,
+        asgariBantOrani: intraday ? gunIciAsgariBantOrani : 0.08,
       );
     }
+
+    // Gün içi serinin çizildiği gün BUGÜN mü?
+    //
+    // "GÜNLÜK" sekmesi piyasa kapalıyken son seansı çizer (bkz.
+    // `PortfolioHistoryBreakdown.seansGunu`). O durumda "şimdi" bu eksende
+    // bir yere karşılık gelmez: ne dikey işaretçi, ne canlı uç noktası.
+    final simdiDt = DateTime.now();
+    final bugunMu = intraday &&
+        start.year == simdiDt.year &&
+        start.month == simdiDt.month &&
+        start.day == simdiDt.day;
+
+    // Serinin son noktasının gün başından uzaklığı (dakika). Bugünü
+    // çizerken bu zaten "şimdi"ye eşittir; geçmiş seansta kapanış anıdır.
+    final gunIciSonNoktaDk = !intraday
+        ? 0.0
+        : (primarySeg.spots.isEmpty ? 0.0 : primarySeg.spots.last.x);
 
     // X ekseni — aktif segment çok sıkışıksa (örn. tek gün alım + bugün)
     // viewport'u aktif segment başlangıcından biraz öncesine daralt.
@@ -1514,8 +1543,12 @@ class _PortfolioPerformanceScreenState
       // Kural `chart_axis.dart`'ta — takip listesi grafiği de aynı
       // fonksiyondan besleniyor. İki ekran aynı günü aynı ölçekte çizmeli;
       // kopyalandığında biri düzelirken öteki geride kalıyordu.
-      final now = DateTime.now();
-      fullMaxX = gunIciEksenSonuDk((now.hour * 60 + now.minute).toDouble());
+      //
+      // Referans nokta `DateTime.now()` DEĞİL, serinin SON NOKTASIDIR:
+      // çizilen gün bugün olmayabilir (hafta sonu/tatilde son seans
+      // çizilir) ve o durumda "şu anki saat" bu eksende bir yere karşılık
+      // gelmez — 1440'ı aşan bir sağ uç üretip seansı sola ezerdi.
+      fullMaxX = gunIciEksenSonuDk(gunIciSonNoktaDk);
     } else {
       // Kesirli gün — saatlik veride son X ~6.83, integer olsa 7 kalırdı
       // ve son nokta grafiğin sağında boşta kalırdı.
@@ -1563,9 +1596,9 @@ class _PortfolioPerformanceScreenState
       }
     }
 
-    // Intraday: şimdiki zaman marker'ı — dakika cinsinden 00:00'dan sapma.
-    final now = DateTime.now();
-    final nowMinutes = intraday ? (now.hour * 60 + now.minute).toDouble() : 0.0;
+    // Intraday: son nokta marker'ı — dakika cinsinden 00:00'dan sapma.
+    // Bugünü çizerken "ŞİMDİ", geçmiş seansta "KAPANIŞ" anlamına gelir.
+    final nowMinutes = intraday ? gunIciSonNoktaDk : 0.0;
 
     // Zoom durumunda tekrar üretilen LineChartData'yı bir closure'a al.
     // ZoomableChart pinch/pan sırasında minX/maxX değiştirdikçe bu builder
@@ -1677,7 +1710,9 @@ class _PortfolioPerformanceScreenState
                         fontWeight: FontWeight.w700,
                         color: context.c.amberText,
                       ),
-                      labelResolver: (_) => 'ŞİMDİ',
+                      // Geçmiş seans çizilirken "ŞİMDİ" yalan olurdu —
+                      // o çizgi son seansın kapanışını gösteriyor.
+                      labelResolver: (_) => bugunMu ? 'ŞİMDİ' : 'KAPANIŞ',
                     ),
                   ),
                 ],

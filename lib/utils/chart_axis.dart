@@ -136,6 +136,70 @@ double yuvarlakAdim(double ham) {
   return carpan * us;
 }
 
+/// Gün içi grafiğin Y eksenindeki ASGARİ bant — portföy değerinin oranı.
+///
+/// Eksen yalnızca veriye göre ölçeklenirse yatay giden bir portföyün
+/// kuruşluk dalgalanması tuvalin tamamına yayılır ve olmayan bir "çöküş"
+/// çizilir. Taban bunu keser.
+///
+/// Ama taban GENİŞ olursa ters hata çıkar: bir portföyün gün içi hareketi
+/// tipik olarak ±%0,5–2'dir; %8'lik bir taban o hareketi grafik
+/// yüksekliğinin onda birine sıkıştırır ve seans boyu gerçek dalgalanma
+/// varken çizgi DÜMDÜZ görünür (kullanıcı bildirimi 2026-09-07). Performans
+/// ekranı bu hatadaydı; widget/Live Activity grafiği (`niceAxisBounds`)
+/// zaten %0,5 kullanıyordu. Sabit burada, çünkü iki yüzey aynı günü aynı
+/// ölçekte çizmek zorunda.
+const double gunIciAsgariBantOrani = 0.005;
+
+/// Görünür pencerenin Y ekseni: sınırlar + okunabilir adım.
+///
+/// Girdi, o anda EKRANDA olan noktaların en küçüğü/en büyüğü ve ortalaması
+/// (zoom yapıldıkça pencere daralır, eksen yeniden oturur).
+///
+/// [asgariBantOrani] bandın en dar hâlini portföy değerinin oranı olarak
+/// belirler — gün içi seride [gunIciAsgariBantOrani], uzun periyotlarda
+/// daha geniş bir taban kullanılır (bkz. o sabitin dokümanı).
+///
+/// Değişmez: **veri her zaman bandın içinde kalır.** Sınır veriyi keserse
+/// çizgi kırpılır ve grafik yalan söyler.
+({double minY, double maxY, double interval}) gorunurYBandi({
+  required double dataMinY,
+  required double dataMaxY,
+  required double avgY,
+  required double asgariBantOrani,
+}) {
+  final dataRange =
+      (dataMaxY - dataMinY).clamp(1.0, double.infinity).toDouble();
+  final minSpread =
+      (avgY * asgariBantOrani).clamp(1.0, double.infinity).toDouble();
+  final effectiveRange = dataRange < minSpread ? minSpread : dataRange;
+  final yPadding = effectiveRange * 0.15;
+
+  double outMaxY = (avgY + effectiveRange / 2) + yPadding;
+  double outMinY =
+      (avgY - effectiveRange / 2 - yPadding).clamp(0.0, double.infinity);
+
+  // Uç noktalar bandın kenarına yapışmasın — dot yarıçapı kırpılır.
+  final endpointPad = effectiveRange * 0.10;
+  if (dataMinY - endpointPad < outMinY) {
+    outMinY = (dataMinY - endpointPad).clamp(0.0, double.infinity);
+  }
+  if (dataMaxY + endpointPad > outMaxY) {
+    outMaxY = dataMaxY + endpointPad;
+  }
+
+  // TradingView tarzı "nice numbers": adım okunması kolay yuvarlak sayıya
+  // oturur (34.398 değil 25.000/50.000). Grid çizgileri de oraya denk gelir.
+  final niceInterval = yuvarlakAdim((outMaxY - outMinY) / 4);
+  final niceMin = (outMinY / niceInterval).floor() * niceInterval;
+  final niceMax = (outMaxY / niceInterval).ceil() * niceInterval;
+  return (
+    minY: niceMin.clamp(0.0, double.infinity),
+    maxY: niceMax,
+    interval: niceInterval,
+  );
+}
+
 /// Gün içi ("GÜNLÜK") X ekseninin adımı — dakika.
 ///
 /// 4 saat: 00:00 · 04:00 · 08:00 · 12:00 · 16:00 · 20:00. Telefon genişliğinde

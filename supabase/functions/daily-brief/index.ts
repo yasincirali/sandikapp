@@ -50,6 +50,7 @@ import {
   shortLabel,
 } from '../_shared/fcm.ts';
 import { loadPriceHistories, resolveSymbol } from '../_shared/price_history.ts';
+import { acikPozisyonLotlari } from '../_shared/positions.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,6 +79,10 @@ type AssetRow = {
   type: string;
   is_manual_price: boolean | null;
   kind: string | null;
+  // Netleme alanları — bkz. `_shared/positions.ts`.
+  quantity: number | null;
+  sub_category: string | null;
+  currency: string | null;
 };
 
 type TokenRow = {
@@ -242,9 +247,15 @@ Deno.serve(async (request) => {
     // `deleted_at is null` ŞART: silme fiziksel değil, damgalı
     // (bkz. 0027_soft_delete_lots). Filtre olmadan kullanıcı sildiği hisse
     // için brifing alırdı.
+    //
+    // SATIŞ satırları da çekilir: `kind='buy'` tek başına "hâlâ sahibim"
+    // demek DEĞİLDİR. Tamamen satılmış hisse için brifing gönderilmesi
+    // sinyal push'undaki hatanın aynısıydı (bkz. `_shared/positions.ts`).
     const { data: assetRows, error: assetError } = await admin
       .from('assets')
-      .select('id, user_id, name, ticker, type, is_manual_price, kind')
+      .select(
+        'id, user_id, name, ticker, type, is_manual_price, kind, quantity, sub_category, currency',
+      )
       .in('user_id', userIds)
       .eq('type', 'hisse')
       .is('deleted_at', null);
@@ -252,9 +263,8 @@ Deno.serve(async (request) => {
       throw new Error(`Varliklar alinamadi: ${assetError.message}`);
     }
 
-    const assets = ((assetRows ?? []) as AssetRow[]).filter((a) =>
-      a.is_manual_price !== true && (a.kind ?? 'buy') === 'buy'
-    );
+    const assets = acikPozisyonLotlari((assetRows ?? []) as AssetRow[])
+      .filter((a) => a.is_manual_price !== true);
     if (assets.length === 0) {
       return jsonResponse({ ok: true, reason: 'Brifing icin hisse yok.', sent: 0 });
     }

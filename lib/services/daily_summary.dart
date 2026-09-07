@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
+import '../utils/chart_axis.dart' show gunIciAsgariBantOrani;
 import 'history_service.dart';
 
 /// Uygulama DIŞI yüzeylerin ortak günlük özet hesabı.
@@ -112,7 +113,7 @@ class DailySummary {
   /// rakamla çelişen bir "çöküş" gösteriyordu.
   static ({double min, double max}) niceAxisBounds(
     List<double> values, {
-    double minSpanRatio = 0.005,
+    double minSpanRatio = gunIciAsgariBantOrani,
   }) {
     if (values.isEmpty) return (min: 0, max: 1);
 

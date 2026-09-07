@@ -34,6 +34,7 @@ import {
   MIN_POINTS,
   resolveSymbol,
 } from '../_shared/price_history.ts';
+import { acikPozisyonLotlari } from '../_shared/positions.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -272,6 +273,12 @@ interface AssetRow {
   type: string;
   is_manual_price: boolean | null;
   kind: string | null;
+  // Netleme alanları (bkz. `_shared/positions.ts`). Bunlar çekilmezse
+  // tamamen satılmış pozisyonlar açık sanılır ve bildirim gitmeye devam
+  // eder — kullanıcının "varlığım değil ama push'u geliyor" şikâyeti.
+  quantity: number | null;
+  sub_category: string | null;
+  currency: string | null;
 }
 
 interface PrefRow {
@@ -663,9 +670,13 @@ Deno.serve(async (request) => {
     const userIds = [...tokensByUser.keys()];
 
     // ── 2) Varlıklar ────────────────────────────────────────────────────────
+    // SATIŞ satırları da çekilir — netleme onlarsız yapılamaz. Sorgu
+    // `kind='buy'` ile daraltılırsa tamamen satılmış pozisyon açık görünür.
     const { data: assetRows, error: assetError } = await admin
       .from('assets')
-      .select('id, user_id, name, ticker, type, is_manual_price, kind')
+      .select(
+        'id, user_id, name, ticker, type, is_manual_price, kind, quantity, sub_category, currency',
+      )
       .in('user_id', userIds)
       // Silme fiziksel değil, damgalıdır (bkz. 0027_soft_delete_lots).
       // Bu filtre yokken kullanıcı SİLDİĞİ lot için sinyal bildirimi
@@ -673,12 +684,24 @@ Deno.serve(async (request) => {
       .is('deleted_at', null);
     if (assetError) throw new Error(`Varliklar alinamadi: ${assetError.message}`);
 
-    // Yalnızca aktif alım lot'ları; manuel fiyatlılar için geçmiş yok.
-    const assets = (assetRows ?? []).filter((a: AssetRow) =>
-      ANALYZABLE.has(a.type) &&
-      a.is_manual_price !== true &&
-      (a.kind ?? 'buy') === 'buy'
-    ) as AssetRow[];
+    // Net miktarı sıfıra inmiş pozisyonlar ELENİR.
+    //
+    // `assets` bir lot tablosudur ve satış alım satırını silmez; ikisi
+    // netlenmeden "kind='buy'" filtresi "hâlâ sahibim" anlamına GELMEZ.
+    // İstemci (`aggregatePositions`) net 0 pozisyonu portföyden düşürüyor,
+    // sunucu düşürmüyordu → tamamen satılan hisse için push gelmeye devam
+    // ediyordu (bkz. `_shared/positions.ts`).
+    const acikLotlar = acikPozisyonLotlari((assetRows ?? []) as AssetRow[]);
+    // Kaç alım lot'u satış yüzünden elendi — teşhiste "neden bu varlık
+    // için bildirim gelmiyor" sorusunun cevabı.
+    const closedByNetting =
+      (assetRows ?? []).filter((a: AssetRow) => (a.kind ?? 'buy') === 'buy')
+        .length - acikLotlar.length;
+
+    // Analiz edilebilir türler; manuel fiyatlılar için geçmiş yok.
+    const assets = acikLotlar.filter((a: AssetRow) =>
+      ANALYZABLE.has(a.type) && a.is_manual_price !== true
+    );
 
     if (assets.length === 0) {
       return jsonResponse({ ok: true, reason: 'Analiz edilecek varlik yok.', sent: 0 });
@@ -1002,6 +1025,9 @@ Deno.serve(async (request) => {
       skipped_by_dedup: skippedByDedup,
       users: userIds.length,
       assets: assets.length,
+      // Satışla kapanmış pozisyonların elenen alım lot'ları. >0 ise
+      // kullanıcı artık sahip OLMADIĞI varlık için push ALMAMIŞTIR.
+      closed_by_netting: closedByNetting,
       // Aynı ürünün fazladan lot'ları (birleştirilenler). >0 ise kullanıcı
       // o varlıktan birden çok kez alım yapmış ve tek bildirim gitmiştir.
       collapsed_lots: collapsedLots,

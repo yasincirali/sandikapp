@@ -12,6 +12,38 @@
 
 ---
 
+## 🚨 BEKLEYEN DEPLOY: satılan varlık için push (2026-09-07)
+
+**Belirti:** Tamamen SATILMIŞ hisseler için sinyal bildirimi gelmeye devam
+ediyordu ("AVOD ve AGHOL varlıklarımda olmamasına rağmen push'ları geliyor").
+
+**Sebep:** `assets` bir lot tablosu; satış alım satırını silmez, `kind='sell'`
+ayrı bir satır yazar. Sunucu yalnızca `kind='buy'` filtreliyor, satışları
+netlemiyordu — uygulama net 0 pozisyonu portföyden düşürdüğü için kullanıcı
+"bende yok" görüyor, sunucu "hâlâ var" sanıyordu.
+
+**Düzeltme kodda** (`supabase/functions/_shared/positions.ts`) ama **Edge
+Function'lar yeniden dağıtılmadan etkili olmaz.** Push'lar sunucudan gidiyor;
+uygulama güncellemesi bu hatayı düzeltmez.
+
+```bash
+supabase functions deploy analyze-signals
+supabase functions deploy daily-brief
+```
+
+Doğrulama (push göndermez, yalnızca analiz eder):
+```bash
+curl -X POST "https://<proje>.supabase.co/functions/v1/analyze-signals" \
+  -H "Authorization: Bearer <ANALYZE_SIGNALS_CRON_SECRET>" \
+  -H "Content-Type: application/json" \
+  -d '{"dry_run":true}'
+```
+Yanıttaki `closed_by_netting` alanı, satış yüzünden elenen alım lot'u
+sayısıdır. Sıfırdan büyükse düzeltme fiilen çalışıyor demektir; `preview`
+listesinde satılmış varlıklar artık görünmemeli.
+
+---
+
 ## 🗄️ BEKLEYEN MIGRATION: `0049_partner_activity_push.sql` (2026-09-07)
 
 `profiles` tablosuna `partner_activity_push` sütunu ekler. Çalıştırılmazsa:
