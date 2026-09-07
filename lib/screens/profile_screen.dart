@@ -10,6 +10,7 @@ import '../providers/preferences_provider.dart';
 import 'paywall_screen.dart';
 import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
+import 'recap_screen.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
@@ -374,6 +375,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(height: 20),
                         const _ProfilePremiumBanner(),
                         const SizedBox(height: 24),
+                        // Yıllık özet afişi. Kendi kendini kapatır: bayrak,
+                        // takvim penceresi (26 Aralık–10 Ocak) ve verinin
+                        // anlamlı olması. Yılın 11 ayı hiç görünmez.
+                        const RecapBanner(),
                         _PendingRequestsSection(userId: user?.id ?? ''),
                         const SizedBox(height: 8),
                         const _SectionTitle('ORTAKLIK İŞLEMLERİ'),

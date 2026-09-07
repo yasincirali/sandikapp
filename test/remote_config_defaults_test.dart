@@ -39,6 +39,10 @@ void main() {
       'push_prompt_after_first_asset',
       'real_return_enabled',
       'milestones_enabled',
+      // Recap'in asıl kapısı takvim (26 Aralık–10 Ocak); bayrak yine de
+      // paketle aynı rejimde tutulur ki pencere geldiğinde elle açma
+      // adımı unutulmasın.
+      'recap_enabled',
     ];
 
     for (final bayrak in acikOlmali) {
