@@ -193,15 +193,26 @@ class PriceService {
       } catch (_) {}
     }
 
-    // Gold fallback: Yahoo GC=F + USD/TRY calculation
+    // Gold fallback: XAU/TRY doğrudan, olmazsa GC=F × USD/TRY.
+    //
+    // **Buradaki `usdTry > 0` kapısı KALDIRILDI ve sebebi önemli.**
+    // `USDTRY=X` yalnızca kullanıcının portföyünde bir DÖVİZ varlığı varsa
+    // çekiliyor (`fxList` boşsa truncgil'den FX bile istenmiyor). Yani
+    // altını olup dövizi olmayan bir kullanıcıda `results['USDTRY=X']`
+    // hiçbir zaman dolmuyordu → kur 0 → truncgil düştüğü an altın için
+    // yedek yol HİÇ ÇALIŞMIYOR ve altın fiyatsız kalıyordu. Belirtisi:
+    // "bugün altın fiyatları çekilmiyor" (kullanıcı bildirimi 2026-09-07).
+    //
+    // Yedek yolun kendi kurunu bulabilmesi gerekir; portföyün bileşimine
+    // bağlı olmamalıdır.
     final missingGold = goldList.where((s) => !results.containsKey(s)).toList();
     if (missingGold.isNotEmpty) {
-      final usdTry = results['USDTRY=X']?.regularMarketPrice ?? 0;
-      if (usdTry > 0) {
-        try {
-          results.addAll(await _fetchGoldFallback(missingGold, usdTry));
-        } catch (_) {}
-      }
+      try {
+        results.addAll(await _fetchGoldFallback(
+          missingGold,
+          results['USDTRY=X']?.regularMarketPrice ?? 0,
+        ));
+      } catch (_) {}
     }
 
     // ── TEFAS + Yahoo (zaten tamamlandı) ──────────────────────────────────
@@ -298,16 +309,54 @@ class PriceService {
   YahooQuote _fxQ(String symbol, double price) =>
       YahooQuote(symbol: symbol, regularMarketPrice: price, currency: 'TRY');
 
-  // ── Gold fallback — Yahoo GC=F + USD/TRY ─────────────────────────────────
+  // ── Gold fallback — XAU/TRY doğrudan, olmazsa GC=F × USD/TRY ─────────────
 
+  /// Altın için USD/TRY kuru — portföyün bileşiminden BAĞIMSIZ.
+  ///
+  /// `results['USDTRY=X']` yalnızca kullanıcının döviz varlığı varsa dolar
+  /// (bkz. `fxList`). Altın yedeği o değere bağlı kalırsa, dövizi olmayan
+  /// kullanıcıda kur hiç bulunamaz ve altın fiyatsız kalır. Bu yüzden yedek
+  /// yol kendi kurunu ARAR: önce Yahoo, sonra er-api.
+  Future<double> _resolveUsdTry() async {
+    try {
+      final p = (await _fetchOneChart('USDTRY=X'))?.regularMarketPrice;
+      if (p != null && p > 0) return p;
+    } catch (_) {}
+    try {
+      final fx = await _fetchFxErApi();
+      final p = fx['USDTRY=X']?.regularMarketPrice;
+      if (p != null && p > 0) return p;
+    } catch (_) {}
+    return 0;
+  }
+
+  /// [usdTryHint] çağıran tarafta zaten çekilmiş kur (0 = bilinmiyor).
   Future<Map<String, YahooQuote>> _fetchGoldFallback(
-      List<String> goldSymbols, double usdTry) async {
-    final q = await _fetchOneChart('GC=F');
-    final xauUsd = q?.regularMarketPrice;
-    if (xauUsd == null || xauUsd <= 500) {
-      throw Exception('GC=F unavailable');
+      List<String> goldSymbols, double usdTryHint) async {
+    // 1) XAU/TRY doğrudan — kur çevrimi GEREKTİRMEZ, dolayısıyla USD
+    //    serisi hiç bulunamasa bile altın fiyatlanır. `history_service`
+    //    gün içi altın serisinde de aynı sıralama kullanılıyor; iki yüzey
+    //    aynı kaynağı aynı öncelikle denemeli.
+    //    Eşik ons başına TRY için düşük ama anlamlı bir taban: gerçek değer
+    //    yüz binler mertebesinde, 1000 yalnızca çöp/placeholder'ı eler.
+    double? xauTry;
+    try {
+      final direct = (await _fetchOneChart('XAUTRY=X'))?.regularMarketPrice;
+      if (direct != null && direct > 1000) xauTry = direct;
+    } catch (_) {}
+
+    // 2) Eski yol: GC=F (ons/USD) × USD/TRY.
+    if (xauTry == null) {
+      final q = await _fetchOneChart('GC=F');
+      final xauUsd = q?.regularMarketPrice;
+      if (xauUsd == null || xauUsd <= 500) {
+        throw Exception('GC=F unavailable');
+      }
+      final usdTry = usdTryHint > 0 ? usdTryHint : await _resolveUsdTry();
+      if (usdTry <= 0) throw Exception('USDTRY unavailable');
+      xauTry = xauUsd * usdTry;
     }
-    final xauTry = xauUsd * usdTry;
+
     final gram22k = gram22kFromXauTry(xauTry);
     return {
       for (final sym in goldSymbols)

@@ -205,5 +205,26 @@ void main() {
       expect(goldBlock.contains('if (goldSlots.isEmpty)'), isTrue,
           reason: 'yedek kaynak yalnızca birincisi boşken çalışmalı');
     });
+
+    test('CANLI altın yedeği portföyün bileşimine bağlı DEĞİL', () {
+      // Asıl üretim hatası (2026-09-07): yedek yol `usdTry > 0` kapısının
+      // arkasındaydı ve `USDTRY=X` yalnızca kullanıcının DÖVİZ varlığı
+      // varsa çekiliyordu. Altını olup dövizi olmayan kullanıcıda kur hiç
+      // dolmuyor, truncgil düştüğü an altın fiyatsız kalıyordu.
+      final src = File('lib/services/price_service.dart').readAsStringSync();
+
+      expect(src.contains('_resolveUsdTry'), isTrue,
+          reason: 'yedek yol kendi kurunu arayabilmeli');
+      expect(src.contains("_fetchOneChart('XAUTRY=X')"), isTrue,
+          reason: 'kur çevrimi gerektirmeyen doğrudan kaynak birincil olmalı');
+
+      // Kapının geri gelmediğini kanıtla: çağrı yeri koşulsuz olmalı.
+      final cagri = src.substring(
+        src.indexOf('final missingGold ='),
+        src.indexOf('// ── TEFAS + Yahoo'),
+      );
+      expect(cagri.contains('if (usdTry > 0)'), isFalse,
+          reason: 'altın yedeğini kura bağlayan kapı geri gelmiş');
+    });
   });
 }
