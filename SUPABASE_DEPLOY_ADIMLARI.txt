@@ -1,0 +1,232 @@
+═══════════════════════════════════════════════════════════════════════
+ SANDIK — SUPABASE DEPLOY ADIMLARI
+ Hazırlandı: 2026-09-07  ·  Karşılığı: main @ 8e1f8c8
+═══════════════════════════════════════════════════════════════════════
+
+NEDEN GEREKLİ
+─────────────
+Push bildirimleri SUNUCUDAN gidiyor. "Satılan/silinen varlık için push
+gelmesin" düzeltmesi Edge Function'ların içinde; uygulamayı güncellemek
+bu hatayı DÜZELTMEZ. Aşağıdaki iki fonksiyon dağıtılana kadar AVOD/AGHOL
+push'ları gelmeye devam eder.
+
+Buna karşılık grafik ve CANLI ALTIN FİYATI düzeltmeleri uygulama
+tarafında — onlar TestFlight build'iyle gelir, deploy gerektirmez.
+
+Sırayla git. Her adımın "BEKLENEN" satırı var; tutmuyorsa dur ve bana
+çıktıyı gönder.
+
+
+═══════════════════════════════════════════════════════════════════════
+ ADIM 0 — ÖN KOŞULLAR (bir kereye mahsus)
+═══════════════════════════════════════════════════════════════════════
+
+Proje kökünde (c:\projects\PortfoyTakip) Git Bash veya PowerShell aç.
+
+  supabase --version
+
+BEKLENEN: bir sürüm numarası (ör. 2.x.x).
+CLI yoksa:  npm install -g supabase     (ya da scoop/brew)
+
+  supabase login
+
+Tarayıcı açılır, onayla.
+
+  supabase link --project-ref <PROJE_REF>
+
+<PROJE_REF>, Supabase Dashboard → Project Settings → General →
+"Reference ID" alanındaki değer. Proje URL'inin de alt alan adıdır:
+https://<PROJE_REF>.supabase.co
+
+NOT: Bu değer repoda YOK (bilinçli — sırlar git'e girmiyor,
+supabase_config.dart değerleri build zamanında --dart-define ile
+enjekte ediliyor). Bu yüzden bu adımı benim yerime senin koşman gerekti.
+
+
+═══════════════════════════════════════════════════════════════════════
+ ADIM 1 — MIGRATION DURUMUNU KONTROL ET
+═══════════════════════════════════════════════════════════════════════
+
+  supabase migration list
+
+BEKLENEN: Local ve Remote sütunları eşleşmeli.
+
+Özellikle şu ikisine bak:
+
+  0027_soft_delete_lots      → assets.deleted_at sütunu
+  0049_partner_activity_push → profiles.partner_activity_push sütunu
+
+0027 EKSİKSE bu kritik: silme UPDATE'i patlar, kullanıcı varlık silemez
+ve sunucu silinmiş lot'ları aktif sanar. YAPMAN_GEREKENLER.md hâlâ onu
+"bekleyen" diye işaretliyor ama uygulamada silme çalıştığına göre büyük
+ihtimalle koşulmuş, belge bayat. Yine de doğrula.
+
+Eksik olan varsa:
+
+  supabase db push
+
+Ya da Dashboard → SQL Editor'da tek satırlık kontrol:
+
+  select column_name from information_schema.columns
+   where table_schema = 'public' and table_name = 'assets'
+     and column_name = 'deleted_at';
+
+BEKLENEN: 1 satır döner. Boş dönerse 0027 koşulmamış demektir.
+
+
+═══════════════════════════════════════════════════════════════════════
+ ADIM 2 — EDGE FUNCTION'LARI DAĞIT   ← ASIL İŞ
+═══════════════════════════════════════════════════════════════════════
+
+  supabase functions deploy analyze-signals
+  supabase functions deploy daily-brief
+
+BEKLENEN: her ikisi için "Deployed Function ... " satırı.
+
+Neden ikisi birden: satış/silme netlemesi ortak bir dosyada
+(supabase/functions/_shared/positions.ts) ve iki fonksiyon da onu
+kullanıyor. Yalnızca birini dağıtırsan diğeri eski davranışta kalır —
+sinyal push'u susar ama sabah brifingi hâlâ satılmış hisseyi anlatır.
+
+
+═══════════════════════════════════════════════════════════════════════
+ ADIM 3 — KURU KOŞU (kimseye bildirim GİTMEZ)
+═══════════════════════════════════════════════════════════════════════
+
+<PROJE_REF> ve sır değerlerini kendi değerlerinle değiştir.
+Sırlar: Dashboard → Edge Functions → Secrets
+
+--- 3a) analyze-signals ---
+
+  curl -X POST "https://<PROJE_REF>.supabase.co/functions/v1/analyze-signals" \
+    -H "Authorization: Bearer <ANALYZE_SIGNALS_CRON_SECRET>" \
+    -H "Content-Type: application/json" \
+    -d '{"dry_run":true}'
+
+BEKLENEN yanıt alanları:
+
+  "closed_or_deleted_lots": N   ← EN ÖNEMLİSİ.
+        Satış ya da silme yüzünden elenen alım lot'u sayısı.
+        N > 0 ise düzeltme fiilen çalışıyor demektir.
+        N = 0 ise ya hiç satılmış/silinmiş lot'un yok ya da deploy
+        gitmemiş — bu durumda bana yanıtın tamamını gönder.
+
+  "preview": [...]              ← Bu turda bildirim gidecek varlıklar.
+        AVOD ve AGHOL bu listede GÖRÜNMEMELİ. Görünüyorsa o lot'lar
+        sunucuda hâlâ aktif; aşağıdaki "TEŞHİS" bölümüne bak.
+
+  "assets" / "positions"        ← analiz edilen varlık/pozisyon sayısı
+  "skipped_by_frequency"        ← sıklık penceresi yüzünden atlananlar
+  "skipped_by_dedup"            ← aynı sinyal tekrar bildirilmediği için
+
+PowerShell kullanıyorsan curl yerine:
+
+  Invoke-RestMethod -Method Post `
+    -Uri "https://<PROJE_REF>.supabase.co/functions/v1/analyze-signals" `
+    -Headers @{ Authorization = "Bearer <ANALYZE_SIGNALS_CRON_SECRET>" } `
+    -ContentType "application/json" `
+    -Body '{"dry_run":true}' | ConvertTo-Json -Depth 6
+
+--- 3b) daily-brief ---
+
+  curl -X POST "https://<PROJE_REF>.supabase.co/functions/v1/daily-brief" \
+    -H "Authorization: Bearer <DAILY_BRIEF_CRON_SECRET>" \
+    -H "Content-Type: application/json" \
+    -d '{"dry_run":true}'
+
+BEKLENEN: "ok": true ve "dry_run": true.
+"candidates" sayısı brifing gidecek kullanıcı adedidir.
+
+
+═══════════════════════════════════════════════════════════════════════
+ ADIM 4 — BEKLEYEN VAULT ADIMI (varsa)
+═══════════════════════════════════════════════════════════════════════
+
+Bu, bu turun işi DEĞİL — daha önceden bekliyordu. Ama daily-brief,
+price-alerts ve calendar-nudge cron'ları Vault'tan sır okuyor; Vault'ta
+karşılığı yoksa fonksiyon 401 döner ve HİÇBİR bildirim gitmez.
+
+Kontrol (Dashboard → SQL Editor):
+
+  select name from vault.decrypted_secrets
+   where name in ('price_alerts_cron_secret',
+                  'calendar_nudge_cron_secret',
+                  'daily_brief_cron_secret');
+
+BEKLENEN: 3 satır. Eksik varsa YAPMAN_GEREKENLER.md → "VAULT ADIMI"
+bölümündeki SQL bloğunu koş (değerler scratchpad'deki pa.txt / cn.txt /
+db.txt dosyalarında).
+
+
+═══════════════════════════════════════════════════════════════════════
+ TEŞHİS — "preview"de hâlâ AVOD/AGHOL görünüyorsa
+═══════════════════════════════════════════════════════════════════════
+
+O lot'lar sunucuda hâlâ AKTİF demektir. Dashboard → SQL Editor'da
+kendi kullanıcı kimliğinle çalıştır:
+
+  select id, ticker, kind, quantity, added_date, deleted_at, ref_asset_id
+    from public.assets
+   where user_id = auth.uid()
+     and upper(ticker) like 'AVOD%'
+   order by added_date;
+
+Okuma kılavuzu:
+  · deleted_at DOLU  → sunucu zaten eliyor, sorun push değil başka yerde
+  · deleted_at BOŞ + kind='buy' + net miktar > 0
+        → sunucuya göre bu varlık HÂLÂ SENİN. Uygulamada silme/satış
+          işlemi sunucuya ULAŞMAMIŞ demektir.
+  · kind='delete_log' satırı VAR ama alım lot'unun deleted_at'i BOŞ
+        → tam olarak yakaladığımız yarım kalmış silme. Yeni sürüm bunu
+          hem sunucuda susturuyor (mezar taşını dinliyor) hem de
+          istemcide artık sessizce başarısız olmuyor.
+
+Elle temizlemek istersen (DİKKAT: geri alınamaz, önce yukarıdaki
+select ile ne sildiğini gör):
+
+  update public.assets
+     set deleted_at = now()
+   where user_id = auth.uid()
+     and upper(ticker) in ('AVOD','AVOD.IS','AGHOL','AGHOL.IS')
+     and deleted_at is null;
+
+Sonra ADIM 3a'yı tekrar koş; preview temizlenmiş olmalı.
+
+
+═══════════════════════════════════════════════════════════════════════
+ BU TURDA NE DEĞİŞTİ — ÖZET
+═══════════════════════════════════════════════════════════════════════
+
+SUNUCU (deploy gerekir):
+  · Satılan pozisyon artık push üretmiyor — alım/satış netleniyor.
+  · Silinen pozisyon artık push üretmiyor — deleted_at damgasına ek
+    olarak delete_log mezar taşı da dinleniyor (yarım kalmış silmeye
+    karşı ikinci savunma hattı).
+  · Aynı düzeltme sabah brifinginde de geçerli.
+  · Yanıta closed_or_deleted_lots teşhis sayacı eklendi.
+
+UYGULAMA (TestFlight build'i gerekir, deploy DEĞİL):
+  · GÜNLÜK grafik: Y ekseni asgari bandı %8 → %0,5. Gerçek gün içi
+    hareket artık eziliyor değil, okunuyor.
+  · Piyasa kapalıyken son seans çiziliyor (bugüne yayılmış düz çizgi
+    yerine). Kart başlığı da "Bugünkü" demiyor, tarihi yazıyor.
+  · Seans öncesi düz plato seriden atılıyor.
+  · Altın gün içi serisi önce XAUTRY=X deniyor, GC=F yedek.
+  · CANLI altın fiyatı: yedek yol artık portföyün bileşimine bağlı
+    değil (dövizi olmayan kullanıcıda altın fiyatsız kalıyordu).
+  · Gün içi verisi hiç alınamayan tür varsa grafiğin altında açıkça
+    yazıyor — düzlüğün sebebi artık görünür.
+  · Silme sunucuya ulaşmadıysa artık sessiz kalmıyor, "Silinemedi"
+    diyor.
+
+DOĞRULANAN (bu ortamda koşuldu):
+  flutter analyze                                  → No issues found
+  flutter test                                     → 1198/1198 geçti
+  deno test supabase/tests/open_positions_test.ts  → 20/20 geçti
+  Flutter 3.47.2 · Dart 3.13.2
+
+KOŞULMAYAN:
+  tool/deploy_emulators.sh — Android SDK/emülatör bu ortamda yok.
+  APK build + emülatör kurulumu adımlarını sen koşabilirsin.
+
+═══════════════════════════════════════════════════════════════════════
