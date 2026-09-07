@@ -37,6 +37,12 @@ export interface PozisyonLot {
   currency?: string | null;
   quantity?: number | null;
   kind?: string | null;
+  /// `delete_log` satırlarının ne zaman yazıldığını bilmek için gerekir
+  /// (mezar taşından ESKİ alımlar silinmiş sayılır).
+  added_date?: string | null;
+  /// `delete_log` satırında: TEK bir lot mu silindi (dolu) yoksa
+  /// pozisyonun tamamı mı (null). Ayrım kritik — bkz. `acikPozisyonLotlari`.
+  ref_asset_id?: string | null;
 }
 
 /// Kayan nokta toleransı: 3 × 0.1 lot toplamı 0.30000000000000004 eder.
@@ -90,26 +96,71 @@ export function pozisyonAnahtari(a: PozisyonLot): string {
 /// Elenen satırlar:
 ///   · `sell` / `delete_log` / `dividend` satırları (bunlar pozisyon DEĞİL,
 ///     hareket kaydıdır),
-///   · net miktarı sıfıra inmiş pozisyonların alım lot'ları.
+///   · net miktarı sıfıra inmiş pozisyonların alım lot'ları,
+///   · pozisyonun tamamını silen bir mezar taşından ESKİ alım lot'ları
+///     (ikinci savunma hattı — gerekçesi aşağıda).
 ///
-/// Temettü miktara ASLA girmez (`dividend` satırı nakit hareketidir);
-/// `delete_log` mezar taşıdır ve karşılık gelen alım zaten `deleted_at`
-/// damgalıdır.
+/// Temettü miktara ASLA girmez (`dividend` satırı nakit hareketidir).
 export function acikPozisyonLotlari<T extends PozisyonLot>(rows: T[]): T[] {
   const net = new Map<string, number>();
+  // Pozisyonun tamamını silen mezar taşlarının EN YENİSİ (epoch ms).
+  const pozisyonSilmeAni = new Map<string, number>();
 
   for (const r of rows) {
     const kind = r.kind ?? 'buy';
+    const key = pozisyonAnahtari(r);
+
+    if (kind === 'delete_log') {
+      // ## Mezar taşı neden ayrıca dinlenir
+      // Silmenin ASIL mekanizması `deleted_at` damgasıdır ve çağıran sorgu
+      // onu zaten eliyor. Ama damga her zaman yerine ulaşmıyor: istemci
+      // önce mezar taşını yazıp SONRA `deleted_at` UPDATE'ini atıyor
+      // (`deletePositionLots`), arada bağlantı koparsa lot sunucuda AKTİF
+      // kalır. Uygulama kendi durumunu iyimser günceller, yani kullanıcı
+      // varlığı silinmiş görür — ama push gelmeye devam eder. Kullanıcının
+      // bildirdiği şikâyet tam olarak bu: "sildiğim varlıklar için push
+      // atılmaması gerekiyor."
+      //
+      // ## `ref_asset_id` dolu olan mezar taşları ATLANIR
+      // O bir TEK lot silmesidir (`deleteAsset`) ve yalnızca o `id`'yi
+      // ilgilendirir; ilgili satır zaten fiziksel silinmiştir. Pozisyon
+      // geneline uygulanırsa, iki lot'lu bir varlıkta birini silmek
+      // diğerini de susturur — gerçek bir varlık sessizleşirdi.
+      if (r.ref_asset_id != null) continue;
+      const at = zamanMs(r.added_date);
+      if (at === null) continue;
+      const mevcut = pozisyonSilmeAni.get(key);
+      if (mevcut === undefined || at > mevcut) pozisyonSilmeAni.set(key, at);
+      continue;
+    }
+
     if (kind !== 'buy' && kind !== 'sell') continue;
     const miktar = Number(r.quantity ?? 0);
     if (!Number.isFinite(miktar)) continue;
-    const key = pozisyonAnahtari(r);
     const delta = kind === 'sell' ? -miktar : miktar;
     net.set(key, (net.get(key) ?? 0) + delta);
   }
 
-  return rows.filter((r) =>
-    (r.kind ?? 'buy') === 'buy' &&
-    (net.get(pozisyonAnahtari(r)) ?? 0) > EPSILON
-  );
+  return rows.filter((r) => {
+    if ((r.kind ?? 'buy') !== 'buy') return false;
+    const key = pozisyonAnahtari(r);
+    if ((net.get(key) ?? 0) <= EPSILON) return false;
+
+    // Mezar taşından SONRA alınmış lot yeni bir pozisyondur — kullanıcı
+    // sildiği varlığı tekrar aldıysa bildirimi hak eder.
+    const silme = pozisyonSilmeAni.get(key);
+    if (silme === undefined) return true;
+    const alim = zamanMs(r.added_date);
+    // Tarih okunamıyorsa mezar taşı kazanır: yanlışlıkla bildirim
+    // göndermektense sessiz kalmak yeğdir (kullanıcı açıkça istedi).
+    if (alim === null) return false;
+    return alim > silme;
+  });
+}
+
+/// ISO zaman damgasını epoch ms'e çevirir; okunamıyorsa `null`.
+function zamanMs(v: string | null | undefined): number | null {
+  if (!v) return null;
+  const t = new Date(v).getTime();
+  return Number.isFinite(t) ? t : null;
 }

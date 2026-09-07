@@ -857,6 +857,18 @@ class _PortfolioPerformanceScreenState
                 segments, effectiveStart, endDate, chartAssets,
                 intraday: isIntraday, allTargetAssets: targetAssets),
           ),
+        // Gün içi verisi HİÇ alınamayan türler için açık uyarı.
+        //
+        // Bu türler grafikte son bilinen fiyatla sabit çizilir; uyarı
+        // olmadan kullanıcı düz çizgiyi "piyasa durgun" diye okur ve
+        // uygulamanın bozuk olup olmadığını anlayamaz ("altın değeri mi
+        // alınamıyor acaba" — 2026-09-07). Fon/mevduat gibi gün içi fiyatı
+        // ZATEN olmayan türler bu listeye girmez, yoksa uyarı kalıcı
+        // gürültüye dönerdi.
+        if (isIntraday && breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
+          const SizedBox(height: SandikSpace.sm),
+          _GunIciVeriYokNotu(turler: breakdown.gunIciVerisiYokTurler),
+        ],
         const SizedBox(height: 24),
         // Tür bazlı kâr/zarar dökümü — seçili dönem ve sekmeye göre.
         //
@@ -2468,6 +2480,51 @@ class _VolumeBar {
 /// canlı toplamla ezilir, seriler ham gelir) gerçek bir kategori değil, aynı
 /// varlıkların birkaç dakikalık fiyat farkıdır — `_calibrate` onu türlerin
 /// ağırlığınca dağıtır. `Σ satır == üst kart` yine korunur.
+/// "Bu türün gün içi verisi alınamadı" notu.
+///
+/// ## Neden var
+/// Gün içi fiyatı çekilemeyen bir varlık grafikte KAYBOLMAZ — son bilinen
+/// fiyatıyla gün boyu sabit çizilir (bkz. `assetSeedTRY`). Bu doğru
+/// davranış: varlığı grafikten düşürmek portföyü olduğundan küçük
+/// gösterirdi. Ama sessiz kaldığında kullanıcı düz çizgiyi "piyasa durgun"
+/// diye okuyor ve uygulamanın bozuk olup olmadığını anlayamıyor —
+/// kullanıcı bunu doğrudan sordu: "altın değeri mi alınamıyor acaba".
+///
+/// Not yalnızca gün içi fiyatı OLMASI GEREKEN türler için çıkar; fon
+/// (TEFAS gün içi NAV yayınlamaz), vadeli mevduat ve "diğer" için asla.
+class _GunIciVeriYokNotu extends StatelessWidget {
+  const _GunIciVeriYokNotu({required this.turler});
+
+  final Set<AssetType> turler;
+
+  @override
+  Widget build(BuildContext context) {
+    // Sıra deterministik olsun — küme sırası tur başına değişebilir ve
+    // aynı ekran her build'de farklı okunurdu.
+    final adlar = (turler.map((t) => t.label).toList()..sort()).join(', ');
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: SandikSpace.md, vertical: 12),
+      decoration: context.surfaceCard(radius: SandikRadius.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, size: 15, color: context.c.text58),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$adlar için gün içi fiyat verisi alınamadı. Bu varlıklar '
+              'grafikte son bilinen fiyatlarıyla SABİT çizildi — çizginin '
+              'düz olması piyasanın durgun olduğu anlamına gelmez.',
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TypeBreakdownCard extends StatefulWidget {
   /// Grafiğin çizdiği seriyle AYNI istekten gelen dağılım.
   final PortfolioHistoryBreakdown breakdown;

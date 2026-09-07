@@ -38,9 +38,21 @@ curl -X POST "https://<proje>.supabase.co/functions/v1/analyze-signals" \
   -H "Content-Type: application/json" \
   -d '{"dry_run":true}'
 ```
-Yanıttaki `closed_by_netting` alanı, satış yüzünden elenen alım lot'u
-sayısıdır. Sıfırdan büyükse düzeltme fiilen çalışıyor demektir; `preview`
-listesinde satılmış varlıklar artık görünmemeli.
+Yanıttaki `closed_or_deleted_lots` alanı, **satış ya da silme** yüzünden
+elenen alım lot'u sayısıdır. Sıfırdan büyükse düzeltme fiilen çalışıyor
+demektir; `preview` listesinde satılmış/silinmiş varlıklar artık
+görünmemeli.
+
+**Silme tarafı ayrıca ele alındı.** Silmenin asıl mekanizması `deleted_at`
+damgasıdır ve sunucu onu zaten eliyordu; ama istemci önce mezar taşını
+(`delete_log`) yazıp SONRA damgayı atıyor — arada bağlantı koparsa lot
+sunucuda AKTİF kalır, uygulama ise kendi durumunu iyimser güncellediği için
+kullanıcı varlığı silinmiş görür. Artık sunucu mezar taşını da dinliyor:
+pozisyonun tamamını silen bir `delete_log`'dan ESKİ alım lot'ları
+susturuluyor (sonra tekrar alınmışsa bildirim yine gider).
+
+Bu yüzden `assets` sorgusuna `added_date` ve `ref_asset_id` sütunları
+eklendi — deploy edilmeden ikisi de okunamaz.
 
 ---
 

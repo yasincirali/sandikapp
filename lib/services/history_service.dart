@@ -95,13 +95,27 @@ class PortfolioHistoryBreakdown {
 
   /// Gün içi seride ÇİZİLEN günün 00:00'ı. Diğer periyotlarda `null`.
   ///
-  /// Neden var: "GÜNLÜK" sekmesi her zaman BUGÜNÜ çizmez. Pazar günü Yahoo'nun
-  /// `range=1d` yanıtı Cuma seansını döndürür; ızgara bugüne kurulsaydı o
-  /// noktalar bugünün slotlarına yayılır ve grafik 00:00'dan şu ana kadar
-  /// DÜMDÜZ bir çizgi olurdu (ölçüldü: hafta sonu → tek fiyat, 288 slot).
+  /// Neden var: "GÜNLÜK" sekmesi her zaman BUGÜNÜ çizmez. Piyasa kapalıyken
+  /// (hafta sonu, tatil, Pazartesi 10:00'dan önce) Yahoo'nun `range=1d`
+  /// yanıtı SON SEANSA aittir; ızgara bugüne kurulsaydı o noktalar bugünün
+  /// slotlarına yayılır ve grafik 00:00'dan şu ana kadar DÜMDÜZ bir çizgi
+  /// olurdu (hafta sonu → tek fiyat, 288 slot).
   /// Bu alan, çizilen günü ekrana bildirir: X ekseni, saat etiketleri ve
   /// "şimdi" işareti o güne göre kurulur.
   final DateTime? seansGunu;
+
+  /// Gün içi seride TEK BİR gerçek fiyat noktası bile alınamayan türler.
+  ///
+  /// Bu türlerin değeri gün boyu son bilinen fiyatla (seed) sabit çizilir —
+  /// yani grafikteki düzlük piyasanın durgunluğu değil, VERİ YOKLUĞUDUR.
+  /// Ayrım kullanıcıya gösterilmeden ikisi birbirinden ayırt edilemiyordu:
+  /// "altın değeri mi alınamıyor acaba" sorusunun uygulamada cevabı yoktu
+  /// (kullanıcı bildirimi 2026-09-07).
+  ///
+  /// Gün içi fiyatı OLMAYAN türler (fon → TEFAS gün içi NAV yayınlamaz,
+  /// vadeli mevduat, diğer) buraya HİÇ girmez: onların sabit çizilmesi
+  /// beklenen davranıştır, uyarı üretmek gürültü olurdu.
+  final Set<AssetType> gunIciVerisiYokTurler;
 
   const PortfolioHistoryBreakdown({
     required this.total,
@@ -109,6 +123,7 @@ class PortfolioHistoryBreakdown {
     required this.byPosition,
     required this.positionType,
     this.seansGunu,
+    this.gunIciVerisiYokTurler = const {},
   });
 
   const PortfolioHistoryBreakdown.empty()
@@ -116,7 +131,8 @@ class PortfolioHistoryBreakdown {
         byType = const {},
         byPosition = const {},
         positionType = const {},
-        seansGunu = null;
+        seansGunu = null,
+        gunIciVerisiYokTurler = const {};
 }
 
 class HistoryService {
@@ -588,8 +604,8 @@ class HistoryService {
   /// Piyasa kapalıyken (hafta sonu, resmî tatil) Yahoo'nun `range=1d`
   /// yanıtı SON SEANSA aittir. Izgara bugüne kurulursa `pastOrNull` o
   /// seansın kapanışını bugünün 288 slotunun tamamına yayar ve grafik
-  /// DÜMDÜZ bir çizgi olur — kullanıcının Pazar günü bildirdiği belirti
-  /// buydu ("data alınamıyor olabilir mi, dümdüz çizgi sebebi nedir").
+  /// DÜMDÜZ bir çizgi olur ("data alınamıyor olabilir mi, dümdüz çizgi
+  /// sebebi nedir" — kullanıcı bildirimi 2026-09-07).
   /// Doğrusu: veri hangi güne aitse o günü çizmek; trading uygulamalarının
   /// hafta sonunda gösterdiği şey Cuma seansıdır.
   ///
@@ -718,8 +734,22 @@ class HistoryService {
     final usdFuture = needsUsd
         ? getHistorySafe('USDTRY=X')
         : Future.value(const <(int, double)>[]);
-    final goldFuture = needsGold
-        ? getHistorySafe('GC=F')
+    // Altının gün içi serisi ÖNCE `XAUTRY=X` ile denenir.
+    //
+    // Eskiden tek kaynak `GC=F` idi ve bu TEK ARIZA NOKTASIYDI: Yahoo o
+    // vadeli sözleşme için 5 dakikalık veriyi vermediğinde altının hiçbir
+    // slotu fiyatlanamıyor, her slot `assetSeedTRY` ile son bilinen fiyata
+    // düşüyor ve altın ağırlıklı bir portföyün grafiği gün boyu DÜMDÜZ
+    // çiziliyordu. Üstelik bu bir hata gibi de görünmüyordu: seed slotu
+    // "kapsanmış" sayıyor, eksik kapsam elemesine takılmıyor.
+    //
+    // `fetchHistoricalClose` bu sıralamayı zaten kullanıyordu (önce
+    // XAUTRY=X, olmazsa GC=F × USDTRY); gün içi yolu o dersin dışında
+    // kalmıştı. XAUTRY=X doğrudan TRY/ons verir — USD serisine bağımlılık
+    // da kalkar, yani iki kaynak birden düşmedikçe altın düz çizgiye
+    // inmez.
+    final goldTryFuture = needsGold
+        ? getHistorySafe('XAUTRY=X')
         : Future.value(const <(int, double)>[]);
 
     final tickerFutures = <String, Future<List<(int, double)>>>{};
@@ -741,15 +771,28 @@ class HistoryService {
     }
 
     if (needsGold) {
-      // XAU/USD intraday (GC=F) + USDTRY intraday → gram22k TRY.
-      final xau = await goldFuture;
-      for (final p in xau) {
-        final ts = normalizeSlot(p.$1);
-        final xauUsd = p.$2;
-        double usdRate = closestOrNull(usdTrySlots, ts) ?? 40.0;
-        final xauTry = xauUsd * usdRate;
-        final gram22k = PriceService.gram22kFromXauTry(xauTry);
-        goldSlots[ts] = gram22k;
+      // 1) XAU/TRY doğrudan (tek istek, kur çevrimi yok).
+      final xauTryPts = await goldTryFuture;
+      for (final p in xauTryPts) {
+        goldSlots[normalizeSlot(p.$1)] =
+            PriceService.gram22kFromXauTry(p.$2);
+      }
+
+      // 2) Boşsa eski yol: XAU/USD (GC=F) × USDTRY. Yalnızca birinci
+      //    kaynak hiç nokta vermediğinde çağrılır — normal günde ek
+      //    istek yapılmaz.
+      if (goldSlots.isEmpty) {
+        final xauUsdPts = await getHistorySafe('GC=F');
+        for (final p in xauUsdPts) {
+          final ts = normalizeSlot(p.$1);
+          final usdRate = closestOrNull(usdTrySlots, ts);
+          // Kur bilinmiyorsa slotu ATLA. Eskiden 40.0 sabiti kullanılıyordu
+          // ve gerçek kurdan sapan bu sayı altını olduğundan ucuz/pahalı
+          // gösteren yapay bir basamak üretiyordu.
+          if (usdRate == null) continue;
+          goldSlots[ts] =
+              PriceService.gram22kFromXauTry(p.$2 * usdRate);
+        }
       }
     }
 
@@ -769,8 +812,8 @@ class HistoryService {
     // sonu, resmî tatil, ve gün başında açılıştan önce) Yahoo'nun
     // `range=1d` yanıtı SON SEANSA aittir. Izgara bugüne kurulursa
     // `pastOrNull` o son seansın kapanışını bugünün 288 slotunun tamamına
-    // yayar → grafik dümdüz bir çizgi olur. Kullanıcının gördüğü buydu
-    // (Pazar günü bildirildi): "data alınamıyor olabilir mi, dümdüz çizgi".
+    // yayar → grafik dümdüz bir çizgi olur. Pazartesi 10:00'dan önce de
+    // aynı durum geçerlidir: o saatte son seans hâlâ Cuma'dır.
     //
     // Doğrusu: veri hangi güne aitse O GÜNÜ çiz. Böylece hafta sonunda
     // Cuma seansının gerçek gün içi hareketi görünür — trading
@@ -830,6 +873,12 @@ class HistoryService {
     // Gerçek gün içi fiyatın göründüğü İLK slot (seans açılışı). Döngüden
     // sonra bundan öncesi atılır — bkz. "Seans ÖNCESİ düz plato".
     int? ilkGercekTs;
+    // Gün içi fiyatı OLMASI GEREKEN türler ve fiilen ALINABİLEN türler.
+    // Farkı, kullanıcıya "bu türün düzlüğü veri yokluğundandır" diye
+    // gösterilir (bkz. `gunIciVerisiYokTurler`). Fon/mevduat/diğer bu
+    // sayıma hiç girmez: onların gün içi fiyatı zaten yok.
+    final gunIciBeklenenTurler = <AssetType>{};
+    final gunIciGercekTurler = <AssetType>{};
 
     // Seans gününün 00:00'ından başlayarak 5 dakikalık grid üret.
     // (`dayStart` yukarıda belirlendi — bugün ya da son seans günü.)
@@ -931,14 +980,17 @@ class HistoryService {
           double? v;
 
           if (a.type == AssetType.altin) {
+            gunIciBeklenenTurler.add(a.type);
             final gram = pastOrNull(goldSlots, hourTs);
             if (gram != null) {
               v = gram * goldFactor(a.ticker) * qty;
               slotGercekVeri = true;
+              gunIciGercekTurler.add(a.type);
             }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
               a.type == AssetType.doviz) {
+            gunIciBeklenenTurler.add(a.type);
             final map = tickerSlots[a.ticker] ?? {};
             final price = pastOrNull(map, hourTs);
             if (price != null) {
@@ -949,6 +1001,7 @@ class HistoryService {
               }
               v = p * qty;
               slotGercekVeri = true;
+              gunIciGercekTurler.add(a.type);
             }
           }
           // Fon (TEFAS) intraday NAV yayınlamıyor — o gün için sabit
@@ -1133,6 +1186,11 @@ class HistoryService {
       // Ekran X eksenini bu güne göre kurar; bugün olmak ZORUNDA değil
       // (hafta sonu/tatil → son seans günü).
       seansGunu: dayStart,
+      // Gün içi fiyatı beklenen ama HİÇ alınamayan türler. Grafikte bu
+      // türler sabit çizilir; kullanıcı "piyasa mı durgun, veri mi yok"
+      // sorusunu ancak bu bilgi yüzeye çıkarsa yanıtlayabilir.
+      gunIciVerisiYokTurler:
+          gunIciBeklenenTurler.difference(gunIciGercekTurler),
     );
   }
 

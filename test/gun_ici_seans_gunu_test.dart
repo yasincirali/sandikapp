@@ -1,10 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/utils/chart_axis.dart';
 
 /// **"GÜNLÜK" sekmesi DÜMDÜZ bir çizgi çiziyordu.**
 ///
-/// Kullanıcı bildirimi (2026-09-07, Pazar): "günlük grafik için data
+/// Kullanıcı bildirimi (2026-09-07): "günlük grafik için data
 /// alınamıyor olabilir mi, normalde yüksek precision ile göstermesi
 /// gerekirdi. Dümdüz çizgi sebebi nedir."
 ///
@@ -42,6 +44,27 @@ void main() {
       );
       expect(gun, DateTime(2026, 9, 4), reason: 'son seans günü çizilmeli');
       expect(gun.isBefore(DateTime(2026, 9, 6)), isTrue);
+    });
+
+    test('PAZARTESİ açılıştan ÖNCE de son seans (Cuma) çizilir', () {
+      // Kullanıcının bulunduğu durum: gün Pazartesi ama BIST henüz
+      // açılmamış. `range=1d` yine Cuma'yı döndürür; ızgara bugüne
+      // kurulursa Pazartesi 00:00–09:00 arası tek fiyatla doldurulur.
+      final now = DateTime(2026, 9, 7, 9, 30); // Pazartesi, açılış öncesi
+      final gun = HistoryService.seansGunu(
+        now: now,
+        enSonVeriTs: ts(DateTime(2026, 9, 4, 18, 5)),
+      );
+      expect(gun, DateTime(2026, 9, 4));
+    });
+
+    test('PAZARTESİ seans başladıysa bugün çizilir', () {
+      final now = DateTime(2026, 9, 7, 11, 0);
+      final gun = HistoryService.seansGunu(
+        now: now,
+        enSonVeriTs: ts(DateTime(2026, 9, 7, 10, 55)),
+      );
+      expect(gun, DateTime(2026, 9, 7));
     });
 
     test('resmî tatilde de son seans çizilir (hafta içi olabilir)', () {
@@ -137,6 +160,50 @@ void main() {
       );
       expect(b.maxY, greaterThan(b.minY));
       expect(b.minY, greaterThanOrEqualTo(0));
+    });
+  });
+
+  group('altın gün içi serisi — tek arıza noktası kalmamalı', () {
+    // Kullanıcı doğrudan sordu: "altın değeri mi alınamıyor acaba".
+    //
+    // Gün içi altın yalnızca `GC=F` (vadeli, USD/ons) üzerinden
+    // çözülüyordu. Yahoo o sözleşme için 5 dakikalık veriyi vermediğinde
+    // altının HİÇBİR slotu fiyatlanamıyor, her slot son bilinen fiyata
+    // (seed) düşüyor ve altın ağırlıklı portföyün grafiği gün boyu düz
+    // çiziliyordu — üstelik sessizce, çünkü seed slotu "kapsanmış" sayar.
+    //
+    // Ağ mock'lanamadığı için (servis singleton + private http.Client)
+    // kaynak sırası doğrulanır; `watchlist_axis_sync_test` de aynı
+    // yaklaşımı izliyor.
+    test('gün içi altın ÖNCE XAUTRY=X dener, GC=F yedektir', () async {
+      final src =
+          await File('lib/services/history_service.dart').readAsString();
+
+      expect(src.contains("getHistorySafe('XAUTRY=X')"), isTrue,
+          reason: 'doğrudan TRY kaynağı birincil olmalı — kur çevrimi '
+              'gerektirmez ve GC=F düşse bile altın düz çizgiye inmez');
+      expect(src.contains("getHistorySafe('GC=F')"), isTrue,
+          reason: 'yedek kaynak korunmalı');
+    });
+
+    test('kur bilinmiyorken 40.0 sabiti UYDURULMAZ', () {
+      // Eski yedek yol `closestOrNull(usdTrySlots, ts) ?? 40.0` yazıyordu.
+      // Gerçek kurdan sapan bu sayı altını olduğundan ucuz/pahalı gösteren
+      // yapay bir basamak üretir; slotu atlamak doğru davranıştır.
+      final src = File('lib/services/history_service.dart').readAsStringSync();
+      // Yalnızca GÜN İÇİ altın bloğu — günlük (period) yolunun kendi
+      // bloğu ayrıdır ve bu testin konusu değildir.
+      final bas = src.indexOf('// 1) XAU/TRY doğrudan');
+      final son =
+          src.indexOf('// Fiyat serileri yukarıda paralel başlatıldı');
+      expect(bas, greaterThan(0), reason: 'gün içi altın bloğu bulunamadı');
+      expect(son, greaterThan(bas));
+
+      final goldBlock = src.substring(bas, son);
+      expect(goldBlock.contains('?? 40.0'), isFalse,
+          reason: 'altın çevriminde uydurma kur kalmış');
+      expect(goldBlock.contains('if (goldSlots.isEmpty)'), isTrue,
+          reason: 'yedek kaynak yalnızca birincisi boşken çalışmalı');
     });
   });
 }

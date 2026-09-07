@@ -188,9 +188,22 @@ class SupabaseService {
   /// kaydı geçmişten de yok eder; hareket listesi ham ledger'dan
   /// beslendiği için o varlığın Alım/Satım/Temettü satırlarını da
   /// götürürdü.
+  /// Damganın FİİLEN yazıldığı, dönen satırlarla doğrulanır.
+  ///
+  /// PostgREST'te eşleşmeyen bir UPDATE **hata değildir** — sessizce sıfır
+  /// satır günceller. Doğrulama olmadan silme başarısız olsa bile çağıran
+  /// "oldu" sanıyordu: uygulama kendi durumunu iyimser güncellediği için
+  /// kullanıcı varlığı silinmiş görüyor, ama sunucudaki lot AKTİF kalıyor ve
+  /// push işleri (`analyze-signals`, `daily-brief`) onun için bildirim
+  /// göndermeye devam ediyordu. Kullanıcı şikâyeti buydu: "sildiğim
+  /// varlıklar için push atılmaması gerekiyor."
+  ///
+  /// Sıfır satır dönerse ATILIR; çağıran ekranlar hatayı zaten yakalayıp
+  /// "Silinemedi" gösteriyor. Kısmi eşleşme (bir lot daha önce fiziksel
+  /// silinmişse olabilir) hata sayılmaz — kullanıcının niyeti gerçekleşmiştir.
   Future<void> softDeleteAssets(List<String> ids, DateTime deletedAt) async {
     if (ids.isEmpty) return;
-    await _log.log<void>(
+    final rows = await _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.softDeleteAssets',
       table: 'assets',
       op: 'UPDATE',
@@ -198,8 +211,15 @@ class SupabaseService {
       call: () => _db
           .from('assets')
           .update({'deleted_at': deletedAt.toUtc().toIso8601String()})
-          .inFilter('id', ids),
+          .inFilter('id', ids)
+          .select('id'),
     );
+    if (rows.isEmpty) {
+      throw StateError(
+        'Silme damgası hiçbir satıra yazılamadı (${ids.length} lot). '
+        'Kayıtlar sunucuda aktif kaldı.',
+      );
+    }
   }
 
   Future<int> countAssetsForUser(String userId) async {

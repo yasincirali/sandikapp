@@ -279,6 +279,9 @@ interface AssetRow {
   quantity: number | null;
   sub_category: string | null;
   currency: string | null;
+  // Mezar taşı (`delete_log`) okuması için — silinen pozisyon susturulur.
+  added_date: string | null;
+  ref_asset_id: string | null;
 }
 
 interface PrefRow {
@@ -675,7 +678,7 @@ Deno.serve(async (request) => {
     const { data: assetRows, error: assetError } = await admin
       .from('assets')
       .select(
-        'id, user_id, name, ticker, type, is_manual_price, kind, quantity, sub_category, currency',
+        'id, user_id, name, ticker, type, is_manual_price, kind, quantity, sub_category, currency, added_date, ref_asset_id',
       )
       .in('user_id', userIds)
       // Silme fiziksel değil, damgalıdır (bkz. 0027_soft_delete_lots).
@@ -692,9 +695,9 @@ Deno.serve(async (request) => {
     // sunucu düşürmüyordu → tamamen satılan hisse için push gelmeye devam
     // ediyordu (bkz. `_shared/positions.ts`).
     const acikLotlar = acikPozisyonLotlari((assetRows ?? []) as AssetRow[]);
-    // Kaç alım lot'u satış yüzünden elendi — teşhiste "neden bu varlık
-    // için bildirim gelmiyor" sorusunun cevabı.
-    const closedByNetting =
+    // Kaç alım lot'u SATIŞ ya da SİLME yüzünden elendi — teşhiste "neden bu
+    // varlık için bildirim gelmiyor / hâlâ geliyor" sorusunun cevabı.
+    const closedOrDeletedLots =
       (assetRows ?? []).filter((a: AssetRow) => (a.kind ?? 'buy') === 'buy')
         .length - acikLotlar.length;
 
@@ -1025,9 +1028,9 @@ Deno.serve(async (request) => {
       skipped_by_dedup: skippedByDedup,
       users: userIds.length,
       assets: assets.length,
-      // Satışla kapanmış pozisyonların elenen alım lot'ları. >0 ise
-      // kullanıcı artık sahip OLMADIĞI varlık için push ALMAMIŞTIR.
-      closed_by_netting: closedByNetting,
+      // Satış ya da silme ile kapanmış pozisyonların elenen alım lot'ları.
+      // >0 ise kullanıcı artık sahip OLMADIĞI varlık için push ALMAMIŞTIR.
+      closed_or_deleted_lots: closedOrDeletedLots,
       // Aynı ürünün fazladan lot'ları (birleştirilenler). >0 ise kullanıcı
       // o varlıktan birden çok kez alım yapmış ve tek bildirim gitmiştir.
       collapsed_lots: collapsedLots,

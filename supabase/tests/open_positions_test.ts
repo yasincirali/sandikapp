@@ -29,7 +29,11 @@ type Lot = {
   currency?: string | null;
   quantity?: number | null;
   kind?: string | null;
+  added_date?: string | null;
+  ref_asset_id?: string | null;
 };
+
+const GUN = (n: number) => `2026-09-${String(n).padStart(2, '0')}T10:00:00Z`;
 
 const alim = (o: Partial<Lot> & { id: string }): Lot => ({
   user_id: 'u1',
@@ -180,4 +184,102 @@ Deno.test('satışsız portföy olduğu gibi geçer', () => {
     alim({ id: 'b2', ticker: 'ASELS' }),
   ];
   assertEquals(acikPozisyonLotlari(lots).length, 2);
+});
+
+// ── Mezar taşı (`delete_log`) ile susturma ─────────────────────────────────
+//
+// "Sildiğim varlıklar için push atılmaması gerekiyor" (kullanıcı, 2026-09-07).
+//
+// Silmenin ASIL mekanizması `deleted_at` damgasıdır ve çağıran sorgu onu
+// zaten eliyor. Bu blok İKİNCİ savunma hattını kilitler: istemci önce mezar
+// taşını yazıp sonra damgayı attığı için (`deletePositionLots`), arada
+// bağlantı koparsa lot sunucuda AKTİF kalır ama kullanıcı onu silinmiş
+// görür — push gelmeye devam ederdi.
+
+const mezarTasi = (o: Partial<Lot> & { id: string }): Lot =>
+  // `ref_asset_id: null` = POZİSYON silmesi (varsayılan). Tek lot silmesini
+  // test etmek isteyen çağıran bunu `o` içinde ezer.
+  alim({ ref_asset_id: null, ...o, kind: 'delete_log' });
+
+Deno.test('pozisyon mezar taşı, kendisinden ESKİ alımları susturur', () => {
+  const lots: Lot[] = [
+    alim({ id: 'b1', added_date: GUN(1) }),
+    mezarTasi({ id: 'g1', added_date: GUN(5) }),
+  ];
+  assertEquals(acikPozisyonLotlari(lots).length, 0);
+});
+
+Deno.test('silmeden SONRA tekrar alındıysa bildirim yine gider', () => {
+  const lots: Lot[] = [
+    alim({ id: 'b1', added_date: GUN(1) }),
+    mezarTasi({ id: 'g1', added_date: GUN(5) }),
+    alim({ id: 'b2', added_date: GUN(9) }),
+  ];
+  const out = acikPozisyonLotlari(lots);
+  assertEquals(out.map((l) => l.id), ['b2'], 'yeni alım susturulmamalı');
+});
+
+Deno.test('TEK LOT mezar taşı pozisyonu susturmaz — en kritik yanlış pozitif', () => {
+  // `deleteAsset` (varlık detayından tek lot silme) `ref_asset_id` DOLU bir
+  // mezar taşı yazar. Pozisyon geneline uygulanırsa iki lot'lu bir varlıkta
+  // birini silmek diğerini de susturur ve kullanıcı gerçek bir varlık için
+  // bildirim almayı bırakır — sessiz, fark edilmesi zor bir hata.
+  const lots: Lot[] = [
+    alim({ id: 'b1', added_date: GUN(1) }),
+    alim({ id: 'b2', added_date: GUN(2) }),
+    mezarTasi({ id: 'g1', added_date: GUN(5), ref_asset_id: 'b3' }),
+  ];
+  assertEquals(acikPozisyonLotlari(lots).length, 2);
+});
+
+Deno.test('mezar taşı BAŞKA pozisyonu susturmaz', () => {
+  const lots: Lot[] = [
+    alim({ id: 'b1', ticker: 'AVOD', added_date: GUN(1) }),
+    mezarTasi({ id: 'g1', ticker: 'AGHOL', added_date: GUN(5) }),
+  ];
+  const out = acikPozisyonLotlari(lots);
+  assertEquals(out.map((l) => l.ticker), ['AVOD']);
+});
+
+Deno.test('mezar taşı BAŞKA kullanıcıyı susturmaz', () => {
+  const lots: Lot[] = [
+    alim({ id: 'b1', user_id: 'u1', added_date: GUN(1) }),
+    mezarTasi({ id: 'g1', user_id: 'u2', added_date: GUN(5) }),
+  ];
+  assertEquals(acikPozisyonLotlari(lots).length, 1);
+});
+
+Deno.test('mezar taşı miktara girmez — kapalı pozisyonu diriltmez', () => {
+  // `delete_log` satırı silinen POZİSYONUN net miktarını taşır. Netlemede
+  // alım sayılsaydı, tamamı satılmış bir pozisyon yeniden açılırdı.
+  //
+  // Mezar taşı burada TEK LOT silmesi (`ref_asset_id` dolu), yani susturma
+  // dalı devrede değil — ölçülen tek şey miktarın sızıp sızmadığı.
+  const lots: Lot[] = [
+    alim({ id: 'b1', quantity: 50, added_date: GUN(1) }),
+    satis({ id: 's1', quantity: 50, added_date: GUN(2) }),
+    mezarTasi({
+      id: 'g1',
+      quantity: 50,
+      added_date: GUN(3),
+      ref_asset_id: 'b1',
+    }),
+  ];
+  assertEquals(acikPozisyonLotlari(lots).length, 0);
+});
+
+Deno.test('birden çok mezar taşında EN YENİSİ geçerlidir', () => {
+  const lots: Lot[] = [
+    mezarTasi({ id: 'g1', added_date: GUN(2) }),
+    alim({ id: 'b1', added_date: GUN(4) }),
+    mezarTasi({ id: 'g2', added_date: GUN(6) }),
+  ];
+  assertEquals(acikPozisyonLotlari(lots).length, 0,
+    'eski mezar taşı seçilirse b1 açık kalırdı');
+});
+
+Deno.test('mezar taşı yoksa added_date hiç okunmaz', () => {
+  // Sütun boş gelse bile (eski satır) normal portföy etkilenmemeli.
+  const lots: Lot[] = [alim({ id: 'b1', added_date: null })];
+  assertEquals(acikPozisyonLotlari(lots).length, 1);
 });

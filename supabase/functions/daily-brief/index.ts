@@ -83,6 +83,9 @@ type AssetRow = {
   quantity: number | null;
   sub_category: string | null;
   currency: string | null;
+  // Mezar taşı (`delete_log`) okuması için — silinen pozisyon susturulur.
+  added_date: string | null;
+  ref_asset_id: string | null;
 };
 
 type TokenRow = {
@@ -254,7 +257,7 @@ Deno.serve(async (request) => {
     const { data: assetRows, error: assetError } = await admin
       .from('assets')
       .select(
-        'id, user_id, name, ticker, type, is_manual_price, kind, quantity, sub_category, currency',
+        'id, user_id, name, ticker, type, is_manual_price, kind, quantity, sub_category, currency, added_date, ref_asset_id',
       )
       .in('user_id', userIds)
       .eq('type', 'hisse')
