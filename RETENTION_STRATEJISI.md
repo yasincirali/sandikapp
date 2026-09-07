@@ -280,7 +280,32 @@ diğeri sosyal karşılaştırma.
 | **Ortak hareketi bildirimi** | `daily-brief` ikinci kol, `0049_partner_activity_push.sql`, Ayarlar anahtarı | ✅ |
 | Ortak kilometre taşı | — | ⛔ |
 | Streak (veri bütünlüğü / katkı / partner) | — | ⛔ |
-| Aylık + yıllık recap | — | ⛔ |
+| **Yıllık recap ("sandık Özeti")** | `lib/services/recap_service.dart`, `lib/screens/recap_screen.dart` *(yeni)*, RC `recap_enabled` | ✅ |
+
+**Recap'in asıl kapısı bayrak değil TAKVİM.** Ekran yalnızca **26 Aralık–10
+Ocak** arasında görünüyor. 31 Aralık değil: Wrapped'in erken çıkma sebebi yıl
+sonu gürültüsünden önce olmak — 31'inde herkesin akışı yılbaşı mesajıyla dolu
+ve paylaşım oranı düşer. Ocak'a taşması da kasıtlı: tatilde uygulamayı
+açmayan kullanıcı özetini tamamen kaçırmasın. Ocak'ta açılan özet **bir
+önceki yıla** aittir; 3 Ocak'ta "2027 Özetin" demek üç günlük bir yılı
+özetlemek olurdu.
+
+**Karakter sayfası her zaman var, diğerleri veriye bağlı.** İnsanlar veriyi
+değil kimliği paylaşır — "portföyüm %12 arttı" kimseye anlatılmaz, "ben
+Altıncıyım" anlatılır. Eşik %50: daha düşüğü dengeli bir portföyü yanlış
+etiketler, daha yükseği neredeyse herkesi "Dengeli" yapar ve etiket ayırt
+ediciliğini kaybeder.
+
+**Paylaşım metninde tutar yok** ve bunu bir test kilitliyor (dört haneli sayı
+arar). Tutarlı bir kart paylaşılmaz; paylaşılabilirlik bu özelliğin tek amacı.
+
+**"En kötü varlık" yalnızca gerçekten kayıptaysa gösteriliyor.** Kârdaki bir
+varlığı "en kötün" diye sunmak kutlamayı azarlamaya çevirirdi. Aynı sebeple
+tek varlıklı portföyde en iyi ve en kötü aynı şey olamaz.
+
+**"En çok kazandıran" etiketi "yılın yıldızı" DEĞİL.** Elimizdeki getiri
+ömürlük, döneme ait değil — üç yıl önce alınmış bir varlığı yılın kahramanı
+diye sunmak yanlış olurdu; ekran da "bugüne kadar" diyor.
 
 **Ayrı push YAPILMADI.** §7'de kendi koyduğum kural günde tek proaktif
 bildirime izin veriyor; ortak günde beş lot eklerse beş push demek olurdu.

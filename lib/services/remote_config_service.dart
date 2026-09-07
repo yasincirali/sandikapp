@@ -113,6 +113,12 @@ class RemoteConfigService {
     // Kilometre taşı kutlamaları. Ayda en fazla bir kutlama yapılır;
     // bayrak, tonun kullanıcıda karşılık bulup bulmadığını ölçmek için.
     'milestones_enabled': true,
+
+    // Yıllık "sandık Özeti". Diğer tutundurma bayrakları gibi AÇIK doğar
+    // ama asıl kapı bayrak değil TAKVİM: ekran yalnızca 26 Aralık–10 Ocak
+    // penceresinde ve anlamlı veri varken görünür
+    // (bkz. RecapService.isYearlyWindow).
+    'recap_enabled': true,
   };
 
   Future<void> init() async {
@@ -203,6 +209,9 @@ class RemoteConfigService {
   bool get milestonesEnabled =>
       _rc?.getBool('milestones_enabled') ??
       _defaults['milestones_enabled'] as bool;
+
+  bool get recapEnabled =>
+      _rc?.getBool('recap_enabled') ?? _defaults['recap_enabled'] as bool;
 
   /// UI chip'leri / filtre listeleri için: `depositsEnabled=false` iken
   /// mevduat türünü listeden düşer. `AssetType.values` yerine bunu kullan.
