@@ -202,9 +202,13 @@ class _RecapScreenState extends State<RecapScreen> {
                   ),
                   onPressed: sonSayfa
                       ? _paylas
+                      // Sayfa geçişi bir YÜZEY hareketidir → `surface` (240ms).
+                      // Çıplak süre yerine token: `design_token_leak_test`
+                      // bunu kovalıyor ve `surfaceOf` "hareketi azalt"
+                      // ayarına da uyuyor (çıplak Duration uymuyordu).
                       : () => _controller.nextPage(
-                            duration: const Duration(milliseconds: 260),
-                            curve: Curves.easeOut,
+                            duration: SandikMotion.surfaceOf(context),
+                            curve: SandikMotion.enter,
                           ),
                   child: Text(sonSayfa ? 'Paylaş' : 'Devam'),
                 ),

@@ -116,7 +116,7 @@ void main() {
     test('%1 hareket bandın anlamlı bir kısmını doldurur', () {
       final b = bant(gunIciAsgariBantOrani);
       final bantYuksekligi = b.maxY - b.minY;
-      final hareket = ust - alt;
+      const hareket = ust - alt;
       // Hareket, bandın en az beşte birini kaplamalı. Eski %8'lik taban
       // bunu ~%10'a düşürüyordu ve çizgi düz görünüyordu.
       expect(hareket / bantYuksekligi, greaterThan(0.2),
