@@ -186,8 +186,7 @@ class _PortfolioPerformanceScreenState
   // sayesinde grafik o karede boşalmaz.
   PortfolioHistoryBreakdown? _lastIntradayData;
 
-  Future<PortfolioHistoryBreakdown> _intradayHistory(
-      List<Asset> chartAssets) {
+  Future<PortfolioHistoryBreakdown> _intradayHistory(List<Asset> chartAssets) {
     final key = chartAssets.map((a) => a.id).join(',');
     if (_intradayKey == key && _intradayFuture != null) return _intradayFuture!;
     _intradayKey = key;
@@ -536,6 +535,41 @@ class _PortfolioPerformanceScreenState
                               .toList()
                           : targetAssets;
 
+                      // Filtre: grafik çizimi için yalnızca fiyat serisi
+                      // alınabilir/ya da canlı fiyatı olan varlıkları geçir.
+                      // Aksi halde HistoryService tüm seriyi boşaltabiliyor
+                      // (tek price-less varlık tüm günü götürebiliyordu).
+                      bool _isRenderable(Asset a) {
+                        if (a.quantity == 0) return false;
+                        if (a.currentPrice > 0) return true;
+                        switch (a.type) {
+                          case AssetType.altin:
+                            return true;
+                          case AssetType.hisse:
+                          case AssetType.emtia:
+                            return a.ticker.trim().isNotEmpty;
+                          case AssetType.doviz:
+                            return a.ticker.trim().isNotEmpty;
+                          case AssetType.fon:
+                            return a.ticker.trim().isNotEmpty &&
+                                !a.isManualPrice;
+                          default:
+                            return false;
+                        }
+                      }
+
+                      final chartAssetsRenderable = [
+                        for (final a in chartAssets)
+                          if (_isRenderable(a)) a
+                      ];
+                      final filteredOwnerLotsRenderable = [
+                        for (final lots in filteredOwnerLots)
+                          [
+                            for (final a in lots)
+                              if (_isRenderable(a)) a
+                          ]
+                      ];
+
                       // TradingView "auto range": kullanıcı seçilen periyot
                       // içinde hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün
                       // önce başladı), chart ilk alım tarihinden itibaren
@@ -550,7 +584,8 @@ class _PortfolioPerformanceScreenState
                       // tarihinden başlatıyordu (gerçek tab doğru çalışırken).
                       DateTime effectiveStart = startDate;
                       if (!isIntraday && !_simulate) {
-                        final buys = chartAssets.where((a) => a.isBuy);
+                        final buys =
+                            chartAssetsRenderable.where((a) => a.isBuy);
                         if (buys.isNotEmpty) {
                           final firstBuy = buys
                               .map((a) => a.addedDate)
@@ -567,7 +602,7 @@ class _PortfolioPerformanceScreenState
                       // ZoomDataController üstünden gider.
                       if (!isIntraday) {
                         _ensureController(
-                          chartAssets: chartAssets,
+                          chartAssets: chartAssetsRenderable,
                           from: effectiveStart,
                           to: endDate,
                           intraday: false,
@@ -588,7 +623,7 @@ class _PortfolioPerformanceScreenState
                         // (tip/ortak filtresi, 30sn tick) yeni bir fetch
                         // başlatıp grafiği baştan yüklemeye sokuyordu.
                         return FutureBuilder<PortfolioHistoryBreakdown>(
-                          future: _intradayHistory(chartAssets),
+                          future: _intradayHistory(chartAssetsRenderable),
                           builder: (context, snapshot) {
                             final loading = snapshot.connectionState ==
                                 ConnectionState.waiting;
@@ -604,8 +639,8 @@ class _PortfolioPerformanceScreenState
                             return _buildChartWithData(
                               data?.total ?? const {},
                               targetAssets,
-                              filteredOwnerLots,
-                              chartAssets,
+                              filteredOwnerLotsRenderable,
+                              chartAssetsRenderable,
                               data?.seansGunu ?? startDate,
                               endDate,
                               isIntraday,
@@ -639,8 +674,8 @@ class _PortfolioPerformanceScreenState
                           return _buildChartWithData(
                             historyMap,
                             targetAssets,
-                            filteredOwnerLots,
-                            chartAssets,
+                            filteredOwnerLotsRenderable,
+                            chartAssetsRenderable,
                             effectiveStart,
                             endDate,
                             isIntraday,
@@ -694,6 +729,7 @@ class _PortfolioPerformanceScreenState
     required bool waiting,
     required bool hasData,
     bool stale = false,
+
     /// `historyMap` ile AYNI istekten gelen tür/pozisyon dağılımı — tür dökümü
     /// kartını besler. Her iki veri yolu da doldurur: diğer periyotlar
     /// `getPortfolioHistoryBreakdownAtResolution`, gün içi ise
@@ -1624,8 +1660,7 @@ class _PortfolioPerformanceScreenState
       // → 00:00 / 04:00 / 08:00 / 12:00 / 16:00 / 20:00 gibi.
       final xInterval = intraday
           ? gunIciEksenAdimiDk
-          : yuvarlakAdim((viewMaxX - viewMinX) / 5)
-              .clamp(1.0, double.infinity);
+          : yuvarlakAdim((viewMaxX - viewMinX) / 5).clamp(1.0, double.infinity);
 
       // Alım dot'ları için piksel bazlı seyreltme. Arka arkaya yapılan
       // alımlarda noktalar birkaç piksel arayla düşüp üst üste biniyor ve
@@ -2344,8 +2379,7 @@ class _PortfolioPerformanceScreenState
                             showTitles: true,
                             reservedSize: 60,
                             // Etiket yok — yalnızca hizalama rezervi.
-                            getTitlesWidget: (_, __) =>
-                                const SizedBox.shrink(),
+                            getTitlesWidget: (_, __) => const SizedBox.shrink(),
                           ),
                         ),
                       ),
@@ -2597,9 +2631,9 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final startMs =
         DateTime(widget.start.year, widget.start.month, widget.start.day)
             .millisecondsSinceEpoch;
-    final endMs = DateTime(
-            widget.end.year, widget.end.month, widget.end.day, 23, 59, 59)
-        .millisecondsSinceEpoch;
+    final endMs =
+        DateTime(widget.end.year, widget.end.month, widget.end.day, 23, 59, 59)
+            .millisecondsSinceEpoch;
     for (final lots in widget.ownerLots) {
       for (final a in lots) {
         if (!a.isActive) continue;
@@ -2625,8 +2659,10 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   /// hiçbir tür serisinde yer almıyor. Aradaki artık **"Diğer"** satırına
   /// yazılır. Böylece satırların toplamı üst kartı **tanım gereği** tutar:
   /// artık ne kadarsa o kadar, sıfırsa satır hiç çıkmaz.
-  (List<({AssetType type, _BreakdownRow row})>, Map<AssetType, List<_BreakdownRow>>)
-      _rows() {
+  (
+    List<({AssetType type, _BreakdownRow row})>,
+    Map<AssetType, List<_BreakdownRow>>
+  ) _rows() {
     final flowOf = _flowByType();
     final typeRows = <({AssetType type, _BreakdownRow row})>[];
     final childrenOf = <AssetType, List<_BreakdownRow>>{};
