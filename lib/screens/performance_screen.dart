@@ -123,6 +123,28 @@ class AssetSignalCard extends ConsumerStatefulWidget {
 /// FARKLI sinyal gösterebilirler (bkz. `varlik_sinyal_karti_test.dart`).
 const int kSinyalPenceresiGun = 90;
 
+/// Bildirimin ne kadar önce geldiğini insan diliyle söyler ("10 dk önce").
+///
+/// ## Neden mutlak tarihin YANINDA, yerine değil
+/// Kullanıcı iki şey istedi ve ikisi aynı anda geçerli: bildirimin zamanı
+/// **kaçırılmamalı** (2026-09-10: "bildirim zaman ve tarihini ekle bunu
+/// kaçırmaması lazım") ama şerit de tasarım örneğindeki gibi "10 dk önce"
+/// okumalı. Göreli ifade tek başına bilgi KAYBEDER — "3 gün önce" hangi
+/// gün, saat kaçta olduğunu söylemez ve aynı gün iki sinyal gelebilir.
+/// Bu yüzden göreli metin sol satırda, mutlak tarih+saat sağ sütunda durur.
+///
+/// [now] dışarıdan verilir: içeride `DateTime.now()` çağrılsaydı eşik
+/// dalları testte hiç çalışmazdı.
+String goreliZaman(DateTime an, DateTime now) {
+  final fark = now.difference(an);
+  // Gelecek zaman: sunucu saati ile cihaz saati birkaç saniye kayabilir.
+  // "-3 dk önce" yazmaktansa en yakın eşiğe yuvarlıyoruz.
+  if (fark.inMinutes < 1) return 'az önce';
+  if (fark.inMinutes < 60) return '${fark.inMinutes} dk önce';
+  if (fark.inHours < 24) return '${fark.inHours} sa önce';
+  return '${fark.inDays} gün önce';
+}
+
 class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
   /// Panelle AYNI fiyat serisi. `HistoryService` (tier, sembol) başına
   /// önbellekli olduğu için ikinci çağrı ağa çıkmaz — şerit ve panel aynı
@@ -333,14 +355,20 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     // diyorsa) bu fark kullanıcı için bilginin kendisidir — gizlemek
     // yerine yan yana gösteriyoruz.
     //
-    // SAAT de yazılır (2026-09-10, kullanıcı: "bildirim zaman ve tarihini
-    // ekle bunu kaçırmaması lazım"). Ekranın altındaki ayrıntılı bölüm
-    // kaldırıldı; bildirimin NE ZAMAN geldiği artık yalnızca burada
-    // duruyor, dolayısıyla tarih tek başına yetmez — aynı gün içinde iki
-    // sinyal gelebilir.
-    final kayitSatiri = (canli && kayit != null)
+    // ## `canli` KOŞUL DEĞİL (2026-09-10'da ölçülerek bulundu)
+    // Bu satır önce yalnızca `canli` iken çiziliyordu. Fiyat geçmişi
+    // çekilemediğinde (çevrimdışı, kotasyondan kalkmış sembol) şerit
+    // KAYDIN kendisini gösterir ve o durumda satır gizleniyordu: ekranda
+    // yalnızca "10 Eyl · 23:15" kalıyor, bildirimin YÖNÜ ("▼ aşağı") ve
+    // "10 dk önce" ifadesi tamamen kayboluyordu. Oysa push bildiriminin
+    // açtığı ekran tam olarak burası — kaybolan şey kullanıcının geldiği
+    // bilginin ta kendisiydi.
+    //
+    // Kayıt VARSA satır her iki yolda da çizilir; `canli` yalnızca sağ
+    // sütunun "ŞU AN" mı yoksa tam tarih mi yazacağını belirler.
+    final kayitSatiri = kayit != null
         ? 'Son bildirim: ${_kisaYon(kayit.signal)} · '
-            '${DateFormat('d MMM · HH:mm', 'tr_TR').format(kayit.detectedAt)}'
+            '${goreliZaman(kayit.detectedAt, DateTime.now())}'
         : null;
 
     return _kabuk(
@@ -366,6 +394,21 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Üst etiket: şeridin NE olduğunu söyler. Ekranın diğer
+                // kartlarında ("BUGÜN / lot", "1H DEĞİŞİM") aynı kalıp
+                // kullanılıyor — labelSmall + letterSpacing 0.8 + text36.
+                // Sayfayla ahengi kuran şey bu tekrar.
+                Text(
+                  'TEKNİK GÖRÜNÜM',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.labelSmall?.copyWith(
+                    letterSpacing: 0.8,
+                    fontWeight: FontWeight.w700,
+                    color: context.c.text36,
+                  ),
+                ),
+                const SizedBox(height: 3),
                 // Ton düşürüldü: `w800` + `letterSpacing 0.6` idi ve
                 // kırmızı zeminle birleşince başlık bağırıyordu. Renk
                 // korundu (yön bilgisini o taşıyor), ağırlık ekranın
@@ -411,10 +454,10 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Canlı hesap yoksa şeridin kendisi KAYDI gösteriyor
-                // demektir — o zaman saat de buraya yazılır. Aksi halde
-                // bildirimin saati hiçbir yerde görünmezdi (soldaki "Son
-                // bildirim" satırı yalnızca `canli` iken çiziliyor).
+                // Üst satır her zaman ZAMANI taşır. Canlı hesapta "ŞU AN",
+                // kayıt gösterilirken TAM tarih+saat — göreli ifade soldaki
+                // "Son bildirim" satırında duruyor, mutlak olan burada.
+                // İkisi birlikte: hem hızlı okunur hem bilgi kaybı olmaz.
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerRight,
@@ -424,21 +467,31 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
                         : DateFormat('d MMM · HH:mm', 'tr_TR')
                             .format(kayit!.detectedAt),
                     maxLines: 1,
-                    style: context.t.labelMedium?.copyWith(
-                      letterSpacing: 0.4,
+                    style: context.t.labelSmall?.copyWith(
+                      letterSpacing: 0.8,
                       fontWeight: FontWeight.w700,
                       color: context.c.text36,
                     ),
                   ),
                 ),
-                if (widget.onTap != null) ...[
-                  const SizedBox(height: 2),
-                  Icon(Icons.chevron_right_rounded,
-                      size: 16, color: context.c.text36),
-                ],
+                const SizedBox(height: 4),
+                // Yön ikonunun TEKRARI. Soldaki daire içi ikonla aynı
+                // sembol; tasarım örneğinde de böyle. Bilgi eklemiyor,
+                // sağ sütunu görsel olarak dengeliyor — solda ikon+metin
+                // varken sağda tek satır metin kalıyordu ve şerit sağa
+                // doğru boşalıyordu.
+                Icon(ikon, color: renk, size: 18),
               ],
             ),
           ),
+          // Chevron sütunun ALTINDA değil YANINDA ve dikey ortada — "bu
+          // karta dokunulabilir" işareti, zaman bilgisinin bir parçası
+          // değil. Örnek tasarımda da ayrı bir sütun olarak duruyor.
+          if (widget.onTap != null) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded,
+                size: 18, color: context.c.text36),
+          ],
         ],
       ),
     );

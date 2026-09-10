@@ -195,15 +195,27 @@ void _kaynakTestleri() {
     // bildirimin NE ZAMAN geldiği YALNIZCA bu şeritte görünüyor. Aynı gün
     // içinde iki sinyal gelebildiği için tarih tek başına ayırt etmiyor.
     //
-    // İki yer de denetlenir: soldaki "Son bildirim" satırı (canlı hesap
-    // varken) ve sağdaki etiket (canlı hesap yokken şeridin kendisi kaydı
-    // gösterir). Biri saatsiz kalırsa o kolda bilgi kaybolur.
-    expect(
-      "'d MMM · HH:mm'".allMatches(kart).length,
-      2,
-      reason: 'Şeritteki iki zaman göstergesinden biri saatsiz kalmış — '
-          'o durumda bildirimin saati hiçbir yerde görünmez.',
-    );
+    // ## Yapı 2026-09-10'da değişti
+    // Önce iki yerde de MUTLAK tarih vardı ve bu test iki kopyayı
+    // sayıyordu. Şerit tasarım örneğine uyarlanınca sol satır GÖRELİ
+    // zamana geçti ("10 dk önce"), mutlak tarih sağ sütunda TEK yerde
+    // toplandı. Kopya saymak artık yapıyı değil, tesadüfü ölçer.
+    //
+    // Değişmez aynı kaldı: saat bilgisi hiçbir kolda düşmemeli. İki
+    // koşul birlikte bunu garanti eder — mutlak biçim saat içerir ve
+    // sağ sütunda koşulsuz çizilir.
+    expect(kart.contains("'d MMM · HH:mm'"), isTrue,
+        reason: 'Mutlak zaman biçimi saatsiz kalmış.');
+    expect(kart.contains('goreliZaman(kayit.detectedAt'), isTrue,
+        reason: 'Göreli zaman ifadesi kayıp.');
+
+    // Kayıt satırı `canli` koşuluna BAĞLANMAMALI: fiyat geçmişi
+    // çekilemediğinde şerit kaydın kendisini gösterir ve o kolda satır
+    // gizlenirse bildirimin yönü + göreli zamanı tamamen kaybolur
+    // (2026-09-10'da render testiyle yakalandı).
+    expect(kart.contains('final kayitSatiri = (canli &&'), isFalse,
+        reason: '`canli` koşulu geri gelmiş — çevrimdışı kolda bildirim '
+            'bilgisi kayboluyor.');
   });
 
   test('kaldırılan bölüm GERİ GELMEZ', () {
