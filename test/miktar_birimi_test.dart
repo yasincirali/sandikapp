@@ -36,8 +36,9 @@ Asset _a({
       unitType: unitType,
     );
 
-/// Testte sabit biçim — `fmtNum`'a bağlı kalmadan kuralı ölçer.
-String _f(double v) => v.toStringAsFixed(2);
+/// Testte sabit biçim — `fmtNum`'a (ve locale'e) bağlı kalmadan kuralı
+/// ölçer. Ondalık hane sayısı MODELDEN gelir; test onu yalnızca uygular.
+String _f(double v, int d) => v.toStringAsFixed(d);
 
 void main() {
   group('unitLabel — kullanıcının verdiği örnekler', () {
@@ -103,18 +104,49 @@ void main() {
 
   group('miktarMetni — birim doğru YERDE durur', () {
     test('döviz sembolü ÖNE gelir', () {
-      // "100,00 \$" değil "\$100,00" — para birimi konvansiyonu.
+      // "100 \$" değil "\$100" — para birimi konvansiyonu.
       final usd =
           _a(type: AssetType.doviz, ticker: 'USDTRY=X', currency: 'USD');
-      expect(usd.miktarMetni(100, _f), '\$100.00');
+      expect(usd.miktarMetni(100, _f), '\$100');
     });
 
     test('diğer birimler SONA gelir', () {
-      expect(_a(type: AssetType.fon).miktarMetni(15603, _f), '15603.00 lot');
+      expect(_a(type: AssetType.fon).miktarMetni(15603, _f), '15603 lot');
       expect(_a(type: AssetType.altin, unitType: 'gram').miktarMetni(2.5, _f),
           '2.50 gr');
       expect(_a(type: AssetType.altin, unitType: 'piece').miktarMetni(3, _f),
-          '3.00 adet');
+          '3 adet');
+    });
+  });
+
+  group('ondalık — tam sayıda ",00" YAZILMAZ', () {
+    // Kullanıcı isteği (2026-09-10): "adet miktar olduğundan tam adetli
+    // varlıklarda ,00 kullanmayalım."
+    test('tam sayı miktar ondalıksız', () {
+      expect(_a(type: AssetType.altin, unitType: 'piece').miktarMetni(3, _f),
+          '3 adet');
+      expect(_a(type: AssetType.fon).miktarMetni(15603, _f), '15603 lot');
+    });
+
+    test('KÜSURAT korunur — bilgi kaybı olmaz', () {
+      // Sabit 0 haneye inmek miktarı yanlış okuturdu: 2,5 gram altın
+      // "3 gr" ya da "2 gr" görünemez.
+      expect(_a(type: AssetType.altin, unitType: 'gram').miktarMetni(2.5, _f),
+          '2.50 gr');
+      expect(_a(type: AssetType.fon).miktarMetni(10.75, _f), '10.75 lot');
+    });
+
+    test('kayan nokta gürültüsü tam sayı sayılır', () {
+      // Miktar toplama/çıkarma işlemlerinden geçiyor; 0,1+0,2 gibi
+      // birikimler 3.0000000000000004 üretebilir. Kullanıcı bunu
+      // "3,00 adet" olarak görmemeli.
+      final a = _a(type: AssetType.altin, unitType: 'piece');
+      expect(a.miktarMetni(3.0000000000000004, _f), '3 adet');
+      expect(a.miktarMetni(2.9999999999999996, _f), '3 adet');
+    });
+
+    test('miktarOndalik getter\'ı da aynı kuralı verir', () {
+      expect(_a(type: AssetType.fon).miktarOndalik, 0); // quantity = 1
     });
   });
 

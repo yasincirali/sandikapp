@@ -2910,7 +2910,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             // `unitIsPrefix`: döviz sembolü ÖNE gelir
                             // ("$100"), diğerleri sona ("15.603,00 lot").
                             widget.asset.miktarMetni(_currentQuantity,
-                                (v) => fmtNum(v, digits: 2)),
+                                (v, d) => fmtNum(v, digits: d)),
                             maxLines: 1,
                             style: context.t.numLarge.copyWith(
                                 color: context.c.gold,

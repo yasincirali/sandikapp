@@ -251,20 +251,46 @@ class Asset {
   /// Birim para birimden önce mi gelmeli? (Döviz sembolleri prefix, diğerleri suffix.)
   bool get unitIsPrefix => type == AssetType.doviz;
 
-  /// Miktarı birimiyle birlikte biçimlendirir: "15.603,00 lot", "2,50 gr",
-  /// "3,00 adet", "$100,00".
+  /// Miktar için gösterilecek ondalık hane sayısı.
+  ///
+  /// Tam sayı miktarlarda ondalık YAZILMAZ: "3 adet", "15.603 lot" —
+  /// "3,00 adet" değil (kullanıcı isteği 2026-09-10: "adet miktar
+  /// olduğundan tam adetli varlıklarda ,00 kullanmayalım").
+  ///
+  /// Küsurat VARSA korunur: gram altın 2,5 gr; kesirli fon payı 10,75 lot.
+  /// Sabit 0 haneye inmek burada bilgi kaybı olurdu — miktar yanlış okunur.
+  ///
+  /// Projede bu kural elle tekrar ediliyordu (bkz. `charts_screen`:
+  /// `digits: q == q.truncateToDouble() ? 0 : 2`); tek yere alındı.
+  int get miktarOndalik => _tamSayiMi(quantity) ? 0 : 2;
+
+  /// Değer tam sayı mı? Kayan nokta gürültüsüne karşı toleranslı.
+  ///
+  /// `q == q.truncateToDouble()` doğrudan karşılaştırma yapıyor ve
+  /// 3.0000000000000004 gibi bir değeri "tam değil" sayardı — miktar
+  /// toplama/çıkarma işlemlerinden geçtiği için bu gerçekçi bir durum
+  /// (0,1 + 0,2 = 0,30000000000000004). Küçük bir tolerans, kullanıcıya
+  /// "3,00 adet" yerine "3 adet" göstermeyi garanti eder.
+  static bool _tamSayiMi(double v) => (v - v.roundToDouble()).abs() < 1e-9;
+
+  /// Miktarı birimiyle birlikte biçimlendirir: "15.603 lot", "2,5 gr",
+  /// "3 adet", "$100".
   ///
   /// **Neden burada:** ekranlar `unitLabel` ile `unitIsPrefix`'i ayrı ayrı
   /// okuyup kendi birleştirmesini yapıyordu ve biri ham `unitType`'ı
   /// basıyordu — kullanıcı "15.603,00 piece" görüyordu (2026-09-10).
   /// `unitType` bir DB sabitidir ('piece', 'gram', 'ounce'), ekrana
-  /// basılmak için değil. Üç kural (etiket, konum, biçim) tek yerde
-  /// durursa bir sonraki çağrı yeri de doğru başlar.
+  /// basılmak için değil. Dört kural (etiket, konum, ondalık, biçim) tek
+  /// yerde durursa bir sonraki çağrı yeri de doğru başlar.
   ///
-  /// [bicimlendir] sayıyı metne çevirir; çağıran taraf kendi `fmtNum`'ını
-  /// geçer (model katmanı biçimlendirme yardımcısına bağımlı olmasın).
-  String miktarMetni(double miktar, String Function(double) bicimlendir) {
-    final sayi = bicimlendir(miktar);
+  /// [bicimlendir] sayıyı ve ondalık hane sayısını alıp metne çevirir;
+  /// çağıran taraf kendi `fmtNum`'ını geçer (model katmanı biçimlendirme
+  /// yardımcısına bağımlı olmasın).
+  String miktarMetni(
+    double miktar,
+    String Function(double deger, int ondalik) bicimlendir,
+  ) {
+    final sayi = bicimlendir(miktar, _tamSayiMi(miktar) ? 0 : 2);
     final birim = unitLabel;
     return unitIsPrefix ? '$birim$sayi' : '$sayi $birim';
   }
