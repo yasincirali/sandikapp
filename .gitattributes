@@ -1,0 +1,12 @@
+# Kabuk betikleri her zaman LF.
+#
+# `core.autocrlf=true` (bu makinede açık) `.sh` dosyalarını diske CRLF
+# yazar. Git Bash çoğu durumda tolere eder ama shebang satırındaki `\r`
+# betiği "bad interpreter" ile düşürebilir; WSL ve CI'da kesin kırılır.
+*.sh text eol=lf
+
+# Dart kaynağı LF. Kaynak metnini okuyup içinde blok arayan testler var
+# (bkz. test/sinyal_dagilimi_test.dart); CRLF checkout böyle bir testi
+# 2026-09-10'da Windows'ta kırdı — Linux CI'da geçiyordu, teşhisi zordu.
+# Testler artık satır sonunu normalleştiriyor, bu satır ikinci savunma.
+*.dart text eol=lf

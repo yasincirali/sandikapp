@@ -103,6 +103,35 @@ Wipe sonrası `hw.keyboard = yes` korunur (doğrulandı).
 
 **Not:** pixel7_1 ve pixel7_2 AVD'lerinde `hw.keyboard = yes` 2026-05-09 tarihinde düzeltildi.
 
+## MCP Sunucuları — Oturum Başı Denetim (2026-09-10 kararı)
+
+**Her oturumun başında** projeye bağlı MCP sunucularının ayakta ve kod
+grafiği indeksinin güncel olduğu doğrulanır. Bu otomatiktir:
+`.claude/settings.local.json` içindeki `SessionStart` hook'u
+`tool/mcp_health.sh` betiğini koşar.
+
+Betik iki şeye bakar:
+1. `.mcp.json`'daki her sunucunun çalıştırılabilir dosyası yerinde mi
+   (npm global güncellemesi yolu kaydırırsa sunucu SESSİZCE başlamaz),
+2. kod grafiği indeksi son commit'ten geride mi (bayat indeks, var olmayan
+   sembolleri döndürür — sessiz ve yanıltıcı).
+
+**Betik sunucuları BAŞLATMAZ**, yalnızca rapor eder. MCP süreçlerini Claude
+Code'un kendisi ayağa kaldırır; ikinci bir kopya spawn etmek
+codebase-memory'nin SQLite kilidiyle çakışır.
+
+Elle koşmak için: `bash tool/mcp_health.sh`
+
+Rapor "indeks geride" derse tazele:
+`codebase-memory-mcp cli index_repository --repo-path "c:\projects\PortfoyTakip"`
+⚠️ Sıra önemli: `index_repository` ADR'yi siler — önce indeksle, ADR'yi
+SONRA yaz.
+
+`.claude/` gitignore'da olduğu için hook ayarı **bu makineye özgüdür**;
+başka bir makinede kurulum gerekir. Betiğin kendisi (`tool/`) commit'lidir.
+
+---
+
 ## Kod Belleği: codebase-memory-mcp
 
 Proje `.mcp.json` üzerinden `codebase-memory-mcp` (v0.9.0) MCP sunucusuna bağlıdır.

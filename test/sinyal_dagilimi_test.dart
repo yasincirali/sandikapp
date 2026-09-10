@@ -182,13 +182,23 @@ void main() {
       // koymuştu. Çubuk oranı verir, kimliği düz liste verir; ikisi birlikte
       // durmalı. Bu denetim listenin bir daha `else` dalına düşmesini
       // engelliyor.
-      final kaynak =
-          File('lib/screens/performance_screen.dart').readAsStringSync();
+      // Satır sonu ve girinti NORMALLEŞTİRİLİR. Önceki hâli çok satırlı bir
+      // string literaliyle birebir karşılaştırıyordu ve Windows'ta HER ZAMAN
+      // kırılıyordu: depo LF tutuyor, `core.autocrlf=true` diske CRLF
+      // yazıyor, literal ise LF içeriyor. Linux CI'da geçip yerelde kırılan
+      // bir test, kuralı değil checkout ayarını ölçer.
+      final kaynak = File('lib/screens/performance_screen.dart')
+          .readAsStringSync()
+          .replaceAll('\r\n', '\n');
+      String sikistir(String s) => s.replaceAll(RegExp(r'\s+'), ' ').trim();
+
       expect(
-        kaynak.contains('''if (widget.detayli) ...[
-          SinyalDagilimi(indicators: indicators),
-          const SizedBox(height: SandikSpace.md),
-        ],'''),
+        sikistir(kaynak).contains(sikistir('''
+          if (widget.detayli) ...[
+            SinyalDagilimi(indicators: indicators),
+            const SizedBox(height: SandikSpace.md),
+          ],
+        ''')),
         isTrue,
         reason: 'Düz gösterge listesi detaylı modda yine gizlenmiş.',
       );

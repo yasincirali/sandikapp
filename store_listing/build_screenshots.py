@@ -38,6 +38,13 @@ ROOT = os.path.dirname(HERE)
 RAW = os.path.join(HERE, "screenshots", "raw")
 OUT = os.path.join(HERE, "screenshots", "out")
 
+# İkinci set (2026-09-07): takip listesi + sinyal + canlı etkinlik + yarış.
+# Ayrı klasör, çünkü birinci set BAŞKA bir portföye ait — ikisini tek
+# galeride karıştırmak "aynı portföy tüm karelerde" kuralını bozar
+# (bkz. raw/BURAYA_KOYUN.txt).
+RAW_V2 = os.path.join(HERE, "screenshots", "raw_v2")
+OUT_V2 = os.path.join(HERE, "screenshots", "out_v2")
+
 FONT_BOLD = os.path.join(ROOT, "assets", "fonts", "DMSans-Bold.ttf")
 FONT_MED = os.path.join(ROOT, "assets", "fonts", "DMSans-Medium.ttf")
 
@@ -112,6 +119,53 @@ CAPTIONS = {
 }
 
 
+# ══ İKİNCİ SET ═══════════════════════════════════════════════════════════
+#
+# Sıra "en güçlü iddia önce" (SCREENSHOT_PLAN.md): mağaza listesinde
+# yalnızca ilk iki kare görünür, gerisi ancak galeriyi kaydıranlara.
+#
+# 01 dağılım      → kategori beklentisini karşılar, "bu benim aradığım şey"
+# 02 karşılaştırma→ rakiplerden ayrışılan yer: portföyün vs endeks
+# 03 vurgulu çizgi→ aynı ekranın etkileşimi (dokun, izole et)
+# 04 takip listesi→ sahip olmadığını da izle
+# 05 sinyal       → teknik gösterge; yasal ibare şart (Play Financial)
+# 06 sinyal ayarı → kullanıcı kontrolü, "spam değil" mesajı
+# 07 canlı etkinlik→ iOS'a özgü, kilit ekranı — güçlü farklılaştırıcı
+# 08 yarış        → sosyal kanca, anonimlik vurgulu
+CAPTIONS_V2 = {
+    "01": ("Nerede ne kadar\nvarlığın var", "Döviz, altın, fon, hisse — tek dağılım"),
+    "02": ("Portföyün endeksi\ngeçiyor mu?", "Kendi çizgin, BIST 100 ile yan yana"),
+    "03": ("Dokun, tek çizgiyi\nöne çıkar", "Kalabalık grafikte kaybolma"),
+    "04": ("Almadığın varlığı\nda izle", "Takip listesi portföyüne karışmaz"),
+    "05": ("Teknik göstergeler\nsenin için okundu", "RSI, MACD, Bollinger — sade özet"),
+    "06": ("Bildirimi sen\nayarla", "Sıklık ve gösterge seçimi sende"),
+    "07": ("Kilit ekranında\ncanlı takip", "Uygulamayı açmadan gün içi durum"),
+    "08": ("İstersen sıralamada\nyerini gör", "Anonim — kimsenin varlığı görünmez"),
+}
+
+# Ölçülmüş maskeleme bölgeleri (oransal, ızgarayla saptandı).
+# Kural: gerçek kişi adı ve gerçek portföy tutarı mağaza görseline GİTMEZ.
+REDACTIONS_V2 = {
+    # Gerçek portföy toplamı (₺2.336.387). Tutar kişisel finansal veridir;
+    # ayrıca mağaza görselinde abartılı rakam güven kırar.
+    "01": [(0.300, 0.3660, 0.400, 0.0330, "₺184.250", "c", 0.0210,
+            (61, 47, 30))],
+    # iOS "Arkaya Dokunma" erişilebilirlik bildirimi ekran başlığını
+    # kapatıyor; yamanın üstüne ekranın kendi başlığı yazılır.
+    "05": [(0.150, 0.0455, 0.720, 0.0640, "Karşılaştır", "c", 0.0150,
+            (26, 47, 38))],
+    # Yarış: gerçek ad + amatör duran "Test Account".
+    # LİDER rozeti 0.42'de başlıyor — yama 0.40'ta biter, rozet korunur.
+    # Yamanın orijinal metnin TAMAMINI örtmesi şart: ilk denemede kutu
+    # kısa kaldı ve harflerin alt kuyrukları ("y", "ç") ile satırın sağ
+    # kalanı sızdı — okunabilir bir gerçek ad, maskelenmemiş sayılır.
+    "08": [
+        (0.205, 0.2320, 0.205, 0.0370, "Ayşe K.", "l", 0.0150, (26, 47, 38)),
+        (0.205, 0.3240, 0.380, 0.0400, "Sen", "l", 0.0165, (26, 47, 38)),
+    ],
+}
+
+
 def gradient(size):
     """Dikey degrade zemin."""
     w, h = size
@@ -166,13 +220,16 @@ def sample_bg(img, box):
     return samples[len(samples) // 2]
 
 
-def apply_redactions(shot, key):
+def apply_redactions(shot, key, table=None):
     """Gerçek isimleri sahte olanlarla değiştirir.
 
     Koordinatlar oransaldır; ham görüntünün çözünürlüğü değişse de
     aynı yere denk gelir.
+
+    `table` verilmezse birinci setin tablosu kullanılır (geriye dönük
+    uyumluluk); ikinci set kendi tablosunu geçirir.
     """
-    spec = REDACTIONS.get(key)
+    spec = (REDACTIONS if table is None else table).get(key)
     if not spec:
         return shot
 
@@ -202,10 +259,15 @@ def apply_redactions(shot, key):
 
         size = max(10, int(cap_h * shot.height * 1.38))
         f = ImageFont.truetype(FONT_MED, size)
+
+        # Dikey hizada `anchor` kullanılır, textbbox DEĞİL: Türkçe aksanlı
+        # harfler ("ş", "ğ", "İ") bbox'ın üst kenarını yukarı taşıyor ve
+        # metin yamanın içinde yukarı kayıyordu. "m" (middle baseline)
+        # yazı tipinin kendi metriğine dayanır, harflere göre oynamaz.
+        cy = y + h // 2
         bb = draw.textbbox((0, 0), text, font=f)
         tx = x + (w - (bb[2] - bb[0])) // 2 if align == "c" else x
-        draw.text((tx, y + (h - (bb[3] - bb[1])) // 2 - bb[1]), text,
-                  font=f, fill=colour)
+        draw.text((tx, cy), text, font=f, fill=colour, anchor="lm")
     return shot
 
 
@@ -218,9 +280,10 @@ def write_grid_overlays():
     out_dir = os.path.join(HERE, "screenshots", "grid")
     os.makedirs(out_dir, exist_ok=True)
 
-    for name in sorted(f for f in os.listdir(RAW)
+    src_dir = RAW_V2 if "--v2" in sys.argv else RAW
+    for name in sorted(f for f in os.listdir(src_dir)
                        if f.lower().endswith((".png", ".jpg", ".jpeg"))):
-        im = Image.open(os.path.join(RAW, name)).convert("RGB")
+        im = Image.open(os.path.join(src_dir, name)).convert("RGB")
         d = ImageDraw.Draw(im)
         f = ImageFont.truetype(FONT_MED, max(14, im.width // 55))
 
@@ -243,7 +306,7 @@ def write_grid_overlays():
     print("\nIzgara dosyalari -> screenshots/grid/")
 
 
-def compose(raw_path, caption, target, key=None):
+def compose(raw_path, caption, target, key=None, redactions=None):
     tw, th = target
     canvas = gradient(target).convert("RGB")
     draw = ImageDraw.Draw(canvas)
@@ -275,7 +338,7 @@ def compose(raw_path, caption, target, key=None):
     # Gerçek isimleri sahte olanlarla değiştir — kırpmadan ÖNCE, çünkü
     # REDACTIONS koordinatları kırpılmamış görüntüye göre tanımlı.
     if key:
-        shot = apply_redactions(shot, key)
+        shot = apply_redactions(shot, key, redactions)
 
     # Ham görüntünün üstündeki durum çubuğu (saat/pil) mağaza görselinde
     # gereksiz; istenirse kırpılır. CROP_TOP oranı ham yüksekliğe göredir.
@@ -329,25 +392,36 @@ def main():
         write_grid_overlays()
         return
 
+    # İkinci set ayrı klasörden okunur ve ayrı klasöre yazılır.
+    v2 = "--v2" in sys.argv
+    src_dir = RAW_V2 if v2 else RAW
+    out_dir_base = OUT_V2 if v2 else OUT
+    captions = CAPTIONS_V2 if v2 else CAPTIONS
+    redactions = REDACTIONS_V2 if v2 else REDACTIONS
+
+    if not os.path.isdir(src_dir):
+        sys.exit("Ham görüntü klasörü yok: %s" % src_dir)
+
     # PNG tercih edilir ama JPEG de kabul — WhatsApp/AirDrop ile taşınan
     # görüntüler JPEG gelir.
-    files = sorted(f for f in os.listdir(RAW)
+    files = sorted(f for f in os.listdir(src_dir)
                    if f.lower().endswith((".png", ".jpg", ".jpeg")))
     if not files:
         sys.exit(
-            "screenshots/raw/ boş.\n"
+            "%s boş.\n"
             "Ham ekran görüntülerini 01_*.png ... 06_*.png olarak koyun."
+            % src_dir
         )
 
     made = 0
     for name in files:
         key = name[:2]
-        caption = CAPTIONS.get(key)
+        caption = captions.get(key)
         if caption is None:
             print("  ! %s — %s için başlık tanımlı değil, atlandı" % (name, key))
             continue
 
-        src = Image.open(os.path.join(RAW, name))
+        src = Image.open(os.path.join(src_dir, name))
         if min(src.size) < 1000:
             print("  ! %s — çözünürlük düşük (%dx%d). Ham ekran görüntüsü "
                   "kullanın; WhatsApp gibi araçlar görseli küçültür."
@@ -355,14 +429,15 @@ def main():
 
         stem = os.path.splitext(name)[0] + ".png"
         for tw, th in TARGETS:
-            out_dir = os.path.join(OUT, "%dx%d" % (tw, th))
+            out_dir = os.path.join(out_dir_base, "%dx%d" % (tw, th))
             os.makedirs(out_dir, exist_ok=True)
-            img = compose(os.path.join(RAW, name), caption, (tw, th), key=key)
+            img = compose(os.path.join(src_dir, name), caption, (tw, th),
+                          key=key, redactions=redactions)
             img.save(os.path.join(out_dir, stem), "PNG", optimize=True)
             made += 1
         print("  + %s" % name)
 
-    print("\n%d dosya uretildi -> screenshots/out/" % made)
+    print("\n%d dosya uretildi -> %s" % (made, out_dir_base))
 
 
 if __name__ == "__main__":
