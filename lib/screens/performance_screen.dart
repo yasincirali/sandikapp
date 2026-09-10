@@ -2898,7 +2898,19 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '${fmtNum(_currentQuantity, digits: 2)} ${widget.asset.unitType}',
+                            // `unitLabel`, ham `unitType` DEĞİL.
+                            //
+                            // `unitType` bir DB sabitidir ('piece', 'gram',
+                            // 'ounce') ve ekrana basılmak için değildir;
+                            // kullanıcı "15.603,00 piece" görüyordu.
+                            // `unitLabel` türe göre Türkçe karşılığını verir:
+                            // hisse/fon → "lot", gram altın → "gr", çeyrek →
+                            // "adet", döviz → para sembolü ($, €).
+                            //
+                            // `unitIsPrefix`: döviz sembolü ÖNE gelir
+                            // ("$100"), diğerleri sona ("15.603,00 lot").
+                            widget.asset.miktarMetni(_currentQuantity,
+                                (v) => fmtNum(v, digits: 2)),
                             maxLines: 1,
                             style: context.t.numLarge.copyWith(
                                 color: context.c.gold,

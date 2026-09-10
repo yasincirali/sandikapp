@@ -163,6 +163,36 @@ supabase/tests/` yeşilken. `_shared/fcm.ts` API'si hazır bekliyor.
 
 ---
 
+## 🟡 AÇIK — Birim etiketi iki yerde, ikisi AYRIŞMIŞ
+
+**Karar tarihi:** 2026-09-10
+
+`Asset.unitLabel` (lib/models/asset.dart) ile
+`_AssetRow._unitLabel()` (lib/screens/bulk_add_asset_screen.dart) aynı
+soruyu iki farklı şekilde yanıtlıyor:
+
+| Girdi | `Asset.unitLabel` | `_unitLabel()` |
+|---|---|---|
+| hisse / fon | `lot` | `adet` |
+| döviz | `$` / `€` | `adet` |
+
+**Neden şimdi birleştirilmedi:** toplu ekleme ekranı `Asset` değil
+`BulkCartItem` tutuyor — ortak getter doğrudan çağrılamıyor. Birleştirmek
+ya `BulkCartItem`'a tür alanı eklemeyi ya da etiket mantığını üçüncü bir
+saf fonksiyona çıkarmayı gerektiriyor. Bu turun isteği "performans
+ekranında doğru birim" idi; kapsamı kendiliğinden genişletmedim.
+
+**Ertelemenin maliyeti:** kullanıcı aynı hisseyi toplu ekleme ekranında
+"10 adet", performans ekranında "10 lot" olarak görüyor. Görünür ama
+zararsız bir tutarsızlık — yanlış hesap üretmiyor.
+
+**Ele alınma zamanı:** toplu ekleme ekranına bir sonraki dokunuşta.
+Etiket mantığı `(AssetType, String unitType) -> String` saf fonksiyonuna
+çıkarılıp ikisi de ona bağlanmalı; `miktar_birimi_test.dart` kuralı
+zaten kilitliyor.
+
+---
+
 ## ✅ KAPANDI — `analyze-signals` silinmiş lot'lar için bildirim atıyordu
 
 **Kapanış:** 2026-09-06 · Sprint 1

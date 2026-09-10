@@ -251,6 +251,24 @@ class Asset {
   /// Birim para birimden önce mi gelmeli? (Döviz sembolleri prefix, diğerleri suffix.)
   bool get unitIsPrefix => type == AssetType.doviz;
 
+  /// Miktarı birimiyle birlikte biçimlendirir: "15.603,00 lot", "2,50 gr",
+  /// "3,00 adet", "$100,00".
+  ///
+  /// **Neden burada:** ekranlar `unitLabel` ile `unitIsPrefix`'i ayrı ayrı
+  /// okuyup kendi birleştirmesini yapıyordu ve biri ham `unitType`'ı
+  /// basıyordu — kullanıcı "15.603,00 piece" görüyordu (2026-09-10).
+  /// `unitType` bir DB sabitidir ('piece', 'gram', 'ounce'), ekrana
+  /// basılmak için değil. Üç kural (etiket, konum, biçim) tek yerde
+  /// durursa bir sonraki çağrı yeri de doğru başlar.
+  ///
+  /// [bicimlendir] sayıyı metne çevirir; çağıran taraf kendi `fmtNum`'ını
+  /// geçer (model katmanı biçimlendirme yardımcısına bağımlı olmasın).
+  String miktarMetni(double miktar, String Function(double) bicimlendir) {
+    final sayi = bicimlendir(miktar);
+    final birim = unitLabel;
+    return unitIsPrefix ? '$birim$sayi' : '$sayi $birim';
+  }
+
   /// Yalnızca silme damgasını değiştiren kopya.
   ///
   /// Dar tutuldu: genel bir `copyWith` yerine tek amaçlı bir kopyacı,

@@ -389,6 +389,10 @@ class _BulkItemTile extends StatelessWidget {
   String _fmt(double v) =>
       v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
 
+  /// ⚠️ `Asset.unitLabel`'ın KOPYASI ve ondan AYRIŞMIŞ durumda: burada
+  /// hisse/fon "adet" derken model "lot" diyor. Bu ekran `Asset` değil
+  /// `BulkCartItem` tuttuğu için ortak getter doğrudan çağrılamıyor.
+  /// Birleştirme TECHNICAL_DEBT.md'ye yazıldı (2026-09-10).
   String _unitLabel() {
     switch (item.unitType) {
       case 'gram':
