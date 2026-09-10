@@ -118,43 +118,6 @@ void main() {
     });
   });
 
-  group('GostergeGruplari — hangi algoritma ne diyor', () {
-    testWidgets('AL ve SAT başlıkları ayrı ayrı çıkar', (tester) async {
-      await _pump(tester, GostergeGruplari(indicators: _karisik()));
-
-      expect(find.text('AL DİYENLER'), findsOneWidget);
-      expect(find.text('SAT DİYENLER'), findsOneWidget);
-      expect(find.text('KARARSIZ'), findsOneWidget);
-    });
-
-    testWidgets('gösterge adları doğru grupta listelenir', (tester) async {
-      await _pump(tester, GostergeGruplari(indicators: _karisik()));
-
-      for (final ad in ['RSI', 'MACD', 'Bollinger', 'EMA']) {
-        expect(find.text(ad), findsOneWidget);
-      }
-      expect(find.text('Stochastic'), findsOneWidget);
-      expect(find.text('ADX'), findsOneWidget);
-    });
-
-    testWidgets('göstergenin HAM değeri gösterilir', (tester) async {
-      await _pump(tester, GostergeGruplari(indicators: _karisik()));
-      // fmtNumFlex(28.4, maxDigits: 2) → "28,4"
-      expect(find.text('28,4'), findsOneWidget);
-      expect(find.text('81'), findsOneWidget);
-    });
-
-    testWidgets('boş grup başlığı çizilmez', (tester) async {
-      await _pump(
-        tester,
-        GostergeGruplari(indicators: [_ind('RSI', SignalType.buy, 28.4)]),
-      );
-      expect(find.text('AL DİYENLER'), findsOneWidget);
-      expect(find.text('SAT DİYENLER'), findsNothing);
-      expect(find.text('KARARSIZ'), findsNothing);
-    });
-  });
-
   group('taşma — dar ekran ve büyük yazı tipi', () {
     // 320pt en dar desteklenen genişlik; 2,0× iOS Dynamic Type'ın üst
     // kademelerinden biri ve erişilebilirlik ayarı açık her kullanıcıda
@@ -166,11 +129,7 @@ void main() {
             (tester) async {
           await _pump(
             tester,
-            Column(children: [
-              SinyalDagilimi(indicators: _karisik()),
-              const SizedBox(height: 16),
-              GostergeGruplari(indicators: _karisik()),
-            ]),
+            SinyalDagilimi(indicators: _karisik()),
             width: genislik,
             textScale: olcek,
           );
@@ -182,11 +141,7 @@ void main() {
     testWidgets('açık temada da taşmaz', (tester) async {
       await _pump(
         tester,
-        Column(children: [
-          SinyalDagilimi(indicators: _karisik()),
-          const SizedBox(height: 16),
-          GostergeGruplari(indicators: _karisik()),
-        ]),
+        SinyalDagilimi(indicators: _karisik()),
         width: 320,
         textScale: 1.5,
         parlaklik: Brightness.light,
@@ -216,6 +171,57 @@ void main() {
         isTrue,
         reason: 'Performans ekranı paneli detaylı modda kurmuyor.',
       );
+    });
+
+    test('detaylı modda DÜZ LİSTE de çizilir', () {
+      // Kullanıcı bildirimi (2026-09-10, ikinci tur): "hangi algoritmalar
+      // bunu dedi ekranın en altında görmeyi bekliyorum … tasarımı da
+      // store'da şu an olan şekliyle olmalı."
+      //
+      // İlk sürüm detaylı modda düz listeyi KALDIRIP yerine gruplu kutular
+      // koymuştu. Çubuk oranı verir, kimliği düz liste verir; ikisi birlikte
+      // durmalı. Bu denetim listenin bir daha `else` dalına düşmesini
+      // engelliyor.
+      final kaynak =
+          File('lib/screens/performance_screen.dart').readAsStringSync();
+      expect(
+        kaynak.contains('''if (widget.detayli) ...[
+          SinyalDagilimi(indicators: indicators),
+          const SizedBox(height: SandikSpace.md),
+        ],'''),
+        isTrue,
+        reason: 'Düz gösterge listesi detaylı modda yine gizlenmiş.',
+      );
+      expect(kaynak.contains('GostergeGruplari'), isFalse,
+          reason: 'Gruplu kutular düz listenin bilgisini tekrarlıyordu; '
+              'geri gelmiş.');
+    });
+
+    test('fiyat geçmişi yoksa panel ÖLÜ bir cümle bırakmaz', () {
+      // Üstteki şerit aynı boş seride kayıtlı bildirime düşüp "2/3 gösterge
+      // · güven %67" yazıyor. Alt panel yalnızca "geçmiş yok" derse
+      // kullanıcı üstte sinyal, altta hiçbir şey görür — bildirilen hata
+      // buydu.
+      final kaynak =
+          File('lib/screens/performance_screen.dart').readAsStringSync();
+      expect(kaynak.contains('Widget _gecmisYok(BuildContext context)'), isTrue);
+      // Elde ne varsa gösterilir: kayıtlı bildirimin gerçek sayıları.
+      expect(kaynak.contains("'SON BİLDİRİM'"), isTrue);
+      // Ve istek tekrarlanabilir — başarısız future ömür boyu saklanmaz.
+      expect(kaynak.contains("'Tekrar dene'"), isTrue);
+      expect(kaynak.contains(r"'${widget.subCategory ?? ''}|$_deneme'"), isTrue,
+          reason: 'Yeniden deneme sayacı önbellek anahtarında değil — '
+              '"Tekrar dene" hiçbir şey yapmaz.');
+    });
+
+    test('UYDURMA seriye geri dönülmedi', () {
+      // Store sürümünde liste hep doluydu çünkü fiyat geçmişi yokken
+      // `_simulate()` rastgele seri üretiyordu. Liste geri geldi ama o
+      // tuzak geri gelmemeli: 30 nokta eşiği yerinde.
+      final kaynak =
+          File('lib/screens/performance_screen.dart').readAsStringSync();
+      expect(kaynak.contains('if (prices.length < 30) return _gecmisYok(context);'),
+          isTrue);
     });
 
     test('takip listesi detayı bayrağı GEÇMEZ', () {

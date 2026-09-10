@@ -405,6 +405,15 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   Future<List<double>>? _pricesFuture;
   String? _pricesKey;
 
+  /// Kaçıncı deneme.
+  ///
+  /// Future bir kez BAŞARISIZ olduğunda `_pricesFuture` o başarısız sonucu
+  /// widget ömrü boyunca tutuyordu: ağ geri gelse bile panel "geçmiş yok"
+  /// demeye devam ediyor, kullanıcının ekranı kapatıp açmaktan başka çaresi
+  /// kalmıyordu. Sayaç önbellek anahtarının parçası — artırmak yeni bir
+  /// istek demek.
+  int _deneme = 0;
+
   /// Push bildirimiyle AYNI kaynaktan besleme: sunucu sinyali gerçek piyasa
   /// serisinden üretir, bu panel de öyle yapmalı.
   ///
@@ -417,7 +426,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   /// üretilmez (simülasyona düşmez)` testi).
   Future<List<double>> _loadPrices() {
     final key = '${widget.ticker}|${widget.type.name}|'
-        '${widget.subCategory ?? ''}';
+        '${widget.subCategory ?? ''}|$_deneme';
     if (_pricesKey == key && _pricesFuture != null) return _pricesFuture!;
     _pricesKey = key;
     // Göstergelerin çoğu 100+ nokta ister (MACD 26, Bollinger 20, ADX 14×2).
@@ -471,25 +480,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         final prices = snap.data ?? const <double>[];
         // Fiyat geçmişi YOKSA sinyal üretme — uydurma veriyle sinyal
         // göstermektense hiç göstermemek doğru. Sunucu da aynısını yapar.
-        if (prices.length < 30) {
-          return _panelShell(
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded,
-                    size: 16, color: context.c.text36),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Bu varlık için yeterli fiyat geçmişi yok — '
-                    'teknik gösterge hesaplanamıyor.',
-                    style: context.t.bodySmall
-                        ?.copyWith(color: context.c.text58),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
+        if (prices.length < 30) return _gecmisYok(context);
 
         return _buildPanel(context, prices, enabledIds, premium);
       },
@@ -505,6 +496,152 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         ),
         child: child,
       );
+
+  /// Bu varlık için KAYITLI son bildirim (varsa).
+  ///
+  /// Panel bir `Asset` tutmuyor (bkz. sınıf açıklaması), o yüzden eşleşme
+  /// ticker + tür ile yapılır — [AssetSignalCard.sonSinyal] ile aynı kural.
+  SignalAlert? _sonKayit() {
+    final alerts = ref.watch(signalProvider).valueOrNull ?? const <SignalAlert>[];
+    final t = widget.ticker.trim().toLowerCase();
+    if (t.isEmpty) return null;
+    SignalAlert? best;
+    for (final a in alerts) {
+      if (a.assetType != widget.type) continue;
+      if (a.assetTicker.trim().toLowerCase() != t) continue;
+      if (best == null || a.detectedAt.isAfter(best.detectedAt)) best = a;
+    }
+    return best;
+  }
+
+  /// Fiyat geçmişi çekilemediğinde çizilen panel.
+  ///
+  /// ## Neden ölü bir cümle yetmiyor
+  /// Bu ekranın ÜSTÜNDEKİ şerit aynı boş seride kayıtlı bildirime düşüp
+  /// "2/3 gösterge · güven %67" yazıyor. Alt panel yalnızca "geçmiş yok"
+  /// dediğinde kullanıcı üstte bir sinyal, altta hiçbir şey görüyor ve
+  /// haklı olarak "hangi algoritmalar dedi?" diye soruyor (kullanıcı
+  /// bildirimi 2026-09-10).
+  ///
+  /// Store sürümünde liste hep doluydu çünkü panel fiyat geçmişi yokken
+  /// `_simulate()` ile UYDURMA seri üretiyordu (2026-08-31'de kapatıldı).
+  /// Doğru çözüm o tuzağı geri açmak değil; elde GERÇEKTEN ne varsa onu
+  /// göstermek ve isteği tekrarlanabilir kılmak.
+  ///
+  /// Kayıtlı bildirim yön ve sayıları taşır ama HANGİ göstergelerin öyle
+  /// dediğini taşımaz (`signal_notifications` tek tek göstergeleri
+  /// yazmıyor) — bu yüzden liste vaat edilmez, sınır açıkça söylenir.
+  Widget _gecmisYok(BuildContext context) {
+    final kayit = _sonKayit();
+    final p = context.c;
+
+    return _panelShell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.cloud_off_rounded, size: 16, color: p.text36),
+              const SizedBox(width: SandikSpace.sm),
+              Expanded(
+                child: Text(
+                  'Bu varlığın fiyat geçmişi şu an çekilemedi — göstergeler '
+                  'hesaplanamıyor.',
+                  style: context.t.bodySmall?.copyWith(color: p.text58),
+                ),
+              ),
+            ],
+          ),
+          if (kayit != null) ...[
+            const SizedBox(height: SandikSpace.smd),
+            Divider(height: 1, color: p.hairline),
+            const SizedBox(height: SandikSpace.smd),
+            Text(
+              'SON BİLDİRİM',
+              style: context.t.labelLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+                color: p.text36,
+              ),
+            ),
+            const SizedBox(height: SandikSpace.xs2),
+            // Glif + metin: renk tek başına bırakılmaz (marka yeşili ile
+            // kırmızısı renk körlüğü altında yeterince ayrışmıyor).
+            Wrap(
+              spacing: SandikSpace.smd,
+              runSpacing: SandikSpace.xs,
+              children: [
+                _kayitRozeti(context, '▲', '${kayit.buyCount} AL', p.gain),
+                _kayitRozeti(context, '▼', '${kayit.sellCount} SAT', p.loss),
+                _kayitRozeti(
+                    context,
+                    '◆',
+                    '%${kayit.confidence.round()} güven',
+                    p.text58),
+              ],
+            ),
+            const SizedBox(height: SandikSpace.xs2),
+            Text(
+              '${DateFormat('d MMMM y · HH:mm', 'tr_TR').format(kayit.detectedAt)}'
+              ' · hangi göstergelerin böyle dediği bildirimle birlikte '
+              'saklanmıyor; fiyat geçmişi gelince burada tek tek listelenir.',
+              style: context.t.bodySmall?.copyWith(color: p.text36),
+            ),
+          ],
+          const SizedBox(height: SandikSpace.smd),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _deneme++),
+              child: Container(
+                // HIG'in en küçük dokunma hedefi 44pt; metin 11pt olduğu
+                // için sarmalayıcı olmadan hedef ~14pt'ye düşerdi.
+                height: 44,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.refresh_rounded, size: 16, color: p.amberText),
+                    const SizedBox(width: SandikSpace.xs2),
+                    Text(
+                      'Tekrar dene',
+                      style: context.t.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: p.amberText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _kayitRozeti(
+      BuildContext context, String glif, String metin, Color renk) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(glif,
+            style: context.t.bodySmall?.copyWith(
+                color: renk, fontWeight: FontWeight.w700, height: 1)),
+        const SizedBox(width: SandikSpace.xs),
+        Text(
+          metin,
+          maxLines: 1,
+          style: context.t.bodySmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: context.c.text90,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildPanel(
     BuildContext context,
@@ -684,23 +821,25 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         ),
         const SizedBox(height: 12),
 
-        // ── Dağılım: oran çubuğu + gruplu liste (YALNIZCA detaylı mod) ───────
+        // ── Dağılım çubuğu (YALNIZCA detaylı mod) ───────────────────────────
         //
         // Kullanıcı isteği (2026-09-10): "hangi algoritmalar al ve sat
         // verenleri ve yüzdesi görsel olarak da tatmin edici ve göz alıcı
         // şekilde SADECE varlık performans ekranına eklenmeli."
         //
-        // Düz liste bu soruyu yanıtlamıyordu: AL ve SAT satırları iç içe
-        // geçmiş, ayrımı yalnızca sağdaki rozetin rengi taşıyordu. Detaylı
-        // modda önce oran çubuğu (kaç gösterge hangi yönde), sonra gruplu
-        // liste (hangileri) geliyor; düz liste ise ARTIK ÇİZİLMİYOR —
-        // aynı bilgiyi iki kez göstermek paneli uzatmaktan başka bir şey
-        // yapmazdı.
+        // İlk sürümde çubuğun ALTINA gruplu kutular konmuş, düz liste ise
+        // kaldırılmıştı. Kullanıcı bunu geri istedi (2026-09-10, ikinci
+        // bildirim): "hangi algoritmalar bunu dedi ekranın en altında
+        // görmeyi bekliyorum … tasarımı da store'da şu an olan şekliyle
+        // olmalı." Gruplu kutular düz listenin taşıdığı bilgiyi zaten
+        // tekrarlıyordu; kaldırıldı.
+        //
+        // Kalan iş bölümü net: çubuk ORANI verir (kaçı hangi yönde),
+        // altındaki liste KİMLİĞİ (hangi gösterge, hangi değer, ne diyor).
         if (widget.detayli) ...[
           SinyalDagilimi(indicators: indicators),
           const SizedBox(height: SandikSpace.md),
-          GostergeGruplari(indicators: indicators),
-        ] else
+        ],
         // ── Gösterge listesi (düz) ──────────────────────────────────────────
         Container(
           decoration: BoxDecoration(
@@ -954,164 +1093,6 @@ class SinyalDagilimi extends StatelessWidget {
         SignalType.sell => 'SAT',
         SignalType.neutral => 'NÖTR',
       };
-}
-
-/// Göstergeleri VERDİKLERİ SİNYALE GÖRE gruplayan liste.
-///
-/// Kullanıcının sorusu "hangi algoritmalar AL, hangileri SAT diyor". Düz
-/// bir liste bu soruyu yanıtlamıyordu: AL ve SAT satırları iç içe geçmiş
-/// hâlde, ayrımı yalnızca sağdaki rozetin rengi taşıyordu. Gruplamak,
-/// cevabı okumadan önce GÖRMEYİ sağlıyor.
-///
-/// Boş grup çizilmez — "SAT DİYENLER (0)" başlığı yer kaplar, bilgi vermez.
-class GostergeGruplari extends StatelessWidget {
-  const GostergeGruplari({super.key, required this.indicators});
-
-  final List<TechnicalIndicator> indicators;
-
-  @override
-  Widget build(BuildContext context) {
-    final gruplar = <(SignalType, List<TechnicalIndicator>)>[
-      (
-        SignalType.buy,
-        indicators.where((i) => i.signal == SignalType.buy).toList()
-      ),
-      (
-        SignalType.sell,
-        indicators.where((i) => i.signal == SignalType.sell).toList()
-      ),
-      (
-        SignalType.neutral,
-        indicators.where((i) => i.signal == SignalType.neutral).toList()
-      ),
-    ];
-
-    return Column(
-      children: [
-        for (final (tur, liste) in gruplar)
-          if (liste.isNotEmpty) ...[
-            GostergeGrubu(tur: tur, indicators: liste),
-            const SizedBox(height: SandikSpace.sm),
-          ],
-      ],
-    );
-  }
-}
-
-class GostergeGrubu extends StatelessWidget {
-  const GostergeGrubu({super.key, required this.tur, required this.indicators});
-
-  final SignalType tur;
-  final List<TechnicalIndicator> indicators;
-
-  @override
-  Widget build(BuildContext context) {
-    final renk = SinyalDagilimi._renk(context, tur);
-    final baslik = switch (tur) {
-      SignalType.buy => 'AL DİYENLER',
-      SignalType.sell => 'SAT DİYENLER',
-      SignalType.neutral => 'KARARSIZ',
-    };
-
-    return Container(
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: renk.withValues(alpha: 0.22)),
-      ),
-      child: Column(
-        children: [
-          // ── Grup başlığı ─────────────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-                horizontal: SandikSpace.smd, vertical: SandikSpace.sm),
-            decoration: BoxDecoration(
-              color: renk.withValues(alpha: 0.10),
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(SandikRadius.md)),
-            ),
-            child: Row(
-              children: [
-                Text(SinyalDagilimi._glif(tur),
-                    style: context.t.bodySmall?.copyWith(
-                        color: renk, fontWeight: FontWeight.w700, height: 1)),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    baslik,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.t.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1,
-                      color: renk,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${indicators.length}',
-                  style: context.t.numSmall.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: renk,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // ── Göstergeler ──────────────────────────────────────────────
-          for (var i = 0; i < indicators.length; i++) ...[
-            if (i > 0)
-              Divider(height: 1, color: context.c.overlay, indent: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: SandikSpace.smd, vertical: SandikSpace.smd),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          indicators[i].name,
-                          style: context.t.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: context.c.text90,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          indicators[i].description,
-                          style: context.t.bodySmall
-                              ?.copyWith(color: context.c.text36),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: SandikSpace.sm),
-                  // Göstergenin HAM değeri (RSI 28,4 gibi). Rozet yerine
-                  // sayı: grubun başlığı zaten yönü söylüyor, satırda
-                  // "AL" rozetini tekrarlamak aynı bilgiyi iki kez yazmak
-                  // olurdu. Sayı ise yeni bilgi — ne kadar aşırı olduğunu
-                  // gösterir.
-                  Text(
-                    fmtNumFlex(indicators[i].value, maxDigits: 2),
-                    style: context.t.numSmall.copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: context.c.text58,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
