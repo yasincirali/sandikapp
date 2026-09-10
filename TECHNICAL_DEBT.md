@@ -34,7 +34,7 @@ içi ızgaraya genelleştirildiğinde — iki ekran aynı cebri paylaşabilir.
 
 ---
 
-## 🟡 AÇIK — Fonun gün içi NAV basamağı seans açılışına çapalı
+## 🟡 AÇIK — Fonun gün içi NAV basamağı SABİT bir saate çapalı
 
 **Karar tarihi:** 2026-09-10 · Hata turu
 
@@ -45,14 +45,32 @@ seansın ilk gerçek fiyat verisinden sonra güncel NAV'a atlıyor
 grafikte ve tür dökümünde görünür oluyor.
 
 **Neden bu konum:** NAV'ın FİİLEN yayımlandığı saat bilinmiyor — TEFAS
-yanıtı yalnızca NAV'ın TARİHİNİ taşıyor, yayın anını değil. Seans açılışı,
-elimizdeki tek gözlemlenebilir çapa.
+yanıtı yalnızca NAV'ın TARİHİNİ taşıyor, yayın anını değil. Çapa bu yüzden
+sabit bir saat: `tefasNavYayinSaati = 10` (piyasa açılışı).
+
+**İlk deneme başarısız oldu ve sebebi kayda değer (2026-09-10):** basamak
+önce "seansın ilk gerçek fiyat verisi"ne çapalanmıştı. O veri yalnızca
+hisse/altın/emtia/döviz dallarında üretiliyor; portföyde ya da **tür
+filtresinde** fondan başka varlık yoksa çapa HİÇ oluşmuyordu. Fon gün boyu
+önceki NAV'da kalıyor, son slotu canlı toplamla ezen hizalama tek noktalık
+dik bir uçurum bırakıyordu — üstelik "ŞİMDİ" imlecine yapışık, dakikalar
+geçtikçe sağa kayan bir uçurum. Ders: bir çapa, kendisinden bağımsız
+varlıkların verisine bağlı olmamalı.
 
 **Ertelemenin maliyeti:** basamak gerçek yayın anından birkaç saat sapabilir.
-Değişimin kendisi ve yönü doğru; yalnızca gün içindeki YERİ yaklaşık.
+Değişimin kendisi, yönü ve büyüklüğü doğru; yalnızca gün içindeki YERİ
+yaklaşık.
+
+**Bilinen ikinci yaklaşıklık:** TEFAS'ın en son NAV'ı çoğu gün BİR ÖNCEKİ iş
+gününe aittir (fonun T günü NAV'ı T akşamı/T+1 sabahı yayımlanır). Yani
+"bugünkü" fon değişimi olarak gösterilen fark, aslında o NAV'ın kendi
+gününe ait olabilir. Kullanıcı bunu bilerek istedi (TEFAS'ın kendi sitesi de
+aynı farkı "günlük getiri" diye gösteriyor) — ama tarih bazlı doğru
+atıf yapılacaksa iş burada başlar.
 
 **Ele alınma zamanı:** TEFAS yanıtından yayın zaman damgası çıkarılabilirse
-(ya da güvenilir bir yayın saati doğrulanırsa) basamak oraya taşınır.
+(ya da güvenilir bir yayın saati doğrulanırsa) basamak oraya taşınır; aynı
+turda NAV tarihine göre atıf da düzeltilebilir.
 
 ---
 
