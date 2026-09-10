@@ -232,17 +232,55 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
   }
 
   /// Şeridin dış kabuğu — dolgu, kenarlık, dokunma alanı.
+  ///
+  /// **Kabuk NÖTRDÜR.** Önceden zemin ve kenarlık sinyal rengiyle
+  /// boyanıyordu (`renk` %7 dolgu, %28 kenarlık) ve şerit bir uyarı
+  /// kutusuna dönüşüyordu: aşağı trendde ekranın üstünde kırmızı bir
+  /// blok duruyordu. Sayfanın geri kalanı `surface1` + `hairline` sakin
+  /// kartlardan oluşuyor; şerit tek başına bağırıyordu (kullanıcı
+  /// bildirimi 2026-09-10: "tasarımı sayfa ve uygulamaya uygun olmalı,
+  /// ahenk bozulmamalı").
+  ///
+  /// Renk KAYBOLMADI, yalnızca taşıdığı yere çekildi: ikon, başlık ve
+  /// soldaki ince şerit hâlâ yön rengini kullanıyor. Anlamı renk taşır,
+  /// zemin taşımaz.
   Widget _kabuk({required Color renk, required Widget child}) {
     final govde = Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: SandikSpace.sm),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: renk.withValues(alpha: 0.07),
+        color: context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: renk.withValues(alpha: 0.28)),
+        border: Border.all(color: context.c.hairline),
       ),
-      child: child,
+      // `IntrinsicHeight`: sol şerit içeriğin TAM boyunca uzanmalı. Sabit
+      // yükseklik verilseydi büyük sistem yazı tipinde içerik uzayıp şerit
+      // kısa kalırdı (ya da tersi).
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Yön göstergesi: sol kenarda ince dikey şerit. Ekranın
+            // gösterge listesiyle aynı dil — kart nötr, sol şerit renkli.
+            Container(
+              width: 3,
+              decoration: BoxDecoration(
+                color: renk,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(SandikRadius.md),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: child,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
     if (widget.onTap == null) return govde;
     return GestureDetector(
@@ -309,7 +347,18 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
       renk: renk,
       child: Row(
         children: [
-          Icon(ikon, color: renk, size: 20),
+          // Yumuşak daire içinde ikon — ekranın gösterge listesiyle aynı
+          // dil. Çıplak ikon nötr zeminde havada duruyordu.
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: renk.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(ikon, color: renk, size: 18),
+          ),
           const SizedBox(width: 10),
           // Metin bloğu esner; sağdaki zaman etiketi sabit kalır. Uzun
           // varlık adlarında satır taşmasın diye Expanded şart.
@@ -317,13 +366,16 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Ton düşürüldü: `w800` + `letterSpacing 0.6` idi ve
+                // kırmızı zeminle birleşince başlık bağırıyordu. Renk
+                // korundu (yön bilgisini o taşıyor), ağırlık ekranın
+                // diğer kart başlıklarıyla aynı seviyeye çekildi.
                 Text(
                   etiket,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
+                    fontWeight: FontWeight.w700,
                     color: renk,
                   ),
                 ),
@@ -349,31 +401,43 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
             ),
           ),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Canlı hesap yoksa şeridin kendisi KAYDI gösteriyor demektir
-              // — o zaman saat de buraya yazılır. Aksi halde bildirimin
-              // saati hiçbir yerde görünmezdi (soldaki "Son bildirim"
-              // satırı yalnızca `canli` iken çiziliyor).
-              Text(
-                canli
-                    ? 'ŞU AN'
-                    : DateFormat('d MMM · HH:mm', 'tr_TR')
-                        .format(kayit!.detectedAt),
-                maxLines: 1,
-                style: context.t.labelMedium?.copyWith(
-                  letterSpacing: 0.4,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text36,
+          // `Flexible` + `FittedBox`: sağdaki sütun sabit genişlik istiyordu
+          // ve büyük yazı ölçeğinde satırı 39px taşırıyordu (ölçüldü:
+          // 320pt × 1.6). Kayıt gösterilirken metin "ŞU AN" değil
+          // "10 Eyl · 11:00" oluyor — iki katından uzun. Artık daralınca
+          // küçülür, taşmaz.
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Canlı hesap yoksa şeridin kendisi KAYDI gösteriyor
+                // demektir — o zaman saat de buraya yazılır. Aksi halde
+                // bildirimin saati hiçbir yerde görünmezdi (soldaki "Son
+                // bildirim" satırı yalnızca `canli` iken çiziliyor).
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    canli
+                        ? 'ŞU AN'
+                        : DateFormat('d MMM · HH:mm', 'tr_TR')
+                            .format(kayit!.detectedAt),
+                    maxLines: 1,
+                    style: context.t.labelMedium?.copyWith(
+                      letterSpacing: 0.4,
+                      fontWeight: FontWeight.w700,
+                      color: context.c.text36,
+                    ),
+                  ),
                 ),
-              ),
-              if (widget.onTap != null) ...[
-                const SizedBox(height: 2),
-                Icon(Icons.chevron_right_rounded,
-                    size: 16, color: context.c.text36),
+                if (widget.onTap != null) ...[
+                  const SizedBox(height: 2),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 16, color: context.c.text36),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),
