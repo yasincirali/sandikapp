@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
+import '../models/position.dart';
 import '../models/asset_type.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
@@ -53,6 +54,46 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
+    // ── SADECE AÇIK POZİSYONLAR ─────────────────────────────────────────────
+    //
+    // Çağıran (`main.dart → _triggerSignalAnalysis`) HAM LEDGER'ı veriyor:
+    // `portfolio.assets` bir portföy görünümü değil, bir hareket tablosudur.
+    // İçinde satış satırları, temettü satırları, mezar taşları (`delete_log`)
+    // ve YUMUŞAK SİLİNMİŞ lot'lar da var.
+    //
+    // Bu liste doğrudan gezildiğinde kullanıcının SİLDİĞİ ya da tamamen
+    // SATTIĞI varlık için sinyal üretiliyor, `signal_notifications`'a
+    // yazılıyor ve bildirim listesinde beliriyordu. Sunucu tarafı bu tuzağı
+    // kapatmıştı (`_shared/positions.ts`), istemci tarafı kapatmamıştı —
+    // kullanıcı şikâyeti sürüyordu: "sildiğim varlıkların push'ları gelmeye
+    // devam ediyor" (2026-09-10).
+    //
+    // `aggregatePositions` istemcinin "portföyde ne görünüyor" cevabının
+    // TEK kaynağıdır: silinmiş/mezar taşı lot'ları eler (`isActive`) ve net
+    // miktarı sıfıra inen pozisyonu listeden düşürür. Sinyal analizi de
+    // aynı cevaba bağlanmalı — ekranda olmayan bir varlık bildirim
+    // üretmemeli.
+    //
+    // ## Temsilci lot NEDEN "en küçük id"
+    //
+    // Analiz için herhangi bir lot yeterli (göstergeler sembol + tür okur,
+    // miktar/maliyet okumaz). Ama `asset.id` iki iş daha yapıyor: de-dup
+    // anahtarı (`fetchLastSignalForAsset`) ve push'un derin bağlantısı.
+    //
+    // Sunucu (`analyze-signals → collapseLotsToPositions`) grubun EN KÜÇÜK
+    // id'li lot'unu temsilci seçiyor. İstemci başka bir lot seçerse (örn.
+    // `asDisplayAsset`'in sentetik `pos:` id'si ya da en yeni alım) iki
+    // taraf farklı satırlara bakar ve birbirinin gönderdiği sinyali
+    // görmez — aynı sinyal için iki bildirim.
+    final acikVarliklar = <Asset>[];
+    for (final p in aggregatePositions(assets)) {
+      final alimlar = p.lots.where((l) => l.isBuy).toList();
+      if (alimlar.isEmpty) continue;
+      alimlar.sort((a, b) => a.id.compareTo(b.id));
+      acikVarliklar.add(alimlar.first);
+    }
+    if (acikVarliklar.isEmpty) return;
+
     final indicatorPrefs = ref.read(indicatorPrefsProvider.notifier);
     final thresholds = ref.read(signalThresholdProvider.notifier);
     final neutralPushEnabled = ref.read(signalNeutralPushProvider);
@@ -60,7 +101,7 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
 
     final inserted = <SignalAlert>[];
 
-    for (final asset in assets) {
+    for (final asset in acikVarliklar) {
       // Vadeli mevduatın teknik göstergesi yoktur — sinyal üretmez.
       if (asset.type == AssetType.mevduat) continue;
       final enabledIds = indicatorPrefs.forType(asset.type);

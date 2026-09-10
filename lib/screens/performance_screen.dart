@@ -23,6 +23,8 @@ import '../widgets/zoomable_chart.dart';
 import '../providers/preferences_provider.dart';
 import '../widgets/fullscreen_chart_route.dart';
 import 'signal_settings_screen.dart';
+import '../models/signal_alert.dart';
+import '../providers/signal_provider.dart';
 import '../models/asset_categories.dart';
 import '../services/tefas_service.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -42,6 +44,134 @@ class GoldTransaction {
 }
 
 // ── Teknik Sinyal Paneli ─────────────────────────────────────────────────────
+
+// ── Kayıtlı sinyal rozeti ────────────────────────────────────────────────────
+
+/// Bu varlık için ÜRETİLMİŞ VE KAYDEDİLMİŞ son sinyal.
+///
+/// ## Neden ayrı bir kart
+/// Ekranın altındaki [TechnicalSignalPanel] göstergeleri O AN yeniden
+/// hesaplar. Kullanıcının bildirim olarak aldığı sinyal ise `signal_notifications`
+/// tablosunda duran, ZAMAN DAMGALI bir kayıttır. İkisi aynı şey değildir:
+/// panel "şu anda göstergeler ne diyor" sorusunu, bu kart "bana ne zaman ne
+/// bildirildi" sorusunu yanıtlar.
+///
+/// Kullanıcı isteği (2026-09-10): "Sinyal bilgisi varsa varlık performans
+/// ekranında gözükmeli." Kayıt yoksa kart HİÇ çizilmez — boş bir "sinyal yok"
+/// kutusu ekranın en değerli yerini kaplardı.
+///
+/// ## Eşleştirme neden `positionKey` benzeri
+/// Sinyal kaydı bir LOT id'si taşır (`assetId`) ve o lot bu ekrandaki
+/// pozisyonun temsilcisi olmayabilir — kullanıcı aynı varlıktan birkaç kez
+/// almış olabilir, sunucu da kendi temsilcisini seçiyor. Bu yüzden eşleşme
+/// id ile DEĞİL, ticker + tür ile yapılır: sinyalin ürettiği şey zaten
+/// sembole aittir.
+class AssetSignalCard extends ConsumerWidget {
+  const AssetSignalCard({super.key, required this.asset});
+
+  final Asset asset;
+
+  /// [alerts] içinden bu varlığa ait EN YENİ kaydı seçer.
+  ///
+  /// Saf fonksiyon — widget kurmadan test edilir.
+  static SignalAlert? sonSinyal(List<SignalAlert> alerts, Asset asset) {
+    final ticker = asset.ticker.trim().toUpperCase();
+    SignalAlert? best;
+    for (final a in alerts) {
+      if (a.assetType != asset.type) continue;
+      final at = a.assetTicker.trim().toUpperCase();
+      // Ticker'ı olmayan varlıklarda (altın alt kategorileri, "diğer")
+      // isim eşleşmesine düşülür.
+      final eslesti = ticker.isNotEmpty
+          ? at == ticker
+          : a.assetName.trim().toLowerCase() ==
+              asset.name.trim().toLowerCase();
+      if (!eslesti) continue;
+      if (best == null || a.detectedAt.isAfter(best.detectedAt)) best = a;
+    }
+    return best;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alerts = ref.watch(signalProvider).valueOrNull ?? const <SignalAlert>[];
+    final alert = sonSinyal(alerts, asset);
+    if (alert == null) return const SizedBox.shrink();
+
+    final isBuy = alert.signal == SignalType.buy;
+    final isSell = alert.signal == SignalType.sell;
+    final renk = isBuy
+        ? context.c.gain
+        : isSell
+            ? context.c.loss
+            : context.c.text58;
+    // Yasal not: kesin "AL/SAT" yerine trend yönü — ekranın geri kalanıyla
+    // aynı dil (bkz. `TechnicalSignalPanel`).
+    final etiket = isBuy
+        ? 'YUKARI TREND'
+        : isSell
+            ? 'AŞAĞI TREND'
+            : 'YATAY';
+    final ikon = isBuy
+        ? Icons.trending_up_rounded
+        : isSell
+            ? Icons.trending_down_rounded
+            : Icons.remove_rounded;
+    final toplam = alert.buyCount + alert.sellCount;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: SandikSpace.sm),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: renk.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+        border: Border.all(color: renk.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          Icon(ikon, color: renk, size: 20),
+          const SizedBox(width: 10),
+          // Metin bloğu esner; sağdaki tarih sabit kalır. Uzun varlık
+          // adlarında satır taşmasın diye Expanded şart.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  etiket,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                    color: renk,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  toplam > 0
+                      ? 'Son sinyal · ${isSell ? alert.sellCount : alert.buyCount}/$toplam gösterge · güven %${alert.confidence.round()}'
+                      : 'Son sinyal · güven %${alert.confidence.round()}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.bodySmall?.copyWith(color: context.c.text58),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            DateFormat('d MMM · HH:mm', 'tr_TR').format(alert.detectedAt),
+            style: context.t.numSmall.copyWith(
+              fontSize: 11,
+              color: context.c.text36,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Teknik gösterge paneli.
 ///
@@ -536,12 +666,42 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   Asset? _compareAsset;
   Future<Map<int, double>>? _compareHistoryFuture;
 
-  static const List<({String label, int days})> _periods = [
-    (label: 'HAFTALIK', days: 7),
-    (label: 'AYLIK', days: 30),
-    (label: '6 AYLIK', days: 180),
-    (label: 'YILLIK', days: 365),
+  /// Periyot sekmeleri. `days: 0` → GÜN İÇİ (5 dakikalık çözünürlük).
+  ///
+  /// Etiketler portföy performans ekranıyla AYNI: iki ekran aynı soruyu
+  /// soruyor, farklı kelimelerle sormamalı. Ayrıca beş uzun etiket
+  /// ("HAFTALIK", "6 AYLIK"…) 360pt genişlikte yan yana sığmıyordu.
+  static const List<({String label, int days})> _allPeriods = [
+    (label: 'GÜNLÜK', days: 0),
+    (label: '1H', days: 7),
+    (label: '1A', days: 30),
+    (label: '6A', days: 180),
+    (label: '1Y', days: 365),
   ];
+
+  /// Bu varlık için gün içi fiyat verisi ANLAMLI mı?
+  ///
+  /// Vadeli mevduatın ve elle fiyatlanan varlıkların ("Ev", "Araba") bir
+  /// piyasa serisi yoktur; onlarda GÜNLÜK sekmesi kullanıcıya boş ya da
+  /// dümdüz bir grafik gösterir ve sekmeyi açmanın hiçbir karşılığı olmaz.
+  ///
+  /// Fon DAHİLDİR: TEFAS gün içi NAV yayınlamasa da seri, gün içinde bir
+  /// basamak olarak fonun günlük NAV değişimini taşır
+  /// (bkz. `HistoryService.gunIciFonBirimFiyati`).
+  bool get _gunIciDestekli =>
+      !widget.asset.isManualPrice &&
+      widget.asset.type != AssetType.mevduat &&
+      widget.asset.type != AssetType.diger;
+
+  List<({String label, int days})> get _periods =>
+      _gunIciDestekli ? _allPeriods : _allPeriods.sublist(1);
+
+  /// Gün içi serinin çizildiği günün 00:00'ı.
+  ///
+  /// Bugün olmak ZORUNDA değil: piyasa kapalıyken (hafta sonu, tatil,
+  /// açılıştan önce) servis SON SEANSI döndürür. Seri geldiğinde
+  /// buradan okunur; X ekseni ve saat etiketleri o güne oturur.
+  DateTime? _gunIciBaslangic;
 
   // Son başarılı history sonucu. Periyot değiştiğinde FutureBuilder yeni
   // future'ı "waiting" sayar ve snapshot.data null olur; bu alan olmadan
@@ -553,14 +713,34 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedPeriodIdx = 0;
-    _historyFuture = _loadHistory(_periods[0].days);
+    // Varsayılan sekme HAFTALIK olarak KALIR.
+    //
+    // GÜNLÜK sekmesi listeye eklendi ama varsayılan yapılmadı: varlık
+    // detayına giren kullanıcı çoğunlukla trendi arıyor, tek seansı değil.
+    // Gün içi görünüm bir tıkla, hep aynı yerde (en solda) duruyor.
+    _selectedPeriodIdx = _gunIciDestekli ? 1 : 0;
+    _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
   }
 
   /// History fetch + son başarılı sonucu sakla.
+  ///
+  /// [days] 0 ise GÜN İÇİ seri istenir: 24 saat, 5 dakikalık slotlar.
+  /// Gün içi yolu ayrı bir servistir (`...HourlyBreakdown`) ve çizilen
+  /// günü de bildirir — X ekseni ona göre kurulur.
   Future<Map<int, double>> _loadHistory(int days) {
+    if (days == 0) {
+      return HistoryService.instance
+          .getPortfolioHistoryHourlyBreakdown([widget.asset], 24)
+          .then((b) {
+        if (mounted) {
+          _gunIciBaslangic = b.seansGunu;
+          if (b.total.isNotEmpty) _lastHistory = b.total;
+        }
+        return b.total;
+      });
+    }
     return HistoryService.instance
         .getPortfolioHistory([widget.asset], days)
       ..then((v) {
@@ -575,16 +755,32 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   }
 
   void _selectPeriod(int idx) {
+    // Eski sekme gün içi miydi? Index güncellenmeden ÖNCE okunmalı.
+    final oncekiGunIci = _gunIciMi;
     setState(() {
       _selectedPeriodIdx = idx;
-      _historyFuture = _loadHistory(_periods[idx].days);
+      final days = _periods[idx].days;
+      // Bayat seri periyotlar arasında köprü kurar (bkz. `_lastHistory`).
+      // Gün içi ile günlük seriler AYNI ölçekte DEĞİL: biri 5 dakikalık
+      // slot, öteki gün kapanışı. Birinden ötekine geçerken eski seriyi
+      // taşımak, yeni eksene ait olmayan noktalar çizerdi.
+      if ((days == 0) != oncekiGunIci) _lastHistory = null;
+      _historyFuture = _loadHistory(days);
       // Compare aktifse aynı yeni periyot için compare history'yi de yenile.
+      // Gün içinde karşılaştırma YOK: iki varlığın 5 dakikalık serisini
+      // yüzdeye normalize etmek ayrı bir iş ve bu ekranda karşılığı yok.
       if (_compareAsset != null) {
-        _compareHistoryFuture = HistoryService.instance
-            .getPortfolioHistory([_compareAsset!], _periods[idx].days);
+        _compareHistoryFuture = days == 0
+            ? null
+            : HistoryService.instance
+                .getPortfolioHistory([_compareAsset!], days);
+        if (days == 0) _compareAsset = null;
       }
     });
   }
+
+  /// Seçili sekme gün içi mi?
+  bool get _gunIciMi => _periods[_selectedPeriodIdx].days == 0;
 
   void _openComparePicker() {
     final pState = ref.read(portfolioProvider).valueOrNull;
@@ -747,6 +943,15 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     DateTime startDate,
     DateTime endDate, {
     double? currentUnitPriceOverride,
+
+    /// GÜN İÇİ seri mi? Gün içinde İLK NOKTA ORTALAMA MALİYETLE EZİLMEZ.
+    ///
+    /// Uzun periyotlarda ilk noktayı maliyete çekmek bilinçli bir tercih:
+    /// grafik "aldığım fiyattan bugüne" hikâyesini anlatıyor. Gün içi seri
+    /// bambaşka bir soruyu yanıtlar — "bugün ne oldu". Orada ilk noktayı
+    /// maliyete çekmek, günlük değişimi maliyetle bugün arasındaki farka
+    /// çevirir ve sekmeyi anlamsız kılardı.
+    bool intraday = false,
   }) {
     if (history.isEmpty) return [];
 
@@ -782,7 +987,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
       final x = date.difference(startDate).inMinutes / (60.0 * 24.0);
       final y = history[ts]! / divisor;
 
-      if (!firstActiveReplaced && anchorUnitPrice > 0) {
+      if (!intraday && !firstActiveReplaced && anchorUnitPrice > 0) {
         // Aktif segmentin İLK noktası her zaman anchor (ort. maliyet).
         activeSpots.add(FlSpot(x, anchorUnitPrice));
         firstActiveReplaced = true;
@@ -855,15 +1060,25 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Center(
-                  child: Text(
-                    _periods[i].label,
-                    style: context.t.labelMedium?.copyWith(
-                      letterSpacing: 0,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected
-                          ? context.c.gold
-                          : context.c.text36,
+                  // Sekme sayısı 4'ten 5'e çıktı (GÜNLÜK eklendi) ve
+                  // "GÜNLÜK" en uzun etiket. 375pt'lik bir ekranda sekme
+                  // başına ~72pt kalıyor; sistem yazı tipi büyütülmüşse
+                  // (Dynamic Type 1,5×–2×) etiket bu kutuya sığmıyor.
+                  // `FittedBox` küçülterek sığdırır — kırpmak, hangi
+                  // dönemde olduğunu okunmaz hâle getirirdi.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _periods[i].label,
+                      maxLines: 1,
+                      style: context.t.labelMedium?.copyWith(
+                        letterSpacing: 0,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? context.c.gold
+                            : context.c.text36,
+                      ),
                     ),
                   ),
                 ),
@@ -879,10 +1094,27 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   Widget build(BuildContext context) {
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
-    final startDate = endDate.subtract(Duration(days: period.days));
+    final isIntraday = period.days == 0;
+    // GÜNLÜK sekmesinde eksen ÇİZİLEN GÜNÜN 00:00'ında başlar ve tam gün
+    // (24 saat) boyunca uzanır.
+    //
+    // İki karar da bilinçli:
+    //   · 00:00: kullanıcı isteği — "GÜNLÜK seçildiğinde 00:00'dan
+    //     başlayarak gözükmeli" (2026-09-10). Ekseni ilk fiyat noktasında
+    //     başlatmak, sabah 09:00'da bakınca başka, öğlen bakınca başka bir
+    //     zaman ölçeği gösterirdi.
+    //   · Çizilen gün bugün OLMAYABİLİR: piyasa kapalıyken servis son
+    //     seansı döndürür (`seansGunu`). Ekseni `now`'a kurmak hafta sonu
+    //     Cuma seansını grafiğin dışına atardı.
+    final startDate = isIntraday
+        ? (_gunIciBaslangic ??
+            DateTime(endDate.year, endDate.month, endDate.day))
+        : endDate.subtract(Duration(days: period.days));
     // Kesirli gün — saatlik veride son X gün sınırında değil, gerçek
     // anlarında olmalı. Yoksa nokta grafiğin ortasında yalnız kalır.
-    final maxX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
+    final maxX = isIntraday
+        ? 1.0
+        : endDate.difference(startDate).inMinutes / (60.0 * 24.0);
 
     // Logic moved inside FutureBuilder
 
@@ -976,6 +1208,13 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     },
                     orElse: () => const SizedBox.shrink(),
                   ),
+                // Kayıtlı sinyal varsa EN ÜSTTE görünür — kullanıcı bu
+                // ekrana çoğu zaman bildirimden geliyor ve "bana ne
+                // bildirilmişti" sorusunun cevabını aramak için 2900
+                // satırlık ekranın dibine inmek zorunda kalmamalı.
+                // Kayıt yoksa widget hiç yer kaplamaz.
+                if (widget.asset.type != AssetType.mevduat)
+                  AssetSignalCard(asset: widget.asset),
                 _buildPeriodToggle(),
                 const SizedBox(height: 24),
                 FutureBuilder<Map<int, double>>(
@@ -1032,7 +1271,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
                     final rawSegments = _convertHistoryToSegments(
                         historyMap, startDate, endDate,
-                        currentUnitPriceOverride: currentUnitTRY);
+                        currentUnitPriceOverride: currentUnitTRY,
+                        intraday: isIntraday);
 
                     // Normalize base: aktif segmentin ilk noktası. Bunun
                     // altında ana varlığın Y'leri (y / base) * 100 → % olur.
@@ -1214,8 +1454,15 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     for (final lot in activeLots) {
                       if (!lot.isActive) continue;
                       if (!lot.isBuy && !lot.isSell) continue;
-                      final d = DateTime(lot.addedDate.year,
-                          lot.addedDate.month, lot.addedDate.day);
+                      // GÜN İÇİNDE saat KIRPILMAZ. Diğer periyotlarda bir
+                      // günün çözünürlüğü zaten bir noktadır ve işlemi gece
+                      // yarısına çekmek doğrudur; gün içi seride ise 14:00'te
+                      // yapılan bir alımın noktası 00:00'a düşer ve grafikteki
+                      // sıçramayla hiç örtüşmezdi.
+                      final d = isIntraday
+                          ? lot.addedDate
+                          : DateTime(lot.addedDate.year, lot.addedDate.month,
+                              lot.addedDate.day);
                       if (d.isBefore(startMidnight)) continue;
                       final txX =
                           d.difference(startMidnight).inMinutes / (60.0 * 24.0);
@@ -1277,8 +1524,28 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           if (dev > maxAbsDev) maxAbsDev = dev;
                         }
                       }
-                      final minDev =
-                          (center * 0.01).clamp(1.0, double.infinity);
+                      // Asgari yarı-bant. Eksen yalnızca veriye göre
+                      // ölçeklenirse yatay giden bir fiyatın kuruşluk
+                      // dalgalanması tuvale yayılır ve olmayan bir "çöküş"
+                      // çizilir; taban bunu keser.
+                      //
+                      // GÜN İÇİNDE taban DARDIR: bir hissenin günlük
+                      // hareketi tipik olarak ±%0,5–2'dir ve %1'lik yarı-bant
+                      // (yani %2'lik tam bant) o hareketi grafiğin onda
+                      // birine sıkıştırıp çizgiyi DÜMDÜZ gösterir. Portföy
+                      // performans ekranı aynı dersi `gunIciAsgariBantOrani`
+                      // ile öğrenmişti (tam bant %0,5) — burada da yarısı,
+                      // yani %0,25 yarı-bant kullanılır.
+                      //
+                      // Mutlak 1 TL tabanı gün içinde UYGULANMAZ: birim
+                      // fiyatı 10 TL olan bir fonda ±1 TL, ±%10'luk bir
+                      // bant demektir ve fonun gerçek günlük değişimini
+                      // (binde birkaç) yine görünmez kılardı.
+                      final oransalTaban =
+                          center * (isIntraday ? 0.0025 : 0.01);
+                      final minDev = isIntraday
+                          ? (oransalTaban > 0 ? oransalTaban : 1.0)
+                          : oransalTaban.clamp(1.0, double.infinity);
                       final halfRange =
                           maxAbsDev < minDev ? minDev : maxAbsDev;
                       final yPad = halfRange * 0.35;
@@ -1395,17 +1662,26 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        _CompareStrip(
-                          primaryTicker: widget.asset.ticker,
-                          compare: _compareAsset,
-                          onAddPressed: _openComparePicker,
-                          onClearPressed: () {
-                            setState(() {
-                              _compareAsset = null;
-                              _compareHistoryFuture = null;
-                            });
-                          },
-                        ),
+                        // Karşılaştırma GÜN İÇİNDE kapalı.
+                        //
+                        // Karşılaştırma serisi `getPortfolioHistory(days)`
+                        // ile çekiliyor; gün içi sekmesi `days: 0` taşıdığı
+                        // için o çağrı boş bir pencere isterdi. Ayrıca iki
+                        // varlığın 5 dakikalık serisini yüzdeye normalize
+                        // etmek ayrı bir iş — yarım yapılmış hâli, kullanıcı
+                        // bakıp yanlış okuyacağı bir çizgi üretirdi.
+                        if (!isIntraday)
+                          _CompareStrip(
+                            primaryTicker: widget.asset.ticker,
+                            compare: _compareAsset,
+                            onAddPressed: _openComparePicker,
+                            onClearPressed: () {
+                              setState(() {
+                                _compareAsset = null;
+                                _compareHistoryFuture = null;
+                              });
+                            },
+                          ),
                         const SizedBox(height: 8),
                         FutureBuilder<Map<int, double>>(
                           future: _compareHistoryFuture,
@@ -1475,7 +1751,15 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                             // "ŞİMDİ" etiketi x-tick'lerle çakışmasın.
                             double focusMin = -maxX * 0.03;
                             double focusMax = maxX * 1.08;
-                            if (anchorSpot != null && lastSpot != null) {
+                            // GÜNLÜK sekmesinde daraltma YOK: gün bir
+                            // TAKVİM GÜNÜDÜR. Bugün 14:00'te alınan bir
+                            // varlık için ekseni alım anının etrafına
+                            // daraltmak, aynı sekmeye her bakışta farklı
+                            // bir zaman ölçeği gösterirdi — hareket gün
+                            // içindeki YERİYLE birlikte okunmalı.
+                            if (!isIntraday &&
+                                anchorSpot != null &&
+                                lastSpot != null) {
                               final firstX = anchorSpot.x;
                               final lastX = lastSpot.x;
                               final activeSpan = lastX - firstX;
@@ -1647,19 +1931,26 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                   final showTime = span < 3;
                                   final showYear = !showYearOnly &&
                                       date.year != DateTime.now().year;
-                                  final label = showYearOnly
-                                      ? DateFormat('MMM yy', 'tr_TR')
+                                  // Gün içi sekmesinde tek bir gün çizilir;
+                                  // her etikette aynı tarihi tekrarlamak
+                                  // 74pt'lik etiketi kırpar ve okunması
+                                  // gereken SAATİ gölgeler.
+                                  final label = isIntraday
+                                      ? DateFormat('HH:mm', 'tr_TR')
                                           .format(date)
-                                      : showTime
-                                          ? DateFormat('d MMM HH:mm',
-                                                  'tr_TR')
+                                      : showYearOnly
+                                          ? DateFormat('MMM yy', 'tr_TR')
                                               .format(date)
-                                          : DateFormat(
-                                                  showYear
-                                                      ? 'd MMM yy'
-                                                      : 'd MMM',
-                                                  'tr_TR')
-                                              .format(date);
+                                          : showTime
+                                              ? DateFormat('d MMM HH:mm',
+                                                      'tr_TR')
+                                                  .format(date)
+                                              : DateFormat(
+                                                      showYear
+                                                          ? 'd MMM yy'
+                                                          : 'd MMM',
+                                                      'tr_TR')
+                                                  .format(date);
                                   return Padding(
                                     padding:
                                         const EdgeInsets.only(top: 10),
@@ -1706,8 +1997,14 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                           color: context.c.text90
                                               .withValues(alpha: 0.75),
                                         ),
+                                        // Gün içinde çapa ALIŞ FİYATI DEĞİL,
+                                        // günün ilk noktasıdır (bkz.
+                                        // `_convertHistoryToSegments`
+                                        // `intraday`). Etiketi "ALIŞ"
+                                        // bırakmak doğrudan yanlış bilgi
+                                        // olurdu.
                                         labelResolver: (_) =>
-                                            'ALIŞ  ${NumberFormat('#,##0.00', 'tr_TR').format(anchorY)} ₺',
+                                            '${isIntraday ? 'AÇILIŞ' : 'ALIŞ'}  ${NumberFormat('#,##0.00', 'tr_TR').format(anchorY)} ₺',
                                       ),
                                     ),
                                   ],
@@ -1736,6 +2033,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                                   minutes:
                                                       (anchorSpot.x * 1440)
                                                           .round()));
+                                          if (isIntraday) {
+                                            return 'AÇILIŞ ${DateFormat('HH:mm', 'tr_TR').format(buyDate)}';
+                                          }
                                           return 'ALIŞ ${DateFormat('d MMM', 'tr_TR').format(buyDate)}';
                                         },
                                       ),
@@ -1972,8 +2272,13 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                           symbol: '₺',
                                           decimalDigits: 2)
                                       .format(fromY(snapped.y));
+                              // Gün içinde okunacak bilgi SAATTİR; tarih
+                              // zaten sekmenin kendisinden belli.
                               final subtitle = DateFormat(
-                                      'd MMM yyyy', 'tr_TR')
+                                      isIntraday
+                                          ? 'd MMM · HH:mm'
+                                          : 'd MMM yyyy',
+                                      'tr_TR')
                                   .format(date);
                               return (title, subtitle);
                             },

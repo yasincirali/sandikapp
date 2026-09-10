@@ -104,7 +104,10 @@ void main() {
 
       // Periyot etiketleri her durumda çizilmeli — yükleme göstergesi
       // bunları ağaçtan silmemeli.
-      for (final label in ['HAFTALIK', 'AYLIK', 'YILLIK']) {
+      // Etiketler portföy performans ekranıyla hizalandı (2026-09-10):
+      // GÜNLÜK / 1H / 1A / 6A / 1Y. Beş sekme olduğu için uzun adlar
+      // ("HAFTALIK", "6 AYLIK") artık yan yana sığmıyor.
+      for (final label in ['GÜNLÜK', '1H', '1A', '1Y']) {
         expect(find.text(label), findsWidgets,
             reason: '$label periyot butonu yükleme sırasında kayboldu');
       }
@@ -124,7 +127,7 @@ void main() {
           reason: 'ön koşul: ilk yüklemede chip\'ler görünmeli');
 
       // Periyot değiştir — future yenilenir, FutureBuilder waiting olur.
-      await tester.tap(find.text('AYLIK').first, warnIfMissed: false);
+      await tester.tap(find.text('1A').first, warnIfMissed: false);
       await tester.pump(); // waiting karesi
 
       // Tam bu karede chip'ler HÂLÂ ekranda olmalı.
@@ -151,7 +154,7 @@ void main() {
       expect(find.byType(CustomLoadingView), findsNothing,
           reason: 'ön koşul: ilk yükleme bitmiş olmalı');
 
-      await tester.tap(find.text('YILLIK').first, warnIfMissed: false);
+      await tester.tap(find.text('1Y').first, warnIfMissed: false);
       await tester.pump(); // periyot değişiminin ilk karesi
 
       // ASIL İDDİA: bu karede spinner OLMAMALI — eski seri soluk çizilir.
@@ -166,7 +169,7 @@ void main() {
     testWidgets('arka arkaya periyot değişimi ekranı bozmaz', (tester) async {
       await _pump(tester);
 
-      for (final label in ['HAFTALIK', 'AYLIK', 'YILLIK', 'HAFTALIK']) {
+      for (final label in ['GÜNLÜK', '1H', '1A', '1Y', '1H']) {
         final f = find.text(label);
         if (f.evaluate().isEmpty) continue;
         await tester.tap(f.first, warnIfMissed: false);
@@ -175,7 +178,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
-      expect(find.text('AYLIK'), findsWidgets);
+      expect(find.text('1A'), findsWidgets);
     });
   });
 }

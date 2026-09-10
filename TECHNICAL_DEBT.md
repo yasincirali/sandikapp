@@ -5,7 +5,54 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-07
+**Son güncelleme:** 2026-09-10
+
+---
+
+## 🟡 AÇIK — Varlık performansında GÜNLÜK sekmesinde karşılaştırma kapalı
+
+**Karar tarihi:** 2026-09-10 · Hata turu
+
+`PerformanceScreen`'e GÜNLÜK (gün içi) sekmesi eklendi. Karşılaştırma
+şeridi (`_CompareStrip`) o sekmede **gizleniyor**: karşılaştırma serisi
+`getPortfolioHistory(days)` ile çekiliyor ve gün içi sekmesi `days: 0`
+taşıyor — o çağrı boş bir pencere isterdi. Sekme değiştirilirken seçili
+karşılaştırma varlığı da temizleniyor.
+
+**Neden şimdi çözülmedi:** doğru çözüm, ikinci varlığın gün içi serisini
+`getPortfolioHistoryHourlyBreakdown` ile çekip iki seriyi ORTAK bir 5
+dakikalık ızgaraya oturtmak ve yüzdeye normalize etmek. İki serinin
+slotları örtüşmediğinde (biri BIST, öteki TEFAS fonu) hangi noktanın
+hangisiyle eşleştiği ayrı bir karar. Yarım yapılmış hâli, kullanıcının
+bakıp yanlış okuyacağı bir çizgi üretirdi.
+
+**Ertelemenin maliyeti:** gün içinde iki varlık karşılaştırılamıyor.
+Diğer dört periyotta karşılaştırma çalışmaya devam ediyor.
+
+**Ele alınma zamanı:** `comparison_screen`'deki yüzde normalizasyonu gün
+içi ızgaraya genelleştirildiğinde — iki ekran aynı cebri paylaşabilir.
+
+---
+
+## 🟡 AÇIK — Fonun gün içi NAV basamağı seans açılışına çapalı
+
+**Karar tarihi:** 2026-09-10 · Hata turu
+
+TEFAS gün içi NAV yayınlamıyor; bir fonun fiyatı günde bir kez değişiyor.
+Gün içi seride fon artık bir BASAMAK çiziyor: gün önceki NAV ile açılıyor,
+seansın ilk gerçek fiyat verisinden sonra güncel NAV'a atlıyor
+(`HistoryService.gunIciFonBirimFiyati`). Böylece fonun günlük değişimi
+grafikte ve tür dökümünde görünür oluyor.
+
+**Neden bu konum:** NAV'ın FİİLEN yayımlandığı saat bilinmiyor — TEFAS
+yanıtı yalnızca NAV'ın TARİHİNİ taşıyor, yayın anını değil. Seans açılışı,
+elimizdeki tek gözlemlenebilir çapa.
+
+**Ertelemenin maliyeti:** basamak gerçek yayın anından birkaç saat sapabilir.
+Değişimin kendisi ve yönü doğru; yalnızca gün içindeki YERİ yaklaşık.
+
+**Ele alınma zamanı:** TEFAS yanıtından yayın zaman damgası çıkarılabilirse
+(ya da güvenilir bir yayın saati doğrulanırsa) basamak oraya taşınır.
 
 ---
 

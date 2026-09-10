@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/asset.dart';
@@ -84,6 +86,39 @@ class SparklineService {
       return await future;
     } finally {
       _inflight.remove(symbol);
+    }
+  }
+
+  /// Listedeki varlıkların serilerini ARKA PLANDA hazırlar.
+  ///
+  /// ## Neden gerekli
+  /// Sparkline yalnızca kart AÇILDIĞINDA isteniyordu; kullanıcı bir fonu
+  /// açtığında grafik boş beliriyor, TEFAS/Yahoo cevabı geldikten saniyeler
+  /// sonra doluyordu ("collapsable obje de fonları açınca bir süre sonra
+  /// data geliyor, ancak anlık gelmeli" — 2026-09-10).
+  ///
+  /// Liste zaten ekrandayken seriler çekilirse, kullanıcı karta bastığında
+  /// cevap RAM'de olur ve grafik anında çizilir.
+  ///
+  /// Çağrı ucuzdur ve tekrarlanabilir: cache'te olan sembol için hiçbir şey
+  /// yapılmaz, uçuşan istek `_inflight` ile tekilleştirilir. [max] ile
+  /// sınırlanır — 200 varlıklı bir portföyde açılışta 200 istek atmak ne
+  /// kullanıcıya ne sağlayıcıya yapılacak bir şey.
+  void prefetch(Iterable<Asset> assets, {int max = 40}) {
+    var kalan = max;
+    final gorulen = <String>{};
+    for (final a in assets) {
+      if (kalan <= 0) break;
+      if (!supports(a)) continue;
+      final symbol = _symbolFor(a);
+      if (symbol == null) continue;
+      if (!gorulen.add(symbol)) continue;
+      if (_cache.containsKey(symbol) || _inflight.containsKey(symbol)) continue;
+      kalan--;
+      // Hata yutulur: prefetch bir kolaylıktır, başarısızlığı kullanıcıya
+      // gösterilecek bir olay değil. Kart açıldığında `seriesFor` yine
+      // denenir (boş cache girişi orada da yazılır).
+      unawaited(seriesFor(a));
     }
   }
 

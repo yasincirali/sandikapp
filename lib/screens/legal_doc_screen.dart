@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/sandik.dart';
 
@@ -464,10 +463,23 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ── Bütün ekran TEMA TOKENLARIYLA çizilir ────────────────────────────
+    //
+    // Eski sürüm baştan sona sabit açık renklerle yazılmıştı
+    // (`0xFFF7F5F0` zemin, `0xFF1A1A2E` bantlar, `0xFF2C3E50` gövde) ama
+    // METİN renkleri temadan geliyordu (`context.c.text90`). Koyu temada
+    // bu ikisi çarpışıyor: neredeyse beyaz metin, neredeyse beyaz zemine
+    // yazılıyor ve belge OKUNAMIYORDU. Kullanıcı bunu doğrudan bildirdi
+    // (2026-09-10): "yasal dokümanların olduğu sayfalar eski ve dark/light
+    // mode'a göre değil."
+    //
+    // Belgenin "resmî evrak" hissi korunuyor — ama tonlar artık tek
+    // kaynaktan: zemin `background`, kâğıt `surface1`, başlık bandı
+    // `surface2`, vurgu `amberText`.
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F5F0),
+      backgroundColor: context.c.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: context.c.surface2,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded,
@@ -481,8 +493,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
             Flexible(
               child: Text(
                 widget.title,
-                style: GoogleFonts.dmSans(
-                  fontSize: 16,
+                style: context.t.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: context.c.text90,
                 ),
@@ -497,35 +508,38 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
           // ── Üst bant ────────────────────────────────────────────────────
           Container(
             width: double.infinity,
-            color: const Color(0xFF1A1A2E),
+            color: context.c.surface2,
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            child: Row(
+            // Rozet + adres dar ekranda tek satıra sığmıyordu ("sandık ·
+            // yasincirali.github.io/sandikapp" tek başına ~200pt).
+            // `Wrap` gerektiğinde alt satıra iner, taşma çizgisi çıkmaz.
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 10,
+              runSpacing: 6,
               children: [
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: context.c.amberFill.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
                     border: Border.all(
                       color: context.c.amberFill.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
                     'Resmi Belge',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 11,
+                    style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: context.c.amberText,
                       letterSpacing: 0.5,
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
                 Text(
                   'sandık · ${LegalDocs._web}',
-                  style:
-                      GoogleFonts.dmSans(fontSize: 11, color: context.c.text58),
+                  style: context.t.bodySmall?.copyWith(color: context.c.text58),
                 ),
               ],
             ),
@@ -565,7 +579,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
+          color: context.c.surface2,
           border: Border(
             top: BorderSide(color: context.c.hairline, width: 0.5),
           ),
@@ -582,11 +596,11 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                     Icon(Icons.keyboard_arrow_down_rounded,
                         size: 16, color: context.c.text58),
                     const SizedBox(width: 4),
-                    Text(
-                      'Onaylamak için belgeyi sona kadar okuyun',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 11,
-                        color: context.c.text58,
+                    Flexible(
+                      child: Text(
+                        'Onaylamak için belgeyi sona kadar okuyun',
+                        style: context.t.bodySmall
+                            ?.copyWith(color: context.c.text58),
                       ),
                     ),
                   ],
@@ -599,9 +613,9 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                 height: 48,
                 decoration: BoxDecoration(
                   color: active
-                      ? context.c.amberFill.withValues(alpha: 0.95)
+                      ? context.c.amberFill
                       : context.c.amberFill.withValues(alpha: 0.30),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
                 ),
                 alignment: Alignment.center,
                 child: Row(
@@ -612,19 +626,25 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                           ? Icons.check_circle_rounded
                           : Icons.lock_outline_rounded,
                       size: 18,
+                      // Pasif hâlde de `onAmber` kullanılır, sadece
+                      // soluklaştırılır. Eskiden sabit siyahtı ve koyu
+                      // temada amber zemin üstünde okunmuyordu.
                       color: active
-                          ? const Color(0xFF1A1A2E)
-                          : Colors.black.withValues(alpha: 0.35),
+                          ? context.c.onAmber
+                          : context.c.onAmber.withValues(alpha: 0.45),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      widget.confirmButtonLabel,
-                      style: GoogleFonts.dmSans(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: active
-                            ? const Color(0xFF1A1A2E)
-                            : Colors.black.withValues(alpha: 0.35),
+                    Flexible(
+                      child: Text(
+                        widget.confirmButtonLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: active
+                              ? context.c.onAmber
+                              : context.c.onAmber.withValues(alpha: 0.45),
+                        ),
                       ),
                     ),
                   ],
@@ -661,6 +681,10 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
 }
 
 // ─── Blok widget'ları ─────────────────────────────────────────────────────────
+//
+// Hepsi tema tokenı kullanır; hiçbirinde sabit renk yoktur. Belge
+// hiyerarşisi renkle DEĞİL, ağırlık + boyut + amber vurgu çizgisiyle
+// kurulur — bu, iki temada da aynı şekilde çalışan tek yoldur.
 
 const _kPH = 20.0;
 
@@ -672,10 +696,9 @@ class _DocH1 extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(_kPH, 28, _kPH, 8),
         child: Text(
           text,
-          style: GoogleFonts.dmSans(
-            fontSize: 26,
+          style: context.t.headlineLarge?.copyWith(
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF0D1B2A),
+            color: context.c.text90,
             height: 1.2,
           ),
         ),
@@ -693,10 +716,9 @@ class _DocH2 extends StatelessWidget {
           children: [
             Text(
               text,
-              style: GoogleFonts.dmSans(
-                fontSize: 15,
+              style: context.t.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF0D1B2A),
+                color: context.c.text90,
               ),
             ),
             const SizedBox(height: 6),
@@ -714,10 +736,12 @@ class _DocH3 extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(_kPH, 16, _kPH, 4),
         child: Text(
           text,
-          style: GoogleFonts.dmSans(
-            fontSize: 13,
+          // Alt başlık eskiden koyu YEŞİLDİ (`0xFF1B5E20`). Yeşil bu
+          // uygulamada "kazanç" demek; hukuki bir alt başlıkta anlamı yok
+          // ve koyu temada da okunmuyordu. Vurgu artık marka amberi.
+          style: context.t.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1B5E20),
+            color: context.c.amberText,
           ),
         ),
       );
@@ -731,9 +755,10 @@ class _DocParagraph extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(_kPH, 8, _kPH, 0),
         child: Text(
           text,
-          style: GoogleFonts.dmSans(
-            fontSize: 13.5,
-            color: const Color(0xFF2C3E50),
+          // Gövde metni tam kontrastta (`text90`): hukuki metin "ikincil"
+          // değildir, kullanıcının okuması beklenen asıl içeriktir.
+          style: context.t.bodyMedium?.copyWith(
+            color: context.c.text90,
             height: 1.65,
           ),
         ),
@@ -748,14 +773,13 @@ class _DocMeta extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(_kPH, 8, _kPH, 0),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFE8E4DC),
-          borderRadius: BorderRadius.circular(6),
+          color: context.c.overlay,
+          borderRadius: BorderRadius.circular(SandikRadius.sm),
         ),
         child: Text(
           text,
-          style: GoogleFonts.dmSans(
-            fontSize: 12,
-            color: const Color(0xFF5A6478),
+          style: context.t.bodySmall?.copyWith(
+            color: context.c.text58,
             height: 1.5,
           ),
         ),
@@ -767,10 +791,7 @@ class _DocDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(_kPH, 20, _kPH, 4),
-        child: Divider(
-          color: const Color(0xFF0D1B2A).withValues(alpha: 0.12),
-          height: 1,
-        ),
+        child: Divider(color: context.c.hairline, height: 1),
       );
 }
 
@@ -782,11 +803,15 @@ class _DocTableRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Zebra deseni iki temada da çalışsın diye SURFACE katmanlarından
+    // kurulur: başlık en üst katman (`surface2`), satırlar `surface1` ve
+    // onun üstüne ince bir overlay. Sabit krem tonları koyu temada
+    // beyaz bir blok gibi patlıyordu.
     final rowBg = isHeader
-        ? const Color(0xFF1A1A2E)
+        ? context.c.surface2
         : isEven
-            ? const Color(0xFFF0EDE6)
-            : const Color(0xFFF7F5F0);
+            ? context.c.surface1
+            : context.c.background;
 
     return Container(
       margin: EdgeInsets.only(
@@ -797,17 +822,13 @@ class _DocTableRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: rowBg,
         border: Border(
-          bottom: BorderSide(color: const Color(0xFF0D1B2A).withValues(alpha: 0.08)),
+          bottom: BorderSide(color: context.c.hairline),
           left: BorderSide(
-            color: isHeader
-                ? context.c.amberFill
-                : const Color(0xFF0D1B2A).withValues(alpha: 0.08),
+            color: isHeader ? context.c.amberFill : context.c.hairline,
             width: isHeader ? 3 : 1,
           ),
-          right: BorderSide(color: const Color(0xFF0D1B2A).withValues(alpha: 0.08)),
-          top: isHeader
-              ? BorderSide.none
-              : BorderSide(color: const Color(0xFF0D1B2A).withValues(alpha: 0.04)),
+          right: BorderSide(color: context.c.hairline),
+          top: isHeader ? BorderSide.none : BorderSide(color: context.c.hairline),
         ),
       ),
       child: IntrinsicHeight(
@@ -823,17 +844,20 @@ class _DocTableRow extends StatelessWidget {
                     ? null
                     : BoxDecoration(
                         border: Border(
-                          right: BorderSide(
-                            color: const Color(0xFF0D1B2A).withValues(alpha: 0.08),
-                          ),
+                          right: BorderSide(color: context.c.hairline),
                         ),
                       ),
                 child: Text(
                   cells[i],
-                  style: GoogleFonts.dmSans(
-                    fontSize: isHeader ? 11 : 12.5,
+                  style: (isHeader
+                          ? context.t.labelLarge
+                          : context.t.bodyMedium)
+                      ?.copyWith(
                     fontWeight: isHeader ? FontWeight.w700 : FontWeight.w400,
-                    color: isHeader ? Colors.white : const Color(0xFF2C3E50),
+                    // Başlık hücresi eskiden `Colors.white` idi ve açık
+                    // temada da beyaz zemine yakın bir bant üstüne
+                    // yazılıyordu. Artık her iki temada da okunur.
+                    color: isHeader ? context.c.text90 : context.c.text58,
                     height: 1.4,
                     letterSpacing: isHeader ? 0.4 : 0,
                   ),

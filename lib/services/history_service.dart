@@ -151,12 +151,29 @@ class HistoryService {
   /// Aynı oturumda tekrar tekrar çekmeyi önlemeye yetecek kadar uzun,
   /// gün içi fiyat hareketini kaçırmayacak kadar kısa.
   static const _cacheTtl = Duration(minutes: 15);
+
+  /// GÜN İÇİ (`1d`) serilerin TTL'i — daha kısa.
+  ///
+  /// Gün içi seri 5 dakikalık slotlardan oluşur ve ekran 30 saniyede bir
+  /// tick atıp yeniden istiyor. 15 dakikalık ortak TTL bu isteklerin
+  /// üçte ikisini aynı listeye bağlıyor: grafiğin GÖVDESİ çeyrek saat
+  /// boyunca hiç hareket etmiyor, yalnızca son nokta canlı toplamla
+  /// güncelleniyordu. "Gün içi grafik dümdüz" hissinin bir kısmı
+  /// buradandı. Slot çözünürlüğüyle aynı: 5 dakika.
+  static const _intradayCacheTtl = Duration(minutes: 5);
   static const _cacheMaxEntries = 50;
 
-  static List<(int, double)>? _cacheGet(String key) {
+  /// [ttl] verilmezse [_cacheTtl] geçerlidir.
+  ///
+  /// Gün içi çağıranlar [_intradayCacheTtl] geçer. TTL'i anahtarın
+  /// biçiminden ÇIKARMAYA çalışma: iki farklı anahtar şeması var
+  /// (`SEMBOL_range` ve `SEMBOL_range_interval`) ve `THYAO.IS_1mo_1d` gibi
+  /// bir GÜNLÜK anahtarı da `_1d` ile bitiyor — sonek kontrolü onu yanlışlıkla
+  /// gün içi sayardı.
+  static List<(int, double)>? _cacheGet(String key, {Duration? ttl}) {
     final at = _cacheAt[key];
     if (at == null) return null;
-    if (DateTime.now().difference(at) > _cacheTtl) {
+    if (DateTime.now().difference(at) > (ttl ?? _cacheTtl)) {
       _cache.remove(key);
       _cacheAt.remove(key);
       return null;
@@ -713,18 +730,23 @@ class HistoryService {
     Map<int, double> usdTrySlots = {};
     Map<int, double> goldSlots = {}; // TRY / gram22k
 
-    Future<List<(int, double)>> getHistorySafe(String sym) async {
-      final cacheKey = '${sym}_$range';
-      final cached = _cacheGet(cacheKey);
+    Future<List<(int, double)>> getHistorySafeFor(String sym, String r) async {
+      final cacheKey = '${sym}_$r';
+      // Gün içi seriler daha çabuk eskir (bkz. `_intradayCacheTtl`).
+      final cached =
+          _cacheGet(cacheKey, ttl: r == '1d' ? _intradayCacheTtl : null);
       if (cached != null) return cached;
       try {
-        final pts = await PriceService.instance.fetchHistory(sym, range);
+        final pts = await PriceService.instance.fetchHistory(sym, r);
         if (pts.isNotEmpty) _cachePut(cacheKey, pts);
         return pts;
       } catch (_) {
         return [];
       }
     }
+
+    Future<List<(int, double)>> getHistorySafe(String sym) =>
+        getHistorySafeFor(sym, range);
 
     bool needsGold = assets.any((a) => a.type == AssetType.altin);
     bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
@@ -761,6 +783,38 @@ class HistoryService {
           (a.type == AssetType.doviz && a.ticker.isNotEmpty)) {
         tickerFutures.putIfAbsent(a.ticker, () => getHistorySafe(a.ticker));
       }
+    }
+
+    // ── Fon (TEFAS) NAV serisi ──────────────────────────────────────────────
+    //
+    // TEFAS gün içi NAV yayınlamaz: bir fonun fiyatı günde BİR kez değişir.
+    // Fon gün boyu `currentPrice` ile sabit çizildiğinde gün içi seride
+    // değişimi SIFIR görünüyordu — oysa iki NAV arasında gerçek bir fark
+    // var ve kullanıcı onu görmek istiyor ("günlükte fon seçilince de
+    // değişim yok gözüküyor ancak aslında var", 2026-09-10).
+    //
+    // Çözüm: fonun ÖNCEKİ NAV'ını da çek. Gün, önceki NAV ile açılır;
+    // seansın ilk gerçek verisinden sonra güncel NAV'a geçer (aşağıdaki
+    // `fonOncekiNav` kullanımına bak). Böylece gün içi seri fonun
+    // günlük değişimini bir BASAMAK olarak taşır — ara noktalar
+    // uydurulmaz, çünkü fonun gün içinde ara değeri yoktur.
+    final fonNavFutures = <String, Future<List<(int, double)>>>{};
+    for (final a in assets) {
+      if (!a.isBuy || a.quantity <= 0) continue;
+      if (a.type != AssetType.fon) continue;
+      // NAV yalnızca TEFAS kodlu fonlarda var; elle fiyatlanan fonun
+      // yayımlanmış bir serisi yok.
+      if (!a.ticker.startsWith('TEFAS:')) continue;
+      if (a.isManualPrice) continue;
+      // `5d` aralığı TEFAS tarafında 1 aylık GÜNLÜK NAV serisine eşlenir
+      // (bkz. `PriceService._tefasPeriyodFor`) — son iki nokta yeter.
+      //
+      // Bilerek `1d` DEĞİL: `1d` anahtarları gün içi TTL'ine (5 dk) tabi
+      // ve 30 saniyelik ekran tick'i onları sürekli tazeler. Fon NAV'ı
+      // günde bir kez değişir; onu beş dakikada bir yeniden çekmek boşuna
+      // TEFAS trafiğidir.
+      fonNavFutures.putIfAbsent(
+          a.ticker, () => getHistorySafeFor(a.ticker, '5d'));
     }
 
     if (needsUsd) {
@@ -804,6 +858,22 @@ class HistoryService {
         map[normalizeSlot(p.$1)] = p.$2;
       }
       tickerSlots[entry.key] = map;
+    }
+
+    // Fon NAV'ları: sembol → (önceki NAV, güncel NAV).
+    //
+    // "Önceki" = son yayımlanandan bir ÖNCEKİ gün. İkisi eşitse ya da
+    // seri tek noktalıysa fonun günlük değişimi yok demektir; o durumda
+    // `oncekiNav` null bırakılır ve fon eskisi gibi sabit çizilir.
+    final fonOncekiNav = <String, double>{};
+    for (final entry in fonNavFutures.entries) {
+      final pts = await entry.value; // (ts, nav) — artan sırada
+      if (pts.length < 2) continue;
+      final onceki = pts[pts.length - 2].$2;
+      final son = pts.last.$2;
+      if (onceki <= 0 || son <= 0) continue;
+      if ((son - onceki).abs() < 1e-9) continue;
+      fonOncekiNav[entry.key] = onceki;
     }
 
     // ── Çizilecek SEANS günü ────────────────────────────────────────────────
@@ -870,8 +940,12 @@ class HistoryService {
     final byType = <AssetType, Map<int, double>>{};
     final byPosition = <String, Map<int, double>>{};
     final positionType = <String, AssetType>{};
-    // Gerçek gün içi fiyatın göründüğü İLK slot (seans açılışı). Döngüden
-    // sonra bundan öncesi atılır — bkz. "Seans ÖNCESİ düz plato".
+    // Gerçek gün içi fiyatın göründüğü İLK slot (seans açılışı).
+    //
+    // Fonun NAV basamağı buraya göre konumlanır: seansın ilk gerçek
+    // noktasına kadar önceki NAV, sonrasında güncel NAV (bkz. fon dalı).
+    // Slot döngüsünün SONUNDA yazılır — döngü gövdesinde okunduğunda
+    // "önceki slotlarda gerçek veri gördük mü" sorusunu yanıtlar.
     int? ilkGercekTs;
     // Gün içi fiyatı OLMASI GEREKEN türler ve fiilen ALINABİLEN türler.
     // Farkı, kullanıcıya "bu türün düzlüğü veri yokluğundandır" diye
@@ -939,6 +1013,28 @@ class HistoryService {
       return unitTRY;
     }
 
+    // ── HİÇ fiyatlanamayan varlıklar seriden tamamen çıkarılır ─────────────
+    //
+    // `assetSeedTRY` null döndüren bir varlık (fiyatı hiç çekilemeyen
+    // kurucu-only fon, kaldırılmış sembol, `currentPrice = 0` ile
+    // kaydedilmiş bir kayıt) hiçbir slotta değer üretemez.
+    //
+    // Aşağıdaki "eksik kapsam" elemesi böyle bir varlığı gördüğünde
+    // `covered < expected` olur ve slot seriye ALINMAZ. Tek bir
+    // fiyatlanamayan varlık, bu yüzden HER slotu düşürüyor ve gün içi
+    // grafiği bütünüyle boşaltıyordu — kullanıcı sebebini göremeden
+    // "grafik yok / düz" görüyordu.
+    //
+    // Doğrusu, kapsam sayımının "ölçülebilir portföy" üzerinden yapılması:
+    // fiyatlanamayan varlık ne toplama ne de `expected`'a girer. Böylece
+    // eleme asıl işini yapmaya devam eder (bir ticker kapanışa doğru veri
+    // vermeyi kesince o slot düşer) ama ölçülemeyen bir varlık tüm günü
+    // götürmez.
+    final olculebilir = <Asset>[
+      for (final a in assets)
+        if (a.isQuantityNeutral || a.isDeleted || assetSeedTRY(a) != null) a,
+    ];
+
     for (int i = 0; i <= slotCount; i++) {
       final hourDate = dayStart.add(Duration(minutes: i * slotMinutes));
       final hourTs = normalizeSlot(hourDate.millisecondsSinceEpoch);
@@ -972,7 +1068,8 @@ class HistoryService {
       // açılmadan önceki slotların hepsi seed'dir ve aynı değeri taşır.
       var slotGercekVeri = false;
 
-      for (final a in assets) {
+      // Ölçülemeyen varlıklar burada YOK (bkz. `olculebilir`).
+      for (final a in olculebilir) {
         try {
           final qty = signedQtyOnSlot(a, hourTs);
           if (qty == 0) continue;
@@ -1004,10 +1101,27 @@ class HistoryService {
               gunIciGercekTurler.add(a.type);
             }
           }
-          // Fon (TEFAS) intraday NAV yayınlamıyor — o gün için sabit
-          // currentPrice kullanılır (alternatif yok).
+          // Fon (TEFAS) intraday NAV yayınlamıyor: fiyat günde bir kez
+          // değişir. Gün boyu `currentPrice` ile sabit çizmek, fonun
+          // GERÇEK günlük değişimini grafikten ve tür dökümünden siliyordu
+          // (kullanıcı bildirimi 2026-09-10).
+          //
+          // Doğrusu bir BASAMAK: gün, bir önceki NAV ile açılır; seansın
+          // ilk gerçek fiyat verisi geldikten SONRAKİ slotlarda güncel
+          // NAV'a geçer. Ara noktalar uydurulmaz — fonun gün içinde ara
+          // değeri yoktur, olan tek şey bir yayın anıdır.
+          //
+          // `ilkGercekTs == null` bu döngü içinde "seansın ilk gerçek
+          // verisi henüz geçilmedi" demektir (alan slot döngüsünün SONUNDA
+          // yazılır). Böylece basamak, seansın ilk noktasından hemen sonra
+          // düşer ve seans öncesi platoya gömülmez.
           if (v == null && a.type == AssetType.fon && a.currentPrice > 0) {
-            v = a.currentPrice * qty;
+            v = gunIciFonBirimFiyati(
+                  guncelNav: a.currentPrice,
+                  oncekiNav: fonOncekiNav[a.ticker],
+                  seansBasladi: ilkGercekTs != null,
+                ) *
+                qty;
           }
           // Intraday verisi henüz gelmemiş varlıklar için seed fiyatı
           // kullan — grafik dik sıçramasın.
@@ -1063,29 +1177,27 @@ class HistoryService {
       }
     }
 
-    // ── Seans ÖNCESİ düz plato atılır ───────────────────────────────────────
+    // ── Seri GÜNÜN 00:00'ından başlar ───────────────────────────────────────
     //
-    // Borsa 10:00'da açılır; 00:00–10:00 arasındaki 120 slotun tamamı seed
-    // fiyatıyla (dünkü kapanış proxy'si) doldurulur ve BİREBİR aynı değeri
-    // taşır. Grafiğin yatay ekseninin yarısından fazlası bu düz platoydu;
-    // gerçek seans hareketi sağ tarafa sıkışıyor ve çizgi "dümdüz"
-    // görünüyordu.
+    // Borsa 10:00'da açılır; 00:00–10:00 arasındaki slotlar seed fiyatıyla
+    // (bugünkü ilk gerçek fiyatın proxy'si) doldurulur ve aynı değeri
+    // taşır — yani seans öncesi düz bir platodur.
     //
-    // Seed'in kendisi KALIR — amacı, verisi geç gelen TEK bir varlığın
-    // dik sıçrama yaratmasını önlemek. Atılan yalnızca, HİÇBİR varlığın
-    // gerçek gün içi fiyatı olmayan baştaki slotlardır.
+    // Bu plato bir ara SİLİNİYORDU ("gerçek hareket sağa sıkışıyor"
+    // gerekçesiyle). Sonuç kullanıcı tarafında daha kötüydü: X ekseni
+    // 00:00'da başlıyor ama çizgi grafiğin ortasından, ~%42'sinden
+    // başlıyordu; solda kocaman boş bir alan kalıyordu. Kullanıcının
+    // isteği açık: "GÜNLÜK seçildiğinde 00:00'dan başlayarak gözükmeli"
+    // (2026-09-10).
     //
-    // `ilkGercekTs` null ise (yalnızca TEFAS fonu olan portföy — gün içi NAV
-    // yayınlanmaz) hiçbir şey atılmaz: düz çizgi, boş grafikten iyidir.
-    if (ilkGercekTs != null) {
-      groupedPoints.removeWhere((ts, _) => ts < ilkGercekTs!);
-      for (final series in byType.values) {
-        series.removeWhere((ts, _) => ts < ilkGercekTs!);
-      }
-      for (final series in byPosition.values) {
-        series.removeWhere((ts, _) => ts < ilkGercekTs!);
-      }
-    }
+    // Platonun "her şeyi düz gösterme" riski BAŞKA bir yerde çözüldü:
+    // gün içi Y ekseninin asgari bandı %8'den %0,5'e indi
+    // (`gunIciAsgariBantOrani`), yani seans hareketi plato yanında da
+    // okunaklı kalıyor. Kalan düzlük gerçekten veri yokluğuysa bunu
+    // `gunIciVerisiYokTurler` notu söylüyor.
+    //
+    // `ilkGercekTs` artık yalnızca fonun NAV basamağını konumlandırmak
+    // için kullanılıyor (bkz. yukarıdaki fon dalı).
 
     // Son slotu anlık portföy toplamı ile hizala — grafiğin bitiş noktası
     // her zaman ana ekrandaki toplamla eşleşsin. currentPrice=0 olan
@@ -1849,6 +1961,34 @@ NormalizedSeries? normalizeSeries(Map<int, double> raw) {
     firstPrice: first,
     lastPrice: last,
   );
+}
+
+/// Bir fonun gün içi seride kullanacağı BİRİM fiyat.
+///
+/// TEFAS gün içi NAV yayınlamaz — bir fonun fiyatı günde bir kez değişir.
+/// Fon gün boyu `currentPrice` ile sabit çizildiğinde gün içi seride
+/// değişimi SIFIR görünüyordu; oysa iki NAV arasındaki fark gerçek ve
+/// kullanıcı onu görmek istiyor ("günlükte fon seçilince de değişim yok
+/// gözüküyor ancak aslında var", 2026-09-10).
+///
+/// Kural bir BASAMAK: gün, önceki NAV ile açılır ve seansın ilk gerçek
+/// fiyat verisi geçildikten sonra güncel NAV'a atlar. Ara değer
+/// UYDURULMAZ (doğrusal rampa çizmek, fonun olmayan bir gün içi hareketini
+/// icat etmek olurdu).
+///
+/// [oncekiNav] bilinmiyorsa (seri tek noktalı, iki NAV eşit, fon elle
+/// fiyatlanıyor) davranış eskisi gibi kalır: gün boyu sabit `guncelNav`.
+///
+/// [seansBasladi] `ilkGercekTs != null` — yani bu slottan ÖNCE gerçek gün
+/// içi verisi görüldü mü.
+@visibleForTesting
+double gunIciFonBirimFiyati({
+  required double guncelNav,
+  required double? oncekiNav,
+  required bool seansBasladi,
+}) {
+  if (oncekiNav == null || oncekiNav <= 0) return guncelNav;
+  return seansBasladi ? guncelNav : oncekiNav;
 }
 
 /// Tek noktalık "V" artefaktlarını temizler.

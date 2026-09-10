@@ -98,13 +98,17 @@ export function pozisyonAnahtari(a: PozisyonLot): string {
 ///     hareket kaydıdır),
 ///   · net miktarı sıfıra inmiş pozisyonların alım lot'ları,
 ///   · pozisyonun tamamını silen bir mezar taşından ESKİ alım lot'ları
-///     (ikinci savunma hattı — gerekçesi aşağıda).
+///     (ikinci savunma hattı — gerekçesi aşağıda),
+///   · `ref_asset_id` ile doğrudan işaret edilen tek lot (ve onun miktarı
+///     netten de düşülür).
 ///
 /// Temettü miktara ASLA girmez (`dividend` satırı nakit hareketidir).
 export function acikPozisyonLotlari<T extends PozisyonLot>(rows: T[]): T[] {
   const net = new Map<string, number>();
   // Pozisyonun tamamını silen mezar taşlarının EN YENİSİ (epoch ms).
   const pozisyonSilmeAni = new Map<string, number>();
+  // TEK bir lot'u silen mezar taşlarının işaret ettiği lot id'leri.
+  const silinenLotIdleri = new Set<string>();
 
   for (const r of rows) {
     const kind = r.kind ?? 'buy';
@@ -121,12 +125,32 @@ export function acikPozisyonLotlari<T extends PozisyonLot>(rows: T[]): T[] {
       // bildirdiği şikâyet tam olarak bu: "sildiğim varlıklar için push
       // atılmaması gerekiyor."
       //
-      // ## `ref_asset_id` dolu olan mezar taşları ATLANIR
-      // O bir TEK lot silmesidir (`deleteAsset`) ve yalnızca o `id`'yi
-      // ilgilendirir; ilgili satır zaten fiziksel silinmiştir. Pozisyon
-      // geneline uygulanırsa, iki lot'lu bir varlıkta birini silmek
-      // diğerini de susturur — gerçek bir varlık sessizleşirdi.
-      if (r.ref_asset_id != null) continue;
+      // ## `ref_asset_id` dolu olan mezar taşları POZİSYONU susturmaz —
+      // ## ama işaret ettikleri LOT'u susturur.
+      //
+      // Böyle bir mezar taşı TEK lot silmesidir ve yalnızca o `id`'yi
+      // ilgilendirir. Pozisyon geneline uygulanırsa, iki lot'lu bir
+      // varlıkta birini silmek diğerini de susturur — gerçek bir varlık
+      // sessizleşirdi. Bu yüzden `pozisyonSilmeAni`'ye YAZILMAZ.
+      //
+      // Ama tamamen atlamak da yanlıştı ve kullanıcının şikâyeti orada
+      // sürüyordu: "sildiğim varlıkların push'ları gelmeye devam ediyor"
+      // (2026-09-10). Eski yorum "ilgili satır zaten fiziksel silinmiştir"
+      // diyordu; bu YALNIZCA `deleteAsset` (tek lot, fiziksel DELETE) için
+      // doğru. Normal silme yolu `deletePositionLots` ve o YUMUŞAK siliyor:
+      // pozisyon tek lot'luysa mezar taşına `ref_asset_id` yazıp lot'u
+      // `deleted_at` ile damgalıyor. Damga sunucuya ulaşamazsa (bağlantı
+      // koparsa; iki yazma ayrı isteklerdir) lot AKTİF kalıyor, mezar taşı
+      // atlanıyor ve bildirim gitmeye devam ediyordu. Tek lot'lu pozisyon
+      // en yaygın durum olduğu için ikinci savunma hattı pratikte hiç
+      // devreye girmiyordu.
+      //
+      // Doğrusu: o mezar taşının işaret ettiği lot'u — ve yalnızca onu —
+      // elemek. Silinen lot'a dokunur, kardeşlerine dokunmaz.
+      if (r.ref_asset_id != null) {
+        silinenLotIdleri.add(String(r.ref_asset_id));
+        continue;
+      }
       const at = zamanMs(r.added_date);
       if (at === null) continue;
       const mevcut = pozisyonSilmeAni.get(key);
@@ -141,8 +165,30 @@ export function acikPozisyonLotlari<T extends PozisyonLot>(rows: T[]): T[] {
     net.set(key, (net.get(key) ?? 0) + delta);
   }
 
+  // Silinen tek lot'lar netten DÜŞÜLÜR — ikinci geçiş şart, çünkü mezar
+  // taşı satırı ilgili alım satırından SONRA gelebilir ve tek geçişte
+  // henüz bilinmiyor olurdu.
+  //
+  // Düşülmezse: iki lot'lu bir varlığın birini silmek o lot'u listeden
+  // çıkarır ama miktarını nette bırakır. Kalan lot 0'a satılmış olsa bile
+  // net pozitif görünür ve bildirim gitmeye devam ederdi.
+  if (silinenLotIdleri.size > 0) {
+    for (const r of rows) {
+      const kind = r.kind ?? 'buy';
+      if (kind !== 'buy' && kind !== 'sell') continue;
+      if (!silinenLotIdleri.has(String(r.id))) continue;
+      const miktar = Number(r.quantity ?? 0);
+      if (!Number.isFinite(miktar)) continue;
+      const key = pozisyonAnahtari(r);
+      const delta = kind === 'sell' ? -miktar : miktar;
+      net.set(key, (net.get(key) ?? 0) - delta);
+    }
+  }
+
   return rows.filter((r) => {
     if ((r.kind ?? 'buy') !== 'buy') return false;
+    // Mezar taşının doğrudan işaret ettiği lot: silinmiştir, bildirim yok.
+    if (silinenLotIdleri.has(String(r.id))) return false;
     const key = pozisyonAnahtari(r);
     if ((net.get(key) ?? 0) <= EPSILON) return false;
 

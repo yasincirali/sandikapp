@@ -254,7 +254,13 @@ class TefasService {
   /// NOT: `fetchAllFunds` liste endpoint'i fiyat döndürmüyor (hep 0). Bu
   /// yüzden liste cache'ini fiyat kaynağı olarak kullanmıyoruz; fiyatlar
   /// yalnızca `fonFiyatBilgiGetir` üzerinden gelir.
-  Future<Map<String, double>> fetchPrices(List<String> codes) async {
+  ///
+  /// [forceRefresh] kullanıcı açıkça yenileme istediğinde (pull-to-refresh)
+  /// 30 dakikalık TTL'i atlar — bayat NAV görmemeli.
+  Future<Map<String, double>> fetchPrices(
+    List<String> codes, {
+    bool forceRefresh = false,
+  }) async {
     if (codes.isEmpty) return {};
 
     await _loadPricesFromDisk();
@@ -263,7 +269,7 @@ class TefasService {
     final missing = <String>[];
 
     for (final c in codes) {
-      if (_priceFresh(c)) {
+      if (!forceRefresh && _priceFresh(c)) {
         result[c] = _priceCache[c]!.price;
       } else {
         missing.add(c);
@@ -299,9 +305,32 @@ class TefasService {
   }
 
   /// Tek fon için güncel fiyatı `fonFiyatBilgiGetir` endpoint'inden çeker.
+  ///
+  /// ## ⚠️ Fon listesi cache'ine ASLA düşmez
+  ///
+  /// Bu metot eskiden `lookupFund`'a delege ediyordu. `lookupFund` ise ÖNCE
+  /// `_cachedFunds` listesine bakıp bulduğunu döndürüyor — ve o listedeki
+  /// her fonun fiyatı **0'dır** (`_fetchFundList` fiyat alanını
+  /// döndürmüyor, `price: 0.0` yazıyor). Sonuç iki katmanlı bir sessiz
+  /// arıza oluyordu:
+  ///
+  ///   1. Kullanıcı bir kez fon listesini açar → `_cachedFunds` fiyatsız
+  ///      1000+ fonla dolar ve **24 saat** diskte yaşar.
+  ///   2. Ondan sonra `fetchPrices` her çağrıldığında `lookupFund` o
+  ///      fiyatsız kaydı bulur, `price > 0` kapısına takılır ve `null`
+  ///      döner. Yani fon fiyatı ağdan HİÇ çekilmez; portföyde varlığın
+  ///      en son kaydedilen `currentPrice`'ı kalır.
+  ///
+  /// Belirtisi (kullanıcı bildirimi 2026-09-10): "Fonların günlük değerleri
+  /// güncel çekilmiyor… fonları açınca bir süre sonra data geliyor."
+  /// Gecikmeli gelen veri, listenin cache'i düştükten sonraki ilk
+  /// `lookupFund` ağ çağrısıydı.
+  ///
+  /// Doğrusu: fiyat sorusu HER ZAMAN fiyat endpoint'ine sorulur. Liste
+  /// cache'i yalnızca fonun ADI/ÜNVANI için bir kaynaktır.
   Future<double?> _fetchSinglePrice(String code) async {
-    final fund = await lookupFund(code);
-    return fund != null && fund.price > 0 ? fund.price : null;
+    final fetched = await _fetchPriceRow(code);
+    return fetched?.price;
   }
 
   /// TEFAS liste endpoint'inde (`fonGetiriBazliBilgiGetir`) görünmeyen ama
@@ -310,17 +339,85 @@ class TefasService {
   /// fiyat API'sinde fiyat + ünvan döndürüyor. Kullanıcı bir kod yazdığında
   /// ve normal listede bulunmadığında bu metod çağrılır; bulunursa cache'e
   /// eklenir ve normal fon gibi davranır.
+  ///
+  /// Cache'ten dönen kayıt FİYATSIZ olabilir (liste endpoint'i fiyat
+  /// vermiyor). O durumda fiyat için yine ağa çıkılır — çağıranların
+  /// çoğu (arama, ekleme ekranı) fiyatı da bekliyor.
   Future<TefasFund?> lookupFund(String code) async {
     final normalized = code.trim().toUpperCase();
     if (normalized.isEmpty) return null;
 
-    // Zaten cache'te varsa döndür
+    // Cache'te fiyatıyla birlikte varsa döndür. Fiyatsız kayıt (liste
+    // endpoint'inden gelen) yeterli DEĞİLDİR — aşağıda fiyatla tamamlanır.
+    TefasFund? cached;
     if (_cachedFunds != null) {
       for (final f in _cachedFunds!) {
-        if (f.code == normalized) return f;
+        if (f.code == normalized) {
+          cached = f;
+          break;
+        }
       }
     }
+    if (cached != null && cached.price > 0) return cached;
+    // Taze fiyat cache'i varsa ağa çıkmadan tamamla.
+    if (cached != null && _priceFresh(normalized)) {
+      return _withPrice(cached, _priceCache[normalized]!.price);
+    }
 
+    final fetched = await _fetchPriceRow(normalized);
+    if (fetched == null) return cached; // ağ düştü → elde ne varsa o
+
+    // Ad/ünvan bilgisi liste kaydında daha zengin olabilir; onu koru.
+    final fund = cached != null
+        ? _withPrice(cached, fetched.price)
+        : TefasFund(
+            code: normalized,
+            name: fetched.unvan.isEmpty ? normalized : fetched.unvan,
+            price: fetched.price,
+            // Liste endpoint'inde olmayan fonların tipini bilmiyoruz — YAT
+            // olarak varsay (kullanıcının göreceği kategori "fon").
+            fundType: 'YAT',
+            managerName: _parseManagerName(fetched.unvan),
+          );
+
+    // Cache'e ekle/güncelle — bir daha aynı kod için fetchAllFunds arasa
+    // bulur ve bu sefer FİYATLI bulur.
+    final liste = <TefasFund>[...(_cachedFunds ?? const <TefasFund>[])];
+    final idx = liste.indexWhere((f) => f.code == normalized);
+    if (idx >= 0) {
+      liste[idx] = fund;
+    } else {
+      liste.add(fund);
+    }
+    _cachedFunds = liste;
+    // Kurucu-only fonlar da kalıcı olsun — kullanıcı bir kez eklediğinde
+    // sonraki açılışlarda yeniden lookup gerektirmesin.
+    unawaited(_saveToDisk());
+    return fund;
+  }
+
+  /// Aynı fonun fiyatı güncellenmiş kopyası.
+  static TefasFund _withPrice(TefasFund f, double price) => TefasFund(
+        code: f.code,
+        name: f.name,
+        price: price,
+        fundType: f.fundType,
+        managerName: f.managerName,
+        return1m: f.return1m,
+        return3m: f.return3m,
+        return6m: f.return6m,
+        return1y: f.return1y,
+        returnYtd: f.returnYtd,
+        riskLevel: f.riskLevel,
+      );
+
+  /// `fonFiyatBilgiGetir` çağrısının HAM sonucu — fiyat + ünvan.
+  ///
+  /// Fiyat cache'ini burada yazar: her çağıran (fiyat yenileme, arama,
+  /// kurucu-only lookup) aynı taze değeri paylaşsın.
+  Future<({double price, String unvan})?> _fetchPriceRow(String code) async {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty) return null;
     try {
       final body =
           jsonEncode({'fonKodu': normalized, 'dil': 'TR', 'periyod': 1});
@@ -350,26 +447,13 @@ class TefasService {
       }
       if (latest == null || price == null) return null;
 
-      final unvan = _fixEncoding(latest['fonUnvan'] as String? ?? '').trim();
-      final fund = TefasFund(
-        code: normalized,
-        name: unvan.isEmpty ? normalized : unvan,
-        price: price,
-        // Liste endpoint'inde olmayan fonların tipini bilmiyoruz — YAT
-        // olarak varsay (kullanıcının göreceği kategori "fon").
-        fundType: 'YAT',
-        managerName: _parseManagerName(unvan),
-      );
-
-      // Cache'e ekle — bir daha aynı kod için fetchAllFunds arasa bulur.
-      _cachedFunds = [...(_cachedFunds ?? []), fund];
-      // Fiyatı da fiyat cache'ine yaz — refreshPrices bir daha ağa çıkmasın.
       _priceCache[normalized] = (price: price, ts: DateTime.now());
-      // Kurucu-only fonlar da kalıcı olsun — kullanıcı bir kez eklediğinde
-      // sonraki açılışlarda yeniden lookup gerektirmesin.
-      unawaited(_saveToDisk());
       unawaited(_savePricesToDisk());
-      return fund;
+
+      return (
+        price: price,
+        unvan: _fixEncoding(latest['fonUnvan'] as String? ?? '').trim(),
+      );
     } catch (_) {
       return null;
     }
