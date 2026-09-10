@@ -962,6 +962,27 @@ class HistoryService {
     // sonraki tüm slotlara kapanış fiyatını yayıp yine düz kuyruk üretirdi.
     final nowTs = seansSonuTs ?? normalizeSlot(now.millisecondsSinceEpoch);
 
+    // ── Fonun NAV basamağının yeri ──────────────────────────────────────────
+    //
+    // Fonun günlük NAV değişimi gün içinde TEK bir anda olur. O anın nerede
+    // çizileceği SABİT olmak zorunda: kayan bir basamak, kullanıcıya "az önce
+    // bir şey oldu" der ve her bakışta başka bir yerde durur.
+    //
+    // Çapa neden `tefasNavYayinSaati`: TEFAS yanıtı NAV'ın TARİHİNİ taşıyor,
+    // yayımlandığı ANI değil — elimizde gerçek yayın damgası yok. Piyasa
+    // açılışı (10:00) uygulamanın başka yerlerinde de kullandığı, günden güne
+    // değişmeyen bir referans. Yaklaşıklığı `TECHNICAL_DEBT.md`'de yazılı.
+    //
+    // Çizilen gün henüz o saate ULAŞMADIYSA basamak YOKTUR (`null`): fon gün
+    // boyu güncel NAV ile çizilir. Bu, son slotu canlı toplamla ezen
+    // hizalamanın fon için no-op kalmasını garanti eder — yani imlece yapışan
+    // dik uçurum hiçbir saatte oluşamaz.
+    final fonBasamakAdayi = dayStart
+        .add(const Duration(hours: tefasNavYayinSaati))
+        .millisecondsSinceEpoch;
+    final int? fonBasamakTs =
+        nowTs >= normalizeSlot(fonBasamakAdayi) ? normalizeSlot(fonBasamakAdayi) : null;
+
     // Her varlık için "seed" fiyatı — intraday veri henüz gelmediği
     // slotlarda kullanılır (dünkü kapanış proxy'si). Böylece bir varlığın
     // borsa açılışı gecikse bile grafik ilk slot'tan itibaren varlığı sayar
@@ -1106,20 +1127,24 @@ class HistoryService {
           // GERÇEK günlük değişimini grafikten ve tür dökümünden siliyordu
           // (kullanıcı bildirimi 2026-09-10).
           //
-          // Doğrusu bir BASAMAK: gün, bir önceki NAV ile açılır; seansın
-          // ilk gerçek fiyat verisi geldikten SONRAKİ slotlarda güncel
-          // NAV'a geçer. Ara noktalar uydurulmaz — fonun gün içinde ara
+          // Doğrusu bir BASAMAK: gün önceki NAV ile açılır, yayın anında
+          // güncel NAV'a atlar. Ara nokta uydurulmaz — fonun gün içinde ara
           // değeri yoktur, olan tek şey bir yayın anıdır.
           //
-          // `ilkGercekTs == null` bu döngü içinde "seansın ilk gerçek
-          // verisi henüz geçilmedi" demektir (alan slot döngüsünün SONUNDA
-          // yazılır). Böylece basamak, seansın ilk noktasından hemen sonra
-          // düşer ve seans öncesi platoya gömülmez.
+          // Basamağın yeri `fonBasamakTs` — SABİT bir saat (bkz. o alanın
+          // hesabı). Bir önceki sürümde seansın ilk gerçek verisine
+          // (`ilkGercekTs`) çapalıydı ve bu, portföyde fondan başka varlık
+          // yoksa HİÇ gerçekleşmiyordu: "Fon" türü filtresinde gün boyu
+          // önceki NAV çiziliyor, sonra son slotu canlı toplamla ezen
+          // hizalama tek noktalık dik bir uçurum bırakıyordu. Uçurum
+          // "ŞİMDİ" imlecine yapışık duruyor ve dakikalar geçtikçe onunla
+          // birlikte sağa kayıyordu (kullanıcı ekran görüntüsü, 2026-09-10).
           if (v == null && a.type == AssetType.fon && a.currentPrice > 0) {
             v = gunIciFonBirimFiyati(
                   guncelNav: a.currentPrice,
                   oncekiNav: fonOncekiNav[a.ticker],
-                  seansBasladi: ilkGercekTs != null,
+                  slotTs: hourTs,
+                  basamakTs: fonBasamakTs,
                 ) *
                 qty;
           }
@@ -1963,6 +1988,17 @@ NormalizedSeries? normalizeSeries(Map<int, double> raw) {
   );
 }
 
+/// TEFAS'ın günlük NAV'ının gün içi grafikte çizileceği SAAT (yerel).
+///
+/// TEFAS yanıtı NAV'ın TARİHİNİ taşır, yayımlandığı ANI değil — gerçek yayın
+/// damgası elimizde yok. Piyasa açılışı (10:00) günden güne değişmeyen,
+/// uygulamanın başka yerlerinde de referans aldığı bir an; basamağı oraya
+/// koymak yaklaşık ama KARARLI. Kararlılık burada doğruluktan daha çok iş
+/// görüyor: kayan bir basamak kullanıcıya olmayan bir olay anlatır.
+///
+/// Yaklaşıklığı ve ne zaman iyileştirileceği `TECHNICAL_DEBT.md`'de yazılı.
+const int tefasNavYayinSaati = 10;
+
 /// Bir fonun gün içi seride kullanacağı BİRİM fiyat.
 ///
 /// TEFAS gün içi NAV yayınlamaz — bir fonun fiyatı günde bir kez değişir.
@@ -1971,24 +2007,36 @@ NormalizedSeries? normalizeSeries(Map<int, double> raw) {
 /// kullanıcı onu görmek istiyor ("günlükte fon seçilince de değişim yok
 /// gözüküyor ancak aslında var", 2026-09-10).
 ///
-/// Kural bir BASAMAK: gün, önceki NAV ile açılır ve seansın ilk gerçek
-/// fiyat verisi geçildikten sonra güncel NAV'a atlar. Ara değer
-/// UYDURULMAZ (doğrusal rampa çizmek, fonun olmayan bir gün içi hareketini
-/// icat etmek olurdu).
+/// Kural bir BASAMAK: gün, önceki NAV ile açılır ve [basamakTs] anında
+/// güncel NAV'a atlar. Ara değer UYDURULMAZ (doğrusal rampa çizmek, fonun
+/// olmayan bir gün içi hareketini icat etmek olurdu).
 ///
 /// [oncekiNav] bilinmiyorsa (seri tek noktalı, iki NAV eşit, fon elle
 /// fiyatlanıyor) davranış eskisi gibi kalır: gün boyu sabit `guncelNav`.
 ///
-/// [seansBasladi] `ilkGercekTs != null` — yani bu slottan ÖNCE gerçek gün
-/// içi verisi görüldü mü.
+/// [basamakTs] `null` ise çizilen gün henüz yayın saatine ulaşmamıştır ve
+/// basamak YOKTUR — fon gün boyu `guncelNav` ile çizilir.
+///
+/// ## Çapa neden SABİT bir saat
+/// İlk sürümde basamak, seansın ilk gerçek fiyat verisine çapalıydı. O veri
+/// yalnızca hisse/altın/emtia/döviz dallarında üretiliyor; portföyde (ya da
+/// tür filtresinde) fondan başka varlık yoksa çapa HİÇ oluşmuyor, fon gün
+/// boyu önceki NAV'da kalıyor ve son slotu canlı toplamla ezen hizalama tek
+/// noktalık dik bir uçurum bırakıyordu — üstelik "ŞİMDİ" imlecine yapışık,
+/// dakikalar geçtikçe sağa kayan bir uçurum.
+///
+/// Sabit saat hem bu kaymayı bitirir hem de aynı fonun basamağını "Tümü" ve
+/// "Fon" görünümlerinde AYNI yere koyar.
 @visibleForTesting
 double gunIciFonBirimFiyati({
   required double guncelNav,
   required double? oncekiNav,
-  required bool seansBasladi,
+  required int slotTs,
+  required int? basamakTs,
 }) {
   if (oncekiNav == null || oncekiNav <= 0) return guncelNav;
-  return seansBasladi ? guncelNav : oncekiNav;
+  if (basamakTs == null) return guncelNav;
+  return slotTs < basamakTs ? oncekiNav : guncelNav;
 }
 
 /// Tek noktalık "V" artefaktlarını temizler.

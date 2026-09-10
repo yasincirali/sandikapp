@@ -66,10 +66,15 @@ class GoldTransaction {
 /// almış olabilir, sunucu da kendi temsilcisini seçiyor. Bu yüzden eşleşme
 /// id ile DEĞİL, ticker + tür ile yapılır: sinyalin ürettiği şey zaten
 /// sembole aittir.
-class AssetSignalCard extends ConsumerWidget {
-  const AssetSignalCard({super.key, required this.asset});
+class AssetSignalCard extends ConsumerStatefulWidget {
+  const AssetSignalCard({super.key, required this.asset, this.onTap});
 
   final Asset asset;
+
+  /// Şeride dokununca çağrılır — ekran bunu aşağıdaki tam panele kaydırmak
+  /// için kullanır. Özet bir şerit, hangi göstergenin ne dediğini
+  /// söylemez; kullanıcı merak ettiğinde detayın yolu bir dokunuş olmalı.
+  final VoidCallback? onTap;
 
   /// [alerts] içinden bu varlığa ait EN YENİ kaydı seçer.
   ///
@@ -93,13 +98,154 @@ class AssetSignalCard extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final alerts = ref.watch(signalProvider).valueOrNull ?? const <SignalAlert>[];
-    final alert = sonSinyal(alerts, asset);
-    if (alert == null) return const SizedBox.shrink();
+  ConsumerState<AssetSignalCard> createState() => _AssetSignalCardState();
+}
 
-    final isBuy = alert.signal == SignalType.buy;
-    final isSell = alert.signal == SignalType.sell;
+class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
+  /// Panelle AYNI fiyat serisi. `HistoryService` (tier, sembol) başına
+  /// önbellekli olduğu için ikinci çağrı ağa çıkmaz — şerit ve panel aynı
+  /// yanıtı paylaşır ve **aynı sayıyı** gösterir. Ayrı seri çekilseydi
+  /// üstteki özet ile alttaki panel farklı sonuç verebilirdi.
+  Future<List<double>>? _pricesFuture;
+  String? _pricesKey;
+
+  Future<List<double>> _loadPrices() {
+    final key = '${widget.asset.ticker}|${widget.asset.type.name}';
+    if (_pricesKey == key && _pricesFuture != null) return _pricesFuture!;
+    _pricesKey = key;
+    _pricesFuture = HistoryService.instance
+        .getSymbolHistory(widget.asset.ticker, periodDays: 180)
+        .then((map) {
+      final keys = map.keys.toList()..sort();
+      return [for (final k in keys) map[k]!];
+    }).catchError((_) => <double>[]);
+    return _pricesFuture!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final alerts =
+        ref.watch(signalProvider).valueOrNull ?? const <SignalAlert>[];
+    final kayit = AssetSignalCard.sonSinyal(alerts, widget.asset);
+
+    final prefs = ref.watch(indicatorPrefsProvider);
+    final premium = ref.watch(premiumUnlockedProvider);
+    final enabledIds = prefs[widget.asset.type] ??
+        TechnicalAnalysisService.defaultEnabledFor(widget.asset.type);
+
+    // Kullanıcı bu tür için hiçbir gösterge seçmemişse hesaplanacak bir
+    // şey yok; alttaki panel bunu zaten açıklıyor, şeritte tekrar etmek
+    // ekranın en değerli yerini bir uyarıya harcardı.
+    if (enabledIds.isEmpty) return const SizedBox.shrink();
+
+    return FutureBuilder<List<double>>(
+      future: _loadPrices(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return _kabuk(
+            renk: context.c.text36,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 13,
+                  height: 13,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: context.c.amberFill),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Sinyal hesaplanıyor…',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58)),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final prices = snap.data ?? const <double>[];
+        // Göstergelerin çoğu 20-26 nokta ister; 30 altı güvenilir değil.
+        // Uydurma veriyle sinyal göstermektense hiç göstermemek doğru
+        // (bkz. `TechnicalSignalPanel` — aynı eşik, aynı gerekçe).
+        //
+        // Kayıtlı bir bildirim VARSA yine de gösterilir: o sinyal geçmişte
+        // gerçekten üretilmiş ve kullanıcıya gönderilmiştir; bugün seri
+        // çekilemiyor diye onu saklamak bilgi gizlemek olurdu.
+        if (prices.length < 30) {
+          if (kayit == null) return const SizedBox.shrink();
+          return _satir(
+            signal: kayit.signal,
+            lehte: kayit.signal == SignalType.sell
+                ? kayit.sellCount
+                : kayit.buyCount,
+            toplam: kayit.buyCount + kayit.sellCount,
+            guven: kayit.confidence,
+            canli: false,
+            kayit: kayit,
+          );
+        }
+
+        final indicators = TechnicalAnalysisService.analyzeSeries(
+          prices,
+          widget.asset.type,
+          enabledIds: enabledIds,
+          premiumUnlocked: premium,
+        );
+        if (indicators.isEmpty) return const SizedBox.shrink();
+
+        final ozet = TechnicalAnalysisService.summarize(indicators);
+        return _satir(
+          signal: ozet.signal,
+          lehte:
+              ozet.signal == SignalType.sell ? ozet.sellCount : ozet.buyCount,
+          toplam: ozet.buyCount + ozet.sellCount,
+          guven: ozet.confidence,
+          canli: true,
+          kayit: kayit,
+        );
+      },
+    );
+  }
+
+  /// Şeridin dış kabuğu — dolgu, kenarlık, dokunma alanı.
+  Widget _kabuk({required Color renk, required Widget child}) {
+    final govde = Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: SandikSpace.sm),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: renk.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+        border: Border.all(color: renk.withValues(alpha: 0.28)),
+      ),
+      child: child,
+    );
+    if (widget.onTap == null) return govde;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      child: govde,
+    );
+  }
+
+  /// Tek satırlık sinyal özeti.
+  ///
+  /// [canli] true ise göstergeler ŞU AN yeniden hesaplanmıştır; false ise
+  /// gösterilen şey geçmişte kaydedilmiş bir bildirimdir. Ayrım kullanıcıya
+  /// açıkça yazılır — "şu an yukarı yönlü" ile "üç gün önce yukarı sinyali
+  /// gelmişti" aynı şey değildir.
+  Widget _satir({
+    required SignalType signal,
+    required int lehte,
+    required int toplam,
+    required double guven,
+    required bool canli,
+    required SignalAlert? kayit,
+  }) {
+    final isBuy = signal == SignalType.buy;
+    final isSell = signal == SignalType.sell;
     final renk = isBuy
         ? context.c.gain
         : isSell
@@ -117,22 +263,28 @@ class AssetSignalCard extends ConsumerWidget {
         : isSell
             ? Icons.trending_down_rounded
             : Icons.remove_rounded;
-    final toplam = alert.buyCount + alert.sellCount;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: SandikSpace.sm),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: renk.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: renk.withValues(alpha: 0.28)),
-      ),
+    final detay = toplam > 0
+        ? '$lehte/$toplam gösterge · güven %${guven.round()}'
+        : 'güven %${guven.round()}';
+
+    // Kayıtlı bildirim, CANLI özetten ayrı bir satırda durur. İkisi
+    // çeliştiğinde (bildirim "yukarı" derken göstergeler bugün "aşağı"
+    // diyorsa) bu fark kullanıcı için bilginin kendisidir — gizlemek
+    // yerine yan yana gösteriyoruz.
+    final kayitSatiri = (canli && kayit != null)
+        ? 'Son bildirim: ${_kisaYon(kayit.signal)} · '
+            '${DateFormat('d MMM', 'tr_TR').format(kayit.detectedAt)}'
+        : null;
+
+    return _kabuk(
+      renk: renk,
       child: Row(
         children: [
           Icon(ikon, color: renk, size: 20),
           const SizedBox(width: 10),
-          // Metin bloğu esner; sağdaki tarih sabit kalır. Uzun varlık
-          // adlarında satır taşmasın diye Expanded şart.
+          // Metin bloğu esner; sağdaki zaman etiketi sabit kalır. Uzun
+          // varlık adlarında satır taşmasın diye Expanded şart.
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,28 +301,56 @@ class AssetSignalCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  toplam > 0
-                      ? 'Son sinyal · ${isSell ? alert.sellCount : alert.buyCount}/$toplam gösterge · güven %${alert.confidence.round()}'
-                      : 'Son sinyal · güven %${alert.confidence.round()}',
-                  maxLines: 2,
+                  detay,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.t.bodySmall?.copyWith(color: context.c.text58),
+                  style:
+                      context.t.bodySmall?.copyWith(color: context.c.text58),
                 ),
+                if (kayitSatiri != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    kayitSatiri,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text36),
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            DateFormat('d MMM · HH:mm', 'tr_TR').format(alert.detectedAt),
-            style: context.t.numSmall.copyWith(
-              fontSize: 11,
-              color: context.c.text36,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                canli
+                    ? 'ŞU AN'
+                    : DateFormat('d MMM', 'tr_TR').format(kayit!.detectedAt),
+                style: context.t.labelMedium?.copyWith(
+                  letterSpacing: 0.4,
+                  fontWeight: FontWeight.w700,
+                  color: context.c.text36,
+                ),
+              ),
+              if (widget.onTap != null) ...[
+                const SizedBox(height: 2),
+                Icon(Icons.chevron_right_rounded,
+                    size: 16, color: context.c.text36),
+              ],
+            ],
           ),
         ],
       ),
     );
   }
+
+  String _kisaYon(SignalType s) => switch (s) {
+        SignalType.buy => '▲ yukarı',
+        SignalType.sell => '▼ aşağı',
+        SignalType.neutral => '◆ yatay',
+      };
 }
 
 /// Teknik gösterge paneli.
@@ -696,6 +876,27 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   List<({String label, int days})> get _periods =>
       _gunIciDestekli ? _allPeriods : _allPeriods.sublist(1);
 
+  /// Alttaki teknik gösterge panelinin konumu.
+  ///
+  /// Üstteki sinyal şeridi yalnızca ÖZET verir (yön + kaç gösterge + güven).
+  /// "Hangi gösterge ne diyor" sorusunun cevabı sayfanın dibindeki panelde;
+  /// kullanıcı şeride dokununca oraya kaydırılır. Aksi halde özet, cevabı
+  /// olmayan bir merak uyandırırdı.
+  final GlobalKey _sinyalPaneliKey = GlobalKey();
+
+  /// Şeritten panele kaydır.
+  void _sinyalPaneline() {
+    final ctx = _sinyalPaneliKey.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: SandikMotion.surfaceOf(context),
+      curve: SandikMotion.enter,
+      // Panel ekranın üst kenarına yapışmasın; başlığı görünür kalsın.
+      alignment: 0.1,
+    );
+  }
+
   /// Gün içi serinin çizildiği günün 00:00'ı.
   ///
   /// Bugün olmak ZORUNDA değil: piyasa kapalıyken (hafta sonu, tatil,
@@ -1208,13 +1409,25 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     },
                     orElse: () => const SizedBox.shrink(),
                   ),
-                // Kayıtlı sinyal varsa EN ÜSTTE görünür — kullanıcı bu
-                // ekrana çoğu zaman bildirimden geliyor ve "bana ne
-                // bildirilmişti" sorusunun cevabını aramak için 2900
-                // satırlık ekranın dibine inmek zorunda kalmamalı.
-                // Kayıt yoksa widget hiç yer kaplamaz.
+                // Sinyal özeti EN ÜSTTE.
+                //
+                // Şerit ÖNCE canlı göstergeleri okur, kayıtlı bildirimi
+                // beklemez. İlk sürümde yalnızca `signal_notifications`
+                // satırı varsa çiziliyordu; o satır ancak bir sinyal güven
+                // eşiğini geçtiğinde VE öncekinden farklı olduğunda yazılır,
+                // yani çoğu varlıkta çoğu zaman hiç yoktu ve sinyal bilgisi
+                // pratikte yalnızca sayfanın dibindeki panelde kalıyordu
+                // (kullanıcı bildirimi 2026-09-10: "sinyaller varlık
+                // performansta gözükmeli").
+                //
+                // Kayıtlı bildirim varsa şeridin ikinci satırında durur —
+                // "şu an ne diyor" ile "bana ne bildirilmişti" farklı
+                // sorulardır.
                 if (widget.asset.type != AssetType.mevduat)
-                  AssetSignalCard(asset: widget.asset),
+                  AssetSignalCard(
+                    asset: widget.asset,
+                    onTap: _sinyalPaneline,
+                  ),
                 _buildPeriodToggle(),
                 const SizedBox(height: 24),
                 FutureBuilder<Map<int, double>>(
@@ -2339,7 +2552,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 ),
                 const SizedBox(height: 24),
                 if (widget.asset.type != AssetType.mevduat)
-                  TechnicalSignalPanel.forAsset(widget.asset),
+                  TechnicalSignalPanel.forAsset(widget.asset,
+                      key: _sinyalPaneliKey),
               ],
             ),
           ),
