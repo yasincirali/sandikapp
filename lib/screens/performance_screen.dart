@@ -101,6 +101,28 @@ class AssetSignalCard extends ConsumerStatefulWidget {
   ConsumerState<AssetSignalCard> createState() => _AssetSignalCardState();
 }
 
+/// Teknik göstergelerin istediği fiyat penceresi (gün).
+///
+/// ## Neden 90, neden 180 DEĞİL
+/// 180 gün istemek göstergeleri TAMAMEN devre dışı bırakıyordu — hem
+/// hisselerde hem fonlarda (ölçüldü 2026-09-10: THYAO 26 nokta, TEFAS:DPP
+/// 26 nokta, eşik 30). Sebep pencerenin kendisi değil, `HistoryService`in
+/// çözünürlük merdiveni: 180 gün HAFTALIK katmana düşüyor ve 125 günlük
+/// nokta 26 haftalık kovaya iniyor.
+///
+/// Panel ise GÜNLÜK seri varsayıyor: MACD 26, Bollinger 20, ADX 2×14
+/// nokta ister ve bunlar GÜN cinsinden düşünülmüştür. Haftalık kovalarda
+/// 26 nokta yarım yıl değil, yarım yıllık **6 aylık** bir pencereye
+/// karşılık gelir ve eşiğin altında kalır.
+///
+/// 90 gün günlük katmanda kalır ve 63 nokta verir (ölçüldü) — en uzun
+/// göstergenin (ADX, 28) iki katından fazla.
+///
+/// Şerit ve panel AYNI değeri kullanmak zorunda: ikisi `HistoryService`
+/// önbelleğini paylaşıyor ve farklı pencere isterlerse aynı varlık için
+/// FARKLI sinyal gösterebilirler (bkz. `varlik_sinyal_karti_test.dart`).
+const int kSinyalPenceresiGun = 90;
+
 class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
   /// Panelle AYNI fiyat serisi. `HistoryService` (tier, sembol) başına
   /// önbellekli olduğu için ikinci çağrı ağa çıkmaz — şerit ve panel aynı
@@ -114,7 +136,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     if (_pricesKey == key && _pricesFuture != null) return _pricesFuture!;
     _pricesKey = key;
     _pricesFuture = HistoryService.instance
-        .getSymbolHistory(widget.asset.ticker, periodDays: 180)
+        .getSymbolHistory(widget.asset.ticker, periodDays: kSinyalPenceresiGun)
         .then((map) {
       final keys = map.keys.toList()..sort();
       return [for (final k in keys) map[k]!];
@@ -739,7 +761,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
     // Göstergelerin çoğu 100+ nokta ister (MACD 26, Bollinger 20, ADX 14×2).
     // 180 gün hepsini rahatça besler.
     _pricesFuture = HistoryService.instance
-        .getSymbolHistory(widget.ticker, periodDays: 180)
+        .getSymbolHistory(widget.ticker, periodDays: kSinyalPenceresiGun)
         .then((map) {
       final keys = map.keys.toList()..sort();
       return [for (final k in keys) map[k]!];

@@ -343,7 +343,10 @@ void _kaynakTestleri() {
   test('şerit ile panel AYNI fiyat serisini ister', () {
     // Farklı pencere (ör. 90 gün) kullanılsaydı üstteki özet ile alttaki
     // panel aynı varlık için farklı sinyal gösterebilirdi.
-    expect(kart.contains('periodDays: 180'), isTrue);
+    // Pencere 180'den 90'a çekildi (2026-09-10): 180 gün HAFTALIK katmana
+    // düşüyor ve nokta sayısı eşiğin altına iniyordu — göstergeler hiçbir
+    // varlıkta çizilmiyordu. Ayrıntı: `sinyal_penceresi_test.dart`.
+    expect(kart.contains('periodDays: kSinyalPenceresiGun'), isTrue);
   });
 
   test('yetersiz geçmişte uydurma sinyal üretilmez', () {
