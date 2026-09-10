@@ -241,16 +241,24 @@ void main() {
     final kaynak =
         File('lib/screens/performance_screen.dart').readAsStringSync();
 
+    // Kaynak metni satır sonundan BAĞIMSIZ aranır: depo LF tutuyor,
+    // `core.autocrlf=true` diske CRLF yazıyor. Ham `\n` aramak Windows'ta
+    // her zaman kırılırdı (aynı tuzak 2026-09-10'da iki kez yaşandı).
+    final duz = kaynak.replaceAll('\r\n', '\n');
+
     test('bölüm ekranda KULLANILIYOR', () {
       // Widget yazılıp ekrana takılmayı unutmak sessiz bir hata olurdu:
       // analyze temiz geçer, testler geçer, kullanıcı hiçbir şey görmez.
-      expect(kaynak.contains('AktifSinyalBolumu(asset: widget.asset)'), isTrue,
+      expect(duz.contains('asset: widget.asset, icerikKey: _aktifSinyalKey'),
+          isTrue,
           reason: 'Bölüm tanımlı ama ekrana eklenmemiş.');
     });
 
     test('teknik panelden SONRA geliyor — en altta', () {
-      final panel = kaynak.indexOf('key: _sinyalPaneliKey, detayli: true');
-      final bolum = kaynak.indexOf('AktifSinyalBolumu(asset: widget.asset)');
+      final panel = duz.indexOf('key: _sinyalPaneliKey, detayli: true');
+      // ÇAĞRIYI ara, sınıf tanımını değil: `AktifSinyalBolumu(` ilk olarak
+      // sınıfın kendi constructor'ında geçiyor ve o dosyanın BAŞINDA.
+      final bolum = duz.indexOf('asset: widget.asset, icerikKey:');
       expect(panel, greaterThan(-1));
       expect(bolum, greaterThan(panel),
           reason: 'Kullanıcı "en alta" istedi; bölüm panelin üstüne çıkmış.');
@@ -258,9 +266,35 @@ void main() {
 
     test('mevduatta çizilmez', () {
       // Mevduat için teknik sinyal üretilmiyor (bkz. panel koşulu).
-      final bolum = kaynak.indexOf('AktifSinyalBolumu(asset: widget.asset)');
-      final oncesi = kaynak.substring(bolum - 220, bolum);
+      // Çağrıyı ara — sınıf tanımı `class AktifSinyalBolumu extends`
+      // olduğu için parantez ayırt edicidir.
+      final bolum = duz.indexOf('asset: widget.asset, icerikKey:');
+      expect(bolum, greaterThan(-1));
+      final oncesi = duz.substring(bolum - 260, bolum);
       expect(oncesi.contains('!= AssetType.mevduat'), isTrue);
+    });
+
+    test('üstteki şerit ÖNCE en alta kaydırır', () {
+      // Kullanıcı isteği (2026-09-10): "ekranın en üstündeki kısım
+      // kalabilir, tıklanınca en alta inebilir."
+      expect(
+        duz.contains('_aktifSinyalKey.currentContext ??'),
+        isTrue,
+        reason: 'Şerit hâlâ yalnızca teknik panele kaydırıyor.',
+      );
+      // Yedek hedef şart: bölüm koşullu, aktif kayıt yokken hiç çizilmez.
+      expect(duz.contains('_sinyalPaneliKey.currentContext'), isTrue);
+    });
+
+    test('kaydırma anahtarı İÇERİĞE bağlı — widget\'a değil', () {
+      // İnce tuzak: aktif kayıt yokken bölüm `SizedBox.shrink()` döndürür,
+      // yani ağaçta DURUR. Anahtar widget'ın kendi `key`'i olsaydı
+      // `currentContext` dolu olur, kaydırma sıfır yükseklikli bir kutuya
+      // gider ve `??` yedeği hiç devreye girmezdi.
+      expect(duz.contains('icerikKey: _aktifSinyalKey'), isTrue,
+          reason: 'Anahtar widget\'a bağlanmış; boş durumda kaydırma '
+              'sessizce yanlış yere gider.');
+      expect(duz.contains('key: _aktifSinyalKey,'), isFalse);
     });
   });
 }

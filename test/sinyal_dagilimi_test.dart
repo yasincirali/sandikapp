@@ -207,21 +207,40 @@ void main() {
               'geri gelmiş.');
     });
 
-    test('fiyat geçmişi yoksa panel ÖLÜ bir cümle bırakmaz', () {
-      // Üstteki şerit aynı boş seride kayıtlı bildirime düşüp "2/3 gösterge
-      // · güven %67" yazıyor. Alt panel yalnızca "geçmiş yok" derse
-      // kullanıcı üstte sinyal, altta hiçbir şey görür — bildirilen hata
-      // buydu.
+    test('fiyat geçmişi yoksa panel durumu söyler ve tekrar denenebilir', () {
       final kaynak =
           File('lib/screens/performance_screen.dart').readAsStringSync();
       expect(kaynak.contains('Widget _gecmisYok(BuildContext context)'), isTrue);
-      // Elde ne varsa gösterilir: kayıtlı bildirimin gerçek sayıları.
-      expect(kaynak.contains("'SON BİLDİRİM'"), isTrue);
+      // Durum açıkça söylenir — sessiz boşluk bırakılmaz.
+      expect(kaynak.contains('fiyat geçmişi şu an çekilemedi'), isTrue);
       // Ve istek tekrarlanabilir — başarısız future ömür boyu saklanmaz.
       expect(kaynak.contains("'Tekrar dene'"), isTrue);
       expect(kaynak.contains(r"'${widget.subCategory ?? ''}|$_deneme'"), isTrue,
           reason: 'Yeniden deneme sayacı önbellek anahtarında değil — '
               '"Tekrar dene" hiçbir şey yapmaz.');
+    });
+
+    test('"SON BİLDİRİM" bloğu GERİ GELMEZ', () {
+      // Kullanıcı kararı (2026-09-10): bu blok kaldırıldı.
+      //
+      // Bir önceki turda buraya kayıtlı bildirimin sayıları yazılmıştı
+      // ("▲1 AL ▼2 SAT ◆%67 güven" + bir paragraf açıklama). Kullanıcı
+      // tasarımı beğenmedi ve kaldırılmasını istedi.
+      //
+      // Kaldırmak DOĞRUYDU çünkü aynı bilgi artık üç yerde tekrar
+      // ediyordu: üstteki şerit, en alttaki [AktifSinyalBolumu] ve burası.
+      // Bu testin işi, "panel boş kalmasın" gerekçesiyle bloğun geri
+      // eklenmesini engellemek — o gerekçe artık geçerli değil, çünkü
+      // kayıtlı bildirim ekranın altında zaten tam ayrıntısıyla duruyor.
+      final kaynak =
+          File('lib/screens/performance_screen.dart').readAsStringSync();
+      expect(kaynak.contains("'SON BİLDİRİM'"), isFalse,
+          reason: 'Kaldırılan blok geri gelmiş.');
+      expect(kaynak.contains('saklanmıyor; fiyat geçmişi gelince'), isFalse);
+      expect(kaynak.contains('_kayitRozeti'), isFalse,
+          reason: 'Bloğun yardımcısı ölü kod olarak kalmış.');
+      expect(kaynak.contains('SignalAlert? _sonKayit()'), isFalse,
+          reason: 'Bloğun veri kaynağı ölü kod olarak kalmış.');
     });
 
     test('UYDURMA seriye geri dönülmedi', () {

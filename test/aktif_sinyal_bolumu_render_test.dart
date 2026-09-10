@@ -120,6 +120,56 @@ void main() {
     expect(find.text('AKTİF SİNYAL'), findsNothing);
   });
 
+  // Kaydırma hedefi `icerikKey`'e bağlı. Boş durumda da bağlansaydı
+  // üstteki şeride dokunmak kullanıcıyı sıfır yükseklikli bir kutuya
+  // götürürdü — `SizedBox.shrink()` ağaçta DURUYOR, yani widget'ın kendi
+  // `key`'i boş durumda da `currentContext` verirdi.
+  //
+  // İki ayrı test: tek testte iki kez `pumpWidget` çağırmak Riverpod
+  // override'ını yeniden kurmuyor, ilk sahte veri etkin kalıyordu ve
+  // ikinci ölçüm "kart yok" diye kırılıyordu (ölçerek bulundu).
+  Future<GlobalKey> kurHedefli(
+    WidgetTester tester,
+    List<SignalAlert> alerts,
+  ) async {
+    final hedef = GlobalKey();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          signalProvider.overrideWith(() => _SahteSinyaller(alerts)),
+        ],
+        child: MaterialApp(
+          theme: ThemeData.dark(),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: AktifSinyalBolumu(asset: _asset(), icerikKey: hedef),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    return hedef;
+  }
+
+  testWidgets('icerikKey — kayıt YOKKEN bağlanmaz', (tester) async {
+    final hedef = await kurHedefli(tester, const []);
+    expect(find.text('AKTİF SİNYAL'), findsNothing);
+    expect(hedef.currentContext, isNull,
+        reason: 'Boş durumda hedef bağlanmış — kaydırma boşluğa gider.');
+  });
+
+  testWidgets('icerikKey — kart çizilince BAĞLANIR', (tester) async {
+    final hedef = await kurHedefli(
+        tester, [_alert(at: DateTime.now().subtract(const Duration(hours: 1)))]);
+    // Önce kartın gerçekten çizildiğini doğrula: aksi halde aşağıdaki null
+    // "anahtar bağlanmadı" değil "kart yok" demek olurdu ve test yanlış
+    // şeyi suçlardı.
+    expect(find.text('AKTİF SİNYAL'), findsOneWidget);
+    expect(hedef.currentContext, isNotNull,
+        reason: 'Kart çizildi ama kaydırma hedefi bağlanmamış.');
+  });
+
   testWidgets('silinmiş kayıtta bölüm çizilmez', (tester) async {
     await _pump(tester, [
       _alert(

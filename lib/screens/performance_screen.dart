@@ -373,9 +373,19 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
 /// eskiyse bölüm HİÇ çizilmez. Teknik sinyallerin ömrü kısadır; iki hafta
 /// önceki bir kaydı "aktif" diye sunmak yanıltıcı olurdu.
 class AktifSinyalBolumu extends ConsumerWidget {
-  const AktifSinyalBolumu({super.key, required this.asset});
+  const AktifSinyalBolumu({super.key, required this.asset, this.icerikKey});
 
   final Asset asset;
+
+  /// Kaydırma hedefi — YALNIZCA kart gerçekten çizildiğinde bağlanır.
+  ///
+  /// Widget'ın kendi `key`'ine bağlansaydı işe yaramazdı: aktif kayıt
+  /// yokken bu widget `SizedBox.shrink()` döndürüyor, yani ağaçta duruyor
+  /// ve `currentContext` DOLU oluyor. Üstteki şeritten gelen kaydırma
+  /// sıfır yükseklikli bir kutuya gider, kullanıcı boş ekrana bakardı.
+  /// Anahtar içeriğe bağlıysa `currentContext` gerçekten null olur ve
+  /// çağıran taraf teknik panele düşebilir.
+  final Key? icerikKey;
 
   /// Bir sinyalin "aktif" sayıldığı süre.
   static const Duration omur = Duration(days: 7);
@@ -430,6 +440,7 @@ class AktifSinyalBolumu extends ConsumerWidget {
     final lehte = isSell ? kayit.sellCount : kayit.buyCount;
 
     return Column(
+      key: icerikKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: SandikSpace.lg),
@@ -793,22 +804,11 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         child: child,
       );
 
-  /// Bu varlık için KAYITLI son bildirim (varsa).
-  ///
-  /// Panel bir `Asset` tutmuyor (bkz. sınıf açıklaması), o yüzden eşleşme
-  /// ticker + tür ile yapılır — [AssetSignalCard.sonSinyal] ile aynı kural.
-  SignalAlert? _sonKayit() {
-    final alerts = ref.watch(signalProvider).valueOrNull ?? const <SignalAlert>[];
-    final t = widget.ticker.trim().toLowerCase();
-    if (t.isEmpty) return null;
-    SignalAlert? best;
-    for (final a in alerts) {
-      if (a.assetType != widget.type) continue;
-      if (a.assetTicker.trim().toLowerCase() != t) continue;
-      if (best == null || a.detectedAt.isAfter(best.detectedAt)) best = a;
-    }
-    return best;
-  }
+  // NOT (2026-09-10): "fiyat geçmişi yok" panelinde kayıtlı bildirimi
+  // tekrarlayan bir blok ve onun iki yardımcısı vardı; kullanıcı isteğiyle
+  // kaldırıldı. Aynı bilgi zaten ekranın en altındaki [AktifSinyalBolumu]
+  // ile üstteki şeritte duruyor — üç yerde tekrar ediyordu.
+  // Geri gelmesini `sinyal_dagilimi_test.dart` engelliyor.
 
   /// Fiyat geçmişi çekilemediğinde çizilen panel.
   ///
@@ -828,7 +828,6 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   /// dediğini taşımaz (`signal_notifications` tek tek göstergeleri
   /// yazmıyor) — bu yüzden liste vaat edilmez, sınır açıkça söylenir.
   Widget _gecmisYok(BuildContext context) {
-    final kayit = _sonKayit();
     final p = context.c;
 
     return _panelShell(
@@ -849,42 +848,6 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
               ),
             ],
           ),
-          if (kayit != null) ...[
-            const SizedBox(height: SandikSpace.smd),
-            Divider(height: 1, color: p.hairline),
-            const SizedBox(height: SandikSpace.smd),
-            Text(
-              'SON BİLDİRİM',
-              style: context.t.labelLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-                color: p.text36,
-              ),
-            ),
-            const SizedBox(height: SandikSpace.xs2),
-            // Glif + metin: renk tek başına bırakılmaz (marka yeşili ile
-            // kırmızısı renk körlüğü altında yeterince ayrışmıyor).
-            Wrap(
-              spacing: SandikSpace.smd,
-              runSpacing: SandikSpace.xs,
-              children: [
-                _kayitRozeti(context, '▲', '${kayit.buyCount} AL', p.gain),
-                _kayitRozeti(context, '▼', '${kayit.sellCount} SAT', p.loss),
-                _kayitRozeti(
-                    context,
-                    '◆',
-                    '%${kayit.confidence.round()} güven',
-                    p.text58),
-              ],
-            ),
-            const SizedBox(height: SandikSpace.xs2),
-            Text(
-              '${DateFormat('d MMMM y · HH:mm', 'tr_TR').format(kayit.detectedAt)}'
-              ' · hangi göstergelerin böyle dediği bildirimle birlikte '
-              'saklanmıyor; fiyat geçmişi gelince burada tek tek listelenir.',
-              style: context.t.bodySmall?.copyWith(color: p.text36),
-            ),
-          ],
           const SizedBox(height: SandikSpace.smd),
           Align(
             alignment: Alignment.centerLeft,
@@ -915,27 +878,6 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _kayitRozeti(
-      BuildContext context, String glif, String metin, Color renk) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(glif,
-            style: context.t.bodySmall?.copyWith(
-                color: renk, fontWeight: FontWeight.w700, height: 1)),
-        const SizedBox(width: SandikSpace.xs),
-        Text(
-          metin,
-          maxLines: 1,
-          style: context.t.bodySmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: context.c.text90,
-          ),
-        ),
-      ],
     );
   }
 
@@ -1508,15 +1450,29 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   /// olmayan bir merak uyandırırdı.
   final GlobalKey _sinyalPaneliKey = GlobalKey();
 
-  /// Şeritten panele kaydır.
+  /// Ekranın en altındaki "Aktif Sinyal" bölümünün konumu.
+  ///
+  /// Kullanıcı isteği (2026-09-10): "ekranın en üstündeki kısım kalabilir,
+  /// tıklanınca en alta inebilir." Şeride dokunmak artık öncelikle BURAYA
+  /// kaydırır.
+  final GlobalKey _aktifSinyalKey = GlobalKey();
+
+  /// Şeritten aşağıya kaydır.
+  ///
+  /// Hedef sırası bilinçli: önce en alttaki [AktifSinyalBolumu], o
+  /// çizilmemişse (aktif kayıt yok) teknik panel. Bölüm koşullu olduğu
+  /// için `currentContext` null olabilir — tek hedefe bağlansaydı dokunuş
+  /// sessizce hiçbir şey yapmazdı, ki bu en kötü sonuç: kullanıcı
+  /// dokunulabilir görünen bir şeye dokunur ve ekran kıpırdamaz.
   void _sinyalPaneline() {
-    final ctx = _sinyalPaneliKey.currentContext;
+    final ctx = _aktifSinyalKey.currentContext ??
+        _sinyalPaneliKey.currentContext;
     if (ctx == null) return;
     Scrollable.ensureVisible(
       ctx,
       duration: SandikMotion.surfaceOf(context),
       curve: SandikMotion.enter,
-      // Panel ekranın üst kenarına yapışmasın; başlığı görünür kalsın.
+      // Hedef ekranın üst kenarına yapışmasın; başlığı görünür kalsın.
       alignment: 0.1,
     );
   }
@@ -3181,7 +3137,8 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 // Push'a dokunup gelen kullanıcının aradığı ayrıntı: EN ALTTA
                 // ve yalnızca aktif kayıt varsa. Mevduatta sinyal üretilmez.
                 if (widget.asset.type != AssetType.mevduat)
-                  AktifSinyalBolumu(asset: widget.asset),
+                  AktifSinyalBolumu(
+                      asset: widget.asset, icerikKey: _aktifSinyalKey),
               ],
             ),
           ),
