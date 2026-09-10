@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
@@ -5,10 +7,12 @@ import 'package:portfoy_takip/models/signal_alert.dart';
 import 'package:portfoy_takip/models/technical_signal.dart';
 import 'package:portfoy_takip/screens/performance_screen.dart';
 
-/// Varlık performans ekranındaki "kayıtlı sinyal" kartının eşleştirme kuralı.
+/// Varlık performans ekranındaki sinyal şeridi.
 ///
-/// Kullanıcı isteği (2026-09-10): "Sinyal bilgisi varsa varlık performans
-/// ekranında gözükmeli."
+/// İki ayrı şeyi kilitler:
+///   1. `sonSinyal` — kayıtlı bir bildirimi bu varlıkla eşleştirme kuralı,
+///   2. şeridin kayıt YOKKEN canlı göstergelere düşmesi (aşağıdaki kaynak
+///      denetimi).
 ///
 /// Kritik nokta: sinyal kaydı bir LOT id'si taşır ve o lot bu ekrandaki
 /// pozisyonun temsilcisi OLMAYABİLİR (kullanıcı birkaç kez almış olabilir,
@@ -121,5 +125,60 @@ void main() {
       );
       expect(bulunan, same(a));
     });
+  });
+
+  group('AssetSignalCard kaynak denetimi', _kaynakTestleri);
+}
+
+// ── Şerit KAYIT BEKLEMEZ ─────────────────────────────────────────────────────
+//
+// İlk sürüm yalnızca `signal_notifications` satırı varsa çiziliyordu:
+//
+//     final alert = sonSinyal(alerts, asset);
+//     if (alert == null) return const SizedBox.shrink();
+//
+// O satır ancak bir sinyal güven eşiğini geçtiğinde VE öncekinden farklı
+// olduğunda yazılır — yani çoğu varlıkta çoğu zaman YOKTUR. Sonuç: sinyal
+// bilgisi pratikte yalnızca sayfanın dibindeki panelde kalıyordu
+// (kullanıcı bildirimi 2026-09-10: "sinyaller varlık performansta gözükmeli").
+//
+// Doğrusu: kayıt yoksa CANLI göstergelere düşmek. Bu davranış widget testiyle
+// doğrulanamıyor — canlı yol ağ istiyor ve test ortamında `HistoryService`
+// boş seri döndürüp yine gizlenmeye düşüyor. Bu yüzden kaynak metni
+// denetleniyor; projede aynı örüntü var (bkz. watchlist_detail_test.dart,
+// remote_config_defaults_test.dart).
+
+void _kaynakTestleri() {
+  final kaynak = File('lib/screens/performance_screen.dart').readAsStringSync();
+  // Yalnızca kartın gövdesi — dosyanın geri kalanındaki eşleşmeler saymasın.
+  final bas = kaynak.indexOf('class AssetSignalCard');
+  final son = kaynak.indexOf('/// Teknik gösterge paneli.');
+  final kart = kaynak.substring(bas, son);
+
+  test('kart, kayıt yoksa erken dönmez', () {
+    expect(
+      kart.contains('if (alert == null) return const SizedBox.shrink();'),
+      isFalse,
+      reason: 'Kayıtlı bildirim yokluğunda şerit gizleniyor — canlı '
+          'göstergelere düşmesi gerek.',
+    );
+  });
+
+  test('kart canlı göstergeleri KENDİ hesaplar', () {
+    expect(kart.contains('TechnicalAnalysisService.analyzeSeries'), isTrue,
+        reason: 'Şerit canlı sinyali hesaplamıyor; yalnızca kayda bakıyorsa '
+            'çoğu varlıkta boş kalır.');
+    expect(kart.contains('TechnicalAnalysisService.summarize'), isTrue);
+  });
+
+  test('şerit ile panel AYNI fiyat serisini ister', () {
+    // Farklı pencere (ör. 90 gün) kullanılsaydı üstteki özet ile alttaki
+    // panel aynı varlık için farklı sinyal gösterebilirdi.
+    expect(kart.contains('periodDays: 180'), isTrue);
+  });
+
+  test('yetersiz geçmişte uydurma sinyal üretilmez', () {
+    // Panelle aynı eşik: 30 noktanın altında `analyze` simülasyona düşer.
+    expect(kart.contains('prices.length < 30'), isTrue);
   });
 }
