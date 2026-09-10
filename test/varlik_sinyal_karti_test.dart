@@ -45,6 +45,7 @@ SignalAlert _alert({
   AssetType type = AssetType.hisse,
   SignalType signal = SignalType.buy,
   String assetId = 'baska-lot',
+  DateTime? dismissedAt,
 }) =>
     SignalAlert(
       assetId: assetId,
@@ -56,6 +57,7 @@ SignalAlert _alert({
       sellCount: 2,
       confidence: 67,
       detectedAt: at,
+      dismissedAt: dismissedAt,
     );
 
 void main() {
@@ -128,6 +130,139 @@ void main() {
   });
 
   group('AssetSignalCard kaynak denetimi', _kaynakTestleri);
+
+  // ── Ekranın en altındaki "Aktif Sinyal" bölümü ───────────────────────────
+  //
+  // Kullanıcı isteği (2026-09-10): push'a dokunup gelen kişi en altta,
+  // gönderilmiş sinyalin ayrıntısını görsün. AKTİF sinyal yoksa bölüm boş
+  // kalsın.
+  //
+  // Aktiflik iki kapıdan geçer (kullanıcı kararı): kullanıcı bildirimi
+  // sildiyse VEYA kayıt 7 günden eskiyse gösterilmez.
+  group('AktifSinyalBolumu.aktifKayit', () {
+    final simdi = DateTime(2026, 9, 10, 20, 0);
+
+    test('kayıt yoksa null — bölüm boş kalır', () {
+      expect(
+        AktifSinyalBolumu.aktifKayit(const [], _asset(type: AssetType.hisse),
+            now: simdi),
+        isNull,
+      );
+    });
+
+    test('taze kayıt gösterilir', () {
+      final a = _alert(at: simdi.subtract(const Duration(hours: 3)));
+      expect(
+        AktifSinyalBolumu.aktifKayit([a], _asset(type: AssetType.hisse),
+            now: simdi),
+        same(a),
+      );
+    });
+
+    test('kullanıcı sildiyse gösterilmez', () {
+      // `dismissed_at` kullanıcının "bunu gördüm, kapat" demesidir. Ekranda
+      // diriltmek o kararı geri almak olurdu.
+      final a = _alert(
+        at: simdi.subtract(const Duration(hours: 2)),
+        dismissedAt: simdi.subtract(const Duration(hours: 1)),
+      );
+      expect(
+        AktifSinyalBolumu.aktifKayit([a], _asset(type: AssetType.hisse),
+            now: simdi),
+        isNull,
+      );
+    });
+
+    test('7 GÜNDEN eski kayıt gösterilmez', () {
+      // Teknik sinyalin ömrü kısa; iki hafta önceki bir kaydı "aktif" diye
+      // sunmak kullanıcıyı yanıltır.
+      final a = _alert(at: simdi.subtract(const Duration(days: 8)));
+      expect(
+        AktifSinyalBolumu.aktifKayit([a], _asset(type: AssetType.hisse),
+            now: simdi),
+        isNull,
+      );
+    });
+
+    test('tam sınırda (7 gün) HÂLÂ aktif', () {
+      // Sınır kapsayıcı: `> omur` ile eleniyor, `>=` değil. Bu testin
+      // varlık sebebi sınırın yanlışlıkla bir gün kaydırılmasını yakalamak.
+      final a = _alert(at: simdi.subtract(AktifSinyalBolumu.omur));
+      expect(
+        AktifSinyalBolumu.aktifKayit([a], _asset(type: AssetType.hisse),
+            now: simdi),
+        same(a),
+      );
+    });
+
+    test('eskiyen kayıt varken YENİ kayıt gelirse yeni gösterilir', () {
+      final eski = _alert(
+          at: simdi.subtract(const Duration(days: 20)),
+          signal: SignalType.sell);
+      final yeni = _alert(
+          at: simdi.subtract(const Duration(hours: 1)), signal: SignalType.buy);
+      expect(
+        AktifSinyalBolumu.aktifKayit(
+            [eski, yeni], _asset(type: AssetType.hisse),
+            now: simdi),
+        same(yeni),
+      );
+    });
+
+    test('EN YENİ kayıt silinmişse ESKİYE düşmez', () {
+      // Bilinçli karar: `sonSinyal` en yeniyi seçer, biz onu denetleriz.
+      // Silinen kaydın altından bir öncekini çıkarmak, kullanıcının
+      // kapattığı konuyu başka bir kayıtla yeniden açmak olurdu.
+      final eski = _alert(at: simdi.subtract(const Duration(days: 2)));
+      final yeniSilinmis = _alert(
+        at: simdi.subtract(const Duration(hours: 1)),
+        dismissedAt: simdi,
+      );
+      expect(
+        AktifSinyalBolumu.aktifKayit(
+            [eski, yeniSilinmis], _asset(type: AssetType.hisse),
+            now: simdi),
+        isNull,
+      );
+    });
+
+    test('başka varlığın aktif sinyali sızmaz', () {
+      final baska = _alert(
+          at: simdi.subtract(const Duration(hours: 1)), ticker: 'GARAN.IS');
+      expect(
+        AktifSinyalBolumu.aktifKayit([baska], _asset(type: AssetType.hisse),
+            now: simdi),
+        isNull,
+      );
+    });
+  });
+
+  group('AktifSinyalBolumu yerleşimi', () {
+    final kaynak =
+        File('lib/screens/performance_screen.dart').readAsStringSync();
+
+    test('bölüm ekranda KULLANILIYOR', () {
+      // Widget yazılıp ekrana takılmayı unutmak sessiz bir hata olurdu:
+      // analyze temiz geçer, testler geçer, kullanıcı hiçbir şey görmez.
+      expect(kaynak.contains('AktifSinyalBolumu(asset: widget.asset)'), isTrue,
+          reason: 'Bölüm tanımlı ama ekrana eklenmemiş.');
+    });
+
+    test('teknik panelden SONRA geliyor — en altta', () {
+      final panel = kaynak.indexOf('key: _sinyalPaneliKey, detayli: true');
+      final bolum = kaynak.indexOf('AktifSinyalBolumu(asset: widget.asset)');
+      expect(panel, greaterThan(-1));
+      expect(bolum, greaterThan(panel),
+          reason: 'Kullanıcı "en alta" istedi; bölüm panelin üstüne çıkmış.');
+    });
+
+    test('mevduatta çizilmez', () {
+      // Mevduat için teknik sinyal üretilmiyor (bkz. panel koşulu).
+      final bolum = kaynak.indexOf('AktifSinyalBolumu(asset: widget.asset)');
+      final oncesi = kaynak.substring(bolum - 220, bolum);
+      expect(oncesi.contains('!= AssetType.mevduat'), isTrue);
+    });
+  });
 }
 
 // ── Şerit KAYIT BEKLEMEZ ─────────────────────────────────────────────────────
