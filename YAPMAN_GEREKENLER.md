@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11
+**Tarih:** 2026-05-11 · **Son ek:** 2026-09-10
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -12,7 +12,7 @@
 
 ---
 
-## 🚨 BEKLEYEN DEPLOY: satılan varlık için push (2026-09-07)
+## 🚨 BEKLEYEN DEPLOY: satılan/silinen varlık için push (2026-09-07 → 2026-09-10)
 
 **Belirti:** Tamamen SATILMIŞ hisseler için sinyal bildirimi gelmeye devam
 ediyordu ("AVOD ve AGHOL varlıklarımda olmamasına rağmen push'ları geliyor").
@@ -53,6 +53,32 @@ susturuluyor (sonra tekrar alınmışsa bildirim yine gider).
 
 Bu yüzden `assets` sorgusuna `added_date` ve `ref_asset_id` sütunları
 eklendi — deploy edilmeden ikisi de okunamaz.
+
+### 🔁 2026-09-10 — aynı dosyada İKİNCİ düzeltme, deploy hâlâ bekliyor
+
+Kullanıcı bildirimi sürüyordu: "sildiğim varlıkların push'ları gelmeye devam
+ediyor." Yukarıdaki mezar taşı savunması **tek lot'lu pozisyonlarda hiç
+çalışmıyordu** — yani en yaygın durumda.
+
+Sebep: `ref_asset_id` DOLU mezar taşları tamamen atlanıyordu. Eski gerekçe
+("o satır zaten fiziksel silinmiştir") yalnızca `deleteAsset` için doğru.
+Normal silme yolu `deletePositionLots` ve o YUMUŞAK siliyor: pozisyon tek
+lot'luysa mezar taşına `ref_asset_id` yazıp lot'u `deleted_at` ile
+damgalıyor. Damga sunucuya ulaşmazsa lot AKTİF kalıyor, mezar taşı da
+atlandığı için bildirim gitmeye devam ediyordu.
+
+Artık o mezar taşı, işaret ettiği lot'u — ve **yalnızca** onu — eliyor;
+miktarı netten de düşülüyor. Kardeş lot'lar susmuyor (iki lot'lu bir
+varlıkta birini silmek diğerini sessizleştirmemeli).
+
+`_shared/positions.ts` yine değişti, yani **aşağıdaki iki komut hâlâ
+koşulmalı.** Uygulama tarafındaki eş düzeltme (`analyzePortfolio` artık ham
+ledger yerine yalnızca açık pozisyonları geziyor) TestFlight 1.1.4
+(1785274310) içinde — ama cron'dan giden push'lar sunucudan üretiliyor ve
+onu ancak deploy düzeltir.
+
+Deploy sonrası dry-run'da `closed_or_deleted_lots` sayısı, önceki turdakine
+göre ARTMALI: artık tek lot'lu silmeler de eleniyor.
 
 ---
 

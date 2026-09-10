@@ -365,20 +365,33 @@ class TechnicalSignalPanel extends ConsumerStatefulWidget {
   final AssetType type;
   final String? subCategory;
 
+  /// Dağılım görselleştirmesi (oran çubuğu + gruplu liste) çizilsin mi?
+  ///
+  /// YALNIZCA varlık performans ekranında `true`. Kullanıcı bunu oraya
+  /// istedi ve isteğin "sadece" kısmı bilinçli: takip listesi detayı,
+  /// sahip OLMADIĞIN bir varlığa hızlı bakış ekranıdır — orada özet + düz
+  /// liste yeterli, üç katmanlı bir dağılım paneli ekranı ağırlaştırır.
+  ///
+  /// Bayrak varsayılan olarak `false`: yeni bir çağrı yeri eklendiğinde
+  /// ağır sürüm kazara sızmasın.
+  final bool detayli;
+
   const TechnicalSignalPanel({
     super.key,
     required this.ticker,
     required this.type,
     this.subCategory,
+    this.detayli = false,
   });
 
   /// Sahip olunan bir varlıktan kurar — çağrı yerlerini kısaltır.
-  TechnicalSignalPanel.forAsset(Asset asset, {Key? key})
+  TechnicalSignalPanel.forAsset(Asset asset, {Key? key, bool detayli = false})
       : this(
           key: key,
           ticker: asset.ticker,
           type: asset.type,
           subCategory: asset.subCategory,
+          detayli: detayli,
         );
 
   @override
@@ -671,7 +684,24 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         ),
         const SizedBox(height: 12),
 
-        // ── Gösterge listesi ─────────────────────────────────────────────────
+        // ── Dağılım: oran çubuğu + gruplu liste (YALNIZCA detaylı mod) ───────
+        //
+        // Kullanıcı isteği (2026-09-10): "hangi algoritmalar al ve sat
+        // verenleri ve yüzdesi görsel olarak da tatmin edici ve göz alıcı
+        // şekilde SADECE varlık performans ekranına eklenmeli."
+        //
+        // Düz liste bu soruyu yanıtlamıyordu: AL ve SAT satırları iç içe
+        // geçmiş, ayrımı yalnızca sağdaki rozetin rengi taşıyordu. Detaylı
+        // modda önce oran çubuğu (kaç gösterge hangi yönde), sonra gruplu
+        // liste (hangileri) geliyor; düz liste ise ARTIK ÇİZİLMİYOR —
+        // aynı bilgiyi iki kez göstermek paneli uzatmaktan başka bir şey
+        // yapmazdı.
+        if (widget.detayli) ...[
+          SinyalDagilimi(indicators: indicators),
+          const SizedBox(height: SandikSpace.md),
+          GostergeGruplari(indicators: indicators),
+        ] else
+        // ── Gösterge listesi (düz) ──────────────────────────────────────────
         Container(
           decoration: BoxDecoration(
             color: context.c.surface1,
@@ -763,6 +793,323 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
         const SizedBox(height: 8),
         const DisclaimerWidget(),
       ],
+    );
+  }
+}
+
+
+// ── Sinyal dağılımı: oran çubuğu + gruplu gösterge listesi ───────────────────
+
+/// Göstergelerin AL / SAT / NÖTR dağılımı — SEGMENT BAŞINA BİR GÖSTERGE.
+///
+/// ## Neden düz bir yüzde çubuğu değil
+/// Gösterge sayısı küçük (4–8). Sürekli bir yüzde çubuğu "%67" der ama
+/// kaç göstergeden geldiğini gizler; oysa "6 göstergeden 4'ü" ifadesi
+/// kullanıcının gerçekten kurduğu cümle. Her göstergeye bir hücre vermek
+/// aynı anda İKİ şeyi okutuyor: oran (yeşilin kapladığı alan) ve SAYI
+/// (hücreleri saymak). Aradaki 2px boşluk hücreleri ayırır.
+///
+/// ## Renk TEK BAŞINA anlam taşımaz
+/// Marka yeşili ile kırmızısı koyu temada deuteranopi altında ΔE ≈ 7,6
+/// ayrışıyor — yani kırmızı-yeşil renk körlüğünde birbirine yakın. Bu
+/// yüzden her hücre bir GLİF (▲ ▼ ◆) taşır, her grup metin başlıklıdır ve
+/// sayılar rakamla yazılır. Renk yalnızca hızlı taramaya yardım eder;
+/// bilgiyi tek başına taşımaz.
+class SinyalDagilimi extends StatelessWidget {
+  const SinyalDagilimi({super.key, required this.indicators});
+
+  final List<TechnicalIndicator> indicators;
+
+  static const _yukseklik = 14.0;
+  static const _bosluk = 2.0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (indicators.isEmpty) return const SizedBox.shrink();
+
+    // Sıra SABİT: önce AL, sonra SAT, sonra NÖTR. Çubuk her varlıkta aynı
+    // şekilde okunmalı — sıralama gösterge kimliğine göre değişirse
+    // kullanıcı her ekranda yeniden yön bulmak zorunda kalır.
+    final al = indicators.where((i) => i.signal == SignalType.buy).toList();
+    final sat = indicators.where((i) => i.signal == SignalType.sell).toList();
+    final notr =
+        indicators.where((i) => i.signal == SignalType.neutral).toList();
+    final toplam = indicators.length;
+
+    final sirali = [...al, ...sat, ...notr];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Oran çubuğu ──────────────────────────────────────────────────
+        ClipRRect(
+          borderRadius: BorderRadius.circular(SandikRadius.sm),
+          child: SizedBox(
+            height: _yukseklik,
+            child: Row(
+              children: [
+                for (var i = 0; i < sirali.length; i++) ...[
+                  if (i > 0) const SizedBox(width: _bosluk),
+                  Expanded(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: _renk(context, sirali[i].signal),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: SandikSpace.sm2),
+
+        // ── Lejant ───────────────────────────────────────────────────────
+        //
+        // `Wrap`: dar ekranda ve büyük sistem yazı tipinde üç rozet tek
+        // satıra sığmaz; taşma çizgisi yerine alt satıra iner.
+        Wrap(
+          spacing: SandikSpace.smd,
+          runSpacing: SandikSpace.xs,
+          children: [
+            _lejant(context, SignalType.buy, al.length, toplam),
+            _lejant(context, SignalType.sell, sat.length, toplam),
+            if (notr.isNotEmpty)
+              _lejant(context, SignalType.neutral, notr.length, toplam),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _lejant(
+      BuildContext context, SignalType tur, int adet, int toplam) {
+    final renk = _renk(context, tur);
+    final yuzde = toplam > 0 ? (adet / toplam) * 100 : 0.0;
+    // ## Neden metin parçaları `Flexible`
+    //
+    // `Wrap` çocuklarına kendi genişliğini ÜST SINIR olarak verir; içerik
+    // o sınırı aşarsa `mainAxisSize.min` bir şey kurtarmaz ve satır taşar.
+    // Ölçüldü: 320pt ekranda 2,0× sistem yazı tipinde rozet 1,3px ve 30px
+    // taşıyordu (bkz. `sinyal_dagilimi_test.dart`).
+    //
+    // Çözüm metni KÜÇÜLTMEK değil (büyük yazı tipi bir erişilebilirlik
+    // ayarıdır, geri almak onu boşa çıkarır) — metin parçalarına esneme
+    // izni vermek. Pratikte ellipsis neredeyse hiç tetiklenmez; rozet
+    // kısa. Glif sabit kalır: kimliği o taşıyor.
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(_glif(tur),
+            style: context.t.bodySmall?.copyWith(
+                color: renk, fontWeight: FontWeight.w700, height: 1)),
+        const SizedBox(width: SandikSpace.xs2),
+        Flexible(
+          child: Text(
+            _etiket(tur),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.labelLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+              color: context.c.text58,
+            ),
+          ),
+        ),
+        const SizedBox(width: SandikSpace.xs2),
+        // Sayı METİN tokenıyla yazılır, seri rengiyle değil: rakamı
+        // renklendirmek onu "durum" gibi okutur, oysa burada sadece bir
+        // sayı var. Kimliği soldaki glif + renk taşıyor.
+        Flexible(
+          child: Text(
+            '%${yuzde.round()} · $adet',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.numSmall.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: context.c.text90,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Color _renk(BuildContext context, SignalType t) => switch (t) {
+        SignalType.buy => context.c.gain,
+        SignalType.sell => context.c.loss,
+        SignalType.neutral => context.c.text36,
+      };
+
+  static String _glif(SignalType t) => switch (t) {
+        SignalType.buy => '▲',
+        SignalType.sell => '▼',
+        SignalType.neutral => '◆',
+      };
+
+  static String _etiket(SignalType t) => switch (t) {
+        SignalType.buy => 'AL',
+        SignalType.sell => 'SAT',
+        SignalType.neutral => 'NÖTR',
+      };
+}
+
+/// Göstergeleri VERDİKLERİ SİNYALE GÖRE gruplayan liste.
+///
+/// Kullanıcının sorusu "hangi algoritmalar AL, hangileri SAT diyor". Düz
+/// bir liste bu soruyu yanıtlamıyordu: AL ve SAT satırları iç içe geçmiş
+/// hâlde, ayrımı yalnızca sağdaki rozetin rengi taşıyordu. Gruplamak,
+/// cevabı okumadan önce GÖRMEYİ sağlıyor.
+///
+/// Boş grup çizilmez — "SAT DİYENLER (0)" başlığı yer kaplar, bilgi vermez.
+class GostergeGruplari extends StatelessWidget {
+  const GostergeGruplari({super.key, required this.indicators});
+
+  final List<TechnicalIndicator> indicators;
+
+  @override
+  Widget build(BuildContext context) {
+    final gruplar = <(SignalType, List<TechnicalIndicator>)>[
+      (
+        SignalType.buy,
+        indicators.where((i) => i.signal == SignalType.buy).toList()
+      ),
+      (
+        SignalType.sell,
+        indicators.where((i) => i.signal == SignalType.sell).toList()
+      ),
+      (
+        SignalType.neutral,
+        indicators.where((i) => i.signal == SignalType.neutral).toList()
+      ),
+    ];
+
+    return Column(
+      children: [
+        for (final (tur, liste) in gruplar)
+          if (liste.isNotEmpty) ...[
+            GostergeGrubu(tur: tur, indicators: liste),
+            const SizedBox(height: SandikSpace.sm),
+          ],
+      ],
+    );
+  }
+}
+
+class GostergeGrubu extends StatelessWidget {
+  const GostergeGrubu({super.key, required this.tur, required this.indicators});
+
+  final SignalType tur;
+  final List<TechnicalIndicator> indicators;
+
+  @override
+  Widget build(BuildContext context) {
+    final renk = SinyalDagilimi._renk(context, tur);
+    final baslik = switch (tur) {
+      SignalType.buy => 'AL DİYENLER',
+      SignalType.sell => 'SAT DİYENLER',
+      SignalType.neutral => 'KARARSIZ',
+    };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.c.surface1,
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+        border: Border.all(color: renk.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        children: [
+          // ── Grup başlığı ─────────────────────────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+                horizontal: SandikSpace.smd, vertical: SandikSpace.sm),
+            decoration: BoxDecoration(
+              color: renk.withValues(alpha: 0.10),
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(SandikRadius.md)),
+            ),
+            child: Row(
+              children: [
+                Text(SinyalDagilimi._glif(tur),
+                    style: context.t.bodySmall?.copyWith(
+                        color: renk, fontWeight: FontWeight.w700, height: 1)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    baslik,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1,
+                      color: renk,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${indicators.length}',
+                  style: context.t.numSmall.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: renk,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Göstergeler ──────────────────────────────────────────────
+          for (var i = 0; i < indicators.length; i++) ...[
+            if (i > 0)
+              Divider(height: 1, color: context.c.overlay, indent: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.smd, vertical: SandikSpace.smd),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          indicators[i].name,
+                          style: context.t.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: context.c.text90,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          indicators[i].description,
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text36),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: SandikSpace.sm),
+                  // Göstergenin HAM değeri (RSI 28,4 gibi). Rozet yerine
+                  // sayı: grubun başlığı zaten yönü söylüyor, satırda
+                  // "AL" rozetini tekrarlamak aynı bilgiyi iki kez yazmak
+                  // olurdu. Sayı ise yeni bilgi — ne kadar aşırı olduğunu
+                  // gösterir.
+                  Text(
+                    fmtNumFlex(indicators[i].value, maxDigits: 2),
+                    style: context.t.numSmall.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: context.c.text58,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -2553,7 +2900,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 const SizedBox(height: 24),
                 if (widget.asset.type != AssetType.mevduat)
                   TechnicalSignalPanel.forAsset(widget.asset,
-                      key: _sinyalPaneliKey),
+                      key: _sinyalPaneliKey, detayli: true),
               ],
             ),
           ),
