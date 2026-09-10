@@ -159,7 +159,8 @@ class PriceService {
         : Future<Map<String, dynamic>>.value({});
 
     final tefasFuture = tefasList.isNotEmpty
-        ? _fetchTefas(tefasList).catchError((_) => <String, YahooQuote>{})
+        ? _fetchTefas(tefasList, forceRefresh: forceRefresh)
+            .catchError((_) => <String, YahooQuote>{})
         : Future<Map<String, YahooQuote>>.value({});
 
     final yahooFuture = yahooList.isNotEmpty
@@ -381,10 +382,17 @@ class PriceService {
 
   // ── TEFAS funds ────────────────────────────────────────────────────────────
 
-  Future<Map<String, YahooQuote>> _fetchTefas(List<String> tefasSymbols) async {
+  Future<Map<String, YahooQuote>> _fetchTefas(
+    List<String> tefasSymbols, {
+    bool forceRefresh = false,
+  }) async {
     final codes =
         tefasSymbols.map((s) => s.replaceFirst(_tefasPrefix, '')).toList();
-    final prices = await TefasService.instance.fetchPrices(codes);
+    // `forceRefresh` TEFAS'a da geçer. Geçmediğinde kendi 30 dakikalık
+    // TTL'i devrede kalıyor ve kullanıcının pull-to-refresh'i fonlar için
+    // hiçbir şey yapmıyordu — hisse tazeleniyor, fon bayat kalıyordu.
+    final prices = await TefasService.instance
+        .fetchPrices(codes, forceRefresh: forceRefresh);
     return {
       for (final entry in prices.entries)
         '$_tefasPrefix${entry.key}': YahooQuote(

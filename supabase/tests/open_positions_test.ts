@@ -283,3 +283,71 @@ Deno.test('mezar taşı yoksa added_date hiç okunmaz', () => {
   const lots: Lot[] = [alim({ id: 'b1', added_date: null })];
   assertEquals(acikPozisyonLotlari(lots).length, 1);
 });
+
+// ── ref_asset_id'li mezar taşı: TEK lot'u susturur ──────────────────────────
+//
+// Kullanıcı bildirimi (2026-09-10): "Sildiğim varlıkların push'ları gelmeye
+// devam ediyor."
+//
+// Sebep: `ref_asset_id` DOLU mezar taşları tamamen atlanıyordu. Eski
+// gerekçe "ilgili satır zaten fiziksel silinmiştir" idi ve bu yalnızca
+// `deleteAsset` için doğruydu. Normal silme yolu (`deletePositionLots`)
+// YUMUŞAK siliyor ve pozisyon TEK lot'luysa mezar taşına `ref_asset_id`
+// yazıyor. `deleted_at` damgası yerine ulaşmazsa lot aktif kalıyor, mezar
+// taşı atlanıyor ve bildirim gitmeye devam ediyordu. Tek lot'lu pozisyon en
+// yaygın durum olduğu için ikinci savunma hattı pratikte hiç çalışmıyordu.
+
+Deno.test('ref_asset_id işaret ettiği lot\'u eler (damga ulaşmasa bile)', () => {
+  const lots: Lot[] = [
+    alim({ id: 'b1', added_date: GUN(1) }),
+    mezarTasi({ id: 'g1', added_date: GUN(5), ref_asset_id: 'b1' }),
+  ];
+  assertEquals(acikPozisyonLotlari(lots).length, 0);
+});
+
+Deno.test('ref_asset_id KARDEŞ lot\'u susturmaz', () => {
+  // Karşı taraf: iki lot'lu bir varlıkta birini silmek diğerini
+  // sessizleştirmemeli. `ref_asset_id`'nin pozisyon geneline
+  // uygulanmamasının sebebi tam olarak budur.
+  const lots: Lot[] = [
+    alim({ id: 'b1', quantity: 40, added_date: GUN(1) }),
+    alim({ id: 'b2', quantity: 60, added_date: GUN(2) }),
+    mezarTasi({ id: 'g1', added_date: GUN(5), ref_asset_id: 'b1' }),
+  ];
+  const out = acikPozisyonLotlari(lots);
+  assertEquals(out.map((l) => l.id), ['b2']);
+});
+
+Deno.test('silinen lot\'un miktarı NETTEN de düşülür', () => {
+  // 40 alındı + 60 alındı, 60'ı satıldı, sonra 40'lık lot silindi.
+  // Net kâğıt üzerinde 40 görünür ama o 40 silinen lot'un kendisidir —
+  // pozisyon KAPALIDIR ve bildirim gitmemelidir.
+  const lots: Lot[] = [
+    alim({ id: 'b1', quantity: 40, added_date: GUN(1) }),
+    alim({ id: 'b2', quantity: 60, added_date: GUN(2) }),
+    satis({ id: 's1', quantity: 60, added_date: GUN(3) }),
+    mezarTasi({ id: 'g1', added_date: GUN(5), ref_asset_id: 'b1' }),
+  ];
+  assertEquals(acikPozisyonLotlari(lots).length, 0);
+});
+
+Deno.test('mezar taşı satır SIRASINDAN bağımsız çalışır', () => {
+  // Mezar taşı ilgili alım satırından ÖNCE gelirse de aynı sonuç.
+  // (Sorgu sırası garanti değil; tek geçişli bir çözüm burada kırılırdı.)
+  const lots: Lot[] = [
+    mezarTasi({ id: 'g1', added_date: GUN(5), ref_asset_id: 'b1' }),
+    alim({ id: 'b1', added_date: GUN(1) }),
+  ];
+  assertEquals(acikPozisyonLotlari(lots).length, 0);
+});
+
+Deno.test('silinen lot sonrası TEKRAR alım bildirim hakkı verir', () => {
+  // Kullanıcı sildiği varlığı yeniden aldıysa yeni lot açıktır.
+  const lots: Lot[] = [
+    alim({ id: 'b1', added_date: GUN(1) }),
+    mezarTasi({ id: 'g1', added_date: GUN(5), ref_asset_id: 'b1' }),
+    alim({ id: 'b2', added_date: GUN(7) }),
+  ];
+  const out = acikPozisyonLotlari(lots);
+  assertEquals(out.map((l) => l.id), ['b2']);
+});

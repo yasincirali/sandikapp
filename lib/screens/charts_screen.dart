@@ -406,6 +406,13 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                                         (position) => position.asDisplayAsset())
                                     .toList();
 
+                                // Sparkline serilerini şimdiden hazırla.
+                                // Kart açıldığında ağ beklemesi olmasın —
+                                // eskiden grafik boş beliriyor, saniyeler
+                                // sonra doluyordu (bkz. `prefetch`).
+                                SparklineService.instance
+                                    .prefetch(displayAssets);
+
                                 return Column(
                                   children: [
                                     _AssetTypeDonut(
