@@ -162,11 +162,22 @@ void main() {
       // geçtiğinde noktalar birbirine göre kayıyor, kırpma penceresi bir
       // noktayı dışarıda bırakıyordu. Tam paket koşumunda kırılıp tek başına
       // geçen bir test bu yüzden ortaya çıktı (gece yarısını geçen koşum).
-      final acilis = ts(3);
+      // Seans SABİT bir saatte kurulur (10:00, 11:00, 12:00). Önceden
+      // `ts(3)` + 1sa + 2sa kullanılıyordu ve `ts` `DateTime.now()`'a
+      // bağlıydı: koşum saat 22:00'dan sonraysa "+2 saat" ERTESİ GÜNE
+      // taşıyordu. `clipToPeriod` çapayı son noktanın gününe koyduğu için
+      // ilk iki nokta pencerenin dışında kalıyor ve test kırılıyordu
+      // (ölçüldü 2026-09-10 22:08: son nokta 00:08, kalan 2/3).
+      //
+      // Üretim kodu DOĞRUYDU — kırılan testin kendisiydi. Sabit saat, aynı
+      // takvim gününde kalmayı garanti eder.
+      final gun = DateTime.now().subtract(const Duration(days: 3));
+      final acilis =
+          DateTime(gun.year, gun.month, gun.day, 10).millisecondsSinceEpoch;
       final cuma = {
-        acilis: 100.0, // Cuma açılış
-        acilis + 3600 * 1000: 101.0,
-        acilis + 7200 * 1000: 102.0,
+        acilis: 100.0, // Cuma 10:00 açılış
+        acilis + 3600 * 1000: 101.0, // 11:00
+        acilis + 7200 * 1000: 102.0, // 12:00
       };
 
       final k = HistoryService.clipToPeriod(cuma, 1);

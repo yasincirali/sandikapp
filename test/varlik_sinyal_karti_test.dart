@@ -130,173 +130,6 @@ void main() {
   });
 
   group('AssetSignalCard kaynak denetimi', _kaynakTestleri);
-
-  // ── Ekranın en altındaki "Aktif Sinyal" bölümü ───────────────────────────
-  //
-  // Kullanıcı isteği (2026-09-10): push'a dokunup gelen kişi en altta,
-  // gönderilmiş sinyalin ayrıntısını görsün. AKTİF sinyal yoksa bölüm boş
-  // kalsın.
-  //
-  // Aktiflik iki kapıdan geçer (kullanıcı kararı): kullanıcı bildirimi
-  // sildiyse VEYA kayıt 7 günden eskiyse gösterilmez.
-  group('AktifSinyalBolumu.aktifKayit', () {
-    final simdi = DateTime(2026, 9, 10, 20, 0);
-
-    test('kayıt yoksa null — bölüm boş kalır', () {
-      expect(
-        AktifSinyalBolumu.aktifKayit(const [], _asset(type: AssetType.hisse),
-            now: simdi),
-        isNull,
-      );
-    });
-
-    test('taze kayıt gösterilir', () {
-      final a = _alert(at: simdi.subtract(const Duration(hours: 3)));
-      expect(
-        AktifSinyalBolumu.aktifKayit([a], _asset(type: AssetType.hisse),
-            now: simdi),
-        same(a),
-      );
-    });
-
-    test('kullanıcı sildiyse gösterilmez', () {
-      // `dismissed_at` kullanıcının "bunu gördüm, kapat" demesidir. Ekranda
-      // diriltmek o kararı geri almak olurdu.
-      final a = _alert(
-        at: simdi.subtract(const Duration(hours: 2)),
-        dismissedAt: simdi.subtract(const Duration(hours: 1)),
-      );
-      expect(
-        AktifSinyalBolumu.aktifKayit([a], _asset(type: AssetType.hisse),
-            now: simdi),
-        isNull,
-      );
-    });
-
-    test('7 GÜNDEN eski kayıt gösterilmez', () {
-      // Teknik sinyalin ömrü kısa; iki hafta önceki bir kaydı "aktif" diye
-      // sunmak kullanıcıyı yanıltır.
-      final a = _alert(at: simdi.subtract(const Duration(days: 8)));
-      expect(
-        AktifSinyalBolumu.aktifKayit([a], _asset(type: AssetType.hisse),
-            now: simdi),
-        isNull,
-      );
-    });
-
-    test('tam sınırda (7 gün) HÂLÂ aktif', () {
-      // Sınır kapsayıcı: `> omur` ile eleniyor, `>=` değil. Bu testin
-      // varlık sebebi sınırın yanlışlıkla bir gün kaydırılmasını yakalamak.
-      final a = _alert(at: simdi.subtract(AktifSinyalBolumu.omur));
-      expect(
-        AktifSinyalBolumu.aktifKayit([a], _asset(type: AssetType.hisse),
-            now: simdi),
-        same(a),
-      );
-    });
-
-    test('eskiyen kayıt varken YENİ kayıt gelirse yeni gösterilir', () {
-      final eski = _alert(
-          at: simdi.subtract(const Duration(days: 20)),
-          signal: SignalType.sell);
-      final yeni = _alert(
-          at: simdi.subtract(const Duration(hours: 1)), signal: SignalType.buy);
-      expect(
-        AktifSinyalBolumu.aktifKayit(
-            [eski, yeni], _asset(type: AssetType.hisse),
-            now: simdi),
-        same(yeni),
-      );
-    });
-
-    test('EN YENİ kayıt silinmişse ESKİYE düşmez', () {
-      // Bilinçli karar: `sonSinyal` en yeniyi seçer, biz onu denetleriz.
-      // Silinen kaydın altından bir öncekini çıkarmak, kullanıcının
-      // kapattığı konuyu başka bir kayıtla yeniden açmak olurdu.
-      final eski = _alert(at: simdi.subtract(const Duration(days: 2)));
-      final yeniSilinmis = _alert(
-        at: simdi.subtract(const Duration(hours: 1)),
-        dismissedAt: simdi,
-      );
-      expect(
-        AktifSinyalBolumu.aktifKayit(
-            [eski, yeniSilinmis], _asset(type: AssetType.hisse),
-            now: simdi),
-        isNull,
-      );
-    });
-
-    test('başka varlığın aktif sinyali sızmaz', () {
-      final baska = _alert(
-          at: simdi.subtract(const Duration(hours: 1)), ticker: 'GARAN.IS');
-      expect(
-        AktifSinyalBolumu.aktifKayit([baska], _asset(type: AssetType.hisse),
-            now: simdi),
-        isNull,
-      );
-    });
-  });
-
-  group('AktifSinyalBolumu yerleşimi', () {
-    final kaynak =
-        File('lib/screens/performance_screen.dart').readAsStringSync();
-
-    // Kaynak metni satır sonundan BAĞIMSIZ aranır: depo LF tutuyor,
-    // `core.autocrlf=true` diske CRLF yazıyor. Ham `\n` aramak Windows'ta
-    // her zaman kırılırdı (aynı tuzak 2026-09-10'da iki kez yaşandı).
-    final duz = kaynak.replaceAll('\r\n', '\n');
-
-    test('bölüm ekranda KULLANILIYOR', () {
-      // Widget yazılıp ekrana takılmayı unutmak sessiz bir hata olurdu:
-      // analyze temiz geçer, testler geçer, kullanıcı hiçbir şey görmez.
-      expect(duz.contains('asset: widget.asset, icerikKey: _aktifSinyalKey'),
-          isTrue,
-          reason: 'Bölüm tanımlı ama ekrana eklenmemiş.');
-    });
-
-    test('teknik panelden SONRA geliyor — en altta', () {
-      final panel = duz.indexOf('key: _sinyalPaneliKey, detayli: true');
-      // ÇAĞRIYI ara, sınıf tanımını değil: `AktifSinyalBolumu(` ilk olarak
-      // sınıfın kendi constructor'ında geçiyor ve o dosyanın BAŞINDA.
-      final bolum = duz.indexOf('asset: widget.asset, icerikKey:');
-      expect(panel, greaterThan(-1));
-      expect(bolum, greaterThan(panel),
-          reason: 'Kullanıcı "en alta" istedi; bölüm panelin üstüne çıkmış.');
-    });
-
-    test('mevduatta çizilmez', () {
-      // Mevduat için teknik sinyal üretilmiyor (bkz. panel koşulu).
-      // Çağrıyı ara — sınıf tanımı `class AktifSinyalBolumu extends`
-      // olduğu için parantez ayırt edicidir.
-      final bolum = duz.indexOf('asset: widget.asset, icerikKey:');
-      expect(bolum, greaterThan(-1));
-      final oncesi = duz.substring(bolum - 260, bolum);
-      expect(oncesi.contains('!= AssetType.mevduat'), isTrue);
-    });
-
-    test('üstteki şerit ÖNCE en alta kaydırır', () {
-      // Kullanıcı isteği (2026-09-10): "ekranın en üstündeki kısım
-      // kalabilir, tıklanınca en alta inebilir."
-      expect(
-        duz.contains('_aktifSinyalKey.currentContext ??'),
-        isTrue,
-        reason: 'Şerit hâlâ yalnızca teknik panele kaydırıyor.',
-      );
-      // Yedek hedef şart: bölüm koşullu, aktif kayıt yokken hiç çizilmez.
-      expect(duz.contains('_sinyalPaneliKey.currentContext'), isTrue);
-    });
-
-    test('kaydırma anahtarı İÇERİĞE bağlı — widget\'a değil', () {
-      // İnce tuzak: aktif kayıt yokken bölüm `SizedBox.shrink()` döndürür,
-      // yani ağaçta DURUR. Anahtar widget'ın kendi `key`'i olsaydı
-      // `currentContext` dolu olur, kaydırma sıfır yükseklikli bir kutuya
-      // gider ve `??` yedeği hiç devreye girmezdi.
-      expect(duz.contains('icerikKey: _aktifSinyalKey'), isTrue,
-          reason: 'Anahtar widget\'a bağlanmış; boş durumda kaydırma '
-              'sessizce yanlış yere gider.');
-      expect(duz.contains('key: _aktifSinyalKey,'), isFalse);
-    });
-  });
 }
 
 // ── Şerit KAYIT BEKLEMEZ ─────────────────────────────────────────────────────
@@ -352,5 +185,39 @@ void _kaynakTestleri() {
   test('yetersiz geçmişte uydurma sinyal üretilmez', () {
     // Panelle aynı eşik: 30 noktanın altında `analyze` simülasyona düşer.
     expect(kart.contains('prices.length < 30'), isTrue);
+  });
+
+  test('bildirimin SAATİ de yazılır — tarih tek başına yetmez', () {
+    // Kullanıcı isteği (2026-09-10): "bir üstteki kısma bildirim zaman ve
+    // tarihini ekle bunu kaçırmaması lazım."
+    //
+    // Ekranın altındaki ayrıntılı "Aktif Sinyal" bölümü kaldırıldı; artık
+    // bildirimin NE ZAMAN geldiği YALNIZCA bu şeritte görünüyor. Aynı gün
+    // içinde iki sinyal gelebildiği için tarih tek başına ayırt etmiyor.
+    //
+    // İki yer de denetlenir: soldaki "Son bildirim" satırı (canlı hesap
+    // varken) ve sağdaki etiket (canlı hesap yokken şeridin kendisi kaydı
+    // gösterir). Biri saatsiz kalırsa o kolda bilgi kaybolur.
+    expect(
+      "'d MMM · HH:mm'".allMatches(kart).length,
+      2,
+      reason: 'Şeritteki iki zaman göstergesinden biri saatsiz kalmış — '
+          'o durumda bildirimin saati hiçbir yerde görünmez.',
+    );
+  });
+
+  test('kaldırılan bölüm GERİ GELMEZ', () {
+    // Kullanıcı kararı (2026-09-10): ekranın en altındaki büyük "AKTİF
+    // SİNYAL" kartı kaldırıldı — "aşağı trend bilgisi çok bağırıyor ve
+    // itici duruyor ekran".
+    //
+    // Bilgi kaybolmadı: yön, güven ve gösterge sayısı üstteki şeritte
+    // zaten var; zaman/tarih de oraya taşındı (yukarıdaki test).
+    final tam = File('lib/screens/performance_screen.dart').readAsStringSync();
+    expect(tam.contains('class AktifSinyalBolumu'), isFalse,
+        reason: 'Kaldırılan bölüm geri gelmiş.');
+    expect(tam.contains("'AKTİF SİNYAL'"), isFalse);
+    expect(tam.contains('_aktifSinyalKey'), isFalse,
+        reason: 'Bölümün kaydırma anahtarı ölü kod olarak kalmış.');
   });
 }

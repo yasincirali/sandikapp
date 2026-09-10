@@ -294,9 +294,15 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     // çeliştiğinde (bildirim "yukarı" derken göstergeler bugün "aşağı"
     // diyorsa) bu fark kullanıcı için bilginin kendisidir — gizlemek
     // yerine yan yana gösteriyoruz.
+    //
+    // SAAT de yazılır (2026-09-10, kullanıcı: "bildirim zaman ve tarihini
+    // ekle bunu kaçırmaması lazım"). Ekranın altındaki ayrıntılı bölüm
+    // kaldırıldı; bildirimin NE ZAMAN geldiği artık yalnızca burada
+    // duruyor, dolayısıyla tarih tek başına yetmez — aynı gün içinde iki
+    // sinyal gelebilir.
     final kayitSatiri = (canli && kayit != null)
         ? 'Son bildirim: ${_kisaYon(kayit.signal)} · '
-            '${DateFormat('d MMM', 'tr_TR').format(kayit.detectedAt)}'
+            '${DateFormat('d MMM · HH:mm', 'tr_TR').format(kayit.detectedAt)}'
         : null;
 
     return _kabuk(
@@ -346,10 +352,16 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              // Canlı hesap yoksa şeridin kendisi KAYDI gösteriyor demektir
+              // — o zaman saat de buraya yazılır. Aksi halde bildirimin
+              // saati hiçbir yerde görünmezdi (soldaki "Son bildirim"
+              // satırı yalnızca `canli` iken çiziliyor).
               Text(
                 canli
                     ? 'ŞU AN'
-                    : DateFormat('d MMM', 'tr_TR').format(kayit!.detectedAt),
+                    : DateFormat('d MMM · HH:mm', 'tr_TR')
+                        .format(kayit!.detectedAt),
+                maxLines: 1,
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0.4,
                   fontWeight: FontWeight.w700,
@@ -373,313 +385,6 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
         SignalType.sell => '▼ aşağı',
         SignalType.neutral => '◆ yatay',
       };
-}
-
-// ── Aktif sinyal bölümü (ekranın en altı) ────────────────────────────────────
-
-/// Bu varlık için GÖNDERİLMİŞ ve hâlâ geçerli sayılan son sinyal.
-///
-/// ## Neden var
-/// Kullanıcı isteği (2026-09-10): push bildirimine dokunup bu ekrana gelen
-/// kişi, en altta "bana ne bildirildi" sorusunun cevabını ayrıntısıyla
-/// görmeli. Push yalnızca `assetId` taşır; ayrıntı burada okunur.
-///
-/// ## Üstteki şeritten farkı
-/// [AssetSignalCard] ekranın ÜSTÜNDE tek satırlık bir özettir ve öncelikle
-/// CANLI hesabı gösterir. Bu bölüm ise yalnızca `signal_notifications`
-/// kaydını gösterir — zaman damgalı, gerçekten gönderilmiş olayı. İkisi
-/// çelişebilir ve bu çelişki kullanıcı için bilginin kendisidir.
-///
-/// ## "Aktif" tanımı (kullanıcı kararı, 2026-09-10)
-/// Kullanıcı bildirimi sildiyse (`dismissedAt`) VEYA kayıt [_omur]'den
-/// eskiyse bölüm HİÇ çizilmez. Teknik sinyallerin ömrü kısadır; iki hafta
-/// önceki bir kaydı "aktif" diye sunmak yanıltıcı olurdu.
-class AktifSinyalBolumu extends ConsumerWidget {
-  const AktifSinyalBolumu({super.key, required this.asset, this.icerikKey});
-
-  final Asset asset;
-
-  /// Kaydırma hedefi — YALNIZCA kart gerçekten çizildiğinde bağlanır.
-  ///
-  /// Widget'ın kendi `key`'ine bağlansaydı işe yaramazdı: aktif kayıt
-  /// yokken bu widget `SizedBox.shrink()` döndürüyor, yani ağaçta duruyor
-  /// ve `currentContext` DOLU oluyor. Üstteki şeritten gelen kaydırma
-  /// sıfır yükseklikli bir kutuya gider, kullanıcı boş ekrana bakardı.
-  /// Anahtar içeriğe bağlıysa `currentContext` gerçekten null olur ve
-  /// çağıran taraf teknik panele düşebilir.
-  final Key? icerikKey;
-
-  /// Bir sinyalin "aktif" sayıldığı süre.
-  static const Duration omur = Duration(days: 7);
-
-  /// Gösterilecek kaydı seçer — yoksa `null`.
-  ///
-  /// Saf fonksiyon: `now` DIŞARIDAN verilir. `DateTime.now()` içeride
-  /// çağrılsaydı "eskimiş kayıt" dalı ancak gerçek zaman geçtiğinde
-  /// çalışırdı ve test onu hiç görmezdi.
-  static SignalAlert? aktifKayit(
-    List<SignalAlert> alerts,
-    Asset asset, {
-    required DateTime now,
-  }) {
-    final son = AssetSignalCard.sonSinyal(alerts, asset);
-    if (son == null) return null;
-    // Kullanıcı bildirimi kapattıysa ekranda diriltmeyiz.
-    if (son.isDismissed) return null;
-    if (now.difference(son.detectedAt) > omur) return null;
-    return son;
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final alerts =
-        ref.watch(signalProvider).valueOrNull ?? const <SignalAlert>[];
-    final kayit = aktifKayit(alerts, asset, now: DateTime.now());
-
-    // Aktif sinyal yoksa BOŞ kalır — kullanıcı isteğinin açık kısmı.
-    // "Sinyal yok" kutusu çizmek ekranın sonunu bir olumsuzlamayla
-    // doldururdu; bölümün yokluğu zaten aynı şeyi söylüyor.
-    if (kayit == null) return const SizedBox.shrink();
-
-    final c = context.c;
-    final isBuy = kayit.signal == SignalType.buy;
-    final isSell = kayit.signal == SignalType.sell;
-    final renk = isBuy
-        ? c.gain
-        : isSell
-            ? c.loss
-            : c.text58;
-
-    // Yasal dil: kesin "AL/SAT" değil, trend yönü. Ekranın geri kalanıyla
-    // aynı sözcükler (bkz. `_AssetSignalCardState._satir`).
-    final baslik = isBuy
-        ? 'YUKARI TREND'
-        : isSell
-            ? 'AŞAĞI TREND'
-            : 'YATAY SEYİR';
-
-    final toplam = kayit.buyCount + kayit.sellCount;
-    final lehte = isSell ? kayit.sellCount : kayit.buyCount;
-
-    return Column(
-      key: icerikKey,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: SandikSpace.lg),
-        // `Spacer` idi ve 320pt × 1.6'da 141px taşıyordu: iki metin de
-        // doğal genişliğini ister, `Spacer` sıkıştırmaz. Başlık esner
-        // (kısalırsa "…" ile kesilir), zaman etiketi tam kalır — hangisinin
-        // feda edileceği burada bilinçli bir seçim.
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'AKTİF SİNYAL',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.labelMedium?.copyWith(
-                  color: c.text58,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-            const SizedBox(width: SandikSpace.sm),
-            Text(
-              _neZaman(kayit.detectedAt, DateTime.now()),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.t.labelMedium?.copyWith(color: c.text36),
-            ),
-          ],
-        ),
-        const SizedBox(height: SandikSpace.sm2),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(SandikSpace.md),
-          decoration: BoxDecoration(
-            color: renk.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(color: renk.withValues(alpha: 0.28)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: renk.withValues(alpha: 0.14),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isBuy
-                          ? Icons.trending_up_rounded
-                          : isSell
-                              ? Icons.trending_down_rounded
-                              : Icons.remove_rounded,
-                      color: renk,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: SandikSpace.smd),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          baslik,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.titleMedium?.copyWith(
-                            color: renk,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        // KISA ay adı ("10 Eyl" ≠ "10 Eylül"): uzun biçim
-                        // 320pt × 1.6 ölçekte tek başına 470px istiyordu ve
-                        // satırı taşırıyordu. Yıl da atıldı — 7 günden eski
-                        // kayıt zaten gösterilmiyor, yıl bilgi taşımıyor.
-                        Text(
-                          DateFormat("d MMM · HH:mm", 'tr_TR')
-                              .format(kayit.detectedAt),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              context.t.bodySmall?.copyWith(color: c.text58),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: SandikSpace.sm),
-                  // Güven skoru blokunun kendi genişliği YOK; büyük yazı
-                  // ölçeğinde başlıkla birlikte satırı 141px taşırıyordu
-                  // (320pt × 1.6). Esnek bir kutuya alınıp metinler tek
-                  // satıra sabitlendi — skor okunaklılığını korurken
-                  // taşmayı imkânsız kılar.
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            '%${kayit.confidence.round()}',
-                            maxLines: 1,
-                            style: context.t.numMedium.copyWith(
-                              color: renk,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 20,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          'güven',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              context.t.labelSmall?.copyWith(color: c.text36),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              // Gösterge kırılımı yalnızca sayı VARSA çizilir. Sıfır/sıfır
-              // bir dağılım çubuğu bilgi taşımaz, yalnızca yer kaplar.
-              if (toplam > 0) ...[
-                const SizedBox(height: SandikSpace.smd),
-                Divider(height: 1, color: c.hairline),
-                const SizedBox(height: SandikSpace.smd),
-                // `Row` + `Spacer` idi ve büyük yazıda 266px taşıyordu:
-                // üç öğe de doğal genişliğini istiyor, sığmayınca Row
-                // kırılıyor. `Wrap` sığmayanı alt satıra indirir — dar
-                // ekranda düzen bozulmak yerine yumuşakça sarılır.
-                Wrap(
-                  spacing: SandikSpace.md,
-                  runSpacing: SandikSpace.sm,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _Sayac(
-                      etiket: 'Yukarı',
-                      deger: kayit.buyCount,
-                      renk: c.gain,
-                    ),
-                    _Sayac(
-                      etiket: 'Aşağı',
-                      deger: kayit.sellCount,
-                      renk: c.loss,
-                    ),
-                    Text(
-                      '$lehte/$toplam gösterge',
-                      style: context.t.bodySmall?.copyWith(color: c.text58),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// "2 saat önce" / "3 gün önce" — kayıt tazeliğini tek bakışta verir.
-  ///
-  /// Mutlak tarih kartın içinde zaten var; buradaki göreli ifade
-  /// "bu bilgi ne kadar yeni" sorusunu okumadan yanıtlar.
-  static String _neZaman(DateTime an, DateTime now) {
-    final fark = now.difference(an);
-    if (fark.inMinutes < 1) return 'az önce';
-    if (fark.inMinutes < 60) return '${fark.inMinutes} dk önce';
-    if (fark.inHours < 24) return '${fark.inHours} saat önce';
-    return '${fark.inDays} gün önce';
-  }
-}
-
-/// Kartın altındaki tek sayaç (yukarı / aşağı gösterge adedi).
-class _Sayac extends StatelessWidget {
-  const _Sayac({
-    required this.etiket,
-    required this.deger,
-    required this.renk,
-  });
-
-  final String etiket;
-  final int deger;
-  final Color renk;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: renk, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: SandikSpace.xs2),
-        Text(
-          '$deger',
-          style: context.t.numSmall.copyWith(
-            color: renk,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(width: SandikSpace.xs),
-        Text(
-          etiket,
-          style: context.t.bodySmall?.copyWith(color: context.c.text58),
-        ),
-      ],
-    );
-  }
 }
 
 /// Teknik gösterge paneli.
@@ -1472,23 +1177,12 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
   /// olmayan bir merak uyandırırdı.
   final GlobalKey _sinyalPaneliKey = GlobalKey();
 
-  /// Ekranın en altındaki "Aktif Sinyal" bölümünün konumu.
+  /// Şeritten aşağıdaki panele kaydır.
   ///
-  /// Kullanıcı isteği (2026-09-10): "ekranın en üstündeki kısım kalabilir,
-  /// tıklanınca en alta inebilir." Şeride dokunmak artık öncelikle BURAYA
-  /// kaydırır.
-  final GlobalKey _aktifSinyalKey = GlobalKey();
-
-  /// Şeritten aşağıya kaydır.
-  ///
-  /// Hedef sırası bilinçli: önce en alttaki [AktifSinyalBolumu], o
-  /// çizilmemişse (aktif kayıt yok) teknik panel. Bölüm koşullu olduğu
-  /// için `currentContext` null olabilir — tek hedefe bağlansaydı dokunuş
-  /// sessizce hiçbir şey yapmazdı, ki bu en kötü sonuç: kullanıcı
-  /// dokunulabilir görünen bir şeye dokunur ve ekran kıpırdamaz.
+  /// Bir ara "Aktif Sinyal" bölümüne kaydırıyordu; o bölüm kullanıcı
+  /// isteğiyle kaldırıldı (2026-09-10) ve hedef yine teknik panel.
   void _sinyalPaneline() {
-    final ctx = _aktifSinyalKey.currentContext ??
-        _sinyalPaneliKey.currentContext;
+    final ctx = _sinyalPaneliKey.currentContext;
     if (ctx == null) return;
     Scrollable.ensureVisible(
       ctx,
@@ -3156,11 +2850,6 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                 if (widget.asset.type != AssetType.mevduat)
                   TechnicalSignalPanel.forAsset(widget.asset,
                       key: _sinyalPaneliKey, detayli: true),
-                // Push'a dokunup gelen kullanıcının aradığı ayrıntı: EN ALTTA
-                // ve yalnızca aktif kayıt varsa. Mevduatta sinyal üretilmez.
-                if (widget.asset.type != AssetType.mevduat)
-                  AktifSinyalBolumu(
-                      asset: widget.asset, icerikKey: _aktifSinyalKey),
               ],
             ),
           ),
