@@ -539,7 +539,7 @@ class _PortfolioPerformanceScreenState
                       // alınabilir/ya da canlı fiyatı olan varlıkları geçir.
                       // Aksi halde HistoryService tüm seriyi boşaltabiliyor
                       // (tek price-less varlık tüm günü götürebiliyordu).
-                      bool _isRenderable(Asset a) {
+                      bool isRenderable(Asset a) {
                         if (a.quantity == 0) return false;
                         if (a.currentPrice > 0) return true;
                         switch (a.type) {
@@ -560,13 +560,13 @@ class _PortfolioPerformanceScreenState
 
                       final chartAssetsRenderable = [
                         for (final a in chartAssets)
-                          if (_isRenderable(a)) a
+                          if (isRenderable(a)) a
                       ];
                       final filteredOwnerLotsRenderable = [
                         for (final lots in filteredOwnerLots)
                           [
                             for (final a in lots)
-                              if (_isRenderable(a)) a
+                              if (isRenderable(a)) a
                           ]
                       ];
 
@@ -648,6 +648,11 @@ class _PortfolioPerformanceScreenState
                               activePartners,
                               waiting: loading,
                               hasData: data != null,
+                              // Future sonuçlandıysa beklenecek bir şey
+                              // kalmadı: veri hâlâ yoksa spinner değil,
+                              // "alınamadı" durumu gösterilmeli.
+                              settled: snapshot.connectionState ==
+                                  ConnectionState.done,
                               // Tür dökümü artık gün içinde de beslenir.
                               breakdown: data ??
                                   const PortfolioHistoryBreakdown.empty(),
@@ -663,6 +668,9 @@ class _PortfolioPerformanceScreenState
                           final historyMap = controller?.data ?? const {};
                           final waiting = controller?.loading ?? false;
                           final stale = controller?.stale ?? false;
+                          // İlk istek sonuçlandı mı. Boş sonuç + sonuçlanmış
+                          // istek = beklenecek veri yok.
+                          final settled = controller?.settled ?? false;
                           // Tohum veri başka bir filtreye ait: toplamı bu
                           // filtreye ait dağılımla eşleşmez. Bayatken dökümü
                           // hiç gösterme — yanlış bir kırılım göstermektense
@@ -690,6 +698,7 @@ class _PortfolioPerformanceScreenState
                             // Spinner SADECE hiç veri yokken (ilk açılış).
                             hasData: historyMap.isNotEmpty,
                             stale: stale,
+                            settled: settled,
                             breakdown: breakdown,
                           );
                         },
@@ -716,6 +725,9 @@ class _PortfolioPerformanceScreenState
   /// çizilir ve sayısal özet kartı gizlenir: eski rakamlar yeni periyodun
   /// rakamı sanılmasın. Spinner yerine soluk grafik göstermek periyot
   /// değişiminde çok daha akıcı hissettiriyor.
+  /// [settled] veri isteği sonuçlandı mı (başarı ya da hata farketmez).
+  /// `!hasData && settled` → beklenecek bir şey yok; spinner yerine
+  /// "alınamadı" durumu çizilir.
   Widget _buildChartWithData(
     Map<int, double> historyMap,
     List<Asset> targetAssets,
@@ -729,6 +741,7 @@ class _PortfolioPerformanceScreenState
     required bool waiting,
     required bool hasData,
     bool stale = false,
+    bool settled = false,
 
     /// `historyMap` ile AYNI istekten gelen tür/pozisyon dağılımı — tür dökümü
     /// kartını besler. Her iki veri yolu da doldurur: diğer periyotlar
@@ -882,7 +895,33 @@ class _PortfolioPerformanceScreenState
           ),
         ),
         const SizedBox(height: SandikSpace.sm),
-        if (!hasData)
+        // Grafik alanı üç hâlden birinde: boş durum, yükleme, grafik.
+        //
+        // "Boş durum" ayrımı ŞART: seçili tür portföyde yoksa (ya da türün
+        // fiyat geçmişi hiç izlenmiyorsa) `HistoryService` boş varlık
+        // listesine boş seri döndürür — veri ASLA gelmez. Eskiden bu da
+        // `!hasData` sayılıp spinner çiziliyordu ve sonsuza kadar dönüyordu;
+        // kullanıcı yüklenmeyi bekliyor sanıyordu.
+        //
+        // Yükseklik `minHeight` ile kurulur, SABİT değil: grafik alanı kadar
+        // yer tutsun ama büyük metin ölçeğinde (AX5) içerik taşmasın.
+        if (_chartEmptyState(targetAssets, chartAssets) case final empty?)
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 300),
+            child: empty,
+          )
+        else if (!hasData && settled)
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 300),
+            child: _ChartPlaceholder(
+              icon: Icons.cloud_off_rounded,
+              title: 'Grafik verisi alınamadı',
+              message: 'Fiyat geçmişi şu an getirilemedi. '
+                  'Bağlantını kontrol edip tekrar deneyebilirsin.',
+              onRetry: _retryChartData,
+            ),
+          )
+        else if (!hasData)
           const SizedBox(height: 300, child: CustomLoadingView())
         else
           AnimatedOpacity(
@@ -932,6 +971,62 @@ class _PortfolioPerformanceScreenState
         const SizedBox(height: 16),
       ],
     );
+  }
+
+  /// Grafik alanında spinner yerine gösterilecek boş durum — yoksa null.
+  ///
+  /// Üçü de "veri hiç gelmeyecek" hâli ve üçü de eskiden sonsuz spinner
+  /// üretiyordu:
+  ///   • portföy tamamen boş (yeni kullanıcı, "Tümü" seçili),
+  ///   • seçili türde varlık yok (kullanıcının şikâyet ettiği durum),
+  ///   • varlık var ama türün fiyat geçmişi izlenmiyor — mevduat, "Diğer"
+  ///     ve elle fiyatlanan fonlar `isRenderable` elemesine takılır, geriye
+  ///     çizilecek tek bir varlık kalmaz.
+  ///
+  /// [targetAssets] tür filtresinden geçmiş HAM lot'lar, [chartAssets] ise
+  /// bunların çizilebilir olanları. İkisinin farkı son maddeyi ayırt eder.
+  Widget? _chartEmptyState(List<Asset> targetAssets, List<Asset> chartAssets) {
+    if (chartAssets.isNotEmpty) return null;
+    final type = _typeFilter;
+
+    if (targetAssets.isEmpty) {
+      return _ChartPlaceholder(
+        icon: type?.icon ?? Icons.inbox_rounded,
+        iconColor: type?.color,
+        title: type == null
+            ? 'Henüz varlığın yok'
+            : 'Portföyünde ${type.label.toLowerCase()} yok',
+        message: type == null
+            ? 'Varlık ekledikçe portföyünün performansı burada grafiğe '
+                'dönüşecek.'
+            : 'Bu türden bir varlık eklediğinde performansı burada '
+                'görünecek. Başka bir tür seçebilirsin.',
+      );
+    }
+
+    // Varlık var ama hiçbirinin fiyat serisi yok (mevduat, "Diğer", elle
+    // fiyatlanan fon). Değerleri portföy toplamına dahildir — kullanıcı
+    // "varlığım kayboldu" diye okumasın diye bunu açıkça söylüyoruz.
+    return _ChartPlaceholder(
+      icon: Icons.timeline_rounded,
+      iconColor: type?.color,
+      title: 'Grafik verisi yok',
+      message: type == null
+          ? 'Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri '
+              'toplamda görünür ama zaman grafiği çizilemiyor.'
+          : '${type.label} için fiyat geçmişi izlenmiyor. Değeri portföy '
+              'toplamına dahil, ama zaman grafiği çizilemiyor.',
+    );
+  }
+
+  /// "Veri alınamadı" durumundaki tekrar dene. Her iki veri yolunu da
+  /// sıfırlar: gün içi memoize edilmiş future'ı ve zoom controller'ı.
+  void _retryChartData() {
+    setState(() {
+      _intradayKey = null;
+      _intradayFuture = null;
+    });
+    _zoomController?.reload();
   }
 
   Widget _typeChip(AssetType? type, String label) {
@@ -2554,6 +2649,100 @@ class _GunIciVeriYokNotu extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Grafik alanının "çizilecek bir şey yok" hâli.
+///
+/// Spinner bir SÖZDÜR: "bekle, veri geliyor". Gelmeyecekse o söz tutulmaz.
+/// Portföyde bulunmayan bir tür seçildiğinde `HistoryService` boş varlık
+/// listesine boş seri döndürür; ekran eskiden burada da spinner çizip
+/// sonsuza kadar döndürüyordu. Beklenecek bir şey yoksa sebebini söyle.
+class _ChartPlaceholder extends StatelessWidget {
+  const _ChartPlaceholder({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.iconColor,
+    this.onRetry,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
+  /// Tür rengi — boş durum bile seçili çipin kimliğini taşısın.
+  final Color? iconColor;
+
+  /// Yalnızca "veri alınamadı" hâlinde verilir; gerçek boş durumda tekrar
+  /// denenecek bir şey yok.
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: SandikSpace.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(SandikSpace.md),
+              decoration: BoxDecoration(
+                color: (iconColor ?? context.c.amberFill)
+                    .withValues(alpha: 0.10),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon,
+                  size: 28, color: iconColor ?? context.c.amberText),
+            ),
+            const SizedBox(height: SandikSpace.md),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: context.t.titleMedium?.copyWith(
+                color: context.c.text90,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: SandikSpace.sm),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: SandikSpace.md),
+              SandikTappable(
+                onTap: onRetry,
+                haptic: SandikHaptic.medium,
+                semanticLabel: 'Tekrar dene',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SandikSpace.lg,
+                    vertical: SandikSpace.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.c.amberFill.withValues(alpha: 0.12),
+                    borderRadius: SandikRadius.mdAll,
+                    border: Border.all(
+                      color: context.c.amberFill.withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: Text(
+                    'Tekrar Dene',
+                    style: context.t.bodyMedium?.copyWith(
+                      color: context.c.amberText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

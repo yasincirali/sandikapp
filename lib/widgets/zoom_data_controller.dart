@@ -50,6 +50,12 @@ class ZoomDataController extends ChangeNotifier {
   PortfolioHistoryBreakdown _breakdown =
       const PortfolioHistoryBreakdown.empty();
   bool _loading = false;
+  /// En az bir istek SONUÇLANDI mı (başarıyla ya da hatayla)?
+  ///
+  /// "Veri yok" iki farklı şeyi anlatabilir: henüz gelmedi (spinner doğru)
+  /// veya geldi ve boştu (spinner SONSUZA KADAR döner — bekleyecek bir şey
+  /// yok). Ekran bu bayrakla ikisini ayırır.
+  bool _settled = false;
   /// `_data` başka bir filtreden devralınan tohum veri mi? Doğruysa grafik
   /// gösterilir ama "bu henüz seçtiğin filtrenin verisi değil" diye soluk
   /// çizilir ve sayısal özetler (toplam/PnL) buna göre gizlenebilir.
@@ -69,6 +75,10 @@ class ZoomDataController extends ChangeNotifier {
   /// filtreye aittir ve dağılımı bu filtrenin toplamını tutmaz.
   PortfolioHistoryBreakdown get breakdown => _breakdown;
   bool get loading => _loading;
+
+  /// İlk istek sonuçlandı mı. `!loading && settled && data.isEmpty` →
+  /// gerçekten veri yok; spinner yerine boş/hata durumu gösterilmeli.
+  bool get settled => _settled;
 
   /// Ekrandaki veri devralınan tohum mu (henüz bu filtrenin gerçek sonucu
   /// gelmedi mi)?
@@ -170,12 +180,17 @@ class ZoomDataController extends ChangeNotifier {
       // sonrası notifyListeners() exception fırlatır.
       if (!_disposed && mySeq == _requestSeq) {
         _loading = false;
+        _settled = true;
         // Grace timer "yükleniyor" duyurmuş olsa da olmasa da tek notify
         // yeterli: ya spinner'ı kapatır ya da yeni veriyi yayınlar.
         notifyListeners();
       }
     }
   }
+
+  /// Veriyi elle tazele — "veri alınamadı" durumundaki tekrar dene butonu
+  /// bunu çağırır. Debounce'u atlar; kullanıcı zaten bilinçli tetikledi.
+  void reload() => _reload(immediate: true);
 
   @override
   void dispose() {
