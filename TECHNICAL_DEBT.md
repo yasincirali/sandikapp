@@ -5,7 +5,58 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-10
+**Son güncelleme:** 2026-09-11
+
+---
+
+## 🟡 AÇIK — Net miktarı 0'a düşmüş varlık ham listede yaşamaya devam ediyor
+
+**Karar tarihi:** 2026-09-11 · Kullanıcı bildirimi (TestFlight)
+
+Bir pozisyonun miktarı 0'a indiğinde satırları portföyde **aktif** kalır.
+İki yoldan oluşur:
+- tamamı satıldığında alım lot'u olduğu gibi durur, yanına `sell` satırı
+  yazılır (`QuickAdjustDialog` → `addSellTransaction`) — net 0, satır iki;
+- nakit temettü `quantity: 0` bir satır olarak yazılır
+  (`PortfolioNotifier.addDividend`) — pozisyon kapandıktan sonra bile durur.
+
+İkisi de `isActive` (ne mezar taşı ne yumuşak silinmiş), yani **ham lot
+listesini gezen her yer** bunları "varlık var" sayar.
+
+**Bilinen semptom (düzeltildi):** performans ekranında tür çipi, kullanıcı
+o türden hiçbir şey tutmazken "Grafik verisi yok" diyordu — ham satır
+vardı, çizilebilir varlık yoktu. `5cba894` ayrımı net pozisyona taşıdı.
+
+**Muhtemel diğer sızıntı:** `price_alerts_screen.dart:50` alarm adaylarını
+ham aktif `isBuy` lot'larından üretiyor — tamamen satılmış bir hisse hâlâ
+aday olarak çıkıyor olmalı (doğrulanmadı).
+
+**Neden şimdi çözülmedi — ve "sil" göründüğü kadar basit değil:**
+Kullanıcının önerisi satırı silmek ya da soft-delete etmek. Ama bu satırlar
+GEÇMİŞİN kendisi: `HistoryService` her gün için "o gün geçerli net miktarı"
+alım/satım tarihlerinden kurar. Alım lot'u silinirse pozisyonun satıştan
+ÖNCEKİ dönemi grafikten ve tüm periyot hesaplarından kaybolur — satılmış
+varlık hiç olmamış gibi görünür. `deletedAt` damgası da aynı sonucu verir:
+`isActive` false olur ve `keep`/`aggregatePositions` onu her yerden eler.
+Yani "sil" seçeneği, kapanmış pozisyonun geçmiş performansını yok etmeyi
+göze almak demektir — bu bir ürün kararı, teknik bir temizlik değil.
+
+Üçüncü ve muhtemelen doğru yol: satırı silmemek, **okuma tarafını
+düzeltmek**. "Kullanıcı bundan tutuyor mu?" sorusunun tek doğru cevabı
+`aggregatePositions` (satılıp bitmişi `totalQty <= 0` ile, alım satırı
+olmayanı `buyLots.isEmpty` ile düşürür). Ham listeyi gezen yerler tek tek
+bu kaynağa çevrilmeli. Alternatif olarak `Position`'a `isClosed` gibi
+açık bir kavram eklenip UI onu sorabilir.
+
+**Ertelemenin maliyeti:** kapanmış pozisyonlar, ham listeyi gezen
+ekranlarda hayalet olarak görünmeye devam eder. Her biri ayrı ayrı
+keşfedilip düzeltiliyor (bugün performans ekranı) — sistematik bir
+denetim yapılmadı.
+
+**Ele alınma zamanı:** ham lot listesini gezen çağrı yerlerinin denetimi
+yapıldığında. `grep -rn "\.assets\b" lib/screens lib/widgets` ile başla;
+her birinde soru "geçmiş mi soruluyor, bugünkü mülkiyet mi?" — geçmişse
+ham liste doğru, mülkiyetse `aggregatePositions` şart.
 
 ---
 
