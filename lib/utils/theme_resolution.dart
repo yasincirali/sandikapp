@@ -20,14 +20,20 @@ import 'package:flutter/material.dart';
 ///
 /// [ThemeMode.system] seçiliyse cihazın görünümüne düşülür.
 ///
+/// ## Bu tablo NE ZAMAN çözülür
+/// Burada değil. Karar tablosu saftır; kararın **ne zaman** yenilendiği
+/// `SurfaceTheme` içinde yaşar ve yalnızca üç meşru tetikleyiciyle çalışır
+/// (tercih değişimi, öne dönüş, önplandayken cihaz görünümü değişimi).
+/// Tabloyu her portföy yayınında yeniden çözmek, kilit ekranı renginin
+/// kendiliğinden salınmasına yol açıyordu — gerekçe orada belgelendi.
+///
 /// ## Neden `MediaQuery` değil
-/// Bu fonksiyonun iki çağrı yeri de build DIŞINDA: bir `ref.listen` geri
-/// çağrısı (`main.dart`) ve bir `onTap` (`settings_screen.dart`).
-/// `MediaQuery.platformBrightnessOf` bir InheritedWidget bağımlılığı KAYDEDER
-/// ve build ağacının dışında çağrılması kırılgandır — element o sırada
-/// sökülmüş olabilir. Platform doğrudan okunur; değer aynıdır, tek fark
-/// testlerdeki `MediaQuery` geçersiz kılmalarını görmemesidir. Saf karar
-/// tablosu [resolveThemeIsLightWith] ile test edilir.
+/// Çağrı yeri build DIŞINDADIR. `MediaQuery.platformBrightnessOf` bir
+/// InheritedWidget bağımlılığı KAYDEDER ve build ağacının dışında çağrılması
+/// kırılgandır — element o sırada sökülmüş olabilir. Platform doğrudan
+/// okunur; değer aynıdır, tek fark testlerdeki `MediaQuery` geçersiz
+/// kılmalarını görmemesidir. Saf karar tablosu [resolveThemeIsLightWith]
+/// ile test edilir.
 ///
 /// `Theme.of(context)` de doğru araç DEĞİLDİR: o zaten çözülmüş sonucu verir
 /// ve bu fonksiyon tam olarak o çözümü yapıyor.

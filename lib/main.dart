@@ -39,8 +39,8 @@ import 'services/remote_push_service.dart';
 import 'services/milestone_repository.dart';
 import 'services/milestone_service.dart';
 import 'services/retention_tracker.dart';
+import 'services/surface_theme.dart';
 import 'theme/sandik.dart';
-import 'utils/theme_resolution.dart';
 import 'widgets/sandik_error_view.dart';
 import 'widgets/milestone_sheet.dart';
 import 'widgets/widget_install_sheet.dart';
@@ -121,6 +121,13 @@ void main() async {
     // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
     // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
     await initPreferencesCache();
+    // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
+    //
+    // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
+    // varsayılanıyla doğar; açık temalı kullanıcı, portföy ilk kez
+    // yayınlanana kadar koyu palet görüyordu. Karar diskten okunur —
+    // yeniden ÇÖZÜLMEZ (bkz. `SurfaceTheme`).
+    await SurfaceTheme.instance.restore();
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     try {
@@ -712,6 +719,11 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // Emniyet supabı burada BAŞLATILMAZ — kullanıcı belli olunca
     // `_startDataWaitTimeout()` ile başlar (bkz. _dataWaitTimer).
     WidgetsBinding.instance.addObserver(this);
+    // Diskten okunan tema kararını yüzeylere BİR KEZ hizala (`force`).
+    // Servis singleton'ları `false` (koyu) doğar ve karar değişmemiş
+    // sayıldığı için normal yolda itilmezdi: açık temalı kullanıcı, ilk
+    // portföy yayınına kadar koyu palet görüyordu.
+    _applySurfaceTheme(trustDeviceBrightness: true, force: true);
     _authSubscription = ref.listenManual(authProvider, (_, next) {
       final user = next.valueOrNull;
 
@@ -903,6 +915,67 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     }
   }
 
+  /// Çözülmüş tema kararını uygulama DIŞI yüzeylere iter.
+  ///
+  /// Karar [SurfaceTheme] içinde verilir ve YALNIZCA buradan tetiklenir:
+  /// tercih değişimi, öne dönüş ve (önplandayken) cihaz görünümü değişimi.
+  /// Portföy dinleyicisi artık kararı yeniden ÇÖZMEZ, yalnızca okur —
+  /// kilit ekranı renginin kendiliğinden salınması tam olarak oradaki
+  /// yeniden örneklemeden geliyordu (bkz. `SurfaceTheme` dokümantasyonu).
+  ///
+  /// [force] ilk itiş içindir: süreç yeni doğduğunda karar değişmemiş olsa
+  /// bile servis singleton'ları (`false` varsayılanı) ve widget'ın diskteki
+  /// bayrağı diskten okunan kararla hizalanmalıdır.
+  void _applySurfaceTheme({
+    required bool trustDeviceBrightness,
+    bool force = false,
+  }) {
+    final changed = SurfaceTheme.instance.update(
+      ref.read(themeModeProvider),
+      trustDeviceBrightness: trustDeviceBrightness,
+    );
+    if (!changed && !force) return;
+
+    final isLight = SurfaceTheme.instance.isLight;
+    // Widget: palet bayrağı yazılır ve hemen yenilenir.
+    unawaited(HomeWidgetService.instance.applyTheme(isLight));
+
+    final la = LiveActivityService.instance;
+    la.themeIsLight = isLight;
+    // Kilit ekranı HEMEN dönsün. `sync` olmadan yalnızca alan güncellenirdi
+    // ve ne ActivityKit'e `update` giderdi ne de `live_activity_sessions`
+    // satırı tazelenirdi: sunucu 5 dakikada bir ESKİ tema ile push atmaya
+    // devam eder, uygulama öne geldiğinde yenisi basılır — kullanıcının
+    // "sürekli değişiyor" dediği salınımın ikinci ayağı buydu.
+    //
+    // `_checkedUserId` kapısı ZORUNLU: portföy provider'ı lazy ve burada
+    // `read` etmek onu ISITMA sırasının dışında kurar (bkz. `_warmUpData`).
+    // Kullanıcı belli olmadan okumak, açılışta istenmeyen bir çekim başlatır.
+    if (_checkedUserId == null) return;
+    final snapshot = ref.read(portfolioProvider).valueOrNull;
+    if (snapshot != null && snapshot.assets.isNotEmpty) {
+      unawaited(la.sync(
+        snapshot,
+        hideBalance: ref.read(balanceHiddenProvider),
+      ));
+    }
+  }
+
+  /// Cihazın görünümü değişti (Otomatik görünüm, Denetim Merkezi, ayar).
+  ///
+  /// **Yalnızca uygulama gerçekten önplandayken kabul edilir.** iOS arkaya
+  /// alınan uygulamanın karesini TERS görünümde de yakalar ve bu geri
+  /// çağrı o sırada ters parlaklıkla tetiklenir. Kabul edilirse yanlış
+  /// palet hem ActivityKit'e hem sunucu satırına yazılır ve bir sonraki
+  /// öne dönüşe kadar kilit ekranında kalır.
+  @override
+  void didChangePlatformBrightness() {
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return;
+    }
+    _applySurfaceTheme(trustDeviceBrightness: true);
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
@@ -910,6 +983,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         state == AppLifecycleState.hidden) {
       _backgroundedAt = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
+      // Arkadayken olan bir sistem görünümü değişimi burada yakalanır:
+      // önplanda olmadığı için `didChangePlatformBrightness` onu bilinçli
+      // olarak yutmuştu.
+      _applySurfaceTheme(trustDeviceBrightness: true);
       final bg = _backgroundedAt;
       if (bg != null && DateTime.now().difference(bg) >= _sessionTimeout) {
         _backgroundedAt = null;
@@ -944,6 +1021,20 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // oturum geri yüklenirken kaçırılabiliyordu ve splash sonsuza kadar
     // bekliyordu. `_warmUpData` idempotent (??= ile korunuyor).
     if (user != null) _warmUpData();
+
+    // Tema tercihi değişince uygulama DIŞI yüzeyleri tazele.
+    //
+    // Dinleyici BURADA, tek yerde: tercih iki yerden değiştirilebiliyor
+    // (Ayarlar'daki üçlü seçici ve Profil başlığındaki hızlı geçiş) ve
+    // itişi ekranlara dağıtmak birini atlamak demekti — Profil'deki geçiş
+    // tam olarak bunu yapıyordu, widget ve kilit ekranı bir sonraki
+    // portföy yayınına kadar eski temada kalıyordu.
+    //
+    // `_AuthGate` `MaterialApp.home`'dur, yani uygulama yaşadığı sürece
+    // mount'tur; üstüne açılan ekranlardan yapılan değişim de buraya düşer.
+    ref.listen<ThemeMode>(themeModeProvider, (_, __) {
+      _applySurfaceTheme(trustDeviceBrightness: true);
+    });
 
     // Portföy varlık sayısı değişince analytics user property'sini güncelle.
     // Analytics dashboard'ta cohort analizi için gerekli.
@@ -1022,16 +1113,20 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       final snapshot = next.valueOrNull;
       if (snapshot != null && snapshot.assets.isNotEmpty) {
         final hideBalance = ref.read(balanceHiddenProvider);
-        // Tema tercihi native yüzeylere BURADA aktarılır — tutar tercihiyle
-        // aynı desen ve aynı sebep: servisler singleton, provider okuyamaz.
+        // Tema kararı BURADA VERİLMEZ, yalnızca OKUNUR.
         //
-        // "Sistem" burada ÇÖZÜLÜR: kilit ekranı uzantısı ve ana ekran
-        // widget'ı yalnızca CİHAZIN görünümünü görebilir, uygulamanın
-        // tercihini değil. Kullanıcı uygulamayı "Açık" yapıp cihazı koyu
-        // bıraktığında istenen açık palettir; bu ayrımı yalnızca burası
-        // bilebilir.
-        // Bağlamsız çözüm: bu bir `ref.listen` geri çağrısı, build değil.
-        final isLightTheme = resolveThemeIsLightNow(ref.read(themeModeProvider));
+        // Bu dinleyici her portföy yayınında çalışıyor: fiyat tazeleme,
+        // sekme değişimi, varlık ekleme — dakikada birkaç kez. Eskiden
+        // burada `resolveThemeIsLightNow` çağrılıyor, yani cihaz görünümü
+        // yeniden ÖRNEKLENİYORDU. Tercih "Sistem" iken (varsayılan bu) ve
+        // özellikle iOS arkaya alınan kareyi ters görünümde yakalarken
+        // yanlış değer hem ActivityKit'e hem `live_activity_sessions`
+        // satırına yazılıyor, sunucu onu 5 dakikada bir push'luyordu:
+        // kilit ekranı rengi kullanıcı hiçbir şey değiştirmeden salınıyordu.
+        //
+        // Karar artık [SurfaceTheme] içinde yaşar ve yalnızca meşru
+        // tetikleyicilerle değişir (bkz. `_applySurfaceTheme`).
+        final isLightTheme = SurfaceTheme.instance.isLight;
         HomeWidgetService.instance.themeIsLight = isLightTheme;
         unawaited(HomeWidgetService.instance.updateWithChart(
           snapshot,

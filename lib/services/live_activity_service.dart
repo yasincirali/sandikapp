@@ -117,6 +117,13 @@ class LiveActivityService {
   /// koyu bıraktığında istenen açık palettir; bu ayrımı yalnızca Dart tarafı
   /// bilebilir.
   ///
+  /// **Değer burada ÇÖZÜLMEZ, itilir — ve iki itiş arasında SABİT kalır.**
+  /// Kararı `SurfaceTheme` verir ve kalıcılaştırır; yalnızca üç meşru
+  /// tetikleyiciyle değişir (kullanıcı tercihi, öne dönüş, önplandayken
+  /// cihaz görünümü değişimi). Eskiden karar her portföy yayınında yeniden
+  /// örnekleniyordu ve kilit ekranı rengi kullanıcı hiçbir şey
+  /// değiştirmeden salınıyordu — gerekçe `SurfaceTheme` içinde.
+  ///
   /// Varsayılan `false` (koyu): tercih henüz itilmemişken bugünkü davranış
   /// korunur.
   bool themeIsLight = false;
