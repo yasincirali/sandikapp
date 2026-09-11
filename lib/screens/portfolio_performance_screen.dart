@@ -525,6 +525,17 @@ class _PortfolioPerformanceScreenState
                         for (final lots in ownerLots) lots.where(keep).toList(),
                       ];
 
+                      // "Bu türden portföyümde VAR MI?" sorusunun tek
+                      // doğru cevabı net pozisyondur, ham satır sayısı
+                      // değil: temettü satırı miktara girmez, satılıp
+                      // bitmiş pozisyonun alım/satım satırları ise geçmişte
+                      // durur. `aggregatePositions` ikisini de düşürür —
+                      // portföy toplamları da aynı kaynaktan okur, yani boş
+                      // durum mesajı ekranın geri kalanıyla aynı şeyi söyler.
+                      final holdsSelectedType =
+                          aggregatePositionsByOwner(filteredOwnerLots)
+                              .isNotEmpty;
+
                       // Simülasyon modu: bugünün net pozisyonlarını
                       // tüm dönem boyunca sabit tut — "şu anki portföyümü o
                       // zaman elimde tutsaydım" senaryosunu HistoryService'e
@@ -648,6 +659,7 @@ class _PortfolioPerformanceScreenState
                               activePartners,
                               waiting: loading,
                               hasData: data != null,
+                              holdsSelectedType: holdsSelectedType,
                               // Future sonuçlandıysa beklenecek bir şey
                               // kalmadı: veri hâlâ yoksa spinner değil,
                               // "alınamadı" durumu gösterilmeli.
@@ -690,6 +702,7 @@ class _PortfolioPerformanceScreenState
                             pState,
                             activePartners,
                             waiting: waiting,
+                            holdsSelectedType: holdsSelectedType,
                             // Tohum veri de "gösterilebilir" sayılır: aynı
                             // varlıkların bir önceki penceresidir, spinner'dan
                             // çok daha iyi bir ara kare. `stale` ile soluk
@@ -740,6 +753,11 @@ class _PortfolioPerformanceScreenState
     List<AppUser> activePartners, {
     required bool waiting,
     required bool hasData,
+
+    /// Seçili türde NET pozisyon var mı (satılıp bitmişler ve temettü gibi
+    /// miktarsız satırlar hariç). Boş durumun "hiç yok" ile "var ama
+    /// çizilemiyor" ayrımı buna dayanır.
+    required bool holdsSelectedType,
     bool stale = false,
     bool settled = false,
 
@@ -905,7 +923,7 @@ class _PortfolioPerformanceScreenState
         //
         // Yükseklik `minHeight` ile kurulur, SABİT değil: grafik alanı kadar
         // yer tutsun ama büyük metin ölçeğinde (AX5) içerik taşmasın.
-        if (_chartEmptyState(targetAssets, chartAssets) case final empty?)
+        if (_chartEmptyState(holdsSelectedType, chartAssets) case final empty?)
           ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 300),
             child: empty,
@@ -983,13 +1001,18 @@ class _PortfolioPerformanceScreenState
   ///     ve elle fiyatlanan fonlar `isRenderable` elemesine takılır, geriye
   ///     çizilecek tek bir varlık kalmaz.
   ///
-  /// [targetAssets] tür filtresinden geçmiş HAM lot'lar, [chartAssets] ise
-  /// bunların çizilebilir olanları. İkisinin farkı son maddeyi ayırt eder.
-  Widget? _chartEmptyState(List<Asset> targetAssets, List<Asset> chartAssets) {
+  /// [holdsSelectedType] NET pozisyona bakar, ham satıra DEĞİL. Ayrım bir
+  /// kez ham satırlara dayandırılmıştı ve yanlış mesaj veriyordu: temettü
+  /// satırı (miktarsız) ya da satılıp bitmiş bir pozisyon türde "varlık
+  /// var" saydırıp, çizilecek bir şey olmadığı için ekranı "grafik verisi
+  /// yok"a düşürüyordu — oysa kullanıcının o türden hiçbir şeyi yoktu.
+  /// [chartAssets] ise çizilebilir varlıklar; boş olması şart, aksi halde
+  /// grafik zaten çizilir.
+  Widget? _chartEmptyState(bool holdsSelectedType, List<Asset> chartAssets) {
     if (chartAssets.isNotEmpty) return null;
     final type = _typeFilter;
 
-    if (targetAssets.isEmpty) {
+    if (!holdsSelectedType) {
       return _ChartPlaceholder(
         icon: type?.icon ?? Icons.inbox_rounded,
         iconColor: type?.color,

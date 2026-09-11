@@ -48,6 +48,25 @@ Asset _asset({
       addedDate: DateTime(2026, 3, 14),
     );
 
+/// Miktara GİRMEYEN satır: temettü. Kullanıcı o hisseyi artık tutmuyor
+/// ama nakit temettü kaydı portföyde aktif satır olarak duruyor.
+Asset _temettuSatiri() => Asset(
+      id: 'THYAO-div-1',
+      userId: _uid,
+      name: 'Türk Hava Yolları',
+      ticker: 'THYAO.IS',
+      type: AssetType.hisse,
+      quantity: 0,
+      purchasePrice: 0,
+      currency: 'TRY',
+      notes: '',
+      isManualPrice: false,
+      currentPrice: 0,
+      addedDate: DateTime(2026, 4, 2),
+      kind: AssetKind.dividend,
+      dividendAmount: 480.0,
+    );
+
 class _FakeAuth extends AuthNotifier {
   @override
   Future<AppUser?> build() async => AppUser(
@@ -164,6 +183,27 @@ void main() {
       expect(find.byType(CustomLoadingView), findsNothing,
           reason: 'boş portföyde beklenecek veri yok');
       expect(find.text('Henüz varlığın yok'), findsOneWidget);
+      tester.takeException();
+    });
+
+    // TESTFLIGHT REGRESYONU (2026-09-11): ayrım ham satıra dayanıyordu.
+    // Kullanıcının hissesi yoktu, yalnızca eski bir temettü kaydı vardı;
+    // satır "varlık var" saydırıyor, çizilecek bir şey olmadığı için ekran
+    // "Grafik verisi yok" diyordu. Doğru cevap NET pozisyondur.
+    testWidgets('miktarsız satır (temettü) "varlık var" saydırmaz',
+        (tester) async {
+      await _pump(
+        tester,
+        assets: [_temettuSatiri()],
+        initialTypeFilter: AssetType.hisse,
+      );
+
+      expect(find.byType(CustomLoadingView), findsNothing);
+      expect(find.text('Portföyünde hisse yok'), findsOneWidget,
+          reason: 'temettü satırı miktara girmez — net pozisyon yok, '
+              'yani kullanıcının o türden varlığı YOK');
+      expect(find.text('Grafik verisi yok'), findsNothing,
+          reason: 'tutulmayan bir tür için "çizilemiyor" demek yanıltıcı');
       tester.takeException();
     });
 
