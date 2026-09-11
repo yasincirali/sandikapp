@@ -936,17 +936,20 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     );
     if (!changed && !force) return;
 
-    final isLight = SurfaceTheme.instance.isLight;
-    // Widget: palet bayrağı yazılır ve hemen yenilenir.
-    unawaited(HomeWidgetService.instance.applyTheme(isLight));
+    // Widget: palet bayrağı yazılır ve hemen yenilenir. Değeri servis
+    // `SurfaceTheme`'den kendisi okur — buradan bool GEÇİLMEZ.
+    unawaited(HomeWidgetService.instance.applyTheme());
 
     final la = LiveActivityService.instance;
-    la.themeIsLight = isLight;
-    // Kilit ekranı HEMEN dönsün. `sync` olmadan yalnızca alan güncellenirdi
-    // ve ne ActivityKit'e `update` giderdi ne de `live_activity_sessions`
-    // satırı tazelenirdi: sunucu 5 dakikada bir ESKİ tema ile push atmaya
-    // devam eder, uygulama öne geldiğinde yenisi basılır — kullanıcının
-    // "sürekli değişiyor" dediği salınımın ikinci ayağı buydu.
+    // Kilit ekranının SUNUCU ucu: tema satıra hemen yazılır.
+    //
+    // Bu, uygulama kapalıyken tek besleyen yol. Özetin (`summary`)
+    // yazılmasını BEKLEMEZ: tema değişimi gösterim penceresi dışında
+    // yapıldığında `sync` oturumu bitirip erken döner ve özet hiç
+    // yazılmazdı — kullanıcı bulgusu "kill edince tema değişiyor" buydu.
+    unawaited(la.pushThemeToServer());
+    // Kilit ekranının YEREL ucu: ActivityKit'e update gitsin ki uygulama
+    // önplandayken de anında dönsün.
     //
     // `_checkedUserId` kapısı ZORUNLU: portföy provider'ı lazy ve burada
     // `read` etmek onu ISITMA sırasının dışında kurar (bkz. `_warmUpData`).
@@ -1113,7 +1116,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       final snapshot = next.valueOrNull;
       if (snapshot != null && snapshot.assets.isNotEmpty) {
         final hideBalance = ref.read(balanceHiddenProvider);
-        // Tema kararı BURADA VERİLMEZ, yalnızca OKUNUR.
+        // **Tema BURADA ne çözülür ne de itilir.**
         //
         // Bu dinleyici her portföy yayınında çalışıyor: fiyat tazeleme,
         // sekme değişimi, varlık ekleme — dakikada birkaç kez. Eskiden
@@ -1124,10 +1127,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // satırına yazılıyor, sunucu onu 5 dakikada bir push'luyordu:
         // kilit ekranı rengi kullanıcı hiçbir şey değiştirmeden salınıyordu.
         //
-        // Karar artık [SurfaceTheme] içinde yaşar ve yalnızca meşru
-        // tetikleyicilerle değişir (bkz. `_applySurfaceTheme`).
-        final isLightTheme = SurfaceTheme.instance.isLight;
-        HomeWidgetService.instance.themeIsLight = isLightTheme;
+        // Karar artık [SurfaceTheme] içinde yaşar; iki servis de onu
+        // getter üzerinden okur (`themeIsLight`), yani atanacak bir alan
+        // kalmadı — itmeyi unutmak mümkün değil.
         unawaited(HomeWidgetService.instance.updateWithChart(
           snapshot,
           hideBalance: hideBalance,
@@ -1140,7 +1142,6 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Kilit ekranında tutar tercihi servise BURADA aktarılır: servis
         // provider okuyamaz (Riverpod'a bağlı değil, singleton).
         final la = LiveActivityService.instance;
-        la.themeIsLight = isLightTheme;
         la.showAmountsOnLockScreen = ref.read(lockScreenAmountsProvider);
         la.startMinute = ref.read(liveActivityStartProvider);
         la.endMinute = ref.read(liveActivityEndProvider);

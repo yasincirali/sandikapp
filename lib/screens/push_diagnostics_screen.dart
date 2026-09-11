@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/live_activity_service.dart';
 import '../services/remote_push_service.dart';
+import '../services/surface_theme.dart';
 import '../theme/sandik.dart';
 
 /// Push zinciri teşhis ekranı — **admin'e açık, release dahil**.
@@ -53,6 +55,36 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   /// çağrılmazsa `getAPNSToken()` hep null döner), ya da FCM token üretilmemiştir.
   /// Üçü de aynı belirtiyi verir: "push gelmiyor".
   Map<String, String> _cihaz = const {};
+
+  /// Canlı etkinlik (Live Activity) oturum satırları — tema teşhisi.
+  ///
+  /// **Neden bu ekranda:** kilit ekranı yüzeyi iki ayrı kaynaktan beslenir
+  /// ve ikisi ayrıştığında belirti aynıdır ("tema kendiliğinden değişiyor"),
+  /// ama sebep farklıdır:
+  ///   * uygulama ÖNPLANDA → ActivityKit'e giden yerel `update` (yani
+  ///     `SurfaceTheme` kararı),
+  ///   * uygulama KAPALI → sunucunun bu satırdan okuyup push'ladığı değer.
+  ///
+  /// Yerel kararı ve satırdaki değeri yan yana göstermek, hangi ucun
+  /// bayat kaldığını tahmin etmeden söyler.
+  List<dynamic> _canliOturumlar = const [];
+
+  /// Kararın türetildiği tercihin okunabilir adı.
+  ///
+  /// "Sistem" seçiliyken yüzeyin cihaz görünümünü izlemesi DOĞRUDUR; bu
+  /// satır olmadan kullanıcı bunu hata sanar.
+  String _temaTercihiAdi() {
+    switch (SurfaceTheme.instance.lastResolvedMode) {
+      case ThemeMode.light:
+        return 'Açık (cihazdan bağımsız SABİT)';
+      case ThemeMode.dark:
+        return 'Koyu (cihazdan bağımsız SABİT)';
+      case ThemeMode.system:
+        return 'Sistem — cihaz görünümünü izler (değişmesi NORMAL)';
+      case null:
+        return 'henüz çözülmedi';
+    }
+  }
 
   /// De-dup durumunu sıfırlar — aynı sinyaller yeniden gönderilebilsin.
   ///
@@ -220,6 +252,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     List<dynamic> tokenlar = const [];
     List<dynamic> sinyaller = const [];
     List<dynamic> tercihler = const [];
+    List<dynamic> canliOturumlar = const [];
     final uid = db.auth.currentUser?.id;
     if (uid != null) {
       try {
@@ -259,6 +292,21 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       } catch (e) {
         hatalar.add('signal_preferences: $e');
       }
+      // Canlı etkinlik oturumları — tema hangi değerle push'lanıyor?
+      //
+      // `select('*')`: `is_light_theme` sütunu 0050 migration'ı ile geldi
+      // ve alan listesine yazmak, migration koşmamış bir veritabanında bu
+      // bölümü tümden patlatırdı. `*` ile sütun yoksa alan eksik gelir ve
+      // aşağıda "sütun YOK" olarak raporlanır — teşhisin kendisi olur.
+      try {
+        canliOturumlar = await db
+            .from('live_activity_sessions')
+            .select('*')
+            .eq('user_id', uid)
+            .order('updated_at', ascending: false) as List<dynamic>;
+      } catch (e) {
+        hatalar.add('live_activity_sessions: $e');
+      }
     }
 
     // Cihaz teşhisi ASLA sayfayı düşürmemeli.
@@ -287,6 +335,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       _sinyaller = sinyaller;
       _tercihler = tercihler;
       _tokenlar = tokenlar;
+      _canliOturumlar = canliOturumlar;
       _myTokenCount = tokenCount;
       _cihaz = cihaz;
       // Hepsi patladıysa tam hata ekranı; kısmi hata sayfada gösterilir.
@@ -695,7 +744,34 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
                 'son:${p['last_notified_at'] ?? "-"}\n'
                 '   güncelleme: ${p['updated_at']}',
         ]),
-        _bolum('6. SİNYAL GEÇMİŞİ (de-dup kaynağı)',
+        // Kilit ekranı teması iki uçtan besleniyor ve ayrıştıklarında
+        // belirti aynı ("tema kendiliğinden değişiyor"), sebep farklı.
+        // İki ucu yan yana yazmak tahmini ortadan kaldırır.
+        _bolum(
+            '6. CANLI ETKİNLİK / TEMA',
+            _canliOturumlar.isEmpty
+                ? 'Aktif oturum satırı yok — kilit ekranı push ALMIYOR'
+                : null, [
+          'Yerel karar (SurfaceTheme): '
+              '${SurfaceTheme.instance.isLight ? "AÇIK" : "KOYU"}',
+          'Tercih: ${_temaTercihiAdi()}',
+          if (_canliOturumlar.isNotEmpty) '',
+          for (final s in _canliOturumlar) ...[
+            'satır • güncelleme: '
+                '${s['updated_at']?.toString().substring(0, 16) ?? "?"}'
+                '  bitiş: ${s['expires_at']?.toString().substring(0, 16) ?? "?"}',
+            // Sunucunun push'a koyduğu değer BU: sütun varsa sütun,
+            // yoksa özetteki yedek alan.
+            '   sütun (is_light_theme): '
+                '${s.containsKey('is_light_theme') ? (s['is_light_theme'] == true ? "AÇIK" : "KOYU") : "SÜTUN YOK ← 0050 migration koşulmamış"}',
+            '   özet (summary.isLightTheme): '
+                '${s['summary'] == null ? "özet YOK" : ((s['summary'] as Map)['isLightTheme'] == true ? "AÇIK" : "KOYU")}',
+            '   özet şeması: '
+                '${s['summary'] == null ? "-" : (s['summary'] as Map)['schema'] ?? "damgasız"}'
+                ' (beklenen ${LiveActivityService.summarySchemaVersion})',
+          ],
+        ]),
+        _bolum('7. SİNYAL GEÇMİŞİ (de-dup kaynağı)',
             _sinyaller.isEmpty ? 'Kayıt yok' : null, [
           for (final s in _sinyaller)
             '${s['sent_at']}\n   ${s['asset_name']} → ${s['signal']} '

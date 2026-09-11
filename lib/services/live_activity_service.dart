@@ -10,6 +10,7 @@ import '../utils/tr_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'daily_summary.dart';
+import 'surface_theme.dart';
 
 /// iOS Live Activity — kilit ekranı + Dynamic Island "piyasa seansı" yüzeyi.
 ///
@@ -117,16 +118,19 @@ class LiveActivityService {
   /// koyu bıraktığında istenen açık palettir; bu ayrımı yalnızca Dart tarafı
   /// bilebilir.
   ///
-  /// **Değer burada ÇÖZÜLMEZ, itilir — ve iki itiş arasında SABİT kalır.**
-  /// Kararı `SurfaceTheme` verir ve kalıcılaştırır; yalnızca üç meşru
-  /// tetikleyiciyle değişir (kullanıcı tercihi, öne dönüş, önplandayken
-  /// cihaz görünümü değişimi). Eskiden karar her portföy yayınında yeniden
-  /// örnekleniyordu ve kilit ekranı rengi kullanıcı hiçbir şey
-  /// değiştirmeden salınıyordu — gerekçe `SurfaceTheme` içinde.
+  /// **Değer burada ÇÖZÜLMEZ ve İTİLMEZ — tek kaynaktan OKUNUR.**
   ///
-  /// Varsayılan `false` (koyu): tercih henüz itilmemişken bugünkü davranış
-  /// korunur.
-  bool themeIsLight = false;
+  /// Kararı [SurfaceTheme] verir, diske yazar ve yalnızca üç meşru
+  /// tetikleyiciyle değiştirir (kullanıcı tercihi, öne dönüş, önplandayken
+  /// cihaz görünümü değişimi). Eskiden bu bir alandı ve dışarıdan
+  /// itiliyordu; iki hata birden doğuruyordu:
+  ///   * itişi kaçıran bir kod yolu (ya da süreç henüz yeni doğmuşsa hiç
+  ///     itilmemiş olması) alanı `false` = KOYU bırakıyordu,
+  ///   * karar her portföy yayınında yeniden örnekleniyordu ve kilit
+  ///     ekranı rengi kullanıcı hiçbir şey değiştirmeden salınıyordu.
+  ///
+  /// Getter olduğu için "itmeyi unutmak" artık MÜMKÜN DEĞİL.
+  bool get themeIsLight => SurfaceTheme.instance.isLight;
 
   /// Hafta sonu da gösterilsin mi? Varsayılan AÇIK.
   ///
@@ -212,7 +216,10 @@ class LiveActivityService {
     startMinute = defaultStartMinute;
     endMinute = defaultEndMinute;
     includeWeekend = true;
-    themeIsLight = false;
+    // Tema artık bu serviste YAŞAMIYOR; kaynağı sıfırlamak gerekir.
+    SurfaceTheme.instance.resetForTest();
+    _lastPushedTheme = null;
+    _themeColumnSupported = true;
     showAmountsOnLockScreen = false;
   }
 
@@ -267,7 +274,85 @@ class LiveActivityService {
     // ilk fiyat değişimine kadar HİÇ beslenmiyordu. Piyasa kapalıyken bu
     // "hiç" demektir.
     _lastSummaryKey = null;
+
+    // Tema satıra HEMEN yazılır. Upsert'in kendisine konmadı: sütun henüz
+    // migrate edilmemiş bir veritabanında upsert TÜMDEN patlar ve oturum
+    // hiç kaydolmaz — tema uğruna push zincirinin tamamını kaybetmek kötü
+    // bir takas. Ayrı ve toleranslı bir yazım (bkz. [pushThemeToServer])
+    // en kötü durumda yalnızca temayı kaybeder.
+    //
+    // `force`: satır YENİ, yani tema değeri değişmemiş olsa bile bu satıra
+    // hiç yazılmadı. Tekrar-elemeye takılırsa satır varsayılan koyu kalır.
+    await pushThemeToServer(force: true);
   }
+
+  /// Çözülmüş tema kararını oturum satırına yazar — ÖZETTEN BAĞIMSIZ.
+  ///
+  /// ## Neden ayrı bir yazım
+  /// Tema eskiden yalnızca `summary` JSON'unun içinde taşınıyordu ve o JSON
+  /// yalnızca portföy özeti yazılırken güncelleniyor. Uygulama KAPALIYKEN
+  /// kilit ekranını besleyen tek şey bu satır olduğu için, özetin
+  /// güncellenmediği her durumda palet eski değerinde kalıyordu:
+  ///   * tema gösterim penceresi DIŞINDA değiştirildiğinde ([sync] orada
+  ///     oturumu bitirip erken döner, özet hiç yazılmaz),
+  ///   * yeni bir oturum satırı açıldığında (özet henüz yok),
+  ///   * özet eski ANLAM sürümündeyse (sunucu satırı `skippedStale` sayar —
+  ///     rakamlar için doğru, ama tema rakam değil).
+  ///
+  /// Kullanıcı bulgusu "uygulamayı kill edince tema değişiyor" tam olarak
+  /// buydu: önplanda ActivityKit doğru paleti basıyor, kapanınca sunucu
+  /// eski satırdan besleyip geri döndürüyordu.
+  ///
+  /// ## Neden toleranslı
+  /// `is_light_theme` sütunu 0050 migration'ı ile geldi. Uygulama
+  /// güncellenip SQL henüz koşulmamışsa Postgres "column not found"
+  /// döndürür; bu yazım o durumda SESSİZCE geçer ve tema yine
+  /// `summary.isLightTheme` üzerinden taşınır (sunucu onu yedek olarak
+  /// okur). Aksi halde migration'ı beklerken kilit ekranı tümden donardı.
+  ///
+  /// [force] yeni bir oturum satırı açıldığında gerekir: değer değişmemiş
+  /// olsa bile o satır henüz temayı taşımıyordur.
+  Future<void> pushThemeToServer({bool force = false}) async {
+    if (!_themeColumnSupported) return;
+    if (!force && _lastPushedTheme == themeIsLight) return;
+
+    try {
+      // `_db` de fırlatabilir (Supabase henüz init değilse): bu metot
+      // `unawaited` çağrılıyor, dışarı kaçan bir hata Crashlytics'e
+      // "fatal" olarak düşerdi.
+      final user = _db.auth.currentUser;
+      if (user == null) return;
+
+      await _db
+          .from('live_activity_sessions')
+          .update({
+            'is_light_theme': themeIsLight,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('user_id', user.id);
+      _lastPushedTheme = themeIsLight;
+    } catch (e) {
+      // Sütun yoksa bir daha denenmez: her tema değişiminde başarısız bir
+      // DB turu atmanın anlamı yok.
+      final msg = e.toString();
+      if (msg.contains('is_light_theme') || msg.contains('PGRST204')) {
+        _themeColumnSupported = false;
+        if (kDebugMode) {
+          debugPrint('is_light_theme sütunu yok — 0050 migration koşulmalı. '
+              'Tema summary üzerinden taşınmaya devam ediyor.');
+        }
+        return;
+      }
+      if (kDebugMode) debugPrint('Tema yazılamadı: $e');
+    }
+  }
+
+  /// `is_light_theme` sütunu bu veritabanında var mı? (bkz.
+  /// [pushThemeToServer] — migration'dan önceki sürümlerde yok.)
+  bool _themeColumnSupported = true;
+
+  /// Sunucuya en son yazılan tema — aynı değeri tekrar yazmamak için.
+  bool? _lastPushedTheme;
 
   /// Portföy özetini sunucuya yazar; push döngüsü bunu okur.
   ///
@@ -554,6 +639,16 @@ class LiveActivityService {
       // uygulamanın akışını bekletmemeli.
       unawaited(_writeSummary(payload).catchError((Object e) {
         if (kDebugMode) debugPrint('Özet yazılamadı: $e');
+      }));
+
+      // Tema sütunu da her senkronda HİZALANIR — kendini iyileştiren yol.
+      //
+      // Normalde temayı `_applySurfaceTheme` (main.dart) değişim anında
+      // yazar. Buradaki çağrı o tetikleyicinin kaçırıldığı ya da yazımın
+      // ağ yokluğunda düştüğü durumlar için: değer sunucuda zaten
+      // doğruysa tekrar-eleme yüzünden DB turu bile açılmaz.
+      unawaited(pushThemeToServer().catchError((Object e) {
+        if (kDebugMode) debugPrint('Tema hizalanamadı: $e');
       }));
 
       if (unchanged) return;

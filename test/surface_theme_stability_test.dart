@@ -219,14 +219,75 @@ void main() {
     });
   });
 
+  group('tema süreçten BAĞIMSIZ taşınıyor', () {
+    // Uygulama kill edildiğinde kilit ekranını besleyen TEK şey sunucu
+    // push'udur; o da `live_activity_sessions` satırından okur. Tema
+    // yalnızca `summary` JSON'unda taşındığı sürece, özetin
+    // güncellenmediği her durumda (pencere dışı tema değişimi, yeni
+    // oturum satırı, eski şema damgası) palet eski değerinde kalıyordu.
+    late String servis;
+
+    setUpAll(() async {
+      servis = _yorumsuz(
+          await File('lib/services/live_activity_service.dart').readAsString());
+    });
+
+    test('themeIsLight ATANABİLİR bir alan değil, getter', () {
+      expect(servis.contains('bool get themeIsLight'), isTrue,
+          reason: 'alan olsaydı itmeyi kaçıran bir yol onu KOYU bırakırdı');
+      expect(servis.contains('bool themeIsLight = '), isFalse);
+    });
+
+    test('tema sütunu özetten bağımsız yazılıyor', () {
+      expect(servis.contains('Future<void> pushThemeToServer('), isTrue);
+      expect(servis.contains("'is_light_theme': themeIsLight"), isTrue,
+          reason: 'sunucu bu sütundan okuyor');
+    });
+
+    test('yeni oturum satırına tema ZORLA yazılıyor', () {
+      // Yeni satır temayı taşımaz; tekrar-elemeye takılırsa varsayılan
+      // koyu kalır ve uygulama kapalıyken palet geri döner.
+      expect(servis.contains('pushThemeToServer(force: true)'), isTrue);
+    });
+
+    test('HomeWidgetService de tek kaynaktan okuyor', () async {
+      final widget = _yorumsuz(
+          await File('lib/services/home_widget_service.dart').readAsString());
+      expect(widget.contains('bool get themeIsLight'), isTrue);
+      expect(widget.contains('bool themeIsLight = '), isFalse);
+      expect(widget.contains('Future<void> applyTheme()'), isTrue,
+          reason: 'bool dışarıdan geçilirse iki çağrı yeri ayrışır');
+    });
+
+    test('sunucu SÜTUNU tercih ediyor, özeti yedek tutuyor', () async {
+      final fn = await File('supabase/functions/push-live-activity/index.ts')
+          .readAsString();
+      expect(fn.contains("typeof s.is_light_theme === 'boolean'"), isTrue,
+          reason: 'sütun varsa o kazanmalı');
+      expect(fn.contains('row.isLightTheme === true'), isTrue,
+          reason: 'migration koşmamış veritabanı için yedek yol kalmalı');
+      expect(fn.contains(".select('*')"), isTrue,
+          reason: 'alan listesi, sütun yokken fonksiyonu TÜMDEN patlatır');
+    });
+
+    test('migration dosyası sütunu ekliyor', () async {
+      final sql = await File(
+              'supabase/migrations/0050_live_activity_theme.sql')
+          .readAsString();
+      expect(sql.contains('add column if not exists is_light_theme'), isTrue);
+      expect(sql.contains('default false'), isTrue,
+          reason: 'eski satırlar da geçerli bir değer taşımalı');
+    });
+  });
+
   group('ekranlar kendi başına itmiyor', () {
     test('Ayarlar tema seçicisi yalnızca tercihi yazıyor', () async {
       final src = _yorumsuz(
           await File('lib/screens/settings_screen.dart').readAsString());
       expect(src.contains('resolveThemeIsLightNow'), isFalse,
           reason: 'çözüm tek noktada — SurfaceTheme');
-      expect(src.contains('LiveActivityService.instance.themeIsLight ='), isFalse,
-          reason: 'itiş merkezî dinleyicinin işi');
+      expect(src.contains('themeIsLight ='), isFalse,
+          reason: 'itiş merkezî dinleyicinin işi (ve artık getter)');
     });
 
     test('Profil hızlı geçişi de yalnızca tercihi yazıyor', () async {

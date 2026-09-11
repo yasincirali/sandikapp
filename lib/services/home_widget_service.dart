@@ -13,6 +13,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'daily_summary.dart';
 import 'retention_tracker.dart';
+import 'surface_theme.dart';
 
 /// Telefonun ANA EKRANINDAKİ widget'a veri besler (uygulama dışı yüzey).
 ///
@@ -95,13 +96,14 @@ class HomeWidgetService {
   /// taşır ("Sistem" seçiliyse cihazın görünümüne çözülür).
   static const _kIsLightTheme = 'sandik_is_light_theme';
 
-  /// Uygulamanın çözülmüş tema tercihi.
+  /// Uygulamanın çözülmüş tema tercihi — tek kaynaktan OKUNUR.
   ///
-  /// `LiveActivityService.themeIsLight` ile aynı desen ve aynı gerekçe:
-  /// servis singleton olduğu için provider'ı kendisi okuyamaz, tercih
-  /// dışarıdan itilir. Varsayılan `false` (koyu) — tercih henüz itilmemişken
-  /// bugünkü davranış korunur.
-  bool themeIsLight = false;
+  /// `LiveActivityService.themeIsLight` ile aynı desen: karar
+  /// [SurfaceTheme] içinde yaşar, diske yazılır ve yalnızca meşru
+  /// tetikleyicilerle değişir. Eskiden dışarıdan itilen bir alandı;
+  /// itişi kaçıran bir kod yolu (ya da henüz itilmemiş yeni bir süreç)
+  /// widget'ı `false` = KOYU bırakıyordu.
+  bool get themeIsLight => SurfaceTheme.instance.isLight;
 
   /// Sparkline PNG'sinin renkleri — uygulamanın seçili temasına göre.
   ///
@@ -630,21 +632,26 @@ class HomeWidgetService {
         _kUpdatedAt, DateFormat('HH:mm', 'tr_TR').format(DateTime.now()));
   }
 
-  /// Tema tercihini yazar ve widget'ı hemen yeniler.
+  /// Çözülmüş tema kararını widget'ın paylaşımlı deposuna yazar ve widget'ı
+  /// hemen yeniler.
   ///
-  /// Ayarlardan tema değiştirildiğinde çağrılır. Portföy verisi burada
-  /// yeniden yazılmaz — yalnızca palet bayrağı değişir; onsuz widget bir
-  /// sonraki portföy tazelemesine kadar eski temada kalır ve kullanıcı
-  /// ayarı değiştirip ana ekrana çıktığında hiçbir şey değişmemiş görür.
+  /// Tema değiştiğinde çağrılır. Portföy verisi burada yeniden yazılmaz —
+  /// yalnızca palet bayrağı değişir; onsuz widget bir sonraki portföy
+  /// tazelemesine kadar eski temada kalır ve kullanıcı ayarı değiştirip ana
+  /// ekrana çıktığında hiçbir şey değişmemiş görür.
   ///
-  /// Sparkline PNG'si de yeniden çizilmez: bir sonraki [update] doğru
+  /// **Parametre ALMAZ:** değer [SurfaceTheme]'den okunur. Eskiden bool
+  /// dışarıdan geliyordu ve çağıran taraflar kendi başına çözüyordu — iki
+  /// çağrı yeri iki farklı an örnekleyince widget ile kilit ekranı
+  /// ayrışıyordu.
+  ///
+  /// Sparkline PNG'si burada yeniden çizilmez: bir sonraki [update] doğru
   /// paletle çizecek. Grafik tonları iki zeminde de okunur, aradaki kısa
   /// süre görsel bir tutarsızlık yaratmaz.
-  Future<void> applyTheme(bool isLight) async {
-    themeIsLight = isLight;
+  Future<void> applyTheme() async {
     try {
       await _ensureInit();
-      await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, isLight);
+      await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
       await _requestUpdate();
     } catch (e) {
       if (kDebugMode) debugPrint('HomeWidget applyTheme failed: $e');

@@ -82,6 +82,84 @@ göre ARTMALI: artık tek lot'lu silmeler de eleniyor.
 
 ---
 
+## 🚨 BEKLEYEN DEPLOY: kilit ekranı teması (2026-09-11) — EN OLASI SEBEP
+
+**Belirti:** "Canlı etkinlikler tema rengi sürekli değişiyor; uygulamayı
+kill etsem de son seçilen tema kalmalı."
+
+### 1) Birinci sebep: `push-live-activity` HİÇ DAĞITILMAMIŞ olabilir
+
+Temayı push gövdesine koyan sunucu kodu **2026-09-03**'te eklendi
+(commit `b5ce9e4`). 2026-09-07 tarihli `SUPABASE_DEPLOY_ADIMLARI.txt`
+yalnızca `analyze-signals` ve `daily-brief`'i listeliyor —
+`push-live-activity` hiçbir deploy listesinde geçmiyor.
+
+Dağıtılmadıysa sunucudaki ESKİ sürüm `isLightTheme` alanını **hiç
+göndermez**; Swift tarafı eksik alanı `false` = KOYU varsayar
+(`SandikAttributes.swift`, bilinçli geri uyumluluk). Sonuç tam olarak
+kullanıcının gördüğü şey:
+
+| durum | yüzeyi kim besliyor | palet |
+|---|---|---|
+| uygulama önplanda | ActivityKit yerel `update` | **doğru** |
+| uygulama kapalı / 5 dk'lık cron push | eski edge function | **koyu** |
+
+Yani banner uygulamayı her açıp kapadıkça renk değiştirir. **Uygulama
+güncellemesi bunu düzeltmez** — hangi build'i kursan sunucu aynı eksik
+gövdeyi göndermeye devam eder.
+
+```bash
+supabase functions deploy push-live-activity
+```
+
+Doğrulama: komut çıktısındaki sürüm/tarih güncel olmalı; sonra kilit
+ekranını 5-10 dakika (bir cron turu) izle — palet artık dönmemeli.
+
+### 2) İkinci sebep: tema özetin içine gömülüydü
+
+**Sebep:** tema yalnızca `live_activity_sessions.summary` JSON'unun içinde
+taşınıyordu ve o JSON **yalnızca portföy özeti yazılırken** güncelleniyor.
+Uygulama kapalıyken kilit ekranını besleyen tek şey bu satır olduğu için,
+özetin tazelenmediği her durumda (tema gösterim penceresi dışında
+değiştirildi, oturum satırı yeni açıldı, özet eski şema damgası taşıyor)
+sunucu ESKİ paletle push atıyordu. Uygulama açılınca doğru palet basılıyor,
+kapanınca geri dönüyordu.
+
+**Düzeltme iki parçalı — uygulama güncellemesi TEK BAŞINA yetmez:**
+
+a) Migration (tek satır, geri alınabilir):
+```sql
+alter table live_activity_sessions
+  add column if not exists is_light_theme boolean not null default false;
+```
+ya da `supabase db push` (dosya: `0050_live_activity_theme.sql`).
+
+b) Edge function (push içeriğini artık bu sütundan okuyor) — yukarıdaki
+(1) ile aynı komut, bir kez koşmak ikisini de kapsar:
+```bash
+supabase functions deploy push-live-activity
+```
+
+**Sıra önemli: ÖNCE migration, SONRA function.** Fonksiyon satırı `select('*')`
+ile okuduğu için sütun yokken patlamaz, ama sütun gelene kadar eski
+(özet içindeki) yedek değeri kullanmaya devam eder.
+
+Koşulmazsa ne olur: uygulama çökmez, kilit ekranı donmaz — tema yine
+özet üzerinden taşınır, yani düzeltmenin **yalnızca** uygulama içi ayağı
+çalışır ve "kill edince değişiyor" bulgusu sürer.
+
+**Doğrulama (uygulamadan, kod gerekmez):** Profil → (admin) Push Teşhisi →
+**6. CANLI ETKİNLİK / TEMA** bölümü. Üç satırı karşılaştır:
+* `Yerel karar` — uygulamanın çözdüğü tema,
+* `sütun (is_light_theme)` — sunucunun push'a koyduğu değer,
+* `özet (summary.isLightTheme)` — eski yedek yol.
+
+"SÜTUN YOK" yazıyorsa migration koşulmamıştır. `Tercih: Sistem` yazıyorsa
+temanın cihazla birlikte değişmesi **normaldir** — sabitlemek için Ayarlar'dan
+açıkça Açık ya da Koyu seçilmeli.
+
+---
+
 ## 🗄️ BEKLEYEN MIGRATION: `0049_partner_activity_push.sql` (2026-09-07)
 
 `profiles` tablosuna `partner_activity_push` sütunu ekler. Çalıştırılmazsa:

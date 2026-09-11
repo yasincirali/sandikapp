@@ -206,9 +206,16 @@ Deno.serve(async (request) => {
 
   // Yalnızca SÜRESİ DOLMAMIŞ oturumlar. Ölü token'a push atmak APNs
   // tarafında hata üretir ve kotayı yakar.
+  // `select('*')` BİLİNÇLİ — alan listesi değil.
+  //
+  // `is_light_theme` sütunu 0050 migration'ı ile geldi. Alan listesine
+  // yazılırsa, migration henüz koşulmamış bir veritabanında Postgres
+  // "column does not exist" döndürür ve fonksiyon TÜMDEN patlar: tema
+  // uğruna bütün push zinciri durur. `*` ile sütun yoksa alan basitçe
+  // `undefined` gelir ve aşağıdaki yedek yola düşülür.
   let q = admin
     .from('live_activity_sessions')
-    .select('token, user_id, expires_at, show_amounts, summary')
+    .select('*')
     .gt('expires_at', new Date().toISOString());
   if (onlyUser) q = q.eq('user_id', onlyUser);
 
@@ -326,14 +333,21 @@ Deno.serve(async (request) => {
       // Sıfır değişimde yön/renk bastırılır. Gizlilik kapısına TABİ
       // DEĞİL: yalnızca "bugün hareket yok" bilgisi, tutar taşımaz.
       isFlatChange: row.isFlatChange === true,
-      // Uygulamanın SEÇİLİ teması. İstemcinin yazdığı özetten olduğu gibi
-      // taşınır — sunucu tema bilmez ve bilmemeli.
+      // Uygulamanın SEÇİLİ teması. Sunucu temaya karar VERMEZ, taşır.
       //
-      // Alan yoksa (eski istemcinin yazdığı satır) `false`: koyu palet,
-      // yani bugüne kadarki davranış. Şema sürümü bu yüzden
-      // YÜKSELTİLMEDİ — mevcut alanların anlamı değişmedi, yükseltmek
-      // v6 yazan bütün oturumları bayat sayıp push'u tümden keserdi.
-      isLightTheme: row.isLightTheme === true,
+      // **Önce SÜTUN, sonra özet.** İkisi de istemcinin yazdığı değerdir
+      // ama sütun (`is_light_theme`) özetten BAĞIMSIZ yazılır: tema
+      // gösterim penceresi dışında değiştirildiğinde, satır yeni
+      // açıldığında ya da özet eski şemadan kalmışken `summary` hiç
+      // tazelenmiyor ve JSON içindeki bayrak eski değerinde kalıyordu.
+      // Uygulama kapalıyken kilit ekranını besleyen tek şey bu satır
+      // olduğu için palet geri dönüyordu — kullanıcı bulgusu buydu.
+      //
+      // Sütun yoksa (0050 migration'ı henüz koşmamış) özetteki alana
+      // düşülür; o da yoksa `false` = koyu, bugüne kadarki davranış.
+      isLightTheme: typeof s.is_light_theme === 'boolean'
+        ? s.is_light_theme
+        : row.isLightTheme === true,
     };
 
     const result = await pushToSession(

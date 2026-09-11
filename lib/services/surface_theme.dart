@@ -51,11 +51,20 @@ class SurfaceTheme {
   static const prefKey = 'pref_surface_is_light';
 
   bool _isLight = false;
+  ThemeMode? _lastMode;
 
   /// Uygulama dışı yüzeylerin kullanacağı çözülmüş karar.
   ///
   /// Okumak ASLA yeniden çözmez — tam olarak bu yüzden var.
   bool get isLight => _isLight;
+
+  /// Kararın türetildiği son tercih — TEŞHİS içindir.
+  ///
+  /// "Sistem" seçiliyken yüzeyin cihazı izlemesi DOĞRU davranıştır; bu
+  /// ayrım bilinmeden "tema kendiliğinden değişiyor" bulgusu hatalı
+  /// yorumlanır (bkz. `push_diagnostics_screen`). İlk [update] çağrısına
+  /// kadar `null`.
+  ThemeMode? get lastResolvedMode => _lastMode;
 
   /// Kalıcı kararı yükler. `main()` içinde, ilk frame'den önce çağrılır.
   Future<void> restore() async {
@@ -82,6 +91,7 @@ class SurfaceTheme {
     required bool trustDeviceBrightness,
     Brightness? brightness,
   }) {
+    _lastMode = mode;
     final next = decide(
       mode,
       current: _isLight,
@@ -129,5 +139,8 @@ class SurfaceTheme {
   /// Süreç içi durumu sıfırlar — singleton olduğu için testler arasında
   /// bir testin kararı sonrakine taşar.
   @visibleForTesting
-  void resetForTest() => _isLight = false;
+  void resetForTest() {
+    _isLight = false;
+    _lastMode = null;
+  }
 }
