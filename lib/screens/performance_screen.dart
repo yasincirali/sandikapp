@@ -1869,10 +1869,39 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     }
                     final data = snapshot.data ?? fallback;
                     final isStale = snapshot.data == null && data != null;
-                    if (data == null) {
-                      return const SizedBox(
-                          height: 400,
-                          child: CustomLoadingView());
+                    // BOŞ seri de "veri yok" demektir.
+                    //
+                    // `getPortfolioHistoryHourlyBreakdown` başarısız
+                    // çekimde `null` değil BOŞ MAP döndürüyor. `data == null`
+                    // kontrolü bunu yakalamıyordu: ekran "veri var" sanıp
+                    // eksenleri ve "AÇILIŞ" etiketini çiziyor, ama çizgi
+                    // olmuyordu. Kullanıcı bunu hata sanıyordu — oysa
+                    // çekim hâlâ sürüyordu (bildirim 2026-09-13).
+                    //
+                    // İki nokta altı: `fl_chart` çizgi çizemez, eksen
+                    // tek başına yanıltıcıdır.
+                    if (data == null || data.length < 2) {
+                      // Çekim SÜRÜYORSA spinner; BİTTİ ve hâlâ boşsa
+                      // dürüst bir mesaj. Sonsuz spinner, veri hiç
+                      // gelmeyecekken bile "birazdan gelir" der.
+                      return SizedBox(
+                        height: 400,
+                        child: waiting
+                            ? const CustomLoadingView()
+                            : Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(SandikSpace.lg),
+                                  child: Text(
+                                    'Bu varlığın fiyat geçmişi şu an '
+                                    'çekilemedi. Bağlantını kontrol edip '
+                                    'tekrar dene.',
+                                    textAlign: TextAlign.center,
+                                    style: context.t.bodyMedium
+                                        ?.copyWith(color: context.c.text58),
+                                  ),
+                                ),
+                              ),
+                      );
                     }
 
                     final historyMap = data;

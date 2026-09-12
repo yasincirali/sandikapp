@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models/asset.dart';
@@ -153,6 +154,18 @@ class PortfolioHistoryBreakdown {
 }
 
 class HistoryService {
+  /// Grafik veri çekiminin üst sınırı.
+  ///
+  /// Alt katmanda (`PriceService`) 15 saniyelik bir timeout var ama o
+  /// SAYFA AÇILIŞINI değil tek bir HTTP çağrısını koruyor. Kullanıcı
+  /// grafiği beklerken 15 saniye çok uzun: bildirim (2026-09-13) "uzun
+  /// süre bekleyince geldi, kimse bu kadar uzun beklemez."
+  ///
+  /// 8 saniye bilinçli bir takas: normal ağda tüm çekimler 1-2 saniyede
+  /// biter, yavaş ağda ise grafik boş beklemek yerine elde olanla
+  /// (yedek kaynak / `currentPrice` seed'i) çizilir.
+  static const _grafikCekimSuresi = Duration(seconds: 8);
+
   static final HistoryService instance = HistoryService._();
   HistoryService._();
 
@@ -855,6 +868,21 @@ class HistoryService {
         ? getHistorySafe('XAUTRY=X')
         : Future.value(const <(int, double)>[]);
 
+    // Yedek altın kaynağı ŞİMDİ başlar — birincinin sonucu beklenmeden.
+    //
+    // Eskiden `if (goldSlots.isEmpty)` dalında çağrılıyordu, yani ikinci
+    // istek ancak birincisi TAMAMLANDIKTAN sonra başlıyordu. Altın böylece
+    // tek başına iki isteği SIRALI yapan tür oluyordu: en kötü durumda
+    // 15 sn + 15 sn = 30 saniye. Diğer türler tek istekle en kötü 15 sn.
+    //
+    // Kullanıcı bildirimi (2026-09-13): "uzun süre bekleyince geldi, kimse
+    // bu kadar uzun beklemez." Paralel başlatmak en kötü durumu yarıya
+    // indiriyor; birincisi doluysa ikincinin sonucu zaten kullanılmıyor
+    // (fazladan bir istek, ölçülebilir bir gecikme değil).
+    final goldUsdFuture = needsGold
+        ? getHistorySafe('GC=F')
+        : Future.value(const <(int, double)>[]);
+
     final tickerFutures = <String, Future<List<(int, double)>>>{};
     for (final a in assets) {
       if (!a.isBuy) continue;
@@ -917,7 +945,8 @@ class HistoryService {
       //    kaynak hiç nokta vermediğinde çağrılır — normal günde ek
       //    istek yapılmaz.
       if (goldSlots.isEmpty) {
-        final xauUsdPts = await getHistorySafe('GC=F');
+        // Paralel başlatıldı (yukarıda) — burada yalnızca sonucu alıyoruz.
+        final xauUsdPts = await goldUsdFuture;
         for (final p in xauUsdPts) {
           final ts = normalizeSlot(p.$1);
           final usdRate = closestOrNull(usdTrySlots, ts);
@@ -2053,9 +2082,15 @@ class HistoryService {
     if (cached != null) return cached;
     try {
       final pts = await PriceService.instance
-          .fetchHistoryAtInterval(sym, range, interval);
+          .fetchHistoryAtInterval(sym, range, interval)
+          .timeout(_grafikCekimSuresi);
       if (pts.isNotEmpty) _cachePut(key, pts);
       return pts;
+    } on TimeoutException {
+      // Zaman aşımı HATA DEĞİL, bir karar: grafik o kaynak olmadan
+      // çizilir (altında yedek kaynak ya da `currentPrice` seed'i var).
+      if (kDebugMode) debugPrint('getSymbolHistory($sym) zaman aşımı');
+      return const [];
     } catch (e) {
       if (kDebugMode) debugPrint('getSymbolHistory($sym) failed: $e');
       return const [];
