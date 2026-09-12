@@ -1725,6 +1725,31 @@ class _PortfolioPerformanceScreenState
     final primarySeg =
         segments.reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
 
+    // ── Crosshair'in tarayacağı noktalar ────────────────────────────────
+    //
+    // `primarySeg` Y ekseni için doğru kaynak (en kalın = ana çizgi) ama
+    // DOKUNMA için yanlış: piyasa kapalı kuyruğu ayrı ve daha ince bir
+    // segment olduğundan (bkz. `TransactionSegment.piyasaKapali`) oraya
+    // düşmüyor. Sonuç: kullanıcı uzun bastığında crosshair kapanışta
+    // duruyor, hafta sonu/tatil bölgesinde tarih ve değer okunamıyordu
+    // (kullanıcı bildirimi 2026-09-12).
+    //
+    // Dokunma tüm çizilmiş noktaları görmeli. Segmentler zaten X'e göre
+    // sıralı üretiliyor; sınırda tek nokta çakışabildiği için birleştirme
+    // sonrası tekilleştiriliyor — `nearestSpotIndex` ikili arama yapıyor
+    // ve sıralı+tekil dizi bekliyor.
+    final List<FlSpot> crosshairSpots;
+    if (segments.length == 1) {
+      crosshairSpots = primarySeg.spots;
+    } else {
+      final birlesik = [for (final s in segments) ...s.spots]
+        ..sort((a, b) => a.x.compareTo(b.x));
+      crosshairSpots = [
+        for (var i = 0; i < birlesik.length; i++)
+          if (i == 0 || birlesik[i].x != birlesik[i - 1].x) birlesik[i],
+      ];
+    }
+
     // Görünür X aralığındaki spot'lara göre Y sınırlarını hesapla. Zoom
     // sırasında X daraldıkça Y ekseni otomatik yeniden fit olur — kullanıcı
     // dar bir zaman diliminde küçük dalgalanmayı okuyabilir.
@@ -2444,7 +2469,9 @@ class _PortfolioPerformanceScreenState
                     controller.updateViewport(from, to);
                   },
             crosshairSnapX: (x) {
-              final spots = primarySeg.spots;
+              // Kuyruk dahil TÜM noktalar: piyasa kapalı bölgesinde de
+              // crosshair kaymalı (bkz. `crosshairSpots`).
+              final spots = crosshairSpots;
               if (spots.isEmpty) return x;
               final clamped = x.clamp(spots.first.x, spots.last.x);
               // Spot'lar X'e göre sıralı → ikili arama (bkz. nearestSpotIndex).
@@ -2453,7 +2480,9 @@ class _PortfolioPerformanceScreenState
             },
             crosshairLabelBuilder: (x) {
               // x zaten crosshairSnapX ile snap edildi — burada eşleşen spot'u bul.
-              final spots = primarySeg.spots;
+              // Kaynak `crosshairSnapX` ile AYNI olmalı: farklı listelerde
+              // arayınca snap edilen X ile gösterilen değer ayrışırdı.
+              final spots = crosshairSpots;
               if (spots.isEmpty) return null;
               final snapped = spots[nearestSpotIndex(spots, x)];
               final date = intraday
@@ -2463,14 +2492,24 @@ class _PortfolioPerformanceScreenState
               final title = NumberFormat.currency(
                       locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
                   .format(snapped.y);
+              // Gün içi etiket normalde yalnızca saat yazar — tek gün
+              // çizildiği için tarih gereksiz gürültüydü. Ama piyasa
+              // kapalıyken seri BİRDEN ÇOK günü kapsıyor (Cuma→Pazar) ve
+              // saat tek başına "Cmt 14:00" ile "Cuma 14:00"ı ayırt
+              // ettirmez. Kullanıcı isteği (2026-09-12): "grafik
+              // detaylarını gün ve tarih bilgisiyle görebilmeliyim."
+              final cokGunlu = intraday && segments.any((s) => s.piyasaKapali);
               final subtitle = intraday
-                  ? DateFormat('HH:mm', 'tr_TR').format(date)
+                  ? (cokGunlu
+                      ? DateFormat('d MMM · HH:mm', 'tr_TR').format(date)
+                      : DateFormat('HH:mm', 'tr_TR').format(date))
                   : DateFormat('d MMM yyyy', 'tr_TR').format(date);
               return (title, subtitle);
             },
             crosshairDetailsBuilder: (x) {
               // Snap edilmiş spot'u bul (crosshairSnapX zaten uyguladı).
-              final spots = primarySeg.spots;
+              // Kaynak diğer iki callback ile AYNI liste olmalı.
+              final spots = crosshairSpots;
               if (spots.isEmpty || _simulate || intraday) return const [];
               // Diğer crosshair callback'leriyle aynı ikili arama.
               final snapped = spots[nearestSpotIndex(spots, x)];

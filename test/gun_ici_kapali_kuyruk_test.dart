@@ -191,6 +191,83 @@ void main() {
     });
   });
 
+  group('ÇOK GÜNLÜ pencere (1H) — kapalı günler ELENMEZ', () {
+    // Kullanıcı bildirimi (2026-09-12): "1H'de 12 Eylül datasını
+    // göremiyorum."
+    //
+    // Ölçüldü: `periodDays <= 7` seriyi SAATLİK ızgaraya düşürüyor ve o
+    // ızgara Cmt/Pazar slotlarını tamamen eliyordu. Cumartesi bakıldığında
+    // 12 Eylül HİÇ üretilmiyor, grafik 11 Eylül'de bitiyordu.
+    //
+    // Eleme kuralı 24 SAATLİK pencere için konmuştu (hafta sonunda pencere
+    // boşalıp çizgi kaybolmasın). Çok günlü pencerede böyle bir risk yok.
+
+    List<DateTime> gunler(List<int> slots) {
+      final set = <int>{};
+      final out = <DateTime>[];
+      for (final ts in slots) {
+        final d = DateTime.fromMillisecondsSinceEpoch(ts);
+        final gun = DateTime(d.year, d.month, d.day);
+        if (set.add(gun.millisecondsSinceEpoch)) out.add(gun);
+      }
+      return out;
+    }
+
+    test('Cumartesi bakıldığında 1H BUGÜNÜ içerir', () {
+      final now = DateTime(2026, 9, 12, 18, 45); // Cumartesi
+      final slots =
+          HistoryService.gridSlotlari(now: now, periodDays: 7, hourly: true);
+
+      final son = DateTime.fromMillisecondsSinceEpoch(slots.last);
+      expect(son.day, 12,
+          reason: 'Son slot 12 Eylül değil (${son.day}/${son.month}) — '
+              'bugün yine eleniyor.');
+    });
+
+    test('hafta sonu günleri ızgarada DURUR', () {
+      final now = DateTime(2026, 9, 12, 18, 45);
+      final g = gunler(
+          HistoryService.gridSlotlari(now: now, periodDays: 7, hourly: true));
+
+      expect(g.any((d) => d.weekday == DateTime.saturday), isTrue,
+          reason: 'Cumartesi elenmiş.');
+      expect(g.any((d) => d.weekday == DateTime.sunday), isTrue,
+          reason: 'Pazar elenmiş.');
+    });
+
+    test('pencere 7 günü TAM kapsar', () {
+      final now = DateTime(2026, 9, 12, 18, 45);
+      final g = gunler(
+          HistoryService.gridSlotlari(now: now, periodDays: 7, hourly: true));
+      expect(g.length, 8,
+          reason: '7 gün + bugün = 8 takvim günü bekleniyor, ${g.length} var.');
+    });
+
+    test('GÜNLÜK (1 gün) pencerede eleme KORUNUR', () {
+      // Bu kural kaldırılamaz: hafta sonunda 24 saatlik pencerenin tamamı
+      // elenir ve çizgi kaybolurdu. Gün içi grafiğin hafta sonu davranışını
+      // kuyruk mantığı (`gunIciSagUc`) yönetiyor.
+      final now = DateTime(2026, 9, 12, 18, 45); // Cumartesi
+      final slots =
+          HistoryService.gridSlotlari(now: now, periodDays: 1, hourly: true);
+
+      final son = DateTime.fromMillisecondsSinceEpoch(slots.last);
+      expect(son.day, 11,
+          reason: 'Tek günlük pencere son seansa çapalanmalı.');
+      expect(slots.length, greaterThanOrEqualTo(24),
+          reason: 'Pencere boşalmış — çizgi kaybolur.');
+    });
+
+    test('hafta içi bakıldığında 1H değişmez', () {
+      // Regresyon kapısı: düzeltme yalnızca kapalı günleri etkilemeli.
+      final now = DateTime(2026, 9, 9, 14, 0); // Çarşamba
+      final slots =
+          HistoryService.gridSlotlari(now: now, periodDays: 7, hourly: true);
+      final son = DateTime.fromMillisecondsSinceEpoch(slots.last);
+      expect(son.day, 9);
+    });
+  });
+
   group('savunma — bozuk girdi çökertmez', () {
     test('veri damgası GELECEKTE ise kuyruk üretilmez', () {
       // Saat dilimi kayması: kapanış "şimdi"den ileride görünebilir.
@@ -235,3 +312,4 @@ void main() {
     });
   });
 }
+

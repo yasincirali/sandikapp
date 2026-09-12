@@ -576,14 +576,30 @@ class HistoryService {
       return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
     }
 
-    final gridNow = hourly ? _sonIsGunu(now) : now;
+    // ## Hafta sonu YALNIZCA tek günlük pencerede elenir
+    //
+    // Eleme, 24 saatlik pencerenin hafta sonunda tümüyle boşalmasını
+    // önlemek için konmuştu: "son 24 saat" yerine "son 24 SEANS SAATİ"
+    // çizilir ve çizgi kaybolmaz.
+    //
+    // Ama kural ÇOK GÜNLÜ pencerelerde (1H = 7 gün, saatlik) zararlıydı:
+    // Cumartesi bakıldığında 12 Eylül ızgarada HİÇ üretilmiyor, grafik
+    // 11 Eylül'de bitiyordu. Kullanıcı bildirimi 2026-09-12: "1H'de
+    // 12 Eylül datasını göremiyorum."
+    //
+    // Çok günlü pencerede boşalma riski zaten yok (hafta sonu en fazla
+    // iki günü kaplar, geriye beş seans günü kalır). Kapalı günler
+    // ızgarada DURUR ve `_getClosestPrice` son kapanışı taşır — yani düz
+    // çizgi olarak görünürler, kullanıcının istediği davranış.
+    final tekGunlukPencere = periodDays <= 1;
+    final gridNow = (hourly && tekGunlukPencere) ? _sonIsGunu(now) : now;
     final stepMinutes = hourly ? 60 : 24 * 60;
     final totalSteps = hourly ? periodDays * 24 : periodDays;
 
     final out = <int>[];
     for (var i = totalSteps; i >= 0; i--) {
       final slotDate = gridNow.subtract(Duration(minutes: i * stepMinutes));
-      if (hourly) {
+      if (hourly && tekGunlukPencere) {
         final wd = slotDate.weekday; // 6=Cts, 7=Paz
         if (wd == DateTime.saturday || wd == DateTime.sunday) continue;
       }
@@ -602,7 +618,9 @@ class HistoryService {
     // Çözüm: hedef slot sayısına ulaşana kadar iş günlerinde geriye yürü.
     // Böylece "son 24 saat" değil "son 24 SEANS SAATİ" çizilir — grafiğin
     // sorusu zaten piyasanın açık olduğu zamanla ilgili.
-    if (hourly && out.length < totalSteps + 1) {
+    // Yalnızca eleme YAPILDIYSA anlamlı: çok günlü pencerede hafta sonu
+    // artık elenmiyor, ızgara zaten tam uzunlukta.
+    if (hourly && tekGunlukPencere && out.length < totalSteps + 1) {
       var slotDate = gridNow.subtract(Duration(minutes: totalSteps * stepMinutes));
       // Üst sınır: sonsuz döngüye karşı güvenlik ağı (tatil zinciri olsa
       // bile iki haftada hedefe ulaşılır).
