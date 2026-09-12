@@ -291,7 +291,19 @@ String zamanEtiketi(
   required double spanGun,
   required bool gunIci,
 }) {
-  if (gunIci) return DateFormat('HH:mm', 'tr_TR').format(t);
+  if (gunIci) {
+    // Gün içi eksen normalde TEK günü kapsar; tarih gereksiz gürültüdür.
+    //
+    // Ama piyasa kapalıyken seri son seanstan BUGÜNE uzuyor (bkz.
+    // `HistoryService.gunIciSagUc`) ve eksen iki-üç günü birden gösterir.
+    // O durumda "18:45" hangi güne ait belli olmaz: Cuma mı, Cumartesi mi?
+    // Kullanıcı isteği (2026-09-12): "tüm zaman aralıkları için hafta
+    // sonundaysam çizilen son grafik için tarih bulunduğum an olmalı."
+    //
+    // Eşik 1 günden BÜYÜK: tek günlük eksen (hafta içi) etkilenmez.
+    if (spanGun > 1) return DateFormat('d MMM HH:mm', 'tr_TR').format(t);
+    return DateFormat('HH:mm', 'tr_TR').format(t);
+  }
   if (spanGun > 400) return DateFormat('MMM yy', 'tr_TR').format(t);
   if (spanGun < 3) return DateFormat('d MMM HH:mm', 'tr_TR').format(t);
   final yilFarkli = t.year != DateTime.now().year;

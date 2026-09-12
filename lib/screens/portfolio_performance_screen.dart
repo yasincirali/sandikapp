@@ -2111,7 +2111,12 @@ class _PortfolioPerformanceScreenState
                   intraday
                       ? start.add(Duration(minutes: val.round()))
                       : start.add(Duration(minutes: (val * 24 * 60).round())),
-                  spanGun: (meta.max - meta.min).abs(),
+                  // `spanGun` adı GÜN demek ama gün içi eksende X
+                  // DAKİKA cinsinden. Dönüştürülmezse eşik karşılaştırması
+                  // saçmalar: 1 günlük eksen 1440 "gün" gibi okunur.
+                  spanGun: intraday
+                      ? (meta.max - meta.min).abs() / 1440.0
+                      : (meta.max - meta.min).abs(),
                   gunIci: intraday,
                 );
                 return Padding(
