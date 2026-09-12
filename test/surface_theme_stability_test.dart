@@ -194,10 +194,35 @@ void main() {
     });
 
     test('portföy dinleyicisi yalnızca OKUR', () {
-      expect(kaynak.contains('SurfaceTheme.instance.isLight'), isTrue,
-          reason: 'karar okunmalı');
+      // Asıl değişmez: `main.dart` cihaz görünümünü YENİDEN ÖRNEKLEMEZ.
+      // Her portföy yayınında yeniden çözmek temanın salınmasına yol
+      // açıyordu.
       expect(kaynak.contains('resolveThemeIsLightNow('), isFalse,
           reason: 'her portföy yayınında yeniden örnekleme hatanın kaynağıydı');
+
+      // Kararın TEK sahibi `SurfaceTheme`: main yalnızca `update` ile
+      // besler, `isLight`'ı tüketiciler (widget + kilit ekranı servisleri)
+      // kendileri okur — buradan bool GEÇİLMEZ.
+      //
+      // Not: bu denetim önce `main.dart` içinde `SurfaceTheme.instance
+      // .isLight` arıyordu ama o okuma hiç orada olmadı; `bab142c` ile
+      // test kırık geldi. Aranan şey artık gerçek yapı.
+      expect(kaynak.contains('SurfaceTheme.instance.update('), isTrue,
+          reason: 'karar tek noktadan beslenmeli');
+    });
+
+    test('`isLight` tüketicilerde okunur — main bool DAĞITMAZ', () {
+      // Kararın yayılma yolu: main `update` eder, servisler okur. Bool
+      // parametre olarak dolaştırılsaydı bir tüketici atlanabilirdi
+      // (hatanın ilk hâli buydu).
+      for (final yol in const [
+        'lib/services/home_widget_service.dart',
+        'lib/services/live_activity_service.dart',
+      ]) {
+        expect(File(yol).readAsStringSync().contains('SurfaceTheme.instance'),
+            isTrue,
+            reason: '$yol kararı kaynağından okumuyor.');
+      }
     });
 
     test('tercih değişimi TEK dinleyiciden itiliyor', () {
