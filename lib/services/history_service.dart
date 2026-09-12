@@ -419,14 +419,22 @@ class HistoryService {
 
           if (a.type == AssetType.altin) {
             if (goldHistory.isNotEmpty) {
-              double factor = (a.ticker == 'ALTIN_CEYREK')
-                  ? 1.75
-                  : (a.ticker == 'ALTIN_YARIM')
-                      ? 3.5
-                      : (a.ticker == 'ALTIN_CUMHURIYET' ||
-                              a.ticker == 'ALTIN_ATA')
-                          ? 7.216
-                          : 1.0;
+              // Ağırlık tablosu `PriceService`'te tutulur. Burada duran yerel
+              // kopya ALTIN_RESAT'ı ATLIYORDU (tabloda 7.216 ile var ama
+              // koşul zincirinde yoktu) ve `?? 1.0` sessizce gram altına
+              // düşürüyordu. Kardeş iki yol (`...HourlyBreakdown`,
+              // `...BreakdownAtResolution`) aynı hatadan ötürü zaten ortak
+              // tabloya taşınmıştı; ÜÇÜNCÜ kopya olan burası geride kalmıştı.
+              //
+              // Sonucu ölçülmüş iki belirtiydi (kullanıcı bildirimi
+              // 2026-09-12, "altının datası grafiği çizilmiyor ancak
+              // kar/zararda 0 da farklı"): Reşat için geçmiş seri 7.216 kat
+              // küçük çiziliyor (birim ~6.200 ₺), son nokta ise canlı fiyatla
+              // (~34.000 ₺) EZİLDİĞİ için grafik dümdüz bir taban + tek dikey
+              // sıçrama oluyordu — ölçülen oran 5,17 kat. Kâr/zarar `Asset.
+              // currentPrice` üzerinden hesaplandığı için doğru kalıyor;
+              // "grafik yok ama kâr/zarar var" ayrışması tam olarak buradan.
+              double factor = PriceService.goldWeightFactor(a.ticker);
               double price = _getClosestPrice(goldHistory, dayTs, null);
               assetDayVal = price * factor * qty;
             } else {
