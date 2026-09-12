@@ -56,6 +56,25 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
     this.showBackButton = false,
   });
 
+  /// Dönem başlangıcı — takvim ayına göre.
+  ///
+  /// Kullanıcı isteği (2026-09-12): "1 aylık grafik bir önceki ay aynı
+  /// günden başlamalı, 6 ayda da 6 ay önce aynı günden."
+  ///
+  /// Ayın son günleri özel: 31 Mart'tan bir ay geri 31 Şubat olmaz.
+  /// `DateTime(2026, 2, 31)` Dart'ta sessizce 3 Mart'a TAŞAR — yani ileri
+  /// bir tarihe. Bu yüzden hedef ayın gün sayısına kırpılıyor.
+  @visibleForTesting
+  static DateTime donemBaslangici(DateTime bitis, int ayGeri) {
+    final toplamAy = bitis.year * 12 + (bitis.month - 1) - ayGeri;
+    final yil = toplamAy ~/ 12;
+    final ay = toplamAy % 12 + 1;
+    // Hedef ayın son günü: bir sonraki ayın 0. günü.
+    final ayinSonGunu = DateTime(yil, ay + 1, 0).day;
+    final gun = bitis.day <= ayinSonGunu ? bitis.day : ayinSonGunu;
+    return DateTime(yil, ay, gun, bitis.hour, bitis.minute, bitis.second);
+  }
+
   @override
   ConsumerState<PortfolioPerformanceScreen> createState() =>
       _PortfolioPerformanceScreenState();
@@ -218,13 +237,23 @@ class _PortfolioPerformanceScreenState
   }
 
   // days=0 && intraday=true → günlük (24 saat, 5 dk çözünürlük).
-  static const List<({String label, int days, bool intraday})> _periods = [
-    (label: 'GÜNLÜK', days: 0, intraday: true),
-    (label: '1H', days: 7, intraday: false),
-    (label: '1A', days: 30, intraday: false),
-    (label: '6A', days: 180, intraday: false),
-    (label: '1Y', days: 365, intraday: false),
+  /// [ayGeri] dolu ise dönem başı TAKVİMDEN hesaplanır: "1 ay" 30 gün
+  /// değil, bir önceki ayın AYNI günüdür.
+  ///
+  /// Sabit gün sayısı kullanıcının kurduğu cümleyle uyuşmuyordu: 31 günlük
+  /// aylarda "1A" bir gün eksik, Şubat'ta iki-üç gün fazla pencere
+  /// gösteriyordu. [days] yine taşınıyor çünkü veri katmanı (çözünürlük
+  /// merdiveni, önbellek anahtarı) gün cinsinden çalışıyor — takvim
+  /// başlangıcı `donemBaslangici` ile hesaplanıp gün farkına çevriliyor.
+  static const List<({String label, int days, int? ayGeri, bool intraday})>
+      _periods = [
+    (label: 'GÜNLÜK', days: 0, ayGeri: null, intraday: true),
+    (label: '1H', days: 7, ayGeri: null, intraday: false),
+    (label: '1A', days: 30, ayGeri: 1, intraday: false),
+    (label: '6A', days: 180, ayGeri: 6, intraday: false),
+    (label: '1Y', days: 365, ayGeri: 12, intraday: false),
   ];
+
 
   // ── Logic ──────────────────────────────────────────────────────────────────
 
@@ -491,9 +520,18 @@ class _PortfolioPerformanceScreenState
     final endDate = DateTime.now();
     final isIntraday = _periods[_selectedPeriodIdx].intraday;
     // Intraday modda X ekseni bugünün 00:00'ından başlar.
+    // Dönem başı: aylık pencerelerde TAKVİMDEN, diğerlerinde gün sayısıyla.
+    //
+    // "1A" 30 gün değil, bir önceki ayın aynı günü (kullanıcı isteği
+    // 2026-09-12). Haftalık pencere gün sayısıyla kalıyor — "1 hafta"
+    // zaten tam olarak 7 gündür, takvim ayı gibi değişken değil.
+    final donem = _periods[_selectedPeriodIdx];
     final startDate = isIntraday
         ? DateTime(endDate.year, endDate.month, endDate.day)
-        : endDate.subtract(Duration(days: _periods[_selectedPeriodIdx].days));
+        : (donem.ayGeri != null
+            ? PortfolioPerformanceScreen.donemBaslangici(
+                endDate, donem.ayGeri!)
+            : endDate.subtract(Duration(days: donem.days)));
 
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(
@@ -2045,32 +2083,16 @@ class _PortfolioPerformanceScreenState
                 verticalLines: primarySeg.spots.isEmpty
                     ? const []
                     : [
-                        // Başlangıç (dönem başı) için dashed amber marker.
-                        // Etiket çizginin SAĞINA (grafik içine) yaslanır,
-                        // aksi halde sol kenara sıkışıp kırpılır.
-                        VerticalLine(
-                          x: primarySeg.spots.first.x,
-                          color: context.c.amberFill.withValues(alpha: 0.75),
-                          strokeWidth: 1.6,
-                          dashArray: const [4, 4],
-                          label: VerticalLineLabel(
-                            show: true,
-                            alignment: Alignment.topRight,
-                            padding: const EdgeInsets.only(bottom: 8, left: 6),
-                            style: context.t.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: context.c.amberText,
-                            ),
-                            labelResolver: (_) {
-                              final startTs = start.add(Duration(
-                                  minutes: (primarySeg.spots.first.x * 1440)
-                                      .round()));
-                              final showYear =
-                                  startTs.year != DateTime.now().year;
-                              return '● ${DateFormat(showYear ? 'd MMM yyyy' : 'd MMM', 'tr_TR').format(startTs)}';
-                            },
-                          ),
-                        ),
+                        // Dönem başı için dikey kesikli işaret KALDIRILDI
+                        // (kullanıcı isteği 2026-09-12): "başlangıcın
+                        // dikine kesikli çizgilerle gösterilmesini
+                        // istemiyorum, tüm grafikler aynı deneyimi
+                        // sunmalı."
+                        //
+                        // Dönem başı bilgisi kaybolmadı — üstteki değişim
+                        // kartı "5 Eyl → 12 Eyl" aralığını zaten yazıyor
+                        // ve X ekseninin ilk etiketi de aynı tarihi
+                        // gösteriyor.
                         // Son nokta (bugün / şimdi) için dashed marker.
                         // Etiket çizginin SOLUNA (grafik içine) yaslanır.
                         VerticalLine(
