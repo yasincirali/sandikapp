@@ -389,14 +389,16 @@ class _PortfolioPerformanceScreenState
         final x = date.difference(startDate).inMinutes / (60.0 * 24.0);
         spots.add(FlSpot(x, history[ts]!));
       }
-      // Son spot'un Y değerini canlı toplamla override et — X'e dokunma,
-      // aksi halde saatlik veride yeni bir spot eklenip zigzag olur.
+      // Son spot ŞU ANA taşınır (gerçek seride olduğu gibi — bkz. aşağıdaki
+      // aktif segment dalı). Yalnızca Y güncellenirse "ŞİMDİ" çizgisi son
+      // kovanın gün başına düşer ve bir önceki güne bitişik görünür.
       if (currentTotalOverride != null && currentTotalOverride > 0) {
+        final nowX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
         if (spots.isNotEmpty) {
           final last = spots.last;
-          spots[spots.length - 1] = FlSpot(last.x, currentTotalOverride);
+          final yeniX = nowX > last.x ? nowX : last.x;
+          spots[spots.length - 1] = FlSpot(yeniX, currentTotalOverride);
         } else {
-          final nowX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
           spots.add(FlSpot(nowX, currentTotalOverride));
         }
       }
@@ -444,12 +446,23 @@ class _PortfolioPerformanceScreenState
     // toplama override et — X'i değiştirme, böylece grafik zigzag/kırık
     // olmaz. Nokta yoksa endDate'in tam anına yeni bir spot ekle.
     if (currentTotalOverride != null && currentTotalOverride > 0) {
+      final nowX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
       if (activeSpots.isNotEmpty) {
         final last = activeSpots.last;
+        // Son nokta ŞU ANA taşınır — yalnızca Y'yi güncellemek yetmiyordu.
+        //
+        // Günlük seride son kova GÜN BAŞINA normalize ediliyor (12 Eylül
+        // 00:00). X'e dokunulmayınca "ŞİMDİ" dikey çizgisi o gece yarısına
+        // düşüyor ve 11 Eylül'e bitişik duruyordu: kullanıcı tüm
+        // dönemlerde "şu an" noktasında 11 Eylül görüyordu
+        // (bildirim 2026-09-12).
+        //
+        // Sıçrama riski yok: X yalnızca İLERİ taşınıyor ve Y aynı kalıyor,
+        // yani son segment gün başından şu ana yatay uzar.
+        final yeniX = nowX > last.x ? nowX : last.x;
         activeSpots[activeSpots.length - 1] =
-            FlSpot(last.x, currentTotalOverride);
+            FlSpot(yeniX, currentTotalOverride);
       } else {
-        final nowX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
         activeSpots.add(FlSpot(nowX, currentTotalOverride));
       }
     }
