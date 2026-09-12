@@ -276,13 +276,20 @@ class _PortfolioPerformanceScreenState
     if (intraday) {
       final sortedTs = history.keys.toList()..sort();
       final nowMs = DateTime.now().millisecondsSinceEpoch;
-      // Çizilen gün bugün mü? Piyasa kapalıyken seri SON SEANSA aittir
-      // (bkz. `PortfolioHistoryBreakdown.seansGunu`) ve "şimdi" bu eksende
-      // günler ötesine düşer — canlı uç noktası oraya EKLENEMEZ.
-      final simdiDt = DateTime.fromMillisecondsSinceEpoch(nowMs);
-      final bugunMu = startDate.year == simdiDt.year &&
-          startDate.month == simdiDt.month &&
-          startDate.day == simdiDt.day;
+      // "Şimdi" bu eksende VAR MI?
+      //
+      // Eskiden koşul "çizilen gün bugün mü" idi: piyasa kapalıyken seri
+      // son seansa ait olduğu için canlı uç noktası eklenemiyordu.
+      //
+      // Kuyruk geldikten sonra bu artık doğru değil — seri son seanstan
+      // BUGÜNE uzanıyor (`gunIciSagUc`), yani "şimdi" eksenin içinde.
+      // Koşulu gün eşitliğine bağlı bırakmak, hafta sonunda son noktayı
+      // canlı değere sabitlemeyi engelliyordu. Kullanıcı isteği
+      // (2026-09-12): "şu an noktasında izlenen anın değeri gösterilmeli."
+      //
+      // Ölçüt artık takvim değil GEOMETRİ: "şimdi" eksenin sağ ucunda mı?
+      final nowMinutesX = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
+      final simdiEksendeVar = nowMinutesX >= 0;
       final spots = <FlSpot>[];
       double? lastNonZero;
       for (final ts in sortedTs) {
@@ -298,17 +305,19 @@ class _PortfolioPerformanceScreenState
       // Şu an'ı canlı toplamla sabitle — grafiğin son noktası her zaman
       // "şu andaki portföy değeri" olur. Yalnızca BUGÜN çizilirken:
       // geçmiş seansta "şimdi" o günün ekseninde yok, seri kapanışta biter.
-      if (bugunMu && currentTotalOverride != null && currentTotalOverride > 0) {
-        final nowMinutes = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
-        if (spots.isNotEmpty && (nowMinutes - spots.last.x).abs() < 5) {
-          spots[spots.length - 1] = FlSpot(nowMinutes, currentTotalOverride);
+      if (simdiEksendeVar &&
+          currentTotalOverride != null &&
+          currentTotalOverride > 0) {
+        if (spots.isNotEmpty && (nowMinutesX - spots.last.x).abs() < 5) {
+          spots[spots.length - 1] = FlSpot(nowMinutesX, currentTotalOverride);
         } else {
-          spots.add(FlSpot(nowMinutes, currentTotalOverride));
+          spots.add(FlSpot(nowMinutesX, currentTotalOverride));
         }
-      } else if (bugunMu && lastNonZero != null && spots.isNotEmpty) {
-        final nowMinutes = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
-        if ((nowMinutes - spots.last.x).abs() >= 5) {
-          spots.add(FlSpot(nowMinutes, lastNonZero));
+      } else if (simdiEksendeVar && lastNonZero != null && spots.isNotEmpty) {
+        // Canlı toplam yoksa son bilinen fiyat "şimdi"ye taşınır — kuyruk
+        // zaten bunu yapıyor ama seri erken bitmişse boşluk kalmasın.
+        if ((nowMinutesX - spots.last.x).abs() >= 5) {
+          spots.add(FlSpot(nowMinutesX, lastNonZero));
         }
       }
       if (spots.length < 2) return [];
@@ -857,8 +866,23 @@ class _PortfolioPerformanceScreenState
     // Yanıltıcı olan grafik değil, DEĞİŞİM KARTIYDI: o hâlâ net akıştan
     // arındırılmış rakamı gösterir (bkz. `_buildPeriodChangeCard`), böylece
     // "portföyüm ne kazandı?" sorusu doğru cevaplanır.
+    // Gün içi X ekseni ÇİZİLEN GÜNÜN 00:00'ından başlar — bugünün değil.
+    //
+    // Piyasa kapalıyken seri son seanstan (Cuma) bugüne uzanıyor
+    // (`gunIciSagUc`). Eksen bugünün 00:00'ına kurulursa Cuma noktaları
+    // NEGATİF X'e düşer ve `fl_chart` onları çizim alanının dışında bırakır:
+    // grafik boş ya da yarım görünür. Kullanıcı bildirimi 2026-09-12:
+    // "hâlâ grafiklerde 12 Eylül datalarını göremiyorum."
+    //
+    // `seansGunu` breakdown'dan geliyor ve tam ekran grafiği (satır ~699)
+    // bunu zaten kullanıyordu; ana grafik kullanmıyordu — iki yüzey
+    // ayrışmıştı.
+    final cizimBaslangici = isIntraday
+        ? (breakdown.seansGunu ?? effectiveStart)
+        : effectiveStart;
+
     final segments = _convertHistoryToSegments(
-        historyMap, chartAssets, effectiveStart, endDate,
+        historyMap, chartAssets, cizimBaslangici, endDate,
         currentTotalOverride: currentTotal,
         simulate: _simulate,
         intraday: isIntraday,
@@ -952,7 +976,9 @@ class _PortfolioPerformanceScreenState
           curve: SandikMotion.enter,
           child: _buildPeriodChangeCard(
             segments,
-            effectiveStart,
+            // Segmentlerle AYNI başlangıç: X ekseni bu tarihe göre
+            // yorumlanıyor, ayrışırsa kart yanlış günü anlatır.
+            cizimBaslangici,
             endDate,
             targetAssets,
             intraday: isIntraday,
@@ -993,7 +1019,7 @@ class _PortfolioPerformanceScreenState
             duration: SandikMotion.stateOf(context),
             curve: SandikMotion.enter,
             child: _buildChartContainer(
-                segments, effectiveStart, endDate, chartAssets,
+                segments, cizimBaslangici, endDate, chartAssets,
                 intraday: isIntraday, allTargetAssets: targetAssets),
           ),
         // Gün içi verisi HİÇ alınamayan türler için açık uyarı.
@@ -1020,7 +1046,7 @@ class _PortfolioPerformanceScreenState
             totalFirst: ep.first,
             totalLast: ep.last,
             ownerLots: ownerLots,
-            start: effectiveStart,
+            start: cizimBaslangici,
             end: endDate,
             simulate: _simulate,
           ),
@@ -1789,16 +1815,21 @@ class _PortfolioPerformanceScreenState
       );
     }
 
-    // Gün içi serinin çizildiği gün BUGÜN mü?
+    // Serinin sağ ucu "ŞİMDİ"yi mi gösteriyor?
     //
-    // "GÜNLÜK" sekmesi piyasa kapalıyken son seansı çizer (bkz.
-    // `PortfolioHistoryBreakdown.seansGunu`). O durumda "şimdi" bu eksende
-    // bir yere karşılık gelmez: ne dikey işaretçi, ne canlı uç noktası.
+    // Eskiden ölçüt "çizilen gün bugün mü" idi: piyasa kapalıyken seri son
+    // seansa ait olduğu için uç nokta "KAPANIŞ" sayılıyordu.
+    //
+    // Kuyruk geldikten sonra bu yanlış — seri son seanstan BUGÜNE uzanıyor
+    // (`gunIciSagUc`), yani sağ uç gerçekten şu anki değerdir. Gün
+    // eşitliğine bakmak hafta sonunda "KAPANIŞ" yazdırıyordu; oysa o
+    // noktada canlı toplam duruyor.
+    //
+    // Ölçüt artık takvim değil GEOMETRİ — segment üretimindeki
+    // `simdiEksendeVar` ile aynı mantık.
     final simdiDt = DateTime.now();
-    final bugunMu = intraday &&
-        start.year == simdiDt.year &&
-        start.month == simdiDt.month &&
-        start.day == simdiDt.day;
+    final ucNoktaSimdiMi = intraday &&
+        !simdiDt.isBefore(DateTime(start.year, start.month, start.day));
 
     // Serinin son noktasının gün başından uzaklığı (dakika). Bugünü
     // çizerken bu zaten "şimdi"ye eşittir; geçmiş seansta kapanış anıdır.
@@ -1991,7 +2022,8 @@ class _PortfolioPerformanceScreenState
                       ),
                       // Geçmiş seans çizilirken "ŞİMDİ" yalan olurdu —
                       // o çizgi son seansın kapanışını gösteriyor.
-                      labelResolver: (_) => bugunMu ? 'ŞİMDİ' : 'KAPANIŞ',
+                      labelResolver: (_) =>
+                          ucNoktaSimdiMi ? 'ŞİMDİ' : 'KAPANIŞ',
                     ),
                   ),
                 ],
