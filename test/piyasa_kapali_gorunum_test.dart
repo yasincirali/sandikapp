@@ -28,13 +28,14 @@ void main() {
           reason: 'Ekran kuyruğun nerede başladığını öğrenemez.');
     });
 
-    test('seri kapanışta KESİLMEZ — bugüne uzar', () {
-      // Eski davranış `nowTs = seansSonuTs ?? ...` idi: seri kapanışta
-      // bitiyordu ve eksende yalnızca Cuma görünüyordu.
-      expect(servis.contains('seansSonuTs ?? normalizeSlot'), isFalse,
-          reason: 'Seri yine kapanışta kesiliyor; kuyruk çizilmez.');
-      expect(servis.contains('gunIciSagUc('), isTrue,
-          reason: 'Sağ uç hesabı ortak fonksiyondan gelmiyor.');
+    test('kuyruk KALDIRILDI — seri son seansta biter', () {
+      // Kullanıcı kararı (2026-09-12): kuyruk iptal, güncel değer
+      // serinin ucunda gösteriliyor. `seansSonuTs ?? now` eski ve
+      // artık DOĞRU olan davranış.
+      expect(servis.contains('seansSonuTs ?? normalizeSlot'), isTrue,
+          reason: 'Kuyruk geri gelmiş.');
+      expect(servis.contains('const int? piyasaKapaliTs = null;'), isTrue,
+          reason: 'Kuyruk damgası hâlâ üretiliyor.');
     });
 
     test('ızgara sabit 288 slotta SINIRLI değil', () {

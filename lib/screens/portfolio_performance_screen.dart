@@ -335,19 +335,10 @@ class _PortfolioPerformanceScreenState
       // Şu an'ı canlı toplamla sabitle — grafiğin son noktası "şu andaki
       // portföy değeri" olur.
       //
-      // ## Piyasa KAPALIYKEN uygulanmaz
-      // Kapalı kuyruk, son kapanış fiyatının taşınmasıdır: tanımı gereği
-      // DÜZ olmalı. Canlı toplamı ucuna yazmak kuyruğu yukarı/aşağı
-      // kırıyordu — "piyasa kapalı" yazan bir grafikte fiyat değişmiş
-      // görünüyordu (kullanıcı bildirimi 2026-09-12: "piyasa kapalı
-      // dedik ama fiyatı değişen bir varlık var demek ki").
-      //
-      // Fark gerçek olabilir (manuel fiyatlı varlık, kur hareketi, yeni
-      // alım) ama onu KAPALI bölgede göstermek yanlış yer: kullanıcı onu
-      // borsa hareketi sanır. Kapanış anındaki değer korunur.
-      final kapaliKuyrukVar = piyasaKapaliBaslangicTs != null;
+      // Kapalı kuyruk kaldırıldıktan sonra (2026-09-12) bu koşul sadeleşti:
+      // serinin ucu HER ZAMAN canlı toplama sabitlenir. Kullanıcı isteği:
+      // "güncel değer ne ise o şekilde göstersin."
       if (simdiEksendeVar &&
-          !kapaliKuyrukVar &&
           currentTotalOverride != null &&
           currentTotalOverride > 0) {
         if (spots.isNotEmpty && (nowMinutesX - spots.last.x).abs() < 5) {
@@ -2134,9 +2125,16 @@ class _PortfolioPerformanceScreenState
       final gunIciSpanGun = (viewMaxX - viewMinX).abs() / 1440.0;
       final xInterval = intraday
           ? (gunIciSpanGun > 1
-              // Hedef ~5 etiket; 60 dk'nın katına yuvarla ki tick'ler
-              // yuvarlak saatlere düşsün ("13:47" gibi bir etiket olmasın).
-              ? ((viewMaxX - viewMinX).abs() / 5 / 60).ceilToDouble() * 60
+              // Çok günlü eksende etiket "11 Eyl 04:00"a uzuyor (~88px).
+              // Hedef ÜÇ etiket: ölçüldü, 5 etiket ~330px genişlikte
+              // sığmıyordu ve yan yana yapışıyordu (kullanıcı bildirimi
+              // 2026-09-12, iki tur üst üste).
+              //
+              // 3 saatin katına yuvarlanıyor: tick'ler hem yuvarlak
+              // saatlere düşsün hem de kaba adımlarda 09:00/12:00 gibi
+              // okunur değerler çıksın.
+              ? (((viewMaxX - viewMinX).abs() / 3 / 180).ceilToDouble() * 180)
+                  .clamp(gunIciEksenAdimiDk, double.infinity)
               : gunIciEksenAdimiDk)
           : yuvarlakAdim((viewMaxX - viewMinX) / 5).clamp(1.0, double.infinity);
 

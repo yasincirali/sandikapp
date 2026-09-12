@@ -102,25 +102,30 @@ void main() {
     });
   });
 
-  group('kapalı kuyruk DÜZ kalır', () {
-    // Kullanıcı bildirimi: "piyasa kapalı olmasına rağmen fiyat değişimi
-    // olmuş; piyasa kapalı dedik ama fiyatı değişen bir varlık var."
+  group('kapalı kuyruk KALDIRILDI', () {
+    // Kullanıcı kararı (2026-09-12): "piyasa kapalı ve çizikli alanları
+    // iptal edelim önceki gibi, güncel değer ne ise o şekilde göstersin."
     //
-    // Sebep: kuyruğun ucuna CANLI toplam yazılıyordu. Kapanış fiyatından
-    // farklıysa kuyruk yukarı/aşağı kırılıyor ve "piyasa kapalı" yazan
-    // grafikte fiyat oynamış görünüyordu.
-    test('canlı toplam kapalı kuyrukta UYGULANMAZ', () {
-      expect(kaynak.contains('final kapaliKuyrukVar = piyasaKapaliBaslangicTs != null;'),
-          isTrue,
-          reason: 'Kapalı kuyruk kontrolü yok.');
-      expect(kaynak.contains('!kapaliKuyrukVar &&'), isTrue,
-          reason: 'Canlı toplam kapalı bölgede de yazılıyor — kuyruk '
-              'kırılır.');
+    // Kuyruk iki sebeple kaldırıldı:
+    //   1. "Son seans" damgası güvenilir değildi — `enSonVeriTs` TÜM
+    //      sembollerin en yenisi ve döviz 7/24'e yakın işliyor. BIST
+    //      18:10'da kapanmışken damga 20:40 çıkabiliyordu.
+    //   2. Kuyruk boyunca hiçbir varlık hesaplanmıyordu; mevduat faizi
+    //      ve açık spot piyasalar görünmüyordu.
+    test('servis kuyruk damgası ÜRETMEZ', () {
+      final servis = File('lib/services/history_service.dart')
+          .readAsStringSync()
+          .replaceAll('\r\n', '\n');
+      expect(servis.contains('const int? piyasaKapaliTs = null;'), isTrue,
+          reason: 'Kuyruk geri gelmiş.');
     });
 
-    test('kuyruk son ÇİZİLEN değeri taşır', () {
-      expect(kaynak.contains('final sonY = spots.last.y;'), isTrue,
-          reason: 'Kuyruk düz kalmıyor.');
+    test('serinin ucu CANLI toplama sabitlenir', () {
+      expect(kaynak.contains('FlSpot(nowMinutesX, currentTotalOverride)'),
+          isTrue,
+          reason: 'Güncel değer gösterilmiyor.');
+      expect(kaynak.contains('!kapaliKuyrukVar &&'), isFalse,
+          reason: 'Kapalı kuyruk koşulu hâlâ duruyor — ölü kod.');
     });
   });
 }

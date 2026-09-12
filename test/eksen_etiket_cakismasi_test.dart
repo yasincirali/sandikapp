@@ -38,9 +38,17 @@ void main() {
     });
 
     test('tick\'ler YUVARLAK saate düşer', () {
-      // 60'ın katına yuvarlanmazsa "13:47" gibi etiketler çıkar.
-      expect(kaynak.contains('/ 60).ceilToDouble() * 60'), isTrue,
-          reason: 'Adım saat katına yuvarlanmıyor.');
+      // Yuvarlanmazsa "13:47" gibi etiketler çıkar.
+      //
+      // Hedef 5 etiketten 3'e indirildi (2026-09-12): ölçüldü — 44
+      // saatlik eksende 5 etiket üretiliyordu ama ~330px genişliğe
+      // yalnızca 3 tanesi sığıyor, yan yana yapışıyorlardı. Kullanıcı
+      // çakışmayı iki tur üst üste bildirdi.
+      //
+      // Adım 3 SAATİN katına yuvarlanıyor: kaba adımlarda da 09:00 /
+      // 12:00 gibi okunur değerler çıksın.
+      expect(kaynak.contains('/ 3 / 180).ceilToDouble() * 180'), isTrue,
+          reason: 'Adım 3 saatin katına yuvarlanmıyor — etiketler çakışır.');
     });
 
     test('non-intraday adımı DEĞİŞMEDİ', () {

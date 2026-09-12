@@ -1033,13 +1033,26 @@ class HistoryService {
     // bugüne kadar sabit kuyruk olarak uzatılıyor ki eksen Pazar günü
     // Cuma–Cmt–Pazar'ı kapsasın. Kuyruk gerçek işlem değildir; ekran onu
     // gri/kesikli çizer (bkz. `gunIciSagUc`).
-    final sagUcBilgi = gunIciSagUc(
-      now: now,
-      seansSonuTs: seansSonuTs,
-      normalizeSlot: normalizeSlot,
-    );
-    final nowTs = sagUcBilgi.sagUc;
-    final piyasaKapaliTs = sagUcBilgi.piyasaKapali;
+    // ## Kapalı kuyruk KALDIRILDI (kullanıcı kararı 2026-09-12)
+    //
+    // Kuyruk, son seansın kapanışını bugüne kadar düz taşıyordu. İki
+    // sorun çıktı:
+    //
+    //   1. "Son seans" güvenilir değil: `enSonVeriTs` TÜM sembollerin en
+    //      yenisi ve döviz 7/24'e yakın işliyor. BIST 18:10'da kapanmışken
+    //      damga 20:40 çıkabiliyor — kullanıcı bunu fark etti.
+    //   2. Kuyruk boyunca hiçbir varlık hesaplanmadığı için mevduat faizi
+    //      ve açık spot piyasalar görünmüyordu; "piyasa kapalı" demek de
+    //      yanlış bilgiydi.
+    //
+    // Kullanıcı isteği: "piyasa kapalı ve çizikli alanları iptal edelim
+    // önceki gibi, güncel değer ne ise o şekilde göstersin."
+    //
+    // Seri yine son seansın gününü çiziyor (`seansGunu`) ve serinin ucu
+    // CANLI toplama sabitleniyor (ekran tarafı) — yani rakam her zaman
+    // güncel.
+    final nowTs = seansSonuTs ?? normalizeSlot(now.millisecondsSinceEpoch);
+    const int? piyasaKapaliTs = null;
 
     // Izgara `dayStart`'tan başlar ve SAĞ UCA kadar uzar.
     //
