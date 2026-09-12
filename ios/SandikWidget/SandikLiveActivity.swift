@@ -15,6 +15,22 @@ import WidgetKit
 /// Kazanç/kayıp yönü renkle BİRLİKTE her zaman ▲/▼ işareti taşır. Renk
 /// körlüğü bir yana, kilit ekranında Dynamic Island öğeleri çok küçüktür ve
 /// renk tek sinyal olamaz. `directionArrow` bunu tek yerde toplar.
+/// Canlı Etkinlik dokunuşunun taşıdığı URI.
+///
+/// Dart tarafındaki `DeepLinkRouter.liveActivityHost` ile aynı olmalı —
+/// yönlendirme bu eşleşmeye dayanıyor. Ana ekran widget'ından AYRI bir
+/// host kullanılıyor: ikisi aynı yere gitse de, hangi yüzeyin kullanıldığı
+/// atıfta ayırt edilebilmeli.
+///
+/// ## `?homeWidget` neden ZORUNLU
+/// URL'yi Dart'a taşıyan `home_widget` eklentisi, gelen her URL'yi
+/// `isWidgetUrl` ile süzüyor ve **yalnızca `homeWidget` adlı bir query
+/// parametresi taşıyanları** kabul ediyor (`HomeWidgetPlugin.swift:462`).
+/// Parametre olmadan URL sessizce düşer: uygulama açılır ama dokunuş
+/// Dart'a hiç ulaşmaz, yani hata görünmez.
+private let liveActivityClickURL =
+    URL(string: "sandik://live-activity/summary?homeWidget=1")
+
 @available(iOS 17.0, *)
 struct SandikLiveActivity: Widget {
     var body: some WidgetConfiguration {
@@ -53,6 +69,12 @@ struct SandikLiveActivity: Widget {
                     \.colorScheme,
                     context.state.isLightTheme ? .light : .dark
                 )
+                // Dokunuş → uygulamanın performans ekranı (günlük grafik).
+                // Kullanıcı kilit ekranındaki toplamı görüp ayrıntıya
+                // inmek istediğinde varsayılan olarak uygulamanın en son
+                // bırakıldığı sekme açılıyordu — banner'daki sayıyla
+                // ilgisiz bir yer.
+                .widgetURL(liveActivityClickURL)
 
         } dynamicIsland: { context in
             let palette = SandikPalette.resolved(isLight: context.state.isLightTheme)
@@ -179,6 +201,13 @@ struct SandikLiveActivity: Widget {
                 SandikLogoMark(width: 16)
             }
             .keylineTint(SandikTheme.amber)
+            // Ada'ya dokunuş da performans ekranına gider.
+            //
+            // `.widgetURL` BURADA KULLANILAMAZ: o bir görünüm
+            // değiştiricisidir, `DynamicIsland` ise `View` değildir —
+            // aşağıdaki (1) numaralı notta anlatılan derleme kırılmasının
+            // aynısı olurdu. ActivityKit bu iş için ayrı bir API veriyor.
+            .widgetURL(liveActivityClickURL)
             // ŞEMA BURAYA SABİTLENMEZ — iki ayrı nedenle.
             //
             // 1. `DynamicIsland` bir `View` DEĞİL; `.environment(...)` gibi

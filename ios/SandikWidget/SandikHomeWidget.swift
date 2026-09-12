@@ -41,7 +41,14 @@ private enum WidgetKeys {
 /// `SandikWidgetProvider.WIDGET_CLICK_URI` (Android) ve
 /// `HomeWidgetService.widgetClickUri` (Dart) ile aynı olmalı — açılış atfı
 /// bu eşleşmeye dayanıyor.
-private let widgetClickURL = URL(string: "sandik://widget/home")
+/// ## `?homeWidget` neden ZORUNLU
+/// URL'yi Dart'a taşıyan `home_widget` eklentisi gelen URL'leri
+/// `isWidgetUrl` ile süzüyor ve **yalnızca `homeWidget` adlı bir query
+/// parametresi taşıyanları** kabul ediyor (`HomeWidgetPlugin.swift:462`).
+/// Parametresiz URL sessizce düşer — uygulama açılır, dokunuş Dart'a hiç
+/// ulaşmaz. Android tarafında böyle bir süzgeç yok; parametre orada
+/// zararsızdır ve iki platform aynı URI'yi kullanabilsin diye eklendi.
+private let widgetClickURL = URL(string: "sandik://widget/home?homeWidget=1")
 
 struct SandikEntry: TimelineEntry {
     let date: Date

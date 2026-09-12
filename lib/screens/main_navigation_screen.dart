@@ -14,6 +14,26 @@ import '../services/remote_config_service.dart';
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
 
+  /// Performans sekmesinin indeksi — [_screens] sırasına bağlı.
+  ///
+  /// Widget ve Canlı Etkinlik dokunuşu buraya gider (bkz.
+  /// `DeepLinkService`). Sabit dışarıdan okunabilir olmalı: hedefi çağıran
+  /// tarafta elle `3` yazmak, `_screens` sırası değiştiğinde SESSİZCE
+  /// yanlış sekmeye götürürdü.
+  ///
+  /// ⚠️ İsimlendirme tuzağı: alt menüdeki "Portföy" sekmesi
+  /// `ChartsScreen`'dir (indeks 1); performans grafiği indeks 3'tedir.
+  static const performansSekmesi = 3;
+
+  /// Dışarıdan sekme değiştirme kanalı.
+  ///
+  /// Neden `ValueNotifier`: dokunuş uygulama AÇIKKEN de gelebilir (sıcak
+  /// açılış). O durumda yeni bir ekran push etmek yanlış olur — kullanıcı
+  /// zaten uygulamadadır, yalnızca sekme değişmelidir. Provider yerine
+  /// bunu seçmenin sebebi, kaynağın (native dokunuş) Riverpod kapsamı
+  /// DIŞINDA olması.
+  static final sekmeIstegi = ValueNotifier<int?>(null);
+
   @override
   ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
@@ -24,6 +44,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Widget / Canlı Etkinlik dokunuşundan gelen sekme isteği.
+    //
+    // Soğuk açılışta istek bu ekran KURULMADAN önce yazılmış olabilir;
+    // o yüzden dinleyiciyi bağlamakla yetinmeyip mevcut değeri de bir kez
+    // okuyoruz. Yalnızca dinleseydik, uygulama kapalıyken yapılan dokunuş
+    // sessizce kaybolurdu.
+    MainNavigationScreen.sekmeIstegi.addListener(_sekmeIstegiGeldi);
+    if (MainNavigationScreen.sekmeIstegi.value != null) {
+      Future.microtask(_sekmeIstegiGeldi);
+    }
+
     // İlk açılışta fiyatları yükle
     Future.microtask(() {
       if (mounted) ref.read(portfolioProvider.notifier).refreshPrices();
@@ -52,6 +84,32 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     const PortfolioPerformanceScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void dispose() {
+    // Dinleyici statik bir `ValueNotifier`'a bağlı: kaldırılmazsa ekran
+    // yeniden kurulduğunda (tema/dil değişimi, hot restart) üst üste
+    // birikir ve tek dokunuş birden çok kez işlenir.
+    MainNavigationScreen.sekmeIstegi.removeListener(_sekmeIstegiGeldi);
+    super.dispose();
+  }
+
+  /// Dışarıdan gelen sekme isteğini uygular.
+  ///
+  /// İstek TÜKETİLİR (`value = null`): aksi halde ekran her yeniden
+  /// kurulduğunda eski dokunuş yeniden uygulanır ve kullanıcı başka bir
+  /// sekmeye geçmeye çalışırken geri fırlatılır.
+  void _sekmeIstegiGeldi() {
+    final hedef = MainNavigationScreen.sekmeIstegi.value;
+    if (hedef == null) return;
+    MainNavigationScreen.sekmeIstegi.value = null;
+
+    // Aralık dışı değer gelirse yoksay — native taraf yanlış indeks
+    // gönderirse uygulama çökmemeli.
+    if (hedef < 0 || hedef >= _screens.length) return;
+    if (!mounted) return;
+    setState(() => _currentIndex = hedef);
+  }
 
   void _onItemTapped(int index) {
     if (index == 2) {

@@ -9,9 +9,11 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../providers/portfolio_provider.dart';
+import '../screens/main_navigation_screen.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'daily_summary.dart';
+import 'deep_link_router.dart';
 import 'retention_tracker.dart';
 import 'surface_theme.dart';
 
@@ -123,7 +125,7 @@ class HomeWidgetService {
   /// Kotlin tarafındaki `SandikWidgetProvider.WIDGET_CLICK_URI` ile BİREBİR
   /// aynı olmalı — atıf bu eşleşmeye dayanıyor. Değeri değiştirirken iki
   /// dosya birlikte güncellenmeli.
-  static const widgetClickUri = 'sandik://widget/home';
+  static const widgetClickUri = 'sandik://widget/home?homeWidget=1';
 
   StreamSubscription<Uri?>? _clickSub;
   bool _clickAttributionStarted = false;
@@ -138,6 +140,10 @@ class HomeWidgetService {
       final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
       if (uri == null) return false;
       await RetentionTracker.instance.recordWidgetTap(surface: 'home_widget');
+      // Dokunuş performans ekranına (günlük grafik) götürür. İstek
+      // `MainNavigationScreen` daha kurulmadan yazılabilir; ekran
+      // `initState`'te mevcut değeri de okuduğu için kaybolmaz.
+      _sekmeyeYonlendir(uri);
       return true;
     } catch (e) {
       if (kDebugMode) debugPrint('launchedFromWidget failed: $e');
@@ -159,11 +165,26 @@ class HomeWidgetService {
         unawaited(RetentionTracker.instance
             .recordWidgetTap(surface: 'home_widget'));
         unawaited(RetentionTracker.instance.recordLaunch(source: 'widget'));
+        // Uygulama AÇIKKEN gelen dokunuş: yeni ekran push EDİLMEZ, yalnızca
+        // sekme değişir. Push etmek, kullanıcı zaten uygulamadayken üst üste
+        // yığılan kopyalar üretirdi.
+        _sekmeyeYonlendir(uri);
       });
     } catch (e) {
       // Widget atfı ikincil bir ölçüm — kurulamazsa uygulama etkilenmez.
       if (kDebugMode) debugPrint('startClickAttribution failed: $e');
     }
+  }
+
+  /// Dokunuşu hedef sekmeye çevirir.
+  ///
+  /// Eşleme kararı [DeepLinkRouter]'da — bu metot yalnızca UYGULAR.
+  /// Tanınmayan URI'de hiçbir şey yapılmaz: uygulama yine açılır, sekme
+  /// değişmez.
+  void _sekmeyeYonlendir(Uri uri) {
+    final hedef = DeepLinkRouter.hedefSekme(uri);
+    if (hedef == null) return;
+    MainNavigationScreen.sekmeIstegi.value = hedef;
   }
 
   /// Testler için aboneliği bırakır.

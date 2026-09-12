@@ -62,6 +62,30 @@
 	-->
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<!--
+	  `sandik://` derin bağlantı şeması.
+
+	  Ana ekran widget'ı ve Canlı Etkinlik dokunuşu bu şemayı kullanıyor
+	  (`SandikHomeWidget.widgetClickURL`, `SandikLiveActivity
+	  .liveActivityClickURL`). Şema BURADA kayıtlı değilse iOS URL'yi
+	  uygulamaya hiç teslim etmez: uygulama yine açılır ama dokunuş
+	  yönlendirmesi sessizce kaybolur — derleme başarılı olduğu için hata
+	  ancak cihazda fark edilir (`NSSupportsLiveActivities` ile aynı sınıf
+	  tuzak).
+	-->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.sandik.app.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>sandik</string>
+			</array>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

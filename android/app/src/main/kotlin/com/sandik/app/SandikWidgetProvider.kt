@@ -31,9 +31,16 @@ class SandikWidgetProvider : AppWidgetProvider() {
         /**
          * Widget dokunuşunun taşıdığı URI. Dart tarafındaki
          * `HomeWidgetService.widgetClickUri` ile BİREBİR aynı olmalı —
-         * atıf bu eşleşmeye dayanıyor.
+         * atıf ve performans ekranına yönlendirme bu eşleşmeye dayanıyor.
+         *
+         * `?homeWidget=1` Android'de GEREKMEZ (burada URI
+         * `HomeWidgetLaunchIntent` ile taşınıyor, süzgeçten geçmiyor) ama
+         * iOS'ta ZORUNLU: `home_widget` eklentisi yalnızca bu parametreyi
+         * taşıyan URL'leri kabul ediyor. İki platform aynı URI'yi
+         * kullansın diye burada da duruyor — ayrışırlarsa Dart tarafındaki
+         * tek eşleme iki koddan birini sessizce ıskalar.
          */
-        const val WIDGET_CLICK_URI = "sandik://widget/home"
+        const val WIDGET_CLICK_URI = "sandik://widget/home?homeWidget=1"
     }
 
     /**
