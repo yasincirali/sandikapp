@@ -286,13 +286,24 @@ class DailySummary {
   ///   2. `y <= 0` slotlar atlanır — borsa açılmadan önceki boş slotlar.
   ///      Bunlar bırakılırsa çizilen aralık 0'dan başlar ve gerçek gün içi
   ///      hareket düz bir çizgiye ezilir.
-  ///   3. Son nokta canlı toplama sabitlenir — ama YALNIZCA seri güncelse
-  ///      (bkz. [_liveTailMaxLag]).
+  ///   3. Serinin ucu canlı toplama sabitlenir — ama YALNIZCA çizilen gün
+  ///      BUGÜNSE (bkz. [seansGunu] parametresi).
+  ///
+  /// [seansGunu] çizilen seansın 00:00'ı. `null` verilirse SERİNİN KENDİ
+  /// son damgasından türetilir — bugün VARSAYILMAZ.
+  ///
+  /// **Neden bugün varsayılmıyor:** varsayım yanlış olduğunda sessizce
+  /// zarar veriyor. Hafta sonu seri Cuma'nındır; "bugün" varsayan bir
+  /// dal, kapanmış Cuma seansının ucuna Pazar'ın canlı toplamını ekler ve
+  /// olmamış bir hareket çizer (ölçüldü: Cuma'nın gerçek ₺9.800'lük
+  /// hareketi +₺99.000 / %9,89 olarak görünüyordu). Seriden türetmek
+  /// `seansGunu` taşınmadığı her yolda da doğru davranışı verir.
   static List<double> dayValues(
     Map<int, double> series,
     DateTime now,
-    double currentTotal,
-  ) {
+    double currentTotal, {
+    DateTime? seansGunu,
+  }) {
     if (series.isEmpty) return const [];
     final nowMs = now.millisecondsSinceEpoch;
     final keys = series.keys.toList()..sort();
@@ -308,49 +319,90 @@ class DailySummary {
     }
     if (values.isEmpty) return const [];
 
-    // Grafiğin ucunu canlı toplama sabitle — AMA yalnızca serinin son
-    // noktası taze ise.
-    //
-    // **Neden koşullu:** `HistoryService` serinin son slotunu zaten canlı
-    // toplama sabitliyor, ama seri 5 dakika ÖNBELLEKLENİYOR
-    // ([IntradaySeriesCache]). Bu arada fiyatlar tazelenirse buradaki
-    // `currentTotal` önbellekteki uçtan farklı olur.
-    //
-    // Piyasa AÇIKKEN bu farkı uca yazmak doğrudur: aradaki hareket
-    // gerçektir ve grafiğin ucu güncel değeri göstermelidir. Ama piyasa
-    // KAPALIYKEN seri kapanışta donmuştur; saatler önceki bir slota akşam
-    // fiyatını yazmak, olmayan bir hareketi grafiğe basar.
-    //
-    // Uygulamanın kendi günlük grafiği de aynı eşiği kullanıyor
+    // Grafiğin ucunu canlı toplama sabitle — uygulamanın günlük
+    // grafiğiyle BİREBİR aynı iki dallı kural
     // (`portfolio_performance_screen._convertHistoryToSegments`, intraday
-    // dalı): fark 5 dakikadan azsa son nokta EZİLİR. Orada değilse canlı
-    // değer kendi zaman konumuna AYRI bir nokta olarak eklenir; burada
-    // seri ham bir değer listesi olduğu (X ekseni taşımadığı) için o
-    // karşılık yoktur, uç değiştirilmeden bırakılır.
+    // dalı):
     //
-    // Rakam (`totalTRY`) zaten canlı değeri gösteriyor; grafik gün içi
-    // hareketi anlatır ve kapanıştan sonra düz kalması DOĞRUDUR.
-    if (currentTotal > 0 && nowMs - lastTs <= _liveTailMaxLag.inMilliseconds) {
-      values[values.length - 1] = currentTotal;
+    //   * Serinin ucu TAZEYSE (< 5 dk) son nokta EZİLİR — aynı ana iki
+    //     nokta koymak grafiğin ucunda dik bir çentik bırakırdı.
+    //   * Ucu BAYATSA canlı değer AYRI bir nokta olarak EKLENİR. Seri 5
+    //     dakika önbelleklenir ([IntradaySeriesCache]) ve o arada fiyatlar
+    //     tazelenir; ekleme, eğrinin ucunu yanındaki rakamla aynı yere
+    //     getiren şeydir.
+    //
+    // **Neden eskiden eklenmiyordu:** bu liste X ekseni taşımıyor, o yüzden
+    // "canlı değeri kendi zaman konumuna ekle" dalının karşılığı yok
+    // sayılmıştı ve uç olduğu gibi bırakılıyordu. Sonuç: yüzeyin yazdığı
+    // rakam ile hemen altındaki eğrinin bittiği yer farklı oluyordu
+    // (ölçüldü: rakam ₺1.040.000, eğrinin ucu ₺1.009.800). Sparkline
+    // eşit aralıklı çizildiği için son noktayı sona eklemek doğru
+    // karşılıktır — tek kayıp, o noktanın X'inin bir slot ileride
+    // olması; eğrinin ŞEKLİ ve bittiği DEĞER artık uyuşuyor.
+    //
+    // **Neden yalnızca BUGÜN çizilirken:** geçmiş seans çizilirken (hafta
+    // sonu → Cuma) "şimdi" o günün ekseninde YOKTUR. Kapanmış bir seansın
+    // ucuna bugünün canlı değerini yazmak, olmamış bir hareketi grafiğe
+    // basar. Uygulamanın `bugunMu` kapısı da tam olarak bunu yapıyor.
+    final cizilenGun = seansGunu ?? cizilenGunFromSeries(series);
+    final bugunMu = cizilenGun != null &&
+        cizilenGun.year == now.year &&
+        cizilenGun.month == now.month &&
+        cizilenGun.day == now.day;
+
+    if (bugunMu && currentTotal > 0) {
+      if (nowMs - lastTs <= _liveTailMaxLag.inMilliseconds) {
+        values[values.length - 1] = currentTotal;
+      } else {
+        values.add(currentTotal);
+      }
     }
 
     return values;
   }
 
-  /// Serinin ucu bu süreden eskiyse canlı değerle EZİLMEZ.
+  /// Serinin AİT OLDUĞU günü (00:00) damgalarından türetir.
+  ///
+  /// `HistoryService` ızgarayı tek bir seans gününe kurar, bu yüzden son
+  /// damganın günü çizilen gündür. Geleceğe düşen damgalar (saat dilimi
+  /// kayması) yok sayılır — aksi halde "yarın" çizildiği sanılırdı.
+  static DateTime? cizilenGunFromSeries(Map<int, double> series) {
+    if (series.isEmpty) return null;
+    final sonTs = series.keys.reduce((a, b) => a > b ? a : b);
+    final d = DateTime.fromMillisecondsSinceEpoch(sonTs);
+    return DateTime(d.year, d.month, d.day);
+  }
+
+  /// Serinin ucu bu süreden eskiyse canlı değer son noktayı EZMEZ, ayrı
+  /// bir nokta olarak eklenir.
   ///
   /// 5 dakika, hem veri çözünürlüğüyle (5 dk slot) hem de uygulamanın
   /// kendi grafiğindeki eşikle aynıdır.
   static const _liveTailMaxLag = Duration(minutes: 5);
 
-  /// Bugün portföye giren net nakit (TRY) — alım (+), satış (−).
+  /// Çizilen SEANS GÜNÜNDE portföye giren net nakit (TRY) — alım (+),
+  /// satış (−).
   ///
   /// **Neden gerekli:** ham uçtan uca fark "portföyüm ne kazandı?"
-  /// sorusunun cevabı DEĞİLDİR; içine bugün yatırdığınız para da girer.
+  /// sorusunun cevabı DEĞİLDİR; içine o gün yatırdığınız para da girer.
   /// 170.000 TL'lik bir alım, hiçbir fiyat hareketi olmasa bile yüzeyi
   /// "+%6,19 kâr" gösterirdi.
   ///
-  /// `portfolio_performance_screen._flowOf` ile BİREBİR aynı kural:
+  /// **Neden "bugün" DEĞİL, çizilen gün:** seri her zaman bugüne ait
+  /// değildir. Piyasa kapalıyken (hafta sonu, tatil, Pazartesi 10:00
+  /// öncesi) `HistoryService` SON SEANSI döndürür — Pazar günü çizilen
+  /// eğri Cuma'nındır (bkz. `PortfolioHistoryBreakdown.seansGunu`).
+  /// Akış bugüne göre hesaplanırsa, seansTAN SONRA yapılmış bir alım o
+  /// seansın hareketinden düşülür: ölçülen vakada Cuma'nın gerçek
+  /// hareketi ₺9.800 iken Pazar günü girilen ₺1.000'lik alım yüzünden
+  /// yüzeyler ₺8.800 gösteriyordu. O alım Cuma seansında henüz yoktu.
+  ///
+  /// `portfolio_performance_screen._buildPeriodChangeCard` akışı aynı
+  /// şekilde ÇİZİLEN aralığa (`start`…`end`) göre kapar, bugüne göre
+  /// değil — iki taraf aynı kuralı kullanmak zorunda.
+  ///
+  /// `portfolio_performance_screen._flowOf` ile BİREBİR aynı işaret
+  /// kuralı:
   ///   * alım para GİRİŞİ (+), satışta ele geçen tutar ÇIKIŞ (−);
   ///   * satışta maliyet değil `sellProceedsTRY` kullanılır — kârla
   ///     satılan pozisyonda ikisi farklıdır ve fark yanlışlıkla "piyasa
@@ -360,6 +412,17 @@ class DailySummary {
     final dayStart = DateTime(now.year, now.month, now.day);
     final dayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
+    return inflowOnDay(assets, dayStart, dayEnd);
+  }
+
+  /// [todayInflow]'un gün penceresini AÇIKÇA alan hâli.
+  ///
+  /// Çizilen seans günü bugün olmayabilir; pencereyi çağıran taraf verir.
+  static double inflowOnDay(
+    List<Asset> assets,
+    DateTime dayStart,
+    DateTime dayEnd,
+  ) {
     var total = 0.0;
     for (final a in assets) {
       if (!a.isActive) continue;
@@ -379,13 +442,18 @@ class DailySummary {
   ///
   /// [series] boş ya da tek noktalıysa değişim `null` döner — grafik de
   /// çizilmez. Tek noktalı bir "çizgi" yanıltıcı olurdu.
+  ///
+  /// [seansGunu] ÇİZİLEN seansın 00:00'ı — bugün olmak zorunda değil
+  /// (hafta sonu/tatilde son seans). Hem canlı uç kuralı hem de nakit
+  /// akışı penceresi buna göre kurulur; `null` verilirse bugün varsayılır.
   static DailySummary from({
     required PortfolioState state,
     required Map<int, double> series,
     required DateTime now,
+    DateTime? seansGunu,
   }) {
     final total = liveTotalTRY(state);
-    final values = dayValues(series, now, total);
+    final values = dayValues(series, now, total, seansGunu: seansGunu);
 
     if (values.length < 2) {
       return DailySummary(
@@ -408,7 +476,18 @@ class DailySummary {
     }
 
     // Nakit akışından ARINDIR — uygulamanın kartıyla birebir aynı formül.
-    final inflow = todayInflow(state.assets, now);
+    //
+    // Pencere ÇİZİLEN seans günüdür, bugün değil: hafta sonu Cuma'nın
+    // eğrisi çizilirken Cumartesi/Pazar girilen bir alım o seansın
+    // hareketinden düşülemez (bkz. [todayInflow]).
+    final cizilenGun = seansGunu ??
+        cizilenGunFromSeries(series) ??
+        DateTime(now.year, now.month, now.day);
+    final inflow = inflowOnDay(
+      state.assets,
+      DateTime(cizilenGun.year, cizilenGun.month, cizilenGun.day),
+      DateTime(cizilenGun.year, cizilenGun.month, cizilenGun.day, 23, 59, 59),
+    );
     final amount = (last - open) - inflow;
 
     // Yüzde tabanı: gün başı değer + bugün yatırılan para. Yalnızca `open`
@@ -453,9 +532,19 @@ class IntradaySeriesCache {
 
   Map<int, double>? _series;
   DateTime? _fetchedAt;
+  DateTime? _seansGunu;
 
   /// Son başarıyla çekilen seri — hiç çekilmediyse boş.
   Map<int, double> get series => _series ?? const {};
+
+  /// Son çekilen serinin ait olduğu SEANS günü (00:00) — bugün olmak
+  /// zorunda değil.
+  ///
+  /// Piyasa kapalıyken `HistoryService` son seansı döndürür; yüzeylerin
+  /// hem canlı uç kuralı hem nakit akışı penceresi buna dayanır. Bu alan
+  /// taşınmadığında iki yüzey de "bugün" varsayıyor ve hafta sonu Cuma'nın
+  /// eğrisine bugünün akışını uyguluyordu.
+  DateTime? get seansGunu => _seansGunu;
 
   /// Seriyi gerekiyorsa tazeler ve döner.
   ///
@@ -479,14 +568,19 @@ class IntradaySeriesCache {
       // Dünün serisi DERHAL düşer — fetch başarısız olsa bile bayat
       // baseline'la rakam üretilmemeli.
       _series = null;
+      _seansGunu = null;
     } else if (ts.difference(_fetchedAt!) < minInterval) {
       return _series ?? const {};
     }
 
     try {
+      // Breakdown çağrılır, `getPortfolioHistoryHourly` DEĞİL: ikincisi
+      // yalnızca `.total` döndürür ve `seansGunu`'nu düşürür. O alan
+      // düştüğünde yüzeyler çizilen günü bugün sanıyordu.
       final fresh = await HistoryService.instance
-          .getPortfolioHistoryHourly(state.activeAssets, 24);
-      _series = fresh;
+          .getPortfolioHistoryHourlyBreakdown(state.activeAssets, 24);
+      _series = fresh.total;
+      _seansGunu = fresh.seansGunu;
       // Damga yalnızca fetch BAŞARILI olduğunda atılır. Await'ten önce
       // atmak, ağ hatası alan çağrının da pencereyi yakmasına yol açardı:
       // hata sürekliyse seri saatlerce tazelenmez ve yüzeyler sabahki
@@ -504,5 +598,6 @@ class IntradaySeriesCache {
   void clear() {
     _series = null;
     _fetchedAt = null;
+    _seansGunu = null;
   }
 }

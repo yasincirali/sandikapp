@@ -260,6 +260,9 @@ class HomeWidgetService {
           state: state,
           series: intraday ?? const {},
           now: DateTime.now(),
+          // Çizilen seans bugün olmayabilir (hafta sonu → Cuma). Uygulamanın
+          // günlük grafiği de ekseni bu güne kurar.
+          seansGunu: IntradaySeriesCache.instance.seansGunu,
         );
 
         // Yön GÜNLÜK değişimden okunur, ömürlük getiriden değil.

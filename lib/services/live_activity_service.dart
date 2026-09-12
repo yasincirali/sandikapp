@@ -435,7 +435,14 @@ class LiveActivityService {
   Future<List<double>> _buildSparkline(PortfolioState state) async {
     final now = DateTime.now();
     final series = await IntradaySeriesCache.instance.get(state, now: now);
-    _summary = DailySummary.from(state: state, series: series, now: now);
+    _summary = DailySummary.from(
+      state: state,
+      series: series,
+      now: now,
+      // Çizilen seans bugün olmayabilir (hafta sonu → Cuma). Uygulamanın
+      // günlük grafiği de ekseni bu güne kurar.
+      seansGunu: IntradaySeriesCache.instance.seansGunu,
+    );
     return DailySummary.normalizeForSparkline(_summary!.sparkline);
   }
 
