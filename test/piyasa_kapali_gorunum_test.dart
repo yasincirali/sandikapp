@@ -78,9 +78,13 @@ void main() {
   });
 
   group('ibare — kullanıcıya SÖZLE de söylenir', () {
-    test('"PİYASA KAPALI" rozeti var', () {
-      expect(ekran.contains("'PİYASA KAPALI'"), isTrue,
-          reason: 'Kullanıcı düz çizgiyi "fiyat oynamadı" diye okur.');
+    test('rozet var ve TÜRE göre üretiliyor', () {
+      // Sabit "PİYASA KAPALI" metni kaldırıldı: mevduat faizi hafta sonu
+      // da işlediği için o ifade yanlış bilgiydi (kullanıcı 2026-09-12).
+      // Artık `piyasaKapaliEtiketi` türe göre daraltıyor.
+      expect(ekran.contains('piyasaKapaliEtiketiVarliklardan(targetAssets)'),
+          isTrue,
+          reason: 'Rozet kaldırılmış ya da sabit metne dönmüş.');
     });
 
     test('rozet yalnızca kuyruk VARKEN gösterilir', () {
@@ -103,7 +107,7 @@ void main() {
     // Ayrı bir kavram zaten var (`gunIciVerisiYokTurler`): o, fiyat
     // ÇEKİLEMEDİĞİNİ söyler. Kuyruk ise fiyatın var olduğu ama borsanın
     // kapalı olduğu durum. İkisini aynı sözle anlatmak yanlış teşhis olur.
-    final bas = ekran.indexOf("'PİYASA KAPALI'");
+    final bas = ekran.indexOf('piyasaKapaliEtiketiVarliklardan');
     expect(bas, isNot(-1));
     final yakin = ekran.substring(bas - 400, bas);
     expect(yakin.contains('veri yok'), isFalse,

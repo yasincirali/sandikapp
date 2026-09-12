@@ -15,6 +15,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/chart_axis.dart';
+import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
@@ -1697,7 +1698,10 @@ class _PortfolioPerformanceScreenState
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text(
-                    'PİYASA KAPALI',
+                    // Metin portföydeki TÜRLERE göre daralır: mevduat
+                    // faizi hafta sonu da işler, ona "piyasa kapalı"
+                    // demek yanlış bilgidir (bkz. `piyasaKapaliEtiketi`).
+                    piyasaKapaliEtiketiVarliklardan(targetAssets),
                     maxLines: 1,
                     style: context.t.labelSmall?.copyWith(
                       letterSpacing: 0.6,
