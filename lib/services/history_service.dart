@@ -104,6 +104,21 @@ class PortfolioHistoryBreakdown {
   /// "şimdi" işareti o güne göre kurulur.
   final DateTime? seansGunu;
 
+  /// Piyasanın KAPALI olduğu slotların başlangıcı (UNIX millis).
+  ///
+  /// Gün içi seri son seansın kapanışında bitmiyor; kapanış fiyatı BUGÜNE
+  /// kadar sabit bir kuyruk olarak uzatılıyor. Böylece Pazar günü eksende
+  /// Cuma–Cumartesi–Pazar görünür ve kullanıcı "grafik dünde kalmış"
+  /// demez (kullanıcı isteği 2026-09-12).
+  ///
+  /// Bu damgadan SONRAKİ noktalar gerçek işlem değildir: son kapanışın
+  /// taşınmasıdır. Ekran onları GRİ ve kesikli çizer, "piyasa kapalı"
+  /// ibaresi gösterir — yoksa düz çizgi "fiyat hiç oynamadı" diye
+  /// okunurdu, oysa borsa kapalıydı.
+  ///
+  /// `null` ise seri tümüyle canlı seanstır (hafta içi, piyasa açık).
+  final int? piyasaKapaliBaslangicTs;
+
   /// Gün içi seride TEK BİR gerçek fiyat noktası bile alınamayan türler.
   ///
   /// Bu türlerin değeri gün boyu son bilinen fiyatla (seed) sabit çizilir —
@@ -123,6 +138,7 @@ class PortfolioHistoryBreakdown {
     required this.byPosition,
     required this.positionType,
     this.seansGunu,
+    this.piyasaKapaliBaslangicTs,
     this.gunIciVerisiYokTurler = const {},
   });
 
@@ -132,6 +148,7 @@ class PortfolioHistoryBreakdown {
         byPosition = const {},
         positionType = const {},
         seansGunu = null,
+        piyasaKapaliBaslangicTs = null,
         gunIciVerisiYokTurler = const {};
 }
 
@@ -645,6 +662,44 @@ class HistoryService {
     return veriGunu.isBefore(bugun) ? veriGunu : bugun;
   }
 
+  /// Gün içi serinin SAĞ UCU ve kapalı bölgenin başlangıcı.
+  ///
+  /// ## Neden kapanışta durmuyoruz (kullanıcı isteği 2026-09-12)
+  /// Geçmiş bir seans çizilirken seri, o seansın kapanışında kesiliyordu.
+  /// Doğru veriydi ama Pazar günü eksende yalnızca Cuma görünüyordu ve
+  /// kullanıcı "grafik dünde kalmış" diye okudu.
+  ///
+  /// Artık kapanış fiyatı BUGÜNE kadar sabit bir kuyruk olarak uzatılıyor:
+  /// Pazar günü eksen Cuma–Cumartesi–Pazar'ı kapsar. Kuyruk gerçek işlem
+  /// DEĞİLDİR; [piyasaKapali] damgasından sonrası ekranda gri ve kesikli
+  /// çizilir.
+  ///
+  /// ## Neden saf fonksiyon
+  /// Hafta sonu dalı yalnızca Cumartesi/Pazar ortaya çıkar. Karar
+  /// `DateTime.now()` ile verildiği sürece hafta içi koşan hiçbir test o
+  /// dalı çalıştıramaz — `gridSlotlari` ve `seansGunu` da aynı sebeple
+  /// ayrılmıştı.
+  ///
+  /// [seansSonuTs] geçmiş seans çiziliyorsa o seansın son veri damgası,
+  /// bugün çiziliyorsa `null`.
+  @visibleForTesting
+  static ({int sagUc, int? piyasaKapali}) gunIciSagUc({
+    required DateTime now,
+    required int? seansSonuTs,
+    required int Function(int) normalizeSlot,
+  }) {
+    final simdi = normalizeSlot(now.millisecondsSinceEpoch);
+    // Bugünün seansı çiziliyor: kuyruk yok, seri "şimdi"de biter.
+    if (seansSonuTs == null) return (sagUc: simdi, piyasaKapali: null);
+
+    final kapanis = normalizeSlot(seansSonuTs);
+    // Savunma: veri damgası ileri tarihliyse (saat dilimi kayması)
+    // kuyruk NEGATİF uzunlukta olurdu.
+    if (kapanis >= simdi) return (sagUc: kapanis, piyasaKapali: null);
+
+    return (sagUc: simdi, piyasaKapali: kapanis);
+  }
+
   static DateTime _sonIsGunu(DateTime d) {
     var out = d;
     while (out.weekday == DateTime.saturday || out.weekday == DateTime.sunday) {
@@ -954,13 +1009,36 @@ class HistoryService {
     final gunIciBeklenenTurler = <AssetType>{};
     final gunIciGercekTurler = <AssetType>{};
 
-    // Seans gününün 00:00'ından başlayarak 5 dakikalık grid üret.
-    // (`dayStart` yukarıda belirlendi — bugün ya da son seans günü.)
-    final slotCount = hours * (60 ~/ slotMinutes); // 24h → 288 slot
-    // Serinin sağ ucu: bugünü çizerken ŞU AN, geçmiş seansı çizerken o
-    // seansın son verisi. İkincisinde "şimdi"ye kadar uzatmak, kapanıştan
-    // sonraki tüm slotlara kapanış fiyatını yayıp yine düz kuyruk üretirdi.
-    final nowTs = seansSonuTs ?? normalizeSlot(now.millisecondsSinceEpoch);
+    // Serinin sağ ucu ve "piyasa kapalı" bölgesinin başlangıcı.
+    //
+    // Geçmiş seans çizilirken seri kapanışta KESİLMİYOR: kapanış fiyatı
+    // bugüne kadar sabit kuyruk olarak uzatılıyor ki eksen Pazar günü
+    // Cuma–Cmt–Pazar'ı kapsasın. Kuyruk gerçek işlem değildir; ekran onu
+    // gri/kesikli çizer (bkz. `gunIciSagUc`).
+    final sagUcBilgi = gunIciSagUc(
+      now: now,
+      seansSonuTs: seansSonuTs,
+      normalizeSlot: normalizeSlot,
+    );
+    final nowTs = sagUcBilgi.sagUc;
+    final piyasaKapaliTs = sagUcBilgi.piyasaKapali;
+
+    // Izgara `dayStart`'tan başlar ve SAĞ UCA kadar uzar.
+    //
+    // Sabit 288 slot (24 saat) yetmiyor: kapalı kuyruk çizilirken seri
+    // Cuma 00:00'dan Pazar'a kadar uzanabilir (Pazar günü ~3 gün = 864
+    // slot). Sabit sayıyla döngü Cuma gecesinde biter ve kuyruk hiç
+    // çizilmezdi — eksende yine tek gün görünürdü.
+    const slotMs = slotMinutes * 60 * 1000;
+    final hedefSlot =
+        ((nowTs - dayStart.millisecondsSinceEpoch) / slotMs).ceil();
+    // Alt sınır: istenen pencere (24s → 288). Üst sınır: güvenlik ağı —
+    // bozuk/çok eski bir veri damgası ızgarayı sonsuza yaymasın
+    // (7 gün = 2016 slot, en uzun tatil zinciri için fazlasıyla yeterli).
+    final slotCount = hedefSlot.clamp(
+      hours * (60 ~/ slotMinutes),
+      7 * 24 * (60 ~/ slotMinutes),
+    );
 
     // ── Fonun NAV basamağının yeri ──────────────────────────────────────────
     //
@@ -1323,6 +1401,9 @@ class HistoryService {
       // Ekran X eksenini bu güne göre kurar; bugün olmak ZORUNDA değil
       // (hafta sonu/tatil → son seans günü).
       seansGunu: dayStart,
+      // Kapanıştan sonraki kuyruk: gerçek işlem değil, son fiyatın
+      // taşınması. Ekran bu damgadan sonrasını gri/kesikli çizer.
+      piyasaKapaliBaslangicTs: piyasaKapaliTs,
       // Gün içi fiyatı beklenen ama HİÇ alınamayan türler. Grafikte bu
       // türler sabit çizilir; kullanıcı "piyasa mı durgun, veri mi yok"
       // sorusunu ancak bu bilgi yüzeye çıkarsa yanıtlayabilir.

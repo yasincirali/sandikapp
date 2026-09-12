@@ -266,6 +266,7 @@ class _PortfolioPerformanceScreenState
     double? currentTotalOverride,
     bool simulate = false,
     bool intraday = false,
+    int? piyasaKapaliBaslangicTs,
   }) {
     if (history.isEmpty || allAssets.isEmpty) return [];
 
@@ -311,6 +312,49 @@ class _PortfolioPerformanceScreenState
         }
       }
       if (spots.length < 2) return [];
+
+      // ── Piyasa kapalı kuyruğu ayrı segment ────────────────────────────
+      //
+      // Hafta sonu serisi Cuma kapanışını bugüne kadar taşıyor. O kuyruk
+      // gerçek işlem DEĞİL; tek fiyatın yayılması. Tek segment olarak
+      // çizilseydi sarı çizgi düz devam eder ve "fiyat oynamadı" diye
+      // okunurdu — oysa borsa kapalıydı.
+      //
+      // Kuyruk nötr renk + kesikli desenle ayrılıyor (bkz.
+      // `TransactionSegment.piyasaKapali`).
+      if (piyasaKapaliBaslangicTs != null) {
+        final sinirX =
+            (piyasaKapaliBaslangicTs - startDate.millisecondsSinceEpoch) /
+                60000.0;
+        final seans = [for (final s in spots) if (s.x <= sinirX) s];
+        final kapali = [for (final s in spots) if (s.x >= sinirX) s];
+
+        // İki segment de çizilebiliyorsa böl. Aksi halde (kuyruk tek
+        // noktaysa ya da seans boşsa) bölmek kopuk çizgi üretirdi —
+        // tek parça bırakmak daha doğru.
+        if (seans.length >= 2 && kapali.length >= 2) {
+          return [
+            TransactionSegment(
+              spots: seans,
+              lineColor: context.c.amberText,
+              areaGradientStart: context.c.amberFill.withValues(alpha: 0.12),
+              areaGradientEnd: Colors.transparent,
+              thickness: 3.5,
+            ),
+            TransactionSegment(
+              spots: kapali,
+              // Nötr ton: kuyruk bir kazanç/kayıp anlatmıyor.
+              lineColor: context.c.text36,
+              // Alan doldurulmaz — dolgu "bu bölge de birikim" derdi.
+              areaGradientStart: Colors.transparent,
+              areaGradientEnd: Colors.transparent,
+              thickness: 2.5,
+              piyasaKapali: true,
+            ),
+          ];
+        }
+      }
+
       return [
         TransactionSegment(
           spots: spots,
@@ -817,7 +861,9 @@ class _PortfolioPerformanceScreenState
         historyMap, chartAssets, effectiveStart, endDate,
         currentTotalOverride: currentTotal,
         simulate: _simulate,
-        intraday: isIntraday);
+        intraday: isIntraday,
+        // Hafta sonu kuyruğu: kapanıştan sonrası gri + kesikli çizilir.
+        piyasaKapaliBaslangicTs: breakdown.piyasaKapaliBaslangicTs);
 
     return ListView(
       controller: _scrollController,
@@ -1380,10 +1426,22 @@ class _PortfolioPerformanceScreenState
     final gunIciBugun = start.year == simdi.year &&
         start.month == simdi.month &&
         start.day == simdi.day;
+    // Piyasa kapalı kuyruğu çizilmiş mi? Ayrı bir parametre GEÇİRMİYORUZ:
+    // segmentler zaten bu kartın girdisi ve kuyruk orada işaretli. İkinci
+    // bir yoldan sormak, iki kaynağın ayrışması demekti.
+    final kapaliKuyruk = segments.any((s) => s.piyasaKapali);
+
+    // Gün içi başlık, çizilen günü söyler. Kuyruk varsa aralık yazılır
+    // ("11 Eyl → bugün"): eksen artık tek gün değil, kullanıcı isteği
+    // gereği hafta sonunu da kapsıyor (2026-09-12).
+    final gunIciBaslik = gunIciBugun
+        ? 'Bugünkü birikim değişimi'
+        : kapaliKuyruk
+            ? '${DateFormat('d MMM', 'tr_TR').format(start)} → bugün'
+            : '${DateFormat('d MMMM', 'tr_TR').format(start)} birikim değişimi';
+
     final title = intraday
-        ? (gunIciBugun
-            ? 'Bugünkü birikim değişimi'
-            : '${DateFormat('d MMMM', 'tr_TR').format(start)} birikim değişimi')
+        ? gunIciBaslik
         : _simulate
             ? '$periodLabel değişim · simülasyon'
             : '$periodLabel birikim değişimi';
@@ -1397,11 +1455,42 @@ class _PortfolioPerformanceScreenState
         children: [
           // Başlık "1A birikim değişimi · simülasyon" gibi uzayabiliyor;
           // 320pt'de tek satıra sığmalı (taşma testi bunu kovalıyor).
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.titleSmall?.copyWith(color: context.c.text58),
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      context.t.titleSmall?.copyWith(color: context.c.text58),
+                ),
+              ),
+              // "PİYASA KAPALI" rozeti — grafikteki gri kesikli kuyruğun
+              // ne olduğunu SÖZLE de anlatır. Desen tek başına yeterli
+              // değil: kullanıcı düz çizgiyi "fiyat oynamadı" diye
+              // okuyabilir, oysa borsa kapalıydı.
+              if (kapaliKuyruk) ...[
+                const SizedBox(width: SandikSpace.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: context.c.text36.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  ),
+                  child: Text(
+                    'PİYASA KAPALI',
+                    maxLines: 1,
+                    style: context.t.labelSmall?.copyWith(
+                      letterSpacing: 0.6,
+                      fontWeight: FontWeight.w700,
+                      color: context.c.text36,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: SandikSpace.sm),
           Row(
@@ -2051,6 +2140,11 @@ class _PortfolioPerformanceScreenState
             isCurved: false,
             color: seg.lineColor,
             barWidth: effectiveBarWidth,
+            // Piyasa kapalıyken taşınan fiyat KESİKLİ çizilir. Rengi
+            // `lineColor` zaten nötr geliyor (bkz. `_convertHistoryToSegments`);
+            // desen, renk körlüğünde de ayırt edilebilsin diye ikinci bir
+            // sinyal olarak ekleniyor.
+            dashArray: seg.piyasaKapali ? const [4, 4] : null,
             dotData: FlDotData(
               show: true,
               checkToShowDot: (spot, barData) {
@@ -3330,12 +3424,26 @@ class TransactionSegment {
   final Color areaGradientStart;
   final Color areaGradientEnd;
   final double thickness;
+
+  /// Bu segment piyasa KAPALIYKEN taşınan son fiyat mı?
+  ///
+  /// Hafta sonu gün içi grafiği Cuma kapanışını bugüne kadar uzatıyor
+  /// (bkz. `HistoryService.gunIciSagUc`). O kuyruk gerçek işlem değildir:
+  /// tek bir fiyatın yayılmasıdır. Düz çizgi olarak çizilirse "fiyat hiç
+  /// oynamadı" diye okunur — oysa borsa kapalıydı.
+  ///
+  /// `true` olduğunda çizgi GRİ ve KESİKLİ çizilir, altındaki alan
+  /// doldurulmaz. Kullanıcı isteği (2026-09-12): "cmt ve pazar günü için
+  /// piyasa kapalı ibaresi olup gri şekilde çizilecek."
+  final bool piyasaKapali;
+
   TransactionSegment(
       {required this.spots,
       required this.lineColor,
       required this.areaGradientStart,
       required this.areaGradientEnd,
-      required this.thickness});
+      required this.thickness,
+      this.piyasaKapali = false});
 }
 
 /// Yarış (leaderboard) ekranını açan küçük ikon buton — grafik container
