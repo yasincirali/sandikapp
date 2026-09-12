@@ -1,0 +1,108 @@
+import 'package:flutter/material.dart';
+
+import '../models/grafik_tipi.dart';
+import '../theme/sandik.dart';
+
+/// Grafik tipi seçici — grafik kabının üstündeki chip + açılır menü.
+///
+/// Kullanıcı isteği (2026-09-12): TradingView'deki gibi bir liste; seçili
+/// olanın yanında tik, seçim oturum boyunca korunuyor.
+///
+/// ## Neden `PopupMenuButton`, bottom sheet değil
+/// Liste dört kısa satır ve chip'in hemen altında açılması konumsal
+/// bağlamı koruyor. Bottom sheet ekranın yarısını kaplar ve grafikle
+/// bağı kopar — kullanıcı seçtiği tipin etkisini göremeden sayfa örtülür.
+class GrafikTipiSecici extends StatelessWidget {
+  const GrafikTipiSecici({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<GrafikTipi>(
+      valueListenable: grafikTipiNotifier,
+      builder: (context, secili, _) {
+        // `Material` ZORUNLU ve POPUP'IN DIŞINDA olmalı.
+        //
+        // Bu ekran `CupertinoPageScaffold` altında çiziliyor;
+        // `PopupMenuButton`'ın KENDİ `InkWell`'i bir Material ata arıyor
+        // ve bulamayınca `debugCheckHasMaterial` fırlatıyor. Sarmalayıcıyı
+        // butonun İÇİNE koymak yetmedi — ölçüldü, hata aynen sürdü:
+        // kontrol butonun kendi bağlamında yapılıyor.
+        //
+        // Bozulma sessiz değildi ama yanıltıcıydı: ağaç kırılınca boş
+        // durum metni hiç render edilmiyor ve RenderFlex 98.674px
+        // taşıyordu (20 test birden kırılmıştı).
+        return Material(
+          type: MaterialType.transparency,
+          child: PopupMenuButton<GrafikTipi>(
+          tooltip: 'Grafik tipi',
+          position: PopupMenuPosition.under,
+          color: context.c.surface2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            side: BorderSide(color: context.c.hairline),
+          ),
+          onSelected: (t) => grafikTipiNotifier.value = t,
+          itemBuilder: (_) => [
+            for (final t in GrafikTipi.values)
+              PopupMenuItem<GrafikTipi>(
+                value: t,
+                height: 48,
+                child: Row(
+                  children: [
+                    Icon(t.ikon, size: 18, color: context.c.text58),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        t.etiket,
+                        style: context.t.bodyMedium?.copyWith(
+                          color: context.c.text90,
+                          fontWeight: t == secili
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                    // Tik YALNIZCA seçilide. Yer her zaman ayrılıyor ki
+                    // satırlar seçim değiştikçe yatay kaymasın.
+                    SizedBox(
+                      width: 20,
+                      child: t == secili
+                          ? Icon(Icons.check_rounded,
+                              size: 16, color: context.c.amberText)
+                          : null,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+          child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: context.c.surface2,
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(color: context.c.hairline),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(secili.ikon, size: 15, color: context.c.text58),
+                  const SizedBox(width: SandikSpace.xs),
+                  Text(
+                    secili.etiket,
+                    style: context.t.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.c.text58,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(Icons.expand_more_rounded,
+                      size: 15, color: context.c.text36),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
