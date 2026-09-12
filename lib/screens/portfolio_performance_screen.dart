@@ -528,12 +528,27 @@ class _PortfolioPerformanceScreenState
     // 2026-09-12). Haftalık pencere gün sayısıyla kalıyor — "1 hafta"
     // zaten tam olarak 7 gündür, takvim ayı gibi değişken değil.
     final donem = _periods[_selectedPeriodIdx];
-    final startDate = isIntraday
+    // Dönem başı GÜN BAŞINA çekilir.
+    //
+    // `endDate` şu an (örn. 22:29) ve ondan gün çıkarınca başlangıç da
+    // gün ortasında kalıyordu. Veri kovaları ise gün başına normalize
+    // ediliyor → ilk nokta `startDate`'ten ÖNCE düşüp X'i NEGATİF
+    // yapıyordu (ölçüldü: −0,02 gün). Eksen 0'dan başladığı için o nokta
+    // kırpılıyor ve çizgi grafiğin solundan değil içeriden başlıyordu
+    // (kullanıcı bildirimi 2026-09-12, 1H sekmesi).
+    //
+    // Gün başına çekmek ekseni kovalarla hizalıyor; tüm dönemler aynı
+    // davranıyor.
+    final hamBaslangic = isIntraday
         ? DateTime(endDate.year, endDate.month, endDate.day)
         : (donem.ayGeri != null
             ? PortfolioPerformanceScreen.donemBaslangici(
                 endDate, donem.ayGeri!)
             : endDate.subtract(Duration(days: donem.days)));
+    final startDate = isIntraday
+        ? hamBaslangic
+        : DateTime(
+            hamBaslangic.year, hamBaslangic.month, hamBaslangic.day);
 
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(
@@ -2031,7 +2046,20 @@ class _PortfolioPerformanceScreenState
       fullMaxX = (end.difference(start).inMinutes / (60.0 * 24.0))
           .clamp(1.0, double.infinity);
     }
-    double minX = 0;
+    // Eksenin sol ucu VERİNİN başladığı yer — sabit 0 değil.
+    //
+    // `startDate` ile ilk veri noktası nadiren çakışır: dönem başı takvim
+    // gününe çekiliyor ama seri o gün borsanın açıldığı saatte başlıyor,
+    // ayrıca hafta sonu/tatilde ilk kova günler sonraya düşebiliyor.
+    // Eksen 0'dan başlayınca soldaki o fark BOŞ bir şerit olarak kalıyor
+    // ve çizgi grafiğin başından değil içeriden başlıyor görünüyordu
+    // (kullanıcı bildirimi 2026-09-12, 1H sekmesi — ölçüldü: ilk nokta
+    // X = 0,917, yani neredeyse bir gün içeride).
+    //
+    // Çözüm: ekseni veriye oturt. Sağ uç zaten son noktada bitiyor.
+    final veriXs = primarySeg.spots.map((s) => s.x);
+    final ilkVeriX = veriXs.isEmpty ? 0.0 : veriXs.reduce((a, b) => a < b ? a : b);
+    double minX = intraday ? 0.0 : ilkVeriX;
     double maxX = fullMaxX;
     final activeSpotXs = primarySeg.spots.map((s) => s.x).toList()..sort();
     if (activeSpotXs.isNotEmpty && !intraday) {
