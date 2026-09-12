@@ -322,21 +322,31 @@ class _PortfolioPerformanceScreenState
       final nowMinutesX = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
       final simdiEksendeVar = nowMinutesX >= 0;
       final spots = <FlSpot>[];
-      double? lastNonZero;
       for (final ts in sortedTs) {
         if (ts > nowMs) break;
         final y = history[ts] ?? 0;
         // 0 dönen slotlar (borsa saatleri dışı ilk slotlar) atlanır; kullanıcı
         // ilk fiyat oluşan noktadan itibaren çizgiyi görür.
         if (y <= 0) continue;
-        lastNonZero = y;
         final minutes = (ts - startDate.millisecondsSinceEpoch) / 60000.0;
         spots.add(FlSpot(minutes, y));
       }
-      // Şu an'ı canlı toplamla sabitle — grafiğin son noktası her zaman
-      // "şu andaki portföy değeri" olur. Yalnızca BUGÜN çizilirken:
-      // geçmiş seansta "şimdi" o günün ekseninde yok, seri kapanışta biter.
+      // Şu an'ı canlı toplamla sabitle — grafiğin son noktası "şu andaki
+      // portföy değeri" olur.
+      //
+      // ## Piyasa KAPALIYKEN uygulanmaz
+      // Kapalı kuyruk, son kapanış fiyatının taşınmasıdır: tanımı gereği
+      // DÜZ olmalı. Canlı toplamı ucuna yazmak kuyruğu yukarı/aşağı
+      // kırıyordu — "piyasa kapalı" yazan bir grafikte fiyat değişmiş
+      // görünüyordu (kullanıcı bildirimi 2026-09-12: "piyasa kapalı
+      // dedik ama fiyatı değişen bir varlık var demek ki").
+      //
+      // Fark gerçek olabilir (manuel fiyatlı varlık, kur hareketi, yeni
+      // alım) ama onu KAPALI bölgede göstermek yanlış yer: kullanıcı onu
+      // borsa hareketi sanır. Kapanış anındaki değer korunur.
+      final kapaliKuyrukVar = piyasaKapaliBaslangicTs != null;
       if (simdiEksendeVar &&
+          !kapaliKuyrukVar &&
           currentTotalOverride != null &&
           currentTotalOverride > 0) {
         if (spots.isNotEmpty && (nowMinutesX - spots.last.x).abs() < 5) {
@@ -344,11 +354,12 @@ class _PortfolioPerformanceScreenState
         } else {
           spots.add(FlSpot(nowMinutesX, currentTotalOverride));
         }
-      } else if (simdiEksendeVar && lastNonZero != null && spots.isNotEmpty) {
-        // Canlı toplam yoksa son bilinen fiyat "şimdi"ye taşınır — kuyruk
-        // zaten bunu yapıyor ama seri erken bitmişse boşluk kalmasın.
+      } else if (simdiEksendeVar && spots.isNotEmpty) {
+        // Canlı toplam kullanılmıyor (ya yok ya da piyasa kapalı): son
+        // ÇİZİLEN değer "şimdi"ye taşınır. Kuyruk böylece DÜZ kalır.
+        final sonY = spots.last.y;
         if ((nowMinutesX - spots.last.x).abs() >= 5) {
-          spots.add(FlSpot(nowMinutesX, lastNonZero));
+          spots.add(FlSpot(nowMinutesX, sonY));
         }
       }
       if (spots.length < 2) return [];
@@ -1995,21 +2006,6 @@ class _PortfolioPerformanceScreenState
       );
     }
 
-    // Serinin sağ ucu "ŞİMDİ"yi mi gösteriyor?
-    //
-    // Eskiden ölçüt "çizilen gün bugün mü" idi: piyasa kapalıyken seri son
-    // seansa ait olduğu için uç nokta "KAPANIŞ" sayılıyordu.
-    //
-    // Kuyruk geldikten sonra bu yanlış — seri son seanstan BUGÜNE uzanıyor
-    // (`gunIciSagUc`), yani sağ uç gerçekten şu anki değerdir. Gün
-    // eşitliğine bakmak hafta sonunda "KAPANIŞ" yazdırıyordu; oysa o
-    // noktada canlı toplam duruyor.
-    //
-    // Ölçüt artık takvim değil GEOMETRİ — segment üretimindeki
-    // `simdiEksendeVar` ile aynı mantık.
-    final simdiDt = DateTime.now();
-    final ucNoktaSimdiMi = intraday &&
-        !simdiDt.isBefore(DateTime(start.year, start.month, start.day));
 
     // Serinin son noktasının gün başından uzaklığı (dakika). Bugünü
     // çizerken bu zaten "şimdi"ye eşittir; geçmiş seansta kapanış anıdır.
@@ -2110,10 +2106,6 @@ class _PortfolioPerformanceScreenState
         if (maxX <= minX) minX = (maxX - 1).clamp(0.0, fullMaxX);
       }
     }
-
-    // Intraday: son nokta marker'ı — dakika cinsinden 00:00'dan sapma.
-    // Bugünü çizerken "ŞİMDİ", geçmiş seansta "KAPANIŞ" anlamına gelir.
-    final nowMinutes = intraday ? gunIciSonNoktaDk : 0.0;
 
     // Zoom durumunda tekrar üretilen LineChartData'yı bir closure'a al.
     // ZoomableChart pinch/pan sırasında minX/maxX değiştirdikçe bu builder
@@ -2228,30 +2220,12 @@ class _PortfolioPerformanceScreenState
           ),
         ),
         extraLinesData: intraday
-            ? ExtraLinesData(
-                verticalLines: [
-                  VerticalLine(
-                    x: nowMinutes,
-                    color: context.c.amberFill.withValues(alpha: 0.6),
-                    strokeWidth: 1.5,
-                    dashArray: const [5, 4],
-                    label: VerticalLineLabel(
-                      show: true,
-                      alignment: Alignment.topLeft,
-                      padding: const EdgeInsets.only(bottom: 6, right: 4),
-                      style: context.t.labelMedium?.copyWith(
-                        letterSpacing: 0,
-                        fontWeight: FontWeight.w700,
-                        color: context.c.amberText,
-                      ),
-                      // Geçmiş seans çizilirken "ŞİMDİ" yalan olurdu —
-                      // o çizgi son seansın kapanışını gösteriyor.
-                      labelResolver: (_) =>
-                          ucNoktaSimdiMi ? 'ŞİMDİ' : 'KAPANIŞ',
-                    ),
-                  ),
-                ],
-              )
+            // Gün içi grafikte dikey "ŞİMDİ" çizgisi KALDIRILDI
+            // (kullanıcı isteği 2026-09-12): X ekseni etiketleriyle
+            // çakışıyordu ve bilgi zaten iki yerde daha var — serinin
+            // ucundaki nokta (piyasa kapalıyken gri) ve üstteki kartın
+            // "11 Eyl → bugün · PİYASA KAPALI" başlığı.
+            ? const ExtraLinesData(verticalLines: [])
             : ExtraLinesData(
                 verticalLines: primarySeg.spots.isEmpty
                     ? const []

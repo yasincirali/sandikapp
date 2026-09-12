@@ -78,11 +78,49 @@ void main() {
     expect(kaynak.contains('dashArray: seg.piyasaKapali'), isTrue);
   });
 
-  test('"ŞİMDİ" etiketi kapalıyken de doğru', () {
-    // Ölçüt takvim değil geometri — seri bugüne uzandığı için sağ uç
-    // gerçekten şu anı gösteriyor.
-    expect(kaynak.contains('ucNoktaSimdiMi'), isTrue);
-    expect(kaynak.contains('final bugunMu ='), isFalse,
-        reason: 'Gün eşitliği koşulu geri gelmiş.');
+  group('dikey "ŞİMDİ" çizgisi KALDIRILDI', () {
+    // Kullanıcı isteği (2026-09-12): "şimdi çizgisine gerek yok, x ekseni
+    // labellarıyla çakışıyor."
+    //
+    // Bilgi kaybı yok: serinin ucundaki nokta (kapalıyken gri) konumu
+    // gösteriyor, üstteki kart da "11 Eyl → bugün · PİYASA KAPALI"
+    // yazıyor.
+    test('gün içi dalda dikey çizgi yok', () {
+      expect(kaynak.contains('const ExtraLinesData(verticalLines: [])'), isTrue,
+          reason: 'Gün içi dikey çizgi geri gelmiş — etiketlerle çakışır.');
+    });
+
+    test('eski "ŞİMDİ"/"KAPANIŞ" etiketi de kalkmış', () {
+      expect(kaynak.contains("ucNoktaSimdiMi ? 'ŞİMDİ' : 'KAPANIŞ'"), isFalse,
+          reason: 'Çizgi yokken etiket mantığı ölü kod.');
+    });
+
+    test('non-intraday "ŞİMDİ" çizgisi KORUNUR', () {
+      // Orada X ekseni etiketleri seyrek (5 tick) ve çakışma yok.
+      expect(kaynak.contains("labelResolver: (_) => 'ŞİMDİ'"), isTrue,
+          reason: 'Gün dışı dönemlerdeki işaret de silinmiş.');
+    });
+  });
+
+  group('kapalı kuyruk DÜZ kalır', () {
+    // Kullanıcı bildirimi: "piyasa kapalı olmasına rağmen fiyat değişimi
+    // olmuş; piyasa kapalı dedik ama fiyatı değişen bir varlık var."
+    //
+    // Sebep: kuyruğun ucuna CANLI toplam yazılıyordu. Kapanış fiyatından
+    // farklıysa kuyruk yukarı/aşağı kırılıyor ve "piyasa kapalı" yazan
+    // grafikte fiyat oynamış görünüyordu.
+    test('canlı toplam kapalı kuyrukta UYGULANMAZ', () {
+      expect(kaynak.contains('final kapaliKuyrukVar = piyasaKapaliBaslangicTs != null;'),
+          isTrue,
+          reason: 'Kapalı kuyruk kontrolü yok.');
+      expect(kaynak.contains('!kapaliKuyrukVar &&'), isTrue,
+          reason: 'Canlı toplam kapalı bölgede de yazılıyor — kuyruk '
+              'kırılır.');
+    });
+
+    test('kuyruk son ÇİZİLEN değeri taşır', () {
+      expect(kaynak.contains('final sonY = spots.last.y;'), isTrue,
+          reason: 'Kuyruk düz kalmıyor.');
+    });
   });
 }
