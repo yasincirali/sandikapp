@@ -72,8 +72,20 @@ void main() {
       ]);
 
       expect(DailySummary.liveTotalTRY(state), 18000.0);
-      expect(DailySummary.liveTotalTRY(state), lessThan(state.totalValue),
-          reason: 'satış lot u portföy değerini büyütemez');
+      // `state.totalValue` de ARTIK net pozisyondan hesaplanıyor
+      // (2026-09-12): ham `activeAssets` toplamı satış lot'unu
+      // ÇIKARMAK yerine EKLİYORDU ve ana ekran ile performans ekranı
+      // farklı tutar gösteriyordu (kullanıcı bildirimi: 2.519.470 vs
+      // 2.517.574).
+      //
+      // Bu test eskiden `lessThan` bekliyordu — yani ham toplamın ŞİŞİK
+      // olduğunu varsayıyordu. Şişkinlik kaynağında düzeltildiği için
+      // beklenti EŞİTLİK: iki yüzey aynı sayıyı vermeli.
+      expect(DailySummary.liveTotalTRY(state), state.totalValue,
+          reason: 'İki hesap yolu ayrışmış — ana ekran ile performans '
+              'ekranı yine farklı tutar gösterir.');
+      expect(state.totalValue, 18000.0,
+          reason: 'Ham toplam (140 × 300 = 42.000) geri gelmiş.');
     });
 
     test('satış yokken ham toplamla aynı sonucu verir', () {

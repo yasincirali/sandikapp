@@ -93,8 +93,28 @@ class PortfolioState {
   List<Asset> get activeAssets =>
       assets.where((a) => a.isActive).toList(growable: false);
 
-  double get totalValue =>
-      activeAssets.fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
+  /// Portföyün güncel TRY değeri — NET pozisyondan.
+  ///
+  /// ## Neden ham `activeAssets` toplanamaz
+  /// `Asset.totalValue` = `quantity * currentPrice`, yani İŞARETSİZ.
+  /// Satış lot'u da pozitif miktar taşıdığı için ham toplama EKLENİYORDU;
+  /// oysa satış pozisyonu azaltır. Ölçüldü: 10 alıp 4 satan kullanıcıda
+  /// net 6 lot = 600 TL beklenirken 1.400 TL çıkıyordu.
+  ///
+  /// Kullanıcı bildirimi (2026-09-12): ana ekran 2.519.470 TL, performans
+  /// ekranı 2.517.574 TL gösteriyordu. Performans ekranı zaten
+  /// `aggregatePositions` kullandığı için DOĞRU olan oydu.
+  ///
+  /// `aggregatePositions` ayrıca temettü (`quantity: 0`) ve mezar taşı
+  /// satırlarını da eler — tek kaynak, tek kural.
+  double get totalValue {
+    double t = 0;
+    for (final p in aggregatePositions(assets)) {
+      final a = p.asDisplayAsset();
+      t += toTRY(a.totalValue, a.currency);
+    }
+    return t;
+  }
 
   /// Hem alım fiyatı hem güncel fiyatı bilinen varlıkların TRY maliyeti.
   /// currentPrice=0 olan varlıklar henüz fiyat çekilememiş demektir — dahil etme.
