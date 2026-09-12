@@ -2114,8 +2114,23 @@ class _PortfolioPerformanceScreenState
       final double yInterval = y.interval;
       // X ekseni için uygun aralık. Intraday'de 4 saatlik (240 dk) etiketler
       // → 00:00 / 04:00 / 08:00 / 12:00 / 16:00 / 20:00 gibi.
+      // Gün içi eksende adım, ETİKET UZUNLUĞUNA göre açılır.
+      //
+      // Sabit 240 dk (4 saat) tek günlük eksende doğruydu: etiket "04:00"
+      // gibi kısa. Ama piyasa kapalıyken eksen birden çok günü kapsıyor ve
+      // etiket "11 Eyl 04:00"a uzuyor (bkz. `zamanEtiketi`) — aynı adımda
+      // yan yana altı etiket ÜST ÜSTE BİNİYORDU (kullanıcı bildirimi
+      // 2026-09-12, ekran görüntüsüyle).
+      //
+      // Çok günlü eksende adım gün sayısıyla ölçekleniyor: eksen ne kadar
+      // uzarsa etiketler o kadar seyrekleşir, sayıları sabit kalır.
+      final gunIciSpanGun = (viewMaxX - viewMinX).abs() / 1440.0;
       final xInterval = intraday
-          ? gunIciEksenAdimiDk
+          ? (gunIciSpanGun > 1
+              // Hedef ~5 etiket; 60 dk'nın katına yuvarla ki tick'ler
+              // yuvarlak saatlere düşsün ("13:47" gibi bir etiket olmasın).
+              ? ((viewMaxX - viewMinX).abs() / 5 / 60).ceilToDouble() * 60
+              : gunIciEksenAdimiDk)
           : yuvarlakAdim((viewMaxX - viewMinX) / 5).clamp(1.0, double.infinity);
 
       // Alım dot'ları için piksel bazlı seyreltme. Arka arkaya yapılan
@@ -2338,8 +2353,14 @@ class _PortfolioPerformanceScreenState
                   // Sabit genişlik + ortalama: fl_chart etiketi tick'te
                   // ortalar, taşan metin ellipsis olur ve komşu etiketle
                   // çakışmaz.
+                  //
+                  // Genişlik etiketin EN UZUN hâline göre: çok günlü gün
+                  // içi eksende "11 Eyl 04:00" yazılıyor ve 74px'e
+                  // sığmayıp kırpılıyordu.
                   child: SizedBox(
-                    width: 74,
+                    width: intraday && (meta.max - meta.min).abs() > 1440
+                        ? 88
+                        : 74,
                     child: Text(
                       label,
                       textAlign: TextAlign.center,
