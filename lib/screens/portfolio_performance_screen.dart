@@ -2013,9 +2013,20 @@ class _PortfolioPerformanceScreenState
 
     // Serinin son noktasının gün başından uzaklığı (dakika). Bugünü
     // çizerken bu zaten "şimdi"ye eşittir; geçmiş seansta kapanış anıdır.
+    // TÜM segmentlerin en sağdaki noktası — `primarySeg` DEĞİL.
+    //
+    // `primarySeg` "en kalın segment" olarak seçiliyor ve bu SEANS
+    // segmentidir (3.5); piyasa kapalı kuyruğu daha ince (2.5) olduğu
+    // için dışarıda kalıyordu. Sonuç: "ŞİMDİ" dikey çizgisi ve son nokta
+    // işaretçisi kapanışta duruyor, kuyruk boyunca uzanmıyordu
+    // (kullanıcı bildirimi 2026-09-12, ekran görüntüsüyle).
+    //
+    // Kuyruk varsa en sağdaki nokta ONUN son noktasıdır — yani "şimdi".
     final gunIciSonNoktaDk = !intraday
         ? 0.0
-        : (primarySeg.spots.isEmpty ? 0.0 : primarySeg.spots.last.x);
+        : segments
+            .expand((s) => s.spots)
+            .fold<double>(0.0, (m, s) => s.x > m ? s.x : m);
 
     // X ekseni — aktif segment çok sıkışıksa (örn. tek gün alım + bugün)
     // viewport'u aktif segment başlangıcından biraz öncesine daralt.
@@ -2478,11 +2489,17 @@ class _PortfolioPerformanceScreenState
                 // dot ile göster — trading uygulaması hissiyatı için
                 // ince halka ile.
                 if (intraday && isLast) {
-                  // "Şu an" noktası — canlı vurgulu yeşil (context.c.gain)
-                  // ile trading uygulaması hissiyatı, ince beyaz halka.
+                  // "Şu an" noktası.
+                  //
+                  // Piyasa KAPALIYKEN gri: o noktada canlı bir fiyat yok,
+                  // son kapanış taşınıyor. Yeşil bırakmak "şu anda işlem
+                  // görüyor" derdi (kullanıcı isteği 2026-09-12: "şu an
+                  // noktası piyasa kapalı andaysa gri şekilde kesikli
+                  // çizginin ucunda konumlanmalı").
+                  final kapali = seg.piyasaKapali;
                   return FlDotCirclePainter(
                     radius: 5.0,
-                    color: context.c.gain,
+                    color: kapali ? context.c.text36 : context.c.gain,
                     strokeColor: context.c.text90,
                     strokeWidth: 1.6,
                   );
