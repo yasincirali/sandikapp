@@ -42,6 +42,62 @@ enum AssetKind {
   }
 }
 
+/// Miktar birimi etiketi — uygulamanın TEK kaynağı.
+///
+/// ## Neden serbest fonksiyon
+/// Etiket iki yerde gerekiyor: kaydedilmiş bir [Asset] ve henüz
+/// kaydedilmemiş bir sepet satırı (`BulkCartItem`). İkisi ortak bir taban
+/// sınıfı paylaşmıyor. Mantık `Asset`'in içinde kaldığı sürece sepet
+/// tarafı kendi kopyasını tutmak zorundaydı — ve tuttu:
+/// `bulk_add_asset_screen._unitLabel()` yalnızca `unitType`'a bakıyor,
+/// `type`'ı hiç sormuyordu. Sonuç, hisse/fon için sepette **"adet"**,
+/// kaydedildikten sonra **"lot"** yazmasıydı: aynı varlık iki ekranda iki
+/// farklı birim.
+///
+/// Kopyayı silmek yerine mantığı dışarı almak, bir sonraki çağrı yerinin
+/// de doğru başlamasını sağlıyor.
+String birimEtiketi({
+  required AssetType type,
+  required String unitType,
+  required String currency,
+  String? currencySymbol,
+}) {
+  switch (type) {
+    case AssetType.doviz:
+      return currencySymbol ?? currency.toUpperCase();
+    case AssetType.hisse:
+    case AssetType.fon:
+      // "adet" DEĞİL: borsada işlem birimi lot'tur.
+      return 'lot';
+    case AssetType.altin:
+    case AssetType.emtia:
+      switch (unitType) {
+        case 'gram':
+        case 'gr':
+          return 'gr';
+        case 'ounce':
+        case 'oz':
+          return 'oz';
+        case 'kilogram':
+        case 'kg':
+          return 'kg';
+        case 'liter':
+        case 'lt':
+          return 'lt';
+        case 'barrel':
+        case 'bbl':
+          return 'bbl';
+        default:
+          // Çeyrek/yarım/ata altın: `unitType == 'piece'`.
+          return 'adet';
+      }
+    case AssetType.mevduat:
+      return '₺';
+    case AssetType.diger:
+      return 'adet';
+  }
+}
+
 class Asset {
   final String id;
   final String userId;
@@ -213,40 +269,12 @@ class Asset {
 
   /// Miktar için kullanılacak birim etiketi (adet/lot/gr/oz/₺-$ vb.).
   /// Ekranlarda "1 lot", "2,5 gr", "$100" gibi göstermek için kullanılır.
-  String get unitLabel {
-    switch (type) {
-      case AssetType.doviz:
-        return currencySymbol ?? currency.toUpperCase();
-      case AssetType.hisse:
-      case AssetType.fon:
-        return 'lot';
-      case AssetType.altin:
-      case AssetType.emtia:
-        switch (unitType) {
-          case 'gram':
-          case 'gr':
-            return 'gr';
-          case 'ounce':
-          case 'oz':
-            return 'oz';
-          case 'kilogram':
-          case 'kg':
-            return 'kg';
-          case 'liter':
-          case 'lt':
-            return 'lt';
-          case 'barrel':
-          case 'bbl':
-            return 'bbl';
-          default:
-            return 'adet';
-        }
-      case AssetType.mevduat:
-        return '₺';
-      case AssetType.diger:
-        return 'adet';
-    }
-  }
+  String get unitLabel => birimEtiketi(
+        type: type,
+        unitType: unitType,
+        currency: currency,
+        currencySymbol: currencySymbol,
+      );
 
   /// Birim para birimden önce mi gelmeli? (Döviz sembolleri prefix, diğerleri suffix.)
   bool get unitIsPrefix => type == AssetType.doviz;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/position.dart';
 import '../models/price_alert.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -50,9 +51,13 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   List<_Aday> _adaylar() {
     final out = <String, _Aday>{};
 
-    final assets = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    // `aktifLotlar`: tamamen satılmış pozisyonlar elenir. Ham `isActive`
+    // filtresi yetmiyordu — satılan hissenin alım lot'u defterde durduğu
+    // için kullanıcı artık tutmadığı bir sembol için alarm kurabiliyordu.
+    final assets =
+        aktifLotlar(ref.read(portfolioProvider).valueOrNull?.assets ?? const []);
     for (final a in assets) {
-      if (!a.isBuy || !a.isActive) continue;
+      if (!a.isBuy) continue;
       final sembol = _sembol(a.ticker, a.subCategory);
       if (sembol == null) continue;
       out[sembol] = _Aday(sembol, a.name, a.currentPrice);

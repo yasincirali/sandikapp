@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/asset_type.dart';
+import '../models/position.dart';
 import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -194,11 +195,15 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     final watchedKeys = {for (final w in watchlist) w.key};
 
     // Portföydeki varlıkların anahtarları — pasif göstermek için.
-    final owned = ref.watch(portfolioProvider).valueOrNull?.assets ?? const [];
+    //
+    // `aktifLotlar`: tamamen satılmış pozisyon "portföyde var" sayılmamalı.
+    // Ham `isActive` ile kullanıcı, elinden çıkardığı bir hisseyi takip
+    // listesine EKLEYEMİYORDU — satır "zaten portföyünde" diye pasifti.
+    final owned =
+        aktifLotlar(ref.watch(portfolioProvider).valueOrNull?.assets ?? const []);
     final ownedKeys = <String>{
       for (final a in owned)
-        if (a.isActive)
-          '${a.type.name}|${(a.subCategory?.trim().isNotEmpty ?? false) ? 'sub:${a.subCategory!.trim().toUpperCase()}' : a.ticker.trim().toUpperCase()}',
+        '${a.type.name}|${(a.subCategory?.trim().isNotEmpty ?? false) ? 'sub:${a.subCategory!.trim().toUpperCase()}' : a.ticker.trim().toUpperCase()}',
     };
 
     final results = _results;

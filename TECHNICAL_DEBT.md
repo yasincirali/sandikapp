@@ -9,7 +9,36 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
-## 🟡 AÇIK — Net miktarı 0'a düşmüş varlık ham listede yaşamaya devam ediyor
+## 🟢 BÜYÜK ÖLÇÜDE KAPANDI — Net miktarı 0'a düşmüş varlık ham listede yaşamaya devam ediyor
+
+**Kapanış:** 2026-09-12 · `aktifLotlar(...)` ortak yardımcısı eklendi
+(`lib/models/position.dart`) ve doğrulanmış sızıntılar ona bağlandı:
+
+| Yer | Belirti |
+|---|---|
+| `price_alerts_screen` | Satılmış hisse hâlâ alarm adayıydı (borç kaydında "doğrulanmadı" notu vardı — DOĞRULANDI) |
+| `add_watchlist_screen` | Satılmış hisse "zaten portföyünde" diye takip listesine EKLENEMİYORDU |
+| `performance_screen` | Satılmış varlık karşılaştırma listesinde çıkıyordu |
+
+**Yöntem — `deletedAt` DEĞİL, okuma tarafı.** Kullanıcı önce soft-delete
+istedi; borç kaydındaki uyarı gösterildikten sonra okuma tarafı seçildi.
+Kapanmışlık DB'ye YAZILMIYOR, `aggregatePositions` üzerinden okuma anında
+türetiliyor. Alım lot'una `deletedAt` basmak `isActive`'i false yapar ve
+satıştan önceki dönem grafikten + periyot hesaplarından kaybolurdu.
+
+`aktifLotlar_test.dart` bu değişmezi ayrıca kilitliyor: kapanmış
+pozisyonun lot'ları silinmez ve `deletedAt` null kalır. Sabotajla
+doğrulandı — `deletedAt` ile çözmeye çalışan sürüm testi kırıyor.
+
+**Kalan:** sistematik denetim yapılmadı. `.assets` gezen 28 çağrı
+yerinin tamamı tek tek incelenmedi; yalnızca "bugünkü mülkiyet" soran
+üç sızıntı düzeltildi. Geçmiş soran yerler (hareket listesi,
+`HistoryService`, dönem hesapları) ham defteri kullanmaya DEVAM
+ETMELİ — oralarda ham liste doğru olandır.
+
+---
+
+## (eski kayıt) Net miktarı 0'a düşmüş varlık ham listede yaşamaya devam ediyor
 
 **Karar tarihi:** 2026-09-11 · Kullanıcı bildirimi (TestFlight)
 
@@ -214,7 +243,25 @@ supabase/tests/` yeşilken. `_shared/fcm.ts` API'si hazır bekliyor.
 
 ---
 
-## 🟡 AÇIK — Birim etiketi iki yerde, ikisi AYRIŞMIŞ
+## ✅ KAPANDI — Birim etiketi iki yerde, ikisi AYRIŞMIŞ
+
+**Kapanış:** 2026-09-12 · Etiket mantığı `birimEtiketi(...)` saf
+fonksiyonuna çıkarıldı (`lib/models/asset.dart`). `Asset.unitLabel` ve
+`bulk_add_asset_screen._unitLabel()` artık ikisi de onu çağırıyor;
+yerel kopya silindi.
+
+Öngörüldüğü gibi `BulkCartItem`'ı değiştirmek gerekmedi — gereken üç
+alan (`type`, `unitType`, `currency`) zaten vardı; eski kopya yalnızca
+`unitType`'a bakıp `type`'ı hiç sormadığı için ayrışıyordu.
+
+Test: `birim_etiketi_tekil_kaynak_test.dart` (14 test) — 10 tür/birim
+kombinasyonunda sepet ile kayıtlı varlığın AYNI etiketi verdiğini
+doğruluyor, ayrıca yerel `switch`'in geri gelmesini yasaklıyor.
+Sabotajla doğrulandı.
+
+---
+
+## (eski kayıt) Birim etiketi iki yerde, ikisi AYRIŞMIŞ
 
 **Karar tarihi:** 2026-09-10
 

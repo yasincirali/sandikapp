@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../models/asset.dart' show birimEtiketi;
 import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
@@ -393,22 +394,16 @@ class _BulkItemTile extends StatelessWidget {
   /// hisse/fon "adet" derken model "lot" diyor. Bu ekran `Asset` değil
   /// `BulkCartItem` tuttuğu için ortak getter doğrudan çağrılamıyor.
   /// Birleştirme TECHNICAL_DEBT.md'ye yazıldı (2026-09-10).
-  String _unitLabel() {
-    switch (item.unitType) {
-      case 'gram':
-        return 'gr';
-      case 'ounce':
-        return 'oz';
-      case 'kilogram':
-        return 'kg';
-      case 'liter':
-        return 'lt';
-      case 'barrel':
-        return 'bbl';
-      default:
-        return 'adet';
-    }
-  }
+  /// Ortak kaynak (`models/asset.dart`).
+  ///
+  /// Buradaki eski kopya `type`'a hiç bakmıyordu: hisse ve fon `default`
+  /// dalına düşüp **"adet"** yazıyordu, aynı varlık kaydedildikten sonra
+  /// **"lot"** görünüyordu. Kopya silindi; ayrışma böyle başlamıştı.
+  String _unitLabel() => birimEtiketi(
+        type: item.type,
+        unitType: item.unitType,
+        currency: item.currency,
+      );
 
   @override
   Widget build(BuildContext context) {

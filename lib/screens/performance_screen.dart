@@ -1398,7 +1398,9 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
 
   void _openComparePicker() {
     final pState = ref.read(portfolioProvider).valueOrNull;
-    final all = pState?.assets ?? const <Asset>[];
+    // `aktifLotlar`: tamamen satılmış pozisyon karşılaştırma listesinde
+    // çıkmamalı — kullanıcı artık tutmadığı bir varlıkla kıyas kuramaz.
+    final all = aktifLotlar(pState?.assets ?? const <Asset>[]);
     // Aynı ticker hariç — kendisiyle karşılaştırma yok. Aynı ticker'ın
     // birden fazla lot'u olabilir (birden çok alım); ticker bazlı dedup.
     final seen = <String>{};

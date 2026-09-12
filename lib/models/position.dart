@@ -237,6 +237,51 @@ double ownerScopedTotalValue(
 ///
 /// - Sıralama: en yüksek totalValue (TRY) DESC — home ekranı için makul.
 ///   Farklı sıralama isteyen çağıran kendisi sıralar.
+/// Kullanıcının BUGÜN gerçekten tuttuğu lot'lar.
+///
+/// ## Neden gerekli
+/// `assets` bir LOT DEFTERİDİR: tamamen satılan bir pozisyonun alım satırı
+/// silinmez, yanına `sell` satırı yazılır. İkisi de `isActive` olduğu için
+/// ham listeyi gezen her yer bunları "varlık var" sayıyordu — kullanıcı o
+/// hisseden hiç tutmadığı hâlde fiyat alarmı adayı, tür çipi ve dağılım
+/// satırı olarak görünüyordu (kullanıcı bildirimi, TestFlight 2026-09-11).
+///
+/// ## `deletedAt` ile KARIŞTIRILMAMALI — ikisi ayrı kavram
+///   * `deletedAt`  → kullanıcı o lot'u SİLDİ. Geçmişte durur, hiçbir
+///     hesaba girmez. [Asset.isActive] bunu zaten eliyor.
+///   * kapanmış pozisyon → lot'lar duruyor ve GEÇERLİ; yalnızca net miktar
+///     0. Geçmiş grafiği bu satırlardan kuruluyor.
+///
+/// Kapanmış pozisyona `deletedAt` basmak ikisini birleştirirdi ve
+/// **satıştan önceki dönem grafikten silinirdi** — satılmış varlık hiç
+/// alınmamış gibi görünürdü. Bu yüzden kapanmışlık DB'ye yazılmıyor,
+/// okuma anında türetiliyor.
+///
+/// ## Nerede kullanılır
+/// "Kullanıcı bundan tutuyor mu?" sorusunun sorulduğu her yerde: ön yüz
+/// listeleri, dağılım, fiyat alarmı adayları, bildirim hedefleri.
+/// **Kullanılmayacağı yer:** hareket geçmişi, `HistoryService` ve tüm
+/// dönem hesapları — oralarda ham defter DOĞRU olandır.
+List<Asset> aktifLotlar(Iterable<Asset> assets) {
+  final acikAnahtarlar = <String>{
+    for (final p in aggregatePositions(assets.toList())) p.key,
+  };
+  return [
+    for (final a in assets)
+      if (a.isActive && acikAnahtarlar.contains(positionKey(a))) a,
+  ];
+}
+
+/// Ön yüzde gösterilecek pozisyonlar — her biri tek satır.
+///
+/// `aggregatePositions` + `asDisplayAsset` bileşimi birden çok ekranda
+/// elle tekrarlanıyordu; biri güncellenip diğeri kalınca aynı portföy iki
+/// ekranda farklı görünüyordu.
+List<Asset> gosterilecekVarliklar(Iterable<Asset> assets) =>
+    aggregatePositions(assets.toList())
+        .map((p) => p.asDisplayAsset())
+        .toList();
+
 List<Position> aggregatePositions(List<Asset> assets) {
   final map = <String, List<Asset>>{};
   for (final a in assets) {

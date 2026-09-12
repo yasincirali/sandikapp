@@ -158,10 +158,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // deleteLog skip edilir, totalQty <= 0 pozisyonlar liste dışı kalır.
     // Aynı aggregate'i burada da uyguluyoruz ve `asDisplayAsset()` ile
     // downstream widget'ların beklediği Asset formatına çeviriyoruz.
-    List<Asset> positionedAssets(Iterable<Asset> raw) =>
-        aggregatePositions(raw.toList())
-            .map((p) => p.asDisplayAsset())
-            .toList();
+    // Ortak yardımcı (`models/position.dart`). Aynı bileşim birkaç ekranda
+    // elle tekrarlanıyordu; biri güncellenip diğeri kalınca aynı portföy
+    // iki ekranda farklı görünüyordu.
+    const positionedAssets = gosterilecekVarliklar;
 
     final List<Asset> displayedAssets;
     if (_view == '') {
