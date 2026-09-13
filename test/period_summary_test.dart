@@ -880,6 +880,75 @@ void main() {
   });
 
   // ══════════════════════════════════════════════════════════════════════
+  // Dönem eğrisi — 1Y "yıl eğrisi" bloğunun beslendiği seri
+  // ══════════════════════════════════════════════════════════════════════
+  group('dönem eğrisi', () {
+    test('non-intraday dönemde sparkline DOLU gelir', () {
+      // REGRESYON: `sparkline` yalnızca GÜNLÜK dalında doldurulduğu için
+      // 1Y'nin "yıl eğrisi" bloğu ÖLÜ KODDU — kart
+      // `sparkline.length >= 2` kapısının arkasındaydı ve dizi her zaman
+      // boştu. Hata vermiyordu, sadece hiç görünmüyordu.
+      final now = DateTime(2026, 9, 13, 15);
+      final total = _gunluk(
+        bas: DateTime(2025, 9, 13),
+        gunSayisi: 60,
+        deger: (i) => 100000.0 + i * 500,
+      );
+
+      final s = PeriodSummaryService.compute(
+        period: SummaryPeriod.birYil,
+        assets: const [],
+        breakdown: _bd(total),
+        now: now,
+      );
+
+      expect(s.sparkline.length, greaterThanOrEqualTo(2),
+          reason: 'yıl eğrisi bu seriden çiziliyor — boşsa blok hiç '
+              'görünmez');
+      expect(s.sparkline.first, 100000.0);
+      expect(s.sparkline.last, greaterThan(s.sparkline.first));
+    });
+
+    test('y<=0 slotlar atlanır — eğri sıfırdan zıplamaz', () {
+      final seri = {
+        DateTime(2026, 9, 1).millisecondsSinceEpoch: 0.0,
+        DateTime(2026, 9, 2).millisecondsSinceEpoch: 0.0,
+        DateTime(2026, 9, 3).millisecondsSinceEpoch: 5000.0,
+        DateTime(2026, 9, 4).millisecondsSinceEpoch: 5200.0,
+      };
+      final out = PeriodSummaryService.donemSerisi(
+        seri,
+        fromMs: DateTime(2026, 8, 1).millisecondsSinceEpoch,
+        toMs: DateTime(2026, 9, 30).millisecondsSinceEpoch,
+      );
+      expect(out, [5000.0, 5200.0]);
+    });
+
+    test('pencere DIŞI slotlar girmez', () {
+      final seri = {
+        DateTime(2026, 1, 1).millisecondsSinceEpoch: 1000.0,
+        DateTime(2026, 9, 3).millisecondsSinceEpoch: 5000.0,
+        DateTime(2026, 9, 4).millisecondsSinceEpoch: 5200.0,
+      };
+      final out = PeriodSummaryService.donemSerisi(
+        seri,
+        fromMs: DateTime(2026, 9, 1).millisecondsSinceEpoch,
+        toMs: DateTime(2026, 9, 30).millisecondsSinceEpoch,
+      );
+      expect(out, [5000.0, 5200.0]);
+    });
+
+    test('tek nokta eğri DEĞİLDİR — boş döner', () {
+      final out = PeriodSummaryService.donemSerisi(
+        {DateTime(2026, 9, 3).millisecondsSinceEpoch: 5000.0},
+        fromMs: DateTime(2026, 9, 1).millisecondsSinceEpoch,
+        toMs: DateTime(2026, 9, 30).millisecondsSinceEpoch,
+      );
+      expect(out, isEmpty, reason: 'tek noktalı bir "çizgi" yanıltıcıdır');
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════════
   // Paylaşım metni — TUTAR İÇERMEZ kuralı ikinci çağıranda da geçerli
   // ══════════════════════════════════════════════════════════════════════
   group('paylaşım metni', () {

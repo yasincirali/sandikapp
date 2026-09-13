@@ -490,7 +490,42 @@ class PeriodSummaryService {
       dagilimBasi: _dagilim(breakdown.byType, u.firstTs),
       dagilimSonu: _dagilim(breakdown.byType, u.lastTs),
       gunSayimi: gunSayimi(breakdown.total, fromMs: fromMs, toMs: toMs),
+      sparkline: donemSerisi(breakdown.total, fromMs: fromMs, toMs: toMs),
     );
+  }
+
+  /// Dönem penceresine düşen HAM (TRY) değer serisi — eğri çizimi için.
+  ///
+  /// 1Y bloğundaki "yıl eğrisi" bunu kullanıyor. Daha önce yalnızca GÜNLÜK
+  /// dalı `sparkline`'ı dolduruyordu, dolayısıyla o blok ÖLÜ KODDU: kart
+  /// `sparkline.length >= 2` kapısının arkasındaydı ve dizi her zaman
+  /// boştu, yani hiç çizilmiyordu (sessiz eksik — hata vermiyor,
+  /// görünmüyor).
+  ///
+  /// `y <= 0` slotlar atlanır: veri başlamadan önceki boş slotlar bırakılsa
+  /// eğri sıfırdan zıplayarak başlar ve gerçek hareket düzleşir. Aynı kural
+  /// `DailySummary.dayValues` ve [uclar] içinde de var.
+  ///
+  /// Normalize EDİLMEZ — çizim tarafı `DailySummary.normalizeForSparkline`
+  /// ile ölçekliyor ve o kural ortak katmanda tek yerde duruyor.
+  static List<double> donemSerisi(
+    Map<int, double> total, {
+    required int fromMs,
+    required int toMs,
+  }) {
+    if (total.isEmpty) return const [];
+    final keys = total.keys.toList()..sort();
+    final out = <double>[];
+    for (final k in keys) {
+      if (k < fromMs) continue;
+      if (k > toMs) break;
+      final v = total[k];
+      if (v == null || v <= 0) continue;
+      out.add(v);
+    }
+    // Tek noktalı bir "eğri" yanıltıcıdır; çizim tarafı da iki nokta
+    // istiyor. Boş dönmek o kapıyı kapatır.
+    return out.length < 2 ? const [] : out;
   }
 
   /// Gün içinde en çok hareket eden pozisyon.

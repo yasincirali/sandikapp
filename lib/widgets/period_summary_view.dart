@@ -121,10 +121,7 @@ class PeriodSummaryView extends StatelessWidget {
 
       case SummaryPeriod.birAy:
         if (summary.tufeFarki != null) {
-          bloklar.add(_TufeKarti(
-            fark: summary.tufeFarki!,
-            getiriPct: summary.getiriPct,
-          ));
+          bloklar.add(_TufeKarti(fark: summary.tufeFarki!));
         }
         if (summary.dagilimBasi != null && summary.dagilimSonu != null) {
           bloklar.add(_DagilimKarti(
@@ -150,10 +147,7 @@ class PeriodSummaryView extends StatelessWidget {
 
       case SummaryPeriod.birYil:
         if (summary.tufeFarki != null) {
-          bloklar.add(_ReelGetiriKarti(
-            fark: summary.tufeFarki!,
-            getiriPct: summary.getiriPct,
-          ));
+          bloklar.add(_ReelGetiriKarti(fark: summary.tufeFarki!));
         }
         if (karakter != null) {
           bloklar.add(_KarakterKarti(karakter: karakter!));
@@ -677,9 +671,8 @@ class _GunSayimiKarti extends StatelessWidget {
 /// TÜFE farkı — 1A bloğu.
 class _TufeKarti extends StatelessWidget {
   final double fark;
-  final double? getiriPct;
 
-  const _TufeKarti({required this.fark, this.getiriPct});
+  const _TufeKarti({required this.fark});
 
   @override
   Widget build(BuildContext context) {
@@ -716,9 +709,8 @@ class _TufeKarti extends StatelessWidget {
 /// Reel getiri — 1Y bloğu (bileşik, puan farkından ayrı).
 class _ReelGetiriKarti extends StatelessWidget {
   final double fark;
-  final double? getiriPct;
 
-  const _ReelGetiriKarti({required this.fark, this.getiriPct});
+  const _ReelGetiriKarti({required this.fark});
 
   @override
   Widget build(BuildContext context) {
