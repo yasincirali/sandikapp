@@ -3,7 +3,7 @@ import '../models/asset_type.dart';
 import '../models/position.dart' show positionKey;
 import 'daily_summary.dart';
 import 'history_service.dart';
-import 'recap_service.dart' show RecapAsset;
+import 'recap_service.dart' show PortfolioCharacter, RecapAsset, RecapService;
 
 /// Özet sekmesinin dönemleri.
 ///
@@ -527,14 +527,20 @@ class PeriodSummaryService {
   ///
   /// Öneri/eylem dili de YOK (§9 SPK): durum bildirilir, eylem önerilmez.
   /// [uzunDonemPct] yoksa yalnızca nötr durum cümlesi döner.
+  /// Dönemin cümle içinde kullanılan adı ("Bu ay", "Bu yıl").
+  ///
+  /// Hem ton cümlesi hem paylaşım başlığı buradan okur — iki yerde ayrı
+  /// yazılsa biri güncellenip öteki kalırdı.
+  static String donemAdi(SummaryPeriod p) => switch (p) {
+        SummaryPeriod.gunluk => 'Bugün',
+        SummaryPeriod.birHafta => 'Bu hafta',
+        SummaryPeriod.birAy => 'Bu ay',
+        SummaryPeriod.altiAy => 'Bu altı ay',
+        SummaryPeriod.birYil => 'Bu yıl',
+      };
+
   static String tonCumlesi(PeriodSummary s, {double? uzunDonemPct}) {
-    final ad = switch (s.period) {
-      SummaryPeriod.gunluk => 'Bugün',
-      SummaryPeriod.birHafta => 'Bu hafta',
-      SummaryPeriod.birAy => 'Bu ay',
-      SummaryPeriod.altiAy => 'Bu altı ay',
-      SummaryPeriod.birYil => 'Bu yıl',
-    };
+    final ad = donemAdi(s.period);
 
     if (s.isFlat) return '$ad piyasa hareketi yok.';
 
@@ -551,5 +557,41 @@ class PeriodSummaryService {
       return '$ad artıda. Daha uzun pencerede −%$v.';
     }
     return '$ad artıda.';
+  }
+
+  /// Dönem özetinin paylaşım metni.
+  ///
+  /// `RecapService.composeShareText`'e DELEGE eder — metnin biçimi ve
+  /// **TUTAR İÇERMEME** kuralı tek yerde durur. İkinci bir metin kurucusu
+  /// yazmak o kuralın ikinci bir kopyasını doğurur ve biri güncellenip
+  /// öteki kalırdı (`TECHNICAL_DEBT.md`'de bu yüzden ertelenmişti).
+  ///
+  /// **Başlıkta TARİH ARALIĞI yok — bilinçli.** "14 Ağu → 13 Eyl" gibi bir
+  /// aralık hem gereksiz (dönem adı zaten söylüyor) hem de riskli: yıl
+  /// içeren dört haneli sayılar paylaşılan metinde TUTAR gibi okunur.
+  /// `recap_service_test`'in "dört haneli sayı tutar demektir" iddiası da
+  /// tam olarak bunu kovalıyor.
+  ///
+  /// Yüzde SAF PİYASA getirisidir ([PeriodSummary.getiriPct]), portföy
+  /// değeri değişimi değil — etiket de bunu söylüyor. Katkının şişirdiği
+  /// bir rakamı "getirim" diye paylaşmak, ekranın tüm mesajını tersine
+  /// çevirirdi.
+  ///
+  /// Ölçülebilir bir yüzde yoksa `null` döner ve çağıran taraf paylaşım
+  /// butonunu HİÇ göstermez: içinde tek bir sayı olmayan bir kart
+  /// paylaşılmaz.
+  static String? shareText(
+    PeriodSummary s, {
+    PortfolioCharacter? karakter,
+  }) {
+    if (s.getiriPct == null) return null;
+
+    return RecapService.composeShareText(
+      baslik: 'sandık · ${donemAdi(s.period)}',
+      karakter: karakter,
+      degisimPct: s.getiriPct,
+      degisimEtiketi: 'Piyasa getirim',
+      enflasyonPuan: s.tufeFarki,
+    );
   }
 }

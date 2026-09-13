@@ -5,6 +5,7 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
+import 'package:portfoy_takip/services/recap_service.dart';
 
 /// Dönem Özeti — katkı/piyasa ayrımının kilidi.
 ///
@@ -875,6 +876,103 @@ void main() {
           DateTime(2026, 9, 10, 23, 59, 59),
         ),
       );
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Paylaşım metni — TUTAR İÇERMEZ kuralı ikinci çağıranda da geçerli
+  // ══════════════════════════════════════════════════════════════════════
+  group('paylaşım metni', () {
+    PeriodSummary ozet({
+      SummaryPeriod period = SummaryPeriod.birAy,
+      double? pct = 2.72,
+      double? tufe,
+    }) =>
+        PeriodSummary(
+          period: period,
+          start: DateTime(2026, 8, 14),
+          end: DateTime(2026, 9, 13),
+          // Bilerek BÜYÜK tutarlar: metne sızarlarsa test yakalar.
+          baslangicTRY: 2489186,
+          sonTRY: 2685684,
+          katkiTRY: 120000,
+          piyasaTRY: 76498,
+          getiriPct: pct,
+          tufeFarki: tufe,
+        );
+
+    test('TUTAR İÇERMEZ — dört haneli sayı yok', () {
+      // `recap_service_test`'teki aynı iddia, ikinci çağıran için.
+      // Tutarlı bir kart paylaşılmaz; tutarsız kart paylaşılır.
+      final metin = PeriodSummaryService.shareText(ozet(tufe: 6.4))!;
+
+      expect(metin.contains('₺'), isFalse);
+      expect(metin.contains('2489186'), isFalse);
+      expect(metin.contains('2.489'), isFalse);
+      expect(metin.contains('120'), isFalse);
+      expect(RegExp(r'\d{4,}').hasMatch(metin), isFalse,
+          reason: 'dört haneli sayı tutar demektir — başlıkta tarih '
+              'aralığı da bu yüzden YOK');
+    });
+
+    test('yüzde SAF PİYASA getirisi olarak etiketlenir', () {
+      final metin = PeriodSummaryService.shareText(ozet())!;
+      expect(metin.contains('Piyasa getirim: +%2,7'), isTrue,
+          reason: 'katkının şişirdiği rakamı "getirim" diye paylaşmak '
+              'ekranın tüm mesajını tersine çevirirdi');
+    });
+
+    test('dönem adı başlıkta geçer', () {
+      expect(PeriodSummaryService.shareText(ozet())!.contains('Bu ay'), isTrue);
+      expect(
+        PeriodSummaryService.shareText(ozet(period: SummaryPeriod.birYil))!
+            .contains('Bu yıl'),
+        isTrue,
+      );
+    });
+
+    test('ölçülebilir yüzde yoksa null — buton çizilmez', () {
+      expect(PeriodSummaryService.shareText(ozet(pct: null)), isNull,
+          reason: 'içinde tek bir sayı olmayan kart paylaşılmaz');
+    });
+
+    test('kayıp döneminde işaret − ve kutlama dili yok', () {
+      final metin = PeriodSummaryService.shareText(ozet(pct: -11.5))!;
+      expect(metin.contains('−%11,5'), isTrue);
+      for (final k in ['Tebrikler', 'Harika', '🎉', '🔥', 'Devam']) {
+        expect(metin.contains(k), isFalse, reason: '"$k" paylaşımda olmamalı');
+      }
+    });
+
+    test('TÜFE yoksa o satır hiç yazılmaz', () {
+      final metin = PeriodSummaryService.shareText(ozet())!;
+      expect(metin.contains('Enflasyonun'), isFalse);
+      final ileTufe = PeriodSummaryService.shareText(ozet(tufe: 6.4))!;
+      expect(ileTufe.contains('Enflasyonun 6,4 puan önündeyim'), isTrue);
+    });
+
+    test('karakter verilirse etiketi geçer, verilmezse satır yok', () {
+      expect(
+        PeriodSummaryService.shareText(ozet(),
+                karakter: PortfolioCharacter.altinci)!
+            .contains('Altıncı'),
+        isTrue,
+      );
+      expect(PeriodSummaryService.shareText(ozet())!.contains('—'), isFalse,
+          reason: 'karakter yoksa tagline ayıracı da olmamalı');
+    });
+
+    test('composeShareText TRY alanı KABUL ETMEZ', () {
+      // Yapısal koruma: imzada tutar taşıyan parametre yok, dolayısıyla
+      // çağıran taraf yanlışlıkla tutar geçemiyor. Bu test o imzanın
+      // genişletilmediğini kilitler.
+      final metin = RecapService.composeShareText(
+        baslik: 'sandık · Bu ay',
+        degisimPct: 2.72,
+      );
+      expect(metin.startsWith('sandık · Bu ay'), isTrue);
+      expect(metin.endsWith('sandık ile takip ediyorum'), isTrue);
+      expect(RegExp(r'\d{4,}').hasMatch(metin), isFalse);
     });
   });
 }

@@ -186,8 +186,7 @@ class RecapService {
 
     // ── Dönem uçları ────────────────────────────────────────────────────
     final sirali = [...snapshots]..sort((a, b) => a.ts.compareTo(b.ts));
-    final basTotal =
-        sirali.isEmpty ? null : snapshotTotal(sirali.first.values);
+    final basTotal = sirali.isEmpty ? null : snapshotTotal(sirali.first.values);
     final sonTotal = sirali.isEmpty ? null : snapshotTotal(sirali.last.values);
     double? degisim;
     if (basTotal != null && sonTotal != null && basTotal > 0) {
@@ -202,8 +201,8 @@ class RecapService {
     RecapAsset? enIyi;
     RecapAsset? enKotu;
     if (olculebilir.isNotEmpty) {
-      final sirali2 = [...olculebilir]..sort(
-          (a, b) => a.gainLossPercentage.compareTo(b.gainLossPercentage));
+      final sirali2 = [...olculebilir]
+        ..sort((a, b) => a.gainLossPercentage.compareTo(b.gainLossPercentage));
       final ilk = sirali2.first;
       final son = sirali2.last;
       if (son.gainLossPercentage > 0) {
@@ -241,33 +240,73 @@ class RecapService {
     );
   }
 
-  /// Paylaşım metni.
+  /// Bir yüzdeyi paylaşım metninde kullanılacak biçime getirir.
   ///
-  /// **TUTAR YOKTUR.** Yüzde ve etiket yeter: tutarlı bir kart paylaşılmaz,
-  /// tutarsız kart paylaşılır. Paylaşılabilirlik özelliğin tek amacı.
-  static String shareText(RecapData d, {required int year}) {
-    final satirlar = <String>[
-      'sandık Özetim $year',
-      '',
-      '${d.character.label} — ${d.character.tagline}',
-    ];
-    if (d.changePct != null) {
-      final yon = d.changePct! >= 0 ? '+' : '−';
-      satirlar.add(
-          'Portföy değişimi: $yon%${d.changePct!.abs().toStringAsFixed(1).replaceAll('.', ',')}');
+  /// Virgüllü ve tek ondalıklı: "12,4". Türkçe ondalık ayırıcı virgüldür ve
+  /// paylaşılan metin ekran görüntüsü gibi okunuyor.
+  static String _yuzde(double v) =>
+      v.abs().toStringAsFixed(1).replaceAll('.', ',');
+
+  /// Paylaşım metninin ÇEKİRDEĞİ — tek kaynak.
+  ///
+  /// ## Neden skaler parametreler, neden ortak bir arayüz değil
+  /// İki çağıran var ve veri şekilleri örtüşmüyor: [RecapData] `character`'ı
+  /// ZORUNLU taşıyor ve `trackedDays` var; `PeriodSummary`'de karakter ayrı
+  /// bir parametre olarak geliyor (ekranda öyle) ve takip günü kavramı yok.
+  /// İkisine ortak bir taban sınıf ya da arayüz uydurmak, yalnızca bu metin
+  /// için var olan yapay bir hiyerarşi üretirdi. Çıkarılmış skalerler
+  /// almak ikisini de sadeleştiriyor.
+  ///
+  /// ## TUTAR YOKTUR — pazarlıksız
+  /// Yüzde ve etiket yeter: **tutarlı bir kart paylaşılmaz, tutarsız kart
+  /// paylaşılır.** Paylaşılabilirlik bu özelliğin tek amacı, dolayısıyla
+  /// kuralın da tek bekçisi bu fonksiyon. Bu yüzden imza TRY taşıyan hiçbir
+  /// alan KABUL ETMİYOR — çağıran taraf yanlışlıkla tutar geçemiyor.
+  /// (`recap_service_test` bunu ayrıca kovalıyor: `₺` yok ve yıl dışında
+  /// dört haneli sayı yok.)
+  ///
+  /// [baslik] "sandık Özetim 2026" ya da "sandık · Bu ay" gibi tek satır.
+  /// Yıl DIŞINDA dört haneli sayı içermemeli, yoksa tutar sanılır.
+  static String composeShareText({
+    required String baslik,
+    PortfolioCharacter? karakter,
+    double? degisimPct,
+    String degisimEtiketi = 'Portföy değişimi',
+    double? enflasyonPuan,
+    int? takipGunu,
+  }) {
+    final satirlar = <String>[baslik, ''];
+
+    if (karakter != null) {
+      satirlar.add('${karakter.label} — ${karakter.tagline}');
     }
-    if (d.inflationSpread != null) {
-      final s = d.inflationSpread!;
-      satirlar.add(s >= 0
-          ? 'Enflasyonun ${s.toStringAsFixed(1).replaceAll('.', ',')} puan önündeyim'
-          : 'Enflasyonun ${s.abs().toStringAsFixed(1).replaceAll('.', ',')} puan gerisindeyim');
+    if (degisimPct != null) {
+      final yon = degisimPct >= 0 ? '+' : '−';
+      satirlar.add('$degisimEtiketi: $yon%${_yuzde(degisimPct)}');
     }
-    if (d.trackedDays > 0) {
-      satirlar.add('${d.trackedDays} gün takip ettim');
+    if (enflasyonPuan != null) {
+      satirlar.add(enflasyonPuan >= 0
+          ? 'Enflasyonun ${_yuzde(enflasyonPuan)} puan önündeyim'
+          : 'Enflasyonun ${_yuzde(enflasyonPuan)} puan gerisindeyim');
     }
+    if (takipGunu != null && takipGunu > 0) {
+      satirlar.add('$takipGunu gün takip ettim');
+    }
+
     satirlar
       ..add('')
       ..add('sandık ile takip ediyorum');
     return satirlar.join('\n');
   }
+
+  /// Yıllık özetin paylaşım metni.
+  ///
+  /// [composeShareText]'e delege eder; biçim kuralları orada.
+  static String shareText(RecapData d, {required int year}) => composeShareText(
+        baslik: 'sandık Özetim $year',
+        karakter: d.character,
+        degisimPct: d.changePct,
+        enflasyonPuan: d.inflationSpread,
+        takipGunu: d.trackedDays,
+      );
 }

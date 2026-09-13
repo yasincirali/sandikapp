@@ -5,6 +5,7 @@ import 'package:flutter/material.dart'
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
@@ -4180,14 +4181,36 @@ class _OzetYanVeriState extends State<_OzetYanVeri> {
     final tufe = (_enflasyon != null && s.getiriPct != null)
         ? InflationService.spreadPoints(s.getiriPct!, _enflasyon!)
         : null;
+    final gosterilen = tufe == null ? s : _tufeIle(s, tufe);
+
+    // Paylaşım metni ENFLASYON BAĞLANDIKTAN SONRAKİ özetten üretilir:
+    // `gosterilen` yerine `s` verilirse "enflasyonun X puan önündeyim"
+    // satırı metne hiç girmez.
+    //
+    // Metin null ise (ölçülebilir yüzde yok) buton HİÇ çizilmez: içinde tek
+    // bir sayı olmayan bir kart paylaşılmaz.
+    final paylasimMetni = PeriodSummaryService.shareText(
+      gosterilen,
+      karakter: widget.karakter,
+    );
 
     return PeriodSummaryView(
-      summary: tufe == null ? s : _tufeIle(s, tufe),
+      summary: gosterilen,
       uzunDonemPct: widget.period == SummaryPeriod.birYil ? null : _uzunDonem,
       karakter: widget.karakter,
       enSabirli: widget.enSabirli,
       enSabirliGun: widget.enSabirliGun,
+      onShare: paylasimMetni == null ? null : () => _paylas(paylasimMetni),
     );
+  }
+
+  Future<void> _paylas(String metin) async {
+    AnalyticsService.instance.logRecapShared(
+      period: widget.period.name,
+      channel: 'system_sheet',
+    );
+    await Share.share(metin,
+        subject: 'sandık · ${PeriodSummaryService.donemAdi(widget.period)}');
   }
 
   /// Özetin TÜFE alanı doldurulmuş kopyası.
