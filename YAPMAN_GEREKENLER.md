@@ -91,8 +91,94 @@ olduğunu bilmen için:
 bağlı** — 1H sekmesi hiç açılmıyorsa haftalık push'un gönderilecek bir
 karşılığı yok demektir.
 
-Migration yok, vault sırrı yok, edge function yok. Faz 2'de (haftalık
-push) bunların hepsi gelecek; o zaman buraya yeni bir madde düşülecek.
+Migration yok, vault sırrı yok, edge function yok. Faz 2 (haftalık push)
+2026-09-14'te geldi — aşağıdaki maddeye bak.
+
+---
+
+## 🚨 BEKLEYEN DEPLOY: haftalık özet push'u — Faz 2 (2026-09-14)
+
+Kod tarafı tamam; **üç adım elden yapılmadan hiçbir bildirim gitmez** ve
+hata SESSİZ olur (tetikleyici `raise exception` der ama bunu yalnızca cron
+günlüğünde görürsün). Bu repoda en sık atlanan adım 3.
+
+```bash
+# 1) Fonksiyonu dağıt
+supabase functions deploy weekly-summary
+
+# 2) Secret'ı ver (FCM ikilisi daily-brief'takiyle aynı, dokunma)
+supabase secrets set WEEKLY_SUMMARY_CRON_SECRET="<rastgele-uzun-string>"
+
+# 3) ⬜ KALDI — Vault'a AYNI string'i yaz
+#    Supabase Dashboard → Vault → name: weekly_summary_cron_secret
+#    ⚠️ 2. ve 3. adımdaki string BİREBİR aynı olmalı, yoksa 401 döner.
+
+# 4) Migration
+supabase db push   # ya da SQL Editor → 0052_weekly_summary.sql
+```
+
+**Migration ne yapıyor:** `weekly_summary_log` defteri,
+`profiles.weekly_summary_push` kolonu, `trigger_weekly_summary()`,
+cron (`45 6 * * 1` = Pazartesi TR 09:45) ve **`daily-brief`'i `1-5` → `2-5`
+daraltma**. Sonunda kendi sonucunu doğruluyor: cron kurulmadıysa ya da
+brifing susturulamadıysa YÜKSEK SESLE patlıyor (sessizce uygulanmamış bir
+cron, "çalıştığı sanılan ama çalışmayan" en pahalı hata sınıfı).
+
+### Kuru koşu (kimseye bildirim gitmez)
+
+```bash
+curl -X POST "https://<proje>.supabase.co/functions/v1/weekly-summary" \
+  -H "Authorization: Bearer $WEEKLY_SUMMARY_CRON_SECRET" \
+  -H "Content-Type: application/json" -d '{"dry_run": true}'
+```
+
+Dönen alanlar ve **ne anlama geldikleri**:
+
+| Alan | Anlamı |
+|---|---|
+| `sent` | gidecek bildirim |
+| `skipped_flow` | hafta içinde alım/satım yaptığı için elenen — **en önemlisi** |
+| `skipped_coverage` | uçları pencere kenarına 48 saatten uzak olan |
+| `skipped_quiet` | eşiğin (%2) altında kalan |
+| `skipped_opt_out` | `weekly_summary_push = false` |
+
+### ⚠️ `sent: 0` görmek muhtemelen NORMAL
+
+Kendi hesabınla test ederken büyük olasılıkla `skipped_flow` ya da
+`skipped_coverage` altında elenirsin:
+
+- **`skipped_flow`** — hafta içinde alım/satım yaptıysan push GİTMEZ. Bu
+  bilinçli bir karar: `snapshots` brüt değer tutuyor, para girişi
+  ayıklanmıyor ve "+%30 kazandın" gibi yanlış bir rakam göndermek hiç
+  göndermemekten kötü. Ayrıntı: `supabase/functions/weekly-summary/README.md`.
+- **`skipped_coverage`** — `snapshots` yalnızca uygulamayı açtığında
+  yazılıyor. Hafta başında ve sonunda (48 saat içinde) birer snapshot
+  yoksa yüzde eksik bir pencereyi anlatırdı.
+
+Zorla bir gönderim görmek istersen: temiz bir hafta (işlem yapılmamış) +
+hafta başı/sonu uygulamayı açmış olmak + `{"min_move_pct": 0}` ile kuru
+koşu.
+
+### Doğrulama sorguları
+
+```sql
+-- Cron'lar doğru kurulmuş mu? (Pazartesi ikisi birden koşmamalı)
+select jobname, schedule from cron.job
+ where jobname in ('weekly-summary', 'daily-brief', 'weekly-summary-cleanup')
+ order by jobname;
+-- beklenen: daily-brief = '45 6 * * 2-5', weekly-summary = '45 6 * * 1'
+
+-- Kime gönderilmiş?
+select sent_on, count(*) from weekly_summary_log
+ group by sent_on order by sent_on desc limit 5;
+```
+
+**Ayrıca:** Ayarlar → BİLDİRİMLER → "Haftalık özet" anahtarı eklendi
+(`profiles.weekly_summary_push`, varsayılan açık). Android'de ayrı kanal
+(`summary_channel`) — kullanıcı haftalık özeti kapatıp sabah brifingini
+açık tutabilir.
+
+Ayrıntı: `supabase/functions/weekly-summary/README.md`
 
 ---
 
