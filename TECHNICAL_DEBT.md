@@ -45,8 +45,12 @@ allowlist'inin ayrışmaması, k_min/n_max çiftinin korunması ve istemcinin
 kalması. Allowlist sessiz bir kapı — testsiz bıraksak drift fark
 edilmezdi.
 
-**Kalan (kullanıcı adımı):** migration Supabase'e KOŞULMALI, yoksa şerit
-görünmez. `YAPMAN_GEREKENLER.md`'ye yazıldı.
+**Migration koşuldu** (2026-09-13) ve canlıda üç yerin de açık olduğu
+uzak veritabanına sorguyla doğrulandı; 180 insert'inin CHECK + RLS +
+throttle trigger'ını geçtiği `rollback`'li denemeyle görüldü.
+
+Şerit hâlâ görünmüyor çünkü havuzda tek kullanıcı var (k=8 eşiği) —
+doğru davranış, ayrıntı `YAPMAN_GEREKENLER.md`'de.
 
 ---
 
