@@ -90,22 +90,31 @@ void main() {
     });
   });
 
-  group('seansGunu — çizilen gün BUGÜN mü', () {
-    test('Pazar günü CUMA döner — basamağın kapısı burada', () {
-      // Bu, hatanın kök sebebi: `dayStart` bugün değil, son seans.
-      // NAV günü de Cuma olduğu için eski kapı (navGunu == dayStart)
-      // AÇIK kalıyordu.
+  group('seansGunu — artık HER ZAMAN bugün', () {
+    // ── Kök sebep TARİHÇESİ ───────────────────────────────────────────
+    // Bu dosya yazıldığında `seansGunu` Pazar günü CUMA'yı döndürüyordu
+    // ve hatanın kök sebebi buydu: NAV günü de Cuma olduğu için eski kapı
+    // (`navGunu == dayStart`) AÇIK kalıyor, basamak Cuma 10:00'a düşüyor
+    // ve grafiğin sol ucunda uçurum olarak görünüyordu.
+    //
+    // Aynı gün ikinci bir kullanıcı kararıyla `seansGunu` "her zaman
+    // bugün"e çevrildi (bkz. `gunluk_sekmesi_bugun_test`). Bu, kök sebebi
+    // ikinci bir yerden daha kapatıyor.
+    //
+    // `!gecmisSeans` kapısı YİNE DE KALIYOR — savunma derinliği: birisi
+    // ileride `seansGunu`'nu geri alırsa basamak sessizce geri gelmesin.
+
+    test('Pazar günü BUGÜNÜ döner — kök sebep kapandı', () {
       final pazar = DateTime(2026, 9, 13, 20, 15);
       final cumaVeri = DateTime(2026, 9, 11, 18).millisecondsSinceEpoch;
       final gun = HistoryService.seansGunu(now: pazar, enSonVeriTs: cumaVeri);
 
-      expect(gun, DateTime(2026, 9, 11),
-          reason: 'Pazar günü çizilen seans Cuma olmalı');
-      expect(gun.day == pazar.day, isFalse,
-          reason: 'çizilen gün bugün DEĞİL — basamak bu yüzden gizlenmeli');
+      expect(gun, DateTime(2026, 9, 13));
+      expect(gun.day == pazar.day, isTrue,
+          reason: 'çizilen gün artık her zaman bugün');
     });
 
-    test('hafta içi BUGÜNÜ döner — basamak açık kalmalı', () {
+    test('hafta içi de BUGÜN — basamak açık kalmalı', () {
       final cuma = DateTime(2026, 9, 11, 14);
       final bugunVeri = DateTime(2026, 9, 11, 13).millisecondsSinceEpoch;
       final gun = HistoryService.seansGunu(now: cuma, enSonVeriTs: bugunVeri);

@@ -668,38 +668,47 @@ class HistoryService {
   @visibleForTesting
   static DateTime sonIsGunu(DateTime d) => _sonIsGunu(d);
 
-  /// Gün içi grafiğin ÇİZECEĞİ günün 00:00'ı.
+  /// Gün içi grafiğin ÇİZECEĞİ günün 00:00'ı — HER ZAMAN bugün.
   ///
   /// [enSonVeriTs] çekilen gün içi serilerdeki EN YENİ zaman damgası
-  /// (hiç veri yoksa `null`).
+  /// (hiç veri yoksa `null`). Artık yalnızca geriye dönük uyumluluk için
+  /// duruyor: dönüş değeri ona BAĞLI DEĞİL.
   ///
-  /// ## Neden bugün olmayabilir
-  /// Piyasa kapalıyken (hafta sonu, resmî tatil) Yahoo'nun `range=1d`
-  /// yanıtı SON SEANSA aittir. Izgara bugüne kurulursa `pastOrNull` o
-  /// seansın kapanışını bugünün 288 slotunun tamamına yayar ve grafik
-  /// DÜMDÜZ bir çizgi olur ("data alınamıyor olabilir mi, dümdüz çizgi
-  /// sebebi nedir" — kullanıcı bildirimi 2026-09-07).
-  /// Doğrusu: veri hangi güne aitse o günü çizmek; trading uygulamalarının
-  /// hafta sonunda gösterdiği şey Cuma seansıdır.
+  /// ## Neden eskiden bugün olmayabiliyordu
+  /// Piyasa kapalıyken Yahoo'nun `range=1d` yanıtı SON SEANSA aittir.
+  /// Izgara bugüne kurulunca `pastOrNull` o seansın kapanışını bugünün
+  /// 288 slotunun tamamına yayıyor ve grafik DÜMDÜZ bir çizgi oluyordu
+  /// ("data alınamıyor olabilir mi, dümdüz çizgi sebebi nedir" —
+  /// kullanıcı bildirimi 2026-09-07). Çözüm veriyi ait olduğu güne
+  /// çizmekti.
   ///
-  /// ## Neden saf fonksiyon
-  /// Hafta sonu davranışı yalnızca Cumartesi/Pazar ortaya çıkar. Karar
-  /// `getPortfolioHistoryHourlyBreakdown` içinde `DateTime.now()` ile
-  /// verildiği sürece hafta içi koşan hiçbir test o dalı çalıştıramaz —
-  /// `gridSlotlari` de aynı sebeple ayrılmıştı.
+  /// ## Neden DEĞİŞTİ (kullanıcı kararı 2026-09-13)
+  /// "Ayın 13'ünde günlük tabında 12 Eylül verisini görmemeliyim."
+  ///
+  /// O çözüm iki yeni sorun doğurmuştu:
+  ///   1. Sekme adı yalan söylüyordu — "GÜNLÜK" başka bir günü gösteriyordu.
+  ///   2. Seri son seansın son damgasında (Cuma 20:55) bitiyor, ekran ise
+  ///      ucuna CANLI toplamı ekliyordu. Aradaki saatlerde nokta yok:
+  ///      grafik düz gidip "şimdi"ye ATLIYORDU.
+  ///
+  /// Düz çizgi artık kabul edilebilir çünkü ekranda onu AÇIKLAYAN bir
+  /// rozet var (`piyasa_kapali_etiketi.dart` — "BORSA KAPALI" / "SON
+  /// VERİ"). 2026-09-07'de o rozet YOKTU; düz çizgi sessizdi ve bu yüzden
+  /// korkutucuydu. Dürüst ve açıklanmış bir düz çizgi, yanlış güne
+  /// çizilmiş bir seriden iyidir.
+  ///
+  /// ## Neden saf fonksiyon (ve neden imza korunuyor)
+  /// Karar `DateTime.now()` ile verilseydi hafta içi koşan hiçbir test
+  /// hafta sonu dalını çalıştıramazdı. [enSonVeriTs] parametresi, çağıran
+  /// tarafı ve testleri kırmamak için duruyor; kaldırmak bu dosyanın
+  /// dışındaki dört çağrı noktasını da değiştirmeyi gerektirirdi ve
+  /// kazancı yok.
   @visibleForTesting
   static DateTime seansGunu({
     required DateTime now,
     required int? enSonVeriTs,
-  }) {
-    final bugun = DateTime(now.year, now.month, now.day);
-    if (enSonVeriTs == null) return bugun;
-    final d = DateTime.fromMillisecondsSinceEpoch(enSonVeriTs);
-    final veriGunu = DateTime(d.year, d.month, d.day);
-    // Gelecek tarihli veri (saat dilimi kayması) bugüne çekilir — ileri
-    // bir güne ızgara kurmak boş grafik demek olurdu.
-    return veriGunu.isBefore(bugun) ? veriGunu : bugun;
-  }
+  }) =>
+      DateTime(now.year, now.month, now.day);
 
   /// Gün içi serinin SAĞ UCU ve kapalı bölgenin başlangıcı.
   ///

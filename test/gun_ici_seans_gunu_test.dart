@@ -34,28 +34,43 @@ void main() {
       expect(gun, DateTime(2026, 9, 4));
     });
 
-    test('PAZAR günü CUMA seansı çizilir — düz çizginin sebebi', () {
-      // Asıl hata: ızgara Pazar 00:00'a kuruluyor, Cuma kapanışı 288
-      // slotun hepsine yayılıyor ve grafik düzleşiyordu.
+    // ── KARAR DEĞİŞTİ (2026-09-13) ────────────────────────────────────
+    //
+    // Aşağıdaki üç test eskiden "son seans çizilmeli" diyordu. Kullanıcı
+    // kararıyla tersine döndü: "Ayın 13'ünde günlük tabında 12 Eylül
+    // verisini görmemeliyim."
+    //
+    // Eski kural iki yeni sorun doğurmuştu:
+    //   1. Sekme adı yalan söylüyordu — "GÜNLÜK" başka bir günü gösteriyor.
+    //   2. Seri son seansın son damgasında bitiyor, ekran ucuna CANLI
+    //      toplamı ekliyordu; arada nokta olmadığı için grafik düz gidip
+    //      "şimdi"ye ATLIYORDU (ekran görüntüsüyle bildirildi).
+    //
+    // Düz çizgi artık kabul edilebilir çünkü onu AÇIKLAYAN bir rozet var
+    // (`piyasa_kapali_etiketi.dart`). 2026-09-07'de o rozet yoktu; düz
+    // çizgi sessizdi ve bu yüzden korkutucuydu.
+    //
+    // Ayrıntılı gerekçe ve sınır durumları: `gunluk_sekmesi_bugun_test`.
+
+    test('PAZAR günü de BUGÜN çizilir — sekme adı dürüst olmalı', () {
       final now = DateTime(2026, 9, 6, 11, 0); // Pazar
       final gun = HistoryService.seansGunu(
         now: now,
         enSonVeriTs: ts(DateTime(2026, 9, 4, 18, 5)), // Cuma kapanışı
       );
-      expect(gun, DateTime(2026, 9, 4), reason: 'son seans günü çizilmeli');
-      expect(gun.isBefore(DateTime(2026, 9, 6)), isTrue);
+      expect(gun, DateTime(2026, 9, 6),
+          reason: 'GÜNLÜK sekmesi içinde bulunulan günü çizer');
     });
 
-    test('PAZARTESİ açılıştan ÖNCE de son seans (Cuma) çizilir', () {
-      // Kullanıcının bulunduğu durum: gün Pazartesi ama BIST henüz
-      // açılmamış. `range=1d` yine Cuma'yı döndürür; ızgara bugüne
-      // kurulursa Pazartesi 00:00–09:00 arası tek fiyatla doldurulur.
-      final now = DateTime(2026, 9, 7, 9, 30); // Pazartesi, açılış öncesi
+    test('PAZARTESİ açılıştan ÖNCE de bugün çizilir', () {
+      // Gün Pazartesi ama BIST henüz açılmamış. Seri düz olacak — bu
+      // DOĞRU ve rozet bunu açıklıyor.
+      final now = DateTime(2026, 9, 7, 9, 30);
       final gun = HistoryService.seansGunu(
         now: now,
         enSonVeriTs: ts(DateTime(2026, 9, 4, 18, 5)),
       );
-      expect(gun, DateTime(2026, 9, 4));
+      expect(gun, DateTime(2026, 9, 7));
     });
 
     test('PAZARTESİ seans başladıysa bugün çizilir', () {
@@ -67,15 +82,15 @@ void main() {
       expect(gun, DateTime(2026, 9, 7));
     });
 
-    test('resmî tatilde de son seans çizilir (hafta içi olabilir)', () {
-      // Kural takvimden değil VERİDEN türetilir; tatil listesi tutmaya
-      // gerek yok. Salı tatilse en son veri Pazartesi'ye aittir.
+    test('resmî tatilde de BUGÜN çizilir — tatil listesi gerekmez', () {
+      // Tatil takvimi tutmuyoruz ve artık gerekmiyor: kural "her zaman
+      // bugün" olduğu için tatilin hafta içine düşmesi fark etmiyor.
       final now = DateTime(2026, 4, 23, 12, 0);
       final gun = HistoryService.seansGunu(
         now: now,
         enSonVeriTs: ts(DateTime(2026, 4, 22, 18, 5)),
       );
-      expect(gun, DateTime(2026, 4, 22));
+      expect(gun, DateTime(2026, 4, 23));
     });
 
     test('hiç veri yoksa bugüne düşülür — boş ızgara üretilmez', () {
