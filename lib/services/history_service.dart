@@ -7,17 +7,48 @@ import '../models/position.dart';
 import 'price_service.dart';
 
 /// Grafik çözünürlük seviyeleri. Zoom yaptıkça daha ince tier'a düşer.
+///
+/// **Bu enum YALNIZCA ÇİZİM çözünürlüğüdür.** Sinyal üretimi buradan
+/// beslenmez ve beslenmemelidir: `TechnicalAnalysisService` bar SAYISI ile
+/// çalışır (`RSI(14)` = son 14 bar) ve barın ne kadar sürdüğünü BİLMEZ.
+/// Aynı motoru 5 dakikalık seriye verirsen `RSI(14)` "son 70 dakika"
+/// anlamına gelir, ama eşikler (`overbought = 70`) GÜNLÜK bar için kalibre
+/// edilmiştir; intraday'de RSI uçlara çok daha sık değer ve motor kalibresiz
+/// biçimde AL/SAT üretir. Sinyal yolu `getSymbolHistory(periodDays: 180)`
+/// ile günlük bara sabittir — `test/sinyal_gunluk_bar_kilidi_test.dart`
+/// bunu kilitler.
+///
+/// Üye listesi sektör standardıyla hizalı (TradingView/Yahoo/Investing ortak
+/// çekirdeği): 1dk · 5dk · 15dk · 1sa · 1G · 1H. Adımlar kabaca 3-4×
+/// logaritmik ilerler — iki komşu seçenek arasındaki fark kullanıcıya
+/// GÖRÜNÜR olmalı. 10dk/20dk bilinçli olarak YOK: 5dk ile 15dk arasına
+/// sıkışıyorlar, seçim yükü ekleyip bilgi eklemiyorlar (ayrıca Yahoo bu
+/// interval'leri hiç vermiyor; 5dk'dan bucket'lamak gerekirdi).
 enum ResolutionTier {
+  oneMin, // 1 dakikalık — yalnızca bugün; Yahoo 8 GÜN geriye veriyor
   fiveMin, // 5 dakikalık — sadece bugün için (1d range)
+  fifteenMin, // 15 dakikalık — son günler; Yahoo 1mo'ya kadar
   hourly, // 1 saatlik — son 5-7 gün (5d range)
   daily, // günlük close — son 30-180 gün
   weekly, // haftalık close — 1 yıl+ (uzun dönem)
 }
 
 extension ResolutionTierMeta on ResolutionTier {
-  /// Yahoo API range parametresi
+  /// Yahoo API range parametresi.
+  ///
+  /// **Range'ler ÖLÇÜLDÜ (2026-09-13, THYAO.IS).** Yahoo dakikalık veride
+  /// sert duvarlar koyuyor ve aşıldığında `Unprocessable Entity` döner:
+  ///   · `1m` + `1mo` → "Only 8 days worth of 1m granularity data allowed"
+  ///   · `5m` + `3mo` → reddedildi (`1mo` çalışıyor: 2342 nokta)
+  ///   · `15m` + `3mo` → reddedildi (`1mo` çalışıyor: 782 nokta)
+  ///   · `1h` + `2y` → çalışıyor (4582 nokta)
+  /// `oneMin` için bu yüzden `5d` seçildi: Yahoo'da `8d` range'i yok, `1mo`
+  /// ise duvarı aşıyor. Range dönemden GENİŞ olabilir ([clipToPeriod] kırpar),
+  /// DAR olması veri kaybıdır — ama duvarı aşmak veriyi TAMAMEN kaybettirir.
   String get yahooRange => switch (this) {
+        ResolutionTier.oneMin => '5d',
         ResolutionTier.fiveMin => '1d',
+        ResolutionTier.fifteenMin => '1mo',
         // 1H periyot 7 gün ister — Yahoo 5d döner ve sol tarafta boşluk kalır.
         // 1mo döndür (Yahoo 1h intervalinde 1mo'ya kadar destekler).
         ResolutionTier.hourly => '1mo',
@@ -27,10 +58,37 @@ extension ResolutionTierMeta on ResolutionTier {
 
   /// Yahoo API interval parametresi (PriceService._intervalFor ile uyumlu)
   String get yahooInterval => switch (this) {
+        ResolutionTier.oneMin => '1m',
         ResolutionTier.fiveMin => '5m',
+        ResolutionTier.fifteenMin => '15m',
         ResolutionTier.hourly => '1h',
         ResolutionTier.daily => '1d',
         ResolutionTier.weekly => '1wk',
+      };
+
+  /// Seçicide görünen kısa etiket.
+  String get etiket => switch (this) {
+        ResolutionTier.oneMin => '1dk',
+        ResolutionTier.fiveMin => '5dk',
+        ResolutionTier.fifteenMin => '15dk',
+        ResolutionTier.hourly => '1sa',
+        ResolutionTier.daily => '1G',
+        ResolutionTier.weekly => '1H',
+      };
+
+  /// Bir barın kapsadığı süre — seri önbelleğinin TTL'i buradan türer.
+  ///
+  /// **Kural: `ttl == bar süresi`.** Bardan daha sık tazelemek AYNI barı
+  /// tekrar çekmektir: ağ harcar, ekranda hiçbir şey değişmez. Bu içgörü
+  /// zaten `_intradayCacheTtl` yorumunda keşfedilmişti ("Slot çözünürlüğüyle
+  /// aynı: 5 dakika"); burada tüm tier'lara genelleniyor.
+  Duration get barSuresi => switch (this) {
+        ResolutionTier.oneMin => const Duration(minutes: 1),
+        ResolutionTier.fiveMin => const Duration(minutes: 5),
+        ResolutionTier.fifteenMin => const Duration(minutes: 15),
+        ResolutionTier.hourly => const Duration(hours: 1),
+        ResolutionTier.daily => const Duration(days: 1),
+        ResolutionTier.weekly => const Duration(days: 7),
       };
 
   /// Bu tier'da ts'yi hangi ölçekte normalize edelim (aynı bucket'a düşen
@@ -38,8 +96,15 @@ extension ResolutionTierMeta on ResolutionTier {
   int normalizeTs(int ms) {
     final d = DateTime.fromMillisecondsSinceEpoch(ms);
     switch (this) {
+      case ResolutionTier.oneMin:
+        return DateTime(d.year, d.month, d.day, d.hour, d.minute)
+            .millisecondsSinceEpoch;
       case ResolutionTier.fiveMin:
         final snappedMin = (d.minute ~/ 5) * 5;
+        return DateTime(d.year, d.month, d.day, d.hour, snappedMin)
+            .millisecondsSinceEpoch;
+      case ResolutionTier.fifteenMin:
+        final snappedMin = (d.minute ~/ 15) * 15;
         return DateTime(d.year, d.month, d.day, d.hour, snappedMin)
             .millisecondsSinceEpoch;
       case ResolutionTier.hourly:
@@ -1537,15 +1602,43 @@ class HistoryService {
   // ağa çıkılmaz. Farklı tier'da aynı sembol için ayrı istek (Yahoo interval
   // farklı olduğundan).
   final Map<String, Map<int, double>> _tierCache = {};
+  final Map<String, DateTime> _tierCacheAt = {};
+
+  /// Tier önbelleğinde tutulacak azami giriş sayısı.
+  ///
+  /// Tier sayısı 4'ten 6'ya çıktı (1dk/15dk eklendi) ve her tier aynı sembol
+  /// için AYRI bir giriş tutuyor — üst sınır olmadan gezinen kullanıcıda
+  /// sembol × 6 seri birikir. `_cache`in (`_cacheMaxEntries = 50`) zaten
+  /// uyguladığı disiplinin aynısı.
+  static const _tierCacheMaxEntries = 60;
 
   String _tierCacheKey(ResolutionTier tier, String symbol) =>
       '${tier.name}::$symbol';
+
+  /// Önbellek girişi hâlâ taze mi?
+  ///
+  /// **TTL = bar süresi.** Bardan daha sık tazelemek AYNI barı yeniden
+  /// çekmektir: ağ harcar, ekranda hiçbir şey değişmez. Tersi de bozuk —
+  /// 1 dakikalık bar 15 dakika önbellekte tutulursa grafiğin GÖVDESİ donar
+  /// ve yalnızca canlı uç kıpırdar ("gün içi grafik dümdüz" hissi,
+  /// `_intradayCacheTtl` yorumunda kayıtlı).
+  ///
+  /// Günlük/haftalık barlarda tavan 15 dakika: kapanış verisi gün içinde
+  /// değişmez, bir günlük TTL ise fiyat düzeltmelerini kaçırırdı.
+  bool _tierCacheTaze(String key, ResolutionTier tier) {
+    final at = _tierCacheAt[key];
+    if (at == null) return false;
+    final ttl = tier.barSuresi < const Duration(minutes: 15)
+        ? tier.barSuresi
+        : const Duration(minutes: 15);
+    return DateTime.now().difference(at) < ttl;
+  }
 
   Future<Map<int, double>> _fetchTickerAtTier(
       String ticker, ResolutionTier tier) async {
     final key = _tierCacheKey(tier, ticker);
     final cached = _tierCache[key];
-    if (cached != null) return cached;
+    if (cached != null && _tierCacheTaze(key, tier)) return cached;
     try {
       final pts = await PriceService.instance
           .fetchHistoryAtInterval(ticker, tier.yahooRange, tier.yahooInterval);
@@ -1553,10 +1646,23 @@ class HistoryService {
       for (final p in pts) {
         map[tier.normalizeTs(p.$1)] = p.$2;
       }
+      // Yeniden ekle: `Map` ekleme sırasını korur, bu yüzden var olan
+      // anahtarı önce SİLMEZSEK LRU sırası güncellenmez ve sık kullanılan
+      // bir giriş en eski sayılıp atılabilir.
+      _tierCache.remove(key);
+      _tierCacheAt.remove(key);
       _tierCache[key] = map;
+      _tierCacheAt[key] = DateTime.now();
+      while (_tierCache.length > _tierCacheMaxEntries) {
+        final enEski = _tierCache.keys.first;
+        _tierCache.remove(enEski);
+        _tierCacheAt.remove(enEski);
+      }
       return map;
     } catch (_) {
-      return {};
+      // Bayat da olsa elde bir seri varsa onu döndür: boş grafik, eski
+      // grafikten kötüdür (ağ hatası geçicidir).
+      return cached ?? {};
     }
   }
 
@@ -1832,12 +1938,12 @@ class HistoryService {
     return changed;
   }
 
-  int _tierStepMs(ResolutionTier tier) => switch (tier) {
-        ResolutionTier.fiveMin => 5 * 60 * 1000,
-        ResolutionTier.hourly => 60 * 60 * 1000,
-        ResolutionTier.daily => 24 * 60 * 60 * 1000,
-        ResolutionTier.weekly => 7 * 24 * 60 * 60 * 1000,
-      };
+  /// Tier'ın bar adımı (ms).
+  ///
+  /// [ResolutionTierMeta.barSuresi]'ye DELEGE eder. Eskiden burada ikinci bir
+  /// merdiven vardı ve yeni bir tier eklendiğinde sessizce eksik kalırdı —
+  /// "iki merdiven tutmak" bu projede tekrar eden hata sınıfı.
+  int _tierStepMs(ResolutionTier tier) => tier.barSuresi.inMilliseconds;
 
   /// Sıralı anahtar indeksi (identity-keyed).
   ///
