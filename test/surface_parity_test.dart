@@ -389,27 +389,42 @@ void main() {
       expect(DailySummary.isVisuallyFlat([100.0, 100.00001]), isTrue);
     });
 
-    test('BAYAT seri canlı değerle EZİLMEZ — sahte sıçrama olmaz', () {
-      // Kullanıcının bulduğu hata: piyasa kapandıktan saatler sonra
-      // grafiğin ucunda dikey bir sıçrama görünüyordu — uygulamanın kendi
-      // günlük grafiğinde OLMAYAN bir sıçrama.
+    test('BAYAT seri canlı değeri AYRI nokta olarak ekler', () {
+      // ⚠️ BU TESTİN İDDİASI 2026-09-13'te TERSİNE ÇEVRİLDİ.
       //
-      // Sebep: serinin iki ucu farklı kaynaklardan geliyor. Seri
-      // `HistoryService`'ten (Yahoo intraday) gelir ve kapanışta donar;
-      // canlı toplam ise `Asset.currentPrice`'tan hesaplanır ve akşam
-      // boyu güncellenir. Son noktayı KOŞULSUZ ezmek, saatler önceki bir
-      // slota bugünkü canlı değeri yazıyordu.
+      // Eski hâli "bayat slota canlı değer YAZILAMAZ" diyordu ve son
+      // noktanın 1000.0 kalmasını bekliyordu. O kural `631c595`
+      // ("widget ve canlı etkinlik gün içi grafiği uygulamayla birebir")
+      // ile değişti ama bu dosya güncellenmedi — test o tarihten beri
+      // kırık duruyordu ve `tool/deploy_emulators.sh` kapısını bloke
+      // ediyordu.
       //
-      // Uygulamanın grafiği bu yüzden 5 dakikalık tazelik eşiği kullanıyor.
+      // **Neden yeni kural doğru:** son noktayı EZMEMEK doğruydu, ama
+      // canlı değeri hiç göstermemek değildi. Yüzeyin yazdığı rakam ile
+      // eğrinin bittiği yer farklı oluyordu (ölçüldü: rakam ₺1.040.000,
+      // eğrinin ucu ₺1.009.800). Bayat uçta canlı değer AYRI bir nokta
+      // olarak EKLENİR: eski slot olduğu yerde kalır (sahte sıçrama yok,
+      // eski kuralın asıl kaygısı korunur) ve eğri güncel değerde biter.
+      //
+      // Taze uçta (< 5 dk) ise son nokta EZİLİR — aynı ana iki nokta
+      // koymak eğrinin ucunda dik bir çentik bırakırdı.
+      //
+      // `gunluk_grafik_birebir_test.dart:158` aynı değişmezi uygulamanın
+      // kendi grafiğine karşı kilitliyor; iki dosya artık aynı şeyi
+      // söylüyor.
       final values = DailySummary.dayValues(
         {ago(240): 1000.0, ago(180): 1000.0},
         now,
         1200.0, // canlı değer çok farklı
       );
 
-      expect(values.last, 1000.0,
-          reason: '3 saatlik bayat slota canlı değer yazılamaz');
-      expect(values.last, isNot(1200.0));
+      expect(values.length, 3,
+          reason: 'bayat uçta canlı değer EKLENİR, mevcut slotu ezmez');
+      expect(values[1], 1000.0,
+          reason: '3 saatlik bayat slot OLDUĞU GİBİ kalır — '
+              'o slota canlı değer yazılsa sahte sıçrama olurdu');
+      expect(values.last, 1200.0,
+          reason: 'eğri yanındaki rakamla aynı yerde bitmeli');
     });
 
     test('TAZE seri canlı değerle ezilir', () {
