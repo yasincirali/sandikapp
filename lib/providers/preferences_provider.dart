@@ -9,6 +9,7 @@ import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
+import '../config/pref_keys.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -41,14 +42,14 @@ void setPreferencesUser(String? userId) {
 String _userKey(String base) =>
     _aktifKullaniciId == null ? base : '${base}_$_aktifKullaniciId';
 
-const _kThemeModeKey = 'pref_theme_mode'; // 'system' | 'light' | 'dark'
-const _kSignalNotificationsKey = 'pref_signal_notifications';
-const _kPartnerNotificationsKey = 'pref_partner_notifications';
-const _kBalanceHiddenKey = 'pref_balance_hidden';
-const _kLockScreenAmountsKey = 'pref_lockscreen_amounts';
-const _kLiveActivityStartKey = 'pref_live_activity_start_min';
-const _kLiveActivityEndKey = 'pref_live_activity_end_min';
-const _kLiveActivityWeekendKey = 'pref_live_activity_weekend';
+const _kThemeModeKey = PrefKeys.themeMode;
+const _kSignalNotificationsKey = PrefKeys.signalNotifications;
+const _kPartnerNotificationsKey = PrefKeys.partnerNotifications;
+const _kBalanceHiddenKey = PrefKeys.balanceHidden;
+const _kLockScreenAmountsKey = PrefKeys.lockScreenAmounts;
+const _kLiveActivityStartKey = PrefKeys.liveActivityStartMin;
+const _kLiveActivityEndKey = PrefKeys.liveActivityEndMin;
+const _kLiveActivityWeekendKey = PrefKeys.liveActivityWeekend;
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
@@ -282,7 +283,7 @@ final liveActivityWeekendProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 // Şimdilik SharedPreferences ile local toggle. Gerçek IAP entegrasyonu
 // yapılana kadar test amaçlı Ayarlar ekranından açılıp kapatılabilir.
 
-const _kPremiumUnlockedKey = 'pref_premium_unlocked';
+const _kPremiumUnlockedKey = PrefKeys.premiumUnlocked;
 
 final premiumUnlockedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kPremiumUnlockedKey, false));
@@ -354,7 +355,7 @@ final watchlistLimitProvider = Provider<int>((ref) {
 // Kullanıcı her varlık türü için hangi göstergelerin sinyal üretmesini istediğini
 // seçebilir. Kalıcı: SharedPreferences.
 
-const _kIndicatorPrefsKey = 'pref_indicators_by_type_v1';
+const _kIndicatorPrefsKey = PrefKeys.indicatorsByType;
 
 class IndicatorPrefsNotifier extends Notifier<Map<AssetType, Set<String>>> {
   @override
@@ -508,8 +509,8 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
 //   85 → yüksek (sadece güçlü sinyaller)
 // Eşiğin altında kalan sinyaller push gönderilmez.
 
-const _kSignalThresholdKey = 'pref_signal_threshold_by_type_v1';
-const _kSignalNeutralPushKey = 'pref_signal_neutral_push';
+const _kSignalThresholdKey = PrefKeys.signalThresholdByType;
+const _kSignalNeutralPushKey = PrefKeys.signalNeutralPush;
 
 const kSignalThresholdOptions = <int>[50, 70, 85];
 const kSignalThresholdDefault = 70;
@@ -584,8 +585,8 @@ final signalThresholdProvider =
 // çalışıp bu tercihe göre karar verir (bkz. `shouldNotifyNow`).
 // Bildirimler TR 10:00–18:00 penceresi dışına asla çıkmaz.
 
-const _kSignalFrequencyKey = 'pref_signal_frequency_by_type_v1';
-const _kSignalHoursKey = 'pref_signal_hours_by_type_v1';
+const _kSignalFrequencyKey = PrefKeys.signalFrequencyByType;
+const _kSignalHoursKey = PrefKeys.signalHoursByType;
 
 /// Bir varlık türünün sıklık ayarı: sıklık + seçilen saatler.
 typedef SignalSchedule = ({SignalFrequency frequency, List<int> hours});
@@ -806,8 +807,8 @@ Future<void> syncSignalPreferencesOnLogin(WidgetRef ref) async {
 // Grafik üzerine çizilecek göstergeler. Sinyal göstergelerinden ayrı: burası
 // sadece görsel overlay (MA20, MA50, Bollinger vs.). Faz 4'te MA20 ile başlar.
 
-const _kChartMA20Key = 'pref_chart_overlay_ma20';
-const _kChartLogScaleKey = 'pref_chart_log_scale';
+const _kChartMA20Key = PrefKeys.chartOverlayMa20;
+const _kChartLogScaleKey = PrefKeys.chartLogScale;
 
 final chartMA20Provider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kChartMA20Key, false));
@@ -822,7 +823,7 @@ final chartLogScaleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 // consent verir. Default kapalı (KVKK). Ortakların yarış'ında görünmek için
 // bu true olmalı; false ise kendisi de leaderboard'u göremez.
 
-const _kLeaderboardOptInKey = 'pref_leaderboard_opt_in';
+const _kLeaderboardOptInKey = PrefKeys.leaderboardOptIn;
 
 final leaderboardOptInProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kLeaderboardOptInKey, false));

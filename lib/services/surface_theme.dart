@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/theme_resolution.dart';
+import '../config/pref_keys.dart';
 
 /// Uygulama DIŞI yüzeylerin (iOS Live Activity + ana ekran widget'ı) paletine
 /// karar veren TEK nokta — ve kararın KALICI hâli.
@@ -48,7 +49,7 @@ class SurfaceTheme {
 
   /// Tema/bakiye gibi CİHAZ tercihleriyle aynı sınıf: kullanıcı ön eki
   /// almaz (bkz. `preferences_provider._userKey` notu).
-  static const prefKey = 'pref_surface_is_light';
+  static const prefKey = PrefKeys.surfaceIsLight;
 
   bool _isLight = false;
   ThemeMode? _lastMode;

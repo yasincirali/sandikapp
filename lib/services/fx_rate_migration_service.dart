@@ -1,12 +1,19 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../config/pref_keys.dart';
 import 'price_service.dart';
 
 /// purchase_fx_rate = 1.0 olan non-TRY varlıklar için alım tarihindeki
 /// tarihsel kuru Yahoo Finance'ten çekip Supabase'e yazar.
 ///
-/// Her kullanıcı girişinde arka planda bir kez çalışır;
-/// zaten düzeltilmiş satırları tekrar işlemez.
+/// Arka planda çalışır; zaten düzeltilmiş satırları tekrar işlemez.
+///
+/// 2026-09: her açılışta değil, kullanıcı başına GÜNDE BİR kez koşar
+/// (`PrefKeys.fxMigrationLastRunMs`). Sorgu ucuz ama her soğuk başlangıçta
+/// bir Supabase turu atmak, sıfır satır döneceğini bildiğimiz bir iş için
+/// gereksizdi. Günlük tekrar, tarihsel kur bulunamayan varlıklar için
+/// yeniden deneme davranışını korur.
 class FxRateMigrationService {
   static final FxRateMigrationService instance = FxRateMigrationService._();
   FxRateMigrationService._();
@@ -20,8 +27,17 @@ class FxRateMigrationService {
   /// [userId] için migration'ı çalıştırır.
   /// Hata olursa sessizce geçer — varlıklar purchase_fx_rate=1.0 ile
   /// düzgün çalışmaya devam eder, bir sonraki girişte tekrar denenilir.
+  static const _throttle = Duration(hours: 24);
+
   Future<void> runFor(String userId) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${PrefKeys.fxMigrationLastRunMs}_$userId';
+      final last = prefs.getInt(key) ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now - last < _throttle.inMilliseconds) return;
+      await prefs.setInt(key, now);
+
       final db = Supabase.instance.client;
 
       // purchase_fx_rate = 1.0 olan non-TRY varlıkları çek

@@ -13,11 +13,14 @@ import '../providers/portfolio_provider.dart';
 import '../screens/partnership_requests_screen.dart';
 import '../screens/performance_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
+import '../config/pref_keys.dart';
 import 'analytics_service.dart';
 import 'retention_tracker.dart';
 
-const _kSignalNotificationsKey = 'pref_signal_notifications';
-const _kPartnerNotificationsKey = 'pref_partner_notifications';
+// Anahtarlar preferences_provider ile AYNI kaynaktan (PrefKeys) — ikisi
+// ayrışırsa Ayarlar'daki toggle bildirim yolunu etkilemez olurdu.
+const _kSignalNotificationsKey = PrefKeys.signalNotifications;
+const _kPartnerNotificationsKey = PrefKeys.partnerNotifications;
 
 Future<bool> _prefEnabled(String key) async {
   try {

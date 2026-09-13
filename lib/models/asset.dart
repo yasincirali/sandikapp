@@ -355,50 +355,11 @@ class Asset {
         deletedAt: deletedAt,
       );
 
-  /// SQLite uyumlu map (partner kod payload'ı için kullanılır)
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'userId': userId,
-        'name': name,
-        'ticker': ticker,
-        'type': type.name,
-        'subCategory': subCategory,
-        'unitType': unitType,
-        'quantity': quantity,
-        'purchasePrice': purchasePrice,
-        'currency': currency,
-        'currentPrice': currentPrice,
-        'lastUpdated': lastUpdated?.millisecondsSinceEpoch,
-        'addedDate': addedDate.millisecondsSinceEpoch,
-        'notes': notes,
-        'isManualPrice': isManualPrice ? 1 : 0,
-        'kind': kind.dbValue,
-        'refAssetId': refAssetId,
-        'sellPrice': sellPrice,
-      };
-
-  factory Asset.fromMap(Map<String, dynamic> m) => Asset(
-        id: m['id'] as String,
-        userId: (m['userId'] as String?) ?? '',
-        name: m['name'] as String,
-        ticker: m['ticker'] as String,
-        type: AssetType.fromString(m['type'] as String),
-        quantity: (m['quantity'] as num).toDouble(),
-        purchasePrice: (m['purchasePrice'] as num).toDouble(),
-        currency: m['currency'] as String,
-        currentPrice: (m['currentPrice'] as num).toDouble(),
-        subCategory: m['subCategory'] as String?,
-        unitType: (m['unitType'] as String?) ?? 'piece',
-        lastUpdated: m['lastUpdated'] != null
-            ? DateTime.fromMillisecondsSinceEpoch(m['lastUpdated'] as int)
-            : null,
-        addedDate: DateTime.fromMillisecondsSinceEpoch(m['addedDate'] as int),
-        notes: (m['notes'] as String?) ?? '',
-        isManualPrice: (m['isManualPrice'] as int) == 1,
-        kind: AssetKind.fromDb(m['kind'] as String?),
-        refAssetId: m['refAssetId'] as String?,
-        sellPrice: (m['sellPrice'] as num?)?.toDouble(),
-      );
+  // `toMap()` / `fromMap()` (SQLite/camelCase çifti) 2026-09'da SİLİNDİ:
+  // kod tabanında sıfır çağıranı vardı ve `toSupabase()` ile alan kümesi
+  // ayrışmıştı (purchaseFxRate, commission, dividendAmount, deletedCount,
+  // deletedAt taşımıyordu). Yeniden bir taşıma biçimi gerekirse
+  // `toSupabase()`/`fromSupabase()` kullanılır — tek serileştirme şeması.
 
   /// Supabase snake_case sütunlarına map
   Map<String, dynamic> toSupabase() => {
