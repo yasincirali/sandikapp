@@ -6,6 +6,8 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'custom_loading_indicator.dart';
 
@@ -151,18 +153,18 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
 
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isAdd
-              ? '${_fmt(qty)} $_unitLabel alındı'
-              : '${_fmt(qty)} $_unitLabel satıldı'),
-        ),
+      sandikSnack(
+        context,
+        _isAdd
+            ? '${_fmt(qty)} $_unitLabel alındı'
+            : '${_fmt(qty)} $_unitLabel satıldı',
+        kind: SandikSnackKind.success,
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'İşlem başarısız: $e';
+        _error = 'İşlem başarısız. ${friendlyError(e)}';
       });
     }
   }

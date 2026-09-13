@@ -21,6 +21,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import 'paywall_screen.dart';
 
 /// Takibe alınacak varlığı seçme ekranı.
@@ -411,40 +412,30 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
             addedAt: DateTime.now(),
           ));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${c.name} takibe alındı'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      sandikSnack(context, '${c.name} takibe alındı',
+          kind: SandikSnackKind.success);
     } on WatchlistLimitException catch (e) {
       if (!mounted) return;
       // Limit hatası ağ hatasından AYRI ele alınır: kullanıcıya neden
       // eklenemediğini ve ÇIKIŞ YOLUNU söylemek gerekir. "Eklenemedi" deyip
       // bırakmak kullanıcıyı çıkışsız bırakırdı.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Ücretsiz planda en fazla ${e.limit} varlık takip edebilirsin.'),
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Premium',
-            onPressed: () =>
-                PaywallScreen.show(context, source: 'watchlist_limit'),
-          ),
+      sandikSnack(
+        context,
+        'Ücretsiz planda en fazla ${e.limit} varlık takip edebilirsin.',
+        kind: SandikSnackKind.warning,
+        action: SnackBarAction(
+          label: 'Premium',
+          textColor: context.c.onAmber,
+          onPressed: () =>
+              PaywallScreen.show(context, source: 'watchlist_limit'),
         ),
       );
     } catch (_) {
       if (!mounted) return;
       // Sunucudaki unique index çakışması da buraya düşer — kullanıcıya
       // teknik hata değil, ne olduğunu söyle.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Eklenemedi. Zaten takipte olabilir.'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: context.c.loss,
-        ),
-      );
+      sandikSnack(context, 'Eklenemedi. Zaten takipte olabilir.',
+          kind: SandikSnackKind.error);
     }
   }
 }

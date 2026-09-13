@@ -19,6 +19,7 @@ import '../providers/auth_provider.dart' show activePartnersProvider;
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/modern_tab_selector.dart';
@@ -533,27 +534,14 @@ class _Row extends ConsumerWidget {
     try {
       await notifier.remove(item.id);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${item.displayLabel} takipten çıkarıldı'),
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Geri al',
-            onPressed: () => notifier.add(item),
-          ),
-        ),
-      );
+      sandikSnack(context, '${item.displayLabel} takipten çıkarıldı',
+          onUndo: () => notifier.add(item));
     } catch (_) {
       if (!context.mounted) return;
       // Provider state'i zaten geri aldı; burada SEBEBİ söylüyoruz — satırın
       // sessizce geri gelmesi kullanıcıya hata gibi görünürdü.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Takipten çıkarılamadı. Bağlantını kontrol et.'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: context.c.loss,
-        ),
-      );
+      sandikSnack(context, 'Takipten çıkarılamadı. Bağlantını kontrol et.',
+          kind: SandikSnackKind.error);
     }
   }
 }

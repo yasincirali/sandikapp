@@ -9,6 +9,7 @@ import '../services/live_activity_service.dart';
 import '../services/remote_push_service.dart';
 import '../services/surface_theme.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 
 /// Push zinciri teşhis ekranı — **admin'e açık, release dahil**.
 ///
@@ -150,27 +151,21 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       if (!mounted) return;
 
       final vardi = _sinyaller.isNotEmpty || silinen.isNotEmpty;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: silinen.isEmpty && vardi ? context.c.loss : null,
-          content: Text(
-            silinen.isEmpty && vardi
-                ? 'signal_state SİLİNEMEDİ (RLS?) — de-dup sürüyor'
-                : 'De-dup sıfırlandı (${silinen.length} satır) — '
-                    'sinyaller yeniden gönderilir',
-          ),
-        ),
+      sandikSnack(
+        context,
+        silinen.isEmpty && vardi
+            ? 'signal_state SİLİNEMEDİ (RLS?) — de-dup sürüyor'
+            : 'De-dup sıfırlandı (${silinen.length} satır) — '
+                'sinyaller yeniden gönderilir',
+        kind: silinen.isEmpty && vardi
+            ? SandikSnackKind.error
+            : SandikSnackKind.neutral,
       );
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: context.c.loss,
-          content: Text('Silinemedi: $e',
-              style: TextStyle(color: context.c.onStatus)),
-        ),
-      );
+      // Teşhis ekranı: ham hata BİLİNÇLİ — admin RLS/kolon adını görmeli.
+      sandikSnack(context, 'Silinemedi: $e', kind: SandikSnackKind.error);
     } finally {
       if (mounted) setState(() => _tetikleniyor = false);
     }
@@ -188,18 +183,11 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         params: {'p_slot': 'morning', 'p_dry_run': dryRun},
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(sonuc?.toString() ?? 'Tetiklendi')),
-      );
+      sandikSnack(context, sonuc?.toString() ?? 'Tetiklendi');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: context.c.loss,
-          content: Text('Tetikleme başarısız: $e',
-              style: TextStyle(color: context.c.onStatus)),
-        ),
-      );
+      sandikSnack(context, 'Tetikleme başarısız: $e',
+          kind: SandikSnackKind.error);
     } finally {
       if (mounted) setState(() => _tetikleniyor = false);
     }
@@ -836,9 +824,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             label: const Text('Teşhisi kopyala'),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: _metinRapor(t)));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Panoya kopyalandı')),
-              );
+              sandikSnack(context, 'Panoya kopyalandı');
             },
           ),
         ),

@@ -6,6 +6,7 @@ import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/deposit_service.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'paywall_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -89,9 +90,8 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_termDays <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vade sonu, başlangıç tarihinden sonra olmalı')),
-      );
+      sandikSnack(context, 'Vade sonu, başlangıç tarihinden sonra olmalı',
+          kind: SandikSnackKind.warning);
       return;
     }
     setState(() => _saving = true);
@@ -153,9 +153,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Kaydedilemedi: $e')),
-      );
+      sandikSnackError(context, e, prefix: 'Kaydedilemedi');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

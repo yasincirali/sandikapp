@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
+import '../utils/sandik_snack.dart';
 import 'custom_loading_indicator.dart';
 
 /// Nakit temettü kaydı.
@@ -77,14 +79,12 @@ class _DividendDialogState extends State<_DividendDialog> {
           );
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Temettü kaydedildi')),
-      );
+      sandikSnack(context, 'Temettü kaydedildi', kind: SandikSnackKind.success);
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'Kaydedilemedi: $e';
+        _error = 'Kaydedilemedi. ${friendlyError(e)}';
       });
     }
   }

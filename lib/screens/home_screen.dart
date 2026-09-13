@@ -15,6 +15,7 @@ import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/percentile_strip.dart';
@@ -878,13 +879,8 @@ class _SignalsBottomSheet extends ConsumerWidget {
   /// yeniden açılınca kayıt geri gelir ve uygulamaya güveni sarsılır.
   static void _hataGoster(BuildContext context) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Bildirim silinemedi. Bağlantını kontrol et.'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: context.c.loss,
-      ),
-    );
+    sandikSnack(context, 'Bildirim silinemedi. Bağlantını kontrol et.',
+        kind: SandikSnackKind.error);
   }
 
   /// Yıkıcı toplu işlemler için onay.

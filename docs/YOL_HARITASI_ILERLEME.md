@@ -9,7 +9,7 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > Değişiklikler bilinçli olarak küçük ve mekanik tutuldu.
 
 ## Son kalınan yer
-Faz 0 tamam, Faz 1.1–1.2 tamam. Sıradaki: **Faz 1.3** (sandikSnack yardımcısı).
+Faz 0 tamam, Faz 1.1–1.3 tamam. Sıradaki: **Faz 1.4** (para/tarih tek yol).
 
 ## Faz 0 — Kanamayı durdur
 
@@ -32,7 +32,7 @@ Faz 0 tamam, Faz 1.1–1.2 tamam. Sıradaki: **Faz 1.3** (sandikSnack yardımcı
 |---|---|---|
 | 1.1 | ✅ (kısmi) | Silindi: `asset_detail_screen.dart`, `portfolio_detail_screen.dart`, `premium_gate.dart`, `PortfoyTakip.xcodeproj/`, `assets/images/sandik_original_circle.png` + `splash_icon.png` (Android kendi drawable kopyasını kullanıyor). `tools/` → `tool/` birleşti. `chart_interaction_parity_test` listesi güncellendi. **Bilerek bırakıldı:** `bar_interval_selector.dart` (kullanıcının son commit'i, bağlanması bekleniyor), `chart_downsample`/`series_downsample` (`TECHNICAL_DEBT.md` "ERTELENDİ" kaydı var), `store_listing/screenshots/orig+raw` (`build_screenshots.py` raw/ okuyor). |
 | 1.2 | ✅ | 17 kök doküman → `docs/archive/` ("ARŞİV" başlığıyla), çapraz bağlantılar düzeltildi. `README.md` dizin oldu. `CLAUDE.md` yeniden yazıldı: sqflite/Provider/emülatör-ilk-kurulum kaldırıldı, kurallar (tasarım sistemi, para/tarih, hata, navigasyon, katmanlama, sunucu, gizli anahtar) tek yerde, Windows yolları "yerel makine notları" bölümünde. |
-| 1.3 | ⏳ | |
+| 1.3 | ✅ | `lib/utils/sandik_snack.dart`: `sandikSnack(kind: neutral/success/warning/error, onUndo, action)` + `sandikSnackError` (friendlyError zorunlu). 30 `showSnackBar` sitesi + 12 ham `$e`/`e.toString()` sitesi geçirildi (profil, toplu ekleme, mevduat, temettü, hızlı işlem, ortaklık istekleri, alarm). Push teşhisi ham hatayı bilinçli koruyor (admin aracı). `test/sandik_snack_test.dart`: ham hata sızmaz, undo çalışır, kuyruk birikmez, `showSnackBar` yalnızca yardımcıda (ratchet). L7 şifre metni 8+harf+rakam ile hizalandı. Nav bar inset eklenmedi: dış Scaffold `extendBody` kullanmıyor, sekme Scaffold'u nav bar'ın üstünde bitiyor. |
 | 1.4 | ⏳ | |
 | 1.5 | ⏳ | |
 | 1.6 | ⏳ | |

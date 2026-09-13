@@ -5,6 +5,7 @@ import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../widgets/custom_loading_indicator.dart';
 
 /// Premium'a geçiş için paywall. Faz 1'de RevenueCat'e bağlanacak;
@@ -141,15 +142,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _restorePurchases() async {
     // FAZ 1 TODO: RevenueCat.restorePurchases()
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Geri yükleme yakında (RevenueCat entegrasyonu ile)',
-          style: context.t.bodyLarge,
-        ),
-        backgroundColor: context.c.surface2,
-      ),
-    );
+    sandikSnack(context, 'Geri yükleme yakında (RevenueCat entegrasyonu ile)');
   }
 
   Future<void> _showSuccessSheet() {

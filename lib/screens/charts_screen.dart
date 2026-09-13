@@ -28,6 +28,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/deposit_service.dart';
 import '../services/sparkline_service.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
 import '../widgets/modern_tab_selector.dart';
@@ -202,14 +203,10 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                     .read(portfolioProvider.notifier)
                     .deletePositionLots(lots);
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Varlık silindi')),
-                );
+                sandikSnack(context, 'Varlık silindi');
               } catch (e) {
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Silinemedi: $e')),
-                );
+                sandikSnackError(context, e, prefix: 'Silinemedi');
               }
             },
             child: const Text('Yine de sil'),

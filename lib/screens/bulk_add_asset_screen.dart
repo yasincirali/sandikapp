@@ -140,7 +140,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         limitHit = true;
         failures.add('${item.name}: varlık limitine ulaşıldı');
       } catch (e) {
-        failures.add('${item.name}: ${e.toString()}');
+        failures.add('${item.name}: ${friendlyError(e)}');
       }
     }));
 

@@ -75,7 +75,8 @@ String _authMessage(String raw) {
     return 'Çok fazla deneme. Lütfen birkaç dakika sonra tekrar dene.';
   }
   if (lower.contains('weak password') || lower.contains('password should')) {
-    return 'Şifre çok zayıf. En az 6 karakter kullan.';
+    // AuthService.validatePassword ile aynı kural: 8 karakter + harf + rakam.
+    return 'Şifre çok zayıf. En az 8 karakter, bir harf ve bir rakam kullan.';
   }
   if (lower.contains('jwt expired') || lower.contains('token expired')) {
     return 'Oturumun süresi doldu. Tekrar giriş yap.';

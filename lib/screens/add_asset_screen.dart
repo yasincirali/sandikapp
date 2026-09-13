@@ -13,6 +13,8 @@ import '../services/price_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_deposit_screen.dart';
@@ -2010,23 +2012,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             ? '$dateStr kapanışı ${fmt.format(price)} $_currency olarak atandı'
             : '$dateStr için geçmiş fiyat bulunamadı — güncel fiyat '
                 '${fmt.format(price)} $_currency atandı';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            // İki zemin İKİ farklı mürekkep ister: gain teması takip eder
-            // (`onStatus`), amber her iki temada da açıktır (`onAmber`).
-            content: Text(msg,
-                style: context.t.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: priceFromHistorical
-                      ? context.c.onStatus
-                      : context.c.onAmber,
-                )),
-            backgroundColor: priceFromHistorical
-                ? context.c.gain.withValues(alpha: 0.9)
-                : context.c.amberFill.withValues(alpha: 0.9),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
+        // Tarihli kapanış bulundu → başarı; bulunamadı → uyarı zemini.
+        sandikSnack(
+          context,
+          msg,
+          kind: priceFromHistorical
+              ? SandikSnackKind.success
+              : SandikSnackKind.warning,
+          duration: const Duration(seconds: 4),
         );
       }
       // `true`: çağıran (MainNavigationScreen) bunu "kayıt oldu" sinyali
@@ -2357,17 +2350,9 @@ class _TefasPickerState extends State<_TefasPicker> {
     } catch (e) {
       // This should never happen, but keep for safety
       if (mounted) {
-        String errorMsg = 'Bilinmeyen hata: ${e.toString()}';
-        if (errorMsg.contains('HTTP')) {
-          errorMsg = 'Sunucu hatası. Lütfen tekrar deneyiniz.';
-        } else if (errorMsg.contains('internet') ||
-            errorMsg.contains('Connection')) {
-          errorMsg = 'İnternet bağlantısı kontrol edin.';
-        } else if (errorMsg.contains('timeout') ||
-            errorMsg.contains('Timeout')) {
-          errorMsg = 'Bağlantı zaman aşımı. Tekrar deneyin.';
-        }
-        setState(() => _error = errorMsg);
+        // Elle string eşleme yerine ortak çevirici — ağ/timeout/HTTP
+        // ayrımını zaten yapıyor, ham metin sızdırmıyor.
+        setState(() => _error = friendlyError(e));
       }
     }
   }

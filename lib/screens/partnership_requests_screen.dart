@@ -8,6 +8,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../widgets/custom_loading_indicator.dart';
 
 class PartnershipRequestsScreen extends ConsumerStatefulWidget {
@@ -74,19 +75,11 @@ class _PartnershipRequestsScreenState
       ref.read(allPartnerAssetsProvider.notifier).reload();
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          // Renkli zeminde tema `contentTextStyle`'ı (text90) kullanılamaz —
-          // light modda 3.02:1 verir. Dolgu üstünün mürekkebi `onStatus`.
-          content: Text('Ortaklık kabul edildi.',
-              style: TextStyle(color: context.c.onStatus)),
-          backgroundColor: context.c.gain,
-        ),
-      );
+      sandikSnack(context, 'Ortaklık kabul edildi.',
+          kind: SandikSnackKind.success);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
+      sandikSnackError(context, e, prefix: 'Kabul edilemedi');
     }
   }
 
@@ -95,17 +88,11 @@ class _PartnershipRequestsScreenState
       await ref.read(partnersProvider.notifier).rejectInvite(inviteId);
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ortaklık isteği reddedildi.',
-              style: TextStyle(color: context.c.onStatus)),
-          backgroundColor: context.c.loss,
-        ),
-      );
+      // Reddetmek başarılı bir işlem; kırmızı zemin "hata" okunuyordu.
+      sandikSnack(context, 'Ortaklık isteği reddedildi.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
+      sandikSnackError(context, e, prefix: 'Reddedilemedi');
     }
   }
 

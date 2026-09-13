@@ -10,6 +10,7 @@ import '../models/watchlist_item.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -224,14 +225,8 @@ class _RemoveButton extends ConsumerWidget {
           if (!context.mounted) return;
           // Provider state'i geri aldı; sebebi söylemek gerekiyor — satırın
           // sessizce kalması kullanıcıya "çalışmadı" hissi verirdi.
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  const Text('Takipten çıkarılamadı. Bağlantını kontrol et.'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: context.c.loss,
-            ),
-          );
+          sandikSnack(context, 'Takipten çıkarılamadı. Bağlantını kontrol et.',
+              kind: SandikSnackKind.error);
         }
       },
       child: SizedBox(

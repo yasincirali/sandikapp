@@ -10,6 +10,7 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
@@ -1496,14 +1497,10 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                     .deletePositionLots(lots);
                 if (!mounted) return;
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Varlık silindi')),
-                );
+                sandikSnack(context, 'Varlık silindi');
               } catch (e) {
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Silinemedi: $e')),
-                );
+                sandikSnackError(context, e, prefix: 'Silinemedi');
               }
             },
             child: const Text('Yine de sil'),

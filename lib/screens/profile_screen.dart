@@ -130,7 +130,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await Clipboard.setData(ClipboardData(text: code));
       await _showMsg('Kod üretildi ve panoya kopyalandı');
     } catch (e) {
-      await _showMsg(e.toString(), isError: true);
+      await _showMsg(friendlyError(e), isError: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -168,7 +168,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           context: context,
           kind: SandikDialogKind.info,
           title: 'Biraz Bekle',
-          message: e.toString(),
+          message: friendlyError(e),
           liveMessage: () {
             final kalan = _rateLimitRemaining;
             if (kalan <= 0) return null; // dialog kapanır
@@ -178,7 +178,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
       }
     } catch (e) {
-      await _showMsg(e.toString(), isError: true);
+      await _showMsg(friendlyError(e), isError: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -297,7 +297,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         _startPolling(inviteId);
-        await _showMsg(e.toString(), isError: true);
+        await _showMsg(friendlyError(e), isError: true);
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -894,7 +894,7 @@ class _PendingRequestsSectionState
       await _load();
       await _showMsg('Ortaklık kabul edildi!');
     } catch (e) {
-      await _showMsg(e.toString(), isError: true);
+      await _showMsg(friendlyError(e), isError: true);
     }
   }
 
@@ -905,7 +905,7 @@ class _PendingRequestsSectionState
           .rejectInvite(invite['id'] as String);
       await _load();
     } catch (e) {
-      await _showMsg(e.toString(), isError: true);
+      await _showMsg(friendlyError(e), isError: true);
     }
   }
 

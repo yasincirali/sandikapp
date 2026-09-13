@@ -15,6 +15,7 @@ import '../services/disclaimer_service.dart';
 import '../services/supabase_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'push_diagnostics_screen.dart';
@@ -173,13 +174,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       await DataExportService.instance.exportAndShare();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.'),
-          duration: Duration(seconds: 4),
-        ),
-      );
+      sandikSnack(context, 'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.',
+          kind: SandikSnackKind.success, duration: const Duration(seconds: 4));
     } catch (e) {
       if (!mounted) return;
       showAppError(context, e);
@@ -257,12 +253,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Mail uygulaması açılamadı. Lütfen $_supportEmail adresine yazın.'),
-        ),
-      );
+      sandikSnack(context,
+          'Mail uygulaması açılamadı. Lütfen $_supportEmail adresine yaz.',
+          kind: SandikSnackKind.warning, duration: const Duration(seconds: 5));
     }
   }
 
@@ -1193,9 +1186,8 @@ class _PartnerActivitySwitchState
     } catch (_) {
       if (!mounted) return;
       setState(() => _deger = onceki);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ayar kaydedilemedi, tekrar dene.')),
-      );
+      sandikSnack(context, 'Ayar kaydedilemedi, tekrar dene.',
+          kind: SandikSnackKind.error);
     }
   }
 

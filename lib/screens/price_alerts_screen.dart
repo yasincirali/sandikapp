@@ -10,6 +10,7 @@ import '../providers/watchlist_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/price_alert_service.dart';
 import '../theme/sandik.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_error_view.dart';
 
@@ -129,14 +130,14 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       AnalyticsService.instance.logScreenView(screenName: 'price_alert_created');
       _tazele();
     } catch (e) {
-      _uyar('Alarm kurulamadı: $e');
+      if (!mounted) return;
+      sandikSnackError(context, e, prefix: 'Alarm kurulamadı');
     }
   }
 
   void _uyar(String mesaj) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(mesaj)));
+    sandikSnack(context, mesaj, kind: SandikSnackKind.warning);
   }
 
   @override
