@@ -148,8 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<AppUser> partners,
   ) {
     final user = ref.watch(authProvider).valueOrNull;
-    final tryFmt =
-        tryFormatter(digits: 0);
+    final tryFmt = tryFormatter(digits: 0);
     final sw = MediaQuery.of(context).size.width;
     final hp = sw < 360 ? 14.0 : 20.0;
     final allActivePartners = ref.watch(activePartnersProvider);
@@ -274,6 +273,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final ledgerCount = _typeFilter == null
         ? ledgerAssets.length
         : ledgerAssets.where((a) => a.type == _typeFilter).length;
+
+    // Kendi görünümü + sıfır varlık = ilk kullanım boş durumu. Eskiden
+    // özet (₺0), üç şerit, iki kişi kartı, filtre çipleri ve iki boş
+    // başlıktan SONRA, listenin en altında bir "İlk varlığını ekle" düğmesi
+    // vardı — 27 adımlık turdan çıkan kullanıcı bir duvar sıfır görüyordu.
+    final ownView = !(_view != null && _view!.isNotEmpty);
+    final isEmptyOwn = ownView && myState.assets.isEmpty;
 
     return RefreshIndicator(
       color: context.c.amberText,
@@ -414,6 +420,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ),
+          if (isEmptyOwn)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hp, 24, hp, 0),
+                child: const _EmptyPortfolioCta(),
+              ),
+            ),
           // Anonim yüzdelik dilim şeridi.
           //
           // ORTAK görünümünde gizlenir: şerit KULLANICININ kendi dilimini
@@ -421,7 +434,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // bahsedildiğini belirsizleştirir. Kendi kendini kapatan bir
           // widget (bayrak/opt-in/k-anonimlik) olduğu için burada başka
           // koşul yok.
-          if (!(_view != null && _view!.isNotEmpty)) ...[
+          if (ownView && !isEmptyOwn) ...[
             // Reel getiri percentile'den ÖNCE gelir: "eridim mi?" sorusu
             // "başkalarına göre nerdeyim?" sorusundan önce gelir — biri
             // alım gücü, diğeri sosyal karşılaştırma.
@@ -454,40 +467,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ],
           // Mini cards
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(hp, 16, hp, 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _personMiniCard(
-                      'Ben',
-                      myBuyTotal,
-                      context.c.amberText,
-                      tryFmt,
-                      user?.displayName.isNotEmpty == true
-                          ? user!.displayName[0].toUpperCase()
-                          : 'B',
-                      hideBalance: ref.watch(balanceHiddenProvider),
-                    ),
-                  ),
-                  if (showRightCard && partners.isNotEmpty) ...[
-                    const SizedBox(width: SandikSpace.md),
+          if (!isEmptyOwn)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hp, 16, hp, 20),
+                child: Row(
+                  children: [
                     Expanded(
                       child: _personMiniCard(
-                        rightLabel,
-                        rightTotal,
-                        rightColor,
+                        'Ben',
+                        myBuyTotal,
+                        context.c.amberText,
                         tryFmt,
-                        rightInitial,
+                        user?.displayName.isNotEmpty == true
+                            ? user!.displayName[0].toUpperCase()
+                            : 'B',
                         hideBalance: ref.watch(balanceHiddenProvider),
                       ),
                     ),
+                    if (showRightCard && partners.isNotEmpty) ...[
+                      const SizedBox(width: SandikSpace.md),
+                      Expanded(
+                        child: _personMiniCard(
+                          rightLabel,
+                          rightTotal,
+                          rightColor,
+                          tryFmt,
+                          rightInitial,
+                          hideBalance: ref.watch(balanceHiddenProvider),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
           // Tab bar
           if (allActivePartners.isNotEmpty)
             SliverToBoxAdapter(
@@ -501,55 +515,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           // Asset type filter chips
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(hp, 0, hp, 0),
-              child: HScrollWithFade(
-                child: Row(
-                  children: [
-                    _typeChip(null, 'Tümü'),
-                    for (final t
-                        in RemoteConfigService.instance.visibleAssetTypes)
-                      _typeChip(t, t.label),
-                  ],
+          if (!isEmptyOwn)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hp, 0, hp, 0),
+                child: HScrollWithFade(
+                  child: Row(
+                    children: [
+                      _typeChip(null, 'Tümü'),
+                      for (final t
+                          in RemoteConfigService.instance.visibleAssetTypes)
+                        _typeChip(t, t.label),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           // Distribution header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(hp, 16, hp, 8),
-              child: Text(
-                'VARLIK DAĞILIMI',
-                style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: context.c.text58,
+          if (!isEmptyOwn)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hp, 16, hp, 8),
+                child: Text(
+                  'VARLIK DAĞILIMI',
+                  style: context.t.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: context.c.text58,
+                  ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: hp),
-              child: _buildDistributionList(displayedState),
+          if (!isEmptyOwn)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: hp),
+                child: _buildDistributionList(displayedState),
+              ),
             ),
-          ),
           // Recent transactions header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(hp, 24, hp, 8),
-              child: Text(
-                'PORTFÖY HAREKETLERİ',
-                style: context.t.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: context.c.text58,
+          if (!isEmptyOwn)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hp, 24, hp, 8),
+                child: Text(
+                  'PORTFÖY HAREKETLERİ',
+                  style: context.t.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: context.c.text58,
+                  ),
                 ),
               ),
             ),
-          ),
           // Recent transaction list (show individual asset transactions newest -> oldest)
           SliverToBoxAdapter(
             child: Padding(
@@ -563,73 +581,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ..sort((a, b) => b.addedDate.compareTo(a.addedDate));
 
                 if (recentAssets.isEmpty) {
-                  // Yatay `hp` ÜST Padding'te zaten uygulanıyor; burada
-                  // tekrarlanınca içerik kutusu iki kat daralıyor ve 320pt'de
-                  // "İlk Varlığını Ekle" düğmesi 119px taşıyordu.
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
-                    child: Column(
-                      children: [
-                        Icon(Icons.savings_outlined,
-                            color: context.c.text36, size: 48),
-                        const SizedBox(height: SandikSpace.md),
-                        Text(
-                          'Henüz varlık eklenmemiş',
-                          style: context.t.titleLarge
-                              ?.copyWith(color: context.c.text90),
-                        ),
-                        const SizedBox(height: SandikSpace.sm),
-                        Text(
-                          'İlk varlığını ekleyerek sandığını oluşturmaya başla.',
-                          textAlign: TextAlign.center,
-                          style: context.t.bodyMedium
-                              ?.copyWith(color: context.c.text36),
-                        ),
-                        const SizedBox(height: SandikSpace.lg),
-                        SandikTappable(
-                          haptic: SandikHaptic.medium,
-                          semanticLabel: 'Varlık ekle',
-                          onTap: () => pushGuarded(
-                            context,
-                            adaptiveRoute(
-                                builder: (_) => const AddAssetScreen()),
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 28, vertical: 14),
-                            decoration: BoxDecoration(
-                              color:
-                                  context.c.amberFill.withValues(alpha: 0.15),
-                              borderRadius:
-                                  BorderRadius.circular(SandikRadius.md),
-                              border: Border.all(
-                                  color: context.c.amberFill
-                                      .withValues(alpha: 0.5)),
-                            ),
-                            // 28pt yatay padding + ikon + etiket dar ekranda
-                            // sığmıyor. FittedBox içeriği kırpmadan küçültür;
-                            // düğme metni her cihazda tam okunur.
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.add_rounded,
-                                      color: context.c.amberText, size: 20),
-                                  const SizedBox(width: SandikSpace.sm),
-                                  Text(
-                                    'İlk Varlığını Ekle',
-                                    style: context.t.bodyLarge?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: context.c.amberText),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  // Hiç varlık yoksa CTA ZATEN özetin hemen altında
+                  // (_EmptyPortfolioCta) — burada ikinci kez gösterme.
+                  if (isEmptyOwn) return const SizedBox.shrink();
+                  // Tür filtresi boş: kullanıcıya nedenini ve çıkışı söyle.
+                  return const Padding(
+                    padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
+                    child: _EmptyPortfolioCta(filtered: true),
                   );
                 }
 
@@ -1477,6 +1435,72 @@ class _SignalBadgeButton extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Boş portföy çağrısı. [filtered] true ise "bu türde varlık yok" dilinde.
+class _EmptyPortfolioCta extends StatelessWidget {
+  const _EmptyPortfolioCta({this.filtered = false});
+
+  final bool filtered;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(Icons.savings_outlined, color: context.c.text36, size: 48),
+        const SizedBox(height: SandikSpace.md),
+        Text(
+          filtered ? 'Bu türde varlık yok' : 'Henüz varlık eklenmemiş',
+          style: context.t.titleLarge?.copyWith(color: context.c.text90),
+        ),
+        const SizedBox(height: SandikSpace.sm),
+        Text(
+          filtered
+              ? 'Filtreyi değiştir ya da bu türden bir varlık ekle.'
+              : 'İlk varlığını ekleyerek sandığını oluşturmaya başla.',
+          textAlign: TextAlign.center,
+          style: context.t.bodyMedium?.copyWith(color: context.c.text36),
+        ),
+        const SizedBox(height: SandikSpace.lg),
+        SandikTappable(
+          haptic: SandikHaptic.medium,
+          semanticLabel: 'Varlık ekle',
+          onTap: () => pushGuarded(
+            context,
+            adaptiveRoute(builder: (_) => const AddAssetScreen()),
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+            decoration: BoxDecoration(
+              color: context.c.amberFill.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(SandikRadius.md),
+              border:
+                  Border.all(color: context.c.amberFill.withValues(alpha: 0.5)),
+            ),
+            // 28pt yatay padding + ikon + etiket dar ekranda
+            // sığmıyor. FittedBox içeriği kırpmadan küçültür;
+            // düğme metni her cihazda tam okunur.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_rounded, color: context.c.amberText, size: 20),
+                  const SizedBox(width: SandikSpace.sm),
+                  Text(
+                    filtered ? 'Varlık Ekle' : 'İlk Varlığını Ekle',
+                    style: context.t.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: context.c.amberText),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

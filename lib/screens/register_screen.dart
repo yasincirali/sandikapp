@@ -381,9 +381,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 accepted: _termsAccepted,
                 docConfirmed: _termsDocConfirmed,
                 error: _termsError,
-                errorMessage: _termsDocConfirmed
-                    ? 'Devam etmek için yasal koşulları kabul etmelisin.'
-                    : 'Önce belgeyi açıp sona kadar okumalısın.',
+                errorMessage: 'Devam etmek için yasal koşulları kabul etmelisin.',
                 onToggle: () => setState(() {
                   _termsAccepted = !_termsAccepted;
                   if (_termsAccepted) _termsError = false;
@@ -410,10 +408,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 accepted: _consentAccepted,
                 docConfirmed: _consentDocConfirmed,
                 error: _consentError,
-                errorMessage: _consentDocConfirmed
-                    ? 'Devam etmek için yurt dışı aktarım rızasını '
-                        'kabul etmelisin.'
-                    : 'Önce belgeyi açıp sona kadar okumalısın.',
+                errorMessage: 'Devam etmek için yurt dışı aktarım rızasını '
+                    'kabul etmelisin.',
                 onToggle: () => setState(() {
                   _consentAccepted = !_consentAccepted;
                   if (_consentAccepted) _consentError = false;
@@ -501,9 +497,8 @@ class _LegalConsentBox extends StatelessWidget {
   final bool error;
   final String errorMessage;
   final VoidCallback onToggle;
-  /// Kullanıcı bağlı belgeyi açıp sonuna kadar okuyup onayladıysa `true`
-  /// olur. `false` iken checkbox tıklamayla değiştirilemez; sadece belgeyi
-  /// aç butonu (linkLabel) çalışır.
+  /// Kullanıcı belgeyi açıp sonuna kadar okuduysa `true`. Yalnızca bağlantı
+  /// etiketini ("tekrar aç") etkiler; işaretlemeyi KİLİTLEMEZ.
   final bool docConfirmed;
 
   const _LegalConsentBox({
@@ -587,14 +582,11 @@ class _LegalConsentBox extends StatelessWidget {
           ],
           const SizedBox(height: 14),
           GestureDetector(
-            onTap: () {
-              if (!docConfirmed) {
-                // Belge henüz açılıp onaylanmadı → belgeyi aç.
-                onShowText?.call();
-                return;
-              }
-              onToggle();
-            },
+            // 2026-09: "belgeyi açıp sonuna kadar kaydır" zorunluluğu
+            // kaldırıldı. Belge bir dokunuş uzakta (bağlantı hemen üstte);
+            // kutuyu işaretlemek onay için yeterli. Dört düz kutudan daha
+            // yavaş bir ilk kullanım, hukuki bir kazanç sağlamıyordu.
+            onTap: onToggle,
             behavior: HitTestBehavior.opaque,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,

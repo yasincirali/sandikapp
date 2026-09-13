@@ -1,9 +1,11 @@
+import 'dart:io' show Platform;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
+import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -122,10 +124,23 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     }
     setState(() => _submitting = true);
     try {
-      await AuthService.instance.verifyRegistrationOtp(
+      final user = await AuthService.instance.verifyRegistrationOtp(
         email: widget.email,
         token: code,
       );
+      // Sorumluluk reddi KAYIT ekranında zaten onaylandı ("Yasal Koşullar"
+      // kutusu disclaimer metnini içeriyor). Eskiden OTP sonrası
+      // DisclaimerAcceptanceScreen ikinci kez soruyordu — aynı oturumda
+      // iki kez aynı onay. Kaydı burada düşüyoruz ki _AuthGate kapısı
+      // geçsin; hata olursa eski davranış (ekran sorar) yedek olarak kalır.
+      try {
+        await DisclaimerService.instance.recordAcceptance(
+          userId: user.id,
+          appVersion: '1.0.0+1',
+          platform: Platform.isIOS ? 'ios' : 'android',
+          locale: 'tr_TR',
+        );
+      } catch (_) {}
       ref.invalidate(authProvider);
       if (!mounted) return;
       Navigator.of(context).popUntil((r) => r.isFirst);

@@ -18,6 +18,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
+import 'onboarding_screen.dart';
 import 'push_diagnostics_screen.dart';
 import 'price_alerts_screen.dart';
 import 'signal_settings_screen.dart';
@@ -498,6 +499,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Bize Ulaş',
               subtitle: _supportEmail,
               onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
+            ),
+            _SettingsTile(
+              icon: Icons.explore_outlined,
+              title: 'Tanıtım turunu yeniden izle',
+              subtitle: 'Ekranların ne işe yaradığını hatırla',
+              onTap: () {
+                final uid = ref.read(authProvider).valueOrNull?.id;
+                if (uid == null) return;
+                Navigator.of(context).push(
+                  adaptiveRoute<void>(
+                    fullscreenDialog: true,
+                    builder: (ctx) => OnboardingScreen(
+                      userId: uid,
+                      onComplete: () => Navigator.of(ctx).pop(),
+                    ),
+                  ),
+                );
+              },
             ),
             _SettingsTile(
               icon: Icons.rate_review_outlined,
