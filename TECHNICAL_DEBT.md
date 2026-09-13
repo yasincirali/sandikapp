@@ -858,7 +858,7 @@ Kasten regresyon enjekte edilip doğrulandı.
 bak. "Metin rengi" diye adlandırılmış bir token pratikte zemin olarak
 kullanılıyor olabilir; ad niyeti anlatır, kullanımı garanti etmez.
 
-Tasarım ve komponent envanteri: `LIGHT_MODE_TASARIM_RAPORU.md`.
+Tasarım ve komponent envanteri: `docs/archive/LIGHT_MODE_TASARIM_RAPORU.md`.
 
 ---
 

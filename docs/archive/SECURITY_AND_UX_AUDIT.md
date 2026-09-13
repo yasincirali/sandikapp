@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** 2026-05-12 güvenlik + UX denetimi. SECURITY_AUDIT_2026_08.md ve docs/DEGERLENDIRME_VE_YOL_HARITASI_2026_09.md §3 tarafından aşıldı.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # sandık — Güvenlik & UX Audit Raporu
 
 **Tarih:** 2026-05-12

@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** 2026-07-05 tarihli hata listesi; maddeler kapatıldı.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # PortfoyTakip — Bug Fix & Yeni Özellik Planı
 
 **Tarih:** 2026-07-05

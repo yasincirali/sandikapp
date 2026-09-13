@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** İsteğe bağlı fiyat özelliği tasarım notu; uygulandı.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Opsiyonel Alış Fiyatı Özelliği
 
 ## 📋 Yapılan Değişiklikler

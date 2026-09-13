@@ -24,7 +24,7 @@ tarama **kabuğu** denetler: manifest, native lib, kaynaklar, gömülü string'l
 Uygulama mantığının (auth akışı, RLS, edge function yetkilendirmesi, PII
 işleme) güvenlik incelemesi **ayrıdır** ve kaynak seviyesinde yapılır —
 bkz. [`SECURITY_AUDIT_2026_08.md`](../../SECURITY_AUDIT_2026_08.md) ve
-[`SECURITY_AND_UX_AUDIT.md`](../../SECURITY_AND_UX_AUDIT.md).
+[`SECURITY_AND_UX_AUDIT.md`](../archive/SECURITY_AND_UX_AUDIT.md).
 
 Bu iki katman birbirini tamamlar; biri diğerinin yerine geçmez.
 

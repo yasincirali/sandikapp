@@ -300,7 +300,7 @@ ayrıca detay veriyor. sandık için işaretlemen gerekenler ve gerekçeleri:
   "para/kripto yönetimi veya yatırımı, **kişiselleştirilmiş tavsiye dahil**".
   Uygulamada RSI/MACD/Bollinger tabanlı **"AL / SAT" sinyalleri** ve sinyal
   push bildirimleri var (`lib/models/technical_signal.dart`,
-  `TECHNICAL_SIGNALS_IMPLEMENTATION.md`). Bir incelemeci bunu "yatırım
+  `docs/archive/TECHNICAL_SIGNALS_IMPLEMENTATION.md`). Bir incelemeci bunu "yatırım
   tavsiyesi" sayabilir; Türkiye'de yatırım danışmanlığı SPK izni gerektirir.
   **Alınacak önlem — üçü birden:**
   1. ✅ **Tamam (2026-09-06).** Uyarı artık sinyal gösteren her yüzeyde:

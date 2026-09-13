@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** Faz B tamamlanma raporu (2026-05). Tarihsel kayıt.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Faz B — Yayın Sonrası 30 Gün Tamamlandı
 
 **Tarih:** 2026-05-13  

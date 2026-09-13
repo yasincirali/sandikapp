@@ -9,7 +9,7 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > Değişiklikler bilinçli olarak küçük ve mekanik tutuldu.
 
 ## Son kalınan yer
-**Faz 0 tamam** (kod tarafı). Sıradaki: Faz 1.1 (ölü kod silme).
+Faz 0 tamam, Faz 1.1–1.2 tamam. Sıradaki: **Faz 1.3** (sandikSnack yardımcısı).
 
 ## Faz 0 — Kanamayı durdur
 
@@ -27,7 +27,21 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 | 0.10 | ✅ | `SupabaseService.isPushAdmin()` + `isPushAdminProvider` + Ayarlar tile'ı yalnızca admin'e; "GELİŞTİRİCİ" → "TANILAMA"; `adaptiveRoute`. Debug "Test Crash" tile'ı admin'den bağımsız ayrı bloğa alındı. Migration `0054` GRANT — koşulması sende (#7). |
 
 ## Faz 1 — Temizlik ve tutarlılık altyapısı
-(henüz başlanmadı)
+
+| # | Durum | Not |
+|---|---|---|
+| 1.1 | ✅ (kısmi) | Silindi: `asset_detail_screen.dart`, `portfolio_detail_screen.dart`, `premium_gate.dart`, `PortfoyTakip.xcodeproj/`, `assets/images/sandik_original_circle.png` + `splash_icon.png` (Android kendi drawable kopyasını kullanıyor). `tools/` → `tool/` birleşti. `chart_interaction_parity_test` listesi güncellendi. **Bilerek bırakıldı:** `bar_interval_selector.dart` (kullanıcının son commit'i, bağlanması bekleniyor), `chart_downsample`/`series_downsample` (`TECHNICAL_DEBT.md` "ERTELENDİ" kaydı var), `store_listing/screenshots/orig+raw` (`build_screenshots.py` raw/ okuyor). |
+| 1.2 | ✅ | 17 kök doküman → `docs/archive/` ("ARŞİV" başlığıyla), çapraz bağlantılar düzeltildi. `README.md` dizin oldu. `CLAUDE.md` yeniden yazıldı: sqflite/Provider/emülatör-ilk-kurulum kaldırıldı, kurallar (tasarım sistemi, para/tarih, hata, navigasyon, katmanlama, sunucu, gizli anahtar) tek yerde, Windows yolları "yerel makine notları" bölümünde. |
+| 1.3 | ⏳ | |
+| 1.4 | ⏳ | |
+| 1.5 | ⏳ | |
+| 1.6 | ⏳ | |
+| 1.7 | ⏳ | |
+| 1.8 | ⏳ | |
+| 1.9 | ⏳ | |
+| 1.10 | ⏳ | |
+| 1.11 | ⏳ | |
+| 1.12 | ⏳ | |
 
 ## Faz 2 — UX tutarlılığı ve modern UI
 (henüz başlanmadı)

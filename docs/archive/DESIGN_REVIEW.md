@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** 2026-08-06 tasarım incelemesi. Açık maddeler docs/DEGERLENDIRME_VE_YOL_HARITASI_2026_09.md §6-7 içinde yeniden ölçüldü.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Sandık — Tasarım & Hareket Denetimi
 
 **Tarih:** 2026-08-06 · **Kapsam:** `lib/` (24 ekran, 16 widget, 21k satır ekran kodu)

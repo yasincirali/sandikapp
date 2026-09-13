@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** Faz A tamamlanma raporu (2026-05). Tarihsel kayıt; güncel durum TECHNICAL_DEBT.md ve YAPMAN_GEREKENLER.md.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Faz A — Yayın Öncesi Bloker'ları Tamamlandı
 
 **Tarih:** 2026-05-12

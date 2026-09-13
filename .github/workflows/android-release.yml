@@ -96,7 +96,7 @@ jobs:
 
       # --obfuscate Dart sembol adlarını karartır; --split-debug-info onları
       # ayrı dosyaya yazar. İkisi birlikte zorunlu. Karartma olmadan APK'dan
-      # sınıf/metot adları düz metin okunabiliyor (PRODUCTION_STATUS S5).
+      # sınıf/metot adları düz metin okunabiliyor (docs/archive/PRODUCTION_STATUS.md S5).
       # Sonuç: Crashlytics'e düşen Dart stack trace'leri okunamaz hale gelir —
       # aşağıdaki symbols artefaktını sürüm bazında SAKLA:
       #   flutter symbolize -i crash.txt -d symbols/app.android-arm64.symbols

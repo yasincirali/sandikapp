@@ -4,7 +4,7 @@ Kapsam: SQL injection, rate limiting ve genel güvenlik yüzeyi.
 İnceleme alanı: `lib/` (Flutter istemci), `supabase/migrations/`,
 `supabase/functions/` (Edge Functions), platform yapılandırması.
 
-Bu inceleme `SECURITY_AND_UX_AUDIT.md` (A1–A7, B5, C1–C3, D1–D2)
+Bu inceleme `docs/archive/SECURITY_AND_UX_AUDIT.md` (A1–A7, B5, C1–C3, D1–D2)
 bulgularının **üzerine** yapıldı; o turdaki düzeltmeler yerinde ve
 etkili durumda.
 

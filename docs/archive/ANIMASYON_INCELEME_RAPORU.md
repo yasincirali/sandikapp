@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** 2026-08-09 animasyon incelemesi. Reduce-motion kapsaması %100 (test korumalı).
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Sandık — Animasyon İnceleme Raporu
 
 **Tarih:** 2026-08-09

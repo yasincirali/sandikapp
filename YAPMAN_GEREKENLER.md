@@ -283,7 +283,7 @@ kill etsem de son seçilen tema kalmalı."
 ### 1) Birinci sebep: `push-live-activity` HİÇ DAĞITILMAMIŞ olabilir
 
 Temayı push gövdesine koyan sunucu kodu **2026-09-03**'te eklendi
-(commit `b5ce9e4`). 2026-09-07 tarihli `SUPABASE_DEPLOY_ADIMLARI.txt`
+(commit `b5ce9e4`). 2026-09-07 tarihli `docs/archive/SUPABASE_DEPLOY_ADIMLARI.txt`
 yalnızca `analyze-signals` ve `daily-brief`'i listeliyor —
 `push-live-activity` hiçbir deploy listesinde geçmiyor.
 

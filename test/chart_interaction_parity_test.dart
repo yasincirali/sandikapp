@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// | `performance_screen`           | ✅ | ✅ | ✅ | ✖ |
 /// | `comparison_screen`            | ✖ | ✖ | ✖ | ✖ |
 /// | `watchlist_chart`              | ✖ | ✖ | ✖ | ✅ |
-/// | `portfolio_detail_screen`      | ✖ | ✖ | ✖ | ✖ |
+/// | `portfolio_detail_screen`      | ✖ | ✖ | ✖ | ✖ | (2026-09'da silindi — 0 referans)
 ///
 /// Değer okuma jesti bile üç türlüydü: performans ekranlarında 220 ms basılı
 /// tutma, takip/karşılaştırmada fl_chart'ın built-in tooltip'i, sparkline'da
@@ -113,7 +113,6 @@ void main() {
       // Eğri, veride olmayan tepe ve dip uydurur; fiyat grafiğinde yanıltıcı.
       for (final yol in const [
         'lib/widgets/percent_comparison_chart.dart',
-        'lib/screens/portfolio_detail_screen.dart',
         'lib/screens/performance_screen.dart',
         'lib/screens/portfolio_performance_screen.dart',
       ]) {

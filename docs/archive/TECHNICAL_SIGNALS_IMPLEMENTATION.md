@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** Teknik sinyaller uygulama notu (Portekizce). Silinmiş portfolio_detail_screen.dart'ı anlatır; güncel uygulama lib/services/technical_analysis_service.dart.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Implementação de Sinais Técnicos de Compra/Venda
 
 ## 📊 Visão Geral

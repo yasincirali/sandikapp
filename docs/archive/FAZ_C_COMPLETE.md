@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** Faz C tamamlanma raporu (2026-05). Tarihsel kayıt.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Faz C — İyileştirme Tamamlandı
 
 **Tarih:** 2026-05-13  

@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** Android emülatör kurulum bağlamı (tek makineye özgü).
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Android Deployment Context
 
 ## Project Overview

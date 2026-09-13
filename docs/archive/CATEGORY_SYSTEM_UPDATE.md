@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** Kategori sistemi güncellemesi notu. Var olmayan dosyalara (database_service.dart, asset_row_widget.dart) referans verir; yalnızca tarihsel.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # Kategori Sistemi Güncelleme - Özet
 
 ## 📋 Yapılan Değişiklikler

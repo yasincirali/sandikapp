@@ -1,3 +1,6 @@
+> **ARŞİV — 2026-09-13.** 2026-05-11 tarihli yol haritası. Yerini docs/DEGERLENDIRME_VE_YOL_HARITASI_2026_09.md aldı.
+> Bu dosya güncellenmiyor; bağlantılar ve dosya yolları eski olabilir.
+
 # sandık (PortfoyTakip) — Production Yol Haritası
 
 **Tarih:** 2026-05-11
