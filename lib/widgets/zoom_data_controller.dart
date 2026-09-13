@@ -16,10 +16,12 @@ class ZoomDataController extends ChangeNotifier {
     required this.initialTo,
     this.simulate = false,
     Map<int, double> seedData = const {},
+    ResolutionTier? manualTier,
   }) {
     _from = initialFrom;
     _to = initialTo;
-    _tier = ResolutionTierMeta.pickForSpan(_spanDays());
+    _manualTier = manualTier;
+    _tier = _cozunurluk();
     // Filtre değişiminde önceki controller'ın verisi tohum olarak gelir.
     // Yeni seri hazır olana kadar ekranda soluk şekilde eski grafik durur;
     // böylece "veri yok" hâli oluşmaz ve tam sayfa spinner'a düşülmez.
@@ -40,6 +42,19 @@ class ZoomDataController extends ChangeNotifier {
   DateTime _from = DateTime.now();
   DateTime _to = DateTime.now();
   ResolutionTier _tier = ResolutionTier.daily;
+
+  /// Kullanıcının seçtiği bar. `null` ise çözünürlük viewport genişliğinden
+  /// otomatik türetilir (eski davranış, hiç değişmedi).
+  ///
+  /// Seçim yapılmışsa zoom bunu GERİ ALAMAZ: kullanıcı 15dk seçip pinch
+  /// yaptığında grafiğin sessizce 5dk'ya düşmesi, açıkça verilmiş bir kararı
+  /// ezmek olurdu. Çağıran bu değeri [ChartIntervalPolicy.uyarla]'dan
+  /// geçirmiş olmalı — controller dönemi bilmez, geçerliliği doğrulayamaz.
+  ResolutionTier? _manualTier;
+
+  /// Şu an geçerli çözünürlük: elle seçim varsa o, yoksa viewport'tan.
+  ResolutionTier _cozunurluk() =>
+      _manualTier ?? ResolutionTierMeta.pickForSpan(_spanDays());
 
   Map<int, double> _data = const {};
   /// `_data` ile AYNI istekten gelen tür/pozisyon dağılımı.
@@ -95,7 +110,7 @@ class ZoomDataController extends ChangeNotifier {
   void updateViewport(DateTime from, DateTime to) {
     _from = from;
     _to = to;
-    final newTier = ResolutionTierMeta.pickForSpan(_spanDays());
+    final newTier = _cozunurluk();
     // Tier değişmediyse ve _data zaten viewport'u kapsıyorsa reload etme —
     // pan sırasında Y-fit içinde gezmek yeni istek gerektirmez.
     if (newTier == _tier && _dataCoversViewport()) {
@@ -187,6 +202,33 @@ class ZoomDataController extends ChangeNotifier {
       }
     }
   }
+
+  /// Kullanıcı bar aralığını değiştirdi.
+  ///
+  /// [tier] `null` verilirse elle seçim KALDIRILIR ve çözünürlük yeniden
+  /// viewport'tan türetilmeye başlar.
+  ///
+  /// Debounce YOK: pinch/pan sırasında saniyede onlarca kez tetiklenen
+  /// `updateViewport`'un aksine bu, tek bir bilinçli dokunuş. Beklemek
+  /// yalnızca gecikme hissi yaratırdı.
+  void setManualTier(ResolutionTier? tier) {
+    if (_manualTier == tier) return;
+    _manualTier = tier;
+    final yeni = _cozunurluk();
+    if (yeni == _tier) {
+      // Çözünürlük fiilen değişmedi (örn. otomatik zaten aynı tier'ı
+      // seçiyordu) — ağa çıkmaya gerek yok, ama seçim durumu değiştiği
+      // için dinleyiciler haberdar edilmeli (seçici kendini boyar).
+      notifyListeners();
+      return;
+    }
+    _tier = yeni;
+    _debounce?.cancel();
+    _reload(immediate: true);
+  }
+
+  /// Kullanıcının seçtiği bar; `null` ise otomatik.
+  ResolutionTier? get manualTier => _manualTier;
 
   /// Veriyi elle tazele — "veri alınamadı" durumundaki tekrar dene butonu
   /// bunu çağırır. Debounce'u atlar; kullanıcı zaten bilinçli tetikledi.
