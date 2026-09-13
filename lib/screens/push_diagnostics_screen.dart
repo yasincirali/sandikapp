@@ -9,6 +9,8 @@ import '../services/live_activity_service.dart';
 import '../services/remote_push_service.dart';
 import '../services/surface_theme.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
+import '../widgets/custom_loading_indicator.dart';
 import '../utils/sandik_snack.dart';
 
 /// Push zinciri teşhis ekranı — **admin'e açık, release dahil**.
@@ -100,33 +102,17 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   /// ekranın kendi önerisi işe yaramıyordu (2026-08-19'da doğrulandı:
   /// geçmiş 0 satırken bile 9 sinyal atlanıyordu).
   Future<void> _sinyalGecmisiniTemizle() async {
-    final onay = await showDialog<bool>(
+    final onay = await showSandikConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.c.surface2,
-        title: Text('De-dup sıfırlansın mı?',
-            style: TextStyle(color: context.c.text90, fontSize: 17)),
-        content: Text(
-          'Son gönderilen sinyal durumu (signal_state) silinir; aynı '
+      title: 'De-dup sıfırlansın mı?',
+      message: 'Son gönderilen sinyal durumu (signal_state) silinir; aynı '
           'sinyaller bir sonraki turda YENİDEN gönderilir. Uygulama içi '
           'bildirim listesi (${_sinyaller.length} kayıt) de boşalır. '
           'Bu işlem geri alınamaz.',
-          style: TextStyle(color: context.c.text58, fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: context.c.loss),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sil'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Sil',
+      destructive: true,
     );
-    if (onay != true) return;
+    if (!onay) return;
 
     setState(() => _tetikleniyor = true);
     try {
@@ -594,7 +580,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       ),
       body: SafeArea(
         child: _loading
-            ? Center(child: CircularProgressIndicator(color: context.c.amberText))
+            ? const Center(child: CustomLoadingIndicator())
             : _error != null
                 ? _hataGorunumu()
                 : _icerik(),

@@ -170,7 +170,7 @@ class _DisclaimerAcceptanceScreenState
               if (_showError) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Devam etmek için yasal uyarıyı kabul etmelisiniz.',
+                  'Devam etmek için yasal uyarıyı kabul etmelisin.',
                   style: context.t.bodySmall?.copyWith(color: context.c.loss),
                 ),
               ],

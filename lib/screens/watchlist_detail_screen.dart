@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show Icons, Material, Colors;
+    show Icons, Material, Colors, RefreshIndicator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,6 +9,7 @@ import '../models/watchlist_item.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
@@ -84,7 +85,17 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
               children: [
                 _header(context),
                 Expanded(
-                  child: ListView(
+                  child: RefreshIndicator(
+      color: context.c.amberText,
+      onRefresh: () async {
+        setState(() {
+          _future = null;
+          _loadedFor = null;
+        });
+        await _load();
+      },
+      child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                     children: [
                       _PeriodToggle(
@@ -129,6 +140,7 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
                       const _FooterNote(),
                     ],
                   ),
+    ),
                 ),
               ],
             ),
@@ -196,26 +208,14 @@ class _RemoveButton extends ConsumerWidget {
     return SandikTappable(
       semanticLabel: 'Takipten çıkar',
       onTap: () async {
-        final onay = await showCupertinoDialog<bool>(
+        final onay = await showSandikConfirm(
           context: context,
-          builder: (dlg) => CupertinoAlertDialog(
-            title: const Text('Takipten çıkar'),
-            content:
-                Text('${item.displayLabel} takip listenden kaldırılsın mı?'),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.pop(dlg, false),
-                child: const Text('Vazgeç'),
-              ),
-              CupertinoDialogAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.pop(dlg, true),
-                child: const Text('Çıkar'),
-              ),
-            ],
-          ),
+          title: 'Takipten çıkar',
+          message: '${item.displayLabel} takip listenden kaldırılsın mı?',
+          confirmLabel: 'Çıkar',
+          destructive: true,
         );
-        if (onay != true || !context.mounted) return;
+        if (!onay || !context.mounted) return;
 
         try {
           await ref.read(watchlistProvider.notifier).remove(item.id);

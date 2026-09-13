@@ -44,42 +44,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _confirmDeleteAccount() async {
     // 1. Kademe — uyarı
-    final firstConfirm = await showDialog<bool>(
+    final firstConfirm = await showSandikConfirm(
       context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        backgroundColor: context.c.surface2,
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: context.c.loss),
-            const SizedBox(width: 8),
-            Text('Hesabını silmek üzeresin',
-                style: TextStyle(color: context.c.text90)),
-          ],
-        ),
-        content: Text(
-          'Bu işlem GERİ ALINAMAZ.\n\n'
+      title: 'Hesabını silmek üzeresin',
+      message: 'Bu işlem GERİ ALINAMAZ.\n\n'
           'Tüm portföy kayıtların, performans geçmişin ve ortaklık '
           'bağlantıların 30 gün içinde kalıcı olarak silinecek.\n\n'
           'Devam etmek istiyor musun?',
-          style: TextStyle(color: context.c.text90),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Vazgeç',
-                style: TextStyle(color: context.c.text58)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Devam Et',
-                style: TextStyle(color: context.c.loss)),
-          ),
-        ],
-      ),
+      confirmLabel: 'Devam et',
+      destructive: true,
+      barrierDismissible: false,
     );
-
-    if (firstConfirm != true || !mounted) return;
+    if (!firstConfirm || !mounted) return;
 
     // 2. Kademe — şifre doğrulama
     final passwordCtrl = TextEditingController();
@@ -387,7 +363,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           children: [
-            const _SectionTitle('GÖRÜNÜM'),
+            const SandikSectionHeader(title: 'GÖRÜNÜM'),
             const SizedBox(height: 12),
             const _ThemeModePicker(),
             const SizedBox(height: 24),
@@ -399,7 +375,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // "SİNYALLER"de. Kullanıcı sinyalleri ayarlamak istediğinde
             // ekranda iki farklı yere bakmak zorundaydı. Aynı özelliğin
             // parçaları bir arada durur.
-            const _SectionTitle('BİLDİRİMLER'),
+            const SandikSectionHeader(title: 'BİLDİRİMLER'),
             const SizedBox(height: 12),
             _SwitchTile(
               icon: Icons.notifications_active_outlined,
@@ -464,7 +440,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // ve `sync` ilk satırda döner (bkz. LiveActivityService).
             // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
             if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              const _SectionTitle('CANLI ETKİNLİKLER'),
+              const SandikSectionHeader(title: 'CANLI ETKİNLİKLER'),
               const SizedBox(height: 12),
               const _LiveActivitySection(),
               const SizedBox(height: 28),
@@ -474,7 +450,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             //
             // Tek satırlık "SOSYAL" bölümüydü; adı artık içeriğiyle
             // eşleşiyor.
-            const _SectionTitle('ORTAKLIK'),
+            const SandikSectionHeader(title: 'ORTAKLIK'),
             const SizedBox(height: 12),
             _SwitchTile(
               icon: Icons.emoji_events_outlined,
@@ -488,7 +464,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ref.read(leaderboardOptInProvider.notifier).set(v),
             ),
             const SizedBox(height: 28),
-            const _SectionTitle('YASAL'),
+            const SandikSectionHeader(title: 'YASAL'),
             const SizedBox(height: 12),
             _SettingsTile(
               icon: Icons.privacy_tip_outlined,
@@ -515,7 +491,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: _showDisclaimerText,
             ),
             const SizedBox(height: 28),
-            const _SectionTitle('DESTEK'),
+            const SandikSectionHeader(title: 'DESTEK'),
             const SizedBox(height: 12),
             _SettingsTile(
               icon: Icons.mail_outline_rounded,
@@ -530,7 +506,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: _openFeedbackSheet,
             ),
             const SizedBox(height: 28),
-            const _SectionTitle('HESAP'),
+            const SandikSectionHeader(title: 'HESAP'),
             const SizedBox(height: 12),
             _SettingsTile(
               icon: Icons.download_outlined,
@@ -570,7 +546,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // hesap admin değil" diyen 943 satırlık bir ekrana çıkıyordu.
             if (ref.watch(isPushAdminProvider).valueOrNull == true) ...[
               const SizedBox(height: 28),
-              const _SectionTitle('TANILAMA'),
+              const SandikSectionHeader(title: 'TANILAMA'),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.notifications_active_outlined,
@@ -589,7 +565,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // geliştiricinin kendi cihazında yapılır.
             if (kDebugMode) ...[
               const SizedBox(height: 28),
-              const _SectionTitle('GELİŞTİRİCİ (DEBUG)'),
+              const SandikSectionHeader(title: 'GELİŞTİRİCİ (DEBUG)'),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.bug_report_outlined,
@@ -623,27 +599,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Text(
-        text,
-        style: context.t.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-          // Bölüm başlığı yapısal bilgidir — text36 (3.79:1) yalnızca
-          // yardımcı metin eşiğini geçer, light modda okunmuyordu.
-          color: context.c.text58,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-}
 
 /// Bölüm İÇİ alt başlık — ör. "Canlı Etkinlikler > Gizlilik".
 ///

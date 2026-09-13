@@ -4,7 +4,8 @@ import 'package:flutter/material.dart'
         Icons,
         Colors,
         Dismissible,
-        DismissDirection;
+        DismissDirection,
+        RefreshIndicator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset_type.dart';
@@ -139,7 +140,15 @@ class _List extends ConsumerWidget {
     final periodLabel =
         watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
 
-    return ListView.separated(
+    return RefreshIndicator(
+      color: context.c.amberText,
+      onRefresh: () async {
+        ref.invalidate(watchlistChartProvider);
+        ref.invalidate(watchlistProvider);
+        await ref.read(watchlistProvider.future);
+      },
+      child: ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
       // +3: grafik kartı, sayı başlığı ve sondaki ekleme satırı.
       itemCount: items.length + 3,
@@ -169,6 +178,7 @@ class _List extends ConsumerWidget {
         if (i == items.length + 2) return const _AddRow();
         return _Row(item: items[i - 2]);
       },
+    ),
     );
   }
 }

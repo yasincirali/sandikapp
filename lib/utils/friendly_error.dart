@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/sandik.dart';
 
@@ -129,6 +128,225 @@ Future<void> showAppInfo(
 
 enum SandikDialogKind { error, success, info }
 
+/// Onay dialogu — iki eylem, tek görsel dil.
+///
+/// 2026-09 denetimi: 13 dosyada `AlertDialog`, 5 dosyada
+/// `CupertinoAlertDialog`; aynı "varlığı sil" diyaloğu iki ekranda ayrı
+/// yazılmıştı, çıkış onayı `siz` derken sepet onayı `sen` diyordu. Bu
+/// fonksiyon markanın tek onay yüzeyi: [destructive] true ise vurgu `loss`
+/// ve uyarı ikonu, değilse amber soru ikonu. [detail] mesajın altına
+/// açıklayıcı bir kutu koyar (ör. "bu bir satış değil" uyarısı).
+///
+/// `true` = onaylandı; kapatma/vazgeçme `false`.
+Future<bool> showSandikConfirm({
+  required BuildContext context,
+  required String title,
+  required String message,
+  String confirmLabel = 'Onayla',
+  String cancelLabel = 'Vazgeç',
+  bool destructive = false,
+  Widget? detail,
+  bool barrierDismissible = true,
+}) async {
+  if (!context.mounted) return false;
+  final palette = context.c;
+  final isLight = context.isLight;
+  final accent = destructive ? palette.loss : palette.amberText;
+  final icon =
+      destructive ? Icons.warning_amber_rounded : Icons.help_outline_rounded;
+  final result = await showGeneralDialog<bool>(
+    context: context,
+    barrierDismissible: barrierDismissible,
+    barrierLabel: 'Sandık onay',
+    barrierColor: _barrierColor(isLight),
+    transitionDuration: const Duration(milliseconds: 220),
+    pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
+    transitionBuilder: (ctx, anim, _, __) {
+      final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+      return Opacity(
+        opacity: curved.value,
+        child: Transform.scale(
+          scale: 0.94 + 0.06 * curved.value,
+          child: _SandikDialogShell(
+            accent: accent,
+            icon: icon,
+            title: title,
+            message: message,
+            detail: detail,
+            actions: [
+              _DialogButton(
+                label: cancelLabel,
+                color: palette.text58,
+                filled: false,
+                onTap: () => Navigator.of(ctx).pop(false),
+              ),
+              _DialogButton(
+                label: confirmLabel,
+                color: accent,
+                filled: true,
+                onTap: () => Navigator.of(ctx).pop(true),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+  return result == true;
+}
+
+/// Perde rengi — aydınlıkta hafif, karanlıkta koyu; iki dialog da bunu kullanır.
+Color _barrierColor(bool isLight) =>
+    Colors.black.withValues(alpha: isLight ? 0.32 : 0.55);
+
+/// Dialog kabuğu — ikon rozeti, başlık, mesaj, isteğe bağlı detay kutusu,
+/// eylem satırı. `_SandikDialog` (tek buton, canlı mesaj) ve onay dialogu
+/// aynı kabuğu paylaşır.
+class _SandikDialogShell extends StatelessWidget {
+  const _SandikDialogShell({
+    required this.accent,
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.actions,
+    this.detail,
+  });
+
+  final Color accent;
+  final IconData icon;
+  final String title;
+  final String message;
+  final Widget? detail;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 360),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+            decoration: BoxDecoration(
+              color: context.isLight ? context.c.surface2 : context.c.surface1,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: accent.withValues(alpha: 0.30)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black
+                      .withValues(alpha: context.isLight ? 0.14 : 0.35),
+                  blurRadius: 30,
+                  spreadRadius: -6,
+                  offset: const Offset(0, 12),
+                ),
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.18),
+                  blurRadius: 40,
+                  spreadRadius: -12,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: accent.withValues(alpha: 0.35)),
+                  ),
+                  child: Icon(icon, color: accent, size: 30),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: context.t.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: context.c.text90,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: context.t.bodyMedium?.copyWith(
+                    height: 1.4,
+                    color: context.c.text58,
+                  ),
+                ),
+                if (detail != null) ...[
+                  const SizedBox(height: 14),
+                  detail!,
+                ],
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    for (var i = 0; i < actions.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 10),
+                      Expanded(child: actions[i]),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogButton extends StatelessWidget {
+  const _DialogButton({
+    required this.label,
+    required this.color,
+    required this.filled,
+    required this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final bool filled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 46,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Semantics(
+          button: true,
+          label: label,
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: filled ? color.withValues(alpha: 0.14) : null,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: color.withValues(alpha: filled ? 0.45 : 0.25),
+              ),
+            ),
+            child: Text(
+              label,
+              style: context.t.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Sandık marka kimliğine uygun modal dialog.
 ///
 /// - Koyu yüzey (`Sandik.surface1`) + amber/loss/gain kenar highlight
@@ -174,7 +392,7 @@ Future<void> showSandikDialog({
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Sandık dialog',
-    barrierColor: Colors.black.withValues(alpha: isLight ? 0.32 : 0.55),
+    barrierColor: _barrierColor(isLight),
     transitionDuration: const Duration(milliseconds: 220),
     pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
     transitionBuilder: (ctx, anim, _, __) {
@@ -255,109 +473,21 @@ class _SandikDialogState extends State<_SandikDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 360),
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-            decoration: BoxDecoration(
-              color: context.isLight
-                  ? context.c.surface2
-                  : context.c.surface1,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: accent.withValues(alpha: 0.30),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black
-                      .withValues(alpha: context.isLight ? 0.14 : 0.35),
-                  blurRadius: 30,
-                  spreadRadius: -6,
-                  offset: const Offset(0, 12),
-                ),
-                BoxShadow(
-                  color: accent.withValues(alpha: 0.18),
-                  blurRadius: 40,
-                  spreadRadius: -12,
-                  offset: const Offset(0, 0),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: accent.withValues(alpha: 0.35),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(icon, color: accent, size: 30),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text90,
-                    letterSpacing: -0.01 * 18,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.dmSans(
-                    fontSize: 14,
-                    height: 1.4,
-                    color: context.c.text58,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: accent.withValues(alpha: 0.45),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        actionLabel,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: accent,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    // Kabuk onay dialoguyla ORTAK (_SandikDialogShell); burada yalnızca
+    // tek eylem ve canlı mesaj var.
+    return _SandikDialogShell(
+      accent: accent,
+      icon: icon,
+      title: title,
+      message: message,
+      actions: [
+        _DialogButton(
+          label: actionLabel,
+          color: accent,
+          filled: true,
+          onTap: () => Navigator.of(context).pop(),
         ),
-      ),
+      ],
     );
   }
 }

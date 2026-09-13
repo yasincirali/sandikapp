@@ -1,7 +1,14 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show Colors, LinearProgressIndicator, Icons, TextStyle, Material, InkWell;
+    show
+        Colors,
+        LinearProgressIndicator,
+        Icons,
+        TextStyle,
+        Material,
+        InkWell,
+        RefreshIndicator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -1097,7 +1104,15 @@ class _PortfolioPerformanceScreenState
         // Hafta sonu kuyruğu: kapanıştan sonrası gri + kesikli çizilir.
         piyasaKapaliBaslangicTs: breakdown.piyasaKapaliBaslangicTs);
 
-    return ListView(
+    return RefreshIndicator(
+      color: context.c.amberText,
+      onRefresh: () async {
+        // Kullanıcı yenilemesi — fiyat önbelleği atlanır, gün içi future sıfırlanır.
+        await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
+        if (mounted) _retryChartData();
+      },
+      child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       children: [
@@ -1315,6 +1330,7 @@ class _PortfolioPerformanceScreenState
           const SizedBox(height: 16),
         ],
       ],
+    ),
     );
   }
 

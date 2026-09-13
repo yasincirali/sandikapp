@@ -11,7 +11,7 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > gerçek sonucu verecek.
 
 ## Son kalınan yer
-**Faz 1 tamam** (1.9'un google_fonts/lint kısmı ve 1.11'in leaderboard kısmı bilinçli ertelendi — TECHNICAL_DEBT). Sıradaki: **Faz 2.1** (skeleton yükleyiciler).
+Faz 1 tamam; Faz 2.1–2.4 tamam, 2.6 kısmi. Sıradaki: **Faz 2.7** (ilk kullanım kısaltma).
 
 ## Faz 0 — Kanamayı durdur
 
@@ -46,7 +46,23 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 | 1.12 | ✅ | `FxRateMigrationService.runFor` kullanıcı başına günde bir kez (`PrefKeys.fxMigrationLastRunMs_<uid>`); yeniden deneme davranışı korunuyor. |
 
 ## Faz 2 — UX tutarlılığı ve modern UI
-(henüz başlanmadı)
+
+| # | Durum | Not |
+|---|---|---|
+| 2.1 | ✅ | `lib/widgets/sandik_skeleton.dart`: `SandikSkeleton` (nabız, reduce-motion'da sabit), `SandikSkeletonList`, `SandikSkeletonChart`. Alarm listesi ve karşılaştırma grafiği iskelete geçti; 5 ekrandaki ham `CircularProgressIndicator` → `CustomLoadingIndicator`/iskelet (onboarding'deki ilerleme halkası bilinçli istisna). `test/loading_and_refresh_parity_test.dart` kilitliyor. |
+| 2.2 | ✅ | Pull-to-refresh 3 → 11 veri ekranı: Performans sekmesi (fiyat + gün içi future sıfırlama), varlık detayı, takip listesi, takip detayı, alarmlar, tüm hareketler, karşılaştırma (periyot yeniden çekimi), profil (ortaklar). Test listeyi kilitliyor. |
+| 2.3 | ✅ | `showSandikConfirm()` (`friendly_error.dart`): tek onay yüzeyi, `destructive` → loss + uyarı ikonu, `detail` kutusu. `_SandikDialogShell` tek/çift eylemli dialogların ortak kabuğu (`_SandikDialog` da ona geçti; GoogleFonts/Colors kopyaları düştü). `lib/widgets/delete_asset_dialog.dart`: iki kopya "varlığı sil" → `confirmAndDeletePosition`. 9 onay sitesi geçti: çıkış, sepet temizle, bildirim silme, ortaklık iptal/kaldır, oturum kapatma, takipten çıkar, de-dup sıfırlama, hesap silme 1. kademe. Kalan `AlertDialog`'lar form/doküman (izin listesi testte). `test/sandik_confirm_test.dart`. |
+| 2.4 | ✅ (kısmi) | `_SectionTitle` klonları (settings 10, profile 4) → `SandikSectionHeader`. `SandikCard` benimsemesi (307 ad-hoc BoxDecoration) ayrı tur — büyük ve görsel doğrulama ister. |
+| 2.5 | ⏳ | |
+| 2.6 | 🟡 kısmi | Onay dialogları ve 4 UI metni `sen` kipine çekildi. Yasal metinler (`legal_doc_screen`, `disclaimer_service`) bilinçli `siz`. `en_US` kaldırma ve emoji/başlık kasası taraması bekliyor. |
+| 2.7 | ⏳ | |
+| 2.8 | ⏳ | |
+| 2.9 | ⏳ | |
+| 2.10 | ⏳ | |
+| 2.11 | ⏳ | |
+| 2.12 | ⏳ | |
+| 2.13 | ⏳ | |
+| 2.14 | ⏳ | |
 
 ## Faz 3 — Ürün ve mimari
 (henüz başlanmadı)

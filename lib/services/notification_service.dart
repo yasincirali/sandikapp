@@ -149,7 +149,7 @@ class NotificationService {
       const AndroidNotificationChannel(
         'alert_channel',
         'Fiyat Alarmlari',
-        description: 'Kurdugunuz fiyat hedefine ulasildiginda',
+        description: 'Kurdugun fiyat hedefine ulasildiginda',
         importance: Importance.high,
       ),
     );

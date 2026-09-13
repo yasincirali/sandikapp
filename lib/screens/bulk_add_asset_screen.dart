@@ -184,29 +184,14 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
   }
 
   Future<void> _confirmClear() async {
-    final ok = await showDialog<bool>(
+    final ok = await showSandikConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.c.surface1,
-        title: Text('Sepeti Temizle',
-            style: TextStyle(color: context.c.text90)),
-        content: Text(
-          'Sepetteki tüm varlıklar silinecek. Emin misin?',
-          style: context.t.bodyLarge?.copyWith(color: context.c.text58),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Vazgeç')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Temizle',
-                style: TextStyle(color: context.c.loss)),
-          ),
-        ],
-      ),
+      title: 'Sepeti temizle',
+      message: 'Sepetteki tüm varlıklar silinecek. Emin misin?',
+      confirmLabel: 'Temizle',
+      destructive: true,
     );
-    if (ok == true) ref.read(bulkCartProvider.notifier).clear();
+    if (ok) ref.read(bulkCartProvider.notifier).clear();
   }
 
   @override

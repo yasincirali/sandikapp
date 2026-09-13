@@ -10,7 +10,7 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
-import '../utils/sandik_snack.dart';
+import '../widgets/delete_asset_dialog.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
@@ -191,12 +191,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
             renk: context.c.text36,
             child: Row(
               children: [
-                SizedBox(
-                  width: 13,
-                  height: 13,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: context.c.amberFill),
-                ),
+                const CustomLoadingIndicator(size: 13),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text('Sinyal hesaplanıyor…',
@@ -607,14 +602,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
           return _panelShell(
             child: Row(
               children: [
-                SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: context.c.amberFill,
-                  ),
-                ),
+                const CustomLoadingIndicator(size: 14),
                 const SizedBox(width: 10),
                 // Expanded + ellipsis: dar ekranda (320pt) satır taşmasın.
                 Expanded(
@@ -1445,69 +1433,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     // DB'de karşılığı yoktur. Silinecek gerçek kayıtlar `lots`'tur.
     final lots =
         (widget.lots ?? [widget.asset]).where((l) => !l.isDeleteLog).toList();
-    final multi = lots.length > 1;
-    showDialog<void>(
-      context: ctx,
-      builder: (dlg) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(SandikRadius.lg)),
-        title: const Text('Varlığı Sil'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(multi
-                ? '"${widget.asset.name}" için ${lots.length} işlem kaydı '
-                    '(alım/satım/temettü) kalıcı olarak silinsin mi?'
-                : '"${widget.asset.name}" kalıcı olarak silinsin mi?'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: context.c.danger.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: Border.all(
-                    color:
-                        context.c.danger.withValues(alpha: 0.25)),
-              ),
-              child: const Text(
-                'Bu bir satış değil — varlık portföyden çıkar, toplamlardan '
-                've geçmiş grafiğinden düşer. İşlem kayıtları "Portföy '
-                'Hareketleri"nde kalır. Sattıysan bunun yerine "Sat" kullan; '
-                'realize kâr/zararın hesaba dahil olur.',
-                style: TextStyle(fontSize: 12, height: 1.4),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dlg),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-                backgroundColor: context.c.danger,
-                foregroundColor: context.c.onStatus),
-            onPressed: () async {
-              Navigator.pop(dlg);
-              try {
-                await ref
-                    .read(portfolioProvider.notifier)
-                    .deletePositionLots(lots);
-                if (!mounted) return;
-                Navigator.pop(context);
-                sandikSnack(context, 'Varlık silindi');
-              } catch (e) {
-                if (!mounted) return;
-                sandikSnackError(context, e, prefix: 'Silinemedi');
-              }
-            },
-            child: const Text('Yine de sil'),
-          ),
-        ],
-      ),
-    );
+    confirmAndDeletePosition(ctx, ref, name: widget.asset.name, lots: lots)
+        .then((deleted) {
+      // Varlık gitti — bu ekranın konusu kalmadı; listeye dön.
+      if (deleted && mounted) Navigator.pop(context);
+    });
   }
 
   /// Bir sahibin lot'ları arasından BU ekranın varlığına karşılık gelen
@@ -1786,7 +1716,11 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: RefreshIndicator(
+      color: context.c.amberText,
+      onRefresh: () => ref.read(portfolioProvider.notifier).refreshPrices(force: true),
+      child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
           controller: _scrollController,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -3008,6 +2942,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
             ),
           ),
         ),
+    ),
       ),
     );
   }

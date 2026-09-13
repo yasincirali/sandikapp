@@ -7,12 +7,8 @@ import 'package:flutter/material.dart'
         RefreshIndicator,
         Material,
         MaterialType,
-        AlertDialog,
-        TextButton,
-        FilledButton,
         ListTile,
         Divider,
-        showDialog,
         showModalBottomSheet;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +22,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/deposit_service.dart';
 import '../services/sparkline_service.dart';
 import '../theme/sandik.dart';
-import '../utils/sandik_snack.dart';
+import '../widgets/delete_asset_dialog.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
 import '../widgets/modern_tab_selector.dart';
@@ -151,67 +147,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     // Silinecek gerçek kayıt sayısı — deleteLog izleri lot listesinde
     // olabilir ama silinmez.
     final lots = position.lots.where((l) => !l.isDeleteLog).toList();
-    final multi = lots.length > 1;
-    showDialog<void>(
-      context: ctx,
-      builder: (dlg) => AlertDialog(
-        title: const Text('Varlığı Sil'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(multi
-                ? '"${asset.name}" için ${lots.length} işlem kaydı '
-                    '(alım/satım/temettü) kalıcı olarak silinsin mi?'
-                : '"${asset.name}" kalıcı olarak silinsin mi?'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                // Ham #EF4444 yerine tema token'ı: light'ta uyarı tonu
-                // koyulaşır, açık zeminde de okunur kalır.
-                color: ctx.c.danger.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: Border.all(color: ctx.c.danger.withValues(alpha: 0.25)),
-              ),
-              child: Text(
-                'Bu bir satış değil — varlık portföyden çıkar, toplamlardan '
-                've geçmiş grafiğinden düşer. İşlem kayıtları "Portföy '
-                'Hareketleri"nde kalır. Sattıysan bunun yerine "Sat" kullan; '
-                'realize kâr/zararın hesaba dahil olur.',
-                style:
-                    TextStyle(fontSize: 12, height: 1.4, color: ctx.c.text90),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dlg),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-                backgroundColor: ctx.c.danger,
-                foregroundColor: ctx.c.onStatus),
-            onPressed: () async {
-              Navigator.pop(dlg);
-              try {
-                await ref
-                    .read(portfolioProvider.notifier)
-                    .deletePositionLots(lots);
-                if (!mounted) return;
-                sandikSnack(context, 'Varlık silindi');
-              } catch (e) {
-                if (!mounted) return;
-                sandikSnackError(context, e, prefix: 'Silinemedi');
-              }
-            },
-            child: const Text('Yine de sil'),
-          ),
-        ],
-      ),
-    );
+    confirmAndDeletePosition(ctx, ref, name: asset.name, lots: lots);
   }
 
   @override

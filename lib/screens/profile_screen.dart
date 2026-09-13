@@ -271,26 +271,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final inviteId = _pendingInviteId;
     if (inviteId == null) return;
 
-    final confirm = await showCupertinoDialog<bool>(
+    final confirm = await showSandikConfirm(
       context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Ortaklık İsteğini İptal Et'),
-        content: const Text(
-            'Gönderdiğiniz ortaklık isteğini iptal etmek istediğinize emin misiniz?'),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Evet, iptal et'),
-          ),
-        ],
-      ),
+      title: 'Ortaklık isteğini iptal et',
+      message: 'Gönderdiğin ortaklık isteğini iptal etmek istediğine emin misin?',
+      confirmLabel: 'Evet, iptal et',
+      destructive: true,
     );
-    if (confirm != true) return;
+    if (!confirm) return;
 
     _poll?.cancel();
     setState(() => _busy = true);
@@ -376,7 +364,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Expanded(
                   child: AbsorbPointer(
                     absorbing: _busy,
-                    child: ListView(
+                    child: RefreshIndicator(
+      color: context.c.amberText,
+      onRefresh: () async {
+        await ref.read(partnersProvider.notifier).refresh();
+        ref.read(allPartnerAssetsProvider.notifier).reload();
+      },
+      child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 4),
                       children: [
@@ -390,11 +385,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const RecapBanner(),
                         _PendingRequestsSection(userId: user?.id ?? ''),
                         const SizedBox(height: 8),
-                        const _SectionTitle('ORTAKLIK İŞLEMLERİ'),
+                        const SandikSectionHeader(title: 'ORTAKLIK İŞLEMLERİ'),
                         const SizedBox(height: 16),
                         _buildInviteSection(),
                         const SizedBox(height: 32),
-                        const _SectionTitle('ORTAKLARIM'),
+                        const SandikSectionHeader(title: 'ORTAKLARIM'),
                         const SizedBox(height: 16),
                         partnersAsync.when(
                           loading: () => const CustomLoadingView(),
@@ -413,6 +408,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const SizedBox(height: 40),
                       ],
                     ),
+    ),
                   ),
                 ),
               ],
@@ -828,26 +824,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _confirmRemove(String partnerId, String name) async {
-    final confirm = await showCupertinoDialog<bool>(
+    final confirm = await showSandikConfirm(
       context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Ortaklığı Kaldır'),
-        content:
-            Text('$name ile ortaklığı kaldırmak istediğinizden emin misiniz?'),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Kaldır'),
-          ),
-        ],
-      ),
+      title: 'Ortaklığı kaldır',
+      message: '$name ile ortaklığı kaldırmak istediğine emin misin?',
+      confirmLabel: 'Kaldır',
+      destructive: true,
     );
-    if (confirm == true && mounted) {
+    if (confirm && mounted) {
       setState(() => _busy = true);
       await ref.read(partnersProvider.notifier).removePartner(partnerId);
       if (mounted) setState(() => _busy = false);
@@ -928,7 +912,7 @@ class _PendingRequestsSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle('BEKLEYEN ORTAKLIK İSTEKLERİ'),
+        const SandikSectionHeader(title: 'BEKLEYEN ORTAKLIK İSTEKLERİ'),
         const SizedBox(height: 12),
         ..._pendingInvites.map((invite) => _PendingInviteTile(
               invite: invite,
@@ -1047,24 +1031,6 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: context.t.labelLarge?.copyWith(
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.2,
-          // Bölüm başlığı YAPISAL bilgidir, dekorasyon değil: ekranın
-          // neresinde olduğunu söyler. text36 (3.79:1) yalnızca yardımcı
-          // metin eşiğini geçer — light modda okunmuyordu. text58 (6.90:1)
-          // hiyerarşiyi bozmadan AA'yı sağlar.
-          color: context.c.text58,
-        ),
-      );
-}
 
 class _ActionIcon extends StatelessWidget {
   final IconData icon;

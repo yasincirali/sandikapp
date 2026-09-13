@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
 import 'home_screen.dart';
 import 'charts_screen.dart';
 import 'portfolio_performance_screen.dart';
@@ -161,49 +162,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }
 
   Future<void> _confirmExit() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showSandikConfirm(
       context: context,
-      builder: (ctx) => ClipRRect(
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: AlertDialog(
-            backgroundColor: context.c.overlay,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SandikRadius.lg),
-              side: BorderSide(color: context.c.hairline),
-            ),
-            title: Text('Uygulamadan Çık',
-                style: TextStyle(color: context.c.text90)),
-            content: Text(
-              'Uygulamadan çıkmak istiyor musunuz?',
-              style: TextStyle(color: context.c.text58),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text('Vazgeç', style: TextStyle(color: context.c.text36)),
-              ),
-              FilledButton(
-                onPressed: () {
-                  // Yıkıcı onay — en belirgin ton.
-                  SandikHaptic.heavy.perform();
-                  Navigator.pop(ctx, true);
-                },
-                // `foregroundColor` verilmezse `onPrimary`e (= onAmber, koyu)
-                // düşer; light modda koyu kırmızı dolgu üstünde 3:1 altı kalır.
-                style: FilledButton.styleFrom(
-                  backgroundColor: context.c.loss,
-                  foregroundColor: context.c.onStatus,
-                ),
-                child: const Text('Çık'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: 'Uygulamadan çık',
+      message: 'Uygulamadan çıkmak istediğine emin misin?',
+      confirmLabel: 'Çık',
+      destructive: true,
     );
-    if (confirm == true) {
+    if (confirm) {
+      SandikHaptic.heavy.perform();
       // Uygulamayı kapat. `Navigator.of(context).pop()` DEĞİL: kök
       // navigator'da tek route varken pop hiçbir şey yapmıyordu — kullanıcı
       // "Çık"a basıyor, uygulama açık kalıyordu. SystemNavigator.pop()

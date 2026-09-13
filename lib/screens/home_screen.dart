@@ -15,6 +15,7 @@ import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/portfolio_summary_widget.dart';
@@ -894,24 +895,13 @@ class _SignalsBottomSheet extends ConsumerWidget {
     required String mesaj,
     required String eylem,
   }) async {
-    final onay = await showDialog<bool>(
+    return showSandikConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(baslik),
-        content: Text(mesaj),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(eylem, style: TextStyle(color: context.c.loss)),
-          ),
-        ],
-      ),
+      title: baslik,
+      message: mesaj,
+      confirmLabel: eylem,
+      destructive: true,
     );
-    return onay == true;
   }
 
   /// Kalıcı silmenin KAPSAMINI sorar.

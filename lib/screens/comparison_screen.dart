@@ -11,6 +11,8 @@ import '../providers/portfolio_provider.dart';
 import '../services/history_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_skeleton.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
 import '../widgets/percent_comparison_chart.dart';
@@ -221,7 +223,12 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           children: [
             _periodSelector(p),
             Expanded(
-              child: ListView(
+              child: RefreshIndicator(
+                color: p.amberText,
+                // Periyot değişimiyle aynı yol: tüm seriler yeniden çekilir.
+                onRefresh: () => _changePeriod(_periodIdx),
+                child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
                   _chartCard(p),
@@ -232,6 +239,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                   const SizedBox(height: 16),
                   _disclaimer(p),
                 ],
+              )
               ),
             ),
           ],
@@ -285,12 +293,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (_selected.isEmpty) return _emptyState(p);
 
     if (_series.isEmpty) {
-      return SizedBox(
-        height: 260,
-        child: Center(
-          child: CircularProgressIndicator(color: p.amberFill),
-        ),
-      );
+      return const SandikSkeletonChart(height: 260);
     }
 
     final colors = _seriesColors(p);
@@ -461,12 +464,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
               ),
               const SizedBox(width: 8),
               if (isLoading)
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: p.amberFill),
-                )
+                const CustomLoadingIndicator(size: 16)
               else if (isFailed)
                 Text('veri yok',
                     style: TextStyle(color: p.text36, fontSize: 11))

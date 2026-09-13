@@ -120,7 +120,7 @@ class _PartnershipRequestsScreenState
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Ortaklık kodunuzu giren müşterileri buradan görup onaylayabilirsiniz.',
+              'Ortaklık kodunu giren kişileri buradan görüp onaylayabilirsin.',
               style: context.t.titleMedium?.copyWith(
                 color: context.c.text36,
               ),

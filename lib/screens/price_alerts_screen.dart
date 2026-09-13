@@ -10,6 +10,7 @@ import '../providers/watchlist_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/price_alert_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_skeleton.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_error_view.dart';
@@ -167,10 +168,17 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           }
           final liste = snap.data;
           if (liste == null) {
-            return const Center(child: CircularProgressIndicator());
+            return const SandikSkeletonList(rows: 5);
           }
           if (liste.isEmpty) return _bosDurum(c);
-          return ListView.separated(
+          return RefreshIndicator(
+      color: c.amberText,
+      onRefresh: () async {
+        _tazele();
+        await _future;
+      },
+      child: ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             itemCount: liste.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -185,7 +193,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                 _tazele();
               },
             ),
-          );
+          ),
+    );
         },
       ),
     );

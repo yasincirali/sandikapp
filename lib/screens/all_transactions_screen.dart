@@ -318,7 +318,13 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           Expanded(
             child: rows.isEmpty
                 ? _empty()
-                : ListView.builder(
+                : RefreshIndicator(
+      color: context.c.amberText,
+      onRefresh: () => ref
+          .read(portfolioProvider.notifier)
+          .refreshPrices(force: true),
+      child: ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
                     controller: _scrollCtrl,
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
                     // +1: son satırda "yükleniyor" göstergesi (daha var ise).
@@ -343,6 +349,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       );
                     },
                   ),
+    ),
           ),
         ],
       ),

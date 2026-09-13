@@ -314,7 +314,7 @@ class AuthService {
       final msg = e.message.toLowerCase();
       if (msg.contains('rate') || msg.contains('too many')) {
         throw const AuthException(
-            'Çok sık kod istediniz. 60 saniye bekleyip tekrar deneyin.');
+            'Çok sık kod istedin. 60 saniye bekleyip tekrar dene.');
       }
       throw AuthException(e.message);
     } catch (e, st) {

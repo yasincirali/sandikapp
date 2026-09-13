@@ -8,6 +8,7 @@ import '../services/disclaimer_service.dart';
 import '../services/remote_push_service.dart';
 import '../services/supabase_service.dart';
 import 'bulk_cart_provider.dart';
+import '../utils/friendly_error.dart';
 
 // ── Mevcut oturum kullanıcısı ─────────────────────────────────────────────────
 
@@ -267,25 +268,14 @@ final activePartnersProvider = Provider<List<AppUser>>((ref) {
 /// Onay dialogu gösterir, onaylanırsa logout yapar.
 /// _AuthGate authProvider'ı dinlediği için LoginScreen yönlendirmesi otomatik olur.
 Future<void> confirmAndLogout(BuildContext context, WidgetRef ref) async {
-  final confirm = await showCupertinoDialog<bool>(
+  final confirm = await showSandikConfirm(
     context: context,
-    builder: (ctx) => CupertinoAlertDialog(
-      title: const Text('Çıkış Yap'),
-      content: const Text('Hesabınızdan çıkmak istediğinizden emin misiniz?'),
-      actions: [
-        CupertinoDialogAction(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Vazgeç'),
-        ),
-        CupertinoDialogAction(
-          isDestructiveAction: true,
-          onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Çıkış Yap'),
-        ),
-      ],
-    ),
+    title: 'Çıkış yap',
+    message: 'Hesabından çıkmak istediğine emin misin?',
+    confirmLabel: 'Çıkış yap',
+    destructive: true,
   );
-  if (confirm != true || !context.mounted) return;
+  if (!confirm || !context.mounted) return;
   await ref.read(authProvider.notifier).logout();
 }
 
