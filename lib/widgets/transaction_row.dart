@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 
 /// Portföy hareketleri listesindeki tek satır.
 ///
@@ -30,7 +31,7 @@ class TransactionRow extends StatelessWidget {
     // Portföy ekranındaki varlık kartlarıyla birebir tutar gösterimi için
     // 3 ondalıklı format (tryFmt3 ile aynı biçim).
     final tryFmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 3);
+        tryFormatter(digits: 3);
     final bool isSell = asset.isSell;
     final bool isDelete = asset.isDeleteLog;
     final bool isDividend = asset.isDividend;
@@ -181,8 +182,8 @@ class TransactionRow extends StatelessWidget {
                             ),
                             child: Text(
                               asset.unitIsPrefix
-                                  ? '${asset.unitLabel}${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)}'
-                                  : '${NumberFormat('#,##0.####', 'tr_TR').format(asset.quantity)} ${asset.unitLabel}',
+                                  ? '${asset.unitLabel}${qtyFormatter().format(asset.quantity)}'
+                                  : '${qtyFormatter().format(asset.quantity)} ${asset.unitLabel}',
                               style: context.t.labelMedium?.copyWith(
                                   letterSpacing: 0,
                                   color: context.c.text58,

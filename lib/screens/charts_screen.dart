@@ -632,7 +632,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 
   static String _formatTL(double val) {
     // Ana ekran hero'suyla birebir aynı format: ₺1.234.567
-    return NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
+    return tryFormatter(digits: 0)
         .format(val);
   }
 
@@ -1152,7 +1152,7 @@ class _AssetCardState extends State<_AssetCard>
 
     final a = position.asDisplayAsset();
     final tryFmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+        tryFormatter(digits: 0);
     // Temettü dahil — üstteki özet de dahil ediyor, satır onunla tutarlı olmalı.
     final gainLossTRY = pState.toTRY(position.totalValue, a.currency) -
         position.totalCostTRY +
@@ -1432,9 +1432,9 @@ class _AssetDetailsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final rep = position.representative;
     final tryFmt3 =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 3);
-    final numFmt = NumberFormat('#,##0.####', 'tr_TR');
-    final costFmt3 = NumberFormat('#,##0.000', 'tr_TR');
+        tryFormatter(digits: 3);
+    final numFmt = qtyFormatter();
+    final costFmt3 = fixedFormatter(3);
 
     // Vadeli mevduat için özel panel — normal Position gösteriminden farklı.
     if (rep.type == AssetType.mevduat) {
@@ -1452,7 +1452,7 @@ class _AssetDetailsPanel extends StatelessWidget {
 
     final qty = position.totalQuantity;
     final qtyStr = qty == qty.truncateToDouble()
-        ? NumberFormat('#,###', 'tr_TR').format(qty.toInt())
+        ? fixedFormatter(0).format(qty.toInt())
         : numFmt.format(qty);
     final qtyDisplay = rep.unitIsPrefix
         ? '${rep.unitLabel}$qtyStr'
@@ -1588,7 +1588,7 @@ class _DepositDetailsPanel extends StatelessWidget {
     }
 
     final money =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
+        tryFormatter(digits: 2);
     final dateFmt = DateFormat('d MMM yyyy', 'tr_TR');
 
     final principal = asset.quantity;

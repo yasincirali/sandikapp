@@ -148,7 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final user = ref.watch(authProvider).valueOrNull;
     final tryFmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+        tryFormatter(digits: 0);
     final sw = MediaQuery.of(context).size.width;
     final hp = sw < 360 ? 14.0 : 20.0;
     final allActivePartners = ref.watch(activePartnersProvider);

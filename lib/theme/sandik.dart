@@ -829,6 +829,13 @@ extension SandikPaletteAccess on BuildContext {
 
   /// Aydınlık modda mıyız? Yüzey mantığı yön değiştirdiği için gerekir.
   bool get isLight => Theme.of(this).brightness == Brightness.light;
+
+  /// Kazanç/kayıp rengi: sıfır ve üstü `gain`, altı `loss`.
+  ///
+  /// Sıfırın yeşil sayılması BİLİNÇLİ ve tek yerde: "değişmedi" durumu
+  /// kırmızı okunmasın. Beş ekranda satır içi yazılan üçlü ifade buraya
+  /// toplandı ki bir gün "sıfır nötr olsun" denirse tek satır değişsin.
+  Color signColor(num value) => value >= 0 ? c.gain : c.loss;
 }
 
 /// Moda duyarlı yüzey dekorasyonları.

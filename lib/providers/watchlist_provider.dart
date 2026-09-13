@@ -9,6 +9,7 @@ import '../widgets/watchlist_chart.dart' show WatchlistChart;
 import 'auth_provider.dart';
 import 'portfolio_provider.dart';
 import 'preferences_provider.dart';
+import '../utils/tr_format.dart';
 
 /// Free tier takip limiti aşıldı.
 ///
@@ -140,7 +141,7 @@ Map<String, Map<int, double>> ortakPencereyeHizala(
   final int bas;
   if (periodDays <= 1) {
     final sonGun = DateTime.fromMillisecondsSinceEpoch(son);
-    bas = DateTime(sonGun.year, sonGun.month, sonGun.day)
+    bas = dayKey(sonGun)
         .millisecondsSinceEpoch;
   } else {
     bas = son - Duration(days: periodDays).inMilliseconds;

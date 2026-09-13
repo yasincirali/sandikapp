@@ -3,7 +3,6 @@ import 'package:flutter/material.dart'
     show Icons, Material, Colors, ScaffoldMessenger, SnackBar, SnackBarBehavior;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 
 import '../models/asset_type.dart';
 import '../models/watchlist_item.dart';
@@ -320,12 +319,11 @@ class _PriceCard extends StatelessWidget {
     final isFlat = pct.abs() < 0.005;
     final color = isFlat
         ? context.c.text36
-        : (pct >= 0 ? context.c.gain : context.c.loss);
+        : context.signColor(pct);
 
-    final fmt = NumberFormat.currency(
-        locale: 'tr_TR',
-        symbol: currencySymbolFor(item.ticker, item.currency) ?? '₺',
-        decimalDigits: 2);
+    final fmt = tryFormatter(
+        digits: 2,
+        symbol: currencySymbolFor(item.ticker, item.currency) ?? '₺');
 
     // 0..1 normalize — çizim katmanı ham fiyatla uğraşmasın.
     final vals = [for (final t in ts) series[t]!];

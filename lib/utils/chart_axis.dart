@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:intl/intl.dart';
+import 'tr_format.dart';
 
 /// Çizgi grafiklerin ORTAK eksen ve odak cebiri.
 ///
@@ -250,7 +251,7 @@ double gunIciEksenSonuDk(double sonNoktaDk) {
     // Borsa hafta sonu kapalıdır; `now`'dan saymak Pazar günü bugünün boş
     // eksenini çizip Cuma seansını dışarıda bırakırdı.
     final son = DateTime.fromMillisecondsSinceEpoch(sonMs.round());
-    final geceYarisi = DateTime(son.year, son.month, son.day);
+    final geceYarisi = dayKey(son);
     final bas = geceYarisi.millisecondsSinceEpoch.toDouble();
     final sonDk = (sonMs - bas) / dkMs;
     return (
@@ -273,7 +274,7 @@ double gunIciEksenSonuDk(double sonNoktaDk) {
     min: ilkMs,
     max: sonMs,
     interval: adimGun * gunMs,
-    baseline: DateTime(ilk.year, ilk.month, ilk.day)
+    baseline: dayKey(ilk)
         .millisecondsSinceEpoch
         .toDouble(),
     gunIci: false,

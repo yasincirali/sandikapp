@@ -7,6 +7,7 @@ import '../providers/preferences_provider.dart';
 import '../screens/leaderboard_screen.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import 'custom_loading_indicator.dart';
 
 /// Profile ekranında öne çıkan Yarış hero kartı.
@@ -376,7 +377,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         : (positive ? context.c.gain : context.c.loss);
     final roiText = best.myRoi == null
         ? '—'
-        : '${positive ? '+' : ''}${best.myRoi!.toStringAsFixed(1)}%';
+        : '${positive ? '+' : ''}${fmtNum(best.myRoi!, digits: 1)}%';
 
     // Başlık: "Haftalıkta 1. sıradasın" gibi — hangi periyotta parladığını
     // göstermek rekabet duygusunu güçlendirir, "ne olduğu" belirsizliğini
@@ -396,12 +397,12 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
               ? _secondRoi(d) ?? (best.myRoi ?? 0)
               : (best.myRoi ?? 0));
       subLine = gap > 0.05
-          ? 'Farkı büyüt — ikinci +${gap.toStringAsFixed(1)}% geride'
+          ? 'Farkı büyüt — ikinci +${fmtNum(gap, digits: 1)}% geride'
           : 'Zirvedesin — farkı koru 🏆';
     } else if (best.justAboveName != null && best.justAboveRoi != null) {
       final diff = (best.justAboveRoi! - (best.myRoi ?? 0)).abs();
       subLine =
-          '${best.justAboveName!.split(' ').first}\'i geçmen için +${diff.toStringAsFixed(1)}%';
+          '${best.justAboveName!.split(' ').first}\'i geçmen için +${fmtNum(diff, digits: 1)}%';
     } else {
       subLine = 'Diğer periyotlarda daha üsttesin — dokun, bak';
     }

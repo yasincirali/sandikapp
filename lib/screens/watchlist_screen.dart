@@ -10,7 +10,6 @@ import 'package:flutter/material.dart'
         SnackBarAction,
         SnackBarBehavior;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../models/asset_type.dart';
 import '../models/user_model.dart';
@@ -374,12 +373,11 @@ class _Row extends ConsumerWidget {
     final isFlat = pct == null || pct.abs() < 0.005;
     final color = isFlat
         ? context.c.text36
-        : (pct >= 0 ? context.c.gain : context.c.loss);
+        : context.signColor(pct);
 
-    final fmt = NumberFormat.currency(
-        locale: 'tr_TR',
-        symbol: currencySymbolFor(item.ticker, item.currency) ?? '₺',
-        decimalDigits: 2);
+    final fmt = tryFormatter(
+        digits: 2,
+        symbol: currencySymbolFor(item.ticker, item.currency) ?? '₺');
 
     // Ekran okuyucu için tek parça cümle — parçalı okunursa yön bilgisi
     // yalnızca renkte kalırdı.

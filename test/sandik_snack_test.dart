@@ -34,7 +34,7 @@ void main() {
       t,
       (ctx) => sandikSnackError(
         ctx,
-        const PostgrestException(message: raw, code: '23514'),
+        PostgrestException(message: raw, code: '23514'),
         prefix: 'Silinemedi',
       ),
     );

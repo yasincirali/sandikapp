@@ -1,6 +1,5 @@
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -16,7 +15,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
     final isPos = state.gainLoss >= 0;
     final gainColor = isPos ? context.c.gain : context.c.loss;
     final tryFmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+        tryFormatter(digits: 0);
     final w = MediaQuery.of(context).size.width;
     final heroFontSize = w < 360
         ? 28.0

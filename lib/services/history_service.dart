@@ -5,6 +5,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
 import 'price_service.dart';
+import '../utils/tr_format.dart';
 
 /// Grafik çözünürlük seviyeleri. Zoom yaptıkça daha ince tier'a düşer.
 ///
@@ -110,12 +111,12 @@ extension ResolutionTierMeta on ResolutionTier {
       case ResolutionTier.hourly:
         return DateTime(d.year, d.month, d.day, d.hour).millisecondsSinceEpoch;
       case ResolutionTier.daily:
-        return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
+        return dayKey(d).millisecondsSinceEpoch;
       case ResolutionTier.weekly:
         // Haftanın pazartesi 00:00'ına snap
         final wd = d.weekday; // 1..7
         final monday =
-            DateTime(d.year, d.month, d.day).subtract(Duration(days: wd - 1));
+            dayKey(d).subtract(Duration(days: wd - 1));
         return monday.millisecondsSinceEpoch;
     }
   }
@@ -341,7 +342,7 @@ class HistoryService {
       if (hourly) {
         return DateTime(d.year, d.month, d.day, d.hour).millisecondsSinceEpoch;
       }
-      return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
+      return dayKey(d).millisecondsSinceEpoch;
     }
 
     final groupedPoints = <int, double>{};
@@ -659,7 +660,7 @@ class HistoryService {
       if (hourly) {
         return DateTime(d.year, d.month, d.day, d.hour).millisecondsSinceEpoch;
       }
-      return DateTime(d.year, d.month, d.day).millisecondsSinceEpoch;
+      return dayKey(d).millisecondsSinceEpoch;
     }
 
     // ## Hafta sonu YALNIZCA tek günlük pencerede elenir
@@ -773,7 +774,7 @@ class HistoryService {
     required DateTime now,
     required int? enSonVeriTs,
   }) =>
-      DateTime(now.year, now.month, now.day);
+      dayKey(now);
 
   /// Gün içi serinin SAĞ UCU ve kapalı bölgenin başlangıcı.
   ///
@@ -1060,7 +1061,7 @@ class HistoryService {
       if (onceki <= 0 || son <= 0) continue;
       final sonGun = DateTime.fromMillisecondsSinceEpoch(pts.last.$1);
       fonSonNavGunu[entry.key] =
-          DateTime(sonGun.year, sonGun.month, sonGun.day);
+          dayKey(sonGun);
       if ((son - onceki).abs() < 1e-9) continue;
       fonOncekiNav[entry.key] = onceki;
     }
@@ -1077,7 +1078,7 @@ class HistoryService {
     // Doğrusu: veri hangi güne aitse O GÜNÜ çiz. Böylece hafta sonunda
     // Cuma seansının gerçek gün içi hareketi görünür — trading
     // uygulamalarının standart davranışı.
-    final bugun = DateTime(now.year, now.month, now.day);
+    final bugun = dayKey(now);
     int? enSonVeriTs;
     void enSonuIzle(Map<int, double> m) {
       if (m.isEmpty) return;
@@ -2201,7 +2202,7 @@ class HistoryService {
     if (days <= 1) {
       final sonGun = DateTime.fromMillisecondsSinceEpoch(keys.last);
       cutoff =
-          DateTime(sonGun.year, sonGun.month, sonGun.day).millisecondsSinceEpoch;
+          dayKey(sonGun).millisecondsSinceEpoch;
     } else {
       cutoff = keys.last - Duration(days: days).inMilliseconds;
     }

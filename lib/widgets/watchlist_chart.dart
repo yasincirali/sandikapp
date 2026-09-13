@@ -226,7 +226,7 @@ class _LegendChip extends StatelessWidget {
             fontSize: 11,
             color: isFlat
                 ? context.c.text36
-                : (pct >= 0 ? context.c.gain : context.c.loss),
+                : context.signColor(pct),
           ),
         ),
       ],

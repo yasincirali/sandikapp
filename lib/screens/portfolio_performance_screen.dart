@@ -503,7 +503,7 @@ class _PortfolioPerformanceScreenState
 
     // Normalize firstAssetDate to midnight for comparison
     final firstAssetMidnight =
-        DateTime(firstAssetDate.year, firstAssetDate.month, firstAssetDate.day);
+        dayKey(firstAssetDate);
 
     final sortedTs = history.keys.toList()..sort();
 
@@ -589,13 +589,13 @@ class _PortfolioPerformanceScreenState
     // Gün başına çekmek ekseni kovalarla hizalıyor; tüm dönemler aynı
     // davranıyor.
     final hamBaslangic = isIntraday
-        ? DateTime(endDate.year, endDate.month, endDate.day)
+        ? dayKey(endDate)
         : (donem.ayGeri != null
             ? PortfolioPerformanceScreen.donemBaslangici(endDate, donem.ayGeri!)
             : endDate.subtract(Duration(days: donem.days)));
     final startDate = isIntraday
         ? hamBaslangic
-        : DateTime(hamBaslangic.year, hamBaslangic.month, hamBaslangic.day);
+        : dayKey(hamBaslangic);
 
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(
@@ -1058,7 +1058,7 @@ class _PortfolioPerformanceScreenState
         // startDate'i geç kaydır. Aksi halde tam periyodu göster.
         if (firstBuy.isAfter(startDate)) {
           effectiveStart =
-              DateTime(firstBuy.year, firstBuy.month, firstBuy.day);
+              dayKey(firstBuy);
         }
       }
     }
@@ -1777,7 +1777,7 @@ class _PortfolioPerformanceScreenState
     double netInflow = 0;
     if (!_simulate) {
       final startMs =
-          DateTime(start.year, start.month, start.day).millisecondsSinceEpoch;
+          dayKey(start).millisecondsSinceEpoch;
       final endMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
           .millisecondsSinceEpoch;
       for (final a in targetAssets) {
@@ -1820,7 +1820,7 @@ class _PortfolioPerformanceScreenState
         : (positive ? context.c.gain : context.c.loss);
 
     final tryFmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+        tryFormatter(digits: 0);
     final periodLabel = _periods[_selectedPeriodIdx].label;
     // Yıl, iki uç FARKLI yıla düşüyorsa yazılır.
     //
@@ -2066,7 +2066,7 @@ class _PortfolioPerformanceScreenState
     // silinmiş lot'lar da nokta üretiyordu: grafikte nokta görünüyor, ama
     // basınca "Alım/Satış" satırı çıkmıyordu.
     // İşlem günlerini grafiğin X birimine (kesirli gün) çevir.
-    final startMidnight = DateTime(start.year, start.month, start.day);
+    final startMidnight = dayKey(start);
     final txXs = <double>[];
     for (final a in assets) {
       if (!a.isActive) continue;
@@ -2074,14 +2074,14 @@ class _PortfolioPerformanceScreenState
       final d = a.addedDate;
       // Gün içi ("GÜNLÜK") seride SAAT KORUNUR.
       //
-      // Burada eskiden koşulsuz `DateTime(d.year, d.month, d.day)` vardı —
+      // Burada eskiden koşulsuz `dayKey(d)` vardı —
       // işlemin saati kırpılıp gece yarısına çekiliyordu. Günlük/haftalık
       // seride bu doğrudur (bar zaten güne snap edilir), ama gün içi seride
       // 5 dakikalık slotlarla çalışılır: 14:00'te yapılan alım 00:00'a
       // düşünce grafiğin görünür aralığının DIŞINA çıkıyor ve nokta hiç
       // doğmuyordu. Sıçramanın ölçek yüzünden görünmediği durumda
       // (tüm portföy görünümü) geriye hiçbir işaret kalmıyordu.
-      final anchor = intraday ? d : DateTime(d.year, d.month, d.day);
+      final anchor = intraday ? d : dayKey(d);
       txXs.add(anchor.difference(startMidnight).inMinutes / (60.0 * 24.0));
     }
 
@@ -2769,8 +2769,7 @@ class _PortfolioPerformanceScreenState
             tooltipPadding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             getTooltipItems: (spots) {
-              final tryFmt0 = NumberFormat.currency(
-                  symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
+              final tryFmt0 = tryFormatter(digits: 0);
               // Primary segmentteki ilk ve son x — anchor / bugün tespiti.
               final firstX = primarySeg.spots.first.x;
               final lastX = primarySeg.spots.last.x;
@@ -2792,7 +2791,7 @@ class _PortfolioPerformanceScreenState
                 // İlk noktadan (anchor) bugüne kadar KÜMÜLATİF hareketler.
                 double cumBuyTRY = 0, cumSellTRY = 0;
                 if (!_simulate && !intraday) {
-                  final spotDayMs = DateTime(date.year, date.month, date.day)
+                  final spotDayMs = dayKey(date)
                       .millisecondsSinceEpoch;
                   for (final a in assets) {
                     if (!a.isActive) continue;
@@ -2868,7 +2867,7 @@ class _PortfolioPerformanceScreenState
                       text:
                           '\nNet ${dayNet >= 0 ? '+' : '−'}${tryFmt0.format(dayNet.abs())}',
                       style: context.t.numSmall.copyWith(
-                        color: dayNet >= 0 ? context.c.gain : context.c.loss,
+                        color: context.signColor(dayNet),
                         fontSize: 11,
                       ),
                     ));
@@ -2971,12 +2970,10 @@ class _PortfolioPerformanceScreenState
               if (spots.isEmpty) return null;
               final snapped = spots[nearestSpotIndex(spots, x)];
               final date = intraday
-                  ? DateTime(start.year, start.month, start.day)
+                  ? dayKey(start)
                       .add(Duration(minutes: snapped.x.round()))
                   : start.add(Duration(minutes: (snapped.x * 1440).round()));
-              final title = NumberFormat.currency(
-                      locale: 'tr_TR', symbol: '₺', decimalDigits: 0)
-                  .format(snapped.y);
+              final title = fmtTRY(snapped.y);
               // Gün içi etiket normalde yalnızca saat yazar — tek gün
               // çizildiği için tarih gereksiz gürültüydü. Ama piyasa
               // kapalıyken seri BİRDEN ÇOK günü kapsıyor (Cuma→Pazar) ve
@@ -2998,13 +2995,12 @@ class _PortfolioPerformanceScreenState
               if (spots.isEmpty || _simulate || intraday) return const [];
               // Diğer crosshair callback'leriyle aynı ikili arama.
               final snapped = spots[nearestSpotIndex(spots, x)];
-              final tryFmt0 = NumberFormat.currency(
-                  symbol: '₺', locale: 'tr_TR', decimalDigits: 0);
+              final tryFmt0 = tryFormatter(digits: 0);
               final firstY = spots.first.y;
               final gain = snapped.y - firstY;
               final date =
                   start.add(Duration(minutes: (snapped.x * 1440).round()));
-              final spotDayMs = DateTime(date.year, date.month, date.day)
+              final spotDayMs = dayKey(date)
                   .millisecondsSinceEpoch;
               double dayBuy = 0, daySell = 0;
               for (final a in txAssets) {
@@ -3150,7 +3146,7 @@ class _PortfolioPerformanceScreenState
     // Ana grafik bu hatayı yapmıyor: o `date.difference(startDate).inMinutes /
     // (60*24)` ile KESİRLİ gün üretiyor. Hacim paneli de aynı tabana oturmalı,
     // aksi halde iki panel farklı X uzayında çizilir.
-    final startMidnight = DateTime(start.year, start.month, start.day);
+    final startMidnight = dayKey(start);
     // Grafiğin X'i `start`'a göre; gece yarısı ile arasındaki kayma sabit.
     final startOffsetDays =
         startMidnight.difference(start).inMinutes / (60.0 * 24.0);
@@ -3159,7 +3155,7 @@ class _PortfolioPerformanceScreenState
     for (final a in assets) {
       if (!a.isActive) continue;
       final dayMidnight =
-          DateTime(a.addedDate.year, a.addedDate.month, a.addedDate.day);
+          dayKey(a.addedDate);
       // Gece yarısı ↔ gece yarısı farkı — tam gün, kırpma sorunu yok.
       final dayIdx = dayMidnight.difference(startMidnight).inDays;
       if (dayIdx < 0) continue;
@@ -3459,7 +3455,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final out = <AssetType, double>{};
     if (widget.simulate) return out;
     final startMs =
-        DateTime(widget.start.year, widget.start.month, widget.start.day)
+        dayKey(widget.start)
             .millisecondsSinceEpoch;
     final endMs =
         DateTime(widget.end.year, widget.end.month, widget.end.day, 23, 59, 59)
@@ -3614,7 +3610,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     if (typeRows.isEmpty) return const SizedBox.shrink();
 
     final tryFmt =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+        tryFormatter(digits: 0);
 
     return Container(
       padding:
@@ -3787,7 +3783,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final isFlat = pnl.abs().round() == 0 && (pct?.abs() ?? 0) < 0.005;
     final color = isFlat
         ? context.c.text36
-        : (pnl >= 0 ? context.c.gain : context.c.loss);
+        : context.signColor(pnl);
 
     // Ekran okuyucu için tek parça cümle — `portfolio_summary_widget` ile aynı
     // kalıp. Parçalı okunursa "Altın", "+₺12.500", "%3,20" diye üç kopuk

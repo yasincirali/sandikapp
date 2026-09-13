@@ -843,13 +843,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (price == null || price <= 0) return const SizedBox.shrink();
 
     final total = qty * price;
-    final fmt = NumberFormat.currency(
-        locale: 'tr_TR',
-        symbol: _currency == 'TRY' ? '₺ ' : '',
-        decimalDigits: 2);
+    final fmt =
+        tryFormatter(digits: 2, symbol: _currency == 'TRY' ? '₺ ' : '');
     final formatted = _currency == 'TRY'
         ? fmt.format(total)
-        : '${NumberFormat('#,##0.##', 'tr_TR').format(total)} $_currency';
+        : '${qtyFormatter(maxDigits: 2).format(total)} $_currency';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -942,7 +940,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       subtitle = '$dateLabel için kapanış aranıyor';
     } else if (_previewPrice != null) {
       final p = _previewPrice!;
-      final fmt = NumberFormat('#,##0.##', 'tr_TR');
+      final fmt = qtyFormatter(maxDigits: 2);
       color = _previewIsHistorical ? context.c.gain : context.c.amberText;
       icon = _previewIsHistorical
           ? Icons.event_available_rounded
@@ -2006,7 +2004,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       // Tarihli fiyat çekimi yapıldıysa kullanıcıya bildir — atanan değer
       // net görünsün, "güncel geldi sandım" hissi olmasın.
       if (priceFromHistorical || priceFallbackToSpot) {
-        final fmt = NumberFormat('#,##0.##', 'tr_TR');
+        final fmt = qtyFormatter(maxDigits: 2);
         final dateStr = DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
         final msg = priceFromHistorical
             ? '$dateStr kapanışı ${fmt.format(price)} $_currency olarak atandı'
@@ -2378,7 +2376,7 @@ class _TefasPickerState extends State<_TefasPicker> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final filtered = _filtered;
-    final fmt = NumberFormat('#,##0.######', 'tr_TR');
+    final fmt = qtyFormatter(maxDigits: 6);
 
     return _PickerShell(
       title: 'TEFAS Fonları',

@@ -7,6 +7,7 @@ import '../services/inflation_service.dart';
 import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 
 /// Reel getiri rozeti — "portföyün TÜFE'yi kaç puan geçti".
 ///
@@ -87,7 +88,7 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
 
     final puan = InflationService.spreadPoints(veri.nominal, veri.inflation);
     final onde = puan >= 0;
-    final mutlak = puan.abs().toStringAsFixed(1).replaceAll('.', ',');
+    final mutlak = fmtNum(puan.abs(), digits: 1);
     final c = context.c;
     final ton = onde ? c.gain : c.loss;
 
@@ -136,8 +137,8 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
               // Ham iki sayı da verilir: kullanıcı puan farkını
               // doğrulayabilmeli, yoksa rozet bir kara kutu olur.
               Text(
-                '%${veri.nominal.toStringAsFixed(0)} · '
-                'TÜFE %${veri.inflation.toStringAsFixed(0)}',
+                '%${fmtNum(veri.nominal, digits: 0)} · '
+                'TÜFE %${fmtNum(veri.inflation, digits: 0)}',
                 style: context.t.bodySmall?.copyWith(color: c.text36),
               ),
             ],

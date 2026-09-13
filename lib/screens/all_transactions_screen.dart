@@ -9,6 +9,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
@@ -151,7 +152,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         // Bitiş günü DAHİL olmalı: kullanıcı 5 Mart seçtiyse o günün
         // işlemleri de listeye girsin.
         return (
-          DateTime(r.start.year, r.start.month, r.start.day),
+          dayKey(r.start),
           DateTime(r.end.year, r.end.month, r.end.day, 23, 59, 59),
         );
     }

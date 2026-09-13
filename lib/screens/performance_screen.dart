@@ -1571,7 +1571,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     final segments = <TransactionSegment>[];
     final firstAssetDate = widget.asset.addedDate;
     final firstAssetMidnight =
-        DateTime(firstAssetDate.year, firstAssetDate.month, firstAssetDate.day);
+        dayKey(firstAssetDate);
 
     // Grafik "birim fiyat" (TL) gösterir — HistoryService'in döndürdüğü
     // toplam pozisyon değerini quantity'ye bölerek per-unit fiyata çeviririz.
@@ -1721,7 +1721,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
     //     Cuma seansını grafiğin dışına atardı.
     final startDate = isIntraday
         ? (_gunIciBaslangic ??
-            DateTime(endDate.year, endDate.month, endDate.day))
+            dayKey(endDate))
         : endDate.subtract(Duration(days: period.days));
     // Kesirli gün — saatlik veride son X gün sınırında değil, gerçek
     // anlarında olmalı. Yoksa nokta grafiğin ortasında yalnız kalır.
@@ -2658,7 +2658,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                         // bırakmak doğrudan yanlış bilgi
                                         // olurdu.
                                         labelResolver: (_) =>
-                                            '${isIntraday ? 'AÇILIŞ' : 'ALIŞ'}  ${NumberFormat('#,##0.00', 'tr_TR').format(anchorY)} ₺',
+                                            '${isIntraday ? 'AÇILIŞ' : 'ALIŞ'}  ${fixedFormatter(2).format(anchorY)} ₺',
                                       ),
                                     ),
                                   ],
@@ -2862,7 +2862,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                               fitInsideVertically: true,
                               getTooltipItems: (touchedSpots) {
                                 final valueFmt =
-                                    NumberFormat('#,##0.000', 'tr_TR');
+                                    fixedFormatter(3);
                                 // Passive + active segmentler anchor noktasında
                                 // aynı (x, y) spot'unu paylaşır → aynı tooltip
                                 // iki kere görünür. Yakın olanları filtrele.
@@ -2921,10 +2921,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                       (snapped.x * 1440).round()));
                               final title = compareOn
                                   ? '${(snapped.y - 100).toStringAsFixed(2)}%'
-                                  : NumberFormat.currency(
-                                          locale: 'tr_TR',
-                                          symbol: '₺',
-                                          decimalDigits: 2)
+                                  : tryFormatter(digits: 2)
                                       .format(fromY(snapped.y));
                               // Gün içinde okunacak bilgi SAATTİR; tarih
                               // zaten sekmenin kendisinden belli.
@@ -3047,8 +3044,7 @@ class _PeriodChangeRow extends StatelessWidget {
     final positive = changeTRY >= 0;
     final color =
         isFlat ? context.c.text36 : (positive ? context.c.gain : context.c.loss);
-    final tryFmt = NumberFormat.currency(
-        locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+    final tryFmt = tryFormatter(digits: 0);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -3138,7 +3134,7 @@ class _PnlSummaryStrip extends StatelessWidget {
   String _fmtPrice(double v) {
     // Birim fiyat — kullanıcı per-unit farkı algılayabilsin diye ondalık koru.
     // Grup ayraçlı, 2 ondalıklı (tr locale).
-    final f = NumberFormat('#,##0.00', 'tr_TR');
+    final f = fixedFormatter(2);
     return '${f.format(v)} ₺';
   }
 

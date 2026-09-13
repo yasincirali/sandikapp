@@ -547,7 +547,7 @@ class LiveActivityService {
     // 7/24 pencerede takvim sınırı yok; yalnızca Apple limiti geçerli.
     if (startMinute == endMinute) return hardLimit;
 
-    var end = DateTime(now.year, now.month, now.day)
+    var end = dayKey(now)
         .add(Duration(minutes: endMinute));
     // Bitiş geçmişte kaldıysa (gece aşan pencere) yarına taşı.
     if (!end.isAfter(now)) end = end.add(const Duration(days: 1));

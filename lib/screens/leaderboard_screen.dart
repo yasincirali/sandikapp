@@ -9,6 +9,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -541,7 +542,7 @@ class _SoloRoiCard extends StatelessWidget {
         : (positive ? context.c.gain : context.c.loss);
     final valueText = r == null
         ? (computing ? 'Hesaplanıyor…' : '—')
-        : '${positive ? '+' : ''}${r.toStringAsFixed(2)}%';
+        : '${positive ? '+' : ''}${fmtNum(r, digits: 2)}%';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
@@ -982,7 +983,7 @@ class _LeaderRow extends StatelessWidget {
         : (positive ? context.c.gain : context.c.loss);
     final roiText = roi == null
         ? 'Veri yok'
-        : '${positive ? '+' : ''}${roi.toStringAsFixed(1)}%';
+        : '${positive ? '+' : ''}${fmtNum(roi, digits: 1)}%';
 
     final isLeader = rank == 1 && roi != null;
     final isMe = row.isMe;
@@ -992,7 +993,7 @@ class _LeaderRow extends StatelessWidget {
     if (isMe && !isLeader && roi != null && leaderRoi != null) {
       final gap = leaderRoi! - roi;
       if (gap > 0.05) {
-        gapTeaser = '+${gap.toStringAsFixed(1)}% arayla 1.';
+        gapTeaser = '+${fmtNum(gap, digits: 1)}% arayla 1.';
       }
     }
 
@@ -1340,7 +1341,7 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
     return _row(
       badge: _Badge(
         text: total > 1000
-            ? '${(total / 1000).toStringAsFixed(1)}K KİŞİ'
+            ? '${fmtNum(total / 1000, digits: 1)}K KİŞİ'
             : '$total KİŞİ',
         color: context.c.text58,
       ),
@@ -1681,7 +1682,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
                         ),
                       ),
                       Text(
-                        '${positive ? '+' : ''}${r.roiPct.toStringAsFixed(1)}%',
+                        '${positive ? '+' : ''}${fmtNum(r.roiPct, digits: 1)}%',
                         style: context.t.numSmall.copyWith(
                           fontWeight: FontWeight.w800,
                           color: roiColor,
@@ -1840,7 +1841,7 @@ class _LegendChip extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            '%${pct.toStringAsFixed(0)}',
+            '%${fmtNum(pct, digits: 0)}',
             style: context.t.numSmall.copyWith(
               fontSize: 11,
               fontWeight: FontWeight.w800,

@@ -248,8 +248,7 @@ class HomeWidgetService {
         // widget uygulamadan daha kolay görünür.
         await _writeHidden();
       } else {
-        final tryFmt = NumberFormat.currency(
-            locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+        final tryFmt = tryFormatter(digits: 0);
 
         // Özet ORTAK katmandan gelir — kilit ekranıyla (Live Activity)
         // birebir aynı hesap. İki yüzey ayrı ayrı hesaplarken üç yerde

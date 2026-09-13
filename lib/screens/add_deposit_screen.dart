@@ -161,7 +161,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final money = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
+    final money = tryFormatter(digits: 2);
     final dateFmt = DateFormat('dd.MM.yyyy', 'tr_TR');
     final maturityNet = _previewMaturityNet;
 

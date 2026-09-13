@@ -143,3 +143,32 @@ double? parseTrNumber(String text) {
   if (val == null || !val.isFinite) return null;
   return val;
 }
+
+// ── Biçimlendirici NESNELERİ ─────────────────────────────────────────────
+//
+// Bazı çağrı yerleri (grafik tooltip'leri, satır widget'ları) `NumberFormat`
+// nesnesini parametre olarak taşıyor. Orada `fmtTRY` gibi bir fonksiyon değil
+// nesne gerekir. Nesne de buradan üretilir ki `NumberFormat.currency(locale:
+// 'tr_TR' …)` literal'i kod tabanında tek yerde kalsın — 2026-09 denetiminde
+// 20 kopyası vardı ve aynı ₺ tutarı için 0/2/3 ondalık arasında değişiyordu.
+// Ondalık sayısı çağıranın kararıdır (alış maliyeti 3, tutar 0), ama sembol,
+// locale ve ayraçlar buradan gelir.
+
+/// `₺1.234,56` üreten biçimlendirici. [symbol] yalnızca döviz cinsinden
+/// gösterilen takip kalemleri için değiştirilir.
+NumberFormat tryFormatter({int digits = 0, String symbol = '₺'}) =>
+    NumberFormat.currency(locale: 'tr_TR', symbol: symbol, decimalDigits: digits);
+
+/// Miktar: trailing sıfır atan, en fazla [maxDigits] ondalıklı (`1.234,5`).
+NumberFormat qtyFormatter({int maxDigits = 4}) =>
+    NumberFormat('#,##0${maxDigits > 0 ? '.${'#' * maxDigits}' : ''}', 'tr_TR');
+
+/// Sabit ondalıklı sayı (`1.234,500`) — birim maliyet gibi hizalı sütunlar.
+NumberFormat fixedFormatter(int digits) =>
+    NumberFormat('#,##0${digits > 0 ? '.${'0' * digits}' : ''}', 'tr_TR');
+
+/// Takvim günü anahtarı — saat/dakika atılmış tarih.
+///
+/// `DateTime(t.year, t.month, t.day)` 38 yerde elle yazılıyordu. Tek isim,
+/// tek anlam: "aynı gün mü" ve "gün sayısı farkı" karşılaştırmaları buradan.
+DateTime dayKey(DateTime t) => DateTime(t.year, t.month, t.day);

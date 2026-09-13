@@ -72,7 +72,7 @@ class PeriodSummaryView extends StatelessWidget {
   });
 
   static final _tryFmt =
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+      tryFormatter(digits: 0);
 
   @override
   Widget build(BuildContext context) {
@@ -678,7 +678,7 @@ class _TufeKarti extends StatelessWidget {
   Widget build(BuildContext context) {
     final onde = fark >= 0;
     final ton = onde ? context.c.gain : context.c.loss;
-    final mutlak = fark.abs().toStringAsFixed(1).replaceAll('.', ',');
+    final mutlak = fmtNum(fark.abs(), digits: 1);
 
     return _BaglamKarti(
       baslik: 'Enflasyona karşı',
@@ -716,7 +716,7 @@ class _ReelGetiriKarti extends StatelessWidget {
   Widget build(BuildContext context) {
     final onde = fark >= 0;
     final ton = onde ? context.c.gain : context.c.loss;
-    final mutlak = fark.abs().toStringAsFixed(1).replaceAll('.', ',');
+    final mutlak = fmtNum(fark.abs(), digits: 1);
 
     return _BaglamKarti(
       baslik: 'Reel getiri',

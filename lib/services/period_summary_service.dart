@@ -4,6 +4,7 @@ import '../models/position.dart' show positionKey;
 import 'daily_summary.dart';
 import 'history_service.dart';
 import 'recap_service.dart' show PortfolioCharacter, RecapAsset, RecapService;
+import '../utils/tr_format.dart';
 
 /// Özet sekmesinin dönemleri.
 ///
@@ -185,7 +186,7 @@ class PeriodSummaryService {
     DateTime end,
   ) {
     final startMs =
-        DateTime(start.year, start.month, start.day).millisecondsSinceEpoch;
+        dayKey(start).millisecondsSinceEpoch;
     final endMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
         .millisecondsSinceEpoch;
 
@@ -233,9 +234,9 @@ class PeriodSummaryService {
     DateTime? seansGunu,
   }) {
     if (period.intraday) {
-      final gun = seansGunu ?? DateTime(now.year, now.month, now.day);
+      final gun = seansGunu ?? dayKey(now);
       return (
-        start: DateTime(gun.year, gun.month, gun.day),
+        start: dayKey(gun),
         end: DateTime(gun.year, gun.month, gun.day, 23, 59, 59),
       );
     }
@@ -249,7 +250,7 @@ class PeriodSummaryService {
         ? now.subtract(Duration(days: period.days))
         : donemBaslangici(now, ayGeri);
     return (
-      start: DateTime(start.year, start.month, start.day),
+      start: dayKey(start),
       end: now,
     );
   }
@@ -375,7 +376,7 @@ class PeriodSummaryService {
       final v = total[k];
       if (v == null || v <= 0) continue;
       final d = DateTime.fromMillisecondsSinceEpoch(k);
-      gunSon[DateTime(d.year, d.month, d.day).millisecondsSinceEpoch] = v;
+      gunSon[dayKey(d).millisecondsSinceEpoch] = v;
     }
     if (gunSon.length < 2) return null;
 

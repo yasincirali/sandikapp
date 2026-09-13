@@ -7,6 +7,7 @@ import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/chart_axis.dart' show gunIciAsgariBantOrani;
 import 'history_service.dart';
+import '../utils/tr_format.dart';
 
 /// Uygulama DIŞI yüzeylerin ortak günlük özet hesabı.
 ///
@@ -370,7 +371,7 @@ class DailySummary {
     if (series.isEmpty) return null;
     final sonTs = series.keys.reduce((a, b) => a > b ? a : b);
     final d = DateTime.fromMillisecondsSinceEpoch(sonTs);
-    return DateTime(d.year, d.month, d.day);
+    return dayKey(d);
   }
 
   /// Serinin ucu bu süreden eskiyse canlı değer son noktayı EZMEZ, ayrı
@@ -409,7 +410,7 @@ class DailySummary {
   ///     etkisi" sayılırdı;
   ///   * temettü ve silinen lot akışa girmez (`isActive` ikisini de eler).
   static double todayInflow(List<Asset> assets, DateTime now) {
-    final dayStart = DateTime(now.year, now.month, now.day);
+    final dayStart = dayKey(now);
     final dayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
     return inflowOnDay(assets, dayStart, dayEnd);
@@ -482,10 +483,10 @@ class DailySummary {
     // hareketinden düşülemez (bkz. [todayInflow]).
     final cizilenGun = seansGunu ??
         cizilenGunFromSeries(series) ??
-        DateTime(now.year, now.month, now.day);
+        dayKey(now);
     final inflow = inflowOnDay(
       state.assets,
-      DateTime(cizilenGun.year, cizilenGun.month, cizilenGun.day),
+      dayKey(cizilenGun),
       DateTime(cizilenGun.year, cizilenGun.month, cizilenGun.day, 23, 59, 59),
     );
     final amount = (last - open) - inflow;

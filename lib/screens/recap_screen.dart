@@ -10,6 +10,7 @@ import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 
 /// "sandık Özeti" — yıllık geriye bakış.
 ///
@@ -76,7 +77,7 @@ class _RecapScreenState extends State<RecapScreen> {
       out.add(_Sayfa(
         ustBaslik: 'Portföyün',
         baslik:
-            '${artis ? '+' : '−'}%${d.changePct!.abs().toStringAsFixed(1).replaceAll('.', ',')}',
+            '${artis ? '+' : '−'}%${fmtNum(d.changePct!.abs(), digits: 1)}',
         altBaslik: artis ? 'Bu yıl böyle büyüdün.' : 'Zor bir yıl oldu.',
         ikon: artis ? Icons.trending_up_rounded : Icons.trending_down_rounded,
         renk: artis ? c.gain : c.loss,
@@ -88,7 +89,7 @@ class _RecapScreenState extends State<RecapScreen> {
       out.add(_Sayfa(
         ustBaslik: 'Enflasyona karşı',
         baslik:
-            '${d.inflationSpread!.abs().toStringAsFixed(1).replaceAll('.', ',')} puan',
+            '${fmtNum(d.inflationSpread!.abs(), digits: 1)} puan',
         altBaslik: onde
             ? 'Alım gücünü korudun ve üstüne koydun.'
             : 'Bu yıl enflasyon öndeydi.',
@@ -105,7 +106,7 @@ class _RecapScreenState extends State<RecapScreen> {
         // değil. Üç yıl önce alınmış bir varlığı "yılın yıldızı" diye
         // sunmak yanlış olurdu.
         altBaslik:
-            'Bugüne kadar %${d.bestAsset!.changePct.toStringAsFixed(1).replaceAll('.', ',')} getirdi.',
+            'Bugüne kadar %${fmtNum(d.bestAsset!.changePct, digits: 1)} getirdi.',
         ikon: Icons.workspace_premium_rounded,
         renk: c.gain,
       ));
