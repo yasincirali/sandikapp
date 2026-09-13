@@ -39,6 +39,11 @@ ucuz. Bkz. `TECHNICAL_DEBT.md`.
 `CALENDAR_NUDGE_CRON_SECRET` (Vault'taki `calendar_nudge_cron_secret` ile
 birebir aynı).
 
+⚠️ Cron secret'ı **`x-cron-secret`** header'ında taşınır, `Authorization`'da
+DEĞİL — oraya konulduğunda API gateway isteği fonksiyona hiç ulaştırmadan
+401 döndürür ve arıza sessiz olur. Bkz.
+[`_shared/CRON_AUTH.md`](../_shared/CRON_AUTH.md).
+
 ## Kurulum ve doğrulama
 
 ```bash
@@ -48,7 +53,8 @@ supabase secrets set CALENDAR_NUDGE_CRON_SECRET="<uzun-rastgele>"
 # Migration: supabase/migrations/0048_calendar_nudge.sql
 
 curl -X POST "https://<proje>.supabase.co/functions/v1/calendar-nudge" \
-  -H "Authorization: Bearer $CALENDAR_NUDGE_CRON_SECRET" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "x-cron-secret: $CALENDAR_NUDGE_CRON_SECRET" \
   -H "Content-Type: application/json" -d '{"dry_run": true}'
 
 deno test supabase/tests/calendar_nudge_test.ts

@@ -47,6 +47,11 @@ Damga yazılıp push başarısız olursa alarm yalnızca bir kez kaçar.
 | `FCM_SERVICE_ACCOUNT_JSON` | `analyze-signals` ile aynı |
 | `PRICE_ALERTS_CRON_SECRET` | Vault'taki `price_alerts_cron_secret` ile birebir aynı |
 
+⚠️ Cron secret'ı **`x-cron-secret`** header'ında taşınır, `Authorization`'da
+DEĞİL — oraya konulduğunda API gateway isteği fonksiyona hiç ulaştırmadan
+401 döndürür ve arıza sessiz olur. Bkz.
+[`_shared/CRON_AUTH.md`](../_shared/CRON_AUTH.md).
+
 ## Kurulum
 
 ```bash
@@ -60,7 +65,8 @@ supabase secrets set PRICE_ALERTS_CRON_SECRET="<rastgele-uzun-string>"
 
 ```bash
 curl -X POST "https://<proje>.supabase.co/functions/v1/check-price-alerts" \
-  -H "Authorization: Bearer $PRICE_ALERTS_CRON_SECRET" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "x-cron-secret: $PRICE_ALERTS_CRON_SECRET" \
   -H "Content-Type: application/json" -d '{"dry_run": true}'
 ```
 

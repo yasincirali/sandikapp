@@ -5,7 +5,65 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-13
+**Son güncelleme:** 2026-09-14
+
+---
+
+## ✅ KAPANDI — Cron çağrıları API gateway'de 401 alıyordu (SESSİZ)
+
+**Bulunma tarihi:** 2026-09-14 · **Kapanış:** aynı gün ·
+`0054_cron_auth_header.sql`
+
+Borç kaydı olarak hiç açılmamıştı — **bilinmiyordu**. Haftalık özetin
+canlı doğrulaması sırasında ortaya çıktı.
+
+**Belirti:** `daily_brief_log` Mayıs 2026'dan beri BOŞTU. Sabah brifingi
+hiç gönderilmemişti. `calendar_nudge_log` ve `weekly_summary_log` de boş.
+
+**Sebep:** Supabase API gateway, isteği edge function'a iletmeden ÖNCE
+`Authorization` header'ını JWT olarak ayrıştırıyor. Yedi tetikleyicinin
+hepsi oraya rastgele hex bir cron secret koyuyordu
+(`0017`'den beri süregelen desen), gateway bunu JWT sanıp isteği fonksiyona
+**hiç ulaştırmadan** reddediyordu:
+
+```
+401 {"code":"UNAUTHORIZED_INVALID_JWT_FORMAT","message":"Invalid JWT"}
+```
+
+**Neden dört ay fark edilmedi** — her gösterge yeşildi:
+
+| Nereye bakılırsa | Ne görünürdü |
+|---|---|
+| `cron.job` | iş kurulu, zamanlama doğru ✓ |
+| `cron.job_run_details` | koşu başarılı ✓ (pg_net isteği kuyruğa aldı) |
+| Edge function logları | **boş** — fonksiyon hiç çalışmadı |
+| `net._http_response` | 401 — **tek görünür yer** |
+
+`live-activity-refresh`'in çalışmasının tek sebebi Vault'undaki değerin
+rastgele bir string değil, 219 karakterlik gerçek bir service_role JWT'si
+olmasıydı. Yani tek çalışan iş, yanlışlıkla doğru header'ı taşıyordu.
+
+**Çözüm:** `Authorization` gateway'e (service_role JWT), cron secret'ı
+`x-cron-secret` header'ına. İki katman korundu. Fonksiyon tarafında
+`_shared/cron_auth.ts`, SQL tarafında `public.cron_headers(secret_adi)` —
+header deseni bir daha değişirse dokunulacak tek yer.
+
+Reddedilen iki alternatif: `verify_jwt = false` (gateway katmanı tamamen
+kalkardı) ve Vault'a cron secret'ı OLARAK service_role JWT yazmak
+(fonksiyon başına izolasyon kaybolurdu — tek sızıntı tüm DB'yi açar).
+
+**Yanında kapanan:** `daily_brief`, `calendar_nudge`, `price_alerts` ve
+`live_activity` tetikleyicileri `timeout_milliseconds` bayrağını hiç
+almamıştı — `0040`'ın belgelediği 5 saniye tuzağına açıktılar. Dördüne de
+verildi.
+
+**Regresyon kapısı:** `supabase/tests/cron_auth_test.ts` (41 test). Eski
+desenin geri sızmasını ve yeni desenin eksiksizliğini iki yönlü
+doğruluyor. Belge: `supabase/functions/_shared/CRON_AUTH.md`.
+
+**Kurulum bağımlılığı:** `cron_gateway_jwt` Vault kaydı GEREKLİ — migration
+onu yazamaz (service_role key'i SQL içinden okuyamaz ve repoya girmemeli).
+Yoksa `0054` açık hatayla durur; sessiz düşmemesi kasıtlı.
 
 ---
 
