@@ -10,6 +10,7 @@ import '../providers/preferences_provider.dart';
 import 'paywall_screen.dart';
 import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
+import '../utils/polling.dart';
 import 'recap_screen.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
@@ -87,7 +88,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String? _pendingInviteId;
   String? _pendingPartnerName;
-  Timer? _pollTimer;
+  BackoffPoller? _poll;
 
   @override
   void initState() {
@@ -110,7 +111,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _rateLimitTicker?.cancel();
     _codeCtrl.dispose();
-    _pollTimer?.cancel();
+    _poll?.cancel();
     super.dispose();
   }
 
@@ -229,33 +230,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _startPolling(String inviteId) {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
-      if (!mounted) return;
-      final status = await SupabaseService.instance.getInviteStatus(inviteId);
-      if (status == 'accepted') {
-        _pollTimer?.cancel();
-        await ref.read(partnersProvider.notifier).refresh();
-        ref.read(allPartnerAssetsProvider.notifier).reload();
-        if (mounted) {
-          final name = _pendingPartnerName;
-          setState(() {
-            _pendingInviteId = null;
-            _pendingPartnerName = null;
-          });
-          await _showMsg('$name ile ortaklık kuruldu!');
+    _poll?.cancel();
+    // Sabit 3 sn yerine geri çekilmeli yoklama (3→15 sn, en çok 10 dk).
+    // Gerçek zamanlı bildirim ayrıca `PartnerInviteListenerService`'ten
+    // geliyor; bu yoklama yalnızca push/realtime kaçarsa yedek.
+    _poll = BackoffPoller(
+      check: () async {
+        if (!mounted) return true;
+        final status =
+            await SupabaseService.instance.getInviteStatus(inviteId);
+        if (status == 'accepted') {
+          await ref.read(partnersProvider.notifier).refresh();
+          ref.read(allPartnerAssetsProvider.notifier).reload();
+          if (mounted) {
+            final name = _pendingPartnerName;
+            setState(() {
+              _pendingInviteId = null;
+              _pendingPartnerName = null;
+            });
+            await _showMsg('$name ile ortaklık kuruldu!');
+          }
+          return true;
         }
-      } else if (status == 'rejected') {
-        _pollTimer?.cancel();
-        if (mounted) {
-          setState(() {
-            _pendingInviteId = null;
-            _pendingPartnerName = null;
-          });
-          await _showMsg('Ortaklık isteği reddedildi.', isError: true);
+        if (status == 'rejected') {
+          if (mounted) {
+            setState(() {
+              _pendingInviteId = null;
+              _pendingPartnerName = null;
+            });
+            await _showMsg('Ortaklık isteği reddedildi.', isError: true);
+          }
+          return true;
         }
-      }
-    });
+        return false;
+      },
+    )..start();
   }
 
   Future<void> _cancelPending() async {
@@ -283,7 +292,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
     if (confirm != true) return;
 
-    _pollTimer?.cancel();
+    _poll?.cancel();
     setState(() => _busy = true);
     try {
       await ref.read(partnersProvider.notifier).rejectInvite(inviteId);
@@ -860,18 +869,21 @@ class _PendingRequestsSection extends ConsumerStatefulWidget {
 class _PendingRequestsSectionState
     extends ConsumerState<_PendingRequestsSection> {
   List<Map<String, dynamic>> _pendingInvites = [];
-  Timer? _refreshTimer;
+  // 5 sn sabit poll yerine 20 sn + arka planda durur. Davetler ayrıca
+  // realtime dinleyiciyle geliyor; bu yalnızca güvenlik ağı.
+  late final ForegroundPoller _poller =
+      ForegroundPoller(interval: const Duration(seconds: 20), onTick: _load);
 
   @override
   void initState() {
     super.initState();
     _load();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) => _load());
+    _poller.start();
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _poller.dispose();
     super.dispose();
   }
 

@@ -8,6 +8,8 @@ import 'db_logger.dart';
 import 'home_widget_service.dart';
 import 'live_activity_service.dart';
 import 'supabase_service.dart';
+import '../utils/friendly_error.dart';
+import 'crash_reporter.dart';
 
 const _uuid = Uuid();
 const _savedEmailKey = 'saved_email';
@@ -205,15 +207,21 @@ class AuthService {
     } on AuthException {
       rethrow;
     } on AuthApiException catch (e) {
+      // Hesap numaralandırma (M4): "zaten kayıtlı" demek, bu e-postanın bir
+      // hesabı olduğunu doğrulamaktı. Confirm-email açıkken Supabase zaten
+      // duplicate için de "kod gönderildi" davranır; bu dal yalnızca eski
+      // yapılandırmalarda çalışır. Mesaj artık varlığı doğrulamıyor.
       if (e.message.contains('already registered') ||
           e.message.contains('User already registered')) {
         throw const AuthException(
-          'Bu e-posta zaten kayıtlı. Giriş yapmayı deneyin.',
+          'Bu e-posta ile kayıt tamamlanamadı. Hesabın varsa giriş yap ya da '
+          'şifreni sıfırla.',
         );
       }
-      throw AuthException(e.message);
-    } catch (e) {
-      throw AuthException('Kayıt hatası: $e');
+      throw AuthException(friendlyError(e));
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.register');
+      throw AuthException('Kayıt hatası: ${friendlyError(e)}');
     }
   }
 
@@ -280,8 +288,9 @@ class AuthService {
             'Kod geçersiz veya süresi doldu. Yeni kod isteyin.');
       }
       throw AuthException(e.message);
-    } catch (e) {
-      throw AuthException('Doğrulama hatası: $e');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.verifyRegistrationOtp');
+      throw AuthException('Doğrulama hatası: ${friendlyError(e)}');
     }
   }
 
@@ -308,8 +317,9 @@ class AuthService {
             'Çok sık kod istediniz. 60 saniye bekleyip tekrar deneyin.');
       }
       throw AuthException(e.message);
-    } catch (e) {
-      throw AuthException('Kod gönderilemedi: $e');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.resendRegistrationOtp');
+      throw AuthException('Kod gönderilemedi: ${friendlyError(e)}');
     }
   }
 
@@ -380,8 +390,9 @@ class AuthService {
             'E-posta adresinizi doğrulayın. Gelen kutunuzu kontrol edin.');
       }
       throw AuthException(e.message);
-    } catch (e) {
-      throw AuthException('Giriş hatası: $e');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.login');
+      throw AuthException('Giriş hatası: ${friendlyError(e)}');
     }
   }
 
@@ -414,8 +425,9 @@ class AuthService {
       throw const AuthException(
         'İstek alındı. E-posta adresine kod gönderdik.',
       );
-    } catch (e) {
-      throw AuthException('Şifre sıfırlama isteği başarısız: ${_safe(e)}');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.sendPasswordResetOtp');
+      throw AuthException('Şifre sıfırlama isteği başarısız: ${friendlyError(e)}');
     }
   }
 
@@ -429,8 +441,13 @@ class AuthService {
     final normalized = email.toLowerCase().trim();
     final passError = validatePassword(newPassword);
     if (passError != null) throw AuthException(passError);
-    if (otp.trim().isEmpty) {
+    final cleanOtp = otp.trim();
+    if (cleanOtp.isEmpty) {
       throw const AuthException('Kod girin.');
+    }
+    // Kayıt OTP'siyle aynı biçim kuralı — sunucuya biçimsiz kod gitmesin.
+    if (cleanOtp.length != 6 || int.tryParse(cleanOtp) == null) {
+      throw const AuthException('Kod 6 haneli olmalı.');
     }
 
     try {
@@ -465,8 +482,9 @@ class AuthService {
         throw const AuthException('Kod hatalı veya süresi doldu.');
       }
       throw AuthException(e.message);
-    } catch (e) {
-      throw AuthException('Şifre güncelleme hatası: ${_safe(e)}');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.verifyPasswordResetOtp');
+      throw AuthException('Şifre güncelleme hatası: ${friendlyError(e)}');
     }
   }
 
@@ -538,8 +556,9 @@ class AuthService {
       }
     } on AuthException {
       rethrow;
-    } catch (e) {
-      throw AuthException('Hesap silme hatası: ${_safe(e)}');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.deleteAccount');
+      throw AuthException('Hesap silme hatası: ${friendlyError(e)}');
     }
 
     // 3. Local cache temizle
@@ -719,11 +738,6 @@ class AuthService {
     return _formatDuration(seconds ?? 600);
   }
 
-  String _safe(Object e) {
-    final s = e.toString();
-    if (s.length > 100) return s.substring(0, 100);
-    return s;
-  }
 
   // ── Kod sahibi onayladı → partnership kur (Edge Function) ────────────────
 

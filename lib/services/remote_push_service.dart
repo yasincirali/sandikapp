@@ -243,8 +243,11 @@ class RemotePushService {
       }
     }
     try {
+      // UUID'nin tamamı DEĞİL: Crashlytics üçüncü ülkeye giden bir işlemci,
+      // tam kimlik KVKK açısından gereksiz. İlk 8 karakter korelasyona yeter.
       await FirebaseCrashlytics.instance.log(
-          'fcm_token=${token == null ? 'NULL' : 'len=${token.length}'} userId=$userId');
+          'fcm_token=${token == null ? 'NULL' : 'len=${token.length}'} '
+          'uid8=${userId.length >= 8 ? userId.substring(0, 8) : userId}');
     } catch (_) {}
     if (token == null || token.isEmpty) return;
 

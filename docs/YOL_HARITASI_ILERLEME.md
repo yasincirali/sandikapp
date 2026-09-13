@@ -9,7 +9,7 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > Değişiklikler bilinçli olarak küçük ve mekanik tutuldu.
 
 ## Son kalınan yer
-Faz 0 tamam, Faz 1.1–1.6 ve 1.12 tamam. Sıradaki: **Faz 1.7** (Crashlytics non-fatal).
+**Faz 1 tamam** (1.9'un google_fonts/lint kısmı ve 1.11'in leaderboard kısmı bilinçli ertelendi — TECHNICAL_DEBT). Sıradaki: **Faz 2.1** (skeleton yükleyiciler).
 
 ## Faz 0 — Kanamayı durdur
 
@@ -36,11 +36,11 @@ Faz 0 tamam, Faz 1.1–1.6 ve 1.12 tamam. Sıradaki: **Faz 1.7** (Crashlytics no
 | 1.4 | ✅ | `tr_format.dart`: `tryFormatter(digits, symbol)`, `qtyFormatter`, `fixedFormatter`, `dayKey`. 20 `NumberFormat.currency` + 13 `NumberFormat('#…')` kopyası bunlara bağlandı (ondalık sayısı çağıranda kaldı, locale/sembol tek yerde). 38 `DateTime(y,m,d)` → `dayKey`. 17 `toStringAsFixed` → `fmtNum` (leaderboard `12.5%` → `12,5%` TR ayracı düzeldi); kalan 5'i eksen sözleşmeli, bilinçli. `context.signColor(v)` eklendi, 5 satır içi kazanç/kayıp üçlüsü buna geçti. `test/tr_format_single_source_test.dart` ratchet. Kullanılmayan `intl` importları temizlendi. |
 | 1.5 | ✅ | `lib/config/pref_keys.dart` (`PrefKeys`): 18 `pref_*` anahtarı tek yerde; `preferences_provider`, `notification_service`, `surface_theme` buna bağlandı. `test/pref_keys_single_source_test.dart`: literal PrefKeys dışında yazılamaz + benzersizlik. `sandik_*` (widget IPC) ve `retention_*` bilinçli kapsam dışı. |
 | 1.6 | ✅ (silme ile) | `Asset.toMap()/fromMap()` lib+test'te SIFIR çağıran — "partner kod payload" yorumu bayattı. Alan paritesi kurmak yerine ölü çift SİLİNDİ; tek serileştirme şeması `toSupabase/fromSupabase`. |
-| 1.7 | ⏳ | |
-| 1.8 | ⏳ | |
-| 1.9 | ⏳ | |
-| 1.10 | ⏳ | |
-| 1.11 | ⏳ | |
+| 1.7 | ✅ (auth kapsamı) | `lib/services/crash_reporter.dart`: `CrashReporter.report(e, st, reason:)` — sanitize + non-fatal + Firebase yoksa no-op. `auth_service`'teki 7 jenerik `catch (e)` buna bağlandı ve kullanıcı mesajı `friendlyError(e)` üzerinden. `remote_push_service` breadcrumb'ında tam UUID yerine ilk 8 karakter (M6). Diğer servislerdeki bilinçli `catch (_)` blokları (yorum gerekçeli) dokunulmadı. |
+| 1.8 | ✅ (kısmi) | Kayıt hatası artık hesap varlığını doğrulamıyor (M4). Şifre sıfırlama OTP'sinde 6 hane kontrolü. **Login/OTP sunucu tarafı throttle (M12) yapılmadı**: istemci sayacı güvenlik sınırı değil (S1 dersi); doğru yer GoTrue rate limit ayarları — `YAPMAN_GEREKENLER.md` #10. |
+| 1.9 | 🟡 kısmi | `flutter_launcher_icons` → `dev_dependencies`. **Ertelendi:** `google_fonts` kaldırma (35 kullanım + `bundled_font_test` google_fonts API'sine bağlı) ve `flutter_lints` 4→6 + strict — ikisi de analyzer koşmadan güvenli değil; `TECHNICAL_DEBT.md`'ye yazıldı. |
+| 1.10 | ✅ | `test/design_token_ratchet_test.dart`: `Colors.*` ≤ 89 satır, `fontSize:` ≤ 181 satır (tema dışı). |
+| 1.11 | ✅ (kısmi) | `lib/utils/polling.dart`: `ForegroundPoller` (arka planda durur, üst üste binmez) ve `BackoffPoller` (3→15 sn, 10 dk tavan). Profil bekleyen istekler ve ortaklık istekleri ekranı 5 sn → 20 sn + arka planda durur; davet durumu yoklaması geri çekilmeli. **Leaderboard'daki 5 tick timer dokunulmadı** — ekran Faz 3.12 kararına bağlı (kapatılabilir). |
 | 1.12 | ✅ | `FxRateMigrationService.runFor` kullanıcı başına günde bir kez (`PrefKeys.fxMigrationLastRunMs_<uid>`); yeniden deneme davranışı korunuyor. |
 
 ## Faz 2 — UX tutarlılığı ve modern UI

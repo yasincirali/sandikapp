@@ -1,4 +1,3 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../utils/polling.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/custom_loading_indicator.dart';
 
@@ -28,18 +28,19 @@ class _PartnershipRequestsScreenState
     extends ConsumerState<PartnershipRequestsScreen> {
   List<Map<String, dynamic>> _pendingInvites = [];
   bool _loading = true;
-  Timer? _refreshTimer;
+  late final ForegroundPoller _poller =
+      ForegroundPoller(interval: const Duration(seconds: 20), onTick: _load);
 
   @override
   void initState() {
     super.initState();
     _load();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) => _load());
+    _poller.start();
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _poller.dispose();
     super.dispose();
   }
 

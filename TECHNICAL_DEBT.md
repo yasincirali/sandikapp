@@ -9,6 +9,59 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — google_fonts bağımlılığı yalnızca TextStyle üreticisi olarak duruyor
+
+**Karar tarihi:** 2026-09-13 · Değerlendirme raporu §2/Faz 1.9
+
+DM Sans 6 ağırlıkla `assets/fonts/` altında gömülü ve `main.dart:118`
+`allowRuntimeFetching = false` diyor. `google_fonts` paketi hiçbir şey
+indirmiyor; yalnızca `GoogleFonts.dmSans(...)` (35 çağrı) ve
+`dmSansTextTheme` ile `fontFamily: 'DM Sans'` yazmanın uzun yolu.
+Aile adının paketin ürettiğiyle birebir eşleşme zorunluluğu (pubspec
+yorumu) kırılgan bir bağ.
+
+**Neden ertelendi:** 35 çağrı yerinin mekanik değişimi kolay ama
+`bundled_font_test.dart` google_fonts API'sine bağlı; analyzer/test
+koşulmadan yapılan bir bağımlılık kaldırma CI'ı kırma riski taşıyor.
+**Maliyet:** bir bağımlılık + asset-manifest makinesi + runtime-fetch
+tuzağı. **Ne zaman:** CI (`ci.yml`) yeşil görüldükten sonraki ilk tur;
+`GoogleFonts.dmSans(` → `TextStyle(fontFamily: 'DM Sans', ` ve
+`dmSansTextTheme(x)` → `x.apply(fontFamily: 'DM Sans')`, test yeniden
+yazılır.
+
+---
+
+## 🟡 AÇIK — analysis_options.yaml dokunulmamış şablon, flutter_lints 4.x
+
+**Karar tarihi:** 2026-09-13
+
+`include: package:flutter_lints/flutter.yaml` + boş `rules:`. Güncel
+6.x iki majör ileride; `strict-casts`, `unawaited_futures`,
+`avoid_dynamic_calls` kapalı. Kod tabanında yalnızca 3 `// ignore:`
+var — muhtemelen sıkılaştırmayı sorunsuz kaldırır ama 62k satırda
+hangi kuralın kaç yerde patlayacağı analyzer koşmadan bilinemez.
+**Ne zaman:** CI yeşil olduktan sonra, tek commit'te; `unawaited_futures`
+tek başına servis katmanındaki ateşle-unut çağrıları yüzeye çıkarır.
+
+---
+
+## 🟡 AÇIK — leaderboard_screen'de 5 bağımsız canlı tick timer'ı
+
+**Karar tarihi:** 2026-09-13
+
+`_liveTick` 15/15/30/45 sn (ekran) + 30 sn (hero kart) — her biri kendi
+`setState(() => _future = ...)` döngüsünü kuruyor. `LeaderboardService`
+TTL önbelleği ağ maliyetini sınırlıyor ama beş widget birbirinden habersiz
+yeniden hesaplıyor ve hiçbiri arka planda durmuyor.
+**Neden ertelendi:** Yarış özelliğinin kendisi Faz 3.12 kararına bağlı
+(DAU ≥ 2×k_min ve Sybil çözümü olmadan kapalı). Kapatılacak bir ekranın
+timer mimarisini yeniden kurmak boşa efor.
+**Ne zaman:** Yarış açılma kararıyla birlikte; `ForegroundPoller`
+(`lib/utils/polling.dart`) hazır, tek `Notifier` ile beş future tek
+yerden tazelenir.
+
+---
+
 ## ✅ KAPANDI — Özet sekmesinde 6A yüzdelik dilimi bağlı değil
 
 **Kapanış:** 2026-09-13 · Migration `0051_percentile_180d.sql` + ekran
