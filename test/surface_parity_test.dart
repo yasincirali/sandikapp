@@ -320,7 +320,21 @@ void main() {
   });
 
   group('grafik — uygulamanın GÜNLÜK grafiğiyle aynı kurallar', () {
-    final now = DateTime.now();
+    // ⚠️ SABİT saat — `DateTime.now()` DEĞİL.
+    //
+    // Bu grup `ago(240)`'a kadar geriye nokta koyuyor. Gerçek saatle
+    // koşarsa 00:00–04:00 arasında o noktalar DÜNE düşüyor ve
+    // `DailySummary.dayValues` "çizilen gün bugün değil" diye canlı
+    // değeri EKLEMİYOR — test, kod hiç değişmeden kırılıyor.
+    //
+    // Ölçüldü (2026-09-14 00:08, aynı girdi, yalnızca saat farklı):
+    //   now=12:00 → 3 nokta, uç 1200.0  ✓
+    //   now=00:08 → 2 nokta, uç 1000.0  ✗
+    //
+    // Saat öğlene sabitleniyor: gün sınırı testin konusu değil, gündüz
+    // davranışı. Gün sınırı davranışını `gunluk_sekmesi_bugun_test`
+    // ayrıca ve AÇIKÇA kilitliyor.
+    final now = DateTime(2026, 9, 14, 12);
     int ago(int minutes) =>
         now.subtract(Duration(minutes: minutes)).millisecondsSinceEpoch;
 
