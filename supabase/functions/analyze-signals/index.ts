@@ -35,11 +35,12 @@ import {
   resolveSymbol,
 } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
+import { cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+    'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 type ServiceAccount = {
@@ -622,12 +623,8 @@ Deno.serve(async (request) => {
       );
     }
 
-    if (cronSecret) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        return jsonResponse({ error: 'Yetkisiz cron cagrisi.' }, 401);
-      }
-    }
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
 
     let slot = 'unknown';
     let dryRun = false;

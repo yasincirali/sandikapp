@@ -44,10 +44,12 @@
 // sezgisel olarak yakalar (bkz. `bazKirilmasiVarMi`) ve yazmayı reddeder
 // — yanlış bir reel getiri, hiç göstermemekten kötüdür.
 
+import { cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+    'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 /// EVDS serisi — TÜFE genel endeks.
@@ -210,12 +212,8 @@ Deno.serve(async (request) => {
         + 'sağlanmadı. Bunlar otomatik enjekte edilir.',
       );
     }
-    if (cronSecret) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        return jsonResponse({ error: 'Yetkisiz cron cagrisi.' }, 401);
-      }
-    }
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
 
     // Anahtar yoksa HİÇBİR ŞEY yazılmaz.
     //

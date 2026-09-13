@@ -21,11 +21,12 @@ import {
   sendFcmNotification,
   ServiceAccount,
 } from '../_shared/fcm.ts';
+import { cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+    'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 /// Brifingle AYNI kanal: ikisi de "bilgilendirici, acil değil" sınıfında ve
@@ -122,12 +123,8 @@ Deno.serve(async (request) => {
     if (!fcmProjectId || !fcmServiceAccountJson) {
       throw new Error('FCM secret\'ları eksik.');
     }
-    if (cronSecret) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        return jsonResponse({ error: 'Yetkisiz cron cagrisi.' }, 401);
-      }
-    }
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
 
     let dryRun = false;
     try {
