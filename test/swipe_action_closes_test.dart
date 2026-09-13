@@ -116,7 +116,7 @@ void main() {
     // Bu, tip seviyesinde bir değişmez. `void Function(Position)` kalsaydı
     // `await onPressed()` derlenir ama BEKLEMEZ; panel yine erken kapanırdı
     // ve hata sessizce geri gelirdi.
-    const src = 'lib/screens/charts_screen.dart';
+    const src = 'lib/screens/portfolio_screen.dart';
     final file = File(src);
     final text = file.readAsStringSync();
 

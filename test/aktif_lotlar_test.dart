@@ -142,7 +142,7 @@ void main() {
     });
 
     test('karşılaştırma seçici', () {
-      final k = oku('lib/screens/performance_screen.dart');
+      final k = oku('lib/screens/asset_detail_screen.dart');
       expect(k.contains('aktifLotlar('), isTrue,
           reason: 'Satılmış varlık karşılaştırma listesinde çıkar.');
     });

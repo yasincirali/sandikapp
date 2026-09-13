@@ -144,7 +144,7 @@ kilitleyen 8 test eklendi.
 |---|---|
 | `price_alerts_screen` | Satılmış hisse hâlâ alarm adayıydı (borç kaydında "doğrulanmadı" notu vardı — DOĞRULANDI) |
 | `add_watchlist_screen` | Satılmış hisse "zaten portföyünde" diye takip listesine EKLENEMİYORDU |
-| `performance_screen` | Satılmış varlık karşılaştırma listesinde çıkıyordu |
+| `asset_detail_screen` | Satılmış varlık karşılaştırma listesinde çıkıyordu |
 
 **Yöntem — `deletedAt` DEĞİL, okuma tarafı.** Kullanıcı önce soft-delete
 istedi; borç kaydındaki uyarı gösterildikten sonra okuma tarafı seçildi.
@@ -269,7 +269,7 @@ ekleyip her sembolün çekim süresini yazdır.
 
 **Karar tarihi:** 2026-09-10 · Hata turu
 
-`PerformanceScreen`'e GÜNLÜK (gün içi) sekmesi eklendi. Karşılaştırma
+`AssetDetailScreen`'e GÜNLÜK (gün içi) sekmesi eklendi. Karşılaştırma
 şeridi (`_CompareStrip`) o sekmede **gizleniyor**: karşılaştırma serisi
 `getPortfolioHistory(days)` ile çekiliyor ve gün içi sekmesi `days: 0`
 taşıyor — o çağrı boş bir pencere isterdi. Sekme değiştirilirken seçili
@@ -635,16 +635,16 @@ Beş ekran dosyası toplam **10.744 satır** — kod tabanının %31'i:
 | Dosya | Satır |
 |---|---|
 | `lib/screens/add_asset_screen.dart` | 2.627 |
-| `lib/screens/performance_screen.dart` | 2.553 |
+| `lib/screens/asset_detail_screen.dart` | 2.553 |
 | `lib/screens/portfolio_performance_screen.dart` | 2.209 |
-| `lib/screens/charts_screen.dart` | 1.690 |
+| `lib/screens/portfolio_screen.dart` | 1.690 |
 | `lib/screens/leaderboard_screen.dart` | 1.665 |
 
 **Ertelemenin maliyeti — teorik değil, ölçüldü:**
 2026-08-03'te ortak kâr/zarar hatası **üç ekrana birden** yayılmıştı, çünkü
 ortak filtreleme mantığı (`_view` == '' / null / uuid ayrımı) bu dosyalara
 kopyalanmıştı. Tek bir hata üç ayrı yerde düzeltildi. Aynı kopyalama
-`portfolio_performance_screen` ile `charts_screen` arasında hâlâ duruyor.
+`portfolio_performance_screen` ile `portfolio_screen` arasında hâlâ duruyor.
 
 **Ele alınma zamanı:** Tek seferlik büyük bir refactor olarak DEĞİL — o
 riskli ve test kapsamı buna yetmiyor. Bu ekranlardan birine iş düştükçe,
@@ -662,10 +662,10 @@ o dokunuşta ortak parçayı çıkar:
 
 **2026-08-04 durumu:** 162 testin 46'sı gerçek widget testi:
 - `transaction_row_overflow_test.dart` — `TransactionRow` (11 senaryo)
-- `asset_card_overflow_test.dart` — `ChartsScreen` (8 senaryo)
+- `asset_card_overflow_test.dart` — `PortfolioScreen` (8 senaryo)
 - `leaderboard_overflow_test.dart` — `LeaderboardScreen`, opt-in açık/kapalı
   iki hâl (8 senaryo)
-- `performance_screen_overflow_test.dart` — `PerformanceScreen` (8 senaryo)
+- `asset_detail_screen_overflow_test.dart` — `AssetDetailScreen` (8 senaryo)
 - `home_screen_overflow_test.dart` — `HomeScreen`, boş/dolu portföy
   (11 senaryo)
 
@@ -676,10 +676,10 @@ hiçbiri gözle görülmüyordu:
 | Yer | Taşma | Sebep |
 |---|---|---|
 | `TransactionRow` satış satırı | 19px yatay | "Çıkarıldı" etiketi "Eklendi"den uzun, 116pt kolona sığmıyor |
-| `performance_screen` TOPLAM MİKTAR | 105px yatay | etiket + değer ikisi de sınırsız |
-| `performance_screen` TEKNİK ANALİZ başlığı | — | başlık + sayaç ayar bağlantısını itiyor |
-| `performance_screen` grafik lejantı | 15px yatay | uzun ticker rozetleri |
-| `performance_screen` DEĞİŞİM kartı | 54px @320pt | etiket tam genişliği alıyor, değer taşıyor |
+| `asset_detail_screen` TOPLAM MİKTAR | 105px yatay | etiket + değer ikisi de sınırsız |
+| `asset_detail_screen` TEKNİK ANALİZ başlığı | — | başlık + sayaç ayar bağlantısını itiyor |
+| `asset_detail_screen` grafik lejantı | 15px yatay | uzun ticker rozetleri |
+| `asset_detail_screen` DEĞİŞİM kartı | 54px @320pt | etiket tam genişliği alıyor, değer taşıyor |
 
 Bu yaklaşımın değeri ölçüldü: gerçek widget'a bağlanan test, ilk çalıştırmada
 **daha önce bilinmeyen bir taşmayı** ortaya çıkardı (satış satırında 19px
@@ -771,9 +771,9 @@ değil.
   açılsa satın alma çalışmaz. Ayrıntı: `MONETIZATION_ROADMAP.md`.
 - `lib/screens/asset_detail_screen.dart` — **ölü kod** (bulundu 2026-08-10).
   Hiçbir yerden `push` edilmiyor; sınıfa yapılan tek referans kendi tanımı,
-  testi de yok. Varlık satırı bunun yerine `PerformanceScreen`'e gidiyor.
+  testi de yok. Varlık satırı bunun yerine `AssetDetailScreen`'e gidiyor.
 
-  Neden hemen silinmedi: dosya `PerformanceScreen`'e geçiş yapan bir alt
+  Neden hemen silinmedi: dosya `AssetDetailScreen`'e geçiş yapan bir alt
   bölüm içeriyor (satır 274), yani bir zamanlar akışın parçasıymış. Silmek
   ürün kararıdır — bu ekranın geri gelmesi planlanıyorsa yaşamalı.
 

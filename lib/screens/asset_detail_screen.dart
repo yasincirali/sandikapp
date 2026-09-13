@@ -504,7 +504,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
 ///
 /// **Bir `Asset` İSTEMEZ** — yalnızca sembol, tür ve alt kategori. Göstergeler
 /// miktar/maliyet okumaz; sahiplikle ilgisi yoktur. Bu sayede aynı panel hem
-/// sahip olunan varlıkta (`PerformanceScreen`) hem de yalnızca izlenen
+/// sahip olunan varlıkta (`AssetDetailScreen`) hem de yalnızca izlenen
 /// varlıkta (`WatchlistDetailScreen`) kullanılabiliyor — panelin ~400 satırlık
 /// gösterge arayüzü kopyalanmadan.
 class TechnicalSignalPanel extends ConsumerStatefulWidget {
@@ -1188,7 +1188,7 @@ class TransactionSegment {
 
 // ── Widget ───────────────────────────────────────────────────────────────────
 
-class PerformanceScreen extends ConsumerStatefulWidget {
+class AssetDetailScreen extends ConsumerStatefulWidget {
   final Asset asset;
   final bool showBackButton;
   /// Aggregate edilmiş pozisyonun tüm lot'ları (buy + sell). Grafik üstünde
@@ -1200,7 +1200,7 @@ class PerformanceScreen extends ConsumerStatefulWidget {
   /// header'a döner.
   final double initialScrollOffset;
 
-  const PerformanceScreen({
+  const AssetDetailScreen({
     super.key,
     required this.asset,
     this.showBackButton = false,
@@ -1209,10 +1209,10 @@ class PerformanceScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PerformanceScreen> createState() => _PerformanceScreenState();
+  ConsumerState<AssetDetailScreen> createState() => _AssetDetailScreenState();
 }
 
-class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
+class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Y/X ekseni interval'i için TradingView tarzı "nice number" —
   /// 1/2/2.5/5/10 tabanında yuvarlar. Örn: 34398 → 50000, 137 → 200.
   double _niceRound(double raw) {
@@ -2236,7 +2236,7 @@ class _PerformanceScreenState extends ConsumerState<PerformanceScreen> {
                                 FullscreenChartRoute.open(
                                   context,
                                   title: widget.asset.name,
-                                  builder: (_) => PerformanceScreen(
+                                  builder: (_) => AssetDetailScreen(
                                     asset: widget.asset,
                                     lots: widget.lots,
                                     showBackButton: false,

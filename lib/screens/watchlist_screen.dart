@@ -29,7 +29,7 @@ import 'watchlist_detail_screen.dart';
 ///
 /// ## Neden bir "Screen" değil
 /// Giriş noktası Portföy ekranının üstündeki `Varlıklarım | Takip Listesi`
-/// segmentidir (bkz. `charts_screen.dart`); tam sayfa bir `WatchlistScreen`
+/// segmentidir (bkz. `portfolio_screen.dart`); tam sayfa bir `WatchlistScreen`
 /// vardı ama segmentten sonra ona giden hiçbir yol kalmadı ve kaldırıldı.
 /// Ulaşılamayan bir route bakım yükünden başka bir şey değildir — bu ekranın
 /// kendi geçmişinde de yaşandı (bkz. `leaderboard_screen`'in solo paneli).

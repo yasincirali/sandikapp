@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/technical_signal.dart';
-import 'package:portfoy_takip/screens/performance_screen.dart';
+import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 
 /// Varlık performans ekranındaki sinyal DAĞILIMI görselleştirmesi.
 ///
@@ -165,7 +165,7 @@ void main() {
       // doğrulanamıyor (projede aynı örüntü var — bkz.
       // varlik_sinyal_karti_test.dart).
       final kaynak =
-          File('lib/screens/performance_screen.dart').readAsStringSync();
+          File('lib/screens/asset_detail_screen.dart').readAsStringSync();
       expect(
         kaynak.contains('key: _sinyalPaneliKey, detayli: true'),
         isTrue,
@@ -187,7 +187,7 @@ void main() {
       // kırılıyordu: depo LF tutuyor, `core.autocrlf=true` diske CRLF
       // yazıyor, literal ise LF içeriyor. Linux CI'da geçip yerelde kırılan
       // bir test, kuralı değil checkout ayarını ölçer.
-      final kaynak = File('lib/screens/performance_screen.dart')
+      final kaynak = File('lib/screens/asset_detail_screen.dart')
           .readAsStringSync()
           .replaceAll('\r\n', '\n');
       String sikistir(String s) => s.replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -209,7 +209,7 @@ void main() {
 
     test('fiyat geçmişi yoksa panel durumu söyler ve tekrar denenebilir', () {
       final kaynak =
-          File('lib/screens/performance_screen.dart').readAsStringSync();
+          File('lib/screens/asset_detail_screen.dart').readAsStringSync();
       expect(kaynak.contains('Widget _gecmisYok(BuildContext context)'), isTrue);
       // Durum açıkça söylenir — sessiz boşluk bırakılmaz.
       expect(kaynak.contains('fiyat geçmişi şu an çekilemedi'), isTrue);
@@ -233,7 +233,7 @@ void main() {
       // eklenmesini engellemek — o gerekçe artık geçerli değil, çünkü
       // kayıtlı bildirim ekranın altında zaten tam ayrıntısıyla duruyor.
       final kaynak =
-          File('lib/screens/performance_screen.dart').readAsStringSync();
+          File('lib/screens/asset_detail_screen.dart').readAsStringSync();
       expect(kaynak.contains("'SON BİLDİRİM'"), isFalse,
           reason: 'Kaldırılan blok geri gelmiş.');
       expect(kaynak.contains('saklanmıyor; fiyat geçmişi gelince'), isFalse);
@@ -248,7 +248,7 @@ void main() {
       // `_simulate()` rastgele seri üretiyordu. Liste geri geldi ama o
       // tuzak geri gelmemeli: 30 nokta eşiği yerinde.
       final kaynak =
-          File('lib/screens/performance_screen.dart').readAsStringSync();
+          File('lib/screens/asset_detail_screen.dart').readAsStringSync();
       expect(kaynak.contains('if (prices.length < 30) return _gecmisYok(context);'),
           isTrue);
     });

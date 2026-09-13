@@ -62,9 +62,9 @@ void main() {
   test('veri ekranlarında pull-to-refresh var', () {
     const dataScreens = [
       'lib/screens/home_screen.dart',
-      'lib/screens/charts_screen.dart',
+      'lib/screens/portfolio_screen.dart',
       'lib/screens/portfolio_performance_screen.dart',
-      'lib/screens/performance_screen.dart',
+      'lib/screens/asset_detail_screen.dart',
       'lib/screens/watchlist_screen.dart',
       'lib/screens/watchlist_detail_screen.dart',
       'lib/screens/price_alerts_screen.dart',

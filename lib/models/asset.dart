@@ -288,7 +288,7 @@ class Asset {
   /// Küsurat VARSA korunur: gram altın 2,5 gr; kesirli fon payı 10,75 lot.
   /// Sabit 0 haneye inmek burada bilgi kaybı olurdu — miktar yanlış okunur.
   ///
-  /// Projede bu kural elle tekrar ediliyordu (bkz. `charts_screen`:
+  /// Projede bu kural elle tekrar ediliyordu (bkz. `portfolio_screen`:
   /// `digits: q == q.truncateToDouble() ? 0 : 2`); tek yere alındı.
   int get miktarOndalik => _tamSayiMi(quantity) ? 0 : 2;
 

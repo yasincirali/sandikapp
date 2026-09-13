@@ -5,7 +5,7 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/signal_alert.dart';
 import 'package:portfoy_takip/models/technical_signal.dart';
-import 'package:portfoy_takip/screens/performance_screen.dart';
+import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 
 /// Varlık performans ekranındaki sinyal şeridi.
 ///
@@ -151,7 +151,7 @@ void main() {
 // remote_config_defaults_test.dart).
 
 void _kaynakTestleri() {
-  final kaynak = File('lib/screens/performance_screen.dart').readAsStringSync();
+  final kaynak = File('lib/screens/asset_detail_screen.dart').readAsStringSync();
   // Yalnızca kartın gövdesi — dosyanın geri kalanındaki eşleşmeler saymasın.
   final bas = kaynak.indexOf('class AssetSignalCard');
   final son = kaynak.indexOf('/// Teknik gösterge paneli.');
@@ -225,7 +225,7 @@ void _kaynakTestleri() {
     //
     // Bilgi kaybolmadı: yön, güven ve gösterge sayısı üstteki şeritte
     // zaten var; zaman/tarih de oraya taşındı (yukarıdaki test).
-    final tam = File('lib/screens/performance_screen.dart').readAsStringSync();
+    final tam = File('lib/screens/asset_detail_screen.dart').readAsStringSync();
     expect(tam.contains('class AktifSinyalBolumu'), isFalse,
         reason: 'Kaldırılan bölüm geri gelmiş.');
     expect(tam.contains("'AKTİF SİNYAL'"), isFalse);

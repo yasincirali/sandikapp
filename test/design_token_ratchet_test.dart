@@ -30,7 +30,7 @@ void main() {
 
   test('ham Colors.* satır sayısı artmamalı', () {
     final hits = linesMatching(RegExp(r'Colors\.[a-zA-Z]'));
-    // 2026-09-13: 89 (performance_screen 16, portfolio_performance 15, main 11).
+    // 2026-09-13: 89 (asset_detail_screen 16, portfolio_performance 15, main 11).
     expect(hits.length, lessThanOrEqualTo(89),
         reason: 'context.c.* kullan:\n${hits.join('\n')}');
   });

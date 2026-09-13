@@ -7,7 +7,7 @@ import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/signal_alert.dart';
 import 'package:portfoy_takip/models/technical_signal.dart';
 import 'package:portfoy_takip/providers/signal_provider.dart';
-import 'package:portfoy_takip/screens/performance_screen.dart';
+import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 
 /// Yeniden biçimlendirilen sinyal şeridi dar ekranda taşmamalı.
 ///

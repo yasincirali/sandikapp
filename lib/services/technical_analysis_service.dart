@@ -465,7 +465,7 @@ class TechnicalAnalysisService {
     // Burada eskiden koşulsuz `priceHistory.isNotEmpty ? ... : _simulate(asset)`
     // vardı. `_simulate` `Random` ile UYDURMA fiyat üretir; boş liste veren
     // her çağıran farkında olmadan sahte veriden sinyal hesaplıyordu.
-    // İki gerçek çağıran da (`performance_screen` paneli ve
+    // İki gerçek çağıran da (`asset_detail_screen` paneli ve
     // `signal_provider.analyzePortfolio`) `const []` geçiyordu — yani
     // ekrandaki sinyal ve DB'ye yazılan sinyal rastgeleydi. Sunucudan gelen
     // push ise GERÇEK piyasa serisinden üretildiği için ikisi çelişiyordu:

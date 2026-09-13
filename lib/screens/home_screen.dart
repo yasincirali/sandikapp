@@ -29,7 +29,7 @@ import '../widgets/transaction_row.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
 import 'all_transactions_screen.dart';
-import 'performance_screen.dart';
+import 'asset_detail_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -95,7 +95,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               context,
               adaptiveRoute(
                   builder: (_) =>
-                      PerformanceScreen(asset: asset, showBackButton: true)),
+                      AssetDetailScreen(asset: asset, showBackButton: true)),
             );
           }
         },
@@ -360,7 +360,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // HIG'in "navigation bar'ı düğmeyle doldurma" kuralını
                   // (Severity: High) çiğniyordu. Takip listesi bir VARLIK
                   // LİSTESİDİR; yeri Portföy sekmesinin gövdesi
-                  // (`charts_screen.dart`), üst bar değil.
+                  // (`portfolio_screen.dart`), üst bar değil.
                   _SignalBadgeButton(onTap: _scrollToSignals),
                   const SizedBox(width: SandikSpace.sm),
                   SandikLogoutButton(

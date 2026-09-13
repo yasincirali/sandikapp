@@ -30,7 +30,7 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/dividend_dialog.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'comparison_screen.dart';
-import 'performance_screen.dart';
+import 'asset_detail_screen.dart';
 import 'watchlist_screen.dart';
 import '../providers/watchlist_provider.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -44,14 +44,14 @@ enum _SortOrder {
   gainPctAsc,
 }
 
-class ChartsScreen extends ConsumerStatefulWidget {
-  const ChartsScreen({super.key});
+class PortfolioScreen extends ConsumerStatefulWidget {
+  const PortfolioScreen({super.key});
 
   @override
-  ConsumerState<ChartsScreen> createState() => _ChartsScreenState();
+  ConsumerState<PortfolioScreen> createState() => _PortfolioScreenState();
 }
 
-class _ChartsScreenState extends ConsumerState<ChartsScreen> {
+class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   String? _view = '';
   AssetType? _filteredType;
   _SortOrder _sortOrder = _SortOrder.valueDesc;
@@ -360,7 +360,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                                       onTap: (p) => Navigator.push(
                                         context,
                                         CupertinoPageRoute(
-                                            builder: (_) => PerformanceScreen(
+                                            builder: (_) => AssetDetailScreen(
                                                   asset: p.asDisplayAsset(),
                                                   showBackButton: true,
                                                   lots: p.lots,

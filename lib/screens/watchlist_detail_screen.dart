@@ -15,12 +15,12 @@ import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/disclaimer_widget.dart';
-import 'performance_screen.dart' show TechnicalSignalPanel;
+import 'asset_detail_screen.dart' show TechnicalSignalPanel;
 
 /// Takip edilen bir varlığın detay ekranı — fiyat + teknik göstergeler.
 ///
-/// ## Neden `PerformanceScreen` kullanılmıyor
-/// `PerformanceScreen` yapısal olarak bir SAHİPLİK ekranıdır; gösterdiği her
+/// ## Neden `AssetDetailScreen` kullanılmıyor
+/// `AssetDetailScreen` yapısal olarak bir SAHİPLİK ekranıdır; gösterdiği her
 /// sayı miktara ya da maliyete bağlıdır:
 ///   · grafiğin Y ekseni `pozisyon değeri / quantity` (birim fiyata BÖLEREK),
 ///   · maliyet çizgisi `purchasePrice × purchaseFxRate`,
@@ -130,7 +130,7 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
                           subCategory: item.subCategory,
                         ),
                         // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
-                        // taşır (bkz. performance_screen, home_screen).
+                        // taşır (bkz. asset_detail_screen, home_screen).
                         // Panel koşullu olduğu için ibare de aynı koşulun
                         // içinde: sinyal yoksa uyarı da görünmez.
                         const SizedBox(height: SandikSpace.sm),

@@ -72,7 +72,7 @@ void main() {
     test('performans ekranlarıyla AYNI bayrak', () {
       // Parite: aynı hatanın üç grafikte üç farklı cevabı olmamalı.
       for (final f in const [
-        'lib/screens/performance_screen.dart',
+        'lib/screens/asset_detail_screen.dart',
         'lib/screens/portfolio_performance_screen.dart',
       ]) {
         expect(File(f).readAsStringSync(), contains('FlClipData.all()'),
@@ -158,7 +158,7 @@ void main() {
       // Kopyalanmış merdiven = ekranların sessizce ayrışması.
       for (final f in const [
         'lib/widgets/percent_comparison_chart.dart',
-        'lib/screens/performance_screen.dart',
+        'lib/screens/asset_detail_screen.dart',
         'lib/screens/portfolio_performance_screen.dart',
       ]) {
         final src = File(f).readAsStringSync();

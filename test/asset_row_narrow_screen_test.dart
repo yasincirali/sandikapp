@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// kalan her şey isme gider. Sparkline satırdan tamamen kaldırıldı (telefon
 /// genişliklerinde 2–22pt'ye düşüyordu) ve detay paneline taşındı.
 ///
-/// Buradaki [resolve], charts_screen.dart'taki `_AssetCardMetrics.resolve`
+/// Buradaki [resolve], portfolio_screen.dart'taki `_AssetCardMetrics.resolve`
 /// ile birebir aynı olmalı — private olduğu için kopyalandı. Orası
 /// değişirse burası da güncellenmeli.
 

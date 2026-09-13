@@ -11,7 +11,7 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > gerçek sonucu verecek.
 
 ## Son kalınan yer
-Faz 1 tamam; Faz 2.1–2.4, 2.7, 2.8 tamam, 2.6 kısmi. Sıradaki: **Faz 2.9** (sekme/sınıf adları).
+Faz 1 tamam; Faz 2.1–2.4, 2.7–2.9 tamam, 2.6 kısmi. Sıradaki: **Faz 2.13** (erişilebilirlik) ve kalan Faz 2 kalemleri.
 
 ## Faz 0 — Kanamayı durdur
 
@@ -57,7 +57,7 @@ Faz 1 tamam; Faz 2.1–2.4, 2.7, 2.8 tamam, 2.6 kısmi. Sıradaki: **Faz 2.9** (
 | 2.6 | 🟡 kısmi | Onay dialogları ve 4 UI metni `sen` kipine çekildi. Yasal metinler (`legal_doc_screen`, `disclaimer_service`) bilinçli `siz`. `en_US` kaldırma ve emoji/başlık kasası taraması bekliyor. |
 | 2.7 | ✅ | (1) OTP doğrulaması sonrası sorumluluk reddi kaydı otomatik düşülüyor — kayıt ekranındaki 'Yasal Koşullar' onayı zaten disclaimer'ı içeriyordu; `DisclaimerAcceptanceScreen` artık yalnızca eski/kaydı olmayan hesaplara çıkar. (2) **'Belgeyi açıp sonuna kadar kaydır' kapısı kaldırıldı** — kutu doğrudan işaretlenir, belge bağlantısı bir dokunuş uzakta. ⚠️ Hukuki tarafta bilinçli karar: KVKK açık rıza 'bilgilendirilmiş' olmayı ister, 'sonuna kadar kaydırılmış' olmayı değil; itiraz edersen `_LegalConsentBox.onTap` tek satırla eski davranışa döner. (3) Turda 'Atla' zaten vardı; Ayarlar → Destek'e 'Tanıtım turunu yeniden izle' eklendi. |
 | 2.8 | ✅ (boş durum) | Ana ekranda kendi görünümü + sıfır varlık = `_EmptyPortfolioCta` özetin hemen altında; şeritler, kişi kartları, filtre çipleri ve iki boş başlık gizli. Tür filtresi boşken aynı bileşen 'Bu türde varlık yok' diliyle. **3 şeridi tek yatay karta toplama yapılmadı** — şeritler zaten kendi kendini gizliyor; dolu portföyde katlama üstü sorunu ölçülmeden yeniden düzenlemek erken. |
-| 2.9 | ⏳ | |
+| 2.9 | ✅ (adlar) | `charts_screen.dart`/`ChartsScreen` → `portfolio_screen.dart`/`PortfolioScreen`; `performance_screen.dart`/`PerformanceScreen` → `asset_detail_screen.dart`/`AssetDetailScreen`. 73 dosya (lib, test kaynak-metin yolları, CLAUDE.md, TECHNICAL_DEBT.md) tek geçişte; arşiv dokümanlar eski adla kaldı. **Geri tuşu sekme geçmişi ve predictive back yapılmadı** — `PopScope(canPop:false)` çıkış onayıyla iç içe; ayrı bir tasarım kararı. |
 | 2.10 | ⏳ | |
 | 2.11 | ⏳ | |
 | 2.12 | ⏳ | |

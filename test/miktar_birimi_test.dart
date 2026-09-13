@@ -153,7 +153,7 @@ void main() {
   test('ekran ham unitType BASMAZ', () {
     // Asıl regresyon buydu. Kaynak denetimi, çünkü ekranın canlı yolu
     // portföy sağlayıcısı ve ağ istiyor.
-    final kaynak = File('lib/screens/performance_screen.dart')
+    final kaynak = File('lib/screens/asset_detail_screen.dart')
         .readAsStringSync()
         .replaceAll('\r\n', '\n');
     expect(kaynak.contains(r'${widget.asset.unitType}'), isFalse,

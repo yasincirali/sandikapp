@@ -173,7 +173,7 @@ void main() {
       // dalı `handleRemoteMessageData` içinde hiç ele alınmamıştı ve yerel
       // bildirimde `payload` boş gönderiliyordu.
       //
-      // Hedef `PerformanceScreen` — grafiğin altındaki teknik sinyal paneli
+      // Hedef `AssetDetailScreen` — grafiğin altındaki teknik sinyal paneli
       // orada; kullanıcının bildirimden sonra görmek istediği yer orası.
       final kod = File('lib/services/notification_service.dart')
           .readAsStringSync()
@@ -184,7 +184,7 @@ void main() {
 
       expect(kod, contains('_openAssetPerformance'),
           reason: 'sinyal bildirimi için yönlendirme yok');
-      expect(kod, contains('PerformanceScreen'),
+      expect(kod, contains('AssetDetailScreen'),
           reason: 'performans ekranına gidilmiyor');
 
       // Yerel bildirimde payload gönderilmezse ön planda basılan bildirime

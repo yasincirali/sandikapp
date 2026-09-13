@@ -535,7 +535,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
               label: 'Al',
               icon: Icons.trending_up_rounded,
               // Dolgu üstündeki mürekkep `onStatus` — `text90` renkli
-              // zeminde iki temada da kırılıyor (bkz. charts_screen).
+              // zeminde iki temada da kırılıyor (bkz. portfolio_screen).
               background: p.gain,
               foreground: p.onStatus,
               onPressed: () => _openAdjust(pos, QuickAdjustMode.add),

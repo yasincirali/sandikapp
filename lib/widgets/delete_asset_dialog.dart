@@ -9,7 +9,7 @@ import '../utils/sandik_snack.dart';
 
 /// "Varlığı sil" onayı + silme — tek yerde.
 ///
-/// Aynı diyalog `charts_screen` ve `performance_screen`'de ayrı ayrı
+/// Aynı diyalog `portfolio_screen` ve `asset_detail_screen`'de ayrı ayrı
 /// yazılmıştı (metin, uyarı kutusu, buton renkleri dahil). Bir tanesinde
 /// yapılan düzeltme ötekine taşınmıyordu. Şimdi her iki ekran da bunu
 /// çağırır; `true` dönerse silme başarıyla yapılmıştır (çağıran isterse

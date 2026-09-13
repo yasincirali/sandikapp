@@ -134,7 +134,7 @@ void main() {
           // (dekorasyon + child ağacı) rahatlıkla birkaç bin karakteri geçiyor.
           // Sabit bir pencere kullanıldığında `duration:` sınırın dışında
           // kalıp "koruma yok" gibi okunuyordu — kod doğruyken test kırmızı
-          // yanıyordu (paywall_screen:392, performance_screen:1246).
+          // yanıyordu (paywall_screen:392, asset_detail_screen:1246).
           var depth = 0;
           var end = src.length;
           for (var j = m.end - 1; j < src.length; j++) {

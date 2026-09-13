@@ -2773,7 +2773,7 @@ class _PortfolioPerformanceScreenState
         // uyumsuz görünüyordu — tek kaynağa çektik.
         //
         // `enabled: false` de şart: `handleBuiltInTouches` yalnızca tooltip'i
-        // kapatır, dokunma işleme katmanı açık kalır. `performance_screen`
+        // kapatır, dokunma işleme katmanı açık kalır. `asset_detail_screen`
         // ikisini birden veriyordu, burası vermiyordu — aynı jest iki ekranda
         // farklı davranıyordu.
         lineTouchData: LineTouchData(

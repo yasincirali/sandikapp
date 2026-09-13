@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:portfoy_takip/screens/performance_screen.dart';
+import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 
 /// Sinyal şeridindeki "10 dk önce" ifadesi.
 ///

@@ -6,7 +6,7 @@ import 'package:portfoy_takip/theme/sandik.dart';
 ///
 /// Denetimde (2026-08-10) 64 kart kabuğunun elle kurulduğu ve 13 varyasyona
 /// dağıldığı görüldü. Asıl bedel görsel tutarsızlık değil, **hatanın
-/// tekrarlanması**: "başlık + sayaç rozeti" taşması `performance_screen`'de
+/// tekrarlanması**: "başlık + sayaç rozeti" taşması `asset_detail_screen`'de
 /// düzeltildikten sonra `portfolio_performance_screen`'de yeniden yazıldı.
 ///
 /// Bu testler komponentlerin o hatayı yapısal olarak imkânsız kıldığını

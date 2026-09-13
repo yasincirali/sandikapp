@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// | ekran | pinch | pan | crosshair | tap→odak |
 /// |---|---|---|---|---|
 /// | `portfolio_performance_screen` | ✅ | ✅ | ✅ | ✖ |
-/// | `performance_screen`           | ✅ | ✅ | ✅ | ✖ |
+/// | `asset_detail_screen`           | ✅ | ✅ | ✅ | ✖ |
 /// | `comparison_screen`            | ✖ | ✖ | ✖ | ✖ |
 /// | `watchlist_chart`              | ✖ | ✖ | ✖ | ✅ |
 /// | `portfolio_detail_screen`      | ✖ | ✖ | ✖ | ✖ | (2026-09'da silindi — 0 referans)
@@ -113,7 +113,7 @@ void main() {
       // Eğri, veride olmayan tepe ve dip uydurur; fiyat grafiğinde yanıltıcı.
       for (final yol in const [
         'lib/widgets/percent_comparison_chart.dart',
-        'lib/screens/performance_screen.dart',
+        'lib/screens/asset_detail_screen.dart',
         'lib/screens/portfolio_performance_screen.dart',
       ]) {
         final src = await _oku(yol);
@@ -128,7 +128,7 @@ void main() {
       // `handleBuiltInTouches` yalnızca tooltip i kapatır; dokunma işleme
       // katmani acik kalir. Biri ikisini de veriyordu, oteki vermiyordu.
       for (final yol in const [
-        'lib/screens/performance_screen.dart',
+        'lib/screens/asset_detail_screen.dart',
         'lib/screens/portfolio_performance_screen.dart',
       ]) {
         final src = await _oku(yol);

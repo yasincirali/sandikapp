@@ -1225,7 +1225,7 @@ class SandikLogoutButton extends StatelessWidget {
 /// 18'i birebir `context.c.hairline` idi.
 ///
 /// Elle kurmanın bedeli soyut değil: "başlık + sayaç rozeti" taşma hatası
-/// `performance_screen`'de düzeltildikten sonra `portfolio_performance_screen`'de
+/// `asset_detail_screen`'de düzeltildikten sonra `portfolio_performance_screen`'de
 /// **yeniden yazıldı**, çünkü paylaşılan bir kabuk yoktu.
 ///
 /// Bu widget yalnızca **düz** kartı kapsar. Seçim/hata/vurgu gibi durum
@@ -1284,7 +1284,7 @@ class SandikCard extends StatelessWidget {
 ///
 /// **Neden gerekli:** bu desen elle yazıldığında taşıyor. Aynı hata iki
 /// ekranda ayrı ayrı ortaya çıktı:
-/// - `performance_screen` "TEKNİK ANALİZ" (TECHNICAL_DEBT.md'de kayıtlı)
+/// - `asset_detail_screen` "TEKNİK ANALİZ" (TECHNICAL_DEBT.md'de kayıtlı)
 /// - `portfolio_performance_screen` "TEKNİK SİNYALLER" (1.5×'te 61px,
 ///   3×'te 415px taşıyordu)
 ///

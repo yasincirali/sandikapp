@@ -54,7 +54,7 @@ void main() {
         if (lines[i].contains('toStringAsFixed')) h.add('$p:${i + 1}');
       }
     }
-    // 2026-09-13: 22 → 5. Kalanlar: performance_screen (yüzde ekseni, 4 —
+    // 2026-09-13: 22 → 5. Kalanlar: asset_detail_screen (yüzde ekseni, 4 —
     // comparison_axis_test ile sözleşmeli) ve percent_comparison_chart (1).
     expect(h.length, lessThanOrEqualTo(5),
         reason: 'fmtNum / fmtPct kullan:\n${h.join('\n')}');

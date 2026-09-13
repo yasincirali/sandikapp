@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'home_screen.dart';
-import 'charts_screen.dart';
+import 'portfolio_screen.dart';
 import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
 import 'add_asset_screen.dart';
@@ -23,8 +23,8 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   /// tarafta elle `3` yazmak, `_screens` sırası değiştiğinde SESSİZCE
   /// yanlış sekmeye götürürdü.
   ///
-  /// ⚠️ İsimlendirme tuzağı: alt menüdeki "Portföy" sekmesi
-  /// `ChartsScreen`'dir (indeks 1); performans grafiği indeks 3'tedir.
+  /// Alt menüdeki "Portföy" sekmesi `PortfolioScreen`'dir (indeks 1);
+  /// "Performans" sekmesi `PortfolioPerformanceScreen` indeks 3'tedir.
   static const performansSekmesi = 3;
 
   /// Dışarıdan sekme değiştirme kanalı.
@@ -81,7 +81,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const ChartsScreen(),
+    const PortfolioScreen(),
     const SizedBox.shrink(),
     const PortfolioPerformanceScreen(),
     const ProfileScreen(),

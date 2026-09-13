@@ -59,7 +59,7 @@ void main() {
   setUpAll(() async {
     home = _yorumsuz(await File('lib/screens/home_screen.dart').readAsString());
     charts =
-        _yorumsuz(await File('lib/screens/charts_screen.dart').readAsString());
+        _yorumsuz(await File('lib/screens/portfolio_screen.dart').readAsString());
     nav = _yorumsuz(
         await File('lib/screens/main_navigation_screen.dart').readAsString());
   });
@@ -82,7 +82,7 @@ void main() {
       // Header, gövde sekmesine kadar olan bölüm.
       final bodyStart = charts.indexOf('_BodyTabs(');
       expect(bodyStart, greaterThan(0),
-          reason: 'charts_screen yapısı değişmiş — bu testi güncelle');
+          reason: 'portfolio_screen yapısı değişmiş — bu testi güncelle');
       final header = charts.substring(0, bodyStart);
       expect(header.contains('WatchlistBody'), isFalse,
           reason: 'takip listesi üst bara değil gövdeye konur');

@@ -7,7 +7,7 @@ import 'package:portfoy_takip/services/technical_analysis_service.dart';
 /// **Takip detay ekranı sahte `Asset` ÜRETMEZ.**
 ///
 /// ## Neden bu test var
-/// Faz 2'nin ilk tasarımı `PerformanceScreen`'e bir `watchOnly` bayrağı
+/// Faz 2'nin ilk tasarımı `AssetDetailScreen`'e bir `watchOnly` bayrağı
 /// eklemekti. Kod okunduğunda bunun yanlış olduğu ölçüldü: o ekranın
 /// gösterdiği her sayı sahipliğe bağlı —
 ///   · grafik Y ekseni  = pozisyon değeri / `quantity`
@@ -66,9 +66,9 @@ void main() {
       }
     });
 
-    test('PerformanceScreen\'i AÇMAZ', () {
+    test('AssetDetailScreen\'i AÇMAZ', () {
       // Yalnızca gösterge panelini içe aktarır; ekranın kendisini değil.
-      expect(detay.contains('PerformanceScreen('), isFalse,
+      expect(detay.contains('AssetDetailScreen('), isFalse,
           reason: 'sahiplik ekranı takip kaydıyla açılamaz');
       expect(detay.contains('show TechnicalSignalPanel'), isTrue,
           reason: 'yalnızca sahipliğe bağlı olmayan panel paylaşılır');
@@ -147,7 +147,7 @@ void main() {
               'ibare kuralı da bu ekran için anlamsızlaşır');
       expect(detay.contains('DisclaimerWidget'), isTrue,
           reason: 'AL/SAT sinyali gösterilen yüzeyde "yatırım tavsiyesi '
-              'değildir" ibaresi zorunlu (bkz. performance_screen, '
+              'değildir" ibaresi zorunlu (bkz. asset_detail_screen, '
               'home_screen, signal_settings_screen)');
     });
 

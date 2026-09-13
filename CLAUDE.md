@@ -38,8 +38,8 @@ lib/config/      supabase_config.dart — yalnızca String.fromEnvironment, fall
 lib/models/      Asset (+AssetKind), Position, AssetType, kategori enum'ları, sinyal/alarm modelleri
 lib/providers/   auth, portfolio, preferences (_BoolPrefNotifier/_IntPrefNotifier deseni),
                  watchlist, signal, bulk_cart
-lib/screens/     Sekmeler: home, charts ("Portföy" sekmesi), portfolio_performance ("Performans"),
-                 profile; tekil varlık: performance_screen; ekleme: add_asset, bulk_add, add_deposit
+lib/screens/     Sekmeler: home, portfolio ("Portföy" sekmesi), portfolio_performance ("Performans"),
+                 profile; tekil varlık: asset_detail_screen; ekleme: add_asset, bulk_add, add_deposit
 lib/services/    supabase_service (DB geçidi), price_service/tefas_service (fiyat), history_service
                  (seri motoru), period_summary/recap/daily_summary, notification/remote_push,
                  home_widget/live_activity, leaderboard, inflation, analytics, db_logger
@@ -53,9 +53,10 @@ supabase/        migrations/ (tek şema kaynağı), functions/ (+_shared/cron_au
                  tests/ (Deno), audit/
 ```
 
-Adlandırma tuzağı: "Portföy" sekmesi `ChartsScreen`, "Performans" sekmesi
-`PortfolioPerformanceScreen`, tekil varlık ekranı `PerformanceScreen`. Yeniden adlandırma
-yol haritasında (Faz 2.9); o zamana kadar bu eşlemeyi bil.
+Adlar sekmelerle örtüşür (2026-09 yeniden adlandırması): "Portföy" sekmesi
+`PortfolioScreen`, "Performans" sekmesi `PortfolioPerformanceScreen`, tekil varlık ekranı
+`AssetDetailScreen`. Eski adlar `ChartsScreen` / `PerformanceScreen` idi; arşiv dokümanlarda
+o adlarla geçer.
 
 ## Kurallar
 

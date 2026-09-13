@@ -9,7 +9,7 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
-import 'package:portfoy_takip/screens/performance_screen.dart';
+import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 import 'package:portfoy_takip/widgets/custom_loading_indicator.dart';
 
 /// Filtre kontrolleri yükleme sırasında ekranda kalmalı (regresyon).
@@ -82,7 +82,7 @@ Future<void> _pump(WidgetTester tester) async {
       ],
       child: MaterialApp(
         theme: ThemeData.dark(),
-        home: PerformanceScreen(asset: asset, showBackButton: true),
+        home: AssetDetailScreen(asset: asset, showBackButton: true),
       ),
     ),
   );

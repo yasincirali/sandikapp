@@ -68,7 +68,7 @@ void main() {
     final m = RegExp(r'_portfolioTab\s*=\s*(\d+)').firstMatch(nav);
     expect(m, isNotNull, reason: 'İndeks adlandırılmış sabit olmalı.');
     expect(m!.group(1), '1',
-        reason: 'Portföy `_screens` listesinde ikinci sırada (ChartsScreen). '
+        reason: 'Portföy `_screens` listesinde ikinci sırada (PortfolioScreen). '
             'Sıra değişirse bu sabit de değişmeli.');
 
     // Alt barda 1. indeks gerçekten "Portföy" etiketli mi?

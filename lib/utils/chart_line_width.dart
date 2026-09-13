@@ -2,7 +2,7 @@
 ///
 /// ## Neden ortak
 /// Kural önce yalnızca performans ekranlarında yaşıyordu ve orada bile üç
-/// ayrı kopyası vardı (`portfolio_performance_screen`, `performance_screen`
+/// ayrı kopyası vardı (`portfolio_performance_screen`, `asset_detail_screen`
 /// içinde iki yerde). Takip/Karşılaştır grafiği ise dönemden HABERSİZDİ:
 /// her dönemde sabit 1,8px (vurgulu seri 3px) çiziyordu. Aynı portföyün aynı
 /// dönemi iki ekranda farklı kalınlıkta görünüyordu — kullanıcı bulgusu:

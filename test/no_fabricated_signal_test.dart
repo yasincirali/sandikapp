@@ -14,7 +14,7 @@ import 'package:portfoy_takip/services/technical_analysis_service.dart';
 /// **Kök neden:** `TechnicalAnalysisService.analyze` boş fiyat geçmişi
 /// aldığında `_simulate()`'e düşüyordu — `Random` ile UYDURMA bir seri
 /// üretir. Üç istemci yüzeyi de `analyze(asset, const [])` çağırıyordu:
-///   1. `performance_screen` → teknik sinyal paneli (ekranda görünen)
+///   1. `asset_detail_screen` → teknik sinyal paneli (ekranda görünen)
 ///   2. `signal_provider.analyzePortfolio` → DB'ye sinyal YAZAN yol
 ///   3. `portfolio_performance_screen` → portföy sinyal paneli
 /// Yani ekrandaki sinyal rastgele veriden geliyordu. Push ise sunucuda

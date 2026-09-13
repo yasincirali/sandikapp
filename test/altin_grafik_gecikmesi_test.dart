@@ -33,7 +33,7 @@ void main() {
   final servis = File('lib/services/history_service.dart')
       .readAsStringSync()
       .replaceAll('\r\n', '\n');
-  final ekran = File('lib/screens/performance_screen.dart')
+  final ekran = File('lib/screens/asset_detail_screen.dart')
       .readAsStringSync()
       .replaceAll('\r\n', '\n');
 

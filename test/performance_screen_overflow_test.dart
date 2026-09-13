@@ -9,7 +9,7 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
-import 'package:portfoy_takip/screens/performance_screen.dart';
+import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 
 /// Varlık performans ekranının taşma regresyonu.
 ///
@@ -94,7 +94,7 @@ Future<void> _pump(
       ],
       child: MaterialApp(
         theme: ThemeData.dark(),
-        home: PerformanceScreen(
+        home: AssetDetailScreen(
           asset: asset,
           showBackButton: true,
           lots: lots,

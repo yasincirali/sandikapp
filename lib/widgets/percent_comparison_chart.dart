@@ -478,7 +478,7 @@ class PercentComparisonChart extends StatelessWidget {
       ),
       lineTouchData: LineTouchData(
         // Çizgiye dokunmak o seriye ODAKLANIR; aynısına tekrar dokunmak odağı
-        // kaldırır. `charts_screen`'deki donut `touchCallback` deseninin
+        // kaldırır. `portfolio_screen`'deki donut `touchCallback` deseninin
         // aynısı — kullanıcı her grafikte aynı davranışı görsün.
         touchCallback: (event, response) {
           if (onFocusChanged == null) return;

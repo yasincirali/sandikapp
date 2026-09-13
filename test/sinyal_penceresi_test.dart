@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:portfoy_takip/screens/performance_screen.dart';
+import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 
 /// Teknik gösterge panelinin fiyat penceresi.
@@ -56,7 +56,7 @@ void main() {
       // İkisi `HistoryService` önbelleğini paylaşıyor. Farklı pencere
       // isterlerse iki ayrı ağ çağrısı olur ve aynı varlık için FARKLI
       // sinyal gösterebilirler.
-      final kaynak = File('lib/screens/performance_screen.dart')
+      final kaynak = File('lib/screens/asset_detail_screen.dart')
           .readAsStringSync()
           .replaceAll('\r\n', '\n');
 

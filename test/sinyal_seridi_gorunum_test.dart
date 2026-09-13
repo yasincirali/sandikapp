@@ -16,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// başlık ve sol şerit hâlâ yön rengini taşıyor; anlamı renk taşır, zemin
 /// taşımaz.
 void main() {
-  final kaynak = File('lib/screens/performance_screen.dart')
+  final kaynak = File('lib/screens/asset_detail_screen.dart')
       .readAsStringSync()
       .replaceAll('\r\n', '\n');
 

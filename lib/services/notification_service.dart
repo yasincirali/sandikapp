@@ -11,7 +11,7 @@ import '../models/position.dart' show positionKey;
 import '../models/technical_signal.dart';
 import '../providers/portfolio_provider.dart';
 import '../screens/partnership_requests_screen.dart';
-import '../screens/performance_screen.dart';
+import '../screens/asset_detail_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
 import '../config/pref_keys.dart';
 import 'analytics_service.dart';
@@ -486,7 +486,7 @@ class NotificationService {
 
   /// Sinyal bildiriminden varlığın performans ekranına gider.
   ///
-  /// [PerformanceScreen] grafiğin ALTINDA teknik sinyal panelini gösterir —
+  /// [AssetDetailScreen] grafiğin ALTINDA teknik sinyal panelini gösterir —
   /// bildirimdeki "4/6 gösterge yukarı" özetinin dayanağı orada açılır.
   ///
   /// Varlık `id` üzerinden provider'dan çözülür; bildirim yalnızca `asset_id`
@@ -542,7 +542,7 @@ class NotificationService {
 
     navigator.push(
       adaptiveRoute(
-        builder: (_) => PerformanceScreen(
+        builder: (_) => AssetDetailScreen(
           asset: asset!,
           showBackButton: true,
           lots: lots,

@@ -8,7 +8,7 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/add_asset_screen.dart';
-import 'package:portfoy_takip/screens/charts_screen.dart';
+import 'package:portfoy_takip/screens/portfolio_screen.dart';
 import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
 
 /// **Metin ölçeği** (Dynamic Type) altında taşma regresyonu.
@@ -25,7 +25,7 @@ import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
 /// Kök sebepler:
 /// - `portfolio_performance_screen`: "TEKNİK SİNYALLER" başlığı + sayaç
 ///   rozeti kısıtsız `Row`'daydı; başlık büyüyünce rozeti dışarı itiyordu.
-/// - `charts_screen`: lejant çipi (`Wrap` içinde) ekran genişliğini
+/// - `portfolio_screen`: lejant çipi (`Wrap` içinde) ekran genişliğini
 ///   aşabiliyordu. `Wrap` çipi alt satıra indirir ama TEK çip satıra
 ///   sığmıyorsa çaresizdir.
 ///
@@ -166,13 +166,13 @@ void main() {
     }
   });
 
-  group('ChartsScreen — metin ölçeği', () {
+  group('PortfolioScreen — metin ölçeği', () {
     for (final w in widths) {
       for (final s in scales) {
         testWidgets('${w.toInt()}pt x$s taşmamalı', (t) async {
           final err = await _pumpAndCatch(
             t,
-            const ChartsScreen(),
+            const PortfolioScreen(),
             width: w,
             scale: s,
           );
@@ -189,7 +189,7 @@ void main() {
   group('en kötü durum — kalın metin + 3.0× + 320pt', () {
     final screens = <String, Widget>{
       'PortfolioPerformance': const PortfolioPerformanceScreen(),
-      'Charts': const ChartsScreen(),
+      'Charts': const PortfolioScreen(),
       'AddAsset': const Scaffold(body: AddAssetScreen()),
     };
     screens.forEach((name, w) {

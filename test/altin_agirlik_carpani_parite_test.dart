@@ -72,7 +72,7 @@ void main() {
   /// Uçtan uca: grafik serisi ile canlı birim fiyat AYNI ÖLÇEKTE olmalı.
   ///
   /// Bu testin yakaladığı şey "grafik çizilmiyor" belirtisinin kendisidir.
-  /// `performance_screen` grafiği `getPortfolioHistory(...)/quantity` ile
+  /// `asset_detail_screen` grafiği `getPortfolioHistory(...)/quantity` ile
   /// birim fiyata çevirir ve serinin SON noktasını canlı fiyatla ezer.
   /// Geçmiş seri yanlış ölçekteyse iki uç arasında uçurum oluşur ve
   /// grafik "düz taban + dikey sıçrama" olarak görünür.

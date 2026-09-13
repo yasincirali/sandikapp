@@ -7,17 +7,17 @@ import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
-import 'package:portfoy_takip/screens/charts_screen.dart';
+import 'package:portfoy_takip/screens/portfolio_screen.dart';
 
 /// Portföy ekranındaki varlık kartlarının taşma regresyonu.
 ///
-/// `_AssetCard` charts_screen'e private ve sekiz iç içe yardımcıya bağlı
+/// `_AssetCard` portfolio_screen'e private ve sekiz iç içe yardımcıya bağlı
 /// (`_AssetCardMetrics`, `_AssetLeadingIcon`, `_AssetDetailsPanel`,
 /// `_GainLossLine`, `_ExpandChevron`, `_DetailItem`, `_rowAction`,
 /// `_DepositDetailsPanel`). Ayrı widget'a çıkarmak "dev ekranları parçala"
 /// borcunun parçası ve TECHNICAL_DEBT.md'de bilinçli olarak ertelendi.
 ///
-/// Bu test o refactor'ı BEKLEMEDEN kapsama alır: `ChartsScreen`'i gerçek
+/// Bu test o refactor'ı BEKLEMEDEN kapsama alır: `PortfolioScreen`'i gerçek
 /// haliyle pump eder, provider'ları override ederek veri besler. Kart
 /// yerleşimi bozulursa (kolon dağıtımı, kaydırma aksiyonları, genişleyen
 /// panel) taşma exception'ı olarak yakalanır.
@@ -111,7 +111,7 @@ Future<void> _pumpScreen(
       ],
       child: MaterialApp(
         theme: ThemeData.dark(),
-        home: const ChartsScreen(),
+        home: const PortfolioScreen(),
       ),
     ),
   );

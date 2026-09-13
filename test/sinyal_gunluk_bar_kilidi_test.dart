@@ -8,7 +8,7 @@ import 'package:portfoy_takip/utils/chart_interval_policy.dart';
 /// DEĞİŞTİREMEZ.
 ///
 /// (Bugün iki yüzey iki farklı kaba barda: `signal_provider` haftalık,
-/// `performance_screen` günlük. Bu ayrışma burada düzeltilmiyor; kilidin
+/// `asset_detail_screen` günlük. Bu ayrışma burada düzeltilmiyor; kilidin
 /// konusu "asla dakikalık bar".)
 ///
 /// ## Neden bu test var
@@ -36,7 +36,7 @@ void main() {
       // ÖLÇÜLDÜ (2026-09-14), varsayılmadı:
       //   · signal_provider: periodDays 180 → `pickForSpan` eşiği `< 180`
       //     olduğu için WEEKLY (~26 nokta),
-      //   · performance_screen: kSinyalPenceresiGun = 90 → DAILY.
+      //   · asset_detail_screen: kSinyalPenceresiGun = 90 → DAILY.
       // İki sinyal yüzeyi bugün farklı barda çalışıyor. Bu mevcut bir
       // durum; burada DÜZELTİLMİYOR, yalnızca intraday'e kaymaları
       // engelleniyor. Kilidin koruduğu şey "hangi kaba bar" değil,
@@ -58,7 +58,7 @@ void main() {
         ResolutionTier.fifteenMin,
       };
       // Sinyal tarafında kullanılan pencereler (signal_provider: 180,
-      // performance_screen: kSinyalPenceresiGun = 90).
+      // asset_detail_screen: kSinyalPenceresiGun = 90).
       for (final gun in [180, 90, 365]) {
         expect(dakikalik.contains(HistoryService.tierForPeriod(gun)), isFalse,
             reason: '$gun günlük sinyal penceresi dakikalık bara düştü');

@@ -302,7 +302,7 @@ List<_Sahne> _turuKur() {
           vurgu: 1,
           baslik: 'Varlık kartını aç',
           // Yön ÖNEMLİ: sağa kaydırma Al/Sat/Temettü panelini, sola
-          // kaydırma yalnızca Sil'i açar (bkz. charts_screen.dart →
+          // kaydırma yalnızca Sil'i açar (bkz. portfolio_screen.dart →
           // startActionPane / endActionPane). Tek bir "kaydır" demek,
           // kullanıcının yanlış yöne kaydırıp hiçbir şey bulamaması
           // demekti.
