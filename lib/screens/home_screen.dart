@@ -19,6 +19,7 @@ import '../utils/tr_format.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/percentile_strip.dart';
 import '../widgets/real_return_strip.dart';
+import '../widgets/weekly_summary_chip.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_error_view.dart';
@@ -212,8 +213,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : displayedAssets.where((a) => a.type == _typeFilter).toList();
 
     // "Ben" mini card'ı — kendi net pozisyon toplamı (satışlar düşülmüş).
-    final myBuyTotal = positionedAssets(myState.assets).fold<double>(
-        0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
+    final myBuyTotal = positionedAssets(myState.assets)
+        .fold<double>(0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
 
     final displayedState = PortfolioState(
       assets: filteredForSummary,
@@ -313,7 +314,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           color: context.c.amberFill.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(SandikRadius.md),
                           border: Border.all(
-                              color: context.c.amberFill.withValues(alpha: 0.24),
+                              color:
+                                  context.c.amberFill.withValues(alpha: 0.24),
                               width: 1.0),
                         ),
                         child: Row(
@@ -370,8 +372,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   decoration: BoxDecoration(
                     color: context.c.amberFill.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(SandikRadius.md),
-                    border:
-                        Border.all(color: context.c.amberFill.withValues(alpha: 0.35)),
+                    border: Border.all(
+                        color: context.c.amberFill.withValues(alpha: 0.35)),
                   ),
                   child: Row(
                     children: [
@@ -435,6 +437,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
               ),
             ),
+            // "Bu hafta" kartı en SONA gelir: diğer ikisi alım gücü ve
+            // sosyal karşılaştırma gibi yavaş değişen bağlamlar, bu ise
+            // haftalık bir rakam. Üstüne konsa daha kalıcı olan iki
+            // bilgiyi aşağı iterdi.
+            //
+            // Kendi kapılarını kendi kuruyor (bayrak + seri + ölçülebilir
+            // yüzde), bu yüzden burada ek koşul yok.
+            SliverToBoxAdapter(
+              child: WeeklySummaryChip(
+                myAssets: myState.assets,
+                padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+              ),
+            ),
           ],
           // Mini cards
           SliverToBoxAdapter(
@@ -491,7 +506,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Row(
                   children: [
                     _typeChip(null, 'Tümü'),
-                    for (final t in RemoteConfigService.instance.visibleAssetTypes)
+                    for (final t
+                        in RemoteConfigService.instance.visibleAssetTypes)
                       _typeChip(t, t.label),
                   ],
                 ),
@@ -580,10 +596,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 28, vertical: 14),
                             decoration: BoxDecoration(
-                              color: context.c.amberFill.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(SandikRadius.md),
+                              color:
+                                  context.c.amberFill.withValues(alpha: 0.15),
+                              borderRadius:
+                                  BorderRadius.circular(SandikRadius.md),
                               border: Border.all(
-                                  color: context.c.amberFill.withValues(alpha: 0.5)),
+                                  color: context.c.amberFill
+                                      .withValues(alpha: 0.5)),
                             ),
                             // 28pt yatay padding + ikon + etiket dar ekranda
                             // sığmıyor. FittedBox içeriği kırpmadan küçültür;
@@ -654,8 +673,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: SandikSpace.md),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: SandikSpace.md),
                     decoration: context.surfaceCard(),
                     child: Center(
                       child: Row(
@@ -731,15 +750,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             backgroundColor: color.withValues(alpha: 0.2),
             child: Text(
               initial,
-              style: context.t.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w800, color: color),
+              style: context.t.bodySmall
+                  ?.copyWith(fontWeight: FontWeight.w800, color: color),
             ),
           ),
           const SizedBox(height: SandikSpace.sm),
           Text(name,
               style: context.t.bodySmall?.copyWith(
-                  color: context.c.text58,
-                  fontWeight: FontWeight.w500)),
+                  color: context.c.text58, fontWeight: FontWeight.w500)),
           const SizedBox(height: SandikSpace.xs),
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -748,9 +766,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               hideBalance ? '••••••' : fmt.format(total),
               // cardFontSize dinamik (tutar uzunluğuna göre küçülür), o
               // yüzden boyut override'ı kalıyor; tabular figür tema'dan.
-              style: context.t.numSmall.copyWith(
-                  fontSize: cardFontSize,
-                  color: context.c.text90),
+              style: context.t.numSmall
+                  .copyWith(fontSize: cardFontSize, color: context.c.text90),
             ),
           ),
         ],
@@ -813,8 +830,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   textAlign: TextAlign.right,
                   // Sabit 52pt kolonda sağa dayalı — tabular figür şart.
                   style: context.t.numSmall.copyWith(
-                      color: context.c.text58,
-                      fontWeight: FontWeight.w500),
+                      color: context.c.text58, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -823,7 +839,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }).toList(),
     );
   }
-
 }
 
 // ── Sinyaller Bottom Sheet ────────────────────────────────────────────────────
@@ -1017,7 +1032,8 @@ class _SignalsBottomSheet extends ConsumerWidget {
                           color: context.c.amberFill.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(SandikRadius.sm),
                           border: Border.all(
-                              color: context.c.amberFill.withValues(alpha: 0.3)),
+                              color:
+                                  context.c.amberFill.withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           '${signals.length}',
@@ -1254,17 +1270,15 @@ class _SignalTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isBuy = alert.signal == SignalType.buy;
     final isSell = alert.signal == SignalType.sell;
-    final Color color = isBuy
-        ? context.c.gain
-        : (isSell ? context.c.loss : context.c.text58);
+    final Color color =
+        isBuy ? context.c.gain : (isSell ? context.c.loss : context.c.text58);
     final String label = isBuy ? 'AL' : (isSell ? 'SAT' : 'NÖTR');
     final IconData icon = isBuy
         ? Icons.trending_up_rounded
         : (isSell
             ? Icons.trending_down_rounded
             : Icons.horizontal_rule_rounded);
-    final int count =
-        isBuy ? alert.buyCount : (isSell ? alert.sellCount : 0);
+    final int count = isBuy ? alert.buyCount : (isSell ? alert.sellCount : 0);
 
     final double alphaFactor = faded ? 0.45 : 1.0;
     final double bgAlpha = faded ? 0.05 : 0.10;
@@ -1277,8 +1291,8 @@ class _SignalTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: bgAlpha),
           borderRadius: BorderRadius.circular(SandikRadius.md),
-          border:
-              Border.all(color: color.withValues(alpha: borderAlpha), width: 1.5),
+          border: Border.all(
+              color: color.withValues(alpha: borderAlpha), width: 1.5),
         ),
         child: Row(
           children: [
@@ -1315,8 +1329,7 @@ class _SignalTile extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color:
-                              color.withValues(alpha: 0.18 * alphaFactor),
+                          color: color.withValues(alpha: 0.18 * alphaFactor),
                           borderRadius: BorderRadius.circular(SandikRadius.sm),
                         ),
                         child: Text(label,
@@ -1345,8 +1358,7 @@ class _SignalTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDismiss,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                    minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               )
             else if (onDelete != null)
               IconButton(
@@ -1354,8 +1366,7 @@ class _SignalTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDelete,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                    minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
           ],
         ),

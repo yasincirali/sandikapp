@@ -57,12 +57,28 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   /// "Çıkış Yap" beklenmeyen ve tehlikeli bir eylemdir.
   final bool showBackButton;
 
+  /// Açılışta Özet sekmesi seçili gelsin mi.
+  ///
+  /// Ana ekrandaki "Bu hafta" kartı buradan derin bağlanıyor: kullanıcı
+  /// kartı görüp tıkladığında aynı rakamın geldiği yere düşmeli, Grafik
+  /// sekmesine değil.
+  final bool initialOzet;
+
+  /// Açılışta seçili dönem — `_periods` dizisindeki indeks.
+  ///
+  /// `SummaryPeriod.fromIndex` ile aynı eşleme. Sınır dışı değer
+  /// kırpılıyor, atılmıyor: derin bağlantı bozuk bir indeksle gelse de
+  /// ekran açılmalı.
+  final int? initialPeriodIdx;
+
   const PortfolioPerformanceScreen({
     super.key,
     this.initialView = '',
     this.initialTypeFilter,
     this.initialScrollOffset = 0,
     this.showBackButton = false,
+    this.initialOzet = false,
+    this.initialPeriodIdx,
   });
 
   /// Dönem başlangıcı — takvim ayına göre.
@@ -129,8 +145,17 @@ class _PortfolioPerformanceScreenState
     super.initState();
     _view = widget.initialView;
     _typeFilter = widget.initialTypeFilter;
+    _ozetSekmesi = widget.initialOzet;
+    // Sınır dışı indeks KIRPILIR, atılmaz: bozuk bir derin bağlantı
+    // ekranı hiç açılmaz hale getirmemeli.
+    if (widget.initialPeriodIdx != null) {
+      _selectedPeriodIdx =
+          widget.initialPeriodIdx!.clamp(0, _periods.length - 1);
+    }
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
+    // Dönem derin bağlantıyla GÜNLÜK dışına ayarlanmış olabilir; tick
+    // kararı seçili dönemden sonra verilmeli.
     _startIntradayTickIfNeeded();
   }
 
