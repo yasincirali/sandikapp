@@ -5,7 +5,57 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-11
+**Son güncelleme:** 2026-09-13
+
+---
+
+## 🟡 AÇIK — Özet sekmesinde 6A yüzdelik dilimi bağlı değil
+
+**Karar tarihi:** 2026-09-13 · Dönem Özeti Faz 1
+
+`PeriodSummaryView` 6A bloğunda bir benchmark şeridi çiziyor ve
+`percentile` / `percentileKatilimci` parametrelerini kabul ediyor — ama
+ekran tarafı (`_OzetYanVeri`) bu iki alanı DOLDURMUYOR, yani şerit
+pratikte hiç görünmüyor.
+
+**Neden şimdi çözülmedi:** `get_percentile_bucket` RPC'si 30 güne sabit
+(`PercentileStrip.periodDays = 30`). 180 günlük kova için ya RPC'ye
+parametre eklenmeli ya ikinci bir RPC yazılmalı; ikisi de migration
+demek ve bu tur ekran katmanıyla sınırlı tutuldu. Yanlış pencerenin
+verisini 6A şeridinde göstermek — 30 günlük diliminizi "altı aylık
+karşılaştırma" diye sunmak — sessiz ve yanıltıcı bir hata olurdu.
+
+**Ertelemenin maliyeti:** 6A dönemi diğer dönemlere göre bir blok eksik
+görünüyor (uçlar + köprü var, karşılaştırma yok). Kullanıcı bir şeyin
+eksik olduğunu bilmiyor, dolayısıyla şikâyet üretmiyor.
+
+**Ele alınma zamanı:** `get_percentile_bucket`'a `period_days`
+parametresi eklenip k-anonimlik eşiği 180 gün için de doğrulandığında.
+Widget tarafı hazır — yalnızca iki parametrenin geçirilmesi yeterli.
+
+---
+
+## 🟡 AÇIK — Özet 1Y bloğunda paylaş butonu bağlı değil
+
+**Karar tarihi:** 2026-09-13 · Dönem Özeti Faz 1
+
+`PeriodSummaryView.onShare` parametresi var ve `null` olduğunda buton
+hiç çizilmiyor; ekran tarafı da `null` geçiyor.
+
+**Neden şimdi çözülmedi:** `RecapService.shareText` yıllık recap'in
+kendi veri şekline (`RecapData`) bağlı ve `PeriodSummary` farklı bir
+tip. Paylaşım metnini ikinci kez yazmak — hele TUTAR İÇERMEME kuralını
+ikinci kez uygulamak — `RETENTION_STRATEJISI.md` §5.G'nin tek gerçek
+kısıtını iki yere dağıtmak olurdu. Doğru çözüm ortak bir
+`shareText(period, pct, etiket)` imzası, ve o refactor recap ekranına da
+dokunuyor.
+
+**Ertelemenin maliyeti:** Özet sekmesinden paylaşım yapılamıyor. Yıllık
+recap ekranındaki paylaşım butonu çalışmaya devam ediyor, yani özelliğin
+viral yolu tamamen kapalı değil.
+
+**Ele alınma zamanı:** `shareText` ortak imzaya çıkarıldığında; ya da
+Faz 2'de haftalık push eklenirken (o da aynı metin katmanına dokunacak).
 
 ---
 

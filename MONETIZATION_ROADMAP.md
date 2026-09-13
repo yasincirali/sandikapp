@@ -353,14 +353,53 @@ Cron-tabanlı sinyal bildirimi altyapısı devrede:
 - Skor 90+ olan kullanıcılara özel rozet: "Portföy Ustası"
 
 #### 3.4 Haftalık Özet Bildirimi
-**Zaman:** Perşembe akşam 20:00 (kritik gün — Pazar değil)
 
-**İçerik varyantları (Remote Config ile A/B):**
-- Variant A: "Bu hafta portföyün %2.3 arttı 📈"
-- Variant B: "3 sinyal alındı: 2 alış, 1 satış. Detay için tıkla"
-- Variant C: "Streak: 12 gün 🔥 Devam!"
+> **⚠️ REVİZE EDİLDİ (2026-09-13).** Bu bölümün ilk hâli
+> [RETENTION_STRATEJISI.md](RETENTION_STRATEJISI.md) §8 ve §9 ile
+> ÇELİŞİYORDU. Aşağıdaki spesifikasyon geçerlidir; değişenin ne olduğu ve
+> neden değiştiği bölümün sonundaki notta.
+
+**Zaman:** **Pazartesi TR 09:45** (cron `45 6 * * 1`, UTC).
+
+Pazartesi seçildi: haftalık özet GEÇEN haftayı anlatır ve hafta kapanmadan
+gönderilen bir "haftalık" özet eksik bir haftayı özetler. Ayrıca
+`daily-brief` ile aynı slota düşer, yani **o günün brifinginin YERİNE**
+gider — yeni bir bildirim slotu açılmaz (bkz. §7 bütçesi). Bunun için
+`0044_daily_brief.sql`'deki brifing cron'u `45 6 * * 1-5` → `45 6 * * 2-5`
+olarak daraltılır.
+
+**İçerik — tek varyant, A/B yalnızca bayrakla aç/kapa:**
+
+> "Geçen hafta piyasadan %2,3. Dönem başı ₺168.774 → ₺185.684."
+
+Kurallar:
+- **Kayıp haftasında ton değişir, kutlama ya da uyarı YOK:** "Geçen hafta
+  ekside. Daha uzun pencerede hâlâ +%31,8." Bağlam verilemiyorsa
+  **gönderilmez** (`skipped_quiet`).
+- **Emoji yok, streak yok, "Devam et!" yok.** Fintech tonu korunur.
+- **Eylem önerilmez** (§9 SPK): durum bildirilir. "Portföyünün %38'i
+  altında" ✅ — "Altın al" ❌.
+- Dönem başı ya da sonu snapshot'ı yoksa **gönderilmez** — uydurma bir
+  yüzdeyle push atmak, hiç atmamaktan kötü.
+- Ayrı Android kanalı (`summary_channel`, `Importance.defaultImportance`)
+  → kullanıcı brifingi tutup yalnızca özeti kapatabilsin.
 
 Supabase Edge Function ile FCM scheduled push (server-side cron).
+Uygulanma durumu: **Faz 2** — ekran tarafı (Performans → Özet sekmesi)
+2026-09-13'te tamamlandı, push henüz yazılmadı.
+
+**Neyi neden değiştirdim (2026-09-13):**
+
+| Eski | Sorun | Yeni |
+|---|---|---|
+| Perşembe 20:00 | Haftalık özet geçen haftayı anlatır; Perşembe hafta henüz kapanmamıştır. Ayrıca §7'nin haftalık 5 bildirim tavanına EK bir slot açıyordu. | Pazartesi 09:45, brifingin YERİNE |
+| Variant A: "%2.3 arttı 📈" | Tek yönlü artış çerçevesi + emoji. §8: kayıp gününde uyarı/kutlama yok; "çocuksu emoji/rozet yağmuru" yasak. | Nötr rakam, kayıpta uzun pencere bağlamı |
+| Variant C: "Streak: 12 gün 🔥 Devam!" | Ham giriş serisi §5.D'de zaten reddedilmişti (hollow engagement, Barber & Odean). Emoji + teşvik dili §8'e aykırı. | Kaldırıldı |
+| Üç varyantlı A/B | Üçü aynı anda canlıysa bir kullanıcı haftada üç özet alabilirdi. | Tek içerik, bayrak yalnızca aç/kapa |
+
+§8'in "MONETIZATION_ROADMAP'te de not düşülmüş" dediği fintech-tonu notu
+bu dosyada YOKTU — çapraz referans havada kalıyordu. Bu bölüm artık o
+notu gerçekten taşıyor.
 
 #### 3.5 Referral Sistemi
 **Konsept:** Partner davet ederse ve o kullanıcı 7 gün aktif olursa → **1 ay ücretsiz Premium**
@@ -375,7 +414,9 @@ Supabase Edge Function ile FCM scheduled push (server-side cron).
 #### Kabul kriterleri
 - [ ] Streak sayacı doğru artıyor, kırılıyor, freeze çalışıyor (premium)
 - [ ] En az 10 rozet çalışır durumda, unlock animasyonu var
-- [ ] Perşembe haftalık push scheduled ve teslim ediliyor
+- [ ] Pazartesi haftalık push scheduled ve teslim ediliyor (bkz. revize §3.4)
+- [ ] Aynı Pazartesi bir kullanıcı `daily-brief` ile `weekly-summary`'yi
+      BİRDEN ALMIYOR — `supabase/tests/` içinde kanıtlı
 - [ ] Referral akışı end-to-end test edildi (2 test hesabıyla)
 
 ---

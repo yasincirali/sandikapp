@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-09-10
+**Tarih:** 2026-05-11 · **Son ek:** 2026-09-13
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -9,6 +9,30 @@
 > yeni rehber geçerlidir.
 
 **Kapsam:** Yayın öncesi senin elden yapman gereken işler. Kod tarafı (Faz 1) tamam; bu liste deploy + hukuki + ticari adımları içerir.
+
+---
+
+## 🎛️ İSTEĞE BAĞLI: `period_summary_enabled` bayrağı (2026-09-13)
+
+Dönem Özeti (Performans → **Grafik | Özet** sekmesi) ve ana ekrandaki
+"Bu hafta" kartı geldi. **Tamamen ücretsiz** — paywall'a bağlı değil.
+
+**Elden yapılacak bir şey YOK.** Bayrak varsayılan olarak `true` doğuyor,
+yani yeni sürüm çıktığı anda açık. Bu madde yalnızca bayrağın VAR
+olduğunu bilmen için:
+
+- Firebase Console → Remote Config → `period_summary_enabled`
+- `false` çekersen **yalnızca ana ekran kartı** gizlenir; Performans
+  ekranındaki Özet sekmesi kalır (kullanıcının bilinçli olarak girdiği
+  bir yer, dikkat bütçesinden yemiyor).
+
+Ölçüm: `period_summary_viewed` olayı (parametre `period`: `gunluk` |
+`birHafta` | `birAy` | `altiAy` | `birYil`). **Faz 2 kararı buna
+bağlı** — 1H sekmesi hiç açılmıyorsa haftalık push'un gönderilecek bir
+karşılığı yok demektir.
+
+Migration yok, vault sırrı yok, edge function yok. Faz 2'de (haftalık
+push) bunların hepsi gelecek; o zaman buraya yeni bir madde düşülecek.
 
 ---
 
