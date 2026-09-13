@@ -11,7 +11,12 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > gerçek sonucu verecek.
 
 ## Son kalınan yer
-Faz 1 tamam; Faz 2.1–2.4, 2.7–2.9 tamam, 2.6 kısmi. Sıradaki: **Faz 2.13** (erişilebilirlik) ve kalan Faz 2 kalemleri.
+Faz 0 ve Faz 1 tamam. Faz 2: 2.1, 2.2, 2.3, 2.4(kısmi), 2.6(kısmi), 2.7, 2.8, 2.9, 2.13(kısmi) tamam.
+**Kalan Faz 2 kalemleri** (görsel doğrulama isteyen, cihazsız yapılmaması daha doğru):
+2.5 tek SandikAppBar, 2.10 varlık silmede undo (sunucu tarafı kalıcı silme — soft-delete ister),
+2.11 grafik etkileşim paritesi, 2.12 SegmentedButton geçişi, 2.14 Hero geçişi, 2.13'ün
+`Size.zero` buton kısmı (20 site), 2.6'nın `en_US` kaldırma + emoji/başlık kasası taraması.
+Sıradaki: bunlardan biri ya da Faz 3.
 
 ## Faz 0 — Kanamayı durdur
 
@@ -61,7 +66,7 @@ Faz 1 tamam; Faz 2.1–2.4, 2.7–2.9 tamam, 2.6 kısmi. Sıradaki: **Faz 2.13**
 | 2.10 | ⏳ | |
 | 2.11 | ⏳ | |
 | 2.12 | ⏳ | |
-| 2.13 | ⏳ | |
+| 2.13 | 🟡 kısmi | `ZoomableChart.semanticLabel` (varsayılan 'Fiyat grafiği'; `PercentComparisonChart` seri sayısı + gün ile dolduruyor, takip grafiği ondan miras alıyor). Sparkline dekoratif olarak bilinçli sessiz (kaynakta gerekçeli). **Yapılmadı:** 20 `minimumSize: Size.zero` butonun 44pt'ye çıkarılması; settings/add_asset Semantics; kompakt yüzeylerde ok glifi. |
 | 2.14 | ⏳ | |
 
 ## Faz 3 — Ürün ve mimari

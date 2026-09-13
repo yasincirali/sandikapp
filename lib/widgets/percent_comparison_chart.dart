@@ -113,6 +113,8 @@ class PercentComparisonChart extends StatelessWidget {
     // okumaya gerek kalmadı; [ZoomableChart] zaten kendi `LayoutBuilder`ını
     // kuruyor.
     return ZoomableChart(
+      semanticLabel:
+          '${ciz.cizilenler.length} seri, $periodDays günlük yüzde karşılaştırması',
       height: height,
       fullMinX: ciz.minX,
       fullMaxX: ciz.maxX,

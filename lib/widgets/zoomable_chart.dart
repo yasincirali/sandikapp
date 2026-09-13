@@ -55,6 +55,11 @@ class ChartViewport extends ChangeNotifier {
 class ZoomableChart extends StatefulWidget {
   final double fullMinX;
   final double fullMaxX;
+
+  /// Ekran okuyucu özeti. Grafik dokunmatik bir yüzey; içindeki çizgiler
+  /// TalkBack/VoiceOver için anlamsız. Çağıran "portföy değeri, 30 gün, %x"
+  /// gibi bir cümle verir; vermezse jenerik etiket okunur.
+  final String semanticLabel;
   final LineChartData Function(double minX, double maxX) builder;
   final double height;
 
@@ -122,6 +127,7 @@ class ZoomableChart extends StatefulWidget {
     this.bottomAxisHeight = 32,
     this.plotPaddingRight = 0,
     this.plotPaddingLeft = 0,
+    this.semanticLabel = 'Fiyat grafiği',
     this.swapDuration = SandikMotion.state,
     this.swapCurve = SandikMotion.enter,
   });
@@ -361,7 +367,10 @@ class _ZoomableChartState extends State<ZoomableChart> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
+    return Semantics(
+      label: widget.semanticLabel,
+      image: true,
+      child: LayoutBuilder(builder: (context, constraints) {
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;
       return SizedBox(
         height: widget.height,
@@ -521,7 +530,8 @@ class _ZoomableChartState extends State<ZoomableChart> {
           ],
         ),
       );
-    });
+    }),
+    );
   }
 }
 
