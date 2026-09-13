@@ -1305,8 +1305,23 @@ class HistoryService {
           //
           // Yayın günü çizilen günle uyuşmuyorsa fon SABİT çizilir ve tür
           // dökümünde "—" görünür — piyasa kapalıyken doğru olan budur.
+          //
+          // ## İKİNCİ koşul: çizilen seans BUGÜN olmalı
+          // Yalnızca yayın gününe bakmak YETMEDİ (kullanıcı bildirimi
+          // 2026-09-13, ikinci kez). Sebep: `dayStart` bugün değil, SON
+          // SEANS. Pazar günü `seansGunu` Cuma'yı döndürüyor ve TEFAS'ın
+          // son NAV'ı da Cuma; iki tarih uyuşuyor, kapı açılıyor ve
+          // basamak `dayStart + 10:00` = Cuma 10:00'a düşüyordu. Eksen
+          // Cuma'dan Pazar'a uzandığı için bu, grafiğin SOL UCUNDA dik bir
+          // uçurum olarak görünüyordu.
+          //
+          // Cuma'nın NAV hareketi Cuma'ya aittir — yanlış olan hareketin
+          // kendisi değil, KAPANMIŞ bir seansın içine bugünün canlı ucunu
+          // bağlayan melez seri. Geçmiş seans çizilirken fon sabit çizilir;
+          // basamak yalnızca seans bugünse "şu an itibarıyla" diye okunur.
           final navGunu = fonSonNavGunu[a.ticker];
-          final navBugunMu = navGunu != null &&
+          final navBugunMu = !gecmisSeans &&
+              navGunu != null &&
               navGunu.year == dayStart.year &&
               navGunu.month == dayStart.month &&
               navGunu.day == dayStart.day;

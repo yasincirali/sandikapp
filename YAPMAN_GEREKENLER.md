@@ -12,35 +12,63 @@
 
 ---
 
-## 🗄️ BEKLEYEN MIGRATION: `0051_percentile_180d.sql` (2026-09-13)
+## ✅ UYGULANDI: `0051_percentile_180d.sql` (2026-09-13)
 
-Dönem Özeti'nin **6A benchmark şeridi** bu migration koşulmadan
-görünmez. Kod tarafı hazır; şerit sessizce çizilmiyor (hata vermiyor,
-sadece yok).
+180 günlük yüzdelik dilim kovası **canlıda açık** — doğrulandı
+(2026-09-13, uzak veritabanına sorguyla):
 
-```bash
-supabase db push
-# ya da SQL Editor'e 0051_percentile_180d.sql içeriğini yapıştır
-```
+| Yer | Durum |
+|---|---|
+| `user_roi_snapshots` CHECK | `ARRAY[7, 30, 180, 365]` ✅ |
+| `get_percentile_bucket` | 180 allowlist'te ✅ |
+| `get_top_gainers_allocation` | 180 allowlist'te ✅ |
+| Yetkiler | `authenticated` + `service_role`; `anon`/`public` YOK ✅ |
+| `search_path` | `public` sabitlenmiş, `SECURITY DEFINER` ✅ |
 
-**Ne yapıyor:** 180 günlük yüzdelik dilim kovasını üç yerde birden açıyor
-— `user_roi_snapshots.period_days` CHECK'i, `get_percentile_bucket` ve
-`get_top_gainers_allocation` allowlist'leri. Üçü birlikte açılmak zorunda;
-biri kalırsa özellik çalışmaz.
+180 satırının gerçekten yazılabildiği de `rollback`'li bir deneme
+insert'iyle doğrulandı — CHECK, RLS ve throttle trigger'ının hepsi
+geçildi.
+
+> **⚠️ Migration defteri GÜNCEL DEĞİL.** SQL Editor'den elle koşulduğu
+> için `supabase_migrations` tablosuna kaydedilmedi: `supabase migration
+> list` çıktısında `0050` ve `0051` için `remote` kolonu BOŞ görünüyor.
+> Bir sonraki `supabase db push` ikisini yeniden koşmaya çalışır.
+> **Zararsız** (ikisi de idempotent: `add column if not exists`,
+> varlık kontrollü `DO` blokları, `CREATE OR REPLACE`) ama defteri
+> düzeltmek temiz olur:
+>
+> ```bash
+> supabase migration repair --status applied 0050 0051
+> ```
 
 **k-anonimlik değişmedi:** `k_min = 8` ve `n_max = 4` aynen korunuyor.
 Yeni bir kova eklendi, eşik matematiğine dokunulmadı.
 
-**Doğrulama:** migration'dan sonra Performans → Özet → 6A. Şerit hâlâ
-görünmüyorsa sebebi k-anonimlik olabilir: son 24 saatte 180 günlük
-snapshot atmış **8 kullanıcı** gerekiyor. Tek kullanıcıyla test ederken
-şerit görünmez — bu doğru davranış, hata değil.
+### Şerit neden HÂLÂ görünmüyor (ve bu neden normal)
+
+Ölçüldü (2026-09-13): son 24 saatte havuzda **tek kullanıcı** var (sen).
+Üç kovanın hepsi k=8'in altında, yani ana ekrandaki mevcut
+`PercentileStrip` de görünmüyordur. Bu **doğru davranış** — KVKK
+k-anonimliği. Tek kullanıcıyla test ederek şeridi göremezsin.
+
+Ayrıca `period_days = 180` satırı henüz HİÇ yok: `_yukleDilim` yalnızca
+**Performans → Özet → 6A** sekmesi açıldığında snapshot atıyor. Sekme bu
+kodu taşıyan bir derlemede bir kez açılınca satır düşer.
 
 ```sql
--- Havuz doldu mu?
-select count(distinct user_id) from user_roi_snapshots
- where period_days = 180 and created_at >= now() - interval '24 hours';
+-- Kova başına havuz durumu
+select period_days,
+       count(distinct user_id) as kisi_24s,
+       case when count(distinct user_id) >= 8 then 'ACIK' else 'KAPALI' end
+  from user_roi_snapshots
+ where created_at >= now() - interval '24 hours'
+ group by period_days order by period_days;
 ```
+
+**Not:** `uploadRoiSnapshot` hatayı SESSİZCE yutuyor
+(`leaderboard_service.dart` `catch (_)`). Migration'dan ÖNCE atılmış bir
+180 insert'i CHECK'e takılıp iz bırakmadan kaybolurdu — artık takılmıyor,
+ama bu sessizlik ileride benzer bir teşhiste yanıltabilir.
 
 ---
 

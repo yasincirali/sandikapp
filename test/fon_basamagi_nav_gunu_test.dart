@@ -52,7 +52,15 @@ void main() {
 
   group('basamak KOŞULLU çiziliyor', () {
     test('NAV günü ile çizilen gün karşılaştırılıyor', () {
-      expect(servis.contains('final navBugunMu = navGunu != null &&'), isTrue,
+      // Kapı 2026-09-13'te GENİŞLETİLDİ: `!gecmisSeans &&` önüne eklendi.
+      // Yayın günü karşılaştırması hâlâ kapının parçası; iddia o parçayı
+      // kovalıyor, satırın tam metnini değil.
+      // Gerekçe: `dart format` sarma noktasını kaydırıyor ve tam-metin
+      // iddiaları mantık değişmemişken kırılıyor
+      // (bkz. source_text_test_fragility).
+      final tek = servis.replaceAll(RegExp(r'\s+'), ' ');
+      expect(tek.contains('navGunu != null && navGunu.year == dayStart.year'),
+          isTrue,
           reason: 'Karşılaştırma yok.');
       expect(servis.contains('navGunu.day == dayStart.day'), isTrue,
           reason: 'Gün karşılaştırması eksik.');
