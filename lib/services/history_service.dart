@@ -976,12 +976,17 @@ class HistoryService {
     // seri tek noktalıysa fonun günlük değişimi yok demektir; o durumda
     // `oncekiNav` null bırakılır ve fon eskisi gibi sabit çizilir.
     final fonOncekiNav = <String, double>{};
+    // Son NAV'ın YAYIN TARİHİ — basamağın çizilip çizilmeyeceğini belirler.
+    final fonSonNavGunu = <String, DateTime>{};
     for (final entry in fonNavFutures.entries) {
       final pts = await entry.value; // (ts, nav) — artan sırada
       if (pts.length < 2) continue;
       final onceki = pts[pts.length - 2].$2;
       final son = pts.last.$2;
       if (onceki <= 0 || son <= 0) continue;
+      final sonGun = DateTime.fromMillisecondsSinceEpoch(pts.last.$1);
+      fonSonNavGunu[entry.key] =
+          DateTime(sonGun.year, sonGun.month, sonGun.day);
       if ((son - onceki).abs() < 1e-9) continue;
       fonOncekiNav[entry.key] = onceki;
     }
@@ -1285,10 +1290,32 @@ class HistoryService {
           // hizalama tek noktalık dik bir uçurum bırakıyordu. Uçurum
           // "ŞİMDİ" imlecine yapışık duruyor ve dakikalar geçtikçe onunla
           // birlikte sağa kayıyordu (kullanıcı ekran görüntüsü, 2026-09-10).
+          //
+          // ## Basamak YALNIZCA o günün NAV'ı yayınlandıysa
+          // TEFAS hafta sonu ve tatilde NAV yayınlamıyor. Basamak yine de
+          // çizilirse, elde olan SON değişim (örn. Perşembe→Cuma) bugünün
+          // hareketiymiş gibi görünüyordu: Pazar günü grafik ve tür dökümü
+          // fonlarda −%2,12 gösteriyordu, oysa o Cuma'nın hareketiydi
+          // (kullanıcı bildirimi 2026-09-13; TEFAS'tan ölçüldü — AFT son
+          // iki NAV 10 Eyl 1,022627 → 11 Eyl 1,000902 = −%2,12, ekrandaki
+          // rakamla birebir).
+          //
+          // Üstelik aynı ekranda "altın için gün içi veri alınamadı, sabit
+          // çizildi" uyarısı duruyordu: iki ifade çelişiyordu.
+          //
+          // Yayın günü çizilen günle uyuşmuyorsa fon SABİT çizilir ve tür
+          // dökümünde "—" görünür — piyasa kapalıyken doğru olan budur.
+          final navGunu = fonSonNavGunu[a.ticker];
+          final navBugunMu = navGunu != null &&
+              navGunu.year == dayStart.year &&
+              navGunu.month == dayStart.month &&
+              navGunu.day == dayStart.day;
           if (v == null && a.type == AssetType.fon && a.currentPrice > 0) {
             v = gunIciFonBirimFiyati(
                   guncelNav: a.currentPrice,
-                  oncekiNav: fonOncekiNav[a.ticker],
+                  // NAV bugüne ait değilse basamak YOK: `oncekiNav` null
+                  // verilince fonksiyon sabit çiziyor.
+                  oncekiNav: navBugunMu ? fonOncekiNav[a.ticker] : null,
                   slotTs: hourTs,
                   basamakTs: fonBasamakTs,
                 ) *
