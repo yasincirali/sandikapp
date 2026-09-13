@@ -38,10 +38,32 @@ flutter build apk --debug --dart-define-from-file=.env.local 2>&1 | tail -3
 DEVICES=$("$ADB" devices | awk '/emulator-.*\tdevice$/{print $1}')
 if [ -z "$DEVICES" ]; then
   echo "HATA: bağlı emülatör yok. Önce:"
-  echo "  flutter emulators --launch pixel7_1"
-  echo "  flutter emulators --launch pixel7_2"
+  echo "  bash tool/launch_emulators.sh"
   exit 1
 fi
+
+# ── Saat dilimini host ile hizala ───────────────────────────────────────────
+#
+# Emülatör GMT açılıyor, host GMT+3. Aynı AN ama farklı gösterim; bu
+# uygulamada saatin GÖRÜNEN değeri işlevsel:
+#   * "GÜNLÜK" sekmesi içinde bulunulan TAKVİM GÜNÜNÜ çiziyor,
+#   * fon NAV basamağı TR 10:00'a çapalı,
+#   * BIST seans pencereleri TR saatiyle.
+# GMT'de test edilen bir ekran, gece yarısına yakın saatlerde YANLIŞ GÜNÜ
+# gösterir ve bu sessizce yanlış doğrulamaya yol açar.
+#
+# ⚠️ Kalıcı DEĞİL: emülatör her açılışta GMT'ye dönüyor (`auto_time_zone=0`
+# yapılsa bile — ölçüldü 2026-09-14, iki reboot). Kalıcı çözüm başlatma
+# bayrağı: `tool/launch_emulators.sh` `-timezone Europe/Istanbul` veriyor.
+# Buradaki adım, emülatör elle başlatılmışsa devreye giren emniyet ağı.
+for d in $DEVICES; do
+  tz=$("$ADB" -s "$d" shell getprop persist.sys.timezone 2>/dev/null | tr -d '\r')
+  if [ "$tz" != "Europe/Istanbul" ]; then
+    "$ADB" -s "$d" shell settings put global auto_time_zone 0 >/dev/null 2>&1
+    "$ADB" -s "$d" shell "service call alarm 3 s16 Europe/Istanbul" >/dev/null 2>&1
+    echo "  $d saat dilimi $tz → Europe/Istanbul"
+  fi
+done
 
 step "4/5  Kurulum"
 for d in $DEVICES; do

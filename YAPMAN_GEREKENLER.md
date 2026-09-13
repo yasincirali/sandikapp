@@ -445,7 +445,15 @@ bozulmuş demektir.
    "VAULT ADIMI" bölümü; bu yapılmadan cron 401 alır)
 4. ✅ Migration `0048_calendar_nudge.sql` — koşuldu
 
-**TÜFE endeksi dolu değilse bildirim gitmez** (aşağıdaki maddeye bak).
+**TÜFE endeksi dolu değilse bildirim gitmez** — endeks artık otomatik
+çekiliyor ama EVDS anahtarı gerekiyor (bkz. "TEK ADIM KALDI: TÜFE
+otomatik çekimi").
+
+⚠️ **2026-09-14 sonrası:** `0053` bu kancanın ayın 4'ündeki ikinci turunu
+açıyor ve fonksiyon gönderim defterini okuyacak şekilde güncellendi.
+`supabase functions deploy calendar-nudge` YAPILMADAN migration koşulursa
+çift bildirim gider.
+
 Ayrıntı: `supabase/functions/calendar-nudge/README.md`
 
 ---
@@ -472,41 +480,83 @@ Ayrıntı: `supabase/functions/check-price-alerts/README.md`
 
 ---
 
-## 📉 VERİ GEREKİYOR: TÜFE endeksi (2026-09-06)
+## 🔑 TEK ADIM KALDI: TÜFE otomatik çekimi — EVDS anahtarı (2026-09-14)
 
-Reel getiri rozeti ("enflasyonun 6,4 puan önündesin") kodda hazır ama
-**`inflation_index` tablosu BOŞ doğuyor** ve boşken rozet hiç görünmüyor.
+Reel getiri rozeti ("enflasyonun 6,4 puan önündesin") ve Özet sekmesinin
+TÜFE satırları `inflation_index` tablosuna bağlı. **Tablo artık ELLE
+doldurulmuyor** — `fetch-inflation` edge function'ı her ayın 3'ünde
+TCMB EVDS'den çekiyor.
 
-**Endeks değerlerini bilerek doldurmadım:** yanlış bir TÜFE, portföy
-getirisini olduğundan iyi ya da kötü gösterir; kullanıcı bunu TÜİK'in
-açıkladığı rakamla karşılaştırınca uygulamaya güveni gider. Doğrulanmamış
-sayıyı finansal bir hesaba gömmektense özelliği kapalı bırakmak doğrusu.
+**Aylık bakım BİTTİ.** Yapman gereken tek şey bir kerelik anahtar:
 
-**Ne gerekiyor:** ayda bir satır — `period` (ayın ilk günü) + `tufe_index`
-(endeks DEĞERİ, yüzde değil).
+### 1) EVDS anahtarı al (5 dakika, ücretsiz)
 
-**Kaynak:** TCMB EVDS → `TP.FG.J0` serisi (TÜFE genel endeks).
-EVDS ücretsiz ama API anahtarı istiyor: evds2.tcmb.gov.tr → üye ol →
-Profil → API Anahtarı.
+evds2.tcmb.gov.tr → üye ol → **Profil → API Anahtarı**
 
-**En az kaç ay lazım:** rozet 365 günlük pencere kullanıyor, yani **13 ay**
-(başlangıç ayı + son açıklanan ay). Daha azıyla hesap null döner.
+### 2) Dağıt
 
-```sql
--- Örnek (değerleri EVDS'den al, buradaki sayılar YER TUTUCUDUR):
-insert into public.inflation_index (period, tufe_index) values
-  ('2025-09-01', 0000.00),
-  ('2025-10-01', 0000.00)
-  -- ...
-on conflict (period) do update set tufe_index = excluded.tufe_index;
+```bash
+supabase functions deploy fetch-inflation
+supabase secrets set EVDS_API_KEY="<evds-anahtarin>"
+supabase secrets set INFLATION_FETCH_CRON_SECRET="<rastgele-uzun-string>"
+
+# ⬜ KALDI — Vault → inflation_fetch_cron_secret = AYNI string
+#    (Dashboard → Vault; 3. satırdaki string ile birebir aynı olmalı)
+
+# ⚠️ Bu satır ATLANAMAZ — aşağıdaki uyarıya bak
+supabase functions deploy calendar-nudge
+
+supabase db push   # ya da SQL Editor → 0053_fetch_inflation.sql
 ```
 
-Migration: `supabase/migrations/0045_inflation_index.sql`
-Sonra Remote Config → `real_return_enabled` → `true`.
+### ⚠️ `calendar-nudge` neden yeniden dağıtılmalı
 
-**Aylık bakım:** TÜİK her ayın 3'ünde 10:00'da açıklıyor; o gün bir satır
-eklenmeli. İleride EVDS'den çeken bir Edge Function yazılabilir
-(TECHNICAL_DEBT'e not düşüldü).
+Migration, takvim kancasının **ayın 4'ündeki ikinci turunu açıyor** (veri
+bir gün geç yayımlanırsa o ayın kancası kaçmasın diye). Bu tur ancak
+fonksiyon **gönderim defterini** okuyorsa güvenli.
+
+Eski sürümde kalırsa: veri 3'ünde zamanında girildiğinde **iki bildirim**
+gider — yani `0048`'in ikinci turu kapatma sebebinin aynısı geri gelir.
+
+### Anahtarı almadan ne olur
+
+Hiçbir şey bozulmaz. Fonksiyon `no_api_key` döner ve **tabloya yazmaz**;
+tablo boş kaldığı için rozet de görünmez (bugünkü durumun aynısı). Yarım
+bir entegrasyonla tabloyu bozmaktansa kapalı kalması tercih edildi.
+
+### Doğrulama
+
+```bash
+# Tabloya YAZMADAN — ne çekeceğini söyler
+curl -X POST "https://<proje>.supabase.co/functions/v1/fetch-inflation" \
+  -H "Authorization: Bearer $INFLATION_FETCH_CRON_SECRET" \
+  -H "Content-Type: application/json" -d '{"dry_run": true}'
+```
+
+İlk gerçek koşu **24 ay** geriye gider. Rozet 365 günlük pencere
+kullanıyor, yani en az **13 ay** gerekiyor (başlangıç ayı + son açıklanan
+ay); 24 ay pencereyi rahatça dolduruyor.
+
+```sql
+select count(*) as ay_sayisi, min(period), max(period) from inflation_index;
+```
+
+**Sonra:** Remote Config → `real_return_enabled` → `true`. Tablo dolu olsa
+bile bu bayrak kapalıysa rozet görünmez.
+
+### 🚨 Bir gün gelecek: baz yılı değişimi
+
+TÜİK baz yılını değiştirdiğinde (ör. 2003=100 → 2025=100) endeks
+SIFIRLANIR ve eski satırlarla yeni satırlar karşılaştırılamaz. Fonksiyon
+bunu yakalayıp **yazmayı reddediyor** (`base_year_break`, HTTP 409) —
+çünkü bölme "−%95 enflasyon" gibi anlamsız bir sonuç verirdi.
+
+O gün geldiğinde bu senin kararın olacak: yeni seriyi ayrı mı tutmak,
+eski satırları mı silmek, ikisini bir dönüşüm katsayısıyla mı birleştirmek.
+Otomatik çözülmez ve sessizce yanlış yapmasın diye kasten durduruluyor.
+
+Ayrıntı: `supabase/functions/fetch-inflation/README.md`
+Migration: `0045_inflation_index.sql` (tablo), `0053_fetch_inflation.sql` (çekim)
 
 ---
 

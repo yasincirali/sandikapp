@@ -193,6 +193,34 @@ Deno.serve(async (request) => {
 
     const mesaj = buildInflationMessage(aylik, yillik);
 
+    // ── Bu ay ZATEN gönderildi mi? ──────────────────────────────────────────
+    //
+    // Gönderim defteri (`0053_fetch_inflation.sql`). Kanca artık İKİ gün
+    // koşuyor — ayın 3'ü ve 4'ü — çünkü TÜFE verisi bir gün geç
+    // yayımlanabiliyor ve `0048`'de o ayın kancası tamamen kaçıyordu.
+    //
+    // İkinci tur ancak defter varsa güvenli: veri 3'ünde zamanında
+    // girildiyse 4'ündeki tur burada durur. Defter OLMADAN ikinci turu
+    // açmak, `0048`'in onu kapatma sebebinin aynısını geri getirir
+    // (çift bildirim).
+    //
+    // Anahtar GÖNDERİM GÜNÜ değil, endeksin AİT OLDUĞU ay: 3'ünde ve
+    // 4'ünde koşan iki tur aynı ayı anlatıyor.
+    const donem = `${sonPeriod}-01`;
+    const { data: defterRows } = await admin
+      .from('calendar_nudge_log')
+      .select('period')
+      .eq('occasion', 'inflation_day')
+      .eq('period', donem)
+      .limit(1);
+    if ((defterRows ?? []).length > 0) {
+      return jsonResponse({
+        ok: true,
+        reason: `${sonPeriod} kancasi zaten gonderildi.`,
+        sent: 0,
+      });
+    }
+
     // ── Gönderim ────────────────────────────────────────────────────────────
     const { data: tokenRows } = await admin
       .from('user_push_tokens')
@@ -235,6 +263,25 @@ Deno.serve(async (request) => {
           await admin.from('user_push_tokens').delete().eq('token', t.token);
         }
       }
+    }
+
+    // Defter YAZIMI — ikinci turun duracağı yer.
+    //
+    // Yalnızca gerçekten bir şey gönderildiyse yazılır: hepsi başarısız
+    // olduysa ayın 4'ündeki tur yeniden denemeli.
+    //
+    // Hata YUTULUR: yazamazsak en kötü ihtimalle 4'ünde ikinci bildirim
+    // gider. `daily_brief_log` ile aynı denge — bildirimi hiç
+    // göndermemekten iyidir.
+    if (sent > 0) {
+      try {
+        await admin
+          .from('calendar_nudge_log')
+          .upsert(
+            { occasion: 'inflation_day', period: donem },
+            { onConflict: 'occasion,period' },
+          );
+      } catch (_) { /* bkz. yukarıdaki not */ }
     }
 
     return jsonResponse({ ok: true, sent, failures: failures.slice(0, 5) });

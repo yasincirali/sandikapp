@@ -303,43 +303,61 @@ imzası doğrulanıp uygulama açılışında bir kez okunsun; sonuç
 
 ---
 
-## 🟡 AÇIK — Takvim kancasında gönderim defteri yok
+## ✅ KAPANDI — Takvim kancasında gönderim defteri yok
 
-**Karar tarihi:** 2026-09-06 · Sprint 2
+**Kapanış:** 2026-09-14 · `calendar_nudge_log` tablosu
+(`0053_fetch_inflation.sql`) + `calendar-nudge` defteri okuyup yazıyor.
 
-`calendar-nudge` her ayın 3'ünde koşuyor ama TÜFE endeksi elle
-dolduruluyor. Veri o gün girilmemişse fonksiyon sessizce hiçbir şey
-göndermiyor ve o ayın kancası tamamen kaçıyor.
+Defter borç kaydının önerdiği şekilde: kullanıcı bazlı DEĞİL, `occasion` +
+`period`. Kanca herkese aynı rakamı gönderiyor, dolayısıyla "bu ay
+gönderildi mi" tek satırlık bir soru.
 
-Yeniden deneme cron'u (ayın 4'ü) yazıldı ama **kapalı bırakıldı**: gönderim
-defteri olmadan, veri 3'ünde zamanında girilirse iki bildirim giderdi.
+Anahtar GÖNDERİM GÜNÜ değil, endeksin AİT OLDUĞU ay: ayın 3'ünde ve
+4'ünde koşan iki tur aynı ayı anlatıyor.
 
-**Ertelemenin maliyeti:** veri geç girilen aylarda kanca kaçar. Kaçırılan
-bir kanca, çift bildirimden ucuz — bu yüzden bilinçli seçim.
+Ayın 4'ündeki ikinci tur böylece AÇILDI. Defter yalnızca `sent > 0` iken
+yazılıyor — hepsi başarısız olduysa ikinci tur yeniden denemeli.
 
-**Ele alınma zamanı:** `daily_brief_log` gibi bir `calendar_nudge_log`
-tablosu (user_id yok, `occasion` + `period` yeter) eklenince yeniden deneme
-cron'u açılabilir. Ya da TÜFE çekimi otomatikleşirse sorun kendiliğinden
-kalkar.
+**⚠️ Dağıtım sırası bağımlı:** migration ikinci turu açıyor ama
+`calendar-nudge` defteri okumayan eski sürümde kalırsa çift bildirim
+gider. `supabase functions deploy calendar-nudge` migration'la BİRLİKTE
+yapılmalı; `YAPMAN_GEREKENLER.md`'de 5. adım olarak işaretli ve
+`fetch_inflation_test.ts` fonksiyonun defteri gerçekten okuduğunu
+kaynak metninden denetliyor.
 
 ---
 
-## 🟡 AÇIK — TÜFE endeksi elle dolduruluyor
+## ✅ KAPANDI — TÜFE endeksi elle dolduruluyor
 
-**Karar tarihi:** 2026-09-06 · Sprint 2
+**Kapanış:** 2026-09-14 · `fetch-inflation` edge function + aylık cron
+(`0053_fetch_inflation.sql`).
 
-`inflation_index` tablosuna satırlar elle giriliyor (bkz.
-YAPMAN_GEREKENLER.md). TCMB EVDS'den çeken bir Edge Function yazılabilirdi
-ama EVDS API anahtarı gerektiriyor ve anahtar bu oturumda yoktu — uçtan uca
-denenemeyecek bir entegrasyon yazmak, elle girişten daha az güvenilir olurdu.
+Borç kaydı "EVDS anahtarı alındığında" diyordu. Anahtar HÂLÂ YOK; çözüm
+anahtarsız da güvenli olacak şekilde kuruldu: `EVDS_API_KEY` tanımsızsa
+fonksiyon `no_api_key` döner ve **hiçbir şey yazmaz**. Yarım bir
+entegrasyonla tabloyu bozmak, elle girişten kötü olurdu — erteleme
+gerekçesi buydu ve o gerekçe artık geçerli değil çünkü yazma yolu
+anahtarsız hiç açılmıyor. Ayrıştırma mantığı gerçek EVDS yanıt şekliyle
+(fixture) testli.
 
-**Ertelemenin maliyeti:** her ayın 3'ünde bir satır eklenmesi gerekiyor.
-Unutulursa rozet sessizce eskimeye başlar: hesap son AÇIKLANMIŞ aya
-dayandığı için yanlış sayı göstermez, ama pencere geriye kayar.
+**Borç kaydının önerdiği CRON SAATİ YANLIŞTI.** `0 8 3 * *` (TR 11:00)
+deniyordu; `calendar-nudge` ayın 3'ünde TR 10:15'te koşuyor ve tabloda bu
+ayın satırını arıyor. Çekim ondan SONRA koşarsa nudge hep bayat veriyle
+karşılaşır ve o ayın kancası kaçar — otomatikleştirmenin asıl kazancı
+kaybolurdu. Doğru sıra: TÜİK 10:00 açıklar → **10:05 çekim** → 10:15
+bildirim. Migration bu sırayı kendi kendine doğruluyor ve ikisi aynı
+saate kurulursa yüksek sesle patlıyor.
 
-**Ele alınma zamanı:** EVDS anahtarı alındığında. `fetch-inflation` Edge
-Function + aylık cron (`0 8 3 * *` UTC = TR 11:00, açıklamadan bir saat
-sonra), `analyze-signals` cron deseniyle aynı.
+**Ek olarak yakalanan risk — baz yılı değişimi.** TÜİK baz yılını
+değiştirdiğinde endeks SIFIRLANIR (2003=100 → 2025=100) ve eski
+satırlarla yeni satırlar karşılaştırılamaz: bölme "−%95 enflasyon" gibi
+anlamsız bir sonuç verir. Fonksiyon ardışık aylarda %15'ten fazla düşüş
+görürse yazmayı REDDEDİYOR (`base_year_break`, HTTP 409). Bu durumda
+insan müdahalesi gerekiyor — yeni seri adı ve eski satırların ne olacağı
+ürün kararı.
+
+Revizyonlar bedava geldi: yazma `period` üzerinden upsert, TÜİK
+açıklanmış bir ayı düzeltirse bir sonraki tur onu güncelliyor.
 
 ---
 
