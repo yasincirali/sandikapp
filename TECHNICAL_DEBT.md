@@ -89,6 +89,56 @@ ham liste doğru, mülkiyetse `aggregatePositions` şart.
 
 ---
 
+## 🟡 AÇIK — Grafik tipi seçicide Candle (mum) YOK
+
+**Karar tarihi:** 2026-09-12 · Kullanıcı kararı
+
+Kullanıcı TradingView'deki beş tipi istedi (Line / Candle / Baseline /
+Mountain / Bar). Dördü eklendi, **Candle eklenmedi**.
+
+**Neden:** mum grafiği OHLC ister (açılış / en yüksek / en düşük /
+kapanış). Portföy serisi her zaman dilimi için **TEK değer** tutuyor
+(`Map<int, double>` — o andaki toplam portföy değeri); OHLC veri
+katmanında hiç üretilmiyor. Menüye koyup tıklanınca Line çizmek
+kullanıcıyı yanıltırdı.
+
+Kullanıcıya soruldu, "şimdilik atla" seçildi.
+
+**Ertelemenin maliyeti:** tanıdık bir grafik tipi eksik. Kullanıcı
+başka uygulamalarda gördüğü mumu burada bulamıyor.
+
+**Ele alınma zamanı:** gün içi 5 dakikalık noktalardan günlük OHLC
+türetilebilir (`getPortfolioHistoryHourlyBreakdown` zaten o çözünürlükte
+veri çekiyor). Ayrı bir seri ve ayrı bir model alanı gerekir; yalnızca
+GÜNLÜK sekmesinde anlamlı olur çünkü diğer dönemlerde gün içi nokta yok.
+
+---
+
+## 🟠 AÇIK — Altın gecikmesi YAPISAL olarak düzeltildi ama ÖLÇÜLMEDİ
+
+**Karar tarihi:** 2026-09-13 · Kullanıcı bildirimi
+
+Altın grafiği çok geç geliyordu ("uzun süre bekleyince geldi, kimse bu
+kadar uzun beklemez"). Üç sebep kaynakta bulundu ve düzeltildi
+(`e066af5`): iki isteğin sıralı olması, timeout bulunmaması, boş serinin
+"veri var" sayılması.
+
+**Ölçülemeyen:** gerçek gecikme süresi. Test ortamında ağ yok
+(`GC=F`, `USDTRY=X` hepsi 0 nokta döndü), emülatörde oturum açık
+değildi. Kanıt **yapısal**: iki isteğin sıralı olduğu ve timeout'un
+bulunmadığı kaynakta doğrulandı, ama "30 saniyeden 8 saniyeye indi"
+iddiası gerçek ağda ölçülmedi.
+
+**Ertelemenin maliyeti:** düzeltmenin işe yaradığı varsayılıyor. Gerçek
+darboğaz başka bir yerdeyse (örn. Yahoo'nun `XAUTRY=X` için yavaş
+yanıtı) bu değişiklikler onu çözmez ve sorun sürer.
+
+**Ele alınma zamanı:** gerçek cihazda oturum açıkken `adb logcat` ile
+`getSymbolHistory` sürelerini ölç. Alternatif: geçici bir teşhis logu
+ekleyip her sembolün çekim süresini yazdır.
+
+---
+
 ## 🟡 AÇIK — Varlık performansında GÜNLÜK sekmesinde karşılaştırma kapalı
 
 **Karar tarihi:** 2026-09-10 · Hata turu
