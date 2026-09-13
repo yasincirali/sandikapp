@@ -12,6 +12,38 @@
 
 ---
 
+## 🗄️ BEKLEYEN MIGRATION: `0051_percentile_180d.sql` (2026-09-13)
+
+Dönem Özeti'nin **6A benchmark şeridi** bu migration koşulmadan
+görünmez. Kod tarafı hazır; şerit sessizce çizilmiyor (hata vermiyor,
+sadece yok).
+
+```bash
+supabase db push
+# ya da SQL Editor'e 0051_percentile_180d.sql içeriğini yapıştır
+```
+
+**Ne yapıyor:** 180 günlük yüzdelik dilim kovasını üç yerde birden açıyor
+— `user_roi_snapshots.period_days` CHECK'i, `get_percentile_bucket` ve
+`get_top_gainers_allocation` allowlist'leri. Üçü birlikte açılmak zorunda;
+biri kalırsa özellik çalışmaz.
+
+**k-anonimlik değişmedi:** `k_min = 8` ve `n_max = 4` aynen korunuyor.
+Yeni bir kova eklendi, eşik matematiğine dokunulmadı.
+
+**Doğrulama:** migration'dan sonra Performans → Özet → 6A. Şerit hâlâ
+görünmüyorsa sebebi k-anonimlik olabilir: son 24 saatte 180 günlük
+snapshot atmış **8 kullanıcı** gerekiyor. Tek kullanıcıyla test ederken
+şerit görünmez — bu doğru davranış, hata değil.
+
+```sql
+-- Havuz doldu mu?
+select count(distinct user_id) from user_roi_snapshots
+ where period_days = 180 and created_at >= now() - interval '24 hours';
+```
+
+---
+
 ## 🎛️ İSTEĞE BAĞLI: `period_summary_enabled` bayrağı (2026-09-13)
 
 Dönem Özeti (Performans → **Grafik | Özet** sekmesi) ve ana ekrandaki

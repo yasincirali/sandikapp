@@ -26,6 +26,7 @@ import '../services/analytics_service.dart';
 import '../services/daily_summary.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
+import '../services/leaderboard_service.dart';
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
@@ -4058,7 +4059,7 @@ String _positionLabel(String key, AssetType type) {
 /// "veri yoksa özellik yoktur" diyor) ve yüzdelik dilim k-anonimlik
 /// eşiğinin altında null döner. İkisi de null iken özet yine gösterilir —
 /// yalnızca o bloklar çizilmez.
-class _OzetYanVeri extends StatefulWidget {
+class _OzetYanVeri extends ConsumerStatefulWidget {
   final SummaryPeriod period;
   final PeriodSummary summary;
   final PortfolioCharacter? karakter;
@@ -4078,10 +4079,10 @@ class _OzetYanVeri extends StatefulWidget {
   });
 
   @override
-  State<_OzetYanVeri> createState() => _OzetYanVeriState();
+  ConsumerState<_OzetYanVeri> createState() => _OzetYanVeriState();
 }
 
-class _OzetYanVeriState extends State<_OzetYanVeri> {
+class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   double? _enflasyon;
 
   /// Kayıp döneminde gösterilen "daha uzun pencere" bağlamı (1Y getirisi).
@@ -4096,6 +4097,12 @@ class _OzetYanVeriState extends State<_OzetYanVeri> {
   /// (kayıptaki kısa dönemde) atılır.
   double? _uzunDonem;
   bool _uzunDonemIstendi = false;
+
+  /// 6A benchmark şeridinin yüzdelik dilimi. `null` iken şerit çizilmez —
+  /// bayrak kapalı, opt-in yok, geçmiş yetersiz ya da k-anonimlik eşiği
+  /// dolmamış olabilir; dördü de "gösterme" demek.
+  ({int percentile, int total})? _dilim;
+  bool _dilimIstendi = false;
 
   @override
   void initState() {
@@ -4112,6 +4119,12 @@ class _OzetYanVeriState extends State<_OzetYanVeri> {
       // bağlı: yeni dönem kayıptaysa ve önceki değilse istek hiç
       // atılmamıştır, bu yüzden bayrak da sıfırlanır.
       _uzunDonemIstendi = false;
+      // Dilim YALNIZCA 6A'da isteniyor; başka bir dönemden 6A'ya
+      // geçildiğinde istek hiç atılmamış olur. Bayrağı sıfırlamak o
+      // geçişte şeridin görünmesini sağlar. `_dilim`'in kendisi
+      // korunuyor: 6A'ya geri dönen kullanıcı aynı rakamı yeniden
+      // beklemeden görür (havuz 24 saatlik pencerede zaten sabit).
+      _dilimIstendi = false;
       WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
     }
   }
@@ -4120,6 +4133,7 @@ class _OzetYanVeriState extends State<_OzetYanVeri> {
     if (!mounted) return;
 
     await _yukleUzunDonem();
+    await _yukleDilim();
 
     // GÜNLÜK'te TÜFE sorulmaz: endeks AYLIK yayımlanıyor, bir günlük
     // pencerede enflasyon farkı tanımsız.
@@ -4129,6 +4143,64 @@ class _OzetYanVeriState extends State<_OzetYanVeri> {
         await InflationService.instance.inflationForPeriod(widget.period.days);
     if (!mounted) return;
     setState(() => _enflasyon = enf);
+  }
+
+  /// 6A yüzdelik dilimini çeker — benchmark şeridi için.
+  ///
+  /// Dört kapı, `PercentileStrip` ile aynı disiplin: dönem 6A olmalı,
+  /// Remote Config bayrağı açık olmalı, kullanıcı yarışa opt-in olmalı ve
+  /// oturum açmış olmalı. Sunucudaki k-anonimlik eşiği beşinci kapı —
+  /// havuz 8 kişiye ulaşmadıysa RPC boş döner ve şerit hiç çizilmez.
+  ///
+  /// **Snapshot burada yükleniyor.** `get_percentile_bucket` yalnızca son
+  /// 24 saatte snapshot atmış kullanıcıları karşılaştırıyor; yüklemeyi
+  /// atlarsak kullanıcı kendi havuzunda görünmez ve kendi dilimini asla
+  /// göremez (`PercentileStrip` içindeki aynı not).
+  ///
+  /// 180 kovası migration `0051` ile açıldı; ondan önce RPC bu periyodu
+  /// geçersiz sayıp boş dönüyordu.
+  Future<void> _yukleDilim() async {
+    if (_dilimIstendi) return;
+    if (widget.period != SummaryPeriod.altiAy) return;
+    _dilimIstendi = true;
+
+    if (!RemoteConfigService.instance.percentileStripEnabled) return;
+    if (!ref.read(leaderboardOptInProvider)) return;
+    final me = ref.read(authProvider).valueOrNull;
+    if (me == null) return;
+    if (widget.assets.isEmpty) return;
+
+    final pState = ref.read(portfolioProvider).valueOrNull;
+    if (pState == null) return;
+
+    try {
+      final servis = LeaderboardService.instance;
+      const gun = 180;
+      final roi = await servis.computeROI(
+        assets: widget.assets,
+        periodDays: gun,
+        currentValueTRY: servis.totalValueTRY(widget.assets, pState.toTRY),
+        toTRY: pState.toTRY,
+        cacheKey: me.id,
+      );
+      // Geçmiş yetersiz — karşılaştırma yapılamaz, uydurma bir dilim
+      // gösterilmez.
+      if (roi == null || !mounted) return;
+
+      await servis.uploadRoiSnapshot(
+        userId: me.id,
+        periodDays: gun,
+        roiPct: roi,
+      );
+      final data = await servis.fetchPercentile(gun);
+      if (!mounted || data == null) return;
+
+      AnalyticsService.instance
+          .logPercentileViewed(bucket: data.percentile, periodDays: gun);
+      setState(() => _dilim = data);
+    } catch (_) {
+      // Sessizce vazgeç: şerit ikincil, özet onsuz da tam.
+    }
   }
 
   /// 1Y bağlamını çeker — YALNIZCA gerektiğinde.
@@ -4200,6 +4272,8 @@ class _OzetYanVeriState extends State<_OzetYanVeri> {
       karakter: widget.karakter,
       enSabirli: widget.enSabirli,
       enSabirliGun: widget.enSabirliGun,
+      percentile: _dilim?.percentile,
+      percentileKatilimci: _dilim?.total,
       onShare: paylasimMetni == null ? null : () => _paylas(paylasimMetni),
     );
   }

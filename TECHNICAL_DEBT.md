@@ -9,53 +9,72 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
-## 🟡 AÇIK — Özet sekmesinde 6A yüzdelik dilimi bağlı değil
+## ✅ KAPANDI — Özet sekmesinde 6A yüzdelik dilimi bağlı değil
 
-**Karar tarihi:** 2026-09-13 · Dönem Özeti Faz 1
+**Kapanış:** 2026-09-13 · Migration `0051_percentile_180d.sql` + ekran
+tarafı bağlandı (`_OzetYanVeri._yukleDilim`).
 
-`PeriodSummaryView` 6A bloğunda bir benchmark şeridi çiziyor ve
-`percentile` / `percentileKatilimci` parametrelerini kabul ediyor — ama
-ekran tarafı (`_OzetYanVeri`) bu iki alanı DOLDURMUYOR, yani şerit
-pratikte hiç görünmüyor.
+Borç kaydı işi "RPC'ye `period_days` parametresi eklenmeli" diye
+tanımlıyordu; **gerçek engel daha aşağıdaydı.** Üç yer birden kapalıydı
+ve biri açılıp öteki kalsa özellik SESSİZCE çalışmazdı:
 
-**Neden şimdi çözülmedi:** `get_percentile_bucket` RPC'si 30 güne sabit
-(`PercentileStrip.periodDays = 30`). 180 günlük kova için ya RPC'ye
-parametre eklenmeli ya ikinci bir RPC yazılmalı; ikisi de migration
-demek ve bu tur ekran katmanıyla sınırlı tutuldu. Yanlış pencerenin
-verisini 6A şeridinde göstermek — 30 günlük diliminizi "altı aylık
-karşılaştırma" diye sunmak — sessiz ve yanıltıcı bir hata olurdu.
+| Yer | Engel |
+|---|---|
+| `user_roi_snapshots` | `CHECK (period_days IN (7,30,365))` — 180 satırı hiç yazılamıyordu |
+| `get_percentile_bucket` | allowlist `NOT IN (7,30,365)` → boş dönüyordu |
+| `get_top_gainers_allocation` | aynı allowlist; ayrışsa Yarış listesi 180'de boş kalırdı |
 
-**Ertelemenin maliyeti:** 6A dönemi diğer dönemlere göre bir blok eksik
-görünüyor (uçlar + köprü var, karşılaştırma yok). Kullanıcı bir şeyin
-eksik olduğunu bilmiyor, dolayısıyla şikâyet üretmiyor.
+**Parametre EKLENMEDİ, kova eklendi.** `get_percentile_bucket`'a yeni bir
+argüman vermek imzayı değiştirir ve `CREATE OR REPLACE` eski
+1-argümanlı fonksiyonu kendi GRANT'leriyle ayakta bırakır (overload,
+replace değil). Allowlist'i genişletmek aynı sonucu imza değiştirmeden
+veriyor.
 
-**Ele alınma zamanı:** `get_percentile_bucket`'a `period_days`
-parametresi eklenip k-anonimlik eşiği 180 gün için de doğrulandığında.
-Widget tarafı hazır — yalnızca iki parametrenin geçirilmesi yeterli.
+**"180 kovası hiç dolmaz" endişesi ölçüldü ve yanlış çıktı.** `k_min`
+8'e indirilmişti çünkü taban 20 aktif/gün eşiğine ulaşmıyor (bkz.
+`0031`); 180 kovasının en seyrek kalacağı düşünülmüştü. Ama
+`donemGetirisiPct` seriyi `simulate: true` ile üretiyor — bugünkü net
+pozisyon dönemin tamamına yayılıyor, yani kullanıcının 180 gündür varlık
+TUTMASI gerekmiyor, yalnızca sembollerinin 180 günlük fiyat geçmişi
+gerekiyor. Kova 30 günlükle neredeyse aynı kümeden besleniyor.
+`k_min = 8` ve `n_max = floor(k_min/2) = 4` değişmezine dokunulmadı.
+
+`percentile_strip_test` içindeki yeni grup üç şeyi kilitliyor: iki RPC
+allowlist'inin ayrışmaması, k_min/n_max çiftinin korunması ve istemcinin
+6A gün sayısının (`SummaryPeriod.altiAy.days`) sunucu kovasıyla aynı
+kalması. Allowlist sessiz bir kapı — testsiz bıraksak drift fark
+edilmezdi.
+
+**Kalan (kullanıcı adımı):** migration Supabase'e KOŞULMALI, yoksa şerit
+görünmez. `YAPMAN_GEREKENLER.md`'ye yazıldı.
 
 ---
 
-## 🟡 AÇIK — Özet 1Y bloğunda paylaş butonu bağlı değil
+## ✅ KAPANDI — Özet 1Y bloğunda paylaş butonu bağlı değil
 
-**Karar tarihi:** 2026-09-13 · Dönem Özeti Faz 1
+**Kapanış:** 2026-09-13 · `RecapService.composeShareText` ortak
+çekirdeği + `PeriodSummaryService.shareText` delegasyonu.
 
-`PeriodSummaryView.onShare` parametresi var ve `null` olduğunda buton
-hiç çizilmiyor; ekran tarafı da `null` geçiyor.
+Borç kaydı `shareText(period, pct, etiket)` imzasını öneriyordu; uygulanan
+biçim **skaler parametreli** bir çekirdek:
+`composeShareText({baslik, karakter, degisimPct, degisimEtiketi,
+enflasyonPuan, takipGunu})`.
 
-**Neden şimdi çözülmedi:** `RecapService.shareText` yıllık recap'in
-kendi veri şekline (`RecapData`) bağlı ve `PeriodSummary` farklı bir
-tip. Paylaşım metnini ikinci kez yazmak — hele TUTAR İÇERMEME kuralını
-ikinci kez uygulamak — `RETENTION_STRATEJISI.md` §5.G'nin tek gerçek
-kısıtını iki yere dağıtmak olurdu. Doğru çözüm ortak bir
-`shareText(period, pct, etiket)` imzası, ve o refactor recap ekranına da
-dokunuyor.
+**Ortak arayüz/taban sınıf UYDURULMADI.** İki veri şekli örtüşmüyor:
+`RecapData.character` zorunlu ve `trackedDays` var; `PeriodSummary`'de
+karakter ayrı bir parametre (ekranda öyle geliyor) ve takip günü kavramı
+hiç yok. Yalnızca bu metin için yapay bir hiyerarşi kurmak ikisini de
+karmaşıklaştırırdı.
 
-**Ertelemenin maliyeti:** Özet sekmesinden paylaşım yapılamıyor. Yıllık
-recap ekranındaki paylaşım butonu çalışmaya devam ediyor, yani özelliğin
-viral yolu tamamen kapalı değil.
+**TUTAR İÇERMEME kuralı artık YAPISAL:** imza TRY taşıyan hiçbir alan
+kabul etmiyor, dolayısıyla çağıran taraf yanlışlıkla tutar geçemiyor.
+Aynı sebeple dönem başlığında TARİH ARALIĞI yok — yıl içeren dört haneli
+sayılar paylaşılan metinde tutar gibi okunuyor ve `recap_service_test`'in
+"dört haneli sayı tutar demektir" iddiası tam olarak bunu kovalıyor.
 
-**Ele alınma zamanı:** `shareText` ortak imzaya çıkarıldığında; ya da
-Faz 2'de haftalık push eklenirken (o da aynı metin katmanına dokunacak).
+Mevcut recap paylaşım testleri dokunulmadan geçti (refactor davranış
+koruyor); `period_summary_test` içine aynı kuralı ikinci çağıran için
+kilitleyen 8 test eklendi.
 
 ---
 
