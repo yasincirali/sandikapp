@@ -119,6 +119,15 @@ class RemoteConfigService {
     // penceresinde ve anlamlı veri varken görünür
     // (bkz. RecapService.isYearlyWindow).
     'recap_enabled': true,
+
+    // Dönem Özeti (Performans → Özet sekmesi) ve ana ekrandaki "Bu hafta"
+    // kartı. TAMAMEN ÜCRETSİZ — paywall'a bağlı değil.
+    //
+    // Bayrak asıl olarak ana ekran kartı için var: Performans ekranındaki
+    // sekme zaten kullanıcının bilinçli olarak girdiği bir yer, ama ana
+    // ekrana eklenen her satır dikkat bütçesinden yiyor ve geri alınabilir
+    // olması gerekiyor.
+    'period_summary_enabled': true,
   };
 
   Future<void> init() async {
@@ -212,6 +221,10 @@ class RemoteConfigService {
 
   bool get recapEnabled =>
       _rc?.getBool('recap_enabled') ?? _defaults['recap_enabled'] as bool;
+
+  bool get periodSummaryEnabled =>
+      _rc?.getBool('period_summary_enabled') ??
+      _defaults['period_summary_enabled'] as bool;
 
   /// UI chip'leri / filtre listeleri için: `depositsEnabled=false` iken
   /// mevduat türünü listeden düşer. `AssetType.values` yerine bunu kullan.

@@ -420,9 +420,8 @@ class PeriodSummaryService {
         baslangicTRY: gunlukOzet.sparkline.isEmpty
             ? u?.first
             : gunlukOzet.sparkline.first,
-        sonTRY: gunlukOzet.sparkline.isEmpty
-            ? u?.last
-            : gunlukOzet.sparkline.last,
+        sonTRY:
+            gunlukOzet.sparkline.isEmpty ? u?.last : gunlukOzet.sparkline.last,
         katkiTRY: katki,
         // Ortak katman zaten nakit akışından ARINDIRMIŞ rakamı veriyor.
         piyasaTRY: gunlukOzet.changeTRY,
@@ -430,8 +429,8 @@ class PeriodSummaryService {
         sparkline: gunlukOzet.sparkline,
         dagilimBasi: _dagilim(breakdown.byType, fromMs),
         dagilimSonu: _dagilim(breakdown.byType, toMs),
-        enIyi: _gunIciEnHareketli(breakdown, fromMs, toMs, assets, etiket)
-            ?.enIyi,
+        enIyi:
+            _gunIciEnHareketli(breakdown, fromMs, toMs, assets, etiket)?.enIyi,
         enZayif: _gunIciEnHareketli(breakdown, fromMs, toMs, assets, etiket)
             ?.enZayif,
       );
@@ -486,9 +485,8 @@ class PeriodSummaryService {
       getiriPct: pct,
       enIyi: uclar2.enIyi,
       enZayif: uclar2.enZayif,
-      tufeFarki: (pct != null && inflationPct != null)
-          ? pct - inflationPct
-          : null,
+      tufeFarki:
+          (pct != null && inflationPct != null) ? pct - inflationPct : null,
       dagilimBasi: _dagilim(breakdown.byType, u.firstTs),
       dagilimSonu: _dagilim(breakdown.byType, u.lastTs),
       gunSayimi: gunSayimi(breakdown.total, fromMs: fromMs, toMs: toMs),

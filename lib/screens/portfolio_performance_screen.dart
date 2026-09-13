@@ -21,8 +21,14 @@ import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
+import '../services/analytics_service.dart';
+import '../services/daily_summary.dart';
 import '../services/history_service.dart';
+import '../services/inflation_service.dart';
+import '../services/period_summary_service.dart';
+import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
+import '../widgets/period_summary_view.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/zoomable_chart.dart';
@@ -91,6 +97,14 @@ class _PortfolioPerformanceScreenState
   // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
   //             true  = simülasyon (bugünkü net pozisyon tüm dönem boyunca).
   bool _simulate = false;
+
+  /// Yüzey sekmesi: false = Grafik, true = Özet.
+  ///
+  /// Dönem seçici (`_selectedPeriodIdx`) İKİ SEKME ARASINDA PAYLAŞILIR —
+  /// kullanıcı Grafik'te 6A seçip Özet'e geçince aynı pencereyi görür.
+  /// Sekme başına ayrı bir dönem tutmak, aynı ekranda iki farklı "şu anki
+  /// dönem" kavramı yaratırdı.
+  bool _ozetSekmesi = false;
   // Intraday sekmesi seçiliyken şimdiki zaman marker'ının X ekseni üstünde
   // ilerlemesi için periyodik tick. Her 60 sn'de bir setState çağırıyor.
   Timer? _intradayTick;
@@ -257,7 +271,6 @@ class _PortfolioPerformanceScreenState
     (label: '1Y', days: 365, ayGeri: 12, intraday: false),
   ];
 
-
   // ── Logic ──────────────────────────────────────────────────────────────────
 
   /// Seriyi para giriş/çıkışından arındırır.
@@ -369,8 +382,14 @@ class _PortfolioPerformanceScreenState
         final sinirX =
             (piyasaKapaliBaslangicTs - startDate.millisecondsSinceEpoch) /
                 60000.0;
-        final seans = [for (final s in spots) if (s.x <= sinirX) s];
-        final kapali = [for (final s in spots) if (s.x >= sinirX) s];
+        final seans = [
+          for (final s in spots)
+            if (s.x <= sinirX) s
+        ];
+        final kapali = [
+          for (final s in spots)
+            if (s.x >= sinirX) s
+        ];
 
         // İki segment de çizilebiliyorsa böl. Aksi halde (kuyruk tek
         // noktaysa ya da seans boşsa) bölmek kopuk çizgi üretirdi —
@@ -545,13 +564,11 @@ class _PortfolioPerformanceScreenState
     final hamBaslangic = isIntraday
         ? DateTime(endDate.year, endDate.month, endDate.day)
         : (donem.ayGeri != null
-            ? PortfolioPerformanceScreen.donemBaslangici(
-                endDate, donem.ayGeri!)
+            ? PortfolioPerformanceScreen.donemBaslangici(endDate, donem.ayGeri!)
             : endDate.subtract(Duration(days: donem.days)));
     final startDate = isIntraday
         ? hamBaslangic
-        : DateTime(
-            hamBaslangic.year, hamBaslangic.month, hamBaslangic.day);
+        : DateTime(hamBaslangic.year, hamBaslangic.month, hamBaslangic.day);
 
     return DefaultTextStyle(
       style: GoogleFonts.dmSans(
@@ -1042,9 +1059,8 @@ class _PortfolioPerformanceScreenState
     // `seansGunu` breakdown'dan geliyor ve tam ekran grafiği (satır ~699)
     // bunu zaten kullanıyordu; ana grafik kullanmıyordu — iki yüzey
     // ayrışmıştı.
-    final cizimBaslangici = isIntraday
-        ? (breakdown.seansGunu ?? effectiveStart)
-        : effectiveStart;
+    final cizimBaslangici =
+        isIntraday ? (breakdown.seansGunu ?? effectiveStart) : effectiveStart;
 
     final segments = _convertHistoryToSegments(
         historyMap, chartAssets, cizimBaslangici, endDate,
@@ -1076,172 +1092,201 @@ class _PortfolioPerformanceScreenState
           ),
         ),
         const SizedBox(height: 16),
+        // Sekme anahtarı dönem seçicinin ÜSTÜNDE: dönem ikisi için de
+        // geçerli, sekme ise hangi sunumu gördüğünü belirler. Tersi sırada
+        // dönem seçici sekmeye aitmiş gibi okunuyordu.
+        _buildSurfaceToggle(),
+        const SizedBox(height: 12),
         _buildPeriodToggle(),
-        if (!isIntraday) ...[
+        // Simülasyon anahtarı yalnızca GRAFİK sekmesinde anlamlı: Özet
+        // gerçek nakit akışını ayırmak için var ve simülasyon tam olarak o
+        // akışı yok sayıyor. İkisini birleştirmek "katkın ₺0" yazan bir
+        // köprü üretirdi.
+        if (!isIntraday && !_ozetSekmesi) ...[
           const SizedBox(height: 12),
           _buildModeToggle(),
         ],
         const SizedBox(height: 24),
-        // "Yeni çözünürlükte veri yükleniyor" göstergesi — zoom sırasında
-        // eski veri ekranda kalır, üstte ince bir bar akıcı hisi verir.
-        if (waiting)
-          SizedBox(
-            height: 2,
-            child: LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: Colors.transparent,
-              color: context.c.amberFill,
-            ),
-          ),
-        Row(
-          // `spaceBetween` + `Spacer` YOK: bu satır yatay kaydırılabilir
-          // bir bağlamda çiziliyor ve `Spacer` sonsuz genişlik isteyip
-          // RenderFlex'i 98.674px taşırıyordu (ölçüldü — boş durum metni
-          // hiç render edilmiyordu).
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Grafik tipi seçici — gün içi sekmesinde de geçerli.
-            const GrafikTipiSecici(),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-            if (ref.watch(leaderboardOptInProvider) &&
-                activePartners.isNotEmpty) ...[
-              _LeaderboardChip(
-                onTap: () => Navigator.push(
-                  context,
-                  adaptiveRoute(builder: (_) => const LeaderboardScreen()),
-                ),
-              ),
-              const SizedBox(width: 6),
-            ],
-            _PortfolioFullscreenChip(
-              onTap: () {
-                FullscreenChartRoute.open(
-                  context,
-                  title: 'Portföy Performans',
-                  builder: (_) => PortfolioPerformanceScreen(
-                    initialView: _view,
-                    initialTypeFilter: _typeFilter,
-                    // Landscape'te grafik hemen görünsün diye header'ları
-                    // aşağı kaydır. Yukarı swipe ile tab/filtre/period gelir.
-                    initialScrollOffset: 220,
-                  ),
-                );
-              },
-            ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        // ── Akıcı geçiş tasarımı ────────────────────────────────────────
-        // `LineChart` bir ImplicitlyAnimatedWidget: yeni `LineChartData`
-        // verildiğinde eski veriden yenisine kendi lerp'liyor (150ms).
-        // Ama bu ancak widget AĞAÇTA KALIRSA çalışır. Grafiği spinner ile
-        // değiştirmek (veya sarmalayıcı yapıyı değiştirmek) State'i yok
-        // eder, tween sıfırlanır ve geçiş "0'dan yeniden çizim" gibi
-        // görünür. Bu yüzden:
-        //   • Grafik konteyneri HER ZAMAN aynı konumda kalır.
-        //   • Özet kartı bayatken gizlenmez — yerini korusun diye
-        //     opaklığı düşer (layout zıplaması da olmaz).
-        //   • Spinner yalnızca hiç veri yokken (ilk açılış) görünür.
-        AnimatedOpacity(
-          opacity: stale ? 0.45 : 1.0,
-          duration: SandikMotion.stateOf(context),
-          curve: SandikMotion.enter,
-          child: _buildPeriodChangeCard(
-            segments,
-            // Segmentlerle AYNI başlangıç: X ekseni bu tarihe göre
-            // yorumlanıyor, ayrışırsa kart yanlış günü anlatır.
-            cizimBaslangici,
-            endDate,
-            targetAssets,
+        // ── ÖZET sekmesi ──────────────────────────────────────────────────
+        //
+        // Erken `return` YOK: filtre denetimleri (ortak sekmeleri, tür
+        // çipleri, dönem seçici) ağaçta KALMALI, yoksa kullanıcı Özet'e
+        // geçtiğinde dönemini değiştiremez hale gelir. Aynı gerekçe
+        // `_buildChartWithData`'nın koşulsuz çağrılmasının da sebebi.
+        if (_ozetSekmesi) ...[
+          _buildOzetSekmesi(
+            breakdown: breakdown,
+            targetAssets: targetAssets,
             intraday: isIntraday,
+            seansBaslangici: cizimBaslangici,
           ),
-        ),
-        const SizedBox(height: SandikSpace.sm),
-        // Grafik alanı üç hâlden birinde: boş durum, yükleme, grafik.
-        //
-        // "Boş durum" ayrımı ŞART: seçili tür portföyde yoksa (ya da türün
-        // fiyat geçmişi hiç izlenmiyorsa) `HistoryService` boş varlık
-        // listesine boş seri döndürür — veri ASLA gelmez. Eskiden bu da
-        // `!hasData` sayılıp spinner çiziliyordu ve sonsuza kadar dönüyordu;
-        // kullanıcı yüklenmeyi bekliyor sanıyordu.
-        //
-        // Yükseklik `minHeight` ile kurulur, SABİT değil: grafik alanı kadar
-        // yer tutsun ama büyük metin ölçeğinde (AX5) içerik taşmasın.
-        if (_chartEmptyState(holdsSelectedType, chartAssets) case final empty?)
-          ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 300),
-            child: empty,
-          )
-        else if (!hasData && settled)
-          ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 300),
-            child: _ChartPlaceholder(
-              icon: Icons.cloud_off_rounded,
-              title: 'Grafik verisi alınamadı',
-              message: 'Fiyat geçmişi şu an getirilemedi. '
-                  'Bağlantını kontrol edip tekrar deneyebilirsin.',
-              onRetry: _retryChartData,
+          const SizedBox(height: 12),
+          const DisclaimerWidget(),
+          const SizedBox(height: 16),
+        ] else ...[
+          // "Yeni çözünürlükte veri yükleniyor" göstergesi — zoom sırasında
+          // eski veri ekranda kalır, üstte ince bir bar akıcı hisi verir.
+          if (waiting)
+            SizedBox(
+              height: 2,
+              child: LinearProgressIndicator(
+                minHeight: 2,
+                backgroundColor: Colors.transparent,
+                color: context.c.amberFill,
+              ),
             ),
-          )
-        else if (!hasData)
-          const SizedBox(height: 300, child: CustomLoadingView())
-        else
+          Row(
+            // `spaceBetween` + `Spacer` YOK: bu satır yatay kaydırılabilir
+            // bir bağlamda çiziliyor ve `Spacer` sonsuz genişlik isteyip
+            // RenderFlex'i 98.674px taşırıyordu (ölçüldü — boş durum metni
+            // hiç render edilmiyordu).
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Grafik tipi seçici — gün içi sekmesinde de geçerli.
+              const GrafikTipiSecici(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (ref.watch(leaderboardOptInProvider) &&
+                      activePartners.isNotEmpty) ...[
+                    _LeaderboardChip(
+                      onTap: () => Navigator.push(
+                        context,
+                        adaptiveRoute(
+                            builder: (_) => const LeaderboardScreen()),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  _PortfolioFullscreenChip(
+                    onTap: () {
+                      FullscreenChartRoute.open(
+                        context,
+                        title: 'Portföy Performans',
+                        builder: (_) => PortfolioPerformanceScreen(
+                          initialView: _view,
+                          initialTypeFilter: _typeFilter,
+                          // Landscape'te grafik hemen görünsün diye header'ları
+                          // aşağı kaydır. Yukarı swipe ile tab/filtre/period gelir.
+                          initialScrollOffset: 220,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // ── Akıcı geçiş tasarımı ────────────────────────────────────────
+          // `LineChart` bir ImplicitlyAnimatedWidget: yeni `LineChartData`
+          // verildiğinde eski veriden yenisine kendi lerp'liyor (150ms).
+          // Ama bu ancak widget AĞAÇTA KALIRSA çalışır. Grafiği spinner ile
+          // değiştirmek (veya sarmalayıcı yapıyı değiştirmek) State'i yok
+          // eder, tween sıfırlanır ve geçiş "0'dan yeniden çizim" gibi
+          // görünür. Bu yüzden:
+          //   • Grafik konteyneri HER ZAMAN aynı konumda kalır.
+          //   • Özet kartı bayatken gizlenmez — yerini korusun diye
+          //     opaklığı düşer (layout zıplaması da olmaz).
+          //   • Spinner yalnızca hiç veri yokken (ilk açılış) görünür.
           AnimatedOpacity(
             opacity: stale ? 0.45 : 1.0,
             duration: SandikMotion.stateOf(context),
             curve: SandikMotion.enter,
-            // Grafik tipi değişince YENİDEN çizilmeli. Notifier widget
-            // ağacının dışında yaşıyor (oturum durumu), bu yüzden
-            // dinleyici burada kuruluyor — `setState` yerine bu, yalnızca
-            // grafiği yeniler, tüm sayfayı değil.
-            child: ValueListenableBuilder<GrafikTipi>(
-              valueListenable: grafikTipiNotifier,
-              builder: (context, _, __) => _buildChartContainer(
-                  segments, cizimBaslangici, endDate, chartAssets,
-                  intraday: isIntraday, allTargetAssets: targetAssets),
+            child: _buildPeriodChangeCard(
+              segments,
+              // Segmentlerle AYNI başlangıç: X ekseni bu tarihe göre
+              // yorumlanıyor, ayrışırsa kart yanlış günü anlatır.
+              cizimBaslangici,
+              endDate,
+              targetAssets,
+              intraday: isIntraday,
             ),
           ),
-        // Gün içi verisi HİÇ alınamayan türler için açık uyarı.
-        //
-        // Bu türler grafikte son bilinen fiyatla sabit çizilir; uyarı
-        // olmadan kullanıcı düz çizgiyi "piyasa durgun" diye okur ve
-        // uygulamanın bozuk olup olmadığını anlayamaz ("altın değeri mi
-        // alınamıyor acaba" — 2026-09-07). Fon/mevduat gibi gün içi fiyatı
-        // ZATEN olmayan türler bu listeye girmez, yoksa uyarı kalıcı
-        // gürültüye dönerdi.
-        if (isIntraday && breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
           const SizedBox(height: SandikSpace.sm),
-          _GunIciVeriYokNotu(turler: breakdown.gunIciVerisiYokTurler),
+          // Grafik alanı üç hâlden birinde: boş durum, yükleme, grafik.
+          //
+          // "Boş durum" ayrımı ŞART: seçili tür portföyde yoksa (ya da türün
+          // fiyat geçmişi hiç izlenmiyorsa) `HistoryService` boş varlık
+          // listesine boş seri döndürür — veri ASLA gelmez. Eskiden bu da
+          // `!hasData` sayılıp spinner çiziliyordu ve sonsuza kadar dönüyordu;
+          // kullanıcı yüklenmeyi bekliyor sanıyordu.
+          //
+          // Yükseklik `minHeight` ile kurulur, SABİT değil: grafik alanı kadar
+          // yer tutsun ama büyük metin ölçeğinde (AX5) içerik taşmasın.
+          if (_chartEmptyState(holdsSelectedType, chartAssets)
+              case final empty?)
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 300),
+              child: empty,
+            )
+          else if (!hasData && settled)
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 300),
+              child: _ChartPlaceholder(
+                icon: Icons.cloud_off_rounded,
+                title: 'Grafik verisi alınamadı',
+                message: 'Fiyat geçmişi şu an getirilemedi. '
+                    'Bağlantını kontrol edip tekrar deneyebilirsin.',
+                onRetry: _retryChartData,
+              ),
+            )
+          else if (!hasData)
+            const SizedBox(height: 300, child: CustomLoadingView())
+          else
+            AnimatedOpacity(
+              opacity: stale ? 0.45 : 1.0,
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
+              // Grafik tipi değişince YENİDEN çizilmeli. Notifier widget
+              // ağacının dışında yaşıyor (oturum durumu), bu yüzden
+              // dinleyici burada kuruluyor — `setState` yerine bu, yalnızca
+              // grafiği yeniler, tüm sayfayı değil.
+              child: ValueListenableBuilder<GrafikTipi>(
+                valueListenable: grafikTipiNotifier,
+                builder: (context, _, __) => _buildChartContainer(
+                    segments, cizimBaslangici, endDate, chartAssets,
+                    intraday: isIntraday, allTargetAssets: targetAssets),
+              ),
+            ),
+          // Gün içi verisi HİÇ alınamayan türler için açık uyarı.
+          //
+          // Bu türler grafikte son bilinen fiyatla sabit çizilir; uyarı
+          // olmadan kullanıcı düz çizgiyi "piyasa durgun" diye okur ve
+          // uygulamanın bozuk olup olmadığını anlayamaz ("altın değeri mi
+          // alınamıyor acaba" — 2026-09-07). Fon/mevduat gibi gün içi fiyatı
+          // ZATEN olmayan türler bu listeye girmez, yoksa uyarı kalıcı
+          // gürültüye dönerdi.
+          if (isIntraday && breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
+            const SizedBox(height: SandikSpace.sm),
+            _GunIciVeriYokNotu(turler: breakdown.gunIciVerisiYokTurler),
+          ],
+          const SizedBox(height: 24),
+          // Tür bazlı kâr/zarar dökümü — seçili dönem ve sekmeye göre.
+          //
+          // Üst kartla AYNI iki sayıdan (`_periodEndpoints`) ve AYNI istekten
+          // gelen dağılımdan beslenir; satırların toplamı bu yüzden üst rakamı
+          // tutar. Endpoint yoksa üst kart da çizilmiyordur — döküm de çıkmaz.
+          if (_periodEndpoints(segments) case final ep?)
+            _TypeBreakdownCard(
+              breakdown: breakdown,
+              totalFirst: ep.first,
+              totalLast: ep.last,
+              ownerLots: ownerLots,
+              start: cizimBaslangici,
+              end: endDate,
+              simulate: _simulate,
+            ),
+          // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
+          // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
+          // ekranında gösterilir. Bu panel senkron çalıştığı için gerçek fiyat
+          // geçmişi çekemiyordu; uydurma seriye düşmesi engellendikten sonra
+          // (bkz. `analyze(..., allowSimulation)`) zaten kalıcı olarak
+          // "sinyal yok" gösteriyordu — yer kaplayan ölü bir yüzeydi.
+          const SizedBox(height: 12),
+          const DisclaimerWidget(),
+          const SizedBox(height: 16),
         ],
-        const SizedBox(height: 24),
-        // Tür bazlı kâr/zarar dökümü — seçili dönem ve sekmeye göre.
-        //
-        // Üst kartla AYNI iki sayıdan (`_periodEndpoints`) ve AYNI istekten
-        // gelen dağılımdan beslenir; satırların toplamı bu yüzden üst rakamı
-        // tutar. Endpoint yoksa üst kart da çizilmiyordur — döküm de çıkmaz.
-        if (_periodEndpoints(segments) case final ep?)
-          _TypeBreakdownCard(
-            breakdown: breakdown,
-            totalFirst: ep.first,
-            totalLast: ep.last,
-            ownerLots: ownerLots,
-            start: cizimBaslangici,
-            end: endDate,
-            simulate: _simulate,
-          ),
-        // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
-        // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
-        // ekranında gösterilir. Bu panel senkron çalıştığı için gerçek fiyat
-        // geçmişi çekemiyordu; uydurma seriye düşmesi engellendikten sonra
-        // (bkz. `analyze(..., allowSimulation)`) zaten kalıcı olarak
-        // "sinyal yok" gösteriyordu — yer kaplayan ölü bir yüzeydi.
-        const SizedBox(height: 12),
-        const DisclaimerWidget(),
-        const SizedBox(height: 16),
       ],
     );
   }
@@ -1379,6 +1424,141 @@ class _PortfolioPerformanceScreenState
             ),
           );
         }),
+      ),
+    );
+  }
+
+  /// Özet sekmesinin gövdesi.
+  ///
+  /// Hesap `PeriodSummaryService.compute`'ta — burada yalnızca girdiler
+  /// toplanır. Servis saf olduğu için `now` ve `breakdown` dışarıdan
+  /// veriliyor ve testler ağsız koşabiliyor.
+  ///
+  /// **GÜNLÜK dönemde `DailySummary.from()` DELEGE edilir.** Widget, Live
+  /// Activity, üst kart ve bu sekme aynı rakamı göstermek zorunda
+  /// (bkz. `daily_summary.dart` "Değişmezler"); ikinci bir günlük hesap
+  /// kurmak o değişmezi sessizce kırardı.
+  Widget _buildOzetSekmesi({
+    required PortfolioHistoryBreakdown breakdown,
+    required List<Asset> targetAssets,
+    required bool intraday,
+    required DateTime seansBaslangici,
+  }) {
+    final period = SummaryPeriod.fromIndex(_selectedPeriodIdx);
+    final pState = ref.watch(portfolioProvider).valueOrNull;
+    final now = DateTime.now();
+
+    // GÜNLÜK'te ortak katmanın özeti hazırlanır. `seansGunu` breakdown'dan
+    // gelir: piyasa kapalıyken çizilen seans BUGÜN DEĞİLDİR ve pencere de
+    // o güne kurulmalı (hafta sonu → Cuma).
+    DailySummary? gunluk;
+    if (intraday && pState != null) {
+      gunluk = DailySummary.from(
+        state: pState,
+        series: breakdown.total,
+        now: now,
+        seansGunu: breakdown.seansGunu ?? seansBaslangici,
+      );
+    }
+
+    final summary = PeriodSummaryService.compute(
+      period: period,
+      assets: targetAssets,
+      breakdown: breakdown,
+      now: now,
+      gunlukOzet: gunluk,
+      // `_positionLabel` ham `positionKey`'i insan-okunur hale getirir;
+      // yoksa ekranda "altin|sub:çeyrek|TRY" görünürdü.
+      etiket: (k) =>
+          _positionLabel(k, breakdown.positionType[k] ?? AssetType.diger),
+    );
+
+    // Tür dağılımı canlı portföyden — karakter etiketi için.
+    final valueByType = <AssetType, double>{};
+    if (pState != null) {
+      for (final a in targetAssets.where((a) => a.isBuy && a.isActive)) {
+        valueByType[a.type] =
+            (valueByType[a.type] ?? 0) + pState.toTRY(a.totalValue, a.currency);
+      }
+    }
+
+    // En sabırlı varlık — 1Y bloğu.
+    Asset? enEski;
+    for (final a in targetAssets.where((a) => a.isBuy && a.isActive)) {
+      if (enEski == null || a.addedDate.isBefore(enEski.addedDate)) enEski = a;
+    }
+
+    return _OzetYanVeri(
+      period: period,
+      summary: summary,
+      assets: targetAssets,
+      // Karakter/sabır yalnızca 1Y'de gösterilir; başka dönemde
+      // hesaplanmış olsa da view onları çizmez.
+      karakter: period == SummaryPeriod.birYil
+          ? RecapService.characterFor(valueByType)
+          : null,
+      enSabirli: period == SummaryPeriod.birYil && enEski != null
+          ? RecapAsset(enEski.name, 0)
+          : null,
+      enSabirliGun: period == SummaryPeriod.birYil && enEski != null
+          ? now.difference(enEski.addedDate).inDays
+          : null,
+    );
+  }
+
+  /// Grafik | Özet yüzey anahtarı.
+  ///
+  /// `_buildModeToggle` ile aynı kabuk (44px, surface1, SandikRadius.md) —
+  /// iki anahtar yan yana durabildiği için aynı görünmek zorundalar, yoksa
+  /// kullanıcı ikisini farklı sınıf denetimler sanır.
+  ///
+  /// Dönem seçici DEĞİŞMEZ: `_selectedPeriodIdx` iki sekmede paylaşılıyor.
+  Widget _buildSurfaceToggle() {
+    const options = [
+      (label: 'Grafik', ozet: false),
+      (label: 'Özet', ozet: true),
+    ];
+    return Container(
+      height: 44,
+      decoration: BoxDecoration(
+          color: context.c.surface1,
+          borderRadius: BorderRadius.circular(SandikRadius.md)),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: options.map((o) {
+          final selected = _ozetSekmesi == o.ozet;
+          return Expanded(
+            child: CupertinoButton(
+              minimumSize: Size.zero,
+              padding: EdgeInsets.zero,
+              onPressed: () {
+                if (_ozetSekmesi == o.ozet) return;
+                setState(() => _ozetSekmesi = o.ozet);
+                if (o.ozet) {
+                  AnalyticsService.instance.logPeriodSummaryViewed(
+                    period: SummaryPeriod.fromIndex(_selectedPeriodIdx).name,
+                  );
+                }
+              },
+              child: Container(
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  color: selected ? context.c.surface2 : Colors.transparent,
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
+                ),
+                child: Center(
+                  child: Text(
+                    o.label,
+                    style: context.t.bodyMedium?.copyWith(
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                      color: selected ? context.c.amberText : context.c.text36,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -1682,8 +1862,8 @@ class _PortfolioPerformanceScreenState
               if (kapaliKuyruk) ...[
                 const SizedBox(width: SandikSpace.sm),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: context.c.text36.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
@@ -2001,7 +2181,6 @@ class _PortfolioPerformanceScreenState
       );
     }
 
-
     // Serinin son noktasının gün başından uzaklığı (dakika). Bugünü
     // çizerken bu zaten "şimdi"ye eşittir; geçmiş seansta kapanış anıdır.
     // TÜM segmentlerin en sağdaki noktası — `primarySeg` DEĞİL.
@@ -2060,7 +2239,8 @@ class _PortfolioPerformanceScreenState
     //
     // Çözüm: ekseni veriye oturt. Sağ uç zaten son noktada bitiyor.
     final veriXs = primarySeg.spots.map((s) => s.x);
-    final ilkVeriX = veriXs.isEmpty ? 0.0 : veriXs.reduce((a, b) => a < b ? a : b);
+    final ilkVeriX =
+        veriXs.isEmpty ? 0.0 : veriXs.reduce((a, b) => a < b ? a : b);
     double minX = intraday ? 0.0 : ilkVeriX;
     double maxX = fullMaxX;
     final activeSpotXs = primarySeg.spots.map((s) => s.x).toList()..sort();
@@ -2379,166 +2559,169 @@ class _PortfolioPerformanceScreenState
         lineBarsData: tip == GrafikTipi.bar
             ? _cubukSegmentleri(context, segments, viewMinY)
             : segments.map((seg) {
-          final isActive = seg.thickness > 2.0;
-          // Nokta yoğunluğu arttıkça çizgi inceltilir — intraday ve haftalık
-          // (saatlik) yüzlerce nokta içerir, kalın çizgi zigzag'i yutar.
-          // Trading uygulamalarındaki gibi ince ve okunaklı bir hat için:
-          //
-          // Merdivenin kendisi `chart_line_width.dart`'ta: takip/karşılaştır
-          // grafiği de AYNI fonksiyonu çağırıyor. Kopyalanmış üç merdiven,
-          // iki ekranın aynı dönemi farklı kalınlıkta çizmesinin sebebiydi.
-          //
-          // Gün içi sekmesi `days: 0` taşır; fonksiyon `<= 1` dalında zaten
-          // gün içi kalınlığını verir, ayrıca `intraday` sormaya gerek yok.
-          final periodDays = _periods[_selectedPeriodIdx].days;
-          final activeBarWidth = donemCizgiKalinligi(periodDays);
-          final effectiveBarWidth = isActive ? activeBarWidth : seg.thickness;
-          // İlk/son X'i closure dışında bir kez oku. Bu callback'ler
-          // fl_chart tarafından NOKTA BAŞINA çağrılıyor; içeride
-          // `seg.spots.first`/`.last` demek her nokta için tekrar
-          // erişim + karşılaştırma demekti.
-          final firstX = seg.spots.isEmpty ? double.nan : seg.spots.first.x;
-          final lastX = seg.spots.isEmpty ? double.nan : seg.spots.last.x;
+                final isActive = seg.thickness > 2.0;
+                // Nokta yoğunluğu arttıkça çizgi inceltilir — intraday ve haftalık
+                // (saatlik) yüzlerce nokta içerir, kalın çizgi zigzag'i yutar.
+                // Trading uygulamalarındaki gibi ince ve okunaklı bir hat için:
+                //
+                // Merdivenin kendisi `chart_line_width.dart`'ta: takip/karşılaştır
+                // grafiği de AYNI fonksiyonu çağırıyor. Kopyalanmış üç merdiven,
+                // iki ekranın aynı dönemi farklı kalınlıkta çizmesinin sebebiydi.
+                //
+                // Gün içi sekmesi `days: 0` taşır; fonksiyon `<= 1` dalında zaten
+                // gün içi kalınlığını verir, ayrıca `intraday` sormaya gerek yok.
+                final periodDays = _periods[_selectedPeriodIdx].days;
+                final activeBarWidth = donemCizgiKalinligi(periodDays);
+                final effectiveBarWidth =
+                    isActive ? activeBarWidth : seg.thickness;
+                // İlk/son X'i closure dışında bir kez oku. Bu callback'ler
+                // fl_chart tarafından NOKTA BAŞINA çağrılıyor; içeride
+                // `seg.spots.first`/`.last` demek her nokta için tekrar
+                // erişim + karşılaştırma demekti.
+                final firstX =
+                    seg.spots.isEmpty ? double.nan : seg.spots.first.x;
+                final lastX = seg.spots.isEmpty ? double.nan : seg.spots.last.x;
 
-          // ── Baseline: dönem başına göre kazanç/kayıp rengi ─────────
-          //
-          // `fl_chart` tek bir çizgiyi iki renge bölemiyor; renk geçişi
-          // gradyan stop'larıyla kuruluyor. Taban, dönemin İLK değeri:
-          // "bugün nerede başladım, şimdi neredeyim" sorusu bu.
-          //
-          // Kapalı kuyruk bu boyamanın DIŞINDA — orası nötr kalmalı.
-          final tabanY = seg.spots.isEmpty ? 0.0 : seg.spots.first.y;
-          final baselineAktif =
-              tip == GrafikTipi.baseline && !seg.piyasaKapali && isActive;
+                // ── Baseline: dönem başına göre kazanç/kayıp rengi ─────────
+                //
+                // `fl_chart` tek bir çizgiyi iki renge bölemiyor; renk geçişi
+                // gradyan stop'larıyla kuruluyor. Taban, dönemin İLK değeri:
+                // "bugün nerede başladım, şimdi neredeyim" sorusu bu.
+                //
+                // Kapalı kuyruk bu boyamanın DIŞINDA — orası nötr kalmalı.
+                final tabanY = seg.spots.isEmpty ? 0.0 : seg.spots.first.y;
+                final baselineAktif =
+                    tip == GrafikTipi.baseline && !seg.piyasaKapali && isActive;
 
-          return LineChartBarData(
-            spots: seg.spots,
-            isCurved: false,
-            color: baselineAktif ? null : seg.lineColor,
-            // Baseline'da renk gradyanla veriliyor; `color` ile birlikte
-            // kullanılamaz (fl_chart ikisini birden kabul etmez).
-            gradient: baselineAktif
-                ? _baselineGradient(context, seg.spots, tabanY)
-                : null,
-            // Bar tipinde çizgi GİZLİ: çubuklar ayrı katmanda çiziliyor
-            // ve üstüne bir de çizgi binmesi grafiği okunamaz yapardı.
-            barWidth: tip == GrafikTipi.bar ? 0.0 : effectiveBarWidth,
-            // Piyasa kapalıyken taşınan fiyat KESİKLİ çizilir. Rengi
-            // `lineColor` zaten nötr geliyor (bkz. `_convertHistoryToSegments`);
-            // desen, renk körlüğünde de ayırt edilebilsin diye ikinci bir
-            // sinyal olarak ekleniyor.
-            dashArray: seg.piyasaKapali ? const [4, 4] : null,
-            dotData: FlDotData(
-              show: true,
-              checkToShowDot: (spot, barData) {
-                if (!isActive) return false;
-                // Simülasyonda nokta yok — sadece süreklilik çizgisi.
-                if (_simulate) return false;
-                // Intraday: sadece ilk ve son noktada dot göster (5 dk
-                // aralıklı yüzlerce nokta olduğu için hepsini işaretlemek
-                // grafiği bulanıklaştırır).
-                if (intraday) {
-                  // "Şimdi" noktası her zaman görünür.
-                  if (spot.x == lastX) return true;
-                  // Gün içi İŞLEM noktaları da görünür.
-                  //
-                  // Sebep: sıçramanın görünürlüğü mutlak tutara değil ORANA
-                  // bağlı. Tüm portföy görünümünde küçük bir alım Y ekseninde
-                  // kaybolur (500.000 TL'nin %1'i düz görünür), tür filtresi
-                  // uygulanınca aynı alım belirgin basamak olur. Nokta,
-                  // sıçrama görünmediğinde bile "burada işlem yapıldı"
-                  // bilgisini taşır ve tooltip'e bağlanır.
-                  return dotThinner.shows(spot.x);
-                }
-                // İlk/son nokta her zaman görünür; alım dot'ları ise
-                // piksel bazlı seyreltmeden geçer (bkz. `dotThinner`) —
-                // yoğun alım günlerinde üst üste binip yığın oluşmasın.
-                if (spot.x == firstX || spot.x == lastX) {
-                  return true;
-                }
-                return dotThinner.shows(spot.x);
-              },
-              getDotPainter: (spot, percent, barData, index) {
-                final isFirst = spot.x == firstX;
-                final isLast = spot.x == lastX;
-                // Intraday'de sadece "şimdi" noktasını canlı bir amber
-                // dot ile göster — trading uygulaması hissiyatı için
-                // ince halka ile.
-                if (intraday && isLast) {
-                  // "Şu an" noktası.
-                  //
-                  // Piyasa KAPALIYKEN gri: o noktada canlı bir fiyat yok,
-                  // son kapanış taşınıyor. Yeşil bırakmak "şu anda işlem
-                  // görüyor" derdi (kullanıcı isteği 2026-09-12: "şu an
-                  // noktası piyasa kapalı andaysa gri şekilde kesikli
-                  // çizginin ucunda konumlanmalı").
-                  final kapali = seg.piyasaKapali;
-                  return FlDotCirclePainter(
-                    radius: 5.0,
-                    color: kapali ? context.c.text36 : context.c.gain,
-                    strokeColor: context.c.text90,
-                    strokeWidth: 1.6,
-                  );
-                }
-                // Başlangıç dot'u kaldırıldı — "orada alım yapılmış" gibi
-                // yanıltıcı görünüyordu. Başlangıç zaten dashed marker +
-                // label ile işaretli. Son nokta (şimdi) canlı vurgusu için
-                // büyük yeşil dot ile kalır.
-                if (isFirst) {
-                  return FlDotCirclePainter(
-                    radius: 0,
-                    color: Colors.transparent,
-                    strokeWidth: 0,
-                  );
-                }
-                if (isLast) {
-                  return FlDotCirclePainter(
-                    radius: 6.0,
-                    color: context.c.gain,
-                    strokeColor: context.c.text90,
-                    strokeWidth: 2.5,
-                  );
-                }
-                // Ortadaki işlem noktaları — "şimdi" noktasından belirgin
-                // şekilde küçük. Önceki 4.5px + 2px halka (toplam ~8.5px çap)
-                // yoğun alım yapılan aylarda çizgiyi boncuk dizisine
-                // çeviriyordu. Halka da inceltildi: küçük yarıçapta 2px'lik
-                // kenar dolgunun yarısını yiyip noktayı içi boş gösteriyordu.
-                return FlDotCirclePainter(
-                  radius: 3.0,
-                  color: context.c.amberText,
-                  strokeColor: context.c.text90,
-                  strokeWidth: 1.2,
-                );
-              },
-            ),
-            // ── Dolgu: grafik TİPİNE göre ───────────────────────────
-            //
-            // `line`      → dolgu yok, yalnızca çizgi.
-            // `mountain`  → gradyan dolgu (eski varsayılan görünüm).
-            // `baseline`  → dönem başına göre üstü kazanç / altı kayıp.
-            // `bar`       → çizgi gizli, çubuklar ayrı katmanda.
-            //
-            // Kapalı kuyruk HER TİPTE dolgusuz: o bölge birikim değil,
-            // taşınan son fiyat (bkz. `TransactionSegment.piyasaKapali`).
-            belowBarData: (tip == GrafikTipi.mountain && !seg.piyasaKapali)
-                ? BarAreaData(
+                return LineChartBarData(
+                  spots: seg.spots,
+                  isCurved: false,
+                  color: baselineAktif ? null : seg.lineColor,
+                  // Baseline'da renk gradyanla veriliyor; `color` ile birlikte
+                  // kullanılamaz (fl_chart ikisini birden kabul etmez).
+                  gradient: baselineAktif
+                      ? _baselineGradient(context, seg.spots, tabanY)
+                      : null,
+                  // Bar tipinde çizgi GİZLİ: çubuklar ayrı katmanda çiziliyor
+                  // ve üstüne bir de çizgi binmesi grafiği okunamaz yapardı.
+                  barWidth: tip == GrafikTipi.bar ? 0.0 : effectiveBarWidth,
+                  // Piyasa kapalıyken taşınan fiyat KESİKLİ çizilir. Rengi
+                  // `lineColor` zaten nötr geliyor (bkz. `_convertHistoryToSegments`);
+                  // desen, renk körlüğünde de ayırt edilebilsin diye ikinci bir
+                  // sinyal olarak ekleniyor.
+                  dashArray: seg.piyasaKapali ? const [4, 4] : null,
+                  dotData: FlDotData(
                     show: true,
-                    gradient: LinearGradient(
-                      colors: intraday
-                          ? [
-                              context.c.amberFill.withValues(alpha: 0.22),
-                              context.c.amberFill.withValues(alpha: 0.06),
-                              Colors.transparent,
-                            ]
-                          : [seg.areaGradientStart, Colors.transparent],
-                      stops: intraday ? const [0.0, 0.5, 1.0] : null,
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  )
-                : BarAreaData(show: false),
-          );
+                    checkToShowDot: (spot, barData) {
+                      if (!isActive) return false;
+                      // Simülasyonda nokta yok — sadece süreklilik çizgisi.
+                      if (_simulate) return false;
+                      // Intraday: sadece ilk ve son noktada dot göster (5 dk
+                      // aralıklı yüzlerce nokta olduğu için hepsini işaretlemek
+                      // grafiği bulanıklaştırır).
+                      if (intraday) {
+                        // "Şimdi" noktası her zaman görünür.
+                        if (spot.x == lastX) return true;
+                        // Gün içi İŞLEM noktaları da görünür.
+                        //
+                        // Sebep: sıçramanın görünürlüğü mutlak tutara değil ORANA
+                        // bağlı. Tüm portföy görünümünde küçük bir alım Y ekseninde
+                        // kaybolur (500.000 TL'nin %1'i düz görünür), tür filtresi
+                        // uygulanınca aynı alım belirgin basamak olur. Nokta,
+                        // sıçrama görünmediğinde bile "burada işlem yapıldı"
+                        // bilgisini taşır ve tooltip'e bağlanır.
+                        return dotThinner.shows(spot.x);
+                      }
+                      // İlk/son nokta her zaman görünür; alım dot'ları ise
+                      // piksel bazlı seyreltmeden geçer (bkz. `dotThinner`) —
+                      // yoğun alım günlerinde üst üste binip yığın oluşmasın.
+                      if (spot.x == firstX || spot.x == lastX) {
+                        return true;
+                      }
+                      return dotThinner.shows(spot.x);
+                    },
+                    getDotPainter: (spot, percent, barData, index) {
+                      final isFirst = spot.x == firstX;
+                      final isLast = spot.x == lastX;
+                      // Intraday'de sadece "şimdi" noktasını canlı bir amber
+                      // dot ile göster — trading uygulaması hissiyatı için
+                      // ince halka ile.
+                      if (intraday && isLast) {
+                        // "Şu an" noktası.
+                        //
+                        // Piyasa KAPALIYKEN gri: o noktada canlı bir fiyat yok,
+                        // son kapanış taşınıyor. Yeşil bırakmak "şu anda işlem
+                        // görüyor" derdi (kullanıcı isteği 2026-09-12: "şu an
+                        // noktası piyasa kapalı andaysa gri şekilde kesikli
+                        // çizginin ucunda konumlanmalı").
+                        final kapali = seg.piyasaKapali;
+                        return FlDotCirclePainter(
+                          radius: 5.0,
+                          color: kapali ? context.c.text36 : context.c.gain,
+                          strokeColor: context.c.text90,
+                          strokeWidth: 1.6,
+                        );
+                      }
+                      // Başlangıç dot'u kaldırıldı — "orada alım yapılmış" gibi
+                      // yanıltıcı görünüyordu. Başlangıç zaten dashed marker +
+                      // label ile işaretli. Son nokta (şimdi) canlı vurgusu için
+                      // büyük yeşil dot ile kalır.
+                      if (isFirst) {
+                        return FlDotCirclePainter(
+                          radius: 0,
+                          color: Colors.transparent,
+                          strokeWidth: 0,
+                        );
+                      }
+                      if (isLast) {
+                        return FlDotCirclePainter(
+                          radius: 6.0,
+                          color: context.c.gain,
+                          strokeColor: context.c.text90,
+                          strokeWidth: 2.5,
+                        );
+                      }
+                      // Ortadaki işlem noktaları — "şimdi" noktasından belirgin
+                      // şekilde küçük. Önceki 4.5px + 2px halka (toplam ~8.5px çap)
+                      // yoğun alım yapılan aylarda çizgiyi boncuk dizisine
+                      // çeviriyordu. Halka da inceltildi: küçük yarıçapta 2px'lik
+                      // kenar dolgunun yarısını yiyip noktayı içi boş gösteriyordu.
+                      return FlDotCirclePainter(
+                        radius: 3.0,
+                        color: context.c.amberText,
+                        strokeColor: context.c.text90,
+                        strokeWidth: 1.2,
+                      );
+                    },
+                  ),
+                  // ── Dolgu: grafik TİPİNE göre ───────────────────────────
+                  //
+                  // `line`      → dolgu yok, yalnızca çizgi.
+                  // `mountain`  → gradyan dolgu (eski varsayılan görünüm).
+                  // `baseline`  → dönem başına göre üstü kazanç / altı kayıp.
+                  // `bar`       → çizgi gizli, çubuklar ayrı katmanda.
+                  //
+                  // Kapalı kuyruk HER TİPTE dolgusuz: o bölge birikim değil,
+                  // taşınan son fiyat (bkz. `TransactionSegment.piyasaKapali`).
+                  belowBarData: (tip == GrafikTipi.mountain &&
+                          !seg.piyasaKapali)
+                      ? BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: intraday
+                                ? [
+                                    context.c.amberFill.withValues(alpha: 0.22),
+                                    context.c.amberFill.withValues(alpha: 0.06),
+                                    Colors.transparent,
+                                  ]
+                                : [seg.areaGradientStart, Colors.transparent],
+                            stops: intraday ? const [0.0, 0.5, 1.0] : null,
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        )
+                      : BarAreaData(show: false),
+                );
               }).toList(),
         // fl_chart'ın built-in touch'ı kapalı — crosshair TEK KAYNAK.
         // Kullanıcı uzun bastığında `ZoomableChart` snap edilmiş X'te dikey
@@ -3122,12 +3305,12 @@ class _ChartPlaceholder extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(SandikSpace.md),
               decoration: BoxDecoration(
-                color: (iconColor ?? context.c.amberFill)
-                    .withValues(alpha: 0.10),
+                color:
+                    (iconColor ?? context.c.amberFill).withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon,
-                  size: 28, color: iconColor ?? context.c.amberText),
+              child:
+                  Icon(icon, size: 28, color: iconColor ?? context.c.amberText),
             ),
             const SizedBox(height: SandikSpace.md),
             Text(
@@ -3396,25 +3579,6 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     for (final e in childrenOf.entries) {
       childrenOf[e.key] = [for (final k in e.value) scaled(k)];
     }
-  }
-
-  /// `positionKey` insan-okunur etikete çevrilir.
-  ///
-  /// Anahtar `type|core|currency` biçimindedir (bkz. `positionKey`); `core`
-  /// altında `sub:` öneki altın/döviz alt kategorisini, `name:` öneki
-  /// ticker'sız varlığın adını taşır. Ham anahtarı ekrana basmak
-  /// "altin|sub:çeyrek|TRY" gibi bir şey gösterirdi.
-  String _positionLabel(String key, AssetType type) {
-    final parts = key.split('|');
-    var core = parts.length > 1 ? parts[1] : key;
-    if (core.startsWith('sub:')) core = core.substring(4);
-    if (core.startsWith('name:')) core = core.substring(5);
-    if (core.isEmpty) return type.label;
-    // Alt kategoriler küçük harfle saklanır (`positionKey`), ticker'lar büyük.
-    // İlk harfi büyüterek "çeyrek" → "Çeyrek" yapıyoruz; ticker'a dokunmaz.
-    return core.length > 1
-        ? core[0].toUpperCase() + core.substring(1)
-        : core.toUpperCase();
   }
 
   @override
@@ -3831,4 +3995,195 @@ class _PortfolioFullscreenChip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// `positionKey` insan-okunur etikete çevrilir.
+///
+/// Anahtar `type|core|currency` biçimindedir (bkz. `positionKey`); `core`
+/// altında `sub:` öneki altın/döviz alt kategorisini, `name:` öneki
+/// ticker'sız varlığın adını taşır. Ham anahtarı ekrana basmak
+/// "altin|sub:çeyrek|TRY" gibi bir şey gösterirdi.
+///
+/// **Neden üst seviyeye çıktı:** iki yer okuyor — tür dökümü kartı ve Özet
+/// sekmesinin en iyi/en zayıf satırları. Kopyalamak bu projede ons→gram
+/// formülünü beş yere dağıtan sınıf hatanın aynısıydı.
+String _positionLabel(String key, AssetType type) {
+  final parts = key.split('|');
+  var core = parts.length > 1 ? parts[1] : key;
+  if (core.startsWith('sub:')) core = core.substring(4);
+  if (core.startsWith('name:')) core = core.substring(5);
+  if (core.isEmpty) return type.label;
+  // Alt kategoriler küçük harfle saklanır (`positionKey`), ticker'lar büyük.
+  // İlk harfi büyüterek "çeyrek" → "Çeyrek" yapıyoruz; ticker'a dokunmaz.
+  return core.length > 1
+      ? core[0].toUpperCase() + core.substring(1)
+      : core.toUpperCase();
+}
+
+/// Özet sekmesinin AĞA ÇIKAN yan verilerini toplar: TÜFE ve yüzdelik dilim.
+///
+/// **Neden ayrı bir StatefulWidget:** ikisi de ağ çağrısı ve ana ekran her
+/// `setState`'te (30 sn'lik gün içi tick dahil) yeniden çiziliyor. Çağrılar
+/// `_buildOzetSekmesi` içinde yapılsaydı her tick'te tekrar atılırdı. Burada
+/// `initState` bir kez ister; dönem değişince `didUpdateWidget` yeniden
+/// ister.
+///
+/// Sessizce başarısız olur: TÜFE tablosu boş doğuyor (`InflationService`
+/// "veri yoksa özellik yoktur" diyor) ve yüzdelik dilim k-anonimlik
+/// eşiğinin altında null döner. İkisi de null iken özet yine gösterilir —
+/// yalnızca o bloklar çizilmez.
+class _OzetYanVeri extends StatefulWidget {
+  final SummaryPeriod period;
+  final PeriodSummary summary;
+  final PortfolioCharacter? karakter;
+  final RecapAsset? enSabirli;
+  final int? enSabirliGun;
+
+  /// Uzun pencere bağlamı için gereken varlıklar ve akış kuralı.
+  final List<Asset> assets;
+
+  const _OzetYanVeri({
+    required this.period,
+    required this.summary,
+    required this.assets,
+    this.karakter,
+    this.enSabirli,
+    this.enSabirliGun,
+  });
+
+  @override
+  State<_OzetYanVeri> createState() => _OzetYanVeriState();
+}
+
+class _OzetYanVeriState extends State<_OzetYanVeri> {
+  double? _enflasyon;
+
+  /// Kayıp döneminde gösterilen "daha uzun pencere" bağlamı (1Y getirisi).
+  ///
+  /// "Bu ay ekside. Daha uzun pencerede hâlâ +%31,8." cümlesinin ikinci
+  /// yarısı. `RETENTION_STRATEJISI.md` §8 kayıp anında ya SUSMAYI ya BAĞLAM
+  /// VERMEYİ şart koşuyor; ekran sustuğunda kullanıcı yalnız bir kırmızı
+  /// rakam görür, o yüzden bağlam tercih edildi.
+  ///
+  /// Ayrı bir istek: ekranın elindeki `breakdown` yalnızca SEÇİLİ dönemi
+  /// kapsıyor, 1Y rakamı onun içinde yok. Yalnızca gerçekten gerektiğinde
+  /// (kayıptaki kısa dönemde) atılır.
+  double? _uzunDonem;
+  bool _uzunDonemIstendi = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
+  }
+
+  @override
+  void didUpdateWidget(_OzetYanVeri old) {
+    super.didUpdateWidget(old);
+    if (old.period != widget.period) {
+      _enflasyon = null;
+      // 1Y bağlamı dönemden bağımsız (hep 12 ay geri) ama KAPISI döneme
+      // bağlı: yeni dönem kayıptaysa ve önceki değilse istek hiç
+      // atılmamıştır, bu yüzden bayrak da sıfırlanır.
+      _uzunDonemIstendi = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
+    }
+  }
+
+  Future<void> _yukle() async {
+    if (!mounted) return;
+
+    await _yukleUzunDonem();
+
+    // GÜNLÜK'te TÜFE sorulmaz: endeks AYLIK yayımlanıyor, bir günlük
+    // pencerede enflasyon farkı tanımsız.
+    if (widget.period == SummaryPeriod.gunluk) return;
+
+    final enf =
+        await InflationService.instance.inflationForPeriod(widget.period.days);
+    if (!mounted) return;
+    setState(() => _enflasyon = enf);
+  }
+
+  /// 1Y bağlamını çeker — YALNIZCA gerektiğinde.
+  ///
+  /// Üç kapı: dönem kayıpta olmalı, dönem 1Y'nin kendisi olmamalı (bir
+  /// pencereyi kendisiyle karşılaştırmak bilgi taşımaz) ve daha önce
+  /// istenmemiş olmalı. Kapılar olmadan bu istek her sekme geçişinde
+  /// atılırdı; oysa cümle ancak kayıpta gösteriliyor.
+  Future<void> _yukleUzunDonem() async {
+    if (_uzunDonemIstendi) return;
+    if (!widget.summary.isNegative) return;
+    if (widget.period == SummaryPeriod.birYil) return;
+    if (widget.assets.isEmpty) return;
+    _uzunDonemIstendi = true;
+
+    try {
+      final now = DateTime.now();
+      final from = PeriodSummaryService.donemBaslangici(now, 12);
+      final bd = await HistoryService.instance
+          .getPortfolioHistoryBreakdownAtResolution(
+        assets: widget.assets,
+        from: from,
+        to: now,
+        tier: ResolutionTierMeta.pickForSpan(
+            SummaryPeriod.birYil.days.toDouble()),
+      );
+      if (!mounted) return;
+
+      final yil = PeriodSummaryService.compute(
+        period: SummaryPeriod.birYil,
+        assets: widget.assets,
+        breakdown: bd,
+        now: now,
+      );
+      if (yil.getiriPct == null) return;
+      setState(() => _uzunDonem = yil.getiriPct);
+    } catch (_) {
+      // Sessizce vazgeç: bağlam cümlesi ikincil. Ana rakam ve köprü zaten
+      // çizilmiş durumda ve kayıp tonu bağlam olmadan da doğru
+      // (`tonCumlesi` uzunDonemPct null iken nötr cümleye düşüyor).
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TÜFE farkı burada bağlanır: servis saf ve ağa çıkmıyor, bu yüzden
+    // hesabı yapılmış özeti enflasyonla yeniden kurmak yerine yalnızca
+    // farkı hesaplayıp view'a veriyoruz.
+    final s = widget.summary;
+    final tufe = (_enflasyon != null && s.getiriPct != null)
+        ? InflationService.spreadPoints(s.getiriPct!, _enflasyon!)
+        : null;
+
+    return PeriodSummaryView(
+      summary: tufe == null ? s : _tufeIle(s, tufe),
+      uzunDonemPct: widget.period == SummaryPeriod.birYil ? null : _uzunDonem,
+      karakter: widget.karakter,
+      enSabirli: widget.enSabirli,
+      enSabirliGun: widget.enSabirliGun,
+    );
+  }
+
+  /// Özetin TÜFE alanı doldurulmuş kopyası.
+  ///
+  /// `PeriodSummary` değişmez (`@immutable` disiplini) ve `copyWith`
+  /// taşımıyor — tek alan için eklemek yerine burada yeniden kuruluyor.
+  PeriodSummary _tufeIle(PeriodSummary s, double tufe) => PeriodSummary(
+        period: s.period,
+        start: s.start,
+        end: s.end,
+        baslangicTRY: s.baslangicTRY,
+        sonTRY: s.sonTRY,
+        katkiTRY: s.katkiTRY,
+        piyasaTRY: s.piyasaTRY,
+        getiriPct: s.getiriPct,
+        enIyi: s.enIyi,
+        enZayif: s.enZayif,
+        tufeFarki: tufe,
+        dagilimBasi: s.dagilimBasi,
+        dagilimSonu: s.dagilimSonu,
+        sparkline: s.sparkline,
+        gunSayimi: s.gunSayimi,
+      );
 }

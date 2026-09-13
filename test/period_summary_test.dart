@@ -114,7 +114,8 @@ void main() {
       final total = _gunluk(
         bas: bas,
         gunSayisi: 31,
-        deger: (i) => i == 0 ? 168774.0 : (i < 15 ? 169000.0 + i * 50 : 185684.0),
+        deger: (i) =>
+            i == 0 ? 168774.0 : (i < 15 ? 169000.0 + i * 50 : 185684.0),
       );
 
       final assets = [
@@ -390,8 +391,8 @@ void main() {
       ];
       final state = _state(assets);
 
-      final gunluk =
-          DailySummary.from(state: state, series: series, now: now, seansGunu: gun);
+      final gunluk = DailySummary.from(
+          state: state, series: series, now: now, seansGunu: gun);
 
       final s = PeriodSummaryService.compute(
         period: SummaryPeriod.gunluk,
@@ -431,8 +432,8 @@ void main() {
       ];
       final state = _state(assets);
 
-      final gunluk =
-          DailySummary.from(state: state, series: series, now: now, seansGunu: gun);
+      final gunluk = DailySummary.from(
+          state: state, series: series, now: now, seansGunu: gun);
       final s = PeriodSummaryService.compute(
         period: SummaryPeriod.gunluk,
         assets: assets,
@@ -653,8 +654,7 @@ void main() {
         fromMs: s.start.millisecondsSinceEpoch,
         toMs: s.end.millisecondsSinceEpoch,
       )!;
-      expect(s.enIyi!.changePct,
-          closeTo((u.last / u.first - 1) * 100, 0.0001));
+      expect(s.enIyi!.changePct, closeTo((u.last / u.first - 1) * 100, 0.0001));
       expect(s.enIyi!.changePct, greaterThan(0));
     });
 
@@ -681,7 +681,9 @@ void main() {
           byPosition: {
             // Alım yüzünden %200 "artmış" görünen pozisyon.
             'hisse|AAA|TRY': _gunluk(
-                bas: bas, gunSayisi: 8, deger: (i) => i < 3 ? 10000.0 : 30000.0),
+                bas: bas,
+                gunSayisi: 8,
+                deger: (i) => i < 3 ? 10000.0 : 30000.0),
             'hisse|BBB|TRY': _gunluk(
                 bas: bas, gunSayisi: 8, deger: (i) => 50000.0 + i * 300),
           },
@@ -795,8 +797,7 @@ void main() {
       expect(s.isFlat, isTrue);
       expect(s.isNegative, isFalse,
           reason: 'sıfır YÖN taşımaz — kırmızı gösterilmemeli');
-      expect(PeriodSummaryService.tonCumlesi(s),
-          'Bu ay piyasa hareketi yok.');
+      expect(PeriodSummaryService.tonCumlesi(s), 'Bu ay piyasa hareketi yok.');
     });
   });
 
@@ -806,7 +807,11 @@ void main() {
   group('flowOf işaret kuralı', () {
     test('alım +, satış −, silinen ve temettü 0', () {
       final alim = _lot(
-          id: 'a', qty: 10, cur: 100, purchase: 90, added: DateTime(2026, 9, 1));
+          id: 'a',
+          qty: 10,
+          cur: 100,
+          purchase: 90,
+          added: DateTime(2026, 9, 1));
       expect(PeriodSummaryService.flowOf(alim), alim.totalCostTRY);
       expect(PeriodSummaryService.flowOf(alim), greaterThan(0));
 

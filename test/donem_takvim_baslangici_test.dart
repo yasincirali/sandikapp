@@ -115,10 +115,18 @@ void main() {
 
     test('startDate takvim dalını KULLANIR', () {
       // Satır kırılmasına dayanıklı: boşlukları tek boşluğa indir.
+      //
+      // Parantezden SONRAKİ boşluk da esnek olmalı. Önce
+      // `donemBaslangici( endDate` literali aranıyordu — yani `dart format`
+      // çağrıyı tek satıra topladığı anda (dosya büyüyüp sarma noktası
+      // kaydığında olur) test, mantık hiç değişmemiş olmasına rağmen
+      // kırılıyordu. Kovalanan şey çağrının VARLIĞI; biçimi değil.
       final tek = kaynak.replaceAll(RegExp(r'\s+'), ' ');
       expect(
         tek.contains(
-            'PortfolioPerformanceScreen.donemBaslangici( endDate, donem.ayGeri!)'),
+            'PortfolioPerformanceScreen.donemBaslangici(endDate, donem.ayGeri!)') ||
+            tek.contains(
+                'PortfolioPerformanceScreen.donemBaslangici( endDate, donem.ayGeri!)'),
         isTrue,
         reason: 'Hesap bağlanmamış — hâlâ sabit gün sayısı.',
       );

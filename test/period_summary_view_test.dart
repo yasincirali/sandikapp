@@ -157,8 +157,7 @@ void main() {
   });
 
   group('kayıp tonu', () {
-    testWidgets('kutlama yok, uyarı yok, uzun pencere bağlamı var',
-        (t) async {
+    testWidgets('kutlama yok, uyarı yok, uzun pencere bağlamı var', (t) async {
       await _pump(
         t,
         PeriodSummaryView(
@@ -196,8 +195,7 @@ void main() {
       _tonDenetimi(t);
     });
 
-    testWidgets('değer artmış ama piyasa ekside — yine kayıp tonu',
-        (t) async {
+    testWidgets('değer artmış ama piyasa ekside — yine kayıp tonu', (t) async {
       // Katkının maskelediği senaryo: köprü bunu görünür kılmak için var.
       await _pump(
         t,
@@ -360,8 +358,7 @@ void main() {
 /// Render sırasında biriken istisnalar (taşma dahil).
 List<Object> renderHatalari() {
   final out = <Object>[];
-  var hata = TestWidgetsFlutterBinding
-      .instance.takeException();
+  var hata = TestWidgetsFlutterBinding.instance.takeException();
   while (hata != null) {
     out.add(hata as Object);
     hata = TestWidgetsFlutterBinding.instance.takeException();

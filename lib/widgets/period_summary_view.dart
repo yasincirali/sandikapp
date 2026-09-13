@@ -408,8 +408,7 @@ class _KopruKarti extends StatelessWidget {
                 child: Text(
                   'Mavi çubuk senin paran — getiri sayılmaz. '
                   'Yüzde yalnızca piyasa çubuğundan hesaplanır.',
-                  style:
-                      context.t.bodySmall?.copyWith(color: context.c.text36),
+                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
               ),
             ],
@@ -469,8 +468,9 @@ class _CubukSatiri extends StatelessWidget {
               borderRadius: BorderRadius.circular(SandikRadius.sm),
               child: Stack(
                 children: [
-                  Container(height: 10, color: context.c.text20
-                      .withValues(alpha: 0.25)),
+                  Container(
+                      height: 10,
+                      color: context.c.text20.withValues(alpha: 0.25)),
                   FractionallySizedBox(
                     // Sıfır genişlikte çubuk görünmez olur; okunur bir
                     // asgari bırakılır ki "ölçüldü ve sıfıra yakın"
@@ -628,9 +628,7 @@ class _VarlikSatiri extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         children: [
           Icon(
-            yukari
-                ? Icons.arrow_upward_rounded
-                : Icons.arrow_downward_rounded,
+            yukari ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
             size: 14,
             color: renk,
           ),
@@ -668,8 +666,7 @@ class _GunSayimiKarti extends StatelessWidget {
               child: Text(
                 '${sayim.toplam} işlem gününün ${sayim.artida}\'ü artıda '
                 'kapandı.',
-                style:
-                    context.t.bodyMedium?.copyWith(color: context.c.text58),
+                style: context.t.bodyMedium?.copyWith(color: context.c.text58),
               ),
             ),
           ],
@@ -767,8 +764,8 @@ class _DagilimKarti extends StatelessWidget {
     // İki uçtaki türlerin BİRLEŞİMİ: dönem içinde girilen ya da tamamen
     // çıkılan tür de görünmeli.
     final turler = <AssetType>{...basi.keys, ...sonu.keys}.toList()
-      ..sort((a, b) => ((sonu[b] ?? 0) / sonToplam)
-          .compareTo((sonu[a] ?? 0) / sonToplam));
+      ..sort((a, b) =>
+          ((sonu[b] ?? 0) / sonToplam).compareTo((sonu[a] ?? 0) / sonToplam));
 
     return _BaglamKarti(
       baslik: 'Dağılım değişimi',
@@ -855,7 +852,8 @@ class _BenchmarkKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final kova = ((percentile - 1) / (100 / _kovaSayisi)).floor()
+    final kova = ((percentile - 1) / (100 / _kovaSayisi))
+        .floor()
         .clamp(0, _kovaSayisi - 1);
     final ustundeOlduklari = 100 - percentile;
 
@@ -977,8 +975,7 @@ class _PaylasButonu extends StatelessWidget {
           ),
           style: TextButton.styleFrom(
             backgroundColor: context.c.surface1,
-            padding:
-                const EdgeInsets.symmetric(vertical: SandikSpace.smd),
+            padding: const EdgeInsets.symmetric(vertical: SandikSpace.smd),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SandikRadius.md),
             ),

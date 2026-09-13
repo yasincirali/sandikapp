@@ -24,8 +24,9 @@ class AnalyticsService {
     }
   }
 
-  FirebaseAnalyticsObserver? get navigatorObserver =>
-      _analytics == null ? null : FirebaseAnalyticsObserver(analytics: _analytics!);
+  FirebaseAnalyticsObserver? get navigatorObserver => _analytics == null
+      ? null
+      : FirebaseAnalyticsObserver(analytics: _analytics!);
 
   Future<void> setUserId(String? userId) async {
     if (_analytics == null) return;
@@ -96,7 +97,8 @@ class AnalyticsService {
         'slot': slot, // morning | afternoon | manual
       });
 
-  Future<void> logSignalViewed({required String ticker, required String action}) =>
+  Future<void> logSignalViewed(
+          {required String ticker, required String action}) =>
       _log('signal_viewed', {'ticker': ticker, 'action': action});
 
   Future<void> logSignalDismissed({required String ticker}) =>
@@ -239,4 +241,12 @@ class AnalyticsService {
     required String channel,
   }) =>
       _log('recap_shared', {'period': period, 'channel': channel});
+
+  /// [period]: gunluk | birHafta | birAy | altiAy | birYil
+  ///
+  /// Hangi dönemin gerçekten okunduğunu ölçer. Faz 2'de haftalık push
+  /// kararı buna dayanacak: 1H sekmesi hiç açılmıyorsa o push'un
+  /// gönderilecek bir karşılığı yok demektir.
+  Future<void> logPeriodSummaryViewed({required String period}) =>
+      _log('period_summary_viewed', {'period': period});
 }
