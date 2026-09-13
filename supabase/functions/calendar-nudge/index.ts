@@ -15,6 +15,7 @@
 // Reel getiri rozeti onu açtığında zaten karşılıyor.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { requireCronSecret } from '../_shared/cron_auth.ts';
 
 import {
   createAccessToken,
@@ -114,7 +115,6 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const fcmProjectId = Deno.env.get('FCM_PROJECT_ID');
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
-    const cronSecret = Deno.env.get('CALENDAR_NUDGE_CRON_SECRET');
 
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY yok.');
@@ -122,12 +122,9 @@ Deno.serve(async (request) => {
     if (!fcmProjectId || !fcmServiceAccountJson) {
       throw new Error('FCM secret\'ları eksik.');
     }
-    if (cronSecret) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        return jsonResponse({ error: 'Yetkisiz cron cagrisi.' }, 401);
-      }
-    }
+    // FAIL-CLOSED: secret yoksa 503, uyusmuyorsa 401 (bkz. _shared/cron_auth.ts).
+    const denied = await requireCronSecret(request, 'CALENDAR_NUDGE_CRON_SECRET');
+    if (denied) return denied;
 
     let dryRun = false;
     try {

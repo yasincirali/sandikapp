@@ -1,5 +1,6 @@
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
 import 'home_screen.dart';
@@ -203,9 +204,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ),
     );
     if (confirm == true) {
-      // Uygulamayı kapat
-      // ignore: use_build_context_synchronously
-      Navigator.of(context).pop();
+      // Uygulamayı kapat. `Navigator.of(context).pop()` DEĞİL: kök
+      // navigator'da tek route varken pop hiçbir şey yapmıyordu — kullanıcı
+      // "Çık"a basıyor, uygulama açık kalıyordu. SystemNavigator.pop()
+      // Android'de aktiviteyi kapatır; iOS'ta HIG gereği no-op'tur (iOS'ta
+      // zaten sistem geri tuşu olmadığından bu diyalog açılmaz).
+      SystemNavigator.pop();
     }
   }
 

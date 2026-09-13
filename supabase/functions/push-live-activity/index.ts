@@ -9,11 +9,18 @@
 // bağlanılır.
 //
 // ## Çağrılma biçimi
-// `pg_cron` seans içinde periyodik tetikler (bkz. 0033 migration).
-// Ayrıca elle çağrılabilir: `{ "userId": "<uuid>" }` gövdesiyle tek
-// kullanıcı güncellenir (hata ayıklama için).
+// `pg_cron` seans içinde periyodik tetikler (bkz. 0033/0034 migration) ve
+// `Authorization: Bearer <live_activity_cron_secret>` başlığı gönderir.
+// Fonksiyon bu başlığı `LIVE_ACTIVITY_CRON_SECRET` secret'ıyla doğrular
+// (fail-closed; bkz. _shared/cron_auth.ts). Vault'taki
+// `live_activity_cron_secret` ile function secret'ı AYNI değer olmalı.
+//
+// Eskiden `{ "userId": "<uuid>" }` gövdesiyle tek kullanıcı güncellenebiliyordu.
+// Kaldırıldı: yetkisiz çağrıda "aktif oturum yok" / "gönderildi" ayrımı
+// bir kullanıcı UUID'sinin uygulamayı açık tuttuğunu sızdırıyordu.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { requireCronSecret } from '../_shared/cron_auth.ts';
 
 // ── APNs kimlik bilgileri ───────────────────────────────────────────────
 // Token bazlı kimlik doğrulama (sertifika değil): .p8 anahtarı 1 yıl
@@ -186,6 +193,11 @@ async function pushToSession(
 }
 
 Deno.serve(async (request) => {
+  // Yetki kontrolü HER ŞEYDEN ÖNCE — APNs kimlik hatası bile yetkisiz
+  // çağırana bilgi vermemeli.
+  const denied = await requireCronSecret(request, 'LIVE_ACTIVITY_CRON_SECRET');
+  if (denied) return denied;
+
   if (!APNS_KEY_ID || !APNS_TEAM_ID || !APNS_PRIVATE_KEY) {
     return new Response(
       JSON.stringify({ error: 'APNs kimlik bilgileri eksik' }),
@@ -195,14 +207,6 @@ Deno.serve(async (request) => {
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
 
-  // İsteğe bağlı tek kullanıcı filtresi (hata ayıklama).
-  let onlyUser: string | null = null;
-  try {
-    const b = await request.json();
-    onlyUser = typeof b?.userId === 'string' ? b.userId : null;
-  } catch {
-    // Gövdesiz çağrı normaldir (cron).
-  }
 
   // Yalnızca SÜRESİ DOLMAMIŞ oturumlar. Ölü token'a push atmak APNs
   // tarafında hata üretir ve kotayı yakar.
@@ -213,15 +217,13 @@ Deno.serve(async (request) => {
   // "column does not exist" döndürür ve fonksiyon TÜMDEN patlar: tema
   // uğruna bütün push zinciri durur. `*` ile sütun yoksa alan basitçe
   // `undefined` gelir ve aşağıdaki yedek yola düşülür.
-  let q = admin
+  const { data: sessions, error } = await admin
     .from('live_activity_sessions')
     .select('*')
     .gt('expires_at', new Date().toISOString());
-  if (onlyUser) q = q.eq('user_id', onlyUser);
-
-  const { data: sessions, error } = await q;
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('live_activity_sessions okunamadi:', error.message);
+    return new Response(JSON.stringify({ error: 'sessions_query_failed' }), {
       status: 500,
       headers: { 'content-type': 'application/json' },
     });

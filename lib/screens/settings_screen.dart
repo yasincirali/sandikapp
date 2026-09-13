@@ -571,36 +571,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // bir kapı kurmak (e-posta karşılaştırması gibi) yetki kuralını
             // iki yere kopyalardı; ikisi ayrıştığında yanlış olan bu taraf
             // olurdu. Salt okunur, token'ların kendisini göstermez.
-            ...[
+            // 2026-09: tile artık YALNIZCA admin hesaba görünür. Ekranın
+            // kendini koruması yeterliydi ama admin olmayan kullanıcı
+            // "GELİŞTİRİCİ" başlığı altında cron/edge/APNs jargonlu, "Bu
+            // hesap admin değil" diyen 943 satırlık bir ekrana çıkıyordu.
+            if (ref.watch(isPushAdminProvider).valueOrNull == true) ...[
               const SizedBox(height: 28),
-              const _SectionTitle('GELİŞTİRİCİ'),
+              const _SectionTitle('TANILAMA'),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.notifications_active_outlined,
                 title: 'Push Teşhisi',
                 subtitle:
-                    'cron → edge function → FCM zincirinin neresi kopuk; '
+                    'Bildirim zincirinin neresi kopuk; '
                     'cihaz APNs/FCM token durumu',
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
+                  adaptiveRoute<void>(
                     builder: (_) => const PushDiagnosticsScreen(),
                   ),
                 ),
               ),
-              if (kDebugMode) ...[
-                const SizedBox(height: 8),
-                _SettingsTile(
-                  icon: Icons.bug_report_outlined,
-                  title: 'Test Crash (debug-only)',
-                  subtitle:
-                      'Crashlytics raporlamasını test etmek için uygulamayı çökertir',
-                  destructive: true,
-                  onTap: () {
-                    // Bilinçli olarak çökertiyoruz — Crashlytics dashboard'da görünmeli
-                    throw Exception('Test crash — kullanıcı tetikledi');
-                  },
-                ),
-              ],
+            ],
+            // Debug build'de admin olmasa da görünür — Crashlytics testi
+            // geliştiricinin kendi cihazında yapılır.
+            if (kDebugMode) ...[
+              const SizedBox(height: 28),
+              const _SectionTitle('GELİŞTİRİCİ (DEBUG)'),
+              const SizedBox(height: 12),
+              _SettingsTile(
+                icon: Icons.bug_report_outlined,
+                title: 'Test Crash (debug-only)',
+                subtitle:
+                    'Crashlytics raporlamasını test etmek için uygulamayı çökertir',
+                destructive: true,
+                onTap: () {
+                  // Bilinçli olarak çökertiyoruz — Crashlytics dashboard'da görünmeli
+                  throw Exception('Test crash — kullanıcı tetikledi');
+                },
+              ),
             ],
             const SizedBox(height: 24),
             Padding(

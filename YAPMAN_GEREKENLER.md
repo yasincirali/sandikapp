@@ -12,6 +12,29 @@
 
 ---
 
+## 🚨 ÖNCE BU: 2026-09-13 güvenlik denetimi sonrası (kod tarafı yapıldı, deploy sende)
+
+Kod değişiklikleri `claude/app-evaluation-roadmap-afnh0f` dalında. Aşağıdakiler
+senin elinden geçmeden **canlıda etkili olmaz** ve bazıları için kod tarafı
+artık eski davranışa dönmez (fail-closed).
+
+| # | İş | Neden | Nasıl |
+|---|---|---|---|
+| 1 | **`daily_brief_cron_secret`'ı DÖNDÜR** | Eski değer `tmp/update_daily_brief_vault.sql` içinde git'e commit edilmişti (`61a74dc`). Dosya silindi ama git geçmişinde duruyor. | Yeni bir değer üret (`openssl rand -hex 32`). Vault'ta güncelle (0034'teki deterministic okuma en yeni kaydı alır) VE `supabase secrets set DAILY_BRIEF_CRON_SECRET=<yeni>`. |
+| 2 | **Git geçmişini temizle** (isteğe bağlı ama önerilir) | Repo klonlanmış/fork'lanmışsa eski secret oradan okunabilir; rotasyon yapıldıysa zararsız ama temiz olsun. | `git filter-repo --path tmp/update_daily_brief_vault.sql --invert-paths` + force push; tüm klonlar yeniden çekmeli. |
+| 3 | **`LIVE_ACTIVITY_CRON_SECRET` function secret'ı** | `push-live-activity` artık Bearer doğruluyor (eskiden HİÇ doğrulamıyordu). Vault'taki `live_activity_cron_secret` ile aynı değer olmalı; yoksa fonksiyon 503 döner ve Live Activity güncellenmez. | `supabase secrets set LIVE_ACTIVITY_CRON_SECRET=<vault'taki değer>` |
+| 4 | **Diğer 6 cron secret'ının SET olduğunu doğrula** | Fonksiyonlar artık fail-closed: secret yoksa 503. Eskiden secret yoksa herkese açıktı. | `supabase secrets list` → `ANALYZE_SIGNALS_CRON_SECRET`, `CALENDAR_NUDGE_CRON_SECRET`, `PRICE_ALERTS_CRON_SECRET`, `DAILY_BRIEF_CRON_SECRET`, `INFLATION_FETCH_CRON_SECRET`, `WEEKLY_SUMMARY_CRON_SECRET` hepsi listede olmalı ve Vault'takiyle eşleşmeli. |
+| 5 | **`DELETION_HASH_SALT` set et** | Varsayılan tuz kaldırıldı; set değilse hesap silme 503 döner. | `supabase secrets set DELETION_HASH_SALT=$(openssl rand -hex 32)` — bir kez set et, bir daha DEĞİŞTİRME (eski log kayıtlarıyla eşleşme bozulur). |
+| 6 | **8 edge function'ı yeniden deploy et** | analyze-signals, calendar-nudge, check-price-alerts, daily-brief, fetch-inflation, weekly-summary, push-live-activity, send-partner-invite-push, delete-account (`_shared/cron_auth.ts` yeni). | `supabase functions deploy <ad> --no-verify-jwt` (cron olanlar); `send-partner-invite-push` ve `delete-account` JWT doğrulamalı kalır. |
+| 7 | **`0054_is_push_admin_grant.sql`'i koş** | Ayarlar'daki "Push Teşhisi" tile'ı artık `is_push_admin()` RPC'sine bakıyor; GRANT yoksa tile admin'e de görünmez (fonksiyon hata → false). | `supabase db push` ya da SQL Editor. |
+| 8 | **Yerel release build için `android/key.properties`** | `key.properties` yoksa release build artık KIRILIR (eskiden debug anahtarıyla sessizce imzalıyordu). | §4 keystore adımları. CI (`android-release.yml`) zaten secret'tan yazıyor, etkilenmez. |
+| 9 | **Sybil / k=8 kararı** (M1) | 7 sahte hesapla bir kullanıcının ROI'si ve dağılımı okunabilir. Kod değişikliği değil, ürün kararı. | Yarış'ı DAU ≥ 16 olana kadar kapalı tut ya da k paydasında yalnızca ≥7 gün geçmişi olan hesapları say (migration gerekir). |
+
+Tam bulgu listesi: `docs/DEGERLENDIRME_VE_YOL_HARITASI_2026_09.md` §3.
+İlerleme: `docs/YOL_HARITASI_ILERLEME.md`.
+
+---
+
 ## ✅ UYGULANDI: `0051_percentile_180d.sql` (2026-09-13)
 
 180 günlük yüzdelik dilim kovası **canlıda açık** — doğrulandı

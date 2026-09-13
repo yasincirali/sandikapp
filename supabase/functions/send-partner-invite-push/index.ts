@@ -270,21 +270,23 @@ Deno.serve(async (request) => {
           await adminClient.from('user_push_tokens').delete().eq('token', token);
         }
 
-        return {
-          token,
-          ok: result.ok,
-          rawText: result.rawText,
-        };
+        // Ham FCM yanıtı yalnızca sunucu log'una. Cevaba token ya da
+        // rawText KOYMA: çağıran davetin HEDEFİ, token'lar davet SAHİBİNİN
+        // cihazlarına ait — herkese açık paylaşılmış bir kodla başkasının
+        // kalıcı cihaz kimlikleri sızıyordu.
+        if (!result.ok) {
+          console.error('FCM gonderimi basarisiz:', result.rawText);
+        }
+        return result.ok;
       }),
     );
 
     return jsonResponse({
       ok: true,
-      delivered: deliveryResults.some((item) => item.ok),
-      results: deliveryResults,
+      delivered: deliveryResults.some(Boolean),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return jsonResponse({ error: message }, 500);
+    console.error('send-partner-invite-push:', error);
+    return jsonResponse({ error: 'internal_error' }, 500);
   }
 });

@@ -288,3 +288,12 @@ Future<void> confirmAndLogout(BuildContext context, WidgetRef ref) async {
   if (confirm != true || !context.mounted) return;
   await ref.read(authProvider.notifier).logout();
 }
+
+/// Push teşhis ekranı görünürlüğü. Oturum değişince yeniden hesaplanır.
+/// Sunucudaki `is_push_admin()` RPC'sine bağlıdır (bkz. 0054 migration);
+/// hata durumunda false — tile gizlenir, teşhis RPC'leri zaten kendini korur.
+final isPushAdminProvider = FutureProvider<bool>((ref) async {
+  final userId = ref.watch(authProvider).valueOrNull?.id;
+  if (userId == null) return false;
+  return SupabaseService.instance.isPushAdmin();
+});

@@ -35,6 +35,7 @@ import {
   resolveSymbol,
 } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
+import { requireCronSecret } from '../_shared/cron_auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -603,7 +604,6 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const fcmProjectId = Deno.env.get('FCM_PROJECT_ID');
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
-    const cronSecret = Deno.env.get('ANALYZE_SIGNALS_CRON_SECRET');
 
     // SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY platform tarafından otomatik
     // enjekte edilir (elle girilemez — `SUPABASE_` öneki rezerve). Yoksa
@@ -622,12 +622,9 @@ Deno.serve(async (request) => {
       );
     }
 
-    if (cronSecret) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        return jsonResponse({ error: 'Yetkisiz cron cagrisi.' }, 401);
-      }
-    }
+    // FAIL-CLOSED: secret yoksa 503, uyusmuyorsa 401 (bkz. _shared/cron_auth.ts).
+    const denied = await requireCronSecret(request, 'ANALYZE_SIGNALS_CRON_SECRET');
+    if (denied) return denied;
 
     let slot = 'unknown';
     let dryRun = false;

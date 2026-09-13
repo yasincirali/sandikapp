@@ -111,3 +111,7 @@ store_listing/screenshots/raw/*.jpeg
 store_listing/screenshots/raw/*.jpg
 store_listing/screenshots/grid/
 store_listing/screenshots/out/
+
+# Geçici çalışma dosyaları — 2026-09 denetiminde canlı bir Vault secret
+# tmp/ altından git'e sızdı. Bu dizin bir daha izlenmez.
+tmp/

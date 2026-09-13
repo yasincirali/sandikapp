@@ -1061,4 +1061,21 @@ class SupabaseService {
           _db.from('signal_notifications').delete().eq('id', id),
     );
   }
+
+  /// Bu hesap push teşhis RPC'lerini çağırabilir mi (`is_push_admin()`).
+  ///
+  /// Ayarlar ekranı "GELİŞTİRİCİ → Push Teşhisi" tile'ını yalnızca bu true
+  /// dönerse gösterir. Sunucu tarafı koruma (RPC'lerdeki `is_push_admin()`
+  /// kontrolü) DEĞİŞMEDİ; bu yalnızca admin olmayan kullanıcıya boş bir
+  /// teşhis ekranı göstermemek için. Hata ya da eski migration'da (0054
+  /// koşulmamışsa GRANT yok → yetki hatası) sessizce false.
+  Future<bool> isPushAdmin() async {
+    if (_uid == null) return false;
+    try {
+      final r = await _db.rpc('is_push_admin').timeout(DbLogger.defaultTimeout);
+      return r == true;
+    } catch (_) {
+      return false;
+    }
+  }
 }

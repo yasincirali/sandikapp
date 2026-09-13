@@ -1,0 +1,62 @@
+name: CI
+
+# Her PR'da ve main'e her push'ta analyze + test.
+#
+# 2026-09 denetimine kadar test paketi (155 dosya, ~28.7k satır) YALNIZCA
+# `v*` tag push'unda koşuyordu (android-release.yml). Bu kapı olmadan
+# hiçbir refactor güvenli değil.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    name: Flutter analyze + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # android-release.yml ile AYNI sürüm — gerekçe orada.
+          flutter-version: 3.47.2
+          cache: true
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze lib/ test/
+
+      - name: Test
+        run: flutter test
+
+  edge-functions:
+    name: Deno test (supabase/tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check edge functions
+        run: |
+          for f in supabase/functions/*/index.ts; do
+            echo "== $f"
+            deno check "$f"
+          done
+
+      - name: Deno tests
+        run: deno test --allow-all supabase/tests/

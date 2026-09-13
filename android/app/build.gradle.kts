@@ -59,11 +59,18 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
+            // key.properties YOKSA BUILD KIRILIR. Eski davranış debug anahtarına
+            // sessizce düşmekti: `flutter build apk --release` herkesin bildiği
+            // debug anahtarıyla imzalı, dağıtılabilir bir APK üretiyordu ve
+            // hiçbir uyarı vermiyordu. Yerelde release denemek için
+            // android/key.properties oluştur (bkz. YAPMAN_GEREKENLER.md §6).
+            if (!keystorePropertiesFile.exists()) {
+                throw GradleException(
+                    "android/key.properties bulunamadı — release build debug " +
+                    "anahtarıyla imzalanmaz. Keystore'u kur ya da debug build al."
+                )
             }
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

@@ -24,8 +24,12 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Hash salt — production'da Supabase secret olarak set edin.
-const HASH_SALT = Deno.env.get("DELETION_HASH_SALT") ?? "sandik-default-salt-CHANGE-ME";
+// Hash salt — Supabase secret olarak set edilmesi ZORUNLU. Varsayılan değer
+// YOK: eski `?? "sandik-default-salt-CHANGE-ME"` fallback'i, secret hiç set
+// edilmemişse account_deletion_log'daki user_id_hash'i herkesin yeniden
+// hesaplayabildiği bir değere düşürüyordu — anonim kayıt anonim olmaktan
+// çıkıyordu. Secret yoksa fonksiyon istek anında 503 döner.
+const HASH_SALT = Deno.env.get("DELETION_HASH_SALT");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,6 +56,10 @@ async function sha256Hex(input: string): Promise<string> {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+  if (!HASH_SALT) {
+    console.error("DELETION_HASH_SALT tanimli degil — hesap silme reddedildi.");
+    return jsonResponse({ error: "misconfigured" }, 503);
   }
 
   if (req.method !== "POST") {
@@ -135,10 +143,7 @@ Deno.serve(async (req: Request) => {
 
     if (deleteError) {
       console.error("Failed to delete user:", deleteError);
-      return jsonResponse(
-        { error: "Failed to delete account", detail: deleteError.message },
-        500,
-      );
+      return jsonResponse({ error: "delete_failed" }, 500);
     }
 
     return jsonResponse({ success: true, deleted_at: new Date().toISOString() });
