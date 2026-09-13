@@ -38,9 +38,12 @@ void main() {
     test('non-intraday `startDate` saat taşımaz', () {
       expect(kaynak.contains('final hamBaslangic = isIntraday'), isTrue,
           reason: 'Ham başlangıç ayrılmamış.');
+      // 2026-09: `DateTime(y, m, d)` üçlüsü `dayKey()` yardımcısına taşındı
+      // (tr_format.dart); iddia mantığa bakar, yazım biçimine değil.
       expect(
-        kaynak.contains(
-            'hamBaslangic.year, hamBaslangic.month, hamBaslangic.day)'),
+        kaynak.contains('dayKey(hamBaslangic)') ||
+            kaynak.contains(
+                'hamBaslangic.year, hamBaslangic.month, hamBaslangic.day)'),
         isTrue,
         reason: 'Başlangıç gün başına çekilmiyor — ilk nokta negatif X\'e '
             'düşer ve kırpılır.',

@@ -42,8 +42,10 @@ void main() {
 
     test('tarih GÜN başına normalize ediliyor', () {
       // Saat/dakika taşırsa karşılaştırma hiçbir zaman tutmaz.
+      // 2026-09: üçlü `dayKey(sonGun)` yardımcısına taşındı (tr_format.dart).
       expect(
-        servis.contains('DateTime(sonGun.year, sonGun.month, sonGun.day)'),
+        servis.contains('dayKey(sonGun)') ||
+            servis.contains('DateTime(sonGun.year, sonGun.month, sonGun.day)'),
         isTrue,
         reason: 'Tarih gün başına çekilmiyor.',
       );

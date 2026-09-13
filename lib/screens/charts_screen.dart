@@ -5,8 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
         RefreshIndicator,
-        ScaffoldMessenger,
-        SnackBar,
         Material,
         MaterialType,
         AlertDialog,

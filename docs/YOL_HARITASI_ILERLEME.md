@@ -3,10 +3,12 @@
 Kaynak plan: `DEGERLENDIRME_VE_YOL_HARITASI_2026_09.md` §8.
 Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 
-> ⚠️ Bu ortamda `flutter`/`dart`/`deno` YOK. Dart değişiklikleri analiz
-> edilmeden commit'lendi; ilk `flutter analyze` + `flutter test` koşusu
-> (yeni `ci.yml` PR'da otomatik) kırık bir şey bulursa önce onu düzelt.
-> Değişiklikler bilinçli olarak küçük ve mekanik tutuldu.
+> ✅ Flutter 3.47.2 bu oturumda `/opt/flutter-sdk` altına kuruldu (2026-09-13,
+> Faz 1 sonunda). O andan itibaren her commit öncesi `flutter analyze lib/ test/`
+> ve tam `flutter test` koşuldu. Faz 0–1 değişikliklerinin tümü doğrulandı:
+> analyzer 0 sorun, 1.665+ test geçiyor. `deno` hâlâ yok — edge function
+> değişiklikleri yalnızca okunarak incelendi; `ci.yml` deno job'ı ilk PR'da
+> gerçek sonucu verecek.
 
 ## Son kalınan yer
 **Faz 1 tamam** (1.9'un google_fonts/lint kısmı ve 1.11'in leaderboard kısmı bilinçli ertelendi — TECHNICAL_DEBT). Sıradaki: **Faz 2.1** (skeleton yükleyiciler).

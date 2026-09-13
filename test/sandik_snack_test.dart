@@ -25,7 +25,9 @@ void main() {
       ),
     ));
     await t.tap(find.text('go'));
+    // SnackBar aşağıdan kayarak gelir; animasyon bitmeden eylem dokunulamaz.
     await t.pump();
+    await t.pump(const Duration(milliseconds: 800));
   }
 
   testWidgets('sandikSnackError ham exception metnini göstermez', (t) async {
@@ -34,7 +36,7 @@ void main() {
       t,
       (ctx) => sandikSnackError(
         ctx,
-        PostgrestException(message: raw, code: '23514'),
+        const PostgrestException(message: raw, code: '23514'),
         prefix: 'Silinemedi',
       ),
     );
@@ -69,7 +71,7 @@ void main() {
     ));
     await t.tap(find.text('go'));
     await t.pump();
-    await t.pump(const Duration(milliseconds: 500));
+    await t.pump(const Duration(milliseconds: 800));
     expect(find.text('ikinci'), findsOneWidget);
     expect(find.text('birinci'), findsNothing);
   });

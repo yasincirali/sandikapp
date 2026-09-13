@@ -217,6 +217,8 @@ class LiveActivityService {
     endMinute = defaultEndMinute;
     includeWeekend = true;
     // Tema artık bu serviste YAŞAMIYOR; kaynağı sıfırlamak gerekir.
+    // Bu metot da yalnızca testten çağrılır; lint kütüphane sınırına bakıyor.
+    // ignore: invalid_use_of_visible_for_testing_member
     SurfaceTheme.instance.resetForTest();
     _lastPushedTheme = null;
     _themeColumnSupported = true;
