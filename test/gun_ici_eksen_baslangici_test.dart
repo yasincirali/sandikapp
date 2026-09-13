@@ -28,9 +28,18 @@ void main() {
       .readAsStringSync()
       .replaceAll('\r\n', '\n');
 
+  /// Boşlukları tek boşluğa indirmiş kaynak.
+  ///
+  /// Kaynak-metin iddiaları BİÇİME değil, mantığın VARLIĞINA bakmalı.
+  /// Dosya büyüdüğünde `dart format` sarma noktasını kaydırıyor ve
+  /// satır başı girintisine dayanan iddialar, mantık hiç değişmemiş
+  /// olmasına rağmen kırılıyor (2026-09-13'te tam olarak bu oldu:
+  /// üçlü operatör üç satırdan ikiye düştü).
+  final tek = kaynak.replaceAll(RegExp(r'\s+'), ' ');
+
   group('eksen başlangıcı', () {
     test('gün içi çizim `seansGunu`\'nu kullanır', () {
-      expect(kaynak.contains('final cizimBaslangici = isIntraday'), isTrue,
+      expect(tek.contains('final cizimBaslangici = isIntraday'), isTrue,
           reason: 'Gün içi/dışı ayrımı yok.');
       expect(kaynak.contains('breakdown.seansGunu ?? effectiveStart'), isTrue,
           reason: 'Eksen hâlâ bugünün 00:00\'ına kuruluyor — kapalı '
@@ -49,9 +58,13 @@ void main() {
     test('non-intraday `effectiveStart` KORUNUR', () {
       // Düzeltme yalnızca gün içi dalı etkilemeli: diğer dönemlerde
       // başlangıç ilk alım tarihine kaydırılabiliyor.
-      expect(kaynak.contains('        : effectiveStart;'), isTrue,
+      // Gün DIŞI dalın `effectiveStart`a düştüğünü doğrular. Girintiye
+      // dayanan eski hâli (`'        : effectiveStart;'`) format
+      // değişikliğinde kırılıyordu; kovalanan şey ternary'nin yanlış
+      // dalının değişmemiş olması.
+      expect(tek.contains(': effectiveStart;'), isTrue,
           reason: 'Gün dışı dal da değişmiş.');
-      expect(kaynak.contains('if (!isIntraday && !_simulate)'), isTrue,
+      expect(tek.contains('if (!isIntraday && !_simulate)'), isTrue,
           reason: 'İlk alım kaydırması kaldırılmış.');
     });
   });
@@ -84,7 +97,8 @@ void main() {
   test('kuyruk bölmesi canlı noktadan SONRA yapılır', () {
     // Sıra önemli: bölme önce yapılsaydı canlı nokta hiçbir segmente
     // giremez ve grafiğin ucu eski değerde kalırdı.
-    final canliIdx = kaynak.indexOf('FlSpot(nowMinutesX, currentTotalOverride)');
+    final canliIdx =
+        kaynak.indexOf('FlSpot(nowMinutesX, currentTotalOverride)');
     final bolmeIdx = kaynak.indexOf('if (piyasaKapaliBaslangicTs != null)');
     expect(canliIdx, isNot(-1));
     expect(bolmeIdx, isNot(-1));

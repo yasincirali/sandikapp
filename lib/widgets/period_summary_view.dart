@@ -285,7 +285,7 @@ class _AnaRakamKarti extends StatelessWidget {
                         size: 13,
                         color: renk,
                       ),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: SandikSpace.xxs),
                       Text(
                         fmtPct(pct.abs(), digits: 2),
                         style: context.t.numSmall.copyWith(color: renk),

@@ -26,6 +26,14 @@ void main() {
       .readAsStringSync()
       .replaceAll('\r\n', '\n');
 
+  /// Boşlukları tek boşluğa indirmiş kaynak.
+  ///
+  /// Kaynak-metin iddiaları BİÇİME değil mantığın VARLIĞINA bakmalı:
+  /// dosya büyüdükçe `dart format` sarma noktasını kaydırıyor ve satır
+  /// sonuna dayanan iddialar, mantık değişmemiş olmasına rağmen kırılıyor
+  /// (2026-09-13: `final ilkVeriX = ...` iki satıra bölündü).
+  final tek = kaynak.replaceAll(RegExp(r'\s+'), ' ');
+
   group('dönem başı gün başına çekilir', () {
     test('non-intraday `startDate` saat taşımaz', () {
       expect(kaynak.contains('final hamBaslangic = isIntraday'), isTrue,
@@ -41,7 +49,9 @@ void main() {
 
     test('gün içi dal ETKİLENMEZ', () {
       // Gün içi eksen zaten `seansGunu`nun 00:00'ından başlıyor.
-      expect(kaynak.contains('final startDate = isIntraday\n        ? hamBaslangic'),
+      expect(
+          kaynak
+              .contains('final startDate = isIntraday\n        ? hamBaslangic'),
           isTrue,
           reason: 'Gün içi dal da gün başına çekilmiş — gereksiz.');
     });
@@ -49,14 +59,15 @@ void main() {
 
   group('eksenin sol ucu veriye oturur', () {
     test('`minX` sabit 0 DEĞİL', () {
-      expect(kaynak.contains('double minX = intraday ? 0.0 : ilkVeriX;'), isTrue,
+      expect(
+          kaynak.contains('double minX = intraday ? 0.0 : ilkVeriX;'), isTrue,
           reason: 'Eksen hâlâ 0\'dan başlıyor — soldaki fark boş şerit '
               'olarak kalır.');
     });
 
     test('ilk veri noktası hesaplanıyor', () {
-      expect(kaynak.contains('final ilkVeriX = veriXs.isEmpty'), isTrue);
-      expect(kaynak.contains('reduce((a, b) => a < b ? a : b)'), isTrue,
+      expect(tek.contains('final ilkVeriX = veriXs.isEmpty'), isTrue);
+      expect(tek.contains('reduce((a, b) => a < b ? a : b)'), isTrue,
           reason: 'En küçük X bulunmuyor.');
     });
 
