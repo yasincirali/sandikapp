@@ -33,6 +33,10 @@ on:
         description: "Deftere 'uygulandı' işaretlenecek sürümler (SQL Editor'dan elle koşulanlar için; SQL KOŞMAZ)"
         type: string
         default: ""
+      include_all:
+        description: "Defterde 'uygulandı' görünse bile TÜM migration'ları koş (yanlış repair'i telafi eder)"
+        type: boolean
+        default: false
 
 concurrency:
   group: supabase-deploy
@@ -79,13 +83,22 @@ jobs:
         if: ${{ inputs.repair != '' }}
         run: supabase migration repair --status applied ${{ inputs.repair }}
 
+      # `--include-all`: defter "uygulandı" dese bile hepsini koşar.
+      #
+      # Neden gerekiyor: `migration repair` deftere kayıt düşer ama SQL
+      # KOŞMAZ. 2026-09-14'te 0050–0060 yanlışlıkla bu şekilde işaretlendi;
+      # 0054'ün gövdesi hiç çalışmadığı hâlde `db push` onu atlar oldu ve
+      # yedi cron tetikleyicisi ölü kaldı. Migration'lar idempotent
+      # yazıldığı için yeniden koşmaları güvenlidir.
       - name: Migration'lar (plan)
         if: ${{ inputs.migrations }}
-        run: supabase db push --dry-run
+        run: |
+          supabase db push --dry-run ${{ inputs.include_all && '--include-all' || '' }}
 
       - name: Migration'lar (uygula)
         if: ${{ inputs.migrations && !inputs.dry_run }}
-        run: supabase db push
+        run: |
+          supabase db push ${{ inputs.include_all && '--include-all' || '' }}
 
       - name: Edge Function'lar
         if: ${{ inputs.functions != 'none' && !inputs.dry_run }}
