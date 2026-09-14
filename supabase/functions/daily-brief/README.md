@@ -75,6 +75,12 @@ FCM `data.variant` alanı da `partner` / `mover` olarak işaretlenir.
 `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` platform tarafından otomatik
 enjekte edilir; elle eklenemez.
 
+⚠️ Cron secret'ı **`x-cron-secret`** header'ında taşınır, `Authorization`'da
+DEĞİL — oraya konulduğunda API gateway isteği fonksiyona hiç ulaştırmadan
+401 döndürür ve bu sessiz bir arızadır. Bu fonksiyon tam olarak bu yüzden
+Mayıs–Eylül 2026 arası hiç gönderim yapmadı. Bkz.
+[`_shared/CRON_AUTH.md`](../_shared/CRON_AUTH.md).
+
 ## Kurulum
 
 ```bash
@@ -96,7 +102,8 @@ supabase secrets set DAILY_BRIEF_CRON_SECRET="<rastgele-uzun-string>"
 ```bash
 # Push GÖNDERMEDEN çalıştır — kaç kişiye gideceğini söyler
 curl -X POST "https://<proje>.supabase.co/functions/v1/daily-brief" \
-  -H "Authorization: Bearer $DAILY_BRIEF_CRON_SECRET" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "x-cron-secret: $DAILY_BRIEF_CRON_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"dry_run": true}'
 ```

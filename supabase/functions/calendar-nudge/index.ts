@@ -15,18 +15,18 @@
 // Reel getiri rozeti onu açtığında zaten karşılıyor.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
-import { requireCronSecret } from '../_shared/cron_auth.ts';
 
 import {
   createAccessToken,
   sendFcmNotification,
   ServiceAccount,
 } from '../_shared/fcm.ts';
+import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+    'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 /// Brifingle AYNI kanal: ikisi de "bilgilendirici, acil değil" sınıfında ve
@@ -115,6 +115,7 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const fcmProjectId = Deno.env.get('FCM_PROJECT_ID');
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
+    const cronSecret = Deno.env.get('CALENDAR_NUDGE_CRON_SECRET');
 
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY yok.');
@@ -122,9 +123,11 @@ Deno.serve(async (request) => {
     if (!fcmProjectId || !fcmServiceAccountJson) {
       throw new Error('FCM secret\'ları eksik.');
     }
-    // FAIL-CLOSED: secret yoksa 503, uyusmuyorsa 401 (bkz. _shared/cron_auth.ts).
-    const denied = await requireCronSecret(request, 'CALENDAR_NUDGE_CRON_SECRET');
-    if (denied) return denied;
+    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
+    const eksik = cronSecretZorunlu(cronSecret, 'CALENDAR_NUDGE_CRON_SECRET');
+    if (eksik) return eksik;
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
 
     let dryRun = false;
     try {

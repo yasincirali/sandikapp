@@ -80,6 +80,11 @@ yüzden çift satır üretmiyor.
 enjekte edilir. FCM secret'ları **gerekmez** — bu fonksiyon push göndermiyor,
 yalnızca tabloyu dolduruyor.
 
+⚠️ Cron secret'ı **`x-cron-secret`** header'ında taşınır, `Authorization`'da
+DEĞİL — oraya konulduğunda API gateway isteği fonksiyona hiç ulaştırmadan
+401 döndürür ve arıza sessiz olur. Bkz.
+[`_shared/CRON_AUTH.md`](../_shared/CRON_AUTH.md).
+
 ## Kurulum
 
 ```bash
@@ -112,7 +117,8 @@ sebebinin aynısı geri gelir.
 ```bash
 # Tabloya YAZMADAN çalıştır — ne çekeceğini söyler
 curl -X POST "https://<proje>.supabase.co/functions/v1/fetch-inflation" \
-  -H "Authorization: Bearer $INFLATION_FETCH_CRON_SECRET" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "x-cron-secret: $INFLATION_FETCH_CRON_SECRET" \
   -H "Content-Type: application/json" -d '{"dry_run": true}'
 ```
 

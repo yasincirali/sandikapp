@@ -44,12 +44,12 @@
 // sezgisel olarak yakalar (bkz. `bazKirilmasiVarMi`) ve yazmayı reddeder
 // — yanlış bir reel getiri, hiç göstermemekten kötüdür.
 
-import { requireCronSecret } from '../_shared/cron_auth.ts';
+import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+    'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 /// EVDS serisi — TÜFE genel endeks.
@@ -204,6 +204,7 @@ Deno.serve(async (request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const evdsApiKey = Deno.env.get('EVDS_API_KEY');
+    const cronSecret = Deno.env.get('INFLATION_FETCH_CRON_SECRET');
 
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error(
@@ -211,9 +212,11 @@ Deno.serve(async (request) => {
         + 'sağlanmadı. Bunlar otomatik enjekte edilir.',
       );
     }
-    // FAIL-CLOSED: secret yoksa 503, uyusmuyorsa 401 (bkz. _shared/cron_auth.ts).
-    const denied = await requireCronSecret(request, 'INFLATION_FETCH_CRON_SECRET');
-    if (denied) return denied;
+    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
+    const eksik = cronSecretZorunlu(cronSecret, 'INFLATION_FETCH_CRON_SECRET');
+    if (eksik) return eksik;
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
 
     // Anahtar yoksa HİÇBİR ŞEY yazılmaz.
     //

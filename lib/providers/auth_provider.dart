@@ -280,7 +280,7 @@ Future<void> confirmAndLogout(BuildContext context, WidgetRef ref) async {
 }
 
 /// Push teşhis ekranı görünürlüğü. Oturum değişince yeniden hesaplanır.
-/// Sunucudaki `is_push_admin()` RPC'sine bağlıdır (bkz. 0054 migration);
+/// Sunucudaki `is_push_admin()` RPC'sine bağlıdır (bkz. 0055 migration);
 /// hata durumunda false — tile gizlenir, teşhis RPC'leri zaten kendini korur.
 final isPushAdminProvider = FutureProvider<bool>((ref) async {
   final userId = ref.watch(authProvider).valueOrNull?.id;

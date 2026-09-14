@@ -112,6 +112,11 @@ her edge function'a otomatik enjekte eder. Üstelik `SUPABASE_` öneki
 rezervedir; o adla secret oluşturmaya çalışmak `Secret name must not start
 with the SUPABASE_ prefix` hatası verir.
 
+⚠️ Cron secret'ı **`x-cron-secret`** header'ında taşınır, `Authorization`'da
+DEĞİL — oraya konulduğunda API gateway isteği fonksiyona hiç ulaştırmadan
+401 döndürür ve arıza sessiz olur. Bkz.
+[`_shared/CRON_AUTH.md`](../_shared/CRON_AUTH.md).
+
 Secret'lar **proje geneli**dir, function başına değil. `FCM_PROJECT_ID` ve
 `FCM_SERVICE_ACCOUNT_JSON` zaten `send-partner-invite-push` için tanımlıysa
 tekrar girmeye gerek yok — yalnızca `ANALYZE_SIGNALS_CRON_SECRET` eklenir.
@@ -193,7 +198,8 @@ spam'ine dönüşmez. Cache TTL'i (`price_history.ts` → `CACHE_TTL_MS`) saatli
 
 ```bash
 curl -X POST 'https://<PROJECT_REF>.supabase.co/functions/v1/analyze-signals' \
-  -H 'Authorization: Bearer <ANALYZE_SIGNALS_CRON_SECRET>' \
+  -H 'Authorization: Bearer <SERVICE_ROLE_KEY>' \
+  -H 'x-cron-secret: <ANALYZE_SIGNALS_CRON_SECRET>' \
   -H 'Content-Type: application/json' \
   -d '{"slot":"manual","dry_run":true}'
 ```

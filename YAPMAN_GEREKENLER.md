@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-09-13
+**Tarih:** 2026-05-11 · **Son ek:** 2026-09-14
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -22,11 +22,11 @@ artık eski davranışa dönmez (fail-closed).
 |---|---|---|---|
 | 1 | **`daily_brief_cron_secret`'ı DÖNDÜR** | Eski değer `tmp/update_daily_brief_vault.sql` içinde git'e commit edilmişti (`61a74dc`). Dosya silindi ama git geçmişinde duruyor. | Yeni bir değer üret (`openssl rand -hex 32`). Vault'ta güncelle (0034'teki deterministic okuma en yeni kaydı alır) VE `supabase secrets set DAILY_BRIEF_CRON_SECRET=<yeni>`. |
 | 2 | **Git geçmişini temizle** (isteğe bağlı ama önerilir) | Repo klonlanmış/fork'lanmışsa eski secret oradan okunabilir; rotasyon yapıldıysa zararsız ama temiz olsun. | `git filter-repo --path tmp/update_daily_brief_vault.sql --invert-paths` + force push; tüm klonlar yeniden çekmeli. |
-| 3 | **`LIVE_ACTIVITY_CRON_SECRET` function secret'ı** | `push-live-activity` artık Bearer doğruluyor (eskiden HİÇ doğrulamıyordu). Vault'taki `live_activity_cron_secret` ile aynı değer olmalı; yoksa fonksiyon 503 döner ve Live Activity güncellenmez. | `supabase secrets set LIVE_ACTIVITY_CRON_SECRET=<vault'taki değer>` |
-| 4 | **Diğer 6 cron secret'ının SET olduğunu doğrula** | Fonksiyonlar artık fail-closed: secret yoksa 503. Eskiden secret yoksa herkese açıktı. | `supabase secrets list` → `ANALYZE_SIGNALS_CRON_SECRET`, `CALENDAR_NUDGE_CRON_SECRET`, `PRICE_ALERTS_CRON_SECRET`, `DAILY_BRIEF_CRON_SECRET`, `INFLATION_FETCH_CRON_SECRET`, `WEEKLY_SUMMARY_CRON_SECRET` hepsi listede olmalı ve Vault'takiyle eşleşmeli. |
+| 3 | **`LIVE_ACTIVITY_CRON_SECRET` function secret'ı** | `push-live-activity` artık `x-cron-secret` doğruluyor (eskiden HİÇ doğrulamıyordu; 0054 tetikleyicisi zaten bu header'ı gönderiyor). Vault'taki `live_activity_cron_secret` ile aynı değer olmalı; yoksa fonksiyon 503 döner ve Live Activity güncellenmez. ⚠️ Vault'taki mevcut değer 219 karakterlik bir service_role JWT (bkz. 0054 notu) — onu rastgele bir secret'la DEĞİŞTİR, JWT'yi function secret'ı olarak kopyalama. | `openssl rand -hex 32` → Vault `live_activity_cron_secret` + `supabase secrets set LIVE_ACTIVITY_CRON_SECRET=<aynı değer>` |
+| 4 | **Diğer 6 cron secret'ının SET olduğunu doğrula** | Fonksiyonlar artık fail-closed (`cronSecretZorunlu`): secret yoksa 503. Eskiden secret yoksa herkese açıktı. Yerel geliştirmede `CRON_AUTH_ALLOW_UNSET=1` ile kapı açılır. | `supabase secrets list` → `ANALYZE_SIGNALS_CRON_SECRET`, `CALENDAR_NUDGE_CRON_SECRET`, `PRICE_ALERTS_CRON_SECRET`, `DAILY_BRIEF_CRON_SECRET`, `INFLATION_FETCH_CRON_SECRET`, `WEEKLY_SUMMARY_CRON_SECRET` hepsi listede olmalı ve Vault'takiyle eşleşmeli. |
 | 5 | **`DELETION_HASH_SALT` set et** | Varsayılan tuz kaldırıldı; set değilse hesap silme 503 döner. | `supabase secrets set DELETION_HASH_SALT=$(openssl rand -hex 32)` — bir kez set et, bir daha DEĞİŞTİRME (eski log kayıtlarıyla eşleşme bozulur). |
-| 6 | **8 edge function'ı yeniden deploy et** | analyze-signals, calendar-nudge, check-price-alerts, daily-brief, fetch-inflation, weekly-summary, push-live-activity, send-partner-invite-push, delete-account (`_shared/cron_auth.ts` yeni). | `supabase functions deploy <ad> --no-verify-jwt` (cron olanlar); `send-partner-invite-push` ve `delete-account` JWT doğrulamalı kalır. |
-| 7 | **`0054_is_push_admin_grant.sql`'i koş** | Ayarlar'daki "Push Teşhisi" tile'ı artık `is_push_admin()` RPC'sine bakıyor; GRANT yoksa tile admin'e de görünmez (fonksiyon hata → false). | `supabase db push` ya da SQL Editor. |
+| 6 | **8 edge function'ı yeniden deploy et** | analyze-signals, calendar-nudge, check-price-alerts, daily-brief, fetch-inflation, weekly-summary, push-live-activity, send-partner-invite-push, delete-account (`_shared/cron_auth.ts` yeni). | `supabase functions deploy <ad>` — cron olanlarda da gateway JWT doğrulaması AÇIK kalır (0054 deseni: Authorization'da service_role JWT, `x-cron-secret`'ta secret). |
+| 7 | **`0055_is_push_admin_grant.sql`'i koş** | Ayarlar'daki "Push Teşhisi" tile'ı artık `is_push_admin()` RPC'sine bakıyor; GRANT yoksa tile admin'e de görünmez (fonksiyon hata → false). | `supabase db push` ya da SQL Editor. |
 | 8 | **Yerel release build için `android/key.properties`** | `key.properties` yoksa release build artık KIRILIR (eskiden debug anahtarıyla sessizce imzalıyordu). | §4 keystore adımları. CI (`android-release.yml`) zaten secret'tan yazıyor, etkilenmez. |
 | 10 | **GoTrue rate limit'lerini sabitle** (M12) | Login ve OTP doğrulamada uygulama düzeyi throttle yok; istemci sayacı güvenlik sınırı sayılmaz (S1 dersi). Koruma Supabase Auth'un kendi limitleri. | Dashboard → Authentication → Rate Limits: "Token verifications" ve "Sign-ins/sign-ups" değerlerini gözden geçir, bilinçli bir değere çek ve buraya not düş. |
 | 9 | **Sybil / k=8 kararı** (M1) | 7 sahte hesapla bir kullanıcının ROI'si ve dağılımı okunabilir. Kod değişikliği değil, ürün kararı. | Yarış'ı DAU ≥ 16 olana kadar kapalı tut ya da k paydasında yalnızca ≥7 gün geçmişi olan hesapları say (migration gerekir). |
@@ -120,26 +120,92 @@ Migration yok, vault sırrı yok, edge function yok. Faz 2 (haftalık push)
 
 ---
 
-## 🚨 BEKLEYEN DEPLOY: haftalık özet push'u — Faz 2 (2026-09-14)
+## 🔴 TEK ADIM KALDI (HER ŞEYİ BLOKLUYOR): `cron_gateway_jwt` (2026-09-14)
 
-Kod tarafı tamam; **üç adım elden yapılmadan hiçbir bildirim gitmez** ve
-hata SESSİZ olur (tetikleyici `raise exception` der ama bunu yalnızca cron
-günlüğünde görürsün). Bu repoda en sık atlanan adım 3.
+**Bunu yapmadan hiçbir cron bildirimi gitmiyor — bugün de gitmiyordu.**
+
+### Ne oldu
+
+Haftalık özeti canlı doğrularken dört aylık **sessiz** bir arıza bulundu:
+`daily_brief_log` Mayıs 2026'dan beri BOŞ. Sabah brifingi hiç
+gönderilmemişti. Sebep cron'da ya da fonksiyonda değil, **header'da**:
+
+Supabase API gateway, isteği fonksiyona iletmeden önce `Authorization`
+header'ını JWT olarak ayrıştırıyor. Tetikleyiciler oraya rastgele hex bir
+cron secret koyuyordu; gateway bunu JWT sanıp isteği **fonksiyona hiç
+ulaştırmadan** reddediyordu (`401 UNAUTHORIZED_INVALID_JWT_FORMAT`).
+
+Fark edilmemesinin sebebi: her gösterge yeşildi. Cron kurulu ✓, koşu
+başarılı ✓, fonksiyon logları boş (çünkü hiç çalışmadı), 401 yalnızca
+`net._http_response` içinde.
+
+Kod tarafı düzeltildi ve dağıtıldı (`0054` + `_shared/cron_auth.ts`):
+`Authorization` artık service_role JWT'si taşıyor, cron secret'ı
+`x-cron-secret` header'ına geçti.
+
+### Senin yapacağın: Vault'a service_role JWT'sini yaz
+
+Migration bunu yazamaz — service_role key'ini SQL içinden okuyamaz ve
+repoya girmemeli.
+
+1. **Dashboard → Settings → API → `service_role` (secret)** → kopyala
+   *(`anon` DEĞİL — `service_role` olan, `eyJ...` ile başlayan uzun JWT)*
+2. **SQL Editor**'de:
+
+```sql
+select vault.create_secret(
+  '<service_role JWT>',
+  'cron_gateway_jwt',
+  'API gateway JWT dogrulamasini gecmek icin — cron tetikleyicileri'
+);
+```
+
+3. Sonra migration'ı koş:
 
 ```bash
-# 1) Fonksiyonu dağıt
-supabase functions deploy weekly-summary
-
-# 2) Secret'ı ver (FCM ikilisi daily-brief'takiyle aynı, dokunma)
-supabase secrets set WEEKLY_SUMMARY_CRON_SECRET="<rastgele-uzun-string>"
-
-# 3) ⬜ KALDI — Vault'a AYNI string'i yaz
-#    Supabase Dashboard → Vault → name: weekly_summary_cron_secret
-#    ⚠️ 2. ve 3. adımdaki string BİREBİR aynı olmalı, yoksa 401 döner.
-
-# 4) Migration
-supabase db push   # ya da SQL Editor → 0052_weekly_summary.sql
+supabase db push   # 0054_cron_auth_header.sql
 ```
+
+`0054` kurulum eksikse **açık hatayla durur** (sessiz düşmemesi kasıtlı —
+bu arızanın ilk hâli tam olarak sessizliğinden dolayı dört ay yaşadı).
+JWT biçimini de denetliyor: oraya hex bir string yazılırsa yine patlar.
+
+Yedi tetikleyicinin hepsi bu tek kaydı okur — key rotasyonu yedi ayrı
+Vault kaydına dokunmak olmasın diye.
+
+### Doğrulama — asıl kapı bu
+
+```sql
+select public.trigger_daily_brief();
+select id, status_code, left(content, 200) from net._http_response
+order by id desc limit 1;
+```
+
+| Gördüğün | Anlamı |
+|---|---|
+| `200` | ✅ çalışıyor — dört aylık arıza kapandı |
+| `401 UNAUTHORIZED_INVALID_JWT_FORMAT` | `cron_gateway_jwt` yok ya da JWT değil |
+| `401 Yetkisiz cron cagrisi` | Vault'taki cron secret'ı fonksiyonun env secret'ıyla eşleşmiyor |
+
+Ayrıntı: [`supabase/functions/_shared/CRON_AUTH.md`](supabase/functions/_shared/CRON_AUTH.md)
+
+### ⚠️ Ayrıca düzeltmen iyi olur (bloklamıyor)
+
+İki cron sırrı **aynı string**: `weekly_summary_cron_secret` ve
+`inflation_fetch_cron_secret` özdeş. Çalışır, ama biri sızarsa ikisi birden
+düşer. Her biri için ayrı `openssl rand -hex 32` üretip hem
+`supabase secrets set` hem Vault tarafını güncellemek daha doğru.
+
+---
+
+## ✅ UYGULANDI: haftalık özet push'u — Faz 2 (2026-09-14)
+
+Fonksiyon dağıtıldı, secret'lar verildi, Vault yazıldı, `0052` uygulandı.
+Cron doğrulandı: `weekly-summary = 45 6 * * 1`,
+`daily-brief = 45 6 * * 2-5` (Pazartesi susturulmuş ✓).
+
+⚠️ Ama gönderim **yukarıdaki `cron_gateway_jwt` adımına bağlı** — o
+yapılmadan tetikleyici gateway'de 401 alır.
 
 **Migration ne yapıyor:** `weekly_summary_log` defteri,
 `profiles.weekly_summary_push` kolonu, `trigger_weekly_summary()`,
@@ -152,7 +218,8 @@ cron, "çalıştığı sanılan ama çalışmayan" en pahalı hata sınıfı).
 
 ```bash
 curl -X POST "https://<proje>.supabase.co/functions/v1/weekly-summary" \
-  -H "Authorization: Bearer $WEEKLY_SUMMARY_CRON_SECRET" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "x-cron-secret: $WEEKLY_SUMMARY_CRON_SECRET" \
   -H "Content-Type: application/json" -d '{"dry_run": true}'
 ```
 
@@ -228,7 +295,8 @@ supabase functions deploy daily-brief
 Doğrulama (push göndermez, yalnızca analiz eder):
 ```bash
 curl -X POST "https://<proje>.supabase.co/functions/v1/analyze-signals" \
-  -H "Authorization: Bearer <ANALYZE_SIGNALS_CRON_SECRET>" \
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \
+  -H "x-cron-secret: <ANALYZE_SIGNALS_CRON_SECRET>" \
   -H "Content-Type: application/json" \
   -d '{"dry_run":true}'
 ```
@@ -372,9 +440,18 @@ alter table public.profiles
 ## 🔑 VAULT ADIMI — üç cron sırrı (2026-09-07)
 
 Üç Edge Function dağıtıldı ve `supabase secrets` tarafı yazıldı. **Kalan tek
-adım Vault.** Cron tetikleyicileri sırrı Vault'tan okuyup Bearer token olarak
-gönderiyor; Vault'ta karşılığı yoksa fonksiyon **401** döner ve hiçbir
-bildirim gitmez.
+adım Vault.** Cron tetikleyicileri sırrı Vault'tan okuyor; Vault'ta karşılığı
+yoksa fonksiyon **401** döner ve hiçbir bildirim gitmez.
+
+> ⚠️ **2026-09-14 güncellemesi:** Bu sırlar artık `Authorization` header'ında
+> DEĞİL, `x-cron-secret` header'ında gönderiliyor. `Authorization`'a
+> service_role JWT'si gidiyor ve o **`cron_gateway_jwt`** adlı ayrı bir Vault
+> kaydından okunuyor — bu dosyanın başındaki 🔴 bölüme bak. Aşağıdaki Vault
+> mekaniği aynen geçerli; yalnızca sırrın hangi header'da taşındığı değişti.
+>
+> Aşağıda uyarılan "mükerrer kayıt / `order by` eksikliği" sorunu da `0054`
+> ile kapandı: okuma artık `order by created_at desc` yapıyor ve mükerrer
+> kayıt varsa uyarı basıyor.
 
 Sırların gerçek değerleri repoya YAZILMADI (bu dosya git'te izleniyor).
 Değerler şurada:
@@ -496,7 +573,8 @@ Kuru koşu (kimseye bildirim gitmez):
 
 ```bash
 curl -X POST "https://<proje>.supabase.co/functions/v1/check-price-alerts" \
-  -H "Authorization: Bearer $PRICE_ALERTS_CRON_SECRET" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "x-cron-secret: $PRICE_ALERTS_CRON_SECRET" \
   -H "Content-Type: application/json" -d '{"dry_run": true}'
 ```
 
@@ -520,18 +598,17 @@ evds2.tcmb.gov.tr → üye ol → **Profil → API Anahtarı**
 ### 2) Dağıt
 
 ```bash
-supabase functions deploy fetch-inflation
+# ✅ YAPILDI — fonksiyonlar dağıtıldı, cron secret'ı + Vault yazıldı,
+#              0053 uygulandı, calendar-nudge yeniden dağıtıldı.
+#              Cron doğrulandı: fetch-inflation 10:05 < nudge 10:15 ✓
+
+# ⬜ KALAN TEK ŞEY — EVDS anahtarı:
 supabase secrets set EVDS_API_KEY="<evds-anahtarin>"
-supabase secrets set INFLATION_FETCH_CRON_SECRET="<rastgele-uzun-string>"
-
-# ⬜ KALDI — Vault → inflation_fetch_cron_secret = AYNI string
-#    (Dashboard → Vault; 3. satırdaki string ile birebir aynı olmalı)
-
-# ⚠️ Bu satır ATLANAMAZ — aşağıdaki uyarıya bak
-supabase functions deploy calendar-nudge
-
-supabase db push   # ya da SQL Editor → 0053_fetch_inflation.sql
 ```
+
+⚠️ Ayrıca **yukarıdaki `cron_gateway_jwt`** adımı yapılmadan bu tetikleyici
+de gateway'de 401 alır (`inflation_index` şu an boş — çekim hiç
+çalışmamış olabilir).
 
 ### ⚠️ `calendar-nudge` neden yeniden dağıtılmalı
 
@@ -553,7 +630,8 @@ bir entegrasyonla tabloyu bozmaktansa kapalı kalması tercih edildi.
 ```bash
 # Tabloya YAZMADAN — ne çekeceğini söyler
 curl -X POST "https://<proje>.supabase.co/functions/v1/fetch-inflation" \
-  -H "Authorization: Bearer $INFLATION_FETCH_CRON_SECRET" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "x-cron-secret: $INFLATION_FETCH_CRON_SECRET" \
   -H "Content-Type: application/json" -d '{"dry_run": true}'
 ```
 
@@ -599,7 +677,8 @@ söyler:
 
 ```bash
 curl -X POST "https://<proje>.supabase.co/functions/v1/daily-brief" \
-  -H "Authorization: Bearer $DAILY_BRIEF_CRON_SECRET" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+  -H "x-cron-secret: $DAILY_BRIEF_CRON_SECRET" \
   -H "Content-Type: application/json" -d '{"dry_run": true}'
 ```
 

@@ -23,15 +23,15 @@ Sıradaki: bunlardan biri ya da Faz 3.
 | # | Durum | Not |
 |---|---|---|
 | 0.1 | 🟡 Kod tarafı yapıldı | `tmp/` git'ten silindi, `.gitignore`'a eklendi. **Secret rotasyonu ve geçmiş temizliği SENDE** (`YAPMAN_GEREKENLER.md` en üst tablo #1-2). |
-| 0.2 | ✅ | `push-live-activity`: `requireCronSecret(LIVE_ACTIVITY_CRON_SECRET)`, `userId` kâhini kaldırıldı, hata mesajı sabit koda çevrildi. Deploy + secret sende (#3, #6). |
-| 0.3 | ✅ | `_shared/cron_auth.ts` (fail-closed, sabit zamanlı karşılaştırma). 6 fonksiyon buna bağlandı. Secret doğrulaması sende (#4). |
+| 0.2 | ✅ | `push-live-activity`: main'in `x-cron-secret` desenine (0054) bağlandı + `cronSecretZorunlu` fail-closed; `userId` kâhini kaldırıldı, hata mesajı sabit koda çevrildi. Deploy + secret sende (#3, #6). |
+| 0.3 | ✅ (main ile birleşti) | Main aynı sırada `x-cron-secret` desenine geçmişti (gateway JWT'yi Authorization'da istiyor; Bearer <secret> gateway'de 401 alıyordu — benim ilk sürümüm de o tuzağa düşerdi). Birleşimde main'in `cronYetkisiVarMi` API'si korundu, üstüne `cronSecretZorunlu` (secret yoksa 503; yerelde `CRON_AUTH_ALLOW_UNSET=1`) ve `sabitZamanliEsit` eklendi. 7 fonksiyon bu iki kapıyı sırayla çağırıyor. |
 | 0.4 | ✅ | `send-partner-invite-push` yanıtı `{ok, delivered}`; ham hata echo'su kaldırıldı. İstemci `results` okumuyordu — kırılma yok. |
 | 0.5 | ✅ | `build.gradle.kts`: `key.properties` yoksa `GradleException`. |
 | 0.6 | ✅ | `supabase_reset.sql` silindi; `supabase_schema.sql` migrations'a işaret eden nota indirildi. |
 | 0.7 | ✅ | `delete-account`: `DELETION_HASH_SALT` varsayılanı kaldırıldı (yoksa 503), `detail` echo'su kaldırıldı. Secret set etme sende (#5). |
 | 0.8 | ✅ | `main_navigation_screen.dart`: çıkış onayı `SystemNavigator.pop()`. |
 | 0.9 | ✅ | `.github/workflows/ci.yml`: PR + main'de `flutter analyze` + `flutter test`; ayrı job'da `deno check` + `deno test`. **İlk koşuda kırılabilir** — özellikle deno job'ı (testlerin izin gereksinimi `--allow-all` ile geçildi, `deno check` importları çözemezse job'ı gevşet). |
-| 0.10 | ✅ | `SupabaseService.isPushAdmin()` + `isPushAdminProvider` + Ayarlar tile'ı yalnızca admin'e; "GELİŞTİRİCİ" → "TANILAMA"; `adaptiveRoute`. Debug "Test Crash" tile'ı admin'den bağımsız ayrı bloğa alındı. Migration `0054` GRANT — koşulması sende (#7). |
+| 0.10 | ✅ | `SupabaseService.isPushAdmin()` + `isPushAdminProvider` + Ayarlar tile'ı yalnızca admin'e; "GELİŞTİRİCİ" → "TANILAMA"; `adaptiveRoute`. Debug "Test Crash" tile'ı admin'den bağımsız ayrı bloğa alındı. Migration `0055` GRANT — koşulması sende (#7). (Main ile birleşince 0054 numarası cron-auth migration'ına gitti.) |
 
 ## Faz 1 — Temizlik ve tutarlılık altyapısı
 

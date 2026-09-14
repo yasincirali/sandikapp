@@ -48,18 +48,18 @@
 // olmalı. Yoksa `skipped_coverage` ile atlanır.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
-import { requireCronSecret } from '../_shared/cron_auth.ts';
 
 import {
   createAccessToken,
   sendFcmNotification,
   ServiceAccount,
 } from '../_shared/fcm.ts';
+import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+    'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
 /// Android bildirim kanalı — istemcide aynı kimlikle kayıtlı olmalı
@@ -230,6 +230,7 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const fcmProjectId = Deno.env.get('FCM_PROJECT_ID');
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
+    const cronSecret = Deno.env.get('WEEKLY_SUMMARY_CRON_SECRET');
 
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error(
@@ -242,9 +243,11 @@ Deno.serve(async (request) => {
         'FCM secret\'ları eksik: FCM_PROJECT_ID, FCM_SERVICE_ACCOUNT_JSON.',
       );
     }
-    // FAIL-CLOSED: secret yoksa 503, uyusmuyorsa 401 (bkz. _shared/cron_auth.ts).
-    const denied = await requireCronSecret(request, 'WEEKLY_SUMMARY_CRON_SECRET');
-    if (denied) return denied;
+    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
+    const eksik = cronSecretZorunlu(cronSecret, 'WEEKLY_SUMMARY_CRON_SECRET');
+    if (eksik) return eksik;
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
 
     let dryRun = false;
     let minMovePct = DEFAULT_MIN_MOVE_PCT;

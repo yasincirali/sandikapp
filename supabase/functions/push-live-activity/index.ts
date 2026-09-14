@@ -10,17 +10,18 @@
 //
 // ## Çağrılma biçimi
 // `pg_cron` seans içinde periyodik tetikler (bkz. 0033/0034 migration) ve
-// `Authorization: Bearer <live_activity_cron_secret>` başlığı gönderir.
-// Fonksiyon bu başlığı `LIVE_ACTIVITY_CRON_SECRET` secret'ıyla doğrular
-// (fail-closed; bkz. _shared/cron_auth.ts). Vault'taki
-// `live_activity_cron_secret` ile function secret'ı AYNI değer olmalı.
+// `x-cron-secret: <live_activity_cron_secret>` başlığı gönderir (0054;
+// Authorization gateway JWT'sine ayrılmıştır). Fonksiyon bu başlığı
+// `LIVE_ACTIVITY_CRON_SECRET` secret'ıyla doğrular (fail-closed; bkz.
+// _shared/cron_auth.ts). Vault'taki `live_activity_cron_secret` ile function
+// secret'ı AYNI değer olmalı.
 //
 // Eskiden `{ "userId": "<uuid>" }` gövdesiyle tek kullanıcı güncellenebiliyordu.
 // Kaldırıldı: yetkisiz çağrıda "aktif oturum yok" / "gönderildi" ayrımı
 // bir kullanıcı UUID'sinin uygulamayı açık tuttuğunu sızdırıyordu.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { requireCronSecret } from '../_shared/cron_auth.ts';
+import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 
 // ── APNs kimlik bilgileri ───────────────────────────────────────────────
 // Token bazlı kimlik doğrulama (sertifika değil): .p8 anahtarı 1 yıl
@@ -194,9 +195,13 @@ async function pushToSession(
 
 Deno.serve(async (request) => {
   // Yetki kontrolü HER ŞEYDEN ÖNCE — APNs kimlik hatası bile yetkisiz
-  // çağırana bilgi vermemeli.
-  const denied = await requireCronSecret(request, 'LIVE_ACTIVITY_CRON_SECRET');
-  if (denied) return denied;
+  // çağırana bilgi vermemeli. Desen 0054 ile aynı: gateway JWT'si
+  // Authorization'da, cron secret'ı `x-cron-secret`'ta (bkz. CRON_AUTH.md).
+  const cronSecret = Deno.env.get('LIVE_ACTIVITY_CRON_SECRET');
+  const eksik = cronSecretZorunlu(cronSecret, 'LIVE_ACTIVITY_CRON_SECRET');
+  if (eksik) return eksik;
+  const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+  if (yetkisiz) return yetkisiz;
 
   if (!APNS_KEY_ID || !APNS_TEAM_ID || !APNS_PRIVATE_KEY) {
     return new Response(

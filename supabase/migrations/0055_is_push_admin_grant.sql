@@ -1,4 +1,4 @@
--- 0054 — is_push_admin() istemciden çağrılabilir olsun.
+-- 0055 — is_push_admin() istemciden çağrılabilir olsun.
 --
 -- 0021 fonksiyonu tanımlayıp public/anon'dan revoke etti ama authenticated'a
 -- GRANT vermedi; istemci "ben admin miyim" sorusunu soramıyordu. Bu yüzden

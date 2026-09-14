@@ -1,58 +1,99 @@
-// Cron çağrılarının yetkilendirmesi — FAIL-CLOSED.
+// Cron çağrısı yetkilendirmesi — TEK kaynak.
 //
-// Eski biçim şuydu:
-//   if (cronSecret) { if (authHeader !== `Bearer ${cronSecret}`) return 401; }
-// Bu FAIL-OPEN: secret hiç set edilmemişse (isim hatası, proje restore'u
-// sonrası kayıp, secret'tan önce deploy) blok atlanır ve fonksiyon herkese
-// açık kalır. Aynı fonksiyonlar SUPABASE_URL eksikse throw ediyordu — yani
-// yalnızca güvenlik sınırı sessizce düşüyordu. Bu yardımcı üç şeyi
-// değiştirir:
-//   1. Secret yoksa 503 döner (fonksiyon çalışmaz; log'a yazar).
-//   2. Karşılaştırma sabit zamanlıdır (SHA-256 özetleri üzerinden).
-//   3. Tek yer: yedi fonksiyon aynı kuralı paylaşır, ayrışamaz.
+// ── Neden Authorization DEĞİL de ayrı bir header ────────────────────────────
+// Supabase API gateway, edge function'a ulaşmadan ÖNCE `Authorization`
+// header'ını JWT olarak ayrıştırır. Rastgele hex bir cron secret JWT
+// biçiminde olmadığı için gateway isteği fonksiyona hiç iletmeden
+// `401 UNAUTHORIZED_INVALID_JWT_FORMAT` döner.
 //
-// Kullanım:
-//   const denied = await requireCronSecret(request, 'DAILY_BRIEF_CRON_SECRET');
-//   if (denied) return denied;
+// Bu hata SESSİZDİ: cron her gün koşuyor, pg_net 401'i `net._http_response`
+// içine yazıyor ve kimse bakmıyordu. `daily_brief_log` Mayıs 2026'dan beri
+// boştu — brifing hiç gitmemişti. `live-activity-refresh`'in çalışmasının
+// tek sebebi Vault'undaki değerin (219 karakter) rastgele bir string değil,
+// gerçek bir service_role JWT'si olmasıydı.
+//
+// Doğru bölüşüm:
+//   Authorization: Bearer <service_role JWT>  → gateway'i geçer
+//   x-cron-secret: <rastgele uzun string>     → fonksiyon doğrular
+//
+// İki katman korunur. Gateway'i `verify_jwt = false` ile kapatmak tek
+// savunma olarak secret'ı bırakırdı; Vault'a service_role JWT'yi cron
+// secret'ı OLARAK yazmak ise fonksiyon başına izolasyonu yok ederdi
+// (tek sızıntı tüm DB'yi açar).
 
-const encoder = new TextEncoder();
+/// Cron secret'ını taşıyan header. `Authorization` gateway'e ait.
+export const CRON_SECRET_HEADER = 'x-cron-secret';
 
-async function sha256(input: string): Promise<Uint8Array> {
-  const digest = await crypto.subtle.digest('SHA-256', encoder.encode(input));
-  return new Uint8Array(digest);
-}
-
-/// Sabit zamanlı eşitlik. Özetler eşit uzunlukta olduğundan uzunluk
-/// bilgisi sızmaz; XOR toplamı erken çıkış yapmaz.
-export async function timingSafeEqual(a: string, b: string): Promise<boolean> {
-  const [ha, hb] = await Promise.all([sha256(a), sha256(b)]);
-  let diff = 0;
-  for (let i = 0; i < ha.length; i++) diff |= ha[i] ^ hb[i];
-  return diff === 0;
-}
-
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-/// Secret yoksa 503, başlık uyuşmuyorsa 401, geçerliyse null döner.
-export async function requireCronSecret(
+/// Cron çağrısını doğrular. `null` = geçti, `Response` = reddedildi.
+///
+/// `cronSecret` boşsa kontrol atlanır (yerel geliştirme). Bu, üretimde
+/// secret'ın tanımlı olmasına güvenir — `daily-brief` gibi fonksiyonlarda
+/// zaten var olan davranış, korunuyor.
+///
+/// Geriye dönük uyum: `Authorization: Bearer <cron_secret>` de kabul edilir.
+/// Migration'lar ve fonksiyonlar aynı anda dağıtılamaz; arada kalan çağrı
+/// yetkisiz sayılıp kaybolmasın. Gateway'in JWT duvarı yüzünden bu yol
+/// pratikte yalnızca gateway doğrulamasının kapalı olduğu durumda çalışır.
+export function cronYetkisiVarMi(
   request: Request,
-  envName: string,
-): Promise<Response | null> {
-  const secret = Deno.env.get(envName);
-  if (!secret) {
-    console.error(
-      `${envName} tanimli degil — cron yetkilendirmesi yapilamiyor, istek reddedildi.`,
-    );
-    return json({ error: 'cron_secret_missing' }, 503);
+  cronSecret: string | undefined | null,
+): Response | null {
+  if (!cronSecret) return null;
+
+  const fromHeader = request.headers.get(CRON_SECRET_HEADER);
+  if (fromHeader !== null && sabitZamanliEsit(fromHeader, cronSecret)) {
+    return null;
   }
-  const header = request.headers.get('Authorization') ?? '';
-  const ok = header.startsWith('Bearer ')
-    && (await timingSafeEqual(header.slice('Bearer '.length), secret));
-  if (!ok) return json({ error: 'Yetkisiz cron cagrisi.' }, 401);
-  return null;
+
+  const auth = request.headers.get('Authorization');
+  if (auth !== null && sabitZamanliEsit(auth, `Bearer ${cronSecret}`)) {
+    return null;
+  }
+
+  return new Response(
+    JSON.stringify({ error: 'Yetkisiz cron cagrisi.' }),
+    {
+      status: 401,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json',
+      },
+    },
+  );
+}
+
+/// Sabit zamanlı karşılaştırma. `===` ilk farklı bayttta durur; yanıt
+/// süresinden secret'ın kaç karakterinin doğru olduğu ölçülebilir (2026-09
+/// denetimi L1). Uzunluk farkı da sızmasın diye iki dizi de aynı uzunluğa
+/// getirilerek XOR toplanır.
+export function sabitZamanliEsit(a: string, b: string): boolean {
+  const n = Math.max(a.length, b.length);
+  let fark = a.length ^ b.length;
+  for (let i = 0; i < n; i++) {
+    fark |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  }
+  return fark === 0;
+}
+
+/// FAIL-CLOSED kapı: secret tanımsızsa 503.
+///
+/// `cronYetkisiVarMi` secret boşken kontrolü ATLAR (yerel geliştirme için
+/// bilinçli). Üretimde bu, yanlış yazılmış ya da restore sonrası kaybolmuş
+/// bir secret'ın fonksiyonu herkese açması demek (2026-09 denetimi H2).
+/// Fonksiyonlar bunu `cronYetkisiVarMi`'den ÖNCE çağırır: secret yoksa
+/// istek hiç işlenmez ve log'a düşer. Yerelde `CRON_AUTH_ALLOW_UNSET=1` ile
+/// kapı açılır.
+export function cronSecretZorunlu(
+  cronSecret: string | undefined | null,
+  envName: string,
+): Response | null {
+  if (cronSecret) return null;
+  if (Deno.env.get('CRON_AUTH_ALLOW_UNSET') === '1') return null;
+  console.error(
+    `${envName} tanimli degil — cron yetkilendirmesi yapilamiyor, istek reddedildi.`,
+  );
+  return new Response(JSON.stringify({ error: 'cron_secret_missing' }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
