@@ -68,6 +68,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   static const _supportEmail = 'sandikapp.destek@gmail.com';
 
   Future<void> _confirmDeleteAccount() async {
+    if (_deleting) return;
     // 1. Kademe — uyarı
     final firstConfirm = await showSandikConfirm(
       context: context,
@@ -391,22 +392,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final bolum = widget.bolum;
-    return Scaffold(
-      backgroundColor: context.c.background,
-      appBar: SandikAppBar(
-        title: bolum?.baslik ?? 'Ayarlar',
-      ),
-      body: AbsorbPointer(
-        absorbing: _deleting,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          children: switch (bolum) {
-            null => _hub(),
-            SettingsBolum.gorunum => _gorunum(),
-            SettingsBolum.bildirimler => _bildirimler(),
-            SettingsBolum.hesap => _hesap(),
-            SettingsBolum.yardim => _yardim(),
-          },
+    // Silme uçarken ekran TAMAMEN kilitli olmalı — yalnızca gövde değil.
+    //
+    // Önceki hâlde `AbsorbPointer` sadece `body`'yi sarıyordu: app bar'ın geri
+    // oku ve sistem geri hareketi açık kalıyordu. Kullanıcı istek uçarken
+    // ekrandan çıkabiliyor, sonra `Navigator.popUntil` başka bir ekranı
+    // kapatıyordu. Hesap silme geri alınamaz ve 30 sn sürebilir; bu pencerede
+    // tek doğru davranış "bekle" demek.
+    //
+    // `canPop: false` yalnızca _deleting iken: normal zamanda geri tuşu
+    // çalışmaya devam etsin (ayarlar hub'ı iç içe açılıyor).
+    return PopScope(
+      canPop: !_deleting,
+      child: Scaffold(
+        backgroundColor: context.c.background,
+        appBar: SandikAppBar(
+          title: bolum?.baslik ?? 'Ayarlar',
+          // Geri oku silme sırasında gizlenir: görünüp tıklanmaması
+          // kullanıcıya "bu iş bitene kadar bekle"yi sessizce anlatır.
+          showBack: !_deleting,
+        ),
+        body: Stack(
+          children: [
+            AbsorbPointer(
+              absorbing: _deleting,
+              child: ListView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                children: switch (bolum) {
+                  null => _hub(),
+                  SettingsBolum.gorunum => _gorunum(),
+                  SettingsBolum.bildirimler => _bildirimler(),
+                  SettingsBolum.hesap => _hesap(),
+                  SettingsBolum.yardim => _yardim(),
+                },
+              ),
+            ),
+            // Örtü, kilidin GÖRÜNÜR karşılığı. AbsorbPointer tek başına
+            // dokunuşu yutar ama ekran çalışır görünmeye devam eder;
+            // kullanıcı uygulamanın donduğunu sanıp kapatmaya çalışır.
+            if (_deleting)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: context.c.background.withValues(alpha: 0.82),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CustomLoadingIndicator(size: 32),
+                        SizedBox(height: SandikSpace.md),
+                        Text(
+                          'Hesabın siliniyor…',
+                          style: context.t.titleMedium
+                              ?.copyWith(color: context.c.text90),
+                        ),
+                        SizedBox(height: SandikSpace.xs),
+                        Text(
+                          'Bu işlem birkaç saniye sürebilir. Uygulamayı kapatma.',
+                          textAlign: TextAlign.center,
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text58),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
