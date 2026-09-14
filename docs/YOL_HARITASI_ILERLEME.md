@@ -22,9 +22,9 @@ ile doğrulandı.
 tamam (`SocialAuthService`, `SocialSignInButtons`, sosyal hesapta şifresiz hesap silme);
 sağlayıcı kimlikleri `YAPMAN_GEREKENLER.md` #15-16. Güvenlik: M1, M2, M7, M8, M9, L2, L4,
 L5, L8, L12, L13, L14 kapandı (aşağıdaki tablo). Kalan: M12 (GoTrue dashboard, sende),
-L3 (pinning kararı). **Tamamlanan:** Faz 0 (tümü), Faz 1 (tümü; google_fonts/lint/leaderboard-timer
-ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3.3, 3.4, 3.5,
-3.6, 3.7, 3.8 (kısmi), 3.11, 3.15, 3.17 (kısmi), 3.19 (kısmi).
+L3 (pinning kararı). **Tamamlanan:** Faz 0 (tümü), Faz 1 (tümü), Faz 2: 2.1–2.11, 2.13 (kısmi);
+Faz 3: 3.2 (çekirdek), 3.3, 3.4, 3.5, 3.6, 3.7, 3.8 (kısmi), 3.9 (ortak altyapı), 3.10, 3.11,
+3.15, 3.17, 3.19 (kısmi).
 
 **Kalanlar ve neden burada durdu:**
 
@@ -38,7 +38,7 @@ ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3
 | 3.16 integration_test | Test Supabase projesi + seed verisi ister. |
 | 3.18 Swift widget derleme CI | macOS runner'da `xcodebuild` adımı; yerelde doğrulanamaz. |
 | 3.20 İngilizce arayüz | Yalnızca EN pazarı hedefleniyorsa. |
-| 2.10 / 2.12 / 2.14, 2.13 `Size.zero` | Görsel doğrulama isteyen UI kalemleri; cihazsız yapılmadı. |
+| 2.12 / 2.14 | Görsel doğrulama isteyen UI kalemleri (segment kontrolleri, hero yeniden tasarımı); cihazsız yapılmadı. 2.10 ve 2.13 `Size.zero` 2026-09-14'te kapandı. |
 | 3.8 dış bağlantı köprüsü, 3.19 sertifika pinning | Sırasıyla `app_links`/`flutter_deeplinking_enabled` cihaz testi ve pinning'in kesinti riski kararı. |
 
 **Senin tarafında bekleyenler** (`YAPMAN_GEREKENLER.md` en üst tablo): secret rotasyonu, 7 cron
@@ -92,7 +92,7 @@ limit'leri.
 | 1.6 | ✅ (silme ile) | `Asset.toMap()/fromMap()` lib+test'te SIFIR çağıran — "partner kod payload" yorumu bayattı. Alan paritesi kurmak yerine ölü çift SİLİNDİ; tek serileştirme şeması `toSupabase/fromSupabase`. |
 | 1.7 | ✅ (auth kapsamı) | `lib/services/crash_reporter.dart`: `CrashReporter.report(e, st, reason:)` — sanitize + non-fatal + Firebase yoksa no-op. `auth_service`'teki 7 jenerik `catch (e)` buna bağlandı ve kullanıcı mesajı `friendlyError(e)` üzerinden. `remote_push_service` breadcrumb'ında tam UUID yerine ilk 8 karakter (M6). Diğer servislerdeki bilinçli `catch (_)` blokları (yorum gerekçeli) dokunulmadı. |
 | 1.8 | ✅ (kısmi) | Kayıt hatası artık hesap varlığını doğrulamıyor (M4). Şifre sıfırlama OTP'sinde 6 hane kontrolü. **Login/OTP sunucu tarafı throttle (M12) yapılmadı**: istemci sayacı güvenlik sınırı değil (S1 dersi); doğru yer GoTrue rate limit ayarları — `YAPMAN_GEREKENLER.md` #10. |
-| 1.9 | 🟡 kısmi | `flutter_launcher_icons` → `dev_dependencies`. **Ertelendi:** `google_fonts` kaldırma (35 kullanım + `bundled_font_test` google_fonts API'sine bağlı) ve `flutter_lints` 4→6 + strict — ikisi de analyzer koşmadan güvenli değil; `TECHNICAL_DEBT.md`'ye yazıldı. |
+| 1.9 | ✅ | `flutter_launcher_icons` → `dev_dependencies`. 2026-09-14: `google_fonts` kaldırıldı (DM Sans paketli, `kSandikFontFamily`/`sandikFont`), `flutter_lints` 6 + strict analyzer (`unawaited_futures`, strict-casts/inference/raw-types); `avoid_dynamic_calls` bilinçli kapalı (127 site). |
 | 1.10 | ✅ | `test/design_token_ratchet_test.dart`: `Colors.*` ≤ 89 satır, `fontSize:` ≤ 181 satır (tema dışı). |
 | 1.11 | ✅ (kısmi) | `lib/utils/polling.dart`: `ForegroundPoller` (arka planda durur, üst üste binmez) ve `BackoffPoller` (3→15 sn, 10 dk tavan). Profil bekleyen istekler ve ortaklık istekleri ekranı 5 sn → 20 sn + arka planda durur; davet durumu yoklaması geri çekilmeli. **Leaderboard'daki 5 tick timer dokunulmadı** — ekran Faz 3.12 kararına bağlı (kapatılabilir). |
 | 1.12 | ✅ | `FxRateMigrationService.runFor` kullanıcı başına günde bir kez (`PrefKeys.fxMigrationLastRunMs_<uid>`); yeniden deneme davranışı korunuyor. |
@@ -110,10 +110,10 @@ limit'leri.
 | 2.7 | ✅ | (1) OTP doğrulaması sonrası sorumluluk reddi kaydı otomatik düşülüyor — kayıt ekranındaki 'Yasal Koşullar' onayı zaten disclaimer'ı içeriyordu; `DisclaimerAcceptanceScreen` artık yalnızca eski/kaydı olmayan hesaplara çıkar. (2) **'Belgeyi açıp sonuna kadar kaydır' kapısı kaldırıldı** — kutu doğrudan işaretlenir, belge bağlantısı bir dokunuş uzakta. ⚠️ Hukuki tarafta bilinçli karar: KVKK açık rıza 'bilgilendirilmiş' olmayı ister, 'sonuna kadar kaydırılmış' olmayı değil; itiraz edersen `_LegalConsentBox.onTap` tek satırla eski davranışa döner. (3) Turda 'Atla' zaten vardı; Ayarlar → Destek'e 'Tanıtım turunu yeniden izle' eklendi. |
 | 2.8 | ✅ (boş durum) | Ana ekranda kendi görünümü + sıfır varlık = `_EmptyPortfolioCta` özetin hemen altında; şeritler, kişi kartları, filtre çipleri ve iki boş başlık gizli. Tür filtresi boşken aynı bileşen 'Bu türde varlık yok' diliyle. **3 şeridi tek yatay karta toplama yapılmadı** — şeritler zaten kendi kendini gizliyor; dolu portföyde katlama üstü sorunu ölçülmeden yeniden düzenlemek erken. |
 | 2.9 | ✅ (adlar) | `charts_screen.dart`/`ChartsScreen` → `portfolio_screen.dart`/`PortfolioScreen`; `performance_screen.dart`/`PerformanceScreen` → `asset_detail_screen.dart`/`AssetDetailScreen`. 73 dosya (lib, test kaynak-metin yolları, CLAUDE.md, TECHNICAL_DEBT.md) tek geçişte; arşiv dokümanlar eski adla kaldı. **Geri tuşu sekme geçmişi ve predictive back yapılmadı** — `PopScope(canPop:false)` çıkış onayıyla iç içe; ayrı bir tasarım kararı. |
-| 2.10 | ⏳ | |
+| 2.10 | ✅ | 2026-09-14: takip listesi ve varlık silmede snack üzerinden geri al (`restorePositionLots` — lotlar geri, silme log'u kaldırılır). |
 | 2.11 | ✅ (zaten) | Denetim iddiası eskiydi: `chart_interaction_parity_test` karşılaştırma ve takip grafiklerinin `PercentComparisonChart` → `ZoomableChart` üzerinde olduğunu zaten kilitliyor (pinch/pan/crosshair paritesi var). Sparkline bilinçli etkileşimsiz. |
 | 2.12 | ⏳ | |
-| 2.13 | 🟡 kısmi | `ZoomableChart.semanticLabel` (varsayılan 'Fiyat grafiği'; `PercentComparisonChart` seri sayısı + gün ile dolduruyor, takip grafiği ondan miras alıyor). Sparkline dekoratif olarak bilinçli sessiz (kaynakta gerekçeli). **Yapılmadı:** 20 `minimumSize: Size.zero` butonun 44pt'ye çıkarılması; settings/add_asset Semantics; kompakt yüzeylerde ok glifi. |
+| 2.13 | 🟡 kısmi | `ZoomableChart.semanticLabel`; sparkline bilinçli sessiz. 2026-09-14: `minimumSize: Size.zero` butonlar 44pt'ye çıkarıldı (`SandikTouch.min`, `touch_target_size_test` ratchet), tür/döviz çipleri ve ayarlar seçicileri `Semantics(button, selected)`. **Kalan:** kompakt yüzeylerde ok glifi. |
 | 2.14 | ⏳ | |
 
 ## Faz 3 — Ürün ve mimari
@@ -130,5 +130,5 @@ limit'leri.
 | 3.15 | ✅ (dışa aktarım) | Dışa aktarım 7 → 13 tablo: watchlist, price_alerts, signal_preferences, signal_notifications, milestones, live_activity_sessions eklendi (`export_version` artırıldı). İçe aktarım (geri yükleme) yapılmadı — şema doğrulaması + çakışma politikası ister. |
 | 3.19 | 🟡 kısmi | `0056_force_rls_and_db_logs_retention.sql`: 19 tabloda `FORCE ROW LEVEL SECURITY` (var olanlara, `to_regclass` ile), `cleanup_db_logs()` + günlük 03:15 UTC pg_cron işi (30 gün). **Sertifika pinning yapılmadı** — Supabase/Yahoo/TEFAS sertifika rotasyonlarında uygulamayı kırma riski; ayrı karar. Migration koşulması sende. |
 | 3.5 | ✅ (yapıştır biçimi) | `CsvImportService.parse` (saf): ayraç otomatik (`;`/`,`/sekme), TR/EN başlık takma adları, başlıksız sıra `sembol, adet, fiyat, tarih`, TR sayı, 3 tarih biçimi, tür sütunu ya da semboldan çıkarım (`inferType`), `.IS`/`USDTRY=X`/altın alt türü normalizasyonu; hatalı satır atlanır, nedeni listelenir. `CsvImportScreen`: yapıştır → önizle → sepete ekle (kayıt toplu ekleme ekranında; fiyatı boş satırlar kapanışı orada çeker). Giriş: Toplu Ekle app bar ikonu + boş sepet düğmesi. **Dosya seçici bilerek yok** (eklenti + izin akışı yerine kopyala-yapıştır). Aracı kurum özel biçimleri (Midas/İş Yatırım) eklenmedi — örnek ekstre gerekir. `test/csv_import_service_test.dart`. |
-| 3.17 | 🟡 kısmi | `test/tefas_model_test.dart`: `TefasFund` JSON round-trip (mevduat testleri özellikle birlikte silindi). `remote_push_service`, `data_export_service`, `price_alert_service` hâlâ testsiz — üçü de Supabase/Firebase istemcisine bağlı, arayüz soyutlaması ister. |
+| 3.17 | ✅ | `tefas_model_test`; 2026-09-14: `price_alert_service` (`PriceAlertStore` kapısı), `data_export_service` (saf `belgeKur`/`topla`), `remote_push_service` (`push_message_router`) testli; `add_asset_form_provider` (22) ve `money_format` (10) eklendi. |
 | 3.11 | ✅ (sessiz saatler) | `profiles.quiet_start/quiet_end` (0057, TR saati, sarmalı pencere), `_shared/quiet_hours.ts` (`sessizSaatteMi`, `sessizKullanicilar`), 4 proaktif fonksiyon (brifing, haftalık özet, takvim, fiyat alarmı) sessiz saatte ATLAR (alarm damgalanmaz — pencere bitince koşul sürüyorsa gider). İstemci: `quietHoursProvider` (sunucu kaynaklı), Ayarlar → Bildirimler → 'Sessiz saatler' anahtarı + başlangıç/bitiş kutuları. Sinyaller kendi tür bazlı penceresinde kaldı. **Global sıklık tavanı eklenmedi** — haftalık tavan zaten sunucuda (RETENTION §7). `supabase/tests/quiet_hours_test.ts`. |
