@@ -33,6 +33,10 @@ on:
         description: "Deftere 'uygulandı' işaretlenecek sürümler (SQL Editor'dan elle koşulanlar için; SQL KOŞMAZ)"
         type: string
         default: ""
+      unrepair:
+        description: "Deftere 'reverted' işaretlenecek sürümler — db push onları YENİDEN koşar (yanlış repair'i geri alır)"
+        type: string
+        default: ""
       include_all:
         description: "Defterde 'uygulandı' görünse bile TÜM migration'ları koş (yanlış repair'i telafi eder)"
         type: boolean
@@ -82,6 +86,17 @@ jobs:
       - name: Migration defterini onar
         if: ${{ inputs.repair != '' }}
         run: supabase migration repair --status applied ${{ inputs.repair }}
+
+      # Defter kaydını GERİ AL — `db push` o sürümleri yeniden koşsun.
+      #
+      # `--include-all` bunun yerine GEÇMEZ: o yalnızca defterde HİÇ
+      # bulunmayan sürümleri kapsar, "uygulandı" işaretli olanı atlamaya
+      # devam eder (2026-09-14'te denendi, "up to date" dedi). Yanlışlıkla
+      # `applied` işaretlenmiş ama gövdesi hiç çalışmamış bir migration'ı
+      # ancak bu geri getirir.
+      - name: Migration defterini geri al (yeniden koşsun)
+        if: ${{ inputs.unrepair != '' }}
+        run: supabase migration repair --status reverted ${{ inputs.unrepair }}
 
       # `--include-all`: defter "uygulandı" dese bile hepsini koşar.
       #
