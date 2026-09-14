@@ -1147,6 +1147,29 @@ dosyada ayrıca kaynak metni denetleyen bir "wiring" testi var.
 
 ---
 
+## ✅ KAPANDI — Paralel oturum incelemesi (2026-09-14)
+
+İki bağımsız oturum aynı gün aynı dosyalara dokundu (baz para birimi,
+Ayarlar hub'ı, alarmlar, derin bağlantı, paylaşım kartı). Metinsel çakışma
+rebase'de çözüldü ama ANLAMSAL entegrasyon incelenmemişti; `82363ae..HEAD`
+aralığı gözden geçirildi ve altı hata bulundu (hepsi düzeltildi, testlendi):
+
+| Bulgu | Etki |
+|---|---|
+| `analyze-signals` de-dup haritası `asset_id` ile anahtarlı | 0062'den beri o sütun POZİSYON anahtarı ve kullanıcılar arası ORTAK: bir kullanıcının durumu ötekinin push'unu susturuyordu |
+| Karşılaştırmada TÜFE 1A'da düz %0 | 30 günlük pencereye tek endeks noktası düşüyor; "enflasyon sıfır" okunuyordu |
+| Gün içi karşılaştırmada seans günü kapısı | İki future birlikte başlıyor; karşılaştırma önce dönerse kapı boş/eski değer okuyor |
+| Derin bağlantı çift push | `getInitialLink` + akış: eklenti aynı bağlantıyı iki kez veriyor |
+| iOS izin damgası kayıttan önce | Kayıt düşerse olay kalıcı kayboluyor |
+| Gizli bakiye maskesi `gr••••` | Gram altında sembol sonek |
+
+**Ders:** paralel oturumlar aynı gün aynı alana dokunduğunda, çakışmasız
+birleşme "doğru birleşti" demek değil. İkisi de yeşil testle geldi; hatalar
+tam olarak ikisinin BİRLEŞME noktalarındaydı (0062 şema değişikliği ×
+fonksiyonun bellek içi haritası, yeni TÜFE serisi × mevcut pencere kuralı).
+
+---
+
 ## 🟡 AÇIK — Riverpod ile setState karışımı
 
 Ekranlarda **147 `setState`** çağrısı. Yerel arayüz durumu (açık/kapalı
