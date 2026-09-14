@@ -80,6 +80,27 @@ void main() {
     );
   });
 
+  test('CupertinoButton dokunma hedefi Size.zero ile iptal edilmemeli', () {
+    // 2026-09-14: 20 `minimumSize: Size.zero` sitesi `SandikTouch.minSize`'a
+    // çekildi (2.13). Size.zero, HIG 44pt sınırını tek satırla iptal eder ve
+    // yukarıdaki boyut taraması onu görmez (sayı yok). Tema dosyası sabitin
+    // kendisini tanımlar, taramanın dışındadır.
+    final offenders = <String>[];
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      if (entity.path.endsWith('sandik.dart')) continue;
+      final lines = entity.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        if (lines[i].contains('minimumSize: Size.zero')) {
+          offenders.add('${entity.path}:${i + 1}');
+        }
+      }
+    }
+    expect(offenders, isEmpty,
+        reason: 'minimumSize: SandikTouch.minSize kullan.\n'
+            '${offenders.join('\n')}');
+  });
+
   test('metin ölçekleme (Dynamic Type) ezilmemeli', () {
     // HIG #102 (High): "Scale text with Dynamic Type up to XXXL",
     // "Don't cap text size or break layout at large sizes".

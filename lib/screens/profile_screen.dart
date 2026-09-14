@@ -339,7 +339,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       TourAnchor(
                         target: TourTarget.ayarlar,
                         child: CupertinoButton(
-                        minimumSize: Size.zero,
+                        minimumSize: SandikTouch.minSize,
                         padding: EdgeInsets.zero,
                         onPressed: _busy
                             ? null
@@ -545,7 +545,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       ),
                       CupertinoButton(
-                        minimumSize: Size.zero,
+                        minimumSize: SandikTouch.minSize,
                         padding: EdgeInsets.zero,
                         onPressed: () async {
                           final shortCode = _generatedCode!.split(':')[0];
@@ -791,7 +791,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           CupertinoButton(
-            minimumSize: Size.zero,
+            minimumSize: SandikTouch.minSize,
             padding: EdgeInsets.zero,
             onPressed: _busy
                 ? null
@@ -813,7 +813,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(width: 8),
           CupertinoButton(
-            minimumSize: Size.zero,
+            minimumSize: SandikTouch.minSize,
             padding: EdgeInsets.zero,
             onPressed: _busy
                 ? null

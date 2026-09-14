@@ -482,9 +482,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// (alımlar − satışlar), böylece hareket satırı "ne kadarlık varlık
   /// gitti" sorusunu yanıtlar. Grafik ve toplamlar deleteLog'u zaten yok
   /// sayar; bu alanlar yalnızca gösterim içindir.
-  Future<void> deletePositionLots(List<Asset> lots) async {
+  Future<SilinenPozisyon?> deletePositionLots(List<Asset> lots) async {
     final ids = lots.map((l) => l.id).toSet();
-    if (ids.isEmpty) return;
+    if (ids.isEmpty) return null;
 
     final current = state.valueOrNull;
 
@@ -558,6 +558,35 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         ],
       ));
     }
+    return SilinenPozisyon(lotIds: ids.toList(), logId: log?.id);
+  }
+
+  /// [deletePositionLots]'u geri alır: damga temizlenir, mezar taşı silinir.
+  ///
+  /// HIG: yıkıcı eylem geri alma sunmalı. Silme yumuşak olduğu için lot'lar
+  /// sunucuda duruyor; geri alma yalnızca damgayı kaldırır. Mezar taşı
+  /// fiziksel silinir — o kayıt "silindi" olayının kendisidir, olay
+  /// olmamışsa hareket listesinde durmamalı.
+  Future<void> restorePositionLots(SilinenPozisyon kayit) async {
+    await SupabaseService.instance.restoreAssets(kayit.lotIds);
+    if (kayit.logId case final logId?) {
+      await SupabaseService.instance.deleteAsset(logId);
+    }
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final ids = kayit.lotIds.toSet();
+    state = AsyncData(current.copyWith(
+      assets: [
+        for (final a in current.assets)
+          if (a.id == kayit.logId)
+            // mezar taşı düşer
+            ...<Asset>[]
+          else if (ids.contains(a.id))
+            a.copyWithDeletedAt(null)
+          else
+            a,
+      ],
+    ));
   }
 
   Future<void> updateManualPrice(Asset asset, double price) async {
@@ -790,4 +819,15 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     }
     state = AsyncData(map);
   }
+}
+
+/// [PortfolioNotifier.deletePositionLots]'un makbuzu — geri alma için
+/// gereken her şey: damgalanan lot kimlikleri ve eklenen mezar taşı.
+class SilinenPozisyon {
+  const SilinenPozisyon({required this.lotIds, required this.logId});
+
+  final List<String> lotIds;
+
+  /// Mezar taşı yoksa (yalnızca eski mezar taşları silinmişse) null.
+  final String? logId;
 }

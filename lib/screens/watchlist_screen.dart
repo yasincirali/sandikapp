@@ -98,7 +98,7 @@ class _PeriodToggle extends ConsumerWidget {
             final isSelected = selected == i;
             return Expanded(
               child: CupertinoButton(
-                minimumSize: Size.zero,
+                minimumSize: SandikTouch.minSize,
                 padding: EdgeInsets.zero,
                 onPressed: () {
                   if (isSelected) return;

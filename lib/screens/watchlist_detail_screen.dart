@@ -151,10 +151,10 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
         child: Row(
           children: [
             SizedBox(
-              width: 32,
-              height: 44,
+              width: SandikTouch.min,
+              height: SandikTouch.min,
               child: CupertinoButton(
-                minimumSize: Size.zero,
+                minimumSize: SandikTouch.minSize,
                 padding: EdgeInsets.zero,
                 alignment: Alignment.centerLeft,
                 onPressed: () => Navigator.pop(context),
@@ -254,7 +254,7 @@ class _PeriodToggle extends StatelessWidget {
           final isSelected = selected == i;
           return Expanded(
             child: CupertinoButton(
-              minimumSize: Size.zero,
+              minimumSize: SandikTouch.minSize,
               padding: EdgeInsets.zero,
               onPressed: () {
                 if (isSelected) return;

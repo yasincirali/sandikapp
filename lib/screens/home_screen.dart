@@ -348,6 +348,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     target: TourTarget.yenileTusu,
                     child: _HeaderIconButton(
                       onTap: _reload,
+                      semanticLabel: 'Fiyatları yenile',
                       child: _reloading
                           ? const CustomLoadingIndicator(size: 20)
                           : Icon(Icons.refresh_rounded,
@@ -1356,12 +1357,18 @@ class _BalanceToggleButton extends ConsumerWidget {
 class _HeaderIconButton extends StatelessWidget {
   final VoidCallback onTap;
   final Widget child;
-  const _HeaderIconButton({required this.onTap, required this.child});
+  final String semanticLabel;
+  const _HeaderIconButton({
+    required this.onTap,
+    required this.child,
+    required this.semanticLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SandikTappable(
       onTap: onTap,
+      semanticLabel: semanticLabel,
       child: Container(
         width: 44,
         height: 44,

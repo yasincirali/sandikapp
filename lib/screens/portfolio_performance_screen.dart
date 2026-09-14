@@ -624,10 +624,10 @@ class _PortfolioPerformanceScreenState
                     if (widget.showBackButton) ...[
                       // 44pt dokunma hedefi (HIG minimumu).
                       SizedBox(
-                        width: 36,
-                        height: 44,
+                        width: SandikTouch.min,
+                        height: SandikTouch.min,
                         child: CupertinoButton(
-                          minimumSize: Size.zero,
+                          minimumSize: SandikTouch.minSize,
                           padding: EdgeInsets.zero,
                           alignment: Alignment.centerLeft,
                           onPressed: () => Navigator.pop(context),
@@ -1488,7 +1488,7 @@ class _PortfolioPerformanceScreenState
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: CupertinoButton(
-        minimumSize: Size.zero,
+        minimumSize: SandikTouch.minSize,
         padding: EdgeInsets.zero,
         onPressed: () => setState(() => _typeFilter = type),
         child: AnimatedContainer(
@@ -1528,7 +1528,7 @@ class _PortfolioPerformanceScreenState
           final isSelected = _selectedPeriodIdx == i;
           return Expanded(
             child: CupertinoButton(
-              minimumSize: Size.zero,
+              minimumSize: SandikTouch.minSize,
               padding: EdgeInsets.zero,
               onPressed: () {
                 setState(() => _selectedPeriodIdx = i);
@@ -1659,7 +1659,7 @@ class _PortfolioPerformanceScreenState
           final selected = _ozetSekmesi == o.ozet;
           return Expanded(
             child: CupertinoButton(
-              minimumSize: Size.zero,
+              minimumSize: SandikTouch.minSize,
               padding: EdgeInsets.zero,
               onPressed: () {
                 if (_ozetSekmesi == o.ozet) return;
@@ -1713,7 +1713,7 @@ class _PortfolioPerformanceScreenState
           final selected = _simulate == o.sim;
           return Expanded(
             child: CupertinoButton(
-              minimumSize: Size.zero,
+              minimumSize: SandikTouch.minSize,
               padding: EdgeInsets.zero,
               onPressed: () => setState(() => _simulate = o.sim),
               child: Container(
@@ -1735,7 +1735,10 @@ class _PortfolioPerformanceScreenState
                       ),
                     ),
                     const SizedBox(width: 6),
-                    GestureDetector(
+                    Semantics(
+                      button: true,
+                      label: '${o.label} modu hakkında bilgi',
+                      child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _showModeInfoSheet(forSim: o.sim),
                       child: Padding(
@@ -1748,7 +1751,7 @@ class _PortfolioPerformanceScreenState
                               : context.c.text36,
                         ),
                       ),
-                    ),
+                    )),
                   ],
                 ),
               ),

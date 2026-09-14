@@ -55,8 +55,28 @@ Future<bool> confirmAndDeletePosition(
   );
   if (!ok || !context.mounted) return false;
   try {
-    await ref.read(portfolioProvider.notifier).deletePositionLots(lots);
-    if (context.mounted) sandikSnack(context, 'Varlık silindi');
+    final notifier = ref.read(portfolioProvider.notifier);
+    final kayit = await notifier.deletePositionLots(lots);
+    if (context.mounted) {
+      // Geri alma: HIG yıkıcı eylemde geri alma ister; silme yumuşak olduğu
+      // için ucuz. Geri alma başarısız olursa sebep söylenir — satırın
+      // sessizce gelmemesi hata gibi görünürdü.
+      sandikSnack(
+        context,
+        'Varlık silindi',
+        onUndo: kayit == null
+            ? null
+            : () async {
+                try {
+                  await notifier.restorePositionLots(kayit);
+                } catch (e) {
+                  if (context.mounted) {
+                    sandikSnackError(context, e, prefix: 'Geri alınamadı');
+                  }
+                }
+              },
+      );
+    }
     return true;
   } catch (e) {
     if (context.mounted) sandikSnackError(context, e, prefix: 'Silinemedi');

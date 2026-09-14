@@ -255,7 +255,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     color: context.c.text36, size: 20),
               ),
               suffixIcon: CupertinoButton(
-                minimumSize: Size.zero,
+                minimumSize: SandikTouch.minSize,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 onPressed: () => setState(() => _obscure = !_obscure),
                 child: Icon(

@@ -79,7 +79,7 @@ class _BarDugmesi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoButton(
-      minimumSize: Size.zero,
+      minimumSize: SandikTouch.minSize,
       padding: EdgeInsets.zero,
       onPressed: onPressed,
       child: Semantics(
@@ -87,7 +87,7 @@ class _BarDugmesi extends StatelessWidget {
         button: true,
         child: Container(
           // Dokunma hedefi en az 44px yüksekliğinde kalsın (HIG/Material).
-          constraints: const BoxConstraints(minHeight: 32),
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
           decoration: BoxDecoration(
             color: isSelected ? context.c.surface2 : Colors.transparent,
             borderRadius: BorderRadius.circular(SandikRadius.sm),

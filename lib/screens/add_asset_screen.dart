@@ -1250,7 +1250,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           final selected = _type == t;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
+            // Semantics: çip yalnızca görsel; ekran okuyucu "seçili" ve
+            // "düğme" bilgisini yoksa alamaz (Faz 2.13).
+            child: Semantics(
+              button: true,
+              selected: selected,
+              label: '${t.label} türü',
+              child: GestureDetector(
               onTap: () async {
                 setState(() {
                   _type = t;
@@ -1302,7 +1308,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }).toList(),
       ),
@@ -1318,7 +1324,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
+            child: Semantics(
+              button: true,
+              selected: selected,
+              label: opt.label,
+              child: GestureDetector(
               onTap: () {
                 setState(() {
                   _subCategory = opt.label;
@@ -1379,7 +1389,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   ],
                 ),
               ),
-            ),
+            )),
           ),
         );
       }).toList(),
@@ -1397,7 +1407,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           final selected = _quantity.text == v;
           return Padding(
             padding: const EdgeInsets.only(right: 6),
-            child: GestureDetector(
+            child: Semantics(
+              button: true,
+              selected: selected,
+              label: 'Miktar $v',
+              child: GestureDetector(
               onTap: () => setState(() => _quantity.text = v),
               child: AnimatedContainer(
                 duration:
@@ -1440,7 +1454,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   ],
                 ),
               ),
-            ),
+            )),
           );
         }).toList(),
       ),
@@ -1459,7 +1473,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       validator: (_) => _isBist100 && _bist100SelectedTicker == null
           ? 'Lütfen bir hisse seçin'
           : null,
-      builder: (state) => GestureDetector(
+      builder: (state) => Semantics(
+        button: true,
+        label: selectedName == null
+            ? 'Hisse seç'
+            : 'Seçili hisse: $selectedName. Değiştirmek için çift dokun.',
+        child: GestureDetector(
         onTap: _showBist100Picker,
         child: _selectorContainer(
           cs: cs,
@@ -1469,7 +1488,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           mainText: selectedName ?? 'Hisse seçmek için dokunun...',
           color: AssetType.hisse.color,
         ),
-      ),
+      )),
     );
   }
 
@@ -1503,7 +1522,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return FormField<String>(
       validator: (_) =>
           _isFon && _selectedFund == null ? 'Lütfen bir fon seçin' : null,
-      builder: (state) => GestureDetector(
+      builder: (state) => Semantics(
+        button: true,
+        label: _selectedFund == null
+            ? 'Fon seç'
+            : 'Seçili fon: ${_selectedFund!.name}. Değiştirmek için çift dokun.',
+        child: GestureDetector(
         onTap: _showTefasPicker,
         child: _selectorContainer(
           cs: cs,
@@ -1513,7 +1537,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           mainText: _selectedFund?.name ?? 'Fon seçmek için dokunun...',
           color: AssetType.fon.color,
         ),
-      ),
+      )),
     );
   }
 
@@ -2573,7 +2597,10 @@ class _PickerShellState extends State<_PickerShell> {
                     ),
                   ),
                   if (widget.query.isNotEmpty)
-                    GestureDetector(
+                    Semantics(
+                      button: true,
+                      label: 'Aramayı temizle',
+                      child: GestureDetector(
                       onTap: () {
                         widget.searchCtrl.clear();
                         widget.onSearch('');
@@ -2582,6 +2609,7 @@ class _PickerShellState extends State<_PickerShell> {
                         padding: const EdgeInsets.all(10),
                         child: Icon(Icons.close_rounded,
                             size: 14, color: cs.onSurfaceVariant),
+                      ),
                       ),
                     ),
                 ],

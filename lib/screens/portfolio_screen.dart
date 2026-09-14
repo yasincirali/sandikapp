@@ -197,7 +197,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     // kıyaslayan keşif aracı. Performans ekranından ayrı
                     // durur: o "bende ne var", bu "almasaydım ne olurdu".
                     CupertinoButton(
-                      minimumSize: Size.zero,
+                      minimumSize: SandikTouch.minSize,
                       padding: EdgeInsets.zero,
                       onPressed: () => Navigator.push(
                         context,
@@ -1568,7 +1568,7 @@ class _SortButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoButton(
-      minimumSize: Size.zero,
+      minimumSize: SandikTouch.minSize,
       padding: EdgeInsets.zero,
       onPressed: () => showModalBottomSheet<void>(
         context: context,

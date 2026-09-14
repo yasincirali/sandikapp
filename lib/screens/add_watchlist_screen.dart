@@ -282,10 +282,10 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
               // Ölçek içi (`SandikSpace`): 36 ölçek dışıydı ve
               // `spacing_scale_test` bunu yakaladı. Dokunma hedefi
               // `height: 44` ile zaten HIG minimumunda.
-              width: 32,
-              height: 44,
+              width: SandikTouch.min,
+              height: SandikTouch.min,
               child: CupertinoButton(
-                minimumSize: Size.zero,
+                minimumSize: SandikTouch.minSize,
                 padding: EdgeInsets.zero,
                 alignment: Alignment.centerLeft,
                 onPressed: () => Navigator.pop(context),

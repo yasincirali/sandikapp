@@ -253,6 +253,30 @@ class SupabaseService {
     }
   }
 
+  /// Yumuşak silmeyi geri alır — `deleted_at` temizlenir.
+  ///
+  /// "Geri al" için: [softDeleteAssets] ile aynı doğrulama; sıfır satır
+  /// dönerse atılır, çağıran "geri alınamadı" gösterir.
+  Future<void> restoreAssets(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.restoreAssets',
+      table: 'assets',
+      op: 'UPDATE',
+      request: {'ids': ids.length},
+      call: () => _db
+          .from('assets')
+          .update({'deleted_at': null})
+          .inFilter('id', ids)
+          .select('id'),
+    );
+    if (rows.isEmpty) {
+      throw StateError(
+        'Geri alma hiçbir satıra yazılamadı (${ids.length} lot).',
+      );
+    }
+  }
+
   Future<int> countAssetsForUser(String userId) async {
     final rows = await _log.log<List<Map<String, dynamic>>>(
       source: 'SupabaseService.countAssetsForUser',

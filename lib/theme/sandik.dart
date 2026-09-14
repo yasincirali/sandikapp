@@ -136,6 +136,18 @@ Future<T?> pushGuarded<T>(
 /// - [sm] rozet, çip, küçük ikon kutusu
 /// - [md] liste satırı, input, ikincil kart
 /// - [lg] hero kart, bottom sheet, modal
+/// Dokunma hedefi ölçeği.
+///
+/// HIG (Controls) ve Material erişilebilirlik kılavuzu: dokunulabilir her
+/// öğe en az 44×44pt. Boşluk ölçeğine ait bir sayı DEĞİL — platform
+/// sabiti; bu yüzden [SandikSpace] içinden seçilmez. `CupertinoButton`'da
+/// `minimumSize: Size.zero` yazmak bu sınırı iptal eder; onun yerine
+/// [SandikTouch.minSize] kullanılır (`touch_target_size_test` kilitler).
+abstract final class SandikTouch {
+  static const double min = 44;
+  static const Size minSize = Size(min, min);
+}
+
 abstract final class SandikRadius {
   static const double sm = 8;
   static const double md = 14;
@@ -1194,15 +1206,15 @@ class SandikLogoutButton extends StatelessWidget {
         ? Sandik.loss.withValues(alpha: 0.35)
         : Sandik.loss;
     return CupertinoButton(
-      minimumSize: Size.zero,
+      minimumSize: SandikTouch.minSize,
       padding: EdgeInsets.zero,
       onPressed: disabled ? null : onPressed,
       child: Semantics(
         button: true,
         label: 'Çıkış yap',
         child: Container(
-          width: 42,
-          height: 42,
+          width: SandikTouch.min,
+          height: SandikTouch.min,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.10),
             borderRadius: SandikRadius.mdAll,

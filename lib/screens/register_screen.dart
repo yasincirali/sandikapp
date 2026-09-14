@@ -316,7 +316,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           color: context.c.text36, size: 20),
                     ),
                     suffixIcon: CupertinoButton(
-                      minimumSize: Size.zero,
+                      minimumSize: SandikTouch.minSize,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       onPressed: () => setState(() => _obscure = !_obscure),
                       child: Icon(
@@ -572,7 +572,7 @@ class _LegalConsentBox extends StatelessWidget {
             const SizedBox(height: 6),
             CupertinoButton(
               padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
+              minimumSize: SandikTouch.minSize,
               onPressed: onShowText,
               child: Text(
                 linkLabel!,
