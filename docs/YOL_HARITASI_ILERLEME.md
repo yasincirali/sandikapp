@@ -33,7 +33,7 @@ ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3
 | 3.1 Apple / Google ile giriş | ✅ Kod tamam (2026-09-14). Apple Developer yeteneği, Google Cloud OAuth kimlikleri ve Supabase provider ayarı sende (`YAPMAN_GEREKENLER.md` #15-16); Google düğmesi `GOOGLE_WEB_CLIENT_ID` verilmeden görünmez. |
 | 3.2 Baz para birimi (USD/EUR/altın) | 28 `fmtTRY` + 30 `toTRY` sitesi ve grafik eksenleri; yarım yapılırsa ekranlar karışık sembol gösterir. Bir günlük odaklı tur + cihazda görsel doğrulama ister. |
 | 3.9 Performans ekranlarını birleştir | 8.190 satır; parite testleri güvenlik ağı ama gerçek cihazda gün içi/haftasonu/fon basamağı senaryoları görülmeli. |
-| 3.10 `add_asset_screen` Notifier'a taşı | 37 setState, 17 alan; 3.9 ile aynı gerekçe. |
+| 3.10 `add_asset_screen` Notifier'a taşı | ✅ 2026-09-14: durum makinesi `providers/add_asset_form_provider.dart` (`AddAssetFormNotifier`, `AddAssetPriceLookup` kapısı, `parseQuickEntry`); ekranda `_AddAssetScreenState` içinde `setState` kalmadı (ratchet testi). Metin controller'ları ekranda, geçişler `AlanYazimi` döner. 22 birim testi. |
 | 3.12 Yarış / 3.13 Paywall | Kullanıcı kararı (2026-09-14): ikisi de KALIR; Sybil çözümü 0059 ile uygulandı. 3.14 vadeli mevduat SİLİNDİ (aşağıda). |
 | 3.16 integration_test | Test Supabase projesi + seed verisi ister. |
 | 3.18 Swift widget derleme CI | macOS runner'da `xcodebuild` adımı; yerelde doğrulanamaz. |

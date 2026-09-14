@@ -1027,6 +1027,11 @@ Ekranlarda **147 `setState`** çağrısı. Yerel arayüz durumu (açık/kapalı
 panel, seçili sekme) için doğru kullanım; veri durumu için Riverpod varken
 ikili yönetim gereksiz rebuild ve kafa karışıklığı üretiyor.
 
+2026-09-14: en büyük örnek kapandı — `add_asset_screen` form durumu
+(37 `setState`, 17 alan) `AddAssetFormNotifier`'a taşındı; metin
+controller'ları ekranda kaldı, controller kaynaklı yeniden çizim tek
+`ListenableBuilder`. Kalan `setState`'ler ağırlıkla yerel arayüz durumu.
+
 **Ele alınma zamanı:** Ekran parçalama işiyle birlikte, ayrı bir tur olarak
 değil.
 

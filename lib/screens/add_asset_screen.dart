@@ -7,9 +7,9 @@ import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
-import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -24,26 +24,8 @@ import '../widgets/tour_anchor.dart';
 
 const _addAssetUuid = Uuid();
 
-// ─── Döviz sabitleri ───────────────────────────────────────────────────────────
-
-typedef _DovizOpt = ({String label, String ticker, String name, String symbol});
-
-// ─── Hızlı giriş veri modeli ──────────────────────────────────────────────────
-
-typedef _ParsedEntry = ({
-  AssetType type,
-  String? subCategory,
-  double qty,
-  double price,
-  String raw,
-});
-
-const _dovizOptions = <_DovizOpt>[
-  (label: 'USD', ticker: 'USDTRY=X', name: 'ABD Doları', symbol: '\$'),
-  (label: 'EUR', ticker: 'EURTRY=X', name: 'Euro', symbol: '€'),
-  (label: 'GBP', ticker: 'GBPTRY=X', name: 'İngiliz Sterlini', symbol: '£'),
-  (label: 'TRY', ticker: '', name: 'Türk Lirası', symbol: '₺'),
-];
+// Döviz sabitleri, hızlı giriş modeli ve durum makinesi
+// `providers/add_asset_form_provider.dart`'ta (Faz 3.10).
 
 // ─── Decimal formatter ────────────────────────────────────────────────────────
 
@@ -108,33 +90,37 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   late final TextEditingController _notes;
   late final TextEditingController _commission;
 
-  late AssetType _type;
-  late String? _subCategory;
-  late String _unitType;
-  late String _currency;
-  late bool _isManualPrice;
-  late DateTime _addedDate;
-  bool _saving = false;
+  // Durum makinesi `addAssetFormProvider`'da (Faz 3.10). Aşağıdaki getter'lar
+  // eski alan adlarını korur ki 2000 satırlık widget ağacı dokunulmadan
+  // okumaya devam etsin; YAZMA yalnızca `_n` (notifier) üzerinden yapılır.
+  late final AddAssetFormArgs _args = AddAssetFormArgs(
+    editingAsset: widget.editingAsset,
+    cartInitial: widget.cartInitial,
+    prefillTicker: widget.prefillTicker,
+    prefillType: widget.prefillType,
+  );
+  AddAssetFormState get _s => ref.read(addAssetFormProvider(_args));
+  AddAssetFormNotifier get _n =>
+      ref.read(addAssetFormProvider(_args).notifier);
 
-  // Preview: kullanıcı save'e basmadan önce tahmini birim fiyat.
-  // Ticker+tarih değişince debounce ile fetch tetiklenir, sonuç card'da
-  // gösterilir. Kullanıcı fiyatı kendisi yazdıysa preview gizlenir.
-  double? _previewPrice;
-  bool _previewLoading = false;
-  bool _previewIsHistorical = false;
-  Timer? _previewDebounce;
-  int _previewSeq = 0;
-
-  String? _bist100SelectedTicker;
-  TefasFund? _selectedFund;
+  AssetType get _type => _s.type;
+  String? get _subCategory => _s.subCategory;
+  String get _unitType => _s.unitType;
+  String get _currency => _s.currency;
+  DateTime get _addedDate => _s.addedDate;
+  bool get _saving => _s.saving;
+  double? get _previewPrice => _s.previewPrice;
+  bool get _previewLoading => _s.previewLoading;
+  bool get _previewIsHistorical => _s.previewIsHistorical;
+  String? get _bist100SelectedTicker => _s.bist100Ticker;
+  TefasFund? get _selectedFund => _s.selectedFund;
+  bool get _notesExpanded => _s.notesExpanded;
 
   static const _currencies = ['TRY', 'USD', 'EUR', 'GBP'];
   bool get _isEditing => widget.editingAsset != null;
-  bool get _isBist100 =>
-      _type == AssetType.hisse &&
-      _subCategory == StockSubCategory.bist100.label;
-  bool get _isFon => _type == AssetType.fon;
-  bool get _isDoviz => _type == AssetType.doviz;
+  bool get _isBist100 => _s.isBist100;
+  bool get _isFon => _s.isFon;
+  bool get _isDoviz => _s.isDoviz;
 
   @override
   void initState() {
@@ -148,18 +134,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
     final initQty = a?.quantity ?? c?.quantity ?? 0;
     final initPrice = a?.purchasePrice ?? c?.price ?? 0;
-    final initType =
-        a?.type ?? c?.type ?? widget.prefillType ?? AssetType.hisse;
-    // BIST prefill'inde alt kategori de kurulmalı, yoksa aşağıdaki
-    // `_bist100SelectedTicker` ataması tetiklenmez ve seçici boş açılır.
-    final initSubCat = a?.subCategory ??
-        c?.subCategory ??
-        (widget.prefillType == AssetType.hisse &&
-                (widget.prefillTicker?.endsWith('.IS') ?? false)
-            ? StockSubCategory.bist100.label
-            : null);
-    final initUnit = a?.unitType ?? c?.unitType ?? 'piece';
-    final initCurrency = a?.currency ?? c?.currency ?? initType.defaultCurrency;
 
     _name = TextEditingController(text: initName);
     _ticker = TextEditingController(text: initTicker);
@@ -168,136 +142,43 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     _notes = TextEditingController(text: a?.notes ?? '');
     _commission = TextEditingController(
         text: (a?.commission ?? 0) > 0 ? _fmt(a!.commission) : '');
-    _type = initType;
-    _subCategory = initSubCat;
-    _unitType = initUnit;
-    _currency = initCurrency;
-    _isManualPrice = a?.isManualPrice ?? (c != null && c.ticker.isEmpty);
-    _addedDate = a?.addedDate ?? c?.addedDate ?? DateTime.now();
     // Form açılışında preview'ı bir kere tetikle.
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPricePreview());
-
-    // BIST100 seçili hisse prefill
-    if (initType == AssetType.hisse &&
-        initSubCat == StockSubCategory.bist100.label &&
-        initTicker.isNotEmpty) {
-      _bist100SelectedTicker = initTicker;
-    }
-    // TEFAS fon prefill
-    if (initType == AssetType.fon && initTicker.startsWith('TEFAS:')) {
-      final code = initTicker.replaceFirst('TEFAS:', '');
-      _selectedFund = TefasFund(
-          code: code,
-          name: initName,
-          price: a?.currentPrice ?? 0,
-          fundType: '',
-          managerName: '');
-    }
   }
 
   @override
   void dispose() {
-    _previewDebounce?.cancel();
     for (final c in [_name, _ticker, _quantity, _price, _notes, _commission]) {
       c.dispose();
     }
     super.dispose();
   }
 
+  /// Bir geçişin döndürdüğü metin alanı yazımlarını controller'lara uygular.
+  void _yaz(AlanYazimi y) {
+    if (y.name != null) _name.text = y.name!;
+    if (y.ticker != null) _ticker.text = y.ticker!;
+    if (y.quantity != null) _quantity.text = y.quantity!;
+    if (y.price != null) _price.text = y.price!;
+  }
+
   // ── Preview: seçili varlık + tarih için tahmini birim fiyat ──────────────
-  //
-  // Ticker/tarih değişince 400 ms debounce ile çalışır. Kullanıcı fiyat
-  // alanına manuel değer yazdıysa preview gösterilmez (o zaman zaten kesin
-  // fiyat var). Sequence sayacı ile eski request sonuçlarını yutar.
-  String? _resolveTickerForPreview() {
-    if (_isBist100) return _bist100SelectedTicker;
-    if (_isFon && _selectedFund != null) return 'TEFAS:${_selectedFund!.code}';
-    if (_type == AssetType.altin && _subCategory != null) {
-      return goldTickerMap[_subCategory!];
-    }
-    if (_isDoviz && _subCategory != null) {
-      final opt = _dovizOptions.firstWhere(
-        (o) => o.label == _subCategory,
-        orElse: () => _dovizOptions.first,
+  String? _resolveTickerForPreview() => _s.resolveTicker(_ticker.text);
+
+  void _schedulePricePreview() => _n.schedulePreview(
+        userPrice: _parse(_price.text),
+        tickerText: _ticker.text,
       );
-      return opt.ticker;
-    }
-    final t = _ticker.text.trim().toUpperCase();
-    return t.isEmpty ? null : t;
+
+  Future<void> _refreshPricePreview() {
+    if (!mounted) return Future.value();
+    return _n.refreshPreview(
+      userPrice: _parse(_price.text),
+      tickerText: _ticker.text,
+    );
   }
 
-  void _schedulePricePreview() {
-    _previewDebounce?.cancel();
-    _previewDebounce =
-        Timer(const Duration(milliseconds: 400), _refreshPricePreview);
-  }
-
-  Future<void> _refreshPricePreview() async {
-    // Kullanıcı fiyatı kendi yazdıysa preview'a gerek yok.
-    final userPrice = _parse(_price.text);
-    if (userPrice != null && userPrice > 0) {
-      if (mounted && _previewPrice != null) {
-        setState(() {
-          _previewPrice = null;
-          _previewLoading = false;
-        });
-      }
-      return;
-    }
-
-    final ticker = _resolveTickerForPreview();
-    if (ticker == null || ticker.isEmpty) {
-      if (mounted && (_previewPrice != null || _previewLoading)) {
-        setState(() {
-          _previewPrice = null;
-          _previewLoading = false;
-        });
-      }
-      return;
-    }
-
-    final now = DateTime.now();
-    final isToday = _addedDate.year == now.year &&
-        _addedDate.month == now.month &&
-        _addedDate.day == now.day;
-
-    final seq = ++_previewSeq;
-    if (mounted) setState(() => _previewLoading = true);
-
-    double? fetched;
-    bool isHistorical = false;
-    try {
-      if (!isToday) {
-        final hist = await PriceService.instance
-            .fetchHistoricalClose(ticker, _addedDate);
-        if (hist != null && hist > 0) {
-          fetched = hist;
-          isHistorical = true;
-        }
-      }
-      if (fetched == null) {
-        if (ticker.startsWith('TEFAS:')) {
-          final code = ticker.replaceFirst('TEFAS:', '');
-          final prices = await TefasService.instance.fetchPrices([code]);
-          fetched = prices[code];
-        } else {
-          final quotes = await PriceService.instance.fetchQuotes([ticker]);
-          fetched = quotes[ticker.toUpperCase()]?.regularMarketPrice;
-        }
-      }
-    } catch (_) {}
-
-    // Eski istek dönmüşse yut.
-    if (seq != _previewSeq || !mounted) return;
-    setState(() {
-      _previewPrice = (fetched != null && fetched > 0) ? fetched : null;
-      _previewIsHistorical = isHistorical;
-      _previewLoading = false;
-    });
-  }
-
-  String _fmt(double v) =>
-      v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
+  String _fmt(double v) => AddAssetFormNotifier.fmtInput(v);
 
   double? _parse(String text) {
     // Türkçede `.` BİNLİK ayracıdır. Eski hâli `replaceAll(',', '.')` idi ve
@@ -310,32 +191,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return val;
   }
 
-  String _getUnitLabel(String unitType) {
-    try {
-      return UnitType.values
-          .firstWhere((u) => u.name == unitType || u.shortcode == unitType)
-          .label;
-    } catch (_) {
-      return 'Adet';
-    }
-  }
-
-  String get _quantitySuffix {
-    if (_isDoviz) return _subCategory ?? 'Adet';
-    return _getUnitLabel(_unitType);
-  }
-
-  List<String> get _quantityPresets {
-    if (_unitType == 'gram') return ['1', '5', '10', '50', '100'];
-    if (_unitType == 'ounce') return ['0.1', '0.5', '1', '5', '10'];
-    if (_type == AssetType.fon) return ['1', '10', '100', '1000'];
-    if (_type == AssetType.hisse) return ['1', '5', '10', '100', '1000'];
-    return ['1', '5', '10', '100'];
-  }
+  String get _quantitySuffix => _s.quantitySuffix;
+  List<String> get _quantityPresets => _s.quantityPresets;
 
   // ── Build ──────────────────────────────────────────────────────────────────
-
-  bool _notesExpanded = false;
 
   Widget _sectionLabel(String text) => Text(
         text.toUpperCase(),
@@ -360,9 +219,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         overflow: TextOverflow.ellipsis,
       );
 
+  /// Toplam maliyet, önizleme kartı, preset çipleri ve not rozeti metin
+  /// alanlarını okur; eski kod her tuş vuruşunda tüm ekranı yeniden kuruyordu.
+  /// Controller'lar zaten `Listenable`: tek dinleyiciyle aynı yeniden çizim.
+  late final Listenable _metinler =
+      Listenable.merge([_quantity, _price, _commission, _notes]);
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    // Durum değişimi bu ekranı yeniden kurar; getter'lar `ref.read` ile aynı
+    // değeri okur.
+    ref.watch(addAssetFormProvider(_args));
 
     final saveLabel = widget.cartMode
         ? (widget.cartInitial != null ? 'Kaydet' : 'Sepete Ekle')
@@ -410,7 +278,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ],
         ],
       ),
-      body: GestureDetector(
+      body: ListenableBuilder(
+        listenable: _metinler,
+        builder: (context, _) => GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
         child: Form(
@@ -472,6 +342,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -507,7 +378,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           textCapitalization: TextCapitalization.characters,
           autocorrect: false,
           onChanged: (v) {
-            if (v.isEmpty) setState(() => _isManualPrice = true);
+            if (v.isEmpty) _n.setManualPrice(true);
             _schedulePricePreview();
           },
         ),
@@ -555,15 +426,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           textCapitalization: TextCapitalization.characters,
           autocorrect: false,
           onChanged: (v) {
-            setState(() {
-              if (v.isNotEmpty) {
-                _bist100SelectedTicker = null;
-                _subCategory = StockSubCategory.other.label;
-                _isManualPrice = false;
-              } else {
-                _isManualPrice = true;
-              }
-            });
+            _n.tickerTyped(v);
             _schedulePricePreview();
           },
         ),
@@ -585,11 +448,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         final selected = _subCategory == g.label;
         return GestureDetector(
           onTap: () {
-            setState(() {
-              _subCategory = g.label;
-              _unitType = g.unitType;
-              _name.text = g.label;
-            });
+            _yaz(_n.selectGold(g));
             _schedulePricePreview();
           },
           child: AnimatedContainer(
@@ -652,7 +511,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               (_parse(v ?? '') == null || (_parse(v ?? '') ?? 0) <= 0)
                   ? 'Geçerli miktar'
                   : null,
-          onChanged: (_) => setState(() {}),
         ),
       ],
     );
@@ -688,10 +546,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               v != null && v.trim().isNotEmpty && _parse(v) == null
                   ? 'Geçersiz'
                   : null,
-          onChanged: (_) {
-            setState(() {});
-            _schedulePricePreview();
-          },
+          onChanged: (_) => _schedulePricePreview(),
           suffix: _isDoviz ? null : _inlineCurrencyPicker(),
         ),
       ],
@@ -730,7 +585,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             if (parsed < 0) return 'Negatif olamaz';
             return null;
           },
-          onChanged: (_) => setState(() {}),
           suffix: Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Text(_currency,
@@ -772,7 +626,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     child: Text(c),
                   ))
               .toList(),
-          onChanged: (v) => setState(() => _currency = v ?? _currency),
+          onChanged: (v) => _n.setCurrency(v ?? _currency),
         ),
       ),
     );
@@ -1039,7 +893,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           helpText: 'İşlem tarihi',
         );
         if (picked != null) {
-          setState(() => _addedDate = picked);
+          _n.setDate(picked);
           _schedulePricePreview();
         }
       },
@@ -1102,7 +956,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(SandikRadius.md),
-            onTap: () => setState(() => _notesExpanded = !_notesExpanded),
+            onTap: _n.toggleNotes,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
@@ -1152,7 +1006,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 style: context.t.titleMedium?.copyWith(color: context.c.text90),
                 maxLines: 3,
                 decoration: context.inputDecoration('Notlarınız...'),
-                onChanged: (_) => setState(() {}),
               ),
             ),
           ),
@@ -1258,16 +1111,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               label: '${t.label} türü',
               child: GestureDetector(
               onTap: () async {
-                setState(() {
-                  _type = t;
-                  _subCategory = null;
-                  _unitType = 'piece';
-                  _currency = t.defaultCurrency;
-                  _bist100SelectedTicker = null;
-                  _selectedFund = null;
-                  _ticker.clear();
-                  _name.clear();
-                });
+                _yaz(_n.selectType(t));
                 _schedulePricePreview();
               },
               child: AnimatedContainer(
@@ -1319,7 +1163,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   Widget _dovizSelector(ColorScheme cs) {
     return Row(
-      children: _dovizOptions.map((opt) {
+      children: dovizOptions.map((opt) {
         final selected = _subCategory == opt.label;
         return Expanded(
           child: Padding(
@@ -1330,13 +1174,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               label: opt.label,
               child: GestureDetector(
               onTap: () {
-                setState(() {
-                  _subCategory = opt.label;
-                  _ticker.text = opt.ticker;
-                  _currency = 'TRY';
-                  _isManualPrice = opt.ticker.isEmpty;
-                  _name.text = opt.name;
-                });
+                _yaz(_n.selectDoviz(opt));
                 _schedulePricePreview();
               },
               child: AnimatedContainer(
@@ -1412,7 +1250,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               selected: selected,
               label: 'Miktar $v',
               child: GestureDetector(
-              onTap: () => setState(() => _quantity.text = v),
+              onTap: () => _quantity.text = v,
               child: AnimatedContainer(
                 duration:
                     SandikMotion.of(context, const Duration(milliseconds: 140)),
@@ -1443,7 +1281,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _getUnitLabel(_unitType),
+                      AddAssetFormState.unitLabel(_unitType),
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
                         color: selected
@@ -1503,12 +1341,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       builder: (ctx) => _Bist100Picker(
         selected: _bist100SelectedTicker,
         onSelect: (ticker) {
-          setState(() {
-            _bist100SelectedTicker = ticker;
-            _ticker.text = ticker;
-            _name.text =
-                bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', '');
-          });
+          _yaz(_n.selectBist100(ticker));
           _schedulePricePreview();
           Navigator.pop(ctx);
         },
@@ -1552,15 +1385,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       builder: (ctx) => _TefasPicker(
         selected: _selectedFund?.code,
         onSelect: (fund) {
-          setState(() {
-            _selectedFund = fund;
-            _ticker.text = 'TEFAS:${fund.code}';
-            _name.text = fund.name;
-            // Fon fiyatını alış fiyatına doldur (opsiyonel, kullanıcı silebilir)
-            if (fund.price > 0 && _price.text.isEmpty) {
-              _price.text = _fmt(fund.price);
-            }
-          });
+          // Fon fiyatı alış fiyatına dolar (opsiyonel, kullanıcı silebilir).
+          _yaz(_n.selectFund(fund, priceEmpty: _price.text.isEmpty));
           _schedulePricePreview();
           Navigator.pop(ctx);
         },
@@ -1644,58 +1470,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   //   "GARAN 500 adet 105 lira"       → ticker=GARAN, qty=500, price=105
   //   "10 gram altın"                 → qty=10, fiyat otomatik
 
-  _ParsedEntry? _parseLine(String raw) {
-    final text = raw.toLowerCase().trim();
-    if (text.isEmpty) return null;
-
-    AssetType detectedType = AssetType.hisse;
-    String? detectedSub;
-
-    if (RegExp(r'dolar|usd').hasMatch(text)) {
-      detectedType = AssetType.doviz;
-      detectedSub = 'USD';
-    } else if (RegExp(r'euro|eur').hasMatch(text)) {
-      detectedType = AssetType.doviz;
-      detectedSub = 'EUR';
-    } else if (RegExp(r'sterlin|gbp|pound').hasMatch(text)) {
-      detectedType = AssetType.doviz;
-      detectedSub = 'GBP';
-    } else if (RegExp(r'gram\s*alt[ıi]n|alt[ıi]n').hasMatch(text)) {
-      detectedType = AssetType.altin;
-    } else if (RegExp(r'fon\b').hasMatch(text)) {
-      detectedType = AssetType.fon;
-    } else if (RegExp(r'hisse|adet').hasMatch(text)) {
-      detectedType = AssetType.hisse;
-    }
-
-    final normalized = text.replaceAll(RegExp(r'(?<=\d)\.(?=\d{3})'), '');
-    final numMatches =
-        RegExp(r'(\d+([.,]\d+)?)').allMatches(normalized).toList();
-    double qty = 0;
-    double price = 0;
-
-    if (numMatches.isNotEmpty) {
-      qty =
-          double.tryParse(numMatches.first.group(1)!.replaceAll(',', '.')) ?? 0;
-    }
-    final priceHint =
-        RegExp(r'(\d+([.,]\d+)?)\s*(lira|tl|₺)').firstMatch(normalized);
-    if (priceHint != null) {
-      price = double.tryParse(priceHint.group(1)!.replaceAll(',', '.')) ?? 0;
-    } else if (numMatches.length >= 2) {
-      price =
-          double.tryParse(numMatches[1].group(1)!.replaceAll(',', '.')) ?? 0;
-    }
-
-    if (qty <= 0) return null;
-    return (
-      type: detectedType,
-      subCategory: detectedSub,
-      qty: qty,
-      price: price,
-      raw: raw.trim()
-    );
-  }
+  ParsedEntry? _parseLine(String raw) => parseQuickEntry(raw);
 
   void _showQuickEntrySheet() {
     final ctrl = TextEditingController();
@@ -1720,34 +1495,17 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  void _applyParsedEntry(_ParsedEntry entry) {
-    setState(() {
-      _type = entry.type;
-      _currency = _type.defaultCurrency;
-      if (entry.subCategory != null) {
-        _subCategory = entry.subCategory;
-        if (_type == AssetType.doviz) {
-          final opt = _dovizOptions.firstWhere(
-            (o) => o.label == entry.subCategory,
-            orElse: () => _dovizOptions.first,
-          );
-          _ticker.text = opt.ticker;
-          _name.text = opt.name;
-          _currency = 'TRY';
-        }
-      }
-      _quantity.text = _fmt(entry.qty);
-      if (entry.price > 0) _price.text = _fmt(entry.price);
-    });
-  }
+  void _applyParsedEntry(ParsedEntry entry) =>
+      _yaz(_n.applyParsedEntry(entry));
 
-  Future<void> _saveBatch(List<_ParsedEntry> entries) async {
+  Future<void> _saveBatch(List<ParsedEntry> entries) async {
     if (entries.isEmpty) return;
     if (entries.length == 1) {
       _applyParsedEntry(entries.first);
       return;
     }
-    setState(() => _saving = true);
+    final lookup = ref.read(addAssetPriceLookupProvider);
+    _n.setSaving(true);
     try {
       for (final entry in entries) {
         String ticker = '';
@@ -1755,10 +1513,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         String currency = entry.type.defaultCurrency;
 
         if (entry.type == AssetType.doviz && entry.subCategory != null) {
-          final opt = _dovizOptions.firstWhere(
-            (o) => o.label == entry.subCategory,
-            orElse: () => _dovizOptions.first,
-          );
+          final opt = dovizOptFor(entry.subCategory);
           ticker = opt.ticker;
           assetName = opt.name;
           currency = 'TRY';
@@ -1769,12 +1524,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         double price = entry.price;
         if (price == 0 && ticker.isNotEmpty) {
           try {
-            final quotes = await PriceService.instance.fetchQuotes([ticker]);
-            final q = quotes[ticker.toUpperCase()];
-            if (q?.regularMarketPrice != null && q!.regularMarketPrice! > 0) {
-              price = q.regularMarketPrice!;
-            }
-          } catch (_) {}
+            final spot = await lookup.spot(ticker);
+            if (spot != null && spot > 0) price = spot;
+          } catch (_) {
+            // Fiyat isteğe bağlı; çekilemezse 0 kalır, kullanıcı düzenler.
+          }
         }
 
         if (assetName.isEmpty) {
@@ -1795,7 +1549,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             );
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      _n.setSaving(false);
     }
     // Hızlı giriş de bir kayıttır — `_save()` ile aynı sinyali döndürür.
     if (mounted) Navigator.pop(context, true);
@@ -1809,40 +1563,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final qty = _parse(_quantity.text)!;
     var price = _parse(_price.text) ?? 0.0;
 
-    String ticker = '';
-    String assetName = _name.text.trim();
-
-    if (_isBist100) {
-      ticker = _bist100SelectedTicker ?? '';
-      assetName = bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', '');
-    } else if (_isFon && _selectedFund != null) {
-      ticker = 'TEFAS:${_selectedFund!.code}';
-      assetName = _selectedFund!.name;
-    } else if (_type == AssetType.altin && _subCategory != null) {
-      ticker = goldTickerMap[_subCategory!] ?? '';
-      if (assetName.isEmpty) assetName = _subCategory!;
-    } else if (_isDoviz && _subCategory != null) {
-      final opt = _dovizOptions.firstWhere(
-        (o) => o.label == _subCategory,
-        orElse: () => _dovizOptions.first,
-      );
-      ticker = opt.ticker;
-      if (assetName.isEmpty) assetName = opt.name;
-    } else if (_type != AssetType.altin &&
-        _type != AssetType.fon &&
-        !_isDoviz) {
-      ticker = _isManualPrice ? '' : _ticker.text.trim().toUpperCase();
-    }
-
-    final manual = _isFon
-        ? false
-        : (_type == AssetType.altin
-            ? ticker.isNotEmpty
-                ? false
-                : true
-            : _isDoviz
-                ? ticker.isEmpty
-                : _isManualPrice || ticker.isEmpty);
+    final kimlik = _s.resolveIdentity(
+      nameText: _name.text,
+      tickerText: _ticker.text,
+    );
+    final ticker = kimlik.ticker;
+    var assetName = kimlik.name;
+    final manual = kimlik.manual;
 
     // ── Sepete ekleme modu: bulkCartProvider'a push, fiyat çekme yok ──
     if (widget.cartMode) {
@@ -1878,41 +1605,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     bool priceFromHistorical = false;
     bool priceFallbackToSpot = false;
     if (price == 0.0 && ticker.isNotEmpty) {
-      setState(() => _saving = true);
-      try {
-        final now = DateTime.now();
-        final isToday = _addedDate.year == now.year &&
-            _addedDate.month == now.month &&
-            _addedDate.day == now.day;
-
-        if (!isToday) {
-          final hist = await PriceService.instance
-              .fetchHistoricalClose(ticker, _addedDate);
-          if (hist != null && hist > 0) {
-            price = hist;
-            priceFromHistorical = true;
-          }
-        }
-
-        // Historical yoksa veya bugünse spot
-        if (price == 0.0) {
-          if (ticker.startsWith('TEFAS:') && _selectedFund != null) {
-            final code = ticker.replaceFirst('TEFAS:', '');
-            final prices = await TefasService.instance.fetchPrices([code]);
-            price = prices[code] ?? 0.0;
-          } else {
-            final quotes = await PriceService.instance.fetchQuotes([ticker]);
-            if (!mounted) return;
-            final q = quotes[ticker.toUpperCase()];
-            if (q?.regularMarketPrice != null && q!.regularMarketPrice! > 0) {
-              price = q.regularMarketPrice!;
-            }
-          }
-          if (price > 0 && !isToday) priceFallbackToSpot = true;
-        }
-      } catch (_) {}
+      final sonuc = await _n.fiyatCoz(ticker);
       if (!mounted) return;
-      setState(() => _saving = false);
+      price = sonuc.price ?? 0.0;
+      priceFromHistorical = sonuc.historical;
+      priceFallbackToSpot = sonuc.fallbackToSpot;
     }
 
     // ── Şirket adını Yahoo'dan çek (bilinmiyorsa) ──────────────────────────
@@ -1920,18 +1617,19 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ticker.isNotEmpty &&
         !ticker.startsWith('TEFAS:')) {
       try {
-        final quotes = await PriceService.instance.fetchQuotes([ticker]);
+        final ad = await ref.read(addAssetPriceLookupProvider).companyName(ticker);
         if (!mounted) return;
-        final q = quotes[ticker.toUpperCase()];
-        if (q != null) assetName = q.companyName;
-      } catch (_) {}
+        if (ad != null) assetName = ad;
+      } catch (_) {
+        // Ad kozmetik; bulunamazsa aşağıda sembol ad olur.
+      }
     }
 
     if (assetName.isEmpty) {
       assetName = ticker.isNotEmpty ? ticker : 'Varlık';
     }
 
-    setState(() => _saving = true);
+    _n.setSaving(true);
     try {
       if (_isEditing) {
         final a = widget.editingAsset!;
@@ -1998,7 +1696,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             );
       }
     } on AssetLimitExceededException catch (e) {
-      if (mounted) setState(() => _saving = false);
+      _n.setSaving(false);
       if (!mounted) return;
       // Analytics ve paywall provider tarafından zaten log'landı.
       final upgraded = await PaywallScreen.show(
@@ -2012,7 +1710,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       }
       return;
     } finally {
-      if (mounted) setState(() => _saving = false);
+      _n.setSaving(false);
     }
     if (mounted) {
       // Tarihli fiyat çekimi yapıldıysa kullanıcıya bildir — atanan değer
@@ -2048,9 +1746,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
 class _QuickEntrySheet extends StatefulWidget {
   final TextEditingController ctrl;
-  final _ParsedEntry? Function(String) parseLine;
-  final void Function(_ParsedEntry) onConfirmSingle;
-  final Future<void> Function(List<_ParsedEntry>) onSaveBatch;
+  final ParsedEntry? Function(String) parseLine;
+  final void Function(ParsedEntry) onConfirmSingle;
+  final Future<void> Function(List<ParsedEntry>) onSaveBatch;
 
   const _QuickEntrySheet({
     required this.ctrl,
@@ -2064,14 +1762,14 @@ class _QuickEntrySheet extends StatefulWidget {
 }
 
 class _QuickEntrySheetState extends State<_QuickEntrySheet> {
-  List<_ParsedEntry> _previews = [];
+  List<ParsedEntry> _previews = [];
   bool _saving = false;
 
   void _updatePreviews(String text) {
     final lines = text.split('\n').where((l) => l.trim().isNotEmpty);
     setState(() {
       _previews =
-          lines.map(widget.parseLine).whereType<_ParsedEntry>().toList();
+          lines.map(widget.parseLine).whereType<ParsedEntry>().toList();
     });
   }
 

@@ -115,9 +115,11 @@ void main() {
           // doğru çözer; kural yalnızca noktayı KORUYAN kullanımlar için.
           if (prefix.contains("replaceAll('.', '')")) continue;
           final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;
-          // Hızlı giriş ayrıştırıcısı normalize edilmiş metin üzerinde
-          // çalışır (bkz. add_asset_screen `normalized`).
-          if (e.path.endsWith('add_asset_screen.dart') && line > 1600) {
+          // Hızlı giriş ayrıştırıcısı (`parseQuickEntry`) normalize edilmiş
+          // metin üzerinde çalışır: binlik noktası lookahead ile önceden
+          // atılır. 2026-09-14'te add_asset_screen'den provider'a taşındı.
+          if (e.path.endsWith('add_asset_form_provider.dart') &&
+              _icinde(src, m.start, 'ParsedEntry? parseQuickEntry(')) {
             continue;
           }
           offenders.add('${e.path}:$line');
@@ -130,4 +132,13 @@ void main() {
               '${offenders.join('\n')}');
     });
   });
+}
+
+/// [offset] konumu, [imza] ile başlayan fonksiyonun gövdesinde mi?
+/// Gövde sonu: imzadan sonraki ilk `\n}` (üst düzey fonksiyon kapanışı).
+bool _icinde(String src, int offset, String imza) {
+  final bas = src.indexOf(imza);
+  if (bas < 0 || offset < bas) return false;
+  final son = src.indexOf('\n}', bas);
+  return son < 0 || offset < son;
 }
