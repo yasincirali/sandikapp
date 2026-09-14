@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
+import '../models/yatirimci_seviyesi.dart';
 import '../providers/price_alert_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
@@ -568,6 +569,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const _ThemeModePicker(),
             const SizedBox(height: 12),
             const _BaseCurrencyPicker(),
+            const SizedBox(height: 12),
+            const _InvestorLevelPicker(),
             const SizedBox(height: 24),
 
       ];
@@ -958,6 +961,90 @@ class _BaseCurrencyPicker extends ConsumerWidget {
                 : 'Tutarlar bugünkü kurla ${baz.etkinBirim.label.toLowerCase()} '
                     'cinsinden gösterilir; hesaplar ₺ üzerinden yapılır.',
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Yatırımcı seviyesi — Özet sekmesinin metrik kümesi. Tema/baz para
+/// seçicilerle aynı dil: üç eşit segment + seçilenin bir satırlık açıklaması.
+///
+/// Profilde deneyim alanı yok ve zorunlu onboarding istenmiyor; bu yüzden
+/// OPSİYONEL bir cihaz tercihi (kişiye özel). Varsayılan Orta = bugünkü
+/// görünüm, yani hiç dokunmayan kullanıcı için hiçbir şey değişmez.
+class _InvestorLevelPicker extends ConsumerWidget {
+  const _InvestorLevelPicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(yatirimciSeviyesiProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SubSectionTitle('Yatırımcı seviyesi'),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(SandikSpace.xs),
+          decoration: context.surfaceCard(),
+          child: Row(
+            children: [
+              for (final s in YatirimciSeviyesi.values)
+                Expanded(
+                  child: SandikTappable(
+                    semanticLabel: '${s.etiket} seviye',
+                    onTap: () => ref
+                        .read(investorLevelIndexProvider.notifier)
+                        .set(s.index),
+                    child: AnimatedContainer(
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: current == s
+                            ? context.c.amberFill.withValues(alpha: 0.16)
+                            : Colors.transparent,
+                        borderRadius: SandikRadius.smAll,
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            s.ikon,
+                            size: 20,
+                            color: current == s
+                                ? context.c.amberText
+                                : context.c.text36,
+                          ),
+                          const SizedBox(height: SandikSpace.xs),
+                          Text(
+                            s.etiket,
+                            style: context.t.labelLarge?.copyWith(
+                              letterSpacing: 0,
+                              fontWeight: current == s
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: current == s
+                                  ? context.c.amberText
+                                  : context.c.text58,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            '${current.aciklama} Yalnızca Performans › Özet\'in kart kümesini '
+            'değiştirir; hesaplar aynı kalır.',
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
         ),
       ],

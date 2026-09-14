@@ -31,6 +31,8 @@ class PrefKeys {
   static const biometricLock = 'pref_biometric_lock';
   /// Baz para birimi — `BaseCurrency.index` (0 TRY, 1 USD, 2 EUR, 3 gram altın).
   static const baseCurrency = 'pref_base_currency';
+  /// Yatırımcı seviyesi — `YatirimciSeviyesi.index` (0 başlangıç, 1 orta, 2 ileri).
+  static const investorLevel = 'pref_investor_level';
   static const surfaceIsLight = 'pref_surface_is_light';
   static const signalThresholdByType = 'pref_signal_threshold_by_type_v1';
   static const signalNeutralPush = 'pref_signal_neutral_push';

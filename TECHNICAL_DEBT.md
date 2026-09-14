@@ -177,7 +177,21 @@ ibaresi eklenerek bugün kapatılabilir.
 
 ---
 
-## 🟡 AÇIK — Yatırımcı seviyesine göre görünüm yok
+## ✅ KAPANDI — Yatırımcı seviyesine göre görünüm yok
+
+**KAPANDI 2026-09-14.** Sunucuda alan açmadan, zorunlu onboarding eklemeden:
+Ayarlar › Görünüm'de OPSİYONEL "Yatırımcı seviyesi" (Başlangıç / Orta /
+İleri; `PrefKeys.investorLevel`, kişiye özel, varsayılan **Orta = bugünkü
+görünüm**). Karar tablosu tek yerde (`seviyeGorunurlugu`,
+`models/yatirimci_seviyesi.dart`): Başlangıç sağlık/XIRR/yüzdelik kartlarını
+GİZLER; İleri, Orta'nın üstüne `IleriMetrikKarti` EKLER — risk-ayarlı getiri
+(getiri ÷ yıllık oynaklık, risksiz oransız Sharpe; TL risksiz oranı
+uygulamada tutulmadığı için tanım açıkça yazılı), zamanlama etkisi (XIRR −
+piyasa getirisi) ve toparlanma (en büyük düşüşten zirveye dönüş günü).
+Üçü de zaten hesaplanan girdilerden türetilir; kart yeni veri çekmez.
+Gereksinimdeki "attribution" ve "takip hatası" YOK: ikisi de benchmark
+serisi ister (BIST100/TÜFE'ye göre izleme hatası), karşılaştırma ekranı
+ayrı bir tur. `yatirimci_seviyesi_test` (12).
 
 Ürün gereksinimi başlangıç / orta / ileri seviye için farklı metrik kümesi
 öngörüyordu (ileri seviyede attribution, takip hatası, risk-ayarlı
@@ -503,7 +517,16 @@ ham liste doğru, mülkiyetse `aggregatePositions` şart.
 
 ---
 
-## 🟡 AÇIK — Grafik tipi seçicide Candle (mum) YOK
+## ✅ KAPANDI — Grafik tipi seçicide Candle (mum) YOK
+
+**KAPANDI 2026-09-14.** OHLC çekilmiyor, TÜRETİLİYOR: `utils/mum_turetici.dart`
+seriyi takvime hizalı kovalara böler (gün içi 5 dk'lık noktalardan 30 dk'lık
+mum, 1Y günlük kapanışlardan haftalık mum; kova `mumKovasiSec` ile ~40 mum
+ve ≥2 nokta hedefine log-en-yakın aday). Çizim çubuk tipiyle aynı yolla:
+her mum iki `LineChartBarData` (ince fitil + kalın gövde), fl_chart 0.68'de
+mum çizimi olmadığı için. Doji yuvarlak uçlu nokta. Fitiller ÖRNEKLENMİŞ
+noktaların uçlarıdır — menü etiketi bu yüzden "Mum", "OHLC" değil.
+`mum_turetici_test` (12) + `grafik_tipi_test` (beş tip).
 
 **Karar tarihi:** 2026-09-12 · Kullanıcı kararı
 

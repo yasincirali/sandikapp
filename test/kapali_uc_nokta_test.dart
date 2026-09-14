@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Piyasa kapalıyken kesikli kuyruk AÇTIĞIMIZ ANA kadar uzanmalı ve
 /// "şu an" noktası o ucun üstünde, GRİ durmalı.
@@ -24,8 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// `kapali_bolge_dokunma_test.dart`) — `primarySeg` Y ekseni için doğru
 /// kaynak ama "serinin sağ ucu" sorusu için yanlış.
 void main() {
-  final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-      .readAsStringSync()
+  final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
       .replaceAll('\r\n', '\n');
 
   group('sağ uç TÜM segmentlerden', () {
@@ -113,8 +112,7 @@ void main() {
     //   2. Kuyruk boyunca hiçbir varlık hesaplanmıyordu; mevduat faizi
     //      ve açık spot piyasalar görünmüyordu.
     test('servis kuyruk damgası ÜRETMEZ', () {
-      final servis = File('lib/services/history_service.dart')
-          .readAsStringSync()
+      final servis = ekranKaynagiSync('lib/services/history_service.dart')
           .replaceAll('\r\n', '\n');
       expect(servis.contains('const int? piyasaKapaliTs = null;'), isTrue,
           reason: 'Kuyruk geri gelmiş.');

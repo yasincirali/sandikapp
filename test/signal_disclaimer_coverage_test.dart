@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// "Yatırım tavsiyesi değildir" uyarısı sinyal/analiz gösteren HER yüzeyde
 /// bulunmalı.
@@ -17,7 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 ///   2. PUSH — bildirim gövdesinde, çünkü kullanıcı uygulamayı hiç
 ///      açmadan okuyabiliyor (asıl politika riski burada)
 void main() {
-  String oku(String yol) => File(yol).readAsStringSync();
+  String oku(String yol) => ekranKaynagiSync(yol);
 
   group('uygulama içi yüzeyler', () {
     /// Sinyal, teknik analiz ya da performans yorumu gösteren ekranlar.

@@ -49,6 +49,23 @@ yerel yığın + seed + duman testi + `integration.yml` ile kapandı (tablo sat�
 `HistoryService.fonBasamakAni` basamağı oraya koyar; gözlem yoksa 10:00 aynen.
 Sunucu ayağı `YAPMAN` #24. Deno 222+13 test, Flutter tam paket yeşil.
 
+**2026-09-14 (beşinci tur, "atlananlar"):** **Mum grafik** — OHLC türetilerek
+beşinci tip olarak eklendi (`mum_turetici`, kova bazlı; TECHNICAL_DEBT KAPANDI).
+**Yatırımcı seviyesi** — Ayarlar › Görünüm'de opsiyonel Başlangıç/Orta/İleri
+(varsayılan Orta = bugünkü görünüm); Başlangıç gizler, İleri risk-ayarlı getiri /
+zamanlama etkisi / toparlanma kartı ekler (TECHNICAL_DEBT KAPANDI). **Dev ekran
+parçalama** — `portfolio_performance_screen.dart` 4.600 → 650 satır (7 part:
+`portfolio_performance/grafik_kabi, seriler, kontroller, kartlar, yardimci_widgetlar,
+tur_dokumu_karti, ozet_yan_veri`), `asset_detail_screen.dart` 3.800 → 1.600 satır
+(4 part: `asset_detail/eylemler, sinyal_widgetlari, seritler, karsilastirma_secici`).
+Yöntem `part`/`part of` + State üyeleri için `extension` (aynı kütüphane, private
+erişim aynen, davranış sıfır değişiklik; `setState` yerine `_guncelle` sarmalayıcısı).
+Bölme betikle yapıldı (satır kopyası, elle düzenleme yok). Kaynak tarayan 25 test
+`test/helpers/kaynak.dart` (`ekranKaynagiSync`: ana dosya + part'lar) ile güncellendi.
+`build()` gövdeleri (perf ~600, detay ~1.300 satır) bilinçli olarak yerinde: onları
+bölmek widget ağacını parçalamak demek, ayrı ve görsel doğrulama isteyen bir iş.
+İngilizce arayüz (3.20) sonraki turda (aşağıda).
+
 **Kalanlar ve neden burada durdu:**
 
 | Kalem | Neden kod tarafında ilerlemedi |

@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Hafta sonu kuyruğunun GÖRÜNÜMÜ — gri, kesikli, "piyasa kapalı" ibareli.
 ///
@@ -15,11 +15,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// Kuyruk mantığının KENDİSİ ayrıca saf fonksiyon olarak test ediliyor
 /// (`gun_ici_kapali_kuyruk_test.dart`).
 void main() {
-  final ekran = File('lib/screens/portfolio_performance_screen.dart')
-      .readAsStringSync()
+  final ekran = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
       .replaceAll('\r\n', '\n');
-  final servis = File('lib/services/history_service.dart')
-      .readAsStringSync()
+  final servis = ekranKaynagiSync('lib/services/history_service.dart')
       .replaceAll('\r\n', '\n');
 
   group('veri katmanı kuyruğu BİLDİRİR', () {
@@ -50,8 +48,7 @@ void main() {
     test('segment `piyasaKapali` bayrağı taşır', () {
       // 2026-09-14: `TransactionSegment` iki ekranın ortak modeli oldu
       // (`widgets/transaction_segment.dart`); bayrak artık orada.
-      final segment = File('lib/widgets/transaction_segment.dart')
-          .readAsStringSync();
+      final segment = ekranKaynagiSync('lib/widgets/transaction_segment.dart');
       expect(segment.contains('final bool piyasaKapali'), isTrue);
       expect(ekran.contains("import '../widgets/transaction_segment.dart'"),
           isTrue);

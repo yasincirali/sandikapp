@@ -1,8 +1,8 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/utils/money_format.dart';
 import 'package:portfoy_takip/utils/tr_format.dart';
+import 'helpers/kaynak.dart';
 
 /// Baz para birimi gösterim katmanı (Faz 3.2).
 ///
@@ -79,7 +79,7 @@ void main() {
   });
 
   test('ana yüzeyler baz birimi geçiriyor — kaynak taraması', () {
-    String oku(String p) => File(p).readAsStringSync();
+    String oku(String p) => ekranKaynagiSync(p);
     expect(oku('lib/screens/home_screen.dart'), contains('baz: baz'));
     expect(oku('lib/screens/portfolio_screen.dart'),
         contains('baz: ref.watch(bazParaProvider)'));

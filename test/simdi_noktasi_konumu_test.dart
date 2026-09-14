@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// "ŞİMDİ" noktası GERÇEK şu ana konumlanmalı — son kovanın gün başına
 /// değil.
@@ -25,8 +25,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// segment gün başından şu ana YATAY uzar. Geri taşıma olsaydı seri
 /// kendi üstüne katlanırdı — `max` koruması tam bunun için.
 void main() {
-  final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-      .readAsStringSync()
+  final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
       .replaceAll('\r\n', '\n');
 
   group('son nokta şu ana taşınır', () {

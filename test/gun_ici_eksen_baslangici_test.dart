@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Gün içi grafiğin X ekseni ÇİZİLEN GÜNÜN 00:00'ından başlamalı.
 ///
@@ -24,8 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// geldikten sonra bu ölçüt yanlış: seri bugüne uzanıyor, yani "şimdi"
 /// eksende VAR. Ölçüt takvimden GEOMETRİYE çevrildi.
 void main() {
-  final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-      .readAsStringSync()
+  final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
       .replaceAll('\r\n', '\n');
 
   /// Boşlukları tek boşluğa indirmiş kaynak.

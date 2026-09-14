@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +9,7 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/utils/chart_axis.dart';
 import 'package:portfoy_takip/utils/chart_line_width.dart';
 import 'package:portfoy_takip/widgets/watchlist_chart.dart';
+import 'helpers/kaynak.dart';
 
 /// **Takip listesinin GÜNLÜK ekseni, performans ekranının GÜNLÜK ekseniyle
 /// AYNI olmalı.**
@@ -257,7 +257,7 @@ void main() {
     // tek sebebiydi.
     test('grafik katmanı ResolutionTier kararını ezmiyor', () async {
       final src =
-          (await File('lib/widgets/percent_comparison_chart.dart').readAsString())
+          (await ekranKaynagi('lib/widgets/percent_comparison_chart.dart'))
               .split('\n')
               .where((l) => !l.trimLeft().startsWith('//'))
               .where((l) => !l.trimLeft().startsWith('///'))
@@ -368,7 +368,7 @@ void main() {
   group('TEK KAYNAK — iki ekran da chart_axis i çağırır', () {
     test('takip grafiği ham span/4 kullanmaz', () async {
       final src =
-          await File('lib/widgets/percent_comparison_chart.dart').readAsString();
+          await ekranKaynagi('lib/widgets/percent_comparison_chart.dart');
 
       // Yorumda "span / 4" geçtiği için (kaldırılan kural belgeleniyor)
       // aranan şey KULLANIM: bottomTitles'a giden interval.
@@ -384,8 +384,7 @@ void main() {
     });
 
     test('performans ekranı kendi kopyasını taşımaz', () async {
-      final src = await File('lib/screens/portfolio_performance_screen.dart')
-          .readAsString();
+      final src = await ekranKaynagi('lib/screens/portfolio_performance_screen.dart');
 
       expect(src.contains('_niceRoundNumber'), isFalse,
           reason: 'nice-number kopyası geri gelmiş');
@@ -400,9 +399,8 @@ void main() {
     test('takip grafiği dönemi ÇAĞIRANDAN alır', () async {
       // Dönem veriden çıkarılamaz: GÜNLÜK ekseni son noktanın ötesine uzar.
       final chart =
-          await File('lib/widgets/watchlist_chart.dart').readAsString();
-      final ekran = await File('lib/screens/watchlist_screen.dart')
-          .readAsString();
+          await ekranKaynagi('lib/widgets/watchlist_chart.dart');
+      final ekran = await ekranKaynagi('lib/screens/watchlist_screen.dart');
 
       expect(chart.contains('periodDays: periodDays'), isTrue);
       expect(ekran.contains('periodDays:'), isTrue,

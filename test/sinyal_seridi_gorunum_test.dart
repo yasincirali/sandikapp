@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Üstteki sinyal şeridinin GÖRÜNÜMÜ.
 ///
@@ -16,8 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// başlık ve sol şerit hâlâ yön rengini taşıyor; anlamı renk taşır, zemin
 /// taşımaz.
 void main() {
-  final kaynak = File('lib/screens/asset_detail_screen.dart')
-      .readAsStringSync()
+  final kaynak = ekranKaynagiSync('lib/screens/asset_detail_screen.dart')
       .replaceAll('\r\n', '\n');
 
   // Yalnızca `_kabuk` gövdesi — dosyanın geri kalanı saymasın.

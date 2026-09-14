@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/asset_type.dart';
+import '../models/yatirimci_seviyesi.dart';
 import '../services/contribution_history_service.dart';
 import '../services/daily_summary.dart' show DailySummary;
 import '../services/insight_metrics_service.dart'
@@ -82,6 +83,10 @@ class PeriodSummaryView extends StatelessWidget {
   /// kartı kurup buraya veriyor.
   final SaglikKarti? saglik;
 
+  /// İleri seviye metrik kartı (Ayarlar › Görünüm › Yatırımcı seviyesi =
+  /// İleri). Sağlık kartından SONRA çizilir; `null` ise yok.
+  final Widget? ileriKarti;
+
   /// Para ağırlıklı yıllık getiri (%). `null` ise kart çizilmez.
   final double? xirr;
 
@@ -109,6 +114,7 @@ class PeriodSummaryView extends StatelessWidget {
     this.onShare,
     this.katkiKarti,
     this.saglik,
+    this.ileriKarti,
     this.xirr,
     this.enflasyonVerisiBekleniyor = false,
   });
@@ -251,6 +257,7 @@ class PeriodSummaryView extends StatelessWidget {
           ));
         }
         if (saglik != null) bloklar.add(saglik!);
+        if (ileriKarti != null) bloklar.add(ileriKarti!);
         if (karakter != null) {
           bloklar.add(_KarakterKarti(karakter: karakter!));
         }
@@ -1749,6 +1756,80 @@ class XirrKarti extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// İleri seviye metrikleri — risk-ayarlı getiri, zamanlama etkisi, toparlanma.
+///
+/// Yalnızca Yatırımcı seviyesi = İleri'de çizilir (`seviyeGorunurlugu`).
+/// Üç sayı da zaten hesaplanan girdilerden türetilir (`IleriMetrikler`);
+/// kart yeni veri ÇEKMEZ. Her satırın altında bir cümlelik tanım var:
+/// "risk-ayarlı" gibi terimleri ileri kullanıcı bilir ama TANIMIN hangisi
+/// olduğunu (risksiz oransız Sharpe) ancak yazarsak bilir.
+class IleriMetrikKarti extends StatelessWidget {
+  final IleriMetrikler metrikler;
+
+  const IleriMetrikKarti({super.key, required this.metrikler});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final m = metrikler;
+    if (!m.hasData) return const SizedBox.shrink();
+
+    final satirlar = <Widget>[];
+    void satir(String etiket, String deger, String aciklama, {Color? ton}) {
+      if (satirlar.isNotEmpty) {
+        satirlar.add(const SizedBox(height: SandikSpace.smd));
+      }
+      satirlar.add(_KucukSatir(etiket: etiket, deger: deger, ton: ton));
+      satirlar.add(const SizedBox(height: SandikSpace.xs2));
+      satirlar.add(Text(aciklama,
+          style: context.t.bodySmall?.copyWith(color: c.text36)));
+    }
+
+    final risk = m.riskAyarliGetiri;
+    if (risk != null) {
+      satir(
+        'Risk-ayarlı getiri',
+        fmtNum(risk),
+        'Yıllık getiri ÷ yıllık oynaklık. Sharpe oranının risksiz oransız '
+        'hâli: aldığın her birim dalgalanma için kaç puan getiri.',
+        ton: context.signColor(risk),
+      );
+    }
+    final zamanlama = m.zamanlamaEtkisi;
+    if (zamanlama != null) {
+      satir(
+        'Zamanlama etkisi',
+        '${zamanlama >= 0 ? '+' : ''}${fmtNum(zamanlama, digits: 1)} puan',
+        'Paranın getirisi (XIRR) − piyasa getirisi. Pozitifse alım '
+        'tarihlerin piyasayı yendi; negatifse pahalıya girmişsin.',
+        ton: context.signColor(zamanlama),
+      );
+    }
+    if (m.toparlanmaGun != null) {
+      satir(
+        'Toparlanma',
+        '${m.toparlanmaGun} gün',
+        'En büyük düşüşün dibinden eski zirveye dönüş süresi.',
+      );
+    } else if (m.toparlanmadi) {
+      satir(
+        'Toparlanma',
+        'Henüz yok',
+        'En büyük düşüşün ardından eski zirveye henüz dönülmedi.',
+        ton: c.loss,
+      );
+    }
+
+    return _BaglamKarti(
+      baslik: 'İleri metrikler · son 1 yıl',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: satirlar,
       ),
     );
   }

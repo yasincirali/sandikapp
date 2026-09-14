@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Çubuk grafiği: taban DÖNEM BAŞI, pencere dibi DEĞİL.
 ///
@@ -25,8 +25,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// `dart format`'ın sarma noktasını kaydırması yüzünden, ilgili mantık hiç
 /// değişmemişken sahte kırılmıştı. Kovalanan şey çağrının VARLIĞI.
 void main() {
-  final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-      .readAsStringSync()
+  final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
       .replaceAll(RegExp(r'\s+'), ' ');
 
   group('çubuk tabanı', () {

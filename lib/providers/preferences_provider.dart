@@ -11,6 +11,7 @@ import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
 import '../config/pref_keys.dart';
+import '../models/yatirimci_seviyesi.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -243,6 +244,17 @@ final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 /// cihazı paylaşan iki kullanıcının tercihi karışmasın.
 final baseCurrencyIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(PrefKeys.baseCurrency, 0, perUser: true));
+
+/// Yatırımcı seviyesi (Ayarlar › Görünüm) — `YatirimciSeviyesi.index`.
+/// Varsayılan Orta = bugünkü görünüm; tercih sorulmaz, dayatılmaz (bkz.
+/// `models/yatirimci_seviyesi.dart`). Kişiye özel.
+final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(
+        PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
+        perUser: true));
+
+final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>(
+    (ref) => YatirimciSeviyesi.fromIndex(ref.watch(investorLevelIndexProvider)));
 
 /// Biyometrik / cihaz kilidi — uygulama öne dönünce ve soğuk açılışta
 /// kimlik doğrulaması ister. Varsayılan KAPALI; açarken cihaz destekliyor mu
