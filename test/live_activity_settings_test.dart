@@ -96,6 +96,10 @@ void main() {
       await runAsIOS(() async {
         await tester.pumpWidget(host());
         await tester.pumpAndSettle();
+        // Liste uzadıkça (2026-09: sessiz saatler satırı) başlık ilk
+        // görünür alanın altına kayabilir; iddia yerleşime bakar,
+        // viewport'a değil.
+        await scrollTo(tester, find.text('CANLI ETKİNLİKLER'));
 
         // Kullanıcı iOS'ta gördüğü adla arar; başlık o adla eşleşmeli.
         // iOS'taki özelliğin adı ÇOĞUL: "Canlı Etkinlikler".

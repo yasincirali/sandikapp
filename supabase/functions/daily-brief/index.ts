@@ -52,6 +52,7 @@ import {
 import { loadPriceHistories, resolveSymbol } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -395,11 +396,17 @@ Deno.serve(async (request) => {
 
     let sent = 0;
     let skippedQuiet = 0;
+    let skippedQuietHours = 0;
     const failures: string[] = [];
+
+    // Sessiz saatler (0057): kullanıcı "bu saatte yazma" dediyse brifing
+    // ATLANIR (ertelenmez — ertesi sabah zaten yeni brifing var).
+    const sessiz = await sessizKullanicilar(admin, tokens.map((t) => t.user_id));
 
     let partnerSayisi = 0;
     for (const tokenRow of tokens) {
       if (zatenGonderildi.has(tokenRow.user_id)) continue;
+      if (sessiz.has(tokenRow.user_id)) { skippedQuietHours += 1; continue; }
 
       // Ortak hareketi VARSA sözü o alır ve hareket eşiği aranmaz:
       // "ortağın ekleme yaptı" kendi başına bir haber, fiyat hareketine
@@ -466,6 +473,7 @@ Deno.serve(async (request) => {
       ok: true,
       sent,
       skipped_quiet: skippedQuiet,
+      skipped_quiet_hours: skippedQuietHours,
       candidates: kullaniciAdaylari.size,
       partner_variant: partnerSayisi,
       dry_run: dryRun,

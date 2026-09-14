@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/quiet_hours_provider.dart';
 import '../services/data_export_service.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/disclaimer_service.dart';
@@ -400,6 +401,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 adaptiveRoute(builder: (_) => const PriceAlertsScreen()),
               ),
             ),
+            const _QuietHoursTile(),
+            const SizedBox(height: 8),
             _SwitchTile(
               icon: Icons.people_outline_rounded,
               title: 'Ortaklık daveti bildirimleri',
@@ -1261,3 +1264,83 @@ class _SwitchTile extends StatelessWidget {
 // UH1 fix: _ThemeModeTile + _ThemeChip kaldırıldı.
 // Light theme implementasyonu yapılmadan UI'da göstermek kullanıcı
 // güvenini sarsıyordu. Faz 3'te gerçek light theme tasarlanınca geri gelecek.
+
+/// Sessiz saatler — tek global pencere, tüm proaktif push'lar (brifing,
+/// haftalık özet, takvim, fiyat alarmı). Sinyaller kendi tür bazlı
+/// penceresini kullanır (Sinyal ayarları).
+class _QuietHoursTile extends ConsumerWidget {
+  const _QuietHoursTile();
+
+  static const _defaultStart = 22;
+  static const _defaultEnd = 8;
+
+  String _fmt(int h) => '${h.toString().padLeft(2, '0')}:00';
+
+  Future<void> _pick(BuildContext context, WidgetRef ref,
+      {required bool isStart}) async {
+    final cur = ref.read(quietHoursProvider).valueOrNull ?? const QuietHours();
+    final start = cur.start ?? _defaultStart;
+    final end = cur.end ?? _defaultEnd;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: isStart ? start : end, minute: 0),
+      helpText: isStart ? 'Sessizlik başlangıcı' : 'Sessizlik bitişi',
+      builder: (ctx, child) => MediaQuery(
+        data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (picked == null) return;
+    // Sunucu saat çözünürlüğünde çalışır (cron saat başı); dakika atılır.
+    final h = picked.hour;
+    await ref.read(quietHoursProvider.notifier).set(
+          start: isStart ? h : start,
+          end: isStart ? end : h,
+        );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final q = ref.watch(quietHoursProvider).valueOrNull ?? const QuietHours();
+    return Column(
+      children: [
+        _SwitchTile(
+          icon: Icons.bedtime_outlined,
+          title: 'Sessiz saatler',
+          subtitle: q.enabled
+              ? 'Brifing, özet, takvim ve alarm push\'ları '
+                  '${_fmt(q.start!)}–${_fmt(q.end!)} arası gönderilmez'
+              : 'Gece belirli saatlerde hiçbir proaktif bildirim gelmesin',
+          value: q.enabled,
+          onChanged: (v) => ref.read(quietHoursProvider.notifier).set(
+                start: v ? _defaultStart : null,
+                end: v ? _defaultEnd : null,
+              ),
+        ),
+        if (q.enabled)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _TimeBox(
+                    label: 'Başlangıç',
+                    value: _fmt(q.start!),
+                    onTap: () => _pick(context, ref, isStart: true),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _TimeBox(
+                    label: 'Bitiş',
+                    value: _fmt(q.end!),
+                    onTap: () => _pick(context, ref, isStart: false),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}

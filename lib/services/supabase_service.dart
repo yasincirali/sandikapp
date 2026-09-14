@@ -114,6 +114,37 @@ class SupabaseService {
     );
   }
 
+  /// Sessiz saatler (0057) — TR saati, null = kapalı.
+  Future<({int? start, int? end})> getQuietHours(String userId) async {
+    final row = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.getQuietHours',
+      table: 'profiles',
+      op: 'SELECT',
+      request: {'id': userId},
+      call: () => _db
+          .from('profiles')
+          .select('quiet_start, quiet_end')
+          .eq('id', userId)
+          .maybeSingle(),
+    );
+    return (
+      start: (row?['quiet_start'] as num?)?.toInt(),
+      end: (row?['quiet_end'] as num?)?.toInt(),
+    );
+  }
+
+  Future<void> setQuietHours(String userId, {int? start, int? end}) async {
+    await _log.log<void>(
+      source: 'SupabaseService.setQuietHours',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'quiet_start': start, 'quiet_end': end},
+      call: () => _db
+          .from('profiles')
+          .update({'quiet_start': start, 'quiet_end': end}).eq('id', userId),
+    );
+  }
+
   Future<List<AppUser>> getProfilesByIds(List<String> ids) async {
     if (ids.isEmpty) return [];
     // Her profili ayrı ayrı çek — inFilter RLS policy'siyle bazen uyumsuz davranır

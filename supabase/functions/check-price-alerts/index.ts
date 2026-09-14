@@ -16,6 +16,7 @@ import {
 } from '../_shared/fcm.ts';
 import { fetchLivePrices } from '../_shared/live_prices.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -202,9 +203,16 @@ Deno.serve(async (request) => {
       );
 
     let sent = 0;
+    let skippedQuietHours = 0;
     const failures: string[] = [];
 
+    // Sessiz saatler (0057): alarm ATLANIR ama damgalanmaz — pencere bitince
+    // koşul sürüyorsa bir sonraki turda gider. Kuru koşuda da uygulanır ki
+    // rapor gerçek davranışı göstersin.
+    const sessiz = await sessizKullanicilar(admin, userIds);
+
     for (const alarm of tetiklenen) {
+      if (sessiz.has(alarm.user_id)) { skippedQuietHours += 1; continue; }
       const fiyat = fiyatlar.get(alarm.symbol)!;
       const mesaj = buildAlertMessage(
         alarm.label,
@@ -261,6 +269,7 @@ Deno.serve(async (request) => {
       priced: fiyatlar.size,
       triggered: tetiklenen.length,
       sent,
+      skipped_quiet_hours: skippedQuietHours,
       dry_run: dryRun,
       failures: failures.slice(0, 5),
     });

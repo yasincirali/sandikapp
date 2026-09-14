@@ -22,6 +22,7 @@ import {
   ServiceAccount,
 } from '../_shared/fcm.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -244,8 +245,12 @@ Deno.serve(async (request) => {
     );
 
     let sent = 0;
+    let skippedQuietHours = 0;
     const failures: string[] = [];
+    // Sessiz saatler (0057): takvim hatırlatması zamana bağlı değil, atlanır.
+    const sessiz = await sessizKullanicilar(admin, tokens.map((t) => t.user_id));
     for (const t of tokens) {
+      if (sessiz.has(t.user_id)) { skippedQuietHours += 1; continue; }
       const r = await sendFcmNotification({
         accessToken,
         projectId: fcmProjectId,
@@ -284,7 +289,12 @@ Deno.serve(async (request) => {
       } catch (_) { /* bkz. yukarıdaki not */ }
     }
 
-    return jsonResponse({ ok: true, sent, failures: failures.slice(0, 5) });
+    return jsonResponse({
+      ok: true,
+      sent,
+      skipped_quiet_hours: skippedQuietHours,
+      failures: failures.slice(0, 5),
+    });
   } catch (error) {
     return jsonResponse(
       { error: error instanceof Error ? error.message : String(error) },

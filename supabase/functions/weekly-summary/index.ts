@@ -55,6 +55,7 @@ import {
   ServiceAccount,
 } from '../_shared/fcm.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -374,10 +375,15 @@ Deno.serve(async (request) => {
     let skippedOptOut = 0;
     const failures: string[] = [];
 
+    // Sessiz saatler (0057) — tercihle aynı kapı: atlanır, ertelenmez.
+    const sessiz = await sessizKullanicilar(admin, userIds);
+    let skippedQuietHours = 0;
+
     for (const tokenRow of tokens) {
       const uid = tokenRow.user_id;
       if (zatenGonderildi.has(uid)) continue;
       if (istemeyen.has(uid)) { skippedOptOut += 1; continue; }
+      if (sessiz.has(uid)) { skippedQuietHours += 1; continue; }
 
       // AKIŞ KAPISI — en önemlisi.
       if (akisliKullanicilar.has(uid)) { skippedFlow += 1; continue; }
@@ -451,6 +457,7 @@ Deno.serve(async (request) => {
       skipped_flow: skippedFlow,
       skipped_coverage: skippedCoverage,
       skipped_quiet: skippedQuiet,
+      skipped_quiet_hours: skippedQuietHours,
       skipped_opt_out: skippedOptOut,
       dry_run: dryRun,
       failures: failures.slice(0, 5),
