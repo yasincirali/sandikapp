@@ -3,6 +3,8 @@ import '../models/asset_type.dart';
 import '../models/position.dart' show positionKey;
 import 'daily_summary.dart';
 import 'history_service.dart';
+import 'inflation_service.dart';
+import 'xirr_service.dart' show XirrService;
 import 'recap_service.dart' show PortfolioCharacter, RecapAsset, RecapService;
 import '../utils/tr_format.dart';
 
@@ -98,6 +100,37 @@ class PeriodSummary {
   /// Nominal getirinin TÜFE'yi kaç PUAN geçtiği. Endeks eksikse `null`.
   final double? tufeFarki;
 
+  /// Dönemin kümülatif TÜFE'si (yüzde). Endeks eksikse `null`.
+  ///
+  /// [tufeFarki] tek başına kara kutu: "8,2 puan öndesin" diyen bir ekran
+  /// kullanıcının TÜİK rakamıyla doğrulamasına izin vermez. Ham TÜFE ayrı
+  /// taşınır ki kart üç sayıyı da yazabilsin (nominal, TÜFE, reel).
+  final double? tufePct;
+
+  /// Bileşik reel getiri: (1+n)/(1+e) − 1, yüzde.
+  ///
+  /// [tufeFarki]'ndan FARKLI bir sayıdır ve ikisi birlikte gösterilir.
+  /// Puan farkı gündelik dilin okuduğu şey ("TÜFE'yi 6 puan geçtim"),
+  /// bileşik reel getiri matematiksel olarak doğru olan. Yüksek enflasyonda
+  /// aralarındaki fark büyür: %48,1 nominal / %36,7 TÜFE → puan farkı 11,4
+  /// ama reel getiri 8,34. Birini silip diğerini bırakmak, ya doğruluğu ya
+  /// okunabilirliği feda ederdi.
+  final double? reelGetiriPct;
+
+  /// Dönem içinde tahsil edilen nakit temettü (TRY). Yoksa `null`.
+  ///
+  /// Akışa (`katkiTRY`) GİRMEZ, `piyasaTRY` içinde ERİR — temettü ödendiğinde
+  /// hisse fiyatı temettü kadar düşer, yani portföy değeri serisinde zaten
+  /// görünür. Ayrı satır olarak gösterilmesi "bu getirinin şu kadarı nakit
+  /// olarak elime geçti" bilgisini verir; toplama İKİNCİ KEZ eklenmez.
+  final double? temettuTRY;
+
+  /// Dönem içinde ödenen komisyon (TRY). Yoksa `null`.
+  ///
+  /// `totalCostTRY` komisyonu zaten içerdiği için `katkiTRY`'nin İÇİNDEDİR;
+  /// ayrı satır yalnızca görünürlük sağlar, toplamdan tekrar düşülmez.
+  final double? komisyonTRY;
+
   /// Dönem başı / sonu tür dağılımı (TRY). Seri yoksa `null`.
   final Map<AssetType, double>? dagilimBasi;
   final Map<AssetType, double>? dagilimSonu;
@@ -123,6 +156,10 @@ class PeriodSummary {
     this.enIyi,
     this.enZayif,
     this.tufeFarki,
+    this.tufePct,
+    this.reelGetiriPct,
+    this.temettuTRY,
+    this.komisyonTRY,
     this.dagilimBasi,
     this.dagilimSonu,
     this.sparkline = const [],
@@ -198,6 +235,40 @@ class PeriodSummaryService {
     }
     return total;
   }
+
+  /// [start]…[end] penceresinde ödenen komisyon (TRY).
+  ///
+  /// Pencere kuralı [netInflow] ile AYNI olmak zorunda: iki sayı aynı
+  /// dönemi anlatmıyorsa köprünün alt satırı toplamla çelişir.
+  ///
+  /// `commission` varlığın PARA BİRİMİNDE tutuluyor (bkz. `Asset.commission`
+  /// notu), bu yüzden `purchaseFxRate` ile çevrilir. Temettü satırlarında
+  /// komisyon alanı anlamsız — yalnızca alım/satım taranır.
+  static double komisyonInPeriod(
+    List<Asset> assets,
+    DateTime start,
+    DateTime end,
+  ) {
+    final startMs = dayKey(start).millisecondsSinceEpoch;
+    final endMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
+        .millisecondsSinceEpoch;
+
+    var toplam = 0.0;
+    for (final a in assets) {
+      if (!a.isActive) continue;
+      if (!a.isBuy && !a.isSell) continue;
+      final ms = a.addedDate.millisecondsSinceEpoch;
+      if (ms < startMs || ms > endMs) continue;
+      toplam += a.commission * a.purchaseFxRate;
+    }
+    return toplam;
+  }
+
+  /// NaN/sonsuz değerleri `null`'a çevirir.
+  ///
+  /// `InflationService.realReturnPct` tanımsızı NaN ile bildiriyor;
+  /// NaN'ı modele taşımak ekranda "%NaN" yazdırırdı.
+  static double? _sonluVeyaNull(double v) => v.isFinite ? v : null;
 
   /// Dönem başlangıcı — TAKVİMDEN, sabit gün sayısından değil.
   ///
@@ -452,6 +523,15 @@ class PeriodSummaryService {
     final brut = u.last - u.first;
     final piyasa = brut - katki;
 
+    // Temettü ve komisyon: köprünün ALT SATIRLARI, ayrı bileşen değil.
+    // İkisi de zaten mevcut sayıların içinde (alan notlarına bakın); burada
+    // yalnızca görünür kılınıyorlar. Sıfırsa `null` taşınır ki ekran hiç
+    // olmayan bir satırı "₺0" diye çizmesin.
+    final temettuHam = XirrService.dividendsInPeriod(assets, p.start, p.end);
+    final temettu = temettuHam.abs() < 0.005 ? null : temettuHam;
+    final komisyonHam = komisyonInPeriod(assets, p.start, p.end);
+    final komisyon = komisyonHam.abs() < 0.005 ? null : komisyonHam;
+
     // Payda: dönem başı + POZİTİF katkı. Negatif katkı (net satış)
     // eklenmez — satılan para artık piyasada değil.
     final taban = u.first + (katki > 0 ? katki : 0);
@@ -486,8 +566,19 @@ class PeriodSummaryService {
       getiriPct: pct,
       enIyi: uclar2.enIyi,
       enZayif: uclar2.enZayif,
-      tufeFarki:
-          (pct != null && inflationPct != null) ? pct - inflationPct : null,
+      tufeFarki: (pct != null && inflationPct != null)
+          ? InflationService.spreadPoints(pct, inflationPct)
+          : null,
+      tufePct: inflationPct,
+      // Bileşik reel getiri puan farkının YANINDA taşınır (alan notuna
+      // bakın). NaN filtrelenir: −%100 enflasyonda payda sıfırlanıyor ve
+      // `realReturnPct` tanımsızı NaN ile bildiriyor — NaN'ı ekrana
+      // taşımak "%NaN" yazdırırdı.
+      reelGetiriPct: (pct != null && inflationPct != null)
+          ? _sonluVeyaNull(InflationService.realReturnPct(pct, inflationPct))
+          : null,
+      temettuTRY: temettu,
+      komisyonTRY: komisyon,
       dagilimBasi: _dagilim(breakdown.byType, u.firstTs),
       dagilimSonu: _dagilim(breakdown.byType, u.lastTs),
       gunSayimi: gunSayimi(breakdown.total, fromMs: fromMs, toMs: toMs),

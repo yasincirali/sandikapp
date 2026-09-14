@@ -99,6 +99,26 @@ class InflationService {
     return ((1 + nominalPct / 100) / payda - 1) * 100;
   }
 
+  /// Endeks tablosunda hiç satır var mı?
+  ///
+  /// **Neden bu ayrım gerekiyor:** [inflationForPeriod] iki BAMBAŞKA sebeple
+  /// `null` dönebiliyor ve ekran ikisini ayırt edemeden ikisinde de sessiz
+  /// kalıyordu:
+  ///
+  ///   1. Tablo BOŞ — `inflation_index` doldurulmamış (kurulum eksik:
+  ///      `EVDS_API_KEY` verilmemiş, cron hiç yazmamış). Bu bir SİSTEM
+  ///      durumu; kullanıcının portföyüyle ilgisi yok ve ay geçse de
+  ///      kendiliğinden düzelmez.
+  ///   2. Tablo dolu ama İSTENEN AYIN ucu yok — kullanıcının geçmişi
+  ///      endeksin başladığı tarihten eski ya da dönem çok kısa. Bu
+  ///      kullanıcıya özel ve zamanla düzelir.
+  ///
+  /// İkisini aynı sessizlikle karşılamak, dört ay boyunca fark edilmeyen
+  /// cron arızasıyla (bkz. `0054_cron_auth_header.sql`) aynı hata sınıfı:
+  /// çalışmayan bir şey, çalışıyormuş gibi görünüyor. Ekran artık birinci
+  /// durumda "veri bekleniyor" diyebiliyor.
+  Future<bool> hasIndexData() async => (await _yukle()).isNotEmpty;
+
   /// Son [gun] gün için TÜFE değişimi. Endeks eksikse `null`.
   ///
   /// Uçlar AY BAŞINA yuvarlandığı için gün sayısı yaklaşıktır; TÜİK aylık

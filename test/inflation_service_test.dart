@@ -82,6 +82,35 @@ void main() {
     test('enflasyon sıfırken reel getiri nominale eşittir', () {
       expect(InflationService.realReturnPct(12.0, 0.0), closeTo(12.0, 1e-9));
     });
+
+    test('%48,10 nominal / %36,70 TÜFE → %8,34 reel', () {
+      // Ürün gereksiniminde adı geçen referans vaka. Puan farkı 11,40
+      // olurdu; bileşik hesap 8,34 veriyor ve ikisi de ekranda gösteriliyor
+      // (bkz. `PeriodSummary.reelGetiriPct` notu).
+      expect(InflationService.realReturnPct(48.10, 36.70), closeTo(8.34, 0.01));
+      expect(
+          InflationService.spreadPoints(48.10, 36.70), closeTo(11.40, 1e-9));
+    });
+
+    test('negatif nominal getiri enflasyonla daha da kötüleşir', () {
+      final reel = InflationService.realReturnPct(-10.0, 30.0);
+      expect(reel, lessThan(-10.0));
+      expect(reel, closeTo(-30.769, 1e-3));
+    });
+
+    test('deflasyonda (negatif TÜFE) reel getiri nominalden BÜYÜKTÜR', () {
+      // Fiyatlar düşerken aynı nominal getiri daha fazla alım gücü demek.
+      final reel = InflationService.realReturnPct(10.0, -5.0);
+      expect(reel, greaterThan(10.0));
+      expect(reel, closeTo(15.789, 1e-3));
+    });
+
+    test('−%100 enflasyon tanımsız — NaN döner, 0 UYDURULMAZ', () {
+      // Payda sıfırlanıyor. NaN çağıran tarafta filtrelenir
+      // (`PeriodSummaryService._sonluVeyaNull`); burada sessizce 0
+      // dönseydi ekran "reel getirin sıfır" diye yanlış bir ölçüm yazardı.
+      expect(InflationService.realReturnPct(10.0, -100.0).isNaN, isTrue);
+    });
   });
 
   group('inflationForPeriod', () {
