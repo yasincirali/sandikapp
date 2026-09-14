@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/quiet_hours_provider.dart';
@@ -384,6 +385,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SandikSectionHeader(title: 'GÖRÜNÜM'),
             const SizedBox(height: 12),
             const _ThemeModePicker(),
+            const SizedBox(height: 12),
+            const _BaseCurrencyPicker(),
             const SizedBox(height: 24),
 
             // -- BİLDİRİMLER ---------------------------------------
@@ -757,6 +760,98 @@ class _ThemeModePicker extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Baz para birimi (Faz 3.2). Tema seçiciyle aynı dil: dört eşit segment.
+///
+/// Tercih yalnızca GÖSTERİMİ değiştirir — hesaplar TRY'de kalır, tutarlar
+/// bugünkü kurla çevrilir (bkz. `money_format.dart`). Alt satır bunu açıkça
+/// söyler ki "dolar bazlı getirim bu mu" yanılgısı olmasın.
+class _BaseCurrencyPicker extends ConsumerWidget {
+  const _BaseCurrencyPicker();
+
+  static const _options = <(BaseCurrency, IconData)>[
+    (BaseCurrency.try_, Icons.currency_lira_rounded),
+    (BaseCurrency.usd, Icons.attach_money_rounded),
+    (BaseCurrency.eur, Icons.euro_rounded),
+    (BaseCurrency.gold, Icons.workspace_premium_rounded),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(baseCurrencyProvider);
+    final baz = ref.watch(bazParaProvider);
+    // Seçili birimin kuru henüz yoksa ekranlar ₺'de kalır; kullanıcı bunu
+    // burada görsün, "seçtim ama değişmedi" sanmasın.
+    final kurYok = current != BaseCurrency.try_ && baz.lira;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(SandikSpace.xs),
+          decoration: context.surfaceCard(),
+          child: Row(
+            children: [
+              for (final (birim, icon) in _options)
+                Expanded(
+                  child: SandikTappable(
+                    semanticLabel: 'Baz para birimi ${birim.label}',
+                    onTap: () => setBaseCurrency(ref, birim),
+                    child: AnimatedContainer(
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: current == birim
+                            ? context.c.amberFill.withValues(alpha: 0.16)
+                            : null,
+                        borderRadius: SandikRadius.smAll,
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            icon,
+                            size: 20,
+                            color: current == birim
+                                ? context.c.amberText
+                                : context.c.text36,
+                          ),
+                          const SizedBox(height: SandikSpace.xs),
+                          Text(
+                            birim.kod == 'ALTIN' ? 'Altın' : birim.kod,
+                            style: context.t.labelLarge?.copyWith(
+                              letterSpacing: 0,
+                              fontWeight: current == birim
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: current == birim
+                                  ? context.c.amberText
+                                  : context.c.text58,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: SandikSpace.xs),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+          child: Text(
+            kurYok
+                ? 'Kur henüz çekilmedi; tutarlar şimdilik ₺ görünür.'
+                : 'Tutarlar bugünkü kurla ${baz.etkinBirim.label.toLowerCase()} '
+                    'cinsinden gösterilir; hesaplar ₺ üzerinden yapılır.',
+            style: context.t.bodySmall?.copyWith(color: context.c.text58),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1037,6 +1037,28 @@ değil.
 
 ---
 
+## 🟡 AÇIK — Baz para birimi yalnızca gösterim katmanı
+
+2026-09-14 (Faz 3.2): USD/EUR/gram altın seçildiğinde TRY tutarı **bugünkü**
+kurla bölünür (`utils/money_format.dart`). Bu "bugünkü dolarla kaç para"
+sorusunu yanıtlar; "dolar bazlı gerçek getiri" (alış günü kuruyla maliyet,
+bugünkü kurla değer) DEĞİLDİR — getiri yüzdeleri hâlâ TRY bazlıdır.
+
+**Neden böyle:** lot başına alış günü kuru (`purchaseFxRate`) yalnızca döviz
+cinsi varlıklarda dolu; TRY varlıklar için tarihli USDTRY serisi gerekir ve
+seri motoru (`HistoryService`) bu çevrimi bilmiyor. Kur bazlı getiri ayrı bir
+hesap ve ayrı bir tur.
+
+**Kalan ₺ sabit yüzeyler:** `asset_detail_screen` (fiyat grafiği ve özet),
+takip listesi, `transaction_row` (geçmiş tutar — bilerek ₺), bildirim ve özet
+metinleri (`daily_summary`, `recap_service`, `milestone_service`,
+`period_summary_service` cümleleri), `home_widget_service`, `live_activity_service`.
+Bunlar ya sunucu/işletim sistemi yüzeyi (kur bilgisi yok) ya da tarihli tutar.
+
+**Ele alınma zamanı:** kullanıcı geri bildirimi "dolar getirim yanlış" derse.
+
+---
+
 ## 🟡 AÇIK — Yarım kalan özellikler
 
 İkisi de aynı kararı bekliyor: **ya tamamla ya sil.**

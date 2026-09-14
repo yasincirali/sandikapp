@@ -10,6 +10,7 @@ import 'package:flutter/material.dart'
         InkWell,
         RefreshIndicator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/base_currency_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -1397,6 +1398,7 @@ class _PortfolioPerformanceScreenState
           // tutar. Endpoint yoksa üst kart da çizilmiyordur — döküm de çıkmaz.
           if (_periodEndpoints(segments) case final ep?)
             _TypeBreakdownCard(
+              baz: ref.watch(bazParaProvider),
               breakdown: breakdown,
               totalFirst: ep.first,
               totalLast: ep.last,
@@ -1829,8 +1831,9 @@ class _PortfolioPerformanceScreenState
     );
   }
 
-  /// TRY değeri için okunabilir kısa etiket (₺1,2M / ₺450K / ₺900)
-  String _fmtY(double val) => fmtTRYCompact(val);
+  /// TRY değeri için okunabilir kısa etiket (₺1,2M / ₺450K / ₺900) — baz
+  /// birimde (Faz 3.2). Seri TRY kalır, yalnızca etiket çevrilir.
+  String _fmtY(double val) => ref.read(bazParaProvider).compact(val);
 
   /// Seçili periyodun değişim özeti — grafiğin hemen üstünde.
   ///
@@ -1924,8 +1927,7 @@ class _PortfolioPerformanceScreenState
         ? context.c.text36
         : (positive ? context.c.gain : context.c.loss);
 
-    final tryFmt =
-        tryFormatter(digits: 0);
+    final tryFmt = ref.watch(bazParaProvider).formatter(digits: 0);
     final periodLabel = _periods[_selectedPeriodIdx].label;
     // Yıl, iki uç FARKLI yıla düşüyorsa yazılır.
     //
@@ -2902,7 +2904,7 @@ class _PortfolioPerformanceScreenState
             tooltipPadding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             getTooltipItems: (spots) {
-              final tryFmt0 = tryFormatter(digits: 0);
+              final tryFmt0 = ref.read(bazParaProvider).formatter(digits: 0);
               // Primary segmentteki ilk ve son x — anchor / bugün tespiti.
               final firstX = primarySeg.spots.first.x;
               final lastX = primarySeg.spots.last.x;
@@ -3106,7 +3108,7 @@ class _PortfolioPerformanceScreenState
                   ? dayKey(start)
                       .add(Duration(minutes: snapped.x.round()))
                   : start.add(Duration(minutes: (snapped.x * 1440).round()));
-              final title = fmtTRY(snapped.y);
+              final title = ref.read(bazParaProvider).fmt(snapped.y);
               // Gün içi etiket normalde yalnızca saat yazar — tek gün
               // çizildiği için tarih gereksiz gürültüydü. Ama piyasa
               // kapalıyken seri BİRDEN ÇOK günü kapsıyor (Cuma→Pazar) ve
@@ -3128,7 +3130,7 @@ class _PortfolioPerformanceScreenState
               if (spots.isEmpty || _simulate || intraday) return const [];
               // Diğer crosshair callback'leriyle aynı ikili arama.
               final snapped = spots[nearestSpotIndex(spots, x)];
-              final tryFmt0 = tryFormatter(digits: 0);
+              final tryFmt0 = ref.read(bazParaProvider).formatter(digits: 0);
               final firstY = spots.first.y;
               final gain = snapped.y - firstY;
               final date =
@@ -3531,8 +3533,10 @@ class _TypeBreakdownCard extends StatefulWidget {
   final DateTime start;
   final DateTime end;
   final bool simulate;
+  final BazPara baz;
 
   const _TypeBreakdownCard({
+    required this.baz,
     required this.breakdown,
     required this.totalFirst,
     required this.totalLast,
@@ -3742,8 +3746,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final (typeRows, childrenOf) = _rows();
     if (typeRows.isEmpty) return const SizedBox.shrink();
 
-    final tryFmt =
-        tryFormatter(digits: 0);
+    final tryFmt = widget.baz.formatter(digits: 0);
 
     return Container(
       padding:
@@ -3778,7 +3781,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     AssetType type,
     _BreakdownRow row,
     Map<AssetType, List<_BreakdownRow>> childrenOf,
-    NumberFormat tryFmt,
+    ParaBicimi tryFmt,
   ) {
     // Ürünü olan HER tür açılır — döviz, mevduat, "Diğer" dahil (kullanıcı
     // kararı, 2026-09-01).
@@ -3899,7 +3902,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
 
   Widget _row(
     BuildContext context,
-    NumberFormat tryFmt, {
+    ParaBicimi tryFmt, {
     required String label,
     required Color dotColor,
     required double value,
@@ -3962,7 +3965,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   /// `ExcludeSemantics` altındaki ağaç sade kalsın.
   Widget _rowVisual(
     BuildContext context,
-    NumberFormat tryFmt, {
+    ParaBicimi tryFmt, {
     required String label,
     required Color dotColor,
     required double flow,
@@ -4556,6 +4559,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
         : null;
 
     return PeriodSummaryView(
+      baz: ref.watch(bazParaProvider),
       summary: gosterilen,
       uzunDonemPct: widget.period == SummaryPeriod.birYil ? null : _uzunDonem,
       karakter: widget.karakter,
@@ -4567,6 +4571,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       katkiKarti: katki == null
           ? null
           : ContributionKarti(
+              baz: ref.watch(bazParaProvider),
               ozet: katki,
               aralik: _katkiAralik,
               onAralik: (a) => setState(() => _katkiAralik = a),

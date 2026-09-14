@@ -12,6 +12,7 @@ import 'package:flutter/material.dart'
         showModalBottomSheet;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/base_currency_provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
@@ -352,6 +353,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     _AssetTypeDonut(
                                       assets: displayAssets,
                                       pState: pState,
+                                      baz: ref.watch(bazParaProvider),
                                       onTypeSelected: (type) =>
                                           setState(() => _filteredType = type),
                                     ),
@@ -359,6 +361,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     _AssetList(
                                       positions: filteredPositions,
                                       pState: pState,
+                                      baz: ref.watch(bazParaProvider),
                                       currentUserId: currentUserId,
                                       onTap: (p) => Navigator.push(
                                         context,
@@ -554,10 +557,12 @@ class _EmptyState extends StatelessWidget {
 class _AssetTypeDonut extends StatefulWidget {
   final List<Asset> assets;
   final PortfolioState pState;
+  final BazPara baz;
   final void Function(AssetType?) onTypeSelected;
   const _AssetTypeDonut(
       {required this.assets,
       required this.pState,
+      required this.baz,
       required this.onTypeSelected});
 
   @override
@@ -567,10 +572,9 @@ class _AssetTypeDonut extends StatefulWidget {
 class _AssetTypeDonutState extends State<_AssetTypeDonut> {
   int? _touchedIndex;
 
-  static String _formatTL(double val) {
-    // Ana ekran hero'suyla birebir aynı format: ₺1.234.567
-    return tryFormatter(digits: 0)
-        .format(val);
+  String _formatTL(double val) {
+    // Ana ekran hero'suyla birebir aynı format: ₺1.234.567 (baz birimde)
+    return widget.baz.fmt(val);
   }
 
   @override
@@ -752,6 +756,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 class _AssetList extends StatelessWidget {
   final List<Position> positions;
   final PortfolioState pState;
+  final BazPara baz;
   final String? currentUserId;
   final void Function(Position) onTap;
   final void Function(Position) onDelete;
@@ -765,6 +770,7 @@ class _AssetList extends StatelessWidget {
   const _AssetList({
     required this.positions,
     required this.pState,
+    required this.baz,
     required this.currentUserId,
     required this.onTap,
     required this.onDelete,
@@ -796,6 +802,7 @@ class _AssetList extends StatelessWidget {
             key: ValueKey(position.key),
             position: position,
             pState: pState,
+            baz: baz,
             canEdit: currentUserId != null &&
                 position.representative.userId == currentUserId,
             onTap: onTap,
@@ -999,7 +1006,7 @@ class _GainLossLine extends StatelessWidget {
   final double gainLossTRY;
   final double totalCostTRY;
   final bool isPositive;
-  final NumberFormat tryFmt;
+  final ParaBicimi tryFmt;
 
   @override
   Widget build(BuildContext context) {
@@ -1046,6 +1053,7 @@ class _GainLossLine extends StatelessWidget {
 class _AssetCard extends StatefulWidget {
   final Position position;
   final PortfolioState pState;
+  final BazPara baz;
   final bool canEdit;
   final void Function(Position) onTap;
   final void Function(Position) onDelete;
@@ -1060,6 +1068,7 @@ class _AssetCard extends StatefulWidget {
     super.key,
     required this.position,
     required this.pState,
+    required this.baz,
     required this.canEdit,
     required this.onTap,
     required this.onDelete,
@@ -1088,8 +1097,7 @@ class _AssetCardState extends State<_AssetCard>
     final onDividend = widget.onDividend;
 
     final a = position.asDisplayAsset();
-    final tryFmt =
-        tryFormatter(digits: 0);
+    final tryFmt = widget.baz.formatter(digits: 0);
     // Temettü dahil — üstteki özet de dahil ediyor, satır onunla tutarlı olmalı.
     final gainLossTRY = pState.toTRY(position.totalValue, a.currency) -
         position.totalCostTRY +
@@ -1225,7 +1233,8 @@ class _AssetCardState extends State<_AssetCard>
             curve: Curves.easeOutCubic,
             alignment: Alignment.topCenter,
             child: _expanded
-                ? _AssetDetailsPanel(position: position, pState: pState)
+                ? _AssetDetailsPanel(
+                    position: position, pState: pState, baz: widget.baz)
                 : const SizedBox(width: double.infinity),
           ),
         ],
@@ -1362,14 +1371,15 @@ class _ExpandChevron extends StatelessWidget {
 class _AssetDetailsPanel extends StatelessWidget {
   final Position position;
   final PortfolioState pState;
+  final BazPara baz;
 
-  const _AssetDetailsPanel({required this.position, required this.pState});
+  const _AssetDetailsPanel(
+      {required this.position, required this.pState, required this.baz});
 
   @override
   Widget build(BuildContext context) {
     final rep = position.representative;
-    final tryFmt3 =
-        tryFormatter(digits: 3);
+    final tryFmt3 = baz.formatter(digits: 3);
     final numFmt = qtyFormatter();
     final costFmt3 = fixedFormatter(3);
 

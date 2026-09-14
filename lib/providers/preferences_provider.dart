@@ -238,6 +238,12 @@ final partnerNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kBalanceHiddenKey, false));
 
+/// Baz para birimi (Faz 3.2) — `BaseCurrency.index` olarak saklanır; model
+/// ve kur eşlemesi `base_currency_provider.dart`'ta. Kişiye özel: aynı
+/// cihazı paylaşan iki kullanıcının tercihi karışmasın.
+final baseCurrencyIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.baseCurrency, 0, perUser: true));
+
 /// Biyometrik / cihaz kilidi — uygulama öne dönünce ve soğuk açılışta
 /// kimlik doğrulaması ister. Varsayılan KAPALI; açarken cihaz destekliyor mu
 /// diye bir kez doğrulanır (`BiometricLockService`). Kişiye özel.

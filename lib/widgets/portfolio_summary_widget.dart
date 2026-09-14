@@ -1,21 +1,29 @@
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import '../providers/portfolio_provider.dart';
+import '../utils/money_format.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 
 class PortfolioSummaryWidget extends StatelessWidget {
   final PortfolioState state;
   final bool hideBalance;
-  const PortfolioSummaryWidget(
-      {super.key, required this.state, this.hideBalance = false});
+
+  /// Gösterim birimi (Faz 3.2); varsayılan ₺ — testler ve eski çağıranlar
+  /// değişmeden çalışır.
+  final BazPara baz;
+  const PortfolioSummaryWidget({
+    super.key,
+    required this.state,
+    this.hideBalance = false,
+    this.baz = const BazPara.lira(),
+  });
 
   @override
   Widget build(BuildContext context) {
     final isPos = state.gainLoss >= 0;
     final gainColor = isPos ? context.c.gain : context.c.loss;
-    final tryFmt =
-        tryFormatter(digits: 0);
+    final tryFmt = baz.formatter(digits: 0);
     final w = MediaQuery.of(context).size.width;
     final heroFontSize = w < 360
         ? 28.0
