@@ -38,6 +38,10 @@ class PortfolioSummaryWidget extends StatelessWidget {
               '${isPos ? 'kazanç' : 'kayıp'} '
                   '${tryFmt.format(state.gainLoss.abs())}, '
                   '${fmtPct(state.gainLossPercentage.abs(), digits: 2)}',
+            if (state.hasRealized)
+              'satışlardan gerçekleşen '
+                  '${state.realizedGainLoss >= 0 ? 'kazanç' : 'kayıp'} '
+                  '${tryFmt.format(state.realizedGainLoss.abs())}',
           ].join(', ');
 
     return Semantics(
@@ -149,6 +153,23 @@ class PortfolioSummaryWidget extends StatelessWidget {
                             ),
                           ),
                       ],
+                    ),
+                  // Satışlardan gerçekleşen K/Z — yalnızca satış varsa.
+                  // Üstteki rakam "bugün satsan" (gerçekleşmemiş); bu satır
+                  // "zaten sattın". İkisini karıştırmak en sık sorulan
+                  // "neden toplam kârım tutmuyor" sorusunun kaynağıydı.
+                  if (state.hasRealized && !hideBalance)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Satışlardan gerçekleşen: '
+                        '${state.realizedGainLoss >= 0 ? '+' : ''}'
+                        '${tryFmt.format(state.realizedGainLoss)}',
+                        style: context.t.bodySmall?.copyWith(
+                          color: context.signColor(state.realizedGainLoss),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   if (state.isLoading)
                     Padding(

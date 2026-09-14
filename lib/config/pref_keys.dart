@@ -37,4 +37,7 @@ class PrefKeys {
   /// `FxRateMigrationService` en son ne zaman koştu (epoch ms). Her açılışta
   /// değil, günde bir kez sorgu atsın diye.
   static const fxMigrationLastRunMs = 'fx_migration_last_run_ms';
+
+  /// Son bilinen varlık defteri (JSON); kullanıcı kimliği soneklenir.
+  static const portfolioCachePrefix = 'portfolio_cache_v1_';
 }

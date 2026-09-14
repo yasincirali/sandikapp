@@ -14,6 +14,8 @@ import '../services/retention_tracker.dart';
 import '../services/sparkline_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
+import '../services/crash_reporter.dart';
+import '../services/portfolio_cache.dart';
 
 const _uuid = Uuid();
 
@@ -144,6 +146,27 @@ class PortfolioState {
 
   double get gainLossPercentage =>
       totalCost > 0 ? gainLoss / totalCost * 100 : 0;
+
+  /// Satışlardan GERÇEKLEŞEN kâr/zarar (TRY), temettü HARİÇ.
+  ///
+  /// Değerlendirme (2026-09) §5.5: satış fiyatı `sell_price`'ta saklanıyor,
+  /// satış satırı alım maliyetini (`purchasePrice`, ağırlıklı ortalama) ve
+  /// alım kurunu taşıyor — ama hiçbir ekran "sattıklarımdan ne kazandım"
+  /// demiyordu. Hesap: Σ (satış fiyatı − maliyet) × miktar × alım kuru.
+  /// `sell_price` olmayan eski satış satırları atlanır — uydurmak yerine
+  /// eksik bırakılır.
+  double get realizedGainLoss {
+    double t = 0;
+    for (final a in activeAssets) {
+      if (!a.isSell || a.sellPrice == null) continue;
+      t += (a.sellPrice! - a.purchasePrice) * a.quantity * a.purchaseFxRate;
+    }
+    return t;
+  }
+
+  /// Gerçekleşmiş bir şey var mı — özet kartı satırı yalnızca o zaman çıkar.
+  bool get hasRealized =>
+      activeAssets.any((a) => a.isSell && a.sellPrice != null);
 }
 
 // ---------------------------------------------------------------------------
@@ -156,7 +179,26 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final user = ref.watch(authProvider).valueOrNull;
     if (user == null) return const PortfolioState();
 
-    final assets = await SupabaseService.instance.fetchByUser(user.id);
+    final List<Asset> assets;
+    try {
+      assets = await SupabaseService.instance.fetchByUser(user.id);
+      // Başarılı çekim → son bilinen defteri diske yaz (PortfolioCache).
+      unawaited(PortfolioCache.write(user.id, assets));
+    } catch (e, st) {
+      // Ağ yok / sunucu yok: son bilinen defterle aç. Eskiden burada hata
+      // fırlıyor ve uçak modunda uygulama boş ekran + "Tekrar dene" ile
+      // açılıyordu; kullanıcının dün gördüğü portföy dün gecenin
+      // fiyatlarıyla bile bir şey ifade eder. Önbellek yoksa hata yukarı
+      // çıkar — eski davranış.
+      final cached = await PortfolioCache.read(user.id);
+      if (cached == null) rethrow;
+      CrashReporter.report(e, st,
+          reason: 'PortfolioNotifier.build (önbellekten açıldı)');
+      return PortfolioState(
+        assets: RemoteConfigService.instance.filterHiddenTypes(cached),
+        errorMessage: 'Çevrimdışı — son bilinen veriler gösteriliyor.',
+      );
+    }
     return PortfolioState(
       assets: RemoteConfigService.instance.filterHiddenTypes(assets),
     );

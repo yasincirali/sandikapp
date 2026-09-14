@@ -7,6 +7,7 @@ import '../models/user_model.dart';
 import 'db_logger.dart';
 import 'home_widget_service.dart';
 import 'live_activity_service.dart';
+import 'portfolio_cache.dart';
 import 'supabase_service.dart';
 import '../utils/friendly_error.dart';
 import 'crash_reporter.dart';
@@ -491,6 +492,7 @@ class AuthService {
   // ── Logout ────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
+    final uid = _client.auth.currentUser?.id;
     await _log.log<void>(
       source: 'AuthService.logout',
       table: 'auth/sign-out',
@@ -506,6 +508,9 @@ class AuthService {
     // widget'ıyla aynı gerekçe, daha da kritik: kilit ekranı telefon
     // açılmadan görülür.
     await LiveActivityService.instance.endAll();
+    // Çevrimdışı defter de kullanıcıya ait: aynı cihazdaki bir sonraki
+    // hesap öncekinin portföyünü görmemeli.
+    if (uid != null) await PortfolioCache.clear(uid);
     // Email'i cihazda bırak — sonraki girişte dolu gelsin
   }
 

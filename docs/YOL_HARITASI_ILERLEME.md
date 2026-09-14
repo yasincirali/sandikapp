@@ -15,7 +15,7 @@ Main'e birleştirildi (2026-09-14). Faz 0 ve Faz 1 tamam. Faz 2: 2.1–2.9, 2.11
 **Kalan Faz 2 kalemleri:** 2.10 varlık silmede undo (sunucu tarafı kalıcı silme — soft-delete
 ister, Faz 3 kapsamı), 2.12 SegmentedButton geçişi (görsel doğrulama ister), 2.14 Hero geçişi,
 2.13'ün `Size.zero` buton kısmı (20 site), 2.4'ün `SandikCard` benimsemesi.
-Sıradaki: **2.14 Hero** ya da Faz 3.
+Faz 3 başladı: 3.3, 3.4, 3.7 tamam. Sıradaki: **3.8 derin bağlantı**, 3.15 dışa aktarım, 3.19 RLS/retention, 3.6 biyometrik.
 
 ## Faz 0 — Kanamayı durdur
 
@@ -69,4 +69,9 @@ Sıradaki: **2.14 Hero** ya da Faz 3.
 | 2.14 | ⏳ | |
 
 ## Faz 3 — Ürün ve mimari
-(henüz başlanmadı)
+
+| # | Durum | Not |
+|---|---|---|
+| 3.3 | ✅ (ucuz biçim) | Karşılaştır ekranına tek dokunuşlu kıyas çipleri: Portföyüm / BIST 100 / Dolar / Gram altın (`SymbolSearchService`'in tanıdığı semboller, yeni veri yolu yok). Performans sekmesine overlay eklenmedi — o ekran Faz 3.9 birleşmesini bekliyor. |
+| 3.4 | ✅ (gerçekleşen K/Z) | `PortfolioState.realizedGainLoss` + `hasRealized`: Σ(satış − maliyet)×miktar×alım kuru, `sell_price`'sız eski satırlar atlanır. Özet kartında "Satışlardan gerçekleşen: ±₺x" satırı (yalnızca satış varsa) + ekran okuyucu cümlesi. Bedelsiz/split işlem tipi eklenmedi (şema + ekleme akışı ister). `test/realized_gain_and_cache_test.dart`. |
+| 3.7 | ✅ | `lib/services/portfolio_cache.dart`: başarılı çekimde defter (`toSupabase` JSON) prefs'e yazılır; çekim başarısızsa önbellekten açılır ve `errorMessage` ile mevcut çevrimdışı şeridi çıkar; önbellek yoksa eski davranış (hata). Kullanıcı kimliğine bağlı anahtar, çıkışta silinir. Fiyat önbelleği bilinçli ayrı tutuldu. |

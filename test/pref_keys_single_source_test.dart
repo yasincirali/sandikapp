@@ -44,6 +44,7 @@ void main() {
       PrefKeys.signalFrequencyByType,
       PrefKeys.signalHoursByType,
       PrefKeys.fxMigrationLastRunMs,
+      PrefKeys.portfolioCachePrefix,
     ];
     expect(all.toSet().length, all.length);
   });

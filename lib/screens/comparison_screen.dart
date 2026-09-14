@@ -235,6 +235,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                       _selectionList(p),
                       const SizedBox(height: 12),
                       _addButton(p),
+                      const SizedBox(height: 12),
+                      _benchmarkChips(p),
                       const SizedBox(height: 16),
                       _disclaimer(p),
                     ],
@@ -693,6 +695,67 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   // ── Ekleme ────────────────────────────────────────────────────────────────
+
+  /// Tek dokunuşla kıyas noktaları.
+  ///
+  /// Değerlendirme (2026-09) §5.3: "portföyüm BIST 100'ü / doları / gram
+  /// altını yendi mi?" bu uygulamanın en ucuz ve en değerli sorusuydu ama
+  /// cevap arama sayfasının üç dokunuş arkasındaydı. Semboller
+  /// `SymbolSearchService`'in zaten tanıdığı referanslar; burada yalnızca
+  /// kısayol var, yeni veri yolu yok.
+  static const _benchmarks = <SymbolHit>[
+    SymbolHit(
+        ticker: PortfolioSeries.mine, name: 'Portföyüm', source: 'Portföy'),
+    SymbolHit(ticker: 'XU100.IS', name: 'BIST 100', source: 'Endeks'),
+    SymbolHit(ticker: 'USDTRY=X', name: 'Dolar', source: 'Döviz'),
+    SymbolHit(ticker: 'ALTIN_GRAM', name: 'Gram altın', source: 'Altın'),
+  ];
+
+  Widget _benchmarkChips(SandikPalette p) {
+    final full = _selected.length >= 5;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final b in _benchmarks)
+          Builder(builder: (context) {
+            final on = _selected.contains(b);
+            final disabled = !on && full;
+            return SandikTappable(
+              semanticLabel:
+                  on ? '${b.name} zaten kıyasta' : '${b.name} kıyasa ekle',
+              onTap: (on || full) ? null : () => _add(b),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: SandikSpace.md, vertical: SandikSpace.xs + 2),
+                decoration: BoxDecoration(
+                  color: on ? p.amberFill.withValues(alpha: 0.15) : p.overlay,
+                  borderRadius: BorderRadius.circular(SandikRadius.lg),
+                  border: Border.all(
+                      color:
+                          on ? p.amberFill.withValues(alpha: 0.5) : p.hairline),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(on ? Icons.check_rounded : Icons.add_rounded,
+                        size: 14, color: on ? p.amberText : p.text58),
+                    const SizedBox(width: SandikSpace.xs),
+                    Text(
+                      b.name,
+                      style: context.t.labelLarge?.copyWith(
+                        color: disabled ? p.text36 : p.text90,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+      ],
+    );
+  }
 
   Widget _addButton(SandikPalette p) {
     final full = _selected.length >= 5;
