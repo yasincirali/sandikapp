@@ -12,6 +12,7 @@ import '../services/retention_tracker.dart';
 import '../services/sparkline_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
+import '../utils/money_format.dart';
 import '../services/crash_reporter.dart';
 import '../services/portfolio_cache.dart';
 
@@ -41,6 +42,10 @@ class PortfolioState {
   final double eurTry;
   final double gbpTry;
 
+  /// 22 ayar gram altının TRY fiyatı — yalnızca baz para birimi "gram altın"
+  /// seçiliyken çekilir (Faz 3.2); 0 = bilinmiyor, gösterim ₺'ye düşer.
+  final double goldGramTry;
+
   const PortfolioState({
     this.assets = const [],
     this.isLoading = false,
@@ -49,6 +54,7 @@ class PortfolioState {
     this.usdTry = 1.0,
     this.eurTry = 1.0,
     this.gbpTry = 1.0,
+    this.goldGramTry = 0,
   });
 
   PortfolioState copyWith({
@@ -60,6 +66,7 @@ class PortfolioState {
     double? usdTry,
     double? eurTry,
     double? gbpTry,
+    double? goldGramTry,
   }) =>
       PortfolioState(
         assets: assets ?? this.assets,
@@ -69,6 +76,7 @@ class PortfolioState {
         usdTry: usdTry ?? this.usdTry,
         eurTry: eurTry ?? this.eurTry,
         gbpTry: gbpTry ?? this.gbpTry,
+        goldGramTry: goldGramTry ?? this.goldGramTry,
       );
 
   double toTRY(double amount, String currency) {
@@ -623,6 +631,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     SparklineService.instance.clear();
 
     final symbols = <String>{'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'};
+    // Gram altın kuru yalnızca baz birim altınsa istenir: altın tutmayan
+    // kullanıcı için her yenilemede fazladan XAU isteği gereksiz.
+    if (BaseCurrency.fromIndex(ref.read(baseCurrencyIndexProvider)) ==
+        BaseCurrency.gold) {
+      symbols.add(kGoldGramSymbol);
+    }
     for (final a in s.assets) {
       // Silinmiş varlık için fiyat çekmek gereksiz ağ trafiğidir.
       if (!a.isActive) continue;
@@ -658,9 +672,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       final usd = quotes['USDTRY=X']?.regularMarketPrice ?? current.usdTry;
       final eur = quotes['EURTRY=X']?.regularMarketPrice ?? current.eurTry;
       final gbp = quotes['GBPTRY=X']?.regularMarketPrice ?? current.gbpTry;
+      final gold =
+          quotes[kGoldGramSymbol]?.regularMarketPrice ?? current.goldGramTry;
 
-      final nextState =
-          current.copyWith(usdTry: usd, eurTry: eur, gbpTry: gbp);
+      final nextState = current.copyWith(
+          usdTry: usd, eurTry: eur, gbpTry: gbp, goldGramTry: gold);
 
       // Kendi varlıklarını güncelle
       final updated = baseAssets.map((asset) {

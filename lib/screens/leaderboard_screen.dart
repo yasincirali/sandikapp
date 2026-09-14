@@ -10,6 +10,7 @@ import '../providers/preferences_provider.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../utils/polling.dart';
@@ -44,6 +45,33 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       appBar: SandikAppBar(
         title: 'Yarış',
         actions: [
+          // "Yarış'a katıl" anahtarı Ayarlar'dan buraya taşındı (2026-09-14):
+          // katılım bu ekranın CTA'sı, ayrılma da bu ekranın menüsü. Bir
+          // özelliğin açma/kapama yeri özelliğin kendisidir.
+          if (optIn)
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert_rounded, color: context.c.text58),
+              tooltip: 'Yarış seçenekleri',
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(SandikRadius.md)),
+              onSelected: (v) async {
+                if (v != 'ayril') return;
+                final ok = await showSandikConfirm(
+                  context: context,
+                  title: 'Yarıştan ayrıl',
+                  message: 'Sıralamadan çıkarsın; ortakların yüzdeni artık '
+                      'göremez. İstediğin zaman yeniden katılabilirsin.',
+                  confirmLabel: 'Ayrıl',
+                  destructive: true,
+                );
+                if (ok) {
+                  await ref.read(leaderboardOptInProvider.notifier).set(false);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'ayril', child: Text('Yarıştan ayrıl')),
+              ],
+            ),
           // Yarıştaki getiri (dönemsel) ile Performans ekranındaki yüzde
           // (ilk alımdan bugüne toplam) farklı sorulardır. Kullanıcı ikisini
           // yan yana görünce "hangisi doğru?" diye soruyor — açıklama burada.

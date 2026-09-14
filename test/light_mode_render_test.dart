@@ -176,7 +176,8 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             theme: ThemeData(extensions: const [SandikPalette.dark]),
-            home: const Scaffold(body: SettingsScreen()),
+            home: const Scaffold(
+                body: SettingsScreen(bolum: SettingsBolum.gorunum)),
           ),
         ),
       );

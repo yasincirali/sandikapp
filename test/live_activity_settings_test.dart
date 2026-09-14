@@ -55,7 +55,7 @@ void main() {
             brightness: Brightness.dark,
             extensions: const [SandikPalette.dark],
           ),
-          home: const SettingsScreen(),
+          home: const SettingsScreen(bolum: SettingsBolum.bildirimler),
         ),
       );
 
@@ -160,14 +160,13 @@ void main() {
         await tester.pumpWidget(host());
         await tester.pumpAndSettle();
 
+        // 2026-09-14: Ayarlar hub'a bölündü; bu test Bildirimler bölümünü
+        // kuruyor. Bölüm içi sıra: genel bildirimler önce, Canlı Etkinlik
+        // (iOS) sonra. Görünüm/Hesap/Yasal artık ayrı alt ekranlar
+        // (bkz. settings_hub_test).
         const beklenen = [
-          'GÖRÜNÜM',
           'BİLDİRİMLER',
           'CANLI ETKİNLİKLER',
-          'ORTAKLIK',
-          'YASAL',
-          'DESTEK',
-          'HESAP',
         ];
 
         // `ListView` yalnızca GÖRÜNEN çocukları kurar, bu yüzden ekran

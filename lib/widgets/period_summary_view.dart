@@ -9,6 +9,7 @@ import '../services/insight_metrics_service.dart'
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart' show PortfolioCharacter, RecapAsset;
 import '../theme/sandik.dart';
+import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 
 /// Özet sekmesinin gövdesi — üç blok, her dönemde aynı iskelet.
@@ -41,6 +42,10 @@ import '../utils/tr_format.dart';
 /// `design_token_leak_test`).
 class PeriodSummaryView extends StatelessWidget {
   final PeriodSummary summary;
+
+  /// Gösterim birimi (Faz 3.2). Varsayılan ₺; alt kartlara elle geçirilir
+  /// ki widget'lar `ProviderScope`'suz testlerde de kurulabilsin.
+  final BazPara baz;
 
   /// Daha uzun pencerenin getirisi — kayıp döneminde bağlam cümlesi için.
   ///
@@ -94,6 +99,7 @@ class PeriodSummaryView extends StatelessWidget {
   const PeriodSummaryView({
     super.key,
     required this.summary,
+    this.baz = const BazPara.lira(),
     this.uzunDonemPct,
     this.karakter,
     this.enSabirli,
@@ -107,9 +113,6 @@ class PeriodSummaryView extends StatelessWidget {
     this.enflasyonVerisiBekleniyor = false,
   });
 
-  static final _tryFmt =
-      tryFormatter(digits: 0);
-
   @override
   Widget build(BuildContext context) {
     if (!summary.isMeaningful) return _BosDurum(period: summary.period);
@@ -117,9 +120,10 @@ class PeriodSummaryView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _AnaRakamKarti(summary: summary, uzunDonemPct: uzunDonemPct),
+        _AnaRakamKarti(
+            summary: summary, uzunDonemPct: uzunDonemPct, baz: baz),
         const SizedBox(height: SandikSpace.smd),
-        _KopruKarti(summary: summary),
+        _KopruKarti(summary: summary, baz: baz),
         const SizedBox(height: SandikSpace.smd),
         ..._baglamBloklari(context),
       ],
@@ -289,8 +293,10 @@ class PeriodSummaryView extends StatelessWidget {
 class _AnaRakamKarti extends StatelessWidget {
   final PeriodSummary summary;
   final double? uzunDonemPct;
+  final BazPara baz;
 
-  const _AnaRakamKarti({required this.summary, this.uzunDonemPct});
+  const _AnaRakamKarti(
+      {required this.summary, this.uzunDonemPct, required this.baz});
 
   @override
   Widget build(BuildContext context) {
@@ -351,7 +357,7 @@ class _AnaRakamKarti extends StatelessWidget {
                     (s.isFlat || piyasa == null)
                         ? 'Değişim yok'
                         : '${pozitif ? '+' : '−'}'
-                            '${PeriodSummaryView._tryFmt.format(piyasa.abs())}',
+                            '${baz.fmt(piyasa.abs())}',
                     maxLines: 1,
                     style: context.t.numLarge.copyWith(color: renk),
                   ),
@@ -416,8 +422,9 @@ class _AnaRakamKarti extends StatelessWidget {
 /// Dördünü de yeşil yapmak ekranın taşıdığı tek argümanı yok ederdi.
 class _KopruKarti extends StatelessWidget {
   final PeriodSummary summary;
+  final BazPara baz;
 
-  const _KopruKarti({required this.summary});
+  const _KopruKarti({required this.summary, required this.baz});
 
   @override
   Widget build(BuildContext context) {
@@ -454,6 +461,7 @@ class _KopruKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.smd),
           _CubukSatiri(
+            baz: baz,
             etiket: 'Dönem başı',
             deger: bas,
             oran: bas.abs() / enBuyuk,
@@ -462,6 +470,7 @@ class _KopruKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
+            baz: baz,
             etiket: 'Katkın',
             deger: katki,
             oran: katki.abs() / enBuyuk,
@@ -471,6 +480,7 @@ class _KopruKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
+            baz: baz,
             etiket: 'Piyasa',
             deger: piyasa,
             oran: piyasa.abs() / enBuyuk,
@@ -479,6 +489,7 @@ class _KopruKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
+            baz: baz,
             etiket: s.period.intraday ? 'Bugün' : 'Şimdi',
             deger: son,
             oran: son.abs() / enBuyuk,
@@ -502,14 +513,14 @@ class _KopruKarti extends StatelessWidget {
             if (s.temettuTRY != null)
               _KucukSatir(
                 etiket: 'Bunun nakit temettüsü',
-                deger: fmtTRY(s.temettuTRY!),
+                deger: baz.fmt(s.temettuTRY!),
                 ton: context.c.gain,
               ),
             if (s.komisyonTRY != null) ...[
               if (s.temettuTRY != null) const SizedBox(height: SandikSpace.xs2),
               _KucukSatir(
                 etiket: 'Ödenen komisyon',
-                deger: '−${fmtTRY(s.komisyonTRY!)}',
+                deger: '−${baz.fmt(s.komisyonTRY!)}',
                 ton: context.c.text58,
               ),
             ],
@@ -552,20 +563,23 @@ class _CubukSatiri extends StatelessWidget {
   /// birer SEVİYE, işaret taşımazlar; katkı ve piyasa birer DEĞİŞİM.
   final bool isaretli;
 
+  final BazPara baz;
+
   const _CubukSatiri({
     required this.etiket,
     required this.deger,
     required this.oran,
     required this.renk,
     required this.isaretli,
+    required this.baz,
   });
 
   @override
   Widget build(BuildContext context) {
     final yazi = isaretli
         ? '${deger >= 0 ? '+' : '−'}'
-            '${PeriodSummaryView._tryFmt.format(deger.abs())}'
-        : PeriodSummaryView._tryFmt.format(deger.abs());
+            '${baz.fmt(deger.abs())}'
+        : baz.fmt(deger.abs());
 
     return Semantics(
       label: '$etiket $yazi',
@@ -1296,11 +1310,15 @@ class ContributionKarti extends StatelessWidget {
   /// Aralık değiştirildiğinde. `null` ise seçici çizilmez.
   final ValueChanged<ContributionInterval>? onAralik;
 
+  /// Gösterim birimi (Faz 3.2); varsayılan ₺.
+  final BazPara baz;
+
   const ContributionKarti({
     super.key,
     required this.ozet,
     required this.aralik,
     this.onAralik,
+    this.baz = const BazPara.lira(),
   });
 
   @override
@@ -1326,7 +1344,7 @@ class ContributionKarti extends StatelessWidget {
             )
           else ...[
             Text(
-              fmtTRY(ozet.toplamTRY),
+              baz.fmt(ozet.toplamTRY),
               style: context.t.numMedium.copyWith(
                 color: ozet.toplamTRY >= 0 ? c.amberText : c.loss,
               ),
@@ -1349,6 +1367,7 @@ class ContributionKarti extends StatelessWidget {
                     if (i > 0) const SizedBox(width: SandikSpace.xs2),
                     Expanded(
                       child: _KatkiCubugu(
+                        baz: baz,
                         kova: ozet.kovalar[i],
                         oran: ozet.kovalar[i].netTRY.abs() / enBuyuk,
                         aralik: aralik,
@@ -1367,13 +1386,13 @@ class ContributionKarti extends StatelessWidget {
           if (ozet.ortalamaTRY != null)
             _KucukSatir(
               etiket: 'Katkı yaptığın ${aralik.tekil} ortalaması',
-              deger: fmtTRY(ozet.ortalamaTRY!),
+              deger: baz.fmt(ozet.ortalamaTRY!),
             ),
           if (ozet.zirve != null) ...[
             const SizedBox(height: SandikSpace.xs2),
             _KucukSatir(
               etiket: 'En yüksek',
-              deger: fmtTRY(ozet.zirve!.netTRY),
+              deger: baz.fmt(ozet.zirve!.netTRY),
             ),
           ],
           const SizedBox(height: SandikSpace.xs2),
@@ -1386,7 +1405,7 @@ class ContributionKarti extends StatelessWidget {
             _KucukSatir(
               etiket: 'Geçen ${aralik.tekil}a göre',
               deger: '${ozet.sonFarkTRY! >= 0 ? '+' : '−'}'
-                  '${fmtTRY(ozet.sonFarkTRY!.abs())}',
+                  '${baz.fmt(ozet.sonFarkTRY!.abs())}',
               ton: ozet.sonFarkTRY! >= 0 ? c.gain : c.loss,
             ),
           ],
@@ -1417,10 +1436,13 @@ class _KatkiCubugu extends StatelessWidget {
   final double oran;
   final ContributionInterval aralik;
 
+  final BazPara baz;
+
   const _KatkiCubugu({
     required this.kova,
     required this.oran,
     required this.aralik,
+    required this.baz,
   });
 
   /// Kova altındaki kısa etiket — pencereye göre değişir.
@@ -1446,7 +1468,7 @@ class _KatkiCubugu extends StatelessWidget {
         : (kova.pozitif ? c.amberFill : c.loss);
 
     return Semantics(
-      label: '$_etiket ${fmtTRY(kova.netTRY)}'
+      label: '$_etiket ${baz.fmt(kova.netTRY)}'
           '${kova.kismi ? ", devam eden ${aralik.tekil}" : ""}',
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,

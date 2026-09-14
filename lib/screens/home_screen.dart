@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
@@ -147,7 +147,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     List<AppUser> partners,
   ) {
     final user = ref.watch(authProvider).valueOrNull;
-    final tryFmt = tryFormatter(digits: 0);
+    final baz = ref.watch(bazParaProvider);
+    final tryFmt = baz.formatter(digits: 0);
     final sw = MediaQuery.of(context).size.width;
     final hp = sw < 360 ? 14.0 : 20.0;
     final allActivePartners = ref.watch(activePartnersProvider);
@@ -425,6 +426,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: PortfolioSummaryWidget(
                   state: displayedState,
                   hideBalance: ref.watch(balanceHiddenProvider),
+                  baz: baz,
                 ),
               ),
             ),
@@ -689,7 +691,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _personMiniCard(
-      String name, double total, Color color, NumberFormat fmt, String initial,
+      String name, double total, Color color, ParaBicimi fmt, String initial,
       {bool hideBalance = false}) {
     final sw = MediaQuery.of(context).size.width;
     final cardFontSize = sw < 360 ? 14.0 : 18.0;
