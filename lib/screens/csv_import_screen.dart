@@ -117,7 +117,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                   padding: const EdgeInsets.only(bottom: SandikSpace.xs),
                   child: Row(
                     children: [
-                      Icon(row.type.icon, size: 16, color: row.type.color),
+                      Icon(row.type.icon,
+                          size: 16, color: row.type.onSurface(context)),
                       const SizedBox(width: SandikSpace.sm),
                       Expanded(
                         child: Text(

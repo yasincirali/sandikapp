@@ -9,6 +9,7 @@ import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/history_service.dart';
+import '../services/inflation_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -129,10 +130,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
     // Portföy serileri piyasada kote DEĞİLDİR — lot'lardan hesaplanır.
     // Bu yüzden sembol geçmişi yerine portföy geçmişi yolundan geçerler.
+    // TÜFE de kote değil: TÜİK tablosundan aylık basamak.
     final raw = PortfolioSeries.isPortfolio(ticker)
         ? await _loadPortfolioSeries(ticker, days)
-        : await HistoryService.instance
-            .getSymbolHistory(ticker, periodDays: days);
+        : TufeSeries.isTufe(ticker)
+            ? await _loadTufeSeries(days)
+            : await HistoryService.instance
+                .getSymbolHistory(ticker, periodDays: days);
     final norm = normalizeSeries(raw);
 
     if (!mounted) return;
@@ -183,6 +187,32 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (active.isEmpty) return const {};
 
     return HistoryService.instance.getPortfolioHistory(active, days);
+  }
+
+  /// TÜFE endeksini dönem penceresinde AYLIK noktalar olarak döndürür.
+  ///
+  /// Pencere `days` gün geriye; içindeki her ay başı bir nokta. Son
+  /// açıklanan ay "şimdi"ye kadar sabit taşınır — basamak grafiğin sözü
+  /// tam olarak bu: değer bir sonraki açıklamaya kadar geçerli. Ara gün
+  /// ÜRETİLMEZ. Pencerede iki aydan az nokta varsa (1H) `normalizeSeries`
+  /// `null` döner ve satır "yeterli veri yok" der — 1H'de aylık bir
+  /// gösterge zaten anlamsız.
+  Future<Map<int, double>> _loadTufeSeries(int days) async {
+    final endeks = await InflationService.instance.indexSeries();
+    if (endeks.isEmpty) return const {};
+    final simdi = DateTime.now();
+    final baslangic = simdi.subtract(Duration(days: days));
+    final aylar = endeks.keys.where((a) => !a.isBefore(baslangic)).toList()
+      ..sort();
+    if (aylar.isEmpty) return const {};
+    final out = <int, double>{
+      for (final a in aylar) a.millisecondsSinceEpoch: endeks[a]!,
+    };
+    final sonAy = aylar.last;
+    if (simdi.isAfter(sonAy)) {
+      out[simdi.millisecondsSinceEpoch] = endeks[sonAy]!;
+    }
+    return out;
   }
 
   void _remove(String ticker) {
@@ -321,7 +351,11 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         },
         labelOf: (key) {
           final i = seciliIndeks(key);
-          return i < 0 ? key : _selected[i].ticker;
+          return i < 0 ? key : _displayTicker(_selected[i]);
+        },
+        steppedKeys: {
+          for (final s in _selected)
+            if (TufeSeries.isTufe(s.ticker)) s.ticker,
         },
       ),
     );
@@ -588,6 +622,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (PortfolioSeries.partnerIdOf(hit.ticker) != null) {
       return hit.name.split(' — ').first;
     }
+    // "Aylık" etikette DURUR: basamağın neden basamak olduğunu söyler.
+    if (TufeSeries.isTufe(hit.ticker)) return 'TÜFE (aylık)';
     return hit.ticker.replaceFirst('TEFAS:', '');
   }
 
@@ -709,6 +745,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     SymbolHit(ticker: 'XU100.IS', name: 'BIST 100', source: 'Endeks'),
     SymbolHit(ticker: 'USDTRY=X', name: 'Dolar', source: 'Döviz'),
     SymbolHit(ticker: 'ALTIN_GRAM', name: 'Gram altın', source: 'Altın'),
+    // Enflasyon kıyası: "portföyüm TÜFE'yi yendi mi" sorusunun görsel
+    // cevabı. Reel getiri kartı sayıyı verir, bu çizgiyi.
+    SymbolHit(ticker: TufeSeries.ticker, name: 'TÜFE', source: 'TÜİK'),
   ];
 
   Widget _benchmarkChips(SandikPalette p) {

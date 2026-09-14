@@ -29,6 +29,16 @@ class TopGainerAllocation {
   });
 }
 
+/// `get_percentile_bucket` yanıtı.
+///
+/// [medianDiffPts] = benim ROI − havuz medyanı (yüzde PUANI). Pozitifse
+/// medyandan öndeyim. Sunucu 0061 öncesiyse `null`.
+typedef PercentileBucket = ({
+  int percentile,
+  int total,
+  double? medianDiffPts,
+});
+
 /// Leaderboard sıralaması: **seçili dönemin getirisi.**
 ///
 /// ```
@@ -385,8 +395,10 @@ class LeaderboardService {
   /// k-anonymity (min 8 katılımcı, bkz. migration 0031) altında null
   /// döner — bu durumda UI "Yakında" placeholder gösterir.
   ///
-  /// Dönen: (percentile 1-100, totalParticipants) veya null.
-  Future<({int percentile, int total})?> fetchPercentile(int periodDays) async {
+  /// Dönen: (percentile 1-100, totalParticipants, medyan farkı) veya null.
+  /// `medianDiffPts` sunucu 0061'den eskiyse `null` — şerit medyansız
+  /// çizilir, hata değil.
+  Future<PercentileBucket?> fetchPercentile(int periodDays) async {
     try {
       final result =
           await Supabase.instance.client.rpc<dynamic>('get_percentile_bucket', params: {
@@ -399,7 +411,16 @@ class LeaderboardService {
       final pct = (row['percentile'] as num?)?.toInt();
       final total = (row['total_participants'] as num?)?.toInt();
       if (pct == null || total == null) return null;
-      return (percentile: pct, total: total);
+      // 0061: iki ek sütun. Fark SUNUCUNUN kendi sayılarından alınır —
+      // istemcinin ayrıca hesapladığı ROI, yuvarlama/zamanlama yüzünden
+      // sunucudaki snapshot'tan ayrışabilir.
+      final medyan = (row['median_roi_pct'] as num?)?.toDouble();
+      final benim = (row['my_roi_pct'] as num?)?.toDouble();
+      return (
+        percentile: pct,
+        total: total,
+        medianDiffPts: medyan == null || benim == null ? null : benim - medyan,
+      );
     } catch (_) {
       return null;
     }

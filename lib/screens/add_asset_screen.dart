@@ -727,31 +727,48 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ),
         ],
       ),
+      // İki taraf da ESNEK: eskiden sol kolon ve tutar sabit genişlikteydi,
+      // `add_asset_screen_overflow_test` düzenleme modunda 320pt'te 309px
+      // yatay taşma buldu (kesirli fon miktarı × NAV çarpımı + tutar).
+      // Sol taraf kısalır, tutar sığmazsa ÖLÇEKLENİR — sayı kırpılmaz.
       child: Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('TOPLAM MALİYET',
-                  style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: context.c.amberText,
-                    letterSpacing: 0.8,
-                  )),
-              const SizedBox(height: 4),
-              Text('${_fmt(qty)} × ${_fmt(price)}',
-                  style:
-                      context.t.bodySmall?.copyWith(color: context.c.text58)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TOPLAM MALİYET',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.c.amberText,
+                      letterSpacing: 0.8,
+                    )),
+                const SizedBox(height: 4),
+                Text('${_fmt(qty)} × ${_fmt(price)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58)),
+              ],
+            ),
           ),
-          const Spacer(),
-          Text(
-            formatted,
-            // Form özeti toplam tutarı — tabular figür, yazarken zıplamasın.
-            style: context.t.numLarge.copyWith(
-              fontSize: 22,
-              color: context.c.gold,
-              letterSpacing: -0.5,
+          const SizedBox(width: SandikSpace.md),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                formatted,
+                // Form özeti toplam tutarı — tabular figür, yazarken
+                // zıplamasın.
+                style: context.t.numLarge.copyWith(
+                  fontSize: 22,
+                  color: context.c.gold,
+                  letterSpacing: -0.5,
+                ),
+              ),
             ),
           ),
         ],

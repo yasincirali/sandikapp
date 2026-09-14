@@ -1,6 +1,6 @@
 import 'dart:io' show Platform;
 import 'dart:math' as math;
-import 'dart:ui' show FontFeature, ImageFilter;
+
 import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoPageRoute;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback, SystemUiOverlayStyle;
@@ -1064,69 +1064,6 @@ class Sandik {
       border: selected
           ? Border.all(color: accent.withValues(alpha: 0.42), width: 1)
           : null,
-    );
-  }
-
-  // ── Liquid Glass helpers ────────────────────────────────────────────────────
-
-  /// Blur + translucent overlay — temel glass katmanı.
-  static BoxDecoration glassDecoration({
-    double radius = SandikRadius.lg,
-    Color tint = Colors.white,
-    double tintOpacity = 0.07,
-    Color borderColor = Colors.white,
-    double borderOpacity = 0.14,
-    double borderWidth = 1.0,
-    List<BoxShadow>? shadows,
-  }) {
-    return BoxDecoration(
-      color: tint.withValues(alpha: tintOpacity),
-      borderRadius: BorderRadius.circular(radius),
-      border: Border.all(
-        color: borderColor.withValues(alpha: borderOpacity),
-        width: borderWidth,
-      ),
-      boxShadow: shadows ??
-          [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 24,
-              spreadRadius: -4,
-              offset: const Offset(0, 8),
-            ),
-          ],
-    );
-  }
-
-  /// BackdropFilter + glass container. Clip gerektirir (ClipRRect ile kullan).
-  static Widget glassBox({
-    required Widget child,
-    double radius = SandikRadius.lg,
-    double blur = 14,
-    Color tint = Colors.white,
-    double tintOpacity = 0.07,
-    Color borderColor = Colors.white,
-    double borderOpacity = 0.14,
-    EdgeInsetsGeometry? padding,
-    List<BoxShadow>? shadows,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: Container(
-          padding: padding,
-          decoration: glassDecoration(
-            radius: radius,
-            tint: tint,
-            tintOpacity: tintOpacity,
-            borderColor: borderColor,
-            borderOpacity: borderOpacity,
-            shadows: shadows,
-          ),
-          child: child,
-        ),
-      ),
     );
   }
 

@@ -958,7 +958,8 @@ class _AssetLeadingIcon extends StatelessWidget {
         width: 28,
         height: 28,
         child: Center(
-          child: Icon(asset.type.icon, color: asset.type.color, size: 22),
+          child: Icon(asset.type.icon,
+              color: asset.type.onSurface(context), size: 22),
         ),
       );
     }
@@ -975,7 +976,7 @@ class _AssetLeadingIcon extends StatelessWidget {
           style: context.t.bodyMedium!.copyWith(
             fontSize: symbol.length > 1 ? 9 : 13,
             fontWeight: FontWeight.w800,
-            color: asset.type.color,
+            color: asset.type.onSurface(context),
             height: 1,
           ),
         ),

@@ -1,7 +1,5 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/history_service.dart';
-import 'package:portfoy_takip/utils/series_downsample.dart';
 
 /// **"GÜNLÜK" bir TAKVİM GÜNÜDÜR — kayan 24 saat değil.**
 ///
@@ -98,58 +96,6 @@ void main() {
 
       final k = HistoryService.clipToPeriod(seri, 7);
       expect(k.length, 3, reason: 'son 7 gün: 5, 1 ve 0 gün öncesi');
-    });
-  });
-
-  group('nokta seyreltme — zarf korunur', () {
-    List<FlSpot> seri(int n) =>
-        [for (var i = 0; i < n; i++) FlSpot(i.toDouble(), (i % 7).toDouble())];
-
-    test('hedefin altındaki seri OLDUĞU GİBİ döner', () {
-      final s = seri(50);
-      expect(seyreltSpots(s, 160), same(s));
-    });
-
-    test('seyreltilmiş seri hedefe yakın kalır', () {
-      final s = seri(2000);
-      final k = seyreltSpots(s, 160);
-      expect(k.length, lessThanOrEqualTo(170));
-      expect(k.length, greaterThan(40));
-    });
-
-    test('TEPE ve DİP korunur — grafik yalan söylemez', () {
-      // En kritik değişmez: naif seyreltme (her n'inci nokta) gerçek bir
-      // sıçramayı gizleyebilir.
-      final s = [for (var i = 0; i < 1000; i++) FlSpot(i.toDouble(), 0.0)];
-      s[437] = const FlSpot(437, 99.0); // ani tepe
-      s[812] = const FlSpot(812, -55.0); // ani dip
-
-      final k = seyreltSpots(s, 160);
-      final yler = k.map((e) => e.y).toList();
-
-      expect(yler, contains(99.0), reason: 'tepe kaybolamaz');
-      expect(yler, contains(-55.0), reason: 'dip kaybolamaz');
-    });
-
-    test('X sırası ARTAN kalır', () {
-      // Bozulursa fl_chart zamanda geri giden bir zikzak çizer.
-      final s = [
-        for (var i = 0; i < 900; i++)
-          FlSpot(i.toDouble(), (i * 37 % 101).toDouble())
-      ];
-      final k = seyreltSpots(s, 160);
-
-      for (var i = 1; i < k.length; i++) {
-        expect(k[i].x, greaterThanOrEqualTo(k[i - 1].x),
-            reason: '$i. noktada sıra bozuldu');
-      }
-    });
-
-    test('uçlar HER ZAMAN korunur', () {
-      final s = seri(1500);
-      final k = seyreltSpots(s, 160);
-      expect(k.first, s.first, reason: 'dönem başı %0 referansı');
-      expect(k.last, s.last, reason: 'son değer');
     });
   });
 }

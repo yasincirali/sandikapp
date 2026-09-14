@@ -447,7 +447,8 @@ class _BulkItemTile extends StatelessWidget {
                 color: item.type.color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(SandikRadius.md),
               ),
-              child: Icon(item.type.icon, color: item.type.color, size: 22),
+              child: Icon(item.type.icon,
+                  color: item.type.onSurface(context), size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(

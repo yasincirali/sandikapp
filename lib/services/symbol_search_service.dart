@@ -30,6 +30,20 @@ abstract final class PortfolioSeries {
       : null;
 }
 
+/// Karşılaştırma ekranında TÜFE endeksi — piyasada kote değil, `InflationService`
+/// tablosundan gelir.
+///
+/// **Neden ayrı bir sanal sembol:** reel getiri kart olarak tam ama TÜFE
+/// grafikte görünmüyordu. Portföyün TL eksenine endeks basmak iki ölçeği
+/// karıştırırdı; karşılaştırma ekranı zaten her seriyi dönem başına göre
+/// yüzdeye çeviriyor — TÜFE de o düzlemde dürüstçe çizilebilir. Seri AYLIK
+/// basamak olarak çizilir (`PercentComparisonChart.steppedKeys`); ara
+/// değer uydurulmaz.
+abstract final class TufeSeries {
+  static const ticker = 'TUFE:INDEX';
+  static bool isTufe(String ticker) => ticker == TufeSeries.ticker;
+}
+
 /// Arama sonucundaki tek bir sembol.
 @immutable
 class SymbolHit {

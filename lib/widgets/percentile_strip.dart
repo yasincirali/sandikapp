@@ -9,6 +9,7 @@ import '../services/analytics_service.dart';
 import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../utils/tr_format.dart';
 
 /// Ana ekranda anonim yüzdelik dilim şeridi.
 ///
@@ -55,7 +56,7 @@ class PercentileStrip extends ConsumerStatefulWidget {
 }
 
 class _PercentileStripState extends ConsumerState<PercentileStrip> {
-  ({int percentile, int total})? _data;
+  PercentileBucket? _data;
   bool _istendi = false;
 
   @override
@@ -116,11 +117,25 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
     final ustundeOlduklari = 100 - data.percentile;
     final iyiTaraf = data.percentile <= 50;
 
+    // Metriğin ADI ve medyan farkı (TECHNICAL_DEBT "medyan farkı ve metrik
+    // etiketi"). Sıralama GETİRİ bazlı; portföy büyüklüğü sıralaması yok ve
+    // olmayacak — ama ekran bunu yazmayınca kullanıcı "%X" ifadesinin
+    // büyüklük mü getiri mi olduğunu bilmiyordu. Medyan farkı 0061'den
+    // gelir; eski sunucuda `null` → yalnızca etiket.
+    final medyan = data.medianDiffPts;
+    final medyanMetni = medyan == null
+        ? null
+        : 'medyandan ${fmtNum(medyan.abs(), digits: 1)} puan '
+            '${medyan >= 0 ? 'önde' : 'geride'}';
+    final altSatir = medyanMetni == null
+        ? 'Getiri sıralaması'
+        : 'Getiri sıralaması · $medyanMetni';
+
     return Padding(
       padding: widget.padding,
       child: Semantics(
         label: 'Son 30 günde katılımcıların yüzde $ustundeOlduklari '
-            'kadarının üstündesin',
+            'kadarının üstündesin. $altSatir',
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
@@ -141,24 +156,37 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
                 // erişilebilirlik ayarı orada tek noktada çözülür; elle
                 // yazılmış bir `TextStyle` o yolu atlardı
                 // (bkz. bold_text_support_test).
-                child: RichText(
-                  text: TextSpan(
-                    style: context.t.bodyMedium?.copyWith(
-                      height: 1.35,
-                      color: context.c.text58,
-                    ),
-                    children: [
-                      const TextSpan(text: 'Son 30 günde senin gibi '),
-                      TextSpan(
-                        text: "yatırımcıların %$ustundeOlduklari'inden",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: iyiTaraf ? context.c.gain : context.c.text90,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RichText(
+                      text: TextSpan(
+                        style: context.t.bodyMedium?.copyWith(
+                          height: 1.35,
+                          color: context.c.text58,
                         ),
+                        children: [
+                          const TextSpan(text: 'Son 30 günde senin gibi '),
+                          TextSpan(
+                            text: "yatırımcıların %$ustundeOlduklari'inden",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color:
+                                  iyiTaraf ? context.c.gain : context.c.text90,
+                            ),
+                          ),
+                          const TextSpan(text: ' iyi getirdin'),
+                        ],
                       ),
-                      const TextSpan(text: ' iyi getirdin'),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      altSatir,
+                      style: context.t.bodySmall?.copyWith(
+                        color: context.c.text36,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
+import 'analytics_service.dart';
 import 'price_service.dart';
 import '../utils/tr_format.dart';
 
@@ -2238,21 +2239,53 @@ class HistoryService {
     final key = '${sym}_${range}_$interval';
     final cached = _cacheGet(key);
     if (cached != null) return cached;
+    final sure = Stopwatch()..start();
     try {
       final pts = await PriceService.instance
           .fetchHistoryAtInterval(sym, range, interval)
           .timeout(_grafikCekimSuresi);
+      _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, pts.length,
+          timedOut: false);
       if (pts.isNotEmpty) _cachePut(key, pts);
       return pts;
     } on TimeoutException {
       // Zaman aşımı HATA DEĞİL, bir karar: grafik o kaynak olmadan
       // çizilir (altında yedek kaynak ya da `currentPrice` seed'i var).
-      if (kDebugMode) debugPrint('getSymbolHistory($sym) zaman aşımı');
+      _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, 0, timedOut: true);
       return const [];
     } catch (e) {
       if (kDebugMode) debugPrint('getSymbolHistory($sym) failed: $e');
       return const [];
     }
+  }
+
+  /// Bu sürenin üstündeki çekimler analytics'e düşer.
+  static const _yavasCekimEsigi = Duration(seconds: 3);
+
+  /// Çekim süresi teşhisi.
+  ///
+  /// Altın grafiğinin gecikmesi 2026-09-13'te yapısal olarak düzeltildi (iki
+  /// istek paralel, timeout, boş seri "veri yok") ama gerçek ağda hiç
+  /// ölçülmedi — test ortamında ağ yok, emülatörde oturum yok. Bu kayıt o
+  /// boşluğu kapatır: debug'da her sembolün süresi konsola yazılır; eşiği
+  /// aşanlar ve zaman aşımları Firebase'e `slow_history_fetch` olarak gider.
+  ///
+  /// Neden hepsi değil: bir grafik açılışı 2-3 sembol çeker; hepsini
+  /// loglamak olay hacmini boşuna şişirirdi. Soru "hâlâ yavaş mı, hangi
+  /// sembolde" — yalnızca yavaşlar cevaplar.
+  void _cekimSuresiniKaydet(String sym, int ms, int nokta,
+      {required bool timedOut}) {
+    if (kDebugMode) {
+      debugPrint('getSymbolHistory($sym) ${ms}ms, $nokta nokta'
+          '${timedOut ? ' — ZAMAN AŞIMI' : ''}');
+    }
+    if (!timedOut && ms < _yavasCekimEsigi.inMilliseconds) return;
+    unawaited(AnalyticsService.instance.logSlowHistoryFetch(
+      symbol: sym,
+      ms: ms,
+      points: nokta,
+      timedOut: timedOut,
+    ));
   }
 }
 

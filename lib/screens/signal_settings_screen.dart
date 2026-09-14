@@ -258,7 +258,7 @@ class _CategorySection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Row(
               children: [
-                Icon(type.icon, size: 18, color: type.color),
+                Icon(type.icon, size: 18, color: type.onSurface(context)),
                 const SizedBox(width: 10),
                 Text(
                   type.label,

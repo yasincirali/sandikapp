@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-14
+**Son güncelleme:** 2026-09-14 (P2-P4 turu: 6 madde kapandı, pinning karar önerisi eklendi)
 
 ---
 
@@ -132,7 +132,17 @@ kendisi.
 
 ---
 
-## 🟡 AÇIK — Yatırımcı karşılaştırması medyan farkı ve metrik etiketi taşımıyor
+## ✅ KAPANDI — Yatırımcı karşılaştırması medyan farkı ve metrik etiketi taşımıyor
+
+**KAPANDI 2026-09-14** (madde 1 ve 2; madde 3 TWR bilinçli tercih olarak
+kalıyor). `0061_percentile_median.sql`: `get_percentile_bucket` DROP + CREATE
+ile `median_roi_pct` ve `my_roi_pct` sütunlarını da döner (havuz, k_min=8,
+Sybil kapısı 0059 ile aynı; medyan 1 ondalığa yuvarlanır). İstemci
+`PercentileBucket.medianDiffPts` alanını OPSİYONEL okur — sunucu 0061'den
+eskiyse şerit medyansız çizilir. Şerit altına "Getiri sıralaması · medyandan
+4,2 puan önde/geride" satırı geldi; metriğin adı artık ekranda.
+`percentile_strip_test` 0061 sözleşmesini kilitler. **Deploy sende**
+(`YAPMAN_GEREKENLER.md` #22).
 
 `get_percentile_bucket` (migration `0012`) yalnızca `(percentile,
 total_participants)` döndürüyor. Özet sekmesindeki benchmark şeridi bu
@@ -188,7 +198,17 @@ adımı olarak ASLA.
 
 ---
 
-## 🟡 AÇIK — TÜFE grafiğe endeks çizgisi olarak binmiyor
+## ✅ KAPANDI — TÜFE grafiğe endeks çizgisi olarak binmiyor
+
+**KAPANDI 2026-09-14.** "Aylık basamak kabul edilebilirse stepped line + etiket"
+çözümü uygulandı, ama performans ekranının TL eksenine değil KARŞILAŞTIRMA
+ekranına: orada her seri zaten yüzdeye normalize. `TufeSeries.ticker`
+(`TUFE:INDEX`) bir kıyas çipi olarak eklendi ("Portföyüm" + "TÜFE" = sorunun
+görsel cevabı); `PercentComparisonChart.steppedKeys` ile basamaklı çizilir,
+etiketi "TÜFE (aylık)". Ara gün üretilmez; son açıklanan ay bugüne kadar
+sabit taşınır — basamağın sözü tam olarak bu. 1H'de iki noktadan az kalır
+ve satır "yeterli veri yok" der; aylık göstergeyi haftalık pencerede
+çizmek zaten anlamsız.
 
 Reel getiri artık kart olarak tam (bileşik reel getiri + nominal + kümülatif
 TÜFE + puan farkı, `_ReelGetiriKarti`). Ama Grafik sekmesinde portföy
@@ -531,9 +551,26 @@ yanıtı) bu değişiklikler onu çözmez ve sorun sürer.
 `getSymbolHistory` sürelerini ölç. Alternatif: geçici bir teşhis logu
 ekleyip her sembolün çekim süresini yazdır.
 
+**2026-09-14 — teşhis eklendi, ölçüm bekliyor.** `HistoryService._fetchSafe`
+her çekimi kronometreler: debug'da konsola, 3 sn'yi aşan ya da zaman aşımına
+düşenler Firebase'e `slow_history_fetch` (symbol, ms, points, timed_out).
+Tüm çekimleri loglamak olay hacmini boşuna şişirirdi; soru "hâlâ yavaş mı,
+hangi sembolde". İlk TestFlight/Play sürümünden sonra Analytics'te olay
+görünmüyorsa sorun çözülmüş demektir; görünüyorsa sembol adı darboğazı
+söyler (`GC=F` mi, `USDTRY=X` mi).
+
 ---
 
-## 🟡 AÇIK — Varlık performansında GÜNLÜK sekmesinde karşılaştırma kapalı
+## ✅ KAPANDI — Varlık performansında GÜNLÜK sekmesinde karşılaştırma kapalı
+
+**KAPANDI 2026-09-14.** `_karsilastirmaSerisi`: gün içinde karşılaştırma
+varlığı ana varlıkla AYNI servisten (`getPortfolioHistoryHourlyBreakdown`)
+çekilir; mevcut compare-bar kodu zaten her seriyi kendi ilk noktasına göre
+×100 normalize ediyordu ve X'i gün kesri olarak hesaplıyordu — gün içi için
+de aynı cebir geçerli. Sözleşme: "açılıştan bu yana % değişim", her seri
+kendi açılışından (diğer periyotlarla aynı). Tek tuzak çizilen GÜN farkı
+(hisse Cuma seansı, döviz bugün): o durumda seri boş döner ve uyarı
+snack'i çıkar — yanlış güne ait çizgi çizilmez.
 
 **Karar tarihi:** 2026-09-10 · Hata turu
 
@@ -598,7 +635,15 @@ turda NAV tarihine göre atıf da düzeltilebilir.
 
 ---
 
-## 🟠 AÇIK — iOS bildirim izni ölçülemiyor
+## ✅ KAPANDI — iOS bildirim izni ölçülemiyor
+
+**KAPANDI 2026-09-14.** `IOSFlutterLocalNotificationsPlugin.checkPermissions()`
+imzası kurulu pakette (18.0.1) doğrulandı; `NotificationService.init()`
+sonunda `_iosIzinDurumunuOlc` sistem ayarını OKUR ve yalnızca durum
+DEĞİŞİNCE (`PrefKeys.iosPushPermissionLast`) `recordPushPermission(
+promptContext: 'ios_check')` yazar. Her açılışta yazmak "izin verdi" sayısını
+açılış sayısına çevirirdi. Kullanıcı Ayarlar'dan kapatırsa da görünür —
+istem değil okuma olduğu için.
 
 **Karar tarihi:** 2026-09-06 · Sprint 0 (tutunma ölçümü)
 
@@ -789,7 +834,14 @@ Bkz. aşağıdaki madde.
 
 ---
 
-## 🟡 AÇIK — Swift widget ve pbxproj derlenerek doğrulanmadı
+## ✅ KAPANDI — Swift widget ve pbxproj derlenerek doğrulanmadı
+
+**KAPANDI 2026-09-14.** `ios-testflight.yml` her main push'unda `flutter build
+ios --release` koşuyor ve `Embed Foundation Extensions` adımı
+`SandikWidgetExtension.appex`'i Runner'a gömüyor; uygulama TestFlight'ta.
+Yani pbxproj girişleri ve `SandikHomeWidget.swift` gerçek Xcode build'inden
+geçti. Ayrı bir `xcodebuild` CI adımı (yol haritası 3.18) gereksiz — aynı
+işi yayın hattı zaten yapıyor.
 
 **Karar tarihi:** 2026-09-06 · Sprint 1
 
@@ -824,7 +876,14 @@ kanıtlamaz. Emülatör test listesinde 15. madde.
 
 ---
 
-## ⏸️ ERTELENDİ — `seyreltSpots` çağıransız duruyor
+## ✅ KAPANDI — `seyreltSpots` çağıransız duruyor
+
+**KAPANDI 2026-09-14.** "Bir sonraki grafik temizliğinde hâlâ çağıranı yoksa"
+koşulu doldu: `series_downsample.dart` ve beş testi silindi. Kural (kova
+başına min+max, zarfı bozmadan) burada kayıtlı kalıyor; tier'sız ham bir
+seri çizmek gerekirse yeniden yazılırken naif her-n'inci-nokta tuzağına
+düşülmesin. `grafik_tasma_ve_yogunluk_test` ve `gunluk_eksen_parite_test`
+çağrının geri gelmediğini denetlemeye devam ediyor.
 
 **Karar tarihi:** 2026-09-04 · **Karar:** kullanıcı
 
@@ -964,8 +1023,18 @@ Ekranı `ProviderScope` override'larıyla pump et; iç yapı değil dış davran
 doğrulanır, ekran ileride parçalanınca test yine geçer. Örnek:
 `asset_card_overflow_test.dart`.
 
-**Sırada:** `add_asset_screen` (form alanları), `portfolio_performance_screen`.
+**Sırada:** ~~`add_asset_screen` (form alanları)~~, ~~`portfolio_performance_screen`~~.
 `tester.takeException()` yeterli, golden test gerekmiyor.
+
+**2026-09-14:** `add_asset_screen_overflow_test.dart` eklendi — 5 genişlik ×
+boş form, düzenleme, sepet, ön seçim, altı türün her biri, 320×560. İlk
+koşuda **altıncı gerçek taşma** çıktı: `_totalHero` toplam maliyet kartında
+sol kolon ve tutar ikisi de sabit genişlikteydi; kesirli fon miktarı × NAV
+çarpımı 320pt'te 309px sağa taşıyordu. Sol taraf `Expanded` + ellipsis,
+tutar `FittedBox(scaleDown)` oldu. `portfolio_performance_screen` için
+`performance_screen_overflow_test` zaten vardı (ad 2.9 öncesinden kalma).
+Yapısal kopya bu taşmayı da yakalayamazdı — gerçek widget'a bağlanan test
+kalıbının değeri bir kez daha ölçüldü.
 
 ### ✅ `home_screen` widget testi — önce geri alındı, sonra kazanıldı (2026-08-04)
 
@@ -984,6 +1053,35 @@ portföy hâlleri, 320–430pt tarama. **Sabotajla doğrulandı** — başlıkta
 **Ders:** "ekran testte izole edilemiyor" çoğu zaman ekranın değil,
 bağımlılıkların sorunudur. Testi silmeden önce her bağımlılığı tek tek
 sustur.
+
+---
+
+## ✅ KARAR — Sertifika pinning YAPILMIYOR (L3 / yol haritası 3.19)
+
+**Karar tarihi:** 2026-09-14 · **Karar:** yapılmıyor — kullanıcı onayladı (2026-09-14)
+
+Denetim L3 "pinning yok" dedi. Pre-mortem yapıldı, sonuç: bu uygulamada
+maliyeti faydasından büyük.
+
+**Neden yapılmıyor:**
+1. **Kesinti riski geri dönüşsüz.** Uç nokta `*.supabase.co`; sertifika ve
+   ara CA zinciri Supabase/Cloudflare tarafından yönetilir ve haber
+   verilmeden döner. Pin eşleşmediği an her istemci %100 kör olur ve tek
+   çıkış yolu mağaza güncellemesidir (Play inceleme + kullanıcıların
+   güncellemesi = günler). Yedek pin/uzaktan pin güncelleme mekanizması
+   kurmak, korumanın kendisinden büyük bir altyapı.
+2. **Tehdit modeli örtüşmüyor.** Pinning'in savuşturduğu şey cihaza
+   kullanıcı/kurum CA'sı yüklenmiş bir MITM. Android 7+ release build'de
+   kullanıcı CA'ları zaten reddedilir (varsayılan network security config);
+   iOS'ta kurum profili gerekir. Kalan senaryo (kök CA ele geçirilmiş ya da
+   cihaz root'lu) bir kişisel portföy uygulamasının savunma hattı değil.
+3. **Veri zaten JWT + RLS arkasında.** MITM olsa bile anon key kamuya açık;
+   erişim kullanıcı oturumuna bağlı, sunucu RLS zorluyor (0056 FORCE RLS).
+
+**Ne yapılıyor onun yerine:** hiçbir şey eklenmiyor; mevcut TLS + RLS
+yeterli. Kararı değiştiren şey: kurumsal/MDM dağıtımı ya da bir bulgu
+(gerçek MITM raporu). O gün pin'ler uzaktan güncellenebilir olmalı
+(Remote Config'te SPKI listesi + yedek pin) — sabit gömülü pin ASLA.
 
 ---
 
@@ -1046,7 +1144,11 @@ değil.
 - `paywall_enabled: false` — premium altyapısı (PremiumGate, paywall ekranı,
   Remote Config flag'leri) hazır ama `pubspec.yaml`'da IAP paketi YOK. Flag
   açılsa satın alma çalışmaz. Ayrıntı: `MONETIZATION_ROADMAP.md`.
-- `lib/screens/asset_detail_screen.dart` — **ölü kod** (bulundu 2026-08-10).
+- ~~`lib/screens/asset_detail_screen.dart` — ölü kod~~ — o dosya ESKİ
+  `PerformanceScreen` döneminin ölü ikiziydi; Faz 1.1'de (2026-09-13) silindi.
+  Bugünkü `asset_detail_screen.dart` canlı tekil varlık ekranıdır (2.9
+  yeniden adlandırması). Aşağıdaki not tarihçe olarak duruyor
+  (bulundu 2026-08-10).
   Hiçbir yerden `push` edilmiyor; sınıfa yapılan tek referans kendi tanımı,
   testi de yok. Varlık satırı bunun yerine `AssetDetailScreen`'e gidiyor.
 
@@ -1070,18 +1172,24 @@ değil.
 
 **Kalanlar — hiçbiri light mode'u bloke etmiyor:**
 
-1. **`glassDecoration` / `glassBox` moda duyarlı değil.** Hâlâ beyaz tint +
+1. ~~**`glassDecoration` / `glassBox` moda duyarlı değil.**~~ **KAPANDI
+   2026-09-14:** ikisinin de üretimde çağıranı yoktu; silindi. Hâlâ beyaz tint +
    koyu gölge varsayıyor. Light modda cam yüzeyler (hero kart, bazı sheet'ler)
    olması gerekenden soluk görünür. `context.elevatedCard()` yazıldı ama
    glass helper'ları henüz ona taşınmadı.
 2. **`legal_doc_screen.dart` kendi paletini taşıyor** (~29 sabit renk).
    Hukuki belge render'ı kasten sabit kontrastlı; light modda da koyu kalır.
    Bilinçli, ama tutarsız görünüyor — ürün kararı.
-3. **`asset_type.dart` kategori renkleri tek ton.** Rapordaki ölçüme göre
+3. ~~**`asset_type.dart` kategori renkleri tek ton.**~~ **KAPANDI 2026-09-14:**
+   `AssetType.onSurface(context)` light'ta açıklığı 0,28'e kısılmış tonu
+   verir (hue korunur); 8 ikon/metin sitesi buna geçti, dolgular ham renkte
+   kaldı. `asset_type_light_contrast_test` her türü ≥ 4,5:1'e bağlar. Rapordaki ölçüme göre
    yedisi de light zeminde AA altında (en kötüsü altın 1.52:1). Rozet
    *dolgusu* olarak sorun değil (arkada %15 alfa var), ama ikon/metin
    olarak kullanıldıkları yerde light varyantı gerekiyor.
-4. **`fl_chart` grid/tooltip renkleri** elle verilmiş; grafik ekranları
+4. ~~**`fl_chart` grid/tooltip renkleri** elle verilmiş~~ — 2026-09-14'te
+   sayıldı: üç grafikte de grid `context.c.overlay/hairline`, tooltip
+   `surface2`; elle verilen kalmamış. Yalnızca görsel doğrulama eksik; grafik ekranları
    light modda test edilmedi.
 5. **Varsayılan mod hâlâ `ThemeMode.dark`.** `system` yapmak ürün kararı —
    marka "dark-first" olduğu için değiştirilmedi.

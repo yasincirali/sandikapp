@@ -22,9 +22,23 @@ ile doğrulandı.
 tamam (`SocialAuthService`, `SocialSignInButtons`, sosyal hesapta şifresiz hesap silme);
 sağlayıcı kimlikleri `YAPMAN_GEREKENLER.md` #15-16. Güvenlik: M1, M2, M7, M8, M9, L2, L4,
 L5, L8, L12, L13, L14 kapandı (aşağıdaki tablo). Kalan: M12 (GoTrue dashboard, sende),
-L3 (pinning kararı). **Tamamlanan:** Faz 0 (tümü), Faz 1 (tümü; google_fonts/lint/leaderboard-timer
+L3 (pinning: **yapılmıyor**, kullanıcı kararı 2026-09-14; gerekçe `TECHNICAL_DEBT.md`). **Tamamlanan:** Faz 0 (tümü), Faz 1 (tümü; google_fonts/lint/leaderboard-timer
 ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3.3, 3.4, 3.5,
 3.6, 3.7, 3.8 (kısmi), 3.11, 3.15, 3.17 (kısmi), 3.19 (kısmi).
+
+**2026-09-14 (üçüncü tur, P2→P4 sırası):** CI'da Google giriş define'ları secret'tan
+(`GOOGLE_WEB_CLIENT_ID`/`GOOGLE_IOS_CLIENT_ID`; boşsa düğme gizli). Pinning için
+karar önerisi (yapılmasın). iOS bildirim izni `checkPermissions()` ile ölçülüyor.
+Altın gecikmesi için `slow_history_fetch` teşhis olayı. `seyreltSpots` silindi.
+`add_asset_screen_overflow_test` (5 genişlik × 4 mod) — düzenleme modunda 320pt'te
+**309px gerçek taşma buldu**, düzeltildi. Yüzdelik şeridi: 0061 medyan farkı +
+"Getiri sıralaması" etiketi. Gün içi karşılaştırma açıldı. TÜFE karşılaştırma
+ekranına basamaklı seri olarak eklendi. Light mode: ölü glass yardımcıları silindi,
+`AssetType.onSurface` ile kategori ikon/metinleri ≥ 4,5:1. **Bilinçli atlananlar:**
+3.2 baz para birimi (58 site, cihaz doğrulaması şart), 3.9 ekran birleştirme, 3.16,
+3.20, `signal_state` yeniden anahtarlama (tetikleyici şikâyet yok), fon NAV çapası
+(TEFAS zaman damgası yok), mum grafik / dev ekran parçalama (kullanıcı kararı),
+yatırımcı seviyesi (profil alanı yok, zorunlu onboarding istenmiyor).
 
 **Kalanlar ve neden burada durdu:**
 
@@ -36,10 +50,10 @@ ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3
 | 3.10 `add_asset_screen` Notifier'a taşı | ✅ 2026-09-14: durum makinesi `providers/add_asset_form_provider.dart` (`AddAssetFormNotifier`, `AddAssetPriceLookup` kapısı, `parseQuickEntry`); ekranda `_AddAssetScreenState` içinde `setState` kalmadı (ratchet testi). Metin controller'ları ekranda, geçişler `AlanYazimi` döner. 22 birim testi. |
 | 3.12 Yarış / 3.13 Paywall | Kullanıcı kararı (2026-09-14): ikisi de KALIR; Sybil çözümü 0059 ile uygulandı. 3.14 vadeli mevduat SİLİNDİ (aşağıda). |
 | 3.16 integration_test | Test Supabase projesi + seed verisi ister. |
-| 3.18 Swift widget derleme CI | macOS runner'da `xcodebuild` adımı; yerelde doğrulanamaz. |
+| 3.18 Swift widget derleme CI | ✅ Zaten kapalı (2026-09-14 tespiti): `ios-testflight.yml` `flutter build ios` ile widget extension'ı her main push'unda derliyor; uygulama TestFlight'ta. Ayrı `xcodebuild` adımı gereksiz. |
 | 3.20 İngilizce arayüz | Yalnızca EN pazarı hedefleniyorsa. |
-| 2.10 / 2.12 / 2.14, 2.13 `Size.zero` | Görsel doğrulama isteyen UI kalemleri; cihazsız yapılmadı. |
-| 3.8 dış bağlantı köprüsü, 3.19 sertifika pinning | Sırasıyla `app_links`/`flutter_deeplinking_enabled` cihaz testi ve pinning'in kesinti riski kararı. |
+| 2.12 / 2.14 | Görsel doğrulama isteyen UI kalemleri; cihazsız yapılmadı (2.10 ve 2.13 `Size.zero` kapandı — aşağıda). |
+| 3.8 dış bağlantı köprüsü, 3.19 sertifika pinning | 3.8: `app_links`/`flutter_deeplinking_enabled` cihaz testi. 3.19: ✅ kapandı — pinning yapılmıyor (kullanıcı kararı 2026-09-14), FORCE RLS (L9) ve db_logs retention (L6) 0056 ile canlıda. |
 
 **Senin tarafında bekleyenler** (`YAPMAN_GEREKENLER.md` en üst tablo): secret rotasyonu, 7 cron
 secret'ının `x-cron-secret` desenine göre set edilmesi, `DELETION_HASH_SALT`, edge function
@@ -63,7 +77,7 @@ limit'leri.
 | L13 Hedef reddi kodu yakıyor | ✅ | Hedef vazgeçince `to_user_id/requester_name` sıfırlanır, `used` değişmez; sahibin reddi eskisi gibi yakar. |
 | L14 Çıkışta iz | ✅ | `rl_attempts_*` ve `push_device_id` silinir. |
 | M12 GoTrue throttle | ⏳ sende | Dashboard (`YAPMAN` #10). |
-| L3 Sertifika pinning | ⏳ karar | Kesinti riski; `TECHNICAL_DEBT` notu. |
+| L3 Sertifika pinning | ✅ karar: yapılmıyor (2026-09-14) | Pre-mortem `TECHNICAL_DEBT.md`'de: `*.supabase.co` sertifikası haber verilmeden döner, pin uyuşmazlığı = mağaza güncellemesine kadar tam kesinti; Android 7+ kullanıcı CA'larını zaten reddediyor; veri JWT+RLS arkasında. Kullanıcı onayladı. |
 
 ## Faz 0 — Kanamayı durdur
 
@@ -110,11 +124,11 @@ limit'leri.
 | 2.7 | ✅ | (1) OTP doğrulaması sonrası sorumluluk reddi kaydı otomatik düşülüyor — kayıt ekranındaki 'Yasal Koşullar' onayı zaten disclaimer'ı içeriyordu; `DisclaimerAcceptanceScreen` artık yalnızca eski/kaydı olmayan hesaplara çıkar. (2) **'Belgeyi açıp sonuna kadar kaydır' kapısı kaldırıldı** — kutu doğrudan işaretlenir, belge bağlantısı bir dokunuş uzakta. ⚠️ Hukuki tarafta bilinçli karar: KVKK açık rıza 'bilgilendirilmiş' olmayı ister, 'sonuna kadar kaydırılmış' olmayı değil; itiraz edersen `_LegalConsentBox.onTap` tek satırla eski davranışa döner. (3) Turda 'Atla' zaten vardı; Ayarlar → Destek'e 'Tanıtım turunu yeniden izle' eklendi. |
 | 2.8 | ✅ (boş durum) | Ana ekranda kendi görünümü + sıfır varlık = `_EmptyPortfolioCta` özetin hemen altında; şeritler, kişi kartları, filtre çipleri ve iki boş başlık gizli. Tür filtresi boşken aynı bileşen 'Bu türde varlık yok' diliyle. **3 şeridi tek yatay karta toplama yapılmadı** — şeritler zaten kendi kendini gizliyor; dolu portföyde katlama üstü sorunu ölçülmeden yeniden düzenlemek erken. |
 | 2.9 | ✅ (adlar) | `charts_screen.dart`/`ChartsScreen` → `portfolio_screen.dart`/`PortfolioScreen`; `performance_screen.dart`/`PerformanceScreen` → `asset_detail_screen.dart`/`AssetDetailScreen`. 73 dosya (lib, test kaynak-metin yolları, CLAUDE.md, TECHNICAL_DEBT.md) tek geçişte; arşiv dokümanlar eski adla kaldı. **Geri tuşu sekme geçmişi ve predictive back yapılmadı** — `PopScope(canPop:false)` çıkış onayıyla iç içe; ayrı bir tasarım kararı. |
-| 2.10 | ⏳ | |
+| 2.10 | ✅ (zaten) | `sandikSnack(onUndo:)` ile takipten çıkarma (`watchlist_screen`) ve varlık silme (`delete_asset_dialog`) geri alınabilir; 1.3'te kurulmuştu, denetim listesi bayattı. |
 | 2.11 | ✅ (zaten) | Denetim iddiası eskiydi: `chart_interaction_parity_test` karşılaştırma ve takip grafiklerinin `PercentComparisonChart` → `ZoomableChart` üzerinde olduğunu zaten kilitliyor (pinch/pan/crosshair paritesi var). Sparkline bilinçli etkileşimsiz. |
-| 2.12 | ⏳ | |
-| 2.13 | 🟡 kısmi | `ZoomableChart.semanticLabel` (varsayılan 'Fiyat grafiği'; `PercentComparisonChart` seri sayısı + gün ile dolduruyor, takip grafiği ondan miras alıyor). Sparkline dekoratif olarak bilinçli sessiz (kaynakta gerekçeli). **Yapılmadı:** 20 `minimumSize: Size.zero` butonun 44pt'ye çıkarılması; settings/add_asset Semantics; kompakt yüzeylerde ok glifi. |
-| 2.14 | ⏳ | |
+| 2.12 | ⏸️ | `ModernTabSelector`/`_PeriodToggle` markaya özel; Material `SegmentedButton`'a geçmek tasarım dilini değiştirir ve cihazda görülmeden yapılmaz. |
+| 2.13 | 🟡 kısmi | `ZoomableChart.semanticLabel` (varsayılan 'Fiyat grafiği'; `PercentComparisonChart` seri sayısı + gün ile dolduruyor, takip grafiği ondan miras alıyor). Sparkline dekoratif olarak bilinçli sessiz (kaynakta gerekçeli). 20 `minimumSize: Size.zero` sitesi `SandikTouch.minSize`'a çekildi (`touch_target_size_test` kilitler). **Yapılmadı:** settings/add_asset Semantics; kompakt yüzeylerde ok glifi. |
+| 2.14 | ⏸️ | Hero uçuşu iki uçtaki boyut farkında bozuk görünür; cihaz doğrulaması olmadan eklenmedi. |
 
 ## Faz 3 — Ürün ve mimari
 
@@ -128,7 +142,7 @@ limit'leri.
 | 3.7 | ✅ | `lib/services/portfolio_cache.dart`: başarılı çekimde defter (`toSupabase` JSON) prefs'e yazılır; çekim başarısızsa önbellekten açılır ve `errorMessage` ile mevcut çevrimdışı şeridi çıkar; önbellek yoksa eski davranış (hata). Kullanıcı kimliğine bağlı anahtar, çıkışta silinir. Fiyat önbelleği bilinçli ayrı tutuldu. |
 | 3.8 | 🟡 kısmi | `DeepLinkRouter.hedefVarlikId`: `sandik://asset/<id>` → `NotificationService.openAssetPerformance` (push ile aynı yol). Android manifest'e `sandik` şeması için VIEW/BROWSABLE intent-filter eklendi (iOS'ta `CFBundleURLSchemes` zaten vardı). **Eksik:** dış kaynaktan (tarayıcı, paylaşılan bağlantı) gelen intent'i Flutter'a taşıyan köprü — `home_widget` akışı yalnızca widget dokunuşlarını dinliyor; `flutter_deeplinking_enabled` + route tabanlı yakalama ya da `app_links` paketi gerekir ve cihazda doğrulanmalı. `test/deep_link_asset_test.dart`. |
 | 3.15 | ✅ (dışa aktarım) | Dışa aktarım 7 → 13 tablo: watchlist, price_alerts, signal_preferences, signal_notifications, milestones, live_activity_sessions eklendi (`export_version` artırıldı). İçe aktarım (geri yükleme) yapılmadı — şema doğrulaması + çakışma politikası ister. |
-| 3.19 | 🟡 kısmi | `0056_force_rls_and_db_logs_retention.sql`: 19 tabloda `FORCE ROW LEVEL SECURITY` (var olanlara, `to_regclass` ile), `cleanup_db_logs()` + günlük 03:15 UTC pg_cron işi (30 gün). **Sertifika pinning yapılmadı** — Supabase/Yahoo/TEFAS sertifika rotasyonlarında uygulamayı kırma riski; ayrı karar. Migration koşulması sende. |
+| 3.19 | ✅ | `0056_force_rls_and_db_logs_retention.sql`: 19 tabloda `FORCE ROW LEVEL SECURITY` (var olanlara, `to_regclass` ile), `cleanup_db_logs()` + günlük 03:15 UTC pg_cron işi (30 gün). **Sertifika pinning yapılmıyor — kullanıcı kararı 2026-09-14** (kesinti riski > fayda; pre-mortem `TECHNICAL_DEBT.md`). 0056 canlıda (2026-09-14). |
 | 3.5 | ✅ (yapıştır biçimi) | `CsvImportService.parse` (saf): ayraç otomatik (`;`/`,`/sekme), TR/EN başlık takma adları, başlıksız sıra `sembol, adet, fiyat, tarih`, TR sayı, 3 tarih biçimi, tür sütunu ya da semboldan çıkarım (`inferType`), `.IS`/`USDTRY=X`/altın alt türü normalizasyonu; hatalı satır atlanır, nedeni listelenir. `CsvImportScreen`: yapıştır → önizle → sepete ekle (kayıt toplu ekleme ekranında; fiyatı boş satırlar kapanışı orada çeker). Giriş: Toplu Ekle app bar ikonu + boş sepet düğmesi. **Dosya seçici bilerek yok** (eklenti + izin akışı yerine kopyala-yapıştır). Aracı kurum özel biçimleri (Midas/İş Yatırım) eklenmedi — örnek ekstre gerekir. `test/csv_import_service_test.dart`. |
 | 3.17 | 🟡 kısmi | `test/tefas_model_test.dart`: `TefasFund` JSON round-trip (mevduat testleri özellikle birlikte silindi). `remote_push_service`, `data_export_service`, `price_alert_service` hâlâ testsiz — üçü de Supabase/Firebase istemcisine bağlı, arayüz soyutlaması ister. |
 | 3.11 | ✅ (sessiz saatler) | `profiles.quiet_start/quiet_end` (0057, TR saati, sarmalı pencere), `_shared/quiet_hours.ts` (`sessizSaatteMi`, `sessizKullanicilar`), 4 proaktif fonksiyon (brifing, haftalık özet, takvim, fiyat alarmı) sessiz saatte ATLAR (alarm damgalanmaz — pencere bitince koşul sürüyorsa gider). İstemci: `quietHoursProvider` (sunucu kaynaklı), Ayarlar → Bildirimler → 'Sessiz saatler' anahtarı + başlangıç/bitiş kutuları. Sinyaller kendi tür bazlı penceresinde kaldı. **Global sıklık tavanı eklenmedi** — haftalık tavan zaten sunucuda (RETENTION §7). `supabase/tests/quiet_hours_test.ts`. |

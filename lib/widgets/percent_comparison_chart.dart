@@ -55,7 +55,13 @@ class PercentComparisonChart extends StatelessWidget {
     this.focused,
     this.onFocusChanged,
     this.height = 210,
+    this.steppedKeys = const {},
   });
+
+  /// BASAMAKLI çizilecek seriler. Aylık yayımlanan bir gösterge (TÜFE) iki
+  /// nokta arasında doğrusal çizilirse ara günler için var olmayan bir değer
+  /// ima eder; basamak "değer bir sonraki açıklamaya kadar sabit" der.
+  final Set<String> steppedKeys;
 
   /// `anahtar → normalize edilmiş seri`.
   final Map<String, NormalizedSeries> series;
@@ -326,6 +332,7 @@ class PercentComparisonChart extends StatelessWidget {
         // Tüm çizgi grafiklerde AYNI: eğri interpolasyon veride olmayan
         // tepe ve dip uydurur, fiyat grafiğinde bu yanıltıcıdır.
         isCurved: false,
+        isStepLineChart: steppedKeys.contains(key),
         dotData: const FlDotData(show: false),
       ));
       cizilenler.add(key);

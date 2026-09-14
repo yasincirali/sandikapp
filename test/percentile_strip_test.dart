@@ -108,4 +108,48 @@ void main() {
               'onu tanımaz ve şerit sessizce hiç çizilmez');
     });
   });
+
+  group('0061 medyan farkı — sözleşme', () {
+    // `get_percentile_bucket` 0061'de DROP + CREATE ile yeniden tanımlandı.
+    // Havuz ve eşikler 0059 ile aynı kalmalı; yalnızca iki sütun eklendi.
+    final m = File('supabase/migrations/0061_percentile_median.sql')
+        .readAsStringSync();
+
+    test('istemcinin okuduğu sütun adları', () {
+      // `fetchPercentile` bu adlarla okur; biri değişirse şerit medyansız
+      // çizilir ve hiçbir yerde hata görünmez.
+      for (final col in [
+        'percentile INTEGER',
+        'total_participants INTEGER',
+        'median_roi_pct NUMERIC',
+        'my_roi_pct NUMERIC',
+      ]) {
+        expect(m.contains(col), isTrue, reason: '$col dönüş tipinde olmalı');
+      }
+    });
+
+    test('allowlist, k_min ve uygunluk kapısı 0059 ile aynı', () {
+      expect(m.contains('NOT IN (7, 30, 180, 365)'), isTrue);
+      expect(m.contains('k_min INTEGER := 8'), isTrue);
+      expect(m.contains('leaderboard_eligible_users()'), isTrue,
+          reason: 'Sybil kapısı (0059) yeniden tanımda düşmemeli');
+    });
+
+    test('DROP sonrası yetkiler kuruldu ve doğrulandı', () {
+      // CREATE OR REPLACE dönüş tipini değiştiremediği için DROP şart;
+      // DROP eski GRANT\'leri de siler. Doğrulama bloğu eksik GRANT\'i
+      // migration anında patlatır (0036/0042 deseni).
+      expect(m.contains('DROP FUNCTION IF EXISTS'), isTrue);
+      expect(m.contains('FROM public, anon'), isTrue);
+      expect(m.contains('TO authenticated'), isTrue);
+      expect(m.contains("has_function_privilege("), isTrue);
+      expect(m.contains('raise exception'), isTrue);
+    });
+
+    test('medyan bir ondalığa yuvarlanır', () {
+      // Tekil eşleştirmeye yardım etmesin: "%12,3" yeter.
+      expect(m.contains('percentile_cont(0.5)'), isTrue);
+      expect(RegExp(r'ROUND\(percentile_cont[^;]*, 1\)').hasMatch(m), isTrue);
+    });
+  });
 }

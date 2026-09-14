@@ -99,6 +99,13 @@ class InflationService {
     return ((1 + nominalPct / 100) / payda - 1) * 100;
   }
 
+  /// Ay başı → endeks değeri, artan tarih sırasında değil, Map olarak.
+  ///
+  /// Karşılaştırma ekranı TÜFE'yi portföyle aynı yüzde düzleminde BASAMAKLI
+  /// çizer (`TufeSeries`). Değer AYLIK yayımlanır; ara günler için
+  /// interpolasyon yapılmaz — TÜİK'in açıklamadığı bir sayı üretmek olurdu.
+  Future<Map<DateTime, double>> indexSeries() => _yukle();
+
   /// Endeks tablosunda hiç satır var mı?
   ///
   /// Çoğu çağıran [isStale] istiyor: boş tablo ile DURMUŞ seri kullanıcı

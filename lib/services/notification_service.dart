@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart'
     show Color, GlobalKey, NavigatorState;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -15,6 +17,7 @@ import '../screens/asset_detail_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
 import '../config/pref_keys.dart';
 import 'analytics_service.dart';
+import 'crash_reporter.dart';
 import 'retention_tracker.dart';
 
 // Anahtarlar preferences_provider ile AYNI kaynaktan (PrefKeys) — ikisi
@@ -102,6 +105,9 @@ class NotificationService {
 
     _initialized = true;
 
+    // Açılışı bloklamaz: izin durumu sonucu beklenmeden okunur.
+    unawaited(_iosIzinDurumunuOlc());
+
     final launchPayload = launchDetails?.notificationResponse?.payload;
     if (launchPayload != null) {
       unawaited(Future<void>.microtask(() => _handleNotificationPayload(launchPayload)));
@@ -178,11 +184,10 @@ class NotificationService {
   /// yerlerdeki kabul oranını karşılaştırabilmek için ölçülür. İzin oranı
   /// tutunmanın en büyük tek kaldıracı olduğu için sonucu kaydedilir.
   ///
-  /// **iOS ölçülmez.** Orada izin `init()` içindeki `requestAlertPermission`
-  /// ile daha önce istenmiş oluyor; buradan ikinci bir çağrı yapılmıyor ve
-  /// sonuç bilinmiyor. Uydurulmuş bir değer yazmak, iOS kabul oranını
-  /// olduğundan iyi ya da kötü gösterirdi. iOS tarafı `checkPermissions()`
-  /// ile ayrıca ele alınmalı.
+  /// **iOS burada ölçülmez.** Orada izin `init()` içindeki
+  /// `requestAlertPermission` ile daha önce istenmiş oluyor; buradan ikinci
+  /// bir çağrı yapılmıyor ve sonuç bilinmiyor. iOS tarafı
+  /// [_iosIzinDurumunuOlc] ile sistem ayarından OKUNARAK ölçülür.
   Future<void> requestPermission({String promptContext = 'unknown'}) async {
     if (!_initialized) await init();
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
@@ -194,6 +199,38 @@ class NotificationService {
       granted: granted,
       promptContext: promptContext,
     );
+  }
+
+  /// iOS'ta izin durumunu sistem ayarından okur ve tutunma ölçümüne yazar.
+  ///
+  /// iOS izni `init()` içindeki `requestAlertPermission` ile isteniyor ve o
+  /// yol sonucu döndürmüyor; [requestPermission] ise Android'e özgü. Bu
+  /// yüzden push opt-in oranı yalnızca Android için biliniyordu
+  /// (TECHNICAL_DEBT "iOS bildirim izni ölçülemiyor"). `checkPermissions()`
+  /// bir istem değil, okumadır: kullanıcı Ayarlar'dan kapatırsa da görünür.
+  ///
+  /// Durum yalnızca DEĞİŞİNCE kaydedilir (ilk okuma dahil). Her açılışta
+  /// yazmak "izin verdi" sayısını açılış sayısına çevirirdi.
+  Future<void> _iosIzinDurumunuOlc() async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return;
+    final ios = _plugin.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
+    if (ios == null) return;
+    try {
+      final durum = await ios.checkPermissions();
+      if (durum == null) return; // platform yanıt vermedi — tahmin yürütme
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(PrefKeys.iosPushPermissionLast) == durum.isEnabled) {
+        return;
+      }
+      await prefs.setBool(PrefKeys.iosPushPermissionLast, durum.isEnabled);
+      await RetentionTracker.instance.recordPushPermission(
+        granted: durum.isEnabled,
+        promptContext: 'ios_check',
+      );
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ios_push_permission_check');
+    }
   }
 
   Future<void> sendSignalNotification({

@@ -13,6 +13,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/chart_line_width.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
@@ -1370,15 +1371,48 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       if ((days == 0) != oncekiGunIci) _lastHistory = null;
       _historyFuture = _loadHistory(days);
       // Compare aktifse aynı yeni periyot için compare history'yi de yenile.
-      // Gün içinde karşılaştırma YOK: iki varlığın 5 dakikalık serisini
-      // yüzdeye normalize etmek ayrı bir iş ve bu ekranda karşılığı yok.
       if (_compareAsset != null) {
-        _compareHistoryFuture = days == 0
-            ? null
-            : HistoryService.instance
-                .getPortfolioHistory([_compareAsset!], days);
-        if (days == 0) _compareAsset = null;
+        _compareHistoryFuture = _karsilastirmaSerisi(_compareAsset!, days);
       }
+    });
+  }
+
+  /// Karşılaştırma varlığının serisi — periyoda göre doğru yoldan.
+  ///
+  /// Gün içi (`days == 0`) eskiden KAPALIYDI: seri `getPortfolioHistory`
+  /// ile çekiliyordu ve o çağrı 0 günlük bir pencere isterdi. Şimdi ana
+  /// varlıkla AYNI servisten (`...HourlyBreakdown`) gelir; iki seri de 5
+  /// dakikalık ızgarada, ikisi de kendi ilk noktasına göre yüzdeye
+  /// normalize edilir — yani gün içi karşılaştırma "açılıştan bu yana %
+  /// değişim"dir. Slotları örtüşmeyen çiftlerde (BIST 10-18 ile 7/24 döviz)
+  /// her seri kendi açılışından başlar; bu, diğer periyotlarda da geçerli
+  /// olan sözleşmenin aynısı (her seri kendi ilk noktasına göre).
+  ///
+  /// Tek tuzak: piyasa kapalıyken iki varlığın ÇİZİLEN GÜNÜ farklı olabilir
+  /// (hisse Cuma seansını, döviz bugünü döndürür). Eksen ana varlığın
+  /// gününe kurulu; başka güne ait noktalar ya `x < 0` ile atlanır ya da
+  /// sağa taşardı. O durumda seri BOŞ döner ve kullanıcıya söylenir —
+  /// yanlış güne ait bir çizgi çizmekten iyidir.
+  Future<Map<int, double>> _karsilastirmaSerisi(Asset asset, int days) {
+    if (days != 0) {
+      return HistoryService.instance.getPortfolioHistory([asset], days);
+    }
+    return HistoryService.instance
+        .getPortfolioHistoryHourlyBreakdown([asset], 24)
+        .then((b) {
+      final anaGun = _gunIciBaslangic;
+      if (anaGun != null && b.seansGunu != null && b.seansGunu != anaGun) {
+        if (mounted) {
+          sandikSnack(
+            context,
+            '${asset.ticker} için gün içi verisi farklı bir seans gününe ait; '
+            'karşılaştırma bu sekmede çizilemedi.',
+            kind: SandikSnackKind.warning,
+          );
+        }
+        return const <int, double>{};
+      }
+      return b.total;
     });
   }
 
@@ -1416,8 +1450,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               _compareAsset = vAsset;
               _compareHistoryFuture = vAsset == null
                   ? null
-                  : HistoryService.instance.getPortfolioHistory(
-                      [vAsset], _periods[_selectedPeriodIdx].days);
+                  : _karsilastirmaSerisi(
+                      vAsset, _periods[_selectedPeriodIdx].days);
             });
             Navigator.pop(sheetCtx);
           },
@@ -2234,26 +2268,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        // Karşılaştırma GÜN İÇİNDE kapalı.
-                        //
-                        // Karşılaştırma serisi `getPortfolioHistory(days)`
-                        // ile çekiliyor; gün içi sekmesi `days: 0` taşıdığı
-                        // için o çağrı boş bir pencere isterdi. Ayrıca iki
-                        // varlığın 5 dakikalık serisini yüzdeye normalize
-                        // etmek ayrı bir iş — yarım yapılmış hâli, kullanıcı
-                        // bakıp yanlış okuyacağı bir çizgi üretirdi.
-                        if (!isIntraday)
-                          _CompareStrip(
-                            primaryTicker: widget.asset.ticker,
-                            compare: _compareAsset,
-                            onAddPressed: _openComparePicker,
-                            onClearPressed: () {
-                              setState(() {
-                                _compareAsset = null;
-                                _compareHistoryFuture = null;
-                              });
-                            },
-                          ),
+                        // Karşılaştırma gün içinde de açık — seri
+                        // `_karsilastirmaSerisi` ile ana varlıkla aynı
+                        // 5 dakikalık ızgaradan gelir.
+                        _CompareStrip(
+                          primaryTicker: widget.asset.ticker,
+                          compare: _compareAsset,
+                          onAddPressed: _openComparePicker,
+                          onClearPressed: () {
+                            setState(() {
+                              _compareAsset = null;
+                              _compareHistoryFuture = null;
+                            });
+                          },
+                        ),
                         const SizedBox(height: 8),
                         FutureBuilder<Map<int, double>>(
                           future: _compareHistoryFuture,

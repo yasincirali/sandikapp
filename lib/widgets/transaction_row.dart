@@ -106,13 +106,14 @@ class TransactionRow extends StatelessWidget {
                           style: sandikFont(
                             fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
                             fontWeight: FontWeight.w800,
-                            color: asset.type.color,
+                            color: asset.type.onSurface(context),
                             height: 1,
                           ),
                         ),
                       ),
                     )
-                  : Icon(asset.type.icon, color: asset.type.color, size: 22),
+                  : Icon(asset.type.icon,
+                      color: asset.type.onSurface(context), size: 22),
               const SizedBox(width: SandikSpace.md),
               Expanded(
                 child: Column(
@@ -159,7 +160,7 @@ class TransactionRow extends StatelessWidget {
                           child: Text(asset.type.label,
                               style: TextStyle(
                                   fontSize: 10,
-                                  color: asset.type.color,
+                                  color: asset.type.onSurface(context),
                                   fontWeight: FontWeight.w600)),
                         ),
                         Text(

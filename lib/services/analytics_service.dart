@@ -188,6 +188,26 @@ class AnalyticsService {
         'prompt_context': promptContext,
       });
 
+  // ── Teşhis ──────────────────────────────────────────────────────────────
+
+  /// Yavaş fiyat geçmişi çekimi (`HistoryService._fetchSafe`).
+  ///
+  /// Altın grafiğinin gecikmesi yapısal olarak düzeltildi ama gerçek ağda
+  /// ölçülmedi; bu olay "hâlâ yavaş mı, hangi sembolde, zaman aşımı mı"
+  /// sorusunu Firebase'den cevaplar. Yalnızca eşiği aşan çekimler gelir.
+  Future<void> logSlowHistoryFetch({
+    required String symbol,
+    required int ms,
+    required int points,
+    required bool timedOut,
+  }) =>
+      _log('slow_history_fetch', {
+        'symbol': symbol,
+        'ms': ms,
+        'points': points,
+        'timed_out': timedOut ? 1 : 0,
+      });
+
   /// [type]: signal_alert | partner_invite | daily_brief | price_alert
   Future<void> logPushOpened({required String type, int? minutesSinceSent}) =>
       _log('push_opened', {

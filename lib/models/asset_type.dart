@@ -19,8 +19,33 @@ enum AssetType {
 
   final String label;
   final IconData icon;
+
+  /// Kategori rengi — DOLGU ve nokta/şerit için. Metin ya da ikon olarak
+  /// kullanılacaksa [onSurface].
   final Color color;
   final String defaultCurrency;
+
+  /// Light zeminde ikon/metin olarak okunabilen ton.
+  ///
+  /// Kategori renkleri koyu marka zemini için seçildi; light zeminde yedisi
+  /// de AA altında kalıyordu (ölçüm 2026-08-09: altın 1,52:1). Arkasında
+  /// %12-15 alfa dolgu olan rozetlerde bu sorun değil, ama çıplak ikon ve
+  /// tür etiketi metninde okunmuyordu. Ton aynı, yalnızca açıklık kısılır —
+  /// kategori kimliği (amber = hisse, mavi = fon) korunur.
+  /// `asset_type_light_contrast_test` her türü light `surface1` üstünde
+  /// ≥ 4,5:1'e bağlar.
+  Color onSurface(BuildContext context) =>
+      context.isLight ? onLightSurface : color;
+
+  /// [onSurface]'in light dalı — test edilebilsin diye `BuildContext`'siz.
+  Color get onLightSurface {
+    // 0,28: amber/gold gibi sıcak, parlak tonların light zeminde 4,5:1'e
+    // ulaştığı en yüksek açıklık (0,32'de altın 4,03:1 kalıyordu).
+    final hsl = HSLColor.fromColor(color);
+    return hsl
+        .withLightness(hsl.lightness > 0.28 ? 0.28 : hsl.lightness)
+        .toColor();
+  }
 
   String get tickerHint {
     switch (this) {

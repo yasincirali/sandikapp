@@ -4237,7 +4237,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// 6A benchmark şeridinin yüzdelik dilimi. `null` iken şerit çizilmez —
   /// bayrak kapalı, opt-in yok, geçmiş yetersiz ya da k-anonimlik eşiği
   /// dolmamış olabilir; dördü de "gösterme" demek.
-  ({int percentile, int total})? _dilim;
+  PercentileBucket? _dilim;
   bool _dilimIstendi = false;
 
   /// Birikim kovalarının çözünürlüğü. Dönem seçicisinden BAĞIMSIZ —

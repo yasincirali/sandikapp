@@ -47,6 +47,10 @@ class PrefKeys {
   /// `RemotePushService` cihaz kimliği; çıkışta silinir (L14).
   static const pushDeviceId = 'push_device_id';
 
+  /// iOS bildirim izninin en son analytics'e yazılan durumu. Durum yalnızca
+  /// DEĞİŞİNCE kaydedilir; yoksa her açılış bir "izin verdi" olayı olurdu.
+  static const iosPushPermissionLast = 'ios_push_permission_last';
+
   /// Son bilinen varlık defteri (JSON); kullanıcı kimliği soneklenir.
   static const portfolioCachePrefix = 'portfolio_cache_v1_';
 }
