@@ -23,8 +23,8 @@ tarayıcıda ve elden yapacakların.
 | Data Safety envanteri | ✅ Yazılı · Advertising ID sorusu kapandı — izin manifest'ten düşürüldü (§5.3) |
 | Release keystore | ❌ **SENDE** — yoksa hiçbir şey yüklenemez |
 | Play Console hesabı + doğrulama | 🔄 **Kişisel hesap açıldı**, kimlik doğrulaması Google'da bekliyor (§1) |
-| Ekran görüntüleri | ⚠️ Var ama **Play formatına uymuyor** (2,17:1 > 2:1 sınırı) — yeniden üretilecek (§6.2) |
-| Feature graphic (1024×500) + ikon (512×512) | ❌ Yok — üretilecek (§6.1, §6.3) |
+| Ekran görüntüleri | ✅ **Üretildi (2026-09-15)** — `screenshots/out/1080x1920/` (7) + `out_v2/1080x1920/` (8), 1,78:1, alfa yok (§6.2) |
+| Feature graphic (1024×500) + ikon (512×512) | ✅ **Üretildi (2026-09-15)** — `store_listing/graphics/`, betikle tekrar üretilebilir (§6.1, §6.3) |
 | Supabase `0027_soft_delete_lots.sql` migration | ❌ Uygulanmadı — **Play "hesap silme" şartını kırar** (§7.1) |
 
 **Kritik yol (bunlar bitmeden yayın yok):** hesap tipi kararı → hesap
