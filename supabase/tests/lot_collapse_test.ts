@@ -10,7 +10,10 @@
 //   deno test supabase/tests/lot_collapse_test.ts
 
 import { assertEquals } from 'jsr:@std/assert@1';
-import { collapseLotsToPositions } from '../functions/analyze-signals/index.ts';
+import {
+  collapseLotsToPositions,
+  positionKeyOf,
+} from '../functions/analyze-signals/index.ts';
 
 type Lot = { id: string; user_id: string; type: string; ticker: string };
 
@@ -179,4 +182,52 @@ Deno.test('döngü lot değil POZİSYON üzerinde dönüyor', async () => {
     true,
     '`collapseLotsToPositions` çağrılmıyor — lot birleştirme devre dışı.',
   );
+});
+
+// ── De-dup anahtarı: pozisyon (2026-09-14) ────────────────────────────────
+//
+// İndirgeme döngüyü pozisyona indirse de `signal_state` hafızası temsilci
+// LOT'un id'sinde kalıyordu; temsilci silinince hafıza sıfırlanıyor ve
+// kullanıcı bir kez fazladan bildirim alıyordu. Anahtar artık lot'tan
+// bağımsız: `pos:<tür>|<TICKER>` (migration 0062 eski satırları taşır).
+
+Deno.test("positionKeyOf: aynı pozisyonun iki lot'u AYNI anahtarı verir", () => {
+  const a = { id: 'lot-1', type: 'hisse', ticker: 'thyao.is' };
+  const b = { id: 'lot-2', type: 'hisse', ticker: ' THYAO.IS ' };
+  assertEquals(positionKeyOf(a), positionKeyOf(b));
+  assertEquals(positionKeyOf(a), 'pos:hisse|THYAO.IS');
+});
+
+Deno.test('positionKeyOf: tür farkı anahtarı ayırır', () => {
+  assertEquals(
+    positionKeyOf({ id: 'x', type: 'hisse', ticker: 'GC=F' }) ===
+      positionKeyOf({ id: 'y', type: 'emtia', ticker: 'GC=F' }),
+    false,
+  );
+});
+
+Deno.test("positionKeyOf: ticker'sız lot kendi id'sine düşer", () => {
+  // Sinyal üretemez ama anahtar tanımlı kalmalı; iki ticker'sız lot
+  // birbirine karışmamalı.
+  assertEquals(positionKeyOf({ id: 'lot-9', type: 'diger', ticker: '' }), 'lot-9');
+  assertEquals(positionKeyOf({ id: 'lot-8', type: 'diger', ticker: null }), 'lot-8');
+});
+
+Deno.test("de-dup hafızası lot id'siyle DEĞİL pozisyon anahtarıyla okunup yazılıyor", async () => {
+  // Yukarıdaki wiring testiyle aynı gerekçe: fonksiyon doğru olsa da
+  // çağrı yerinde `asset.id`'ye dönülürse hata sessizce geri gelir.
+  const src = await Deno.readTextFile(
+    new URL('../functions/analyze-signals/index.ts', import.meta.url),
+  );
+  assertEquals(src.includes('const posKey = positionKeyOf(asset);'), true);
+  assertEquals(src.includes('lastSignalOf.get(posKey)'), true);
+  assertEquals(src.includes('sentSignalOf.set(posKey,'), true);
+  for (const kotu of [
+    'lastSignalOf.get(asset.id)',
+    'lastConfidenceOf.get(asset.id)',
+    'lastNotifiedOf.get(asset.id)',
+    'sentSignalOf.set(asset.id',
+  ]) {
+    assertEquals(src.includes(kotu), false, `${kotu} geri gelmiş — de-dup yine lot başına`);
+  }
 });

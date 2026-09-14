@@ -290,6 +290,26 @@ export function shouldSendSignal(
 }
 
 
+/// De-dup anahtarı: LOT değil POZİSYON.
+///
+/// `signal_state` eskiden lot id'siyle anahtarlıydı; `collapseLotsToPositions`
+/// döngüyü pozisyona indirgese de hafıza temsilci lot'un id'sinde kalıyordu.
+/// Temsilci silinince (yumuşak silme) pozisyon yeni bir temsilciye geçer ve
+/// de-dup hafızası sıfırlanırdı — kullanıcı o varlık için bir kez fazladan
+/// bildirim alırdı (TECHNICAL_DEBT "signal_state hâlâ lot başına anahtarlı").
+///
+/// Anahtar `pos:<tür>|<TICKER>`; tür + ticker, lot'tan bağımsız pozisyon
+/// kimliğidir (istemcideki `positionKey` ile aynı fikir). Ticker'sız lot
+/// zaten sinyal üretemez (`resolveSymbol` boş döner); yine de anahtar
+/// tanımlı kalsın diye lot id'sine düşer. Migration 0062 eski satırları bu
+/// biçime taşır; `signal_state.asset_id` sütunu adını korur, içeriği artık bu.
+export function positionKeyOf(
+  a: { id: string; type: string; ticker?: string | null },
+): string {
+  const t = (a.ticker ?? '').trim().toUpperCase();
+  return t ? `pos:${a.type}|${t}` : a.id;
+}
+
 export function collapseLotsToPositions<T extends { id: string; user_id: string; type: string }>(
   assets: T[],
   symbolOf: (a: T) => string | undefined,
@@ -608,7 +628,9 @@ Deno.serve(async (request) => {
         ? pref.indicators
         : DEFAULT_INDICATORS;
       const neutralPush = pref?.neutral_push ?? false;
-      const oncekiSinyal = lastSignalOf.get(asset.id);
+      // De-dup hafızası POZİSYON anahtarıyla (bkz. `positionKeyOf`).
+      const posKey = positionKeyOf(asset);
+      const oncekiSinyal = lastSignalOf.get(posKey);
 
       // Premium göstergeler sunucuda hesaplanmaz — premium durumu burada
       // güvenilir biçimde bilinmiyor. Kullanıcı premium ise uygulama içi
@@ -632,9 +654,9 @@ Deno.serve(async (request) => {
       // Durum `signal_state`'ten toplu okundu (döngü içinde sorgu YOK).
       if (
         !shouldSendSignal(oncekiSinyal, summary.signal, {
-          oncekiGuven: lastConfidenceOf.get(asset.id) ?? null,
+          oncekiGuven: lastConfidenceOf.get(posKey) ?? null,
           yeniGuven: summary.confidence,
-          sonBildirim: lastNotifiedOf.get(asset.id) ?? null,
+          sonBildirim: lastNotifiedOf.get(posKey) ?? null,
           simdi: now,
         })
       ) {
@@ -729,7 +751,7 @@ Deno.serve(async (request) => {
           // De-dup durumu: yalnızca gönderim BAŞARILI olduğunda güncellenir.
           // Başarısız gönderimde yazılsaydı, kullanıcıya ulaşmamış bir sinyal
           // bir sonraki turu bloklardı.
-          sentSignalOf.set(asset.id, {
+          sentSignalOf.set(posKey, {
             userId: asset.user_id,
             signal: summary.signal,
             confidence: summary.confidence,
@@ -757,11 +779,12 @@ Deno.serve(async (request) => {
     // gönderilir — istenen "sinyal değişince bildir" davranışı bozulur.
     if (!dryRun && sentSignalOf.size > 0) {
       const stamp = now.toISOString();
-      for (const [assetId, v] of sentSignalOf) {
+      for (const [posKey, v] of sentSignalOf) {
         try {
           await admin.rpc('touch_signal_state', {
             p_user_id: v.userId,
-            p_asset_id: assetId,
+            // 0062'den beri pozisyon anahtarı; sütun adı tarihî.
+            p_asset_id: posKey,
             p_signal: v.signal,
             p_at: stamp,
             // De-dup hafızası: cooldown/hatırlatma bu damgadan, "güven

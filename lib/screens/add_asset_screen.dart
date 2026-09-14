@@ -446,7 +446,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       runSpacing: 8,
       children: GoldSubCategory.values.map((g) {
         final selected = _subCategory == g.label;
-        return GestureDetector(
+        // Diğer çipler gibi (tür, döviz, miktar): ekran okuyucu 'düğme' ve
+        // 'seçili' bilgisini Semantics olmadan alamaz (Faz 2.13).
+        return Semantics(
+          button: true,
+          selected: selected,
+          label: '${g.label} altın',
+          child: GestureDetector(
           onTap: () {
             _yaz(_n.selectGold(g));
             _schedulePricePreview();
@@ -488,6 +494,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         color: selected ? context.c.text90 : context.c.text58)),
               ],
             ),
+          ),
           ),
         );
       }).toList(),

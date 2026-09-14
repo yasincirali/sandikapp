@@ -127,7 +127,7 @@ limit'leri.
 | 2.10 | ✅ (zaten) | `sandikSnack(onUndo:)` ile takipten çıkarma (`watchlist_screen`) ve varlık silme (`delete_asset_dialog`) geri alınabilir; 1.3'te kurulmuştu, denetim listesi bayattı. |
 | 2.11 | ✅ (zaten) | Denetim iddiası eskiydi: `chart_interaction_parity_test` karşılaştırma ve takip grafiklerinin `PercentComparisonChart` → `ZoomableChart` üzerinde olduğunu zaten kilitliyor (pinch/pan/crosshair paritesi var). Sparkline bilinçli etkileşimsiz. |
 | 2.12 | ⏸️ | `ModernTabSelector`/`_PeriodToggle` markaya özel; Material `SegmentedButton`'a geçmek tasarım dilini değiştirir ve cihazda görülmeden yapılmaz. |
-| 2.13 | 🟡 kısmi | `ZoomableChart.semanticLabel` (varsayılan 'Fiyat grafiği'; `PercentComparisonChart` seri sayısı + gün ile dolduruyor, takip grafiği ondan miras alıyor). Sparkline dekoratif olarak bilinçli sessiz (kaynakta gerekçeli). 20 `minimumSize: Size.zero` sitesi `SandikTouch.minSize`'a çekildi (`touch_target_size_test` kilitler). **Yapılmadı:** settings/add_asset Semantics; kompakt yüzeylerde ok glifi. |
+| 2.13 | ✅ | `ZoomableChart.semanticLabel` (varsayılan 'Fiyat grafiği'; `PercentComparisonChart` seri sayısı + gün ile dolduruyor, takip grafiği ondan miras alıyor). Sparkline dekoratif olarak bilinçli sessiz (kaynakta gerekçeli). 20 `minimumSize: Size.zero` sitesi `SandikTouch.minSize`'a çekildi (`touch_target_size_test` kilitler). 2026-09-14 sayımı: add_asset çipleri (tür/döviz/miktar/altın) ve seçiciler `Semantics(button, selected, label)` taşıyor, settings tema seçici etiketli; sign-renkli sayıların 7 sitesi de +/− işareti basıyor (ok glifi gereksiz). **Kalan:** yok — 2.13 kapandı. |
 | 2.14 | ⏸️ | Hero uçuşu iki uçtaki boyut farkında bozuk görünür; cihaz doğrulaması olmadan eklenmedi. |
 
 ## Faz 3 — Ürün ve mimari

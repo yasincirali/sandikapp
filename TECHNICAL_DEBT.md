@@ -1085,7 +1085,17 @@ yeterli. Kararı değiştiren şey: kurumsal/MDM dağıtımı ya da bir bulgu
 
 ---
 
-## 🟡 AÇIK — `signal_state` hâlâ lot başına anahtarlı
+## ✅ KAPANDI — `signal_state` hâlâ lot başına anahtarlı
+
+**KAPANDI 2026-09-14.** Şema DEĞİŞMEDEN kapatıldı: `asset_id` sütunu adını
+koruyor, içeriği artık `pos:<tür>|<TICKER>` (`positionKeyOf`, analyze-signals).
+Migration `0062` eski satırları `assets` üzerinden bu anahtara taşır (aynı
+pozisyonun lot'larından en son bildirilen kazanır), lot anahtarlı artıkları
+siler ve kalan varsa kendini patlatır. Sütunu yeniden adlandırmamanın sebebi
+deploy penceresi: `touch_signal_state(p_asset_id)` imzası aynı kaldığı için
+migration ile function deploy'u arasında hiçbir tur kırılmaz. 15 Deno testi
+(birim + wiring: `lastSignalOf.get(asset.id)` geri gelirse test düşer).
+**Deploy sende** (`YAPMAN_GEREKENLER.md` #23).
 
 **Karar tarihi:** 2026-08-31
 
