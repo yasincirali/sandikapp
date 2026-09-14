@@ -2,8 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
-import 'package:flutter/material.dart'
-    show Color, GlobalKey, NavigatorState;
+import 'package:flutter/material.dart' show Color, GlobalKey, NavigatorState;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +13,7 @@ import '../models/technical_signal.dart';
 import '../providers/portfolio_provider.dart';
 import '../screens/partnership_requests_screen.dart';
 import '../screens/asset_detail_screen.dart';
+import '../screens/asset_not_found_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
 import '../config/pref_keys.dart';
 import 'analytics_service.dart';
@@ -110,7 +110,8 @@ class NotificationService {
 
     final launchPayload = launchDetails?.notificationResponse?.payload;
     if (launchPayload != null) {
-      unawaited(Future<void>.microtask(() => _handleNotificationPayload(launchPayload)));
+      unawaited(Future<void>.microtask(
+          () => _handleNotificationPayload(launchPayload)));
     }
   }
 
@@ -535,7 +536,17 @@ class NotificationService {
   /// (kullanıcı uygulamanın açıldığını zaten görür).
   /// Dışarıdan da çağrılır (derin bağlantı `sandik://asset/<id>`,
   /// bkz. `DeepLinkRouter.hedefVarlikId`).
-  void openAssetPerformance(String assetId, {int deneme = 0}) {
+  ///
+  /// [onNotFound]: hedef bu hesabın portföyünde yoksa (ya da portföy
+  /// beklenen sürede gelmediyse) çağrılır. Push bildirimi yolu vermez —
+  /// silinmiş varlığın eski bildirimi için hata göstermek yanıltıcı olur.
+  /// Dış derin bağlantı (`DeepLinkService`) verir — kullanıcı bir bağlantıya
+  /// dokundu, hiçbir şey olmaması "uygulama bozuk" hissi verir.
+  void openAssetPerformance(
+    String assetId, {
+    int deneme = 0,
+    VoidCallback? onNotFound,
+  }) {
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;
 
@@ -543,7 +554,11 @@ class NotificationService {
       if (deneme >= _yenidenDenemeSiniri) return;
       Future<void>.delayed(
         _yenidenDenemeAraligi,
-        () => openAssetPerformance(assetId, deneme: deneme + 1),
+        () => openAssetPerformance(
+          assetId,
+          deneme: deneme + 1,
+          onNotFound: onNotFound,
+        ),
       );
       return;
     }
@@ -554,10 +569,17 @@ class NotificationService {
     // Portföy henüz gelmediyse bekle — uygulama soğuk açılışta bildirimden
     // geliyorsa veri birkaç saniye sonra düşer.
     if (assets == null || assets.isEmpty) {
-      if (deneme >= _yenidenDenemeSiniri) return;
+      if (deneme >= _yenidenDenemeSiniri) {
+        onNotFound?.call();
+        return;
+      }
       Future<void>.delayed(
         _yenidenDenemeAraligi,
-        () => openAssetPerformance(assetId, deneme: deneme + 1),
+        () => openAssetPerformance(
+          assetId,
+          deneme: deneme + 1,
+          onNotFound: onNotFound,
+        ),
       );
       return;
     }
@@ -570,9 +592,13 @@ class NotificationService {
       }
     }
 
-    // Varlık silinmiş olabilir (bildirim gönderildikten sonra). Sessiz
-    // geçmek doğru: olmayan bir varlık için boş ekran açmak yanıltıcı olur.
-    if (asset == null) return;
+    // Varlık silinmiş olabilir (bildirim gönderildikten sonra). Bildirim
+    // yolunda sessiz geçmek doğru: olmayan bir varlık için boş ekran açmak
+    // yanıltıcı olur. Dış bağlantı yolu [onNotFound] ile kendi tepkisini verir.
+    if (asset == null) {
+      onNotFound?.call();
+      return;
+    }
 
     // Aynı pozisyonun tüm lot'ları — grafik üstündeki işlem marker'ları için.
     // `positionKey` sahip taşımaz; ortak lot'ları AYRI tutulur.
@@ -587,6 +613,16 @@ class NotificationService {
           lots: lots,
         ),
       ),
+    );
+  }
+
+  /// Dış bağlantının hedefi bulunamadığında hata ekranı. Navigator hazır
+  /// değilse çağrılmaz — [openAssetPerformance] bunu zaten garanti eder.
+  void showAssetNotFound() {
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) return;
+    navigator.push(
+      adaptiveRoute<void>(builder: (_) => const AssetNotFoundScreen()),
     );
   }
 }

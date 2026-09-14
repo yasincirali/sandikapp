@@ -28,8 +28,12 @@ import 'notification_service.dart';
 /// soğuk açılışta Navigator ve portföy hazır olana kadar kendisi bekler.
 class DeepLinkService {
   DeepLinkService._()
-      : _openAsset = ((id) =>
-            NotificationService.instance.openAssetPerformance(id));
+      : _openAsset = ((id) => NotificationService.instance.openAssetPerformance(
+              id,
+              // Sahte / başkasına ait / silinmiş id: sessiz geçme, hata
+              // ekranı göster — kullanıcı bir bağlantıya dokundu.
+              onNotFound: NotificationService.instance.showAssetNotFound,
+            ));
 
   /// Test için: hedef eylemi enjekte edilebilir.
   @visibleForTesting

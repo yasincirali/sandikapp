@@ -520,6 +520,16 @@ tester'lardan bloklayıcı geri bildirim yok.
 
 ---
 
+## 10.5 ✅ Verilen kararlar (2026-09-15)
+
+| Soru | Karar | Sonucu |
+|---|---|---|
+| **Dağıtım ülkeleri** | **Yalnızca Türkiye** | GDPR Md. 27 (AB temsilcisi) satırı hukuki belgelerden düşer — AB'ye dağıtım yok. Play Console → Ülkeler/bölgeler: yalnız TR seç. İleride AB açılırsa temsilci şartı geri gelir |
+| **Web sitesi** | `yasincirali.github.io/sandikapp` (mevcut, çalışıyor) | `com.sandik.app` bir PAKET ADIDIR, site adresi değil — ikisi karıştırılmasın. Play'in istediği `https://…` adresi GitHub Pages'te duruyor; gizlilik politikası ve hesap silme sayfaları orada. Ayrı domain alınmadı (ücretsiz çözüm şartı karşılıyor) |
+| **Sinyal uyarısı** | Ekle → **zaten tam kapsamlı çıktı** | Denetimde görüldü: `DisclaimerWidget` beş sinyal/analiz ekranında + sinyal bottom sheet'inde; push bildiriminin GÖVDESİNDE de "Yatırım tavsiyesi değildir." var (asıl politika riski orada — kullanıcı uygulamayı açmadan okuyor). Eksik olan koruma testiydi: `signal_disclaimer_coverage_test.dart` (8) eklendi |
+
+---
+
 ## 11. Bana söylemen gerekenler
 
 Şunları netleştirirsen kalan kod/doküman işlerini tek seferde bitiririm:

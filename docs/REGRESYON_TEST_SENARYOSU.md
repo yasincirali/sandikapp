@@ -152,5 +152,6 @@ artı o sürümde dokunulan alanın blokları.
 |---|---|---|---|
 | 2026-09-14 | 1.1.4+7 | R-01, R-02, R-04, R-06, R-08, R-09, R-10, R-12 | ✅ hepsi `200`. R-08'de ölü FCM token'ı kendiliğinden silindi. R-07 sınanamadı (`positions:0` — gece, frekans kapısı 12 varlığı eledi) |
 | 2026-09-14 | 1.1.4+7 | R-40, R-41, R-42b | R-40 ✅ / R-41 ✅ (kullanıcı gerçekten silindi) / **R-42b 🐞 KIRIK bulundu → düzeltildi** — silme uçarken ekran etkileşime açıktı |
+| 2026-09-15 | 1.1.4+7 | R-42b (düzeltme sonrası) + cihaz turu | ✅ Kilit doğrulandı: örtü görünüyor, dokunuş yutuluyor, geri çıkış engelli. Elle regresyonun ilk turu bir gerçek bug yakaladı — senaryonun karşılığını verdi |
 
 **Henüz hiç koşulmayanlar:** B bloğunun tamamı (cihaz), C bloğu, E bloğu.
