@@ -67,6 +67,24 @@ void main() {
       );
     });
 
+    test('kalınlık VERİNİN kapladığı genişlikten hesaplanır', () {
+      // Gün içi eksen 00:00–24:00 gösterir ama seans 10:00–18:00 arasıdır:
+      // çubuklar grafiğin ~üçte birine sıkışır. Grafiğin TAMAMINI varsayan
+      // hesap aralarındaki mesafeyi olduğundan büyük sanıp çubukları üst
+      // üste bindiriyordu (kullanıcı bildirimi, ekran görüntüsüyle).
+      expect(
+        kaynak.contains('final veriGenisligiPx = genislik * kaplamaOrani;'),
+        isTrue,
+        reason: 'Kalınlık, verinin gerçekte kapladığı piksel genişliğinden '
+            'türetilmeli — grafiğin tamamından değil.',
+      );
+      expect(
+        kaynak.contains('(veriAralik / gorunurAralik)'),
+        isTrue,
+        reason: 'Kaplama oranı veri aralığı / görünür aralık olmalı.',
+      );
+    });
+
     test('kalınlık sabit değil, yoğunluktan türetilir', () {
       expect(
         kaynak.contains('final cubukKalinligi ='),

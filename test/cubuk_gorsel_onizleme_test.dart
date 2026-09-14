@@ -65,19 +65,34 @@ void main() {
     return out;
   }
 
-  /// YENİ davranış: taban = dönem başı, kalınlık yoğunluktan, renk yönden.
+  /// YENİ davranış: taban = dönem başı, kalınlık VERİNİN kapladığı piksel
+  /// genişliğinden, renk yönden.
   /// `_cubukSegmentleri`'nin aynı cebri (private olduğu için burada tekrar).
   List<LineChartBarData> yeniCubuklar(
     List<FlSpot> spots,
     double tabanY,
     double genislik,
+    double viewMinX,
+    double viewMaxX,
   ) {
     const minAralikPx = 6.0;
     const maksAralikPx = 22.0;
-    final maksCubuk = (genislik / minAralikPx).floor().clamp(8, 240);
+
+    // Veri görünür pencerenin ne kadarını kaplıyor? Gün içi eksen 00:00–24:00
+    // iken seans 10:00–18:00 ise bu ~0,33'tür ve çubuklar o dar şeride
+    // sıkışır. Tam genişliği varsaymak çubukları üst üste bindiriyordu.
+    final veriAralik = spots.last.x - spots.first.x;
+    final gorunurAralik = viewMaxX - viewMinX;
+    final kaplama = (gorunurAralik > 0 && veriAralik > 0)
+        ? (veriAralik / gorunurAralik).clamp(0.05, 1.0)
+        : 1.0;
+    final veriGenisligiPx = genislik * kaplama;
+
+    final maksCubuk = (veriGenisligiPx / minAralikPx).floor().clamp(8, 240);
     final adim = (spots.length / maksCubuk).ceil().clamp(1, 1 << 30);
     final cizilecek = (spots.length / adim).ceil().clamp(1, maksCubuk);
-    final aralikPx = (genislik / cizilecek).clamp(minAralikPx, maksAralikPx);
+    final aralikPx =
+        (veriGenisligiPx / cizilecek).clamp(minAralikPx, maksAralikPx);
     final kalinlik = (aralikPx * 0.65).clamp(2.0, 14.0);
 
     final out = <LineChartBarData>[];
@@ -99,7 +114,7 @@ void main() {
   }
 
   Widget kart(String baslik, List<LineChartBarData> bars, double minY,
-      double maxY, List<FlSpot> spots) {
+      double maxY, double eksenMinX, double eksenMaxX) {
     return Container(
       color: const Color(0xFFFAF7F2),
       padding: const EdgeInsets.all(16),
@@ -118,8 +133,8 @@ void main() {
           Expanded(
             child: LineChart(
               LineChartData(
-                minX: spots.first.x,
-                maxX: spots.last.x,
+                minX: eksenMinX,
+                maxX: eksenMaxX,
                 minY: minY,
                 maxY: maxY,
                 lineBarsData: bars,
@@ -127,7 +142,7 @@ void main() {
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (_) =>
-                      FlLine(color: Colors.black12, strokeWidth: 0.5),
+                      const FlLine(color: Colors.black12, strokeWidth: 0.5),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: const FlTitlesData(show: false),
@@ -205,21 +220,31 @@ void main() {
     // İki kart TEK karede: ayrı `pumpWidget` çağrılarında fl_chart'ın
     // ticker'ı ikinci çizimi süresiz asıyordu (üç deneme). Tek ağaç hem
     // sorunu çözüyor hem karşılaştırmayı doğrudan yan yana koyuyor.
+    // Eksen GÜN BOYU (00:00–24:00), veri yalnızca seans saatlerinde —
+    // gerçek gün içi grafiğindeki durum. Kullanıcı bildirimindeki üst üste
+    // binme tam olarak bu farktan doğuyordu.
+    const eksenMinX = 0.0;
+    const eksenMaxX = 1440.0;
+    const cizimGenisligi = genislik - 32;
+
     await ciz(
       'cubuk_karsilastirma',
       Column(
         children: [
           Expanded(
             child: kart('ESKİ — taban pencere dibi, sabit 2px',
-                eskiCubuklar(spots, eskiMinY), eskiMinY, eskiMaxY, spots),
+                eskiCubuklar(spots, eskiMinY), eskiMinY, eskiMaxY,
+                eksenMinX, eksenMaxX),
           ),
           Expanded(
             child: kart(
-                'YENİ — taban dönem başı, kalınlık yoğunluktan',
-                yeniCubuklar(spots, taban, genislik - 32),
+                'YENİ — taban dönem başı, kalınlık veri yoğunluğundan',
+                yeniCubuklar(
+                    spots, taban, cizimGenisligi, eksenMinX, eksenMaxX),
                 yeniMinY,
                 yeniMaxY,
-                spots),
+                eksenMinX,
+                eksenMaxX),
           ),
         ],
       ),
