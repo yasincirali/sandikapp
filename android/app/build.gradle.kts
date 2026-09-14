@@ -59,17 +59,17 @@ android {
 
     buildTypes {
         release {
-            // key.properties YOKSA BUILD KIRILIR. Eski davranış debug anahtarına
-            // sessizce düşmekti: `flutter build apk --release` herkesin bildiği
-            // debug anahtarıyla imzalı, dağıtılabilir bir APK üretiyordu ve
-            // hiçbir uyarı vermiyordu. Yerelde release denemek için
-            // android/key.properties oluştur (bkz. YAPMAN_GEREKENLER.md §6).
-            if (!keystorePropertiesFile.exists()) {
-                throw GradleException(
-                    "android/key.properties bulunamadı — release build debug " +
-                    "anahtarıyla imzalanmaz. Keystore'u kur ya da debug build al."
-                )
-            }
+            // key.properties YOKSA RELEASE BUILD KIRILIR. Eski davranış debug
+            // anahtarına sessizce düşmekti: `flutter build apk --release`
+            // herkesin bildiği debug anahtarıyla imzalı, dağıtılabilir bir APK
+            // üretiyordu ve hiçbir uyarı vermiyordu. Yerelde release denemek
+            // için android/key.properties oluştur (bkz. YAPMAN_GEREKENLER §6).
+            //
+            // Denetim EXECUTION aşamasında (doFirst): configuration aşamasında
+            // atılan exception `assembleDebug`'ı da kırar, çünkü Gradle hangi
+            // görev istenirse istensin TÜM buildTypes bloğunu değerlendirir.
+            // Bu hâliyle debug build key.properties'siz ortamlarda (CI, yeni
+            // klon) çalışır; yalnızca release imzalanırken durur.
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
@@ -84,6 +84,20 @@ android {
 flutter {
     source = "../.."
 }
+
+// Release imzalama kapısı — yukarıdaki release bloğunun execution ayağı.
+// Görev GERÇEKTEN koşarken denetler, yapılandırma okunurken değil.
+tasks.matching { it.name.contains("Release") && it.name.startsWith("package") }
+    .configureEach {
+        doFirst {
+            if (!keystorePropertiesFile.exists()) {
+                throw GradleException(
+                    "android/key.properties bulunamadı — release build debug " +
+                    "anahtarıyla imzalanmaz. Keystore'u kur ya da debug build al."
+                )
+            }
+        }
+    }
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
