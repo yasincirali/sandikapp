@@ -40,6 +40,47 @@ jobs:
       - name: Test
         run: flutter test
 
+  # Android derleme kapısı.
+  #
+  # Neden ayrı bir iş: `flutter analyze` Dart'a bakar, Kotlin'e BAKMAZ.
+  # 2026-09-14'te `MainActivity.kt` içinde derlenmeyen bir override
+  # (`onFlutterUiDisplayed`, FlutterFragmentActivity'de yok) main'e girdi ve
+  # beş yeşil CI koşusunun altında görünmedi; Kotlin yalnızca `v*` tag'inde
+  # (android-release.yml) derleniyordu. Yani hata ancak release gecesi,
+  # en pahalı anda ortaya çıkacaktı.
+  #
+  # `--debug` bilinçli: imzalama anahtarı istemez (key.properties yoksa
+  # release build artık KIRILIR) ve Kotlin/AGP derlemesini yine de tam koşar.
+  android-build:
+    name: Android derleme (Kotlin kapısı)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      # Gerçek Supabase kimliği gerekmez — derleme bunları yalnızca
+      # String.fromEnvironment olarak gömer, çalıştırma yok.
+      - name: APK derle
+        run: |
+          flutter build apk --debug \
+            --dart-define=SUPABASE_URL=https://ci.invalid \
+            --dart-define=SUPABASE_ANON_KEY=ci-placeholder
+
   edge-functions:
     name: Deno test (supabase/tests)
     runs-on: ubuntu-latest
