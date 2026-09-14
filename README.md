@@ -27,7 +27,7 @@ Android ana ekran widget'ı, iOS widget + Live Activity, FCM/APNs push.
 ```bash
 flutter pub get
 flutter analyze lib/ test/
-flutter test                       # 155 dosya; tek dosya: flutter test test/<ad>_test.dart
+flutter test                       # 160 dosya; tek dosya: flutter test test/<ad>_test.dart
 flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
 ```
 

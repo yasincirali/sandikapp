@@ -99,11 +99,22 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === 'reject') {
+      if (isOwner) {
+        await admin
+          .from('partner_invites')
+          .update({ status: 'rejected', used: true })
+          .eq('id', inviteId)
+        return json({ status: 'rejected' })
+      }
+      // Hedef vazgeçti (2026-09 L13): kodu YAKMA. Kod sahibinin daveti
+      // eskisi gibi boşa döner; aksi hâlde kodu tahmin eden herkes
+      // "gir → vazgeç" ile sahibin davetini geçersiz kılabilirdi.
       await admin
         .from('partner_invites')
-        .update({ status: 'rejected', used: true })
+        .update({ to_user_id: null, requester_name: null, status: 'pending' })
         .eq('id', inviteId)
-      return json({ status: 'rejected' })
+        .eq('to_user_id', user.id)
+      return json({ status: 'withdrawn' })
     }
 
     // action === 'accept'

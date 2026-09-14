@@ -12,8 +12,17 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 
 ## Son kalınan yer (2026-09-14)
 
-Main ile birleşik, her adım analyzer + tam Flutter paketi (1.697 test) + Deno paketi (222 test)
-ile doğrulandı. **Tamamlanan:** Faz 0 (tümü), Faz 1 (tümü; google_fonts/lint/leaderboard-timer
+Main ile birleşik, her adım analyzer + tam Flutter paketi (1.719 test) + Deno paketi (222 test)
+ile doğrulandı.
+
+**2026-09-14 (ikinci tur, kullanıcı kararları):** vadeli mevduat **silindi** (ekran, servis,
+`deposits_enabled`, `AssetType.mevduat`, tüm "mevduat hariç" dalları; 0058 eski satırları
+'diger'e çevirir). Yarış ve Paywall **kalıyor**; Sybil için 0059 (havuza girmek zaman ister:
+≥7 günlük hesap, son 30 günde ≥5 gün snapshot, ≥2 tür). **Apple / Google ile giriş** kodu
+tamam (`SocialAuthService`, `SocialSignInButtons`, sosyal hesapta şifresiz hesap silme);
+sağlayıcı kimlikleri `YAPMAN_GEREKENLER.md` #15-16. Güvenlik: M1, M2, M7, M8, M9, L2, L4,
+L5, L8, L12, L13, L14 kapandı (aşağıdaki tablo). Kalan: M12 (GoTrue dashboard, sende),
+L3 (pinning kararı). **Tamamlanan:** Faz 0 (tümü), Faz 1 (tümü; google_fonts/lint/leaderboard-timer
 ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3.3, 3.4, 3.5,
 3.6, 3.7, 3.8 (kısmi), 3.11, 3.15, 3.17 (kısmi), 3.19 (kısmi).
 
@@ -21,7 +30,7 @@ ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3
 
 | Kalem | Neden kod tarafında ilerlemedi |
 |---|---|
-| 3.1 Apple / Google ile giriş | Apple Developer + Google Cloud OAuth kimlikleri ve Supabase provider ayarı gerekli — senin hesabın. Kod tarafı bunlar olmadan derlenir ama çalışmaz. |
+| 3.1 Apple / Google ile giriş | ✅ Kod tamam (2026-09-14). Apple Developer yeteneği, Google Cloud OAuth kimlikleri ve Supabase provider ayarı sende (`YAPMAN_GEREKENLER.md` #15-16); Google düğmesi `GOOGLE_WEB_CLIENT_ID` verilmeden görünmez. |
 | 3.2 Baz para birimi (USD/EUR/altın) | 28 `fmtTRY` + 30 `toTRY` sitesi ve grafik eksenleri; yarım yapılırsa ekranlar karışık sembol gösterir. Bir günlük odaklı tur + cihazda görsel doğrulama ister. |
 | 3.9 Performans ekranlarını birleştir | 8.190 satır; parite testleri güvenlik ağı ama gerçek cihazda gün içi/haftasonu/fon basamağı senaryoları görülmeli. |
 | 3.10 `add_asset_screen` Notifier'a taşı | 37 setState, 17 alan; 3.9 ile aynı gerekçe. |
@@ -36,6 +45,25 @@ ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3
 secret'ının `x-cron-secret` desenine göre set edilmesi, `DELETION_HASH_SALT`, edge function
 deploy'ları, 0055/0056/0057 migration'ları, biyometrik kilidin cihazda denenmesi, GoTrue rate
 limit'leri.
+
+## Güvenlik bulguları — ikinci tur kapanışları (2026-09-14)
+
+| Bulgu | Durum | Ne yapıldı |
+|---|---|---|
+| M1 Sybil | ✅ 0059 | `leaderboard_eligible_users()` (istemciye kapalı) tek kaynak; iki RPC de havuzu bununla JOIN'ler ve çağıranın kendisi de uygun olmalı. k_min=8 / n_max=4 korunur (`percentile_strip_test` + `leaderboard_sybil_eligibility_test`). |
+| M2 Token düz depoda | ✅ | `lib/services/secure_session_storage.dart`: `LocalStorage` Keychain/Keystore üstünde; ilk açılışta SharedPreferences'taki eski oturum taşınır ve silinir (yeniden giriş yok). Kasa okunamazsa oturum yok sayılır, çökme yok. |
+| M7 Davet limiti hesaba keyli | ✅ | `redeem-invite-code`: `ip:<x-forwarded-for>` öznesiyle ikinci sayaç (10 dk / 20); başarısız tahminde ikisi de artar. IP yoksa eski davranış. |
+| M8 UUID sızıntısı | ✅ | Redeem yanıtından `partner_user_id` çıkarıldı; istemci kullanmıyordu. |
+| M9 Admin e-postayla | ✅ 0060 | `push_admins(user_id)` tablosu, 0021 adresinden BİR kez tohumlanır; `is_push_admin()` UUID'ye bakar. |
+| L2 Idle logout kill sonrası yok | ✅ | `PrefKeys.backgroundedAtMs` arkaya alınınca yazılır; açılışta ≥10 dk ise ilk kullanıcı yayınında `logout()`. |
+| L4 Cron CORS `*` | ✅ | 6 cron fonksiyonu + `cron_auth.ts` 401 yanıtı: Allow-Origin yok (tarayıcı çağrısı yok). |
+| L5 Maske listeye inmiyor | ✅ | `DbLogger._maskValue` liste ve Map'e özyineler. |
+| L8 Dışa aktarımda ham hata | ✅ | Sabit metin + Crashlytics non-fatal. |
+| L12 Şifre üst sınırı | ✅ | 72 bayt (bcrypt), mesajla. |
+| L13 Hedef reddi kodu yakıyor | ✅ | Hedef vazgeçince `to_user_id/requester_name` sıfırlanır, `used` değişmez; sahibin reddi eskisi gibi yakar. |
+| L14 Çıkışta iz | ✅ | `rl_attempts_*` ve `push_device_id` silinir. |
+| M12 GoTrue throttle | ⏳ sende | Dashboard (`YAPMAN` #10). |
+| L3 Sertifika pinning | ⏳ karar | Kesinti riski; `TECHNICAL_DEBT` notu. |
 
 ## Faz 0 — Kanamayı durdur
 
@@ -92,6 +120,8 @@ limit'leri.
 
 | # | Durum | Not |
 |---|---|---|
+| 3.1 | ✅ | `lib/services/social_auth_service.dart` (Apple: rastgele nonce → SHA-256 Apple'a, ham nonce Supabase'e; Google: `serverClientId`=Web istemci), `AuthService.loginWithSocial` (profil yoksa yazar; Apple adı yalnızca ilk girişte gelir), `AuthNotifier.loginWithSocial` (vazgeçme = hata değil), `lib/widgets/social_sign_in_buttons.dart` giriş + kayıt ekranında (Apple yalnızca iOS, Google yalnızca yapılandırıldıysa). Şifresiz hesapta hesap silme: `delete-account` `{provider,id_token,nonce}` alır, `signInWithIdToken` ile doğrular ve `data.user.id === user.id` şartı koyar. iOS `applesignin` entitlement eklendi; Info.plist ters Google URL şeması kimlik gerektirdiği için elle (#16-d). Testler: `test/social_sign_in_test.dart`. |
+| 3.14 | ✅ SİLİNDİ | Kullanıcı kararı. `add_deposit_screen.dart`, `deposit_service.dart`, `deposits_enabled`, `visibleAssetTypes`/`filterHiddenTypes`, `AssetType.mevduat`, `PortfolioCharacter.mevduatci`, `_DepositDetailsPanel`, TS `'mevduat'` dalları gitti; `piyasaKapaliEtiketi` kuralı döviz/emtia/altın için aynen. 0058: eski satırlar 'diger' + not (silinmez). Testler: mevduat vakaları çıkarıldı, `tefas_model_test.dart` kaldı. |
 | 3.3 | ✅ (ucuz biçim) | Karşılaştır ekranına tek dokunuşlu kıyas çipleri: Portföyüm / BIST 100 / Dolar / Gram altın (`SymbolSearchService`'in tanıdığı semboller, yeni veri yolu yok). Performans sekmesine overlay eklenmedi — o ekran Faz 3.9 birleşmesini bekliyor. |
 | 3.4 | ✅ (gerçekleşen K/Z) | `PortfolioState.realizedGainLoss` + `hasRealized`: Σ(satış − maliyet)×miktar×alım kuru, `sell_price`'sız eski satırlar atlanır. Özet kartında "Satışlardan gerçekleşen: ±₺x" satırı (yalnızca satış varsa) + ekran okuyucu cümlesi. Bedelsiz/split işlem tipi eklenmedi (şema + ekleme akışı ister). `test/realized_gain_and_cache_test.dart`. |
 | 3.6 | ✅ (cihazda doğrulanmadı) | `local_auth` eklendi. `BiometricLockService` (available/authenticate, asla fırlatmaz, PIN de kabul), `LockScreen` (içerik kurulmadan önce, otomatik ister), `_AuthGate`: soğuk açılışta ve 30 sn+ arka plandan dönüşte kilit; çıkışta sıfırlanır. Ayarlar → Hesap → 'Biyometrik kilit' (açarken bir kez doğrular; cihaz desteklemiyorsa uyarır). Android: `USE_BIOMETRIC` + `MainActivity` → `FlutterFragmentActivity` (local_auth şartı; splash API'si FragmentActivity ile de çalışır). iOS: `NSFaceIDUsageDescription`. ⚠️ Gerçek cihazda bir kez denenmeli. |

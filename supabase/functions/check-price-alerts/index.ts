@@ -19,7 +19,8 @@ import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
+  // Allow-Origin '*' bilinçli olarak yok.
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };

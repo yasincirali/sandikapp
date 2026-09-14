@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '../config/pref_keys.dart';
 import '../models/user_model.dart';
 import 'db_logger.dart';
 import 'home_widget_service.dart';
@@ -49,6 +50,11 @@ class AuthService {
   static String? validatePassword(String password) {
     if (password.length < 8) {
       return 'Şifre en az 8 karakter olmalı.';
+    }
+    // bcrypt ilk 72 baytı hash'ler; fazlası sessizce atılır ve kullanıcı
+    // "uzun şifrem var" sanır (2026-09 L12). Sınırı açıkça söyle.
+    if (utf8.encode(password).length > 72) {
+      return 'Şifre en fazla 72 karakter olabilir.';
     }
     if (!RegExp(r'[A-Za-zğüşıöçĞÜŞİÖÇ]').hasMatch(password)) {
       return 'Şifre en az bir harf içermeli.';
@@ -577,6 +583,17 @@ class AuthService {
     // hesap öncekinin portföyünü görmemeli.
     if (uid != null) await PortfolioCache.clear(uid);
     await SocialAuthService.instance.signOutGoogle();
+    // Yerel deneme sayaçları ve push cihaz kimliği kullanıcıya özgü izdir;
+    // aynı cihazdaki bir sonraki hesaba taşınmasın (2026-09 L14).
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final k in prefs.getKeys().where((k) => k.startsWith(_rlKeyPrefix))) {
+        await prefs.remove(k);
+      }
+      await prefs.remove(PrefKeys.pushDeviceId);
+    } catch (_) {
+      // Tercih deposu okunamazsa çıkış yine tamamlanır.
+    }
     // Email'i cihazda bırak — sonraki girişte dolu gelsin
   }
 

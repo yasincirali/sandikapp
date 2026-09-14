@@ -11,6 +11,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'models/asset.dart';
@@ -29,7 +30,9 @@ import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
 import 'services/daily_summary.dart';
 import 'services/db_logger.dart';
+import 'config/pref_keys.dart';
 import 'services/disclaimer_service.dart';
+import 'services/secure_session_storage.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/home_widget_service.dart';
 import 'services/live_activity_service.dart';
@@ -184,6 +187,12 @@ void main() async {
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
+      // Oturum token'ı Keychain/Keystore'da (bkz. SecureSessionStorage).
+      authOptions: FlutterAuthClientOptions(
+        localStorage: SecureSessionStorage(
+          persistSessionKey: SecureSessionStorage.defaultKeyFor(supabaseUrl),
+        ),
+      ),
     );
     await NotificationService.instance.init(navigatorKey: appNavigatorKey);
     // Yalnızca zemini şeffaf yap. İkon parlaklığı BURADA sabitlenmez:
@@ -626,6 +635,39 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   DateTime? _backgroundedAt;
   static const _sessionTimeout = Duration(minutes: 10);
 
+  /// Süreç arkadayken öldürüldüyse `_backgroundedAt` kaybolur; arkaya
+  /// alınma anı diske de yazılır ve açılışta okunur (2026-09 L2). Zaman
+  /// aşımı geçmişse ilk kullanıcı yayınında oturum kapatılır.
+  late final Future<bool> _staleSessionAtLaunch = _readStaleSessionAtLaunch();
+  bool _staleSessionHandled = false;
+
+  static Future<bool> _readStaleSessionAtLaunch() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ms = prefs.getInt(PrefKeys.backgroundedAtMs);
+      if (ms == null) return false;
+      await prefs.remove(PrefKeys.backgroundedAtMs);
+      final since = DateTime.now()
+          .difference(DateTime.fromMillisecondsSinceEpoch(ms));
+      return since >= _sessionTimeout;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> _persistBackgroundedAt(DateTime? at) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (at == null) {
+        await prefs.remove(PrefKeys.backgroundedAtMs);
+      } else {
+        await prefs.setInt(PrefKeys.backgroundedAtMs, at.millisecondsSinceEpoch);
+      }
+    } catch (_) {
+      // Disk yazılamazsa bellekteki değer yine çalışır.
+    }
+  }
+
   /// Biyometrik kilit açıkken: soğuk açılışta ve arkada
   /// [_lockAfter]'dan uzun kalınca ana ekran kilit arkasında kalır.
   bool _locked = false;
@@ -762,6 +804,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         AnalyticsService.instance.setUserId(null);
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
+        if (!_staleSessionHandled) {
+          _staleSessionHandled = true;
+          _staleSessionAtLaunch.then((stale) {
+            if (stale && mounted) ref.read(authProvider.notifier).logout();
+          });
+        }
         // Tercih anahtarlarını BU kullanıcıya bağla — `syncSignalPreferences
         // OnLogin`den ÖNCE olmalı, yoksa senkron önceki kullanıcının
         // anahtarlarını okur ve yeni kullanıcının satırına yazar.
@@ -995,7 +1043,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden) {
       _backgroundedAt = DateTime.now();
+      unawaited(_persistBackgroundedAt(_backgroundedAt));
     } else if (state == AppLifecycleState.resumed) {
+      unawaited(_persistBackgroundedAt(null));
       // Arkadayken olan bir sistem görünümü değişimi burada yakalanır:
       // önplanda olmadığı için `didChangePlatformBrightness` onu bilinçli
       // olarak yutmuştu.

@@ -135,21 +135,21 @@ herkesin bildiği debug anahtarıyla imzalı, dağıtılabilir bir APK üretiyor
 
 | # | Bulgu | Yer | Çözüm |
 |---|---|---|---|
-| M1 | k=8 ile k-anonimlik Sybil hesaplarla kırılabilir: 7 sahte hesap + `roi_pct` istemciden geliyor → kurbanın ROI'si ikili aramayla, dağılımı doğrudan okunur | `0031:47-49`, `leaderboard_service.dart:248` | k paydasında yalnızca ≥N gün geçmişi olan kullanıcıları say, ya da liste kapalı kalsın |
-| M2 | Supabase oturum token'ları düz `SharedPreferences`'ta (`flutter_secure_storage` yok) | `main.dart:184-187` | Keychain/EncryptedSharedPreferences destekli `LocalStorage` ver |
+| M1 ✅ | k=8 ile k-anonimlik Sybil hesaplarla kırılabilir: 7 sahte hesap + `roi_pct` istemciden geliyor → kurbanın ROI'si ikili aramayla, dağılımı doğrudan okunur | `0031:47-49`, `leaderboard_service.dart:248` | k paydasında yalnızca ≥N gün geçmişi olan kullanıcıları say, ya da liste kapalı kalsın |
+| M2 ✅ | Supabase oturum token'ları düz `SharedPreferences`'ta (`flutter_secure_storage` yok) | `main.dart:184-187` | Keychain/EncryptedSharedPreferences destekli `LocalStorage` ver |
 | M3 | Silme günlüğü hash tuzu varsayılan değerli: `?? "sandik-default-salt-CHANGE-ME"` | `delete-account/index.ts:28` | Varsayılanı kaldır, yoksa `throw` |
 | M4 | Kayıtta hesap numaralandırma: "Bu e-posta zaten kayıtlı" (Mayıs H2 uygulanmamış) | `auth_service.dart:207-213` | Her durumda "Kod gönderildi" yolu, OTP çözsün |
 | M5 | ~20 sitede `Text(e.toString())` ham PostgREST hatası (tablo/kolon/kısıt adı) | `profile_screen.dart:133,171,181,300,897,908`, `partnership_requests_screen.dart:89,108`, `charts_screen.dart:211`, `performance_screen.dart:1505`… | `showAppError(context, e)` |
 | M6 | Crashlytics breadcrumb'ında ham user UUID (`sanitize()` bypass) | `remote_push_service.dart:246, 180, 210, 232` | İlk 8 karakter ya da takma ad |
-| M7 | Davet kodu rate limit'i saldırganın kendi hesabına keyli; hesap açmak ücretsiz ve sınırsız | `redeem-invite-code/index.ts:79-84` | IP bazlı ikinci sayaç + global saatlik tavan |
-| M8 | Davet onaylanmadan davet sahibinin UUID + adı dönüyor | `redeem-invite-code/index.ts:240-245` | `partner_user_id`'yi yanıttan çıkar (istemci kullanmıyor) |
-| M9 | Admin yetkisi migration'a gömülü, değiştirilebilir e-posta ile | `0021:19-27` | `auth.uid() = '<uuid>'` |
+| M7 ✅ | Davet kodu rate limit'i saldırganın kendi hesabına keyli; hesap açmak ücretsiz ve sınırsız | `redeem-invite-code/index.ts:79-84` | IP bazlı ikinci sayaç + global saatlik tavan |
+| M8 ✅ | Davet onaylanmadan davet sahibinin UUID + adı dönüyor | `redeem-invite-code/index.ts:240-245` | `partner_user_id`'yi yanıttan çıkar (istemci kullanmıyor) |
+| M9 ✅ | Admin yetkisi migration'a gömülü, değiştirilebilir e-posta ile | `0021:19-27` | `auth.uid() = '<uuid>'` |
 | M10 | Edge function'lar `error.message`/`detail` echo ediyor | `send-partner-invite-push:287`, `delete-account:139` | Sabit hata kodu, `console.error` |
 | M11 | Geliştirici teşhis ekranı release'te tüm kullanıcılara açık | `settings_screen.dart:574-589` | `is_admin()` sonucuna göre gizle |
 | M12 | Login / OTP doğrulamada uygulama düzeyi throttle yok; şifre sıfırlama OTP'sinde 6 hane kontrolü yok | `auth_service.dart:318, 228, 424-434` | `rate_limit_attempts` tablosunu `login`/`otp_verify` kapsamıyla kullan |
 
 ### DÜŞÜK
-L1 sabit zamanlı olmayan Bearer karşılaştırması · L2 10 dk idle logout bellekte, process kill sonrası uygulanmıyor (`main.dart:985-997`) · L3 sertifika pinning yok (bilinen, ertelenmiş) · L4 cron fonksiyonlarında `Access-Control-Allow-Origin: *` · L5 `_maskSensitive` `List<Map>`'e inmiyor (`db_logger.dart:174-185`) · L6 `db_logs` 30 gün retention cron'u yorum satırında · L7 `friendly_error.dart:77` "en az 6 karakter" diyor, kural 8+harf+rakam · L8 dışa aktarım JSON'una ham hata gömülüyor (`data_export_service.dart:118`) · L9 `FORCE RLS` yalnızca 2 tabloda · L12 şifre üst sınırı yok (bcrypt 72 bayt, Türkçe karakter 2 bayt) · L13 davet hedefi `reject` ile sahibin 24 saatlik kodunu yakabiliyor (`accept-invite:99-105`) · L14 logout `push_device_id` ve `rl_attempts_*` anahtarlarını bırakıyor.
+L1 sabit zamanlı olmayan Bearer karşılaştırması · L2 ✅ 10 dk idle logout bellekte, process kill sonrası uygulanmıyor (`main.dart:985-997`) · L3 sertifika pinning yok (bilinen, ertelenmiş) · L4 cron fonksiyonlarında `Access-Control-Allow-Origin: *` · L5 `_maskSensitive` `List<Map>`'e inmiyor (`db_logger.dart:174-185`) · L6 `db_logs` 30 gün retention cron'u yorum satırında · L7 `friendly_error.dart:77` "en az 6 karakter" diyor, kural 8+harf+rakam · L8 dışa aktarım JSON'una ham hata gömülüyor (`data_export_service.dart:118`) · L9 `FORCE RLS` yalnızca 2 tabloda · L12 şifre üst sınırı yok (bcrypt 72 bayt, Türkçe karakter 2 bayt) · L13 davet hedefi `reject` ile sahibin 24 saatlik kodunu yakabiliyor (`accept-invite:99-105`) · L14 logout `push_device_id` ve `rl_attempts_*` anahtarlarını bırakıyor.
 
 ---
 
@@ -363,7 +363,7 @@ geçmeden CI yeşil olmalı.
 ### FAZ 3 — Çeyrek: ürün ve mimari (≈30 gün)
 | # | İş | Not |
 |---|---|---|
-| 3.1 | **Apple / Google ile giriş** | Store gerekliliği + huni |
+| 3.1 ✅ | **Apple / Google ile giriş** | Store gerekliliği + huni |
 | 3.2 | **Baz para birimi seçici** (TRY/USD/EUR/gram altın) | Tesisat var |
 | 3.3 | **Benchmark overlay** (XU100/USD/altın/TÜFE) | `PercentComparisonChart` ile |
 | 3.4 | **Gerçekleşen K/Z** + bedelsiz/split işlemi | Veri var |
@@ -376,7 +376,7 @@ geçmeden CI yeşil olmalı.
 | 3.11 | **Sessiz saatler + bildirim tavanı** ayarı | Retention kısıtı |
 | 3.12 | **Yarış kararı:** M1 Sybil çözümü (k paydasında ≥N gün geçmişi) VE DAU ≥ 2×k_min olmadan nav girişi kapalı | — |
 | 3.13 | **Paywall kararı:** RevenueCat entegre et ya da sahte akışı sök | — |
-| 3.14 | **Vadeli mevduat:** bitir ve aç ya da sil | — |
+| 3.14 ✅ silindi | **Vadeli mevduat:** bitir ve aç ya da sil | — |
 | 3.15 | **Dışa aktarımı tamamla + içe aktarım** (GDPR 20) | — |
 | 3.16 | `integration_test/` duman akışı: giriş → varlık ekle → portföyü gör | E2E sıfırdan 1'e |
 | 3.17 | Testsiz servisler: `tefas_service`, `remote_push_service`, `data_export_service`, `deposit_service`, `price_alert_service` | — |

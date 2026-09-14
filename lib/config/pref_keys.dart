@@ -39,6 +39,14 @@ class PrefKeys {
   /// değil, günde bir kez sorgu atsın diye.
   static const fxMigrationLastRunMs = 'fx_migration_last_run_ms';
 
+  /// Uygulama arkaya alındığı an (ms). Süreç öldürülürse bellekteki
+  /// `_backgroundedAt` kaybolurdu ve 10 dk'lık oturum zaman aşımı hiç
+  /// işlemezdi (2026-09 L2); açılışta buradan okunur.
+  static const backgroundedAtMs = 'session_backgrounded_at_ms';
+
+  /// `RemotePushService` cihaz kimliği; çıkışta silinir (L14).
+  static const pushDeviceId = 'push_device_id';
+
   /// Son bilinen varlık defteri (JSON); kullanıcı kimliği soneklenir.
   static const portfolioCachePrefix = 'portfolio_cache_v1_';
 }

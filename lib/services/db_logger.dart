@@ -168,13 +168,20 @@ class DbLogger {
     input.forEach((k, v) {
       if (_sensitiveKeys.contains(k.toLowerCase())) {
         out[k] = '***';
-      } else if (v is Map<String, dynamic>) {
-        out[k] = _maskSensitive(v);
       } else {
-        out[k] = v;
+        out[k] = _maskValue(v);
       }
     });
     return out;
+  }
+
+  /// Liste içindeki map'ler de maskelenir (2026-09 L5): toplu ekleme gibi
+  /// `rows: [{...}, {...}]` istekleri eskiden maskeden geçmeden yazılıyordu.
+  dynamic _maskValue(dynamic v) {
+    if (v is Map<String, dynamic>) return _maskSensitive(v);
+    if (v is Map) return _maskSensitive(v.map((k, x) => MapEntry('$k', x)));
+    if (v is List) return v.map(_maskValue).toList();
+    return v;
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

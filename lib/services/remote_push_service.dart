@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/pref_keys.dart';
 
 import 'notification_service.dart';
 import 'supabase_service.dart';
@@ -279,7 +280,7 @@ class RemotePushService {
   }
 
   /// `shared_preferences` anahtarı — cihaz kimliği burada KALICI durur.
-  static const _deviceIdKey = 'push_device_id';
+  static const _deviceIdKey = PrefKeys.pushDeviceId;
 
   /// Cihaz başına kalıcı kimlik. Yoksa üretilir ve saklanır.
   ///
