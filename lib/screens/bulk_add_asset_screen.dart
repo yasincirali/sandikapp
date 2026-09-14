@@ -10,6 +10,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import 'add_asset_screen.dart';
+import 'csv_import_screen.dart';
 import 'paywall_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 
@@ -205,6 +206,14 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           titleWidget:
               Text('Toplu Ekle${items.isEmpty ? '' : ' (${items.length})'}'),
           actions: [
+            if (!_saving)
+              IconButton(
+                tooltip: 'CSV yapıştır',
+                icon: const Icon(Icons.content_paste_go_rounded),
+                onPressed: () => Navigator.of(context).push(
+                  adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+                ),
+              ),
             if (items.isNotEmpty && !_saving)
               IconButton(
                 tooltip: 'Sepeti temizle',
@@ -255,6 +264,18 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               textAlign: TextAlign.center,
               style: context.t.bodyMedium
                   ?.copyWith(color: context.c.text58, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+              ),
+              icon: const Icon(Icons.content_paste_go_rounded, size: 18),
+              label: const Text('Ekstreden / CSV\'den yapıştır'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: context.c.amberText,
+                side: BorderSide(color: context.c.hairline),
+              ),
             ),
           ],
         ),
