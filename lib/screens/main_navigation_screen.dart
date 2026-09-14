@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../widgets/tour_anchor.dart';
 import 'home_screen.dart';
 import 'portfolio_screen.dart';
 import 'portfolio_performance_screen.dart';
@@ -35,6 +36,13 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   /// bunu seçmenin sebebi, kaynağın (native dokunuş) Riverpod kapsamı
   /// DIŞINDA olması.
   static final sekmeIstegi = ValueNotifier<int?>(null);
+
+  /// Şu an açık olan sekme — dışarıdan OKUNUR (yazılmaz).
+  ///
+  /// Tanıtım turu "Portföy sekmesine dokun" görevinin yapıldığını buradan
+  /// anlar. Provider yerine `ValueNotifier`: tur kök `Overlay`'de yaşar ve
+  /// bu ekranın state'ine erişemez; [sekmeIstegi] ile aynı kanal.
+  static final aktifSekme = ValueNotifier<int>(0);
 
   @override
   ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -110,7 +118,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // gönderirse uygulama çökmemeli.
     if (hedef < 0 || hedef >= _screens.length) return;
     if (!mounted) return;
-    setState(() => _currentIndex = hedef);
+    // Orta tuşun sekmesi yok; istek "Varlık Ekle'yi aç" demektir (tanıtım
+    // turu "Devam" ile geçildiğinde kullanır).
+    if (hedef == 2) {
+      _showAddAsset();
+      return;
+    }
+    _sekmeyeGec(hedef);
+  }
+
+  void _sekmeyeGec(int i) {
+    setState(() => _currentIndex = i);
+    MainNavigationScreen.aktifSekme.value = i;
   }
 
   void _onItemTapped(int index) {
@@ -128,7 +147,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (index == 0 && _currentIndex != 0) {
       ref.read(portfolioProvider.notifier).refreshPrices();
     }
-    setState(() => _currentIndex = index);
+    _sekmeyeGec(index);
   }
 
   /// Portföy sekmesinin indeksi (`_screens` sırasına bağlı).
@@ -157,6 +176,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // girilse bile araya AddAssetScreen giriyor ve akış uzuyor.
     if (added == true) {
       setState(() => _currentIndex = _portfolioTab);
+      MainNavigationScreen.aktifSekme.value = _portfolioTab;
     }
     ref.read(portfolioProvider.notifier).refreshPrices();
   }
@@ -204,7 +224,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // içerik yüksekliği + viewPadding.bottom kullanılır; aksi halde bar
     // Dynamic Island'lı cihazlarda indicator'ın altında kalıyordu.
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    return ClipRect(
+    return TourAnchor(
+      target: TourTarget.altMenu,
+      child: ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
@@ -231,6 +253,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -249,7 +272,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           button: true,
           selected: isSelected,
           label: label,
-          child: Column(
+          child: TourAnchor(
+            target: const [
+              TourTarget.sekmeAna,
+              TourTarget.sekmePortfoy,
+              TourTarget.sekmeEkle,
+              TourTarget.sekmePerformans,
+              TourTarget.sekmeProfil,
+            ][index],
+            child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Aktif sekme ikonu hafifçe büyür — hangi sekmede olduğun
@@ -273,6 +304,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               ),
             ],
           ),
+          ),
         ),
       ),
     );
@@ -288,7 +320,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         haptic: SandikHaptic.medium,
         semanticLabel: 'Varlık ekle',
         child: Center(
-          child: Container(
+          child: TourAnchor(
+            target: TourTarget.sekmeEkle,
+            child: Container(
             width: 52,
             height: 52,
             decoration: BoxDecoration(
@@ -304,6 +338,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               ],
             ),
             child: Icon(Icons.add_rounded, color: context.c.onAmber, size: 36),
+          ),
           ),
         ),
       ),

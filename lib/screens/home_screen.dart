@@ -30,6 +30,7 @@ import 'add_asset_screen.dart';
 import 'all_transactions_screen.dart';
 import 'asset_detail_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/tour_anchor.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -343,15 +344,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                   const Spacer(),
-                  _HeaderIconButton(
-                    onTap: _reload,
-                    child: _reloading
-                        ? const CustomLoadingIndicator(size: 20)
-                        : Icon(Icons.refresh_rounded,
-                            color: context.c.text58, size: 22),
+                  TourAnchor(
+                    target: TourTarget.yenileTusu,
+                    child: _HeaderIconButton(
+                      onTap: _reload,
+                      child: _reloading
+                          ? const CustomLoadingIndicator(size: 20)
+                          : Icon(Icons.refresh_rounded,
+                              color: context.c.text58, size: 22),
+                    ),
                   ),
                   const SizedBox(width: SandikSpace.sm),
-                  const _BalanceToggleButton(),
+                  const TourAnchor(
+                    target: TourTarget.gizleTusu,
+                    child: _BalanceToggleButton(),
+                  ),
                   const SizedBox(width: SandikSpace.sm),
                   // NOT: Takip listesi düğmesi bilerek BURADA DEĞİL.
                   // Bu satır dört düğmeyle zaten taşıyordu (yukarıdaki
@@ -413,9 +420,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: hp),
-              child: PortfolioSummaryWidget(
-                state: displayedState,
-                hideBalance: ref.watch(balanceHiddenProvider),
+              child: TourAnchor(
+                target: TourTarget.heroKart,
+                child: PortfolioSummaryWidget(
+                  state: displayedState,
+                  hideBalance: ref.watch(balanceHiddenProvider),
+                ),
               ),
             ),
           ),

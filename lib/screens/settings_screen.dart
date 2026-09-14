@@ -524,19 +524,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.explore_outlined,
               title: 'Tanıtım turunu yeniden izle',
               subtitle: 'Ekranların ne işe yaradığını hatırla',
-              onTap: () {
-                final uid = ref.read(authProvider).valueOrNull?.id;
-                if (uid == null) return;
-                Navigator.of(context).push(
-                  adaptiveRoute<void>(
-                    fullscreenDialog: true,
-                    builder: (ctx) => OnboardingScreen(
-                      userId: uid,
-                      onComplete: () => Navigator.of(ctx).pop(),
-                    ),
-                  ),
-                );
-              },
+              // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
+              // köke dönülür ve katman orada açılır.
+              onTap: () => OnboardingScreen.yenidenBaslat(context),
             ),
             _SettingsTile(
               icon: Icons.rate_review_outlined,

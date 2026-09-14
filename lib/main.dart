@@ -302,6 +302,9 @@ class SandikApp extends ConsumerWidget {
       // biçimini İngilizceye düşürüyordu (2026-09 denetimi). İngilizce arayüz
       // gelirse (Faz 3.20) buraya .arb ile birlikte eklenir.
       supportedLocales: const [Locale('tr', 'TR')],
+      // Tanıtım turu Navigator'ın ÜSTÜNDE yaşar: her rota açılıp kapansa da
+      // karartma ve kart en üstte kalır (bkz. OnboardingTourHost).
+      builder: (context, child) => OnboardingTourHost(child: child!),
       home: const _AuthGate(),
     );
   }

@@ -20,6 +20,7 @@ import '../utils/partner_code_formatter.dart';
 import 'settings_screen.dart';
 import '../widgets/leaderboard_hero_card.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/tour_anchor.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -335,7 +336,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const _ThemeToggleButton(),
                       const SizedBox(width: 8),
-                      CupertinoButton(
+                      TourAnchor(
+                        target: TourTarget.ayarlar,
+                        child: CupertinoButton(
                         minimumSize: Size.zero,
                         padding: EdgeInsets.zero,
                         onPressed: _busy
@@ -350,6 +353,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           color: context.c.text90,
                           disabled: _busy,
                           semanticLabel: 'Ayarlar',
+                        ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -502,7 +506,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Column(
       children: [
         // Kod üretme
-        Container(
+        TourAnchor(
+          target: TourTarget.davetKodu,
+          child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
               color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
@@ -579,6 +585,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ],
           ),
+        ),
         ),
         const SizedBox(height: 16),
         // Kod girme

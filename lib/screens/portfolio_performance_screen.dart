@@ -48,6 +48,7 @@ import '../providers/preferences_provider.dart' show leaderboardOptInProvider;
 import 'leaderboard_screen.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/tour_anchor.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   final String? initialView;
@@ -1139,14 +1140,20 @@ class _PortfolioPerformanceScreenState
         // dönem seçici sekmeye aitmiş gibi okunuyordu.
         _buildSurfaceToggle(),
         const SizedBox(height: 12),
-        _buildPeriodToggle(),
+        TourAnchor(
+          target: TourTarget.donemSecici,
+          child: _buildPeriodToggle(),
+        ),
         // Simülasyon anahtarı yalnızca GRAFİK sekmesinde anlamlı: Özet
         // gerçek nakit akışını ayırmak için var ve simülasyon tam olarak o
         // akışı yok sayıyor. İkisini birleştirmek "katkın ₺0" yazan bir
         // köprü üretirdi.
         if (!isIntraday && !_ozetSekmesi) ...[
           const SizedBox(height: 12),
-          _buildModeToggle(),
+          TourAnchor(
+            target: TourTarget.modSecici,
+            child: _buildModeToggle(),
+          ),
         ],
         const SizedBox(height: 24),
         // ── ÖZET sekmesi ──────────────────────────────────────────────────

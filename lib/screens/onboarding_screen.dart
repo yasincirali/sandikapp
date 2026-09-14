@@ -1,13 +1,19 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
-import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/tour_anchor.dart';
+import 'main_navigation_screen.dart';
 
-/// Yeni kullanıcılara gösterilen interaktif demo.
+/// Yeni kullanıcılara gösterilen interaktif tanıtım.
 ///
 /// Gösterim politikası: yalnızca **hesap başına bir kez** — yeni kayıt olan
 /// kullanıcı ilk kez giriş yaptığında gösterilir, sonraki giriş/açılışlarda
@@ -20,6 +26,13 @@ import '../theme/sandik.dart';
 /// Ek olarak per-user bir cihaz cache'i tutulur (`onboarding_seen_${userId}`)
 /// → server yazımı fail etse bile aynı cihazda tekrar açılmaz. Bu, "sürekli
 /// gösteriliyor" bug'ını (network hatasında infinite loop) engeller.
+///
+/// ## Nasıl gösterilir (2026-09-14)
+/// Bu widget ayrı bir ekran DEĞİLDİR: gerçek [MainNavigationScreen]'i kurar
+/// ve [OnboardingTourHost] üzerinden bir tur katmanı ([_TurKatmani]) açar.
+/// Katman ekranı karartır, o adımın hedefini oyukla açıkta bırakır;
+/// kullanıcı oyuğun içindeki GERÇEK tuşa dokunur. Böylece tanıtımdaki
+/// hiçbir şey uygulamadan farklı görünemez — çünkü uygulamanın kendisidir.
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
   final String userId;
@@ -93,366 +106,408 @@ class OnboardingScreen extends StatefulWidget {
     }
   }
 
+  /// Turu var olan uygulama ekranının üstünde başlatır.
+  ///
+  /// Katman [OnboardingTourHost] içinde açılır; tur zaten açıksa ikinci kez
+  /// açılmaz. [onBitti] turun nasıl kapandığını söyler: `true` sonuna kadar
+  /// gezildi, `false` "Atla" ile bırakıldı.
+  static void baslatTur({required void Function(bool tamamlandi) onBitti}) {
+    _Tur.baslat(onBitti: onBitti);
+  }
+
+  /// Ayarlar → "Tanıtım turunu yeniden izle".
+  ///
+  /// Tur gerçek sekmelerin üstünde çalıştığı için önce köke dönülür; aksi
+  /// halde Ayarlar rotası hedefleri örter ve ilk adım "alt menü" bulunamaz.
+  static void yenidenBaslat(BuildContext context) {
+    final nav = Navigator.of(context, rootNavigator: true);
+    nav.popUntil((r) => r.isFirst);
+    // Rota kapanışı bir kare sürer; hedefler o kareden sonra ölçülebilir.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _Tur.baslat(onBitti: (_) {});
+    });
+  }
+
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  bool _acildi = false;
 
-// ─── Tur içeriği ─────────────────────────────────────────────────────────────
-//
-// Tanıtım ekran ekran ve TUŞ TUŞ ilerler. Her [_Sahne] bir ekranın
-// minyatürünü çizer; sahnenin [_Adim]'ları o minyatürdeki tek bir öğeyi
-// sırayla vurgular. "İleri" bir sonraki TUŞA, parmakla kaydırma bir sonraki
-// EKRANA geçirir.
-//
-// ## Neden minyatür, ekran görüntüsü değil
-// Ekran görüntüsü ilk tema/dil/yerleşim değişiminde yalan söylemeye başlar
-// ve kimse fark etmez. Minyatürler uygulamanın KENDİ tokenlarıyla çizilir:
-// tema değişince onlar da değişir, marka rengi güncellenince onlar da.
-//
-// ## Neden vurgu koordinatla değil, widget'la
-// Hotspot'lar piksel koordinatı taşımaz; vurgulanacak öğe [_Vurgu] ile
-// sarılır, konumunu Flutter'ın yerleşimi belirler. Metin ölçeği ya da ekran
-// genişliği değişince halka kendiliğinden doğru yerde kalır.
-//
-// ## Neden sıra alt menüyle başlıyor
-// Kullanıcının önce HARİTAYA ihtiyacı var: beş tuşun ne olduğunu bilmeden
-// ekranları gezmek, gezdiği yeri bir daha bulamamak demek. Alt menüden
-// sonra sahneler menünün kendi sırasını izler (Ana → Portföy → + →
-// Performans → Profil), böylece tur bittiğinde kullanıcının kafasındaki
-// sıra uygulamadakiyle aynı olur.
+  @override
+  void initState() {
+    super.initState();
+    // Overlay'e girmek için ağaç kurulmuş olmalı; ilk kareden sonra.
+    SchedulerBinding.instance.addPostFrameCallback((_) => _turuAc());
+  }
 
-enum _MockTur {
-  yok,
-  altMenu,
-  anaEkran,
-  portfoy,
-  varlikEkle,
-  performans,
-  sinyal,
-  profil,
+  void _turuAc() {
+    if (!mounted || _acildi) return;
+    _acildi = true;
+    _Tur.baslat(onBitti: (tamamlandi) async {
+      await OnboardingScreen.markCompleted(widget.userId);
+      if (mounted) widget.onComplete();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const MainNavigationScreen();
 }
+
+// ─── Adımlar ─────────────────────────────────────────────────────────────────
+//
+// Tanıtım "ekranı ANLAT" değil "ekranı DENET" ilkesiyle kuruldu ve gerçek
+// ekranın üstünde çalışır (2026-09-14, kullanıcı geri bildirimi: kopya
+// yüzeyler "font ve bileşenler yine farklı duruyor" — haklıydı; kopyayı
+// birebir tutmak imkânsız, uygulamanın kendisini göstermek bedava).
+//
+// Her adım bir hedefe ([TourTarget]) spot düşürür; hedef gerçek ekranın
+// gerçek widget'ıdır, oyuğun içinde dokunulabilir kalır. Görevli adımlar
+// uygulamanın GERÇEK durumundan tamamlanmayı okur: göz tuşu → gizleme
+// tercihi, sekme tuşu → aktif sekme, + tuşu → Varlık Ekle ekranı ağaçta.
+//
+// Görev zorunlu değil: "Devam" her zaman açık; görevin gerektirdiği geçişi
+// (sekme değiştir, ekranı aç) o zaman tur kendisi yapar. Zorlamak,
+// tanıtımı bir an önce geçmek isteyen kullanıcıyı cezalandırırdı.
 
 class _Adim {
   const _Adim({
+    required this.id,
     required this.baslik,
     required this.govde,
-    this.vurgu,
+    this.hedef,
     this.rozet,
+    this.gorev,
+    this.gorevBitti,
+    this.bitti,
+    this.dokunulabilir = true,
+    this.otoIlerle = false,
+    this.giris,
+    this.devam,
+    this.cikis,
   });
 
+  final String id;
   final String baslik;
   final String govde;
 
-  /// Minyatürde vurgulanacak öğenin [_Vurgu] indeksi.
-  final int? vurgu;
+  /// Spot düşürülecek gerçek öğe; null ise kart ekranın ortasında durur.
+  final TourTarget? hedef;
 
-  /// "BİZE ÖZEL" gibi bir üst etiket — bizi ayırt eden özellikleri
-  /// işaretler. Kullanıcı hangi kısmın başka uygulamalarda olmadığını
-  /// görmeli.
+  /// "BİZE ÖZEL" gibi üst etiket — başka uygulamalarda olmayanı işaretler.
   final String? rozet;
+
+  /// Görev çağrısı ("Göz simgesine dokun") ve tamamlanınca onayı.
+  final String? gorev;
+  final String? gorevBitti;
+
+  /// Görev tamamlandı mı? Uygulamanın gerçek durumundan okunur.
+  final bool Function(WidgetRef ref)? bitti;
+
+  /// Oyuk dokunuşa açık mı? Kapalıysa hedef yalnızca GÖSTERİLİR. Dokunuşu
+  /// bir sheet/rota açan (mikrofon, davet kodu üret) hedeflerde kapalı:
+  /// açılan yüzey karartmanın ALTINDA kalır ve kullanıcı kilitlenmiş sanır.
+  final bool dokunulabilir;
+
+  /// Görev bitince kısa bir onaydan sonra kendiliğinden ilerle. Sekme
+  /// geçişleri için: kullanıcı sekmeye dokundu, yeni ekran açıldı — bir de
+  /// "Devam"a basmasını istemek gereksiz.
+  final bool otoIlerle;
+
+  /// Adıma girerken gereken ön koşulu kur (doğru sekmede ol, ekran açık
+  /// olsun). Kullanıcı tur sırasında başka yere gittiyse ya da "Geri"
+  /// dediyse burası yolu düzeltir.
+  final void Function(WidgetRef ref)? giris;
+
+  /// Görev yapılmadan "Devam"a basıldığında görevi turun kendisi yapar.
+  final void Function(WidgetRef ref)? devam;
+
+  /// Adımdan çıkarken (ileri ya da geri) temizlik — açılan ekranı kapat.
+  final void Function(WidgetRef ref)? cikis;
 }
 
-class _Sahne {
-  const _Sahne({
-    required this.ekran,
-    required this.mock,
-    required this.adimlar,
-    this.ikon,
-  });
+/// Gerçek alt menüde sekmeye geç; `+` için Varlık Ekle'yi aç.
+void _sekmeyeGec(int i) => MainNavigationScreen.sekmeIstegi.value = i;
 
-  /// Üst çubukta görünen ekran adı — kullanıcı hangi ekranı öğrendiğini
-  /// bilsin.
-  final String ekran;
-  final _MockTur mock;
-  final List<_Adim> adimlar;
+bool _sekmede(int i) => MainNavigationScreen.aktifSekme.value == i;
 
-  /// [_MockTur.yok] sahnelerinde minyatür yerine gösterilen simge.
-  final IconData? ikon;
+void _varlikEkleAc() {
+  if (!TourTargets.mounted(TourTarget.hizliGiris)) _sekmeyeGec(2);
+}
+
+/// Varlık Ekle'yi yalnızca EN ÜSTTEKİ rota oysa kapatır.
+///
+/// Körlemesine `pop` tehlikeli: ekran zaten kapanmaktayken ikinci çağrı
+/// alttaki kök rotayı (ana ekranı) kapatmaya kalkar — Android'de "çıkmak
+/// istiyor musun" diyaloğu, en kötüsü uygulama kapanması.
+void _varlikEkleKapat() {
+  final c = TourTargets.context(TourTarget.hizliGiris);
+  if (c == null) return;
+  if (ModalRoute.of(c)?.isCurrent != true) return;
+  Navigator.of(c).pop();
 }
 
 /// Turun tamamı.
 ///
-/// Kapalı bayrakların özellikleri ANLATILMAZ: olmayan bir tuşu tanıtmak,
-/// tanıtımın tamamına olan güveni bozar. Bayrak kapalıyken adım listeden
-/// düşer, minyatürdeki öğe de çizilmez — vurgu indeksleri bu yüzden sabit
-/// tutulur, kaydırılmaz.
-List<_Sahne> _turuKur() {
-  final rc = RemoteConfigService.instance;
-  final yarisVar = rc.percentileStripEnabled;
-  final tufeVar = rc.realReturnEnabled;
-  final premiumVar = rc.paywallEnabled && rc.premiumEnabled;
-
+/// Kapalı bayrakların özellikleri ANLATILMAZ; ekranda olmayan bir hedefe
+/// spot düşürülemez zaten — hedefi bulunamayan adım kendiliğinden atlanır
+/// (bkz. [_TurKatmaniState._tik]).
+List<_Adim> _adimlariKur() {
   // Vadeli mevduat 2026-09-14'te kaldırıldı; tür listesi artık sabit metin.
   return [
-    // ── 1. Karşılama ─────────────────────────────────────────────────────
-    const _Sahne(
-      ekran: 'sandık',
-      mock: _MockTur.yok,
-      ikon: Icons.account_balance_wallet_rounded,
-      adimlar: [
-        _Adim(
-          baslik: 'Sandığınıza hoş geldiniz',
-          govde: 'Hisse, fon, döviz, altın ve emtia — hepsi tek ekranda, tek para biriminde. Fiyatlar '
-              'arka planda kendiliğinden güncellenir.\n\n'
-              'Şimdi uygulamayı birlikte gezelim. Her ekranı ve her tuşu tek '
-              'tek göstereceğim; "İleri" bir sonraki tuşa geçer.',
-        ),
-      ],
+    const _Adim(
+      id: 'karsilama',
+      baslik: 'Sandığına hoş geldin',
+      govde: 'Hisse, fon, döviz, altın ve emtia — hepsi tek toplamda, tek '
+          'para biriminde. Fiyatlar arka planda kendiliğinden güncellenir.\n\n'
+          'Uygulamayı birlikte gezelim: her adımda gerçek ekranın üstünde '
+          'tek bir tuş açık kalır. Dokun, dene.',
     ),
-
-    // ── 2. Alt menü: beş tuş, tek tek ────────────────────────────────────
-    const _Sahne(
-      ekran: 'Alt menü',
-      mock: _MockTur.altMenu,
-      adimlar: [
-        _Adim(
-          vurgu: 0,
-          baslik: 'Ana',
-          govde: 'Toplam birikimin, günlük değişimin ve özet kartların. '
-              'Uygulamayı her açtığında burası karşılar.',
-        ),
-        _Adim(
-          vurgu: 1,
-          baslik: 'Portföy',
-          govde: 'Varlıklarının listesi ve dağılım halkası. Bir varlığa '
-              'dokunduğunda detayına inersin.',
-        ),
-        _Adim(
-          vurgu: 2,
-          baslik: 'Ortadaki + tuşu',
-          govde: 'Yeni varlık ekleme. Menünün ortasında ve diğerlerinden '
-              'büyük duruyor — en sık yapacağın iş bu.',
-        ),
-        _Adim(
-          vurgu: 3,
-          baslik: 'Performans',
-          govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden bir yıla kadar '
-              'her dönemi görebilirsin.',
-        ),
-        _Adim(
-          vurgu: 4,
-          baslik: 'Profil',
-          govde: 'Ortaklık, bildirimler, sinyal ayarları, fiyat alarmları, '
-              'tema ve yasal belgeler burada.',
-        ),
-      ],
+    const _Adim(
+      id: 'alt_menu',
+      hedef: TourTarget.altMenu,
+      baslik: 'Beş tuş, tüm uygulama',
+      govde: 'Ana · Portföy · + · Performans · Profil. Ortadaki büyük tuş '
+          'varlık ekler; en sık yapacağın iş bu.',
+      dokunulabilir: false,
     ),
-
-    // ── 3. Ana ekran ─────────────────────────────────────────────────────
-    _Sahne(
-      ekran: 'Ana',
-      mock: _MockTur.anaEkran,
-      adimlar: [
-        const _Adim(
-          vurgu: 0,
-          baslik: 'Toplam birikimin',
-          govde: 'Tüm varlıkların tek toplamda. Altındaki satır bugün ne '
-              'kadar kazandığını ya da kaybettiğini söyler.',
-        ),
-        const _Adim(
-          vurgu: 1,
-          baslik: 'Yenile',
-          govde: 'Fiyatlar zaten arka planda güncelleniyor; bu tuş "şimdi '
-              'çek" demek. Ekranı aşağı çekerek de yapabilirsin.',
-        ),
-        const _Adim(
-          vurgu: 2,
-          baslik: 'Tutarları gizle',
-          govde: 'Göz simgesi bakiyeleri gizler. Toplu taşımada ya da omzunun '
-              'üstünden bakan biri varken tek dokunuş yeter.',
-        ),
-        if (tufeVar)
-          const _Adim(
-            vurgu: 3,
-            rozet: 'BİZE ÖZEL',
-            baslik: 'Enflasyonu geçtin mi?',
-            govde: 'Getirini TÜFE ile karşılaştırıyoruz. "%40 kazandım" tek '
-                'başına bir şey söylemez; asıl soru enflasyonun kaç puan '
-                'üstünde kaldığın.',
-          ),
-        if (yarisVar)
-          const _Adim(
-            vurgu: 4,
-            rozet: 'BİZE ÖZEL',
-            baslik: 'Yarış',
-            govde: 'Getirini diğer kullanıcılarla ANONİM olarak karşılaştır — '
-                'hangi yüzdelik dilimdesin? Kimse senin tutarlarını görmez, '
-                'sen de kimseninkini.',
-          ),
-      ],
+    _Adim(
+      id: 'hero',
+      hedef: TourTarget.heroKart,
+      baslik: 'Toplam net varlığın',
+      govde: 'Tüm varlıkların tek toplamda; altındaki satır bugün ne kadar '
+          'kazandığını ya da kaybettiğini söyler. İlk varlığını eklediğinde '
+          'burası dolmaya başlar.',
+      giris: (_) => _sekmeyeGec(0),
+      dokunulabilir: false,
     ),
-
-    // ── 4. Portföy ───────────────────────────────────────────────────────
-    const _Sahne(
-      ekran: 'Portföy',
-      mock: _MockTur.portfoy,
-      adimlar: [
-        _Adim(
-          vurgu: 0,
-          baslik: 'Dağılım halkası',
-          govde: 'Paran hangi türde ne kadar? Bir türe dokunarak alttaki '
-              'listeyi ona göre süzebilirsin.',
-        ),
-        _Adim(
-          vurgu: 1,
-          baslik: 'Varlık kartını aç',
-          // Yön ÖNEMLİ: sağa kaydırma Al/Sat/Temettü panelini, sola
-          // kaydırma yalnızca Sil'i açar (bkz. portfolio_screen.dart →
-          // startActionPane / endActionPane). Tek bir "kaydır" demek,
-          // kullanıcının yanlış yöne kaydırıp hiçbir şey bulamaması
-          // demekti.
-          govde: 'Karttaki oka dokun: son bir ayın fiyat eğrisi, ortalama '
-              'maliyetin ve tahsil ettiğin temettü açılır. Kartı sağa '
-              'kaydırınca Al / Sat / Temettü, sola kaydırınca Sil çıkar.',
-        ),
-        _Adim(
-          vurgu: 2,
-          baslik: 'Takip listesi',
-          govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin. Almayı '
-              'düşündüğün hisseyi listeye at, fiyat alarmı kur; portföyünün '
-              'toplamına karışmaz.',
-        ),
-      ],
+    _Adim(
+      id: 'gizle',
+      hedef: TourTarget.gizleTusu,
+      baslik: 'Tutarları gizle',
+      govde: 'Otobüste ya da omzunun üstünden bakan biri varken tek dokunuş '
+          'yeter. Tekrar dokununca açılır.',
+      gorev: 'Göz simgesine dokun',
+      gorevBitti: 'Tutarlar gizlendi',
+      bitti: (ref) => ref.read(balanceHiddenProvider),
+      giris: (_) => _sekmeyeGec(0),
     ),
-
-    // ── 5. Varlık ekleme ─────────────────────────────────────────────────
-    const _Sahne(
-      ekran: 'Varlık ekle',
-      mock: _MockTur.varlikEkle,
-      adimlar: [
-        _Adim(
-          vurgu: 0,
-          baslik: 'Önce türü seç',
-          govde: 'Hisse mi, fon mu, altın mı? Tür seçtiğinde form ona göre '
-              'değişir — altında gram, hissede adet sorulur.',
-        ),
-        _Adim(
-          vurgu: 1,
-          baslik: 'Miktar ve maliyet',
-          govde: 'Ne kadar aldığını ve kaça aldığını gir. Anlık değer ile '
-              'kâr/zarar bundan sonra kendiliğinden hesaplanır.',
-        ),
-        _Adim(
-          vurgu: 2,
-          rozet: 'BİZE ÖZEL',
-          baslik: 'Hızlı Giriş — cümleyle ekle',
-          govde: 'Üstteki mikrofon tuşu Hızlı Giriş\'i açar: "10 gram altın '
-              '4500 lira" ya da "GARAN 500 adet" yazman (veya söylemen) '
-              'yeter. Her satır ayrı bir varlık olur; fiyat yazmazsan güncel '
-              'fiyat kendiliğinden çekilir.',
-        ),
-        _Adim(
-          vurgu: 3,
-          baslik: 'Toplu Ekle — sepet',
-          govde: 'Birden çok varlığı sepete atıp tek onayda kaydedebilirsin. '
-              'Portföyünü ilk kez kurarken en hızlı yol bu.',
-        ),
-      ],
+    const _Adim(
+      id: 'yenile',
+      hedef: TourTarget.yenileTusu,
+      baslik: 'Fiyatları yenile',
+      govde: 'Fiyatlar zaten arka planda güncelleniyor; bu tuş "şimdi çek" '
+          'demek. Ekranı aşağı çekerek de yapabilirsin.',
     ),
-
-    // ── 6. Performans ────────────────────────────────────────────────────
-    const _Sahne(
-      ekran: 'Performans',
-      mock: _MockTur.performans,
-      adimlar: [
-        _Adim(
-          vurgu: 0,
-          baslik: 'Dönem seç',
-          govde: 'GÜNLÜK gün içini saat saat çizer; 1H / 1A / 6A / 1Y daha '
-              'geniş pencereler. Grafiği iki parmakla yakınlaştırabilir, bir '
-              'noktaya basılı tutarak o anın değerini okuyabilirsin.',
-        ),
-        _Adim(
-          vurgu: 1,
-          rozet: 'BİZE ÖZEL',
-          baslik: 'Gerçek / Simülasyon',
-          govde: 'Gerçek, dönem içindeki her alım ve satımla birlikte gerçek '
-              'geçmişini çizer. Simülasyon ise "bugünkü portföyümü baştan '
-              'elimde tutsaydım ne olurdu?" sorusunu yanıtlar.',
-        ),
-        _Adim(
-          vurgu: 2,
-          rozet: 'BİZE ÖZEL',
-          baslik: 'Birlikte / Ben',
-          govde: 'Eşinle ya da iş ortağınla portföylerinizi tek ekranda '
-              'görebilirsiniz. "Birlikte" ikinizin toplamı, "Ben" yalnız '
-              'senin. Kimse diğerinin kaydını değiştiremez.',
-        ),
-      ],
+    _Adim(
+      id: 'sekme_portfoy',
+      hedef: TourTarget.sekmePortfoy,
+      baslik: 'Portföy sekmesi',
+      govde: 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
+          'dokununca detayına inersin.',
+      gorev: 'Portföy sekmesine dokun',
+      gorevBitti: 'Portföy açıldı',
+      bitti: (_) => _sekmede(1),
+      otoIlerle: true,
+      devam: (_) => _sekmeyeGec(1),
     ),
-
-    // ── 7. Teknik sinyaller ──────────────────────────────────────────────
-    const _Sahne(
-      ekran: 'Sinyaller',
-      mock: _MockTur.sinyal,
-      adimlar: [
-        _Adim(
-          vurgu: 0,
-          rozet: 'BİZE ÖZEL',
-          baslik: 'Hangi gösterge ne diyor?',
-          govde: 'RSI, MACD, Bollinger, EMA ve diğerleri her varlığın '
-              'performans ekranında tek tek listelenir: kaçı AL, kaçı SAT '
-              'diyor, hangi değerle. Kararı kutunun içinde saklamıyoruz.',
-        ),
-        _Adim(
-          vurgu: 1,
-          baslik: 'Yön değişince haber ver',
-          govde: 'Portföyün düzenli olarak analiz edilir; sinyal yön '
-              'değiştirdiğinde bildirim gelir. Hangi göstergelerin '
-              'çalışacağını Profil → Sinyal Ayarları\'ndan sen seçersin.\n\n'
-              'Bunlar yatırım tavsiyesi değildir.',
-        ),
-      ],
+    _Adim(
+      id: 'takip',
+      hedef: TourTarget.govdeSekmeleri,
+      rozet: 'BİZE ÖZEL',
+      baslik: 'Takip listesi',
+      govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin. Almayı '
+          'düşündüğün hisseyi listeye at, fiyat alarmı kur; portföyünün '
+          'toplamına karışmaz.',
+      giris: (_) => _sekmeyeGec(1),
     ),
-
-    // ── 8. Profil ────────────────────────────────────────────────────────
-    _Sahne(
-      ekran: 'Profil',
-      mock: _MockTur.profil,
-      adimlar: [
-        const _Adim(
-          vurgu: 0,
-          rozet: 'BİZE ÖZEL',
-          baslik: 'Ortaklık — davet kodun',
-          govde: 'Kodunu eşine gönder ya da onunkini gir. Karşı taraf '
-              'onayladığında portföyleriniz tek ekranda birleşir — istediğiniz '
-              'an ayırabilirsiniz.',
-        ),
-        _Adim(
-          vurgu: 1,
-          baslik: premiumVar ? 'Premium ve ayarlar' : 'Ayarlar burada',
-          govde: premiumVar
-              ? 'Ücretsiz plan ${rc.freeAssetLimit} varlıkla sınırlı; Premium '
-                  'sınırsız varlık ve gelişmiş göstergeler açar. Bildirimler, '
-                  'sinyal ayarları, fiyat alarmları ve yasal belgeler ise '
-                  'Ayarlar\'ın altında.'
-              : 'Ayarlar\'a buradan girilir: bildirimler, sinyal ayarları, '
-                  'fiyat alarmları, tema ve yasal belgeler.',
-        ),
-      ],
+    _Adim(
+      id: 'ekle',
+      hedef: TourTarget.sekmeEkle,
+      baslik: 'Varlık ekle',
+      govde: 'Hisse mi, fon mu, altın mı? Tür seçtiğinde form ona göre '
+          'değişir — altında gram, hissede adet sorulur.',
+      gorev: '+ tuşuna dokun',
+      gorevBitti: 'Varlık Ekle açıldı',
+      bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
+      otoIlerle: true,
+      devam: (_) => _varlikEkleAc(),
     ),
-
-    // ── 9. Kapanış ───────────────────────────────────────────────────────
-    const _Sahne(
-      ekran: 'Hazırsın',
-      mock: _MockTur.yok,
-      ikon: Icons.check_circle_rounded,
-      adimlar: [
-        _Adim(
-          baslik: 'İlk varlığını ekleyelim',
-          // "Her kayıt geri alınabilir" gibi bir söz VERİLMEZ: uygulamada
-          // geri alma yok, silme kalıcıdır. Tanıtımda verilen tutulamayan
-          // söz, tanıtımın tamamına olan güveni bozar.
-          govde: 'Alttaki + tuşuna dokun ve bir varlık ekle; gerisi '
-              'kendiliğinden gelir.\n\n'
-              'Bir şeyi yanlış girdiysen Portföy\'deki kartı kaydırıp '
-              'düzeltebilir ya da silebilirsin. Takıldığın yerde her ekranın '
-              'kendi açıklaması var.',
-        ),
-      ],
+    _Adim(
+      id: 'hizli_giris',
+      hedef: TourTarget.hizliGiris,
+      rozet: 'BİZE ÖZEL',
+      baslik: 'Cümleyle ekle',
+      govde: 'Mikrofon Hızlı Giriş\'i açar: "10 gram altın 4500 lira" ya da '
+          '"GARAN 500 adet" yazman (veya söylemen) yeter. Her satır ayrı bir '
+          'varlık olur; fiyat yazmazsan güncel fiyat kendiliğinden çekilir.',
+      giris: (_) => _varlikEkleAc(),
+      dokunulabilir: false,
+    ),
+    _Adim(
+      id: 'toplu',
+      hedef: TourTarget.topluEkle,
+      baslik: 'Toplu ekle',
+      govde: 'Birden çok varlığı sepete atıp tek onayda kaydet; CSV '
+          'yapıştırarak da içe aktarabilirsin. Portföyünü ilk kez kurarken '
+          'en hızlı yol bu.',
+      giris: (_) => _varlikEkleAc(),
+      dokunulabilir: false,
+      cikis: (_) => _varlikEkleKapat(),
+    ),
+    _Adim(
+      id: 'sekme_performans',
+      hedef: TourTarget.sekmePerformans,
+      baslik: 'Performans sekmesi',
+      govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden bir yıla kadar her '
+          'dönemi görebilirsin.',
+      gorev: 'Performans sekmesine dokun',
+      gorevBitti: 'Performans açıldı',
+      bitti: (_) => _sekmede(3),
+      otoIlerle: true,
+      giris: (_) => _varlikEkleKapat(),
+      devam: (_) => _sekmeyeGec(3),
+    ),
+    _Adim(
+      id: 'donem',
+      hedef: TourTarget.donemSecici,
+      baslik: 'Dönem seç',
+      govde: 'GÜNLÜK gün içini saat saat çizer; 1H / 1A / 6A / 1Y daha geniş '
+          'pencereler. Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
+          'basılı tutarak o anın değerini okuyabilirsin.',
+      gorev: 'GÜNLÜK dışında bir döneme dokun',
+      gorevBitti: 'Dönem değişti',
+      // Gerçek/Simülasyon anahtarı yalnızca gün dışı dönemde çizilir; onun
+      // ağaçta belirmesi "dönem değişti" demektir.
+      bitti: (_) => TourTargets.mounted(TourTarget.modSecici),
+      giris: (_) => _sekmeyeGec(3),
+    ),
+    _Adim(
+      id: 'mod',
+      hedef: TourTarget.modSecici,
+      rozet: 'BİZE ÖZEL',
+      baslik: 'Gerçek / Simülasyon',
+      govde: 'Gerçek, dönem içindeki her alım ve satımla birlikte gerçek '
+          'geçmişini çizer. Simülasyon ise "bugünkü portföyümü baştan elimde '
+          'tutsaydım ne olurdu?" sorusunu yanıtlar.',
+      giris: (_) => _sekmeyeGec(3),
+    ),
+    _Adim(
+      id: 'sekme_profil',
+      hedef: TourTarget.sekmeProfil,
+      baslik: 'Profil sekmesi',
+      govde: 'Ortaklık, bildirimler, sinyal ayarları, fiyat alarmları, tema '
+          've yasal belgeler burada.',
+      gorev: 'Profil sekmesine dokun',
+      gorevBitti: 'Profil açıldı',
+      bitti: (_) => _sekmede(4),
+      otoIlerle: true,
+      devam: (_) => _sekmeyeGec(4),
+    ),
+    _Adim(
+      id: 'ortaklik',
+      hedef: TourTarget.davetKodu,
+      rozet: 'BİZE ÖZEL',
+      baslik: 'Eşinle tek portföy',
+      govde: 'Kodunu eşine gönder ya da onunkini gir. Karşı taraf '
+          'onayladığında portföyleriniz tek ekranda birleşir; "Birlikte" '
+          'ikinizin toplamı, "Ben" yalnız senin. İstediğiniz an ayrılırsınız.',
+      giris: (_) => _sekmeyeGec(4),
+      dokunulabilir: false,
+    ),
+    _Adim(
+      id: 'ayarlar',
+      hedef: TourTarget.ayarlar,
+      baslik: 'Ayarlar',
+      govde: 'Bildirimler, sinyal ayarları, fiyat alarmları, tema, sessiz '
+          'saatler ve yasal belgeler. Bu turu da buradan yeniden '
+          'izleyebilirsin.',
+      giris: (_) => _sekmeyeGec(4),
+      dokunulabilir: false,
+    ),
+    _Adim(
+      id: 'hazir',
+      hedef: TourTarget.sekmeEkle,
+      baslik: 'Hazırsın',
+      // "Her kayıt geri alınabilir" gibi bir söz VERİLMEZ: uygulamada geri
+      // alma yok, silme kalıcıdır. Tutulamayan söz, tanıtıma olan güveni bozar.
+      govde: '+ tuşuna dokun ve ilk varlığını ekle; gerisi kendiliğinden '
+          'gelir. Yanlış girdiğin bir şeyi Portföy\'deki kartı kaydırarak '
+          'düzeltebilir ya da silebilirsin.',
+      gorev: 'İlk varlığını eklemek için + tuşuna dokun',
+      gorevBitti: 'Varlık Ekle açıldı',
+      bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
+      otoIlerle: true,
+      giris: (_) => _sekmeyeGec(0),
     ),
   ];
+}
+
+// ─── Tur denetleyicisi ───────────────────────────────────────────────────────
+
+/// Açık tur oturumu — adımlar ve kapanış geri çağrısı.
+class _Oturum {
+  _Oturum({required this.adimlar, required this.onBitti});
+
+  final List<_Adim> adimlar;
+  final void Function(bool tamamlandi) onBitti;
+}
+
+/// Tek tur oturumu; [OnboardingTourHost] bunu dinler.
+abstract final class _Tur {
+  static final oturum = ValueNotifier<_Oturum?>(null);
+
+  static bool get aktif => oturum.value != null;
+
+  static void baslat({required void Function(bool tamamlandi) onBitti}) {
+    if (aktif) return;
+    oturum.value = _Oturum(adimlar: _adimlariKur(), onBitti: onBitti);
+    AnalyticsService.instance.logOnboardingStep(0);
+  }
+
+  static void kapat(_Oturum o, bool tamamlandi) {
+    if (oturum.value != o) return;
+    oturum.value = null;
+    o.onBitti(tamamlandi);
+  }
+}
+
+/// Tur katmanının ev sahibi — `MaterialApp.builder` içinde Navigator'ı sarar.
+///
+/// ## Neden Overlay değil
+/// İlk sürüm katmanı kök `Overlay`'e ekliyordu. Navigator her yeni rotayı
+/// Overlay'in EN ÜSTÜNE koyar: tur "+ tuşuna dokun" dediğinde açılan
+/// Varlık Ekle ekranı turun üstüne biniyor, karartma ve kart görünmez
+/// oluyordu. Navigator'ın kendisini saran bir katman ise her rotanın
+/// üstünde kalır; açılan/kapanan hiçbir ekran sırayı değiştiremez.
+class OnboardingTourHost extends StatelessWidget {
+  const OnboardingTourHost({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<_Oturum?>(
+      valueListenable: _Tur.oturum,
+      builder: (context, o, altAgac) => Stack(
+        fit: StackFit.expand,
+        children: [
+          altAgac!,
+          if (o != null)
+            Consumer(
+              builder: (context, ref, _) => _TurKatmani(
+                key: ObjectKey(o),
+                ref: ref,
+                adimlar: o.adimlar,
+                onBitti: (tamamlandi) => _Tur.kapat(o, tamamlandi),
+              ),
+            ),
+        ],
+      ),
+      child: child,
+    );
+  }
 }
 
 /// HIG'in en küçük dokunma hedefi: 44×44pt (Human Interface Guidelines →
@@ -460,276 +515,347 @@ List<_Sahne> _turuKur() {
 /// yüzden `SandikSpace` içinden seçilmez.
 const double _higHedef = 44;
 
-/// Turu süren durum.
+/// Uzun süreli hareketler için ölçek — hareket dili sabitlerinin katları,
+/// böylece "hareketi azalt" koruması (`SandikMotion.of`) aynen çalışır.
+abstract final class _Sahne {
+  /// Kartın belirişi: 480ms.
+  static Duration get belir => SandikMotion.surface * 2;
+
+  /// Nabız halkası bir turu: 1.440ms.
+  static Duration get nabiz => SandikMotion.surface * 6;
+
+  /// Görev bittikten sonra kendiliğinden ilerlemeden önceki onay süresi.
+  static Duration get onay => SandikMotion.surface * 3;
+
+  /// Hedefi bulunamayan adımın atlanmasından önce beklenen süre (1,9s):
+  /// sekme geçişi + ekran kurulumu + liste kaydırması birkaç kare sürer,
+  /// hemen atlamak yanlış olur; çok beklemek de kullanıcıyı boş karartmada
+  /// bırakır.
+  static Duration get hedefBekle => SandikMotion.surface * 8;
+}
+
+/// Karartma, oyuk, halka, kart ve üst çubuk — turun görünen katmanı.
 ///
-/// İki eksen var ve karıştırılmamalı:
-/// - **Sahne** = ekran. `PageView` sayfası; parmakla kaydırılır, alttaki
-///   noktalar bunları sayar.
-/// - **Adım** = o ekrandaki tek bir tuş. "İleri" bunu ilerletir; sahne
-///   değişmeden vurgu bir sonraki öğeye geçer.
-///
-/// Kullanıcının isteği "her tuşu tek tek tanıt" idi; tek eksenli bir
-/// PageView'da bu 22 sayfa ve 22 nokta demekti — ilerleme çubuğu hiç
-/// bitmiyormuş gibi görünür. İki eksen, "9 ekran öğreniyorum, bu ekranın
-/// 3. tuşundayım" duygusunu verir.
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
-  late final List<_Sahne> _sahneler = _turuKur();
-  late final PageController _pages = PageController();
+/// Her karede ([_tik]) hedefin dikdörtgenini yeniden ölçer: hedef kayan bir
+/// listede olabilir, sekme geçişinde solabilir, ekran dönebilir. Ölçüm
+/// ucuz (bir `localToGlobal`), yeniden çizim yalnızca dikdörtgen değişince.
+class _TurKatmani extends StatefulWidget {
+  const _TurKatmani({
+    super.key,
+    required this.ref,
+    required this.adimlar,
+    required this.onBitti,
+  });
 
-  late AnimationController _anim;
-  late Animation<double> _fade;
+  final WidgetRef ref;
+  final List<_Adim> adimlar;
+  final void Function(bool tamamlandi) onBitti;
 
-  int _sahne = 0;
-  int _adim = 0;
+  @override
+  State<_TurKatmani> createState() => _TurKatmaniState();
+}
 
-  _Sahne get _aktifSahne => _sahneler[_sahne];
+class _TurKatmaniState extends State<_TurKatmani>
+    with TickerProviderStateMixin {
+  late final Ticker _ticker = createTicker(_tik);
+  late final AnimationController _nabiz =
+      AnimationController(vsync: this, duration: _Sahne.nabiz);
+  late final AnimationController _belir = AnimationController(vsync: this);
 
-  bool get _ilkAdim => _sahne == 0 && _adim == 0;
-  bool get _sonAdim =>
-      _sahne == _sahneler.length - 1 && _adim == _aktifSahne.adimlar.length - 1;
+  int _i = 0;
+  Rect? _rect;
 
-  /// Analytics için düz sayaç — `logOnboardingSkipped` "kaçıncı adımda
-  /// bıraktı" sorusunu yanıtlıyor, sahne indeksi bunu yanıtlamaz.
-  int get _duzAdim {
-    var n = _adim;
-    for (var i = 0; i < _sahne; i++) {
-      n += _sahneler[i].adimlar.length;
-    }
-    return n;
-  }
+  /// Tamamlanan görevlerin adım kimlikleri.
+  final Set<String> _tamamlanan = {};
+
+  /// Adıma giriş anı ve (varsa) planlı otomatik ilerleme anı — ikisi de
+  /// ticker zamanıyla; `Timer` kullanılmaz (katman kapanınca askıda kalır).
+  Duration _girisAni = Duration.zero;
+  Duration? _otoIlerleAni;
+  Duration _simdi = Duration.zero;
+  bool _bitti = false;
+
+  _Adim get _adim => widget.adimlar[_i];
+  bool get _son => _i == widget.adimlar.length - 1;
+  bool get _gorevBitti => _tamamlanan.contains(_adim.id);
 
   @override
   void initState() {
     super.initState();
-    // Beliriş SAYFA BAŞINA DEĞİL, ekran açılışına aittir: `PageView` bir
-    // sonraki sayfayı önden kurduğu için sayfa başına yapılırsa kullanıcı
-    // parmağını sürerken sayfa yeniden belirir ve titrer.
-    _anim = AnimationController(vsync: this, duration: SandikMotion.surface);
-    _fade = CurvedAnimation(parent: _anim, curve: SandikMotion.enter);
-    _anim.forward();
+    _ticker.start();
+    _adimaGir(0, ilk: true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _belir.duration = SandikMotion.of(context, _Sahne.belir);
+    // Sürekli hareket yalnızca "hareketi azalt" kapalıyken; açıkken halka
+    // sabit durur (kaldırılmaz — hedef yine işaretli kalır).
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _nabiz.stop();
+    } else if (!_nabiz.isAnimating) {
+      _nabiz.repeat();
+    }
+    if (!_belir.isAnimating && _belir.value == 0) _belir.forward();
   }
 
   @override
   void dispose() {
-    _pages.dispose();
-    _anim.dispose();
+    _ticker.dispose();
+    _nabiz.dispose();
+    _belir.dispose();
     super.dispose();
   }
 
-  Future<void> _ileri() async {
-    // Önce o ekranın tuşlarını bitir, sonra ekranı değiştir.
-    if (_adim < _aktifSahne.adimlar.length - 1) {
-      setState(() => _adim++);
-      return;
-    }
-    if (_sahne == _sahneler.length - 1) {
-      AnalyticsService.instance.logOnboardingCompleted();
-      await OnboardingScreen.markCompleted(widget.userId);
-      if (mounted) widget.onComplete();
-      return;
-    }
-    await _pages.nextPage(
-      duration: SandikMotion.surfaceOf(context),
-      curve: SandikMotion.enter,
-    );
-  }
+  // ── Adım akışı ──────────────────────────────────────────────────────────
 
-  Future<void> _geriAl() async {
-    if (_adim > 0) {
-      setState(() => _adim--);
-      return;
+  void _adimaGir(int i, {bool ilk = false}) {
+    _i = i;
+    _girisAni = _simdi;
+    _otoIlerleAni = null;
+    _rect = null;
+    if (!ilk) {
+      AnalyticsService.instance.logOnboardingStep(i);
+      _belir.forward(from: 0);
     }
-    if (_sahne == 0) return;
-    await _pages.previousPage(
-      duration: SandikMotion.surfaceOf(context),
-      curve: SandikMotion.enter,
-    );
-  }
-
-  Future<void> _atla() async {
-    AnalyticsService.instance.logOnboardingSkipped(_duzAdim);
-    await OnboardingScreen.markCompleted(widget.userId);
-    if (mounted) widget.onComplete();
-  }
-
-  void _sayfaDegisti(int i) {
-    setState(() {
-      // Geriye gidiliyorsa o ekranın SON tuşuna dön: kullanıcı bıraktığı
-      // yere döner, ekranın başına fırlatılmaz.
-      final geri = i < _sahne;
-      _sahne = i;
-      _adim = geri ? _sahneler[i].adimlar.length - 1 : 0;
+    // Ön koşul (`giris`) BİR KARE SONRA: "Devam"ın açtığı rota daha
+    // kurulmadan hedef "yok" görünür ve ön koşul aynı ekranı ikinci kez
+    // açardı (ölçüldü: iki Varlık Ekle üst üste). Kaydırma ise ondan da bir
+    // kare sonra — sekme geçişi önce yerleşmeli.
+    final adim = _adim;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _bitti || _adim != adim) return;
+      adim.giris?.call(widget.ref);
+      SchedulerBinding.instance.addPostFrameCallback((_) => _hedefiGoster());
     });
   }
 
+  void _hedefiGoster() {
+    if (!mounted || _bitti) return;
+    final hedef = _adim.hedef;
+    if (hedef == null) return;
+    final c = TourTargets.context(hedef);
+    if (c == null) return;
+    Scrollable.ensureVisible(
+      c,
+      alignment: 0.3,
+      duration: SandikMotion.surfaceOf(context),
+      curve: SandikMotion.enter,
+    );
+  }
+
+  void _tik(Duration gecen) {
+    if (_bitti) return;
+    _simdi = gecen;
+    final adim = _adim;
+
+    // 1) Görev tamamlandı mı? Uygulamanın gerçek durumundan.
+    if (adim.bitti != null && !_gorevBitti && adim.bitti!(widget.ref)) {
+      SandikHaptic.medium.perform();
+      setState(() => _tamamlanan.add(adim.id));
+      if (adim.otoIlerle) _otoIlerleAni = gecen + _Sahne.onay;
+    }
+    if (_otoIlerleAni case final t? when gecen >= t) {
+      _otoIlerleAni = null;
+      _ileri();
+      return;
+    }
+
+    // 2) Hedefin dikdörtgeni.
+    final yeni = adim.hedef == null ? null : TourTargets.rect(adim.hedef!);
+    if (adim.hedef != null && yeni == null) {
+      // Hedef bekleme süresi dolunca bulunamadıysa adım atlanır: kapalı
+      // bayrak, değişmiş yerleşim ya da kullanıcı ekranı kapatmış olabilir.
+      // Kullanıcıyı boş bir karartmada bırakmak en kötü sonuç.
+      if (gecen - _girisAni > _Sahne.hedefBekle) _ileri();
+      if (_rect != null) setState(() => _rect = null);
+      return;
+    }
+    if (!_ayni(yeni, _rect)) setState(() => _rect = yeni);
+  }
+
+  static bool _ayni(Rect? a, Rect? b) {
+    if (a == null || b == null) return a == b;
+    return (a.left - b.left).abs() < 0.5 &&
+        (a.top - b.top).abs() < 0.5 &&
+        (a.width - b.width).abs() < 0.5 &&
+        (a.height - b.height).abs() < 0.5;
+  }
+
+  void _ileri() {
+    if (_bitti) return;
+    final adim = _adim;
+    if (adim.bitti != null && !_gorevBitti) adim.devam?.call(widget.ref);
+    adim.cikis?.call(widget.ref);
+    if (_son) {
+      _kapat(tamamlandi: true);
+      return;
+    }
+    setState(() => _adimaGir(_i + 1));
+  }
+
+  void _geri() {
+    if (_bitti || _i == 0) return;
+    _adim.cikis?.call(widget.ref);
+    setState(() => _adimaGir(_i - 1));
+  }
+
+  void _atla() {
+    if (_bitti) return;
+    AnalyticsService.instance.logOnboardingSkipped(_i);
+    _kapat(tamamlandi: false);
+  }
+
+  void _kapat({required bool tamamlandi}) {
+    if (_bitti) return;
+    _bitti = true;
+    _ticker.stop();
+    if (tamamlandi) AnalyticsService.instance.logOnboardingCompleted();
+    widget.onBitti(tamamlandi);
+  }
+
+  // ── Görünüm ─────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final p = context.c;
-    // Zemin TEMADAN gelir: bu ekran bir overlay değil, tam sayfadır
-    // (bkz. `main.dart` — açılış akışında `MainNavigationScreen` yerine
-    // döner). Sabit koyu bir zemin, açık temada uygulamanın geri kalanıyla
-    // hiç uyuşmayan bir giriş yaratıyordu.
-    return Scaffold(
-      backgroundColor: p.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _ustCubuk(context),
-            Expanded(
-              child: FadeTransition(
-                opacity: _fade,
-                child: PageView.builder(
-                  controller: _pages,
-                  itemCount: _sahneler.length,
-                  onPageChanged: _sayfaDegisti,
-                  itemBuilder: (context, i) => _SahneGorunumu(
-                    sahne: _sahneler[i],
-                    // Komşu sayfalar önden kurulur; onlar kendi ilk
-                    // adımlarını göstersin.
-                    adimIndex: i == _sahne ? _adim : 0,
-                  ),
-                ),
+    final adim = _adim;
+    final rect = _rect;
+    // Oyuk hedeften biraz geniş: dokunma hedefi görsel kutudan büyük olabilir
+    // ve kenar halkası hedefe yapışmamalı.
+    final oyuk = rect?.inflate(SandikSpace.xs2);
+    final mq = MediaQuery.of(context);
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Karartma + blur; oyuk dışında dokunuşu YUTAR, oyukta geçirir
+        // (RenderClipPath, kırpma yolunun dışını hit-test etmez).
+        ClipPath(
+          clipper: _OyukKirpici(oyuk),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {},
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+              child: ColoredBox(
+                // Light'ta zemin rengi karartmaz; koyu metin tonu kullanılır.
+                color: context.isLight
+                    ? p.text90.withValues(alpha: 0.42)
+                    : p.background.withValues(alpha: 0.78),
               ),
             ),
-            _noktalar(context),
-            _ileriButonu(context),
-          ],
+          ),
         ),
-      ),
+        // Dokunuşa kapalı hedef: oyuk görünür ama altına geçirmez.
+        if (oyuk != null && !adim.dokunulabilir)
+          Positioned.fromRect(
+            rect: oyuk,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {},
+            ),
+          ),
+        if (oyuk != null) _halka(context, oyuk),
+        _kart(context, mq, oyuk),
+      ],
     );
   }
 
-  // ── Üst çubuk: geri · nerede olduğun · atla ────────────────────────────
-  //
-  // Ortadaki etiket "hangi ekranı öğreniyorum ve bu ekranın kaçıncı
-  // tuşundayım" sorusunu yanıtlar. Kullanıcının isteği tanıtımın "kafada
-  // soru işareti bırakmaması" idi; konum belirsizliği bu soruların en
-  // yaygını.
-  Widget _ustCubuk(BuildContext context) {
+  /// Oyuğun çevresinde nabız gibi genişleyen halka.
+  ///
+  /// Görev bitince söner: ok işareti işini yaptı. Genişleme ÖLÇEKLE değil
+  /// sabit payla — geniş bir hedefte (alt menünün tamamı) ölçek halkayı
+  /// ekranın dışına taşırdı.
+  Widget _halka(BuildContext context, Rect oyuk) {
     final p = context.c;
-    final toplam = _aktifSahne.adimlar.length;
-    final etiket =
-        toplam > 1 ? '${_aktifSahne.ekran} · ${_adim + 1}/$toplam' : _aktifSahne.ekran;
-
-    return SizedBox(
-      height: _higHedef,
-      child: Row(
-        children: [
-          // Geri, yalnızca dönülecek bir adım varken yer kaplar.
-          if (!_ilkAdim)
-            CupertinoButton(
-              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
-              minimumSize: const Size(_higHedef, _higHedef),
-              onPressed: _geriAl,
-              child: Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 18, color: p.text58),
-            )
-          else
-            const SizedBox(width: _higHedef),
-          Expanded(
-            child: Center(
-              child: Text(
-                etiket,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.labelLarge?.copyWith(
-                  color: p.text36,
-                  letterSpacing: 0.8,
+    if (_gorevBitti) return const SizedBox.shrink();
+    final hareket = !MediaQuery.disableAnimationsOf(context);
+    return AnimatedBuilder(
+      animation: _nabiz,
+      builder: (context, _) {
+        final t = hareket ? _nabiz.value : 0.35;
+        final pay = SandikSpace.xs + SandikSpace.smd * t;
+        final alfa = hareket ? (1 - t) * 0.9 : 0.9;
+        return Positioned.fromRect(
+          rect: oyuk.inflate(pay),
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(SandikRadius.md + pay),
+                border: Border.all(
+                  color: p.amberFill.withValues(alpha: alfa),
+                  width: 2,
                 ),
               ),
             ),
           ),
-          CupertinoButton(
-            // HIG 44pt: metin 14pt olduğu için sıfır padding'de dokunma
-            // hedefi ~18pt'ye düşüyordu.
-            padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
-            minimumSize: const Size(_higHedef, _higHedef),
-            onPressed: _atla,
-            child: Text(
-              'Atla',
-              style: context.t.titleMedium?.copyWith(color: p.text58),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  // ── Sahne noktaları ────────────────────────────────────────────────────
+  // ── Kart ────────────────────────────────────────────────────────────────
   //
-  // Nokta sayısı EKRAN sayısıdır. Aktif nokta bir çubuğa uzar ve içi o
-  // ekranda kaç tuş geçildiğine göre dolar — böylece hem "9 ekrandan
-  // 4.'sindeyim" hem "bu ekranın 2/5'indeyim" tek bir öğeden okunur.
-  Widget _noktalar(BuildContext context) {
-    final p = context.c;
-    return Padding(
-      padding: const EdgeInsets.only(top: SandikSpace.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(_sahneler.length, (i) {
-          final aktif = i == _sahne;
-          final dolu = aktif
-              ? (_adim + 1) / _sahneler[i].adimlar.length
-              : (i < _sahne ? 1.0 : 0.0);
-          return AnimatedContainer(
-            duration: SandikMotion.stateOf(context),
-            curve: SandikMotion.enter,
-            margin: const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-            width: aktif ? 28 : 7,
-            height: 7,
-            decoration: BoxDecoration(
-              color: p.text20,
-              borderRadius: BorderRadius.circular(SandikRadius.sm),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: dolu,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: p.amberFill,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
+  // Hedefin boş kalan tarafına yerleşir: hedef ekranın üst yarısındaysa
+  // altına, alt yarısındaysa üstüne. Kalan alana sığmazsa içi kayar —
+  // büyük sistem yazı tipinde kartın hedefi örtmesi ya da taşması yerine.
+  Widget _kart(BuildContext context, MediaQueryData mq, Rect? oyuk) {
+    final ekran = mq.size;
+    final ustSinir = mq.padding.top + SandikSpace.md;
+    final altSinir = ekran.height - mq.padding.bottom - SandikSpace.md;
 
-  Widget _ileriButonu(BuildContext context) {
-    final p = context.c;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          SandikSpace.lg, SandikSpace.lgs, SandikSpace.lg, SandikSpace.lg),
-      child: SizedBox(
-        width: double.infinity,
-        child: CupertinoButton(
-          onPressed: _ileri,
-          padding: EdgeInsets.zero,
-          child: Container(
-            height: 52,
-            decoration: BoxDecoration(
-              color: p.amberFill,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              boxShadow: [
-                BoxShadow(
-                  color: p.amberFill.withValues(alpha: 0.28),
-                  blurRadius: 18,
-                  spreadRadius: -4,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              _sonAdim ? 'Sandığımı Aç' : 'İleri',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.t.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: p.onAmber,
+    double? top;
+    double? bottom;
+    double maxYukseklik;
+    if (oyuk == null) {
+      top = ustSinir;
+      bottom = ekran.height - altSinir;
+      maxYukseklik = altSinir - ustSinir;
+    } else {
+      final ustAlan = oyuk.top - SandikSpace.md - ustSinir;
+      final altAlan = altSinir - (oyuk.bottom + SandikSpace.md);
+      final asagi = oyuk.center.dy < ekran.height / 2 || altAlan > ustAlan;
+      if (asagi) {
+        top = oyuk.bottom + SandikSpace.md;
+        maxYukseklik = altAlan;
+      } else {
+        bottom = ekran.height - (oyuk.top - SandikSpace.md);
+        maxYukseklik = ustAlan;
+      }
+    }
+    // Hedef ekranın kenarındaysa boşluk çok dar olabilir; kartın en azından
+    // okunabilir bir yüksekliği olsun — gerekirse hedefin üstüne biner.
+    maxYukseklik = maxYukseklik.clamp(200.0, ekran.height);
+
+    final egri = CurvedAnimation(parent: _belir, curve: SandikMotion.enter);
+    return Positioned(
+      left: SandikSpace.md,
+      right: SandikSpace.md,
+      top: top,
+      bottom: bottom,
+      child: Align(
+        alignment: oyuk == null
+            ? Alignment.center
+            : (top != null ? Alignment.topCenter : Alignment.bottomCenter),
+        child: FadeTransition(
+          opacity: egri,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0, top != null ? -0.04 : 0.04),
+              end: Offset.zero,
+            ).animate(egri),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxYukseklik),
+              child: _AdimKarti(
+                adim: _adim,
+                bitti: _gorevBitti,
+                sira: _i,
+                toplam: widget.adimlar.length,
+                onGeri: _geri,
+                onIleri: _ileri,
+                onAtla: _atla,
               ),
             ),
           ),
@@ -739,99 +865,322 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 }
 
-/// Tek bir sahne: minyatür + o adımın açıklaması.
+/// Karartmada hedefi açıkta bırakan kırpma yolu.
 ///
-/// Kendi içinde kaydırılabilir. Sabit yükseklikli bir yığın, sistem yazı
-/// tipi büyütülmüşken (erişilebilirlik ayarı) ya da kısa ekranlarda
-/// RenderFlex taşması veriyordu; burada taşma yerine kaydırma olur.
-class _SahneGorunumu extends StatelessWidget {
-  const _SahneGorunumu({required this.sahne, required this.adimIndex});
+/// `RenderClipPath` yolun dışını hit-test etmez: oyuğun içine dokunuş
+/// katmandan geçip alttaki GERÇEK widget'a ulaşır. Spot ışığının bütün
+/// sırrı bu.
+class _OyukKirpici extends CustomClipper<Path> {
+  const _OyukKirpici(this.oyuk);
 
-  final _Sahne sahne;
-  final int adimIndex;
+  final Rect? oyuk;
 
   @override
-  Widget build(BuildContext context) {
-    final adim = sahne.adimlar[adimIndex];
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.lg, vertical: SandikSpace.md),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Mock(tur: sahne.mock, ikon: sahne.ikon, vurgu: adim.vurgu),
-            const SizedBox(height: SandikSpace.lgs),
-            _AdimKarti(adim: adim),
-          ],
-        ),
-      ),
-    );
+  Path getClip(Size size) {
+    final tum = Path()..addRect(Offset.zero & size);
+    if (oyuk == null) return tum;
+    final delik = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+          oyuk!, const Radius.circular(SandikRadius.md)));
+    return Path.combine(PathOperation.difference, tum, delik);
   }
+
+  @override
+  bool shouldReclip(_OyukKirpici old) => old.oyuk != oyuk;
 }
 
-/// Adım metni — rozet, başlık, gövde.
+/// Adımın açıklama kartı: ilerleme + Atla, rozet, başlık, gövde, görev
+/// şeridi, tuşlar.
+///
+/// İlerleme çubuğu ve "Atla" KARTIN İÇİNDE, ekranın üstünde sabit değil:
+/// sabit bir üst çubuk, uygulama çubuğundaki hedeflerin (mikrofon, toplu
+/// ekle) tam üstüne biniyor ve oyuğa dokunuş "Atla"ya gidiyordu. Kart
+/// hedefin boş tarafına yerleştiği için hedefle asla çakışmaz.
 class _AdimKarti extends StatelessWidget {
-  const _AdimKarti({required this.adim});
+  const _AdimKarti({
+    required this.adim,
+    required this.bitti,
+    required this.sira,
+    required this.toplam,
+    required this.onGeri,
+    required this.onIleri,
+    required this.onAtla,
+  });
 
   final _Adim adim;
+  final bool bitti;
+  final int sira;
+  final int toplam;
+  final VoidCallback onGeri;
+  final VoidCallback onIleri;
+  final VoidCallback onAtla;
+
+  bool get ilkAdim => sira == 0;
+  bool get sonAdim => sira == toplam - 1;
 
   @override
   Widget build(BuildContext context) {
     final p = context.c;
     return Semantics(
-      // Adım değişince ekran okuyucu yeni metni kendiliğinden okusun:
-      // görme engelli kullanıcı "İleri"ye bastığında sayfa değişmiyor,
-      // yalnızca bu blok değişiyor.
+      // Adım değişince ekran okuyucu yeni kartı kendiliğinden okusun.
       liveRegion: true,
-      child: AnimatedSize(
-        duration: SandikMotion.stateOf(context),
-        curve: SandikMotion.enter,
-        alignment: Alignment.topCenter,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(SandikSpace.lg),
-          decoration: BoxDecoration(
-            color: p.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.lg),
-            border: Border.all(color: p.hairline),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (adim.rozet case final r?) ...[
-                _Rozet(metin: r),
-                const SizedBox(height: SandikSpace.smd),
-              ],
-              Text(
-                adim.baslik,
-                style: context.t.headlineSmall?.copyWith(
-                  color: p.text90,
-                  letterSpacing: -0.3,
+      child: Container(
+        decoration: BoxDecoration(
+          color: p.surface1,
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
+          border: Border.all(color: p.hairline),
+          boxShadow: [
+            ...p.cardShadow,
+            BoxShadow(
+              color: p.amberFill.withValues(alpha: 0.12),
+              blurRadius: 32,
+              spreadRadius: -6,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ilerleme(context),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                    SandikSpace.lgs, SandikSpace.xs, SandikSpace.lgs, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (adim.rozet case final r?) ...[
+                      _Rozet(metin: r),
+                      const SizedBox(height: SandikSpace.sm2),
+                    ],
+                    Text(
+                      adim.baslik,
+                      style: context.t.headlineSmall?.copyWith(
+                        color: p.text90,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: SandikSpace.sm),
+                    Text(
+                      adim.govde,
+                      style: context.t.bodyMedium?.copyWith(
+                        color: p.text58,
+                        height: 1.5,
+                      ),
+                    ),
+                    if (adim.gorev != null) ...[
+                      const SizedBox(height: SandikSpace.smd),
+                      _GorevSeridi(
+                        metin: bitti ? adim.gorevBitti! : adim.gorev!,
+                        bitti: bitti,
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              const SizedBox(height: SandikSpace.sm),
-              Text(
-                adim.govde,
-                style: context.t.titleMedium?.copyWith(
-                  color: p.text58,
-                  height: 1.55,
-                ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  SandikSpace.smd, SandikSpace.smd, SandikSpace.smd, SandikSpace.smd),
+              child: Row(
+                children: [
+                  if (!ilkAdim)
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(_higHedef, _higHedef),
+                      onPressed: onGeri,
+                      child: Icon(Icons.arrow_back_rounded,
+                          size: 22, color: p.text58),
+                    ),
+                  // Expanded + Align, Spacer DEĞİL: Row esnek olmayan çocuğa
+                  // sınırsız genişlik verir; 2,0× yazı tipinde tuş satırı
+                  // 44px taşıyordu. Align gevşek ama SINIRLI kısıt geçirir,
+                  // içerideki Flexible metin kısalır.
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(_higHedef, _higHedef),
+                    onPressed: onIleri,
+                    child: Container(
+                      height: _higHedef,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: SandikSpace.lgs),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: p.amberGradient,
+                        borderRadius: BorderRadius.circular(SandikRadius.md),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              sonAdim
+                                  ? 'Sandığımı Aç'
+                                  : ilkAdim
+                                      ? 'Başlayalım'
+                                      : 'Devam',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.t.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: p.onAmber,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: SandikSpace.xs2),
+                          Icon(
+                            sonAdim
+                                ? Icons.lock_open_rounded
+                                : Icons.arrow_forward_rounded,
+                            size: 18,
+                            color: p.onAmber,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// "BİZE ÖZEL" rozeti.
-///
-/// Kullanıcının isteğinde ayrı bir madde: "bizi diğer uygulamalardan ayırt
-/// eden özelliklerimiz özellikle vurgulanmalı". Rozet yalnızca o
-/// özelliklerde çıkar — her adıma konulsa hiçbir şey vurgulanmamış olurdu.
+/// İlerleme bölmeleri + Atla — kartın başlığı.
+extension on _AdimKarti {
+  Widget _ilerleme(BuildContext context) {
+    final p = context.c;
+    return Padding(
+      padding: const EdgeInsets.only(left: SandikSpace.lgs),
+      child: SizedBox(
+        height: _higHedef,
+        child: Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                label: '${sira + 1}. adım, toplam $toplam',
+                child: Row(
+                  children: List.generate(toplam, (i) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: SandikSpace.xxs / 2),
+                        child: ClipRRect(
+                          borderRadius:
+                              BorderRadius.circular(SandikRadius.sm),
+                          child: SizedBox(
+                            height: SandikSpace.xs,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ColoredBox(color: p.text20),
+                                AnimatedFractionallySizedBox(
+                                  duration: SandikMotion.surfaceOf(context),
+                                  curve: SandikMotion.enter,
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: i <= sira ? 1 : 0,
+                                  child: ColoredBox(
+                                    color: p.amberFill,
+                                    child: const SizedBox.expand(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+            CupertinoButton(
+              // HIG 44pt: metin 14pt olduğu için sıfır padding'de dokunma
+              // hedefi ~18pt'ye düşüyordu.
+              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
+              minimumSize: const Size(_higHedef, _higHedef),
+              onPressed: onAtla,
+              child: Text(
+                'Atla',
+                style: context.t.titleMedium?.copyWith(
+                  color: p.text58,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Dene: …" çağrısı; görev bitince onaya döner.
+class _GorevSeridi extends StatelessWidget {
+  const _GorevSeridi({required this.metin, required this.bitti});
+
+  final String metin;
+  final bool bitti;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.c;
+    return AnimatedSwitcher(
+      duration: SandikMotion.stateOf(context),
+      switchInCurve: SandikMotion.enter,
+      switchOutCurve: SandikMotion.enter,
+      child: Container(
+        key: ValueKey(bitti),
+        padding: const EdgeInsets.symmetric(
+            horizontal: SandikSpace.sm2, vertical: SandikSpace.sm),
+        decoration: BoxDecoration(
+          color: bitti
+              ? p.gain.withValues(alpha: 0.12)
+              : p.amberFill.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(SandikRadius.sm),
+          border: Border.all(
+            color: bitti
+                ? p.gain.withValues(alpha: 0.45)
+                : p.amberFill.withValues(alpha: 0.30),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              bitti ? Icons.check_circle_rounded : Icons.touch_app_rounded,
+              size: 18,
+              color: bitti ? p.gain : p.amberText,
+            ),
+            const SizedBox(width: SandikSpace.sm),
+            Expanded(
+              child: Text(
+                bitti ? metin : 'Dene: $metin',
+                style: context.t.bodyMedium?.copyWith(
+                  color: bitti ? p.gain : p.text90,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "BİZE ÖZEL" rozeti — yalnızca bizi ayırt eden özelliklerde; her adıma
+/// konulsa hiçbir şey vurgulanmamış olurdu.
 class _Rozet extends StatelessWidget {
   const _Rozet({required this.metin});
 
@@ -848,7 +1197,7 @@ class _Rozet extends StatelessWidget {
         decoration: BoxDecoration(
           // Zemin amberFill, metin onAmber — amberText bir METİN rengidir,
           // zemin olarak kullanılırsa üstündeki yazı görünmez olur.
-          color: p.amberFill,
+          gradient: p.amberGradient,
           borderRadius: BorderRadius.circular(SandikRadius.sm),
         ),
         child: Row(
@@ -856,8 +1205,6 @@ class _Rozet extends StatelessWidget {
           children: [
             Icon(Icons.auto_awesome_rounded, size: 12, color: p.onAmber),
             const SizedBox(width: SandikSpace.xs2),
-            // Flexible şart: `Wrap`/`Row` çocuğa kendi genişliğini üst sınır
-            // olarak verir, `mainAxisSize.min` taşmayı engellemez.
             Flexible(
               child: Text(
                 metin,
@@ -872,984 +1219,6 @@ class _Rozet extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ─── Vurgu ───────────────────────────────────────────────────────────────────
-
-/// Minyatürdeki tek bir öğeyi öne çıkaran sarmalayıcı.
-///
-/// Vurgu bir piksel koordinatı ya da `Positioned` DEĞİL: vurgulanacak öğe
-/// doğrudan bununla sarılır. Böylece metin ölçeği, ekran genişliği veya
-/// yazı tipi değişse de halka her zaman doğru öğenin çevresinde kalır —
-/// koordinatlı bir "spotlight" ilk Dynamic Type kademesinde kayardı.
-///
-/// Pasif öğeler silinmez, SÖNÜKLEŞİR: kullanıcı tuşun ekrandaki
-/// komşularını görmeye devam eder, yoksa öğrendiği şeyin nerede durduğunu
-/// bilemez.
-class _Vurgu extends StatelessWidget {
-  const _Vurgu({required this.aktif, required this.child});
-
-  final bool aktif;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.c;
-    return AnimatedOpacity(
-      duration: SandikMotion.stateOf(context),
-      curve: SandikMotion.enter,
-      opacity: aktif ? 1 : 0.32,
-      child: AnimatedContainer(
-        duration: SandikMotion.stateOf(context),
-        curve: SandikMotion.enter,
-        // Dolgu her durumda var: yalnızca aktifken eklenseydi vurgu her
-        // adımda yerleşimi oynatır, minyatür zıplardı.
-        padding: const EdgeInsets.all(SandikSpace.xs),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(SandikRadius.sm),
-          color: aktif
-              ? p.amberFill.withValues(alpha: 0.14)
-              : const Color(0x00000000),
-          border: Border.all(
-            color: aktif ? p.amberFill : const Color(0x00000000),
-            width: 1.5,
-          ),
-        ),
-        child: child,
-      ),
-    );
-  }
-}
-
-// ─── Minyatür ekranlar ───────────────────────────────────────────────────────
-
-/// Sahnenin minyatürü.
-///
-/// Metin ölçeği burada SINIRLANIR (1,2×). Minyatür bir diyagramdır,
-/// okunacak gövde metni değil — 2,0× sistem yazı tipinde şema kırılır ve
-/// hiçbir şey anlatmaz. Asıl açıklama ([_AdimKarti]) tam ölçeğinde kalır,
-/// yani erişilebilirlik ayarından bir şey kaybedilmez.
-class _Mock extends StatelessWidget {
-  const _Mock({required this.tur, required this.vurgu, this.ikon});
-
-  final _MockTur tur;
-  final int? vurgu;
-  final IconData? ikon;
-
-  bool _v(int i) => vurgu == i;
-
-  @override
-  Widget build(BuildContext context) {
-    if (tur == _MockTur.yok) {
-      return _Spot(ikon: ikon ?? Icons.savings_rounded);
-    }
-    return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.2,
-      child: _Cerceve(child: _icerik(context)),
-    );
-  }
-
-  Widget _icerik(BuildContext context) {
-    switch (tur) {
-      case _MockTur.altMenu:
-        return _altMenu(context);
-      case _MockTur.anaEkran:
-        return _anaEkran(context);
-      case _MockTur.portfoy:
-        return _portfoy(context);
-      case _MockTur.varlikEkle:
-        return _varlikEkle(context);
-      case _MockTur.performans:
-        return _performans(context);
-      case _MockTur.sinyal:
-        return _sinyal(context);
-      case _MockTur.profil:
-        return _profil(context);
-      case _MockTur.yok:
-        return const SizedBox.shrink();
-    }
-  }
-
-  // ── Alt menü ─────────────────────────────────────────────────────────
-  Widget _altMenu(BuildContext context) {
-    final p = context.c;
-    return Column(
-      children: [
-        // Menünün üstünde ne olduğu belli olsun diye soluk bir gövde
-        // taslağı: çubuk tek başına havada dursa "ekranın neresi burası"
-        // sorusu doğar.
-        const _Iskelet(satir: 3),
-        const SizedBox(height: SandikSpace.smd),
-        Divider(height: 1, thickness: 1, color: p.hairline),
-        const SizedBox(height: SandikSpace.sm),
-        Row(
-          children: [
-            Expanded(
-              child: _Vurgu(
-                aktif: _v(0),
-                child: _navOge(context, Icons.home_rounded, 'Ana', secili: true),
-              ),
-            ),
-            Expanded(
-              child: _Vurgu(
-                aktif: _v(1),
-                child: _navOge(context, Icons.donut_large_rounded, 'Portföy'),
-              ),
-            ),
-            Expanded(
-              child: _Vurgu(aktif: _v(2), child: _fabOge(context)),
-            ),
-            Expanded(
-              child: _Vurgu(
-                aktif: _v(3),
-                child: _navOge(context, Icons.show_chart_rounded, 'Performans'),
-              ),
-            ),
-            Expanded(
-              child: _Vurgu(
-                aktif: _v(4),
-                child: _navOge(context, Icons.person_rounded, 'Profil'),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _navOge(BuildContext context, IconData ikon, String etiket,
-      {bool secili = false}) {
-    final p = context.c;
-    final renk = secili ? p.amberText : p.text36;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(ikon, size: 20, color: renk),
-        const SizedBox(height: SandikSpace.xs),
-        // Dar cihazda 'Performans' beş sütunun birine sığmaz; kırpmak
-        // yerine küçültülür — etiketin tamamı okunabilir kalır.
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            etiket,
-            maxLines: 1,
-            style: context.t.labelSmall?.copyWith(color: renk),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _fabOge(BuildContext context) {
-    final p = context.c;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: p.amberFill,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.add_rounded, size: 20, color: p.onAmber),
-        ),
-        const SizedBox(height: SandikSpace.xs),
-        // FAB'ın etiketi yok; boşluk, diğer dört sütunla aynı yüksekliği
-        // tutar — yoksa çubuk dişli görünür.
-        Text(' ', style: context.t.labelSmall),
-      ],
-    );
-  }
-
-  // ── Ana ekran ────────────────────────────────────────────────────────
-  Widget _anaEkran(BuildContext context) {
-    final p = context.c;
-    final rc = RemoteConfigService.instance;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Text(
-              'sandık',
-              style: context.t.titleMedium?.copyWith(
-                color: p.gold,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const Spacer(),
-            _Vurgu(
-              aktif: _v(1),
-              child: _ikonKare(context, Icons.refresh_rounded),
-            ),
-            const SizedBox(width: SandikSpace.xs),
-            _Vurgu(
-              aktif: _v(2),
-              child: _ikonKare(context, Icons.visibility_rounded),
-            ),
-          ],
-        ),
-        const SizedBox(height: SandikSpace.sm),
-        _Vurgu(aktif: _v(0), child: _bakiye(context)),
-        if (rc.realReturnEnabled) ...[
-          const SizedBox(height: SandikSpace.xs2),
-          _Vurgu(
-            aktif: _v(3),
-            child: _serit(context, Icons.trending_up_rounded,
-                'Enflasyon üstü getiri', '+%12,4', p.gain),
-          ),
-        ],
-        if (rc.percentileStripEnabled) ...[
-          const SizedBox(height: SandikSpace.xs2),
-          _Vurgu(
-            aktif: _v(4),
-            child: _serit(context, Icons.emoji_events_rounded, 'Yarış',
-                'İlk %18', p.amberText),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _bakiye(BuildContext context) {
-    final p = context.c;
-    return _Tile(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Toplam Birikim',
-              style: context.t.labelMedium?.copyWith(color: p.text36)),
-          const SizedBox(height: SandikSpace.xs),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '₺248.350',
-              style: context.t.headlineSmall?.copyWith(
-                color: p.gold,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(height: SandikSpace.xs),
-          Text(
-            // Yön hem renkle hem GLİFLE anlatılır: marka yeşili ile
-            // kırmızısı renk körlüğü altında yeterince ayrışmıyor.
-            '▲ ₺3.120 · %1,27',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.labelLarge?.copyWith(color: p.gain),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _serit(BuildContext context, IconData ikon, String etiket,
-      String deger, Color renk) {
-    final p = context.c;
-    return _Tile(
-      child: Row(
-        children: [
-          Icon(ikon, size: 14, color: renk),
-          const SizedBox(width: SandikSpace.xs2),
-          Expanded(
-            child: Text(
-              etiket,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.t.labelLarge?.copyWith(color: p.text58),
-            ),
-          ),
-          Text(
-            deger,
-            maxLines: 1,
-            style: context.t.labelLarge?.copyWith(
-              color: renk,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Portföy ──────────────────────────────────────────────────────────
-  Widget _portfoy(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Gerçek ekranda takip listesi seçicisi gövdenin EN ÜSTÜNDE durur;
-        // minyatür de aynı yerde göstermeli, yoksa kullanıcı tuşu
-        // aradığında bulamaz.
-        _Vurgu(
-          aktif: _v(2),
-          child: _segment(context, const ['Varlıklarım', 'Takip Listesi'], 0),
-        ),
-        const SizedBox(height: SandikSpace.sm),
-        _Vurgu(aktif: _v(0), child: _halka(context)),
-        const SizedBox(height: SandikSpace.xs2),
-        _Vurgu(aktif: _v(1), child: _varlikSatiri(context)),
-      ],
-    );
-  }
-
-  Widget _halka(BuildContext context) {
-    final p = context.c;
-    final dilimler = <(String, String, Color)>[
-      ('Hisse', '%46', p.amberFill),
-      ('Fon', '%31', p.info),
-      ('Altın', '%23', p.gold),
-    ];
-    return _Tile(
-      child: Row(
-        children: [
-          SizedBox(
-            width: SandikSpace.xxl,
-            height: SandikSpace.xxl,
-            child: CircularProgressIndicator(
-              value: 0.46,
-              strokeWidth: 7,
-              color: p.amberFill,
-              backgroundColor: p.hairline,
-            ),
-          ),
-          const SizedBox(width: SandikSpace.smd),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final (ad, pay, renk) in dilimler)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: SandikSpace.xxs),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration:
-                              BoxDecoration(color: renk, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: SandikSpace.xs2),
-                        Expanded(
-                          child: Text(
-                            ad,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: context.t.labelLarge
-                                ?.copyWith(color: p.text58),
-                          ),
-                        ),
-                        Text(
-                          pay,
-                          style: context.t.labelLarge?.copyWith(color: p.text90),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _varlikSatiri(BuildContext context) {
-    final p = context.c;
-    return _Tile(
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: p.amberFill.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(SandikRadius.sm),
-            ),
-            child: Text(
-              'THY',
-              style: context.t.labelSmall?.copyWith(
-                color: p.amberText,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: SandikSpace.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Türk Hava Yolları',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.labelLarge?.copyWith(color: p.text90),
-                ),
-                Text(
-                  '120 adet',
-                  maxLines: 1,
-                  style: context.t.labelSmall?.copyWith(color: p.text36),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: SandikSpace.xs),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '₺38.208',
-                maxLines: 1,
-                style: context.t.labelLarge?.copyWith(color: p.text90),
-              ),
-              Text(
-                '▲ %2,1',
-                maxLines: 1,
-                style: context.t.labelSmall?.copyWith(color: p.gain),
-              ),
-            ],
-          ),
-          Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: p.text36),
-        ],
-      ),
-    );
-  }
-
-  // ── Varlık ekle ──────────────────────────────────────────────────────
-  Widget _varlikEkle(BuildContext context) {
-    final p = context.c;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Varlık Ekle',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.titleMedium?.copyWith(color: p.text90),
-              ),
-            ),
-            // Minyatürdeki simgeler GERÇEK ekrandakilerle aynı olmalı:
-            // kullanıcı burada gördüğü tuşu orada arayacak. Hızlı Giriş'in
-            // giriş noktası mikrofon (⚡ sheet'in kendi başlığında),
-            // toplu ekleme ise liste simgesi.
-            _Vurgu(
-              aktif: _v(2),
-              child: _ikonKare(context, Icons.mic_none_rounded, marka: true),
-            ),
-            const SizedBox(width: SandikSpace.xs),
-            _Vurgu(
-              aktif: _v(3),
-              child: _ikonKare(context, Icons.playlist_add_rounded),
-            ),
-          ],
-        ),
-        const SizedBox(height: SandikSpace.sm),
-        _Vurgu(
-          aktif: _v(0),
-          child: Wrap(
-            spacing: SandikSpace.xs2,
-            runSpacing: SandikSpace.xs2,
-            children: [
-              for (final (ad, secili) in const [
-                ('Hisse', true),
-                ('Fon', false),
-                ('Altın', false),
-                ('Döviz', false),
-              ])
-                _cip(context, ad, secili: secili),
-            ],
-          ),
-        ),
-        const SizedBox(height: SandikSpace.sm),
-        _Vurgu(
-          aktif: _v(1),
-          child: Column(
-            children: [
-              _alan(context, 'Miktar', '120'),
-              const SizedBox(height: SandikSpace.xs2),
-              _alan(context, 'Alış fiyatı', '₺311,80'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _alan(BuildContext context, String etiket, String deger) {
-    final p = context.c;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.sm2, vertical: SandikSpace.sm),
-      decoration: BoxDecoration(
-        color: p.background,
-        borderRadius: BorderRadius.circular(SandikRadius.sm),
-        border: Border.all(color: p.hairline),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              etiket,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.t.labelLarge?.copyWith(color: p.text36),
-            ),
-          ),
-          Text(
-            deger,
-            maxLines: 1,
-            style: context.t.labelLarge?.copyWith(color: p.text90),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Performans ───────────────────────────────────────────────────────
-  Widget _performans(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _Vurgu(
-          aktif: _v(2),
-          child: _segment(context, const ['Birlikte', 'Ben'], 1),
-        ),
-        const SizedBox(height: SandikSpace.sm),
-        _Vurgu(
-          aktif: _v(0),
-          child: _segment(context, const ['GÜNLÜK', '1H', '1A', '1Y'], 1),
-        ),
-        const SizedBox(height: SandikSpace.sm),
-        _grafik(context),
-        const SizedBox(height: SandikSpace.sm),
-        _Vurgu(
-          aktif: _v(1),
-          child: _segment(context, const ['Gerçek', 'Simülasyon'], 0),
-        ),
-      ],
-    );
-  }
-
-  /// Süs grafiği — bir adımı temsil etmez, minyatürün "performans ekranı"
-  /// olduğunu tek bakışta anlatır.
-  Widget _grafik(BuildContext context) {
-    final p = context.c;
-    const oranlar = [0.35, 0.5, 0.42, 0.62, 0.55, 0.74, 0.68, 0.86, 1.0];
-    return SizedBox(
-      height: SandikSpace.xxl,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (final o in oranlar)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-                child: FractionallySizedBox(
-                  heightFactor: o,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: p.gain.withValues(alpha: 0.55),
-                      borderRadius: BorderRadius.circular(SandikRadius.sm),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ── Sinyaller ────────────────────────────────────────────────────────
-  Widget _sinyal(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _Vurgu(aktif: _v(0), child: _dagilim(context)),
-        const SizedBox(height: SandikSpace.sm),
-        _Vurgu(aktif: _v(1), child: _bildirim(context)),
-      ],
-    );
-  }
-
-  Widget _dagilim(BuildContext context) {
-    final p = context.c;
-    // Performans ekranındaki gerçek dağılım çubuğunun küçük kardeşi —
-    // aynı glif + metin ikili kodlaması, aynı renkler.
-    final paylar = <(int, String, String, Color)>[
-      (4, '▲', 'AL', p.gain),
-      (2, '▼', 'SAT', p.loss),
-      (1, '◆', 'NÖTR', p.text36),
-    ];
-    return _Tile(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 10,
-            child: Row(
-              children: [
-                for (final (pay, _, _, renk) in paylar)
-                  Expanded(
-                    flex: pay,
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: renk,
-                          borderRadius: BorderRadius.circular(SandikRadius.sm),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: SandikSpace.sm),
-          Wrap(
-            spacing: SandikSpace.smd,
-            runSpacing: SandikSpace.xs,
-            children: [
-              for (final (pay, glif, ad, renk) in paylar)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(glif,
-                        style: context.t.labelSmall?.copyWith(color: renk)),
-                    const SizedBox(width: SandikSpace.xs),
-                    Text(
-                      '$ad $pay',
-                      maxLines: 1,
-                      style: context.t.labelLarge?.copyWith(color: p.text58),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _bildirim(BuildContext context) {
-    final p = context.c;
-    return _Tile(
-      child: Row(
-        children: [
-          Icon(Icons.notifications_active_rounded, size: 16, color: p.amberText),
-          const SizedBox(width: SandikSpace.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'THYAO · AL sinyali',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.labelLarge?.copyWith(color: p.text90),
-                ),
-                Text(
-                  '6 göstergeden 4\'ü AL diyor',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.labelSmall?.copyWith(color: p.text36),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Profil ───────────────────────────────────────────────────────────
-  Widget _profil(BuildContext context) {
-    final p = context.c;
-    final rc = RemoteConfigService.instance;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _Vurgu(
-          aktif: _v(0),
-          child: _Tile(
-            child: Row(
-              children: [
-                Icon(Icons.people_alt_rounded, size: 16, color: p.amberText),
-                const SizedBox(width: SandikSpace.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Davet kodun',
-                        maxLines: 1,
-                        style:
-                            context.t.labelSmall?.copyWith(color: p.text36),
-                      ),
-                      Text(
-                        'S7K-M2Q4',
-                        maxLines: 1,
-                        style: context.t.labelLarge?.copyWith(
-                          color: p.text90,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.copy_rounded, size: 14, color: p.text36),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: SandikSpace.xs2),
-        _Vurgu(
-          aktif: _v(1),
-          child: Column(
-            children: [
-              if (rc.paywallEnabled && rc.premiumEnabled)
-                _profilSatiri(
-                    context, Icons.workspace_premium_rounded, 'Premium'),
-              // Bunlar Profil'in ALTINDAKİ Ayarlar sayfasında; minyatür de
-              // onları oraya götüren satırlar olarak gösteriyor.
-              _profilSatiri(context, Icons.settings_rounded, 'Ayarlar'),
-              _profilSatiri(context, Icons.insights_rounded, 'Sinyal ayarları'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _profilSatiri(BuildContext context, IconData ikon, String ad) {
-    final p = context.c;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: SandikSpace.xs),
-      child: _Tile(
-        child: Row(
-          children: [
-            Icon(ikon, size: 15, color: p.text58),
-            const SizedBox(width: SandikSpace.sm),
-            Expanded(
-              child: Text(
-                ad,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.labelLarge?.copyWith(color: p.text90),
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded, size: 16, color: p.text36),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Ortak parçalar ───────────────────────────────────────────────────
-  Widget _ikonKare(BuildContext context, IconData ikon, {bool marka = false}) {
-    final p = context.c;
-    return Container(
-      width: 26,
-      height: 26,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: marka ? p.amberFill.withValues(alpha: 0.18) : p.background,
-        borderRadius: BorderRadius.circular(SandikRadius.sm),
-        border: Border.all(color: p.hairline),
-      ),
-      child: Icon(ikon, size: 15, color: marka ? p.amberText : p.text58),
-    );
-  }
-
-  Widget _cip(BuildContext context, String ad, {bool secili = false}) {
-    final p = context.c;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.sm2, vertical: SandikSpace.xs2),
-      decoration: BoxDecoration(
-        color: secili ? p.amberFill : p.background,
-        borderRadius: BorderRadius.circular(SandikRadius.sm),
-        border: Border.all(color: p.hairline),
-      ),
-      child: Text(
-        ad,
-        maxLines: 1,
-        style: context.t.labelLarge?.copyWith(
-          color: secili ? p.onAmber : p.text58,
-          fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _segment(BuildContext context, List<String> etiketler, int seciliIdx) {
-    final p = context.c;
-    return Container(
-      padding: const EdgeInsets.all(SandikSpace.xxs),
-      decoration: BoxDecoration(
-        color: p.background,
-        borderRadius: BorderRadius.circular(SandikRadius.sm),
-        border: Border.all(color: p.hairline),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < etiketler.length; i++)
-            Expanded(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
-                alignment: Alignment.center,
-                decoration: i == seciliIdx
-                    ? BoxDecoration(
-                        color: p.surface2,
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      )
-                    : null,
-                // Dört dönem etiketi dar cihazda sığmaz; kırpmak yerine
-                // küçültülür.
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    etiketler[i],
-                    maxLines: 1,
-                    style: context.t.labelLarge?.copyWith(
-                      color: i == seciliIdx ? p.text90 : p.text36,
-                      fontWeight:
-                          i == seciliIdx ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Minyatürün çerçevesi — bir uygulama ekranı olduğunu belli eder.
-class _Cerceve extends StatelessWidget {
-  const _Cerceve({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.c;
-    return Container(
-      padding: const EdgeInsets.all(SandikSpace.smd),
-      decoration: BoxDecoration(
-        color: p.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: p.hairline),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// Çerçeve içindeki tek bir kart/satır.
-class _Tile extends StatelessWidget {
-  const _Tile({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.c;
-    return Container(
-      padding: const EdgeInsets.all(SandikSpace.sm2),
-      decoration: BoxDecoration(
-        color: p.background,
-        borderRadius: BorderRadius.circular(SandikRadius.sm),
-        border: Border.all(color: p.hairline),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// İçeriği olmayan gövde taslağı — "burada bir liste var" demenin en ucuz
-/// yolu. Sahte veri uydurmaz, bu yüzden yanlış da olamaz.
-class _Iskelet extends StatelessWidget {
-  const _Iskelet({required this.satir});
-
-  final int satir;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.c;
-    return Column(
-      children: [
-        for (var i = 0; i < satir; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: SandikSpace.xs2),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3 + i,
-                  child: Container(
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: p.hairline,
-                      borderRadius: BorderRadius.circular(SandikRadius.sm),
-                    ),
-                  ),
-                ),
-                const Spacer(flex: 2),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// Minyatürü olmayan sahnelerin (karşılama, kapanış) simgesi.
-class _Spot extends StatelessWidget {
-  const _Spot({required this.ikon});
-
-  final IconData ikon;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.c;
-    return Center(
-      child: Container(
-        width: 100,
-        height: 100,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: p.amberFill.withValues(alpha: 0.12),
-          border: Border.all(
-            color: p.amberFill.withValues(alpha: 0.40),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: p.amberFill.withValues(alpha: 0.25),
-              blurRadius: 40,
-              spreadRadius: 8,
-            ),
-          ],
-        ),
-        child: Icon(ikon, size: 48, color: p.amberText),
       ),
     );
   }
