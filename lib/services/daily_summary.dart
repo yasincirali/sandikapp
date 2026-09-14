@@ -8,6 +8,7 @@ import '../providers/portfolio_provider.dart';
 import '../utils/chart_axis.dart' show gunIciAsgariBantOrani;
 import 'history_service.dart';
 import '../utils/tr_format.dart';
+import 'bist_calendar.dart';
 
 /// Uygulama DIŞI yüzeylerin ortak günlük özet hesabı.
 ///
@@ -248,14 +249,20 @@ class DailySummary {
   /// Kullanıcının seçtiği GÖSTERİM penceresinden ayrıdır: 7/24 gösterim
   /// seçilse bile gece fiyat hareket etmez.
   ///
-  /// Resmî tatiller burada bilinmez — takvim gerektirir ve yanlış bir
-  /// tatil listesi listesizlikten kötüdür (bkz. TECHNICAL_DEBT.md).
+  /// Resmî tatiller [BistTakvimi]'nden gelir: sabit tarihli ulusal
+  /// tatiller her yıl, dinî bayramlar yalnızca ilan edilmiş yıllar için
+  /// (kapsanmayan yılda o günler AÇIK sayılır — yanlış liste listesizlikten
+  /// kötüdür). Arife ve 28 Ekim yarım gün: 12:30'da kapanır.
   static bool isMarketOpen(DateTime now) {
     if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
       return false;
     }
+    if (BistTakvimi.tatilMi(now)) return false;
     final mins = now.hour * 60 + now.minute;
-    return mins >= 10 * 60 && mins < 18 * 60 + 10;
+    final kapanis = BistTakvimi.yarimGunMu(now)
+        ? BistTakvimi.yarimGunKapanisDk
+        : 18 * 60 + 10;
+    return mins >= 10 * 60 && mins < kapanis;
   }
 
   /// Portföyün canlı toplam değeri (TRY).

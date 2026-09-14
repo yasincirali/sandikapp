@@ -8,6 +8,7 @@ import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -2231,6 +2232,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // (Üstteki strip periyottan bağımsız, o kalır.)
                         if (periodChangeTRY != null && !isStale)
                           _PeriodChangeRow(
+                            baz: ref.watch(bazParaProvider),
                             label: _periods[_selectedPeriodIdx].label,
                             changeTRY: periodChangeTRY,
                             changePct: periodChangePct,
@@ -2983,11 +2985,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 /// Değişim ham fiyat farkıdır (son − ilk) × miktar. Grafikteki çizginin iki
 /// ucuyla birebir tutarlıdır.
 class _PeriodChangeRow extends StatelessWidget {
+  /// Değişim TUTARI portföy değeridir → baz para biriminde (3.2).
+  final BazPara baz;
   final String label;
   final double changeTRY;
   final double? changePct;
 
   const _PeriodChangeRow({
+    required this.baz,
     required this.label,
     required this.changeTRY,
     required this.changePct,
@@ -3002,7 +3007,7 @@ class _PeriodChangeRow extends StatelessWidget {
     final positive = changeTRY >= 0;
     final color =
         isFlat ? context.c.text36 : (positive ? context.c.gain : context.c.loss);
-    final tryFmt = tryFormatter(digits: 0);
+    final tryFmt = baz.formatter(digits: 0);
 
     return Container(
       padding: const EdgeInsets.symmetric(

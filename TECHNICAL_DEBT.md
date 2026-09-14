@@ -907,7 +907,21 @@ yoksa testleriyle birlikte silinsin.
 
 ---
 
-## ⏸️ ERTELENDİ — Live Activity: resmî tatil takvimi
+## 🟢 BÜYÜK ÖLÇÜDE KAPANDI — Live Activity: resmî tatil takvimi
+
+**2026-09-14:** `services/bist_calendar.dart` (`BistTakvimi`) —
+`DailySummary.isMarketOpen` (kilit ekranı + widget ortak katmanı) artık
+sabit tarihli ulusal tatilleri her yıl, dinî bayramları YALNIZCA ilan
+edilmiş yıllar için (şimdilik 2026) kapalı sayar; arife ve 28 Ekim 12:30'da
+kapanır. Kaydın "yanlış liste listesizlikten kötü" uyarısına sadık:
+kapsanmayan yılda dinî bayram bilinmez ve o gün AÇIK sayılır (eski
+davranış), uydurulmaz. `bist_calendar_test` 2026 tarihlerini ve
+kapsam-dışı yıl davranışını kilitler.
+
+**Kalan (bakım):** her Aralık ayında bir sonraki yılın Resmî Gazete
+takvimini `_diniTamGun` / `_diniYarimGun`'a girip `sonKapsananYil`'i
+artır. Sunucu (push sinyalleri) hâlâ takvimi bilmez — "işlem günü"
+tablosu gelirse iki taraf da oradan beslenir.
 
 **Karar tarihi:** 2026-08-13
 
@@ -1024,6 +1038,10 @@ doğrulanır, ekran ileride parçalanınca test yine geçer. Örnek:
 `asset_card_overflow_test.dart`.
 
 **Sırada:** ~~`add_asset_screen` (form alanları)~~, ~~`portfolio_performance_screen`~~.
+**2026-09-14 (2. tur):** `settings_screens_overflow_test` (hub + 4 alt ekran ×
+3 genişlik + 1,6× metin) ve `alarm_widgets_overflow_test` (`AlarmSeridi` 7
+alarm/uzun ad, `AlarmKurSheet` seçicili/sabit/1,6×) eklendi — aynı gün gelen
+Ayarlar hub'ı ve alarm yüzeyleri artık kapsamda.
 `tester.takeException()` yeterli, golden test gerekmiyor.
 
 **2026-09-14:** `add_asset_screen_overflow_test.dart` eklendi — 5 genişlik ×

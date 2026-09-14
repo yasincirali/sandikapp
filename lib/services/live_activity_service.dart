@@ -503,8 +503,9 @@ class LiveActivityService {
   /// 22:00–06:00) aralık gece yarısını sarar. Naif bir `start <= x < end`
   /// karşılaştırması böyle bir pencerede HİÇBİR ZAMAN doğru olmazdı.
   ///
-  /// Resmî tatiller BURADA bilinmez — takvim gerektirir ve yanlış bir
-  /// tatil listesi, listesizlikten kötüdür. (Bkz. TECHNICAL_DEBT.md)
+  /// Resmî tatiller BURADA bilinmez; gösterim penceresi kullanıcının
+  /// tercihidir. Piyasanın fiilen kapalı olduğu tatiller [isMarketOpen]'da
+  /// (`BistTakvimi`) ele alınır — banner tatilde "Piyasa kapalı" der.
   bool isWithinWindow(DateTime now) {
     if (!includeWeekend &&
         (now.weekday == DateTime.saturday ||

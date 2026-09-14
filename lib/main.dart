@@ -24,6 +24,7 @@ import 'screens/main_navigation_screen.dart';
 import 'screens/lock_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'services/deep_link_service.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
@@ -190,6 +191,9 @@ void main() async {
       ),
     );
     await NotificationService.instance.init(navigatorKey: appNavigatorKey);
+    // Dış kaynaklı sandik:// bağlantıları (3.8). Bildirim servisinden SONRA:
+    // hedefe gidiş `openAssetPerformance` üzerinden, o da navigatorKey ister.
+    unawaited(DeepLinkService.instance.init());
     // Yalnızca zemini şeffaf yap. İkon parlaklığı BURADA sabitlenmez:
     // `Brightness.light` (beyaz ikon) light temada açık zemin üzerinde
     // okunmuyordu. İkon rengi tema ile birlikte değişmeli, bu yüzden
