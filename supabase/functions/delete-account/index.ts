@@ -3,6 +3,10 @@
 // Hesap silme Edge Function (Deno).
 // Akış:
 // 1. JWT ile kullanıcıyı doğrula (auth-required)
+// 1b. Taze kimlik: şifreli hesapta `password`; yalnızca Apple/Google ile
+//     açılmış hesapta `{provider, id_token, nonce?}` (istemci sağlayıcıdan
+//     yeni token alır, burada signInWithIdToken ile doğrulanır ve dönen
+//     kullanıcı JWT'dekiyle aynı olmalıdır)
 // 2. Service-role client ile auth.admin.deleteUser() çağır
 // 3. ON DELETE CASCADE ile bağlı tablolardaki tüm veri silinir
 // 4. account_deletion_log'a anonim kayıt (KVKK kanıtı)
@@ -85,29 +89,50 @@ Deno.serve(async (req: Request) => {
     // 2. Body'den password al ve re-auth (B5 fix)
     // Çalıntı cihaz/aktif JWT senaryosunda saldırgan sadece JWT ile
     // hesabı silemez; fresh password doğrulaması zorunlu.
-    let body: { password?: string };
+    let body: {
+      password?: string;
+      provider?: string;
+      id_token?: string;
+      nonce?: string;
+    };
     try {
       body = await req.json();
     } catch {
       return jsonResponse({ error: "Invalid JSON body" }, 400);
     }
 
-    const password = (body.password ?? "").trim();
-    if (!password) {
-      return jsonResponse({ error: "password_required" }, 400);
-    }
-
-    // Yeni bir anonymous client ile yalnızca password doğrulamak için login dene.
+    // Yeni bir anonymous client ile yalnızca kimlik doğrulamak için login dene.
     // Bu, mevcut session'ı bozmaz (autoRefresh + persist kapalı).
     const verifyClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { error: pwError } = await verifyClient.auth.signInWithPassword({
-      email: user.email,
-      password,
-    });
-    if (pwError) {
-      return jsonResponse({ error: "invalid_password" }, 401);
+
+    const password = (body.password ?? "").trim();
+    const idToken = (body.id_token ?? "").trim();
+    const provider = (body.provider ?? "").trim();
+
+    if (password) {
+      const { error: pwError } = await verifyClient.auth.signInWithPassword({
+        email: user.email,
+        password,
+      });
+      if (pwError) {
+        return jsonResponse({ error: "invalid_password" }, 401);
+      }
+    } else if (idToken && (provider === "apple" || provider === "google")) {
+      // Sosyal hesap: token'ı Supabase'in kendisi doğrular (imza, aud,
+      // nonce). Ek şart: token'ın sahibi JWT'deki kullanıcı olmalı — aksi
+      // hâlde saldırgan kendi Google hesabıyla başkasının oturumunu silerdi.
+      const { data, error: idErr } = await verifyClient.auth.signInWithIdToken({
+        provider,
+        token: idToken,
+        nonce: body.nonce,
+      });
+      if (idErr || !data.user || data.user.id !== user.id) {
+        return jsonResponse({ error: "invalid_identity" }, 401);
+      }
+    } else {
+      return jsonResponse({ error: "password_required" }, 400);
     }
 
     // 3. Service-role client (admin işlemleri için)

@@ -19,6 +19,7 @@ import 'forgot_password_screen.dart';
 import 'otp_verification_screen.dart';
 import 'register_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/social_sign_in_buttons.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -363,6 +364,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
+
+                    // Apple / Google — düğmeler platform ve yapılandırmaya
+                    // göre çizilir; yoksa bu satır boş kalır.
+                    const SocialSignInButtons(),
 
                     // Kayıt ol
                     CupertinoButton(
