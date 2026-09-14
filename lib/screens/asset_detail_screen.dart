@@ -32,6 +32,8 @@ import '../providers/signal_provider.dart';
 import '../models/asset_categories.dart';
 import '../services/tefas_service.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/alarm_kur_sheet.dart';
+import '../widgets/alarm_seridi.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -1198,6 +1200,10 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
+  /// Fiyat kaynağının anladığı sembol; yoksa alarm kurulamaz.
+  String? get _alarmSembolu =>
+      alarmSembolu(widget.asset.ticker, widget.asset.subCategory);
+
   /// Y/X ekseni interval'i için TradingView tarzı "nice number" —
   /// 1/2/2.5/5/10 tabanında yuvarlar. Örn: 34398 → 50000, 137 → 200.
   double _niceRound(double raw) {
@@ -1659,6 +1665,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         transparent: true,
         showBack: widget.showBackButton,
         actions: [
+          // Fiyat alarmı BURADAN kurulur (2026-09-14): alarm varlığa aittir,
+          // Ayarlar'daki liste yalnızca gösterir. Sembolü olmayan (manuel
+          // fiyatlı) varlıkta zil yok — sunucu fiyatını izleyemez.
+          if (_alarmSembolu != null)
+            IconButton(
+              tooltip: 'Fiyat alarmı kur',
+              icon: Icon(Icons.add_alert_outlined, color: context.c.text90),
+              onPressed: () => alarmKurAkisi(
+                context,
+                ref,
+                sabit: AlarmAdayi(
+                    _alarmSembolu!, widget.asset.name, widget.asset.currentPrice),
+              ),
+            ),
           if (isOwnAsset && !widget.showBackButton)
             PopupMenuButton<String>(
               icon: Icon(Icons.more_vert_rounded, color: context.c.text90),
@@ -1742,6 +1762,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   asset: widget.asset,
                   onTap: _sinyalPaneline,
                 ),
+                if (_alarmSembolu != null) ...[
+                  AlarmSeridi(
+                    sembol: _alarmSembolu!,
+                    ad: widget.asset.name,
+                    guncelFiyat: widget.asset.currentPrice,
+                  ),
+                  const SizedBox(height: SandikSpace.smd),
+                ],
                 _buildPeriodToggle(),
                 const SizedBox(height: 24),
                 FutureBuilder<Map<int, double>>(

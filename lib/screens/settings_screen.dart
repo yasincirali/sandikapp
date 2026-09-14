@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
+import '../providers/price_alert_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/quiet_hours_provider.dart';
@@ -30,14 +31,31 @@ import 'price_alerts_screen.dart';
 import 'signal_settings_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 
+/// Ayarlar'ın alt ekranları. Hub → bölüm, en fazla bir seviye derin.
+enum SettingsBolum {
+  gorunum('Görünüm'),
+  bildirimler('Bildirimler'),
+  hesap('Hesap & Güvenlik'),
+  yardim('Yardım & Yasal');
+
+  const SettingsBolum(this.baslik);
+  final String baslik;
+}
+
 /// Profil → Ayarlar ekranı.
 ///
-/// İçerik:
-/// - Yasal belgeler (Gizlilik Politikası, Kullanım Koşulları, KVKK)
-/// - Disclaimer'ı tekrar görüntüleme
-/// - Hesabımı sil (yasal zorunluluk: Play 2024 + App Store 5.1.1(v))
+/// 2026-09-14: tek uzun liste (9 bölüm, ~25 satır) sığ bir HUB'a bölündü —
+/// dört satır, her biri bir alt ekran ([SettingsBolum]). Aynı `State`
+/// sınıfı hem hub'ı hem bölümü çizer: silme/dışa aktarma/yasal metin
+/// akışları bu sınıfta yaşıyor, bölüm başına kopyalanmasın diye.
+///
+/// Özelliğe ait ayarlar ait olduğu yerde durur: Yarış anahtarı Lider
+/// tablosu ekranına taşındı, fiyat alarmı varlık ekranından kurulur;
+/// Bildirimler bölümünde yalnızca liste kalır.
 class SettingsScreen extends ConsumerStatefulWidget {
-  const SettingsScreen({super.key});
+  /// `null` → hub; dolu → o bölümün satırları.
+  final SettingsBolum? bolum;
+  const SettingsScreen({super.key, this.bolum});
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -372,217 +390,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bolum = widget.bolum;
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: const SandikAppBar(
-        title: 'Ayarlar',
+      appBar: SandikAppBar(
+        title: bolum?.baslik ?? 'Ayarlar',
       ),
       body: AbsorbPointer(
         absorbing: _deleting,
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          children: [
-            const SandikSectionHeader(title: 'GÖRÜNÜM'),
-            const SizedBox(height: 12),
-            const _ThemeModePicker(),
-            const SizedBox(height: 12),
-            const _BaseCurrencyPicker(),
-            const SizedBox(height: 24),
+          children: switch (bolum) {
+            null => _hub(),
+            SettingsBolum.gorunum => _gorunum(),
+            SettingsBolum.bildirimler => _bildirimler(),
+            SettingsBolum.hesap => _hesap(),
+            SettingsBolum.yardim => _yardim(),
+          },
+        ),
+      ),
+    );
+  }
 
-            // -- BİLDİRİMLER ---------------------------------------
-            //
-            // Sinyalle ilgili İKİ ayar vardı ve iki ayrı bölümdeydi:
-            // bildirim anahtarı "BİLDİRİMLER"de, gösterge seçimi
-            // "SİNYALLER"de. Kullanıcı sinyalleri ayarlamak istediğinde
-            // ekranda iki farklı yere bakmak zorundaydı. Aynı özelliğin
-            // parçaları bir arada durur.
-            const SandikSectionHeader(title: 'BİLDİRİMLER'),
-            const SizedBox(height: 12),
-            _SwitchTile(
-              icon: Icons.notifications_active_outlined,
-              title: 'Teknik sinyal bildirimleri',
-              subtitle: 'AL/SAT göstergesi tetiklendiğinde bildirim al',
-              value: ref.watch(signalNotificationsProvider),
-              onChanged: (v) async {
-                await ref.read(signalNotificationsProvider.notifier).set(v);
-                // Sunucuya da yaz: sinyal push'unu sunucu gönderiyor, bu
-                // anahtar orada bilinmezse kapatmak işe yaramaz.
-                await syncSignalsEnabledPreference(ref);
-              },
-            ),
-            _SettingsTile(
-              icon: Icons.tune_rounded,
-              title: 'Sinyal ayarları',
-              subtitle: 'Her varlık türü için gösterge seçimi + Premium',
-              onTap: () => Navigator.push(
-                context,
-                adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
-              ),
-            ),
-            _SettingsTile(
-              icon: Icons.add_alert_outlined,
-              title: 'Fiyat alarmları',
-              subtitle: 'Hedef fiyata gelince haber ver',
-              onTap: () => Navigator.push(
-                context,
-                adaptiveRoute<void>(builder: (_) => const PriceAlertsScreen()),
-              ),
-            ),
-            const _QuietHoursTile(),
-            const SizedBox(height: 8),
-            _SwitchTile(
-              icon: Icons.people_outline_rounded,
-              title: 'Ortaklık daveti bildirimleri',
-              subtitle: 'Yeni ortaklık isteği geldiğinde bildirim al',
-              value: ref.watch(partnerNotificationsProvider),
-              onChanged: (v) =>
-                  ref.read(partnerNotificationsProvider.notifier).set(v),
-            ),
-            // Ortağı OLMAYAN kullanıcıya gösterilmez: kapatacak bir şeyi
-            // yokken sunulan anahtar, ayar listesini uzatmaktan başka işe
-            // yaramaz ve "bu ne?" sorusu doğurur.
-            if (ref.watch(activePartnersProvider).isNotEmpty)
-              const _PartnerActivitySwitch(),
-            const SizedBox(height: 28),
+  void _bolumAc(SettingsBolum b) => Navigator.of(context).push(
+        adaptiveRoute<void>(builder: (_) => SettingsScreen(bolum: b)),
+      );
 
-            // -- CANLI ETKİNLİKLER ---------------------------------
-            //
-            // Bölüm başlığı iOS'taki özellik adıyla EŞLEŞİR ("Canlı
-            // Etkinlikler"): kullanıcı gördüğü adla arar.
-            //
-            // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
-            // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
-            // Etkinlik'in ne göstereceğini belirler ve o özellik
-            // kapalıyken hiçbir şey ifade etmez. Android'in ayar
-            // kılavuzu da bunu söylüyor -- bir ayar, ait olduğu
-            // ÖZELLİĞİN altında durur.
-            //
-            // iOS-only: Android'de ActivityKit yok, kanal kayıtlı değil
-            // ve `sync` ilk satırda döner (bkz. LiveActivityService).
-            // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
-            if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              const SandikSectionHeader(title: 'CANLI ETKİNLİKLER'),
-              const SizedBox(height: 12),
-              const _LiveActivitySection(),
-              const SizedBox(height: 28),
-            ],
-
-            // -- ORTAKLIK ------------------------------------------
-            //
-            // Tek satırlık "SOSYAL" bölümüydü; adı artık içeriğiyle
-            // eşleşiyor.
-            const SandikSectionHeader(title: 'ORTAKLIK'),
-            const SizedBox(height: 12),
-            _SwitchTile(
-              icon: Icons.emoji_events_outlined,
-              title: 'Yarış\'a katıl',
-              subtitle:
-                  'Ortaklarınla getiri sıralaması. Sadece kaydolan ortaklar '
-                  'birbirinin yüzdesini görebilir; hangi varlıklara sahip '
-                  'olduğunu asla göstermez.',
-              value: ref.watch(leaderboardOptInProvider),
-              onChanged: (v) =>
-                  ref.read(leaderboardOptInProvider.notifier).set(v),
-            ),
-            const SizedBox(height: 28),
-            const SandikSectionHeader(title: 'YASAL'),
-            const SizedBox(height: 12),
-            _SettingsTile(
-              icon: Icons.privacy_tip_outlined,
-              title: 'Gizlilik Politikası',
-              subtitle: 'Verilerin nasıl işleniyor',
-              onTap: () => _showLegalDoc('Gizlilik Politikası',
-                  LegalDocs.privacy, Icons.privacy_tip_outlined),
-            ),
-            _SettingsTile(
-              icon: Icons.gavel_outlined,
-              title: 'Kullanım Koşulları',
-              subtitle: 'Hizmet sözleşmesi',
-              onTap: () => _showLegalDoc(
-                  'Kullanım Koşulları', LegalDocs.terms, Icons.gavel_outlined),
-            ),
-            _SettingsTile(
-              icon: Icons.shield_outlined,
-              title: 'KVKK Aydınlatma Metni',
-              subtitle: 'Kişisel veri işleme aydınlatması',
-              onTap: () => _showLegalDoc('KVKK Aydınlatma Metni',
-                  LegalDocs.kvkk, Icons.shield_outlined),
-            ),
-            _SettingsTile(
-              icon: Icons.gavel_rounded,
-              title: 'Yatırım Tavsiyesi Reddi',
-              subtitle: 'Onayladığın yasal uyarı metnini görüntüle',
-              onTap: _showDisclaimerText,
-            ),
-            const SizedBox(height: 28),
-            const SandikSectionHeader(title: 'DESTEK'),
-            const SizedBox(height: 12),
-            _SettingsTile(
-              icon: Icons.mail_outline_rounded,
-              title: 'Bize Ulaş',
-              subtitle: _supportEmail,
-              onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
-            ),
-            _SettingsTile(
-              icon: Icons.explore_outlined,
-              title: 'Tanıtım turunu yeniden izle',
-              subtitle: 'Ekranların ne işe yaradığını hatırla',
-              // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
-              // köke dönülür ve katman orada açılır.
-              onTap: () => OnboardingScreen.yenidenBaslat(context),
-            ),
-            _SettingsTile(
-              icon: Icons.rate_review_outlined,
-              title: 'Şikayet & Tavsiye',
-              subtitle: 'Görüşünü bize ilet',
-              onTap: _openFeedbackSheet,
-            ),
-            const SizedBox(height: 28),
-            const SandikSectionHeader(title: 'HESAP'),
-            const SizedBox(height: 12),
-            _SwitchTile(
-              icon: Icons.fingerprint_rounded,
-              title: 'Biyometrik kilit',
-              subtitle:
-                  'Uygulamayı açarken Face ID / parmak izi / cihaz PIN\'i iste',
-              value: ref.watch(biometricLockProvider),
-              onChanged: (v) async {
-                if (v) {
-                  // Açarken bir kez doğrula: cihazda kilit yoksa ya da
-                  // kullanıcı vazgeçerse anahtar açık kalmasın — sonra
-                  // kilitten çıkamayacağı bir ekrana düşerdi.
-                  final svc = BiometricLockService.instance;
-                  if (!await svc.available) {
-                    if (!context.mounted) return;
-                    sandikSnack(context,
-                        'Bu cihazda biyometrik doğrulama ya da PIN tanımlı değil.',
-                        kind: SandikSnackKind.warning);
-                    return;
-                  }
-                  final ok = await svc.authenticate(
-                      reason: 'Biyometrik kilidi açmak için kimliğini doğrula');
-                  if (!ok) return;
-                }
-                await ref.read(biometricLockProvider.notifier).set(v);
-              },
-            ),
-            _SettingsTile(
-              icon: Icons.download_outlined,
-              title: 'Verilerimi İndir',
-              subtitle: 'Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)',
-              trailing:
-                  _exporting ? const CustomLoadingIndicator(size: 18) : null,
-              onTap: _exporting ? null : _exportData,
-            ),
-            _SettingsTile(
-              icon: Icons.delete_forever_outlined,
-              title: 'Hesabımı Sil',
-              subtitle: 'Tüm verilerin kalıcı olarak silinir',
-              destructive: true,
-              trailing:
-                  _deleting ? const CustomLoadingIndicator(size: 18) : null,
-              onTap: _deleting ? null : _confirmDeleteAccount,
-            ),
+  /// Hub: dört bölüm + (admin) tanılama + (debug) geliştirici + sürüm.
+  List<Widget> _hub() => [
+        const SizedBox(height: 4),
+        _SettingsTile(
+          icon: Icons.palette_outlined,
+          title: SettingsBolum.gorunum.baslik,
+          subtitle: 'Tema, baz para birimi',
+          onTap: () => _bolumAc(SettingsBolum.gorunum),
+        ),
+        _SettingsTile(
+          icon: Icons.notifications_outlined,
+          title: SettingsBolum.bildirimler.baslik,
+          subtitle: defaultTargetPlatform == TargetPlatform.iOS
+              ? 'Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik'
+              : 'Sinyaller, fiyat alarmları, sessiz saatler',
+          onTap: () => _bolumAc(SettingsBolum.bildirimler),
+        ),
+        _SettingsTile(
+          icon: Icons.shield_outlined,
+          title: SettingsBolum.hesap.baslik,
+          subtitle: 'Biyometrik kilit, verilerini indir, hesabını sil',
+          onTap: () => _bolumAc(SettingsBolum.hesap),
+        ),
+        _SettingsTile(
+          icon: Icons.help_outline_rounded,
+          title: SettingsBolum.yardim.baslik,
+          subtitle: 'Bize ulaş, tanıtım turu, gizlilik ve koşullar',
+          onTap: () => _bolumAc(SettingsBolum.yardim),
+        ),
             // Push teşhisi debug kapısının DIŞINDA, admin'e açık.
             //
             // Bu ekranın tek işi zincirin neresinin koptuğunu göstermek ve
@@ -647,11 +509,206 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
+      ];
+
+  List<Widget> _gorunum() => [
+            const SizedBox(height: 4),
+            const _ThemeModePicker(),
+            const SizedBox(height: 12),
+            const _BaseCurrencyPicker(),
+            const SizedBox(height: 24),
+
+      ];
+
+  List<Widget> _bildirimler() => [
+            const SandikSectionHeader(title: 'BİLDİRİMLER'),
+            const SizedBox(height: 12),
+            _SwitchTile(
+              icon: Icons.notifications_active_outlined,
+              title: 'Teknik sinyal bildirimleri',
+              subtitle: 'AL/SAT göstergesi tetiklendiğinde bildirim al',
+              value: ref.watch(signalNotificationsProvider),
+              onChanged: (v) async {
+                await ref.read(signalNotificationsProvider.notifier).set(v);
+                // Sunucuya da yaz: sinyal push'unu sunucu gönderiyor, bu
+                // anahtar orada bilinmezse kapatmak işe yaramaz.
+                await syncSignalsEnabledPreference(ref);
+              },
+            ),
+            _SettingsTile(
+              icon: Icons.tune_rounded,
+              title: 'Sinyal ayarları',
+              subtitle: 'Her varlık türü için gösterge seçimi + Premium',
+              onTap: () => Navigator.push(
+                context,
+                adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
+              ),
+            ),
+            // Alarm KURMA yeri varlık ekranıdır (zil ikonu); burada yalnızca
+            // liste. Alt satır aktif sayısını söyler ki hub'dan bakan kişi
+            // ekrana girmeden durumu görsün.
+            _SettingsTile(
+              icon: Icons.add_alert_outlined,
+              title: 'Fiyat alarmları',
+              subtitle: () {
+                final aktif = ref
+                        .watch(priceAlertsProvider)
+                        .valueOrNull
+                        ?.where((a) => a.isActive)
+                        .length ??
+                    0;
+                return aktif == 0
+                    ? 'Varlık ekranındaki zil ile kurulur'
+                    : '$aktif aktif alarm';
+              }(),
+              onTap: () => Navigator.push(
+                context,
+                adaptiveRoute<void>(builder: (_) => const PriceAlertsScreen()),
+              ),
+            ),
+            const _QuietHoursTile(),
+            const SizedBox(height: 8),
+            _SwitchTile(
+              icon: Icons.people_outline_rounded,
+              title: 'Ortaklık daveti bildirimleri',
+              subtitle: 'Yeni ortaklık isteği geldiğinde bildirim al',
+              value: ref.watch(partnerNotificationsProvider),
+              onChanged: (v) =>
+                  ref.read(partnerNotificationsProvider.notifier).set(v),
+            ),
+            // Ortağı OLMAYAN kullanıcıya gösterilmez: kapatacak bir şeyi
+            // yokken sunulan anahtar, ayar listesini uzatmaktan başka işe
+            // yaramaz ve "bu ne?" sorusu doğurur.
+            if (ref.watch(activePartnersProvider).isNotEmpty)
+              const _PartnerActivitySwitch(),
+            const SizedBox(height: 28),
+
+            // -- CANLI ETKİNLİKLER ---------------------------------
+            //
+            // Bölüm başlığı iOS'taki özellik adıyla EŞLEŞİR ("Canlı
+            // Etkinlikler"): kullanıcı gördüğü adla arar.
+            //
+            // Tutar anahtarı da BURADA durur, "GİZLİLİK" altında değil.
+            // Gizlilik onun SONUCU, konusu değil: anahtar Canlı
+            // Etkinlik'in ne göstereceğini belirler ve o özellik
+            // kapalıyken hiçbir şey ifade etmez. Android'in ayar
+            // kılavuzu da bunu söylüyor -- bir ayar, ait olduğu
+            // ÖZELLİĞİN altında durur.
+            //
+            // iOS-only: Android'de ActivityKit yok, kanal kayıtlı değil
+            // ve `sync` ilk satırda döner (bkz. LiveActivityService).
+            // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
+            if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+              const SandikSectionHeader(title: 'CANLI ETKİNLİKLER'),
+              const SizedBox(height: 12),
+              const _LiveActivitySection(),
+              const SizedBox(height: 28),
+            ],
+
+      ];
+
+  List<Widget> _hesap() => [
+            const SizedBox(height: 4),
+            _SwitchTile(
+              icon: Icons.fingerprint_rounded,
+              title: 'Biyometrik kilit',
+              subtitle:
+                  'Uygulamayı açarken Face ID / parmak izi / cihaz PIN\'i iste',
+              value: ref.watch(biometricLockProvider),
+              onChanged: (v) async {
+                if (v) {
+                  // Açarken bir kez doğrula: cihazda kilit yoksa ya da
+                  // kullanıcı vazgeçerse anahtar açık kalmasın — sonra
+                  // kilitten çıkamayacağı bir ekrana düşerdi.
+                  final svc = BiometricLockService.instance;
+                  if (!await svc.available) {
+                    if (!mounted) return;
+                    sandikSnack(context,
+                        'Bu cihazda biyometrik doğrulama ya da PIN tanımlı değil.',
+                        kind: SandikSnackKind.warning);
+                    return;
+                  }
+                  final ok = await svc.authenticate(
+                      reason: 'Biyometrik kilidi açmak için kimliğini doğrula');
+                  if (!ok) return;
+                }
+                await ref.read(biometricLockProvider.notifier).set(v);
+              },
+            ),
+            _SettingsTile(
+              icon: Icons.download_outlined,
+              title: 'Verilerimi İndir',
+              subtitle: 'Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)',
+              trailing:
+                  _exporting ? const CustomLoadingIndicator(size: 18) : null,
+              onTap: _exporting ? null : _exportData,
+            ),
+            _SettingsTile(
+              icon: Icons.delete_forever_outlined,
+              title: 'Hesabımı Sil',
+              subtitle: 'Tüm verilerin kalıcı olarak silinir',
+              destructive: true,
+              trailing:
+                  _deleting ? const CustomLoadingIndicator(size: 18) : null,
+              onTap: _deleting ? null : _confirmDeleteAccount,
+            ),
+      ];
+
+  List<Widget> _yardim() => [
+            const SandikSectionHeader(title: 'DESTEK'),
+            const SizedBox(height: 12),
+            _SettingsTile(
+              icon: Icons.mail_outline_rounded,
+              title: 'Bize Ulaş',
+              subtitle: _supportEmail,
+              onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
+            ),
+            _SettingsTile(
+              icon: Icons.explore_outlined,
+              title: 'Tanıtım turunu yeniden izle',
+              subtitle: 'Ekranların ne işe yaradığını hatırla',
+              // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
+              // köke dönülür ve katman orada açılır.
+              onTap: () => OnboardingScreen.yenidenBaslat(context),
+            ),
+            _SettingsTile(
+              icon: Icons.rate_review_outlined,
+              title: 'Şikayet & Tavsiye',
+              subtitle: 'Görüşünü bize ilet',
+              onTap: _openFeedbackSheet,
+            ),
+            const SizedBox(height: 28),
+            const SandikSectionHeader(title: 'YASAL'),
+            const SizedBox(height: 12),
+            _SettingsTile(
+              icon: Icons.privacy_tip_outlined,
+              title: 'Gizlilik Politikası',
+              subtitle: 'Verilerin nasıl işleniyor',
+              onTap: () => _showLegalDoc('Gizlilik Politikası',
+                  LegalDocs.privacy, Icons.privacy_tip_outlined),
+            ),
+            _SettingsTile(
+              icon: Icons.gavel_outlined,
+              title: 'Kullanım Koşulları',
+              subtitle: 'Hizmet sözleşmesi',
+              onTap: () => _showLegalDoc(
+                  'Kullanım Koşulları', LegalDocs.terms, Icons.gavel_outlined),
+            ),
+            _SettingsTile(
+              icon: Icons.shield_outlined,
+              title: 'KVKK Aydınlatma Metni',
+              subtitle: 'Kişisel veri işleme aydınlatması',
+              onTap: () => _showLegalDoc('KVKK Aydınlatma Metni',
+                  LegalDocs.kvkk, Icons.shield_outlined),
+            ),
+            _SettingsTile(
+              icon: Icons.gavel_rounded,
+              title: 'Yatırım Tavsiyesi Reddi',
+              subtitle: 'Onayladığın yasal uyarı metnini görüntüle',
+              onTap: _showDisclaimerText,
+            ),
+            const SizedBox(height: 28),
+      ];
 }
 
 /// Bölüm İÇİ alt başlık — ör. "Canlı Etkinlikler > Gizlilik".

@@ -13,6 +13,8 @@ import 'package:flutter/material.dart'
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
+import '../providers/price_alert_provider.dart';
+import '../widgets/alarm_kur_sheet.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
@@ -1148,16 +1150,29 @@ class _AssetCardState extends State<_AssetCard>
                             // Fon/hisse: yalnızca KOD (THYAO). Uzun tam ad
                             // satırı taşırıyordu — tam ad artık detay panelinde
                             // "TAM ADI" alanında, kırpılmadan.
-                            Text(
-                              a.showTicker ? a.displayTicker! : a.name,
-                              maxLines: a.showTicker ? 1 : 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.t.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: context.c.text90,
-                                height: 1.25,
-                                letterSpacing: a.showTicker ? 0.2 : -0.2,
-                              ),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    a.showTicker ? a.displayTicker! : a.name,
+                                    maxLines: a.showTicker ? 1 : 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.t.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: context.c.text90,
+                                      height: 1.25,
+                                      letterSpacing:
+                                          a.showTicker ? 0.2 : -0.2,
+                                    ),
+                                  ),
+                                ),
+                                // Aktif fiyat alarmı olan varlık belli olsun:
+                                // kullanıcı "hangisine alarm koymuştum" diye
+                                // Ayarlar'a gitmesin (2026-09-14).
+                                _AlarmRozeti(
+                                  sembol: alarmSembolu(a.ticker, a.subCategory),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 3),
                             Text(
@@ -1332,6 +1347,29 @@ class _AssetCardState extends State<_AssetCard>
 }
 
 // ── Expand Chevron ────────────────────────────────────────────────────────────
+
+/// Sembolde aktif alarm varsa küçük zil; yoksa hiçbir şey.
+class _AlarmRozeti extends ConsumerWidget {
+  final String? sembol;
+  const _AlarmRozeti({required this.sembol});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = sembol;
+    if (s == null) return const SizedBox.shrink();
+    final aktif =
+        ref.watch(symbolAlertsProvider(s)).where((a) => a.isActive).length;
+    if (aktif == 0) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(left: SandikSpace.xs),
+      child: Semantics(
+        label: '$aktif aktif fiyat alarmı',
+        child: Icon(Icons.notifications_active_rounded,
+            size: 14, color: context.c.amberText),
+      ),
+    );
+  }
+}
 
 class _ExpandChevron extends StatelessWidget {
   final bool expanded;
