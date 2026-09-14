@@ -58,6 +58,18 @@ void main() {
     expect(main.contains('DeepLinkService.instance.init()'), isTrue);
   });
 
+  test('soğuk açılış bağlantısı TEK KEZ işlenir', () {
+    // `getInitialLink()` + `uriLinkStream` birlikte kullanılırsa eklenti
+    // aynı bağlantıyı iki kez verir: `getInitialLink` `initialLinkSent`
+    // bayrağını kurmaz, `onListen` de bayrak kurulu değilken soğuk açılış
+    // bağlantısını ilk aboneye yeniden yollar (Android/iOS kaynağı aynı).
+    // Sonuç: varlık ekranı üst üste iki kez push ediliyordu.
+    final src = File('lib/services/deep_link_service.dart').readAsStringSync();
+    expect(src.contains('links.uriLinkStream.listen'), isTrue);
+    expect(src.contains('links.getInitialLink('), isFalse,
+        reason: 'akış zaten ilk bağlantıyı veriyor — ikinci okuma çift push');
+  });
+
   test('platform tarafı: Android intent-filter ve iOS URL şeması', () {
     final manifest =
         File('android/app/src/main/AndroidManifest.xml').readAsStringSync();

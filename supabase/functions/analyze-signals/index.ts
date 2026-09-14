@@ -310,6 +310,18 @@ export function positionKeyOf(
   return t ? `pos:${a.type}|${t}` : a.id;
 }
 
+/// De-dup hafızasının bellek içi anahtarı: `<user_id>|<pozisyon anahtarı>`.
+///
+/// Pozisyon anahtarı (0062'den beri `signal_state.asset_id` sütununda duran
+/// değer) kullanıcılar arasında ORTAKTIR — `pos:hisse|THYAO.IS` aynı hisseyi
+/// tutan herkeste aynıdır. Tablonun PK'sı `(user_id, asset_id)` olduğu için
+/// veritabanı tarafı doğru; hata yalnızca fonksiyonun tüm kullanıcıların
+/// satırlarını TEK haritaya doldurduğu yerdeydi: A'nın durumu B'ninkini
+/// eziyor, B'nin push'u susuyor ve B'nin durumu hiç yazılmıyordu.
+export function signalStateKey(userId: string, posKey: string): string {
+  return `${userId}|${posKey}`;
+}
+
 export function collapseLotsToPositions<T extends { id: string; user_id: string; type: string }>(
   assets: T[],
   symbolOf: (a: T) => string | undefined,
@@ -513,7 +525,12 @@ Deno.serve(async (request) => {
     // Eskiden de-dup döngü İÇİNDE varlık başına ayrı sorgu yapıyordu (N+1) ve
     // kontrol tüm ağır işten SONRA geliyordu. Artık durum önceden toplu
     // okunur; hem N+1 gider hem de kontrol erkene alınabilir.
-    const lastSignalOf = new Map<string, string>(); // assetId → signal
+    // ⚠️ Anahtar `<user_id>|<pozisyon anahtarı>`. 0062'den beri `asset_id`
+    // sütunu POZİSYON anahtarı taşıyor (`pos:hisse|THYAO.IS`) ve o anahtar
+    // kullanıcılar arasında ORTAK. Yalnızca `asset_id` ile anahtarlamak, aynı
+    // hisseyi tutan iki kullanıcıdan birinin durumunu ötekinin üstüne yazardı:
+    // A'ya gönderilmiş sinyal B'nin push'unu susturur.
+    const lastSignalOf = new Map<string, string>();
     // De-dup'ın zaman ve güven hafızası (migration 0038). Cooldown, günlük
     // hatırlatma ve "güven sıçradı mı" kararları bunlardan hesaplanır.
     const lastNotifiedOf = new Map<string, Date>();
@@ -521,22 +538,24 @@ Deno.serve(async (request) => {
     {
       const { data: lastRows } = await admin
         .from('signal_state')
-        .select('asset_id, signal, notified_at, confidence')
+        .select('user_id, asset_id, signal, notified_at, confidence')
         .in('user_id', userIds);
       for (
         const r of (lastRows ?? []) as {
+          user_id: string;
           asset_id: string;
           signal: string;
           notified_at: string | null;
           confidence: number | null;
         }[]
       ) {
-        lastSignalOf.set(r.asset_id, r.signal);
+        const k = signalStateKey(r.user_id, r.asset_id);
+        lastSignalOf.set(k, r.signal);
         if (r.notified_at) {
-          lastNotifiedOf.set(r.asset_id, new Date(r.notified_at));
+          lastNotifiedOf.set(k, new Date(r.notified_at));
         }
         if (r.confidence != null) {
-          lastConfidenceOf.set(r.asset_id, Number(r.confidence));
+          lastConfidenceOf.set(k, Number(r.confidence));
         }
       }
     }
@@ -603,9 +622,11 @@ Deno.serve(async (request) => {
     // güncellenecek. Set: aynı türde birden çok varlık varsa tek yazım.
     const notifiedPrefKeys = new Set<string>();
     // Başarıyla push edilen sinyaller — döngü sonunda signal_state'e yazılır.
+    // Anahtar yine `<user_id>|<pozisyon anahtarı>`: aynı turda iki kullanıcı
+    // aynı pozisyon için push alırsa ikisinin de durumu yazılmalı.
     const sentSignalOf = new Map<
       string,
-      { userId: string; signal: string; confidence: number }
+      { userId: string; posKey: string; signal: string; confidence: number }
     >();
     const preview: Array<Record<string, unknown>> = [];
     // FCM'in reddettiği gönderimlerin sebebi. `failed > 0` olduğunda
@@ -630,7 +651,8 @@ Deno.serve(async (request) => {
       const neutralPush = pref?.neutral_push ?? false;
       // De-dup hafızası POZİSYON anahtarıyla (bkz. `positionKeyOf`).
       const posKey = positionKeyOf(asset);
-      const oncekiSinyal = lastSignalOf.get(posKey);
+      const durumAnahtari = signalStateKey(asset.user_id, posKey);
+      const oncekiSinyal = lastSignalOf.get(durumAnahtari);
 
       // Premium göstergeler sunucuda hesaplanmaz — premium durumu burada
       // güvenilir biçimde bilinmiyor. Kullanıcı premium ise uygulama içi
@@ -654,9 +676,9 @@ Deno.serve(async (request) => {
       // Durum `signal_state`'ten toplu okundu (döngü içinde sorgu YOK).
       if (
         !shouldSendSignal(oncekiSinyal, summary.signal, {
-          oncekiGuven: lastConfidenceOf.get(posKey) ?? null,
+          oncekiGuven: lastConfidenceOf.get(durumAnahtari) ?? null,
           yeniGuven: summary.confidence,
-          sonBildirim: lastNotifiedOf.get(posKey) ?? null,
+          sonBildirim: lastNotifiedOf.get(durumAnahtari) ?? null,
           simdi: now,
         })
       ) {
@@ -751,8 +773,9 @@ Deno.serve(async (request) => {
           // De-dup durumu: yalnızca gönderim BAŞARILI olduğunda güncellenir.
           // Başarısız gönderimde yazılsaydı, kullanıcıya ulaşmamış bir sinyal
           // bir sonraki turu bloklardı.
-          sentSignalOf.set(posKey, {
+          sentSignalOf.set(durumAnahtari, {
             userId: asset.user_id,
+            posKey,
             signal: summary.signal,
             confidence: summary.confidence,
           });
@@ -779,12 +802,12 @@ Deno.serve(async (request) => {
     // gönderilir — istenen "sinyal değişince bildir" davranışı bozulur.
     if (!dryRun && sentSignalOf.size > 0) {
       const stamp = now.toISOString();
-      for (const [posKey, v] of sentSignalOf) {
+      for (const v of sentSignalOf.values()) {
         try {
           await admin.rpc('touch_signal_state', {
             p_user_id: v.userId,
             // 0062'den beri pozisyon anahtarı; sütun adı tarihî.
-            p_asset_id: posKey,
+            p_asset_id: v.posKey,
             p_signal: v.signal,
             p_at: stamp,
             // De-dup hafızası: cooldown/hatırlatma bu damgadan, "güven

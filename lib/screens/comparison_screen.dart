@@ -189,30 +189,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     return HistoryService.instance.getPortfolioHistory(active, days);
   }
 
-  /// TÜFE endeksini dönem penceresinde AYLIK noktalar olarak döndürür.
+  /// TÜFE endeksini dönem penceresinde BASAMAKLI noktalar olarak döndürür.
   ///
-  /// Pencere `days` gün geriye; içindeki her ay başı bir nokta. Son
-  /// açıklanan ay "şimdi"ye kadar sabit taşınır — basamak grafiğin sözü
-  /// tam olarak bu: değer bir sonraki açıklamaya kadar geçerli. Ara gün
-  /// ÜRETİLMEZ. Pencerede iki aydan az nokta varsa (1H) `normalizeSeries`
-  /// `null` döner ve satır "yeterli veri yok" der — 1H'de aylık bir
-  /// gösterge zaten anlamsız.
+  /// Kural ve gerekçesi `InflationService.pencereSerisi`'nde — saf olduğu
+  /// için orada testlenebiliyor; burada yalnızca veri çekilir.
   Future<Map<int, double>> _loadTufeSeries(int days) async {
     final endeks = await InflationService.instance.indexSeries();
-    if (endeks.isEmpty) return const {};
-    final simdi = DateTime.now();
-    final baslangic = simdi.subtract(Duration(days: days));
-    final aylar = endeks.keys.where((a) => !a.isBefore(baslangic)).toList()
-      ..sort();
-    if (aylar.isEmpty) return const {};
-    final out = <int, double>{
-      for (final a in aylar) a.millisecondsSinceEpoch: endeks[a]!,
-    };
-    final sonAy = aylar.last;
-    if (simdi.isAfter(sonAy)) {
-      out[simdi.millisecondsSinceEpoch] = endeks[sonAy]!;
-    }
-    return out;
+    return InflationService.pencereSerisi(endeks, DateTime.now(), days);
   }
 
   void _remove(String ticker) {

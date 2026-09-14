@@ -1147,6 +1147,29 @@ dosyada ayrıca kaynak metni denetleyen bir "wiring" testi var.
 
 ---
 
+## ✅ KAPANDI — Paralel oturum incelemesi (2026-09-14)
+
+İki bağımsız oturum aynı gün aynı dosyalara dokundu (baz para birimi,
+Ayarlar hub'ı, alarmlar, derin bağlantı, paylaşım kartı). Metinsel çakışma
+rebase'de çözüldü ama ANLAMSAL entegrasyon incelenmemişti; `82363ae..HEAD`
+aralığı gözden geçirildi ve altı hata bulundu (hepsi düzeltildi, testlendi):
+
+| Bulgu | Etki |
+|---|---|
+| `analyze-signals` de-dup haritası `asset_id` ile anahtarlı | 0062'den beri o sütun POZİSYON anahtarı ve kullanıcılar arası ORTAK: bir kullanıcının durumu ötekinin push'unu susturuyordu |
+| Karşılaştırmada TÜFE 1A'da düz %0 | 30 günlük pencereye tek endeks noktası düşüyor; "enflasyon sıfır" okunuyordu |
+| Gün içi karşılaştırmada seans günü kapısı | İki future birlikte başlıyor; karşılaştırma önce dönerse kapı boş/eski değer okuyor |
+| Derin bağlantı çift push | `getInitialLink` + akış: eklenti aynı bağlantıyı iki kez veriyor |
+| iOS izin damgası kayıttan önce | Kayıt düşerse olay kalıcı kayboluyor |
+| Gizli bakiye maskesi `gr••••` | Gram altında sembol sonek |
+
+**Ders:** paralel oturumlar aynı gün aynı alana dokunduğunda, çakışmasız
+birleşme "doğru birleşti" demek değil. İkisi de yeşil testle geldi; hatalar
+tam olarak ikisinin BİRLEŞME noktalarındaydı (0062 şema değişikliği ×
+fonksiyonun bellek içi haritası, yeni TÜFE serisi × mevcut pencere kuralı).
+
+---
+
 ## 🟡 AÇIK — Riverpod ile setState karışımı
 
 Ekranlarda **147 `setState`** çağrısı. Yerel arayüz durumu (açık/kapalı
@@ -1175,11 +1198,24 @@ cinsi varlıklarda dolu; TRY varlıklar için tarihli USDTRY serisi gerekir ve
 seri motoru (`HistoryService`) bu çevrimi bilmiyor. Kur bazlı getiri ayrı bir
 hesap ve ayrı bir tur.
 
-**Kalan ₺ sabit yüzeyler:** `asset_detail_screen` (fiyat grafiği ve özet),
-takip listesi, `transaction_row` (geçmiş tutar — bilerek ₺), bildirim ve özet
-metinleri (`daily_summary`, `recap_service`, `milestone_service`,
-`period_summary_service` cümleleri), `home_widget_service`, `live_activity_service`.
-Bunlar ya sunucu/işletim sistemi yüzeyi (kur bilgisi yok) ya da tarihli tutar.
+**2026-09-14 (ikinci/üçüncü tur):** kapsam bir SÖZLEŞMEYE bağlandı —
+portföy **DEĞERLERİ** baz birimde, kote **FİYATLAR** ₺ (kendi biriminde).
+`money_format_scope_test` iki kümeyi kaynakta ayrı tutar. Değer kümesine
+`asset_detail_screen`in PnL toplamı ve dönem değişimi ile `transaction_row`
+eklendi; hareket tutarı da bugünkü kurla çevrilir (maliyet zaten öyleydi,
+aynı sınıf sayının listede ₺ kalması tutarsızdı) — ama "o gün kaç dolardı"
+sorusunun cevabı DEĞİLDİR.
+
+**Kalan ₺ sabit yüzeyler — hepsi bilinçli:**
+- **Kote fiyatlar:** tekil varlık grafiğinin ekseni/ipucu/çapası ve birim
+  fiyatı, takip listesi (`currencySymbolFor`, AAPL için `$`), alarm hedefi,
+  form girdisi. Bir hissenin TL fiyatını dolara çevirmek borsadaki sayıyla
+  çelişir.
+- **Bildirim ve özet metinleri** (`daily_summary`, `recap_service`,
+  `milestone_service`, `period_summary_service` cümleleri): metni sunucu ya da
+  arka plan üretiyor, kullanıcının tercihi orada okunmuyor.
+- **`home_widget_service` / `live_activity_service`**: işletim sistemi yüzeyi;
+  sözleşme `shared_preferences` üzerinden ve kur bilgisi taşımıyor.
 
 **Ele alınma zamanı:** kullanıcı geri bildirimi "dolar getirim yanlış" derse.
 

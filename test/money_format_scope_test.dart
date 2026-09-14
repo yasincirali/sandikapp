@@ -23,6 +23,10 @@ void main() {
     'lib/widgets/period_summary_view.dart',
     'lib/screens/portfolio_performance_screen.dart',
     'lib/screens/portfolio_screen.dart',
+    // Hareket tutarı da bir değerdir: maliyet zaten bugünkü kurla
+    // çevriliyor, aynı sınıf sayının listede ₺ kalması tutarsızdı
+    // (2026-09-14, 3. tur).
+    'lib/widgets/transaction_row.dart',
   ];
 
   // Fiyat kümesi: alarm hedefi, kotasyon, form girdisi.

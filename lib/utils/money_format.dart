@@ -55,6 +55,12 @@ class BazPara {
 
   double cevir(double tryTutar) => lira ? tryTutar : tryTutar / kur;
 
+  /// Bakiye gizliyken yazılan maske — sembol tutarla AYNI tarafta durur.
+  /// Gram altında sembol sonektir (`3,4 gr`); maskeyi her zaman ön eke
+  /// koymak `gr••••` gibi bir şey üretiyordu.
+  String get gizliTutar =>
+      etkinBirim == BaseCurrency.gold ? '•••• $sembol' : '$sembol••••';
+
   /// `tryFormatter(digits:)` karşılığı — `format(num)` sunar.
   ParaBicimi formatter({int digits = 0}) => ParaBicimi._(this, digits);
 

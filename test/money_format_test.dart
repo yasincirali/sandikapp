@@ -64,6 +64,14 @@ void main() {
     });
   });
 
+  test('gizli bakiye maskesi sembolle AYNI tarafta', () {
+    // Gram altında sembol sonek (`3,4 gr`); maske her zaman ön ekse
+    // `gr••••` gibi bir şey çıkıyordu (2026-09-14 incelemesi).
+    expect(const BazPara.lira().gizliTutar, '₺••••');
+    expect(const BazPara(BaseCurrency.usd, 40).gizliTutar, '\$••••');
+    expect(const BazPara(BaseCurrency.gold, 5000).gizliTutar, '•••• gr');
+  });
+
   test('fromIndex bilinmeyen değerde ₺', () {
     expect(BaseCurrency.fromIndex(-1), BaseCurrency.try_);
     expect(BaseCurrency.fromIndex(99), BaseCurrency.try_);
@@ -80,5 +88,16 @@ void main() {
     expect(perf, isNot(contains('tryFormatter(digits: 0)')),
         reason: 'performans ekranında ₺\'ye sabit biçimlendirici kalmamalı');
     expect(oku('lib/widgets/period_summary_view.dart'), isNot(contains('fmtTRY(')));
+
+    // Tekil varlık ekranı ve hareket satırları (2026-09-14): DEĞER tutarları
+    // baz birimde. Fiyat/değer ayrımının kendisi `money_format_scope_test`te.
+    final detay = oku('lib/screens/asset_detail_screen.dart');
+    expect(detay, contains('final baz = ref.watch(bazParaProvider)'));
+    expect(detay, contains('baz: baz'));
+    expect(oku('lib/widgets/transaction_row.dart'), contains('final BazPara baz'));
+
+    // Takip listesi BİLİNÇLİ hariç: oradaki fiyat varlığın KENDİ kurundadır
+    // (AAPL için $), TRY tutarı değil — baz birime çevirmek yanlış olurdu.
+    expect(oku('lib/screens/watchlist_screen.dart'), contains('currencySymbolFor('));
   });
 }

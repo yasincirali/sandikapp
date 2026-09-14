@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
+import '../utils/money_format.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 
@@ -19,18 +20,23 @@ class TransactionRow extends StatelessWidget {
     required this.asset,
     required this.portfolioState,
     this.hideBalance = false,
+    this.baz = const BazPara.lira(),
   });
 
   final Asset asset;
   final PortfolioState portfolioState;
   final bool hideBalance;
 
+  /// Gösterim birimi (Faz 3.2). Geçmiş bir hareket de BUGÜNKÜ kurla
+  /// çevrilir — uygulamanın her yerinde geçerli sadeleştirme
+  /// (`money_format.dart`); tutarın ₺ değeri defterde değişmez.
+  final BazPara baz;
+
   @override
   Widget build(BuildContext context) {
     // Portföy ekranındaki varlık kartlarıyla birebir tutar gösterimi için
     // 3 ondalıklı format (tryFmt3 ile aynı biçim).
-    final tryFmt =
-        tryFormatter(digits: 3);
+    final tryFmt = baz.formatter(digits: 3);
     final bool isSell = asset.isSell;
     final bool isDelete = asset.isDeleteLog;
     final bool isDividend = asset.isDividend;
@@ -239,7 +245,7 @@ class TransactionRow extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       child: Text(
                         hideBalance
-                            ? '$sign₺••••'
+                            ? '$sign${baz.gizliTutar}'
                             : '$sign${tryFmt.format(txValueTRY)}',
                         maxLines: 1,
                         // İşlem tutarı — alt alta listelenir, tabular figür.

@@ -106,6 +106,44 @@ class InflationService {
   /// interpolasyon yapılmaz — TÜİK'in açıklamadığı bir sayı üretmek olurdu.
   Future<Map<DateTime, double>> indexSeries() => _yukle();
 
+  /// Endeksi bir karşılaştırma penceresine oturtur: `<zaman damgası, endeks>`.
+  ///
+  /// Kural (2026-09-14 incelemesiyle düzeltildi):
+  /// - Pencere içinde hiç açıklama yoksa BOŞ döner — aylık bir göstergeyi
+  ///   haftalık pencerede çizmek anlamsız; satır "yeterli veri yok" der.
+  /// - Pencere başındaki nokta, o an YÜRÜRLÜKTE olan endekstir (pencereden
+  ///   önce açıklanmış son ay), damgası pencere başına çakılır. Eskiden
+  ///   yalnızca pencere içindeki aylar alınıyordu: 1A'da tek ay + taşınan
+  ///   nokta = iki EŞİT değer, yani düz %0 çizgisi. Kullanıcı "bir ayda
+  ///   enflasyon sıfır" diye okuyordu.
+  /// - Son açıklanan ay [simdi]'ye kadar sabit taşınır; ara gün üretilmez.
+  static Map<int, double> pencereSerisi(
+    Map<DateTime, double> endeks,
+    DateTime simdi,
+    int days,
+  ) {
+    if (endeks.isEmpty) return const {};
+    final baslangic = simdi.subtract(Duration(days: days));
+    final aylar = endeks.keys.where((a) => !a.isBefore(baslangic)).toList()
+      ..sort();
+    if (aylar.isEmpty) return const {};
+
+    final out = <int, double>{};
+    final oncekiler = endeks.keys.where((a) => a.isBefore(baslangic)).toList()
+      ..sort();
+    if (oncekiler.isNotEmpty) {
+      out[baslangic.millisecondsSinceEpoch] = endeks[oncekiler.last]!;
+    }
+    for (final a in aylar) {
+      out[a.millisecondsSinceEpoch] = endeks[a]!;
+    }
+    final sonAy = aylar.last;
+    if (simdi.isAfter(sonAy)) {
+      out[simdi.millisecondsSinceEpoch] = endeks[sonAy]!;
+    }
+    return out;
+  }
+
   /// Endeks tablosunda hiç satır var mı?
   ///
   /// Çoğu çağıran [isStale] istiyor: boş tablo ile DURMUŞ seri kullanıcı
