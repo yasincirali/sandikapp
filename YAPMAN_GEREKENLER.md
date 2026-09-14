@@ -37,7 +37,7 @@ artık eski davranışa dönmez (fail-closed).
 > yeniden dağıtıldı.** Satır 22 ve 23 TAMAMEN kapandı; sunucu tarafında
 > bekleyen migration ya da fonksiyon dağıtımı kalmadı.
 >
-> Kalan işler secret rotasyonları (#1, #3, #5), sosyal giriş sağlayıcı
+> Kalan işler secret rotasyonları (#1, #3; #5 tuz 2026-09-14 set edildi), sosyal giriş sağlayıcı
 > ayarları (#15, #16) ve cihaz testleri (#12, #18).
 
 | # | İş | Neden | Nasıl |
@@ -50,7 +50,7 @@ artık eski davranışa dönmez (fail-closed).
 | 2 | **Git geçmişini temizle** (isteğe bağlı ama önerilir) | Repo klonlanmış/fork'lanmışsa eski secret oradan okunabilir; rotasyon yapıldıysa zararsız ama temiz olsun. | `git filter-repo --path tmp/update_daily_brief_vault.sql --invert-paths` + force push; tüm klonlar yeniden çekmeli. |
 | 3 | ✅ **YAPILDI (2026-09-14 20:14)** — `LIVE_ACTIVITY_CRON_SECRET` rastgele değerle set edildi, Vault eşitlendi | `push-live-activity` artık `x-cron-secret` doğruluyor. Vault'taki eski 219 karakterlik service_role JWT'si rastgele bir secret'la DEĞİŞTİRİLDİ (JWT'yi function secret'ı olarak kopyalamak tek sızıntıda tüm DB'yi açardı). | **Canlıda doğrulandı:** `trigger_live_activity_push()` → `200 {"sent":5,"removed":1,"total":6}`. Teşhis sırası kayda değer: önce `503 cron_secret_missing` (function secret yok) → `401 Yetkisiz cron cagrisi` (secret var, Vault eşleşmiyor) → `200`. Üç kod üç ayrı eksiği gösterir, karıştırma. |
 | 4 | ✅ **YAPILDI (2026-09-14 20:26)** — YEDİ cron secret'ının hepsi canlıda doğrulandı | Fonksiyonlar fail-closed (`cronSecretZorunlu`): secret yoksa 503, Vault ile eşleşmiyorsa 401. Yedi tetikleyicinin yedisi de `200` döndü. `daily_brief` ve `live_activity` bu turda ROTASYONLA, `weekly_summary`+`inflation_fetch` AYRIŞTIRILARAK, `analyze_signals`+`calendar_nudge`+`price_alerts` olduğu gibi doğrulandı. | ⚠️ **Çağrı tuzağı:** `trigger_analyze_signals` parametre alır — `select public.trigger_analyze_signals('hourly');` (geçerli slot'lar: `morning`, `afternoon`, `hourly`). Argümansız çağrı `42883 function does not exist` der; bu YETKİ ya da EKSİKLİK değil, imza uyuşmazlığıdır. Diğer altısı parametresizdir. |
-| 5 | **`DELETION_HASH_SALT` set et** | Varsayılan tuz kaldırıldı; set değilse hesap silme 503 döner. | `supabase secrets set DELETION_HASH_SALT=$(openssl rand -hex 32)` — bir kez set et, bir daha DEĞİŞTİRME (eski log kayıtlarıyla eşleşme bozulur). |
+| 5 | ✅ **YAPILDI (2026-09-14)** — `DELETION_HASH_SALT` set edildi; hesap silme akışı canlıda açık | Varsayılan tuz kaldırıldı; set değilse hesap silme 503 dönüyordu. Bir daha DEĞİŞTİRME (eski log kayıtlarıyla eşleşme bozulur). | `supabase secrets set DELETION_HASH_SALT=$(openssl rand -hex 32)` — bir kez set et, bir daha DEĞİŞTİRME (eski log kayıtlarıyla eşleşme bozulur). |
 | 6 | **8 edge function'ı yeniden deploy et** | analyze-signals, calendar-nudge, check-price-alerts, daily-brief, fetch-inflation, weekly-summary, push-live-activity, send-partner-invite-push, delete-account (`_shared/cron_auth.ts` yeni). | `supabase functions deploy <ad>` — cron olanlarda da gateway JWT doğrulaması AÇIK kalır (0054 deseni: Authorization'da service_role JWT, `x-cron-secret`'ta secret). |
 | 7 | **`0055_is_push_admin_grant.sql`'i koş** | Ayarlar'daki "Push Teşhisi" tile'ı artık `is_push_admin()` RPC'sine bakıyor; GRANT yoksa tile admin'e de görünmez (fonksiyon hata → false). | `supabase db push` ya da SQL Editor. |
 | 11 | **`0056_force_rls_and_db_logs_retention.sql`'i koş** | Tüm kullanıcı tablolarında FORCE RLS + db_logs 30 gün saklama cron'u. | `supabase db push` ya da SQL Editor. |
