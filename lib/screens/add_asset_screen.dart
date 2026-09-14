@@ -13,6 +13,7 @@ import '../services/price_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -373,11 +374,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: context.c.background,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        title: Text(
+      appBar: SandikAppBar(
+        titleWidget: Text(
           title,
           style: context.t.headlineSmall
               ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
@@ -843,8 +841,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (price == null || price <= 0) return const SizedBox.shrink();
 
     final total = qty * price;
-    final fmt =
-        tryFormatter(digits: 2, symbol: _currency == 'TRY' ? '₺ ' : '');
+    final fmt = tryFormatter(digits: 2, symbol: _currency == 'TRY' ? '₺ ' : '');
     final formatted = _currency == 'TRY'
         ? fmt.format(total)
         : '${qtyFormatter(maxDigits: 2).format(total)} $_currency';

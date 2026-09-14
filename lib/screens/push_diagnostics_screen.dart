@@ -9,6 +9,7 @@ import '../services/live_activity_service.dart';
 import '../services/remote_push_service.dart';
 import '../services/surface_theme.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../utils/sandik_snack.dart';
@@ -43,9 +44,11 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   List<dynamic> _responses = const [];
   List<dynamic> _sinyaller = const [];
   List<dynamic> _tercihler = const [];
+
   /// Kayıtlı token satırları — platformuyla birlikte (bkz. `_load`).
   List<dynamic> _tokenlar = const [];
   int? _myTokenCount;
+
   /// Bölüm bazlı hatalar — hepsi patlamadıysa sayfada uyarı olarak gösterilir.
   List<String> _kismiHatalar = const [];
   bool _tetikleniyor = false;
@@ -210,7 +213,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     }
 
     final hatalar = <String>[];
-    final jobs = await dene('push_cron_jobs', () => db.rpc('push_cron_jobs'), hatalar);
+    final jobs =
+        await dene('push_cron_jobs', () => db.rpc('push_cron_jobs'), hatalar);
     final runs = await dene('push_cron_runs',
         () => db.rpc('push_cron_runs', params: {'p_limit': 20}), hatalar);
     final responses = await dene('push_http_responses',
@@ -422,8 +426,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     if (basarisiz.isNotEmpty) {
       return (
         baslik: 'Cron çalıştı ama HATA verdi',
-        detay: basarisiz.first['return_message']?.toString() ??
-            'Bilinmeyen hata',
+        detay:
+            basarisiz.first['return_message']?.toString() ?? 'Bilinmeyen hata',
         renk: context.c.loss,
       );
     }
@@ -566,17 +570,15 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     // kendisini değil yalnızca var/yok bilgisini gösterir.
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Push Teşhisi',
-            style: TextStyle(color: context.c.text90, fontWeight: FontWeight.w700)),
+      appBar: SandikAppBar(
+        title: 'Push Teşhisi',
         actions: [
           IconButton(
             icon: Icon(Icons.refresh_rounded, color: context.c.text58),
             onPressed: _loading ? null : _load,
           ),
         ],
+        transparent: true,
       ),
       body: SafeArea(
         child: _loading
@@ -595,8 +597,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline_rounded,
-              color: context.c.loss, size: 40),
+          Icon(Icons.error_outline_rounded, color: context.c.loss, size: 40),
           const SizedBox(height: 12),
           Text(
             yetkisiz
@@ -710,14 +711,15 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             '5. SUNUCUDAKİ TERCİHLER (ayarlar kaydediliyor mu?)',
             _tercihler.isEmpty
                 ? 'Hiç satır yok — ayarlar sunucuya YAZILMAMIŞ'
-                : null, [
-          for (final p in _tercihler)
-            '${p['asset_type']}  eşik:${p['threshold']}  '
-                '${p['frequency']} ${p['notify_hours']}\n'
-                '   açık:${p['signals_enabled']} nötr:${p['neutral_push']} '
-                'son:${p['last_notified_at'] ?? "-"}\n'
-                '   güncelleme: ${p['updated_at']}',
-        ]),
+                : null,
+            [
+              for (final p in _tercihler)
+                '${p['asset_type']}  eşik:${p['threshold']}  '
+                    '${p['frequency']} ${p['notify_hours']}\n'
+                    '   açık:${p['signals_enabled']} nötr:${p['neutral_push']} '
+                    'son:${p['last_notified_at'] ?? "-"}\n'
+                    '   güncelleme: ${p['updated_at']}',
+            ]),
         // Kilit ekranı teması iki uçtan besleniyor ve ayrıştıklarında
         // belirti aynı ("tema kendiliğinden değişiyor"), sebep farklı.
         // İki ucu yan yana yazmak tahmini ortadan kaldırır.
@@ -725,26 +727,27 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             '6. CANLI ETKİNLİK / TEMA',
             _canliOturumlar.isEmpty
                 ? 'Aktif oturum satırı yok — kilit ekranı push ALMIYOR'
-                : null, [
-          'Yerel karar (SurfaceTheme): '
-              '${SurfaceTheme.instance.isLight ? "AÇIK" : "KOYU"}',
-          'Tercih: ${_temaTercihiAdi()}',
-          if (_canliOturumlar.isNotEmpty) '',
-          for (final s in _canliOturumlar) ...[
-            'satır • güncelleme: '
-                '${s['updated_at']?.toString().substring(0, 16) ?? "?"}'
-                '  bitiş: ${s['expires_at']?.toString().substring(0, 16) ?? "?"}',
-            // Sunucunun push'a koyduğu değer BU: sütun varsa sütun,
-            // yoksa özetteki yedek alan.
-            '   sütun (is_light_theme): '
-                '${s.containsKey('is_light_theme') ? (s['is_light_theme'] == true ? "AÇIK" : "KOYU") : "SÜTUN YOK ← 0050 migration koşulmamış"}',
-            '   özet (summary.isLightTheme): '
-                '${s['summary'] == null ? "özet YOK" : ((s['summary'] as Map)['isLightTheme'] == true ? "AÇIK" : "KOYU")}',
-            '   özet şeması: '
-                '${s['summary'] == null ? "-" : (s['summary'] as Map)['schema'] ?? "damgasız"}'
-                ' (beklenen ${LiveActivityService.summarySchemaVersion})',
-          ],
-        ]),
+                : null,
+            [
+              'Yerel karar (SurfaceTheme): '
+                  '${SurfaceTheme.instance.isLight ? "AÇIK" : "KOYU"}',
+              'Tercih: ${_temaTercihiAdi()}',
+              if (_canliOturumlar.isNotEmpty) '',
+              for (final s in _canliOturumlar) ...[
+                'satır • güncelleme: '
+                    '${s['updated_at']?.toString().substring(0, 16) ?? "?"}'
+                    '  bitiş: ${s['expires_at']?.toString().substring(0, 16) ?? "?"}',
+                // Sunucunun push'a koyduğu değer BU: sütun varsa sütun,
+                // yoksa özetteki yedek alan.
+                '   sütun (is_light_theme): '
+                    '${s.containsKey('is_light_theme') ? (s['is_light_theme'] == true ? "AÇIK" : "KOYU") : "SÜTUN YOK ← 0050 migration koşulmamış"}',
+                '   özet (summary.isLightTheme): '
+                    '${s['summary'] == null ? "özet YOK" : ((s['summary'] as Map)['isLightTheme'] == true ? "AÇIK" : "KOYU")}',
+                '   özet şeması: '
+                    '${s['summary'] == null ? "-" : (s['summary'] as Map)['schema'] ?? "damgasız"}'
+                    ' (beklenen ${LiveActivityService.summarySchemaVersion})',
+              ],
+            ]),
         _bolum('7. SİNYAL GEÇMİŞİ (de-dup kaynağı)',
             _sinyaller.isEmpty ? 'Kayıt yok' : null, [
           for (final s in _sinyaller)
@@ -767,7 +770,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             'kaynağı burasıdır — bildirim listesini silmek tek başına '
             'gönderimi açmaz.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: context.c.text36, fontSize: 11, height: 1.4),
+            style:
+                TextStyle(color: context.c.text36, fontSize: 11, height: 1.4),
           ),
           const SizedBox(height: 12),
         ],
@@ -790,7 +794,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: context.c.amberFill),
+                style: FilledButton.styleFrom(
+                    backgroundColor: context.c.amberFill),
                 onPressed: _tetikleniyor ? null : () => _tetikle(dryRun: false),
                 child: const Text('Gerçek push'),
               ),

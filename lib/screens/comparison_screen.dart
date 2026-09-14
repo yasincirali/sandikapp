@@ -11,6 +11,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/history_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../utils/chart_axis.dart';
@@ -213,10 +214,8 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
     return Scaffold(
       backgroundColor: p.background,
-      appBar: AppBar(
-        title: const Text('Karşılaştır'),
-        backgroundColor: p.background,
-        elevation: 0,
+      appBar: const SandikAppBar(
+        title: 'Karşılaştır',
       ),
       body: SafeArea(
         child: Column(
@@ -224,23 +223,22 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
             _periodSelector(p),
             Expanded(
               child: RefreshIndicator(
-                color: p.amberText,
-                // Periyot değişimiyle aynı yol: tüm seriler yeniden çekilir.
-                onRefresh: () => _changePeriod(_periodIdx),
-                child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                children: [
-                  _chartCard(p),
-                  const SizedBox(height: 16),
-                  _selectionList(p),
-                  const SizedBox(height: 12),
-                  _addButton(p),
-                  const SizedBox(height: 16),
-                  _disclaimer(p),
-                ],
-              )
-              ),
+                  color: p.amberText,
+                  // Periyot değişimiyle aynı yol: tüm seriler yeniden çekilir.
+                  onRefresh: () => _changePeriod(_periodIdx),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    children: [
+                      _chartCard(p),
+                      const SizedBox(height: 16),
+                      _selectionList(p),
+                      const SizedBox(height: 12),
+                      _addButton(p),
+                      const SizedBox(height: 16),
+                      _disclaimer(p),
+                    ],
+                  )),
             ),
           ],
         ),
@@ -418,44 +416,46 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(_displayTicker(hit),
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: p.text90,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                        if (isOwned) ...[
-                          const SizedBox(width: 6),
-                          // Kullanıcının sahip olduğu varlıklar işaretlenir:
-                          // grafikte "benim" ile "olsaydı" ayrımı kritik.
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: p.amberFill.withValues(alpha: 0.18),
-                              borderRadius:
-                                  BorderRadius.circular(SandikRadius.sm),
-                            ),
-                            child: Text('Portföyümde',
-                                style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    color: p.amberText)),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(_displayTicker(hit),
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            color: p.text90,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600)),
+                                  ),
+                                  if (isOwned) ...[
+                                    const SizedBox(width: 6),
+                                    // Kullanıcının sahip olduğu varlıklar işaretlenir:
+                                    // grafikte "benim" ile "olsaydı" ayrımı kritik.
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            p.amberFill.withValues(alpha: 0.18),
+                                        borderRadius: BorderRadius.circular(
+                                            SandikRadius.sm),
+                                      ),
+                                      child: Text('Portföyümde',
+                                          style: TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w700,
+                                              color: p.amberText)),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              Text(hit.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  style:
+                                      TextStyle(color: p.text58, fontSize: 11)),
+                            ],
                           ),
-                        ],
-                      ],
-                    ),
-                    Text(hit.name,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: p.text58, fontSize: 11)),
-                  ],
-                ),
                         ),
                       ],
                     ),
@@ -1000,8 +1000,8 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                         'Portföyler hesaplanan serilerdir — piyasada kote '
                         'değiller. Getirileri, tıpkı bir varlık gibi dönem '
                         'başına göre yüzde olarak çizilir.',
-                        style:
-                            TextStyle(color: p.text36, fontSize: 11, height: 1.4),
+                        style: TextStyle(
+                            color: p.text36, fontSize: 11, height: 1.4),
                       ),
                     ),
                   ],

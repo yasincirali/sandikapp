@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset_type.dart';
 import '../models/signal_frequency.dart';
@@ -7,6 +7,7 @@ import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../widgets/disclaimer_widget.dart';
 import 'paywall_screen.dart';
 
@@ -27,20 +28,8 @@ class SignalSettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: context.c.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: context.c.text90, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Sinyal Ayarları',
-          style: context.t.headlineMedium?.copyWith(
-            color: context.c.text90,
-          ),
-        ),
+      appBar: const SandikAppBar(
+        title: 'Sinyal Ayarları',
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -52,9 +41,8 @@ class SignalSettingsScreen extends ConsumerWidget {
           if (paywallOn) ...[
             _PremiumCard(
               unlocked: premium,
-              onToggle: () => ref
-                  .read(premiumUnlockedProvider.notifier)
-                  .set(!premium),
+              onToggle: () =>
+                  ref.read(premiumUnlockedProvider.notifier).set(!premium),
             ),
             const SizedBox(height: 24),
           ],
@@ -84,8 +72,7 @@ class SignalSettingsScreen extends ConsumerWidget {
                           Text(
                             'Kapalıyken sadece AL/SAT bildirimi gelir. Nötr sinyaller yine geçmişe yazılır.',
                             style: context.t.bodySmall?.copyWith(
-                                color: context.c.text58,
-                                height: 1.4),
+                                color: context.c.text58, height: 1.4),
                           ),
                         ],
                       ),
@@ -117,12 +104,13 @@ class SignalSettingsScreen extends ConsumerWidget {
 
           Text(
             'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
-            style: context.t.titleSmall?.copyWith(
-                color: context.c.text58, height: 1.5),
+            style: context.t.titleSmall
+                ?.copyWith(color: context.c.text58, height: 1.5),
           ),
           const SizedBox(height: 16),
 
-          for (final type in RemoteConfigService.instance.visibleAssetTypes) ...[
+          for (final type
+              in RemoteConfigService.instance.visibleAssetTypes) ...[
             _CategorySection(
               type: type,
               selected: prefs[type] ??
@@ -131,11 +119,9 @@ class SignalSettingsScreen extends ConsumerWidget {
               // "PREMIUM" chip'i yok). Store hazır olunca RC'den açılır.
               premiumUnlocked: !paywallOn || premium,
               paywallVisible: paywallOn,
-              threshold:
-                  thresholds[type] ?? kSignalThresholdDefault,
-              onToggle: (id) => ref
-                  .read(indicatorPrefsProvider.notifier)
-                  .toggle(type, id),
+              threshold: thresholds[type] ?? kSignalThresholdDefault,
+              onToggle: (id) =>
+                  ref.read(indicatorPrefsProvider.notifier).toggle(type, id),
               onThresholdChanged: (v) => ref
                   .read(signalThresholdProvider.notifier)
                   .setForType(type, v),
@@ -166,7 +152,10 @@ class _PremiumCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: unlocked
-              ? [context.c.amberFill.withValues(alpha: 0.18), context.c.amberFill.withValues(alpha: 0.05)]
+              ? [
+                  context.c.amberFill.withValues(alpha: 0.18),
+                  context.c.amberFill.withValues(alpha: 0.05)
+                ]
               : [context.c.overlay, context.c.overlay],
         ),
         borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -179,7 +168,9 @@ class _PremiumCard extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            unlocked ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded,
+            unlocked
+                ? Icons.workspace_premium_rounded
+                : Icons.lock_outline_rounded,
             color: unlocked ? context.c.amberText : context.c.text58,
             size: 28,
           ),
@@ -200,8 +191,8 @@ class _PremiumCard extends StatelessWidget {
                   unlocked
                       ? 'ADX, Williams %R ve CCI göstergeleri kullanılabilir.'
                       : 'ADX, Williams %R, CCI göstergelerini açmak için Premium\'a geç.',
-                  style: context.t.bodySmall?.copyWith(
-                      color: context.c.text58, height: 1.4),
+                  style: context.t.bodySmall
+                      ?.copyWith(color: context.c.text58, height: 1.4),
                 ),
               ],
             ),
@@ -212,8 +203,7 @@ class _PremiumCard extends StatelessWidget {
             style: TextButton.styleFrom(
               backgroundColor:
                   unlocked ? context.c.overlay : context.c.amberText,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             child: Text(
               unlocked ? 'Kapat' : 'Aç',
@@ -288,8 +278,7 @@ class _CategorySection extends StatelessWidget {
                 Text(
                   'Bildirim eşiği',
                   style: context.t.titleSmall?.copyWith(
-                      color: context.c.text58,
-                      fontWeight: FontWeight.w600),
+                      color: context.c.text58, fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
                 _ThresholdSegment(
@@ -324,8 +313,7 @@ class _CategorySection extends StatelessWidget {
                 if (IndicatorId.premium.contains(id) && !premiumUnlocked) {
                   AnalyticsService.instance
                       .logPremiumGateShown(feature: 'indicator_$id');
-                  PaywallScreen.show(context,
-                      source: 'signal_settings_$id');
+                  PaywallScreen.show(context, source: 'signal_settings_$id');
                   return;
                 }
                 onToggle(id);
@@ -410,9 +398,13 @@ class _FrequencyRow extends StatelessWidget {
                   Text(
                     secili.isEmpty
                         ? 'Henüz saat seçilmedi'
-                        : 'Seçili: ${([...secili]..sort()).map(_saatMetni).join("  •  ")}',
+                        : 'Seçili: ${([
+                            ...secili
+                          ]..sort()).map(_saatMetni).join("  •  ")}',
                     style: context.t.bodySmall?.copyWith(
-                        color: secili.isEmpty ? context.c.text36 : context.c.amberText,
+                        color: secili.isEmpty
+                            ? context.c.text36
+                            : context.c.amberText,
                         fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 14),
@@ -603,7 +595,8 @@ class _FrequencyOption extends StatelessWidget {
                       child: Text(
                         frequency.label,
                         style: context.t.bodyMedium?.copyWith(
-                          color: secili ? context.c.amberText : context.c.text90,
+                          color:
+                              secili ? context.c.amberText : context.c.text90,
                           // Ağırlık BİLİNÇLİ olarak sabit — bkz. sınıf notu.
                           fontWeight: FontWeight.w600,
                         ),
@@ -776,7 +769,8 @@ class _IndicatorRow extends StatelessWidget {
               if (showPremiumChip && recommended) const SizedBox(width: 6),
               if (showPremiumChip)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: context.c.amberFill.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
@@ -821,8 +815,8 @@ class _ThresholdSegment extends StatelessWidget {
               child: AnimatedContainer(
                 duration: SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: value == opt
                       ? context.c.amberFill.withValues(alpha: 0.20)
@@ -839,9 +833,8 @@ class _ThresholdSegment extends StatelessWidget {
                   style: context.t.titleSmall?.copyWith(
                     fontWeight:
                         value == opt ? FontWeight.w800 : FontWeight.w600,
-                    color: value == opt
-                        ? context.c.amberText
-                        : context.c.text58,
+                    color:
+                        value == opt ? context.c.amberText : context.c.text58,
                   ),
                 ),
               ),

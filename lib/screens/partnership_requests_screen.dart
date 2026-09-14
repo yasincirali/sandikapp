@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +6,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/polling.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -101,17 +101,9 @@ class _PartnershipRequestsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Ortaklık Onayı',
-          style: context.t.headlineLarge?.copyWith(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: context.c.text90,
-          ),
-        ),
+      appBar: const SandikAppBar(
+        title: 'Ortaklık Onayı',
+        transparent: true,
       ),
       body: RefreshIndicator(
         color: context.c.amberText,
@@ -195,8 +187,9 @@ class _ApprovalInviteCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color:
-            highlighted ? context.c.amberFill.withValues(alpha: 0.1) : context.c.surface1,
+        color: highlighted
+            ? context.c.amberFill.withValues(alpha: 0.1)
+            : context.c.surface1,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: highlighted

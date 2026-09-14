@@ -9,6 +9,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/h_scroll_with_fade.dart';
@@ -122,7 +123,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
   /// Sahiplik sekmesine göre ham ledger.
   List<Asset> get _ledger {
-    final myAssets = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    final myAssets =
+        ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
     if (_view == '') return myAssets;
     if (_view != null && _view!.isNotEmpty) {
       return widget.allPartnerAssets[_view!] ?? const [];
@@ -182,7 +184,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   }
 
   bool get _hasActiveFilter =>
-      _typeFilter != null || _range != _DateRange.all || _query.trim().isNotEmpty;
+      _typeFilter != null ||
+      _range != _DateRange.all ||
+      _query.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -195,18 +199,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              size: 20, color: context.c.text90),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Portföy Hareketleri',
-          style: context.t.headlineMedium?.copyWith(color: context.c.text90),
-        ),
+      appBar: const SandikAppBar(
+        title: 'Portföy Hareketleri',
+        transparent: true,
       ),
       body: Column(
         children: [
@@ -235,8 +230,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               style: context.t.bodyMedium?.copyWith(color: context.c.text90),
               decoration: context.inputDecoration(
                 'Varlık adı veya sembol ara',
-                prefixIcon:
-                    Icon(Icons.search_rounded, size: 20, color: context.c.text36),
+                prefixIcon: Icon(Icons.search_rounded,
+                    size: 20, color: context.c.text36),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
@@ -271,7 +266,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               child: Row(
                 children: [
                   _typeChip(null, 'Tümü'),
-                  for (final t in RemoteConfigService.instance.visibleAssetTypes)
+                  for (final t
+                      in RemoteConfigService.instance.visibleAssetTypes)
                     _typeChip(t, t.label),
                 ],
               ),
@@ -319,37 +315,37 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             child: rows.isEmpty
                 ? _empty()
                 : RefreshIndicator(
-      color: context.c.amberText,
-      onRefresh: () => ref
-          .read(portfolioProvider.notifier)
-          .refreshPrices(force: true),
-      child: ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-                    controller: _scrollCtrl,
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                    // +1: son satırda "yükleniyor" göstergesi (daha var ise).
-                    itemCount: shown + (shown < rows.length ? 1 : 0),
-                    itemBuilder: (ctx, i) {
-                      if (i >= shown) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: Text(
-                              'Yükleniyor…',
-                              style: context.t.bodySmall
-                                  ?.copyWith(color: context.c.text36),
+                    color: context.c.amberText,
+                    onRefresh: () => ref
+                        .read(portfolioProvider.notifier)
+                        .refreshPrices(force: true),
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      controller: _scrollCtrl,
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                      // +1: son satırda "yükleniyor" göstergesi (daha var ise).
+                      itemCount: shown + (shown < rows.length ? 1 : 0),
+                      itemBuilder: (ctx, i) {
+                        if (i >= shown) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            child: Center(
+                              child: Text(
+                                'Yükleniyor…',
+                                style: context.t.bodySmall
+                                    ?.copyWith(color: context.c.text36),
+                              ),
                             ),
-                          ),
+                          );
+                        }
+                        return TransactionRow(
+                          asset: rows[i],
+                          portfolioState: pState ?? const PortfolioState(),
+                          hideBalance: hideBalance,
                         );
-                      }
-                      return TransactionRow(
-                        asset: rows[i],
-                        portfolioState: pState ?? const PortfolioState(),
-                        hideBalance: hideBalance,
-                      );
-                    },
+                      },
+                    ),
                   ),
-    ),
           ),
         ],
       ),

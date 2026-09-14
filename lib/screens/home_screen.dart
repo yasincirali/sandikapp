@@ -536,14 +536,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, 16, hp, 8),
-                child: Text(
-                  'VARLIK DAĞILIMI',
-                  style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: context.c.text58,
-                  ),
-                ),
+                child: const SandikSectionHeader(title: 'VARLIK DAĞILIMI'),
               ),
             ),
           if (!isEmptyOwn)
@@ -558,14 +551,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, 24, hp, 8),
-                child: Text(
-                  'PORTFÖY HAREKETLERİ',
-                  style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: context.c.text58,
-                  ),
-                ),
+                child: const SandikSectionHeader(title: 'PORTFÖY HAREKETLERİ'),
               ),
             ),
           // Recent transaction list (show individual asset transactions newest -> oldest)

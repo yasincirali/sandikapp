@@ -15,6 +15,7 @@ import '../services/disclaimer_service.dart';
 import '../services/supabase_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
@@ -104,8 +105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
-              child: Text('Vazgeç',
-                  style: TextStyle(color: context.c.text58)),
+              child: Text('Vazgeç', style: TextStyle(color: context.c.text58)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, true),
@@ -151,7 +151,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       await DataExportService.instance.exportAndShare();
       if (!mounted) return;
-      sandikSnack(context, 'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.',
+      sandikSnack(
+          context, 'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.',
           kind: SandikSnackKind.success, duration: const Duration(seconds: 4));
     } catch (e) {
       if (!mounted) return;
@@ -195,8 +196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Kapat',
-                style: TextStyle(color: context.c.amberText)),
+            child: Text('Kapat', style: TextStyle(color: context.c.amberText)),
           ),
         ],
       ),
@@ -207,7 +207,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     Navigator.push(
       context,
       adaptiveRoute(
-        builder: (_) => LegalDocScreen(title: title, blocks: blocks, icon: icon),
+        builder: (_) =>
+            LegalDocScreen(title: title, blocks: blocks, icon: icon),
       ),
     );
   }
@@ -217,9 +218,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     String body = '',
   }) async {
     final userEmail = ref.read(authProvider).valueOrNull?.email ?? '';
-    final signature = userEmail.isNotEmpty
-        ? '\n\n---\nKullanıcı: $userEmail'
-        : '';
+    final signature =
+        userEmail.isNotEmpty ? '\n\n---\nKullanıcı: $userEmail' : '';
     final uri = Uri(
       scheme: 'mailto',
       path: _supportEmail,
@@ -283,10 +283,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           label: Text(t),
                           selected: type == t,
                           onSelected: (_) => setLocal(() => type = t),
-                          selectedColor: context.c.amberFill.withValues(alpha: 0.25),
+                          selectedColor:
+                              context.c.amberFill.withValues(alpha: 0.25),
                           backgroundColor: context.c.surface1,
                           labelStyle: TextStyle(
-                            color: type == t ? context.c.amberText : context.c.text58,
+                            color: type == t
+                                ? context.c.amberText
+                                : context.c.text58,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -344,20 +347,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: context.c.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: context.c.text90, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Ayarlar',
-          style: context.t.headlineMedium?.copyWith(
-            color: context.c.text90,
-          ),
-        ),
+      appBar: const SandikAppBar(
+        title: 'Ayarlar',
       ),
       body: AbsorbPointer(
         absorbing: _deleting,
@@ -396,8 +387,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'Her varlık türü için gösterge seçimi + Premium',
               onTap: () => Navigator.push(
                 context,
-                adaptiveRoute(
-                    builder: (_) => const SignalSettingsScreen()),
+                adaptiveRoute(builder: (_) => const SignalSettingsScreen()),
               ),
             ),
             _SettingsTile(
@@ -414,9 +404,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Ortaklık daveti bildirimleri',
               subtitle: 'Yeni ortaklık isteği geldiğinde bildirim al',
               value: ref.watch(partnerNotificationsProvider),
-              onChanged: (v) => ref
-                  .read(partnerNotificationsProvider.notifier)
-                  .set(v),
+              onChanged: (v) =>
+                  ref.read(partnerNotificationsProvider.notifier).set(v),
             ),
             // Ortağı OLMAYAN kullanıcıya gösterilmez: kapatacak bir şeyi
             // yokken sunulan anahtar, ayar listesini uzatmaktan başka işe
@@ -471,19 +460,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.privacy_tip_outlined,
               title: 'Gizlilik Politikası',
               subtitle: 'Verilerin nasıl işleniyor',
-              onTap: () => _showLegalDoc('Gizlilik Politikası', LegalDocs.privacy, Icons.privacy_tip_outlined),
+              onTap: () => _showLegalDoc('Gizlilik Politikası',
+                  LegalDocs.privacy, Icons.privacy_tip_outlined),
             ),
             _SettingsTile(
               icon: Icons.gavel_outlined,
               title: 'Kullanım Koşulları',
               subtitle: 'Hizmet sözleşmesi',
-              onTap: () => _showLegalDoc('Kullanım Koşulları', LegalDocs.terms, Icons.gavel_outlined),
+              onTap: () => _showLegalDoc(
+                  'Kullanım Koşulları', LegalDocs.terms, Icons.gavel_outlined),
             ),
             _SettingsTile(
               icon: Icons.shield_outlined,
               title: 'KVKK Aydınlatma Metni',
               subtitle: 'Kişisel veri işleme aydınlatması',
-              onTap: () => _showLegalDoc('KVKK Aydınlatma Metni', LegalDocs.kvkk, Icons.shield_outlined),
+              onTap: () => _showLegalDoc('KVKK Aydınlatma Metni',
+                  LegalDocs.kvkk, Icons.shield_outlined),
             ),
             _SettingsTile(
               icon: Icons.gavel_rounded,
@@ -531,9 +523,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.download_outlined,
               title: 'Verilerimi İndir',
               subtitle: 'Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)',
-              trailing: _exporting
-                  ? const CustomLoadingIndicator(size: 18)
-                  : null,
+              trailing:
+                  _exporting ? const CustomLoadingIndicator(size: 18) : null,
               onTap: _exporting ? null : _exportData,
             ),
             _SettingsTile(
@@ -541,9 +532,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Hesabımı Sil',
               subtitle: 'Tüm verilerin kalıcı olarak silinir',
               destructive: true,
-              trailing: _deleting
-                  ? const CustomLoadingIndicator(size: 18)
-                  : null,
+              trailing:
+                  _deleting ? const CustomLoadingIndicator(size: 18) : null,
               onTap: _deleting ? null : _confirmDeleteAccount,
             ),
             // Push teşhisi debug kapısının DIŞINDA, admin'e açık.
@@ -570,8 +560,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _SettingsTile(
                 icon: Icons.notifications_active_outlined,
                 title: 'Push Teşhisi',
-                subtitle:
-                    'Bildirim zincirinin neresi kopuk; '
+                subtitle: 'Bildirim zincirinin neresi kopuk; '
                     'cihaz APNs/FCM token durumu',
                 onTap: () => Navigator.of(context).push(
                   adaptiveRoute<void>(
@@ -617,7 +606,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 }
-
 
 /// Bölüm İÇİ alt başlık — ör. "Canlı Etkinlikler > Gizlilik".
 ///
@@ -795,8 +783,7 @@ class _SettingsTile extends StatelessWidget {
               ),
             ),
             trailing ??
-                Icon(Icons.chevron_right,
-                    color: context.c.text36, size: 20),
+                Icon(Icons.chevron_right, color: context.c.text36, size: 20),
           ],
         ),
       ),
@@ -857,12 +844,11 @@ class _LiveActivitySection extends ConsumerWidget {
     WidgetRef ref, {
     required bool isStart,
   }) async {
-    final current = ref.read(
-        isStart ? liveActivityStartProvider : liveActivityEndProvider);
+    final current =
+        ref.read(isStart ? liveActivityStartProvider : liveActivityEndProvider);
     final picked = await showTimePicker(
       context: context,
-      initialTime:
-          TimeOfDay(hour: current ~/ 60, minute: current % 60),
+      initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
       helpText: isStart ? 'Başlangıç saati' : 'Bitiş saati',
       builder: (ctx, child) => MediaQuery(
         // 24 saat biçimi: TR kullanıcısı AM/PM beklemez.
@@ -975,8 +961,7 @@ class _LiveActivitySection extends ConsumerWidget {
         _SwitchTile(
           icon: Icons.visibility_off_outlined,
           title: 'Tutarları göster',
-          subtitle:
-              'Kapalıyken yalnızca günlük yüzde ve grafik görünür. '
+          subtitle: 'Kapalıyken yalnızca günlük yüzde ve grafik görünür. '
               'Kilit ekranı telefonunuz açılmadan görülebildiği için '
               'varsayılan olarak kapalıdır.',
           value: ref.watch(lockScreenAmountsProvider),
@@ -1020,14 +1005,13 @@ class _LiveActivitySection extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded,
-                    color: p.amberText, size: 16),
+                Icon(Icons.info_outline_rounded, color: p.amberText, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _whyHidden(start, end, weekend),
-                    style: TextStyle(
-                        color: p.text58, fontSize: 11, height: 1.35),
+                    style:
+                        TextStyle(color: p.text58, fontSize: 11, height: 1.35),
                   ),
                 ),
               ],
@@ -1056,8 +1040,8 @@ class _LiveActivitySection extends ConsumerWidget {
   /// düzeltmesi gereken ayar hafta sonu anahtarıdır.
   static String _whyHidden(int start, int end, bool weekend) {
     final now = DateTime.now();
-    final isWeekend = now.weekday == DateTime.saturday ||
-        now.weekday == DateTime.sunday;
+    final isWeekend =
+        now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
 
     if (!weekend && isWeekend) {
       return 'Şu an görünmüyor: hafta sonu gösterimi kapalı. '
@@ -1093,8 +1077,7 @@ class _TimeBox extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label,
-                style: TextStyle(color: p.text58, fontSize: 11)),
+            Text(label, style: TextStyle(color: p.text58, fontSize: 11)),
             const SizedBox(height: 2),
             Text(
               value,

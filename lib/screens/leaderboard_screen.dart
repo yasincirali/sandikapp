@@ -9,6 +9,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 
@@ -39,14 +40,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Yarış',
-          style: context.t.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
-        ),
+      appBar: SandikAppBar(
+        title: 'Yarış',
         actions: [
           // Yarıştaki getiri (dönemsel) ile Performans ekranındaki yüzde
           // (ilk alımdan bugüne toplam) farklı sorulardır. Kullanıcı ikisini
@@ -67,6 +62,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             ),
           ),
         ],
+        transparent: true,
       ),
       body: SafeArea(
         child: !optIn
@@ -1357,7 +1353,7 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
       s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 
   String _toneFor(int pct) {
-    if (pct <= 5) return 'Zirvedeki azınlıktasın 🚀';
+    if (pct <= 5) return 'Zirvedeki azınlıktasın';
     if (pct <= 10) return 'Sandık\'ın en iyi %10\'undasın';
     if (pct <= 25) return 'Ortalamanın çok üstündesin';
     if (pct <= 50) return 'Ortalamanın üstündesin';

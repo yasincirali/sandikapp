@@ -10,6 +10,7 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/tr_format.dart';
@@ -1670,25 +1671,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: widget.showBackButton
-            ? IconButton(
-                icon: Icon(Icons.arrow_back_ios_new_rounded,
-                    size: 20, color: context.c.text90),
-                onPressed: () => Navigator.pop(context),
-              )
-            : null,
-        title: Text(
-          'Performans: ${widget.asset.name}',
-          style: context.t.headlineSmall?.copyWith(color: context.c.text90),
-          // Varlık adı kullanıcı girdisidir ve uzun olabilir ("Yapı Kredi
-          // Koray Gayrimenkul Yatırım Ortaklığı"). AppBar başlığı tek
-          // satırdır; koruma olmadan taşma çizgileri çıkar.
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+      appBar: SandikAppBar(
+        title: 'Performans: ${widget.asset.name}',
+        transparent: true,
+        showBack: widget.showBackButton,
         actions: [
           if (isOwnAsset && !widget.showBackButton)
             PopupMenuButton<String>(

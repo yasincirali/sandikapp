@@ -182,7 +182,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     color: context.c.amberText, size: 40),
               ),
               const SizedBox(height: 16),
-              Text('Premium açıldı 🎉',
+              Text('Premium açıldı',
                   style: context.t.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: context.c.text90)),

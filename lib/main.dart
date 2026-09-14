@@ -287,7 +287,11 @@ class SandikApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('tr', 'TR'), Locale('en', 'US')],
+      // Yalnızca tr_TR: `.arb` yok, tüm metinler Türkçe literal. `en_US` ilan
+      // etmek, İngilizce cihazlarda 'tr_TR' vermeyen widget'ların tarih/sayı
+      // biçimini İngilizceye düşürüyordu (2026-09 denetimi). İngilizce arayüz
+      // gelirse (Faz 3.20) buraya .arb ile birlikte eklenir.
+      supportedLocales: const [Locale('tr', 'TR')],
       home: const _AuthGate(),
     );
   }

@@ -11,12 +11,11 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > gerçek sonucu verecek.
 
 ## Son kalınan yer
-Faz 0 ve Faz 1 tamam. Faz 2: 2.1, 2.2, 2.3, 2.4(kısmi), 2.6(kısmi), 2.7, 2.8, 2.9, 2.13(kısmi) tamam.
-**Kalan Faz 2 kalemleri** (görsel doğrulama isteyen, cihazsız yapılmaması daha doğru):
-2.5 tek SandikAppBar, 2.10 varlık silmede undo (sunucu tarafı kalıcı silme — soft-delete ister),
-2.11 grafik etkileşim paritesi, 2.12 SegmentedButton geçişi, 2.14 Hero geçişi, 2.13'ün
-`Size.zero` buton kısmı (20 site), 2.6'nın `en_US` kaldırma + emoji/başlık kasası taraması.
-Sıradaki: bunlardan biri ya da Faz 3.
+Main'e birleştirildi (2026-09-14). Faz 0 ve Faz 1 tamam. Faz 2: 2.1–2.9, 2.11, 2.13(kısmi) tamam.
+**Kalan Faz 2 kalemleri:** 2.10 varlık silmede undo (sunucu tarafı kalıcı silme — soft-delete
+ister, Faz 3 kapsamı), 2.12 SegmentedButton geçişi (görsel doğrulama ister), 2.14 Hero geçişi,
+2.13'ün `Size.zero` buton kısmı (20 site), 2.4'ün `SandikCard` benimsemesi.
+Sıradaki: **2.14 Hero** ya da Faz 3.
 
 ## Faz 0 — Kanamayı durdur
 
@@ -58,13 +57,13 @@ Sıradaki: bunlardan biri ya da Faz 3.
 | 2.2 | ✅ | Pull-to-refresh 3 → 11 veri ekranı: Performans sekmesi (fiyat + gün içi future sıfırlama), varlık detayı, takip listesi, takip detayı, alarmlar, tüm hareketler, karşılaştırma (periyot yeniden çekimi), profil (ortaklar). Test listeyi kilitliyor. |
 | 2.3 | ✅ | `showSandikConfirm()` (`friendly_error.dart`): tek onay yüzeyi, `destructive` → loss + uyarı ikonu, `detail` kutusu. `_SandikDialogShell` tek/çift eylemli dialogların ortak kabuğu (`_SandikDialog` da ona geçti; GoogleFonts/Colors kopyaları düştü). `lib/widgets/delete_asset_dialog.dart`: iki kopya "varlığı sil" → `confirmAndDeletePosition`. 9 onay sitesi geçti: çıkış, sepet temizle, bildirim silme, ortaklık iptal/kaldır, oturum kapatma, takipten çıkar, de-dup sıfırlama, hesap silme 1. kademe. Kalan `AlertDialog`'lar form/doküman (izin listesi testte). `test/sandik_confirm_test.dart`. |
 | 2.4 | ✅ (kısmi) | `_SectionTitle` klonları (settings 10, profile 4) → `SandikSectionHeader`. `SandikCard` benimsemesi (307 ad-hoc BoxDecoration) ayrı tur — büyük ve görsel doğrulama ister. |
-| 2.5 | ⏳ | |
-| 2.6 | 🟡 kısmi | Onay dialogları ve 4 UI metni `sen` kipine çekildi. Yasal metinler (`legal_doc_screen`, `disclaimer_service`) bilinçli `siz`. `en_US` kaldırma ve emoji/başlık kasası taraması bekliyor. |
+| 2.5 | ✅ | `lib/widgets/sandik_app_bar.dart`: tek zemin, tek başlık stili (headlineSmall w700, tek satır), tek geri oku (yalnızca pop edilebiliyorsa). 14 ekrandaki `appBar: AppBar(` buna geçti (`transparent`, `backgroundColor`, `showBack`, `onBack`, `titleWidget` seçenekleriyle). `test/sandik_app_bar_test.dart` ratchet + davranış. Ana ekrandaki SliverAppBar bilinçli ayrı (büyük başlık + 5 kontrol). |
+| 2.6 | ✅ | Onay dialogları ve 4 UI metni `sen` kipine çekildi; yasal metinler bilinçli `siz`. `en_US` `supportedLocales`'tan çıkarıldı (gerekçe main.dart'ta). Kullanıcı metinlerindeki 3 emoji kaldırıldı (db_logger/teşhis log'ları geliştiriciye, kaldı). Bölüm başlıkları: ana ekranın iki büyük harf başlığı da `SandikSectionHeader`'a geçti — tek kasa. |
 | 2.7 | ✅ | (1) OTP doğrulaması sonrası sorumluluk reddi kaydı otomatik düşülüyor — kayıt ekranındaki 'Yasal Koşullar' onayı zaten disclaimer'ı içeriyordu; `DisclaimerAcceptanceScreen` artık yalnızca eski/kaydı olmayan hesaplara çıkar. (2) **'Belgeyi açıp sonuna kadar kaydır' kapısı kaldırıldı** — kutu doğrudan işaretlenir, belge bağlantısı bir dokunuş uzakta. ⚠️ Hukuki tarafta bilinçli karar: KVKK açık rıza 'bilgilendirilmiş' olmayı ister, 'sonuna kadar kaydırılmış' olmayı değil; itiraz edersen `_LegalConsentBox.onTap` tek satırla eski davranışa döner. (3) Turda 'Atla' zaten vardı; Ayarlar → Destek'e 'Tanıtım turunu yeniden izle' eklendi. |
 | 2.8 | ✅ (boş durum) | Ana ekranda kendi görünümü + sıfır varlık = `_EmptyPortfolioCta` özetin hemen altında; şeritler, kişi kartları, filtre çipleri ve iki boş başlık gizli. Tür filtresi boşken aynı bileşen 'Bu türde varlık yok' diliyle. **3 şeridi tek yatay karta toplama yapılmadı** — şeritler zaten kendi kendini gizliyor; dolu portföyde katlama üstü sorunu ölçülmeden yeniden düzenlemek erken. |
 | 2.9 | ✅ (adlar) | `charts_screen.dart`/`ChartsScreen` → `portfolio_screen.dart`/`PortfolioScreen`; `performance_screen.dart`/`PerformanceScreen` → `asset_detail_screen.dart`/`AssetDetailScreen`. 73 dosya (lib, test kaynak-metin yolları, CLAUDE.md, TECHNICAL_DEBT.md) tek geçişte; arşiv dokümanlar eski adla kaldı. **Geri tuşu sekme geçmişi ve predictive back yapılmadı** — `PopScope(canPop:false)` çıkış onayıyla iç içe; ayrı bir tasarım kararı. |
 | 2.10 | ⏳ | |
-| 2.11 | ⏳ | |
+| 2.11 | ✅ (zaten) | Denetim iddiası eskiydi: `chart_interaction_parity_test` karşılaştırma ve takip grafiklerinin `PercentComparisonChart` → `ZoomableChart` üzerinde olduğunu zaten kilitliyor (pinch/pan/crosshair paritesi var). Sparkline bilinçli etkileşimsiz. |
 | 2.12 | ⏳ | |
 | 2.13 | 🟡 kısmi | `ZoomableChart.semanticLabel` (varsayılan 'Fiyat grafiği'; `PercentComparisonChart` seri sayısı + gün ile dolduruyor, takip grafiği ondan miras alıyor). Sparkline dekoratif olarak bilinçli sessiz (kaynakta gerekçeli). **Yapılmadı:** 20 `minimumSize: Size.zero` butonun 44pt'ye çıkarılması; settings/add_asset Semantics; kompakt yüzeylerde ok glifi. |
 | 2.14 | ⏳ | |

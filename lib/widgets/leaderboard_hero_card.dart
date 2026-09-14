@@ -398,7 +398,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
               : (best.myRoi ?? 0));
       subLine = gap > 0.05
           ? 'Farkı büyüt — ikinci +${fmtNum(gap, digits: 1)}% geride'
-          : 'Zirvedesin — farkı koru 🏆';
+          : 'Zirvedesin — farkı koru';
     } else if (best.justAboveName != null && best.justAboveRoi != null) {
       final diff = (best.justAboveRoi! - (best.myRoi ?? 0)).abs();
       subLine =

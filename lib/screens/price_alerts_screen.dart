@@ -10,6 +10,7 @@ import '../providers/watchlist_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/price_alert_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -56,8 +57,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     // `aktifLotlar`: tamamen satılmış pozisyonlar elenir. Ham `isActive`
     // filtresi yetmiyordu — satılan hissenin alım lot'u defterde durduğu
     // için kullanıcı artık tutmadığı bir sembol için alarm kurabiliyordu.
-    final assets =
-        aktifLotlar(ref.read(portfolioProvider).valueOrNull?.assets ?? const []);
+    final assets = aktifLotlar(
+        ref.read(portfolioProvider).valueOrNull?.assets ?? const []);
     for (final a in assets) {
       if (!a.isBuy) continue;
       final sembol = _sembol(a.ticker, a.subCategory);
@@ -128,7 +129,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         enabled: true,
         createdAt: DateTime.now(),
       ));
-      AnalyticsService.instance.logScreenView(screenName: 'price_alert_created');
+      AnalyticsService.instance
+          .logScreenView(screenName: 'price_alert_created');
       _tazele();
     } catch (e) {
       if (!mounted) return;
@@ -146,9 +148,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     final c = context.c;
     return Scaffold(
       backgroundColor: c.background,
-      appBar: AppBar(
-        backgroundColor: c.background,
-        title: const Text('Fiyat Alarmları'),
+      appBar: const SandikAppBar(
+        title: 'Fiyat Alarmları',
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: c.amberFill,
@@ -172,29 +173,29 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           }
           if (liste.isEmpty) return _bosDurum(c);
           return RefreshIndicator(
-      color: c.amberText,
-      onRefresh: () async {
-        _tazele();
-        await _future;
-      },
-      child: ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-            itemCount: liste.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (_, i) => _AlarmSatiri(
-              alarm: liste[i],
-              onDelete: () async {
-                await PriceAlertService.instance.delete(liste[i].id);
-                _tazele();
-              },
-              onRearm: () async {
-                await PriceAlertService.instance.rearm(liste[i].id);
-                _tazele();
-              },
+            color: c.amberText,
+            onRefresh: () async {
+              _tazele();
+              await _future;
+            },
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+              itemCount: liste.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, i) => _AlarmSatiri(
+                alarm: liste[i],
+                onDelete: () async {
+                  await PriceAlertService.instance.delete(liste[i].id);
+                  _tazele();
+                },
+                onRearm: () async {
+                  await PriceAlertService.instance.rearm(liste[i].id);
+                  _tazele();
+                },
+              ),
             ),
-          ),
-    );
+          );
         },
       ),
     );
@@ -329,7 +330,8 @@ class _AlarmKurSheetState extends State<_AlarmKurSheet> {
   }
 
   void _kaydet() {
-    final ham = _controller.text.trim().replaceAll('.', '').replaceAll(',', '.');
+    final ham =
+        _controller.text.trim().replaceAll('.', '').replaceAll(',', '.');
     final hedef = double.tryParse(ham);
     if (hedef == null || hedef <= 0) {
       setState(() => _hata = 'Geçerli bir fiyat gir');
@@ -360,7 +362,8 @@ class _AlarmKurSheetState extends State<_AlarmKurSheet> {
     }();
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: BoxDecoration(
           color: c.surface1,

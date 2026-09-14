@@ -6,6 +6,7 @@ import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/deposit_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'paywall_screen.dart';
@@ -52,8 +53,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
     if (p == null || r == null || p <= 0 || r <= 0 || _termDays <= 0) {
       return null;
     }
-    final tax = parseTrNumber(_taxCtl.text) ??
-        DepositService.defaultTaxRate;
+    final tax = parseTrNumber(_taxCtl.text) ?? DepositService.defaultTaxRate;
     final terms = DepositTerms(
       start: _start,
       end: _end,
@@ -167,20 +167,8 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: context.c.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: context.c.text90, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Vadeli Mevduat',
-          style: context.t.headlineMedium?.copyWith(
-            color: context.c.text90,
-          ),
-        ),
+      appBar: const SandikAppBar(
+        title: 'Vadeli Mevduat',
       ),
       body: Form(
         key: _formKey,
@@ -202,7 +190,8 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
             _textField(
               controller: _principalCtl,
               hint: 'ör. 50000',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
                 final n = parseTrNumber(v ?? '');
                 if (n == null || n <= 0) return 'Geçerli bir anapara girin';
@@ -216,7 +205,8 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
             _textField(
               controller: _rateCtl,
               hint: 'ör. 45.5',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
                 final n = parseTrNumber(v ?? '');
                 if (n == null || n <= 0 || n > 500) {
@@ -265,8 +255,10 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
             _label('Stopaj Oranı (%)  —  opsiyonel'),
             _textField(
               controller: _taxCtl,
-              hint: 'Boş bırakırsan ${fmtPct(DepositService.defaultTaxRate, digits: 0)} kullanılır',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              hint:
+                  'Boş bırakırsan ${fmtPct(DepositService.defaultTaxRate, digits: 0)} kullanılır',
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
                 if ((v ?? '').trim().isEmpty) return null;
                 final n = parseTrNumber(v ?? '');
@@ -288,8 +280,7 @@ class _AddDepositScreenState extends ConsumerState<AddDepositScreen> {
             // ── Önizleme ──────────────────────────────────────────────────────
             if (maturityNet != null)
               _PreviewCard(
-                principal:
-                    parseTrNumber(_principalCtl.text)!,
+                principal: parseTrNumber(_principalCtl.text)!,
                 maturityNet: maturityNet,
                 termDays: _termDays,
                 money: money,
@@ -534,8 +525,8 @@ class _PreviewCard extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(
-            color: AssetType.mevduat.color.withValues(alpha: 0.35)),
+        border:
+            Border.all(color: AssetType.mevduat.color.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,24 +1,51 @@
 import 'package:flutter/material.dart';
 
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 
 // ─── Belge veri modeli ────────────────────────────────────────────────────────
 
-enum LegalBlockType { h1, h2, h3, paragraph, tableRow, tableHeader, divider, meta }
+enum LegalBlockType {
+  h1,
+  h2,
+  h3,
+  paragraph,
+  tableRow,
+  tableHeader,
+  divider,
+  meta
+}
 
 class LegalBlock {
   final LegalBlockType type;
   final String text;
   final List<String> cells;
 
-  const LegalBlock.p(this.text) : type = LegalBlockType.paragraph, cells = const [];
-  const LegalBlock.h1(this.text) : type = LegalBlockType.h1, cells = const [];
-  const LegalBlock.h2(this.text) : type = LegalBlockType.h2, cells = const [];
-  const LegalBlock.h3(this.text) : type = LegalBlockType.h3, cells = const [];
-  const LegalBlock.meta(this.text) : type = LegalBlockType.meta, cells = const [];
-  const LegalBlock.divider() : type = LegalBlockType.divider, text = '', cells = const [];
-  const LegalBlock.tableHeader(this.cells) : type = LegalBlockType.tableHeader, text = '';
-  const LegalBlock.tableRow(this.cells) : type = LegalBlockType.tableRow, text = '';
+  const LegalBlock.p(this.text)
+      : type = LegalBlockType.paragraph,
+        cells = const [];
+  const LegalBlock.h1(this.text)
+      : type = LegalBlockType.h1,
+        cells = const [];
+  const LegalBlock.h2(this.text)
+      : type = LegalBlockType.h2,
+        cells = const [];
+  const LegalBlock.h3(this.text)
+      : type = LegalBlockType.h3,
+        cells = const [];
+  const LegalBlock.meta(this.text)
+      : type = LegalBlockType.meta,
+        cells = const [];
+  const LegalBlock.divider()
+      : type = LegalBlockType.divider,
+        text = '',
+        cells = const [];
+  const LegalBlock.tableHeader(this.cells)
+      : type = LegalBlockType.tableHeader,
+        text = '';
+  const LegalBlock.tableRow(this.cells)
+      : type = LegalBlockType.tableRow,
+        text = '';
 }
 
 // ─── Belgeler ─────────────────────────────────────────────────────────────────
@@ -35,15 +62,15 @@ class LegalDocs {
     LegalBlock.h1('Gizlilik Politikası'),
     LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
     LegalBlock.divider(),
-
     LegalBlock.h2('1. Veri Sorumlusu'),
-    LegalBlock.p('Bu uygulamayı (sandık) $_company ("biz", "geliştirici") işletmektedir.'),
+    LegalBlock.p(
+        'Bu uygulamayı (sandık) $_company ("biz", "geliştirici") işletmektedir.'),
     LegalBlock.tableHeader(['Bilgi', 'Detay']),
     LegalBlock.tableRow(['E-posta', _email]),
     LegalBlock.tableRow(['Web', _web]),
     LegalBlock.tableRow(['Adres', _address]),
-    LegalBlock.p('KVKK Madde 3(1)(ı) uyarınca veri sorumlusu sıfatıyla hareket ediyoruz.'),
-
+    LegalBlock.p(
+        'KVKK Madde 3(1)(ı) uyarınca veri sorumlusu sıfatıyla hareket ediyoruz.'),
     LegalBlock.h2('2. Bu Politikanın Kapsamı'),
     LegalBlock.p(
       'Bu politika; Uygulamayı indirip kullandığınızda hangi kişisel verilerinizi topladığımızı, '
@@ -51,32 +78,40 @@ class LegalDocs {
       'Politika; KVKK (6698 sayılı Kanun), GDPR (EU 2016/679), Apple App Store Privacy Guidelines ve '
       'Google Play Data Safety gerekliliklerini karşılayacak şekilde hazırlanmıştır.',
     ),
-
     LegalBlock.h2('3. Topladığımız Veriler'),
     LegalBlock.h3('3.1 Hesap Verileri (zorunlu)'),
     LegalBlock.tableHeader(['Veri', 'Amaç', 'Hukuki Dayanak']),
-    LegalBlock.tableRow(['E-posta adresi', 'Hesap oluşturma, oturum açma, şifre sıfırlama', 'KVKK 5(2)(c) — sözleşme']),
+    LegalBlock.tableRow([
+      'E-posta adresi',
+      'Hesap oluşturma, oturum açma, şifre sıfırlama',
+      'KVKK 5(2)(c) — sözleşme'
+    ]),
     LegalBlock.tableRow(['Şifre (hash)', 'Kimlik doğrulama', 'KVKK 5(2)(c)']),
-    LegalBlock.tableRow(['Görünen ad', 'Ortaklık özelliğinde isim göstermek', 'KVKK 5(2)(c)']),
-
+    LegalBlock.tableRow(
+        ['Görünen ad', 'Ortaklık özelliğinde isim göstermek', 'KVKK 5(2)(c)']),
     LegalBlock.h3('3.2 Uygulama İçeriği Verileri'),
     LegalBlock.tableHeader(['Veri', 'Amaç']),
-    LegalBlock.tableRow(['Varlık kayıtları (sembol, miktar, alış fiyatı, tarih, not)', 'Portföy takibi']),
+    LegalBlock.tableRow([
+      'Varlık kayıtları (sembol, miktar, alış fiyatı, tarih, not)',
+      'Portföy takibi'
+    ]),
     LegalBlock.tableRow(['Portföy snapshot geçmişi', 'Performans grafikleri']),
-    LegalBlock.tableRow(['Ortaklık davet kodları ve bağlantılar', 'Çoklu kullanıcı paylaşımı']),
-
+    LegalBlock.tableRow(
+        ['Ortaklık davet kodları ve bağlantılar', 'Çoklu kullanıcı paylaşımı']),
     LegalBlock.h3('3.3 Cihaz ve Bildirim Verileri'),
     LegalBlock.tableHeader(['Veri', 'Amaç']),
-    LegalBlock.tableRow(['Push bildirim token\'ı (FCM)', 'Ortaklık daveti ve sinyal bildirimleri']),
-    LegalBlock.tableRow(['Cihaz modeli, OS sürümü, uygulama sürümü', 'Hata teşhisi']),
+    LegalBlock.tableRow([
+      'Push bildirim token\'ı (FCM)',
+      'Ortaklık daveti ve sinyal bildirimleri'
+    ]),
+    LegalBlock.tableRow(
+        ['Cihaz modeli, OS sürümü, uygulama sürümü', 'Hata teşhisi']),
     LegalBlock.tableRow(['Yerel ayar (locale)', 'Dil / tarih formatı']),
-
     LegalBlock.h3('3.4 Toplamadığımız Veriler'),
     LegalBlock.p(
       'Konum · Telefon defteri · Fotoğraf / kamera · Reklam tanımlayıcısı · '
       'Üçüncü taraf reklam ağı izleme verisi · Banka hesap bilgileri.',
     ),
-
     LegalBlock.h2('4. Verilerin Kullanım Amaçları'),
     LegalBlock.p(
       '1. Hesabınızı oluşturmak ve oturumunuzu sürdürmek\n'
@@ -87,37 +122,50 @@ class LegalDocs {
       '6. Yasal yükümlülüklerimizi yerine getirmek\n'
       '7. Hata teşhisi ve servis kalitesinin iyileştirilmesi',
     ),
-
     LegalBlock.h2('5. Üçüncü Taraflarla Paylaşım'),
     LegalBlock.tableHeader(['Hizmet', 'Sağlayıcı', 'Amaç', 'Yer']),
-    LegalBlock.tableRow(['Backend & veritabanı', 'Supabase Inc.', 'Saklama, kimlik doğrulama', 'ABD (AWS)']),
-    LegalBlock.tableRow(['Push bildirimi', 'Google Firebase (FCM)', 'Bildirim teslimi', 'Küresel']),
-    LegalBlock.tableRow(['Hata raporu', 'Firebase Crashlytics', 'Çökme teşhisi', 'Küresel']),
-    LegalBlock.tableRow(['Fiyat verisi', 'Yahoo Finance, TEFAS', 'Fiyat çekme (kişisel veri aktarılmaz)', 'Küresel']),
+    LegalBlock.tableRow([
+      'Backend & veritabanı',
+      'Supabase Inc.',
+      'Saklama, kimlik doğrulama',
+      'ABD (AWS)'
+    ]),
+    LegalBlock.tableRow([
+      'Push bildirimi',
+      'Google Firebase (FCM)',
+      'Bildirim teslimi',
+      'Küresel'
+    ]),
+    LegalBlock.tableRow(
+        ['Hata raporu', 'Firebase Crashlytics', 'Çökme teşhisi', 'Küresel']),
+    LegalBlock.tableRow([
+      'Fiyat verisi',
+      'Yahoo Finance, TEFAS',
+      'Fiyat çekme (kişisel veri aktarılmaz)',
+      'Küresel'
+    ]),
     LegalBlock.p(
       'Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder.',
     ),
-
     LegalBlock.h2('6. Yurt Dışına Veri Aktarımı'),
     LegalBlock.p(
       'Supabase ve Firebase ABD\'de barındırıldığından verileriniz Türkiye dışına aktarılır. '
       'ABD, KVK Kurulu\'nun "yeterli korumaya sahip ülkeler" listesinde olmadığından aktarım '
       'KVKK Madde 9(1) kapsamında açık rızanıza dayanmaktadır.',
     ),
-
     LegalBlock.h2('7. Veri Saklama Süreleri'),
     LegalBlock.tableHeader(['Veri', 'Süre']),
     LegalBlock.tableRow(['Hesap verileri', 'Hesap silinene kadar']),
     LegalBlock.tableRow(['Varlık kayıtları', 'Hesap silinene kadar']),
     LegalBlock.tableRow(['Snapshot geçmişi', 'Son 365 gün (rolling)']),
-    LegalBlock.tableRow(['Disclaimer onay logu', 'Hesap silindikten sonra 3 yıl (TBK 146)']),
+    LegalBlock.tableRow(
+        ['Disclaimer onay logu', 'Hesap silindikten sonra 3 yıl (TBK 146)']),
     LegalBlock.tableRow(['Push token', 'Logout / uninstall\'a kadar']),
     LegalBlock.tableRow(['Hata logları', '90 gün']),
     LegalBlock.p(
       'Hesabınızı sildiğinizde, yukarıda özel saklama süresi belirtilenlerin haricindeki tüm '
       'verileriniz 30 gün içinde kalıcı olarak silinir.',
     ),
-
     LegalBlock.h2('8. Haklarınız (KVKK Madde 11 / GDPR Madde 15-22)'),
     LegalBlock.p(
       'Bilgi alma · Erişim · Düzeltme · Silme (right to erasure) · Taşınabilirlik (GDPR) · '
@@ -126,7 +174,6 @@ class LegalDocs {
       'KVKK Madde 13(2) uyarınca taleplerinize 30 gün içinde yanıt veririz.\n\n'
       'Şikayet: Kişisel Verileri Koruma Kurumu — kvkk.gov.tr',
     ),
-
     LegalBlock.h2('9. Veri Güvenliği'),
     LegalBlock.p(
       'TLS 1.2+ aktarım şifrelemesi · AES-256 at-rest şifreleme · Bcrypt şifre hash · '
@@ -134,14 +181,12 @@ class LegalDocs {
       '10 dk idle session timeout · PII maskeleme (üretim logları).\n\n'
       'Veri ihlali tespiti halinde 72 saat içinde KVK Kurulu\'na ve etkilenen kullanıcılara bildirim yapılır.',
     ),
-
     LegalBlock.h2('10. Yatırım Tavsiyesi Reddi'),
     LegalBlock.p(
       'sandık bir portföy takip aracıdır. SPK lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. '
       'Uygulamada gösterilen fiyat, performans, sinyal ve grafikler bilgilendirme amaçlıdır ve '
       'yatırım tavsiyesi niteliği taşımaz.',
     ),
-
     LegalBlock.h2('11. İletişim'),
     LegalBlock.p('E-posta: $_email\nWeb: $_web'),
     LegalBlock.divider(),
@@ -156,7 +201,6 @@ class LegalDocs {
     LegalBlock.h1('Kullanım Koşulları'),
     LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
     LegalBlock.divider(),
-
     LegalBlock.h2('1. Taraflar ve Kabul'),
     LegalBlock.p(
       'Bu Kullanım Koşulları ("Koşullar"), $_company ("Geliştirici", "biz") tarafından sunulan '
@@ -165,7 +209,6 @@ class LegalDocs {
       'Uygulamayı indirip hesap oluşturarak bu Koşulları, Gizlilik Politikası\'nı ve '
       'KVKK Aydınlatma Metni\'ni okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.',
     ),
-
     LegalBlock.h2('2. Hizmetin Tanımı'),
     LegalBlock.p(
       'sandık, kullanıcıların aşağıdaki varlık türlerini takip edebileceği bir kişisel portföy izleme aracıdır:\n\n'
@@ -176,7 +219,6 @@ class LegalDocs {
       'Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz '
       'sinyallerini gösterir. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.',
     ),
-
     LegalBlock.h2('3. ÖNEMLİ UYARI — Yatırım Tavsiyesi Reddi'),
     LegalBlock.p(
       'sandık BİR YATIRIM DANIŞMANI, ARACI KURUM VEYA PORTFÖY YÖNETİM ŞİRKETİ DEĞİLDİR.\n\n'
@@ -188,10 +230,10 @@ class LegalDocs {
       '· Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan hiçbir '
       'kâr/zarardan Geliştirici sorumlu tutulamaz.',
     ),
-
     LegalBlock.h2('4. Hesap'),
     LegalBlock.h3('4.1 Hesap Açma'),
-    LegalBlock.p('· 18 yaşından büyük olmalısınız.\n· Geçerli bir e-posta adresi sağlamalısınız.\n· Doğru ve güncel bilgi vermelisiniz.'),
+    LegalBlock.p(
+        '· 18 yaşından büyük olmalısınız.\n· Geçerli bir e-posta adresi sağlamalısınız.\n· Doğru ve güncel bilgi vermelisiniz.'),
     LegalBlock.h3('4.2 Hesap Güvenliği'),
     LegalBlock.p(
       '· Şifrenizi kimseyle paylaşmayın.\n'
@@ -199,7 +241,6 @@ class LegalDocs {
       '· Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi bilgilendirin.\n'
       '· Hesap üzerinden gerçekleştirilen tüm işlemler size ait sayılır.',
     ),
-
     LegalBlock.h2('5. Ortaklık Özelliği'),
     LegalBlock.p(
       'Uygulamada bir başka kullanıcıyı "ortak" olarak ekleyebilirsiniz. Bu özellik aktive edildiğinde:\n\n'
@@ -209,7 +250,6 @@ class LegalDocs {
       '· İstediğiniz zaman ortaklığı sonlandırabilirsiniz.\n\n'
       'Davet kodunuzu yalnızca güvendiğiniz kişiyle paylaşın.',
     ),
-
     LegalBlock.h2('6. Kabul Edilebilir Kullanım'),
     LegalBlock.p(
       'Uygulamayı kullanırken yapılmaması gerekenler:\n\n'
@@ -222,21 +262,18 @@ class LegalDocs {
       '7. Kara para aklama veya terör finansmanı amacıyla kullanmak\n\n'
       'Bu kuralların ihlali halinde hesabınız bildirimsiz kapatılabilir.',
     ),
-
     LegalBlock.h2('7. Üçüncü Taraf Servisleri'),
     LegalBlock.p(
       'Uygulama; Supabase (backend), Firebase (bildirim), Yahoo Finance / TEFAS (fiyat verisi) '
       'gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri veya hataları nedeniyle '
       'oluşacak sorunlardan Geliştirici sorumlu değildir.',
     ),
-
     LegalBlock.h2('8. Fikri Mülkiyet'),
     LegalBlock.p(
       'Uygulamanın tasarımı, kodu, logosu, marka ismi ve içeriği Geliştiriciye aittir. '
       '"sandık" markası, logo ve görsel kimliği telif hakkı ve marka koruması altındadır. '
       'Kendi girdiğiniz veriler (varlık kayıtlarınız) size aittir.',
     ),
-
     LegalBlock.h2('9. Hizmet Değişiklikleri ve Sona Erdirme'),
     LegalBlock.p(
       '· Uygulamayı güncelleme, özellik kaldırma veya ekleme hakkı saklıdır.\n'
@@ -244,7 +281,6 @@ class LegalDocs {
       '· İstediğiniz zaman hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).\n'
       '· Koşulları ihlal ettiğiniz tespit edilirse hesabınız bildirimsiz askıya alınabilir.',
     ),
-
     LegalBlock.h2('10. Sorumluluğun Sınırlandırılması'),
     LegalBlock.p(
       'Uygulama "olduğu gibi" (as-is) sunulur; her türlü açık veya zımni garanti reddedilir. '
@@ -253,27 +289,23 @@ class LegalDocs {
       'İstisna: Kasıtlı kusur veya ağır ihmalden doğan zararlar; tüketici hukuku kapsamındaki '
       'devredilemez haklar bu sınırlamadan etkilenmez.',
     ),
-
     LegalBlock.h2('11. Tüketici Hakları'),
     LegalBlock.p(
       '6502 sayılı Tüketicinin Korunması Hakkında Kanun (TKHK) kapsamındaki devredilemez '
       'haklarınız bu Koşullarla sınırlandırılamaz. Tüketici Hakem Heyeti veya Tüketici '
       'Mahkemesi\'ne başvuru hakkınız saklıdır.',
     ),
-
     LegalBlock.h2('12. Uygulanacak Hukuk'),
     LegalBlock.p(
       'Uygulanacak hukuk: Türkiye Cumhuriyeti hukuku.\n'
       'AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesinin zorunlu '
       'tüketici koruma hükümleri saklıdır.',
     ),
-
     LegalBlock.h2('13. Koşullarda Değişiklik'),
     LegalBlock.p(
       'Değişiklik yapılırsa en az 30 gün önceden uygulama içi bildirim ve e-posta ile '
       'haber verilir. Değişikliği kabul etmiyorsanız hesabınızı silme hakkınız vardır.',
     ),
-
     LegalBlock.h2('14. İletişim'),
     LegalBlock.p('E-posta: $_email\nWeb: $_web'),
     LegalBlock.divider(),
@@ -288,7 +320,6 @@ class LegalDocs {
     LegalBlock.h1('KVKK Aydınlatma Metni'),
     LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
     LegalBlock.divider(),
-
     LegalBlock.h2('1. Veri Sorumlusunun Kimliği'),
     LegalBlock.p(
       '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 10 uyarınca, '
@@ -300,19 +331,19 @@ class LegalDocs {
     LegalBlock.tableRow(['E-posta', _email]),
     LegalBlock.tableRow(['Web', _web]),
     LegalBlock.tableRow(['Adres', _address]),
-
     LegalBlock.h2('2. İşlenen Kişisel Veri Kategorileri'),
     LegalBlock.h3('2.1 Kimlik Verisi'),
     LegalBlock.p('· E-posta adresi\n· Görünen ad (display name)'),
     LegalBlock.h3('2.2 İletişim Verisi'),
     LegalBlock.p('· Push bildirim için kayıtlı cihaz token\'ı'),
     LegalBlock.h3('2.3 Müşteri İşlem Verisi'),
-    LegalBlock.p('· Portföy varlık kayıtları\n· Snapshot geçmişi\n· Ortaklık bağlantıları ve davet kodları'),
+    LegalBlock.p(
+        '· Portföy varlık kayıtları\n· Snapshot geçmişi\n· Ortaklık bağlantıları ve davet kodları'),
     LegalBlock.h3('2.4 İşlem Güvenliği Verisi'),
-    LegalBlock.p('· Şifre (bcrypt hash — geri çevrilemez)\n· Oturum tokenı (JWT)\n· Cihaz IP adresi (oturum açma anında)\n· Cihaz modeli, OS sürümü, uygulama sürümü'),
+    LegalBlock.p(
+        '· Şifre (bcrypt hash — geri çevrilemez)\n· Oturum tokenı (JWT)\n· Cihaz IP adresi (oturum açma anında)\n· Cihaz modeli, OS sürümü, uygulama sürümü'),
     LegalBlock.h3('2.5 Hukuki İşlem Verisi'),
     LegalBlock.p('· Disclaimer onay zamanı, sürümü, platformu, IP\'si'),
-
     LegalBlock.h2('3. Kişisel Verilerin İşlenme Amaçları'),
     LegalBlock.tableHeader(['Amaç', 'Veri Kategorileri']),
     LegalBlock.tableRow(['Hesap oluşturma ve oturum yönetimi', '2.1, 2.4']),
@@ -320,38 +351,68 @@ class LegalDocs {
     LegalBlock.tableRow(['Performans grafiklerinin hesaplanması', '2.3']),
     LegalBlock.tableRow(['Ortaklık özelliği', '2.1, 2.3']),
     LegalBlock.tableRow(['Push bildirim gönderimi', '2.2']),
-    LegalBlock.tableRow(['Yasal yükümlülüklerin yerine getirilmesi', '2.5, 2.4']),
+    LegalBlock.tableRow(
+        ['Yasal yükümlülüklerin yerine getirilmesi', '2.5, 2.4']),
     LegalBlock.tableRow(['Hata teşhisi ve uygulama güvenliği', '2.4']),
-
     LegalBlock.h2('4. Hukuki Dayanak'),
     LegalBlock.tableHeader(['Veri', 'Hukuki Sebep']),
-    LegalBlock.tableRow(['E-posta, şifre, display name', 'KVKK 5(2)(c) — sözleşmenin ifası']),
-    LegalBlock.tableRow(['Portföy verileri', 'KVKK 5(2)(c) — sözleşmenin ifası']),
+    LegalBlock.tableRow(
+        ['E-posta, şifre, display name', 'KVKK 5(2)(c) — sözleşmenin ifası']),
+    LegalBlock.tableRow(
+        ['Portföy verileri', 'KVKK 5(2)(c) — sözleşmenin ifası']),
     LegalBlock.tableRow(['Push token', 'KVKK 5(1) — açık rıza']),
-    LegalBlock.tableRow(['IP, cihaz bilgisi', 'KVKK 5(2)(f) — meşru menfaat (güvenlik)']),
-    LegalBlock.tableRow(['Disclaimer onayı', 'KVKK 5(2)(a) — kanunlarda öngörülmesi']),
-    LegalBlock.tableRow(['Yurt dışı aktarımı', 'KVKK 5(1) ve 9(1) — açık rıza']),
-
+    LegalBlock.tableRow(
+        ['IP, cihaz bilgisi', 'KVKK 5(2)(f) — meşru menfaat (güvenlik)']),
+    LegalBlock.tableRow(
+        ['Disclaimer onayı', 'KVKK 5(2)(a) — kanunlarda öngörülmesi']),
+    LegalBlock.tableRow(
+        ['Yurt dışı aktarımı', 'KVKK 5(1) ve 9(1) — açık rıza']),
     LegalBlock.h2('5. Yurt Dışına Veri Aktarımı'),
     LegalBlock.tableHeader(['Alıcı', 'Ülke', 'Amaç', 'Hukuki Sebep']),
-    LegalBlock.tableRow(['Supabase Inc.', 'ABD', 'Veritabanı ve kimlik doğrulama', 'KVKK 9(1) — açık rıza']),
-    LegalBlock.tableRow(['Google LLC (Firebase)', 'ABD / Küresel', 'Push bildirim teslimi', 'KVKK 9(1) — açık rıza']),
-    LegalBlock.tableRow(['Google LLC (Crashlytics)', 'ABD / Küresel', 'Çökme teşhisi', 'KVKK 9(1) — açık rıza']),
+    LegalBlock.tableRow([
+      'Supabase Inc.',
+      'ABD',
+      'Veritabanı ve kimlik doğrulama',
+      'KVKK 9(1) — açık rıza'
+    ]),
+    LegalBlock.tableRow([
+      'Google LLC (Firebase)',
+      'ABD / Küresel',
+      'Push bildirim teslimi',
+      'KVKK 9(1) — açık rıza'
+    ]),
+    LegalBlock.tableRow([
+      'Google LLC (Crashlytics)',
+      'ABD / Küresel',
+      'Çökme teşhisi',
+      'KVKK 9(1) — açık rıza'
+    ]),
     LegalBlock.p(
       'ABD, KVK Kurulu\'nun "yeterli korumaya sahip ülkeler" listesinde bulunmamaktadır. '
       'Yurt dışı aktarımı KVKK Madde 9(1) kapsamında açık rızanıza dayanmaktadır.',
     ),
-
     LegalBlock.h2('6. Veri Saklama Süreleri'),
     LegalBlock.tableHeader(['Veri', 'Süre', 'Dayanak']),
-    LegalBlock.tableRow(['Hesap verileri', 'Hesap silinene kadar', 'Sözleşme süresi']),
-    LegalBlock.tableRow(['Portföy varlık kayıtları', 'Hesap silinene kadar', 'Sözleşme süresi']),
-    LegalBlock.tableRow(['Snapshot geçmişi', 'Son 365 gün rolling', 'Servis ihtiyacı']),
-    LegalBlock.tableRow(['Push token', 'Logout / uninstall\'a kadar', 'Sözleşme süresi']),
-    LegalBlock.tableRow(['Disclaimer onay logu', 'Hesap silinmesinden sonra 3 yıl', 'TBK Madde 146']),
-    LegalBlock.tableRow(['Oturum logları (IP, cihaz)', '90 gün', 'KVKK 5(2)(f) meşru menfaat']),
-    LegalBlock.tableRow(['Hata logları', '30 gün', 'KVKK 5(2)(f) meşru menfaat']),
-
+    LegalBlock.tableRow(
+        ['Hesap verileri', 'Hesap silinene kadar', 'Sözleşme süresi']),
+    LegalBlock.tableRow([
+      'Portföy varlık kayıtları',
+      'Hesap silinene kadar',
+      'Sözleşme süresi'
+    ]),
+    LegalBlock.tableRow(
+        ['Snapshot geçmişi', 'Son 365 gün rolling', 'Servis ihtiyacı']),
+    LegalBlock.tableRow(
+        ['Push token', 'Logout / uninstall\'a kadar', 'Sözleşme süresi']),
+    LegalBlock.tableRow([
+      'Disclaimer onay logu',
+      'Hesap silinmesinden sonra 3 yıl',
+      'TBK Madde 146'
+    ]),
+    LegalBlock.tableRow(
+        ['Oturum logları (IP, cihaz)', '90 gün', 'KVKK 5(2)(f) meşru menfaat']),
+    LegalBlock.tableRow(
+        ['Hata logları', '30 gün', 'KVKK 5(2)(f) meşru menfaat']),
     LegalBlock.h2('7. KVKK Madde 11 Kapsamındaki Haklarınız'),
     LegalBlock.p(
       'a) Kişisel verilerinizin işlenip işlenmediğini öğrenme\n'
@@ -364,7 +425,6 @@ class LegalDocs {
       'g) Münhasıran otomatik sistemlerle aleyhinize sonuç çıkmasına itiraz etme\n'
       'ğ) Kanuna aykırı işleme sebebiyle zararın giderilmesini talep etme',
     ),
-
     LegalBlock.h3('7.1 Başvuru Yöntemi'),
     LegalBlock.p(
       'KVKK Madde 13 uyarınca taleplerinizi şu yöntemlerden biriyle iletebilirsiniz:\n\n'
@@ -372,7 +432,6 @@ class LegalDocs {
       '2. E-posta: $_email adresine kimlik bilgilerinizle yazılı başvuru\n\n'
       'Başvurunuza 30 gün içinde ücretsiz olarak yanıt veririz.',
     ),
-
     LegalBlock.h3('7.2 KVK Kurulu\'na Şikayet'),
     LegalBlock.p(
       'Yanıttan memnun kalmazsanız Kişisel Verileri Koruma Kurulu\'na şikayet edebilirsiniz.\n\n'
@@ -380,7 +439,6 @@ class LegalDocs {
       'Nasuh Akar Mah. Ziyabey Cad. 1407. Sok. No:4, 06520 Balgat / Ankara\n'
       'Web: www.kvkk.gov.tr',
     ),
-
     LegalBlock.h2('8. Veri Güvenliği'),
     LegalBlock.p(
       'Teknik Önlemler: TLS 1.2+ aktarım şifrelemesi · AES-256 at-rest şifreleme · '
@@ -391,15 +449,14 @@ class LegalDocs {
       'Veri ihlali tespiti halinde 72 saat içinde KVK Kurulu\'na ve etkilenen '
       'kullanıcılara bildirim yapılır.',
     ),
-
     LegalBlock.h2('9. Politikada Değişiklikler'),
     LegalBlock.p(
       'Bu Aydınlatma Metni\'nde değişiklik yapıldığında yeni sürüm uygulama içinde gösterilir, '
       '"Sürüm" numarası artırılır ve önemli değişikliklerde tekrar onay istenir.',
     ),
-
     LegalBlock.h2('10. İletişim'),
-    LegalBlock.p('Veri korumayla ilgili tüm soru, talep ve şikayetler için:\nE-posta: $_email\nWeb: $_web'),
+    LegalBlock.p(
+        'Veri korumayla ilgili tüm soru, talep ve şikayetler için:\nE-posta: $_email\nWeb: $_web'),
     LegalBlock.divider(),
     LegalBlock.meta(
       'Bu Aydınlatma Metni\'ni okuyup anladığınızı, kayıt sırasında ilgili onay kutusunu '
@@ -414,6 +471,7 @@ class LegalDocScreen extends StatefulWidget {
   final String title;
   final List<LegalBlock> blocks;
   final IconData icon;
+
   /// Onay akışında kullanılıyorsa: sayfanın sonunda "Okudum ve onaylıyorum"
   /// butonu görünür. Buton yalnızca kullanıcı en aşağıya kaydırdıktan sonra
   /// aktifleşir. Butona basınca `Navigator.pop(ctx, true)` döner.
@@ -478,15 +536,8 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
     // `surface2`, vurgu `amberText`.
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: AppBar(
-        backgroundColor: context.c.surface2,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              size: 20, color: context.c.text90),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
+      appBar: SandikAppBar(
+        titleWidget: Row(
           children: [
             Icon(widget.icon, color: context.c.amberText, size: 20),
             const SizedBox(width: 8),
@@ -502,6 +553,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
             ),
           ],
         ),
+        backgroundColor: context.c.surface2,
       ),
       body: Column(
         children: [
@@ -559,8 +611,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
               },
               child: ListView.builder(
                 controller: _scrollCtrl,
-                padding: EdgeInsets.only(
-                    bottom: widget.confirmMode ? 24 : 48),
+                padding: EdgeInsets.only(bottom: widget.confirmMode ? 24 : 48),
                 itemCount: widget.blocks.length,
                 itemBuilder: (_, i) => _buildBlock(widget.blocks[i], i),
               ),
@@ -828,7 +879,9 @@ class _DocTableRow extends StatelessWidget {
             width: isHeader ? 3 : 1,
           ),
           right: BorderSide(color: context.c.hairline),
-          top: isHeader ? BorderSide.none : BorderSide(color: context.c.hairline),
+          top: isHeader
+              ? BorderSide.none
+              : BorderSide(color: context.c.hairline),
         ),
       ),
       child: IntrinsicHeight(
@@ -839,7 +892,8 @@ class _DocTableRow extends StatelessWidget {
             return Expanded(
               flex: i == 0 ? 2 : 3,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: isLast
                     ? null
                     : BoxDecoration(
@@ -849,10 +903,9 @@ class _DocTableRow extends StatelessWidget {
                       ),
                 child: Text(
                   cells[i],
-                  style: (isHeader
-                          ? context.t.labelLarge
-                          : context.t.bodyMedium)
-                      ?.copyWith(
+                  style:
+                      (isHeader ? context.t.labelLarge : context.t.bodyMedium)
+                          ?.copyWith(
                     fontWeight: isHeader ? FontWeight.w700 : FontWeight.w400,
                     // Başlık hücresi eskiden `Colors.white` idi ve açık
                     // temada da beyaz zemine yakın bir bant üstüne

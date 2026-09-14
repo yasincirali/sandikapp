@@ -7,6 +7,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import 'add_asset_screen.dart';
 import 'paywall_screen.dart';
@@ -16,8 +17,7 @@ class BulkAddAssetScreen extends ConsumerStatefulWidget {
   const BulkAddAssetScreen({super.key});
 
   @override
-  ConsumerState<BulkAddAssetScreen> createState() =>
-      _BulkAddAssetScreenState();
+  ConsumerState<BulkAddAssetScreen> createState() => _BulkAddAssetScreenState();
 }
 
 class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
@@ -70,13 +70,15 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
 
     final priceFetches = await Future.wait([
       if (tefasCodes.isNotEmpty)
-        TefasService.instance.fetchPrices(tefasCodes.toList()).catchError(
-            (_) => <String, double>{})
+        TefasService.instance
+            .fetchPrices(tefasCodes.toList())
+            .catchError((_) => <String, double>{})
       else
         Future.value(<String, double>{}),
       if (yahooSymbols.isNotEmpty)
-        PriceService.instance.fetchQuotes(yahooSymbols.toList()).catchError(
-            (_) => <String, YahooQuote>{})
+        PriceService.instance
+            .fetchQuotes(yahooSymbols.toList())
+            .catchError((_) => <String, YahooQuote>{})
       else
         Future.value(<String, YahooQuote>{}),
     ]);
@@ -86,9 +88,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     // Geçmiş tarihli item'lar için tarihsel kapanış — paralel fetch.
     final historicalPrices = <String, double>{}; // key: itemId
     await Future.wait(items.where((it) {
-      return it.price <= 0 &&
-          it.ticker.isNotEmpty &&
-          !isToday(it.addedDate);
+      return it.price <= 0 && it.ticker.isNotEmpty && !isToday(it.addedDate);
     }).map((it) async {
       try {
         final hist = await PriceService.instance
@@ -201,8 +201,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       canPop: !_saving,
       child: Scaffold(
         backgroundColor: context.c.background,
-        appBar: AppBar(
-          title: Text('Toplu Ekle${items.isEmpty ? '' : ' (${items.length})'}'),
+        appBar: SandikAppBar(
+          titleWidget:
+              Text('Toplu Ekle${items.isEmpty ? '' : ' (${items.length})'}'),
           actions: [
             if (items.isNotEmpty && !_saving)
               IconButton(
@@ -238,7 +239,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                 color: context.c.amberFill.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: context.c.amberFill.withValues(alpha: 0.30), width: 1),
+                    color: context.c.amberFill.withValues(alpha: 0.30),
+                    width: 1),
               ),
               child: Icon(Icons.playlist_add_rounded,
                   color: context.c.amberText, size: 34),
@@ -246,14 +248,13 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             const SizedBox(height: 16),
             Text('Sepet boş',
                 style: context.t.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text90)),
+                    fontWeight: FontWeight.w700, color: context.c.text90)),
             const SizedBox(height: 6),
             Text(
               'Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.',
               textAlign: TextAlign.center,
-              style: context.t.bodyMedium?.copyWith(
-                  color: context.c.text58, height: 1.4),
+              style: context.t.bodyMedium
+                  ?.copyWith(color: context.c.text58, height: 1.4),
             ),
           ],
         ),
@@ -286,9 +287,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
           color: context.c.surface1,
-          border: Border(
-              top: BorderSide(
-                  color: context.c.overlay, width: 1)),
+          border: Border(top: BorderSide(color: context.c.overlay, width: 1)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -302,12 +301,12 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                 label: Text(
                   'Varlık Ekle',
                   style: context.t.bodyLarge?.copyWith(
-                      color: context.c.amberText,
-                      fontWeight: FontWeight.w600),
+                      color: context.c.amberText, fontWeight: FontWeight.w600),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
-                      color: context.c.amberFill.withValues(alpha: 0.45), width: 1),
+                      color: context.c.amberFill.withValues(alpha: 0.45),
+                      width: 1),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(SandikRadius.md)),
                 ),
@@ -318,8 +317,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               width: double.infinity,
               height: 52,
               child: FilledButton(
-                onPressed:
-                    _saving || items.isEmpty ? null : _saveAll,
+                onPressed: _saving || items.isEmpty ? null : _saveAll,
                 style: FilledButton.styleFrom(
                   backgroundColor: context.c.amberFill,
                   foregroundColor: context.c.onAmber,
@@ -336,8 +334,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                           const SizedBox(width: 12),
                           Text(
                             'Kaydediliyor $_saved / ${items.length}',
-                            style: context.t.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w700),
+                            style: context.t.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ],
                       )
@@ -345,8 +343,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                         items.isEmpty
                             ? 'Kaydet'
                             : 'Tümünü Kaydet (${items.length})',
-                        style: context.t.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w700),
+                        style: context.t.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
               ),
             ),
@@ -437,14 +435,14 @@ class _BulkItemTile extends StatelessWidget {
                   Text(
                     item.name.isEmpty ? item.type.label : item.name,
                     style: context.t.bodyLarge?.copyWith(
-                        color: context.c.text90,
-                        fontWeight: FontWeight.w600),
+                        color: context.c.text90, fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: context.t.titleSmall?.copyWith(color: context.c.text58),
+                      style: context.t.titleSmall
+                          ?.copyWith(color: context.c.text58),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                 ],
@@ -453,14 +451,14 @@ class _BulkItemTile extends StatelessWidget {
             IconButton(
               tooltip: 'Düzenle',
               onPressed: onEdit,
-              icon: Icon(Icons.edit_outlined,
-                  color: context.c.text58, size: 20),
+              icon:
+                  Icon(Icons.edit_outlined, color: context.c.text58, size: 20),
             ),
             IconButton(
               tooltip: 'Sil',
               onPressed: onDelete,
-              icon: Icon(Icons.close_rounded,
-                  color: context.c.text58, size: 20),
+              icon:
+                  Icon(Icons.close_rounded, color: context.c.text58, size: 20),
             ),
           ],
         ),
