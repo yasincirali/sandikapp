@@ -10,12 +10,32 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > değişiklikleri yalnızca okunarak incelendi; `ci.yml` deno job'ı ilk PR'da
 > gerçek sonucu verecek.
 
-## Son kalınan yer
-Main'e birleştirildi (2026-09-14). Faz 0 ve Faz 1 tamam. Faz 2: 2.1–2.9, 2.11, 2.13(kısmi) tamam.
-**Kalan Faz 2 kalemleri:** 2.10 varlık silmede undo (sunucu tarafı kalıcı silme — soft-delete
-ister, Faz 3 kapsamı), 2.12 SegmentedButton geçişi (görsel doğrulama ister), 2.14 Hero geçişi,
-2.13'ün `Size.zero` buton kısmı (20 site), 2.4'ün `SandikCard` benimsemesi.
-Faz 3: 3.3, 3.4, 3.5, 3.6, 3.7, 3.8(kısmi), 3.15, 3.17(kısmi), 3.19(kısmi) tamam. Sıradaki: 3.2 baz para birimi, 3.16 integration test; 3.1 (Apple/Google — geliştirici hesabı ister), 3.9/3.10 büyük refactor'lar.
+## Son kalınan yer (2026-09-14)
+
+Main ile birleşik, her adım analyzer + tam Flutter paketi (1.697 test) + Deno paketi (222 test)
+ile doğrulandı. **Tamamlanan:** Faz 0 (tümü), Faz 1 (tümü; google_fonts/lint/leaderboard-timer
+ertelemeleri TECHNICAL_DEBT'te), Faz 2: 2.1–2.9, 2.11, 2.13 (kısmi); Faz 3: 3.3, 3.4, 3.5,
+3.6, 3.7, 3.8 (kısmi), 3.11, 3.15, 3.17 (kısmi), 3.19 (kısmi).
+
+**Kalanlar ve neden burada durdu:**
+
+| Kalem | Neden kod tarafında ilerlemedi |
+|---|---|
+| 3.1 Apple / Google ile giriş | Apple Developer + Google Cloud OAuth kimlikleri ve Supabase provider ayarı gerekli — senin hesabın. Kod tarafı bunlar olmadan derlenir ama çalışmaz. |
+| 3.2 Baz para birimi (USD/EUR/altın) | 28 `fmtTRY` + 30 `toTRY` sitesi ve grafik eksenleri; yarım yapılırsa ekranlar karışık sembol gösterir. Bir günlük odaklı tur + cihazda görsel doğrulama ister. |
+| 3.9 Performans ekranlarını birleştir | 8.190 satır; parite testleri güvenlik ağı ama gerçek cihazda gün içi/haftasonu/fon basamağı senaryoları görülmeli. |
+| 3.10 `add_asset_screen` Notifier'a taşı | 37 setState, 17 alan; 3.9 ile aynı gerekçe. |
+| 3.12 Yarış / 3.13 Paywall / 3.14 Vadeli mevduat | Ürün kararları — `YAPMAN_GEREKENLER.md` #9 ve değerlendirme §4. |
+| 3.16 integration_test | Test Supabase projesi + seed verisi ister. |
+| 3.18 Swift widget derleme CI | macOS runner'da `xcodebuild` adımı; yerelde doğrulanamaz. |
+| 3.20 İngilizce arayüz | Yalnızca EN pazarı hedefleniyorsa. |
+| 2.10 / 2.12 / 2.14, 2.13 `Size.zero` | Görsel doğrulama isteyen UI kalemleri; cihazsız yapılmadı. |
+| 3.8 dış bağlantı köprüsü, 3.19 sertifika pinning | Sırasıyla `app_links`/`flutter_deeplinking_enabled` cihaz testi ve pinning'in kesinti riski kararı. |
+
+**Senin tarafında bekleyenler** (`YAPMAN_GEREKENLER.md` en üst tablo): secret rotasyonu, 7 cron
+secret'ının `x-cron-secret` desenine göre set edilmesi, `DELETION_HASH_SALT`, edge function
+deploy'ları, 0055/0056/0057 migration'ları, biyometrik kilidin cihazda denenmesi, GoTrue rate
+limit'leri.
 
 ## Faz 0 — Kanamayı durdur
 
