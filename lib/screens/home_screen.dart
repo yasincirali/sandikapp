@@ -30,6 +30,7 @@ import 'all_transactions_screen.dart';
 import 'asset_detail_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
+import '../l10n/l10n.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -397,16 +398,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: SandikSpace.sm),
                       Expanded(
                         child: Text(
-                          'Fiyatlar güncellenemedi — eski veriler gösteriliyor.',
+                          context.l10n.priceUpdateFailed,
                           style: context.t.titleSmall
                               ?.copyWith(color: context.c.amberText),
                         ),
                       ),
                       SandikTappable(
                         onTap: _reload,
-                        semanticLabel: 'Tekrar Dene',
+                        semanticLabel: context.l10n.retry,
                         child: Text(
-                          'Tekrar Dene',
+                          context.l10n.retry,
                           style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: context.c.amberText),
@@ -533,7 +534,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: HScrollWithFade(
                   child: Row(
                     children: [
-                      _typeChip(null, 'Tümü'),
+                      _typeChip(null, context.l10n.allTypes),
                       for (final t
                           in AssetType.values)
                         _typeChip(t, t.label),
@@ -1456,14 +1457,14 @@ class _EmptyPortfolioCta extends StatelessWidget {
         Icon(Icons.savings_outlined, color: context.c.text36, size: 48),
         const SizedBox(height: SandikSpace.md),
         Text(
-          filtered ? 'Bu türde varlık yok' : 'Henüz varlık eklenmemiş',
+          filtered ? context.l10n.noAssetsOfType : context.l10n.noAssetsYet,
           style: context.t.titleLarge?.copyWith(color: context.c.text90),
         ),
         const SizedBox(height: SandikSpace.sm),
         Text(
           filtered
-              ? 'Filtreyi değiştir ya da bu türden bir varlık ekle.'
-              : 'İlk varlığını ekleyerek sandığını oluşturmaya başla.',
+              ? context.l10n.noAssetsOfTypeHint
+              : context.l10n.noAssetsYetHint,
           textAlign: TextAlign.center,
           style: context.t.bodyMedium?.copyWith(color: context.c.text36),
         ),
@@ -1494,7 +1495,7 @@ class _EmptyPortfolioCta extends StatelessWidget {
                   Icon(Icons.add_rounded, color: context.c.amberText, size: 20),
                   const SizedBox(width: SandikSpace.sm),
                   Text(
-                    filtered ? 'Varlık Ekle' : 'İlk Varlığını Ekle',
+                    filtered ? context.l10n.addAssetTitle : context.l10n.addFirstAsset,
                     style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: context.c.amberText),

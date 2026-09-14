@@ -21,6 +21,7 @@ import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
+import '../l10n/l10n.dart';
 
 const _addAssetUuid = Uuid();
 
@@ -233,11 +234,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     ref.watch(addAssetFormProvider(_args));
 
     final saveLabel = widget.cartMode
-        ? (widget.cartInitial != null ? 'Kaydet' : 'Sepete Ekle')
-        : (_isEditing ? 'Güncelle' : 'Ekle');
+        ? (widget.cartInitial != null ? context.l10n.save : 'Sepete Ekle')
+        : (_isEditing ? context.l10n.update : context.l10n.add);
     final title = widget.cartMode
         ? (widget.cartInitial != null ? 'Sepette Düzenle' : 'Sepete Ekle')
-        : (_isEditing ? 'Düzenle' : 'Varlık Ekle');
+        : (_isEditing ? context.l10n.editAsset : context.l10n.addAssetTitle);
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -293,7 +294,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                   children: [
-                    _sectionLabel('Varlık Türü'),
+                    _sectionLabel(context.l10n.assetType),
                     const SizedBox(height: 10),
                     _typeSelector(cs),
                     const SizedBox(height: 22),
@@ -367,9 +368,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       children: [
         _brandInput(
           controller: _name,
-          hint: _type == AssetType.emtia ? 'Örn: Petrol (Brent)' : 'Varlık adı',
+          hint: _type == AssetType.emtia ? 'Örn: Petrol (Brent)' : context.l10n.assetName,
           validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Ad zorunlu' : null,
+              (v == null || v.trim().isEmpty) ? context.l10n.nameRequired : null,
         ),
         const SizedBox(height: 8),
         _brandInput(
@@ -506,7 +507,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('Miktar'),
+        _fieldLabel(context.l10n.quantity),
         const SizedBox(height: 8),
         _brandInput(
           controller: _quantity,
@@ -516,7 +517,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           inputFormatters: [_DecimalFormatter()],
           validator: (v) =>
               (_parse(v ?? '') == null || (_parse(v ?? '') ?? 0) <= 0)
-                  ? 'Geçerli miktar'
+                  ? context.l10n.quantityInvalid
                   : null,
         ),
       ],
@@ -533,10 +534,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // 138px taşıyordu — NORMAL metin boyutunda, büyük fontta değil.
         Row(
           children: [
-            Flexible(child: _fieldLabel('Alış Fiyatı')),
+            Flexible(child: _fieldLabel(context.l10n.purchasePrice)),
             const SizedBox(width: 6),
             Flexible(
-              child: Text('· opsiyonel',
+              child: Text(context.l10n.optional,
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
@@ -546,12 +547,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         const SizedBox(height: 8),
         _brandInput(
           controller: _price,
-          hint: 'Otomatik',
+          hint: context.l10n.auto,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [_DecimalFormatter()],
           validator: (v) =>
               v != null && v.trim().isNotEmpty && _parse(v) == null
-                  ? 'Geçersiz'
+                  ? context.l10n.invalid
                   : null,
           onChanged: (_) => _schedulePricePreview(),
           suffix: _isDoviz ? null : _inlineCurrencyPicker(),
@@ -569,10 +570,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       children: [
         Row(
           children: [
-            Flexible(child: _fieldLabel('Komisyon / Masraf')),
+            Flexible(child: _fieldLabel(context.l10n.commission)),
             const SizedBox(width: 6),
             Flexible(
-              child: Text('· opsiyonel',
+              child: Text(context.l10n.optional,
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
@@ -588,8 +589,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           validator: (v) {
             if (v == null || v.trim().isEmpty) return null;
             final parsed = _parse(v);
-            if (parsed == null) return 'Geçersiz';
-            if (parsed < 0) return 'Negatif olamaz';
+            if (parsed == null) return context.l10n.invalid;
+            if (parsed < 0) return context.l10n.cannotBeNegative;
             return null;
           },
           suffix: Padding(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/biometric_lock_service.dart';
 import '../theme/sandik.dart';
+import '../l10n/l10n.dart';
 
 /// Kilit ekranı — biyometrik kilit açıkken öne dönüşte ve soğuk açılışta.
 ///
@@ -72,7 +73,7 @@ class _LockScreenState extends State<LockScreen> {
                 ),
                 const SizedBox(height: SandikSpace.lg),
                 Text(
-                  'sandık kilitli',
+                  context.l10n.lockTitle,
                   textAlign: TextAlign.center,
                   style: context.t.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
@@ -82,8 +83,8 @@ class _LockScreenState extends State<LockScreen> {
                 const SizedBox(height: SandikSpace.sm),
                 Text(
                   _failed
-                      ? 'Doğrulama yapılamadı. Tekrar dene.'
-                      : 'Portföyünü görmek için kimliğini doğrula.',
+                      ? context.l10n.lockFailed
+                      : context.l10n.lockPrompt,
                   textAlign: TextAlign.center,
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
@@ -93,7 +94,7 @@ class _LockScreenState extends State<LockScreen> {
                   child: FilledButton.icon(
                     onPressed: _busy ? null : _tryUnlock,
                     icon: const Icon(Icons.fingerprint_rounded),
-                    label: Text(_busy ? 'Doğrulanıyor…' : 'Kilidi aç'),
+                    label: Text(_busy ? context.l10n.lockVerifying : context.l10n.unlock),
                   ),
                 ),
               ],

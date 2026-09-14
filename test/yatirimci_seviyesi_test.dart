@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/l10n/generated/app_localizations_en.dart';
+import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/models/yatirimci_seviyesi.dart';
 import 'package:portfoy_takip/services/insight_metrics_service.dart';
 
@@ -21,10 +23,12 @@ void main() {
       expect(YatirimciSeviyesi.fromIndex(99), YatirimciSeviyesi.orta);
     });
 
-    test('her seviyenin etiketi ve açıklaması var', () {
-      for (final s in YatirimciSeviyesi.values) {
-        expect(s.etiket.trim(), isNotEmpty);
-        expect(s.aciklama.trim(), isNotEmpty);
+    test('her seviyenin etiketi ve açıklaması iki dilde de var', () {
+      for (final l in [AppLocalizationsTr(), AppLocalizationsEn()]) {
+        for (final s in YatirimciSeviyesi.values) {
+          expect(s.etiketOf(l).trim(), isNotEmpty);
+          expect(s.aciklamaOf(l).trim(), isNotEmpty);
+        }
       }
     });
   });

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart'
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 /// Varolan kullanıcılar için splash sonrası disclaimer onay ekranı.
 /// Geri butonu yok — onaylanmadan uygulama kullanılamaz.
@@ -65,7 +66,7 @@ class _DisclaimerAcceptanceScreenState
                   Icon(Icons.gavel_rounded, size: 22, color: context.c.amberText),
                   const SizedBox(width: 10),
                   Text(
-                    'Yasal Uyarı',
+                    context.l10n.disclaimerTitle,
                     style: context.t.headlineMedium?.copyWith(
                       color: context.c.amberText,
                     ),
@@ -81,7 +82,7 @@ class _DisclaimerAcceptanceScreenState
               ),
               const SizedBox(height: 8),
               Text(
-                'Uygulamayı kullanmaya devam etmek için lütfen aşağıdaki yasal uyarıyı okuyun ve onaylayın.',
+                context.l10n.disclaimerIntro,
                 style: context.t.bodyMedium?.copyWith(
                   color: context.c.text58,
                   height: 1.5,
@@ -155,7 +156,7 @@ class _DisclaimerAcceptanceScreenState
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Yukarıdaki yasal uyarıyı okudum ve kabul ediyorum.',
+                          context.l10n.disclaimerAcceptRow,
                           style: context.t.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                             color: _showError ? context.c.loss : context.c.text90,
@@ -169,7 +170,7 @@ class _DisclaimerAcceptanceScreenState
               if (_showError) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Devam etmek için yasal uyarıyı kabul etmelisin.',
+                  context.l10n.disclaimerMustAccept,
                   style: context.t.bodySmall?.copyWith(color: context.c.loss),
                 ),
               ],
@@ -201,7 +202,7 @@ class _DisclaimerAcceptanceScreenState
                   child: _loading
                       ? const CustomLoadingIndicator(size: 20)
                       : Text(
-                          'Kabul Ediyorum',
+                          context.l10n.accept,
                           style: context.t.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: context.c.onAmber,

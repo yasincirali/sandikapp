@@ -88,6 +88,7 @@ lib/screens/     Sekmeler: home, portfolio ("Portföy" sekmesi), portfolio_perfo
 lib/services/    supabase_service (DB geçidi), price_service/tefas_service (fiyat), history_service
                  (seri motoru), period_summary/recap/daily_summary, notification/remote_push,
                  home_widget/live_activity, leaderboard, inflation, analytics, db_logger
+lib/l10n/        app_tr.arb / app_en.arb, l10n.dart (context.l10n), generated/ (gen-l10n çıktısı)
 lib/theme/       sandik.dart — context.c (renk), context.t (tipografi), SandikSpace/Radius/Motion,
                  adaptiveRoute, SandikCard, SandikSectionHeader
 lib/utils/       tr_format (fmtTRY/fmtPct/parseTrNumber), friendly_error, grafik yardımcıları
@@ -142,8 +143,12 @@ yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dö
 **Gizli anahtar.** Repoya asla: `google-services.json`, `GoogleService-Info.plist`,
 `key.properties`, keystore, Vault değerleri, `.env`. `tmp/` gitignore'dadır ve öyle kalır.
 
-**i18n.** Arayüz Türkçe; `en_US` `supportedLocales`'ta ilan edilmiş ama `.arb` yok.
-Yeni metin Türkçe, hitap **sen**.
+**i18n.** Ana dil Türkçe, hitap **sen**. 3.20 (2026-09-14): `lib/l10n/app_tr.arb` (şablon) +
+`app_en.arb`, `flutter gen-l10n` → `lib/l10n/generated/` (commit'li), erişim `context.l10n.anahtar`
+(`lib/l10n/l10n.dart`; delegate yoksa Türkçe'ye düşer). Çevrilmiş ekranlarda (liste
+`test/l10n_coverage_test.dart`) yeni metin **ham literal olarak eklenmez**: iki .arb'a anahtar
++ gen-l10n + `context.l10n`. Henüz çevrilmemiş ekranlarda Türkçe literal serbest; İngilizce
+BETA, varsayılan dil Türkçe (`LocaleNotifier`).
 
 ## Doğrulama
 

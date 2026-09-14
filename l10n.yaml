@@ -1,0 +1,18 @@
+# gen-l10n yapılandırması (3.20 İngilizce arayüz).
+#
+# Şablon TÜRKÇE: uygulamanın ana dili ve tüm metinlerin kaynağı Türkçe;
+# İngilizce çeviri `app_en.arb`'da. Üretilen sınıflar `lib/l10n/generated/`
+# altında ve REPOYA GİRER (CI `flutter pub get` sırasında da üretir; commit'li
+# olması analyzer'ı ve IDE'yi üretim adımına bağımlı kılmaz).
+#
+# `nullable-getter: true` (varsayılan) bilinçli: `context.l10n`
+# (`lib/l10n/l10n.dart`) delegate yoksa Türkçe sınıfa düşer — 155+ widget
+# testi `MaterialApp(home: ...)`'ı delegate'siz kuruyor; hepsini değiştirmek
+# yerine geri dönüş tek yerde.
+arb-dir: lib/l10n
+template-arb-file: app_tr.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+output-dir: lib/l10n/generated
+synthetic-package: false
+untranslated-messages-file: lib/l10n/untranslated.json

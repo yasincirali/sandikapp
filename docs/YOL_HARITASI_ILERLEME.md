@@ -36,10 +36,9 @@ Altın gecikmesi için `slow_history_fetch` teşhis olayı. `seyreltSpots` silin
 ekranına basamaklı seri olarak eklendi. Light mode: ölü glass yardımcıları silindi,
 `AssetType.onSurface` ile kategori ikon/metinleri ≥ 4,5:1. **Bilinçli atlananlar:**
 3.2 baz para birimi (58 site, cihaz doğrulaması şart), 3.9 ekran birleştirme,
-3.20, `signal_state` yeniden anahtarlama (tetikleyici şikâyet yok), mum grafik /
-dev ekran parçalama (kullanıcı kararı), yatırımcı seviyesi (profil alanı yok,
-zorunlu onboarding istenmiyor). ~~3.16~~ ve ~~fon NAV çapası~~ dördüncü turda
-kapandı (aşağıda).
+`signal_state` yeniden anahtarlama (tetikleyici şikâyet yok). ~~3.16~~, ~~fon NAV çapası~~,
+~~mum grafik~~, ~~dev ekran parçalama~~, ~~yatırımcı seviyesi~~ ve ~~3.20~~ (beta) aynı gün
+kapandı/açıldı (aşağıda).
 
 **2026-09-14 (dördüncü tur, "dış bağımlılık" ikilisi):** **3.16** — dış bağımlılık
 sanılan şey (test Supabase projesi) aslında eksik taban migration'ıydı; `0000` +
@@ -64,7 +63,20 @@ Bölme betikle yapıldı (satır kopyası, elle düzenleme yok). Kaynak tarayan 
 `test/helpers/kaynak.dart` (`ekranKaynagiSync`: ana dosya + part'lar) ile güncellendi.
 `build()` gövdeleri (perf ~600, detay ~1.300 satır) bilinçli olarak yerinde: onları
 bölmek widget ağacını parçalamak demek, ayrı ve görsel doğrulama isteyen bir iş.
-İngilizce arayüz (3.20) sonraki turda (aşağıda).
+**İngilizce arayüz (3.20) — altyapı + çekirdek akış, BETA:** `l10n.yaml` + `lib/l10n/app_tr.arb`
+(şablon) / `app_en.arb`, üretilen sınıflar `lib/l10n/generated/` (commit'li), `context.l10n`
+(`lib/l10n/l10n.dart`; delegate yoksa Türkçe'ye düşer — 155+ widget testi değişmeden geçer),
+`localeProvider` (`PrefKeys.locale`: tr/en/system; **varsayılan Türkçe**, sistem değil —
+İngilizce cihaz kullanıcı seçmeden karışık arayüz görmesin), Ayarlar › Görünüm › Dil.
+Çevrilen: giriş, kayıt (yasal metinler hariç), şifre sıfırlama, OTP, kilit ekranı, yasal uyarı
+onayı, alt gezinme + çıkış onayı, Ayarlar hub'ı ve Görünüm (tema/dil/yatırımcı seviyesi),
+ana ekran boş durumu + fiyat hatası, Portföy sekme başlıkları + boş durum, varlık ekleme
+formu etiketleri (~130 anahtar). **Kalan (Türkçe):** ~1.900 literal — profil, lider tablosu,
+performans/özet kartları, karşılaştırma, takip listesi, sinyal ayarları, paywall, recap,
+onboarding turu, yasal belgeler (bilinçli), teşhis ekranı (admin). `l10n_coverage_test`
+çevrilen dosyalarda Türkçe literal sayısını yalnızca-azalır tavana bağlar; `l10n_test`
+tr/en anahtar paritesini ve geri dönüşü sabitler. Kapsam bitince varsayılan "sistem"e
+çekilir ve "beta" notu kalkar (TECHNICAL_DEBT).
 
 **Kalanlar ve neden burada durdu:**
 
@@ -79,7 +91,7 @@ bölmek widget ağacını parçalamak demek, ayrı ve görsel doğrulama isteyen
 | 3.12 Yarış / 3.13 Paywall | Kullanıcı kararı (2026-09-14): ikisi de KALIR; Sybil çözümü 0059 ile uygulandı. 3.14 vadeli mevduat SİLİNDİ (aşağıda). |
 | 3.16 integration_test | ✅ 2026-09-14: hosted proje GEREKMİYORDU — asıl eksik taban şemanın migration olarak var olmamasıydı (defter 0007'den başlıyordu, `supabase db reset` sıfırdan ortam kuramıyordu). `0000_base_schema.sql` (git 1b23813'teki `supabase_schema.sql`'in 0008-sonrası, idempotent hâli; canlıda deftere işaretlenecek → `YAPMAN` #24), `supabase/config.toml` + `seed.sql` (tohum kullanıcı `smoke@sandik.test`, onboarding tamam, yasal uyarı bilinçli onaysız). `integration_test/smoke_test.dart`: gerçek `app.main()` → giriş → yasal uyarı → FAB → "Diğer" türü elle fiyatlı varlık → Portföy'de görünür. `tool/supabase_smoke.sh`: aynı akış Flutter'sız (GoTrue token + PostgREST + RLS reddi). `.github/workflows/integration.yml`: `supabase start` → başsız duman → Android emülatörü (api 34, KVM) → integration_test. **Bu oturumda koşulamadı** (Docker daemon ve KVM yok); 0000 + 0008 + seed + 0063 yerel Postgres 16'da stub auth şemasıyla doğrulandı (idempotent, RLS/GRANT), Flutter tarafı analyze temiz. İlk CI koşusunda emülatör işi kırılabilir — `supabase-smoke` işi yeşilse sorun uygulama/emülatör tarafındadır. |
 | 3.18 Swift widget derleme CI | ✅ Zaten kapalı (2026-09-14 tespiti): `ios-testflight.yml` `flutter build ios` ile widget extension'ı her main push'unda derliyor; uygulama TestFlight'ta. Ayrı `xcodebuild` adımı gereksiz. |
-| 3.20 İngilizce arayüz | Yalnızca EN pazarı hedefleniyorsa. |
+| 3.20 İngilizce arayüz | 🟡 BETA (2026-09-14): altyapı + çekirdek akış çevrildi, dil seçici Ayarlar › Görünüm'de; kalan ekranlar Türkçe (yukarıdaki paragraf). |
 | 2.12 / 2.14 | Görsel doğrulama isteyen UI kalemleri (segment kontrolleri, hero yeniden tasarımı); cihazsız yapılmadı. 2.10 ve 2.13 2026-09-14'te kapandı. |
 | 3.8 dış bağlantı köprüsü, 3.19 sertifika pinning | 3.8: ✅ kod tamam (2026-09-14) — `app_links` ile `DeepLinkService` (`sandik://asset/<id>` → `openAssetPerformance`; widget/live-activity host'ları `HomeWidgetService`'e bırakıldı, çift işleme yok). **Cihazda doğrulanmadı** (tarayıcıdan `sandik://asset/<id>` aç). 3.19: ✅ kapandı — pinning yapılmıyor (kullanıcı kararı 2026-09-14), FORCE RLS (L9) ve db_logs retention (L6) 0056 ile canlıda. |
 

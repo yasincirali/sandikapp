@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../services/insight_metrics_service.dart';
 
 /// Yatırımcı seviyesi — Özet sekmesinde HANGİ metriklerin çizileceğini seçer.
@@ -17,27 +18,30 @@ import '../services/insight_metrics_service.dart';
 /// kartlar çizilmez, İleri'de ek bir kart eklenir. Hesap katmanı seviyeyi
 /// bilmez — yalnızca görünürlük değişir.
 enum YatirimciSeviyesi {
-  baslangic(
-    'Başlangıç',
-    'Sade özet: getiri, enflasyon ve katkı. Sağlık, XIRR ve yüzdelik yok.',
-    Icons.spa_outlined,
-  ),
-  orta(
-    'Orta',
-    'Bugünkü görünüm: sağlık kartı, paranın getirisi (XIRR), yüzdelik dilim.',
-    Icons.insights_outlined,
-  ),
-  ileri(
-    'İleri',
-    'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma.',
-    Icons.science_outlined,
-  );
+  baslangic(Icons.spa_outlined),
+  orta(Icons.insights_outlined),
+  ileri(Icons.science_outlined);
 
-  const YatirimciSeviyesi(this.etiket, this.aciklama, this.ikon);
+  const YatirimciSeviyesi(this.ikon);
 
-  final String etiket;
-  final String aciklama;
   final IconData ikon;
+
+  /// Etiket ve açıklama dile göre (3.20) — enum bağlamsız, `context` ister;
+  /// `...Of(l)` sürümleri testte sözlükle doğrudan çağrılır.
+  String etiket(BuildContext context) => etiketOf(context.l10n);
+  String aciklama(BuildContext context) => aciklamaOf(context.l10n);
+
+  String etiketOf(AppLocalizations l) => switch (this) {
+        YatirimciSeviyesi.baslangic => l.levelBeginner,
+        YatirimciSeviyesi.orta => l.levelIntermediate,
+        YatirimciSeviyesi.ileri => l.levelAdvanced,
+      };
+
+  String aciklamaOf(AppLocalizations l) => switch (this) {
+        YatirimciSeviyesi.baslangic => l.levelBeginnerDesc,
+        YatirimciSeviyesi.orta => l.levelIntermediateDesc,
+        YatirimciSeviyesi.ileri => l.levelAdvancedDesc,
+      };
 
   /// Tercih dosyasındaki indeks. Aralık dışı → varsayılan (Orta): eski bir
   /// sürümden gelen bozuk değer ekranı boşaltmasın.

@@ -20,6 +20,7 @@ import 'otp_verification_screen.dart';
 import 'register_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/social_sign_in_buttons.dart';
+import '../l10n/l10n.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -141,14 +142,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const SandikLogo(size: 110),
                           const SizedBox(height: 16),
                           Text(
-                            'sandık',
+                            context.l10n.appName,
                             style: context.t.displaySmall?.copyWith(
                               color: context.c.gold,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Hazineni birlikte büyüt.',
+                            context.l10n.loginTagline,
                             style: context.t.bodyMedium?.copyWith(color: context.c.text58),
                           ),
                         ],
@@ -172,14 +173,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: context.t.bodyLarge?.copyWith(color: context.c.text90),
                       decoration: context.inputDecoration(
                         '',
-                        labelText: 'E-posta',
+                        labelText: context.l10n.email,
                         prefixIcon: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           child: Icon(Icons.email_outlined, color: context.c.text36, size: 20),
                         ),
                       ),
                       validator: (v) =>
-                          (v == null || !v.contains('@')) ? 'Geçerli e-posta girin' : null,
+                          (v == null || !v.contains('@')) ? context.l10n.emailInvalid : null,
                     ),
                     const SizedBox(height: 14),
 
@@ -196,14 +197,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: context.t.bodyLarge?.copyWith(color: context.c.text90),
                       decoration: context.inputDecoration(
                         '',
-                        labelText: 'Şifre',
+                        labelText: context.l10n.password,
                         prefixIcon: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           child: Icon(Icons.lock_outline, color: context.c.text36, size: 20),
                         ),
                         suffixIcon: SandikTappable(
                           semanticLabel:
-                              _obscure ? 'Şifreyi göster' : 'Şifreyi gizle',
+                              _obscure ? context.l10n.passwordShow : context.l10n.passwordHide,
                           onTap: () => setState(() => _obscure = !_obscure),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -216,7 +217,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       validator: (v) =>
-                          (v == null || v.length < 6) ? 'En az 6 karakter' : null,
+                          (v == null || v.length < 6) ? context.l10n.passwordMin6 : null,
                     ),
                     const SizedBox(height: 12),
 
@@ -294,7 +295,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Beni hatırla',
+                          context.l10n.rememberMe,
                           style: context.t.titleMedium?.copyWith(
                             color: context.c.text58,
                           ),
@@ -313,7 +314,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                           child: Text(
-                            'Şifremi unuttum',
+                            context.l10n.forgotPassword,
                             style: context.t.bodyMedium?.copyWith(
                               color: context.c.amberText,
                               fontWeight: FontWeight.w600,
@@ -355,7 +356,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: _loading
                             ? const CustomLoadingIndicator(size: 22)
                             : Text(
-                                'Giriş Yap',
+                                context.l10n.signIn,
                                 style: context.t.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   color: context.c.onAmber,
@@ -376,7 +377,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         CupertinoPageRoute<void>(builder: (_) => const RegisterScreen()),
                       ),
                       child: Text(
-                        'Hesabınız yok mu? Kayıt olun',
+                        context.l10n.noAccountRegister,
                         style: context.t.bodyLarge?.copyWith(color: context.c.amberText),
                       ),
                     ),

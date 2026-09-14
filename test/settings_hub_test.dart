@@ -7,11 +7,16 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/settings_screen.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 
 /// Ayarlar bilgi mimarisi (2026-09-14): sığ hub + dört alt ekran.
 ///
 /// Uzun tek liste (9 bölüm) yerine dört satır; özelliğe ait ayarlar
 /// özelliğin yanında (Yarış → Lider tablosu, alarm kurma → varlık ekranı).
+/// Delegate'siz MaterialApp → `context.l10n` Türkçe sözlüğe düşer; test aynı
+/// sözlükten okur.
+final _tr = AppLocalizationsTr();
+
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -37,7 +42,7 @@ void main() {
     await tester.pumpAndSettle();
 
     for (final b in SettingsBolum.values) {
-      expect(find.text(b.baslik), findsOneWidget, reason: b.baslik);
+      expect(find.text(b.baslikOf(_tr)), findsOneWidget, reason: b.name);
     }
     // Hub'da anahtar/seçici YOK — onlar alt ekranlarda.
     expect(find.text('Sistem'), findsNothing);
@@ -50,9 +55,10 @@ void main() {
   testWidgets('hub satırı alt ekranı açar', (tester) async {
     await tester.pumpWidget(host());
     await tester.pumpAndSettle();
-    await tester.tap(find.text(SettingsBolum.gorunum.baslik));
+    await tester.tap(find.text(SettingsBolum.gorunum.baslikOf(_tr)));
     await tester.pumpAndSettle();
-    expect(find.text('Sistem'), findsOneWidget);
+    // "Sistem" iki seçicide de var (tema + dil, 3.20) — en az bir tane.
+    expect(find.text('Sistem'), findsAtLeastNWidgets(1));
     expect(find.text('Koyu'), findsOneWidget);
     expect(find.text('USD'), findsOneWidget, reason: 'baz para seçici');
   });

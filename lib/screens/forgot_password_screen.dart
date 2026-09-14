@@ -13,6 +13,7 @@ import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 /// Şifremi Unuttum — OTP tabanlı akış.
 ///
@@ -87,9 +88,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (!mounted) return;
       await showAppSuccess(
         context,
-        title: 'Şifre güncellendi',
+        title: context.l10n.passwordUpdatedTitle,
         message:
-            'Yeni şifrenle giriş yapabilirsin. Şimdi ana ekrana yönlendirileceksin.',
+            context.l10n.passwordUpdatedMessage,
       );
       if (!mounted) return;
       // Supabase verifyOTP başarılıyla session açtı — AuthGate otomatik
@@ -111,7 +112,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         backgroundColor: context.c.background,
         border: null,
         middle: Text(
-          'Şifremi Unuttum',
+          context.l10n.forgotTitle,
           style: context.t.headlineSmall?.copyWith(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -148,7 +149,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         children: [
           const SizedBox(height: 12),
           Text(
-            'Kod göndereceğimiz e-posta adresini gir.',
+            context.l10n.forgotIntro,
             style: context.t.bodyLarge?.copyWith(
               color: context.c.text58,
               height: 1.4,
@@ -166,7 +167,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             style: context.t.bodyLarge?.copyWith(color: context.c.text90),
             decoration: context.inputDecoration(
               '',
-              labelText: 'E-posta',
+              labelText: context.l10n.email,
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child:
@@ -174,11 +175,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
             ),
             validator: (v) =>
-                (v == null || !v.contains('@')) ? 'Geçerli e-posta girin' : null,
+                (v == null || !v.contains('@')) ? context.l10n.emailInvalid : null,
           ),
           const SizedBox(height: 24),
           _primaryButton(
-            label: 'Kod Gönder',
+            label: context.l10n.sendCode,
             onTap: _loading ? null : _sendCode,
           ),
         ],
@@ -194,8 +195,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         children: [
           const SizedBox(height: 12),
           Text(
-            '${_emailCtrl.text.trim()} adresine kod gönderdik. '
-            'Kodu ve yeni şifreni gir.',
+            context.l10n.codeSentTo(_emailCtrl.text.trim()),
             style: context.t.titleMedium?.copyWith(
               color: context.c.text58,
               height: 1.4,
@@ -221,7 +221,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
             decoration: context.inputDecoration(
               '',
-              labelText: 'Kod',
+              labelText: context.l10n.code,
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Icon(Icons.pin_outlined,
@@ -229,7 +229,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
             ),
             validator: (v) => (v == null || v.trim().length < 6)
-                ? 'Kod eksik veya geçersiz'
+                ? context.l10n.codeInvalid
                 : null,
           ),
           const SizedBox(height: 14),
@@ -245,7 +245,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             style: context.t.bodyLarge?.copyWith(color: context.c.text90),
             decoration: context.inputDecoration(
               '',
-              labelText: 'Yeni Şifre',
+              labelText: context.l10n.newPassword,
               errorText: _passCtrl.text.isEmpty
                   ? null
                   : AuthService.validatePassword(_passCtrl.text),
@@ -268,7 +268,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
             ),
             validator: (v) => v == null
-                ? 'Şifre gerekli'
+                ? context.l10n.passwordRequired
                 : AuthService.validatePassword(v),
             onChanged: (_) => setState(() {}),
           ),
@@ -286,10 +286,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             style: context.t.bodyLarge?.copyWith(color: context.c.text90),
             decoration: context.inputDecoration(
               '',
-              labelText: 'Yeni Şifre Tekrar',
+              labelText: context.l10n.newPasswordRepeat,
               errorText: (_passConfirmCtrl.text.isNotEmpty &&
                       _passConfirmCtrl.text != _passCtrl.text)
-                  ? 'Şifreler eşleşmiyor'
+                  ? context.l10n.passwordsMismatch
                   : null,
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -298,13 +298,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
             ),
             validator: (v) =>
-                v != _passCtrl.text ? 'Şifreler eşleşmiyor' : null,
+                v != _passCtrl.text ? context.l10n.passwordsMismatch : null,
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 24),
 
           _primaryButton(
-            label: 'Şifreyi Güncelle',
+            label: context.l10n.updatePassword,
             onTap: _loading ? null : _verifyAndUpdate,
           ),
           const SizedBox(height: 12),
@@ -318,7 +318,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       _passConfirmCtrl.clear();
                     }),
             child: Text(
-              'Farklı bir e-posta ile tekrar dene',
+              context.l10n.tryAnotherEmail,
               style: context.t.bodyMedium?.copyWith(color: context.c.amberText),
             ),
           ),

@@ -177,6 +177,33 @@ ibaresi eklenerek bugün kapatılabilir.
 
 ---
 
+## 🟡 AÇIK — İngilizce arayüz BETA: kapsam kısmi, varsayılan dil Türkçe
+
+**Karar tarihi:** 2026-09-14 · 3.20
+
+Altyapı tam (`l10n.yaml`, iki .arb, `context.l10n`, dil seçici, `l10n_test`,
+`l10n_coverage_test`), ama çeviri çekirdek akışla sınırlı: giriş/kayıt/şifre/OTP,
+kilit, yasal uyarı onayı, gezinme, Ayarlar hub + Görünüm, ana ekran ve
+Portföy boş durumları, varlık ekleme formu (~130 anahtar). ~1.900 Türkçe
+literal duruyor: profil, lider tablosu, performans/özet kartları,
+karşılaştırma, takip listesi, sinyal ayarları, paywall, recap, onboarding.
+
+**Neden burada durdu:** her literal için anahtar + iki dilde metin + çağrı
+yeri; `const` zincirleri ve yer tutuculu cümleler elle bakım ister. Yarım
+İngilizce'yi sistem diline bağlamak İngilizce cihazlı kullanıcıya seçmeden
+karışık arayüz gösterirdi — bu yüzden **varsayılan Türkçe**, İngilizce
+Ayarlar'dan bilinçli seçim ve "beta" notu.
+
+**Ertelemenin maliyeti:** İngilizce seçen kullanıcı derin ekranlarda Türkçe
+görür. Mağaza sayfasında "İngilizce arayüz" vaadi verilmemeli.
+
+**Ele alınma zamanı:** EN pazarı hedeflenirse ekran ekran (öncelik: profil →
+performans/özet → lider tablosu → takip listesi → onboarding). Her ekran
+bitince `l10n_coverage_test` tavanı sıfıra iner; hepsi bitince
+`LocaleNotifier` varsayılanı `system` olur ve `languageNote` kalkar.
+
+---
+
 ## ✅ KAPANDI — Yatırımcı seviyesine göre görünüm yok
 
 **KAPANDI 2026-09-14.** Sunucuda alan açmadan, zorunlu onboarding eklemeden:

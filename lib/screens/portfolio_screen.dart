@@ -37,6 +37,7 @@ import 'asset_detail_screen.dart';
 import 'watchlist_screen.dart';
 import '../providers/watchlist_provider.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 enum _SortOrder {
   valueDesc,
@@ -175,7 +176,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Portföy',
+                        context.l10n.portfolio,
                         style: context.t.headlineLarge?.copyWith(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
@@ -452,8 +453,8 @@ class _BodyTabs extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _tab(context, 0, 'Varlıklarım', null),
-          _tab(context, 1, 'Takip Listesi', count > 0 ? count : null),
+          _tab(context, 0, context.l10n.myAssets, null),
+          _tab(context, 1, context.l10n.watchlist, count > 0 ? count : null),
         ],
       ),
     );
@@ -546,7 +547,7 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(Icons.inbox_rounded, size: 64, color: context.c.text36),
           const SizedBox(height: 16),
-          Text('Henüz varlık eklenmemiş',
+          Text(context.l10n.noAssetsYet,
               style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
         ],
       ),

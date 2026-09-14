@@ -13,6 +13,7 @@ import '../models/yatirimci_seviyesi.dart';
 import '../providers/price_alert_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
 import '../services/data_export_service.dart';
 import '../services/auth_service.dart';
@@ -34,13 +35,21 @@ import '../widgets/custom_loading_indicator.dart';
 
 /// Ayarlar'ın alt ekranları. Hub → bölüm, en fazla bir seviye derin.
 enum SettingsBolum {
-  gorunum('Görünüm'),
-  bildirimler('Bildirimler'),
-  hesap('Hesap & Güvenlik'),
-  yardim('Yardım & Yasal');
+  gorunum,
+  bildirimler,
+  hesap,
+  yardim;
 
-  const SettingsBolum(this.baslik);
-  final String baslik;
+  /// Bölüm başlığı — dile göre (3.20). Enum bağlamsız olduğu için başlık
+  /// alan olarak değil, `context` (ya da testte doğrudan sözlük) ile üretilir.
+  String baslik(BuildContext context) => baslikOf(context.l10n);
+
+  String baslikOf(AppLocalizations l) => switch (this) {
+        SettingsBolum.gorunum => l.settingsAppearance,
+        SettingsBolum.bildirimler => l.settingsNotifications,
+        SettingsBolum.hesap => l.settingsAccount,
+        SettingsBolum.yardim => l.settingsHelp,
+      };
 }
 
 /// Profil → Ayarlar ekranı.
@@ -408,7 +417,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Scaffold(
         backgroundColor: context.c.background,
         appBar: SandikAppBar(
-          title: bolum?.baslik ?? 'Ayarlar',
+          title: bolum?.baslik(context) ?? context.l10n.settings,
           // Geri oku silme sırasında gizlenir: görünüp tıklanmaması
           // kullanıcıya "bu iş bitene kadar bekle"yi sessizce anlatır.
           showBack: !_deleting,
@@ -474,13 +483,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SizedBox(height: 4),
         _SettingsTile(
           icon: Icons.palette_outlined,
-          title: SettingsBolum.gorunum.baslik,
-          subtitle: 'Tema, baz para birimi',
+          title: SettingsBolum.gorunum.baslik(context),
+          subtitle: context.l10n.settingsAppearanceSubtitle,
           onTap: () => _bolumAc(SettingsBolum.gorunum),
         ),
         _SettingsTile(
           icon: Icons.notifications_outlined,
-          title: SettingsBolum.bildirimler.baslik,
+          title: SettingsBolum.bildirimler.baslik(context),
           subtitle: defaultTargetPlatform == TargetPlatform.iOS
               ? 'Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik'
               : 'Sinyaller, fiyat alarmları, sessiz saatler',
@@ -488,14 +497,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         _SettingsTile(
           icon: Icons.shield_outlined,
-          title: SettingsBolum.hesap.baslik,
-          subtitle: 'Biyometrik kilit, verilerini indir, hesabını sil',
+          title: SettingsBolum.hesap.baslik(context),
+          subtitle: context.l10n.settingsAccountSubtitle,
           onTap: () => _bolumAc(SettingsBolum.hesap),
         ),
         _SettingsTile(
           icon: Icons.help_outline_rounded,
-          title: SettingsBolum.yardim.baslik,
-          subtitle: 'Bize ulaş, tanıtım turu, gizlilik ve koşullar',
+          title: SettingsBolum.yardim.baslik(context),
+          subtitle: context.l10n.settingsHelpSubtitle,
           onTap: () => _bolumAc(SettingsBolum.yardim),
         ),
             // Push teşhisi debug kapısının DIŞINDA, admin'e açık.
@@ -571,6 +580,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const _BaseCurrencyPicker(),
             const SizedBox(height: 12),
             const _InvestorLevelPicker(),
+            const SizedBox(height: 12),
+            const _LanguagePicker(),
             const SizedBox(height: 24),
 
       ];
@@ -804,22 +815,22 @@ class _SubSectionTitle extends StatelessWidget {
 class _ThemeModePicker extends ConsumerWidget {
   const _ThemeModePicker();
 
-  static const _options = <(ThemeMode, IconData, String)>[
-    (ThemeMode.system, Icons.brightness_auto_rounded, 'Sistem'),
-    (ThemeMode.light, Icons.light_mode_rounded, 'Açık'),
-    (ThemeMode.dark, Icons.dark_mode_rounded, 'Koyu'),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(themeModeProvider);
+    final l = context.l10n;
+    final options = <(ThemeMode, IconData, String)>[
+      (ThemeMode.system, Icons.brightness_auto_rounded, l.themeSystem),
+      (ThemeMode.light, Icons.light_mode_rounded, l.themeLight),
+      (ThemeMode.dark, Icons.dark_mode_rounded, l.themeDark),
+    ];
 
     return Container(
       padding: const EdgeInsets.all(SandikSpace.xs),
       decoration: context.surfaceCard(),
       child: Row(
         children: [
-          for (final (mode, icon, label) in _options)
+          for (final (mode, icon, label) in options)
             Expanded(
               child: SandikTappable(
                 semanticLabel: '$label tema',
@@ -984,7 +995,7 @@ class _InvestorLevelPicker extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SubSectionTitle('Yatırımcı seviyesi'),
+        _SubSectionTitle(context.l10n.investorLevel),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(SandikSpace.xs),
@@ -994,7 +1005,7 @@ class _InvestorLevelPicker extends ConsumerWidget {
               for (final s in YatirimciSeviyesi.values)
                 Expanded(
                   child: SandikTappable(
-                    semanticLabel: '${s.etiket} seviye',
+                    semanticLabel: '${s.etiket(context)} seviye',
                     onTap: () => ref
                         .read(investorLevelIndexProvider.notifier)
                         .set(s.index),
@@ -1019,7 +1030,7 @@ class _InvestorLevelPicker extends ConsumerWidget {
                           ),
                           const SizedBox(height: SandikSpace.xs),
                           Text(
-                            s.etiket,
+                            s.etiket(context),
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == s
@@ -1042,8 +1053,95 @@ class _InvestorLevelPicker extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            '${current.aciklama} Yalnızca Performans › Özet\'in kart kümesini '
-            'değiştirir; hesaplar aynı kalır.',
+            '${current.aciklama(context)} ${context.l10n.investorLevelNote}',
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Arayüz dili (3.20). Tema seçiciyle aynı dil: üç segment.
+///
+/// Varsayılan Türkçe (sistem DEĞİL): İngilizce beta, bazı ekranlar Türkçe
+/// kalıyor; İngilizce cihazlı kullanıcı seçmeden karışık arayüz görmesin.
+/// "Sistem" seçilirse cihaz dili izlenir (`LocaleNotifier`).
+class _LanguagePicker extends ConsumerWidget {
+  const _LanguagePicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = LocaleNotifier.encode(ref.watch(localeProvider));
+    final l = context.l10n;
+    final options = <(String, IconData, String)>[
+      ('tr', Icons.translate_rounded, l.languageTurkish),
+      ('en', Icons.language_rounded, l.languageEnglish),
+      ('system', Icons.phone_android_rounded, l.languageSystem),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SubSectionTitle(l.language),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(SandikSpace.xs),
+          decoration: context.surfaceCard(),
+          child: Row(
+            children: [
+              for (final (kod, icon, label) in options)
+                Expanded(
+                  child: SandikTappable(
+                    semanticLabel: '$label ${l.language}',
+                    onTap: () => ref
+                        .read(localeProvider.notifier)
+                        .set(LocaleNotifier.parse(kod)),
+                    child: AnimatedContainer(
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: current == kod
+                            ? context.c.amberFill.withValues(alpha: 0.16)
+                            : Colors.transparent,
+                        borderRadius: SandikRadius.smAll,
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            icon,
+                            size: 20,
+                            color: current == kod
+                                ? context.c.amberText
+                                : context.c.text36,
+                          ),
+                          const SizedBox(height: SandikSpace.xs),
+                          Text(
+                            label,
+                            style: context.t.labelLarge?.copyWith(
+                              letterSpacing: 0,
+                              fontWeight: current == kod
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: current == kod
+                                  ? context.c.amberText
+                                  : context.c.text58,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            l.languageNote,
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
         ),

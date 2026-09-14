@@ -43,9 +43,9 @@ void main() {
     });
 
     for (final b in SettingsBolum.values) {
-      testWidgets('${w.toInt()}pt ${b.baslik}', (tester) async {
+      testWidgets('${w.toInt()}pt ${b.name}', (tester) async {
         await _pump(tester, w, bolum: b);
-        expect(tester.takeException(), isNull, reason: b.baslik);
+        expect(tester.takeException(), isNull, reason: b.name);
       });
     }
   }

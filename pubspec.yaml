@@ -65,6 +65,8 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  # gen-l10n (3.20): lib/l10n/app_*.arb → lib/l10n/generated/ (bkz. l10n.yaml).
+  generate: true
 
   assets:
     - assets/images/
