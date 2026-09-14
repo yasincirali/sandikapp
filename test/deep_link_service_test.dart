@@ -50,4 +50,21 @@ void main() {
     expect(plist.contains('CFBundleURLSchemes'), isTrue);
     expect(plist.contains('<string>sandik</string>'), isTrue);
   });
+
+  test('motorun yerleşik derin bağlantı yolu KAPALI — app_links tek yol', () {
+    // Flutter 3.x'te varsayılan açık: intent Navigator'a "/<id>" rotası diye
+    // itilir ve "Could not find a generator for route" Crashlytics'e düşer.
+    final manifest =
+        File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+    expect(
+      RegExp(r'android:name="flutter_deeplinking_enabled"\s+android:value="false"')
+          .hasMatch(manifest),
+      isTrue,
+    );
+    final plist = File('ios/Runner/Info.plist').readAsStringSync();
+    expect(
+      RegExp(r'<key>FlutterDeepLinkingEnabled</key>\s*<false/>').hasMatch(plist),
+      isTrue,
+    );
+  });
 }

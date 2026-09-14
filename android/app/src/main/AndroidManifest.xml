@@ -49,6 +49,14 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="sandik"/>
             </intent-filter>
+            <!-- Flutter 3.x'te motorun kendi derin bağlantı yolu VARSAYILAN AÇIK:
+                 intent'i Navigator'a "/<id>" adlı rota diye iter, rota tablosu
+                 olmadığından "Could not find a generator for route" hatası
+                 Crashlytics'e düşer (emülatörde görüldü 2026-09-15). URI'yi
+                 app_links (DeepLinkService) ele alır; motorun yolu kapalı. -->
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false" />
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

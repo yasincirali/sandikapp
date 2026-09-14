@@ -251,6 +251,9 @@ void main() {
       final args = AddAssetFormArgs(
           prefillTicker: 'THYAO.IS', prefillType: AssetType.hisse);
       final n = c.read(addAssetFormProvider(args).notifier);
+      // Form tarihi gerçek saatten gelir; `now` sabitken tarihi de sabitle,
+      // yoksa gün değişince "geçmiş tarih" yoluna düşüp ikinci istek atılır.
+      n.setDate(_bugun);
       await n.refreshPreview(userPrice: null, tickerText: '', now: _bugun);
       expect(c.read(addAssetFormProvider(args)).previewPrice, 5);
       await n.refreshPreview(userPrice: 3, tickerText: '', now: _bugun);

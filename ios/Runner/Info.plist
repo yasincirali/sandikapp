@@ -75,6 +75,10 @@
 	-->
 	<key>NSFaceIDUsageDescription</key>
 	<string>Portföyünü yalnızca senin görebilmen için uygulama kilidini Face ID ile açar.</string>
+	<!-- Motorun yerleşik derin bağlantı yolu kapalı; URI'yi app_links ele alır
+	     (Android manifest'teki flutter_deeplinking_enabled ile aynı karar). -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
