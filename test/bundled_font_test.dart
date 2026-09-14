@@ -4,21 +4,21 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:yaml/yaml.dart';
 
-/// DM Sans `assets/fonts/` altında gömülü olmalı ve google_fonts onu
-/// ağa çıkmadan bulabilmeli.
+/// DM Sans `assets/fonts/` altında gömülü olmalı ve kod aileye tek adla
+/// işaret etmeli.
 ///
 /// **Neden pubspec'i doğrudan okuyoruz:** `flutter test` asset/font
 /// manifest'ini uygulamadaki gibi yüklemez — pubspec'teki font kaydını
-/// bozsanız bile `GoogleFonts.dmSans()` testte sorunsuz döner. Yani
+/// bozsanız bile `TextStyle(fontFamily: …)` testte sorunsuz döner. Yani
 /// "çağrı fırlatmıyor" demek burada hiçbir şey kanıtlamaz. Gerçek
 /// değişmez pubspec kaydının kendisidir; onu doğruluyoruz.
 ///
-/// `allowRuntimeFetching = false` iken google_fonts istenen aileyi asset
-/// olarak bulamazsa üretimde sistem fontuna düşer. Aile adı paketin
-/// beklediğiyle ("DM Sans") birebir uyuşmak zorunda.
+/// 2026-09-14: `google_fonts` kaldırıldı. Eskiden aile adı paketin
+/// beklediğiyle uyuşmak zorundaydı; şimdi `kSandikFontFamily` ile pubspec
+/// kaydı birebir aynı olmalı, aksi halde üretimde sistem fontuna düşülür.
 void main() {
   late YamlMap pubspec;
 
@@ -31,14 +31,14 @@ void main() {
     return fonts.firstWhere(
       (f) => f['family'] == 'DM Sans',
       orElse: () => throw StateError(
-        'pubspec.yaml içinde "DM Sans" font ailesi yok — google_fonts '
-        'çalışma zamanında ağdan indirmeye çalışır.',
+        'pubspec.yaml içinde "DM Sans" font ailesi yok — uygulama sistem '
+        'fontuna düşer.',
       ),
     ) as YamlMap;
   }
 
   test('pubspec "DM Sans" ailesini tam bu adla kaydeder', () {
-    expect(dmSansEntry()['family'], 'DM Sans');
+    expect(dmSansEntry()['family'], kSandikFontFamily);
   });
 
   test('kodda kullanılan tüm ağırlıklar gömülü', () {
@@ -66,17 +66,24 @@ void main() {
     }
   });
 
-  test('main.dart çalışma zamanı indirmesini kapatıyor', () {
-    final src = File('lib/main.dart').readAsStringSync();
-    expect(src, contains('allowRuntimeFetching = false'));
+  test('google_fonts geri gelmedi — aile adı tek kaynaktan', () {
+    final pubspecSrc = File('pubspec.yaml').readAsStringSync();
+    expect(pubspecSrc.contains('google_fonts:'), isFalse,
+        reason: 'Bağımlılık kaldırıldı; geri eklemek ağ tuzağını geri getirir.');
+    final main = File('lib/main.dart').readAsStringSync();
+    expect(main.contains('apply(fontFamily: kSandikFontFamily)'), isTrue,
+        reason: 'Tema metin ölçeği marka ailesine bağlanmalı.');
+    for (final e in Directory('lib').listSync(recursive: true)) {
+      if (e is! File || !e.path.endsWith('.dart')) continue;
+      expect(e.readAsStringSync().contains('GoogleFonts'), isFalse,
+          reason: '${e.path} hâlâ google_fonts kullanıyor.');
+    }
   });
 
-  test('gömülü font ile stil kurulur ve DM Sans ailesine işaret eder', () {
-    GoogleFonts.config.allowRuntimeFetching = false;
-    addTearDown(() => GoogleFonts.config.allowRuntimeFetching = true);
-
-    final style = GoogleFonts.dmSans(fontWeight: FontWeight.w700);
-    expect(style.fontFamily, contains('DMSans'));
+  test('sandikFont marka ailesine işaret eder', () {
+    final style = sandikFont(fontWeight: FontWeight.w700);
+    expect(style.fontFamily, kSandikFontFamily);
+    expect(style.fontWeight, FontWeight.w700);
   });
 
   testWidgets('Türkçe glifler ve ₺ hata üretmeden render edilir',
@@ -86,7 +93,7 @@ void main() {
         home: Scaffold(
           body: Text(
             'Portföy · 1.234,56 ₺ · ığşçöü İĞŞÇÖÜ',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w600),
+            style: sandikFont(fontWeight: FontWeight.w600),
           ),
         ),
       ),

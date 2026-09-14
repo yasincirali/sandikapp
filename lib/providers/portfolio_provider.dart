@@ -252,8 +252,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       }
       final newKey = '${type.name}|$ticker|$currency';
       if (!existingKeys.contains(newKey) && existingKeys.length >= limit) {
-        AnalyticsService.instance
-            .logPremiumGateShown(feature: 'asset_limit');
+        unawaited(AnalyticsService.instance
+            .logPremiumGateShown(feature: 'asset_limit'));
         throw AssetLimitExceededException(existingKeys.length, limit);
       }
     }
@@ -285,10 +285,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
     await SupabaseService.instance.insertAsset(asset);
 
-    AnalyticsService.instance.logAssetAdded(
+    unawaited(AnalyticsService.instance.logAssetAdded(
       type: type.name,
       subCategory: subCategory,
-    );
+    ));
 
     // Aktivasyon eşikleri: ilk varlık ve üçüncü varlık D30 tutunmanın en
     // güçlü tahmincileri. Servis tekrarı kendi eler, buradan koşulsuz
@@ -407,7 +407,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   Future<void> updateAsset(Asset asset) async {
     await SupabaseService.instance.updateAsset(asset);
-    AnalyticsService.instance.logAssetUpdated(type: asset.type.name);
+    unawaited(AnalyticsService.instance.logAssetUpdated(type: asset.type.name));
     final current = state.valueOrNull;
     if (current != null) {
       state = AsyncData(current.copyWith(
@@ -450,7 +450,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         refAssetId: deleted.id,
       );
       await SupabaseService.instance.insertAsset(transaction);
-      AnalyticsService.instance.logAssetDeleted(type: deleted.type.name);
+      unawaited(AnalyticsService.instance.logAssetDeleted(type: deleted.type.name));
     }
     await SupabaseService.instance.deleteAsset(id);
     if (current != null) {
@@ -538,7 +538,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       );
 
       await SupabaseService.instance.insertAsset(log);
-      AnalyticsService.instance.logAssetDeleted(type: rep.type.name);
+      unawaited(AnalyticsService.instance.logAssetDeleted(type: rep.type.name));
     }
 
     // YUMUŞAK silme: lot'lar yerinde kalır, damgalanır. Fiziksel DELETE

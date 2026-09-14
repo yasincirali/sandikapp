@@ -181,7 +181,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       // OTP ekranı verify sonrası authProvider'ı invalidate edip
       // popUntil first yapıyor; _AuthGate devralır.
       await Navigator.of(context).push(
-        CupertinoPageRoute(
+        CupertinoPageRoute<void>(
           builder: (_) => OtpVerificationScreen(email: emailForOtp),
         ),
       );

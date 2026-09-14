@@ -33,7 +33,7 @@ void main() {
       for (var i = 0; i < lines.length; i++) {
         // Satırda birden fazla olabilir — hepsini say, yoksa aynı satıra
         // eklenen ikinci sızıntı testten kaçar.
-        for (var _ in pattern.allMatches(lines[i])) {
+        for (final _ in pattern.allMatches(lines[i])) {
           hits.add('${file.path}:${i + 1}');
         }
       }
@@ -56,7 +56,7 @@ void main() {
     for (final file in sourceFiles()) {
       final lines = file.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
-        for (var _ in pattern.allMatches(lines[i])) {
+        for (final _ in pattern.allMatches(lines[i])) {
           hits.add('${file.path}:${i + 1}');
         }
       }

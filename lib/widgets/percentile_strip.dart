@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -98,10 +99,10 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
     final data = await servis.fetchPercentile(PercentileStrip.periodDays);
     if (!mounted || data == null) return;
 
-    AnalyticsService.instance.logPercentileViewed(
+    unawaited(AnalyticsService.instance.logPercentileViewed(
       bucket: data.percentile,
       periodDays: PercentileStrip.periodDays,
-    );
+    ));
     setState(() => _data = data);
   }
 

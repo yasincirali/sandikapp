@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
@@ -242,7 +243,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             await SupabaseService.instance.getInviteStatus(inviteId);
         if (status == 'accepted') {
           await ref.read(partnersProvider.notifier).refresh();
-          ref.read(allPartnerAssetsProvider.notifier).reload();
+          unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
           if (mounted) {
             final name = _pendingPartnerName;
             setState(() {
@@ -344,7 +345,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         onPressed: _busy
                             ? null
                             : () => Navigator.of(context).push(
-                                  adaptiveRoute(
+                                  adaptiveRoute<void>(
                                     builder: (_) => const SettingsScreen(),
                                   ),
                                 ),
@@ -372,14 +373,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       color: context.c.amberText,
       onRefresh: () async {
         await ref.read(partnersProvider.notifier).refresh();
-        ref.read(allPartnerAssetsProvider.notifier).reload();
+        unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
       },
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 4),
                       children: [
-                        _buildUserHeader(user),
+                        // Oturum çözülmeden bu ekran kurulmaz; null yalnızca
+                        // çıkış anındaki son karede görülebilir.
+                        if (user != null) _buildUserHeader(user),
                         const SizedBox(height: 20),
                         const _ProfilePremiumBanner(),
                         const SizedBox(height: 24),
@@ -456,8 +459,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildUserHeader(dynamic user) {
-    if (user == null) return const SizedBox.shrink();
+  Widget _buildUserHeader(AppUser user) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -554,7 +556,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               'Ortak kodun: $shortCode\n\n'
                               'Uygulamayı aç → Profil → "Ortak Kodu Gir" bölümünden bu kodu gir.';
                           await Share.share(msg, subject: 'Sandık Ortak Daveti');
-                          AnalyticsService.instance.logPartnerInviteSent();
+                          unawaited(AnalyticsService.instance.logPartnerInviteSent());
                         },
                         child: Icon(Icons.share_rounded,
                             color: context.c.amberText),
@@ -752,7 +754,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildPartnerTile(dynamic p) {
+  Widget _buildPartnerTile(PartnerAccount p) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -893,7 +895,7 @@ class _PendingRequestsSectionState
       await ref
           .read(partnersProvider.notifier)
           .acceptInvite(invite['id'] as String);
-      ref.read(allPartnerAssetsProvider.notifier).reload();
+      unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
       await _load();
       await _showMsg('Ortaklık kabul edildi!');
     } catch (e) {
@@ -961,7 +963,7 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
   Future<void> _loadRequesterName() async {
     final toUserId = widget.invite['to_user_id'] as String?;
     if (toUserId == null) return;
-    dynamic profile;
+    AppUser? profile;
     try {
       profile = await SupabaseService.instance.getProfile(toUserId);
     } catch (_) {

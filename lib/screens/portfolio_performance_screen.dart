@@ -19,7 +19,6 @@ import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/chart_axis.dart';
@@ -609,7 +608,7 @@ class _PortfolioPerformanceScreenState
         : dayKey(hamBaslangic);
 
     return DefaultTextStyle(
-      style: GoogleFonts.dmSans(
+      style: sandikFont(
           color: context.c.text90, decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
         backgroundColor: context.c.background,
@@ -1281,7 +1280,7 @@ class _PortfolioPerformanceScreenState
                     _LeaderboardChip(
                       onTap: () => Navigator.push(
                         context,
-                        adaptiveRoute(
+                        adaptiveRoute<void>(
                             builder: (_) => const LeaderboardScreen()),
                       ),
                     ),
@@ -1777,7 +1776,7 @@ class _PortfolioPerformanceScreenState
     showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => DefaultTextStyle(
-        style: GoogleFonts.dmSans(
+        style: sandikFont(
             color: context.c.text90, decoration: TextDecoration.none),
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
@@ -4376,8 +4375,8 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       final data = await servis.fetchPercentile(gun);
       if (!mounted || data == null) return;
 
-      AnalyticsService.instance
-          .logPercentileViewed(bucket: data.percentile, periodDays: gun);
+      unawaited(AnalyticsService.instance
+          .logPercentileViewed(bucket: data.percentile, periodDays: gun));
       setState(() => _dilim = data);
     } catch (_) {
       // Sessizce vazgeç: şerit ikincil, özet onsuz da tam.
@@ -4565,10 +4564,10 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   }
 
   Future<void> _paylas(String metin) async {
-    AnalyticsService.instance.logRecapShared(
+    unawaited(AnalyticsService.instance.logRecapShared(
       period: widget.period.name,
       channel: 'system_sheet',
-    );
+    ));
     await Share.share(metin,
         subject: 'sandık · ${PeriodSummaryService.donemAdi(widget.period)}');
   }

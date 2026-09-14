@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -27,7 +28,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
 
   Future<void> _openAddForm({BulkCartItem? existing}) async {
     await Navigator.of(context).push(
-      adaptiveRoute(
+      adaptiveRoute<void>(
         builder: (_) => AddAssetScreen(
           cartMode: true,
           cartInitial: existing,
@@ -153,7 +154,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       );
       if (upgraded == true && mounted) {
         // Kullanıcı premium'a geçti — kalan item'ları tekrar dene.
-        _saveAll();
+        unawaited(_saveAll());
       }
       return;
     }

@@ -244,7 +244,7 @@ void main() {
 
 Future<String> _oku(String yol) async {
   // Test çalışma dizini proje kökü.
-  return await File(yol).readAsString();
+  return File(yol).readAsString();
 }
 
 /// `//` ile başlayan satırları atar.

@@ -19,7 +19,6 @@ dependencies:
   flutter_slidable: ^3.1.0
   shared_preferences: ^2.3.2
   share_plus: ^10.0.0
-  google_fonts: ^6.2.1
   flutter_local_notifications: ^18.0.0
   firebase_core: ^4.7.0
   firebase_messaging: ^16.2.0
@@ -42,7 +41,7 @@ dev_dependencies:
     sdk: flutter
   # Build-time ikon üretici; runtime bağımlılığı değil (2026-09'da taşındı).
   flutter_launcher_icons: ^0.14.4
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
   # bundled_font_test.dart pubspec'in font kaydını doğrudan okur
   yaml: ^3.1.2
 
@@ -65,10 +64,9 @@ flutter:
   assets:
     - assets/images/
 
-  # DM Sans yerel asset olarak gömülü — google_fonts çalışma zamanında
-  # fonts.gstatic.com'dan indirmesin diye (bkz. main.dart: allowRuntimeFetching).
-  # Aile adı google_fonts'un ürettiğiyle birebir aynı olmalı ki paket
-  # indirmek yerine gömülü olanı bulsun.
+  # DM Sans yerel asset olarak gömülü; tek marka fontu. Aile adı
+  # `kSandikFontFamily` (lib/theme/sandik.dart) ile birebir aynı olmalı —
+  # `bundled_font_test` bunu kilitler. google_fonts 2026-09-14'te kaldırıldı.
   fonts:
     - family: DM Sans
       fonts:

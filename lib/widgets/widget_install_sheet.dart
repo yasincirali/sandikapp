@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -50,7 +51,7 @@ class WidgetInstallSheet extends StatelessWidget {
     // gösterilmez — tek seferlik hakkın anlamı budur.
     if (!context.mounted) return;
 
-    AnalyticsService.instance.logScreenView(screenName: 'widget_install_sheet');
+    unawaited(AnalyticsService.instance.logScreenView(screenName: 'widget_install_sheet'));
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,

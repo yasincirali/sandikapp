@@ -189,7 +189,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showDisclaimerText() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: context.c.surface2,
@@ -232,7 +232,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showLegalDoc(String title, List<LegalBlock> blocks, IconData icon) {
     Navigator.push(
       context,
-      adaptiveRoute(
+      adaptiveRoute<void>(
         builder: (_) =>
             LegalDocScreen(title: title, blocks: blocks, icon: icon),
       ),
@@ -413,7 +413,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'Her varlık türü için gösterge seçimi + Premium',
               onTap: () => Navigator.push(
                 context,
-                adaptiveRoute(builder: (_) => const SignalSettingsScreen()),
+                adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
               ),
             ),
             _SettingsTile(
@@ -422,7 +422,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: 'Hedef fiyata gelince haber ver',
               onTap: () => Navigator.push(
                 context,
-                adaptiveRoute(builder: (_) => const PriceAlertsScreen()),
+                adaptiveRoute<void>(builder: (_) => const PriceAlertsScreen()),
               ),
             ),
             const _QuietHoursTile(),

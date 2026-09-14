@@ -43,7 +43,7 @@ void main() {
                         final slidable = Slidable.of(ctx);
                         await onPressed();
                         log.add('aksiyon-bitti');
-                        slidable?.close();
+                        unawaited(slidable?.close());
                         log.add('panel-kapatildi');
                       },
                       child: Container(

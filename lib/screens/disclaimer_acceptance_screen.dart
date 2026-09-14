@@ -4,7 +4,6 @@ import 'package:flutter/material.dart'
     show
         Colors,
         Icons;
-import 'package:google_fonts/google_fonts.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -53,7 +52,7 @@ class _DisclaimerAcceptanceScreenState
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle(
-      style: GoogleFonts.dmSans(decoration: TextDecoration.none),
+      style: sandikFont(decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
         backgroundColor: context.c.background,
         child: SafeArea(

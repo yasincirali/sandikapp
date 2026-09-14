@@ -153,7 +153,7 @@ void main() {
 
     test('alan yoksa veya tip yanlışsa güvenli varsayılana düşer', () {
       expect(formatRetryAfter(null), '10 dakika');
-      expect(formatRetryAfter({}), '10 dakika');
+      expect(formatRetryAfter(<String, dynamic>{}), '10 dakika');
       expect(formatRetryAfter({'retry_after_seconds': 'abc'}), '10 dakika');
       expect(formatRetryAfter('beklenmedik gövde'), '10 dakika');
     });

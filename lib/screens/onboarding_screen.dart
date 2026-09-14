@@ -97,7 +97,7 @@ class OnboardingScreen extends StatefulWidget {
         break;
       } catch (e) {
         serverError = e;
-        await Future.delayed(Duration(milliseconds: 300 * (attempt + 1)));
+        await Future<void>.delayed(Duration(milliseconds: 300 * (attempt + 1)));
       }
     }
     if (serverError != null) {

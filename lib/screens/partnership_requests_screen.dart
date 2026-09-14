@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -72,8 +73,8 @@ class _PartnershipRequestsScreenState
   Future<void> _accept(String inviteId) async {
     try {
       await ref.read(partnersProvider.notifier).acceptInvite(inviteId);
-      AnalyticsService.instance.logPartnerInviteAccepted();
-      ref.read(allPartnerAssetsProvider.notifier).reload();
+      unawaited(AnalyticsService.instance.logPartnerInviteAccepted());
+      unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
       await _load();
       if (!mounted) return;
       sandikSnack(context, 'Ortaklık kabul edildi.',

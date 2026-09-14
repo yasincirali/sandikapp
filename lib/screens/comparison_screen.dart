@@ -97,7 +97,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         for (final t in widget.initialTickers) {
           final hits = await SymbolSearchService.instance.search(t);
           final hit = hits.where((h) => h.ticker == t).firstOrNull;
-          if (hit != null && mounted) _add(hit);
+          if (hit != null && mounted) unawaited(_add(hit));
         }
       });
     }
@@ -659,7 +659,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   Future<void> _openAdd(SymbolHit hit) async {
     await Navigator.push(
       context,
-      adaptiveRoute(
+      adaptiveRoute<void>(
         builder: (_) => AddAssetScreen(
           prefillTicker: hit.ticker,
           prefillName: hit.name,

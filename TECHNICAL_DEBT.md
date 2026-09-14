@@ -192,9 +192,12 @@ Yoksa `0054` açık hatayla durur; sessiz düşmemesi kasıtlı.
 
 ---
 
-## 🟡 AÇIK — google_fonts bağımlılığı yalnızca TextStyle üreticisi olarak duruyor
+## ✅ KAPANDI — google_fonts bağımlılığı yalnızca TextStyle üreticisi olarak duruyor
 
-**Karar tarihi:** 2026-09-13 · Değerlendirme raporu §2/Faz 1.9
+**Karar tarihi:** 2026-09-13 · Değerlendirme raporu §2/Faz 1.9 · **Kapandı 2026-09-14:**
+bağımlılık kaldırıldı; `kSandikFontFamily` + `sandikFont(...)` (`lib/theme/sandik.dart`),
+tema `apply(fontFamily:)` ile bağlandı, `bundled_font_test` paketin geri gelmediğini ve
+aile adının tek kaynaktan geldiğini kilitliyor.
 
 DM Sans 6 ağırlıkla `assets/fonts/` altında gömülü ve `main.dart:118`
 `allowRuntimeFetching = false` diyor. `google_fonts` paketi hiçbir şey
@@ -214,9 +217,13 @@ yazılır.
 
 ---
 
-## 🟡 AÇIK — analysis_options.yaml dokunulmamış şablon, flutter_lints 4.x
+## ✅ KAPANDI — analysis_options.yaml dokunulmamış şablon, flutter_lints 4.x
 
-**Karar tarihi:** 2026-09-13
+**Karar tarihi:** 2026-09-13 · **Kapandı 2026-09-14:** `flutter_lints` 6.0, `strict-casts` /
+`strict-inference` / `strict-raw-types`, `unawaited_futures` (42 ateşle-unut çağrısı
+`unawaited(...)` ile niyetlendirildi), `prefer_final_locals`, `empty_catches`. Analyzer 0 sorun.
+**Açık kalan tek kural:** `avoid_dynamic_calls` — 127 site, çoğu Supabase JSON satırı
+(`row['x']`); tipli DTO'lar gelene kadar kapalı (gerekçesi `analysis_options.yaml`'da).
 
 `include: package:flutter_lints/flutter.yaml` + boş `rules:`. Güncel
 6.x iki majör ileride; `strict-casts`, `unawaited_futures`,
@@ -228,9 +235,12 @@ tek başına servis katmanındaki ateşle-unut çağrıları yüzeye çıkarır.
 
 ---
 
-## 🟡 AÇIK — leaderboard_screen'de 5 bağımsız canlı tick timer'ı
+## 🟢 BÜYÜK ÖLÇÜDE KAPANDI — leaderboard_screen'de 5 bağımsız canlı tick timer'ı
 
-**Karar tarihi:** 2026-09-13
+**Karar tarihi:** 2026-09-13 · **2026-09-14:** Yarış kalıyor kararıyla beş `Timer.periodic`
+`ForegroundPoller`'a geçti: arka planda dururlar, öne gelince hemen bir tur atarlar, yavaş
+ağda turlar üst üste binmez. **Kalan:** beş widget hâlâ birbirinden habersiz (TTL önbelleği
+ağı sınırlıyor); tek `Notifier`'a toplama ayrı bir tur.
 
 `_liveTick` 15/15/30/45 sn (ekran) + 30 sn (hero kart) — her biri kendi
 `setState(() => _future = ...)` döngüsünü kuruyor. `LeaderboardService`

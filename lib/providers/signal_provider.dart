@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
@@ -162,12 +163,12 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
         );
         inserted.add(saved);
 
-        AnalyticsService.instance.logSignalReceived(
+        unawaited(AnalyticsService.instance.logSignalReceived(
           ticker: asset.ticker,
           action: summary.signal.name,
           confidence: summary.confidence,
           slot: slot,
-        );
+        ));
 
         // NOT: burada artık local notification GÖNDERİLMEZ.
         //
@@ -203,8 +204,8 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
     final current = state.valueOrNull ?? const [];
     final alert = current.where((a) => a.id == id).firstOrNull;
     if (alert != null) {
-      AnalyticsService.instance
-          .logSignalDismissed(ticker: alert.assetTicker);
+      unawaited(AnalyticsService.instance
+          .logSignalDismissed(ticker: alert.assetTicker));
     }
 
     // İyimser: önce ekrandan düş.

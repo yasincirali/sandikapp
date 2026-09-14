@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -139,8 +140,8 @@ class _RecapScreenState extends State<RecapScreen> {
 
   Future<void> _paylas() async {
     final metin = RecapService.shareText(widget.data, year: widget.year);
-    AnalyticsService.instance
-        .logRecapShared(period: widget.data.period, channel: 'system_sheet');
+    unawaited(AnalyticsService.instance
+        .logRecapShared(period: widget.data.period, channel: 'system_sheet'));
     await Share.share(metin, subject: 'sandık Özetim ${widget.year}');
   }
 

@@ -156,12 +156,12 @@ class RemotePushService {
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      Future<void>.microtask(
+      unawaited(Future<void>.microtask(
         () => NotificationService.instance.handleRemoteMessageData(
           initialMessage.data,
           fromColdStart: true,
         ),
-      );
+      ));
     }
 
     return true;
@@ -207,7 +207,7 @@ class RemotePushService {
           apnsToken = await _messaging.getAPNSToken();
         } catch (_) {}
         if (apnsToken != null && apnsToken.isNotEmpty) break;
-        await Future.delayed(const Duration(seconds: 2));
+        await Future<void>.delayed(const Duration(seconds: 2));
       }
       // APNs token yoksa FCM token null döner. Bunu logla ki sunucudan
       // push atarken cihazın neden alıcı olarak listelenmediği anlaşılsın.
@@ -233,7 +233,7 @@ class RemotePushService {
             } catch (_) {}
           }
           if (token != null && token.isNotEmpty) break;
-          await Future.delayed(const Duration(seconds: 2));
+          await Future<void>.delayed(const Duration(seconds: 2));
         }
       }
     } else {

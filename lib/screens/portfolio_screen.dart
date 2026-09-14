@@ -1,4 +1,4 @@
-import 'dart:async' show FutureOr;
+import 'dart:async' show FutureOr, unawaited;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
@@ -201,7 +201,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       padding: EdgeInsets.zero,
                       onPressed: () => Navigator.push(
                         context,
-                        CupertinoPageRoute(
+                        CupertinoPageRoute<void>(
                             builder: (_) => const ComparisonScreen()),
                       ),
                       child: Container(
@@ -362,7 +362,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       currentUserId: currentUserId,
                                       onTap: (p) => Navigator.push(
                                         context,
-                                        CupertinoPageRoute(
+                                        CupertinoPageRoute<void>(
                                             builder: (_) => AssetDetailScreen(
                                                   asset: p.asDisplayAsset(),
                                                   showBackButton: true,
@@ -855,7 +855,7 @@ Widget _rowAction(
           // await sonrası bu context artık geçerli olmayabilir.
           final slidable = Slidable.of(innerContext);
           await onPressed();
-          slidable?.close();
+          unawaited(slidable?.close());
         },
         child: Container(
           color: background,

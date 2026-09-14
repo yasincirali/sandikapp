@@ -104,7 +104,7 @@ class NotificationService {
 
     final launchPayload = launchDetails?.notificationResponse?.payload;
     if (launchPayload != null) {
-      Future<void>.microtask(() => _handleNotificationPayload(launchPayload));
+      unawaited(Future<void>.microtask(() => _handleNotificationPayload(launchPayload)));
     }
   }
 
@@ -476,7 +476,7 @@ class NotificationService {
     }
 
     navigator.push(
-      adaptiveRoute(
+      adaptiveRoute<void>(
         builder: (_) => PartnershipRequestsScreen(
           highlightInviteId: inviteId,
         ),
@@ -543,7 +543,7 @@ class NotificationService {
     final lots = assets.where((a) => positionKey(a) == anahtar).toList();
 
     navigator.push(
-      adaptiveRoute(
+      adaptiveRoute<void>(
         builder: (_) => AssetDetailScreen(
           asset: asset!,
           showBackButton: true,

@@ -416,7 +416,7 @@ class _Row extends ConsumerWidget {
             semanticLabel: '${item.name} detayını aç',
             onTap: () => pushGuarded(
               context,
-              adaptiveRoute(builder: (_) => WatchlistDetailScreen(item: item)),
+              adaptiveRoute<void>(builder: (_) => WatchlistDetailScreen(item: item)),
             ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
@@ -503,7 +503,7 @@ class _Row extends ConsumerWidget {
                     semanticLabel: '${item.displayLabel} portföyüme ekle',
                     onTap: () => Navigator.push(
                       context,
-                      adaptiveRoute(
+                      adaptiveRoute<void>(
                         builder: (_) => AddAssetScreen(
                           prefillTicker: item.ticker,
                           prefillName: item.name,
@@ -578,7 +578,7 @@ class _EmptyState extends StatelessWidget {
             semanticLabel: 'Takibe varlık ekle',
             onTap: () => pushGuarded(
               context,
-              adaptiveRoute(
+              adaptiveRoute<void>(
                 builder: (_) => const AddWatchlistScreen(),
                 fullscreenDialog: true,
               ),
@@ -643,7 +643,7 @@ class _AddRow extends StatelessWidget {
       semanticLabel: 'Takibe varlık ekle',
       onTap: () => pushGuarded(
         context,
-        adaptiveRoute(
+        adaptiveRoute<void>(
           builder: (_) => const AddWatchlistScreen(),
           fullscreenDialog: true,
         ),

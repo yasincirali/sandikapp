@@ -85,7 +85,7 @@ class SparklineService {
     try {
       return await future;
     } finally {
-      _inflight.remove(symbol);
+      _inflight.remove(symbol); // ignore: unawaited_futures
     }
   }
 

@@ -89,7 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
         if (!mounted) return;
         await Navigator.of(context).push(
-          CupertinoPageRoute(
+          CupertinoPageRoute<void>(
             builder: (_) => OtpVerificationScreen(email: emailForOtp),
           ),
         );
@@ -304,7 +304,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           behavior: HitTestBehavior.opaque,
                           onTap: () => Navigator.push(
                             context,
-                            CupertinoPageRoute(
+                            CupertinoPageRoute<void>(
                               builder: (_) => ForgotPasswordScreen(
                                 initialEmail: _emailCtrl.text.trim().isEmpty
                                     ? null
@@ -373,7 +373,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     CupertinoButton(
                       onPressed: () => Navigator.push(
                         context,
-                        CupertinoPageRoute(builder: (_) => const RegisterScreen()),
+                        CupertinoPageRoute<void>(builder: (_) => const RegisterScreen()),
                       ),
                       child: Text(
                         'Hesabınız yok mu? Kayıt olun',

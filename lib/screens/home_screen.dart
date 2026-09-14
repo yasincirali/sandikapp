@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
@@ -67,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // sunucuda silinse bile LİSTE EKRANDA DEĞİŞMİYORDU. "Silmiyor"
     // şikâyetinin görünür sebebi buydu.
     // Sheet artık `ConsumerWidget` ve provider'ı kendisi izliyor.
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -93,7 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (asset != null) {
             Navigator.push(
               context,
-              adaptiveRoute(
+              adaptiveRoute<void>(
                   builder: (_) =>
                       AssetDetailScreen(asset: asset, showBackButton: true)),
             );
@@ -229,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String rightLabel = '';
     double rightTotal = 0;
     String rightInitial = 'O';
-    Color rightColor = context.c.gain;
+    final Color rightColor = context.c.gain;
 
     if (showRightCard) {
       if (_view == null) {
@@ -619,7 +618,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   semanticLabel: 'Tüm hareketleri gör',
                   onTap: () => pushGuarded(
                     context,
-                    adaptiveRoute(
+                    adaptiveRoute<void>(
                       builder: (_) => AllTransactionsScreen(
                         allPartnerAssets: allPartnerAssets,
                         partners: partners,
@@ -923,7 +922,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
     final active = signals.where((a) => !a.isDismissed).toList();
     final history = signals.where((a) => a.isDismissed).toList();
     return DefaultTextStyle(
-      style: GoogleFonts.dmSans(
+      style: sandikFont(
           color: context.c.text90, decoration: TextDecoration.none),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -1471,7 +1470,7 @@ class _EmptyPortfolioCta extends StatelessWidget {
           semanticLabel: 'Varlık ekle',
           onTap: () => pushGuarded(
             context,
-            adaptiveRoute(builder: (_) => const AddAssetScreen()),
+            adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),

@@ -8,7 +8,6 @@ import 'package:flutter/material.dart'
         Colors,
         SnackBarAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/asset_type.dart';
 import '../models/position.dart';
@@ -210,7 +209,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
         results.where((c) => ownedKeys.contains(c.key)).toList();
 
     return DefaultTextStyle(
-      style: GoogleFonts.dmSans(
+      style: sandikFont(
           color: context.c.text90, decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
         backgroundColor: context.c.background,

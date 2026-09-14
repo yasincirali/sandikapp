@@ -90,7 +90,7 @@ class _WeeklySummaryChipState extends ConsumerState<WeeklySummaryChip> {
         .logPeriodSummaryViewed(period: SummaryPeriod.birHafta.name);
     Navigator.push(
       context,
-      adaptiveRoute(
+      adaptiveRoute<void>(
         builder: (_) => const PortfolioPerformanceScreen(
           showBackButton: true,
           initialOzet: true,

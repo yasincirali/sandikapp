@@ -801,7 +801,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             GestureDetector(
               onTap: () => Navigator.push(
                 context,
-                adaptiveRoute(
+                adaptiveRoute<void>(
                     builder: (_) => const SignalSettingsScreen()),
               ),
               child: Row(

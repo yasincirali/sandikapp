@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
@@ -178,7 +179,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       setState(() => _currentIndex = _portfolioTab);
       MainNavigationScreen.aktifSekme.value = _portfolioTab;
     }
-    ref.read(portfolioProvider.notifier).refreshPrices();
+    unawaited(ref.read(portfolioProvider.notifier).refreshPrices());
   }
 
   Future<void> _confirmExit() async {
@@ -196,7 +197,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       // "Çık"a basıyor, uygulama açık kalıyordu. SystemNavigator.pop()
       // Android'de aktiviteyi kapatır; iOS'ta HIG gereği no-op'tur (iOS'ta
       // zaten sistem geri tuşu olmadığından bu diyalog açılmaz).
-      SystemNavigator.pop();
+      unawaited(SystemNavigator.pop());
     }
   }
 

@@ -8,6 +8,7 @@ import '../screens/leaderboard_screen.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../utils/polling.dart';
 import 'custom_loading_indicator.dart';
 
 /// Profile ekranında öne çıkan Yarış hero kartı.
@@ -51,7 +52,7 @@ class _SoloHero extends StatelessWidget {
     return _HeroShell(
       onTap: () => Navigator.push(
         context,
-        adaptiveRoute(builder: (_) => const LeaderboardScreen()),
+        adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
       ),
       child: Row(
         children: [
@@ -198,8 +199,15 @@ class _RankPreviewHero extends ConsumerStatefulWidget {
 
 class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   late Future<_RankSnapshot?> _future;
-  Timer? _liveTick;
-  static const _livePeriod = Duration(seconds: 30);
+  late final ForegroundPoller _liveTick = ForegroundPoller(
+    interval: const Duration(seconds: 30),
+    onTick: () async {
+      if (!mounted) return;
+      final f = _compute();
+      setState(() => _future = f);
+      await f;
+    },
+  );
 
   static const _periods = <({int days, String label})>[
     (days: 7, label: 'haftalık'),
@@ -211,15 +219,12 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   void initState() {
     super.initState();
     _future = _compute();
-    _liveTick = Timer.periodic(_livePeriod, (_) {
-      if (!mounted) return;
-      setState(() => _future = _compute());
-    });
+    _liveTick.start();
   }
 
   @override
   void dispose() {
-    _liveTick?.cancel();
+    _liveTick.dispose();
     super.dispose();
   }
 
@@ -252,11 +257,11 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         cacheKey: me.id,
       );
       if (myRoi != null) {
-        LeaderboardService.instance.uploadRoiSnapshot(
+        unawaited(LeaderboardService.instance.uploadRoiSnapshot(
           userId: me.id,
           periodDays: periodDays,
           roiPct: myRoi,
-        );
+        ));
       }
 
       // Ortakların kâr/zararı BURADA hesaplanır — sunucu snapshot'ı beklenmez.
@@ -328,7 +333,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   void _openLeaderboard() {
     Navigator.push(
       context,
-      adaptiveRoute(builder: (_) => const LeaderboardScreen()),
+      adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
     );
   }
 

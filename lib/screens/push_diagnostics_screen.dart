@@ -167,7 +167,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   Future<void> _tetikle({required bool dryRun}) async {
     setState(() => _tetikleniyor = true);
     try {
-      final sonuc = await Supabase.instance.client.rpc(
+      final sonuc = await Supabase.instance.client.rpc<dynamic>(
         'push_test_trigger',
         params: {'p_slot': 'morning', 'p_dry_run': dryRun},
       );
@@ -733,7 +733,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
                   '${SurfaceTheme.instance.isLight ? "AÇIK" : "KOYU"}',
               'Tercih: ${_temaTercihiAdi()}',
               if (_canliOturumlar.isNotEmpty) '',
-              for (final s in _canliOturumlar) ...[
+              for (final s in _canliOturumlar.cast<Map<String, dynamic>>()) ...[
                 'satır • güncelleme: '
                     '${s['updated_at']?.toString().substring(0, 16) ?? "?"}'
                     '  bitiş: ${s['expires_at']?.toString().substring(0, 16) ?? "?"}',

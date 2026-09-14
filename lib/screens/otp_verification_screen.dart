@@ -167,11 +167,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       _startCooldown();
       _startExpiry();
       _focusNodes.first.requestFocus();
-      showAppSuccess(
+      unawaited(showAppSuccess(
         context,
         title: 'Kod gönderildi',
         message: 'Yeni 6 haneli kod e-postana gönderildi.',
-      );
+      ));
     } catch (e) {
       if (!mounted) return;
       showAppError(context, e);

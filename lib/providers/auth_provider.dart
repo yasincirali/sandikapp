@@ -27,7 +27,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       () => AuthService.instance.login(email: email, password: password, rememberMe: rememberMe),
     );
     if (state.hasValue && state.valueOrNull != null) {
-      AnalyticsService.instance.logLogin(method: 'email');
+      unawaited(AnalyticsService.instance.logLogin(method: 'email'));
     }
   }
 
@@ -39,7 +39,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     try {
       final user = await AuthService.instance.loginWithSocial(provider);
       state = AsyncData(user);
-      AnalyticsService.instance.logLogin(method: provider.name);
+      unawaited(AnalyticsService.instance.logLogin(method: provider.name));
     } on SocialSignInCancelled {
       state = previous;
     } catch (e, st) {
@@ -61,7 +61,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       ),
     );
     if (state.hasValue && state.valueOrNull != null) {
-      AnalyticsService.instance.logSignup(method: 'email');
+      unawaited(AnalyticsService.instance.logSignup(method: 'email'));
     }
   }
 
@@ -82,7 +82,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   }
 
   Future<void> logout() async {
-    AnalyticsService.instance.logLogout();
+    unawaited(AnalyticsService.instance.logLogout());
     await RemotePushService.instance.stop();
     await AuthService.instance.logout();
     DisclaimerService.instance.clearCache();

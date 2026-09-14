@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -124,13 +125,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     try {
       // FAZ 1 TODO: RevenueCat.purchasePackage() burada çağrılacak.
       // Şu an dummy — direkt premium'u aç ki UI akışını test edebilelim.
-      await Future.delayed(const Duration(milliseconds: 600));
+      await Future<void>.delayed(const Duration(milliseconds: 600));
       await ref
           .read(premiumUnlockedProvider.notifier)
           .set(true);
-      AnalyticsService.instance.logPremiumUpgradeCompleted(
+      unawaited(AnalyticsService.instance.logPremiumUpgradeCompleted(
         plan: _selected == _Plan.yearly ? 'yearly' : 'monthly',
-      );
+      ));
       if (!mounted) return;
       await _showSuccessSheet();
       if (!mounted) return;

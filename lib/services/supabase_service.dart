@@ -1127,7 +1127,7 @@ class SupabaseService {
   Future<bool> isPushAdmin() async {
     if (_uid == null) return false;
     try {
-      final r = await _db.rpc('is_push_admin').timeout(DbLogger.defaultTimeout);
+      final r = await _db.rpc<dynamic>('is_push_admin').timeout(DbLogger.defaultTimeout);
       return r == true;
     } catch (_) {
       return false;

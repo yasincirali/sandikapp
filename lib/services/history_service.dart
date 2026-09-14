@@ -351,11 +351,11 @@ class HistoryService {
     // Her bir varlık için günlük fiyat eşleşmesi tutalım donmuş/gerçek fiyatlar
     final Map<String, Map<int, double>> tickerNormalizedDaily = {};
 
-    Map<int, double> usdTryHistory = {};
-    Map<int, double> goldHistory = {};
+    final Map<int, double> usdTryHistory = {};
+    final Map<int, double> goldHistory = {};
 
-    bool needsGold = assets.any((a) => a.type == AssetType.altin);
-    bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
+    final bool needsGold = assets.any((a) => a.type == AssetType.altin);
+    final bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
 
     Future<List<(int, double)>> getHistorySafe(String sym) async {
       final cacheKey = '${sym}_$range';
@@ -513,8 +513,8 @@ class HistoryService {
               // sıçrama oluyordu — ölçülen oran 5,17 kat. Kâr/zarar `Asset.
               // currentPrice` üzerinden hesaplandığı için doğru kalıyor;
               // "grafik yok ama kâr/zarar var" ayrışması tam olarak buradan.
-              double factor = PriceService.goldWeightFactor(a.ticker);
-              double price = _getClosestPrice(goldHistory, dayTs, null);
+              final double factor = PriceService.goldWeightFactor(a.ticker);
+              final double price = _getClosestPrice(goldHistory, dayTs, null);
               assetDayVal = price * factor * qty;
             } else {
               assetDayVal = _flatFallback(a) * (qty / a.quantity);
@@ -527,7 +527,7 @@ class HistoryService {
             if (map.isNotEmpty) {
               double price = _getClosestPrice(map, dayTs, null);
               if (a.currency == 'USD') {
-                double usdRate = usdTryHistory.isNotEmpty
+                final double usdRate = usdTryHistory.isNotEmpty
                     ? _getClosestPrice(usdTryHistory, dayTs, 35.0)
                     : 35.0;
                 price *= usdRate;
@@ -896,8 +896,8 @@ class HistoryService {
 
     final now = DateTime.now();
     final Map<String, Map<int, double>> tickerSlots = {};
-    Map<int, double> usdTrySlots = {};
-    Map<int, double> goldSlots = {}; // TRY / gram22k
+    final Map<int, double> usdTrySlots = {};
+    final Map<int, double> goldSlots = {}; // TRY / gram22k
 
     Future<List<(int, double)>> getHistorySafeFor(String sym, String r) async {
       final cacheKey = '${sym}_$r';
@@ -917,8 +917,8 @@ class HistoryService {
     Future<List<(int, double)>> getHistorySafe(String sym) =>
         getHistorySafeFor(sym, range);
 
-    bool needsGold = assets.any((a) => a.type == AssetType.altin);
-    bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
+    final bool needsGold = assets.any((a) => a.type == AssetType.altin);
+    final bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
 
     // Tüm semboller tek seferde başlatılır — gerekçe için `getPortfolioHistory`
     // içindeki aynı bloğun açıklamasına bak.
@@ -1714,8 +1714,8 @@ class HistoryService {
     final nowTs = tier.normalizeTs(DateTime.now().millisecondsSinceEpoch);
 
     // Gerekli sembolleri tespit et.
-    bool needsGold = assets.any((a) => a.type == AssetType.altin);
-    bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
+    final bool needsGold = assets.any((a) => a.type == AssetType.altin);
+    final bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
 
     final tickerFutures = <String, Future<Map<int, double>>>{};
     for (final a in assets) {

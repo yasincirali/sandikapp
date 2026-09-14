@@ -585,8 +585,8 @@ class PriceService {
       }
 
       final timestamps = (result['timestamp'] as List?)?.cast<dynamic>();
-      final closes = ((result['indicators']?['quote'] as List?)?.firstOrNull
-              as Map<String, dynamic>?)?['close']
+      final closes = (((result['indicators']?['quote'] as List?)?.firstOrNull
+              as Map<String, dynamic>?)?['close'] as List?)
           ?.cast<dynamic>();
       if (timestamps == null ||
           closes == null ||
@@ -649,8 +649,8 @@ class PriceService {
           as Map<String, dynamic>?;
       if (result == null) return null;
 
-      final closes = ((result['indicators']?['quote'] as List?)?.firstOrNull
-              as Map<String, dynamic>?)?['close']
+      final closes = (((result['indicators']?['quote'] as List?)?.firstOrNull
+              as Map<String, dynamic>?)?['close'] as List?)
           ?.cast<dynamic>();
       if (closes == null || closes.isEmpty) return null;
 
@@ -702,8 +702,8 @@ class PriceService {
     if (result == null) return [];
 
     final timestamps = (result['timestamp'] as List?)?.cast<int>() ?? [];
-    final closes = ((result['indicators']?['quote'] as List?)?.firstOrNull
-            as Map<String, dynamic>?)?['close']
+    final closes = (((result['indicators']?['quote'] as List?)?.firstOrNull
+            as Map<String, dynamic>?)?['close'] as List?)
         ?.cast<dynamic>() ?? [];
 
     final points = <(int, double)>[];

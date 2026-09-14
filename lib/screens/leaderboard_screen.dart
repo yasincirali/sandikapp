@@ -12,6 +12,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../utils/polling.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -404,8 +405,15 @@ class _SoloPanel extends StatefulWidget {
 class _SoloPanelState extends State<_SoloPanel> {
   double? _myRoi;
   bool _computing = false;
-  Timer? _liveTick;
-  static const _livePeriod = Duration(seconds: 15);
+  // ForegroundPoller: arka planda durur, öne gelince hemen bir tur atar,
+  // yavaş ağda turlar üst üste binmez. Çıplak `Timer.periodic` bunların
+  // hiçbirini yapmıyordu (TECHNICAL_DEBT "5 bağımsız canlı tick").
+  late final ForegroundPoller _liveTick = ForegroundPoller(
+    interval: const Duration(seconds: 15),
+    onTick: () async {
+      if (mounted) await _refresh();
+    },
+  );
 
   @override
   void initState() {
@@ -417,14 +425,12 @@ class _SoloPanelState extends State<_SoloPanel> {
             periodDays: widget.periodDays,
           );
     _refresh();
-    _liveTick = Timer.periodic(_livePeriod, (_) {
-      if (mounted) _refresh();
-    });
+    _liveTick.start();
   }
 
   @override
   void dispose() {
-    _liveTick?.cancel();
+    _liveTick.dispose();
     super.dispose();
   }
 
@@ -458,11 +464,11 @@ class _SoloPanelState extends State<_SoloPanel> {
     );
     if (roi != null) {
       // Fire-and-forget snapshot — global percentile için.
-      LeaderboardService.instance.uploadRoiSnapshot(
+      unawaited(LeaderboardService.instance.uploadRoiSnapshot(
         userId: me.id,
         periodDays: widget.periodDays,
         roiPct: roi,
-      );
+      ));
     }
     if (!mounted) return;
     setState(() {
@@ -716,15 +722,22 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   // "Anlık" hissi için düzenli tick — her tetikte kendi ROI'sini
   // yeniden hesaplayıp upload eder, sonra partner ROI'lerini
   // Supabase'ten tazeler.
-  Timer? _liveTick;
-  static const _livePeriod = Duration(seconds: 15);
+  late final ForegroundPoller _liveTick = ForegroundPoller(
+    interval: const Duration(seconds: 15),
+    onTick: () async {
+      if (!mounted) return;
+      final f = _compute();
+      setState(() => _future = f);
+      await f;
+    },
+  );
 
   @override
   void initState() {
     super.initState();
     _staleRows = _readCachedRows();
     _future = _compute();
-    _startLiveTick();
+    _liveTick.start();
   }
 
   @override
@@ -739,16 +752,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
 
   @override
   void dispose() {
-    _liveTick?.cancel();
+    _liveTick.dispose();
     super.dispose();
-  }
-
-  void _startLiveTick() {
-    _liveTick?.cancel();
-    _liveTick = Timer.periodic(_livePeriod, (_) {
-      if (!mounted) return;
-      setState(() => _future = _compute());
-    });
   }
 
   /// LeaderboardService cache'inden — TTL geçmiş bile olsa — synchronous
@@ -819,22 +824,22 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       );
       if (myRoi != null) {
         // Await ETMİYORUZ, snapshot upload + partner fetch paralel gitsin.
-        LeaderboardService.instance.uploadRoiSnapshot(
+        unawaited(LeaderboardService.instance.uploadRoiSnapshot(
           userId: me.id,
           periodDays: widget.periodDays,
           roiPct: myRoi,
-        );
+        ));
         // Top gainers allocation feature'ı için anonim tür dağılımını da
         // gönder — miktar/TL yok, sadece {tür: %}. RPC k-anonymity + min
         // type_count filtreleri ile agregat gösterir.
         final alloc = LeaderboardService.instance
             .computeAllocation(widget.myAssets, widget.pnlToTRY);
         if (alloc.length >= 2) {
-          LeaderboardService.instance.uploadAllocationSnapshot(
+          unawaited(LeaderboardService.instance.uploadAllocationSnapshot(
             userId: me.id,
             allocation: alloc,
             typeCount: alloc.length,
-          );
+          ));
         }
       }
     }
@@ -1226,8 +1231,15 @@ class _GlobalPercentileTeaser extends StatefulWidget {
 
 class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
   late Future<_BestPercentile?> _future;
-  Timer? _liveTick;
-  static const _livePeriod = Duration(seconds: 30);
+  late final ForegroundPoller _liveTick = ForegroundPoller(
+    interval: const Duration(seconds: 30),
+    onTick: () async {
+      if (!mounted) return;
+      final f = _computeBest();
+      setState(() => _future = f);
+      await f;
+    },
+  );
 
   static const _periods = <({int days, String label})>[
     (days: 7, label: 'haftalık'),
@@ -1239,15 +1251,12 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
   void initState() {
     super.initState();
     _future = _computeBest();
-    _liveTick = Timer.periodic(_livePeriod, (_) {
-      if (!mounted) return;
-      setState(() => _future = _computeBest());
-    });
+    _liveTick.start();
   }
 
   @override
   void dispose() {
-    _liveTick?.cancel();
+    _liveTick.dispose();
     super.dispose();
   }
 
@@ -1442,18 +1451,22 @@ class _TopGainersAllocationCard extends StatefulWidget {
 
 class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
   late Future<List<TopGainerAllocation>> _future;
-  Timer? _liveTick;
-  static const _livePeriod = Duration(seconds: 45);
+  late final ForegroundPoller _liveTick = ForegroundPoller(
+    interval: const Duration(seconds: 45),
+    onTick: () async {
+      if (!mounted) return;
+      final f = _fetch();
+      setState(() => _future = f);
+      await f;
+    },
+  );
   int _expandedIdx = 0; // seçili rank kartı
 
   @override
   void initState() {
     super.initState();
     _future = _fetch();
-    _liveTick = Timer.periodic(_livePeriod, (_) {
-      if (!mounted) return;
-      setState(() => _future = _fetch());
-    });
+    _liveTick.start();
   }
 
   @override
@@ -1467,7 +1480,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
 
   @override
   void dispose() {
-    _liveTick?.cancel();
+    _liveTick.dispose();
     super.dispose();
   }
 

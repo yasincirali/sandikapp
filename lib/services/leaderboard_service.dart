@@ -273,7 +273,7 @@ class LeaderboardService {
   Future<Map<String, ({double roi, DateTime updatedAt})>> fetchPartnerRois(
       int periodDays) async {
     try {
-      final res = await Supabase.instance.client.rpc(
+      final res = await Supabase.instance.client.rpc<dynamic>(
         'get_partner_rois',
         params: {'p_period_days': periodDays},
       );
@@ -352,7 +352,7 @@ class LeaderboardService {
     int topN = 3,
   }) async {
     try {
-      final res = await Supabase.instance.client.rpc(
+      final res = await Supabase.instance.client.rpc<dynamic>(
         'get_top_gainers_allocation',
         params: {'p_period_days': periodDays, 'p_top_n': topN},
       );
@@ -389,7 +389,7 @@ class LeaderboardService {
   Future<({int percentile, int total})?> fetchPercentile(int periodDays) async {
     try {
       final result =
-          await Supabase.instance.client.rpc('get_percentile_bucket', params: {
+          await Supabase.instance.client.rpc<dynamic>('get_percentile_bucket', params: {
         'p_period_days': periodDays,
       });
       if (result == null) return null;

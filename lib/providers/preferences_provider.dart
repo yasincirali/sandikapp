@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -499,12 +500,12 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
     if (kDebugMode) {
       debugPrint('[signal_pref] ${type.name} sunucuya yazılamadı: $e');
     }
-    FirebaseCrashlytics.instance.recordError(
+    unawaited(FirebaseCrashlytics.instance.recordError(
       e,
       st,
       reason: 'signal_preferences upsert (${type.name})',
       fatal: false,
-    );
+    ));
   }
 }
 

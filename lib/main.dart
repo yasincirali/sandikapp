@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -102,8 +101,8 @@ Future<void> _initDeferredServices() async {
       await step.$2();
     } catch (e, st) {
       if (kDebugMode) debugPrint('${step.$1} init failed: $e');
-      FirebaseCrashlytics.instance
-          .recordError(e, st, reason: '${step.$1} deferred init');
+      unawaited(FirebaseCrashlytics.instance
+          .recordError(e, st, reason: '${step.$1} deferred init'));
     }
   }
 }
@@ -113,13 +112,9 @@ void main() async {
   await runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // DM Sans `assets/fonts/` altında gömülü (bkz. pubspec.yaml `fonts:`).
-    // Bu bayrak olmadan google_fonts fontu her cihazda bir kez
-    // fonts.gstatic.com'dan indirmeye çalışır: ilk açılış ağa bağımlı olur,
-    // offline'da sistem fontuna düşer. Gömülü aile adı ("DM Sans")
-    // google_fonts'un aradığıyla aynı olduğu için paket indirme yerine
-    // asset'i bulur.
-    GoogleFonts.config.allowRuntimeFetching = false;
+    // DM Sans `assets/fonts/` altında gömülü (bkz. pubspec.yaml `fonts:`);
+    // `kSandikFontFamily` ile doğrudan kullanılır. google_fonts kaldırıldı
+    // (2026-09-14) — ağ bağımlılığı ve aile adı eşleşme tuzağı da gitti.
 
     await initializeDateFormatting('tr_TR');
     // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
@@ -355,10 +350,10 @@ class SandikApp extends ConsumerWidget {
     );
 
     // ── Typography (DM Sans — tek font) ──────────────────────────────────────
-    final baseText = GoogleFonts.dmSansTextTheme(ThemeData.dark().textTheme);
+    final baseText = ThemeData.dark().textTheme.apply(fontFamily: kSandikFontFamily);
 
     TextStyle dm(double size, FontWeight weight, double ls) =>
-        GoogleFonts.dmSans(
+        sandikFont(
             fontSize: size,
             fontWeight: weight,
             letterSpacing: ls,
@@ -377,31 +372,31 @@ class SandikApp extends ConsumerWidget {
       headlineMedium: dm(20, FontWeight.w700, -0.01 * 20),
       headlineSmall: dm(18, FontWeight.w600, -0.01 * 18),
       // Title — navigasyon ve kart başlıkları
-      titleLarge: GoogleFonts.dmSans(
+      titleLarge: sandikFont(
           fontSize: 16, fontWeight: FontWeight.w600, color: p.text90),
-      titleMedium: GoogleFonts.dmSans(
+      titleMedium: sandikFont(
           fontSize: 14, fontWeight: FontWeight.w500, color: p.text90),
-      titleSmall: GoogleFonts.dmSans(
+      titleSmall: sandikFont(
           fontSize: 12, fontWeight: FontWeight.w500, color: p.text90),
       // Body — gövde metin
-      bodyLarge: GoogleFonts.dmSans(
+      bodyLarge: sandikFont(
           fontSize: 15, fontWeight: FontWeight.w500, color: p.text90),
-      bodyMedium: GoogleFonts.dmSans(
+      bodyMedium: sandikFont(
           fontSize: 13, fontWeight: FontWeight.w400, color: p.text90),
-      bodySmall: GoogleFonts.dmSans(
+      bodySmall: sandikFont(
           fontSize: 11, fontWeight: FontWeight.w400, color: p.text58),
       // Label — etiket
-      labelLarge: GoogleFonts.dmSans(
+      labelLarge: sandikFont(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.06 * 11,
           color: p.text90),
-      labelMedium: GoogleFonts.dmSans(
+      labelMedium: sandikFont(
           fontSize: 10,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.06 * 10,
           color: p.text58),
-      labelSmall: GoogleFonts.dmSans(
+      labelSmall: sandikFont(
           fontSize: 9,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.06 * 9,
@@ -429,7 +424,7 @@ class SandikApp extends ConsumerWidget {
         barBackgroundColor: p.surface1,
         textTheme: CupertinoTextThemeData(
           primaryColor: p.amberFill,
-          textStyle: GoogleFonts.dmSans(color: p.text90, fontSize: 15),
+          textStyle: sandikFont(color: p.text90, fontSize: 15),
         ),
       ),
 
@@ -440,7 +435,7 @@ class SandikApp extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.dmSans(
+        titleTextStyle: sandikFont(
           fontSize: 22,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.02 * 22,
@@ -496,8 +491,8 @@ class SandikApp extends ConsumerWidget {
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        labelStyle: GoogleFonts.dmSans(color: p.text58, fontSize: 14),
-        hintStyle: GoogleFonts.dmSans(color: p.text36, fontSize: 14),
+        labelStyle: sandikFont(color: p.text58, fontSize: 14),
+        hintStyle: sandikFont(color: p.text36, fontSize: 14),
       ),
 
       // Filled button — Amber CTA
@@ -507,7 +502,7 @@ class SandikApp extends ConsumerWidget {
           foregroundColor: p.onAmber,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          textStyle: GoogleFonts.dmSans(
+          textStyle: sandikFont(
               fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.2),
         ),
       ),
@@ -520,7 +515,7 @@ class SandikApp extends ConsumerWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle:
-              GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14),
+              sandikFont(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
@@ -529,7 +524,7 @@ class SandikApp extends ConsumerWidget {
         style: TextButton.styleFrom(
           foregroundColor: p.amberFill,
           textStyle:
-              GoogleFonts.dmSans(fontWeight: FontWeight.w600, fontSize: 14),
+              sandikFont(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
@@ -548,7 +543,7 @@ class SandikApp extends ConsumerWidget {
         backgroundColor: p.overlay,
         selectedColor: p.amberFill,
         labelStyle:
-            GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500),
+            sandikFont(fontSize: 12, fontWeight: FontWeight.w500),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -574,15 +569,15 @@ class SandikApp extends ConsumerWidget {
       dialogTheme: DialogThemeData(
         backgroundColor: p.surface1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titleTextStyle: GoogleFonts.dmSans(
+        titleTextStyle: sandikFont(
             fontSize: 18, fontWeight: FontWeight.w700, color: p.text90),
-        contentTextStyle: GoogleFonts.dmSans(fontSize: 14, color: p.text58),
+        contentTextStyle: sandikFont(fontSize: 14, color: p.text58),
       ),
 
       // SnackBar
       snackBarTheme: SnackBarThemeData(
         backgroundColor: p.surface2,
-        contentTextStyle: GoogleFonts.dmSans(color: p.text90, fontSize: 13),
+        contentTextStyle: sandikFont(color: p.text90, fontSize: 13),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
@@ -607,7 +602,7 @@ class SandikApp extends ConsumerWidget {
       popupMenuTheme: PopupMenuThemeData(
         color: p.surface2,
         surfaceTintColor: Colors.transparent,
-        textStyle: GoogleFonts.dmSans(color: p.text90, fontSize: 14),
+        textStyle: sandikFont(color: p.text90, fontSize: 14),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SandikRadius.md),
         ),

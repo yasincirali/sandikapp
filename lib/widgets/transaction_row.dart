@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../models/asset.dart';
@@ -104,7 +103,7 @@ class TransactionRow extends StatelessWidget {
                       child: Center(
                         child: Text(
                           asset.currencySymbol!,
-                          style: GoogleFonts.dmSans(
+                          style: sandikFont(
                             fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
                             fontWeight: FontWeight.w800,
                             color: asset.type.color,

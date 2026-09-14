@@ -1493,7 +1493,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   void _showBist100Picker() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -1542,7 +1542,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   void _showTefasPicker() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -2008,7 +2008,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       if (upgraded == true && mounted) {
         // Kullanıcı premium'a geçti — save'i yeniden dene.
         Navigator.pop(context);
-        _save();
+        unawaited(_save());
       }
       return;
     } finally {

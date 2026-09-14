@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show Icons, Material, Colors, RefreshIndicator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/asset_type.dart';
 import '../models/watchlist_item.dart';
@@ -74,7 +73,7 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
     final item = widget.item;
 
     return DefaultTextStyle(
-      style: GoogleFonts.dmSans(
+      style: sandikFont(
           color: context.c.text90, decoration: TextDecoration.none),
       child: CupertinoPageScaffold(
         backgroundColor: context.c.background,

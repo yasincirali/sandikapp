@@ -5,7 +5,6 @@ import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoPageRoute
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback, SystemUiOverlayStyle;
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Platforma uygun sayfa geçişi.
 ///
@@ -136,6 +135,41 @@ Future<T?> pushGuarded<T>(
 /// - [sm] rozet, çip, küçük ikon kutusu
 /// - [md] liste satırı, input, ikincil kart
 /// - [lg] hero kart, bottom sheet, modal
+/// Marka yazı tipi — pubspec `fonts:` altında gömülü DM Sans (6 ağırlık).
+///
+/// 2026-09-14: `google_fonts` kaldırıldı. Paket hiçbir şey indirmiyordu
+/// (`allowRuntimeFetching = false`), yalnızca `fontFamily: 'DM Sans'`
+/// yazmanın uzun yoluydu ve "aile adı paketin ürettiğiyle birebir aynı
+/// olmalı" diye kırılgan bir bağ taşıyordu. Şimdi aile adı tek yerde.
+const String kSandikFontFamily = 'DM Sans';
+
+/// `sandikFont(...)`'ın yerine geçen üretici — aynı adlı
+/// parametreler, tek fark: aile adı sabit. Yeni kodda tercih
+/// `context.t.*`; bu yalnızca tema dışı özel stiller için.
+TextStyle sandikFont({
+  double? fontSize,
+  FontWeight? fontWeight,
+  Color? color,
+  double? letterSpacing,
+  double? height,
+  TextDecoration? decoration,
+  Color? decorationColor,
+  Color? backgroundColor,
+  FontStyle? fontStyle,
+}) =>
+    TextStyle(
+      fontFamily: kSandikFontFamily,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+      decoration: decoration,
+      decorationColor: decorationColor,
+      backgroundColor: backgroundColor,
+      fontStyle: fontStyle,
+    );
+
 /// Dokunma hedefi ölçeği.
 ///
 /// HIG (Controls) ve Material erişilebilirlik kılavuzu: dokunulabilir her
@@ -416,7 +450,7 @@ class _SandikTappableState extends State<SandikTappable> {
 
 /// Tipografi erişimi — `main.dart` içindeki merkezi [TextTheme]'e kısa yol.
 ///
-/// Hardcoded `GoogleFonts.dmSans(fontSize: 13, ...)` yerine bunu kullan:
+/// Hardcoded `sandikFont(fontSize: 13, ...)` yerine bunu kullan:
 /// ```dart
 /// Text('Toplam', style: context.t.bodyMedium)
 /// Text('₺1.240', style: context.t.numMedium.copyWith(color: Sandik.gain))
@@ -1443,7 +1477,7 @@ class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
             const SizedBox(height: SandikSpace.lg),
             Text(
               'sandık',
-              style: GoogleFonts.dmSans(
+              style: sandikFont(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
                 // Moda duyarlı: light palette'te `gold` koyu kahveye iner

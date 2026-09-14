@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -129,8 +130,8 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         enabled: true,
         createdAt: DateTime.now(),
       ));
-      AnalyticsService.instance
-          .logScreenView(screenName: 'price_alert_created');
+      unawaited(AnalyticsService.instance
+          .logScreenView(screenName: 'price_alert_created'));
       _tazele();
     } catch (e) {
       if (!mounted) return;

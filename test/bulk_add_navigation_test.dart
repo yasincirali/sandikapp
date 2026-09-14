@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -78,7 +79,7 @@ void main() {
         ),
       ),
     );
-    addResult.then((v) => log.add('add->main: $v'));
+    unawaited(addResult.then((v) => log.add('add->main: $v')));
 
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('open-bulk')));
