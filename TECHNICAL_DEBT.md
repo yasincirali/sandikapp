@@ -607,9 +607,13 @@ açıklanmış bir ayı düzeltirse bir sonraki tur onu güncelliyor.
 
 ---
 
-## 🟡 AÇIK — Push yardımcıları iki fonksiyonda kopya
+## ✅ KAPANDI — Push yardımcıları iki fonksiyonda kopya
 
-**Karar tarihi:** 2026-09-06 · Sprint 1
+**Karar tarihi:** 2026-09-06 · Sprint 1 · **Kapandı 2026-09-14:** Deno kuruldu, `deno check`
++ 222 test yeşilken `analyze-signals` ve `send-partner-invite-push` `_shared/fcm.ts`'e geçti
+(`priority`/`badge` seçenekleri, silme kuralı birleşimi); beş fonksiyondaki `collapseTokens`/
+`dedupeTokensByDevice` kopyaları `_shared/push_tokens.ts`'te tek kaynak (`push_tokens_test`,
+`fcm_send_test`). Kalan yerel kopya yok.
 
 `daily-brief` yazılırken JWT imzalama ve FCM gönderimi
 `supabase/functions/_shared/fcm.ts`'e çıkarıldı. Ama `analyze-signals` hâlâ

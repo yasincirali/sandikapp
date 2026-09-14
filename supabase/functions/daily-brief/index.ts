@@ -52,6 +52,10 @@ import {
 import { loadPriceHistories, resolveSymbol } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
+
+// Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
+export { collapseTokens };
 import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
 
 const corsHeaders = {
@@ -89,14 +93,6 @@ type AssetRow = {
   // Mezar taşı (`delete_log`) okuması için — silinen pozisyon susturulur.
   added_date: string | null;
   ref_asset_id: string | null;
-};
-
-type TokenRow = {
-  token: string;
-  user_id: string;
-  device_id: string | null;
-  platform: string | null;
-  updated_at: string | null;
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -163,20 +159,6 @@ export function buildPartnerMessage(
 /// `analyze-signals` ile aynı gerekçe: FCM token'ı rotasyona girer (yeniden
 /// kurulum, veri temizleme, güncelleme) ve eski satırlar tabloda kalır.
 /// `device_id` yazmayan eski istemciler için `platform` ile gruplanır.
-export function collapseTokens(rows: TokenRow[]): TokenRow[] {
-  const enTaze = new Map<string, TokenRow>();
-  for (const row of rows) {
-    const anahtar = `${row.user_id}|${row.device_id ?? `platform:${row.platform ?? '?'}`}`;
-    const mevcut = enTaze.get(anahtar);
-    if (
-      !mevcut ||
-      Date.parse(row.updated_at ?? '') > Date.parse(mevcut.updated_at ?? '')
-    ) {
-      enTaze.set(anahtar, row);
-    }
-  }
-  return [...enTaze.values()];
-}
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {

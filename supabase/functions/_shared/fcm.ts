@@ -5,9 +5,10 @@
 // fonksiyonun JWT imzalama kodunu kopyalaması, iki kopyanın zamanla
 // ayrışması demekti.
 //
-// `analyze-signals` HENÜZ buraya taşınmadı — çalışan ve dağıtılmış bir
-// fonksiyonu test edemeden düzenlemek riskli. Bir sonraki dokunuşta
-// taşınmalı (bkz. TECHNICAL_DEBT.md).
+// 2026-09-14: `analyze-signals` de buraya taşındı (`deno check` + 222 test
+// yeşilken). Sinyal bildirimi acil olduğu için `priority: 'high'` ve iOS
+// rozeti (`badge`) seçenek olarak eklendi; varsayılanlar brifing davranışını
+// (normal / apns-priority 5) korur.
 
 export type ServiceAccount = {
   client_email: string;
@@ -97,6 +98,8 @@ export async function sendFcmNotification({
   body,
   channelId,
   data,
+  priority = 'normal',
+  badge,
 }: {
   accessToken: string;
   projectId: string;
@@ -108,7 +111,15 @@ export async function sendFcmNotification({
   /// tipi tek başına kapatamaz.
   channelId: string;
   data: Record<string, string>;
+  /// `high`: acil uyarı (sinyal, fiyat alarmı) — Android yüksek öncelik,
+  /// APNs 10. `normal` (varsayılan): brifing/özet — pil dostu, APNs 5.
+  priority?: 'high' | 'normal';
+  /// iOS rozet sayısı — okunmamış öğe adedi. Sabit 1 göndermek Apple'ın
+  /// beklentisine aykırı: 5 bildirim gelse de "1" görünür. Verilmezse
+  /// rozet dokunulmaz.
+  badge?: number;
 }): Promise<SendResult> {
+  const acil = priority === 'high';
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
     {
@@ -124,8 +135,9 @@ export async function sendFcmNotification({
           data,
           android: {
             // Brifing acil değil: `normal` öncelik pil dostu ve Android'in
-            // "yüksek öncelik kötüye kullanımı" sayımına girmez.
-            priority: 'normal',
+            // "yüksek öncelik kötüye kullanımı" sayımına girmez. Sinyal ve
+            // alarm ise `high` ister — kullanıcı onu anında bekler.
+            priority: acil ? 'high' : 'normal',
             notification: {
               channel_id: channelId,
               sound: 'default',
@@ -136,8 +148,15 @@ export async function sendFcmNotification({
           apns: {
             // apns-priority 5 = güç tasarrufu için ertelenebilir.
             // Brifing için doğrusu bu; `10` acil uyarılar içindir.
-            headers: { 'apns-priority': '5', 'apns-push-type': 'alert' },
-            payload: { aps: { sound: 'default' } },
+            headers: {
+              'apns-priority': acil ? '10' : '5',
+              'apns-push-type': 'alert',
+            },
+            payload: {
+              aps: badge === undefined
+                ? { sound: 'default' }
+                : { sound: 'default', badge },
+            },
           },
         },
       }),
@@ -149,10 +168,14 @@ export async function sendFcmNotification({
   return {
     ok: false,
     rawText,
+    // Silme kuralı iki kopyanın BİRLEŞİMİ: analyze-signals
+    // `registration-token-not-registered`'a, brifing `INVALID_ARGUMENT`'a
+    // bakıyordu; ikisi de FCM'in "bu token artık yok" deme biçimi.
     shouldDeleteToken:
       response.status === 404 ||
       rawText.includes('UNREGISTERED') ||
-      rawText.includes('INVALID_ARGUMENT'),
+      rawText.includes('INVALID_ARGUMENT') ||
+      rawText.includes('registration-token-not-registered'),
   };
 }
 

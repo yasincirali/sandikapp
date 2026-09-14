@@ -36,6 +36,16 @@ import {
 } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import {
+  createAccessToken,
+  sendFcmNotification,
+  ServiceAccount,
+  shortLabel,
+} from '../_shared/fcm.ts';
+import { dedupeTokensByDevice } from '../_shared/push_tokens.ts';
+
+// Testler (`device_token_dedup_test`) bu modülden okuyor; kaynağı `_shared`.
+export { dedupeTokensByDevice, shortLabel };
 
 const corsHeaders = {
   // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
@@ -44,11 +54,6 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
-type ServiceAccount = {
-  client_email: string;
-  private_key: string;
-  token_uri?: string;
-};
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -57,101 +62,11 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-// ── Google OAuth (FCM v1) ───────────────────────────────────────────────────
-
-function base64UrlEncode(input: string | Uint8Array) {
-  const bytes =
-    typeof input === 'string' ? new TextEncoder().encode(input) : input;
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function pemToArrayBuffer(pem: string) {
-  const base64 = pem
-    .replace('-----BEGIN PRIVATE KEY-----', '')
-    .replace('-----END PRIVATE KEY-----', '')
-    .replace(/\s+/g, '');
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return bytes.buffer;
-}
-
-async function createAccessToken(serviceAccount: ServiceAccount) {
-  const now = Math.floor(Date.now() / 1000);
-  const header = base64UrlEncode(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-  const claimSet = base64UrlEncode(
-    JSON.stringify({
-      iss: serviceAccount.client_email,
-      scope: 'https://www.googleapis.com/auth/firebase.messaging',
-      aud: serviceAccount.token_uri ?? 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3600,
-    }),
-  );
-
-  const unsignedToken = `${header}.${claimSet}`;
-  const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
-    pemToArrayBuffer(serviceAccount.private_key),
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    privateKey,
-    new TextEncoder().encode(unsignedToken),
-  );
-  const jwt = `${unsignedToken}.${base64UrlEncode(new Uint8Array(signature))}`;
-
-  const response = await fetch(
-    serviceAccount.token_uri ?? 'https://oauth2.googleapis.com/token',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt,
-      }),
-    },
-  );
-  if (!response.ok) {
-    throw new Error(`Google access token alinamadi: ${await response.text()}`);
-  }
-  return (await response.json()).access_token as string;
-}
-
 // ── Bildirim metni ──────────────────────────────────────────────────────────
 //
 // Yasal not: "AL/SAT sinyali" yerine trend yönü ifadesi kullanılır ve
 // "Yatırım tavsiyesi değildir" ibaresi eklenir — client'taki
 // `NotificationService.sendSignalNotification` ile aynı dil.
-
-/// Bildirim başlığındaki kısa varlık etiketi.
-///
-/// Kilit ekranı başlığı tek satırdır ve fon adları buna sığmaz
-/// ("YAPI KREDİ PORTFÖY YABANCI TEKNOLOJİ SEKTÖRÜ HİSSE SENEDİ FONU" gibi).
-/// İşletim sistemine bırakılırsa ortadan keser ve AYIRT EDİCİ kısım —
-/// yön okunun hemen yanındaki asıl bilgi — kaybolur.
-///
-/// Ticker kullanılır ama HAM haliyle değil: kaynak ön ekleri kullanıcıya
-/// hiçbir şey ifade etmez, hatta teknik bir hata gibi görünür.
-///   `TEFAS:AFO` → `AFO`      (fon kodu)
-///   `AGHOL.IS`  → `AGHOL`    (BIST kodu)
-///   `EURTRY=X`  → adına düş  (kod değil, kur çifti — "Euro" daha anlaşılır)
-export function shortLabel(assetName: string, ticker: string): string {
-  const t = (ticker ?? '').trim();
-
-  // Kur çiftleri kod olarak okunmaz; adı zaten kısa ve nettir ("Euro").
-  if (t.endsWith('=X') || t === '') return assetName;
-
-  const sade = t.includes(':') ? t.split(':').pop()! : t.replace(/\.IS$/i, '');
-
-  // Sadeleşmiş kod boş ya da anlamsız kısaysa ada güven.
-  return sade.length >= 2 ? sade : assetName;
-}
 
 function buildMessage(
   assetName: string,
@@ -196,72 +111,6 @@ function buildMessage(
     title: isBuy ? `▲ ${etiket} · yukarı yönlü` : `▼ ${etiket} · aşağı yönlü`,
     body: `${lehte}/${total} gösterge ${isBuy ? 'yukarı' : 'aşağı'} · ` +
       `güven %${yuzde}. ${disclaimer}`,
-  };
-}
-
-async function sendPush({
-  accessToken,
-  projectId,
-  token,
-  title,
-  body,
-  assetId,
-  badge,
-}: {
-  accessToken: string;
-  projectId: string;
-  token: string;
-  title: string;
-  body: string;
-  assetId: string;
-  /// iOS rozet sayısı — okunmamış (dismissed_at is null) sinyal adedi.
-  /// Sabit 1 göndermek Apple'ın beklentisine aykırı: rozet okunmamış öğe
-  /// sayısını yansıtmalı, yoksa 5 bildirim gelse de "1" görünür.
-  badge: number;
-}) {
-  const response = await fetch(
-    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      body: JSON.stringify({
-        message: {
-          token,
-          // GERÇEK notification payload — uygulama kapalıyken de gösterilir.
-          notification: { title, body },
-          data: { type: 'signal_alert', asset_id: assetId },
-          android: {
-            priority: 'high',
-            notification: {
-              channel_id: 'signal_channel',
-              sound: 'default',
-              // Marka görünümü. `icon` res adıdır (uzantısız) ve beyaz siluet
-              // + şeffaf zemin olmalı; Android yalnızca alfa kanalını kullanır.
-              icon: 'ic_stat_sandik',
-              color: '#F5A623',
-            },
-          },
-          apns: {
-            headers: { 'apns-priority': '10', 'apns-push-type': 'alert' },
-            payload: { aps: { sound: 'default', badge } },
-          },
-        },
-      }),
-    },
-  );
-
-  const rawText = await response.text();
-  if (response.ok) return { ok: true as const };
-  return {
-    ok: false as const,
-    rawText,
-    shouldDeleteToken:
-      response.status === 404 ||
-      rawText.includes('UNREGISTERED') ||
-      rawText.includes('registration-token-not-registered'),
   };
 }
 
@@ -440,90 +289,6 @@ export function shouldSendSignal(
   return false;
 }
 
-/// Aynı ürünün birden çok alım lot'unu TEK sinyal birimine indirger.
-///
-/// ## Neden gerekli
-/// `assets` bir **lot** tablosudur: aynı hisseyi iki kez alan kullanıcının
-/// iki ayrı satırı (iki ayrı `id`) olur. Uygulama bunları ekranda
-/// `positionKey` ile birleştirir, ama push tarafı birleştirmiyordu:
-/// döngü lot başına dönüyor, de-dup da `asset_id` ile anahtarlanıyordu
-/// (`signal_state` PK = `(user_id, asset_id)`). Sonuç: iki lot = iki
-/// bağımsız de-dup satırı, ikisi de diğerinden habersiz "bunu daha önce
-/// göndermedim" diyordu.
-///
-/// Üstelik iki lot aynı ticker'a ait olduğu için fiyat serisi de aynıydı
-/// (`histories.get(symbol)`) → aynı gösterge → aynı sinyal → aynı güven.
-/// Kullanıcı aynı saniyede birbirinin kopyası iki bildirim alıyordu.
-/// Belirtisi: "3 kez alım yaptığım varlık için 3 push geldi."
-///
-/// ## Anahtar neden `user_id|type|symbol`
-/// Sinyal ÜRETİMİ yalnızca çözümlenen fiyat sembolüne bakar; maliyet bazı,
-/// miktar ve alım tarihi analize hiç girmez. Dolayısıyla aynı sembolü
-/// paylaşan iki lot **zorunlu olarak** aynı sinyali üretir — birleştirme
-/// bilgi kaybetmez.
-///
-/// `positionKey`'den (`type|ticker|currency`) farklı olarak `currency`
-/// kullanılmaz: sunucu sorgusu o sütunu çekmiyor ve farklı para birimi
-/// aynı sembolü paylaşıyorsa analiz sonucu yine aynıdır (fiyat serisi tek).
-///
-/// `user_id` anahtarın PARÇASIDIR ve kaldırılmamalıdır: aynı hisseye sahip
-/// iki kullanıcı tek gruba düşerse yalnızca birine bildirim gider. Bu,
-/// ortaklık tarafındaki "farklı sahiplerin lot'ları asla tek havuzda
-/// toplanmaz" değişmezinin push tarafındaki karşılığıdır.
-///
-/// ## Temsilci seçimi
-/// Grubun en küçük `id`'li lot'u temsilcidir. Deterministik olması şart:
-/// temsilci `signal_state` satırının anahtarı ve push'un derin bağlantısı
-/// (`assetId`) olur. Tur başına değişseydi de-dup hafızası her turda başka
-/// satıra yazılır ve tekrar çift bildirim üretirdi.
-/// Cihaz başına TEK (en taze) token bırakır — `user_id → token[]`.
-///
-/// ## Neden gerekli
-/// Gönderim döngüsü kullanıcının HER token'ına ayrı push atar. Aynı fiziksel
-/// cihaz zamanla birden çok token üretir (FCM rotasyonu: yeniden kurulum,
-/// veri temizleme, uygulama güncellemesi) ve eski satırlar tabloda kalır —
-/// istemci onları yalnızca bellekteki `_currentToken` doluyken siliyordu,
-/// uygulama yeniden başlayınca o alan null olur. Sonuç: kullanıcı tek sinyal
-/// için aynı telefonda birden çok bildirim alır.
-///
-/// `collapseLotsToPositions` lot çoklanmasını çözer; bu fonksiyon CİHAZ
-/// çoklanmasını çözer. İkisi farklı katmanlardır, biri diğerinin yerine
-/// geçmez.
-///
-/// ## Gruplama anahtarı
-/// `device_id` varsa o kullanılır (istemcinin `shared_preferences`'ta tuttuğu
-/// kalıcı kimlik). Yoksa `platform`'a düşülür: eski sürüm istemciler ve
-/// migration öncesi satırlar `device_id` taşımaz, ama aynı kullanıcının aynı
-/// platformdaki satırları büyük olasılıkla aynı cihazdır.
-///
-/// En TAZE `updated_at` kazanır — FCM rotasyonda eskisini geçersiz kılar.
-export function dedupeTokensByDevice(
-  rows: {
-    token: string;
-    user_id: string;
-    device_id?: string | null;
-    platform?: string | null;
-    updated_at?: string | null;
-  }[],
-): { tokensByUser: Map<string, string[]>; skipped: number } {
-  const enTaze = new Map<string, { token: string; at: number; uid: string }>();
-  for (const r of rows) {
-    const dev = r.device_id ?? `platform:${r.platform ?? 'unknown'}`;
-    const key = `${r.user_id}|${dev}`;
-    const at = r.updated_at ? new Date(r.updated_at).getTime() : 0;
-    const mevcut = enTaze.get(key);
-    if (mevcut === undefined || at > mevcut.at) {
-      enTaze.set(key, { token: r.token, at, uid: r.user_id });
-    }
-  }
-  const tokensByUser = new Map<string, string[]>();
-  for (const v of enTaze.values()) {
-    const list = tokensByUser.get(v.uid) ?? [];
-    list.push(v.token);
-    tokensByUser.set(v.uid, list);
-  }
-  return { tokensByUser, skipped: rows.length - enTaze.size };
-}
 
 export function collapseLotsToPositions<T extends { id: string; user_id: string; type: string }>(
   assets: T[],
@@ -944,13 +709,16 @@ Deno.serve(async (request) => {
       } catch (_) { /* yut — rozet ikincil */ }
 
       for (const token of tokensByUser.get(asset.user_id) ?? []) {
-        const r = await sendPush({
+        const r = await sendFcmNotification({
           accessToken,
           projectId: fcmProjectId,
           token,
           title,
           body,
-          assetId: asset.id,
+          channelId: 'signal_channel',
+          data: { type: 'signal_alert', asset_id: asset.id },
+          // Sinyal acil: yüksek öncelik + APNs 10; rozet okunmamış sayısı.
+          priority: 'high',
           badge: unreadBadge,
         });
         if (r.ok) {
