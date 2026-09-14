@@ -1,0 +1,18 @@
+# Test etiketleri — tek kaynak.
+#
+# `gorsel`: hiçbir şey assert ETMEYEN, yalnızca `build/gorsel/` altına PNG
+# döken önizleme üreteçleri (`cubuk_gorsel_onizleme_test.dart`). Bu makinedeki
+# emülatörler Flutter'ı render edemediği için "doğru görünüyor mu" sorusunu
+# yanıtlamanın tek yolu bunlar (bkz. CLAUDE.md, yerel makine notları).
+#
+# **Neden varsayılanda KAPALI:** üreteç her karede tam bir sahne rasterize
+# ediyor ve 10 dakikalık test zaman aşımını aşıyor — yani açık bırakılırsa
+# CI'ı ve `tool/deploy_emulators.sh`'ı ASILI BIRAKIP kırar. Testin kendi
+# başlığı "CI'da koşmasın diye `gorsel` etiketi taşıyor" diyordu ama etiket
+# hiçbir yerde tanımlı değildi; bu dosya o eksiği kapatıyor.
+#
+# Elle koşmak için:  flutter test --tags gorsel
+tags:
+  gorsel:
+    # Yalnızca açıkça istendiğinde koşar.
+    skip: "görsel önizleme üreteci — elle koş: flutter test --tags gorsel"
