@@ -29,6 +29,10 @@ on:
         description: "Yalnızca plan (db push --dry-run, fonksiyon deploy atlanır)"
         type: boolean
         default: false
+      repair:
+        description: "Deftere 'uygulandı' işaretlenecek sürümler (SQL Editor'dan elle koşulanlar için; SQL KOŞMAZ)"
+        type: string
+        default: ""
 
 concurrency:
   group: supabase-deploy
@@ -59,6 +63,21 @@ jobs:
 
       - name: Projeye bağlan
         run: supabase link --project-ref "$PROJECT_REF"
+
+      # Defter onarımı — SQL KOŞMAZ, yalnızca `supabase_migrations` tablosuna
+      # "bu sürüm uygulandı" kaydı düşer.
+      #
+      # Neden gerekli: SQL Editor'dan ELLE koşulan migration deftere yazılmaz;
+      # CLI onu "uygulanmamış" görür ve her `db push` aynı dosyaları yeniden
+      # koşmaya çalışır. İdempotent yazıldıkları için genelde zararsızdır ama
+      # veri dokunan migration'ları (0058 tip düşürme, 0059 uygunluk kuralı)
+      # gereksiz yere tekrar koşturmak istemiyoruz.
+      #
+      # Onarım `db push`'tan ÖNCE koşar: defter düzelsin, push yalnızca
+      # gerçekten eksik olanı uygulasın.
+      - name: Migration defterini onar
+        if: ${{ inputs.repair != '' }}
+        run: supabase migration repair --status applied ${{ inputs.repair }}
 
       - name: Migration'lar (plan)
         if: ${{ inputs.migrations }}

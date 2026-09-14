@@ -87,7 +87,10 @@ else:
             idx = datetime.fromisoformat(row[0].replace('Z', '+00:00'))
             son = kabuk('git', 'log', '-1', '--format=%cI')
             if son:
-                commit = datetime.fromisoformat(son).astimezone(timezone.utc)
+                # UTC'de atılan commit'te (ör. cloud oturumu) git %cI 'Z'
+                # soneki döndürür; Python 3.10 fromisoformat bunu tanımaz.
+                commit = datetime.fromisoformat(
+                    son.replace('Z', '+00:00')).astimezone(timezone.utc)
                 if idx < commit:
                     fark = commit - idx
                     saat = int(fark.total_seconds() // 3600)
