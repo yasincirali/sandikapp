@@ -142,13 +142,50 @@ void main() {
       // TÜİK ayın 3'ünde yayımlar; içinde bulunulan ay tabloda hiç yoktur.
       // Bu olağan durum kapıya takılmamalı.
       InflationService.instance.seedForTest({
-        ay(2025, 9): 100.0,
+        ay(2025, 8): 100.0,
         ay(2026, 8): 140.0,
       });
       final r = await InflationService.instance
           .inflationForPeriod(365, now: DateTime(2026, 9, 14));
       expect(r, isNotNull);
       expect(r!, closeTo(40.0, 1e-9));
+    });
+
+    test('365 gün TAM 12 AY sayar — son açıklanmış aydan geriye', () async {
+      // Gerçek arıza (2026-09-14, ekran görüntüsüyle yakalandı): ana ekran
+      // şeridi "TÜFE %27" yazıyordu, TÜİK'in açıkladığı yıllık %31,51
+      // yerine. Sebep: pencere BUGÜNDEN 365 gün geriye gidip ay başına
+      // yuvarlanıyordu (2025-09-01) ve son açıklanmış ay 2026-08 olduğu
+      // için aralık 11 AY oluyordu — bir ay eksik.
+      //
+      // Doğrusu Ağustos 2025 → Ağustos 2026. Eylül satırı tabloda VAR ve
+      // yanlış hesap onu uç seçerdi; bu test ikisini ayırt ediyor.
+      InflationService.instance.seedForTest({
+        ay(2025, 8): 100.0,
+        ay(2025, 9): 103.0,
+        ay(2026, 8): 131.51,
+      });
+      final r = await InflationService.instance
+          .inflationForPeriod(365, now: DateTime(2026, 9, 14));
+      // 11 aylık (yanlış) hesap 27,68 verirdi; 12 aylık doğru hesap 31,51.
+      expect(r!, closeTo(31.51, 1e-9));
+    });
+
+    test('aySayisi gün → ay: 365→12, 180→6, 30→1', () async {
+      expect(InflationService.aySayisi(365), 12);
+      expect(InflationService.aySayisi(180), 6);
+      expect(InflationService.aySayisi(30), 1);
+      expect(InflationService.aySayisi(7), 1); // asgari bir ay
+    });
+
+    test('6A penceresi tam altı ay sayar', () async {
+      InflationService.instance.seedForTest({
+        ay(2026, 2): 100.0,
+        ay(2026, 8): 115.0,
+      });
+      final r = await InflationService.instance
+          .inflationForPeriod(180, now: DateTime(2026, 9, 14));
+      expect(r!, closeTo(15.0, 1e-9));
     });
 
     test('isStale — boş tablo bayat sayılır', () async {
@@ -185,12 +222,58 @@ void main() {
       // TÜİK bir ayın verisini ertesi ayın 3'ünde yayımlar; tabloda içinde
       // bulunulan ay YOKTUR. Hesap tablodaki en son aya dayanmalı.
       InflationService.instance.seedForTest({
-        ay(2025, 9): 100.0,
+        ay(2025, 8): 100.0,
         ay(2026, 8): 140.0,
       });
       final r = await InflationService.instance
           .inflationForPeriod(365, now: DateTime(2026, 9, 20));
       expect(r, closeTo(40.0, 1e-9));
+    });
+  });
+
+  group('monthlyInflation', () {
+    tearDown(() => InflationService.instance.resetForTest());
+
+    test('son açıklanmış ayın bir önceki aya göre değişimi', () async {
+      // Aylık özetin eşiği bu: TÜİK'in Ağustos 2026 için açıkladığı aylık
+      // TÜFE %1,84. Yıllık %31,51'i bir aylık pencereye uygulamak o ayı
+      // otomatik kayıp yazardı.
+      InflationService.instance.seedForTest({
+        ay(2026, 7): 100.0,
+        ay(2026, 8): 101.84,
+      });
+      final r = await InflationService.instance
+          .monthlyInflation(now: DateTime(2026, 9, 14));
+      expect(r!, closeTo(1.84, 1e-9));
+    });
+
+    test('önceki ay eksikse null — eksik veriyle tahmin yürütülmez', () async {
+      InflationService.instance.seedForTest({
+        ay(2026, 6): 100.0,
+        ay(2026, 8): 103.0,
+      });
+      expect(
+        await InflationService.instance
+            .monthlyInflation(now: DateTime(2026, 9, 14)),
+        isNull,
+      );
+    });
+
+    test('bayat seride null — durmuş endeksle aylık hesap yapılmaz', () async {
+      InflationService.instance.seedForTest({
+        ay(2025, 12): 100.0,
+        ay(2026, 1): 102.0,
+      });
+      expect(
+        await InflationService.instance
+            .monthlyInflation(now: DateTime(2026, 9, 14)),
+        isNull,
+      );
+    });
+
+    test('boş tabloda null', () async {
+      InflationService.instance.seedForTest(const {});
+      expect(await InflationService.instance.monthlyInflation(), isNull);
     });
   });
 }

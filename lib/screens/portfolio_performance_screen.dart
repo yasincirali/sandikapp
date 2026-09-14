@@ -4304,8 +4304,21 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     // pencerede enflasyon farkı tanımsız.
     if (widget.period == SummaryPeriod.gunluk) return;
 
-    final enf =
-        await InflationService.instance.inflationForPeriod(widget.period.days);
+    // 1A'da AYLIK enflasyon sorulur, yıllık değil.
+    //
+    // Yıllık TÜFE'yi bir aylık pencereye uygulamak portföyü haksız yere
+    // kötü gösterirdi: %31,5 yıllık enflasyonu bir ayın getirisinden
+    // düşmek o ayı otomatik kayıp yazar. `monthlyInflation` son açıklanmış
+    // ayın bir önceki aya göre değişimini verir ve kart o ayın gerçek
+    // eşiğiyle karşılaştırır.
+    //
+    // Diğer dönemlerde `inflationForPeriod` zaten gün sayısını aya çevirip
+    // son açıklanmış aydan geriye sayıyor.
+    final enf = widget.period == SummaryPeriod.birAy
+        ? await InflationService.instance.monthlyInflation()
+        : await InflationService.instance.inflationForPeriod(
+            widget.period.days,
+          );
 
     // `enf == null` üç sebepten olabilir; ekranın hangisi olduğunu bilmesi
     // gerekiyor:

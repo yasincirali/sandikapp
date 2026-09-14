@@ -144,10 +144,29 @@ class InflationService {
     return endeks.keys.reduce((a, b) => a.isAfter(b) ? a : b);
   }
 
+  /// Gün sayısını AY sayısına çevirir.
+  ///
+  /// 365 gün → 12 ay, 180 → 6, 30 → 1. Yuvarlama en yakına yapılır:
+  /// çağıranlar takvim dönemlerini gün cinsinden ifade ediyor
+  /// (`SummaryPeriod.days`) ve 365/30 = 12,17 gibi bir artık, aşağı
+  /// yuvarlansa pencereyi bir ay kısaltırdı.
+  static int aySayisi(int gun) {
+    final ay = (gun / 30.44).round();
+    return ay < 1 ? 1 : ay;
+  }
+
   /// Son [gun] gün için TÜFE değişimi. Endeks eksik ya da BAYATSA `null`.
   ///
-  /// Uçlar AY BAŞINA yuvarlandığı için gün sayısı yaklaşıktır; TÜİK aylık
-  /// yayımladığından bundan daha ince bir çözünürlük mümkün değil.
+  /// **Pencere SON AÇIKLANMIŞ AYDAN geriye sayılır, bugünden değil.**
+  /// Ölçüldü (2026-09-14): bugünden 365 gün geriye gidip ay başına
+  /// yuvarlamak 2025-09-01 veriyordu; son açıklanmış ay 2026-08 olduğu
+  /// için aralık 11 AY oluyordu ve ana ekran şeridi TÜFE'yi %27 diye
+  /// yazıyordu — TÜİK'in açıkladığı yıllık %31,51 yerine. Kullanıcı iki
+  /// sayıyı karşılaştırıp uygulamaya güvenmeyi bırakır.
+  ///
+  /// Doğrusu: 365 gün = 12 ay ve 12 ay geriye sayılacak uç, bugünün ayı
+  /// değil son açıklanmış aydır. TÜİK "yıllık enflasyon"u da böyle kurar
+  /// (Ağustos 2025 → Ağustos 2026).
   Future<double?> inflationForPeriod(int gun, {DateTime? now}) async {
     final endeks = await _yukle();
     if (endeks.isEmpty) return null;
@@ -164,7 +183,32 @@ class InflationService {
         (bugun.year - sonAy.year) * 12 + (bugun.month - sonAy.month);
     if (gecenAy > bayatlikEsigiAy) return null;
 
-    final baslangic = ayBasi(bugun.subtract(Duration(days: gun)));
+    // Uç, son açıklanmış aydan geriye sayılır (yukarıdaki nota bakın).
+    final baslangic = DateTime(sonAy.year, sonAy.month - aySayisi(gun), 1);
     return changePct(endeks, baslangic, sonAy);
+  }
+
+  /// Son açıklanmış ayın AYLIK TÜFE değişimi (bir önceki aya göre).
+  ///
+  /// Aylık özetin sorusu yıllıktan farklı: "bu ay eridim mi". Yıllık TÜFE
+  /// bir aylık pencereye uygulanınca portföyü haksız yere kötü gösterir —
+  /// %31,5'lik yıllık enflasyonu bir ayın getirisinden düşmek, o ayı
+  /// otomatik olarak kayıp yazar.
+  ///
+  /// Ardışık iki ay gerekir; biri eksikse `null` (eksik veriyle tahmin
+  /// yürütmeme disiplini, bkz. [changePct]). Bayatlık kapısı burada da
+  /// geçerli.
+  Future<double?> monthlyInflation({DateTime? now}) async {
+    final endeks = await _yukle();
+    if (endeks.isEmpty) return null;
+    final bugun = now ?? DateTime.now();
+
+    final sonAy = endeks.keys.reduce((a, b) => a.isAfter(b) ? a : b);
+    final gecenAy =
+        (bugun.year - sonAy.year) * 12 + (bugun.month - sonAy.month);
+    if (gecenAy > bayatlikEsigiAy) return null;
+
+    final oncekiAy = DateTime(sonAy.year, sonAy.month - 1, 1);
+    return changePct(endeks, oncekiAy, sonAy);
   }
 }
