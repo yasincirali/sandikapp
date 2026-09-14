@@ -1,0 +1,83 @@
+# Supabase migration + Edge Function dağıtımı.
+#
+# Neden bir workflow: Claude Code web ortamının Supabase API'sine ağ erişimi
+# yok ve CLI/kimlik bilgisi taşımıyor; migration'lar "senin elinden" geçmek
+# zorunda kalıyordu. Secret'lar bir kez GitHub'a girilince dağıtım buradan
+# tetiklenir (Actions sekmesi → Run workflow, ya da Claude'un actions API'si).
+#
+# Otomatik tetik BİLİNÇLİ olarak yok: `main`'e her push'ta canlı şemaya
+# dokunmak istemiyoruz; migration'ı ne zaman koşacağına sen karar verirsin.
+#
+# Gerekli secret'lar (Settings → Secrets and variables → Actions):
+#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens
+#   SUPABASE_PROJECT_REF   — proje URL'sindeki <ref> (https://<ref>.supabase.co)
+#   SUPABASE_DB_PASSWORD   — Project Settings → Database → Database password
+name: Supabase deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      migrations:
+        description: "supabase db push (migration'ları koş)"
+        type: boolean
+        default: true
+      functions:
+        description: "Deploy edilecek fonksiyonlar: 'all', 'none' ya da boşlukla ayrılmış liste"
+        type: string
+        default: all
+      dry_run:
+        description: "Yalnızca plan (db push --dry-run, fonksiyon deploy atlanır)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secret kontrolü (fail-fast, sessiz atlama yok)
+        run: |
+          missing=0
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD PROJECT_REF; do
+            if [ -z "${!v}" ]; then echo "::error::$v secret'ı eksik"; missing=1; fi
+          done
+          [ "$missing" = 0 ]
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Projeye bağlan
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: Migration'lar (plan)
+        if: ${{ inputs.migrations }}
+        run: supabase db push --dry-run
+
+      - name: Migration'lar (uygula)
+        if: ${{ inputs.migrations && !inputs.dry_run }}
+        run: supabase db push
+
+      - name: Edge Function'lar
+        if: ${{ inputs.functions != 'none' && !inputs.dry_run }}
+        run: |
+          if [ "${{ inputs.functions }}" = "all" ]; then
+            list=$(ls -d supabase/functions/*/ | xargs -n1 basename | grep -v '^_shared$')
+          else
+            list="${{ inputs.functions }}"
+          fi
+          for f in $list; do
+            echo "::group::deploy $f"
+            supabase functions deploy "$f" --project-ref "$PROJECT_REF"
+            echo "::endgroup::"
+          done
