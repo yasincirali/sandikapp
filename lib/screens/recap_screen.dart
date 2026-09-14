@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -12,6 +11,7 @@ import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../widgets/share_card.dart';
 
 /// "sandık Özeti" — yıllık geriye bakış.
 ///
@@ -138,11 +138,23 @@ class _RecapScreenState extends State<RecapScreen> {
     return out;
   }
 
-  Future<void> _paylas() async {
-    final metin = RecapService.shareText(widget.data, year: widget.year);
-    unawaited(AnalyticsService.instance
-        .logRecapShared(period: widget.data.period, channel: 'system_sheet'));
-    await Share.share(metin, subject: 'sandık Özetim ${widget.year}');
+  /// Önizlemeli paylaşım — dönem özetiyle aynı kart (`showShareSheet`).
+  Future<void> _paylas() {
+    final d = widget.data;
+    final metin = RecapService.shareText(d, year: widget.year);
+    return showShareSheet(
+      context,
+      data: ShareCardData(
+        baslik: 'Özetim ${widget.year}',
+        degisimPct: d.changePct,
+        karakter: d.character,
+        enflasyonPuan: d.inflationSpread,
+        takipGunu: d.trackedDays,
+      ),
+      metin: metin,
+      subject: 'sandık Özetim ${widget.year}',
+      analyticsPeriod: d.period,
+    );
   }
 
   @override

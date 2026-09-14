@@ -13,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
@@ -28,6 +27,7 @@ import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
 import '../widgets/modern_tab_selector.dart';
+import '../widgets/share_card.dart';
 import '../widgets/sandik_error_view.dart';
 import '../services/analytics_service.dart';
 import '../services/daily_summary.dart';
@@ -4512,7 +4512,9 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       enSabirliGun: widget.enSabirliGun,
       percentile: _dilim?.percentile,
       percentileKatilimci: _dilim?.total,
-      onShare: paylasimMetni == null ? null : () => _paylas(paylasimMetni),
+      onShare: paylasimMetni == null
+          ? null
+          : () => _paylas(paylasimMetni, gosterilen),
       katkiKarti: katki == null
           ? null
           : ContributionKarti(
@@ -4530,13 +4532,24 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     );
   }
 
-  Future<void> _paylas(String metin) async {
-    unawaited(AnalyticsService.instance.logRecapShared(
-      period: widget.period.name,
-      channel: 'system_sheet',
-    ));
-    await Share.share(metin,
-        subject: 'sandık · ${PeriodSummaryService.donemAdi(widget.period)}');
+  /// Önizlemeli paylaşım (bkz. `showShareSheet`). Kart metinle AYNI
+  /// kaynaktan kurulur (`gosterilen`: enflasyon bağlanmış özet) — ikisi
+  /// ayrışmasın. Analytics sayfanın içinde, seçilen kanala göre yazılır.
+  Future<void> _paylas(String metin, PeriodSummary gosterilen) {
+    return showShareSheet(
+      context,
+      data: ShareCardData(
+        baslik: PeriodSummaryService.donemAdi(widget.period),
+        degisimPct: gosterilen.getiriPct,
+        degisimEtiketi: 'Piyasa getirim',
+        karakter: widget.karakter,
+        enflasyonPuan: gosterilen.tufeFarki,
+        percentile: _dilim?.percentile,
+      ),
+      metin: metin,
+      subject: 'sandık · ${PeriodSummaryService.donemAdi(widget.period)}',
+      analyticsPeriod: widget.period.name,
+    );
   }
 
   /// Özetin enflasyon alanları doldurulmuş kopyası.
