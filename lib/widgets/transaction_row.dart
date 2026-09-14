@@ -245,7 +245,7 @@ class TransactionRow extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       child: Text(
                         hideBalance
-                            ? '$sign${baz.sembol}••••'
+                            ? '$sign${baz.gizliTutar}'
                             : '$sign${tryFmt.format(txValueTRY)}',
                         maxLines: 1,
                         // İşlem tutarı — alt alta listelenir, tabular figür.

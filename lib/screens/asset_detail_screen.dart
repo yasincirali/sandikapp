@@ -1384,13 +1384,26 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// gününe kurulu; başka güne ait noktalar ya `x < 0` ile atlanır ya da
   /// sağa taşardı. O durumda seri BOŞ döner ve kullanıcıya söylenir —
   /// yanlış güne ait bir çizgi çizmekten iyidir.
-  Future<Map<int, double>> _karsilastirmaSerisi(Asset asset, int days) {
+  Future<Map<int, double>> _karsilastirmaSerisi(Asset asset, int days) async {
     if (days != 0) {
       return HistoryService.instance.getPortfolioHistory([asset], days);
     }
-    return HistoryService.instance
-        .getPortfolioHistoryHourlyBreakdown([asset], 24)
-        .then((b) {
+    // Ana serinin future'ı ŞİMDİ yakalanır: `_selectPeriod` ikisini aynı
+    // `setState` içinde başlatıyor ve alan sonra değişebilir.
+    final anaSeri = _historyFuture;
+    final b = await HistoryService.instance
+        .getPortfolioHistoryHourlyBreakdown([asset], 24);
+    // `_gunIciBaslangic` ANA seri çözülünce yazılıyor. Karşılaştırma önce
+    // dönerse alan ya boş (ilk seçim) ya da önceki seansın günü olur —
+    // ikisinde de kapı yanlış karar verir ve başka güne ait noktalar
+    // eksene sızar. Bu yüzden önce ana seri beklenir.
+    try {
+      await anaSeri;
+    } catch (_) {
+      // Ana seri düştüyse karşılaştırmayı da çizmeyiz: eksen zaten yok.
+      return const <int, double>{};
+    }
+    {
       final anaGun = _gunIciBaslangic;
       if (anaGun != null && b.seansGunu != null && b.seansGunu != anaGun) {
         if (mounted) {
@@ -1403,8 +1416,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         }
         return const <int, double>{};
       }
-      return b.total;
-    });
+    }
+    return b.total;
   }
 
   /// Seçili sekme gün içi mi?

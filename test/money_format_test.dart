@@ -64,6 +64,14 @@ void main() {
     });
   });
 
+  test('gizli bakiye maskesi sembolle AYNI tarafta', () {
+    // Gram altında sembol sonek (`3,4 gr`); maske her zaman ön ekse
+    // `gr••••` gibi bir şey çıkıyordu (2026-09-14 incelemesi).
+    expect(const BazPara.lira().gizliTutar, '₺••••');
+    expect(const BazPara(BaseCurrency.usd, 40).gizliTutar, '\$••••');
+    expect(const BazPara(BaseCurrency.gold, 5000).gizliTutar, '•••• gr');
+  });
+
   test('fromIndex bilinmeyen değerde ₺', () {
     expect(BaseCurrency.fromIndex(-1), BaseCurrency.try_);
     expect(BaseCurrency.fromIndex(99), BaseCurrency.try_);

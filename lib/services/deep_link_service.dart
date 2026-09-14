@@ -40,18 +40,21 @@ class DeepLinkService {
   final void Function(String assetId) _openAsset;
   StreamSubscription<Uri>? _sub;
 
+  /// Köprüyü kurar.
+  ///
+  /// **Yalnızca akışa abone olunur; `getInitialLink()` ÇAĞRILMAZ.**
+  /// (2026-09-14 incelemesi.) Eklentinin iki platformdaki kaynağı da aynı:
+  /// `getInitialLink` yanıtı döndürürken `initialLinkSent` bayrağını
+  /// KURMUYOR, `onListen` ise bayrak kurulu değilken soğuk açılış
+  /// bağlantısını ilk aboneye yeniden veriyor
+  /// (`AppLinksPlugin.java:80/130`, `AppLinksIosPlugin.swift:68/238`).
+  /// İkisini birden kullanmak `sandik://asset/<id>` ile açılışta varlık
+  /// ekranını ÜST ÜSTE İKİ KEZ push ediyordu. Paketin README'si de tek
+  /// yol olarak akışı gösteriyor ("Subscribe to all events (initial link
+  /// and further)").
   Future<void> init() async {
     if (_sub != null) return;
     final links = AppLinks();
-    try {
-      // Uygulama bu bağlantıyla AÇILDIYSA (soğuk başlangıç).
-      final ilk = await links.getInitialLink();
-      if (ilk != null) handle(ilk);
-    } catch (e, st) {
-      // Platform kanalı bazı cihazlarda ilk çağrıda hata verebiliyor;
-      // köprü kurulamadıysa uygulama yine normal açılır.
-      CrashReporter.report(e, st, reason: 'deep_link_initial');
-    }
     _sub = links.uriLinkStream.listen(
       handle,
       onError: (Object e, StackTrace st) =>

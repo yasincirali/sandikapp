@@ -223,11 +223,14 @@ class NotificationService {
       if (prefs.getBool(PrefKeys.iosPushPermissionLast) == durum.isEnabled) {
         return;
       }
-      await prefs.setBool(PrefKeys.iosPushPermissionLast, durum.isEnabled);
+      // Damga ÖNCE yazılırsa ve kayıt düşerse olay kalıcı olarak kaybolur:
+      // bir sonraki açılışta damga zaten yeni değerde olduğu için yukarıdaki
+      // kapı erken döner. Önce kaydet, sonra damgala.
       await RetentionTracker.instance.recordPushPermission(
         granted: durum.isEnabled,
         promptContext: 'ios_check',
       );
+      await prefs.setBool(PrefKeys.iosPushPermissionLast, durum.isEnabled);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'ios_push_permission_check');
     }

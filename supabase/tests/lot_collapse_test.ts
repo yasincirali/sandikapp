@@ -13,6 +13,7 @@ import { assertEquals } from 'jsr:@std/assert@1';
 import {
   collapseLotsToPositions,
   positionKeyOf,
+  signalStateKey,
 } from '../functions/analyze-signals/index.ts';
 
 type Lot = { id: string; user_id: string; type: string; ticker: string };
@@ -213,21 +214,37 @@ Deno.test("positionKeyOf: ticker'sız lot kendi id'sine düşer", () => {
   assertEquals(positionKeyOf({ id: 'lot-8', type: 'diger', ticker: null }), 'lot-8');
 });
 
-Deno.test("de-dup hafızası lot id'siyle DEĞİL pozisyon anahtarıyla okunup yazılıyor", async () => {
+Deno.test('de-dup anahtarı kullanıcıyı İÇERİR — pozisyon anahtarı ortaktır', () => {
+  // 2026-09-14 incelemesi: pozisyon anahtarı (`pos:hisse|THYAO.IS`) aynı
+  // hisseyi tutan HERKESTE aynı. Bellek içi harita yalnızca onunla
+  // anahtarlanırsa bir kullanıcının durumu ötekini ezer.
+  const pos = positionKeyOf({ id: 'lot-1', type: 'hisse', ticker: 'THYAO.IS' });
+  assertEquals(signalStateKey('u1', pos) === signalStateKey('u2', pos), false);
+  assertEquals(signalStateKey('u1', pos), 'u1|pos:hisse|THYAO.IS');
+  // Aynı kullanıcının iki lot'u yine TEK anahtara düşer (asıl indirgeme).
+  const pos2 = positionKeyOf({ id: 'lot-2', type: 'hisse', ticker: 'thyao.is' });
+  assertEquals(signalStateKey('u1', pos2), signalStateKey('u1', pos));
+});
+
+Deno.test("de-dup hafızası lot id'siyle DEĞİL (kullanıcı, pozisyon) ile okunup yazılıyor", async () => {
   // Yukarıdaki wiring testiyle aynı gerekçe: fonksiyon doğru olsa da
-  // çağrı yerinde `asset.id`'ye dönülürse hata sessizce geri gelir.
+  // çağrı yerinde `asset.id`'ye ya da çıplak `posKey`'e dönülürse hata
+  // sessizce geri gelir.
   const src = await Deno.readTextFile(
     new URL('../functions/analyze-signals/index.ts', import.meta.url),
   );
   assertEquals(src.includes('const posKey = positionKeyOf(asset);'), true);
-  assertEquals(src.includes('lastSignalOf.get(posKey)'), true);
-  assertEquals(src.includes('sentSignalOf.set(posKey,'), true);
+  assertEquals(src.includes('signalStateKey(asset.user_id, posKey)'), true);
+  // Okuma sorgusu user_id'yi de çekmeli; yoksa anahtar kurulamaz.
+  assertEquals(src.includes("select('user_id, asset_id, signal"), true);
   for (const kotu of [
     'lastSignalOf.get(asset.id)',
     'lastConfidenceOf.get(asset.id)',
     'lastNotifiedOf.get(asset.id)',
     'sentSignalOf.set(asset.id',
+    'lastSignalOf.get(posKey)',
+    'sentSignalOf.set(posKey,',
   ]) {
-    assertEquals(src.includes(kotu), false, `${kotu} geri gelmiş — de-dup yine lot başına`);
+    assertEquals(src.includes(kotu), false, `${kotu} geri gelmiş — de-dup anahtarı eksik`);
   }
 });

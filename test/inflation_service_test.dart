@@ -8,6 +8,7 @@ import 'package:portfoy_takip/services/inflation_service.dart';
 /// Yanlış bir hesap, rozeti göstermemekten kötüdür — kullanıcı sayının
 /// tutmadığını görür ve uygulamanın geri kalanına da güvenmez.
 void main() {
+  _pencereTestleri();
   DateTime ay(int y, int m) => DateTime(y, m, 1);
 
   group('ayBasi', () {
@@ -274,6 +275,62 @@ void main() {
     test('boş tabloda null', () async {
       InflationService.instance.seedForTest(const {});
       expect(await InflationService.instance.monthlyInflation(), isNull);
+    });
+  });
+}
+
+/// TÜFE'nin karşılaştırma penceresine oturtulması (2026-09-14 incelemesi).
+///
+/// Kapsanan hata: 1A sekmesinde pencere İÇİNDE tek endeks noktası kalıyor,
+/// taşınan son noktayla birlikte iki EŞİT değer üretiyordu. `normalizeSeries`
+/// bunu düz %0 çizgisine çeviriyor, kullanıcı "bir ayda enflasyon sıfır,
+/// portföyüm onu tümüyle yendi" diye okuyordu.
+void _pencereTestleri() {
+  final endeks = <DateTime, double>{
+    DateTime(2026, 6): 100.0,
+    DateTime(2026, 7): 102.0,
+    DateTime(2026, 8): 104.0,
+    DateTime(2026, 9): 106.0,
+  };
+  final simdi = DateTime(2026, 9, 14);
+
+  group('InflationService.pencereSerisi', () {
+    test('1A: taban pencereden ÖNCEKİ ay — düz çizgi değil', () {
+      final out = InflationService.pencereSerisi(endeks, simdi, 30);
+      final degerler = (out.keys.toList()..sort()).map((k) => out[k]!).toList();
+      expect(degerler.first, 104.0,
+          reason: '15 Ağustos\'ta yürürlükteki endeks Ağustos\'unkidir');
+      expect(degerler.last, 106.0);
+      expect(degerler.toSet().length, greaterThan(1),
+          reason: 'tek değerli seri %0 düz çizgi demek');
+    });
+
+    test('taban noktası pencere BAŞINA çakılır — eksen geriye uzamaz', () {
+      final out = InflationService.pencereSerisi(endeks, simdi, 30);
+      final ilk = (out.keys.toList()..sort()).first;
+      expect(ilk, simdi.subtract(const Duration(days: 30)).millisecondsSinceEpoch);
+    });
+
+    test('pencerede hiç açıklama yoksa boş — 1H aylık gösterge çizmez', () {
+      expect(InflationService.pencereSerisi(endeks, DateTime(2026, 9, 20), 7),
+          isEmpty);
+    });
+
+    test('son açıklanan ay şimdiye kadar taşınır, ara gün üretilmez', () {
+      final out = InflationService.pencereSerisi(endeks, simdi, 120);
+      expect(out[simdi.millisecondsSinceEpoch], 106.0);
+      // Haziran…Eylül dört ay + taban + şimdi; ara gün yok.
+      expect(out.length, lessThanOrEqualTo(6));
+    });
+
+    test('endeks boşsa boş döner', () {
+      expect(InflationService.pencereSerisi({}, simdi, 30), isEmpty);
+    });
+
+    test('tabandan öncesi yoksa yalnızca pencere içi noktalar', () {
+      final tek = {DateTime(2026, 9): 106.0};
+      final out = InflationService.pencereSerisi(tek, simdi, 30);
+      expect(out.values.toSet(), {106.0});
     });
   });
 }
