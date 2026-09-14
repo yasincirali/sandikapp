@@ -24,6 +24,8 @@ import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
 import '../providers/preferences_provider.dart';
 import '../widgets/fullscreen_chart_route.dart';
+import '../widgets/chart_fullscreen_chip.dart';
+import '../widgets/transaction_segment.dart';
 import 'signal_settings_screen.dart';
 import '../models/signal_alert.dart';
 import '../providers/signal_provider.dart';
@@ -1169,24 +1171,6 @@ class SinyalDagilimi extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-class TransactionSegment {
-  final List<FlSpot> spots;
-  final Color lineColor;
-  final Color areaGradientStart;
-  final Color areaGradientEnd;
-  final double thickness;
-  final bool dashed;
-
-  TransactionSegment({
-    required this.spots,
-    required this.lineColor,
-    required this.areaGradientStart,
-    required this.areaGradientEnd,
-    required this.thickness,
-    this.dashed = false,
-  });
-}
-
 // ── Widget ───────────────────────────────────────────────────────────────────
 
 class AssetDetailScreen extends ConsumerStatefulWidget {
@@ -1849,7 +1833,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // Normalize base: aktif segmentin ilk noktası. Bunun
                     // altında ana varlığın Y'leri (y / base) * 100 → % olur.
                     final rawActiveForBase = rawSegments.firstWhere(
-                      (s) => !s.dashed && s.spots.isNotEmpty,
+                      (s) => !s.piyasaKapali && s.spots.isNotEmpty,
                       orElse: () => TransactionSegment(
                         spots: const [],
                         lineColor: context.c.amberText,
@@ -1888,14 +1872,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   areaGradientStart: s.areaGradientStart,
                                   areaGradientEnd: s.areaGradientEnd,
                                   thickness: s.thickness,
-                                  dashed: s.dashed,
+                                  piyasaKapali: s.piyasaKapali,
                                 ))
                             .toList()
                         : rawSegments;
 
                     // Aktif segmenti bul (kesikli olmayan, yani alım sonrası)
                     final activeSeg = segments.firstWhere(
-                      (s) => !s.dashed && s.spots.isNotEmpty,
+                      (s) => !s.piyasaKapali && s.spots.isNotEmpty,
                       orElse: () => TransactionSegment(
                         spots: const [],
                         lineColor: context.c.amberText,
@@ -1922,7 +1906,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       // MA20 her zaman ham fiyat serisinden hesaplanır;
                       // sonra grafiğe koyulurken log domain'e alınır.
                       final rawActive = rawSegments.firstWhere(
-                        (s) => !s.dashed && s.spots.isNotEmpty,
+                        (s) => !s.piyasaKapali && s.spots.isNotEmpty,
                         orElse: () => TransactionSegment(
                           spots: const [],
                           lineColor: context.c.amberText,
@@ -2014,7 +1998,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     final startMidnight = DateTime(
                         startDate.year, startDate.month, startDate.day);
                     final primarySpots = segments
-                        .firstWhere((s) => !s.dashed && s.spots.isNotEmpty,
+                        .firstWhere((s) => !s.piyasaKapali && s.spots.isNotEmpty,
                             orElse: () => TransactionSegment(
                                   spots: const [],
                                   lineColor: context.c.amberText,
@@ -2215,7 +2199,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               },
                             ),
                             const SizedBox(width: 6),
-                            _FullscreenChip(
+                            ChartFullscreenChip(
                               onTap: () {
                                 FullscreenChartRoute.open(
                                   context,
@@ -2660,18 +2644,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 final periodDays = _periods[_selectedPeriodIdx].days;
                                 final baseWidth =
                                     donemCizgiKalinligi(periodDays);
-                                final effective = seg.dashed ? seg.thickness : baseWidth;
+                                final effective = seg.piyasaKapali ? seg.thickness : baseWidth;
                                 return LineChartBarData(
                                     spots: seg.spots,
                                     isCurved: false,
                                     color: seg.lineColor,
                                     barWidth: effective,
                                     isStrokeCapRound: true,
-                                    dashArray: seg.dashed ? const [4, 4] : null,
+                                    dashArray: seg.piyasaKapali ? const [4, 4] : null,
                                     dotData: FlDotData(
-                                      show: !seg.dashed,
+                                      show: !seg.piyasaKapali,
                                       checkToShowDot: (spot, barData) {
-                                        if (seg.dashed) return false;
+                                        if (seg.piyasaKapali) return false;
                                         if (anchorSpot != null &&
                                             spot.x == anchorSpot.x &&
                                             spot.y == anchorSpot.y) {
@@ -2741,7 +2725,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     belowBarData: BarAreaData(
                                       show: true,
                                       gradient: LinearGradient(
-                                        colors: seg.dashed
+                                        colors: seg.piyasaKapali
                                             ? [
                                                 seg.areaGradientStart,
                                                 seg.areaGradientEnd,
@@ -2753,7 +2737,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                                     .withValues(alpha: 0.06),
                                                 Colors.transparent,
                                               ],
-                                        stops: seg.dashed
+                                        stops: seg.piyasaKapali
                                             ? null
                                             : const [0.0, 0.5, 1.0],
                                         begin: Alignment.topCenter,
@@ -3208,37 +3192,6 @@ class _PnlSummaryStrip extends StatelessWidget {
 }
 
 /// Fullscreen landscape moduna geçiren küçük ikon buton.
-class _FullscreenChip extends StatelessWidget {
-  final VoidCallback onTap;
-  const _FullscreenChip({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-          decoration: BoxDecoration(
-            color: context.c.overlay,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(
-              color: context.c.overlay,
-            ),
-          ),
-          child: Icon(
-            Icons.fullscreen_rounded,
-            size: 16,
-            color: context.c.text58,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Grafik üzerine çizilen göstergeleri açıp kapatan küçük toggle chip.
 class _OverlayChip extends StatelessWidget {
   final String label;

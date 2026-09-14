@@ -46,6 +46,8 @@ import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/zoomable_chart.dart';
 import '../models/grafik_tipi.dart';
 import '../widgets/fullscreen_chart_route.dart';
+import '../widgets/chart_fullscreen_chip.dart';
+import '../widgets/transaction_segment.dart';
 import '../widgets/grafik_tipi_secici.dart';
 import '../providers/preferences_provider.dart' show leaderboardOptInProvider;
 import 'leaderboard_screen.dart';
@@ -1287,7 +1289,7 @@ class _PortfolioPerformanceScreenState
                     ),
                     const SizedBox(width: 6),
                   ],
-                  _PortfolioFullscreenChip(
+                  ChartFullscreenChip(
                     onTap: () {
                       FullscreenChartRoute.open(
                         context,
@@ -4055,33 +4057,6 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-class TransactionSegment {
-  final List<FlSpot> spots;
-  final Color lineColor;
-  final Color areaGradientStart;
-  final Color areaGradientEnd;
-  final double thickness;
-
-  /// Bu segment piyasa KAPALIYKEN taşınan son fiyat mı?
-  ///
-  /// Hafta sonu gün içi grafiği Cuma kapanışını bugüne kadar uzatıyor
-  /// (bkz. `HistoryService.gunIciSagUc`). O kuyruk gerçek işlem değildir:
-  /// tek bir fiyatın yayılmasıdır. Düz çizgi olarak çizilirse "fiyat hiç
-  /// oynamadı" diye okunur — oysa borsa kapalıydı.
-  ///
-  /// `true` olduğunda çizgi GRİ ve KESİKLİ çizilir, altındaki alan
-  /// doldurulmaz. Kullanıcı isteği (2026-09-12): "cmt ve pazar günü için
-  /// piyasa kapalı ibaresi olup gri şekilde çizilecek."
-  final bool piyasaKapali;
-
-  TransactionSegment(
-      {required this.spots,
-      required this.lineColor,
-      required this.areaGradientStart,
-      required this.areaGradientEnd,
-      required this.thickness,
-      this.piyasaKapali = false});
-}
 
 /// Yarış (leaderboard) ekranını açan küçük ikon buton — grafik container
 /// üstünde, fullscreen chip'inin solunda. Opt-in ve partner varsa gösterilir.
@@ -4119,36 +4094,6 @@ class _LeaderboardChip extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Portfolio ekranı grafik container'ının üstündeki "genişlet" ikon butonu.
-class _PortfolioFullscreenChip extends StatelessWidget {
-  final VoidCallback onTap;
-  const _PortfolioFullscreenChip({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-          decoration: BoxDecoration(
-            color: context.c.overlay,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(color: context.c.hairline),
-          ),
-          child: Icon(
-            Icons.fullscreen_rounded,
-            size: 16,
-            color: context.c.text58,
           ),
         ),
       ),

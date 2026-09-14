@@ -48,7 +48,13 @@ void main() {
 
   group('çizim — kuyruk AYIRT EDİLİR', () {
     test('segment `piyasaKapali` bayrağı taşır', () {
-      expect(ekran.contains('final bool piyasaKapali'), isTrue);
+      // 2026-09-14: `TransactionSegment` iki ekranın ortak modeli oldu
+      // (`widgets/transaction_segment.dart`); bayrak artık orada.
+      final segment = File('lib/widgets/transaction_segment.dart')
+          .readAsStringSync();
+      expect(segment.contains('final bool piyasaKapali'), isTrue);
+      expect(ekran.contains("import '../widgets/transaction_segment.dart'"),
+          isTrue);
     });
 
     test('kuyruk KESİKLİ çizilir', () {
