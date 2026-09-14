@@ -65,6 +65,9 @@ ios/ExportOptions.plist
 # Local Android SDK config
 android/local.properties
 
+# Kotlin derleyici oturum dosyaları (AGP 8.x build artefaktı)
+android/.kotlin/
+
 # Database files — never commit (sensitive data)
 *.db
 db_*.db

@@ -64,8 +64,8 @@ void main() {
       expect(varsayilan('paywall_enabled'), 'false');
     });
 
-    test('deposits_enabled hâlâ kapalı — feature stabilize değil', () {
-      expect(varsayilan('deposits_enabled'), 'false');
+    test('deposits_enabled artık yok — vadeli mevduat koddan çıkarıldı', () {
+      expect(varsayilan('deposits_enabled'), isNull);
     });
   });
 

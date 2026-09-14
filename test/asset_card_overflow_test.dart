@@ -14,7 +14,7 @@ import 'package:portfoy_takip/screens/portfolio_screen.dart';
 /// `_AssetCard` portfolio_screen'e private ve sekiz iç içe yardımcıya bağlı
 /// (`_AssetCardMetrics`, `_AssetLeadingIcon`, `_AssetDetailsPanel`,
 /// `_GainLossLine`, `_ExpandChevron`, `_DetailItem`, `_rowAction`,
-/// `_DepositDetailsPanel`). Ayrı widget'a çıkarmak "dev ekranları parçala"
+/// `_DetailItem`). Ayrı widget'a çıkarmak "dev ekranları parçala"
 /// borcunun parçası ve TECHNICAL_DEBT.md'de bilinçli olarak ertelendi.
 ///
 /// Bu test o refactor'ı BEKLEMEDEN kapsama alır: `PortfolioScreen`'i gerçek

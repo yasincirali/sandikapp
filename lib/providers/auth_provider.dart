@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
+import '../services/social_auth_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_push_service.dart';
 import '../services/supabase_service.dart';
@@ -27,6 +28,22 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     );
     if (state.hasValue && state.valueOrNull != null) {
       AnalyticsService.instance.logLogin(method: 'email');
+    }
+  }
+
+  /// Apple / Google ile giriş. Kullanıcı sağlayıcı ekranında vazgeçerse
+  /// state'e dokunulmaz — hata da gösterilmez.
+  Future<void> loginWithSocial(SocialProvider provider) async {
+    final previous = state;
+    state = const AsyncLoading();
+    try {
+      final user = await AuthService.instance.loginWithSocial(provider);
+      state = AsyncData(user);
+      AnalyticsService.instance.logLogin(method: provider.name);
+    } on SocialSignInCancelled {
+      state = previous;
+    } catch (e, st) {
+      state = AsyncError(e, st);
     }
   }
 
@@ -75,7 +92,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
 
   /// Hesabı Edge Function üzerinden kalıcı olarak siler.
   /// Başarılıysa state'i null'a çeker → AuthGate LoginScreen'e döner.
-  Future<void> deleteAccount({required String password}) async {
+  Future<void> deleteAccount({String? password}) async {
     await RemotePushService.instance.stop();
     await AuthService.instance.deleteAccount(password: password);
     DisclaimerService.instance.clearCache();

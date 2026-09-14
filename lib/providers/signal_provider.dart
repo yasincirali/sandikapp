@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
-import '../models/asset_type.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../services/analytics_service.dart';
@@ -102,8 +101,6 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
     final inserted = <SignalAlert>[];
 
     for (final asset in acikVarliklar) {
-      // Vadeli mevduatın teknik göstergesi yoktur — sinyal üretmez.
-      if (asset.type == AssetType.mevduat) continue;
       final enabledIds = indicatorPrefs.forType(asset.type);
       if (enabledIds.isEmpty) continue;
 

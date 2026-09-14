@@ -3,11 +3,13 @@ import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '../config/pref_keys.dart';
 import '../models/user_model.dart';
 import 'db_logger.dart';
 import 'home_widget_service.dart';
 import 'live_activity_service.dart';
 import 'portfolio_cache.dart';
+import 'social_auth_service.dart';
 import 'supabase_service.dart';
 import '../utils/friendly_error.dart';
 import 'crash_reporter.dart';
@@ -48,6 +50,11 @@ class AuthService {
   static String? validatePassword(String password) {
     if (password.length < 8) {
       return 'Şifre en az 8 karakter olmalı.';
+    }
+    // bcrypt ilk 72 baytı hash'ler; fazlası sessizce atılır ve kullanıcı
+    // "uzun şifrem var" sanır (2026-09 L12). Sınırı açıkça söyle.
+    if (utf8.encode(password).length > 72) {
+      return 'Şifre en fazla 72 karakter olabilir.';
     }
     if (!RegExp(r'[A-Za-zğüşıöçĞÜŞİÖÇ]').hasMatch(password)) {
       return 'Şifre en az bir harf içermeli.';
@@ -397,6 +404,70 @@ class AuthService {
     }
   }
 
+  // ── Sosyal giriş (Apple / Google) ─────────────────────────────────────────
+
+  /// Hesabın şifreyle girilebilen bir kimliği var mı?
+  ///
+  /// Yalnızca Apple/Google ile açılmış hesapta `email` sağlayıcısı yoktur;
+  /// hesap silme gibi "taze kimlik" isteyen akışlar şifre yerine sosyal
+  /// yeniden doğrulamaya gider. Supabase kimlik listesi yoksa (eski
+  /// oturum) şifreli varsayılır — eski davranış.
+  bool get hasPasswordIdentity {
+    final ids = _client.auth.currentUser?.identities;
+    if (ids == null || ids.isEmpty) return true;
+    return ids.any((i) => i.provider == 'email');
+  }
+
+  /// Sağlayıcıdan ID token alır, Supabase'de oturum açar, profil yoksa yazar.
+  ///
+  /// Sosyal hesapta OTP adımı yok: e-posta sağlayıcı tarafından
+  /// doğrulanmış gelir. Yasal metin onayı `AuthGate` tarafından hâlâ
+  /// istenir (DisclaimerAcceptanceScreen) — bu kapı auth yöntemine bakmaz.
+  Future<AppUser> loginWithSocial(SocialProvider provider) async {
+    final cred = await SocialAuthService.instance.obtain(provider);
+    try {
+      final response = await _log.log(
+        source: 'AuthService.loginWithSocial',
+        table: 'auth/sign-in-with-id-token',
+        op: 'RPC',
+        request: {'provider': provider.name},
+        call: () => _client.auth.signInWithIdToken(
+          provider: cred.oauthProvider,
+          idToken: cred.idToken,
+          nonce: cred.rawNonce,
+        ),
+      );
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('Giriş başarısız.');
+      }
+      final email = (user.email ?? cred.email ?? '').toLowerCase().trim();
+
+      var profile = await SupabaseService.instance.getProfile(user.id);
+      if (profile == null) {
+        profile = AppUser(
+          id: user.id,
+          email: email,
+          displayName: SocialAuthService.displayNameFor(cred, fallbackEmail: email),
+          createdAt: DateTime.now(),
+        );
+        await SupabaseService.instance.upsertProfile(profile);
+      }
+      if (email.isNotEmpty) await _saveEmail(email);
+      return profile;
+    } on AuthException {
+      rethrow;
+    } on AuthApiException catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.loginWithSocial');
+      throw AuthException(
+          '${provider == SocialProvider.apple ? 'Apple' : 'Google'} ile giriş '
+          'yapılamadı. Biraz sonra tekrar dene.');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthService.loginWithSocial');
+      throw AuthException('Giriş hatası: ${friendlyError(e)}');
+    }
+  }
+
   // ── Şifre Sıfırlama (OTP) ─────────────────────────────────────────────────
 
   /// Kullanıcının e-posta adresine 6 haneli OTP kodu gönderir.
@@ -511,6 +582,18 @@ class AuthService {
     // Çevrimdışı defter de kullanıcıya ait: aynı cihazdaki bir sonraki
     // hesap öncekinin portföyünü görmemeli.
     if (uid != null) await PortfolioCache.clear(uid);
+    await SocialAuthService.instance.signOutGoogle();
+    // Yerel deneme sayaçları ve push cihaz kimliği kullanıcıya özgü izdir;
+    // aynı cihazdaki bir sonraki hesaba taşınmasın (2026-09 L14).
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final k in prefs.getKeys().where((k) => k.startsWith(_rlKeyPrefix))) {
+        await prefs.remove(k);
+      }
+      await prefs.remove(PrefKeys.pushDeviceId);
+    } catch (_) {
+      // Tercih deposu okunamazsa çıkış yine tamamlanır.
+    }
     // Email'i cihazda bırak — sonraki girişte dolu gelsin
   }
 
@@ -526,10 +609,34 @@ class AuthService {
   ///    → account_deletion_log'a anonim kayıt (3 yıl saklanır)
   /// 3. Yerel SharedPreferences temizlenir
   /// 4. Session sonlandırılır
-  Future<void> deleteAccount({required String password}) async {
+  ///
+  /// Şifresiz (yalnızca Apple/Google) hesapta [password] yerine sağlayıcıdan
+  /// TAZE bir kimlik alınır ve sunucu onu `signInWithIdToken` ile doğrular —
+  /// "bu cihazı elinde tutan, hesabın da sahibi mi" sorusunun sosyal karşılığı.
+  Future<void> deleteAccount({String? password}) async {
     final user = _client.auth.currentUser;
     if (user == null || user.email == null) {
       throw const AuthException('Oturum açık değil.');
+    }
+
+    final Map<String, dynamic> body;
+    if (hasPasswordIdentity) {
+      if (password == null || password.isEmpty) {
+        throw const AuthException('Şifre gerekli.');
+      }
+      body = {'password': password};
+    } else {
+      final provider = _socialProviderOf(user);
+      if (provider == null) {
+        throw const AuthException(
+            'Hesabın giriş yöntemi tanınamadı. Destekle iletişime geç.');
+      }
+      final cred = await SocialAuthService.instance.obtain(provider);
+      body = {
+        'provider': provider.name,
+        'id_token': cred.idToken,
+        if (cred.rawNonce != null) 'nonce': cred.rawNonce,
+      };
     }
 
     // B5 fix: Re-auth Edge Function tarafında yapılır. Mobil tarafta
@@ -540,7 +647,7 @@ class AuthService {
     // server password'ü doğrular.
     try {
       final response = await _client.functions
-          .invoke('delete-account', body: {'password': password})
+          .invoke('delete-account', body: body)
           .timeout(const Duration(seconds: 30));
       if (response.status == 200) {
         // başarılı
@@ -553,6 +660,10 @@ class AuthService {
         }
         if (errCode == 'password_required') {
           throw const AuthException('Şifre gerekli.');
+        }
+        if (errCode == 'invalid_identity') {
+          throw const AuthException(
+              'Kimlik doğrulanamadı. Aynı hesapla tekrar dene.');
         }
         throw AuthException(
           'Hesap silinemedi (kod ${response.status}). '
@@ -580,6 +691,15 @@ class AuthService {
     } catch (_) {
       // user zaten silindi, signOut hata verebilir; önemli değil
     }
+  }
+
+  /// Kullanıcının hangi sosyal sağlayıcıyla bağlı olduğu (ilk eşleşen).
+  SocialProvider? _socialProviderOf(User user) {
+    for (final i in user.identities ?? const <UserIdentity>[]) {
+      if (i.provider == 'apple') return SocialProvider.apple;
+      if (i.provider == 'google') return SocialProvider.google;
+    }
+    return null;
   }
 
   // ── Ortak kodu üret ───────────────────────────────────────────────────────

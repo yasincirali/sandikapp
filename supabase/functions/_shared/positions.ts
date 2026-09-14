@@ -74,11 +74,6 @@ export function pozisyonAnahtari(a: PozisyonLot): string {
     case 'altin':
       core = `sub:${alt.toLowerCase()}`;
       break;
-    case 'mevduat':
-      // Her vadeli mevduat kendi vadesi ve faiziyle bağımsız bir hesaptır —
-      // asla birleştirilmez (Dart tarafıyla aynı kural).
-      core = `id:${a.id}`;
-      break;
     default: // emtia, diger
       core = ticker !== '' ? ticker : `name:${ad}`;
   }

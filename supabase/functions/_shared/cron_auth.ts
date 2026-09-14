@@ -54,10 +54,7 @@ export function cronYetkisiVarMi(
     JSON.stringify({ error: 'Yetkisiz cron cagrisi.' }),
     {
       status: 401,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     },
   );
 }

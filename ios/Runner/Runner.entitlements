@@ -16,6 +16,14 @@
 	    2. SandikWidget.entitlements,
 	    3. HomeWidgetService._appGroupId (Dart).
 	-->
+	<!-- Apple ile giriş (2026-09-14). Xcode → Signing & Capabilities'te
+	     "Sign in with Apple" eklenmiş sayılır; App ID'de de yetenek AÇIK olmalı
+	     (developer.apple.com → Identifiers → com.sandik.app → Sign In with Apple),
+	     yoksa yükleme "Provisioning profile doesn't support" der. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.com.sandik.app</string>

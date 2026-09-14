@@ -10,12 +10,10 @@ import 'package:portfoy_takip/utils/piyasa_kapali_etiketi.dart';
 /// "Piyasa kapalı dedik ama fiyatı değişen bir varlık var demek ki."
 ///
 /// Haklıydı. Ölçüldü:
-///   * Vadeli mevduat her gün faiz işletiyor
-///     (`DepositService.currentUnitValue`) — borsadan bağımsız.
 ///   * Döviz/emtia/altın spot piyasaları Pazar akşamı açılıyor.
 ///   * Hisse/fon BIST ve TEFAS takvimine bağlı — hafta sonu kesin kapalı.
 ///
-/// Hepsine birden "PİYASA KAPALI" demek, mevduatı olan kullanıcı için
+/// Hepsine birden "PİYASA KAPALI" demek, dövizi olan kullanıcı için
 /// yanlış bilgiydi.
 void main() {
   group('yalnızca borsa ürünleri', () {
@@ -34,10 +32,10 @@ void main() {
   });
 
   group('karışık portföy — "kapalı" genellemesi YAPILMAZ', () {
-    test('hisse + mevduat', () {
-      // Asıl düzeltme: mevduat faizi hafta sonu da işliyor.
+    test('hisse + altın', () {
+      // Asıl düzeltme: spot altın Pazar gecesi hareket ediyor.
       expect(
-        piyasaKapaliEtiketi([AssetType.hisse, AssetType.mevduat]),
+        piyasaKapaliEtiketi([AssetType.hisse, AssetType.altin]),
         'BORSA KAPALI · DİĞERLERİ SÜRÜYOR',
       );
     });
@@ -59,9 +57,9 @@ void main() {
   });
 
   group('borsa ürünü YOK', () {
-    test('yalnızca mevduat → SON VERİ', () {
+    test('yalnızca emtia → SON VERİ', () {
       // "Borsa kapalı" demek anlamsız: kullanıcının borsa ürünü yok.
-      expect(piyasaKapaliEtiketi([AssetType.mevduat]), 'SON VERİ');
+      expect(piyasaKapaliEtiketi([AssetType.emtia]), 'SON VERİ');
     });
 
     test('yalnızca döviz → SON VERİ', () {
@@ -122,7 +120,7 @@ void main() {
         isTrue,
         reason: 'Rozet hâlâ sabit metin kullanıyor.');
     expect(kaynak.contains("'PİYASA KAPALI',"), isFalse,
-        reason: 'Sabit "PİYASA KAPALI" geri gelmiş — mevduatı olan '
+        reason: 'Sabit "PİYASA KAPALI" geri gelmiş — dövizi olan '
             'kullanıcıya yanlış bilgi.');
   });
 }

@@ -14,9 +14,27 @@
 
 ## 🚨 ÖNCE BU: 2026-09-13 güvenlik denetimi sonrası (kod tarafı yapıldı, deploy sende)
 
-Kod değişiklikleri `claude/app-evaluation-roadmap-afnh0f` dalında. Aşağıdakiler
+Kod değişiklikleri `main`'e merge edildi (2026-09-14, `95b49d9`). Aşağıdakiler
 senin elinden geçmeden **canlıda etkili olmaz** ve bazıları için kod tarafı
 artık eski davranışa dönmez (fail-closed).
+
+> **✅ 2026-09-14 11:14 — migration ve fonksiyon dağıtımı YAPILDI.**
+> Aşağıdaki tablodaki #6, #7, #11, #13, #14, #17 satırlarının deploy ayağı
+> kapandı; #19 (GitHub secret'ları) tamamlandı.
+>
+> - 3 secret girildi: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`
+>   (`ybdbzouzhzwthjgwlbmk` — gizli değil, proje URL'sinin parçası),
+>   `SUPABASE_DB_PASSWORD` (sıfırlandı).
+> - **Migration defteri onarıldı:** 0050–0060 SQL Editor'dan elle koşulduğu
+>   için `supabase_migrations` deftere yazılmamıştı; CLI hepsini
+>   "uygulanmamış" görüyordu. `migration repair` ile işaretlendi →
+>   `db push --dry-run` artık "Remote database is up to date" diyor.
+>   Workflow'a bunun için `repair` input'u eklendi (`a89e6be`).
+> - **11 edge function'ın hepsi yeniden dağıtıldı** — `push-live-activity`
+>   dahil (hiç dağıtılmamış olduğundan şüphelenilen oydu).
+>
+> Kalan işler secret rotasyonları (#1, #3, #5), sosyal giriş sağlayıcı
+> ayarları (#15, #16) ve cihaz testleri (#12, #18).
 
 | # | İş | Neden | Nasıl |
 |---|---|---|---|
@@ -32,7 +50,13 @@ artık eski davranışa dönmez (fail-closed).
 | 12 | **Biyometrik kilidi cihazda dene** | `local_auth` platform tarafı (FragmentActivity, USE_BIOMETRIC, NSFaceIDUsageDescription) kodda ama gerçek cihazda hiç koşmadı. | Ayarlar → Hesap → Biyometrik kilit'i aç, uygulamayı 30 sn arkaya al, geri dön: kilit ekranı gelmeli. |
 | 8 | **Yerel release build için `android/key.properties`** | `key.properties` yoksa release build artık KIRILIR (eskiden debug anahtarıyla sessizce imzalıyordu). | §4 keystore adımları. CI (`android-release.yml`) zaten secret'tan yazıyor, etkilenmez. |
 | 10 | **GoTrue rate limit'lerini sabitle** (M12) | Login ve OTP doğrulamada uygulama düzeyi throttle yok; istemci sayacı güvenlik sınırı sayılmaz (S1 dersi). Koruma Supabase Auth'un kendi limitleri. | Dashboard → Authentication → Rate Limits: "Token verifications" ve "Sign-ins/sign-ups" değerlerini gözden geçir, bilinçli bir değere çek ve buraya not düş. |
-| 9 | **Sybil / k=8 kararı** (M1) | 7 sahte hesapla bir kullanıcının ROI'si ve dağılımı okunabilir. Kod değişikliği değil, ürün kararı. | Yarış'ı DAU ≥ 16 olana kadar kapalı tut ya da k paydasında yalnızca ≥7 gün geçmişi olan hesapları say (migration gerekir). |
+| 9 | ~~Sybil / k=8 kararı~~ → **`0059_leaderboard_sybil_eligibility.sql`'i koş** (M1) | Yarış ve Paywall kalıyor (karar 2026-09-14). Havuza girmek artık zaman ister: hesap ≥7 gün, son 30 günde ≥5 farklı gün snapshot, ≥2 varlık türü. 7 sahte hesap dakikada değil, bir haftalık düzenli kullanımla kurulabilir. k_min=8 aynen. | `supabase db push`. Yan etki: yeni kullanıcı ilk 7 gün yüzdelik şeridinde "Yakında" görür — beklenen. |
+| 14 | **`0058_drop_mevduat_type.sql`'i koş + `delete-account`'u yeniden deploy et** | Vadeli mevduat kaldırıldı; eski `type='mevduat'` satırları 'diger'e döner (silinmez). `delete-account` artık sosyal hesap için `{provider,id_token,nonce}` ile taze kimlik doğruluyor. | `supabase db push`; `supabase functions deploy delete-account`. |
+| 15 | **Apple ile giriş** | Kod hazır (`SocialAuthService`, entitlement eklendi). Apple tarafı ve Supabase provider ayarı sende. | (a) developer.apple.com → Identifiers → App ID `com.sandik.app` → **Sign In with Apple** yeteneğini aç, provisioning profile'ı yenile. (b) Supabase Dashboard → Authentication → Providers → **Apple**: Enable; "Client IDs" alanına `com.sandik.app` (native akışta Services ID gerekmez, secret key gerekmez). (c) TestFlight'ta dene: ilk girişte ad gelir, sonrakilerde gelmez — profil ilk seferde yazılır. |
+| 16 | **Google ile giriş** | Kod hazır; düğme `GOOGLE_WEB_CLIENT_ID` derlemeye verilmeden **görünmez**. | (a) Google Cloud Console → APIs & Services → Credentials: **Web** istemci (Supabase için), **Android** istemci (paket `com.sandik.app` + release ve debug SHA-1), **iOS** istemci (bundle `com.sandik.app`). (b) Supabase → Providers → **Google**: Enable, Web client ID + secret; "Authorized Client IDs"e Web + Android + iOS ID'lerini virgülle ekle (aksi hâlde `aud` uyuşmaz, 400). (c) Build: `--dart-define=GOOGLE_WEB_CLIENT_ID=<web>.apps.googleusercontent.com --dart-define=GOOGLE_IOS_CLIENT_ID=<ios>.apps.googleusercontent.com` (CI secret'larına da ekle). (d) iOS `Info.plist` → `CFBundleURLTypes`'a iOS istemcinin **ters** ID'sini (`com.googleusercontent.apps.<id>`) yeni bir dict olarak ekle; repoya kimlik yazmamak için bu adım elle. (e) Android: `google-services.json` zaten CI secret'ından geliyor; ek adım yok. |
+| 17 | **`0060_push_admin_by_uuid.sql`'i koş + 8 fonksiyonu yeniden deploy et** | M9: admin yetkisi artık `push_admins` tablosunda (UUID). Migration bugünkü e-postandan bir kez tohumlar; tablo boş kalırsa uyarı basar → SQL Editor'da `insert into push_admins(user_id) values ('<senin uuid>')`. Fonksiyonlar: `redeem-invite-code` (IP sayacı, M7/M8), `accept-invite` (L13), 6 cron fonksiyonu (L4 CORS). | `supabase db push`; `supabase functions deploy redeem-invite-code accept-invite analyze-signals calendar-nudge check-price-alerts daily-brief fetch-inflation weekly-summary`. |
+| 18 | **Oturum kasası geçişini cihazda dene** (M2) | Token artık Keychain/Keystore'da; ilk açılışta eski SharedPreferences oturumu taşınır. Beklenen: güncelleme sonrası yeniden giriş İSTENMEZ. | TestFlight/internal build'i mevcut oturumun üstüne kur, uygulamayı aç: doğrudan ana ekran gelmeli. |
+| 19 | ✅ **YAPILDI (2026-09-14)** — Supabase dağıtımı için 3 GitHub secret'ı gir; artık migration/function deploy'unu Claude tetikliyor | Claude Code web ortamı Supabase API'sine erişemiyor (ağ politikası) ve kimlik bilgisi taşımıyor; `.github/workflows/supabase-deploy.yml` bu işi Actions'a taşır. Secret'lar girildikten sonra #7, #11, #13, #14, #17 satırlarındaki `supabase db push` / `functions deploy` adımlarını Actions → **Supabase deploy** → Run workflow ile (ya da Claude'a "deploy et" diyerek) koşturursun. | GitHub → Settings → Secrets and variables → Actions: `SUPABASE_ACCESS_TOKEN` (supabase.com → Account → Access Tokens), `SUPABASE_PROJECT_REF` (`https://<ref>.supabase.co` içindeki ref), `SUPABASE_DB_PASSWORD` (Project Settings → Database). İlk koşuyu `dry_run=true` ile yap; plan temizse gerçek koş. |
 
 Tam bulgu listesi: `docs/DEGERLENDIRME_VE_YOL_HARITASI_2026_09.md` §3.
 İlerleme: `docs/YOL_HARITASI_ILERLEME.md`.
@@ -123,9 +147,27 @@ Migration yok, vault sırrı yok, edge function yok. Faz 2 (haftalık push)
 
 ---
 
-## 🔴 TEK ADIM KALDI (HER ŞEYİ BLOKLUYOR): `cron_gateway_jwt` (2026-09-14)
+## ✅ KAPANDI: `cron_gateway_jwt` — dört aylık sessiz arıza (2026-09-14)
 
-**Bunu yapmadan hiçbir cron bildirimi gitmiyor — bugün de gitmiyordu.**
+**Doğrulandı:** Vault kaydı 09:07'de yazıldı; 11:10'daki
+`trigger_daily_brief()` çağrısı **200** ve `{"sent":2}` döndürdü. Cron
+bildirimleri akıyor. Aşağıdaki anlatı arızanın kaydı olarak duruyor.
+
+> ### ⚠️ Teşhiste tuzak: "function cron_headers does not exist"
+>
+> SQL Editor'da `public.cron_headers(...)` çağırınca
+> `42883: function does not exist` alırsın. **Bu eksiklik DEĞİL, yetki
+> kısıtıdır.** `0054` üç yardımcıyı (`cron_gateway_jwt`, `cron_secret_of`,
+> `cron_headers`) bilinçli olarak yalnızca `service_role`'e veriyor;
+> Postgres, yetkin olmayan fonksiyonu "yok" diye bildirir. Editor'dan
+> denemek için `set local role service_role;` ile rol değiştir.
+>
+> Fonksiyonların gerçekten var olduğunun kanıtı `trigger_*` çağrısının
+> 200 dönmesidir — o fonksiyonlar `cron_headers`'ı içeriden çağırır.
+>
+> Aynı şekilde `net._http_response`'daki eski bir `401` satırı bugünkü
+> durumu göstermez: **`created` sütununa bak**, Vault kaydının
+> zamanından önceyse tarihî bir kayıttır.
 
 ### Ne oldu
 

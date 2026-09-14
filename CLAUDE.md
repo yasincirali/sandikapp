@@ -2,7 +2,7 @@
 
 ## Proje
 
-**sandık** — kişisel portföy takibi (BIST hisse, TEFAS fon, döviz, altın, vadeli mevduat).
+**sandık** — kişisel portföy takibi (BIST hisse, TEFAS fon, döviz, altın, emtia).
 Flutter + **Riverpod** istemci; **Supabase** arka uç (Postgres + RLS, Edge Functions, pg_cron,
 Vault); Firebase (Crashlytics, Analytics, Remote Config, FCM); iOS Live Activity ve
 Android/iOS ana ekran widget'ları.
@@ -159,5 +159,5 @@ koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Beti
 gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
 
 ---
-**Son güncelleme:** 2026-09-13 (değerlendirme sonrası yeniden yazıldı; sqflite/Provider/
+**Son güncelleme:** 2026-09-14 (vadeli mevduat kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/
 emülatör-ilk-kurulum bölümleri kaldırıldı).

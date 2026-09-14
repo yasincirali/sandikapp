@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 
-import '../models/asset.dart';
-import '../models/asset_type.dart';
 
 /// Firebase Remote Config wrapper.
 ///
@@ -63,11 +61,8 @@ class RemoteConfigService {
     // implementasyonu yoktu, flag var olmayan bir özelliği gate'liyordu.
     // Özellik yazıldığında flag'i geri ekle.
 
-    // Vadeli mevduat feature'ı. false ise add-asset ekranında "Vadeli Mevduat"
-    // türü gizlenir ve mevduat ekleme akışına yeni giriş yapılamaz. Mevcut
-    // kayıtlı mevduatlar okunmaya/gösterilmeye devam eder. Feature stabilize
-    // olup store release'e dahil edilince Firebase Console'dan true yapılacak.
-    'deposits_enabled': false,
+    // NOT: `deposits_enabled` kaldırıldı (2026-09-14) — vadeli mevduat
+    // özelliği koddan tamamen çıkarıldı; flag'in gate'leyeceği bir şey yok.
 
     // ── Tutundurma (Sprint 1) ────────────────────────────────────────────
     // TestFlight'ta görünür olmaları için AÇIK doğuyorlar (2026-09-07,
@@ -192,9 +187,6 @@ class RemoteConfigService {
       _rc?.getInt('free_signal_slots_per_day') ??
       _defaults['free_signal_slots_per_day'] as int;
 
-  bool get depositsEnabled =>
-      _rc?.getBool('deposits_enabled') ?? _defaults['deposits_enabled'] as bool;
-
   bool get percentileStripEnabled =>
       _rc?.getBool('percentile_strip_enabled') ??
       _defaults['percentile_strip_enabled'] as bool;
@@ -225,17 +217,4 @@ class RemoteConfigService {
   bool get periodSummaryEnabled =>
       _rc?.getBool('period_summary_enabled') ??
       _defaults['period_summary_enabled'] as bool;
-
-  /// UI chip'leri / filtre listeleri için: `depositsEnabled=false` iken
-  /// mevduat türünü listeden düşer. `AssetType.values` yerine bunu kullan.
-  List<AssetType> get visibleAssetTypes => depositsEnabled
-      ? AssetType.values
-      : AssetType.values.where((t) => t != AssetType.mevduat).toList();
-
-  /// Portföy / işlem listesi gibi asset koleksiyonlarını filtreler.
-  /// `depositsEnabled=false` iken mevduat asset'lerini gizler. Sunucudaki
-  /// veri silinmez — flag açılınca geri görünür.
-  List<Asset> filterHiddenTypes(Iterable<Asset> assets) => depositsEnabled
-      ? assets.toList()
-      : assets.where((a) => a.type != AssetType.mevduat).toList();
 }

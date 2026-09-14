@@ -17,6 +17,7 @@ import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/social_sign_in_buttons.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -465,6 +466,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 14),
+              // Sosyal girişte OTP adımı yok; e-posta sağlayıcıdan doğrulanmış
+              // gelir. Yasal onay kapısı AuthGate'te — bu yolda da sorulur.
+              const SocialSignInButtons(),
               CupertinoButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(

@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
-import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/tour_anchor.dart';
@@ -255,17 +254,13 @@ void _varlikEkleKapat() {
 /// spot düşürülemez zaten — hedefi bulunamayan adım kendiliğinden atlanır
 /// (bkz. [_TurKatmaniState._tik]).
 List<_Adim> _adimlariKur() {
-  final rc = RemoteConfigService.instance;
-  final turler = rc.depositsEnabled
-      ? 'Hisse, fon, döviz, altın, emtia ve vadeli mevduat'
-      : 'Hisse, fon, döviz, altın ve emtia';
-
+  // Vadeli mevduat 2026-09-14'te kaldırıldı; tür listesi artık sabit metin.
   return [
-    _Adim(
+    const _Adim(
       id: 'karsilama',
       baslik: 'Sandığına hoş geldin',
-      govde: '$turler — hepsi tek toplamda, tek para biriminde. Fiyatlar '
-          'arka planda kendiliğinden güncellenir.\n\n'
+      govde: 'Hisse, fon, döviz, altın ve emtia — hepsi tek toplamda, tek '
+          'para biriminde. Fiyatlar arka planda kendiliğinden güncellenir.\n\n'
           'Uygulamayı birlikte gezelim: her adımda gerçek ekranın üstünde '
           'tek bir tuş açık kalır. Dokun, dene.',
     ),

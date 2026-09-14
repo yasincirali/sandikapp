@@ -12,7 +12,6 @@ enum AssetType {
   doviz('Döviz', Icons.attach_money_rounded, Color(0xFF7EC8A9), 'USD'),     // Soft mint — gain'den ayrık
   altin('Altın', Icons.star_rounded, Sandik.gold, 'TRY'),            // Gold — altın karakteri
   emtia('Emtia', Icons.inventory_2_rounded, Color(0xFFC97B4F), 'USD'),      // Copper — emtia sıcaklığı
-  mevduat('Vadeli Mevduat', Icons.savings_rounded, Color(0xFF6BB77B), 'TRY'), // Bank green — güvenli/pasif getiri
   diger('Diğer', Icons.more_horiz_rounded, Color(0xFF8D7BE0), 'TRY');      // Soft violet — nötr, ayrık
 
   const AssetType(
@@ -35,13 +34,13 @@ enum AssetType {
         return 'Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)';
       case AssetType.emtia:
         return 'Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)';
-      case AssetType.mevduat:
-        return 'Vadeli mevduat için ticker gerekmez';
       case AssetType.diger:
         return 'Yahoo Finance sembolü veya boş bırakın';
     }
   }
 
+  /// Bilinmeyen tür → `diger`. Kaldırılan 'mevduat' (2026-09-14) da buraya
+  /// düşer; 0058 migrasyonu eski satırları sunucuda zaten 'diger' yapar.
   static AssetType fromString(String value) => AssetType.values.firstWhere(
         (e) => e.name == value,
         orElse: () => AssetType.diger,

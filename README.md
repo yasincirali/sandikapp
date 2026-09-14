@@ -1,6 +1,6 @@
 # sandık
 
-Kişisel portföy takibi — hisse (BIST), TEFAS fonu, döviz, altın, vadeli mevduat.
+Kişisel portföy takibi — hisse (BIST), TEFAS fonu, döviz, altın, emtia.
 Flutter (Riverpod) istemci + Supabase (Postgres, RLS, Edge Functions, pg_cron) arka uç.
 Android ana ekran widget'ı, iOS widget + Live Activity, FCM/APNs push.
 
@@ -27,7 +27,7 @@ Android ana ekran widget'ı, iOS widget + Live Activity, FCM/APNs push.
 ```bash
 flutter pub get
 flutter analyze lib/ test/
-flutter test                       # 155 dosya; tek dosya: flutter test test/<ad>_test.dart
+flutter test                       # 160 dosya; tek dosya: flutter test test/<ad>_test.dart
 flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
 ```
 

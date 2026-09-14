@@ -96,10 +96,6 @@ void main() {
       expect(_a(type: AssetType.emtia, unitType: 'liter').unitLabel, 'lt');
       expect(_a(type: AssetType.emtia, unitType: 'barrel').unitLabel, 'bbl');
     });
-
-    test('mevduat → ₺', () {
-      expect(_a(type: AssetType.mevduat).unitLabel, '₺');
-    });
   });
 
   group('miktarMetni — birim doğru YERDE durur', () {

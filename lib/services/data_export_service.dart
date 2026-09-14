@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'crash_reporter.dart';
 import 'db_logger.dart';
 
 /// Kullanıcının tüm verisini JSON formatında dışa aktarır.
@@ -135,9 +136,12 @@ class DataExportService {
         call: () =>
             _db.from(table).select().eq(filterColumn, userId),
       );
-    } catch (e) {
-      return [
-        {'_export_error': e.toString()}
+    } catch (e, st) {
+      // Ham hata metni dosyaya gitmez (2026-09 L8): PostgREST mesajları
+      // tablo/sütun adı ve URL taşır; kullanıcı dosyayı paylaşabilir.
+      CrashReporter.report(e, st, reason: 'DataExportService.$table');
+      return const [
+        {'_export_error': 'Bu tablo dışa aktarılamadı.'}
       ];
     }
   }
@@ -155,9 +159,10 @@ class DataExportService {
             .select()
             .or('user_id_1.eq.$userId,user_id_2.eq.$userId'),
       );
-    } catch (e) {
-      return [
-        {'_export_error': e.toString()}
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'DataExportService.partnerships');
+      return const [
+        {'_export_error': 'Bu tablo dışa aktarılamadı.'}
       ];
     }
   }

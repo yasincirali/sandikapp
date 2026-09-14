@@ -40,6 +40,15 @@ function json(body: unknown, status = 200): Response {
 
 const CODE_REGEX = /^[A-Z2-9]{5}-[A-Z2-9]{5}$/
 
+/** Supabase gateway'in ilettiği istemci IP'si; ilk `x-forwarded-for` girdisi. */
+function istemciIp(r: Request): string | null {
+  const xff = r.headers.get('x-forwarded-for')
+  const first = xff?.split(',')[0]?.trim()
+  if (first) return first.slice(0, 64)
+  const cf = r.headers.get('cf-connecting-ip')?.trim()
+  return cf ? cf.slice(0, 64) : null
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
@@ -101,6 +110,34 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'rate_limit_unavailable' }, 503)
     }
 
+    // Hesap başına sayaç tek başına yetmez (2026-09 M7): saldırgan her
+    // 5 denemede yeni hesap açarak sınırı sıfırlar. IP başına ikinci, daha
+    // geniş bir pencere: 10 dakikada 20. IP bilinmiyorsa (proxy başlığı
+    // yok) yalnızca hesap sayacı kalır — fail-open değil, eski davranış.
+    const clientIp = istemciIp(req)
+    if (clientIp) {
+      const { data: ipPeek, error: ipErr } = await admin.rpc('peek_rate_limit', {
+        p_subject: `ip:${clientIp}`,
+        p_scope: 'redeem_invite_ip',
+        p_max_attempts: 20,
+        p_window_seconds: 600,
+      })
+      if (ipErr) {
+        console.error('IP rate limit check failed:', ipErr)
+        return json({ error: 'rate_limit_unavailable' }, 503)
+      }
+      const ipRow = Array.isArray(ipPeek) ? ipPeek[0] : ipPeek
+      if (ipRow && ipRow.allowed === false) {
+        return json(
+          {
+            error: 'rate_limited',
+            retry_after_seconds: ipRow.retry_after_seconds ?? 600,
+          },
+          429,
+        )
+      }
+    }
+
     const rlRow = Array.isArray(rlPeek) ? rlPeek[0] : rlPeek
     if (rlRow && rlRow.allowed === false) {
       return json(
@@ -119,6 +156,12 @@ Deno.serve(async (req: Request) => {
           p_subject: user.id,
           p_scope: 'redeem_invite',
         })
+        if (clientIp) {
+          await admin.rpc('record_rate_limit_attempt', {
+            p_subject: `ip:${clientIp}`,
+            p_scope: 'redeem_invite_ip',
+          })
+        }
       } catch (e) {
         console.error('record_rate_limit_attempt failed:', e)
       }
@@ -237,9 +280,11 @@ Deno.serve(async (req: Request) => {
       console.error('clear_rate_limit failed:', e)
     }
 
+    // `partner_user_id` yanıtta YOK (2026-09 M8): sahip onaylamadan
+    // karşı tarafın kimliği sızmamalı; istemci yalnızca invite_id ile
+    // durum sorguluyor.
     return json({
       invite_id: invite.id,
-      partner_user_id: invite.from_user_id,
       partner_display_name:
         (ownerProfile?.display_name as string | null) ?? 'Kullanıcı',
     })

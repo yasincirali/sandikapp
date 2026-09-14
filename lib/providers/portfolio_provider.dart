@@ -6,8 +6,6 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../services/analytics_service.dart';
-import '../services/deposit_service.dart';
-import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/price_service.dart';
 import '../services/retention_tracker.dart';
@@ -195,12 +193,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       CrashReporter.report(e, st,
           reason: 'PortfolioNotifier.build (önbellekten açıldı)');
       return PortfolioState(
-        assets: RemoteConfigService.instance.filterHiddenTypes(cached),
+        assets: cached,
         errorMessage: 'Çevrimdışı — son bilinen veriler gösteriliyor.',
       );
     }
     return PortfolioState(
-      assets: RemoteConfigService.instance.filterHiddenTypes(assets),
+      assets: assets,
     );
   }
 
@@ -313,7 +311,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     } else {
       final assets = await SupabaseService.instance.fetchByUser(user.id);
       state = AsyncData(PortfolioState(
-        assets: RemoteConfigService.instance.filterHiddenTypes(assets),
+        assets: assets,
       ));
     }
   }
@@ -608,9 +606,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final activePartners = ref.read(activePartnersProvider);
     final partnerAssetsMap = <String, List<Asset>>{};
     for (final partner in activePartners) {
-      final assets = RemoteConfigService.instance.filterHiddenTypes(
-        await SupabaseService.instance.fetchByUser(partner.id),
-      );
+      final assets = await SupabaseService.instance.fetchByUser(partner.id);
       partnerAssetsMap[partner.id] = assets;
       for (final a in assets) {
         if (a.ticker.isNotEmpty && !a.isManualPrice) {
@@ -639,15 +635,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       // Kendi varlıklarını güncelle
       final updated = baseAssets.map((asset) {
-        if (asset.type == AssetType.mevduat) {
-          // Vadeli mevduat — API yok, birim değeri lokal hesapla.
-          final terms = DepositService.decode(asset);
-          if (terms != null) {
-            asset.currentPrice = DepositService.currentUnitValue(terms);
-            asset.lastUpdated = DateTime.now();
-            SupabaseService.instance.updateAsset(asset);
-          }
-        } else if (!asset.isManualPrice && asset.ticker.isNotEmpty) {
+        if (!asset.isManualPrice && asset.ticker.isNotEmpty) {
           final price = quotes[asset.ticker.toUpperCase()]?.regularMarketPrice;
           if (price != null) {
             asset.currentPrice = price;
@@ -772,9 +760,7 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     final activePartners = ref.watch(activePartnersProvider);
     final map = <String, List<Asset>>{};
     for (final p in activePartners) {
-      map[p.id] = RemoteConfigService.instance.filterHiddenTypes(
-        await SupabaseService.instance.fetchByUser(p.id),
-      );
+      map[p.id] = await SupabaseService.instance.fetchByUser(p.id);
     }
     return map;
   }
@@ -800,9 +786,7 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     // Mevcut veriyi koru, loading state'e GEÇMEDEn arka planda yenile
     final map = <String, List<Asset>>{};
     for (final p in activePartners) {
-      map[p.id] = RemoteConfigService.instance.filterHiddenTypes(
-        await SupabaseService.instance.fetchByUser(p.id),
-      );
+      map[p.id] = await SupabaseService.instance.fetchByUser(p.id);
     }
     state = AsyncData(map);
   }

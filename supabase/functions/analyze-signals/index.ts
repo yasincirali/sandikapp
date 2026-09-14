@@ -38,7 +38,8 @@ import { acikPozisyonLotlari } from '../_shared/positions.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
+  // Allow-Origin '*' bilinçli olarak yok.
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
@@ -591,7 +592,7 @@ export function shouldNotifyNow(
   return gecenSaat >= 1;
 }
 
-/// Sinyal üretilebilen türler. Vadeli mevduatın teknik göstergesi yoktur.
+/// Sinyal üretilebilen türler ('diger' elle fiyatlanır, seri yoktur).
 const ANALYZABLE = new Set(['hisse', 'fon', 'altin', 'doviz', 'emtia']);
 
 Deno.serve(async (request) => {

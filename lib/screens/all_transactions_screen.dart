@@ -7,7 +7,6 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
-import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
@@ -267,7 +266,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                 children: [
                   _typeChip(null, 'Tümü'),
                   for (final t
-                      in RemoteConfigService.instance.visibleAssetTypes)
+                      in AssetType.values)
                     _typeChip(t, t.label),
                 ],
               ),

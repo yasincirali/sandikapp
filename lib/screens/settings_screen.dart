@@ -12,6 +12,8 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/quiet_hours_provider.dart';
 import '../services/data_export_service.dart';
+import '../services/auth_service.dart';
+import '../services/social_auth_service.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/supabase_service.dart';
@@ -60,6 +62,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       barrierDismissible: false,
     );
     if (!firstConfirm || !mounted) return;
+
+    // Yalnızca Apple/Google ile açılmış hesabın şifresi yok: ikinci kademe
+    // sağlayıcının kendi ekranıdır (AuthService.deleteAccount taze kimlik
+    // alır, sunucu doğrular). Şifre diyaloğu burada anlamsız olurdu.
+    if (!AuthService.instance.hasPasswordIdentity) {
+      final social = await showSandikConfirm(
+        context: context,
+        title: 'Kimliğini doğrula',
+        message: 'Hesabın Apple/Google ile açılmış. Silmeden önce aynı '
+            'hesapla bir kez daha giriş yapman istenecek.',
+        confirmLabel: 'Devam et',
+        destructive: true,
+        barrierDismissible: false,
+      );
+      if (!social || !mounted) return;
+      await _runDelete(password: null);
+      return;
+    }
 
     // 2. Kademe — şifre doğrulama
     final passwordCtrl = TextEditingController();
@@ -121,16 +141,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (secondConfirm != true || !mounted || passwordCtrl.text.isEmpty) return;
+    await _runDelete(password: passwordCtrl.text);
+  }
 
+  Future<void> _runDelete({required String? password}) async {
     setState(() => _deleting = true);
     try {
       // Provider üzerinden çağır — auth state'i null'a çekip AuthGate'in
       // otomatik olarak LoginScreen'e dönmesini sağlar. Doğrudan
       // AuthService.deleteAccount çağrılırsa state güncellenmez ve
       // kullanıcı silinmiş olsa da ekranda kalır.
-      await ref
-          .read(authProvider.notifier)
-          .deleteAccount(password: passwordCtrl.text);
+      await ref.read(authProvider.notifier).deleteAccount(password: password);
       if (!mounted) return;
       // Açık olabilecek modal'ları kapatıp root'a dön.
       Navigator.of(context).popUntil((r) => r.isFirst);
@@ -140,6 +161,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         title: 'Hesabın silindi',
         message: 'Görüşmek üzere.',
       );
+    } on SocialSignInCancelled {
+      // Sağlayıcı ekranında vazgeçti — hata değil.
+      if (mounted) setState(() => _deleting = false);
     } catch (e) {
       if (!mounted) return;
       setState(() => _deleting = false);
