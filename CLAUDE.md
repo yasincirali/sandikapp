@@ -20,6 +20,48 @@ yol haritası: `docs/DEGERLENDIRME_VE_YOL_HARITASI_2026_09.md`; ilerleme
 2. Özet: ne değişti, neden, hangi karar verildi. Teknik ayrıntı gerektiğinde ver.
 3. Kaynak yorumları **karar kaydıdır** ("ne" değil "neden"). Bu üslubu koru; var olan
    gerekçeleri silme, güncelle.
+4. **Her geliştirme talebi önce kurulu skill'e/komuta yönlendirilir.** Kod yazmaya
+   başlamadan önce aşağıdaki tablodan ilgili skill'i çağır; hiçbiri uymuyorsa bunu
+   özette **"skill dışı"** diye söyle ve neden uymadığını yaz. Skill'siz çalışmak
+   istisnadır, varsayılan değildir.
+
+### Talep → skill/komut yönlendirmesi
+
+Sıra önemlidir: **üstteki kazanır.** Bir talep birden çok satıra uyuyorsa en üstteki
+seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aşağıda) bak.
+
+| Talep | Çağrılacak |
+|---|---|
+| Flutter UI / widget / ekran | `flutter-architecture`, `flutter-adaptive-ui`, `flutter-expert` ⚠️ |
+| Navigasyon | `flutter-navigation` (**`flutter-expert` GoRouter referansı değil**) |
+| Animasyon / hareket | `flutter-animations`, `animate`, `apple-design` |
+| Görsel tasarım / cila | `emil-design-eng`, `ui-ux-pro-max`, `frontend-design` |
+| Flutter testi | `flutter-testing` (**`test-master` değil**) |
+| Test *stratejisi* / kapsam boşluğu | `test-master` |
+| Supabase şema / migration / RPC | `sql-pro` → yazım, `postgres-pro` → PG'ye özgü |
+| Yavaş sorgu teşhisi | `database-optimizer` |
+| Auth / RLS / GRANT / güvenlik *yazarken* | `secure-code-guardian` |
+| Güvenlik *denetimi* (rapor) | `/security-review` → sonra `security-reviewer` |
+| Kod incelemesi | `/code-review` → sonra `code-reviewer` |
+| Sadeleştirme / tekrar temizliği | `/simplify` |
+| Hata / çökme / stack trace | `debugging-wizard` |
+| iOS Swift (Live Activity, widget) | `swift-expert` |
+| Mimari karar / ADR | `architecture-designer` (ADR → `manage_adr`, dosyaya değil) |
+| Dokümantasyon | `code-documenter` |
+| Dokümansız kodu çözme | `spec-miner` |
+| Bir kararı zorlatma / pre-mortem | `the-fool` |
+| Uygulamayı çalıştırıp görme | `/run`, `tool/deploy_emulators.sh` |
+
+**Çakışma kuralı — skill CLAUDE.md'yi asla ezmez.** Skill ile bu dosya çeliştiğinde
+**bu dosya kazanır**; çelişkiyi özette yaz. Bilinen tuzaklar:
+- `flutter-expert` → Bloc ve GoRouter önerir. Burada **Riverpod** + `adaptiveRoute`.
+  Ayrıca ham `Colors.*` / `fontSize:` üretir — tasarım sistemi kuralı geçerlidir.
+- `test-master` → Flutter/Dart bilmez (k6/Artillery/OWASP odaklı).
+- `secure-code-guardian` → örnekleri web (Zod, CORS/CSP). Buradaki karşılığı
+  **RLS + GRANT + `requireCronSecret()`**.
+- Web kaynaklı tasarım skill'leri → CSS/React sözdizimi **alınmaz**, yargısı alınır.
+
+Gerekçeler ve kurulmayanların listesi: `.claude/skills/SKILLS_README.md`.
 
 ### Onay eşikleri
 - **Sormadan yap:** biçimlendirme, lint, hata düzeltme, test ekleme, dokümantasyon,
