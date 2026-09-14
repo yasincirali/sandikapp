@@ -22,6 +22,7 @@ import 'add_deposit_screen.dart';
 import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/tour_anchor.dart';
 
 const _addAssetUuid = Uuid();
 
@@ -382,7 +383,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
         actions: [
           if (!_isEditing && !widget.cartMode) ...[
-            IconButton(
+            TourAnchor(
+              target: TourTarget.topluEkle,
+              child: IconButton(
               tooltip: 'Toplu ekle',
               icon: Icon(Icons.playlist_add_rounded, color: context.c.text58),
               // Toplu ekleme başarıyla bittiğinde `true` döner; o zaman bu
@@ -396,11 +399,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   Navigator.of(context).pop(true);
                 }
               },
+              ),
             ),
-            IconButton(
-              tooltip: 'Sesli / Hızlı giriş',
-              icon: Icon(Icons.mic_none_rounded, color: context.c.text58),
-              onPressed: _showQuickEntrySheet,
+            TourAnchor(
+              target: TourTarget.hizliGiris,
+              child: IconButton(
+                tooltip: 'Sesli / Hızlı giriş',
+                icon: Icon(Icons.mic_none_rounded, color: context.c.text58),
+                onPressed: _showQuickEntrySheet,
+              ),
             ),
           ],
         ],

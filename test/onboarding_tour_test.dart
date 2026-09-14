@@ -1,31 +1,204 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/providers/preferences_provider.dart';
+import 'package:portfoy_takip/screens/main_navigation_screen.dart';
 import 'package:portfoy_takip/screens/onboarding_screen.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/widgets/tour_anchor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// İlk girişte gösterilen interaktif tanıtım.
+/// İlk girişte gösterilen spot ışığı turu.
 ///
-/// 2026-09-14 yeniden yazımı: minyatür şema + 22 açıklama kartı yerine
-/// uygulamanın gerçek görünümünde yedi sayfa ve her sayfada tek bir küçük
-/// görev (tutarı gizle, cümleyle ekle, dönem seç, bildirimi aç, Birlikte'ye
-/// geç). Kullanıcının kısıtı aynı: "olan hiçbir akış bozulmamalı".
+/// 2026-09-14: tur artık ayrı bir ekran değil, gerçek ekranın üstündeki bir
+/// katman. Karartma düşer, o adımın hedefi oyukla açıkta kalır ve kullanıcı
+/// oyuğun içindeki GERÇEK tuşa dokunur.
 ///
-/// ## Neden bu testler
-/// Bu ortamda cihaz yok; "aç ve bak" adımı yapılamıyor. Onun yerine tur
-/// gerçekten pump edilip baştan sona GEZİLİYOR, görevler YAPILIYOR ve üç şey
-/// ölçülüyor:
+/// ## Neden sahte ev sahibi
+/// Gerçek `MainNavigationScreen` Supabase ve beş ekranın provider'larını
+/// ister; testte kurulamaz. Katmanın sözleşmesi ise ekrandan bağımsız:
+/// "[TourAnchor] ile işaretli hedefi bul, oyuk aç, dokunuşu geçir, görevi
+/// uygulamanın durumundan oku". Buradaki ev sahibi tam olarak o sözleşmeyi
+/// sağlar — hedefler sahte tuşlar, sekme/ekran durumu gerçek statik
+/// kanallar (`MainNavigationScreen.aktifSekme` / `sekmeIstegi`, gerçek
+/// `balanceHiddenProvider`, gerçek bir rota push'u).
 ///
-///   1. **Akış bozulmadı.** `onComplete` / `userId` / `isCompleted` /
-///      `markCompleted` ve analytics çağrıları yerinde mi (kaynak denetimi).
-///   2. **Görevler çalışıyor.** Göz simgesi tutarı gizliyor, örnek cümle
-///      karta dönüşüyor, anahtar bildirimi açıyor, "Birlikte" ortak toplamı
-///      gösteriyor; görev şeridi onaya dönüyor.
-///   3. **Taşma yok.** Yüzeyler dar ekranda (320pt) ve büyük sistem yazı
-///      tipinde (2,0×) kırılmamalı; hareket azaltılmışken de aynı.
+/// ## Ne ölçülüyor
+///   1. **Oyuk dokunuşu geçiriyor, karartma yutuyor.** Hedefe dokunuş alta
+///      ulaşır, hedef dışına dokunuş ulaşmaz.
+///   2. **Görevler gerçek durumdan okunuyor.** Göz → tercih, sekme → aktif
+///      sekme, + → açılan rota; sekme görevleri kendiliğinden ilerler.
+///   3. **"Devam" görevi turun kendisine yaptırıyor.** Sekme değişir, ekran
+///      açılır/kapanır.
+///   4. **Bulunamayan hedef atlanıyor**, boş karartmada kalınmıyor.
+///   5. **Taşma yok** — dar ekran, büyük yazı tipi, hareket azalt.
+///   6. **Akış bozulmadı** (kaynak denetimi).
+
+// ── Sahte ev sahibi ─────────────────────────────────────────────────────────
+
+/// Hedef başına dokunuş sayacı — "dokunuş alta ulaştı mı" sorusunun ölçüsü.
+final _dokunus = <TourTarget, int>{};
+
+class _EvSahibi extends StatefulWidget {
+  const _EvSahibi({this.davetKoduVar = true});
+
+  final bool davetKoduVar;
+
+  @override
+  State<_EvSahibi> createState() => _EvSahibiState();
+}
+
+class _EvSahibiState extends State<_EvSahibi> {
+  bool _donemSecildi = false;
+
+  @override
+  void initState() {
+    super.initState();
+    MainNavigationScreen.sekmeIstegi.addListener(_istek);
+  }
+
+  @override
+  void dispose() {
+    MainNavigationScreen.sekmeIstegi.removeListener(_istek);
+    super.dispose();
+  }
+
+  /// Gerçek `MainNavigationScreen._sekmeIstegiGeldi`'nin sahtesi.
+  void _istek() {
+    final i = MainNavigationScreen.sekmeIstegi.value;
+    if (i == null) return;
+    MainNavigationScreen.sekmeIstegi.value = null;
+    if (i == 2) {
+      _ekleAc();
+    } else {
+      MainNavigationScreen.aktifSekme.value = i;
+    }
+  }
+
+  void _ekleAc() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const _SahteVarlikEkle()),
+    );
+  }
+
+  Widget _tus(TourTarget t, String etiket, {VoidCallback? ek}) {
+    return TourAnchor(
+      target: t,
+      child: SizedBox(
+        height: 48,
+        child: TextButton(
+          onPressed: () {
+            _dokunus[t] = (_dokunus[t] ?? 0) + 1;
+            ek?.call();
+          },
+          child: Text(etiket),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ListView(
+        children: [
+          const TourAnchor(
+            target: TourTarget.heroKart,
+            child: SizedBox(height: 120, child: Text('HERO')),
+          ),
+          Row(
+            children: [
+              Expanded(child: _tus(TourTarget.yenileTusu, 'yenile')),
+              Expanded(
+                child: Consumer(
+                  builder: (context, ref, _) => _tus(
+                    TourTarget.gizleTusu,
+                    'gizle',
+                    ek: () => ref
+                        .read(balanceHiddenProvider.notifier)
+                        .set(!ref.read(balanceHiddenProvider)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          _tus(TourTarget.govdeSekmeleri, 'sekmeler'),
+          _tus(TourTarget.donemSecici, 'dönem',
+              ek: () => setState(() => _donemSecildi = true)),
+          // Gerçek ekranda Gerçek/Simülasyon yalnızca gün dışı dönemde
+          // çizilir; burada dönem tuşuna dokununca belirir.
+          if (_donemSecildi) _tus(TourTarget.modSecici, 'mod'),
+          if (widget.davetKoduVar) _tus(TourTarget.davetKodu, 'davet'),
+          _tus(TourTarget.ayarlar, 'ayarlar'),
+          const SizedBox(height: 400),
+        ],
+      ),
+      bottomNavigationBar: TourAnchor(
+        target: TourTarget.altMenu,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            children: [
+              for (final (i, t, ad) in const [
+                (0, TourTarget.sekmeAna, 'Ana'),
+                (1, TourTarget.sekmePortfoy, 'Portföy'),
+                (2, TourTarget.sekmeEkle, '+'),
+                (3, TourTarget.sekmePerformans, 'Performans'),
+                (4, TourTarget.sekmeProfil, 'Profil'),
+              ])
+                Expanded(
+                  child: _tus(
+                    t,
+                    ad,
+                    ek: () {
+                      if (i == 2) {
+                        _ekleAc();
+                      } else {
+                        MainNavigationScreen.aktifSekme.value = i;
+                      }
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Gerçek `AddAssetScreen`'in sahtesi: ayrı bir rota, iki hedef.
+class _SahteVarlikEkle extends StatelessWidget {
+  const _SahteVarlikEkle();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tus(TourTarget t, String ad) => TourAnchor(
+          target: t,
+          child: SizedBox(
+            height: 48,
+            child: TextButton(
+              onPressed: () => _dokunus[t] = (_dokunus[t] ?? 0) + 1,
+              child: Text(ad),
+            ),
+          ),
+        );
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Varlık Ekle'),
+        actions: [tus(TourTarget.topluEkle, 'toplu'), tus(TourTarget.hizliGiris, 'mik')],
+      ),
+      body: const SizedBox.expand(),
+    );
+  }
+}
+
+// ── Yardımcılar ─────────────────────────────────────────────────────────────
+
+bool? _sonuc;
+
 Future<void> _pump(
   WidgetTester tester, {
   double width = 375,
@@ -33,6 +206,7 @@ Future<void> _pump(
   double textScale = 1.0,
   Brightness parlaklik = Brightness.dark,
   bool hareketiAzalt = false,
+  bool davetKoduVar = true,
 }) async {
   tester.view.physicalSize = Size(width * 3, height * 3);
   tester.view.devicePixelRatio = 3.0;
@@ -42,260 +216,227 @@ Future<void> _pump(
       parlaklik == Brightness.light ? SandikPalette.light : SandikPalette.dark;
 
   await tester.pumpWidget(
-    MaterialApp(
-      theme: ThemeData(brightness: parlaklik, extensions: [palet]),
-      home: MediaQuery(
-        data: MediaQueryData(
-          textScaler: TextScaler.linear(textScale),
-          disableAnimations: hareketiAzalt,
+    ProviderScope(
+      child: MaterialApp(
+        theme: ThemeData(brightness: parlaklik, extensions: [palet]),
+        // Gerçek uygulamadaki gibi: katman Navigator'ı sarar.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+            disableAnimations: hareketiAzalt,
+          ),
+          child: OnboardingTourHost(child: child!),
         ),
-        child: OnboardingScreen(onComplete: () {}, userId: 'u1'),
+        home: _EvSahibi(davetKoduVar: davetKoduVar),
       ),
     ),
   );
+  await tester.pump();
+  OnboardingScreen.baslatTur(onBitti: (t) => _sonuc = t);
   await _bekle(tester);
 }
 
-/// `pumpAndSettle` KULLANILMAZ: karşılama halkaları ve nabız işareti
-/// sonsuz döngüdür, settle hiç bitmez. Sabit bir süre ilerletilir — en uzun
-/// tek seferlik hareket (sayaç/grafik, ~1s) bu sürede biter.
+/// `pumpAndSettle` KULLANILMAZ: nabız halkası sonsuz döngüdür. Sabit süre
+/// ilerletilir (1,35s); görev onayı (720ms) bu sürede biter, hedef bekleme
+/// süresi (1,9s) bitmez — atlanma ayrıca [_uzunBekle] ile ölçülür.
 Future<void> _bekle(WidgetTester tester) async {
   await tester.pump();
-  await tester.pump(const Duration(seconds: 2));
+  for (var i = 0; i < 3; i++) {
+    await tester.pump(const Duration(milliseconds: 450));
+  }
+}
+
+Future<void> _uzunBekle(WidgetTester tester) async {
+  await _bekle(tester);
+  await tester.pump(const Duration(seconds: 1));
+  await tester.pump(const Duration(seconds: 1));
 }
 
 Finder get _ileri => find.text('Devam').evaluate().isNotEmpty
     ? find.text('Devam')
     : find.text('Başlayalım');
 
-/// Turu sonuna kadar gez — SON adıma BASMADAN.
-///
-/// Son sayfadaki "Sandığımı Aç" `markCompleted`'ı çağırır: SharedPreferences
-/// ve Supabase yazımı. Testin konusu yerleşim, o yüzden orada durulur.
+Future<void> _devam(WidgetTester tester) async {
+  await tester.tap(_ileri);
+  await _bekle(tester);
+}
+
+/// Turu sonuna kadar gez — SON tuşa BASMADAN.
 Future<int> _turuGez(WidgetTester tester) async {
-  var sayfa = 0;
+  var adim = 0;
   while (find.text('Sandığımı Aç').evaluate().isEmpty) {
-    expect(tester.takeException(), isNull, reason: '$sayfa. sayfada taşma');
-    await tester.tap(_ileri);
-    await _bekle(tester);
-    sayfa++;
-    if (sayfa > 20) fail('Tur bitmedi — "Sandığımı Aç" hiç gelmedi.');
+    expect(tester.takeException(), isNull, reason: '$adim. adımda taşma');
+    await _devam(tester);
+    adim++;
+    if (adim > 30) fail('Tur bitmedi — "Sandığımı Aç" hiç gelmedi.');
   }
-  expect(tester.takeException(), isNull, reason: 'son sayfada taşma');
-  return sayfa;
+  expect(tester.takeException(), isNull, reason: 'son adımda taşma');
+  return adim;
 }
 
-/// Yüzeyler kaydırılabilir; hedef ekranın altında kalabilir. Önce görünür
-/// yap, sonra dokun — aksi halde dokunuş boşa gider ve test yalan söyler.
-Future<void> _dokun(WidgetTester tester, Finder f) async {
-  await tester.ensureVisible(f);
-  await tester.pump();
-  await tester.tap(f);
-}
-
-Future<void> _sayfayaGit(WidgetTester tester, int n) async {
-  for (var i = 0; i < n; i++) {
-    await tester.tap(_ileri);
-    await _bekle(tester);
+Future<void> _adimaGit(WidgetTester tester, String baslik) async {
+  for (var i = 0; i < 30; i++) {
+    if (find.text(baslik).evaluate().isNotEmpty) return;
+    await _devam(tester);
   }
+  fail('"$baslik" adımına ulaşılamadı.');
 }
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    _dokunus.clear();
+    _sonuc = null;
+    MainNavigationScreen.aktifSekme.value = 0;
+    MainNavigationScreen.sekmeIstegi.value = null;
+  });
 
-  group('akış', () {
-    testWidgets('karşılama → altı sayfa → kapanış', (tester) async {
+  group('katman', () {
+    testWidgets('karşılama kartı, ilerleme ve Atla', (tester) async {
       await _pump(tester);
+      expect(find.text('Sandığına hoş geldin'), findsOneWidget);
       expect(find.text('Başlayalım'), findsOneWidget);
       expect(find.text('Atla'), findsOneWidget);
-      // İlk sayfada geri tuşu yok.
-      expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsNothing);
-
-      final sayfa = await _turuGez(tester);
-      expect(sayfa, 6, reason: 'Tur yedi sayfa olmalı (6 geçiş).');
-      expect(find.text('Hazırsın'), findsOneWidget);
+      // İlk adımda geri yok.
+      expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
     });
 
-    testWidgets('geri, bir önceki sayfaya döner', (tester) async {
+    testWidgets('Atla turu kapatır ve "tamamlanmadı" der', (tester) async {
       await _pump(tester);
-      await _sayfayaGit(tester, 2);
-      expect(find.text('Cümleyle varlık ekle'), findsOneWidget);
-
-      await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+      await tester.tap(find.text('Atla'));
       await _bekle(tester);
-      expect(find.text('Ana ekranın'), findsOneWidget);
+      expect(_sonuc, isFalse);
+      expect(find.text('Atla'), findsNothing);
+      // Ev sahibi olduğu gibi duruyor; karartma kalktı, tuşlar dokunulabilir.
+      await tester.tap(find.text('yenile'));
+      expect(_dokunus[TourTarget.yenileTusu], 1);
     });
 
-    testWidgets('görev zorunlu değil — "Devam" görev yapılmadan da açık',
+    testWidgets('tur baştan sona gezilir; son tuş "tamamlandı" der',
         (tester) async {
       await _pump(tester);
-      await _sayfayaGit(tester, 1);
-      expect(find.textContaining('Dene:'), findsOneWidget);
-      expect(find.text('Devam'), findsOneWidget);
-      await tester.tap(find.text('Devam'));
+      final adim = await _turuGez(tester);
+      expect(adim, greaterThan(10));
+      await tester.tap(find.text('Sandığımı Aç'));
       await _bekle(tester);
-      expect(find.text('Cümleyle varlık ekle'), findsOneWidget);
+      expect(_sonuc, isTrue);
+    });
+
+    testWidgets('geri, bir önceki adıma döner', (tester) async {
+      await _pump(tester);
+      await _adimaGit(tester, 'Tutarları gizle');
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await _bekle(tester);
+      expect(find.text('Toplam net varlığın'), findsOneWidget);
     });
   });
 
-  group('görevler — gerçek yüzeyde etkileşim', () {
-    testWidgets('ana ekran: göz simgesi tutarları gizler', (tester) async {
+  group('oyuk — dokunuş geçişi', () {
+    testWidgets('hedefe dokunuş alta ulaşır, hedef dışı yutulur',
+        (tester) async {
       await _pump(tester);
-      await _sayfayaGit(tester, 1);
-      expect(find.text('TOPLAM NET VARLIK'), findsOneWidget);
-      expect(find.text('••••••'), findsNothing);
+      await _adimaGit(tester, 'Tutarları gizle');
 
-      await _dokun(tester, find.byIcon(Icons.visibility_rounded));
+      // Hedef DIŞI: yenile tuşu karartmanın altında; dokunuş ulaşmamalı.
+      await tester.tap(find.text('yenile'), warnIfMissed: false);
       await _bekle(tester);
+      expect(_dokunus[TourTarget.yenileTusu], isNull);
 
-      expect(find.text('••••••'), findsOneWidget);
-      expect(find.byIcon(Icons.visibility_off_rounded), findsOneWidget);
-      expect(find.textContaining('Tutarları gizledin'), findsOneWidget,
-          reason: 'Görev şeridi onaya dönmedi.');
+      // Hedef: göz tuşu oyukta; dokunuş GERÇEK tuşa ulaşır.
+      await tester.tap(find.text('gizle'));
+      await _bekle(tester);
+      expect(_dokunus[TourTarget.gizleTusu], 1);
+      expect(find.text('Tutarlar gizlendi'), findsOneWidget,
+          reason: 'Görev gerçek tercihten (balanceHiddenProvider) okunmalı.');
       expect(find.textContaining('Dene:'), findsNothing);
     });
 
-    testWidgets('hızlı giriş: örnek cümle karta dönüşür', (tester) async {
-      await _pump(tester);
-      await _sayfayaGit(tester, 2);
-      expect(find.text('Hızlı Giriş'), findsOneWidget);
-      expect(find.text('Gram altın'), findsNothing);
-
-      await _dokun(tester, find.text('"10 gram altın 4500 lira"'));
-      // Daktilo yazsın, kart belirsin.
-      await _bekle(tester);
-      await _bekle(tester);
-
-      expect(find.text('Gram altın'), findsOneWidget);
-      expect(find.text('₺4.500 / gram'), findsOneWidget);
-      expect(find.textContaining('Cümleyle varlık ekledin'), findsOneWidget);
-    });
-
-    testWidgets('hızlı giriş: fiyatsız cümle "güncel fiyat çekilecek" der',
+    testWidgets('dokunuşa kapalı hedef: oyuk görünür ama geçirmez',
         (tester) async {
       await _pump(tester);
-      await _sayfayaGit(tester, 2);
-      await _dokun(tester, find.text('"GARAN 500 adet"'));
+      await _adimaGit(tester, 'Beş tuş, tüm uygulama');
+      await tester.tap(find.text('Portföy'), warnIfMissed: false);
       await _bekle(tester);
-      await _bekle(tester);
-      expect(find.text('Güncel fiyat çekilecek'), findsOneWidget);
-    });
-
-    testWidgets('performans: dönem seçimi + grafiğe basma görevi bitirir',
-        (tester) async {
-      await _pump(tester);
-      await _sayfayaGit(tester, 3);
-      expect(find.text('1A GETİRİ'), findsOneWidget);
-
-      await _dokun(tester, find.text('1Y'));
-      await _bekle(tester);
-      expect(find.text('1Y GETİRİ'), findsOneWidget);
-      // Yalnızca dönem seçmek yetmez; grafiğe de dokunulmalı.
-      expect(find.textContaining('Dene:'), findsOneWidget);
-
-      final grafik = find.byType(CustomPaint).last;
-      await tester.ensureVisible(grafik);
-      await tester.pump();
-      final basi = await tester.startGesture(tester.getCenter(grafik));
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pump();
-      expect(find.text('SEÇİLİ NOKTA'), findsOneWidget,
-          reason: 'Basılı tutunca imleç değeri gösterilmeli.');
-      await basi.up();
-      await _bekle(tester);
-
-      expect(find.textContaining('Grafiği keşfettin'), findsOneWidget);
-      expect(find.text('1A GETİRİ'), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('performans: Simülasyon açıklaması değişir', (tester) async {
-      await _pump(tester);
-      await _sayfayaGit(tester, 3);
-      await _dokun(tester, find.text('Simülasyon'));
-      await _bekle(tester);
-      expect(find.textContaining('Simülasyon: bugünkü'), findsOneWidget);
-    });
-
-    testWidgets('sinyal: anahtar bildirim önizlemesini açar', (tester) async {
-      await _pump(tester);
-      await _sayfayaGit(tester, 4);
-      expect(find.text('TEKNİK SİNYALLER'), findsOneWidget);
-      expect(find.text('THYAO · AL sinyali'), findsNothing);
-
-      await _dokun(tester, find.byType(CupertinoSwitch));
-      await _bekle(tester);
-
-      expect(find.text('THYAO · AL sinyali'), findsOneWidget);
-      expect(find.textContaining('Sinyal bildirimini açtın'), findsOneWidget);
-    });
-
-    testWidgets('ortaklık: "Birlikte" ortak toplamı ve ikinci payı gösterir',
-        (tester) async {
-      await _pump(tester);
-      await _sayfayaGit(tester, 5);
-      expect(find.text('TOPLAM NET VARLIK'), findsOneWidget);
-      expect(find.text('Elif'), findsNothing);
-
-      await _dokun(tester, find.text('Birlikte'));
-      await _bekle(tester);
-
-      expect(find.text('ORTAK NET VARLIK'), findsOneWidget);
-      expect(find.text('Elif'), findsOneWidget);
-      expect(find.textContaining('Ortak portföyü gördün'), findsOneWidget);
-    });
-
-    testWidgets('ortaklık: Kopyala → Kopyalandı', (tester) async {
-      await _pump(tester);
-      await _sayfayaGit(tester, 5);
-      await _dokun(tester, find.text('Kopyala'));
-      await _bekle(tester);
-      expect(find.text('Kopyalandı'), findsOneWidget);
-    });
-
-    testWidgets('kapanış, denenen görevleri sayar', (tester) async {
-      await _pump(tester);
-      await _sayfayaGit(tester, 1);
-      await _dokun(tester, find.byIcon(Icons.visibility_rounded));
-      await _bekle(tester);
-      await _sayfayaGit(tester, 5);
-
-      expect(find.text('Hazırsın'), findsOneWidget);
-      expect(find.text('1 / 5'), findsOneWidget);
-      expect(find.text('Tutarları gizledin'), findsOneWidget);
-      expect(find.textContaining('yeniden izle'), findsOneWidget,
-          reason: 'Denemeyene turu tekrar açabileceği söylenmeli.');
+      expect(_dokunus[TourTarget.sekmePortfoy], isNull);
+      expect(MainNavigationScreen.aktifSekme.value, 0);
     });
   });
 
-  group('ayırt edici özellikler', () {
-    testWidgets('"BİZE ÖZEL" rozeti en az üç sayfada çıkar', (tester) async {
-      await _pump(tester);
-      var goruldu = 0;
-      while (find.text('Sandığımı Aç').evaluate().isEmpty) {
-        if (find.text('BİZE ÖZEL').evaluate().isNotEmpty) goruldu++;
-        await tester.tap(_ileri);
-        await _bekle(tester);
-      }
-      expect(goruldu, greaterThanOrEqualTo(3),
-          reason: 'Bizi ayırt eden özellikler işaretlenmemiş.');
-    });
-
-    testWidgets('alt menü kopyası gerçek ekranla aynı beş tuşu taşır',
+  group('görevler — gerçek durumdan', () {
+    testWidgets('sekme görevi: dokununca kendiliğinden ilerler',
         (tester) async {
       await _pump(tester);
-      await _sayfayaGit(tester, 1);
-      for (final etiket in ['Ana', 'Portföy', 'Performans', 'Profil']) {
-        expect(find.text(etiket), findsWidgets, reason: '"$etiket" yok');
-      }
-      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      await _adimaGit(tester, 'Portföy sekmesi');
+      expect(find.textContaining('Dene:'), findsOneWidget);
+
+      await tester.tap(find.text('Portföy'));
+      await _bekle(tester);
+      expect(MainNavigationScreen.aktifSekme.value, 1);
+      // Onay süresi geçti → sonraki adım (takip listesi) açıldı.
+      expect(find.text('Takip listesi'), findsOneWidget);
+    });
+
+    testWidgets('"Devam" görevi turun kendisine yaptırır: sekme değişir',
+        (tester) async {
+      await _pump(tester);
+      await _adimaGit(tester, 'Portföy sekmesi');
+      await _devam(tester);
+      expect(MainNavigationScreen.aktifSekme.value, 1,
+          reason: 'Kullanıcı dokunmadıysa tur sekmeyi kendisi açmalı.');
+      expect(find.text('Takip listesi'), findsOneWidget);
+    });
+
+    testWidgets('+ görevi: gerçek rota açılır, mikrofon adımı gelir',
+        (tester) async {
+      await _pump(tester);
+      await _adimaGit(tester, 'Varlık ekle');
+      await tester.tap(find.text('+'));
+      await _bekle(tester);
+      await _bekle(tester);
+      expect(find.text('Varlık Ekle'), findsOneWidget,
+          reason: 'Sahte AddAssetScreen rotası açılmalı.');
+      expect(find.text('Cümleyle ekle'), findsOneWidget);
+
+      // Mikrofon dokunuşa kapalı: sheet açılıp karartmanın altında kalmasın.
+      await tester.tap(find.text('mik'), warnIfMissed: false);
+      await _bekle(tester);
+      expect(_dokunus[TourTarget.hizliGiris], isNull);
+
+      // Toplu ekle adımından çıkınca rota kapanır, Performans adımı gelir.
+      await _devam(tester);
+      expect(find.text('Toplu ekle'), findsOneWidget);
+      await _devam(tester);
+      await _bekle(tester);
+      expect(find.text('Varlık Ekle'), findsNothing,
+          reason: 'Tur açtığı ekranı arkasında bırakmamalı.');
+      expect(find.text('Performans sekmesi'), findsOneWidget);
+    });
+
+    testWidgets('dönem görevi: mod seçici belirince tamamlanır',
+        (tester) async {
+      await _pump(tester);
+      await _adimaGit(tester, 'Dönem seç');
+      expect(find.textContaining('Dene:'), findsOneWidget);
+      await tester.tap(find.text('dönem'));
+      await _bekle(tester);
+      expect(find.text('Dönem değişti'), findsOneWidget);
+      await _devam(tester);
+      expect(find.text('Gerçek / Simülasyon'), findsOneWidget);
+    });
+  });
+
+  group('hedef bulunamazsa', () {
+    testWidgets('adım atlanır, boş karartmada kalınmaz', (tester) async {
+      await _pump(tester, davetKoduVar: false);
+      await _adimaGit(tester, 'Profil sekmesi');
+      await _devam(tester); // ortaklık adımı — hedefi yok
+      await _uzunBekle(tester);
+      expect(find.text('Eşinle tek portföy'), findsNothing);
+      expect(find.text('Ayarlar'), findsOneWidget);
     });
   });
 
   group('taşma — dar ekran ve büyük yazı tipi', () {
-    // Yüzeyler en kırılgan kısım: beş sütunlu alt menü, beş etiketli dönem
-    // seçici, hero tutar. Turun tamamı geziliyor — yalnızca ilk sayfayı
-    // pump etmek bunları hiç açmazdı.
     for (final genislik in [320.0, 375.0, 430.0]) {
       for (final olcek in [1.0, 1.5, 2.0]) {
         testWidgets('${genislik.toInt()}pt @ $olcek× — tur boyunca taşmaz',
@@ -313,21 +454,17 @@ void main() {
     });
 
     testWidgets('kısa ekranda (SE boyu) taşmaz', (tester) async {
-      // 4,7" iPhone SE: 375×667. Yükseklik en dar olan cihaz.
       await _pump(tester, width: 375, height: 667, textScale: 1.3);
       await _turuGez(tester);
     });
 
-    testWidgets('"hareketi azalt" açıkken tur çalışır ve görevler yapılır',
-        (tester) async {
-      // Süreler sıfırken sonsuz döngüler durur, tek seferlikler anında biter;
-      // hiçbir görev animasyonun bitmesine bağlı kalmamalı.
+    testWidgets('"hareketi azalt" açıkken tur çalışır', (tester) async {
       await _pump(tester, hareketiAzalt: true);
-      await _sayfayaGit(tester, 2);
-      await _dokun(tester, find.text('"10 gram altın 4500 lira"'));
+      await _adimaGit(tester, 'Tutarları gizle');
+      await tester.tap(find.text('gizle'));
       await tester.pump();
       await tester.pump();
-      expect(find.text('Gram altın'), findsOneWidget);
+      expect(find.text('Tutarlar gizlendi'), findsOneWidget);
       await _turuGez(tester);
     });
   });
@@ -363,7 +500,7 @@ void _akisTestleri() {
   });
 
   test('tamamlama ve atlama hâlâ işaretleniyor', () {
-    // Bu iki çağrı düşerse tanıtım HER açılışta tekrar gösterilir.
+    // Bu çağrılar düşerse tanıtım HER açılışta tekrar gösterilir.
     expect(kaynak.contains('OnboardingScreen.markCompleted(widget.userId)'),
         isTrue);
     expect(kaynak.contains('logOnboardingCompleted()'), isTrue);
@@ -376,25 +513,43 @@ void _akisTestleri() {
     expect(kaynak.contains("'Atla'"), isTrue);
   });
 
-  test('ekran okuyucu sayfa değişimini duyuruyor', () {
+  test('ekran okuyucu adım değişimini duyuruyor', () {
     expect(kaynak.contains('liveRegion: true'), isTrue);
   });
 
   test('hareket, azaltılmış hareket ayarına saygı duyuyor', () {
-    // SandikMotion.of/stateOf/surfaceOf, "Hareketi Azalt" açıkken süreyi
-    // sıfırlar. Sonsuz döngüler (nabız, halka, imleç) ayrıca
-    // `disableAnimationsOf` ile durdurulur.
     expect(kaynak.contains('SandikMotion.stateOf(context)'), isTrue);
     expect(kaynak.contains('SandikMotion.surfaceOf(context)'), isTrue);
     expect(kaynak.contains('disableAnimationsOf(context)'), isTrue);
   });
 
-  test('yüzeyler servis katmanına dokunmuyor', () {
-    // Tanıtım sabit örnek veriyle çalışır; fiyat çekmez, Supabase okumaz
-    // (markCompleted dışında). Gerçek ayrıştırıcı/servis bağlanırsa tanıtım
-    // ağ hatasıyla kırılır.
-    expect(kaynak.contains('PriceService'), isFalse);
-    expect(kaynak.contains('portfolioProvider'), isFalse);
-    expect(kaynak.contains("import 'package:http"), isFalse);
+  test('tur gerçek ekranın üstünde çalışır — kopya yüzey yok', () {
+    // Kullanıcı geri bildirimi (2026-09-14): kopya yüzeyler "font ve
+    // bileşenler yine farklı duruyor". Tur MainNavigationScreen'i kurar ve
+    // Overlay'e girer; kendi sahte hero kartını / alt menüsünü çizmez.
+    expect(kaynak.contains('const MainNavigationScreen()'), isTrue);
+    expect(kaynak.contains('TOPLAM NET VARLIK'), isFalse,
+        reason: 'Hero kart kopyası geri gelmiş.');
+    // Katman Navigator'ı sarmalı; aksi halde açılan rotalar turun üstüne
+    // biner (ilk sürümde Overlay ile tam olarak bu oldu).
+    final main = File('lib/main.dart').readAsStringSync();
+    expect(main.contains('OnboardingTourHost(child: child!)'), isTrue,
+        reason: 'MaterialApp.builder tur katmanını sarmıyor.');
+  });
+
+  test('her tur hedefi gerçek bir ekranda işaretli', () {
+    // Tur, ekranda olmayan bir hedefe spot düşüremez: adım sessizce atlanır
+    // ve kimse fark etmez. Her hedefin lib/screens altında bir TourAnchor'ı
+    // olmalı.
+    final ekranlar = Directory('lib/screens')
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'))
+        .map((f) => f.readAsStringSync())
+        .join('\n');
+    for (final t in TourTarget.values) {
+      expect(ekranlar.contains('TourTarget.${t.name}'), isTrue,
+          reason: 'TourTarget.${t.name} hiçbir ekranda işaretli değil.');
+    }
   });
 }

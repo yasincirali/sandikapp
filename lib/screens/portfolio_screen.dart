@@ -25,6 +25,7 @@ import '../theme/sandik.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
+import '../widgets/tour_anchor.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/dividend_dialog.dart';
@@ -230,10 +231,13 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               // üst bar (sırala · karşılaştır · çıkış) kalabalıklaşmaz.
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: _BodyTabs(
-                  selected: _bodyTab,
-                  count: ref.watch(watchlistCountProvider),
-                  onChanged: (i) => setState(() => _bodyTab = i),
+                child: TourAnchor(
+                  target: TourTarget.govdeSekmeleri,
+                  child: _BodyTabs(
+                    selected: _bodyTab,
+                    count: ref.watch(watchlistCountProvider),
+                    onChanged: (i) => setState(() => _bodyTab = i),
+                  ),
                 ),
               ),
               // ── Body ──────────────────────────────────────────────────────
