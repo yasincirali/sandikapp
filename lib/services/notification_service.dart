@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset.dart';
 import '../models/position.dart' show positionKey;
 import '../models/technical_signal.dart';
+import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../screens/partnership_requests_screen.dart';
 import '../screens/asset_detail_screen.dart';
@@ -571,7 +572,11 @@ class NotificationService {
     // geliyorsa veri birkaç saniye sonra düşer.
     if (assets == null || assets.isEmpty) {
       if (deneme >= _yenidenDenemeSiniri) {
-        onNotFound?.call();
+        // Oturum yoksa portföy hiç gelmez; giriş ekranının üstüne "varlık
+        // bulunamadı" açmak yanıltıcı olur — bağlantı sessizce düşer.
+        // Oturum varsa portföy gerçekten boş / hedef yok → tepki ver.
+        final user = container.read(authProvider).valueOrNull;
+        if (user != null) onNotFound?.call();
         return;
       }
       Future<void>.delayed(

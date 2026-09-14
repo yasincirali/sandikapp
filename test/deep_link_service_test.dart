@@ -34,6 +34,23 @@ void main() {
     expect(acilan, isEmpty);
   });
 
+  test('bulunamayan hedef: dış bağlantı hata ekranı ister, bildirim istemez',
+      () {
+    // Karar: aynı `openAssetPerformance` iki kaynaktan çağrılır. Dış
+    // bağlantı (sahte / başkasına ait / silinmiş id) hata ekranı gösterir;
+    // push bildirimi yolu sessiz kalır (eski bildirim → yanıltıcı olur).
+    final dl = File('lib/services/deep_link_service.dart').readAsStringSync();
+    expect(
+        dl.contains(
+            'onNotFound: NotificationService.instance.showAssetNotFound'),
+        isTrue);
+    final ns =
+        File('lib/services/notification_service.dart').readAsStringSync();
+    final bildirimYolu =
+        RegExp(r'openAssetPerformance\(assetId\);').allMatches(ns).length;
+    expect(bildirimYolu, 2, reason: 'FCM data + yerel payload yolları sessiz');
+  });
+
   test('köprü açılışta kuruluyor (wiring)', () {
     // Servis doğru olsa da main.dart'ta çağrılmazsa dış bağlantılar yine
     // düşmez. Kaynak metni denetlemek bu regresyonu görünür kılar.
@@ -63,7 +80,8 @@ void main() {
     );
     final plist = File('ios/Runner/Info.plist').readAsStringSync();
     expect(
-      RegExp(r'<key>FlutterDeepLinkingEnabled</key>\s*<false/>').hasMatch(plist),
+      RegExp(r'<key>FlutterDeepLinkingEnabled</key>\s*<false/>')
+          .hasMatch(plist),
       isTrue,
     );
   });
