@@ -40,6 +40,10 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # Duman testi (3.16): integration_test/smoke_test.dart — gerçek uygulama,
+  # yerel Supabase yığını. CI: .github/workflows/integration.yml
+  integration_test:
+    sdk: flutter
   # Build-time ikon üretici; runtime bağımlılığı değil (2026-09'da taşındı).
   flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0

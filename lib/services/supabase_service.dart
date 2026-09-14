@@ -3,6 +3,7 @@ import '../models/asset.dart';
 import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
 import '../models/signal_preference.dart';
+import '../models/tefas_nav_gozlem.dart';
 import '../models/user_model.dart';
 import '../models/watchlist_item.dart';
 import 'db_logger.dart';
@@ -30,6 +31,45 @@ class SupabaseService {
       _hasPerSideHidden = false;
     }
     return _hasPerSideHidden!;
+  }
+
+  // ── TEFAS NAV gözlemi ────────────────────────────────────────────────────
+
+  /// Verilen fon kodları için son NAV gözlemleri (kod → en yeni satır).
+  ///
+  /// Yalnızca [gun] ve sonrasına ait NAV tarihleri istenir: istemci çizdiği
+  /// günün basamağını arıyor, geçmiş satırların ona faydası yok. Tablo yoksa
+  /// (0063 henüz koşmadı) ya da istek düşerse çağıran boş harita alır ve
+  /// basamak sabit saate düşer — bu yol üretimde sessizce çalışmaya devam
+  /// etmeli, o yüzden hata burada yutulmaz, çağıranda Crashlytics'e gider.
+  Future<Map<String, TefasNavGozlem>> tefasNavGozlemleri(
+    Set<String> fonKodlari, {
+    required DateTime gun,
+  }) async {
+    if (fonKodlari.isEmpty) return const {};
+    final kodlar = fonKodlari.toList()..sort();
+    final gunStr =
+        '${gun.year}-${gun.month.toString().padLeft(2, '0')}-${gun.day.toString().padLeft(2, '0')}';
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.tefasNavGozlemleri',
+      table: 'tefas_nav_gozlem',
+      op: 'SELECT',
+      request: {'fon_kodu': kodlar, 'nav_tarihi_gte': gunStr},
+      call: () => _db
+          .from('tefas_nav_gozlem')
+          .select('fon_kodu, nav_tarihi, ilk_gorulme, onceki_kontrol')
+          .inFilter('fon_kodu', kodlar)
+          .gte('nav_tarihi', gunStr)
+          .order('nav_tarihi', ascending: false),
+    );
+    final out = <String, TefasNavGozlem>{};
+    for (final r in rows) {
+      final g = TefasNavGozlem.fromMap(r);
+      if (g == null) continue;
+      // Satırlar tarih azalan geldi: ilk görülen = en yeni.
+      out.putIfAbsent(g.fonKodu, () => g);
+    }
+    return out;
   }
 
   // ── Profiles ─────────────────────────────────────────────────────────────

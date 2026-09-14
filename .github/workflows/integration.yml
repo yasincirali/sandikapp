@@ -1,0 +1,119 @@
+name: Integration (yerel Supabase + emülatör)
+
+# Yol haritası 3.16 — uçtan uca duman testi.
+#
+# Neden ayrı bir workflow: ci.yml hızlı kapı (analyze + birim testleri,
+# ~10 dk). Buradaki iş Docker'da tam Supabase yığını + Android emülatörü
+# ister (~25 dk); ci.yml'e eklenmesi her PR'ı o kadar bekletirdi.
+#
+# İki katman, bilerek sıralı:
+#   1. supabase-smoke  — `supabase start` (0000 + tüm migration'lar + seed),
+#      sonra tool/supabase_smoke.sh: Flutter'sız, düz REST ile giriş → varlık
+#      ekle → oku → RLS reddi. Saniyeler sürer; kırmızıysa sorun sunucu
+#      tarafında ve emülatörü hiç açmaya gerek yok.
+#   2. emulator-smoke  — aynı yığın + Android emülatörü +
+#      integration_test/smoke_test.dart (gerçek uygulama).
+#
+# Hosted bir "test Supabase projesi" YOK; yığın koşucuda ayağa kalkar ve
+# işle birlikte ölür. Secret gerekmez: yerel anon key deterministik ve
+# `supabase status` ile okunur.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  supabase-smoke:
+    name: Supabase yığını + başsız duman
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # 0000_base_schema.sql'den 00xx'e kadar her migration + seed.sql.
+      # Bir migration taze yığında kırılırsa burada, PR'da görünür —
+      # canlı projeye `db push` edilmeden.
+      - name: supabase start
+        run: supabase start
+
+      - name: Başsız duman (REST)
+        run: bash tool/supabase_smoke.sh
+
+      - name: supabase stop
+        if: always()
+        run: supabase stop --no-backup
+
+  emulator-smoke:
+    name: Android emülatörü + integration_test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: supabase-smoke
+    steps:
+      - uses: actions/checkout@v4
+
+      # GitHub'ın Linux koşucularında KVM var ama /dev/kvm varsayılan olarak
+      # yalnızca root'a açık; emülatör donanım hızlandırmasız çalışmaz.
+      - name: KVM izni
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # ci.yml / android-release.yml ile AYNI sürüm.
+          flutter-version: 3.47.2
+          cache: true
+
+      - name: Flutter dependencies
+        run: flutter pub get
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: supabase start
+        run: supabase start
+
+      # Emülatör ana makineye 10.0.2.2 üzerinden ulaşır; anon key yerel
+      # yığının sabit anahtarı (gizli değil).
+      - name: Supabase bağlantı bilgisi
+        run: |
+          eval "$(supabase status -o env | grep -E '^ANON_KEY=')"
+          echo "SUPABASE_URL=http://10.0.2.2:54321" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+
+      - name: integration_test (emülatör)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            flutter test integration_test/smoke_test.dart \
+              --dart-define=SUPABASE_URL=$SUPABASE_URL \
+              --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+
+      - name: supabase stop
+        if: always()
+        run: supabase stop --no-backup

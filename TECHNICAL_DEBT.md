@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-14 (P2-P4 turu: 6 madde kapandı, pinning karar önerisi eklendi)
+**Son güncelleme:** 2026-09-14 (fon NAV çapası gözlemle kapandı; 3.16 integration_test için taban şema 0000 + yerel yığın)
 
 ---
 
@@ -595,7 +595,28 @@ içi ızgaraya genelleştirildiğinde — iki ekran aynı cebri paylaşabilir.
 
 ---
 
-## 🟡 AÇIK — Fonun gün içi NAV basamağı SABİT bir saate çapalı
+## ✅ KAPANDI — Fonun gün içi NAV basamağı SABİT bir saate çapalı
+
+**KAPANDI 2026-09-14 (gözlemle).** Damgayı TEFAS'tan beklemek yerine
+kendimiz üretiyoruz: `observe-tefas-nav` edge function'ı iş günleri TR
+06:00–21:30 arası yarım saatte bir, portföylerdeki her fon kodu için TEFAS'ın
+son NAV satırını çekiyor ve daha önce görülmemiş bir (kod, NAV tarihi)
+çiftini `tefas_nav_gozlem`'e `ilk_gorulme = now()` ile yazıyor (0063; satır
+bir kez yazılır, `onceki_kontrol` bir önceki turun zamanı → yayın anı
+[onceki_kontrol, ilk_gorulme] aralığında). İstemci `HistoryService.
+fonBasamakAni`: NAV tarihi çizilen günse ve ilk görülme o güne düşüyorsa
+basamak `ilk_gorulme` slotuna; her başka durumda **eski davranış aynen**
+(`tefasNavYayinSaati` = 10:00). Bugün tarihli NAV'ı görülen kod o gün bir
+daha sorulmaz (maliyet). Testler: `gun_ici_fon_degisimi_test` (çapa
+öncelik/koruma kuralları), `supabase/tests/tefas_nav_test.ts` (tarih
+biçimleri, TR gün sınırı, yeniden sorma kuralı).
+
+**Kalan yaklaşıklık (bilinçli):** gözlem cron sıklığı kadar kaba (30 dk) ve
+günün ilk turunda (06:00) görülen tarih yalnızca ÜST sınır verir. Daha ince
+çözünürlük daha sık tur = daha çok TEFAS isteği; 30 dk grafikte 6 slot,
+kullanıcı için fark yok. "İkinci yaklaşıklık" (NAV'ın kendi gününe atfı)
+aynen duruyor: kullanıcı kararı, TEFAS'ın kendi "günlük getiri"siyle uyumlu.
+Sunucu ayağı (0063 + fonksiyon + secret) `YAPMAN_GEREKENLER.md` #24.
 
 **Karar tarihi:** 2026-09-10 · Hata turu
 
@@ -629,9 +650,9 @@ gününe ait olabilir. Kullanıcı bunu bilerek istedi (TEFAS'ın kendi sitesi d
 aynı farkı "günlük getiri" diye gösteriyor) — ama tarih bazlı doğru
 atıf yapılacaksa iş burada başlar.
 
-**Ele alınma zamanı:** TEFAS yanıtından yayın zaman damgası çıkarılabilirse
-(ya da güvenilir bir yayın saati doğrulanırsa) basamak oraya taşınır; aynı
-turda NAV tarihine göre atıf da düzeltilebilir.
+**Ele alınma zamanı (o günkü not):** TEFAS yanıtından yayın zaman damgası
+çıkarılabilirse (ya da güvenilir bir yayın saati doğrulanırsa) basamak oraya
+taşınır. → Damga çıkarılamadı; gözlemle üretildi (yukarıdaki kapanış notu).
 
 ---
 

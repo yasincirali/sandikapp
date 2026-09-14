@@ -35,10 +35,19 @@ Altın gecikmesi için `slow_history_fetch` teşhis olayı. `seyreltSpots` silin
 "Getiri sıralaması" etiketi. Gün içi karşılaştırma açıldı. TÜFE karşılaştırma
 ekranına basamaklı seri olarak eklendi. Light mode: ölü glass yardımcıları silindi,
 `AssetType.onSurface` ile kategori ikon/metinleri ≥ 4,5:1. **Bilinçli atlananlar:**
-3.2 baz para birimi (58 site, cihaz doğrulaması şart), 3.9 ekran birleştirme, 3.16,
-3.20, `signal_state` yeniden anahtarlama (tetikleyici şikâyet yok), fon NAV çapası
-(TEFAS zaman damgası yok), mum grafik / dev ekran parçalama (kullanıcı kararı),
-yatırımcı seviyesi (profil alanı yok, zorunlu onboarding istenmiyor).
+3.2 baz para birimi (58 site, cihaz doğrulaması şart), 3.9 ekran birleştirme,
+3.20, `signal_state` yeniden anahtarlama (tetikleyici şikâyet yok), mum grafik /
+dev ekran parçalama (kullanıcı kararı), yatırımcı seviyesi (profil alanı yok,
+zorunlu onboarding istenmiyor). ~~3.16~~ ve ~~fon NAV çapası~~ dördüncü turda
+kapandı (aşağıda).
+
+**2026-09-14 (dördüncü tur, "dış bağımlılık" ikilisi):** **3.16** — dış bağımlılık
+sanılan şey (test Supabase projesi) aslında eksik taban migration'ıydı; `0000` +
+yerel yığın + seed + duman testi + `integration.yml` ile kapandı (tablo satırı).
+**Fon NAV çapası** — TEFAS damga vermiyor, damga GÖZLEMLE üretildi: `observe-tefas-nav`
+(0063, iş günü 30 dk'da bir) NAV tarihinin ilk görülme anını yazar,
+`HistoryService.fonBasamakAni` basamağı oraya koyar; gözlem yoksa 10:00 aynen.
+Sunucu ayağı `YAPMAN` #24. Deno 222+13 test, Flutter tam paket yeşil.
 
 **Kalanlar ve neden burada durdu:**
 
@@ -51,7 +60,7 @@ yatırımcı seviyesi (profil alanı yok, zorunlu onboarding istenmiyor).
 | 3.9 Performans ekranlarını birleştir | 🟡 İlk adım 2026-09-14: ortak altyapı çıkarıldı — `TransactionSegment` tek model (`widgets/transaction_segment.dart`; tekil varlık ekranındaki ölü `dashed` bayrağı `piyasaKapali` ile birleşti), tam ekran çipi `ChartFullscreenChip`. Asıl birleştirme (8.4k satır, iki ekranın gün içi/kapalı piyasa/fon basamağı davranışları) gerçek cihazda görsel doğrulama ister; parite testleri güvenlik ağı olarak duruyor. |
 | 3.10 `add_asset_screen` Notifier'a taşı | ✅ 2026-09-14: durum makinesi `providers/add_asset_form_provider.dart` (`AddAssetFormNotifier`, `AddAssetPriceLookup` kapısı, `parseQuickEntry`); ekranda `_AddAssetScreenState` içinde `setState` kalmadı (ratchet testi). Metin controller'ları ekranda, geçişler `AlanYazimi` döner. 22 birim testi. |
 | 3.12 Yarış / 3.13 Paywall | Kullanıcı kararı (2026-09-14): ikisi de KALIR; Sybil çözümü 0059 ile uygulandı. 3.14 vadeli mevduat SİLİNDİ (aşağıda). |
-| 3.16 integration_test | Test Supabase projesi + seed verisi ister. |
+| 3.16 integration_test | ✅ 2026-09-14: hosted proje GEREKMİYORDU — asıl eksik taban şemanın migration olarak var olmamasıydı (defter 0007'den başlıyordu, `supabase db reset` sıfırdan ortam kuramıyordu). `0000_base_schema.sql` (git 1b23813'teki `supabase_schema.sql`'in 0008-sonrası, idempotent hâli; canlıda deftere işaretlenecek → `YAPMAN` #24), `supabase/config.toml` + `seed.sql` (tohum kullanıcı `smoke@sandik.test`, onboarding tamam, yasal uyarı bilinçli onaysız). `integration_test/smoke_test.dart`: gerçek `app.main()` → giriş → yasal uyarı → FAB → "Diğer" türü elle fiyatlı varlık → Portföy'de görünür. `tool/supabase_smoke.sh`: aynı akış Flutter'sız (GoTrue token + PostgREST + RLS reddi). `.github/workflows/integration.yml`: `supabase start` → başsız duman → Android emülatörü (api 34, KVM) → integration_test. **Bu oturumda koşulamadı** (Docker daemon ve KVM yok); 0000 + 0008 + seed + 0063 yerel Postgres 16'da stub auth şemasıyla doğrulandı (idempotent, RLS/GRANT), Flutter tarafı analyze temiz. İlk CI koşusunda emülatör işi kırılabilir — `supabase-smoke` işi yeşilse sorun uygulama/emülatör tarafındadır. |
 | 3.18 Swift widget derleme CI | ✅ Zaten kapalı (2026-09-14 tespiti): `ios-testflight.yml` `flutter build ios` ile widget extension'ı her main push'unda derliyor; uygulama TestFlight'ta. Ayrı `xcodebuild` adımı gereksiz. |
 | 3.20 İngilizce arayüz | Yalnızca EN pazarı hedefleniyorsa. |
 | 2.12 / 2.14 | Görsel doğrulama isteyen UI kalemleri (segment kontrolleri, hero yeniden tasarımı); cihazsız yapılmadı. 2.10 ve 2.13 2026-09-14'te kapandı. |

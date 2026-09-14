@@ -4,8 +4,11 @@ import 'package:flutter/foundation.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
+import '../models/tefas_nav_gozlem.dart';
 import 'analytics_service.dart';
+import 'crash_reporter.dart';
 import 'price_service.dart';
+import 'supabase_service.dart';
 import '../utils/tr_format.dart';
 
 /// Grafik çözünürlük seviyeleri. Zoom yaptıkça daha ince tier'a düşer.
@@ -235,6 +238,57 @@ class HistoryService {
 
   static final HistoryService instance = HistoryService._();
   HistoryService._();
+
+  // ── TEFAS NAV gözlemi kaynağı ─────────────────────────────────────────────
+  //
+  // Gün içi fon basamağının çapası (bkz. `fonBasamakAni`). Statik ve
+  // değiştirilebilir: testler sunucuya gitmeden sahte gözlem verir. Varsayılan
+  // `SupabaseService` — tablo yoksa (0063 koşmadıysa) ya da istek düşerse boş
+  // harita döner ve basamak sabit saate (`tefasNavYayinSaati`) düşer. Hata
+  // yutulmaz, Crashlytics'e non-fatal gider.
+  static Future<Map<String, TefasNavGozlem>> Function(
+    Set<String> fonKodlari,
+    DateTime gun,
+  ) tefasNavGozlemKaynagi = _sunucuGozlemleri;
+
+  static Future<Map<String, TefasNavGozlem>> _sunucuGozlemleri(
+    Set<String> fonKodlari,
+    DateTime gun,
+  ) async {
+    try {
+      return await SupabaseService.instance
+          .tefasNavGozlemleri(fonKodlari, gun: gun);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'HistoryService.tefasNavGozlemleri');
+      return const {};
+    }
+  }
+
+  // Gözlem 5 dk önbellekte: gün içi seri 30 sn'de bir yeniden kuruluyor,
+  // gözlem ise günde bir kez değişir. Anahtar kod kümesi — portföye fon
+  // eklenince yeniden sorulur.
+  Map<String, TefasNavGozlem>? _gozlemCache;
+  String _gozlemCacheKey = '';
+  DateTime? _gozlemCacheAt;
+  static const _gozlemCacheTtl = Duration(minutes: 5);
+
+  Future<Map<String, TefasNavGozlem>> _gozlemleriGetir(
+      Set<String> fonKodlari, DateTime gun) async {
+    if (fonKodlari.isEmpty) return const {};
+    final key = (fonKodlari.toList()..sort()).join(',');
+    final at = _gozlemCacheAt;
+    if (_gozlemCache != null &&
+        key == _gozlemCacheKey &&
+        at != null &&
+        DateTime.now().difference(at) < _gozlemCacheTtl) {
+      return _gozlemCache!;
+    }
+    final sonuc = await tefasNavGozlemKaynagi(fonKodlari, gun);
+    _gozlemCache = sonuc;
+    _gozlemCacheKey = key;
+    _gozlemCacheAt = DateTime.now();
+    return sonuc;
+  }
 
   /// Ticker başına fiyat serisi önbelleği.
   ///
@@ -1001,6 +1055,13 @@ class HistoryService {
       fonNavFutures.putIfAbsent(
           a.ticker, () => getHistorySafeFor(a.ticker, '5d'));
     }
+    // Sunucudaki yayın anı gözlemleri — NAV serileriyle PARALEL başlar.
+    // Çizilecek gün (`dayStart`) henüz bilinmiyor; son üç gün istenir,
+    // eşleştirme aşağıda `fonBasamakAni` içinde güne göre yapılır.
+    final fonGozlemFuture = _gozlemleriGetir(
+      fonNavFutures.keys.map(tefasKodu).toSet(),
+      dayKey(now).subtract(const Duration(days: 3)),
+    );
 
     if (needsUsd) {
       final usd = await usdFuture;
@@ -1209,6 +1270,8 @@ class HistoryService {
         .millisecondsSinceEpoch;
     final int? fonBasamakTs =
         nowTs >= normalizeSlot(fonBasamakAdayi) ? normalizeSlot(fonBasamakAdayi) : null;
+    // Gözlem varsa fon bazında bu varsayılanın yerine geçer (`fonBasamakAni`).
+    final fonGozlemler = await fonGozlemFuture;
 
     // Her varlık için "seed" fiyatı — intraday veri henüz gelmediği
     // slotlarda kullanılır (dünkü kapanış proxy'si). Böylece bir varlığın
@@ -1408,7 +1471,13 @@ class HistoryService {
                   // verilince fonksiyon sabit çiziyor.
                   oncekiNav: navBugunMu ? fonOncekiNav[a.ticker] : null,
                   slotTs: hourTs,
-                  basamakTs: fonBasamakTs,
+                  basamakTs: fonBasamakAni(
+                    dayStart: dayStart,
+                    nowTs: nowTs,
+                    varsayilanTs: fonBasamakTs,
+                    gozlem: fonGozlemler[tefasKodu(a.ticker)],
+                    normalizeSlot: normalizeSlot,
+                  ),
                 ) *
                 qty;
           }
@@ -2334,16 +2403,63 @@ NormalizedSeries? normalizeSeries(Map<int, double> raw) {
   );
 }
 
-/// TEFAS'ın günlük NAV'ının gün içi grafikte çizileceği SAAT (yerel).
+/// TEFAS'ın günlük NAV'ının gün içi grafikte çizileceği VARSAYILAN saat
+/// (yerel) — sunucu gözlemi yoksa.
 ///
-/// TEFAS yanıtı NAV'ın TARİHİNİ taşır, yayımlandığı ANI değil — gerçek yayın
-/// damgası elimizde yok. Piyasa açılışı (10:00) günden güne değişmeyen,
-/// uygulamanın başka yerlerinde de referans aldığı bir an; basamağı oraya
-/// koymak yaklaşık ama KARARLI. Kararlılık burada doğruluktan daha çok iş
+/// TEFAS yanıtı NAV'ın TARİHİNİ taşır, yayımlandığı ANI değil. 2026-09-14'e
+/// kadar tek çapa buydu: piyasa açılışı (10:00), günden güne değişmeyen bir
+/// an; yaklaşık ama KARARLI. Kararlılık burada doğruluktan daha çok iş
 /// görüyor: kayan bir basamak kullanıcıya olmayan bir olay anlatır.
 ///
-/// Yaklaşıklığı ve ne zaman iyileştirileceği `TECHNICAL_DEBT.md`'de yazılı.
+/// Artık asıl çapa sunucunun GÖZLEMİ (`fonBasamakAni`, `tefas_nav_gozlem`,
+/// 0063): NAV tarihinin sunucuda ilk görüldüğü an. Bu sabit yalnızca gözlem
+/// olmadığında (tablo yok, hafta sonu, TEFAS o tur yanıt vermedi) devreye
+/// girer. Geçmişi `TECHNICAL_DEBT.md`'de.
 const int tefasNavYayinSaati = 10;
+
+/// `TEFAS:AFT` → `AFT`. Sunucu gözlemi öneksiz kodla anahtarlı.
+String tefasKodu(String ticker) {
+  final t = ticker.trim().toUpperCase();
+  return t.startsWith('TEFAS:') ? t.substring('TEFAS:'.length) : t;
+}
+
+/// Bir fonun gün içi basamağının çizileceği slot.
+///
+/// Öncelik sunucu gözleminde ([gozlem], bkz. `TefasNavGozlem`): NAV tarihi
+/// çizilen gün ([dayStart]) İSE ve ilk görülme de o güne düşüyorsa basamak
+/// ilk görülmenin slotuna konur — TEFAS'ın verdiği damga değil, bizim
+/// ölçtüğümüz "en geç bu saatte yayımlanmıştı" anı (cron sıklığı kadar,
+/// 30 dk, kaba).
+///
+/// Aksi hâlde [varsayilanTs] (sabit `tefasNavYayinSaati`, gün o saate
+/// gelmediyse `null`). Yani gözlem yokken davranış ESKİSİYLE AYNI; gözlem
+/// varken yalnızca basamağın yeri değişir, basamağın kendisi (`oncekiNav` /
+/// `guncelNav`) aynı kalır.
+///
+/// İki koruma:
+///   * Gözlem [dayStart]'tan önceye düşerse (saat dilimi/bozuk damga)
+///     varsayılana dönülür — grafiğin sol ucunda uçurum açılmasın.
+///   * Gözlem ŞİMDİDEN ilerideyse (cihaz saati geri) basamak henüz yok
+///     (`null`) — hizalama fon için no-op kalır, imlece yapışık uçurum
+///     oluşmaz (2026-09-10 dersi).
+@visibleForTesting
+int? fonBasamakAni({
+  required DateTime dayStart,
+  required int nowTs,
+  required int? varsayilanTs,
+  required TefasNavGozlem? gozlem,
+  required int Function(int) normalizeSlot,
+}) {
+  if (gozlem == null) return varsayilanTs;
+  bool ayniGun(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+  if (!ayniGun(gozlem.navTarihi, dayStart)) return varsayilanTs;
+  if (!ayniGun(gozlem.ilkGorulme, dayStart)) return varsayilanTs;
+  final slot = normalizeSlot(gozlem.ilkGorulme.millisecondsSinceEpoch);
+  if (slot < dayStart.millisecondsSinceEpoch) return varsayilanTs;
+  if (nowTs < slot) return null;
+  return slot;
+}
 
 /// Bir fonun gün içi seride kullanacağı BİRİM fiyat.
 ///

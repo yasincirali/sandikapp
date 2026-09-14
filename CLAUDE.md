@@ -91,8 +91,9 @@ lib/utils/       tr_format (fmtTRY/fmtPct/parseTrNumber), friendly_error, grafik
 lib/widgets/     zoomable_chart (+ZoomDataController), percent_comparison_chart, sparkline, şeritler
 test/            155 dosya; parite/değişmez testleri (chart_interaction_parity, design_token_leak,
                  spacing_scale, touch_target_size, reduce_motion_coverage…) kasıtlı ratchet'lerdir
-supabase/        migrations/ (tek şema kaynağı), functions/ (+_shared/cron_auth.ts, fcm.ts),
-                 tests/ (Deno), audit/
+integration_test/ smoke_test.dart — gerçek uygulama + yerel Supabase (3.16); CI: integration.yml
+supabase/        migrations/ (tek şema kaynağı; 0000 taban şema), functions/ (+_shared/cron_auth.ts,
+                 fcm.ts), tests/ (Deno), audit/, config.toml + seed.sql (yerel yığın / CI)
 ```
 
 Adlar sekmelerle örtüşür (2026-09 yeniden adlandırması): "Portföy" sekmesi
@@ -147,7 +148,10 @@ flutter analyze lib/ test/
 flutter test test/<o turda yazılan veya etkilenen>_test.dart
 ```
 Testler yine **yazılır**; tam paket her turda koşulmaz. CI (`.github/workflows/ci.yml`)
-PR'da ve `main`'de tam paketi + `deno check`/`deno test` koşar.
+PR'da ve `main`'de tam paketi + `deno check`/`deno test` koşar; `integration.yml` yerel
+Supabase yığınını (`supabase start`: 0000 + tüm migration'lar + `seed.sql`) kaldırıp
+`tool/supabase_smoke.sh` ve Android emülatöründe `integration_test/` koşar. Yeni migration
+taze yığında kırılırsa orada görünür.
 
 Push / commit öncesi, kullanıcı görsel doğrulama istediğinde ya da bir dizi değişikliğin
 sonunda tam paket + emülatör dağıtımı:
