@@ -88,7 +88,11 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
 
     final puan = InflationService.spreadPoints(veri.nominal, veri.inflation);
     final onde = puan >= 0;
-    final mutlak = fmtNum(puan.abs(), digits: 1);
+    // Puan farkı da yuvarlanmaz: yanındaki iki ham sayı iki ondalıklı ve
+    // kullanıcı farkı elle doğruluyor (nominal − TÜFE). Tek ondalıkta
+    // çıkarma tutmuyordu — 48,20 − 31,51 = 16,69 iken rozet "16,7 puan"
+    // yazıyordu ve rozetin kendi kara kutu olmama amacı zedeleniyordu.
+    final mutlak = fmtNum(puan.abs(), digits: 2);
     final c = context.c;
     final ton = onde ? c.gain : c.loss;
 
@@ -136,9 +140,23 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
               const SizedBox(width: 8),
               // Ham iki sayı da verilir: kullanıcı puan farkını
               // doğrulayabilmeli, yoksa rozet bir kara kutu olur.
+              //
+              // **YUVARLAMA YOK — iki ondalık.** Önceden `digits: 0` idi ve
+              // TÜFE %31,51 ekranda "%32" görünüyordu; kullanıcı bunu
+              // TÜİK'in açıkladığı rakamla karşılaştırdığında tutmuyor ve
+              // doğrulama amacı boşa çıkıyordu. Daha kötüsü: yuvarlama
+              // ARIZAYI GİZLİYORDU — pencere bir ay eksik sayıldığı için
+              // gelen %27,68 de, doğrusu olan %31,51 de yuvarlanınca
+              // "makul" bir tam sayıya dönüşüyordu (2026-09-14'te ekran
+              // görüntüsüyle yakalandı). Ham sayı tam yazılırsa sapma
+              // gözle görünür.
+              //
+              // `_ReelGetiriKarti` de iki ondalık yazıyor (`fmtPct`
+              // varsayılanı); iki yüzey aynı sayıyı farklı yuvarlarsa
+              // kullanıcı hangisine güveneceğini bilemez.
               Text(
-                '%${fmtNum(veri.nominal, digits: 0)} · '
-                'TÜFE %${fmtNum(veri.inflation, digits: 0)}',
+                '%${fmtNum(veri.nominal, digits: 2)} · '
+                'TÜFE %${fmtNum(veri.inflation, digits: 2)}',
                 style: context.t.bodySmall?.copyWith(color: c.text36),
               ),
             ],
