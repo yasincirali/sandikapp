@@ -1660,6 +1660,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Baz para birimi BİR KEZ burada okunur: alt widget'lara parametre
+    // gider. Yalnızca DEĞER tutarları (PnL, dönem değişimi) çevrilir;
+    // grafiğin ekseni/ipucu kote FİYATTIR ve ₺ kalır.
+    final baz = ref.watch(bazParaProvider);
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final isIntraday = period.days == 0;
@@ -2215,6 +2219,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                           ),
                         if (anchorSpot != null && lastSpot != null)
                           _PnlSummaryStrip(
+                            baz: baz,
                             anchorUnitPrice: anchorUnitTRY,
                             currentUnitPrice: currentUnitTRY,
                             pnlPct: pnlPct,
@@ -2232,7 +2237,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // (Üstteki strip periyottan bağımsız, o kalır.)
                         if (periodChangeTRY != null && !isStale)
                           _PeriodChangeRow(
-                            baz: ref.watch(bazParaProvider),
+                            baz: baz,
                             label: _periods[_selectedPeriodIdx].label,
                             changeTRY: periodChangeTRY,
                             changePct: periodChangePct,
@@ -2821,8 +2826,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               fitInsideHorizontally: true,
                               fitInsideVertically: true,
                               getTooltipItems: (touchedSpots) {
-                                final valueFmt =
-                                    fixedFormatter(3);
+                                final valueFmt = fixedFormatter(3);
                                 // Passive + active segmentler anchor noktasında
                                 // aynı (x, y) spot'unu paylaşır → aynı tooltip
                                 // iki kere görünür. Yakın olanları filtrele.
@@ -3085,7 +3089,11 @@ class _PnlSummaryStrip extends StatelessWidget {
   final String unitLabel;
   final bool isPositive;
 
+  /// Gösterim birimi (Faz 3.2).
+  final BazPara baz;
+
   const _PnlSummaryStrip({
+    required this.baz,
     required this.anchorUnitPrice,
     required this.currentUnitPrice,
     required this.pnlPct,
@@ -3094,20 +3102,16 @@ class _PnlSummaryStrip extends StatelessWidget {
     required this.isPositive,
   });
 
+  /// Birim FİYAT ₺ kalır: bir hissenin TL fiyatını dolara çevirmek borsadaki
+  /// sayıyla çelişir (bkz. `money_format_scope_test` değer/fiyat ayrımı).
+  /// Ondalık korunur ki kullanıcı per-unit farkı algılayabilsin.
   String _fmtPrice(double v) {
-    // Birim fiyat — kullanıcı per-unit farkı algılayabilsin diye ondalık koru.
-    // Grup ayraçlı, 2 ondalıklı (tr locale).
     final f = fixedFormatter(2);
     return '${f.format(v)} ₺';
   }
 
-  String _fmtTotal(double v) {
-    final abs = v.abs();
-    final sign = v < 0 ? '-' : '';
-    if (abs >= 1000000) return '$sign${fmtNum(abs / 1000000, digits: 2)}M ₺';
-    if (abs >= 1000) return '$sign${fmtNum(abs / 1000, digits: 1)}k ₺';
-    return '$sign${fmtNum(abs, digits: 0)} ₺';
-  }
+  /// Toplam kâr/zarar bir portföy DEĞERİdir → baz para biriminde.
+  String _fmtTotal(double v) => baz.compact(v);
 
   @override
   Widget build(BuildContext context) {

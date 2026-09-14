@@ -5,6 +5,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../theme/sandik.dart';
@@ -338,6 +339,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                           );
                         }
                         return TransactionRow(
+                          baz: ref.watch(bazParaProvider),
                           asset: rows[i],
                           portfolioState: pState ?? const PortfolioState(),
                           hideBalance: hideBalance,

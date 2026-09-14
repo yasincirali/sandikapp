@@ -1175,11 +1175,24 @@ cinsi varlıklarda dolu; TRY varlıklar için tarihli USDTRY serisi gerekir ve
 seri motoru (`HistoryService`) bu çevrimi bilmiyor. Kur bazlı getiri ayrı bir
 hesap ve ayrı bir tur.
 
-**Kalan ₺ sabit yüzeyler:** `asset_detail_screen` (fiyat grafiği ve özet),
-takip listesi, `transaction_row` (geçmiş tutar — bilerek ₺), bildirim ve özet
-metinleri (`daily_summary`, `recap_service`, `milestone_service`,
-`period_summary_service` cümleleri), `home_widget_service`, `live_activity_service`.
-Bunlar ya sunucu/işletim sistemi yüzeyi (kur bilgisi yok) ya da tarihli tutar.
+**2026-09-14 (ikinci/üçüncü tur):** kapsam bir SÖZLEŞMEYE bağlandı —
+portföy **DEĞERLERİ** baz birimde, kote **FİYATLAR** ₺ (kendi biriminde).
+`money_format_scope_test` iki kümeyi kaynakta ayrı tutar. Değer kümesine
+`asset_detail_screen`in PnL toplamı ve dönem değişimi ile `transaction_row`
+eklendi; hareket tutarı da bugünkü kurla çevrilir (maliyet zaten öyleydi,
+aynı sınıf sayının listede ₺ kalması tutarsızdı) — ama "o gün kaç dolardı"
+sorusunun cevabı DEĞİLDİR.
+
+**Kalan ₺ sabit yüzeyler — hepsi bilinçli:**
+- **Kote fiyatlar:** tekil varlık grafiğinin ekseni/ipucu/çapası ve birim
+  fiyatı, takip listesi (`currencySymbolFor`, AAPL için `$`), alarm hedefi,
+  form girdisi. Bir hissenin TL fiyatını dolara çevirmek borsadaki sayıyla
+  çelişir.
+- **Bildirim ve özet metinleri** (`daily_summary`, `recap_service`,
+  `milestone_service`, `period_summary_service` cümleleri): metni sunucu ya da
+  arka plan üretiyor, kullanıcının tercihi orada okunmuyor.
+- **`home_widget_service` / `live_activity_service`**: işletim sistemi yüzeyi;
+  sözleşme `shared_preferences` üzerinden ve kur bilgisi taşımıyor.
 
 **Ele alınma zamanı:** kullanıcı geri bildirimi "dolar getirim yanlış" derse.
 

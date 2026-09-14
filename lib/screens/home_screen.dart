@@ -599,6 +599,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: List.generate(
                       count,
                       (i) => TransactionRow(
+                            baz: baz,
                             asset: recentAssets[i],
                             portfolioState: myState,
                             hideBalance: hideBalance,
