@@ -83,7 +83,7 @@ class PeriodSummaryView extends StatelessWidget {
   /// TÜFE endeksi tabloda HİÇ YOK mu?
   ///
   /// `true` iken reel getiri yerine "veri bekleniyor" hâli çizilir. Sessiz
-  /// kalmak yerine sebebi söylemek, `InflationService.hasIndexData`
+  /// kalmak yerine sebebi söylemek, `InflationService.isStale`
   /// notundaki gerekçeyle: dört ay sessizce çalışmayan bir cron bu projede
   /// zaten bir kez yaşandı.
   ///

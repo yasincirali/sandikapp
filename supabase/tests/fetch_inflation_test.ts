@@ -5,7 +5,7 @@
 //
 // ## Bu dosyanın kovaladığı üç şey
 //
-// 1. **EVDS biçimi.** Yanıt `{ items: [{ Tarih, TP_FG_J0 }] }` geliyor ve
+// 1. **EVDS biçimi.** Yanıt `{ items: [{ Tarih, TP_TUKFIY2025_GENEL }] }` geliyor ve
 //    tarih biçimi tutarsız (`AY-YIL`, `YYYY-MM`, `GG-AY-YIL` hepsi
 //    görülüyor). Yanlış ayrıştırma satırı YANLIŞ AYA yazar ve reel getiri
 //    sessizce kayar.
@@ -69,9 +69,9 @@ Deno.test('tanınmayan biçim null döner — tarih TAHMİN EDİLMEZ', () => {
 const gercekYanit = {
   totalCount: 3,
   items: [
-    { Tarih: '06-2026', TP_FG_J0: '2000.00', UNIXTIME: { $numberLong: '0' } },
-    { Tarih: '07-2026', TP_FG_J0: '2040.50' },
-    { Tarih: '08-2026', TP_FG_J0: '2081.31' },
+    { Tarih: '06-2026', TP_TUKFIY2025_GENEL: '2000.00', UNIXTIME: { $numberLong: '0' } },
+    { Tarih: '07-2026', TP_TUKFIY2025_GENEL: '2040.50' },
+    { Tarih: '08-2026', TP_TUKFIY2025_GENEL: '2081.31' },
   ],
 };
 
@@ -87,9 +87,9 @@ Deno.test('sonuç KRONOLOJİK sıralanır', () => {
   // bir kırılma raporlanır.
   const out = parseEvds({
     items: [
-      { Tarih: '08-2026', TP_FG_J0: '2081' },
-      { Tarih: '06-2026', TP_FG_J0: '2000' },
-      { Tarih: '07-2026', TP_FG_J0: '2040' },
+      { Tarih: '08-2026', TP_TUKFIY2025_GENEL: '2081' },
+      { Tarih: '06-2026', TP_TUKFIY2025_GENEL: '2000' },
+      { Tarih: '07-2026', TP_TUKFIY2025_GENEL: '2040' },
     ],
   });
   assertEquals(out.map((r) => r.period), [
@@ -104,11 +104,11 @@ Deno.test('boş / null / sıfır değerler ATLANIR', () => {
   // `tufe_index > 0` istiyor; sıfır yazmak upsert'i düşürürdü.
   const out = parseEvds({
     items: [
-      { Tarih: '06-2026', TP_FG_J0: '' },
-      { Tarih: '07-2026', TP_FG_J0: null },
-      { Tarih: '08-2026', TP_FG_J0: '0' },
-      { Tarih: '09-2026', TP_FG_J0: '-5' },
-      { Tarih: '10-2026', TP_FG_J0: '2100' },
+      { Tarih: '06-2026', TP_TUKFIY2025_GENEL: '' },
+      { Tarih: '07-2026', TP_TUKFIY2025_GENEL: null },
+      { Tarih: '08-2026', TP_TUKFIY2025_GENEL: '0' },
+      { Tarih: '09-2026', TP_TUKFIY2025_GENEL: '-5' },
+      { Tarih: '10-2026', TP_TUKFIY2025_GENEL: '2100' },
     ],
   });
   assertEquals(out, [{ period: '2026-10-01', value: 2100 }]);
@@ -117,8 +117,8 @@ Deno.test('boş / null / sıfır değerler ATLANIR', () => {
 Deno.test('tek bozuk ay tüm turu DÜŞÜRMEZ', () => {
   const out = parseEvds({
     items: [
-      { Tarih: 'bozuk', TP_FG_J0: '2000' },
-      { Tarih: '07-2026', TP_FG_J0: '2040' },
+      { Tarih: 'bozuk', TP_TUKFIY2025_GENEL: '2000' },
+      { Tarih: '07-2026', TP_TUKFIY2025_GENEL: '2040' },
     ],
   });
   assertEquals(out.length, 1);
@@ -126,7 +126,7 @@ Deno.test('tek bozuk ay tüm turu DÜŞÜRMEZ', () => {
 });
 
 Deno.test('sayısal değer de kabul edilir (string olmayabilir)', () => {
-  const out = parseEvds({ items: [{ Tarih: '07-2026', TP_FG_J0: 2040.5 }] });
+  const out = parseEvds({ items: [{ Tarih: '07-2026', TP_TUKFIY2025_GENEL: 2040.5 }] });
   assertEquals(out[0].value, 2040.5);
 });
 
@@ -135,6 +135,43 @@ Deno.test('bozuk gövde boş liste döner — çökmez', () => {
   assertEquals(parseEvds({}), []);
   assertEquals(parseEvds({ items: 'ne' }), []);
   assertEquals(parseEvds({ items: [] }), []);
+});
+
+// ── Seri kodu parametresi ───────────────────────────────────────────────────
+//
+// Baz yılı değişiminde seri kodu da değişiyor ve alan adı ondan türüyor
+// (`TP.X.Y` → `TP_X_Y`). Ayrıştırıcı kodu SABİT varsaysaydı, yeni seriyle
+// gelen yanıt sessizce boş liste dönerdi — tam olarak 2026-09'da yaşanan
+// sessiz arıza sınıfı.
+
+Deno.test('seri kodu parametreden alınır — alan adı ona göre çözülür', () => {
+  const out = parseEvds(
+    { items: [{ Tarih: '07-2026', TP_FG_J0: '2040.50' }] },
+    'TP.FG.J0',
+  );
+  assertEquals(out.length, 1);
+  assertEquals(out[0].value, 2040.5);
+});
+
+Deno.test('yanlış seri kodu SESSİZCE boş döner — sayı uydurmaz', () => {
+  // Yanıt yeni seriden geliyor ama eski kodla ayrıştırılıyor: alan bulunamaz.
+  // Boş liste dönmesi doğru davranış — çağıran taraf `written: 0` görür ve
+  // tabloya hiçbir şey yazılmaz.
+  const out = parseEvds(
+    { items: [{ Tarih: '07-2026', TP_TUKFIY2025_GENEL: '118.5' }] },
+    'TP.FG.J0',
+  );
+  assertEquals(out, []);
+});
+
+Deno.test('varsayılan seri 2025=100 genel endeksidir', () => {
+  // Parametresiz çağrı yeni seriyi çözmeli; eski koda geri düşerse bu test
+  // kırılır ve baz yılı geriye alınmış olur.
+  const out = parseEvds({
+    items: [{ Tarih: '08-2026', TP_TUKFIY2025_GENEL: '118.5' }],
+  });
+  assertEquals(out.length, 1);
+  assertEquals(out[0].period, '2026-08-01');
 });
 
 // ── bazKirilmasiVarMi ───────────────────────────────────────────────────────

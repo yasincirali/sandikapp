@@ -4218,7 +4218,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   ///
   /// `_enflasyon == null` ile aynı şey DEĞİL: endeks dolu olup bu dönemin
   /// ucu eksik de olabilir. Ayrımın gerekçesi
-  /// `InflationService.hasIndexData` notunda.
+  /// `InflationService.isStale` notunda.
   bool _endeksBos = false;
 
   /// Kayıp döneminde gösterilen "daha uzun pencere" bağlamı (1Y getirisi).
@@ -4307,16 +4307,20 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     final enf =
         await InflationService.instance.inflationForPeriod(widget.period.days);
 
-    // `enf == null` iki sebepten olabilir; ekranın hangisi olduğunu bilmesi
-    // gerekiyor (bkz. `InflationService.hasIndexData`). Tablo tamamen boşsa
-    // kullanıcıya sebebi söylenir; tablo doluysa ama bu dönemin ucu yoksa
-    // sessiz kalınır — o geçici ve kullanıcıya özel.
+    // `enf == null` üç sebepten olabilir; ekranın hangisi olduğunu bilmesi
+    // gerekiyor:
     //
-    // İkinci sorgu MALİYETSİZ: `hasIndexData` aynı 12 saatlik önbelleği
-    // okuyor, ağ turu atmıyor.
-    final bosMu = enf == null
-        ? !(await InflationService.instance.hasIndexData())
-        : false;
+    //   1. Tablo BOŞ            → sebebi söyle ("veri bekleniyor")
+    //   2. Seri DURMUŞ (bayat)  → sebebi söyle — kullanıcı açısından 1 ile
+    //      aynı sonuç: reel getiri hesaplanamıyor. Ölçüldü: TÜİK Ocak
+    //      2026'da baz yılını değiştirdi, eski seri orada bitti.
+    //   3. Tablo taze ama bu DÖNEMİN ucu yok → sessiz kal; kullanıcıya
+    //      özel ve zamanla kendiliğinden düzelir.
+    //
+    // `isStale` 1 ve 2'yi birlikte kapsıyor, bu yüzden tek çağrı yetiyor.
+    // Maliyetsiz: aynı 12 saatlik önbelleği okuyor, ağ turu atmıyor.
+    final bosMu =
+        enf == null ? await InflationService.instance.isStale() : false;
 
     if (!mounted) return;
     setState(() {

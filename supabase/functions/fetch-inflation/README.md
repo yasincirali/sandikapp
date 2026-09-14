@@ -30,8 +30,16 @@ saate kurulursa yüksek sesle patlıyor.
 
 ## Neden EVDS
 
-TCMB EVDS `TP.FG.J0` serisi = TÜFE genel endeks. Tablonun `source` kolonu
-zaten `TUIK-TP.FG.J0` varsayılanını taşıyor.
+TCMB EVDS `TP.TUKFIY2025.GENEL` serisi = TÜFE genel endeks (**2025=100**).
+Tabloya `TUIK-TP.TUKFIY2025.GENEL` olarak yazılır — `source` kolonu baz
+yılını ayırt etmenin tek kanıtı.
+
+> **2026-09-14:** önceki kod `TP.FG.J0` (2003=100) idi. TÜİK Ocak 2026'da
+> baz yılını değiştirdi ve o seri orada **sona erdi**; tablo dolu görünmeye
+> devam ederken Şubat–Ağustos 2026 hiç gelmiyordu. Aynı turda EVDS adresi de
+> `evds2` → `evds3` taşınmıştı ve eski yol API yerine HTML döndürüyordu.
+> Yeni seri kodu katalogdan **okundu**, tahmin edilmedi (aşağıdaki
+> "Katalog keşfi" bölümü).
 
 **Anahtar ŞART.** Anahtar yoksa fonksiyon `no_api_key` döner ve **hiçbir şey
 yazmaz** — yarım bir entegrasyonla tabloyu bozmak, elle girişten kötü olurdu
@@ -57,6 +65,70 @@ bu boyutta olmadı.
 Bu durumda **insan müdahalesi gerekiyor**: yeni seri adı ne, eski satırlar ne
 olacak — bunlar ürün kararı, otomatik çözülmez.
 
+### ⚠️ Daha sinsi hâli: seri SESSİZCE durur
+
+2026-09-14'te yaşanan buydu ve baz kırılması denetimine **hiç takılmadı**:
+TÜİK yeni seriyi AYRI bir kod altında yayımladı, eskisini olduğu yerde
+bıraktı. Yani endeks düşmedi — sadece **yeni ay hiç gelmedi**. Fonksiyon
+`no_new_data` döndü, tablo dolu göründü, kimse fark etmedi.
+
+İki koruma eklendi:
+
+- **İstemci tarafı:** `InflationService.isStale` — son satır 2 aydan
+  eskiyse reel getiri hesaplanmaz, ekran "TÜFE verisi henüz yüklenmedi"
+  der. Bayat endeksle yanlış bir yüzde göstermektense hiç göstermemek.
+- **Bu README + `TECHNICAL_DEBT.md`** — belirti ("tablo dolu ama aylar
+  gelmiyor") ve teşhis yolu yazılı.
+
+### Katalog keşfi — yeni seri kodunu TAHMİN ETME
+
+Seri kodu tahmin edilirse yanlış bir endeks (ör. bir alt harcama kalemi)
+sessizce yazılır ve reel getiri yanlış çıkar. Doğru kod EVDS kataloğundan
+okunur; anahtar yalnızca sunucuda olduğu için fonksiyonun kendi `catalog`
+modu bunun için var:
+
+```sql
+-- 1) Kategorilerde ara
+select net.http_post(
+  url := 'https://<ref>.supabase.co/functions/v1/fetch-inflation',
+  headers := public.cron_headers('inflation_fetch_cron_secret'),
+  body := jsonb_build_object('catalog','categories','q','TÜKETİCİ'));
+--    → 2005 | TÜKETİCİ FİYAT ENDEKSİ (TÜİK)
+
+-- 2) O kategorinin veri gruplarını listele
+body := jsonb_build_object('catalog','groups:2005')
+--    → bie_tukfiy2025 | Tüketici Fiyat Endeksi (2025=100)
+
+-- 3) Gruptaki genel endeks serisini bul
+body := jsonb_build_object('catalog','bie_tukfiy2025','q','GENEL')
+--    → TP.TUKFIY2025.GENEL | Genel Endeks | 01-2005 .. 08-2026
+
+-- 4) YAZMADAN dene
+body := jsonb_build_object('dry_run', true, 'series','TP.TUKFIY2025.GENEL')
+```
+
+Yanıtı `select content from net._http_response order by created desc limit 1;`
+ile oku.
+
+`series` gövde parametresi kalıcıdır: aday kodlar `dry_run` ile deploy
+gerektirmeden denenebilir. Doğrusu bulununca `EVDS_SERIES` sabitini güncelle.
+
+**Kabul ölçütü — bu adımı atlama:** çekimden sonra yıllık değişim TÜİK'in
+açıkladığı rakamla örtüşmeli.
+
+```sql
+select round(((select tufe_index from inflation_index where period='2026-08-01')
+            / (select tufe_index from inflation_index where period='2025-08-01') - 1) * 100, 2);
+-- → 31.51  (TÜİK Ağustos 2026 yıllık TÜFE ile birebir ✓)
+```
+
+### Baz değişince eski satırlar
+
+İki bazı aynı tabloda tutma — `changePct` ikisini birbirine böler ve sonuç
+anlamsız olur. 2026-09'da izlenen yol: `delete from inflation_index;` sonra
+yeni seriyle 24 aylık backfill. Tablo kamuya açık istatistik tutuyor,
+kullanıcı verisi değil; silinen her satır yeniden çekilebilir.
+
 ## İçinde bulunulan ay YAZILMAZ
 
 `InflationService.inflationForPeriod` "son açıklanmış ay"ı arıyor ve içinde
@@ -73,7 +145,7 @@ yüzden çift satır üretmiyor.
 
 | Ad | Nerede | Not |
 |---|---|---|
-| `EVDS_API_KEY` | Edge Function secret | evds2.tcmb.gov.tr → üye ol → Profil → API Anahtarı |
+| `EVDS_API_KEY` | Edge Function secret | evds3.tcmb.gov.tr → üye ol → Profil → API Anahtarı |
 | `INFLATION_FETCH_CRON_SECRET` | Edge Function secret | Vault'taki `inflation_fetch_cron_secret` ile **birebir aynı** |
 
 `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` platform tarafından otomatik

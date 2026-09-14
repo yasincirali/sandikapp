@@ -9,7 +9,74 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
-## 🔴 AÇIK — Migration defteri "uygulandı" diyor ama gövde koşmamış olabilir
+## ✅ KAPANDI — TÜFE serisi Ocak 2026'da bitmişti: yeni baz yılına geçildi
+
+**Ölçüldü 2026-09-14, canlı veriyle.** `inflation_index` artık dolu (29
+satır, Eylül 2023 – **Ocak 2026**) ama **Şubat–Ağustos 2026 eksik** ve
+kendiliğinden gelmeyecek.
+
+**Sebep:** TÜİK, Ocak 2026'da TÜFE baz yılını `2003=100`'den `2025=100`'e
+çevirdi (AB uyumu, ECOICOP v2). Fonksiyonun çektiği `TP.FG.J0` serisi ESKİ
+baz — o ayda sona erdi. EVDS 36 aylık pencerede bile Ocak 2026'dan sonrasını
+döndürmüyor (`written: 29, latest: 2026-01-01, reason: no_new_data`).
+
+**Bu turda kapatılan iki ayrı arıza (ikisi de birbirini gizliyordu):**
+
+| Arıza | Durum |
+|---|---|
+| `0054` hiç koşmamıştı → 7 tetikleyici 401 alıyordu | ✅ kapandı |
+| Vault'ta 2 cron secret eksikti | ✅ kapandı |
+| EVDS adresi `evds2` → `evds3` taşınmıştı (HTML dönüyordu) | ✅ kapandı |
+| EVDS parametreleri path-style istiyor, `?query` 404 | ✅ kapandı |
+| **Seri kodu eski baz yılına ait** | 🟠 **AÇIK** |
+
+**KAPANDI 2026-09-14.** Yeni seri kodu EVDS3 kataloğundan **okundu**,
+tahmin edilmedi — fonksiyonun kendi `catalog` moduyla (anahtar yalnızca
+sunucuda olduğu için dışarıdan sorgulanamıyor):
+
+```
+kategori 2005  "TÜKETİCİ FİYAT ENDEKSİ (TÜİK)"
+  └─ grup bie_tukfiy2025  "Tüketici Fiyat Endeksi (2025=100)"
+       └─ TP.TUKFIY2025.GENEL  "Genel Endeks"  01-2005 … 08-2026
+```
+
+Tablo temizlenip yeni bazla dolduruldu: **24 satır, Eylül 2024 – Ağustos
+2026**, `source = TUIK-TP.TUKFIY2025.GENEL`. Eski satırların yedeği alındı
+(kamuya açık istatistik, kullanıcı verisi değil).
+
+**Kabul ölçütü karşılandı** — canlı veriyle doğrulandı:
+
+| Dönem | Hesaplanan | TÜİK |
+|---|---|---|
+| Aylık (Ağustos 2026) | **%1,84** | %1,84 ✓ |
+| Yıllık (Ağu 25 → Ağu 26) | **%31,51** | %31,51 ✓ |
+| 6 aylık | %13,08 | — |
+
+Kalıcı korumalar: `EVDS_SERIES` artık gövdeden geçilebiliyor (`series`
+parametresi + `dry_run`, deploy gerektirmeden aday kod denenebilir),
+`source` etiketi seri kodundan türetiliyor (baz ayrımı kanıtlı),
+`parseEvds` seri kodunu parametre alıyor ve üç yeni Deno testi bunu
+kilitliyor.
+
+### Bir daha yaşanırsa — bu arıza baz kırılması denetimine TAKILMADI
+
+Öğrenilen ders: TÜİK yeni seriyi **ayrı bir kod altında** yayımladı,
+eskisini olduğu yerde bıraktı. Yani endeks düşmedi — `bazKirilmasiVarMi`
+hiç tetiklenmedi. Sadece **yeni ay hiç gelmedi**: fonksiyon `no_new_data`
+döndü, tablo dolu göründü, kimse fark etmedi.
+
+Belirti: *"tablo dolu ama son satır aylardır aynı"*. Teşhis yolu ve
+katalog gezinme komutları `supabase/functions/fetch-inflation/README.md`
+→ "Katalog keşfi" bölümünde.
+
+İkinci koruma istemcide: `InflationService.isStale` son satır 2 aydan
+eskiyse reel getiriyi hesaplamıyor ve ekran "TÜFE verisi henüz
+yüklenmedi" diyor — bayat endeksle yanlış bir yüzde göstermektense hiç
+göstermemek.
+
+---
+
+## ✅ KAPANDI — Migration defteri "uygulandı" diyor ama gövde koşmamıştı
 
 **Ölçüldü 2026-09-14, canlı veritabanında.** `supabase migration list`
 `0054`'ü uygulanmış gösteriyordu; gerçekte:
@@ -48,8 +115,16 @@ from pg_proc p join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public' and proname like 'trigger_%';
 ```
 
-**Ne zaman:** hemen — TestFlight'taki kullanıcılar bugün hiçbir bildirim
-almıyor.
+**KAPANDI 2026-09-14.** `0054` SQL Editor'dan elle koşuldu ve şemadan
+doğrulandı: yedi tetikleyicinin yedisi de `cron_headers` desenine geçti,
+üç yardımcı fonksiyon oluştu. İlk denemede `0054`'ün doğrulama bloğu
+Vault'ta eksik iki secret'ı (`calendar_nudge_cron_secret`,
+`price_alerts_cron_secret`) yakalayıp işlemi geri aldı — yani **kendi
+kendini doğrulama tasarımı çalıştı**; o iki kayıt yazıldıktan sonra geçti.
+
+⚠️ `db push --include-all` bu işi YAPMAZ: defterde "uygulanmış" görünen
+bir migration'ı yeniden koşmaz. Aynı durumla karşılaşılırsa SQL Editor'dan
+elle koşmak ya da `migration repair --status reverted` gerekir.
 
 **Önleme fikri (ayrı bir tur):** CI'a "şema gerçekten beklenen hâlde mi"
 denetimi. Migration defteri bir NİYET kaydı; tek gerçek kaynak şemanın

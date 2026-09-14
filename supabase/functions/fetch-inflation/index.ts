@@ -24,10 +24,10 @@
 // tur onu yakalar (aşağıya bak).
 //
 // ── Neden EVDS ──────────────────────────────────────────────────────────────
-// TCMB EVDS `TP.FG.J0` serisi = TÜFE genel endeks (2003=100). Tablo
-// zaten `source` kolonunda bu adı varsayılan tutuyor.
+// TCMB EVDS `TP.TUKFIY2025.GENEL` serisi = TÜFE genel endeks (2025=100).
+// `source` kolonu bu adı taşır ve baz yılını ayırt etmenin tek kanıtıdır.
 //
-// EVDS API anahtarı ŞART: evds2.tcmb.gov.tr → üye ol → Profil → API
+// EVDS API anahtarı ŞART: evds3.tcmb.gov.tr → üye ol → Profil → API
 // Anahtarı → `supabase secrets set EVDS_API_KEY=...`. Anahtar yoksa
 // fonksiyon `no_api_key` döner ve HİÇBİR ŞEY YAZMAZ — yarım bir
 // entegrasyonla tabloyu bozmaktan iyidir.
@@ -53,14 +53,55 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type, x-cron-secret',
 };
 
-/// EVDS serisi — TÜFE genel endeks.
-const EVDS_SERIES = 'TP.FG.J0';
-
-/// Tabloya yazılan kaynak etiketi — `0045`'in varsayılanıyla aynı.
+/// EVDS serisi — TÜFE genel endeks (2025=100).
 ///
-/// Baz yılı değişirse TÜİK seri adını da değiştirir; bu etiket o yüzden
-/// hangi seriden geldiğini taşıyor ve eski satırlar ayırt edilebiliyor.
-const SOURCE_LABEL = 'TUIK-TP.FG.J0';
+/// **2026-09-14'te değişti.** Önceki kod `TP.FG.J0` idi (2003=100) ve TÜİK
+/// baz yılını `2025=100`'e çevirdiğinde o seri **Ocak 2026'da sona erdi**.
+/// Tablo dolu görünmeye devam ediyordu (29 satır) ama Şubat–Ağustos 2026
+/// hiç gelmiyordu ve fonksiyon bunu `no_new_data` diye raporluyordu —
+/// yine sessiz bir arıza.
+///
+/// Yeni kod EVDS3 kataloğundan OKUNDU, tahmin edilmedi:
+///
+///     kategori 2005  "TÜKETİCİ FİYAT ENDEKSİ (TÜİK)"
+///       └─ grup bie_tukfiy2025  "Tüketici Fiyat Endeksi (2025=100)"
+///            └─ TP.TUKFIY2025.GENEL  "Genel Endeks"  01-2005 … 08-2026
+///
+/// Katalog gezinmesi fonksiyonun kendi `catalog` moduyla yapıldı (anahtar
+/// yalnızca sunucuda olduğu için dışarıdan sorgulanamıyor); o mod bir
+/// sonraki baz değişiminde de aynı işi görecek.
+const EVDS_SERIES = 'TP.TUKFIY2025.GENEL';
+
+/// EVDS servis adresi.
+///
+/// **2026-09-14'te değişti — sessiz kırılma.** TCMB, EVDS'yi `evds2`'den
+/// `evds3`'e taşıdı ve eski `evds2.tcmb.gov.tr/service/evds/` yolu artık
+/// API DEĞİL, web uygulamasının HTML'ini döndürüyor:
+///
+///     evds2/service/evds/  → 302 → evds3.tcmb.gov.tr → <!DOCTYPE html>
+///
+/// Bu bir HTTP hatası olarak GÖRÜNMÜYOR: yönlendirme takip edilince
+/// durum 200 geliyor, yani `res.ok` geçiyor ve hata ancak `res.json()`
+/// aşamasında "Unexpected token '<'" olarak patlıyor. Fonksiyon bunu
+/// `evds_unreachable` diye raporluyordu ve gerçek sebep (adres değişimi)
+/// görünmüyordu — ölçüldü, canlıda 502 alındı.
+///
+/// Yeni yol `/igmevdsms-dis/`. Doğrulandı: anahtarsız istekte HTML değil,
+/// `401 Invalid API Key` (text/plain) dönüyor — yani gerçekten API.
+///
+/// Anahtar yine HEADER'da (`key`), sorgu dizesinde değil.
+const EVDS_BASE = 'https://evds3.tcmb.gov.tr/igmevdsms-dis/';
+
+/// Tabloya yazılan kaynak etiketi — `0045`'in varsayılanıyla aynı biçim.
+///
+/// Baz yılı değişirse TÜİK seri adını da değiştirir; etiket o yüzden
+/// SERİ KODUNDAN türetilir, sabit değildir. Böylece `2003=100` ve
+/// `2025=100` satırları tabloda ayırt edilebiliyor — iki bazı birbirine
+/// bölmek anlamsız bir enflasyon üretirdi ve hangi satırın hangi bazdan
+/// geldiği tek kanıt bu kolon.
+function sourceLabel(seri: string): string {
+  return `TUIK-${seri}`;
+}
 
 /// İlk koşuda kaç ay geriye gidilsin.
 ///
@@ -90,7 +131,7 @@ export type EndeksSatiri = { period: string; value: number };
 ///
 /// EVDS gövdesi şu şekilde gelir:
 /// ```json
-/// { "items": [ { "Tarih": "01-2026", "TP_FG_J0": "2100.50" }, ... ] }
+/// { "items": [ { "Tarih": "01-2026", "TP_TUKFIY2025_GENEL": "118.5" }, ...] }
 /// ```
 /// Alan adı serideki noktaların alt çizgiye dönmüş hâlidir. Tarih
 /// `AY-YIL` biçiminde ve tabloya AYIN İLK GÜNÜ olarak yazılmalı
@@ -100,10 +141,14 @@ export type EndeksSatiri = { period: string; value: number };
 /// Bozuk/eksik satırlar ATLANIR, hata fırlatılmaz: EVDS bazı aylar için
 /// boş string (`""`) ya da `null` döndürebiliyor ve tek bozuk ay tüm turu
 /// düşürmemeli.
-export function parseEvds(json: unknown): EndeksSatiri[] {
+/// [seri] verilmezse varsayılan [EVDS_SERIES] kullanılır. Parametre, baz
+/// yılı değişiminde seri kodunun gövdeden geçilebilmesi için var (bkz.
+/// istek gövdesindeki `series` alanı) — alan adı seri koduna bağlı olduğu
+/// için ayrıştırma da aynı kodu bilmek zorunda.
+export function parseEvds(json: unknown, seri: string = EVDS_SERIES): EndeksSatiri[] {
   const govde = json as { items?: unknown } | null;
   const items = Array.isArray(govde?.items) ? govde!.items : [];
-  const alan = EVDS_SERIES.replaceAll('.', '_');
+  const alan = seri.replaceAll('.', '_');
 
   const out: EndeksSatiri[] = [];
   for (const raw of items) {
@@ -229,7 +274,7 @@ Deno.serve(async (request) => {
         ok: true,
         reason: 'no_api_key',
         detail: 'EVDS_API_KEY yok — tabloya yazilmadi. '
-          + 'evds2.tcmb.gov.tr uzerinden anahtar alip '
+          + 'evds3.tcmb.gov.tr uzerinden anahtar alip '
           + 'supabase secrets set EVDS_API_KEY=... yap.',
         written: 0,
       });
@@ -237,6 +282,9 @@ Deno.serve(async (request) => {
 
     let dryRun = false;
     let backfillAy = BACKFILL_AY;
+    let seri = EVDS_SERIES;
+    let katalogKodu: string | null = null;
+    let filtre: string | null = null;
     try {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
@@ -245,7 +293,99 @@ Deno.serve(async (request) => {
         // 10 yıldan eskisi zaten baz kırılmalarıyla dolu.
         backfillAy = Math.min(120, Math.max(1, Math.floor(body.backfill_months)));
       }
+      // Seri kodu GÖVDEDEN geçilebilir.
+      //
+      // **Neden gerekiyor:** TÜİK baz yılını değiştirdiğinde seri kodu da
+      // değişiyor (2026-01'de `2003=100` → `2025=100` oldu ve `TP.FG.J0`
+      // sona erdi). Kod sabit olsaydı her baz değişiminde deploy gerekirdi;
+      // daha kötüsü, doğru kodu bulmak için önce yanlış kodla deneme
+      // yapmak imkânsız olurdu — anahtar yalnızca sunucuda.
+      //
+      // `dry_run` ile birlikte kullanıldığında tabloya HİÇBİR ŞEY yazmaz,
+      // yani aday kodlar güvenle denenebilir.
+      if (typeof body?.series === 'string' && /^[A-Z0-9._]{3,64}$/.test(body.series)) {
+        seri = body.series;
+      }
+      // Katalog keşfi: EVDS'nin seri listesini olduğu gibi döndürür.
+      // Doğru seri kodunu TAHMİN ETMEK yerine katalogdan OKUMAK için.
+      if (typeof body?.catalog === 'string' && /^[A-Za-z0-9._:-]{2,64}$/.test(body.catalog)) {
+        katalogKodu = body.catalog;
+      }
+      // Katalog süzgeci: seri adı/kodu içinde geçen metin. Kırpma yüzünden
+      // aranan satırın listeden düşmesini engeller.
+      if (typeof body?.q === 'string' && body.q.length <= 40) {
+        filtre = body.q;
+      }
     } catch (_) { /* gövde opsiyonel */ }
+
+    // ── 0) Katalog keşfi (opsiyonel) ────────────────────────────────────────
+    // Yalnızca OKUR, tabloya dokunmaz. Baz yılı değiştiğinde yeni seri
+    // kodunu bulmanın tek güvenli yolu: anahtar sunucuda olduğu için
+    // katalog dışarıdan sorgulanamıyor.
+    if (katalogKodu) {
+      try {
+        // İki mod:
+        //   · `catalog: "groups:<kategori id>"` → o kategorinin VERİ
+        //     GRUPLARINI listeler (grup kodunu tahmin etmemek için)
+        //   · `catalog: "<grup kodu>"`          → grubun SERİLERİNİ listeler
+        //
+        // Grup kodunu tahmin etmek işe yaramadı (ölçüldü: `bie_tufe`,
+        // `bie_tufe2`, `bie_tufe3` hepsi boş dizi döndürdü), bu yüzden
+        // katalog gezinmesi iki adımlı.
+        const kUrl = katalogKodu === 'categories'
+          ? 'https://evds3.tcmb.gov.tr/igmevdsms-dis/categories/type=json'
+          : katalogKodu.startsWith('groups:')
+          ? `https://evds3.tcmb.gov.tr/igmevdsms-dis/datagroups/mode=2&code=${katalogKodu.slice(7)}&type=json`
+          : `https://evds3.tcmb.gov.tr/igmevdsms-dis/serieList/type=json&code=${katalogKodu}`;
+        const kRes = await fetch(kUrl, {
+          headers: { key: evdsApiKey, Accept: 'application/json' },
+          signal: AbortSignal.timeout(20_000),
+        });
+        const kHam = await kRes.text();
+
+        // Katalog binlerce seri taşıyor ve pg_net gövdesi okunabilir
+        // kalmalı. Ham metni kırpmak JSON'u ortadan bölüyordu (ölçüldü:
+        // ayrıştırma "Unterminated string" veriyordu), bu yüzden ÖNCE
+        // parse edip SONRA süzüyoruz — ve yalnızca işe yarayan alanları
+        // döndürüyoruz.
+        let ozet: unknown = kHam.slice(0, 4000);
+        try {
+          const dizi = JSON.parse(kHam) as Record<string, unknown>[];
+          const q = (filtre ?? '').toLocaleUpperCase('tr');
+          const secili = dizi
+            .filter((k) => {
+              if (q.length === 0) return true;
+              const hedef = [
+                k['SERIE_CODE'], k['SERIE_NAME'], k['DATAGROUP_CODE'],
+                k['DATAGROUP_NAME'], k['TOPIC_TITLE_TR'], k['CATEGORY_ID'],
+              ].join(' ').toLocaleUpperCase('tr');
+              return hedef.includes(q);
+            })
+            .slice(0, 60)
+            .map((k) => ({
+              code: k['SERIE_CODE'] ?? k['DATAGROUP_CODE'] ?? k['CATEGORY_ID'],
+              name: k['SERIE_NAME'] ?? k['DATAGROUP_NAME'] ?? k['TOPIC_TITLE_TR'],
+              start: k['START_DATE'], end: k['END_DATE'],
+            }));
+          ozet = { total: dizi.length, matched: secili.length, items: secili };
+        } catch (_) { /* dizi değilse ham kırpılmış hâli döner */ }
+
+        return jsonResponse({
+          ok: kRes.ok,
+          mode: 'catalog',
+          status: kRes.status,
+          body: ozet,
+          written: 0,
+        });
+      } catch (e) {
+        return jsonResponse({
+          ok: false,
+          mode: 'catalog',
+          detail: e instanceof Error ? e.message : String(e),
+          written: 0,
+        }, 502);
+      }
+    }
 
     // ── 1) EVDS'den seriyi çek ──────────────────────────────────────────────
     const simdi = new Date();
@@ -256,12 +396,26 @@ Deno.serve(async (request) => {
       1,
     ));
 
-    const url = new URL('https://evds2.tcmb.gov.tr/service/evds/');
-    url.searchParams.set('series', EVDS_SERIES);
-    url.searchParams.set('startDate', evdsTarihBicimi(baslangic));
-    url.searchParams.set('endDate', evdsTarihBicimi(bitis));
-    url.searchParams.set('type', 'json');
-    url.searchParams.set('frequency', '5'); // 5 = aylık
+    // EVDS parametreleri YOLA gömülür, sorgu dizesine DEĞİL:
+    //
+    //     .../igmevdsms-dis/series=<kod>&startDate=...&type=json   ✓ 200
+    //     .../igmevdsms-dis/?series=<kod>&startDate=...             ✗ 404
+    //
+    // Alışılmadık ama TCMB'nin biçimi bu; ölçüldü (2026-09-14): soru
+    // işaretli sürüm 404 HTML döndürüyor, gömülü sürüm gerçek API yanıtı
+    // veriyor. Bu yüzden `new URL(...).searchParams` KULLANILAMAZ — o
+    // otomatik olarak `?` ekler ve isteği 404'e düşürür.
+    //
+    // Değerlerin hiçbiri kullanıcı girdisi değil (sabit seri adı + kendi
+    // ürettiğimiz tarihler), yani kaçış gerektiren bir enjeksiyon yüzeyi
+    // yok; yine de tarihler `evdsTarihBicimi` ile tek yerden üretiliyor.
+    const url = new URL(
+      `${EVDS_BASE}series=${seri}`
+      + `&startDate=${evdsTarihBicimi(baslangic)}`
+      + `&endDate=${evdsTarihBicimi(bitis)}`
+      + '&type=json'
+      + '&frequency=5', // 5 = aylık
+    );
 
     let evdsJson: unknown;
     try {
@@ -284,7 +438,25 @@ Deno.serve(async (request) => {
           written: 0,
         }, 502);
       }
-      evdsJson = await res.json();
+      // JSON'a doğrudan gitmiyoruz: EVDS adres değiştirdiğinde (2026-09'da
+      // evds2 → evds3 oldu) eski yol HTML döndürüyor ve durum 200 geliyor.
+      // `res.json()` o hâlde "Unexpected token '<'" diye patlıyor ve hata
+      // `evds_unreachable` olarak raporlanıyordu — ağ sorunu gibi görünen,
+      // aslında adres değişimi olan bir teşhis. Bir daha o yanılgıya
+      // düşmemek için içerik türü ÖNCE kontrol ediliyor.
+      const ham = await res.text();
+      const ct = res.headers.get('content-type') ?? '';
+      if (!ct.includes('json') || ham.trimStart().startsWith('<')) {
+        return jsonResponse({
+          ok: false,
+          reason: 'evds_html_response',
+          detail: 'EVDS JSON yerine HTML dondu — servis adresi degismis '
+            + `olabilir. content-type=${ct}, ilk 80 karakter: `
+            + ham.slice(0, 80),
+          written: 0,
+        }, 502);
+      }
+      evdsJson = JSON.parse(ham);
     } catch (e) {
       return jsonResponse({
         ok: false,
@@ -295,7 +467,7 @@ Deno.serve(async (request) => {
     }
 
     // ── 2) Ayrıştır ve denetle ──────────────────────────────────────────────
-    const tumu = parseEvds(evdsJson);
+    const tumu = parseEvds(evdsJson, seri);
     const satirlar = guncelAyiEle(tumu, simdi);
 
     if (satirlar.length === 0) {
@@ -361,7 +533,7 @@ Deno.serve(async (request) => {
         satirlar.map((s) => ({
           period: s.period,
           tufe_index: s.value,
-          source: SOURCE_LABEL,
+          source: sourceLabel(seri),
         })),
         { onConflict: 'period' },
       );

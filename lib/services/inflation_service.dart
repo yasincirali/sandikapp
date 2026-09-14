@@ -101,25 +101,50 @@ class InflationService {
 
   /// Endeks tablosunda hiç satır var mı?
   ///
-  /// **Neden bu ayrım gerekiyor:** [inflationForPeriod] iki BAMBAŞKA sebeple
-  /// `null` dönebiliyor ve ekran ikisini ayırt edemeden ikisinde de sessiz
-  /// kalıyordu:
-  ///
-  ///   1. Tablo BOŞ — `inflation_index` doldurulmamış (kurulum eksik:
-  ///      `EVDS_API_KEY` verilmemiş, cron hiç yazmamış). Bu bir SİSTEM
-  ///      durumu; kullanıcının portföyüyle ilgisi yok ve ay geçse de
-  ///      kendiliğinden düzelmez.
-  ///   2. Tablo dolu ama İSTENEN AYIN ucu yok — kullanıcının geçmişi
-  ///      endeksin başladığı tarihten eski ya da dönem çok kısa. Bu
-  ///      kullanıcıya özel ve zamanla düzelir.
-  ///
-  /// İkisini aynı sessizlikle karşılamak, dört ay boyunca fark edilmeyen
-  /// cron arızasıyla (bkz. `0054_cron_auth_header.sql`) aynı hata sınıfı:
-  /// çalışmayan bir şey, çalışıyormuş gibi görünüyor. Ekran artık birinci
-  /// durumda "veri bekleniyor" diyebiliyor.
+  /// Çoğu çağıran [isStale] istiyor: boş tablo ile DURMUŞ seri kullanıcı
+  /// açısından aynı sonucu doğurur (reel getiri hesaplanamaz) ve `isStale`
+  /// ikisini birden kapsar. Bu metot ayrımın kendisi gerektiğinde —
+  /// teşhiste — duruyor.
   Future<bool> hasIndexData() async => (await _yukle()).isNotEmpty;
 
-  /// Son [gun] gün için TÜFE değişimi. Endeks eksikse `null`.
+  /// Endeksin BAYAT sayıldığı eşik (ay).
+  ///
+  /// TÜİK bir ayın verisini ertesi ayın 3'ünde yayımlar, yani normalde son
+  /// satır en fazla bir ay geridedir. İki ay tolerans, gecikmeli yayın ya
+  /// da çekim turunun bir ayı kaçırması için pay bırakır.
+  ///
+  /// **Neden bir eşik gerekiyor.** Ölçüldü (2026-09-14): TÜİK Ocak 2026'da
+  /// baz yılını 2003=100'den 2025=100'e çevirdi ve eski `TP.FG.J0` serisi o
+  /// ayda SONA ERDİ. Tablo dolu görünüyordu (29 satır) ama son satır sekiz
+  /// ay eskiydi. Bu kapı olmasaydı ekran "son 1 yılın enflasyonu" diye
+  /// Şubat 2025 – Ocak 2026 aralığını gösterir, kullanıcı bunu TÜİK'in
+  /// açıkladığı güncel rakamla karşılaştırır ve tutmadığını görürdü.
+  ///
+  /// Bayat veriyle hesap yapmamak, `changePct`'in eksik uçta `null`
+  /// dönmesiyle aynı disiplin: yanlış bir sayı, hiç sayı olmamasından
+  /// kötüdür.
+  static const bayatlikEsigiAy = 2;
+
+  /// Endeksin son satırı bayat mı? Tablo boşsa da `true`.
+  Future<bool> isStale({DateTime? now}) async {
+    final endeks = await _yukle();
+    if (endeks.isEmpty) return true;
+    final bugun = now ?? DateTime.now();
+    final sonAy = endeks.keys.reduce((a, b) => a.isAfter(b) ? a : b);
+    final gecenAy =
+        (bugun.year - sonAy.year) * 12 + (bugun.month - sonAy.month);
+    return gecenAy > bayatlikEsigiAy;
+  }
+
+  /// Endeksin son satırının ayı — teşhis ve "veri şu tarihe kadar" notu
+  /// için. Tablo boşsa `null`.
+  Future<DateTime?> latestPeriod() async {
+    final endeks = await _yukle();
+    if (endeks.isEmpty) return null;
+    return endeks.keys.reduce((a, b) => a.isAfter(b) ? a : b);
+  }
+
+  /// Son [gun] gün için TÜFE değişimi. Endeks eksik ya da BAYATSA `null`.
   ///
   /// Uçlar AY BAŞINA yuvarlandığı için gün sayısı yaklaşıktır; TÜİK aylık
   /// yayımladığından bundan daha ince bir çözünürlük mümkün değil.
@@ -131,6 +156,14 @@ class InflationService {
     // Son AÇIKLANMIŞ ay: TÜİK bir ayın verisini ertesi ayın 3'ünde
     // yayımlar, yani içinde bulunulan ay tabloda henüz yoktur.
     final sonAy = endeks.keys.reduce((a, b) => a.isAfter(b) ? a : b);
+
+    // Bayatlık kapısı ([bayatlikEsigiAy] notuna bakın): seri durmuşsa
+    // pencere sessizce geriye kayar ve gösterilen sayı kullanıcının TÜİK'te
+    // gördüğüyle tutmaz.
+    final gecenAy =
+        (bugun.year - sonAy.year) * 12 + (bugun.month - sonAy.month);
+    if (gecenAy > bayatlikEsigiAy) return null;
+
     final baslangic = ayBasi(bugun.subtract(Duration(days: gun)));
     return changePct(endeks, baslangic, sonAy);
   }

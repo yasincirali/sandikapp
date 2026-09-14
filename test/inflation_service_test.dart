@@ -121,6 +121,66 @@ void main() {
       expect(await InflationService.instance.inflationForPeriod(365), null);
     });
 
+    test('seri DURMUŞSA null — bayat endeksle hesap yapılmaz', () async {
+      // Gerçek vaka (2026-09-14): TÜİK Ocak 2026'da baz yılını 2003=100'den
+      // 2025=100'e çevirdi, eski `TP.FG.J0` serisi o ayda sona erdi. Tablo
+      // 29 satırla DOLU görünüyordu ama son satır sekiz ay eskiydi.
+      // Kapı olmasaydı ekran Şubat 2025 – Ocak 2026 aralığını "son 1 yılın
+      // enflasyonu" diye gösterirdi.
+      InflationService.instance.seedForTest({
+        ay(2025, 1): 100.0,
+        ay(2026, 1): 140.0,
+      });
+      expect(
+        await InflationService.instance
+            .inflationForPeriod(365, now: DateTime(2026, 9, 14)),
+        isNull,
+      );
+    });
+
+    test('bir aylık normal gecikme bayat SAYILMAZ', () async {
+      // TÜİK ayın 3'ünde yayımlar; içinde bulunulan ay tabloda hiç yoktur.
+      // Bu olağan durum kapıya takılmamalı.
+      InflationService.instance.seedForTest({
+        ay(2025, 9): 100.0,
+        ay(2026, 8): 140.0,
+      });
+      final r = await InflationService.instance
+          .inflationForPeriod(365, now: DateTime(2026, 9, 14));
+      expect(r, isNotNull);
+      expect(r!, closeTo(40.0, 1e-9));
+    });
+
+    test('isStale — boş tablo bayat sayılır', () async {
+      InflationService.instance.seedForTest(const {});
+      expect(await InflationService.instance.isStale(), isTrue);
+    });
+
+    test('isStale — taze seri false, durmuş seri true', () async {
+      InflationService.instance.seedForTest({ay(2026, 8): 140.0});
+      expect(
+        await InflationService.instance.isStale(now: DateTime(2026, 9, 14)),
+        isFalse,
+      );
+
+      InflationService.instance.seedForTest({ay(2026, 1): 140.0});
+      expect(
+        await InflationService.instance.isStale(now: DateTime(2026, 9, 14)),
+        isTrue,
+      );
+    });
+
+    test('latestPeriod son ayı verir, boş tabloda null', () async {
+      InflationService.instance.seedForTest({
+        ay(2026, 6): 130.0,
+        ay(2026, 8): 140.0,
+      });
+      expect(await InflationService.instance.latestPeriod(), ay(2026, 8));
+
+      InflationService.instance.seedForTest(const {});
+      expect(await InflationService.instance.latestPeriod(), isNull);
+    });
+
     test('son AÇIKLANMIŞ ay kullanılır, içinde bulunulan ay değil', () async {
       // TÜİK bir ayın verisini ertesi ayın 3'ünde yayımlar; tabloda içinde
       // bulunulan ay YOKTUR. Hesap tablodaki en son aya dayanmalı.
