@@ -927,21 +927,60 @@ class _PortfolioPerformanceScreenState
   /// Yoğun serilerde çubuklar birbirine girer; nokta sayısı eşiği aşınca
   /// eşit aralıklarla seyreltilir. Seyreltme ilk ve son noktayı HER ZAMAN
   /// korur — dönem uçları grafiğin okunmasında çapa.
+  /// Çubuk grafiği: her çubuk DÖNEM BAŞINDAN o ana kadarki değişimi gösterir.
+  ///
+  /// Taban neden `viewMinY` değil: çubuklar görünür pencerenin alt kenarından
+  /// başlayınca, değerler birbirine yakın olduğunda (portföy ₺2,49M–₺2,51M
+  /// arası gezerken) hepsi neredeyse eşit yükseklikte çıkıyor ve grafik
+  /// taralı bir duvara dönüyordu — ₺12.794'lük düşüş grafikte görünmüyordu.
+  /// Dönem başı taban alınınca çubuk yukarı (kazanç) ya da aşağı (kayıp)
+  /// büyür; bar grafiğinin anlattığı şey değişimin YÖNÜ ve BÜYÜKLÜĞÜ olur.
+  /// `baseline` tipi de aynı tabanı kullanıyor (`seg.spots.first.y`).
+  ///
+  /// Çubuk sayısı grafiğin GENİŞLİĞİNE göre sınırlanır. Eski kod segment
+  /// BAŞINA 60 çubuk çiziyordu; çok işlemli portföyde segment sayısı arttıkça
+  /// toplam yüzlere çıkıp çubuklar bitişiyordu. Sınır artık toplam üzerinden.
   List<LineChartBarData> _cubukSegmentleri(
     BuildContext context,
     List<TransactionSegment> segments,
     double tabanY,
+    double grafikGenisligi,
   ) {
-    const maksCubuk = 60;
+    // Çubuk + boşluk için piksel bütçesi: 6px altında çubuklar bitişik
+    // görünüyor, 22px üstünde seyrek ve kaba duruyor.
+    const minAralikPx = 6.0;
+    const maksAralikPx = 22.0;
+
+    final toplamNokta =
+        segments.fold<int>(0, (t, s) => t + s.spots.length);
+    if (toplamNokta == 0) return const [];
+
+    final genislik = grafikGenisligi.isFinite && grafikGenisligi > 0
+        ? grafikGenisligi
+        : 320.0;
+    final maksCubuk = (genislik / minAralikPx).floor().clamp(8, 240);
+    final adim = (toplamNokta / maksCubuk).ceil().clamp(1, 1 << 30);
+
+    // Gerçekte kaç çubuk çizileceğinden kalınlığı türet: seyrek veride
+    // kalın ve okunaklı, yoğun veride ince ama bitişik değil.
+    final cizilecek = (toplamNokta / adim).ceil().clamp(1, maksCubuk);
+    final aralikPx = (genislik / cizilecek).clamp(minAralikPx, maksAralikPx);
+    // Çubuklar arasında en az ~%35 boşluk kalsın — bitişik çubuklar
+    // bar grafiğini alan grafiğine çevirir.
+    final cubukKalinligi = (aralikPx * 0.65).clamp(2.0, 14.0);
+
     final out = <LineChartBarData>[];
+    // Sayaç segmentler ARASINDA sürüyor: her segment kendi başına
+    // seyreltilirse kısa segmentler orantısız çok çubuk alır.
+    var sayac = 0;
 
     for (final seg in segments) {
       if (seg.spots.isEmpty) continue;
 
-      final adim = (seg.spots.length / maksCubuk).ceil().clamp(1, 1 << 30);
       final secilen = <FlSpot>[];
-      for (var i = 0; i < seg.spots.length; i += adim) {
-        secilen.add(seg.spots[i]);
+      for (final s in seg.spots) {
+        if (sayac % adim == 0) secilen.add(s);
+        sayac++;
       }
       // Son nokta ("şimdi") seyreltmeye kurban gitmemeli.
       if (secilen.isEmpty || secilen.last.x != seg.spots.last.x) {
@@ -949,11 +988,20 @@ class _PortfolioPerformanceScreenState
       }
 
       for (final s in secilen) {
+        // Renk değişimin yönünden: taban üstü kazanç, altı kayıp. Kapalı
+        // piyasa segmenti kendi soluk rengini korur (veri yok, tahmin var).
+        final renk = seg.piyasaKapali
+            ? context.c.text36
+            : (s.y >= tabanY ? context.c.gain : context.c.loss);
+
         out.add(LineChartBarData(
           spots: [FlSpot(s.x, tabanY), FlSpot(s.x, s.y)],
           isCurved: false,
-          color: seg.piyasaKapali ? context.c.text36 : seg.lineColor,
-          barWidth: 2.0,
+          color: renk,
+          barWidth: cubukKalinligi,
+          // Yuvarlak uç modern bar grafiklerinin okunabilirliğini artırır;
+          // ince çubukta fark etmez, kalın çubukta belirgin.
+          isStrokeCapRound: cubukKalinligi >= 5,
           dashArray: seg.piyasaKapali ? const [3, 3] : null,
           dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(show: false),
@@ -2210,6 +2258,19 @@ class _PortfolioPerformanceScreenState
       }
       if (minY == double.infinity) minY = 0;
       if (maxY == -double.infinity) maxY = 1000;
+
+      // Çubuk tipinde taban (dönem başı) Y aralığına DAHİL olmalı: çubuklar
+      // o değerden başlıyor ve taban pencerenin dışında kalırsa alt uçları
+      // kırpılır — yarım çubuklar "veri yok" gibi okunur. Diğer tiplerde
+      // aralık dokunulmadan kalır (dar bant gün içi hassasiyeti için şart).
+      if (grafikTipiNotifier.value == GrafikTipi.bar &&
+          segments.isNotEmpty &&
+          segments.first.spots.isNotEmpty) {
+        final taban = segments.first.spots.first.y;
+        if (taban < minY) minY = taban;
+        if (taban > maxY) maxY = taban;
+      }
+
       final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
       // Bandın cebri `chart_axis.dart`'ta — saf ve testli.
       //
@@ -2337,6 +2398,11 @@ class _PortfolioPerformanceScreenState
     // yeniden çağrılır; Y ekseni görünür pencereye göre re-fit olur.
     LineChartData buildData(double viewMinX, double viewMaxX) {
       final y = computeY(viewMinX, viewMaxX);
+      // Çizim alanının genişliği — ekran eksi sağ Y rezervi (60px) ve yatay
+      // kenar boşlukları (40px). Hem işlem noktası seyreltmesi hem çubuk
+      // yoğunluğu bunu kullanır; iki ayrı formül iki farklı yoğunluk demekti.
+      final double plotWidthPx =
+          (MediaQuery.of(context).size.width - 60 - 40).clamp(120.0, 2000.0);
       final double viewMinY = y.minY;
       final double viewMaxY = y.maxY;
       final double yInterval = y.interval;
@@ -2397,9 +2463,7 @@ class _PortfolioPerformanceScreenState
                     _buyDayKeys(segments, txAssets, start, intraday: intraday),
                 viewMinX: viewMinX,
                 viewMaxX: viewMaxX,
-                // Grafik genişliği ~ekran - sağ Y rezervi (60px).
-                plotWidthPx: (MediaQuery.of(context).size.width - 60 - 40)
-                    .clamp(120.0, 2000.0),
+                plotWidthPx: plotWidthPx,
                 // Nokta çapı 8.5px'ten ~7.2px'e indi (r=3 + 1.2 halka), bu
                 // yüzden ayrım eşiği de 16'dan 11'e çekilebiliyor: daha az
                 // nokta gizlenir, üst üste binme yine olmaz.
@@ -2606,8 +2670,18 @@ class _PortfolioPerformanceScreenState
         //
         // Yoğun serilerde (169 nokta) çubuklar birbirine girmesin diye
         // seyreltiliyor; sınır grafiğin okunabilir kaldığı yoğunluk.
+        //
+        // Taban DÖNEM BAŞI (ilk noktanın değeri), pencere dibi değil —
+        // gerekçe `_cubukSegmentleri` doküman yorumunda.
         lineBarsData: tip == GrafikTipi.bar
-            ? _cubukSegmentleri(context, segments, viewMinY)
+            ? _cubukSegmentleri(
+                context,
+                segments,
+                segments.isEmpty || segments.first.spots.isEmpty
+                    ? viewMinY
+                    : segments.first.spots.first.y,
+                plotWidthPx,
+              )
             : segments.map((seg) {
                 final isActive = seg.thickness > 2.0;
                 // Nokta yoğunluğu arttıkça çizgi inceltilir — intraday ve haftalık
