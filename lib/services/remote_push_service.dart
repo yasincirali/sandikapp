@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/pref_keys.dart';
 
 import 'notification_service.dart';
+import 'push_message_router.dart';
 import 'supabase_service.dart';
 
 @pragma('vm:entry-point')
@@ -99,53 +100,41 @@ class RemotePushService {
 
     _foregroundSubscription =
         FirebaseMessaging.onMessage.listen((message) async {
-      final data = message.data;
-      final type = data['type']?.toString();
-
-      if (type == NotificationService.partnerInviteType) {
-        final inviteId = data['invite_id']?.toString();
-        if (inviteId == null || inviteId.isEmpty) return;
-
-        final requesterName =
-            data['requester_name']?.toString().trim().isNotEmpty == true
-                ? data['requester_name']!.toString().trim()
-                : 'Bir kullanici';
-
-        await NotificationService.instance.showPartnerInviteNotification(
-          inviteId: inviteId,
-          requesterName: requesterName,
-        );
-        return;
-      }
-
-      // Sunucunun ürettiği hazır sinyal bildirimi.
-      //
-      // Android, uygulama ÖN PLANDAYKEN `notification` payload'ını kendisi
-      // GÖSTERMEZ — göstermek uygulamanın işidir. Bu dal eksikti: mesaj
-      // cihaza ulaşıyor (`FLTFireMsgReceiver: broadcast received`), FCM
-      // `sent` diyor, ama kullanıcı hiçbir şey görmüyordu. Arka planda ve
-      // uygulama kapalıyken bildirim zaten sistem tarafından gösterilir,
-      // bu yüzden burada yalnızca ön plan durumu ele alınır.
-      if (type == NotificationService.signalAlertType) {
-        final n = message.notification;
-        final title = n?.title ?? data['title']?.toString() ?? 'Yeni sinyal';
-        final body = n?.body ?? data['body']?.toString() ?? '';
-        await NotificationService.instance.showSignalNotification(
-          title: title,
-          body: body,
-          assetId: data['asset_id']?.toString() ?? '',
-        );
-        return;
-      }
-
-      if (type == NotificationService.signalAnalyzeRequestType) {
+      // Yönlendirme kuralları saf `pushMesajiniYonlendir`'de (test edilir);
+      // burada yalnızca eylem yürütülür.
+      final eylem = pushMesajiniYonlendir(
+        message.data,
+        notificationTitle: message.notification?.title,
+        notificationBody: message.notification?.body,
+      );
+      switch (eylem) {
+        case OrtaklikDavetiEylemi(:final inviteId, :final requesterName):
+          await NotificationService.instance.showPartnerInviteNotification(
+            inviteId: inviteId,
+            requesterName: requesterName,
+          );
+        // Sunucunun ürettiği hazır sinyal bildirimi.
+        //
+        // Android, uygulama ÖN PLANDAYKEN `notification` payload'ını kendisi
+        // GÖSTERMEZ — göstermek uygulamanın işidir. Bu dal eksikti: mesaj
+        // cihaza ulaşıyor (`FLTFireMsgReceiver: broadcast received`), FCM
+        // `sent` diyor, ama kullanıcı hiçbir şey görmüyordu. Arka planda ve
+        // uygulama kapalıyken bildirim zaten sistem tarafından gösterilir,
+        // bu yüzden burada yalnızca ön plan durumu ele alınır.
+        case SinyalBildirimiEylemi(:final title, :final body, :final assetId):
+          await NotificationService.instance.showSignalNotification(
+            title: title,
+            body: body,
+            assetId: assetId,
+          );
         // Cron'dan gelen "analiz zamanı" tetiği. Callback set edilmişse
         // client tarafında portföy analizini başlatır.
-        final slot = data['slot']?.toString() ?? 'manual';
-        try {
-          _onSignalAnalyzeRequest?.call(slot);
-        } catch (_) {}
-        return;
+        case AnalizIstegiEylemi(:final slot):
+          try {
+            _onSignalAnalyzeRequest?.call(slot);
+          } catch (_) {}
+        case YokEylemi():
+          break;
       }
     });
 
@@ -303,17 +292,13 @@ class RemotePushService {
     // `Random.secure()` — çakışma olasılığı pratikte sıfır. Kriptografik bir
     // sır değil, yalnızca ayırt edici bir etiket.
     final r = Random.secure();
-    final id = List.generate(16, (_) => r.nextInt(256))
-        .map((b) => b.toRadixString(16).padLeft(2, '0'))
-        .join();
+    final id = cihazKimligiUret(() => r.nextInt(256));
     await prefs.setString(_deviceIdKey, id);
     return id;
   }
 
   Future<void> _syncToken(String userId, String token) async {
-    if (_currentToken != null &&
-        _currentToken != token &&
-        _currentToken!.isNotEmpty) {
+    if (eskiTokenSilinmeli(_currentToken, token)) {
       try {
         await SupabaseService.instance.deletePushToken(_currentToken!);
       } catch (_) {
