@@ -9,6 +9,131 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🔴 AÇIK — Migration defteri "uygulandı" diyor ama gövde koşmamış olabilir
+
+**Ölçüldü 2026-09-14, canlı veritabanında.** `supabase migration list`
+`0054`'ü uygulanmış gösteriyordu; gerçekte:
+
+| Kontrol | Beklenen | Bulunan |
+|---|---|---|
+| `cron_headers` fonksiyonu | var | **YOK** |
+| `cron_gateway_jwt` fonksiyonu | var | **YOK** |
+| `cron_secret_of` fonksiyonu | var | **YOK** |
+| 7 tetikleyici deseni | `cron_headers(...)` | hepsi **eski desen** |
+| `net._http_response` | 200 | **401 INVALID_JWT_FORMAT** |
+
+Yani `0054`'ün düzelttiği arıza hiç düzelmemiş; üstelik `0054`'ün ASIL
+DERSİ (sessiz başarısızlık) bir kez daha tekrarlanmış — bu sefer
+migration'ın kendisinde.
+
+**Kök sebep:** defter kaydı gövdeden bağımsız yazılabiliyor
+(`supabase migration repair --status applied`). Bir migration SQL Editor'den
+elle koşulup yarıda kaldığında ya da repair yanlış kullanıldığında defter
+"uygulandı" der ve `db push` bir daha denemez. `0054` kendi içinde
+`do $$` doğrulama bloğu taşıyor ama **o blok hiç çalışmadığı için**
+patlayamadı da.
+
+**Neden buradaki diğer maddelerden ciddi:** sessizce ölü olan şey yedi cron
+işi — TÜFE çekimi, sabah brifingi, haftalık özet, fiyat alarmları, takvim
+kancası, sinyal analizi. Hepsi "kurulu ve aktif" görünüyor
+(`cron.job.active = true`), hiçbiri iş yapmıyor.
+
+**Yapılacak:** `0054`'ü gerçekten koş (`YAPMAN_GEREKENLER.md` #20). Sonra
+**defter yerine ŞEMAYA sor** — kalıcı çözüm bu:
+
+```sql
+-- Deftere değil, fonksiyonun gövdesine bak.
+select proname, pg_get_functiondef(p.oid) ~ 'cron_headers' as yeni
+from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public' and proname like 'trigger_%';
+```
+
+**Ne zaman:** hemen — TestFlight'taki kullanıcılar bugün hiçbir bildirim
+almıyor.
+
+**Önleme fikri (ayrı bir tur):** CI'a "şema gerçekten beklenen hâlde mi"
+denetimi. Migration defteri bir NİYET kaydı; tek gerçek kaynak şemanın
+kendisi.
+
+---
+
+## 🟡 AÇIK — Yatırımcı karşılaştırması medyan farkı ve metrik etiketi taşımıyor
+
+`get_percentile_bucket` (migration `0012`) yalnızca `(percentile,
+total_participants)` döndürüyor. Özet sekmesindeki benchmark şeridi bu
+yüzden "ilk %X'tesin" diyebiliyor ama **medyana ne kadar uzakta olduğunu
+söyleyemiyor.**
+
+Eksik olan üç şey:
+
+1. **Medyan farkı.** RPC havuzun medyan ROI'sini dönmüyor. Kullanıcı kendi
+   yüzdelik dilimini görüyor ama "medyandan 4,2 puan öndeyim" gibi
+   kavraması kolay olan cümleyi göremiyor.
+2. **Metriğin adı.** Sıralama getiri bazlı (`LeaderboardService`
+   simülasyon-ROI'si) ve portföy BÜYÜKLÜĞÜ sıralaması hiç yok — bu doğru
+   tercih. Ama ekran hangisine baktığını YAZMIYOR; kullanıcı "ilk %12"nin
+   büyüklük mü getiri mi olduğunu bilmiyor.
+3. **Metrik TWR değil.** Simülasyon-ROI dönem içi alım/satımı yok sayıyor
+   (gerekçesi `LeaderboardService` sınıf notunda, yarış için bilinçli
+   tercih). Gerçek TWR her lot için tarihsel nakit akışı ister; veri modeli
+   `addedDate` dışında ara değerleme taşımıyor.
+
+**Neden şimdi yapılmadı:** 1 ve 2 bir migration gerektiriyor (RPC imzası
+değişir, `k_min = 20` anonimlik eşiği korunmalı) ve dönüş tipini değiştirmek
+istemcinin eski sürümlerini kırar — `fetchPercentile` yeni alanı opsiyonel
+okumalı. Bu tur istemci tarafında kapatılabilecek maddelere ayrıldı.
+
+**Maliyeti:** karşılaştırma kartı bugün doğru ama eksik bilgi veriyor;
+yanlış bir şey göstermiyor.
+
+**Ne zaman:** medyan farkı, RPC'ye dokunulacak bir sonraki turda. Metriğin
+adı (madde 2) migration İSTEMİYOR — şerit metnine "getiri sıralaması"
+ibaresi eklenerek bugün kapatılabilir.
+
+---
+
+## 🟡 AÇIK — Yatırımcı seviyesine göre görünüm yok
+
+Ürün gereksinimi başlangıç / orta / ileri seviye için farklı metrik kümesi
+öngörüyordu (ileri seviyede attribution, takip hatası, risk-ayarlı
+performans).
+
+**Yapılmadı çünkü** kullanıcı profilinde deneyim seviyesi alanı YOK
+(`user_model.dart`, `preferences_provider`) ve gereksinimin kendisi "yoksa
+yeni zorunlu onboarding ekleme" diyor. Seviye sormadan seviyeye göre
+gizlemek, uydurulmuş bir sınıflandırma olurdu.
+
+Bugünkü karşılığı: kartlar **verisi olduğunda** görünüyor. Yeni kullanıcıda
+sağlık ve XIRR kartları zaten çizilmiyor (yeterli geçmiş yok), bir yıllık
+kullanıcıda kendiliğinden beliriyor. Kademeli açılma seviye sorusu sormadan
+sağlanıyor.
+
+**Ne zaman:** Profil'e opsiyonel bir tercih eklenirse. Zorunlu onboarding
+adımı olarak ASLA.
+
+---
+
+## 🟡 AÇIK — TÜFE grafiğe endeks çizgisi olarak binmiyor
+
+Reel getiri artık kart olarak tam (bileşik reel getiri + nominal + kümülatif
+TÜFE + puan farkı, `_ReelGetiriKarti`). Ama Grafik sekmesinde portföy
+eğrisinin üzerine TÜFE endeksi ÇİZİLMİYOR.
+
+**Neden ertelendi:** iki seri farklı ölçekte (portföy TL, TÜFE endeks) ve
+aynı eksene basmak gereksinimin kendi yasakladığı şey. Doğru yol
+`percent_comparison_chart`'ın normalize-100 modu — o bileşen var ama
+TÜFE'nin AYLIK çözünürlüğü portföyün günlük/5dk serisiyle aynı eksende
+basamaklı bir merdiven çizerdi. Ara değerleri interpolasyonla doldurmak,
+TÜİK'in açıklamadığı bir sayı üretmek olur.
+
+**Maliyeti:** karşılaştırma sayı olarak tam, görsel olarak yok.
+
+**Ne zaman:** aylık basamağın kabul edilebilir olduğuna karar verilirse
+(`stepped line` olarak çizip etiketinde "aylık yayımlanır" demek dürüst bir
+çözüm olabilir).
+
+---
+
 ## ✅ KAPANDI — Cron çağrıları API gateway'de 401 alıyordu (SESSİZ)
 
 **Bulunma tarihi:** 2026-09-14 · **Kapanış:** aynı gün ·
