@@ -182,7 +182,7 @@ void main() {
           .where((l) => !l.trimLeft().startsWith('///'))
           .join('\n');
 
-      expect(kod, contains('_openAssetPerformance'),
+      expect(kod, contains('openAssetPerformance'),
           reason: 'sinyal bildirimi için yönlendirme yok');
       expect(kod, contains('AssetDetailScreen'),
           reason: 'performans ekranına gidilmiyor');

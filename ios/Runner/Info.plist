@@ -73,6 +73,8 @@
 	  ancak cihazda fark edilir (`NSSupportsLiveActivities` ile aynı sınıf
 	  tuzak).
 	-->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Portföyünü yalnızca senin görebilmen için uygulama kilidini Face ID ile açar.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

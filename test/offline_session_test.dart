@@ -60,7 +60,10 @@ void main() {
 
     test('LoginScreen\'e düşmeden önce hasError + yerel oturum kontrolü var',
         () {
-      final gateIdx = mainSrc.indexOf('if (user == null) return const LoginScreen');
+      // 2026-09: kapı blok gövdeli oldu (kilit durumu sıfırlanıyor); iddia
+      // yazım biçimine değil kapının varlığına bakar.
+      var gateIdx = mainSrc.indexOf('if (user == null) return const LoginScreen');
+      if (gateIdx < 0) gateIdx = mainSrc.indexOf('if (user == null) {');
       expect(gateIdx, greaterThan(-1), reason: 'auth gate bulunamadı');
 
       final before = mainSrc.substring(0, gateIdx);

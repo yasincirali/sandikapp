@@ -11,6 +11,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/data_export_service.dart';
+import '../services/biometric_lock_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/supabase_service.dart';
 import '../services/live_activity_service.dart';
@@ -519,6 +520,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 28),
             const SandikSectionHeader(title: 'HESAP'),
             const SizedBox(height: 12),
+            _SwitchTile(
+              icon: Icons.fingerprint_rounded,
+              title: 'Biyometrik kilit',
+              subtitle:
+                  'Uygulamayı açarken Face ID / parmak izi / cihaz PIN\'i iste',
+              value: ref.watch(biometricLockProvider),
+              onChanged: (v) async {
+                if (v) {
+                  // Açarken bir kez doğrula: cihazda kilit yoksa ya da
+                  // kullanıcı vazgeçerse anahtar açık kalmasın — sonra
+                  // kilitten çıkamayacağı bir ekrana düşerdi.
+                  final svc = BiometricLockService.instance;
+                  if (!await svc.available) {
+                    if (!context.mounted) return;
+                    sandikSnack(context,
+                        'Bu cihazda biyometrik doğrulama ya da PIN tanımlı değil.',
+                        kind: SandikSnackKind.warning);
+                    return;
+                  }
+                  final ok = await svc.authenticate(
+                      reason: 'Biyometrik kilidi açmak için kimliğini doğrula');
+                  if (!ok) return;
+                }
+                await ref.read(biometricLockProvider.notifier).set(v);
+              },
+            ),
             _SettingsTile(
               icon: Icons.download_outlined,
               title: 'Verilerimi İndir',

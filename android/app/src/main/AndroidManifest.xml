@@ -2,6 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Biyometrik kilit (local_auth). İzin yalnızca kullanıcı ayarı açınca kullanılır. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- firebase_analytics bu izni birleştirilmiş manifest'e kendiliğinden
          ekler. Uygulamada reklam yok ve iOS tarafında da izleme kapalı
          (PrivacyInfo.xcprivacy: NSPrivacyTracking=false) — iki mağazada aynı
@@ -38,6 +40,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- sandik://asset/<id>, sandik://widget — iOS'taki CFBundleURLSchemes
+                 ile aynı şema. Bkz. lib/services/deep_link_router.dart. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="sandik"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

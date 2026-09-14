@@ -428,7 +428,7 @@ class NotificationService {
     if (type == signalAlertType) {
       final assetId = data['asset_id']?.toString();
       if (assetId == null || assetId.isEmpty) return;
-      _openAssetPerformance(assetId);
+      openAssetPerformance(assetId);
       return;
     }
 
@@ -454,7 +454,7 @@ class NotificationService {
 
     if (payload.startsWith(_signalPayloadPrefix)) {
       final assetId = payload.substring(_signalPayloadPrefix.length);
-      if (assetId.isNotEmpty) _openAssetPerformance(assetId);
+      if (assetId.isNotEmpty) openAssetPerformance(assetId);
       return;
     }
 
@@ -496,7 +496,9 @@ class NotificationService {
   /// dokunulduğunda portföy henüz yüklenmemiş olur ve varlık bulunamaz.
   /// Sonsuz döngü olmaması için sınırlıdır — bulunamazsa sessizce vazgeçilir
   /// (kullanıcı uygulamanın açıldığını zaten görür).
-  void _openAssetPerformance(String assetId, {int deneme = 0}) {
+  /// Dışarıdan da çağrılır (derin bağlantı `sandik://asset/<id>`,
+  /// bkz. `DeepLinkRouter.hedefVarlikId`).
+  void openAssetPerformance(String assetId, {int deneme = 0}) {
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;
 
@@ -504,7 +506,7 @@ class NotificationService {
       if (deneme >= _yenidenDenemeSiniri) return;
       Future<void>.delayed(
         _yenidenDenemeAraligi,
-        () => _openAssetPerformance(assetId, deneme: deneme + 1),
+        () => openAssetPerformance(assetId, deneme: deneme + 1),
       );
       return;
     }
@@ -518,7 +520,7 @@ class NotificationService {
       if (deneme >= _yenidenDenemeSiniri) return;
       Future<void>.delayed(
         _yenidenDenemeAraligi,
-        () => _openAssetPerformance(assetId, deneme: deneme + 1),
+        () => openAssetPerformance(assetId, deneme: deneme + 1),
       );
       return;
     }

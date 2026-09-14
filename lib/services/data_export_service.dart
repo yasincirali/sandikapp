@@ -43,6 +43,14 @@ class DataExportService {
       _fetchPartnerships(user.id),
       _fetchTable('user_push_tokens', 'user_id', user.id),
       _fetchTable('disclaimer_acceptances', 'user_id', user.id),
+      // 2026-09 denetimi: GDPR 20 / KVKK 11 "tam döküm" dört tabloyu
+      // atlıyordu. Hepsi kullanıcının kendi girdisi ya da ona ait kayıt.
+      _fetchTable('watchlist', 'user_id', user.id),
+      _fetchTable('price_alerts', 'user_id', user.id),
+      _fetchTable('signal_preferences', 'user_id', user.id),
+      _fetchTable('signal_notifications', 'user_id', user.id),
+      _fetchTable('milestones', 'user_id', user.id),
+      _fetchTable('live_activity_sessions', 'user_id', user.id),
     ]);
 
     // 2. JSON dokümanını oluştur
@@ -68,6 +76,12 @@ class DataExportService {
         'partnerships': results[4],
         'push_tokens': results[5],
         'disclaimer_acceptances': results[6],
+        'watchlist': results[7],
+        'price_alerts': results[8],
+        'signal_preferences': results[9],
+        'signal_notifications': results[10],
+        'milestones': results[11],
+        'live_activity_sessions': results[12],
       },
     };
 

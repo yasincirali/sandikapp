@@ -14,6 +14,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'daily_summary.dart';
 import 'deep_link_router.dart';
+import 'notification_service.dart';
 import 'retention_tracker.dart';
 import 'surface_theme.dart';
 
@@ -182,6 +183,13 @@ class HomeWidgetService {
   /// Tanınmayan URI'de hiçbir şey yapılmaz: uygulama yine açılır, sekme
   /// değişmez.
   void _sekmeyeYonlendir(Uri uri) {
+    // Varlık bağlantısı sekmeden önce: `sandik://asset/<id>` doğrudan
+    // detay ekranını açar (push bildirimiyle aynı yol).
+    final varlik = DeepLinkRouter.hedefVarlikId(uri);
+    if (varlik != null) {
+      NotificationService.instance.openAssetPerformance(varlik);
+      return;
+    }
     final hedef = DeepLinkRouter.hedefSekme(uri);
     if (hedef == null) return;
     MainNavigationScreen.sekmeIstegi.value = hedef;

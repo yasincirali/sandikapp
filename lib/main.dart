@@ -21,6 +21,7 @@ import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/lock_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/analytics_service.dart';
@@ -625,6 +626,11 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   DateTime? _backgroundedAt;
   static const _sessionTimeout = Duration(minutes: 10);
 
+  /// Biyometrik kilit açıkken: soğuk açılışta ve arkada
+  /// [_lockAfter]'dan uzun kalınca ana ekran kilit arkasında kalır.
+  bool _locked = false;
+  static const _lockAfter = Duration(seconds: 30);
+
   String? _checkedUserId;
   bool? _disclaimerAccepted; // null = kontrol bekleniyor
   bool? _onboardingDone; // null = kontrol bekleniyor
@@ -1000,6 +1006,14 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Oturumu kapat — auth state değişince LoginScreen'e döner
         ref.read(authProvider.notifier).logout();
       } else {
+        // Kısa arka plan dönüşleri (bildirim çekmecesi, gelen arama)
+        // kilit istemez; 30 sn üstü ister.
+        if (bg != null &&
+            DateTime.now().difference(bg) >= _lockAfter &&
+            ref.read(biometricLockProvider) &&
+            ref.read(authProvider).valueOrNull != null) {
+          setState(() => _locked = true);
+        }
         _backgroundedAt = null;
         // Öne dönüş açılış olarak sayılır; servis kısa arka plan
         // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
@@ -1254,7 +1268,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       );
     }
 
-    if (user == null) return const LoginScreen(key: ValueKey('login'));
+    if (user == null) {
+      // Çıkışta kilit durumu sıfırlanır: bir sonraki hesap kendi tercihine
+      // göre değerlendirilir, öncekinin kilidini devralmaz.
+      _locked = false;
+      _lockAtLaunchFor = null;
+      return const LoginScreen(key: ValueKey('login'));
+    }
 
     if (_disclaimerAccepted == false) {
       return DisclaimerAcceptanceScreen(
@@ -1272,7 +1292,22 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       );
     }
 
+    // Soğuk açılış: kilit tercihi açıksa ana ekran kurulmadan önce kilit.
+    // Kullanıcı değişince (`_checkedUserId`) yeniden değerlendirilir.
+    if (_locked || (_lockAtLaunchFor != user.id && _lockAtLaunchNeeded())) {
+      _lockAtLaunchFor = user.id;
+      _locked = true;
+      return LockScreen(
+        key: const ValueKey('lock'),
+        onUnlocked: () => setState(() => _locked = false),
+      );
+    }
+
     return const MainNavigationScreen(key: ValueKey('main'));
   }
+
+  /// Soğuk açılışta kilit gerekiyor mu — kullanıcı başına BİR kez sorulur.
+  String? _lockAtLaunchFor;
+  bool _lockAtLaunchNeeded() => ref.read(biometricLockProvider);
 }
 

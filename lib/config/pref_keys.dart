@@ -28,6 +28,7 @@ class PrefKeys {
   static const chartOverlayMa20 = 'pref_chart_overlay_ma20';
   static const chartLogScale = 'pref_chart_log_scale';
   static const leaderboardOptIn = 'pref_leaderboard_opt_in';
+  static const biometricLock = 'pref_biometric_lock';
   static const surfaceIsLight = 'pref_surface_is_light';
   static const signalThresholdByType = 'pref_signal_threshold_by_type_v1';
   static const signalNeutralPush = 'pref_signal_neutral_push';

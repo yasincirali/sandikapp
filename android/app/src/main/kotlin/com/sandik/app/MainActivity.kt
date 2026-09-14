@@ -3,9 +3,10 @@ package com.sandik.app
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity() {
+// FlutterFragmentActivity: local_auth (biyometrik kilit) FragmentActivity ister.
+class MainActivity : FlutterFragmentActivity() {
     private var flutterReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {

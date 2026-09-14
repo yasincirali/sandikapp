@@ -29,6 +29,23 @@ class DeepLinkRouter {
   /// iOS Canlı Etkinlik (kilit ekranı / Dynamic Island) dokunuşu.
   static const liveActivityHost = 'live-activity';
 
+  /// Belirli bir varlığın detayı — `sandik://asset/<id>`.
+  ///
+  /// Push bildirimleri zaten `asset_id` ile bu ekrana gidiyor
+  /// (`NotificationService.openAssetPerformance`); bu host aynı hedefi
+  /// URI ile adreslenebilir yapar (widget, paylaşılan bağlantı, App Links).
+  static const assetHost = 'asset';
+
+  /// `sandik://asset/<id>` → `<id>`; değilse null.
+  static String? hedefVarlikId(Uri? uri) {
+    if (uri == null || uri.scheme != 'sandik' || uri.host != assetHost) {
+      return null;
+    }
+    final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    if (segs.length != 1) return null;
+    return segs.first;
+  }
+
   /// URI'yi hedef sekme indeksine çevirir; tanınmayan URI için `null`.
   ///
   /// `null` dönmesi "hiçbir şey yapma" demektir — uygulama yine açılır,

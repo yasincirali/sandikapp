@@ -38,6 +38,7 @@ void main() {
       PrefKeys.chartOverlayMa20,
       PrefKeys.chartLogScale,
       PrefKeys.leaderboardOptIn,
+      PrefKeys.biometricLock,
       PrefKeys.surfaceIsLight,
       PrefKeys.signalThresholdByType,
       PrefKeys.signalNeutralPush,

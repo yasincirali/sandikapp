@@ -237,6 +237,12 @@ final partnerNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kBalanceHiddenKey, false));
 
+/// Biyometrik / cihaz kilidi — uygulama öne dönünce ve soğuk açılışta
+/// kimlik doğrulaması ister. Varsayılan KAPALI; açarken cihaz destekliyor mu
+/// diye bir kez doğrulanır (`BiometricLockService`). Kişiye özel.
+final biometricLockProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.biometricLock, false, perUser: true));
+
 /// Kilit ekranı Live Activity'sinde para tutarı gösterilsin mi?
 ///
 /// **Varsayılan KAPALI.** Kilit ekranı telefon açılmadan görülebilen bir

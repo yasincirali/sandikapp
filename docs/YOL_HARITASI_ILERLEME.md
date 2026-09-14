@@ -15,7 +15,7 @@ Main'e birleştirildi (2026-09-14). Faz 0 ve Faz 1 tamam. Faz 2: 2.1–2.9, 2.11
 **Kalan Faz 2 kalemleri:** 2.10 varlık silmede undo (sunucu tarafı kalıcı silme — soft-delete
 ister, Faz 3 kapsamı), 2.12 SegmentedButton geçişi (görsel doğrulama ister), 2.14 Hero geçişi,
 2.13'ün `Size.zero` buton kısmı (20 site), 2.4'ün `SandikCard` benimsemesi.
-Faz 3 başladı: 3.3, 3.4, 3.7 tamam. Sıradaki: **3.8 derin bağlantı**, 3.15 dışa aktarım, 3.19 RLS/retention, 3.6 biyometrik.
+Faz 3: 3.3, 3.4, 3.6, 3.7, 3.8(kısmi), 3.15, 3.19(kısmi) tamam. Sıradaki: 3.11 sessiz saatler, 3.17 testsiz servisler, 3.16 integration test; 3.1/3.2/3.5/3.9/3.10 büyük kalemler.
 
 ## Faz 0 — Kanamayı durdur
 
@@ -74,4 +74,8 @@ Faz 3 başladı: 3.3, 3.4, 3.7 tamam. Sıradaki: **3.8 derin bağlantı**, 3.15 
 |---|---|---|
 | 3.3 | ✅ (ucuz biçim) | Karşılaştır ekranına tek dokunuşlu kıyas çipleri: Portföyüm / BIST 100 / Dolar / Gram altın (`SymbolSearchService`'in tanıdığı semboller, yeni veri yolu yok). Performans sekmesine overlay eklenmedi — o ekran Faz 3.9 birleşmesini bekliyor. |
 | 3.4 | ✅ (gerçekleşen K/Z) | `PortfolioState.realizedGainLoss` + `hasRealized`: Σ(satış − maliyet)×miktar×alım kuru, `sell_price`'sız eski satırlar atlanır. Özet kartında "Satışlardan gerçekleşen: ±₺x" satırı (yalnızca satış varsa) + ekran okuyucu cümlesi. Bedelsiz/split işlem tipi eklenmedi (şema + ekleme akışı ister). `test/realized_gain_and_cache_test.dart`. |
+| 3.6 | ✅ (cihazda doğrulanmadı) | `local_auth` eklendi. `BiometricLockService` (available/authenticate, asla fırlatmaz, PIN de kabul), `LockScreen` (içerik kurulmadan önce, otomatik ister), `_AuthGate`: soğuk açılışta ve 30 sn+ arka plandan dönüşte kilit; çıkışta sıfırlanır. Ayarlar → Hesap → 'Biyometrik kilit' (açarken bir kez doğrular; cihaz desteklemiyorsa uyarır). Android: `USE_BIOMETRIC` + `MainActivity` → `FlutterFragmentActivity` (local_auth şartı; splash API'si FragmentActivity ile de çalışır). iOS: `NSFaceIDUsageDescription`. ⚠️ Gerçek cihazda bir kez denenmeli. |
 | 3.7 | ✅ | `lib/services/portfolio_cache.dart`: başarılı çekimde defter (`toSupabase` JSON) prefs'e yazılır; çekim başarısızsa önbellekten açılır ve `errorMessage` ile mevcut çevrimdışı şeridi çıkar; önbellek yoksa eski davranış (hata). Kullanıcı kimliğine bağlı anahtar, çıkışta silinir. Fiyat önbelleği bilinçli ayrı tutuldu. |
+| 3.8 | 🟡 kısmi | `DeepLinkRouter.hedefVarlikId`: `sandik://asset/<id>` → `NotificationService.openAssetPerformance` (push ile aynı yol). Android manifest'e `sandik` şeması için VIEW/BROWSABLE intent-filter eklendi (iOS'ta `CFBundleURLSchemes` zaten vardı). **Eksik:** dış kaynaktan (tarayıcı, paylaşılan bağlantı) gelen intent'i Flutter'a taşıyan köprü — `home_widget` akışı yalnızca widget dokunuşlarını dinliyor; `flutter_deeplinking_enabled` + route tabanlı yakalama ya da `app_links` paketi gerekir ve cihazda doğrulanmalı. `test/deep_link_asset_test.dart`. |
+| 3.15 | ✅ (dışa aktarım) | Dışa aktarım 7 → 13 tablo: watchlist, price_alerts, signal_preferences, signal_notifications, milestones, live_activity_sessions eklendi (`export_version` artırıldı). İçe aktarım (geri yükleme) yapılmadı — şema doğrulaması + çakışma politikası ister. |
+| 3.19 | 🟡 kısmi | `0056_force_rls_and_db_logs_retention.sql`: 19 tabloda `FORCE ROW LEVEL SECURITY` (var olanlara, `to_regclass` ile), `cleanup_db_logs()` + günlük 03:15 UTC pg_cron işi (30 gün). **Sertifika pinning yapılmadı** — Supabase/Yahoo/TEFAS sertifika rotasyonlarında uygulamayı kırma riski; ayrı karar. Migration koşulması sende. |
