@@ -1,6 +1,6 @@
 # sandık
 
-Kişisel portföy takibi — hisse (BIST), TEFAS fonu, döviz, altın, vadeli mevduat.
+Kişisel portföy takibi — hisse (BIST), TEFAS fonu, döviz, altın, emtia.
 Flutter (Riverpod) istemci + Supabase (Postgres, RLS, Edge Functions, pg_cron) arka uç.
 Android ana ekran widget'ı, iOS widget + Live Activity, FCM/APNs push.
 

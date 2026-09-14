@@ -134,14 +134,13 @@ void main() {
     });
 
     test('diğer türler desteklemez', () {
-      // Altın/döviz/emtia temettü dağıtmaz; mevduatın getirisi faizdir.
+      // Altın/döviz/emtia temettü dağıtmaz.
       // Fon dağıtım yapabilir ama TEFAS fiyatına yansır → çift sayım olurdu.
       for (final t in [
         AssetType.fon,
         AssetType.doviz,
         AssetType.altin,
         AssetType.emtia,
-        AssetType.mevduat,
         AssetType.diger,
       ]) {
         expect(ofType(t).supportsDividend, isFalse,

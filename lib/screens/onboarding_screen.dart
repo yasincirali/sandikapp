@@ -179,25 +179,21 @@ class _Sahne {
 /// tutulur, kaydırılmaz.
 List<_Sahne> _turuKur() {
   final rc = RemoteConfigService.instance;
-  final mevduat = rc.depositsEnabled;
   final yarisVar = rc.percentileStripEnabled;
   final tufeVar = rc.realReturnEnabled;
   final premiumVar = rc.paywallEnabled && rc.premiumEnabled;
 
-  final turler = mevduat
-      ? 'Hisse, fon, döviz, altın, emtia ve vadeli mevduat'
-      : 'Hisse, fon, döviz, altın ve emtia';
-
+  // Vadeli mevduat 2026-09-14'te kaldırıldı; tür listesi artık sabit metin.
   return [
     // ── 1. Karşılama ─────────────────────────────────────────────────────
-    _Sahne(
+    const _Sahne(
       ekran: 'sandık',
       mock: _MockTur.yok,
       ikon: Icons.account_balance_wallet_rounded,
       adimlar: [
         _Adim(
           baslik: 'Sandığınıza hoş geldiniz',
-          govde: '$turler — hepsi tek ekranda, tek para biriminde. Fiyatlar '
+          govde: 'Hisse, fon, döviz, altın ve emtia — hepsi tek ekranda, tek para biriminde. Fiyatlar '
               'arka planda kendiliğinden güncellenir.\n\n'
               'Şimdi uygulamayı birlikte gezelim. Her ekranı ve her tuşu tek '
               'tek göstereceğim; "İleri" bir sonraki tuşa geçer.',

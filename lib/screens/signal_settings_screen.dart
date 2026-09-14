@@ -4,7 +4,6 @@ import '../models/asset_type.dart';
 import '../models/signal_frequency.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
-import '../services/remote_config_service.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -110,7 +109,7 @@ class SignalSettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           for (final type
-              in RemoteConfigService.instance.visibleAssetTypes) ...[
+              in AssetType.values) ...[
             _CategorySection(
               type: type,
               selected: prefs[type] ??

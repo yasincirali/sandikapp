@@ -2,7 +2,7 @@
 
 ## Proje
 
-**sandık** — kişisel portföy takibi (BIST hisse, TEFAS fon, döviz, altın, vadeli mevduat).
+**sandık** — kişisel portföy takibi (BIST hisse, TEFAS fon, döviz, altın, emtia).
 Flutter + **Riverpod** istemci; **Supabase** arka uç (Postgres + RLS, Edge Functions, pg_cron,
 Vault); Firebase (Crashlytics, Analytics, Remote Config, FCM); iOS Live Activity ve
 Android/iOS ana ekran widget'ları.

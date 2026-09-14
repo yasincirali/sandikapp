@@ -82,7 +82,6 @@ void main() {
     test('parasal alanlar ondalık klavye kullanır', () {
       for (final dosya in [
         'lib/screens/add_asset_screen.dart',
-        'lib/screens/add_deposit_screen.dart',
         'lib/widgets/dividend_dialog.dart',
       ]) {
         expect(

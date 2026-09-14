@@ -73,7 +73,6 @@ void main() {
       (type: AssetType.emtia, unitType: 'kilogram', beklenen: 'kg'),
       (type: AssetType.emtia, unitType: 'liter', beklenen: 'lt'),
       (type: AssetType.emtia, unitType: 'barrel', beklenen: 'bbl'),
-      (type: AssetType.mevduat, unitType: 'piece', beklenen: '₺'),
       (type: AssetType.diger, unitType: 'piece', beklenen: 'adet'),
     ];
 

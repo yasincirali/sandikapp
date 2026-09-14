@@ -8,15 +8,14 @@ import '../models/asset_type.dart';
 /// "piyasa kapalı dedik ama fiyatı değişen bir varlık var demek ki."
 /// Haklıydı — ölçüldü:
 ///
-///   * **Vadeli mevduat** her gün faiz işletiyor
-///     (`DepositService.currentUnitValue`), borsadan tamamen bağımsız.
 ///   * **Döviz / emtia / altın** spot piyasaları Pazar akşamı açılıyor;
 ///     Cumartesi kapalı ama Pazar gecesi hareket var.
 ///   * **Hisse / fon** BIST ve TEFAS takvimine bağlı — hafta sonu kesin
 ///     kapalı.
 ///
-/// Hepsine birden "piyasa kapalı" demek, mevduatı olan bir kullanıcı için
-/// YANLIŞ bilgi. Rozet artık neyin kapalı olduğunu söylüyor.
+/// Hepsine birden "piyasa kapalı" demek, dövizi olan bir kullanıcı için
+/// YANLIŞ bilgi. (Vadeli mevduat da bu listedeydi; tür 2026-09-14'te
+/// kaldırıldı, kural döviz/emtia/altın için aynen geçerli.) Rozet artık neyin kapalı olduğunu söylüyor.
 ///
 /// ## Neden saf fonksiyon
 /// Karar yalnızca türe bakıyor; widget ağacı, tarih ya da ağ gerekmiyor.
@@ -28,10 +27,8 @@ const _borsayaBagli = {AssetType.hisse, AssetType.fon};
 
 /// Kapalı dönemde de değer üretebilen türler.
 ///
-/// Mevduat faizi takvim günüyle işler; döviz/emtia/altın spot piyasaları
-/// hafta sonunun bir kısmında açıktır.
+/// Döviz/emtia/altın spot piyasaları hafta sonunun bir kısmında açıktır.
 const _kapalidaIsleyebilen = {
-  AssetType.mevduat,
   AssetType.doviz,
   AssetType.emtia,
   AssetType.altin,
@@ -49,7 +46,7 @@ String piyasaKapaliEtiketi(Iterable<AssetType> turler) {
   // Yalnızca borsa ürünleri → en net ifade.
   if (borsaVar && !digerVar) return 'BORSA KAPALI';
 
-  // Karışık portföy: "piyasa kapalı" demek mevduat faizini yok sayardı.
+  // Karışık portföy: "piyasa kapalı" demek spot hareketi yok sayardı.
   // Hangi kolun durduğunu söylüyoruz, tamamının durduğunu değil.
   if (borsaVar && digerVar) return 'BORSA KAPALI · DİĞERLERİ SÜRÜYOR';
 

@@ -822,7 +822,7 @@ değil.
 
 İkisi de aynı kararı bekliyor: **ya tamamla ya sil.**
 
-- `deposits_enabled: false` — vadeli mevduat kodu duruyor, kullanıcıya kapalı.
+- ~~`deposits_enabled: false`~~ — vadeli mevduat 2026-09-14 tamamen kaldırıldı (0058).
   Faiz/vade hesabı ayrı bir domain; yarım hâlde durması karmaşıklık borcu.
 - `paywall_enabled: false` — premium altyapısı (PremiumGate, paywall ekranı,
   Remote Config flag'leri) hazır ama `pubspec.yaml`'da IAP paketi YOK. Flag

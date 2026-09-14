@@ -591,7 +591,7 @@ export function shouldNotifyNow(
   return gecenSaat >= 1;
 }
 
-/// Sinyal üretilebilen türler. Vadeli mevduatın teknik göstergesi yoktur.
+/// Sinyal üretilebilen türler ('diger' elle fiyatlanır, seri yoktur).
 const ANALYZABLE = new Set(['hisse', 'fon', 'altin', 'doviz', 'emtia']);
 
 Deno.serve(async (request) => {

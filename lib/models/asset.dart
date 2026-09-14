@@ -91,8 +91,6 @@ String birimEtiketi({
           // Çeyrek/yarım/ata altın: `unitType == 'piece'`.
           return 'adet';
       }
-    case AssetType.mevduat:
-      return '₺';
     case AssetType.diger:
       return 'adet';
   }

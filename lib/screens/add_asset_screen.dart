@@ -10,7 +10,6 @@ import '../models/asset_categories.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
-import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -18,7 +17,6 @@ import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
-import 'add_deposit_screen.dart';
 import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -1234,12 +1232,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   // ── Varlık türü seçici (Sandik brand) ──────────────────────────────────────
 
   Widget _typeSelector(ColorScheme cs) {
-    // Vadeli mevduat feature'ı Remote Config ile kapatılabilir. Kapalıyken
-    // add-asset seçicisinden gizlenir — mevcut kayıtlı mevduatlar okunmaya
-    // devam eder, sadece yeni ekleme kapanır.
-    final types = RemoteConfigService.instance.depositsEnabled
-        ? AssetType.values
-        : AssetType.values.where((t) => t != AssetType.mevduat).toList();
+    // Vadeli mevduat türü 2026-09-14'te kaldırıldı (hiç yayına çıkmamıştı,
+    // ayrı form + lokal faiz motoru bakım yükü getiriyordu); seçici artık
+    // enum'un tamamını gösterir.
+    const types = AssetType.values;
     return HScrollWithFade(
       fadeColor: context.c.background,
       child: Row(
@@ -1249,16 +1245,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
               onTap: () async {
-                if (t == AssetType.mevduat) {
-                  // Vadeli mevduat için ayrı, form yapısı tamamen farklı ekran.
-                  final ok = await Navigator.of(context).push<bool>(
-                    adaptiveRoute(
-                      builder: (_) => const AddDepositScreen(),
-                    ),
-                  );
-                  if (ok == true && mounted) Navigator.of(context).pop(true);
-                  return;
-                }
                 setState(() {
                   _type = t;
                   _subCategory = null;

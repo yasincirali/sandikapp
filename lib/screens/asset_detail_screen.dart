@@ -1261,7 +1261,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
   /// Bu varlık için gün içi fiyat verisi ANLAMLI mı?
   ///
-  /// Vadeli mevduatın ve elle fiyatlanan varlıkların ("Ev", "Araba") bir
+  /// Elle fiyatlanan varlıkların ("Ev", "Araba") bir
   /// piyasa serisi yoktur; onlarda GÜNLÜK sekmesi kullanıcıya boş ya da
   /// dümdüz bir grafik gösterir ve sekmeyi açmanın hiçbir karşılığı olmaz.
   ///
@@ -1270,7 +1270,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// (bkz. `HistoryService.gunIciFonBirimFiyati`).
   bool get _gunIciDestekli =>
       !widget.asset.isManualPrice &&
-      widget.asset.type != AssetType.mevduat &&
       widget.asset.type != AssetType.diger;
 
   List<({String label, int days})> get _periods =>
@@ -1755,11 +1754,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 // Kayıtlı bildirim varsa şeridin ikinci satırında durur —
                 // "şu an ne diyor" ile "bana ne bildirilmişti" farklı
                 // sorulardır.
-                if (widget.asset.type != AssetType.mevduat)
-                  AssetSignalCard(
-                    asset: widget.asset,
-                    onTap: _sinyalPaneline,
-                  ),
+                AssetSignalCard(
+                  asset: widget.asset,
+                  onTap: _sinyalPaneline,
+                ),
                 _buildPeriodToggle(),
                 const SizedBox(height: 24),
                 FutureBuilder<Map<int, double>>(
@@ -2921,9 +2919,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                if (widget.asset.type != AssetType.mevduat)
-                  TechnicalSignalPanel.forAsset(widget.asset,
-                      key: _sinyalPaneliKey, detayli: true),
+                TechnicalSignalPanel.forAsset(widget.asset,
+                    key: _sinyalPaneliKey, detayli: true),
               ],
             ),
           ),

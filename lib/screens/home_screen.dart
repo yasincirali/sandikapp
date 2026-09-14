@@ -11,7 +11,6 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
 import '../services/analytics_service.dart';
-import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
@@ -524,7 +523,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       _typeChip(null, 'Tümü'),
                       for (final t
-                          in RemoteConfigService.instance.visibleAssetTypes)
+                          in AssetType.values)
                         _typeChip(t, t.label),
                     ],
                   ),

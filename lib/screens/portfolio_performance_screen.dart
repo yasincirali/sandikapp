@@ -1128,7 +1128,7 @@ class _PortfolioPerformanceScreenState
           child: Row(
             children: [
               _typeChip(null, 'Tümü'),
-              for (final t in RemoteConfigService.instance.visibleAssetTypes)
+              for (final t in AssetType.values)
                 _typeChip(t, t.label),
             ],
           ),

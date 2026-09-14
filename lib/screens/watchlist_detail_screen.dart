@@ -123,19 +123,15 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
                       // Takip listesinin ASIL değeri burada: sahip olmadığın
                       // varlık için de teknik göstergeler hesaplanır. Panel bir
                       // `Asset` istemiyor (bkz. `TechnicalSignalPanel`).
-                      if (item.type != AssetType.mevduat) ...[
-                        TechnicalSignalPanel(
-                          ticker: item.ticker,
-                          type: item.type,
-                          subCategory: item.subCategory,
-                        ),
-                        // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
-                        // taşır (bkz. asset_detail_screen, home_screen).
-                        // Panel koşullu olduğu için ibare de aynı koşulun
-                        // içinde: sinyal yoksa uyarı da görünmez.
-                        const SizedBox(height: SandikSpace.sm),
-                        const DisclaimerWidget(),
-                      ],
+                      TechnicalSignalPanel(
+                        ticker: item.ticker,
+                        type: item.type,
+                        subCategory: item.subCategory,
+                      ),
+                      // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
+                      // taşır (bkz. asset_detail_screen, home_screen).
+                      const SizedBox(height: SandikSpace.sm),
+                      const DisclaimerWidget(),
                       const SizedBox(height: SandikSpace.lg),
                       const _FooterNote(),
                     ],

@@ -99,7 +99,7 @@ Gizlilik vaadiyle çelişen tek kare bile güven kırar.
 | Ayarlar / profil | Kimse ayarlar için uygulama indirmez |
 | Onboarding | Değeri değil, süreci gösterir |
 | Paywall | `paywall_enabled: false` — kapalı özelliği göstermeyin |
-| Vadeli mevduat | `deposits_enabled: false` — kullanıcıya kapalı |
+| Vadeli mevduat | Kaldırıldı (2026-09-14) — ekran görüntüsü yok |
 
 ---
 

@@ -279,7 +279,6 @@ class CsvImportService {
           currency: 'TRY',
         );
       case AssetType.emtia:
-      case AssetType.mevduat:
       case AssetType.diger:
         return (
           ticker: t,
