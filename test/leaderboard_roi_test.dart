@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/leaderboard_service.dart';
+import 'helpers/kaynak.dart';
 
 /// **Yarışta herkes TEK formülle ölçülür: seçili dönemin getirisi.**
 ///
@@ -131,15 +132,20 @@ void main() {
       // Kullanıcı "neden para yatırınca yüzdem değişmedi?" diye sormamalı.
       final ekran = _yorumsuz(
           await File('lib/screens/leaderboard_screen.dart').readAsString());
-      expect(ekran.contains('Para yatırmak sıralamayı değiştirmez'), isTrue,
+      expect(ekran.contains('l10n.depositsDontChangeRank'), isTrue,
           reason: 'metriğin en şaşırtıcı yanı açıkça yazılmalı');
-      expect(ekran.contains('ETKİLEMEZ'), isTrue);
+      expect(trMetni('depositsDontChangeRank'), contains('sıralamayı değiştirmez'));
+      // 3.20: metin sözlükte (`depositsDontChangeRankBody`).
+      expect(ekran.contains('l10n.depositsDontChangeRankBody'), isTrue);
+      expect(trMetni('depositsDontChangeRankBody'), contains('ETKİLEMEZ'));
       // Formül de yazılı olmalı.
-      expect(ekran.contains('(dönem sonu − dönem başı) ÷ dönem başı'), isTrue,
+      expect(trMetni('selectedPeriodReturnBody'),
+          contains('(dönem sonu − dönem başı) ÷ dönem başı'),
           reason: 'hesabın kendisi kullanıcıya gösterilmeli');
       // Sınır dürüstçe belirtilmeli.
-      expect(ekran.contains('senaryosunu gösterir'), isTrue,
+      expect(ekran.contains('l10n.rankSwapNote'), isTrue,
           reason: 'varlık değiştirme sınırı gizlenmemeli');
+      expect(trMetni('rankSwapNote'), contains('senaryosunu gösterir'));
     });
   });
 

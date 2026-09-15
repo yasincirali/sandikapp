@@ -88,9 +88,9 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   ///
   /// Dönem seçici DEĞİŞMEZ: `_selectedPeriodIdx` iki sekmede paylaşılıyor.
   Widget _buildSurfaceToggle() {
-    const options = [
-      (label: 'Grafik', ozet: false),
-      (label: 'Özet', ozet: true),
+    final options = [
+      (label: context.l10n.tabChart, ozet: false),
+      (label: context.l10n.tabSummary, ozet: true),
     ];
     return Container(
       height: 44,
@@ -142,9 +142,9 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   ///   tarihlerine göre).
   /// - Simülasyon: bugünkü net portföy tüm dönem boyunca elde tutulmuş gibi.
   Widget _buildModeToggle() {
-    const options = [
-      (label: 'Gerçek', sim: false),
-      (label: 'Simülasyon', sim: true),
+    final options = [
+      (label: context.l10n.modeReal, sim: false),
+      (label: context.l10n.modeSim, sim: true),
     ];
     return Container(
       height: 44,
@@ -181,7 +181,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                     const SizedBox(width: 6),
                     Semantics(
                       button: true,
-                      label: '${o.label} modu hakkında bilgi',
+                      label: context.l10n.modeInfoSemantics(o.label),
                       child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _showModeInfoSheet(forSim: o.sim),
@@ -207,16 +207,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   }
 
   void _showModeInfoSheet({required bool forSim}) {
-    final title = forSim ? 'Simülasyon Modu' : 'Gerçek Mod';
+    final title = forSim ? context.l10n.simModeTitle : context.l10n.realModeTitle;
     final body = forSim
-        ? 'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş '
-            'olsaydın grafik nasıl görünürdü — geçmişteki alım/satış '
-            'kararlarını yok sayar, sadece güncel pozisyonun fiyat '
-            'değişimini gösterir.'
-        : 'Her günün grafikteki değeri, o gün elinde olan net miktara '
-            'göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri '
-            've varsa alım / satış tutarları görünür — böylece grafiğin '
-            'neden yükseldiğini veya düştüğünü net görebilirsin.';
+        ? context.l10n.simModeBody
+        : context.l10n.realModeBody;
 
     showCupertinoModalPopup<void>(
       context: context,
@@ -300,13 +294,12 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         icon: type?.icon ?? Icons.inbox_rounded,
         iconColor: type?.color,
         title: type == null
-            ? 'Henüz varlığın yok'
-            : 'Portföyünde ${type.label.toLowerCase()} yok',
+            ? context.l10n.noAssetsYetTitle
+            : context.l10n.noAssetsOfTypeTitle(
+                type.labelOf(context.l10n).toLowerCase()),
         message: type == null
-            ? 'Varlık ekledikçe portföyünün performansı burada grafiğe '
-                'dönüşecek.'
-            : 'Bu türden bir varlık eklediğinde performansı burada '
-                'görünecek. Başka bir tür seçebilirsin.',
+            ? context.l10n.noAssetsChartBody
+            : context.l10n.noAssetsOfTypeChartBody,
       );
     }
 
@@ -316,12 +309,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     return _ChartPlaceholder(
       icon: Icons.timeline_rounded,
       iconColor: type?.color,
-      title: 'Grafik verisi yok',
+      title: context.l10n.noChartData,
       message: type == null
-          ? 'Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri '
-              'toplamda görünür ama zaman grafiği çizilemiyor.'
-          : '${type.label} için fiyat geçmişi izlenmiyor. Değeri portföy '
-              'toplamına dahil, ama zaman grafiği çizilemiyor.',
+          ? context.l10n.noHistoryAllBody
+          : context.l10n.noHistoryTypeBody(type.labelOf(context.l10n)),
     );
   }
 

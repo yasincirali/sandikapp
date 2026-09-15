@@ -8,6 +8,7 @@ import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 /// Premium'a geçiş için paywall. Faz 1'de RevenueCat'e bağlanacak;
 /// şu an dummy — [_completePurchase] direkt [premiumUnlockedProvider]'ı
@@ -71,9 +72,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   const SizedBox(height: 24),
                   _PlanCard(
                     plan: _Plan.yearly,
-                    title: 'Yıllık',
+                    title: context.l10n.planYearly,
                     price: priceYearly,
-                    subtitle: '7 gün ücretsiz dene, sonra otomatik yenilenir',
+                    subtitle: context.l10n.planYearlySubtitle,
                     badgeText: '%40 tasarruf',
                     selected: _selected == _Plan.yearly,
                     onTap: () => setState(() => _selected = _Plan.yearly),
@@ -81,19 +82,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   const SizedBox(height: 12),
                   _PlanCard(
                     plan: _Plan.monthly,
-                    title: 'Aylık',
+                    title: context.l10n.planMonthly,
                     price: priceMonthly,
-                    subtitle: 'İstediğin zaman iptal edebilirsin',
+                    subtitle: context.l10n.planMonthlySubtitle,
                     badgeText: null,
                     selected: _selected == _Plan.monthly,
                     onTap: () => setState(() => _selected = _Plan.monthly),
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Abonelik App Store hesabına yansır. Otomatik yenilenir, '
-                    'iptal için Ayarlar → Apple ID → Abonelikler menüsünden '
-                    'yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; '
-                    'iptal etmezsen deneme sonunda ücret tahsil edilir.',
+                    context.l10n.subscriptionTerms,
                     style: context.t.bodySmall?.copyWith(
                       color: context.c.text36,
                       height: 1.5,
@@ -183,14 +181,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     color: context.c.amberText, size: 40),
               ),
               const SizedBox(height: 16),
-              Text('Premium açıldı',
+              Text(context.l10n.premiumUnlocked,
                   style: context.t.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
-                'Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve '
-                'daha fazlası açıldı.',
+                context.l10n.premiumUnlockedBody,
                 textAlign: TextAlign.center,
                 style: context.t.bodyMedium?.copyWith(
                     color: context.c.text58, height: 1.5),
@@ -207,7 +204,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(SandikRadius.md)),
                   ),
-                  child: Text('Harika',
+                  child: Text(context.l10n.greatWord,
                       style: context.t.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w800)),
                 ),
@@ -270,7 +267,7 @@ class _HeroCard extends StatelessWidget {
               border: Border.all(color: context.c.amberFill.withValues(alpha: 0.5)),
             ),
             child: Text(
-              'SANDIK PREMIUM',
+              context.l10n.sandikPremiumUpper,
               style: context.t.labelMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
@@ -280,7 +277,7 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Portföyünü daha derinlemesine\ntakip et',
+            context.l10n.paywallHeadline,
             style: context.t.headlineLarge?.copyWith(
               fontWeight: FontWeight.w800,
               color: context.c.text90,
@@ -289,7 +286,7 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.',
+            context.l10n.paywallSubhead,
             style: context.t.bodyMedium?.copyWith(
               color: context.c.text58,
               height: 1.4,
@@ -532,7 +529,7 @@ class _BottomBar extends StatelessWidget {
             const SizedBox(height: 8),
             TextButton(
               onPressed: busy ? null : onRestore,
-              child: Text('Satın alımı geri yükle',
+              child: Text(context.l10n.restorePurchase,
                   style: context.t.titleSmall?.copyWith(
                       color: context.c.text58,
                       fontWeight: FontWeight.w600)),

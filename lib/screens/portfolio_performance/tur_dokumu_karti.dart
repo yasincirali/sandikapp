@@ -237,7 +237,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'TÜRE GÖRE DEĞİŞİM',
+            context.l10n.changeByTypeUpper,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.t.labelSmall?.copyWith(

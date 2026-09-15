@@ -12,6 +12,7 @@ import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/share_card.dart';
+import '../l10n/l10n.dart';
 
 /// "sandık Özeti" — yıllık geriye bakış.
 ///
@@ -57,9 +58,9 @@ class _RecapScreenState extends State<RecapScreen> {
     final c = context.c;
     final out = <_Sayfa>[
       _Sayfa(
-        ustBaslik: '${widget.year} yılında',
-        baslik: 'sandık Özetin',
-        altBaslik: 'Bir yılın kısa hikâyesi.',
+        ustBaslik: context.l10n.recapInYear(widget.year),
+        baslik: context.l10n.recapTitle,
+        altBaslik: context.l10n.recapSubtitle,
         ikon: Icons.auto_stories_rounded,
         renk: c.amberText,
       ),
@@ -90,7 +91,7 @@ class _RecapScreenState extends State<RecapScreen> {
       out.add(_Sayfa(
         ustBaslik: 'Enflasyona karşı',
         baslik:
-            '${fmtNum(d.inflationSpread!.abs(), digits: 1)} puan',
+            context.l10n.recapPoints(fmtNum(d.inflationSpread!.abs(), digits: 1)),
         altBaslik: onde
             ? 'Alım gücünü korudun ve üstüne koydun.'
             : 'Bu yıl enflasyon öndeydi.',
@@ -126,7 +127,7 @@ class _RecapScreenState extends State<RecapScreen> {
     if (d.trackedDays >= 5) {
       out.add(_Sayfa(
         ustBaslik: 'Takipteydin',
-        baslik: '${d.trackedDays} gün',
+        baslik: context.l10n.recapDays(d.trackedDays),
         altBaslik: d.typeCount > 1
             ? '${d.typeCount} türde varlık ile.'
             : 'Bir yıl boyunca.',
@@ -145,7 +146,7 @@ class _RecapScreenState extends State<RecapScreen> {
     return showShareSheet(
       context,
       data: ShareCardData(
-        baslik: 'Özetim ${widget.year}',
+        baslik: context.l10n.myRecapYear(widget.year),
         degisimPct: d.changePct,
         karakter: d.character,
         enflasyonPuan: d.inflationSpread,
@@ -384,12 +385,12 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('$yil Özetin hazır',
+                      Text(context.l10n.recapReady(yil),
                           style:
                               context.t.titleLarge?.copyWith(color: c.text90)),
                       const SizedBox(height: 2),
                       Text(
-                        'Bir yılın kısa hikâyesi — ${d.character.label}',
+                        context.l10n.recapCardSubtitle(d.character.label),
                         style:
                             context.t.bodyMedium?.copyWith(color: c.text58),
                         maxLines: 1,

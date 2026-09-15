@@ -90,9 +90,7 @@ class _GunIciVeriYokNotu extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$adlar için gün içi fiyat verisi alınamadı. Bu varlıklar '
-              'grafikte son bilinen fiyatlarıyla SABİT çizildi — çizginin '
-              'düz olması piyasanın durgun olduğu anlamına gelmez.',
+              context.l10n.intradayMissingBody(adlar),
               style: context.t.bodySmall?.copyWith(color: context.c.text58),
             ),
           ),
@@ -166,7 +164,7 @@ class _ChartPlaceholder extends StatelessWidget {
               SandikTappable(
                 onTap: onRetry,
                 haptic: SandikHaptic.medium,
-                semanticLabel: 'Tekrar dene',
+                semanticLabel: context.l10n.retryLower,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: SandikSpace.lg,
@@ -224,7 +222,7 @@ class _LeaderboardChip extends StatelessWidget {
                   size: 13, color: context.c.amberText),
               const SizedBox(width: 4),
               Text(
-                'YARIŞ',
+                context.l10n.raceUpper,
                 style: context.t.labelMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: context.c.amberText,

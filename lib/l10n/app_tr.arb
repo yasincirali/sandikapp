@@ -585,5 +585,381 @@
   "generatingEllipsis": "Üretiliyor...",
   "generateCode": "Kod Üret",
   "switchToDark": "Koyu temaya geç",
-  "switchToLight": "Açık temaya geç"
+  "switchToLight": "Açık temaya geç",
+  "tabChart": "Grafik",
+  "tabSummary": "Özet",
+  "modeReal": "Gerçek",
+  "modeSim": "Simülasyon",
+  "modeInfoSemantics": "{mode} modu hakkında bilgi",
+  "@modeInfoSemantics": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "noChartData": "Grafik verisi yok",
+  "noAssetsYetTitle": "Henüz varlığın yok",
+  "noAssetsOfTypeTitle": "Portföyünde {type} yok",
+  "@noAssetsOfTypeTitle": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "noAssetsChartBody": "Varlık ekledikçe portföyünün performansı burada grafiğe dönüşecek.",
+  "noAssetsOfTypeChartBody": "Bu türden bir varlık eklediğinde performansı burada görünecek. Başka bir tür seçebilirsin.",
+  "noHistoryAllBody": "Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri toplamda görünür ama zaman grafiği çizilemiyor.",
+  "noHistoryTypeBody": "{type} için fiyat geçmişi izlenmiyor. Değeri portföy toplamına dahil, ama zaman grafiği çizilemiyor.",
+  "@noHistoryTypeBody": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "simModeTitle": "Simülasyon Modu",
+  "realModeTitle": "Gerçek Mod",
+  "simModeBody": "Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü — geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.",
+  "realModeBody": "Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür — böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.",
+  "portfolioPerformance": "Portföy Performans",
+  "chartDataFailed": "Grafik verisi alınamadı",
+  "chartDataFailedBody": "Fiyat geçmişi şu an getirilemedi. Bağlantını kontrol edip tekrar deneyebilirsin.",
+  "intradayMissingBody": "{names} için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi — çizginin düz olması piyasanın durgun olduğu anlamına gelmez.",
+  "@intradayMissingBody": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "retryLower": "Tekrar dene",
+  "raceUpper": "YARIŞ",
+  "changeByTypeUpper": "TÜRE GÖRE DEĞİŞİM",
+  "noData": "Veri yok",
+  "tooltipReturn": "\nGetiri ",
+  "tooltipBuy": "\nAlım  +",
+  "tooltipSell": "\nSatış −",
+  "tooltipNet": "\nNet ",
+  "tooltipInvested": "\nToplam yatırım ",
+  "tradeVolumeUpper": "İŞLEM HACMİ",
+  "performanceTitle": "Performans",
+  "intervalWeekly": "Haftalık",
+  "intervalMonthly": "Aylık",
+  "intervalYearly": "Yıllık",
+  "lastNWeeksNet": "son {n} hafta · net",
+  "@lastNWeeksNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lastNMonthsNet": "son {n} ay · net",
+  "@lastNMonthsNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lastNYearsNet": "son {n} yıl · net",
+  "@lastNYearsNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "avgContributingWeek": "Katkı yaptığın hafta ortalaması",
+  "avgContributingMonth": "Katkı yaptığın ay ortalaması",
+  "avgContributingYear": "Katkı yaptığın yıl ortalaması",
+  "vsLastWeek": "Geçen haftaya göre",
+  "vsLastMonth": "Geçen aya göre",
+  "vsLastYear": "Geçen yıla göre",
+  "ongoingWeek": ", devam eden hafta",
+  "ongoingMonth": ", devam eden ay",
+  "ongoingYear": ", devam eden yıl",
+  "trendUpWeek": "Son hafta önceki katkılarının üzerinde.",
+  "trendUpMonth": "Son ay önceki katkılarının üzerinde.",
+  "trendUpYear": "Son yıl önceki katkılarının üzerinde.",
+  "trendDownWeek": "Son hafta önceki katkılarının altında.",
+  "trendDownMonth": "Son ay önceki katkılarının altında.",
+  "trendDownYear": "Son yıl önceki katkılarının altında.",
+  "trendFlatWeek": "Katkın haftadan haftaya istikrarlı.",
+  "trendFlatMonth": "Katkın aydan aya istikrarlı.",
+  "trendFlatYear": "Katkın yıldan yıla istikrarlı.",
+  "biggestMoverToday": "Günün en çok hareket edeni",
+  "weekExtremes": "Haftanın uçları",
+  "lastMonthPeriod": "son 1 ay",
+  "last6MonthsPeriod": "son 6 ay",
+  "sixMonthExtremes": "Altı ayın uçları",
+  "lastYearPeriod": "son 1 yıl",
+  "yearCurve": "Yıl eğrisi",
+  "periodMarketReturn": "{period} piyasa getirisi",
+  "@periodMarketReturn": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "whereItCameFrom": "Nereden geldi",
+  "periodStart": "Dönem başı",
+  "yourContribution": "Katkın",
+  "marketWord": "Piyasa",
+  "cashDividend": "Bunun nakit temettüsü",
+  "commissionPaid": "Ödenen komisyon",
+  "contributionNotReturn": "Mavi çubuk senin paran — getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.",
+  "periodCourse": "Dönem içi seyir",
+  "greenDaysOfTotal": "{total} işlem gününün {up}'ü artıda kapandı.",
+  "@greenDaysOfTotal": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "up": {
+        "type": "int"
+      }
+    }
+  },
+  "againstInflation": "Enflasyona karşı",
+  "realReturnPeriod": "Reel getiri · {period}",
+  "@realReturnPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "nominalReturn": "Nominal getiri",
+  "periodCpi": "Dönem TÜFE",
+  "pointDifference": "Puan farkı",
+  "realReturn": "Reel getiri",
+  "cpiNotLoaded": "TÜFE verisi henüz yüklenmedi.",
+  "cpiNotLoadedBody": "Enflasyon endeksi geldiğinde portföyünün reel getirisi burada görünecek. Tahmini bir sayı gösterilmiyor.",
+  "allocationChange": "Dağılım değişimi",
+  "sixMonthComparison": "Altı aylık karşılaştırma",
+  "portfolioCharacter": "Portföyünün karakteri",
+  "mostPatientAsset": "En sabırlı varlığın",
+  "nDays": "{n} gün",
+  "@nDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "shareSummary": "Özetini paylaş",
+  "savingDiscipline": "Birikim disiplinin",
+  "noNewMoney": "Bu pencerede portföyüne yeni para girmemiş.",
+  "highestWord": "En yüksek",
+  "contributingPeriods": "Katkı yapılan dönem",
+  "portfolioHealthPeriod": "Portföy sağlığı · {period}",
+  "@portfolioHealthPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "maxDrawdown": "En büyük düşüş",
+  "volatility": "Oynaklık",
+  "volatilityBody": "Portföyünün değeri yıl boyunca ortalama bu ölçüde dalgalandı. Yüksek olması iyi ya da kötü değil — daha çok inip çıktığı anlamına gelir.",
+  "concentration": "Yoğunlaşma",
+  "moneyReturnAnnual": "Paranın getirisi (yıllık)",
+  "xirrBody": "Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.",
+  "periodMarketReturnLabel": "Dönem piyasa getirisi",
+  "xirrVsMarketBody": "İki sayı çelişmez: üstteki senin ne zaman alım yaptığını da hesaba katar, alttaki yalnızca piyasanın hareketini ölçer.",
+  "advancedMetricsYear": "İleri metrikler · son 1 yıl",
+  "notEnoughHistory": "{period} için yeterli geçmiş yok",
+  "@notEnoughHistory": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "notEnoughHistoryBody": "Bu dönem dolduğunda özet kendiliğinden görünür.",
+  "nAssetsPeriod": "{count} VARLIK · {period}",
+  "@nAssetsPeriod": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "chartLoadFailed": "Grafik yüklenemedi.",
+  "notEnoughPriceHistory": "Grafik için yeterli fiyat geçmişi yok.",
+  "portfolioLineNote": "{name} çizgisi, bugünkü varlıklarını dönem başından beri tutsaydın senaryosudur — gerçekleşmiş getirin değildir.",
+  "@portfolioLineNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openDetailSemantics": "{name} detayını aç",
+  "@openDetailSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addToPortfolioSemantics": "{name} portföyüme ekle",
+  "@addToPortfolioSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noWatchlistYet": "Henüz izlediğin varlık yok",
+  "noWatchlistBody": "Almadan önce takibe al. Fiyatını portföyüne dokunmadan izle.",
+  "addToWatchlist": "Takibe varlık ekle",
+  "whyWatchlistUpper": "NEDEN TAKİP LİSTESİ?",
+  "whyWatchlistBody": "Bir varlığı satın almadan fiyatını izleyebilirsin. Takip listesi portföyüne girmez; toplam değerini ve kâr/zararını etkilemez.",
+  "notInPortfolioNote": "Bu varlıklar portföyüne dahil değildir.",
+  "addAssetsToCompare": "Karşılaştırmak için varlık ekleyin",
+  "addAssetsToCompareBody": "Portföyünüzde olmayan varlıkları da ekleyebilirsiniz.",
+  "inMyPortfolio": "Portföyümde",
+  "noDataShort": "veri yok",
+  "addToMyPortfolio": "Portföyüme ekle",
+  "comparisonDisclaimer": "Geçmiş performans gelecek getiri için gösterge değildir. Grafikteki değerler dönem başına göre yüzde değişimi gösterir; komisyon, vergi ve temettü dahil değildir.",
+  "searchAssetsHint": "Hisse, fon, altın veya endeks ara",
+  "noResultsFound": "Sonuç bulunamadı",
+  "portfolioSeriesNote": "Portföyler hesaplanan serilerdir — piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.",
+  "portfolioActivityTitle": "Portföy Hareketleri",
+  "clearFilters": "Filtreleri temizle",
+  "loadingEllipsis": "Yükleniyor…",
+  "widenDateRangeHint": "Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.",
+  "priceAlertsTitle": "Fiyat Alarmları",
+  "createAlert": "Alarm kur",
+  "noAlertsYet": "Henüz alarmın yok",
+  "noAlertsBody": "Bir varlığın ekranındaki zile dokun ya da buradan kur; uygulama kapalıyken bile haber verelim.",
+  "recreateAlert": "Yeniden kur",
+  "raceTitle": "Yarış",
+  "raceOptions": "Yarış seçenekleri",
+  "leaveRace": "Yarıştan ayrıl",
+  "leaveRaceBody": "Sıralamadan çıkarsın; ortakların yüzdeni artık göremez. İstediğin zaman yeniden katılabilirsin.",
+  "leaveWord": "Ayrıl",
+  "howReturnCalculated": "Getiri nasıl hesaplanıyor?",
+  "selectedPeriodReturn": "Seçili dönemin getirisi",
+  "depositsDontChangeRank": "Para yatırmak sıralamayı değiştirmez",
+  "everyoneMeasuredSame": "Herkes aynı şekilde ölçülür",
+  "rankVsPortfolioNote": "Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir — orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.",
+  "rankSwapNote": "Dönem içinde bir varlığı tamamen satıp yerine başkasını aldıysan, sonuç \"yeni varlığı dönem başından beri tutsaydın\" senaryosunu gösterir. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.",
+  "notInRace": "Yarış'a katılmadın",
+  "notInRaceBody": "Ortaklarınla getiri sıralamasında yer almak için katılmayı aç. Sadece kaydolan ortaklar birbirinin yüzdesini görebilir. Varlıkların ve toplam TRY değerin asla paylaşılmaz.",
+  "joinRace": "Yarış'a katıl",
+  "addPartnerToRace": "Ortak ekle, aranızda da yarış",
+  "raceNoListShared": "Kimsenin varlık listesi paylaşılmaz — yalnız getiri yüzdeleri sıralanır.",
+  "yourReturnUpper": "SENİN GETİRİN",
+  "dataNotReady": "Veri hazır değil.",
+  "leaderUpper": "LİDER",
+  "loadingUpper": "YÜKLENİYOR",
+  "globalRanking": "Genel Sıralama",
+  "checkingAnonPool": "Anonim havuz kontrol ediliyor…",
+  "comingSoonUpper": "YAKINDA",
+  "globalRankingSoon": "Yeterli katılımcı olunca sıran açılacak — anonim, KVKK uyumlu",
+  "topPercentile": "{period} sıralamada ilk %{pct}'desin",
+  "@topPercentile": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "topPortfolios": "Zirvedeki Portföyler",
+  "topGainersAllocation": "{period} en çok kazananların dağılımı",
+  "@topGainersAllocation": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "anonymousUpper": "ANONİM",
+  "topPortfoliosSoon": "Yeterli katılımcı olunca zirve portföyler burada görünecek. Anonim havuz oluşuyor…",
+  "nthPortfolio": "{n}. portföy",
+  "@nthPortfolio": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedPeriodReturnBody": "Portföyünün dönem sonundaki değeri, dönem başındaki değeriyle karşılaştırılır:\n\n(dönem sonu − dönem başı) ÷ dönem başı\n\nYukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.",
+  "depositsDontChangeRankBody": "Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez — 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.",
+  "everyoneMeasuredSameBody": "Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok — hesap bu cihazda yapılır.",
+  "planYearly": "Yıllık",
+  "planYearlySubtitle": "7 gün ücretsiz dene, sonra otomatik yenilenir",
+  "planMonthly": "Aylık",
+  "planMonthlySubtitle": "İstediğin zaman iptal edebilirsin",
+  "subscriptionTerms": "Abonelik App Store hesabına yansır. Otomatik yenilenir, iptal için Ayarlar → Apple ID → Abonelikler menüsünden yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; iptal etmezsen deneme sonunda ücret tahsil edilir.",
+  "premiumUnlocked": "Premium açıldı",
+  "premiumUnlockedBody": "Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve daha fazlası açıldı.",
+  "greatWord": "Harika",
+  "sandikPremiumUpper": "SANDIK PREMIUM",
+  "paywallHeadline": "Portföyünü daha derinlemesine\ntakip et",
+  "paywallSubhead": "Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.",
+  "restorePurchase": "Satın alımı geri yükle",
+  "recapTitle": "sandık Özetin",
+  "recapInYear": "{year} yılında",
+  "@recapInYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapSubtitle": "Bir yılın kısa hikâyesi.",
+  "recapPoints": "{n} puan",
+  "@recapPoints": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "recapDays": "{n} gün",
+  "@recapDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "myRecapYear": "Özetim {year}",
+  "@myRecapYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapReady": "{year} Özetin hazır",
+  "@recapReady": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapCardSubtitle": "Bir yılın kısa hikâyesi — {character}",
+  "@recapCardSubtitle": {
+    "placeholders": {
+      "character": {
+        "type": "String"
+      }
+    }
+  }
 }

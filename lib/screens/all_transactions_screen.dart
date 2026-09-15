@@ -200,8 +200,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: const SandikAppBar(
-        title: 'Portföy Hareketleri',
+      appBar: SandikAppBar(
+        title: context.l10n.portfolioActivityTitle,
         transparent: true,
       ),
       body: Column(
@@ -290,7 +290,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                 const Spacer(),
                 if (_hasActiveFilter)
                   SandikTappable(
-                    semanticLabel: 'Filtreleri temizle',
+                    semanticLabel: context.l10n.clearFilters,
                     onTap: () => setState(() {
                       _typeFilter = null;
                       _range = _DateRange.all;
@@ -300,7 +300,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       _resetPaging();
                     }),
                     child: Text(
-                      'Filtreleri temizle',
+                      context.l10n.clearFilters,
                       style: context.t.bodySmall?.copyWith(
                           color: context.c.amberText,
                           fontWeight: FontWeight.w600),
@@ -332,7 +332,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 20),
                             child: Center(
                               child: Text(
-                                'Yükleniyor…',
+                                context.l10n.loadingEllipsis,
                                 style: context.t.bodySmall
                                     ?.copyWith(color: context.c.text36),
                               ),
@@ -367,7 +367,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             if (_hasActiveFilter) ...[
               const SizedBox(height: 8),
               Text(
-                'Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.',
+                context.l10n.widenDateRangeHint,
                 textAlign: TextAlign.center,
                 style: context.t.bodySmall?.copyWith(color: context.c.text36),
               ),

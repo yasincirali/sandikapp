@@ -1185,4 +1185,644 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get switchToLight => 'Açık temaya geç';
+
+  @override
+  String get tabChart => 'Grafik';
+
+  @override
+  String get tabSummary => 'Özet';
+
+  @override
+  String get modeReal => 'Gerçek';
+
+  @override
+  String get modeSim => 'Simülasyon';
+
+  @override
+  String modeInfoSemantics(String mode) {
+    return '$mode modu hakkında bilgi';
+  }
+
+  @override
+  String get noChartData => 'Grafik verisi yok';
+
+  @override
+  String get noAssetsYetTitle => 'Henüz varlığın yok';
+
+  @override
+  String noAssetsOfTypeTitle(String type) {
+    return 'Portföyünde $type yok';
+  }
+
+  @override
+  String get noAssetsChartBody =>
+      'Varlık ekledikçe portföyünün performansı burada grafiğe dönüşecek.';
+
+  @override
+  String get noAssetsOfTypeChartBody =>
+      'Bu türden bir varlık eklediğinde performansı burada görünecek. Başka bir tür seçebilirsin.';
+
+  @override
+  String get noHistoryAllBody =>
+      'Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri toplamda görünür ama zaman grafiği çizilemiyor.';
+
+  @override
+  String noHistoryTypeBody(String type) {
+    return '$type için fiyat geçmişi izlenmiyor. Değeri portföy toplamına dahil, ama zaman grafiği çizilemiyor.';
+  }
+
+  @override
+  String get simModeTitle => 'Simülasyon Modu';
+
+  @override
+  String get realModeTitle => 'Gerçek Mod';
+
+  @override
+  String get simModeBody =>
+      'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü — geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.';
+
+  @override
+  String get realModeBody =>
+      'Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür — böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.';
+
+  @override
+  String get portfolioPerformance => 'Portföy Performans';
+
+  @override
+  String get chartDataFailed => 'Grafik verisi alınamadı';
+
+  @override
+  String get chartDataFailedBody =>
+      'Fiyat geçmişi şu an getirilemedi. Bağlantını kontrol edip tekrar deneyebilirsin.';
+
+  @override
+  String intradayMissingBody(String names) {
+    return '$names için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi — çizginin düz olması piyasanın durgun olduğu anlamına gelmez.';
+  }
+
+  @override
+  String get retryLower => 'Tekrar dene';
+
+  @override
+  String get raceUpper => 'YARIŞ';
+
+  @override
+  String get changeByTypeUpper => 'TÜRE GÖRE DEĞİŞİM';
+
+  @override
+  String get noData => 'Veri yok';
+
+  @override
+  String get tooltipReturn => '\nGetiri ';
+
+  @override
+  String get tooltipBuy => '\nAlım  +';
+
+  @override
+  String get tooltipSell => '\nSatış −';
+
+  @override
+  String get tooltipNet => '\nNet ';
+
+  @override
+  String get tooltipInvested => '\nToplam yatırım ';
+
+  @override
+  String get tradeVolumeUpper => 'İŞLEM HACMİ';
+
+  @override
+  String get performanceTitle => 'Performans';
+
+  @override
+  String get intervalWeekly => 'Haftalık';
+
+  @override
+  String get intervalMonthly => 'Aylık';
+
+  @override
+  String get intervalYearly => 'Yıllık';
+
+  @override
+  String lastNWeeksNet(int n) {
+    return 'son $n hafta · net';
+  }
+
+  @override
+  String lastNMonthsNet(int n) {
+    return 'son $n ay · net';
+  }
+
+  @override
+  String lastNYearsNet(int n) {
+    return 'son $n yıl · net';
+  }
+
+  @override
+  String get avgContributingWeek => 'Katkı yaptığın hafta ortalaması';
+
+  @override
+  String get avgContributingMonth => 'Katkı yaptığın ay ortalaması';
+
+  @override
+  String get avgContributingYear => 'Katkı yaptığın yıl ortalaması';
+
+  @override
+  String get vsLastWeek => 'Geçen haftaya göre';
+
+  @override
+  String get vsLastMonth => 'Geçen aya göre';
+
+  @override
+  String get vsLastYear => 'Geçen yıla göre';
+
+  @override
+  String get ongoingWeek => ', devam eden hafta';
+
+  @override
+  String get ongoingMonth => ', devam eden ay';
+
+  @override
+  String get ongoingYear => ', devam eden yıl';
+
+  @override
+  String get trendUpWeek => 'Son hafta önceki katkılarının üzerinde.';
+
+  @override
+  String get trendUpMonth => 'Son ay önceki katkılarının üzerinde.';
+
+  @override
+  String get trendUpYear => 'Son yıl önceki katkılarının üzerinde.';
+
+  @override
+  String get trendDownWeek => 'Son hafta önceki katkılarının altında.';
+
+  @override
+  String get trendDownMonth => 'Son ay önceki katkılarının altında.';
+
+  @override
+  String get trendDownYear => 'Son yıl önceki katkılarının altında.';
+
+  @override
+  String get trendFlatWeek => 'Katkın haftadan haftaya istikrarlı.';
+
+  @override
+  String get trendFlatMonth => 'Katkın aydan aya istikrarlı.';
+
+  @override
+  String get trendFlatYear => 'Katkın yıldan yıla istikrarlı.';
+
+  @override
+  String get biggestMoverToday => 'Günün en çok hareket edeni';
+
+  @override
+  String get weekExtremes => 'Haftanın uçları';
+
+  @override
+  String get lastMonthPeriod => 'son 1 ay';
+
+  @override
+  String get last6MonthsPeriod => 'son 6 ay';
+
+  @override
+  String get sixMonthExtremes => 'Altı ayın uçları';
+
+  @override
+  String get lastYearPeriod => 'son 1 yıl';
+
+  @override
+  String get yearCurve => 'Yıl eğrisi';
+
+  @override
+  String periodMarketReturn(String period) {
+    return '$period piyasa getirisi';
+  }
+
+  @override
+  String get whereItCameFrom => 'Nereden geldi';
+
+  @override
+  String get periodStart => 'Dönem başı';
+
+  @override
+  String get yourContribution => 'Katkın';
+
+  @override
+  String get marketWord => 'Piyasa';
+
+  @override
+  String get cashDividend => 'Bunun nakit temettüsü';
+
+  @override
+  String get commissionPaid => 'Ödenen komisyon';
+
+  @override
+  String get contributionNotReturn =>
+      'Mavi çubuk senin paran — getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.';
+
+  @override
+  String get periodCourse => 'Dönem içi seyir';
+
+  @override
+  String greenDaysOfTotal(int total, int up) {
+    return '$total işlem gününün $up\'ü artıda kapandı.';
+  }
+
+  @override
+  String get againstInflation => 'Enflasyona karşı';
+
+  @override
+  String realReturnPeriod(String period) {
+    return 'Reel getiri · $period';
+  }
+
+  @override
+  String get nominalReturn => 'Nominal getiri';
+
+  @override
+  String get periodCpi => 'Dönem TÜFE';
+
+  @override
+  String get pointDifference => 'Puan farkı';
+
+  @override
+  String get realReturn => 'Reel getiri';
+
+  @override
+  String get cpiNotLoaded => 'TÜFE verisi henüz yüklenmedi.';
+
+  @override
+  String get cpiNotLoadedBody =>
+      'Enflasyon endeksi geldiğinde portföyünün reel getirisi burada görünecek. Tahmini bir sayı gösterilmiyor.';
+
+  @override
+  String get allocationChange => 'Dağılım değişimi';
+
+  @override
+  String get sixMonthComparison => 'Altı aylık karşılaştırma';
+
+  @override
+  String get portfolioCharacter => 'Portföyünün karakteri';
+
+  @override
+  String get mostPatientAsset => 'En sabırlı varlığın';
+
+  @override
+  String nDays(int n) {
+    return '$n gün';
+  }
+
+  @override
+  String get shareSummary => 'Özetini paylaş';
+
+  @override
+  String get savingDiscipline => 'Birikim disiplinin';
+
+  @override
+  String get noNewMoney => 'Bu pencerede portföyüne yeni para girmemiş.';
+
+  @override
+  String get highestWord => 'En yüksek';
+
+  @override
+  String get contributingPeriods => 'Katkı yapılan dönem';
+
+  @override
+  String portfolioHealthPeriod(String period) {
+    return 'Portföy sağlığı · $period';
+  }
+
+  @override
+  String get maxDrawdown => 'En büyük düşüş';
+
+  @override
+  String get volatility => 'Oynaklık';
+
+  @override
+  String get volatilityBody =>
+      'Portföyünün değeri yıl boyunca ortalama bu ölçüde dalgalandı. Yüksek olması iyi ya da kötü değil — daha çok inip çıktığı anlamına gelir.';
+
+  @override
+  String get concentration => 'Yoğunlaşma';
+
+  @override
+  String get moneyReturnAnnual => 'Paranın getirisi (yıllık)';
+
+  @override
+  String get xirrBody =>
+      'Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.';
+
+  @override
+  String get periodMarketReturnLabel => 'Dönem piyasa getirisi';
+
+  @override
+  String get xirrVsMarketBody =>
+      'İki sayı çelişmez: üstteki senin ne zaman alım yaptığını da hesaba katar, alttaki yalnızca piyasanın hareketini ölçer.';
+
+  @override
+  String get advancedMetricsYear => 'İleri metrikler · son 1 yıl';
+
+  @override
+  String notEnoughHistory(String period) {
+    return '$period için yeterli geçmiş yok';
+  }
+
+  @override
+  String get notEnoughHistoryBody =>
+      'Bu dönem dolduğunda özet kendiliğinden görünür.';
+
+  @override
+  String nAssetsPeriod(int count, String period) {
+    return '$count VARLIK · $period';
+  }
+
+  @override
+  String get chartLoadFailed => 'Grafik yüklenemedi.';
+
+  @override
+  String get notEnoughPriceHistory => 'Grafik için yeterli fiyat geçmişi yok.';
+
+  @override
+  String portfolioLineNote(String name) {
+    return '$name çizgisi, bugünkü varlıklarını dönem başından beri tutsaydın senaryosudur — gerçekleşmiş getirin değildir.';
+  }
+
+  @override
+  String openDetailSemantics(String name) {
+    return '$name detayını aç';
+  }
+
+  @override
+  String addToPortfolioSemantics(String name) {
+    return '$name portföyüme ekle';
+  }
+
+  @override
+  String get noWatchlistYet => 'Henüz izlediğin varlık yok';
+
+  @override
+  String get noWatchlistBody =>
+      'Almadan önce takibe al. Fiyatını portföyüne dokunmadan izle.';
+
+  @override
+  String get addToWatchlist => 'Takibe varlık ekle';
+
+  @override
+  String get whyWatchlistUpper => 'NEDEN TAKİP LİSTESİ?';
+
+  @override
+  String get whyWatchlistBody =>
+      'Bir varlığı satın almadan fiyatını izleyebilirsin. Takip listesi portföyüne girmez; toplam değerini ve kâr/zararını etkilemez.';
+
+  @override
+  String get notInPortfolioNote => 'Bu varlıklar portföyüne dahil değildir.';
+
+  @override
+  String get addAssetsToCompare => 'Karşılaştırmak için varlık ekleyin';
+
+  @override
+  String get addAssetsToCompareBody =>
+      'Portföyünüzde olmayan varlıkları da ekleyebilirsiniz.';
+
+  @override
+  String get inMyPortfolio => 'Portföyümde';
+
+  @override
+  String get noDataShort => 'veri yok';
+
+  @override
+  String get addToMyPortfolio => 'Portföyüme ekle';
+
+  @override
+  String get comparisonDisclaimer =>
+      'Geçmiş performans gelecek getiri için gösterge değildir. Grafikteki değerler dönem başına göre yüzde değişimi gösterir; komisyon, vergi ve temettü dahil değildir.';
+
+  @override
+  String get searchAssetsHint => 'Hisse, fon, altın veya endeks ara';
+
+  @override
+  String get noResultsFound => 'Sonuç bulunamadı';
+
+  @override
+  String get portfolioSeriesNote =>
+      'Portföyler hesaplanan serilerdir — piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.';
+
+  @override
+  String get portfolioActivityTitle => 'Portföy Hareketleri';
+
+  @override
+  String get clearFilters => 'Filtreleri temizle';
+
+  @override
+  String get loadingEllipsis => 'Yükleniyor…';
+
+  @override
+  String get widenDateRangeHint =>
+      'Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.';
+
+  @override
+  String get priceAlertsTitle => 'Fiyat Alarmları';
+
+  @override
+  String get createAlert => 'Alarm kur';
+
+  @override
+  String get noAlertsYet => 'Henüz alarmın yok';
+
+  @override
+  String get noAlertsBody =>
+      'Bir varlığın ekranındaki zile dokun ya da buradan kur; uygulama kapalıyken bile haber verelim.';
+
+  @override
+  String get recreateAlert => 'Yeniden kur';
+
+  @override
+  String get raceTitle => 'Yarış';
+
+  @override
+  String get raceOptions => 'Yarış seçenekleri';
+
+  @override
+  String get leaveRace => 'Yarıştan ayrıl';
+
+  @override
+  String get leaveRaceBody =>
+      'Sıralamadan çıkarsın; ortakların yüzdeni artık göremez. İstediğin zaman yeniden katılabilirsin.';
+
+  @override
+  String get leaveWord => 'Ayrıl';
+
+  @override
+  String get howReturnCalculated => 'Getiri nasıl hesaplanıyor?';
+
+  @override
+  String get selectedPeriodReturn => 'Seçili dönemin getirisi';
+
+  @override
+  String get depositsDontChangeRank => 'Para yatırmak sıralamayı değiştirmez';
+
+  @override
+  String get everyoneMeasuredSame => 'Herkes aynı şekilde ölçülür';
+
+  @override
+  String get rankVsPortfolioNote =>
+      'Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir — orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.';
+
+  @override
+  String get rankSwapNote =>
+      'Dönem içinde bir varlığı tamamen satıp yerine başkasını aldıysan, sonuç \"yeni varlığı dönem başından beri tutsaydın\" senaryosunu gösterir. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.';
+
+  @override
+  String get notInRace => 'Yarış\'a katılmadın';
+
+  @override
+  String get notInRaceBody =>
+      'Ortaklarınla getiri sıralamasında yer almak için katılmayı aç. Sadece kaydolan ortaklar birbirinin yüzdesini görebilir. Varlıkların ve toplam TRY değerin asla paylaşılmaz.';
+
+  @override
+  String get joinRace => 'Yarış\'a katıl';
+
+  @override
+  String get addPartnerToRace => 'Ortak ekle, aranızda da yarış';
+
+  @override
+  String get raceNoListShared =>
+      'Kimsenin varlık listesi paylaşılmaz — yalnız getiri yüzdeleri sıralanır.';
+
+  @override
+  String get yourReturnUpper => 'SENİN GETİRİN';
+
+  @override
+  String get dataNotReady => 'Veri hazır değil.';
+
+  @override
+  String get leaderUpper => 'LİDER';
+
+  @override
+  String get loadingUpper => 'YÜKLENİYOR';
+
+  @override
+  String get globalRanking => 'Genel Sıralama';
+
+  @override
+  String get checkingAnonPool => 'Anonim havuz kontrol ediliyor…';
+
+  @override
+  String get comingSoonUpper => 'YAKINDA';
+
+  @override
+  String get globalRankingSoon =>
+      'Yeterli katılımcı olunca sıran açılacak — anonim, KVKK uyumlu';
+
+  @override
+  String topPercentile(String period, int pct) {
+    return '$period sıralamada ilk %$pct\'desin';
+  }
+
+  @override
+  String get topPortfolios => 'Zirvedeki Portföyler';
+
+  @override
+  String topGainersAllocation(String period) {
+    return '$period en çok kazananların dağılımı';
+  }
+
+  @override
+  String get anonymousUpper => 'ANONİM';
+
+  @override
+  String get topPortfoliosSoon =>
+      'Yeterli katılımcı olunca zirve portföyler burada görünecek. Anonim havuz oluşuyor…';
+
+  @override
+  String nthPortfolio(int n) {
+    return '$n. portföy';
+  }
+
+  @override
+  String get selectedPeriodReturnBody =>
+      'Portföyünün dönem sonundaki değeri, dönem başındaki değeriyle karşılaştırılır:\n\n(dönem sonu − dönem başı) ÷ dönem başı\n\nYukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.';
+
+  @override
+  String get depositsDontChangeRankBody =>
+      'Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez — 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.';
+
+  @override
+  String get everyoneMeasuredSameBody =>
+      'Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok — hesap bu cihazda yapılır.';
+
+  @override
+  String get planYearly => 'Yıllık';
+
+  @override
+  String get planYearlySubtitle =>
+      '7 gün ücretsiz dene, sonra otomatik yenilenir';
+
+  @override
+  String get planMonthly => 'Aylık';
+
+  @override
+  String get planMonthlySubtitle => 'İstediğin zaman iptal edebilirsin';
+
+  @override
+  String get subscriptionTerms =>
+      'Abonelik App Store hesabına yansır. Otomatik yenilenir, iptal için Ayarlar → Apple ID → Abonelikler menüsünden yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; iptal etmezsen deneme sonunda ücret tahsil edilir.';
+
+  @override
+  String get premiumUnlocked => 'Premium açıldı';
+
+  @override
+  String get premiumUnlockedBody =>
+      'Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve daha fazlası açıldı.';
+
+  @override
+  String get greatWord => 'Harika';
+
+  @override
+  String get sandikPremiumUpper => 'SANDIK PREMIUM';
+
+  @override
+  String get paywallHeadline => 'Portföyünü daha derinlemesine\ntakip et';
+
+  @override
+  String get paywallSubhead =>
+      'Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.';
+
+  @override
+  String get restorePurchase => 'Satın alımı geri yükle';
+
+  @override
+  String get recapTitle => 'sandık Özetin';
+
+  @override
+  String recapInYear(int year) {
+    return '$year yılında';
+  }
+
+  @override
+  String get recapSubtitle => 'Bir yılın kısa hikâyesi.';
+
+  @override
+  String recapPoints(String n) {
+    return '$n puan';
+  }
+
+  @override
+  String recapDays(int n) {
+    return '$n gün';
+  }
+
+  @override
+  String myRecapYear(int year) {
+    return 'Özetim $year';
+  }
+
+  @override
+  String recapReady(int year) {
+    return '$year Özetin hazır';
+  }
+
+  @override
+  String recapCardSubtitle(String character) {
+    return 'Bir yılın kısa hikâyesi — $character';
+  }
 }

@@ -1185,4 +1185,646 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get switchToLight => 'Switch to light theme';
+
+  @override
+  String get tabChart => 'Chart';
+
+  @override
+  String get tabSummary => 'Summary';
+
+  @override
+  String get modeReal => 'Actual';
+
+  @override
+  String get modeSim => 'Simulation';
+
+  @override
+  String modeInfoSemantics(String mode) {
+    return 'About $mode mode';
+  }
+
+  @override
+  String get noChartData => 'No chart data';
+
+  @override
+  String get noAssetsYetTitle => 'You have no assets yet';
+
+  @override
+  String noAssetsOfTypeTitle(String type) {
+    return 'No $type in your portfolio';
+  }
+
+  @override
+  String get noAssetsChartBody =>
+      'As you add assets, your portfolio performance turns into a chart here.';
+
+  @override
+  String get noAssetsOfTypeChartBody =>
+      'Add an asset of this type and its performance appears here. You can pick another type.';
+
+  @override
+  String get noHistoryAllBody =>
+      'Price history is not tracked for your assets; their value counts in the total but no time chart can be drawn.';
+
+  @override
+  String noHistoryTypeBody(String type) {
+    return 'Price history is not tracked for $type. Its value counts in the portfolio total, but no time chart can be drawn.';
+  }
+
+  @override
+  String get simModeTitle => 'Simulation Mode';
+
+  @override
+  String get realModeTitle => 'Actual Mode';
+
+  @override
+  String get simModeBody =>
+      'How the chart would look if you had held today\'s net portfolio for the whole period — it ignores past buy/sell decisions and shows only the price change of your current position.';
+
+  @override
+  String get realModeBody =>
+      'Each day\'s value is computed from the net quantity you held that day. Tap a point to see that day\'s portfolio value and any buy / sell amounts — so you can see exactly why the chart rose or fell.';
+
+  @override
+  String get portfolioPerformance => 'Portfolio Performance';
+
+  @override
+  String get chartDataFailed => 'Could not load chart data';
+
+  @override
+  String get chartDataFailedBody =>
+      'Price history could not be fetched. Check your connection and try again.';
+
+  @override
+  String intradayMissingBody(String names) {
+    return 'Intraday prices could not be fetched for $names. These assets are drawn FLAT at their last known price — a flat line does not mean the market was quiet.';
+  }
+
+  @override
+  String get retryLower => 'Try again';
+
+  @override
+  String get raceUpper => 'RACE';
+
+  @override
+  String get changeByTypeUpper => 'CHANGE BY TYPE';
+
+  @override
+  String get noData => 'No data';
+
+  @override
+  String get tooltipReturn => '\nReturn ';
+
+  @override
+  String get tooltipBuy => '\nBuy  +';
+
+  @override
+  String get tooltipSell => '\nSell −';
+
+  @override
+  String get tooltipNet => '\nNet ';
+
+  @override
+  String get tooltipInvested => '\nTotal invested ';
+
+  @override
+  String get tradeVolumeUpper => 'TRADE VOLUME';
+
+  @override
+  String get performanceTitle => 'Performance';
+
+  @override
+  String get intervalWeekly => 'Weekly';
+
+  @override
+  String get intervalMonthly => 'Monthly';
+
+  @override
+  String get intervalYearly => 'Yearly';
+
+  @override
+  String lastNWeeksNet(int n) {
+    return 'last $n weeks · net';
+  }
+
+  @override
+  String lastNMonthsNet(int n) {
+    return 'last $n months · net';
+  }
+
+  @override
+  String lastNYearsNet(int n) {
+    return 'last $n years · net';
+  }
+
+  @override
+  String get avgContributingWeek => 'Average per contributing week';
+
+  @override
+  String get avgContributingMonth => 'Average per contributing month';
+
+  @override
+  String get avgContributingYear => 'Average per contributing year';
+
+  @override
+  String get vsLastWeek => 'Compared to last week';
+
+  @override
+  String get vsLastMonth => 'Compared to last month';
+
+  @override
+  String get vsLastYear => 'Compared to last year';
+
+  @override
+  String get ongoingWeek => ', ongoing week';
+
+  @override
+  String get ongoingMonth => ', ongoing month';
+
+  @override
+  String get ongoingYear => ', ongoing year';
+
+  @override
+  String get trendUpWeek => 'This week is above your earlier contributions.';
+
+  @override
+  String get trendUpMonth => 'This month is above your earlier contributions.';
+
+  @override
+  String get trendUpYear => 'This year is above your earlier contributions.';
+
+  @override
+  String get trendDownWeek => 'This week is below your earlier contributions.';
+
+  @override
+  String get trendDownMonth =>
+      'This month is below your earlier contributions.';
+
+  @override
+  String get trendDownYear => 'This year is below your earlier contributions.';
+
+  @override
+  String get trendFlatWeek => 'Your contributions are steady week to week.';
+
+  @override
+  String get trendFlatMonth => 'Your contributions are steady month to month.';
+
+  @override
+  String get trendFlatYear => 'Your contributions are steady year to year.';
+
+  @override
+  String get biggestMoverToday => 'Today\'s biggest mover';
+
+  @override
+  String get weekExtremes => 'This week\'s extremes';
+
+  @override
+  String get lastMonthPeriod => 'the last month';
+
+  @override
+  String get last6MonthsPeriod => 'the last 6 months';
+
+  @override
+  String get sixMonthExtremes => 'Six-month extremes';
+
+  @override
+  String get lastYearPeriod => 'the last year';
+
+  @override
+  String get yearCurve => 'Year curve';
+
+  @override
+  String periodMarketReturn(String period) {
+    return '$period market return';
+  }
+
+  @override
+  String get whereItCameFrom => 'Where it came from';
+
+  @override
+  String get periodStart => 'Period start';
+
+  @override
+  String get yourContribution => 'Your contribution';
+
+  @override
+  String get marketWord => 'Market';
+
+  @override
+  String get cashDividend => 'Cash dividends within it';
+
+  @override
+  String get commissionPaid => 'Commission paid';
+
+  @override
+  String get contributionNotReturn =>
+      'The blue bar is your own money — it is not a return. The percentage comes only from the market bar.';
+
+  @override
+  String get periodCourse => 'Course over the period';
+
+  @override
+  String greenDaysOfTotal(int total, int up) {
+    return '$up of $total trading days closed up.';
+  }
+
+  @override
+  String get againstInflation => 'Against inflation';
+
+  @override
+  String realReturnPeriod(String period) {
+    return 'Real return · $period';
+  }
+
+  @override
+  String get nominalReturn => 'Nominal return';
+
+  @override
+  String get periodCpi => 'Period CPI';
+
+  @override
+  String get pointDifference => 'Point difference';
+
+  @override
+  String get realReturn => 'Real return';
+
+  @override
+  String get cpiNotLoaded => 'Inflation data has not loaded yet.';
+
+  @override
+  String get cpiNotLoadedBody =>
+      'When the inflation index arrives, your portfolio\'s real return appears here. No estimated figure is shown.';
+
+  @override
+  String get allocationChange => 'Allocation change';
+
+  @override
+  String get sixMonthComparison => 'Six-month comparison';
+
+  @override
+  String get portfolioCharacter => 'Your portfolio\'s character';
+
+  @override
+  String get mostPatientAsset => 'Your most patient asset';
+
+  @override
+  String nDays(int n) {
+    return '$n days';
+  }
+
+  @override
+  String get shareSummary => 'Share your summary';
+
+  @override
+  String get savingDiscipline => 'Your saving discipline';
+
+  @override
+  String get noNewMoney =>
+      'No new money entered your portfolio in this window.';
+
+  @override
+  String get highestWord => 'Highest';
+
+  @override
+  String get contributingPeriods => 'Periods with contributions';
+
+  @override
+  String portfolioHealthPeriod(String period) {
+    return 'Portfolio health · $period';
+  }
+
+  @override
+  String get maxDrawdown => 'Largest drawdown';
+
+  @override
+  String get volatility => 'Volatility';
+
+  @override
+  String get volatilityBody =>
+      'This is how much your portfolio value swung on average over the year. High is neither good nor bad — it just means bigger ups and downs.';
+
+  @override
+  String get concentration => 'Concentration';
+
+  @override
+  String get moneyReturnAnnual => 'Return on your money (annual)';
+
+  @override
+  String get xirrBody =>
+      'The annual compound return of the money you invested, taking the DATES of your investments into account.';
+
+  @override
+  String get periodMarketReturnLabel => 'Period market return';
+
+  @override
+  String get xirrVsMarketBody =>
+      'The two numbers do not contradict: the top one also accounts for when you bought, the bottom one measures only the market\'s move.';
+
+  @override
+  String get advancedMetricsYear => 'Advanced metrics · last year';
+
+  @override
+  String notEnoughHistory(String period) {
+    return 'Not enough history for $period';
+  }
+
+  @override
+  String get notEnoughHistoryBody =>
+      'The summary appears on its own once this period fills up.';
+
+  @override
+  String nAssetsPeriod(int count, String period) {
+    return '$count ASSETS · $period';
+  }
+
+  @override
+  String get chartLoadFailed => 'The chart could not be loaded.';
+
+  @override
+  String get notEnoughPriceHistory => 'Not enough price history for a chart.';
+
+  @override
+  String portfolioLineNote(String name) {
+    return 'The $name line is the scenario where you held today\'s assets from the start of the period — it is not your realised return.';
+  }
+
+  @override
+  String openDetailSemantics(String name) {
+    return 'Open $name details';
+  }
+
+  @override
+  String addToPortfolioSemantics(String name) {
+    return 'Add $name to my portfolio';
+  }
+
+  @override
+  String get noWatchlistYet => 'You are not watching anything yet';
+
+  @override
+  String get noWatchlistBody =>
+      'Watch it before you buy. Track the price without touching your portfolio.';
+
+  @override
+  String get addToWatchlist => 'Add to watchlist';
+
+  @override
+  String get whyWatchlistUpper => 'WHY A WATCHLIST?';
+
+  @override
+  String get whyWatchlistBody =>
+      'You can follow an asset\'s price without buying it. The watchlist is not part of your portfolio; it does not affect your total value or profit/loss.';
+
+  @override
+  String get notInPortfolioNote =>
+      'These assets are not part of your portfolio.';
+
+  @override
+  String get addAssetsToCompare => 'Add assets to compare';
+
+  @override
+  String get addAssetsToCompareBody =>
+      'You can also add assets you don\'t own.';
+
+  @override
+  String get inMyPortfolio => 'In my portfolio';
+
+  @override
+  String get noDataShort => 'no data';
+
+  @override
+  String get addToMyPortfolio => 'Add to my portfolio';
+
+  @override
+  String get comparisonDisclaimer =>
+      'Past performance is not an indicator of future returns. Chart values show percentage change from the start of the period; commission, tax and dividends are not included.';
+
+  @override
+  String get searchAssetsHint => 'Search stocks, funds, gold or indices';
+
+  @override
+  String get noResultsFound => 'No results found';
+
+  @override
+  String get portfolioSeriesNote =>
+      'Portfolios are computed series — they are not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.';
+
+  @override
+  String get portfolioActivityTitle => 'Portfolio Activity';
+
+  @override
+  String get clearFilters => 'Clear filters';
+
+  @override
+  String get loadingEllipsis => 'Loading…';
+
+  @override
+  String get widenDateRangeHint =>
+      'Try widening the date range or clearing the search.';
+
+  @override
+  String get priceAlertsTitle => 'Price Alerts';
+
+  @override
+  String get createAlert => 'Create an alert';
+
+  @override
+  String get noAlertsYet => 'You have no alerts yet';
+
+  @override
+  String get noAlertsBody =>
+      'Tap the bell on an asset\'s screen or create one here; we\'ll let you know even when the app is closed.';
+
+  @override
+  String get recreateAlert => 'Set again';
+
+  @override
+  String get raceTitle => 'Race';
+
+  @override
+  String get raceOptions => 'Race options';
+
+  @override
+  String get leaveRace => 'Leave the race';
+
+  @override
+  String get leaveRaceBody =>
+      'You leave the ranking; your partners can no longer see your percentage. You can rejoin any time.';
+
+  @override
+  String get leaveWord => 'Leave';
+
+  @override
+  String get howReturnCalculated => 'How is the return calculated?';
+
+  @override
+  String get selectedPeriodReturn => 'Return for the selected period';
+
+  @override
+  String get depositsDontChangeRank => 'Deposits don\'t change the ranking';
+
+  @override
+  String get everyoneMeasuredSame => 'Everyone is measured the same way';
+
+  @override
+  String get rankVsPortfolioNote =>
+      'This number can DIFFER from the profit/loss percentage on the Portfolio screen — that one shows total profit/loss since your first purchase, this one only what happened in the period you picked.';
+
+  @override
+  String get rankSwapNote =>
+      'If you sold an asset entirely and bought another during the period, the result shows the \"as if you had held the new asset from the start\" scenario. Portfolios without price history are excluded from the ranking.';
+
+  @override
+  String get notInRace => 'You haven\'t joined the Race';
+
+  @override
+  String get notInRaceBody =>
+      'Turn on participation to appear in the return ranking with your partners. Only partners who opt in can see each other\'s percentage. Your assets and total TRY value are never shared.';
+
+  @override
+  String get joinRace => 'Join the Race';
+
+  @override
+  String get addPartnerToRace => 'Add a partner and race together';
+
+  @override
+  String get raceNoListShared =>
+      'No one\'s asset list is shared — only return percentages are ranked.';
+
+  @override
+  String get yourReturnUpper => 'YOUR RETURN';
+
+  @override
+  String get dataNotReady => 'Data is not ready.';
+
+  @override
+  String get leaderUpper => 'LEADER';
+
+  @override
+  String get loadingUpper => 'LOADING';
+
+  @override
+  String get globalRanking => 'Global Ranking';
+
+  @override
+  String get checkingAnonPool => 'Checking the anonymous pool…';
+
+  @override
+  String get comingSoonUpper => 'SOON';
+
+  @override
+  String get globalRankingSoon =>
+      'Your rank opens once there are enough participants — anonymous, KVKK compliant';
+
+  @override
+  String topPercentile(String period, int pct) {
+    return 'You\'re in the top $pct% of the $period ranking';
+  }
+
+  @override
+  String get topPortfolios => 'Top Portfolios';
+
+  @override
+  String topGainersAllocation(String period) {
+    return '$period top gainers\' allocation';
+  }
+
+  @override
+  String get anonymousUpper => 'ANONYMOUS';
+
+  @override
+  String get topPortfoliosSoon =>
+      'Top portfolios appear here once there are enough participants. The anonymous pool is forming…';
+
+  @override
+  String nthPortfolio(int n) {
+    return 'Portfolio #$n';
+  }
+
+  @override
+  String get selectedPeriodReturnBody =>
+      'Your portfolio\'s value at the end of the period is compared with its value at the start:\n\n(period end − period start) ÷ period start\n\nThe 7D / 30D / 1Y choice above changes the result directly.';
+
+  @override
+  String get depositsDontChangeRankBody =>
+      'The only thing measured is how much your assets gained in the market. Buys and sells during the period do NOT affect the ratio.\n\nThe calculation assumes you held today\'s assets from the start of the period. Growing your portfolio therefore does not raise your return — you see the same percentage whether you hold 1 lot or 10,000.';
+
+  @override
+  String get everyoneMeasuredSameBody =>
+      'You and your partners are computed with the same formula, at the same moment, from the same prices.\n\nYou don\'t need to wait for your partner to open the app — the calculation happens on this device.';
+
+  @override
+  String get planYearly => 'Yearly';
+
+  @override
+  String get planYearlySubtitle => '7 days free, then renews automatically';
+
+  @override
+  String get planMonthly => 'Monthly';
+
+  @override
+  String get planMonthlySubtitle => 'Cancel any time';
+
+  @override
+  String get subscriptionTerms =>
+      'The subscription is billed to your App Store account. It renews automatically; to cancel, manage it under Settings → Apple ID → Subscriptions. The yearly plan starts with a 7-day free trial; unless you cancel, you are charged at the end of the trial.';
+
+  @override
+  String get premiumUnlocked => 'Premium unlocked';
+
+  @override
+  String get premiumUnlockedBody =>
+      'Unlimited assets, 2 signal analyses a day, premium indicators and more are now unlocked.';
+
+  @override
+  String get greatWord => 'Great';
+
+  @override
+  String get sandikPremiumUpper => 'SANDIK PREMIUM';
+
+  @override
+  String get paywallHeadline => 'Track your portfolio\nin more depth';
+
+  @override
+  String get paywallSubhead =>
+      'Unlimited assets, advanced indicators and 2 signal analyses a day.';
+
+  @override
+  String get restorePurchase => 'Restore purchase';
+
+  @override
+  String get recapTitle => 'Your sandık Recap';
+
+  @override
+  String recapInYear(int year) {
+    return 'in $year';
+  }
+
+  @override
+  String get recapSubtitle => 'A short story of the year.';
+
+  @override
+  String recapPoints(String n) {
+    return '$n points';
+  }
+
+  @override
+  String recapDays(int n) {
+    return '$n days';
+  }
+
+  @override
+  String myRecapYear(int year) {
+    return 'My $year Recap';
+  }
+
+  @override
+  String recapReady(int year) {
+    return 'Your $year Recap is ready';
+  }
+
+  @override
+  String recapCardSubtitle(String character) {
+    return 'A short story of the year — $character';
+  }
 }

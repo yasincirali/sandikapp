@@ -585,5 +585,381 @@
   "generatingEllipsis": "Generating...",
   "generateCode": "Generate Code",
   "switchToDark": "Switch to dark theme",
-  "switchToLight": "Switch to light theme"
+  "switchToLight": "Switch to light theme",
+  "tabChart": "Chart",
+  "tabSummary": "Summary",
+  "modeReal": "Actual",
+  "modeSim": "Simulation",
+  "modeInfoSemantics": "About {mode} mode",
+  "@modeInfoSemantics": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "noChartData": "No chart data",
+  "noAssetsYetTitle": "You have no assets yet",
+  "noAssetsOfTypeTitle": "No {type} in your portfolio",
+  "@noAssetsOfTypeTitle": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "noAssetsChartBody": "As you add assets, your portfolio performance turns into a chart here.",
+  "noAssetsOfTypeChartBody": "Add an asset of this type and its performance appears here. You can pick another type.",
+  "noHistoryAllBody": "Price history is not tracked for your assets; their value counts in the total but no time chart can be drawn.",
+  "noHistoryTypeBody": "Price history is not tracked for {type}. Its value counts in the portfolio total, but no time chart can be drawn.",
+  "@noHistoryTypeBody": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "simModeTitle": "Simulation Mode",
+  "realModeTitle": "Actual Mode",
+  "simModeBody": "How the chart would look if you had held today's net portfolio for the whole period — it ignores past buy/sell decisions and shows only the price change of your current position.",
+  "realModeBody": "Each day's value is computed from the net quantity you held that day. Tap a point to see that day's portfolio value and any buy / sell amounts — so you can see exactly why the chart rose or fell.",
+  "portfolioPerformance": "Portfolio Performance",
+  "chartDataFailed": "Could not load chart data",
+  "chartDataFailedBody": "Price history could not be fetched. Check your connection and try again.",
+  "intradayMissingBody": "Intraday prices could not be fetched for {names}. These assets are drawn FLAT at their last known price — a flat line does not mean the market was quiet.",
+  "@intradayMissingBody": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "retryLower": "Try again",
+  "raceUpper": "RACE",
+  "changeByTypeUpper": "CHANGE BY TYPE",
+  "noData": "No data",
+  "tooltipReturn": "\nReturn ",
+  "tooltipBuy": "\nBuy  +",
+  "tooltipSell": "\nSell −",
+  "tooltipNet": "\nNet ",
+  "tooltipInvested": "\nTotal invested ",
+  "tradeVolumeUpper": "TRADE VOLUME",
+  "performanceTitle": "Performance",
+  "intervalWeekly": "Weekly",
+  "intervalMonthly": "Monthly",
+  "intervalYearly": "Yearly",
+  "lastNWeeksNet": "last {n} weeks · net",
+  "@lastNWeeksNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lastNMonthsNet": "last {n} months · net",
+  "@lastNMonthsNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lastNYearsNet": "last {n} years · net",
+  "@lastNYearsNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "avgContributingWeek": "Average per contributing week",
+  "avgContributingMonth": "Average per contributing month",
+  "avgContributingYear": "Average per contributing year",
+  "vsLastWeek": "Compared to last week",
+  "vsLastMonth": "Compared to last month",
+  "vsLastYear": "Compared to last year",
+  "ongoingWeek": ", ongoing week",
+  "ongoingMonth": ", ongoing month",
+  "ongoingYear": ", ongoing year",
+  "trendUpWeek": "This week is above your earlier contributions.",
+  "trendUpMonth": "This month is above your earlier contributions.",
+  "trendUpYear": "This year is above your earlier contributions.",
+  "trendDownWeek": "This week is below your earlier contributions.",
+  "trendDownMonth": "This month is below your earlier contributions.",
+  "trendDownYear": "This year is below your earlier contributions.",
+  "trendFlatWeek": "Your contributions are steady week to week.",
+  "trendFlatMonth": "Your contributions are steady month to month.",
+  "trendFlatYear": "Your contributions are steady year to year.",
+  "biggestMoverToday": "Today's biggest mover",
+  "weekExtremes": "This week's extremes",
+  "lastMonthPeriod": "the last month",
+  "last6MonthsPeriod": "the last 6 months",
+  "sixMonthExtremes": "Six-month extremes",
+  "lastYearPeriod": "the last year",
+  "yearCurve": "Year curve",
+  "periodMarketReturn": "{period} market return",
+  "@periodMarketReturn": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "whereItCameFrom": "Where it came from",
+  "periodStart": "Period start",
+  "yourContribution": "Your contribution",
+  "marketWord": "Market",
+  "cashDividend": "Cash dividends within it",
+  "commissionPaid": "Commission paid",
+  "contributionNotReturn": "The blue bar is your own money — it is not a return. The percentage comes only from the market bar.",
+  "periodCourse": "Course over the period",
+  "greenDaysOfTotal": "{up} of {total} trading days closed up.",
+  "@greenDaysOfTotal": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "up": {
+        "type": "int"
+      }
+    }
+  },
+  "againstInflation": "Against inflation",
+  "realReturnPeriod": "Real return · {period}",
+  "@realReturnPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "nominalReturn": "Nominal return",
+  "periodCpi": "Period CPI",
+  "pointDifference": "Point difference",
+  "realReturn": "Real return",
+  "cpiNotLoaded": "Inflation data has not loaded yet.",
+  "cpiNotLoadedBody": "When the inflation index arrives, your portfolio's real return appears here. No estimated figure is shown.",
+  "allocationChange": "Allocation change",
+  "sixMonthComparison": "Six-month comparison",
+  "portfolioCharacter": "Your portfolio's character",
+  "mostPatientAsset": "Your most patient asset",
+  "nDays": "{n} days",
+  "@nDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "shareSummary": "Share your summary",
+  "savingDiscipline": "Your saving discipline",
+  "noNewMoney": "No new money entered your portfolio in this window.",
+  "highestWord": "Highest",
+  "contributingPeriods": "Periods with contributions",
+  "portfolioHealthPeriod": "Portfolio health · {period}",
+  "@portfolioHealthPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "maxDrawdown": "Largest drawdown",
+  "volatility": "Volatility",
+  "volatilityBody": "This is how much your portfolio value swung on average over the year. High is neither good nor bad — it just means bigger ups and downs.",
+  "concentration": "Concentration",
+  "moneyReturnAnnual": "Return on your money (annual)",
+  "xirrBody": "The annual compound return of the money you invested, taking the DATES of your investments into account.",
+  "periodMarketReturnLabel": "Period market return",
+  "xirrVsMarketBody": "The two numbers do not contradict: the top one also accounts for when you bought, the bottom one measures only the market's move.",
+  "advancedMetricsYear": "Advanced metrics · last year",
+  "notEnoughHistory": "Not enough history for {period}",
+  "@notEnoughHistory": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "notEnoughHistoryBody": "The summary appears on its own once this period fills up.",
+  "nAssetsPeriod": "{count} ASSETS · {period}",
+  "@nAssetsPeriod": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "chartLoadFailed": "The chart could not be loaded.",
+  "notEnoughPriceHistory": "Not enough price history for a chart.",
+  "portfolioLineNote": "The {name} line is the scenario where you held today's assets from the start of the period — it is not your realised return.",
+  "@portfolioLineNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openDetailSemantics": "Open {name} details",
+  "@openDetailSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addToPortfolioSemantics": "Add {name} to my portfolio",
+  "@addToPortfolioSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noWatchlistYet": "You are not watching anything yet",
+  "noWatchlistBody": "Watch it before you buy. Track the price without touching your portfolio.",
+  "addToWatchlist": "Add to watchlist",
+  "whyWatchlistUpper": "WHY A WATCHLIST?",
+  "whyWatchlistBody": "You can follow an asset's price without buying it. The watchlist is not part of your portfolio; it does not affect your total value or profit/loss.",
+  "notInPortfolioNote": "These assets are not part of your portfolio.",
+  "addAssetsToCompare": "Add assets to compare",
+  "addAssetsToCompareBody": "You can also add assets you don't own.",
+  "inMyPortfolio": "In my portfolio",
+  "noDataShort": "no data",
+  "addToMyPortfolio": "Add to my portfolio",
+  "comparisonDisclaimer": "Past performance is not an indicator of future returns. Chart values show percentage change from the start of the period; commission, tax and dividends are not included.",
+  "searchAssetsHint": "Search stocks, funds, gold or indices",
+  "noResultsFound": "No results found",
+  "portfolioSeriesNote": "Portfolios are computed series — they are not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.",
+  "portfolioActivityTitle": "Portfolio Activity",
+  "clearFilters": "Clear filters",
+  "loadingEllipsis": "Loading…",
+  "widenDateRangeHint": "Try widening the date range or clearing the search.",
+  "priceAlertsTitle": "Price Alerts",
+  "createAlert": "Create an alert",
+  "noAlertsYet": "You have no alerts yet",
+  "noAlertsBody": "Tap the bell on an asset's screen or create one here; we'll let you know even when the app is closed.",
+  "recreateAlert": "Set again",
+  "raceTitle": "Race",
+  "raceOptions": "Race options",
+  "leaveRace": "Leave the race",
+  "leaveRaceBody": "You leave the ranking; your partners can no longer see your percentage. You can rejoin any time.",
+  "leaveWord": "Leave",
+  "howReturnCalculated": "How is the return calculated?",
+  "selectedPeriodReturn": "Return for the selected period",
+  "depositsDontChangeRank": "Deposits don't change the ranking",
+  "everyoneMeasuredSame": "Everyone is measured the same way",
+  "rankVsPortfolioNote": "This number can DIFFER from the profit/loss percentage on the Portfolio screen — that one shows total profit/loss since your first purchase, this one only what happened in the period you picked.",
+  "rankSwapNote": "If you sold an asset entirely and bought another during the period, the result shows the \"as if you had held the new asset from the start\" scenario. Portfolios without price history are excluded from the ranking.",
+  "notInRace": "You haven't joined the Race",
+  "notInRaceBody": "Turn on participation to appear in the return ranking with your partners. Only partners who opt in can see each other's percentage. Your assets and total TRY value are never shared.",
+  "joinRace": "Join the Race",
+  "addPartnerToRace": "Add a partner and race together",
+  "raceNoListShared": "No one's asset list is shared — only return percentages are ranked.",
+  "yourReturnUpper": "YOUR RETURN",
+  "dataNotReady": "Data is not ready.",
+  "leaderUpper": "LEADER",
+  "loadingUpper": "LOADING",
+  "globalRanking": "Global Ranking",
+  "checkingAnonPool": "Checking the anonymous pool…",
+  "comingSoonUpper": "SOON",
+  "globalRankingSoon": "Your rank opens once there are enough participants — anonymous, KVKK compliant",
+  "topPercentile": "You're in the top {pct}% of the {period} ranking",
+  "@topPercentile": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "topPortfolios": "Top Portfolios",
+  "topGainersAllocation": "{period} top gainers' allocation",
+  "@topGainersAllocation": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "anonymousUpper": "ANONYMOUS",
+  "topPortfoliosSoon": "Top portfolios appear here once there are enough participants. The anonymous pool is forming…",
+  "nthPortfolio": "Portfolio #{n}",
+  "@nthPortfolio": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedPeriodReturnBody": "Your portfolio's value at the end of the period is compared with its value at the start:\n\n(period end − period start) ÷ period start\n\nThe 7D / 30D / 1Y choice above changes the result directly.",
+  "depositsDontChangeRankBody": "The only thing measured is how much your assets gained in the market. Buys and sells during the period do NOT affect the ratio.\n\nThe calculation assumes you held today's assets from the start of the period. Growing your portfolio therefore does not raise your return — you see the same percentage whether you hold 1 lot or 10,000.",
+  "everyoneMeasuredSameBody": "You and your partners are computed with the same formula, at the same moment, from the same prices.\n\nYou don't need to wait for your partner to open the app — the calculation happens on this device.",
+  "planYearly": "Yearly",
+  "planYearlySubtitle": "7 days free, then renews automatically",
+  "planMonthly": "Monthly",
+  "planMonthlySubtitle": "Cancel any time",
+  "subscriptionTerms": "The subscription is billed to your App Store account. It renews automatically; to cancel, manage it under Settings → Apple ID → Subscriptions. The yearly plan starts with a 7-day free trial; unless you cancel, you are charged at the end of the trial.",
+  "premiumUnlocked": "Premium unlocked",
+  "premiumUnlockedBody": "Unlimited assets, 2 signal analyses a day, premium indicators and more are now unlocked.",
+  "greatWord": "Great",
+  "sandikPremiumUpper": "SANDIK PREMIUM",
+  "paywallHeadline": "Track your portfolio\nin more depth",
+  "paywallSubhead": "Unlimited assets, advanced indicators and 2 signal analyses a day.",
+  "restorePurchase": "Restore purchase",
+  "recapTitle": "Your sandık Recap",
+  "recapInYear": "in {year}",
+  "@recapInYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapSubtitle": "A short story of the year.",
+  "recapPoints": "{n} points",
+  "@recapPoints": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "recapDays": "{n} days",
+  "@recapDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "myRecapYear": "My {year} Recap",
+  "@myRecapYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapReady": "Your {year} Recap is ready",
+  "@recapReady": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapCardSubtitle": "A short story of the year — {character}",
+  "@recapCardSubtitle": {
+    "placeholders": {
+      "character": {
+        "type": "String"
+      }
+    }
+  }
 }

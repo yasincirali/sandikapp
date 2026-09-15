@@ -15,7 +15,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             color: context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.lg)),
         child: Center(
-            child: Text('Veri yok', style: TextStyle(color: context.c.text36))),
+            child: Text(context.l10n.noData, style: TextStyle(color: context.c.text36))),
       );
     }
 
@@ -758,7 +758,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   final positive = gainVsAnchor >= 0;
                   children.add(TextSpan(
                     text:
-                        '\nGetiri ${positive ? '+' : '−'}${tryFmt0.format(gainVsAnchor.abs())}',
+                        '${context.l10n.tooltipReturn}${positive ? '+' : '−'}${tryFmt0.format(gainVsAnchor.abs())}',
                     style: context.t.numSmall.copyWith(
                       color: positive ? context.c.gain : context.c.loss,
                       fontSize: 11,
@@ -770,7 +770,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 if (hasActivity) {
                   if (dayBuyTRY > 0) {
                     children.add(TextSpan(
-                      text: '\nAlım  +${tryFmt0.format(dayBuyTRY)}',
+                      text: '${context.l10n.tooltipBuy}${tryFmt0.format(dayBuyTRY)}',
                       style: context.t.numSmall.copyWith(
                         color: context.c.gain,
                         fontSize: 11,
@@ -780,7 +780,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   }
                   if (daySellTRY > 0) {
                     children.add(TextSpan(
-                      text: '\nSatış −${tryFmt0.format(daySellTRY)}',
+                      text: '${context.l10n.tooltipSell}${tryFmt0.format(daySellTRY)}',
                       style: context.t.numSmall.copyWith(
                         color: context.c.loss,
                         fontSize: 11,
@@ -791,7 +791,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   if (dayBuyTRY > 0 && daySellTRY > 0) {
                     children.add(TextSpan(
                       text:
-                          '\nNet ${dayNet >= 0 ? '+' : '−'}${tryFmt0.format(dayNet.abs())}',
+                          '${context.l10n.tooltipNet}${dayNet >= 0 ? '+' : '−'}${tryFmt0.format(dayNet.abs())}',
                       style: context.t.numSmall.copyWith(
                         color: context.signColor(dayNet),
                         fontSize: 11,
@@ -807,7 +807,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 if (isFirst && !_simulate && cumBuyTRY > 0) {
                   final cumNet = cumBuyTRY - cumSellTRY;
                   children.add(TextSpan(
-                    text: '\nToplam yatırım ${tryFmt0.format(cumNet)}',
+                    text: '${context.l10n.tooltipInvested}${tryFmt0.format(cumNet)}',
                     style: context.t.labelMedium?.copyWith(
                       letterSpacing: 0,
                       color: context.c.text58,
@@ -966,7 +966,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             Padding(
               padding: const EdgeInsets.only(left: 4, right: 4),
               child: Text(
-                'İŞLEM HACMİ',
+                context.l10n.tradeVolumeUpper,
                 style: context.t.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: context.c.text58,

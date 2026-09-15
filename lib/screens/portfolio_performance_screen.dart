@@ -335,7 +335,7 @@ class _PortfolioPerformanceScreenState
                     ],
                     Expanded(
                       child: Text(
-                        'Performans',
+                        context.l10n.performanceTitle,
                         style: context.t.headlineLarge?.copyWith(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,

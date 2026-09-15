@@ -203,7 +203,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                     onTap: () {
                       FullscreenChartRoute.open(
                         context,
-                        title: 'Portföy Performans',
+                        title: context.l10n.portfolioPerformance,
                         builder: (_) => PortfolioPerformanceScreen(
                           initialView: _view,
                           initialTypeFilter: _typeFilter,
@@ -266,9 +266,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               constraints: const BoxConstraints(minHeight: 300),
               child: _ChartPlaceholder(
                 icon: Icons.cloud_off_rounded,
-                title: 'Grafik verisi alınamadı',
-                message: 'Fiyat geçmişi şu an getirilemedi. '
-                    'Bağlantını kontrol edip tekrar deneyebilirsin.',
+                title: context.l10n.chartDataFailed,
+                message: context.l10n.chartDataFailedBody,
                 onRetry: _retryChartData,
               ),
             )

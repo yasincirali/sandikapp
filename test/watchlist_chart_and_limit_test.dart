@@ -8,6 +8,7 @@ import 'package:portfoy_takip/providers/watchlist_provider.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/utils/chart_line_width.dart';
 import 'package:portfoy_takip/widgets/watchlist_chart.dart';
+import 'helpers/kaynak.dart';
 
 /// Takip listesi grafiği + free tier limiti.
 ///
@@ -202,9 +203,11 @@ void main() {
       // Kullanıcı bu çizgiyi "gerçekleşmiş getirim" sanmamalı.
       final ekran = _yorumsuz(
           await File('lib/screens/watchlist_screen.dart').readAsString());
-      expect(ekran.contains('senaryosudur'), isTrue,
+      // 3.20: metin sözlükte (`portfolioLineNote`).
+      expect(ekran.contains('l10n.portfolioLineNote'), isTrue,
           reason: 'simülasyon olduğu belirtilmezse yanıltıcı olur');
-      expect(ekran.contains('gerçekleşmiş getirin değildir'), isTrue);
+      expect(trMetni('portfolioLineNote'),
+          contains('gerçekleşmiş getirin değildir'));
     });
 
     test('baştaki sıfırlar ATILIR', () {

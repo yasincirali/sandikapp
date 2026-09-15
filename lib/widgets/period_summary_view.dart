@@ -159,7 +159,7 @@ class PeriodSummaryView extends StatelessWidget {
         }
         if (summary.enIyi != null || summary.enZayif != null) {
           bloklar.add(_VarlikKarti(
-            baslik: 'Günün en çok hareket edeni',
+            baslik: context.l10n.biggestMoverToday,
             enIyi: summary.enIyi,
             enZayif: summary.enZayif,
           ));
@@ -168,7 +168,7 @@ class PeriodSummaryView extends StatelessWidget {
       case SummaryPeriod.birHafta:
         if (summary.enIyi != null || summary.enZayif != null) {
           bloklar.add(_VarlikKarti(
-            baslik: 'Haftanın uçları',
+            baslik: context.l10n.weekExtremes,
             enIyi: summary.enIyi,
             enZayif: summary.enZayif,
           ));
@@ -186,7 +186,7 @@ class PeriodSummaryView extends StatelessWidget {
             nominal: summary.getiriPct,
             tufe: summary.tufePct,
             fark: summary.tufeFarki,
-            donemEtiketi: 'son 1 ay',
+            donemEtiketi: context.l10n.lastMonthPeriod,
           ));
         } else if (summary.tufeFarki != null) {
           bloklar.add(_TufeKarti(fark: summary.tufeFarki!));
@@ -210,7 +210,7 @@ class PeriodSummaryView extends StatelessWidget {
             nominal: summary.getiriPct,
             tufe: summary.tufePct,
             fark: summary.tufeFarki,
-            donemEtiketi: 'son 6 ay',
+            donemEtiketi: context.l10n.last6MonthsPeriod,
           ));
         } else if (summary.tufeFarki != null) {
           bloklar.add(_TufeKarti(fark: summary.tufeFarki!));
@@ -225,7 +225,7 @@ class PeriodSummaryView extends StatelessWidget {
         }
         if (summary.enIyi != null || summary.enZayif != null) {
           bloklar.add(_VarlikKarti(
-            baslik: 'Altı ayın uçları',
+            baslik: context.l10n.sixMonthExtremes,
             enIyi: summary.enIyi,
             enZayif: summary.enZayif,
           ));
@@ -242,7 +242,7 @@ class PeriodSummaryView extends StatelessWidget {
             nominal: summary.getiriPct,
             tufe: summary.tufePct,
             fark: summary.tufeFarki,
-            donemEtiketi: 'son 1 yıl',
+            donemEtiketi: context.l10n.lastYearPeriod,
           ));
         } else if (summary.tufeFarki != null) {
           // Bileşik hesap yapılamadı ama puan farkı var — eski davranış
@@ -266,7 +266,7 @@ class PeriodSummaryView extends StatelessWidget {
           bloklar.add(_SabirKarti(varlik: enSabirli!, gun: enSabirliGun!));
         }
         if (summary.sparkline.length >= 2) {
-          bloklar.add(_GunIciEgriKarti(summary: summary, baslik: 'Yıl eğrisi'));
+          bloklar.add(_GunIciEgriKarti(summary: summary, baslik: context.l10n.yearCurve));
         }
         if (onShare != null) {
           bloklar.add(_PaylasButonu(onShare: onShare!));
@@ -338,7 +338,7 @@ class _AnaRakamKarti extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  '${s.period.label} piyasa getirisi',
+                  context.l10n.periodMarketReturn(donemEtiketi(context.l10n, s.period.label)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style:
@@ -464,13 +464,13 @@ class _KopruKarti extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Nereden geldi',
+            context.l10n.whereItCameFrom,
             style: context.t.titleSmall?.copyWith(color: context.c.text58),
           ),
           const SizedBox(height: SandikSpace.smd),
           _CubukSatiri(
             baz: baz,
-            etiket: 'Dönem başı',
+            etiket: context.l10n.periodStart,
             deger: bas,
             oran: bas.abs() / enBuyuk,
             renk: context.c.text36,
@@ -479,7 +479,7 @@ class _KopruKarti extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
             baz: baz,
-            etiket: 'Katkın',
+            etiket: context.l10n.yourContribution,
             deger: katki,
             oran: katki.abs() / enBuyuk,
             // MAVİ — getiri değil, kullanıcının kendi parası.
@@ -489,7 +489,7 @@ class _KopruKarti extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
             baz: baz,
-            etiket: 'Piyasa',
+            etiket: context.l10n.marketWord,
             deger: piyasa,
             oran: piyasa.abs() / enBuyuk,
             renk: piyasaRenk,
@@ -520,14 +520,14 @@ class _KopruKarti extends StatelessWidget {
             const SizedBox(height: SandikSpace.smd),
             if (s.temettuTRY != null)
               _KucukSatir(
-                etiket: 'Bunun nakit temettüsü',
+                etiket: context.l10n.cashDividend,
                 deger: baz.fmt(s.temettuTRY!),
                 ton: context.c.gain,
               ),
             if (s.komisyonTRY != null) ...[
               if (s.temettuTRY != null) const SizedBox(height: SandikSpace.xs2),
               _KucukSatir(
-                etiket: 'Ödenen komisyon',
+                etiket: context.l10n.commissionPaid,
                 deger: '−${baz.fmt(s.komisyonTRY!)}',
                 ton: context.c.text58,
               ),
@@ -545,8 +545,7 @@ class _KopruKarti extends StatelessWidget {
               const SizedBox(width: SandikSpace.xs2),
               Expanded(
                 child: Text(
-                  'Mavi çubuk senin paran — getiri sayılmaz. '
-                  'Yüzde yalnızca piyasa çubuğundan hesaplanır.',
+                  context.l10n.contributionNotReturn,
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
               ),
@@ -801,13 +800,12 @@ class _GunSayimiKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _BaglamKarti(
-        baslik: 'Dönem içi seyir',
+        baslik: context.l10n.periodCourse,
         child: Row(
           children: [
             Expanded(
               child: Text(
-                '${sayim.toplam} işlem gününün ${sayim.artida}\'ü artıda '
-                'kapandı.',
+                context.l10n.greenDaysOfTotal(sayim.toplam, sayim.artida),
                 style: context.t.bodyMedium?.copyWith(color: context.c.text58),
               ),
             ),
@@ -829,7 +827,7 @@ class _TufeKarti extends StatelessWidget {
     final mutlak = fmtNum(fark.abs(), digits: 1);
 
     return _BaglamKarti(
-      baslik: 'Enflasyona karşı',
+      baslik: context.l10n.againstInflation,
       child: Row(
         children: [
           // Yön RENKLE anlatılmaz — ok her zaman yanında (RealReturnStrip
@@ -900,7 +898,7 @@ class _ReelGetiriKarti extends StatelessWidget {
     final c = context.c;
 
     return _BaglamKarti(
-      baslik: 'Reel getiri · $donemEtiketi',
+      baslik: context.l10n.realReturnPeriod(donemEtiketi),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -934,13 +932,13 @@ class _ReelGetiriKarti extends StatelessWidget {
             const SizedBox(height: SandikSpace.smd),
             Divider(color: c.hairline, height: 1),
             const SizedBox(height: SandikSpace.smd),
-            _KucukSatir(etiket: 'Nominal getiri', deger: fmtPct(nominal!)),
+            _KucukSatir(etiket: context.l10n.nominalReturn, deger: fmtPct(nominal!)),
             const SizedBox(height: SandikSpace.xs2),
-            _KucukSatir(etiket: 'Dönem TÜFE', deger: fmtPct(tufe!)),
+            _KucukSatir(etiket: context.l10n.periodCpi, deger: fmtPct(tufe!)),
             if (fark != null) ...[
               const SizedBox(height: SandikSpace.xs2),
               _KucukSatir(
-                etiket: 'Puan farkı',
+                etiket: context.l10n.pointDifference,
                 deger: '${fark! >= 0 ? '+' : '−'}'
                     '${fmtNum(fark!.abs(), digits: 1)} puan',
                 ton: fark! >= 0 ? c.gain : c.loss,
@@ -970,7 +968,7 @@ class _EnflasyonBekleniyorKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _BaglamKarti(
-        baslik: 'Reel getiri',
+        baslik: context.l10n.realReturn,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -981,14 +979,13 @@ class _EnflasyonBekleniyorKarti extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'TÜFE verisi henüz yüklenmedi.',
+                    context.l10n.cpiNotLoaded,
                     style: context.t.bodyMedium
                         ?.copyWith(color: context.c.text58),
                   ),
                   const SizedBox(height: SandikSpace.xs),
                   Text(
-                    'Enflasyon endeksi geldiğinde portföyünün reel getirisi '
-                    'burada görünecek. Tahmini bir sayı gösterilmiyor.',
+                    context.l10n.cpiNotLoadedBody,
                     style: context.t.bodySmall
                         ?.copyWith(color: context.c.text36),
                   ),
@@ -1048,7 +1045,7 @@ class _DagilimKarti extends StatelessWidget {
           ((sonu[b] ?? 0) / sonToplam).compareTo((sonu[a] ?? 0) / sonToplam));
 
     return _BaglamKarti(
-      baslik: 'Dağılım değişimi',
+      baslik: context.l10n.allocationChange,
       child: Column(
         children: [
           for (final t in turler.take(5)) ...[
@@ -1138,7 +1135,7 @@ class _BenchmarkKarti extends StatelessWidget {
     final ustundeOlduklari = 100 - percentile;
 
     return _BaglamKarti(
-      baslik: 'Altı aylık karşılaştırma',
+      baslik: context.l10n.sixMonthComparison,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1182,7 +1179,7 @@ class _KarakterKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _BaglamKarti(
-        baslik: 'Portföyünün karakteri',
+        baslik: context.l10n.portfolioCharacter,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1209,7 +1206,7 @@ class _SabirKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _BaglamKarti(
-        baslik: 'En sabırlı varlığın',
+        baslik: context.l10n.mostPatientAsset,
         child: Row(
           children: [
             Expanded(
@@ -1221,7 +1218,7 @@ class _SabirKarti extends StatelessWidget {
               ),
             ),
             Text(
-              '$gun gün',
+              context.l10n.nDays(gun),
               style: context.t.numSmall.copyWith(color: context.c.text58),
             ),
           ],
@@ -1247,7 +1244,7 @@ class _PaylasButonu extends StatelessWidget {
           icon: Icon(Icons.ios_share_rounded,
               size: 16, color: context.c.amberText),
           label: Text(
-            'Özetini paylaş',
+            context.l10n.shareSummary,
             style: context.t.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: context.c.amberText,
@@ -1335,7 +1332,7 @@ class ContributionKarti extends StatelessWidget {
     final enBuyuk = ozet.enBuyukMutlak;
 
     return _BaglamKarti(
-      baslik: 'Birikim disiplinin',
+      baslik: context.l10n.savingDiscipline,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1347,7 +1344,7 @@ class ContributionKarti extends StatelessWidget {
           // Hiç katkı yoksa çubuk çizmenin anlamı yok — dürüst boş hâl.
           if (ozet.bos)
             Text(
-              'Bu pencerede portföyüne yeni para girmemiş.',
+              context.l10n.noNewMoney,
               style: context.t.bodyMedium?.copyWith(color: c.text58),
             )
           else ...[
@@ -1359,7 +1356,7 @@ class ContributionKarti extends StatelessWidget {
             ),
             const SizedBox(height: SandikSpace.xxs),
             Text(
-              'son ${ozet.kovalar.length} ${aralik.tekil} · net',
+              aralik.sonNDonem(context.l10n, ozet.kovalar.length),
               style: context.t.bodySmall?.copyWith(color: c.text36),
             ),
           ],
@@ -1393,25 +1390,25 @@ class ContributionKarti extends StatelessWidget {
 
           if (ozet.ortalamaTRY != null)
             _KucukSatir(
-              etiket: 'Katkı yaptığın ${aralik.tekil} ortalaması',
+              etiket: aralik.ortalamaBasligi(context.l10n),
               deger: baz.fmt(ozet.ortalamaTRY!),
             ),
           if (ozet.zirve != null) ...[
             const SizedBox(height: SandikSpace.xs2),
             _KucukSatir(
-              etiket: 'En yüksek',
+              etiket: context.l10n.highestWord,
               deger: baz.fmt(ozet.zirve!.netTRY),
             ),
           ],
           const SizedBox(height: SandikSpace.xs2),
           _KucukSatir(
-            etiket: 'Katkı yapılan dönem',
+            etiket: context.l10n.contributingPeriods,
             deger: '${ozet.katkiliKovaSayisi} / ${ozet.kovalar.length}',
           ),
           if (ozet.sonFarkTRY != null) ...[
             const SizedBox(height: SandikSpace.xs2),
             _KucukSatir(
-              etiket: 'Geçen ${aralik.tekil}a göre',
+              etiket: aralik.gecenDonemeGore(context.l10n),
               deger: '${ozet.sonFarkTRY! >= 0 ? '+' : '−'}'
                   '${baz.fmt(ozet.sonFarkTRY!.abs())}',
               ton: ozet.sonFarkTRY! >= 0 ? c.gain : c.loss,
@@ -1421,14 +1418,13 @@ class ContributionKarti extends StatelessWidget {
           if (ozet.trend != null) ...[
             const SizedBox(height: SandikSpace.smd),
             Text(
-              switch (ozet.trend!) {
-                ContributionTrend.artiyor =>
-                  'Son ${aralik.tekil} önceki katkılarının üzerinde.',
-                ContributionTrend.sabit =>
-                  'Katkın ${aralik.tekil}dan ${aralik.tekil}a istikrarlı.',
-                ContributionTrend.azaliyor =>
-                  'Son ${aralik.tekil} önceki katkılarının altında.',
-              },
+              aralik.trendCumlesi(
+                  context.l10n,
+                  switch (ozet.trend!) {
+                    ContributionTrend.artiyor => 1,
+                    ContributionTrend.sabit => 0,
+                    ContributionTrend.azaliyor => -1,
+                  }),
               style: context.t.bodySmall?.copyWith(color: c.text58),
             ),
           ],
@@ -1477,7 +1473,7 @@ class _KatkiCubugu extends StatelessWidget {
 
     return Semantics(
       label: '$_etiket ${baz.fmt(kova.netTRY)}'
-          '${kova.kismi ? ", devam eden ${aralik.tekil}" : ""}',
+          '${kova.kismi ? aralik.devamEden(context.l10n) : ""}',
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -1553,7 +1549,7 @@ class _AralikSecici extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      a.label,
+                      a.labelOf(context.l10n),
                       style: context.t.labelMedium?.copyWith(
                         color: a == secili ? c.onAmber : c.text58,
                         fontWeight:
@@ -1606,13 +1602,13 @@ class SaglikKarti extends StatelessWidget {
     final y = yogunlasma;
 
     return _BaglamKarti(
-      baslik: 'Portföy sağlığı · $donemEtiketi',
+      baslik: context.l10n.portfolioHealthPeriod(donemEtiketi),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (d != null) ...[
             _SaglikSatiri(
-              baslik: 'En büyük düşüş',
+              baslik: context.l10n.maxDrawdown,
               deger: d.isFlat ? '—' : '%${fmtNum(d.yuzde, digits: 1)}',
               aciklama: d.isFlat
                   ? 'Bu pencerede portföyün zirvesinden gerilemedi.'
@@ -1625,11 +1621,9 @@ class SaglikKarti extends StatelessWidget {
           if (volatilite != null) ...[
             if (d != null) const SizedBox(height: SandikSpace.smd),
             _SaglikSatiri(
-              baslik: 'Oynaklık',
+              baslik: context.l10n.volatility,
               deger: '%${fmtNum(volatilite!, digits: 1)}',
-              aciklama: 'Portföyünün değeri yıl boyunca ortalama bu ölçüde '
-                  'dalgalandı. Yüksek olması iyi ya da kötü değil — daha '
-                  'çok inip çıktığı anlamına gelir.',
+              aciklama: context.l10n.volatilityBody,
               ton: c.text58,
             ),
           ],
@@ -1637,7 +1631,7 @@ class SaglikKarti extends StatelessWidget {
             if (d != null || volatilite != null)
               const SizedBox(height: SandikSpace.smd),
             _SaglikSatiri(
-              baslik: 'Yoğunlaşma',
+              baslik: context.l10n.concentration,
               deger: '%${fmtNum(y.enBuyukPay, digits: 0)}',
               aciklama: 'Portföyünün %${fmtNum(y.enBuyukPay, digits: 0)}\'i '
                   '${y.enBuyukEtiket} içinde; toplam ${y.pozisyonSayisi} '
@@ -1718,7 +1712,7 @@ class XirrKarti extends StatelessWidget {
     final ton = onde ? c.gain : c.loss;
 
     return _BaglamKarti(
-      baslik: 'Paranın getirisi (yıllık)',
+      baslik: context.l10n.moneyReturnAnnual,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1737,8 +1731,7 @@ class XirrKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.xs),
           Text(
-            'Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak '
-            'hesaplanan yıllık bileşik getirisi.',
+            context.l10n.xirrBody,
             style: context.t.bodySmall?.copyWith(color: c.text58),
           ),
           if (piyasaGetirisi != null) ...[
@@ -1746,13 +1739,12 @@ class XirrKarti extends StatelessWidget {
             Divider(color: c.hairline, height: 1),
             const SizedBox(height: SandikSpace.smd),
             _KucukSatir(
-              etiket: 'Dönem piyasa getirisi',
+              etiket: context.l10n.periodMarketReturnLabel,
               deger: fmtPct(piyasaGetirisi!),
             ),
             const SizedBox(height: SandikSpace.xs2),
             Text(
-              'İki sayı çelişmez: üstteki senin ne zaman alım yaptığını da '
-              'hesaba katar, alttaki yalnızca piyasanın hareketini ölçer.',
+              context.l10n.xirrVsMarketBody,
               style: context.t.bodySmall?.copyWith(color: c.text36),
             ),
           ],
@@ -1827,7 +1819,7 @@ class IleriMetrikKarti extends StatelessWidget {
     }
 
     return _BaglamKarti(
-      baslik: 'İleri metrikler · son 1 yıl',
+      baslik: context.l10n.advancedMetricsYear,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: satirlar,
@@ -1856,13 +1848,13 @@ class _BosDurum extends StatelessWidget {
             Icon(Icons.timelapse_rounded, size: 28, color: context.c.text36),
             const SizedBox(height: SandikSpace.smd),
             Text(
-              '${period.label} için yeterli geçmiş yok',
+              context.l10n.notEnoughHistory(donemEtiketi(context.l10n, period.label)),
               textAlign: TextAlign.center,
               style: context.t.bodyMedium?.copyWith(color: context.c.text58),
             ),
             const SizedBox(height: SandikSpace.xs),
             Text(
-              'Bu dönem dolduğunda özet kendiliğinden görünür.',
+              context.l10n.notEnoughHistoryBody,
               textAlign: TextAlign.center,
               style: context.t.bodySmall?.copyWith(color: context.c.text36),
             ),
