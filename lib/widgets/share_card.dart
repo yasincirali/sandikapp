@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../services/analytics_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/recap_service.dart' show PortfolioCharacter;
 import '../services/share_card_service.dart';
 import '../theme/sandik.dart';
@@ -320,7 +321,14 @@ class _ShareSheetState extends State<_ShareSheet> {
         text: widget.metin,
         subject: widget.subject,
       );
-    } catch (e) {
+    } catch (e, st) {
+      // Crashlytics'e BİLDİR — yoksa hata yalnızca kullanıcının ekranında
+      // bir saniye görünüp kayboluyordu. `friendlyError` tanımadığı
+      // hataları genel bir cümleye çeviriyor, yani gerçek sebep (PNG
+      // üretimi mi, sistem paylaşım sayfası mı, geçici dosya yazımı mı)
+      // hiçbir yere yazılmıyordu. Sahadan "paylaş butonu hata veriyor"
+      // bildirimi geldiğinde elde tek bir iz bile yoktu (2026-09-16).
+      CrashReporter.report(e, st, reason: 'share image');
       if (mounted) {
         sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
       }
@@ -330,9 +338,22 @@ class _ShareSheetState extends State<_ShareSheet> {
   }
 
   Future<void> _metin() async {
-    await AnalyticsService.instance
-        .logRecapShared(period: widget.analyticsPeriod, channel: 'text');
-    await ShareCardService.shareText(widget.metin, subject: widget.subject);
+    // ## Neden burada da try/catch var
+    // Yoktu. Metin yolu görsel yolundan daha basit diye korumasız
+    // bırakılmıştı, ama `Share.share` da platform kanalından geçiyor ve
+    // fırlatabiliyor. Fırlattığında hata hiçbir yere gitmiyordu:
+    // kullanıcı butona basıyor, hiçbir şey olmuyor, tek satır iz yok.
+    // İki yol artık AYNI sözleşmeyi taşıyor.
+    try {
+      await AnalyticsService.instance
+          .logRecapShared(period: widget.analyticsPeriod, channel: 'text');
+      await ShareCardService.shareText(widget.metin, subject: widget.subject);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'share text');
+      if (mounted) {
+        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
+      }
+    }
   }
 
   @override

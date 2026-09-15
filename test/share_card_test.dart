@@ -164,6 +164,44 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+
+  // ── Gerçek sayfa yapısı: FittedBox içinde RepaintBoundary ───────────────
+  //
+  // `showShareSheet` kartı `FittedBox(fit: scaleDown)` içine koyuyor (dar
+  // ekranda önizleme küçülsün diye). Yukarıdaki PNG testi boundary'yi
+  // DOĞRUDAN pump ediyor, yani o sarmalayıcıyı hiç sınamıyordu.
+  testWidgets('FittedBox küçültmesi altında PNG üretilebiliyor',
+      (tester) async {
+    tester.view.physicalSize = const Size(320 * 3, 640 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    final key = GlobalKey();
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        extensions: const [SandikPalette.dark],
+      ),
+      home: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: RepaintBoundary(key: key, child: ShareCard(data: tam)),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    final bytes = await tester.runAsync(() => ShareCardService.renderPng(key));
+    expect(bytes, isNotNull);
+    expect(bytes!.sublist(0, 4), [0x89, 0x50, 0x4E, 0x47]);
+    expect(tester.takeException(), isNull);
+  });
+
   test('kartta TUTAR yok — kaynak taraması', () {
     // Yorum satırları taranmaz — kural KOD içindir.
     final src = File('lib/widgets/share_card.dart')
@@ -173,6 +211,55 @@ void main() {
     for (final yasak in ['fmtTRY', 'tryFormatter', 'BazPara', '₺', 'toTRY']) {
       expect(src.contains(yasak), isFalse, reason: '$yasak kartta olamaz');
     }
+  });
+
+
+  // ── Hata yutulmuyor ─────────────────────────────────────────────────────
+  //
+  // Sahadan "Performans → yıllık özet → paylaş hata veriyor" bildirimi
+  // geldi (2026-09-16) ve elde TEK BİR İZ yoktu:
+  //   · görsel yolunda `catch` vardı ama yalnızca snackbar basıyordu —
+  //     `friendlyError` tanımadığı hatayı genel bir cümleye çeviriyor,
+  //     yani gerçek sebep hiçbir yere yazılmıyordu;
+  //   · metin yolunda `catch` HİÇ YOKTU — `Share.share` fırlatırsa
+  //     kullanıcı butona basıyor ve hiçbir şey olmuyordu.
+  //
+  // Bu testler iki yolun da sözleşmesini kilitler: kaynakta CrashReporter
+  // çağrısı VAR ve iki yol da korumalı. Davranışın kendisi (platform
+  // kanalı fırlattığında ne olur) widget testinde kurulamıyor — kanal
+  // sahtesi share_plus'ın iç yapısına bağımlı olurdu ve o yapı sürümle
+  // değişiyor; korunması gereken şey yapının varlığı.
+  group('paylaşım hataları yutulmuyor', () {
+    late String src;
+
+    setUpAll(() {
+      src = File('lib/widgets/share_card.dart')
+          .readAsLinesSync()
+          .where((l) {
+            final t = l.trimLeft();
+            return !t.startsWith('//') && !t.startsWith('///');
+          })
+          .join('\n');
+    });
+
+    test('görsel yolu Crashlytics\'e bildiriyor', () {
+      expect(src.contains("CrashReporter.report(e, st, reason: 'share image')"),
+          isTrue,
+          reason: 'görsel paylaşımı sessizce düşerse sahada iz kalmaz');
+    });
+
+    test('metin yolu da korumalı ve bildiriyor', () {
+      expect(src.contains("CrashReporter.report(e, st, reason: 'share text')"),
+          isTrue,
+          reason: 'metin yolunda catch YOKTU — hata tümden görünmezdi');
+    });
+
+    test('iki yol da kullanıcıya friendlyError gösteriyor', () {
+      // Ham `$e` kullanıcıya gösterilmez (CLAUDE.md hata gösterimi kuralı).
+      expect('friendlyError(e)'.allMatches(src).length, greaterThanOrEqualTo(2),
+          reason: 'her iki yol da kullanıcıya anlaşılır mesaj vermeli');
+      expect(src.contains(r'sandikSnack(context, $e'), isFalse);
+    });
   });
 
   test('ShareCardData.bos', () {
