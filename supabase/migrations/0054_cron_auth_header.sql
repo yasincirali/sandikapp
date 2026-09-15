@@ -320,6 +320,79 @@ $$;
 
 revoke all on function public.trigger_live_activity_push() from public, anon, authenticated;
 
+-- ── Yerel/CI yığını için Vault tohumu ───────────────────────────────────────
+--
+-- Aşağıdaki doğrulama bloğu Vault'ta yedi cron secret'ı + gateway JWT'si
+-- arar ve yoksa `raise exception` eder. Bu CANLI için doğru: `0054`'ün
+-- tamamı "sessizce uygulanmamış migration" arızasından doğdu ve fail-closed
+-- olması bilinçli bir karardır.
+--
+-- Ama `supabase start` (CI, `db reset`) TAZE ve BOŞ bir Vault ile gelir.
+-- Orada secret'lar hiç yoktur, migration zinciri burada durur ve arkasındaki
+-- her şey — duman testi, emülatörde `integration_test/` — hiç koşmaz.
+-- `integration.yml` bu yüzden aylarca her push'ta kırıldı: kapının tek işi
+-- "yeni migration taze yığında kırılıyor mu?" sorusunu yanıtlamaktı ve
+-- sürekli kırmızı olduğu için sinyal değeri sıfıra indi.
+--
+-- ## Değişmez: VAR OLAN BİR SECRET'A ASLA DOKUNULMAZ
+--
+-- `where not exists` kapısı satır satır uygulanır. Canlıda yedi secret da
+-- mevcut olduğu için bu blok orada HİÇBİR ŞEY yazmaz — gerçek bir değeri
+-- ezme yolu yoktur. Yalnızca hiç kaydı olmayan bir Vault'a (yani taze yerel
+-- yığına) placeholder koyar.
+--
+-- ## Neden `db push` bunu canlıya taşımaz
+--
+-- `0054` canlıda ZATEN uygulanmış durumda (defterde kayıtlı, 2026-09-14'te
+-- `repair --status reverted` + `db push --include-all` ile gerçekten koştu).
+-- Uygulanmış bir migration yeniden çalıştırılmaz; bu düzenleme yalnızca
+-- BUNDAN SONRA kurulan taze yığınları etkiler.
+--
+-- ## Değerler neden böyle
+--
+-- Gateway JWT'si üç parçalı bir JWT BİÇİMİNDE olmak zorunda: doğrulama
+-- bloğu `^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$` regex'iyle
+-- biçim denetimi yapıyor (hex bir string yazılırsa arıza sessizce geri
+-- dönerdi). Aşağıdaki değer o biçime uyan, `local-stack-only` yazan ve
+-- HİÇBİR YERDE geçerli olmayan sahte bir token'dır.
+--
+-- Bunlar gerçek secret DEĞİLDİR ve öyle görünmemelidir: adları açıkça
+-- yereli söyler. Yerel yığın dışarıdan erişilemez, her `db reset`'te
+-- sıfırlanır ve bu tetikleyiciler CI'da hiç çağrılmaz — çağrılsalar bile
+-- `net.http_post` hedefi canlı proje URL'si olduğu için gateway reddeder.
+do $$
+declare
+  ad text;
+begin
+  -- Gateway JWT'si — JWT biçiminde olmak ZORUNDA (regex denetimi var).
+  if not exists (
+    select 1 from vault.decrypted_secrets where name = 'cron_gateway_jwt'
+  ) then
+    perform vault.create_secret(
+      'eyJsb2NhbCI6dHJ1ZX0.eyJzdWIiOiJsb2NhbC1zdGFjay1vbmx5In0.local-stack-only-not-a-real-key',
+      'cron_gateway_jwt'
+    );
+  end if;
+
+  -- Yedi cron secret'ı. Biçim serbest: yalnızca varlıkları denetleniyor.
+  foreach ad in array array[
+    'analyze_signals_cron_secret',
+    'daily_brief_cron_secret',
+    'weekly_summary_cron_secret',
+    'inflation_fetch_cron_secret',
+    'calendar_nudge_cron_secret',
+    'price_alerts_cron_secret',
+    'live_activity_cron_secret'
+  ] loop
+    if not exists (
+      select 1 from vault.decrypted_secrets where name = ad
+    ) then
+      perform vault.create_secret('local-stack-only-not-a-real-secret', ad);
+    end if;
+  end loop;
+end;
+$$;
+
 -- ── Kendini doğrulama ───────────────────────────────────────────────────────
 --
 -- Bu migration'ın ASIL RİSKİ sessiz başarısızlık: düzelttiği hata dört ay

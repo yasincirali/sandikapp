@@ -5,11 +5,11 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-15 (integration workflow'u 0054'ün Vault denetiminde kırık — açık madde)
+**Son güncelleme:** 2026-09-15 (integration workflow'u 0054 içi Vault tohumuyla kapandı)
 
 ---
 
-## 🟠 AÇIK — Integration workflow'u her push'ta kırık: 0054 Vault'suz yığında patlıyor
+## ✅ KAPANDI — Integration workflow'u her push'ta kırıktı: 0054 Vault'suz yığında patlıyordu
 
 **Ne:** `.github/workflows/integration.yml` en az 2026-09-15'ten beri **her
 push'ta** ~47 saniyede kırılıyor; `supabase start` adımında `0054`'ün
@@ -39,11 +39,29 @@ push öncesinden geliyor. Düzeltmek `0054`'ün doğrulama bloğunu ortama duyar
 yapmayı gerektiriyor ve o blok tam olarak "ortama göre gevşeme" yüzünden
 yazılmıştı — dikkatli bir karar, aceleye gelmez.
 
-**Ne zaman:** Integration kapısına güvenmek gerektiğinde (yeni migration
-serisi yazılmadan önce). İki seçenek: (a) `seed.sql` CI'da sahte Vault
-secret'ları yazsın — denetim gerçek kalır, yalnızca yığın beslenir;
-(b) doğrulama bloğu `current_setting('app.env')` benzeri bir kapıya bağlansın.
-**(a) tercih edilmeli**: denetimin canlıdaki sıkılığı hiç gevşemez.
+**Nasıl kapandı (2026-09-15):** Tohum `0054`'ün İÇİNE, doğrulama bloğunun
+hemen öncesine kondu — `seed.sql` DEĞİL. Sebep: `config.toml` seed'i
+"after migrations" koşuyor, yani `0054` zaten patlamış oluyor ve tohum hiç
+çalışmıyordu. İlk önerilen (a) yolu bu yüzden olduğu gibi uygulanamadı.
+
+Tohum satır satır `where not exists` kapısıyla korunuyor: canlıda yedi
+secret da mevcut olduğu için orada HİÇBİR ŞEY yazmaz. Bu kritik, çünkü
+`vault.create_secret` üzerine yazmaz, YENİ satır ekler (`0034`'ün bulgusu) —
+kapı olmasaydı her `db push` mükerrer kayıt üretir ve `order by created_at
+desc` sahte secret'ı seçerdi. Ayrıca `0054` canlıda zaten uygulanmış
+olduğundan bu düzenleme oraya hiç taşınmaz, yalnızca bundan sonra kurulan
+taze yığınları etkiler.
+
+Gateway JWT placeholder'ı üç parçalı JWT biçiminde: doğrulama bloğu regex
+ile biçim denetliyor (hex string yazılırsa arıza sessizce geri dönerdi).
+Değerler açıkça `local-stack-only` diyor — gerçek secret gibi görünmemeli.
+
+`supabase/tests/cron_auth_test.ts` beş yeni testle sınırı koruyor: kapının
+varlığı, tohumun doğrulamadan önce gelmesi, JWT biçimi, placeholder'ın
+ayırt edilebilirliği, yedi secret'ın tamlığı. **Deno 261/261 geçiyor.**
+
+⚠️ **Yerelde `supabase start` ile doğrulanmadı** (Docker kapalıydı, kullanıcı
+kararı) — gerçek doğrulama ilk Integration koşusunda.
 
 ## 🟠 AÇIK — Dış fiyat API'leri sessizce değişiyor; kanarya yok
 

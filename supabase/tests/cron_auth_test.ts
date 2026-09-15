@@ -257,3 +257,75 @@ Deno.test('mükerrer Vault kaydı tuzağı korunuyor', () => {
   assertEquals(migration.includes('order by created_at desc'), true);
   assertEquals(migration.includes('raise warning'), true);
 });
+
+// ── Yerel/CI Vault tohumu ──────────────────────────────────────────────────
+//
+// `integration.yml` aylarca her push'ta kırıldı: `0054`'ün doğrulama bloğu
+// Vault'ta yedi cron secret'ı arıyor, `supabase start` ise taze ve BOŞ bir
+// Vault ile geliyor. Migration zinciri orada duruyor ve arkasındaki her şey
+// (duman testi, emülatörde integration_test) hiç koşmuyordu.
+//
+// Tohum bu boşluğu doldurur. Buradaki testler tohumun GÜVENLİK sınırını
+// korur: canlıdaki gerçek bir secret hiçbir koşulda ezilmemeli.
+
+Deno.test('tohum var olan secret\'ı ASLA ezmez', () => {
+  // Asıl değişmez. `vault.create_secret` üzerine YAZMAZ, yeni satır ekler
+  // (0034'ün bulgusu) — kapı olmasaydı canlıda her `db push` mükerrer
+  // kayıt üretir ve `order by created_at desc` sahte secret'ı seçerdi.
+  const tohum = sql.slice(
+    sql.indexOf('vault.create_secret('),
+    sql.indexOf('-- 1) Hiçbir tetikleyicide'),
+  );
+  assertEquals(
+    /not exists\s*\(\s*select 1 from vault\.decrypted_secrets/.test(tohum),
+    true,
+    'tohum `where not exists` kapısını kaybetmiş — var olan secret ezilir',
+  );
+});
+
+Deno.test('tohum doğrulama bloğundan ÖNCE geliyor', () => {
+  // Sonra gelirse hiçbir işe yaramaz: doğrulama zaten patlamış olur.
+  const tohumIdx = sql.indexOf('perform vault.create_secret(');
+  const dogrulamaIdx = sql.indexOf('jwt := public.cron_gateway_jwt();');
+  assertEquals(tohumIdx > 0 && dogrulamaIdx > 0, true);
+  assertEquals(
+    tohumIdx < dogrulamaIdx,
+    true,
+    'tohum doğrulamadan sonra kalmış — CI yine kırılır',
+  );
+});
+
+Deno.test('placeholder JWT biçim denetimini geçer', () => {
+  // Doğrulama bloğu JWT BİÇİMİ arıyor (hex string yazılırsa arıza sessizce
+  // geri dönerdi). Placeholder o regex'e uymazsa CI yine kırılır.
+  const m = sql.match(/perform vault\.create_secret\(\s*'([^']+)',\s*'cron_gateway_jwt'/);
+  assertEquals(m !== null, true, 'gateway JWT tohumu bulunamadı');
+  assertMatch(m![1], /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
+});
+
+Deno.test('placeholder değerler gerçek secret gibi GÖRÜNMEZ', () => {
+  // Yereli açıkça söylemeleri şart: biri bunu canlıda görürse derhal
+  // anlamalı. Ayrıca gerçek bir anahtarla karıştırılıp kopyalanmamalı.
+  const m = sql.match(/perform vault\.create_secret\('([^']+)', ad\)/);
+  assertEquals(m !== null, true, 'cron secret tohumu bulunamadı');
+  assertMatch(m![1], /local-stack-only/);
+});
+
+Deno.test('yedi cron secret\'ının hepsi tohumlanıyor', () => {
+  // Doğrulama bloğu yedisini de arıyor; biri eksik kalırsa CI yine kırılır.
+  for (const ad of [
+    'analyze_signals_cron_secret',
+    'daily_brief_cron_secret',
+    'weekly_summary_cron_secret',
+    'inflation_fetch_cron_secret',
+    'calendar_nudge_cron_secret',
+    'price_alerts_cron_secret',
+    'live_activity_cron_secret',
+  ]) {
+    assertEquals(
+      new RegExp(`'${ad}'`).test(sql),
+      true,
+      `${ad} tohumda yok`,
+    );
+  }
+});
