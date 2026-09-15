@@ -134,7 +134,11 @@
   "allTypes": "All",
   "scopeCategory": "Category: {label}",
   "@scopeCategory": {
-    "placeholders": { "label": { "type": "String" } }
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
   "retry": "Retry",
   "cancel": "Cancel",
@@ -1970,5 +1974,19 @@
   "scopeWho": "Whose portfolio",
   "scopePartners": "Partners",
   "chartTypeTooltip": "Chart type",
-  "fullscreenChart": "Open chart full screen"
+  "fullscreenChart": "Open chart full screen",
+  "whatsNewTitle": "What's New",
+  "@whatsNewTitle": {},
+  "whatsNewSubtitle": "See what changed in this version",
+  "@whatsNewSubtitle": {},
+  "whatsNewEmpty": "No notes for this version.",
+  "@whatsNewEmpty": {},
+  "appVersionLabel": "sandık — version {surum}",
+  "@appVersionLabel": {
+    "placeholders": {
+      "surum": {
+        "type": "String"
+      }
+    }
+  }
 }

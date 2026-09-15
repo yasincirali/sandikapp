@@ -104,6 +104,16 @@ class AnalyticsService {
   Future<void> logSignalDismissed({required String ticker}) =>
       _log('signal_dismissed', {'ticker': ticker});
 
+  // ── Yenilikler (What's New) ─────────────────────────────────────────────
+  //
+  // Hangi sürümün notunun kaç kişiye ulaştığını ölçer. `adet` birikmiş
+  // sürüm sayısı: 1'den büyükse kullanıcı aradaki sürümleri hiç açmamış.
+  Future<void> logWhatsNewShown({
+    required String surum,
+    required int adet,
+  }) =>
+      _log('whats_new_shown', {'surum': surum, 'adet': adet});
+
   // ── Premium / Paywall (Faz 1'e hazırlık) ────────────────────────────────
   Future<void> logPremiumGateShown({required String feature}) =>
       _log('premium_gate_shown', {'feature': feature});

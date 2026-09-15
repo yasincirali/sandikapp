@@ -134,7 +134,11 @@
   "allTypes": "Tümü",
   "scopeCategory": "Kategori: {label}",
   "@scopeCategory": {
-    "placeholders": { "label": { "type": "String" } }
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
   "retry": "Tekrar Dene",
   "cancel": "Vazgeç",
@@ -1970,5 +1974,19 @@
   "scopeWho": "Kimin portföyü",
   "scopePartners": "Ortaklar",
   "chartTypeTooltip": "Grafik tipi",
-  "fullscreenChart": "Grafiği tam ekran aç"
+  "fullscreenChart": "Grafiği tam ekran aç",
+  "whatsNewTitle": "Yenilikler",
+  "@whatsNewTitle": {},
+  "whatsNewSubtitle": "Bu sürümde neler değişti",
+  "@whatsNewSubtitle": {},
+  "whatsNewEmpty": "Bu sürüm için not yok.",
+  "@whatsNewEmpty": {},
+  "appVersionLabel": "sandık — sürüm {surum}",
+  "@appVersionLabel": {
+    "placeholders": {
+      "surum": {
+        "type": "String"
+      }
+    }
+  }
 }

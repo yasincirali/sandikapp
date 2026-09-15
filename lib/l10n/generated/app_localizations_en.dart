@@ -2890,4 +2890,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fullscreenChart => 'Open chart full screen';
+
+  @override
+  String get whatsNewTitle => 'What\'s New';
+
+  @override
+  String get whatsNewSubtitle => 'See what changed in this version';
+
+  @override
+  String get whatsNewEmpty => 'No notes for this version.';
+
+  @override
+  String appVersionLabel(String surum) {
+    return 'sandık — version $surum';
+  }
 }

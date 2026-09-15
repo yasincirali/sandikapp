@@ -41,6 +41,13 @@ class PrefKeys {
   static const signalFrequencyByType = 'pref_signal_frequency_by_type_v1';
   static const signalHoursByType = 'pref_signal_hours_by_type_v1';
 
+  /// Kullanıcının "Yenilikler"ini en son gördüğü uygulama sürümü ('1.2.0').
+  ///
+  /// Cihaza özgü ve kasıtlı: sürüm notu KURULU SÜRÜME dairdir, hesaba değil.
+  /// Aynı hesapla iki cihaz farklı sürümlerde olabilir; sunucuya yazılsaydı
+  /// yeni sürüme geçen cihaz notu görmezdi.
+  static const sonGorulenSurumNotu = 'pref_son_gorulen_surum_notu';
+
   /// `FxRateMigrationService` en son ne zaman koştu (epoch ms). Her açılışta
   /// değil, günde bir kez sorgu atsın diye.
   static const fxMigrationLastRunMs = 'fx_migration_last_run_ms';

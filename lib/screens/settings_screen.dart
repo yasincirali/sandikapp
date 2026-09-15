@@ -15,6 +15,8 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
+import '../widgets/yenilikler_sheet.dart';
+import '../services/surum_notu_service.dart';
 import '../services/data_export_service.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
@@ -75,7 +77,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _deleting = false;
   bool _exporting = false;
 
+  /// Kurulu sürüm — paketten okunur, elle yazılmaz (bkz. sayfa dibindeki
+  /// sürüm satırı). Yüklenene kadar null.
+  String? _surum;
+
   static const _supportEmail = 'sandikapp.destek@gmail.com';
+
+  @override
+  void initState() {
+    super.initState();
+    SurumNotuService.instance.calisanSurum().then((v) {
+      if (mounted) setState(() => _surum = v);
+    }).catchError((_) => null);
+  }
 
   Future<void> _confirmDeleteAccount() async {
     if (_deleting) return;
@@ -556,8 +570,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
+              // Sürüm SABİT yazılmıyordu artık: fastlane CI'da bump ettiği
+              // için elle yazılan değer bayatlıyordu (gerçek 1.1.4 iken
+              // burada "1.0.0" görünüyordu). `PackageInfo` kurulu olanı
+              // söyler.
               child: Text(
-                'sandık — sürüm 1.0.0',
+                context.l10n.appVersionLabel(_surum ?? '…'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: context.c.text36,
@@ -725,6 +743,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: context.l10n.contactUs,
               subtitle: _supportEmail,
               onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
+            ),
+            _SettingsTile(
+              icon: Icons.auto_awesome_outlined,
+              title: context.l10n.whatsNewTitle,
+              subtitle: context.l10n.whatsNewSubtitle,
+              // Elle açılışta TÜM liste gösterilir (otomatik açılışın
+              // `onemli` filtresi uygulanmaz): kullanıcı buraya bilerek
+              // geliyor, yama sürümlerini de görebilmeli.
+              onTap: () async {
+                final notlar = await SurumNotuService.instance
+                    .gosterilecekler(otomatikAcilis: false);
+                // State'in kendi `mounted`'ı — `context.mounted` burada
+                // analyzer'ın istediği güvence değil.
+                if (!mounted) return;
+                if (notlar.isEmpty) {
+                  sandikSnack(context, context.l10n.whatsNewEmpty);
+                  return;
+                }
+                await YeniliklerSheet.goster(context, notlar);
+              },
             ),
             _SettingsTile(
               icon: Icons.explore_outlined,

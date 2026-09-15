@@ -4999,6 +4999,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Grafiği tam ekran aç'**
   String get fullscreenChart;
+
+  /// No description provided for @whatsNewTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yenilikler'**
+  String get whatsNewTitle;
+
+  /// No description provided for @whatsNewSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu sürümde neler değişti'**
+  String get whatsNewSubtitle;
+
+  /// No description provided for @whatsNewEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu sürüm için not yok.'**
+  String get whatsNewEmpty;
+
+  /// No description provided for @appVersionLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık — sürüm {surum}'**
+  String appVersionLabel(String surum);
 }
 
 class _AppLocalizationsDelegate

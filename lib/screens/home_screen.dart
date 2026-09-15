@@ -399,7 +399,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // seçim yapmayan hiç kimse bunu kaybetmez.
                   if (seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
                       .teknikSinyaller) ...[
-                    _SignalBadgeButton(onTap: _scrollToSignals),
+                    TourAnchor(
+                      target: TourTarget.bildirimCani,
+                      child: _SignalBadgeButton(onTap: _scrollToSignals),
+                    ),
                     const SizedBox(width: SandikSpace.sm),
                   ],
                   SandikLogoutButton(

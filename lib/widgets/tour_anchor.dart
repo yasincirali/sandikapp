@@ -45,6 +45,13 @@ enum TourTarget {
   /// açan çipi işaret ediyor.
   kapsamSecici,
 
+  /// Ana ekran: bildirim çanı (teknik sinyaller + fiyat alarmları).
+  ///
+  /// 1.2.0'da eklendi — tur, uygulamanın güncel hâlini anlatmalı. Yeni
+  /// kullanıcı en yeni özelliği de öğrenmeli, yalnızca eski sürümde var
+  /// olanları değil.
+  bildirimCani,
+
   /// Profil: davet kodu bölümü.
   davetKodu,
 

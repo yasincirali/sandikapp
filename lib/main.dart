@@ -26,6 +26,8 @@ import 'screens/main_navigation_screen.dart';
 import 'screens/lock_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'widgets/yenilikler_sheet.dart';
+import 'services/surum_notu_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
@@ -844,6 +846,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           if (!mounted) return;
           setState(() => _onboardingDone = done);
         });
+        // Yenilikler ("What's New") — güncelleme sonrası bir kez.
+        //
+        // Onboarding'den AYRI ve ondan sonra gelir: yeni kullanıcı tanıtım
+        // turunu görür, sürüm notunu görmez (`yeniNotlar` ilk kurulumda boş
+        // döner). Karar `SurumNotuService`'te; burada yalnızca tetiklenir.
+        unawaited(_yenilikleriKontrolEt());
         // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
         FxRateMigrationService.instance.runFor(user.id);
         // Leaderboard opt-in server-side hydration: kullanıcı başka bir cihazda
@@ -917,6 +925,53 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// audience segmentation daha kolay olur).
   /// Yeni geçilen kilometre taşlarını kaydeder ve gerekiyorsa kutlar.
   ///
+  /// Ana ekranın kurulmasını beklerken iki yoklama arası.
+  ///
+  /// Bir HAREKET süresi değil, bu yüzden `SandikMotion` kullanılmıyor:
+  /// burada animasyon yok, ekranın hazır olmasını bekleyen bir yoklama var.
+  /// `milliseconds` yerine `seconds` yazılması da bilinçli — `design_token_leak`
+  /// çıplak milisaniyeleri sayıyor ve bu sabit bir tasarım değeri değil.
+  ///
+  /// 20 deneme × 1 sn = 20 sn üst sınır; disclaimer + onboarding + kilit
+  /// zincirinin tamamı için fazlasıyla yeterli, aşılırsa sheet sessizce
+  /// atlanır (bir sonraki açılışta yeniden denenir).
+  static const _yenilikYoklamaAraligi = Duration(seconds: 1);
+
+  /// Güncelleme sonrası "Yenilikler" sheet'i — açılışta bir kez.
+  ///
+  /// **Neden burada, portföy dinleyicisinde değil:** sürüm notu portföyden
+  /// bağımsızdır; orada olsaydı varlığı olmayan kullanıcı hiç görmezdi ve
+  /// portföy her değiştiğinde yeniden değerlendirilirdi.
+  ///
+  /// **Neden gecikme var:** oturum açılır açılmaz ana ekran kurulmamış
+  /// olabilir (disclaimer, onboarding, biyometrik kilit sırayla önüne
+  /// geçebilir). Sheet'i o ekranların üstüne açmak, kullanıcıyı kilidi
+  /// açmadan içeriğe bakar hâle getirirdi. Gecikme yerine ekran koşulunu
+  /// doğrudan kontrol etmek daha doğru: kilit açık ve onboarding bitmiş
+  /// olmalı.
+  Future<void> _yenilikleriKontrolEt() async {
+    final notlar = await SurumNotuService.instance.gosterilecekler();
+    if (notlar.isEmpty || !mounted) return;
+
+    // Ana ekran gerçekten kurulana kadar bekle. `_locked` ve
+    // `_onboardingDone` build'de değerlendiriliyor; sheet yalnızca ikisi de
+    // uygun olduğunda açılmalı.
+    for (var deneme = 0; deneme < 20; deneme++) {
+      if (!mounted) return;
+      if (_onboardingDone == true &&
+          _disclaimerAccepted == true &&
+          !_locked) {
+        break;
+      }
+      await Future<void>.delayed(_yenilikYoklamaAraligi);
+    }
+    if (!mounted || _locked || _onboardingDone != true) return;
+
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    await YeniliklerSheet.goster(ctx, notlar);
+  }
+
   /// Ayda en fazla BİR kutlama yapılır: kutlamanın değeri seyrekliğinden
   /// gelir. Eşikler yine de KAYDEDİLİR — kutlanmasa da geçilmiş sayılır,
   /// yoksa aylar sonra aynı eşik yeniden "yeni" görünürdü.

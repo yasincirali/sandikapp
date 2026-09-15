@@ -12,6 +12,71 @@
 
 ---
 
+## 📣 YENİ: "Yenilikler" (What's New) — her sürümde yapman gereken TEK iş
+
+**Kullanıcı isteği.** Güncelleme sonrası neyin değiştiği uygulama içinde
+görünüyor; ana özellikler tanıtım turuna da giriyor.
+
+### Her yeni sürümde: `lib/config/surum_notlari.dart`
+
+Listenin **başına** yeni bir `SurumNotu` ekle. Tek kaynak orası; başka
+hiçbir yere dokunmana gerek yok.
+
+```dart
+SurumNotu(
+  surum: '1.1.6',          // YAYINLANACAK sürüm (pubspec'i ELLE bump etme)
+  tarih: 'Ekim 2026',
+  onemli: true,            // true → güncelleme sonrası KENDİLİĞİNDEN açılır
+  baslik: 'Tek cümlelik özet',
+  yenilikler: [
+    Yenilik(
+      ikon: YenilikIkonu.bildirim,
+      baslik: 'Kısa başlık',
+      aciklama: 'Kullanıcının fark edeceği şey, somut ve kısa.',
+    ),
+  ],
+),
+```
+
+⚠️ **`surum` pubspec ile eşleşmezse not HİÇ gösterilmez** (sessiz). Ama
+pubspec'i elle bump etme — fastlane CI'da yapıyor. Buraya **yayınlanacak**
+sürümü yaz; pubspec o değere CI'da ulaşır. Bugün `1.1.5` yazılı (pubspec
+`1.1.4+7`), yani not bir sonraki yayınla görünür hale gelecek.
+
+⚠️ **`onemli: false` kullan** yama sürümlerinde — iki satırlık düzeltme için
+kullanıcının önüne modal koymak, üçüncü seferde kapatılan bir şeye dönerdi.
+Notu yine yazılır, yalnızca otomatik açılmaz (Ayarlar'dan görünür).
+
+### Gösterim kuralları (hepsi test edilmiş)
+
+| Durum | Davranış |
+|---|---|
+| İlk kurulum | Gösterilmez — yeni kullanıcı tanıtım turunu görüyor |
+| Aynı sürüm 2. açılış | Gösterilmez |
+| 1.0 → 1.3 atlandı | 1.1, 1.2, 1.3 **birikir**, hepsi gösterilir |
+| Çalışan sürümün notu yazılmamış | Hiçbir şey gösterilmez (yanlış bilgi vermek yerine sus) |
+| Hiçbiri `onemli` değil | Otomatik açılmaz |
+
+### Ana özellikler tanıtım turuna
+
+`onemli` bir özellik uygulamanın ana yüzeylerinden birini değiştiriyorsa
+tura adım ekle (`onboarding_screen.dart` → `_adimlariKur`). Bu turda
+**bildirim merkezi** adımı eklendi (`rozet: 'YENİ'`) — yeni kullanıcı
+yalnızca eski sürümde var olanları öğrenip en yenisini kaçırmamalı.
+
+⚠️ Yeni `TourTarget` eklersen onu bir ekranda `TourAnchor` ile
+**işaretlemelisin** — `onboarding_tour_test` işaretlenmemiş hedefi yakalar.
+
+### Yan düzeltme: Ayarlar'daki sürüm bayattı
+
+"sandık — sürüm 1.0.0" yazıyordu (gerçek 1.1.4). Elle yazılan sabit
+fastlane bump'ıyla ayrışmıştı; artık `package_info_plus` ile kurulu sürüm
+okunuyor.
+
+**Yeni bağımlılık:** `package_info_plus: ^8.0.0`.
+
+---
+
 ## 🔴 DÜZELTME: altın ayarı yanlış eşlendi — alarm ERKEN tetiklendi (2026-09-15, 2. tur)
 
 **Kullanıcı bildirdi:** "eşik 6270 idi ama gram altın 6700 oldu diye bildirim

@@ -300,6 +300,22 @@ List<_Adim> _adimlariKur() {
       govde: 'Fiyatlar zaten arka planda güncelleniyor; bu tuş "şimdi çek" '
           'demek. Ekranı aşağı çekerek de yapabilirsin.',
     ),
+    // 1.2.0'da eklendi. Tur, uygulamanın GÜNCEL hâlini anlatmalı: yeni
+    // kullanıcı yalnızca eski sürümde var olan özellikleri öğrenip en
+    // yenisini kaçırmamalı (bkz. `config/surum_notlari.dart` — `onemli`
+    // işaretli sürümler tura girmeye adaydır).
+    _Adim(
+      id: 'bildirimler',
+      hedef: TourTarget.bildirimCani,
+      rozet: 'YENİ',
+      baslik: 'Bildirim merkezi',
+      govde: 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
+          'toplanır. Bir varlığın ekranındaki zilden fiyat alarmı '
+          'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
+          'uygulama kapalıyken de çalışır.',
+      giris: (_) => _sekmeyeGec(0),
+      dokunulabilir: false,
+    ),
     _Adim(
       id: 'sekme_portfoy',
       hedef: TourTarget.sekmePortfoy,

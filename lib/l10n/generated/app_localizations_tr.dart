@@ -2882,4 +2882,18 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get fullscreenChart => 'Grafiği tam ekran aç';
+
+  @override
+  String get whatsNewTitle => 'Yenilikler';
+
+  @override
+  String get whatsNewSubtitle => 'Bu sürümde neler değişti';
+
+  @override
+  String get whatsNewEmpty => 'Bu sürüm için not yok.';
+
+  @override
+  String appVersionLabel(String surum) {
+    return 'sandık — sürüm $surum';
+  }
 }
