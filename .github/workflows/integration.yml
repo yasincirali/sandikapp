@@ -109,30 +109,35 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          # `-d` AÇIKÇA verilir — cihaz seçimi ZORUNLU.
+          # Çalışma dizini SABİTLENİR + yol MUTLAK verilir.
           #
-          # Bunsuz adım şu hatayla anında düşüyordu:
+          # Adım şu hatayla anında düşüyordu:
           #
           #   Integration tests and unit tests cannot be run in a single
           #   invocation.
           #
-          # Mesaj YANILTICI ve sebebi göstermiyor. Elenenler (2026-09-15):
-          #   · dizin/dosya ya da eğik çizgi ayrımı DEĞİL — yerelde tek
-          #     cihaz bağlıyken üç yazım da sorunsuz koşuyor,
+          # Mesaj YANILTICI. flutter_tools'un koşulu (src/commands/test.dart,
+          # `_shouldRunAsIntegrationTests`) şu: toplanan test dosyalarının
+          # HEPSİ `<currentDirectory>/integration_test` önekiyle başlamalı;
+          # bir kısmı başlayıp bir kısmı başlamazsa bu hata atılır.
+          #
+          # Elenenler (2026-09-15, ölçülerek):
+          #   · dizin/dosya ve eğik çizgi ayrımı DEĞİL — yerelde üç yazım
+          #     da sorunsuz koşuyor,
           #   · `integration_test/` altında fazladan dosya DEĞİL — CI'da
-          #     listelendi, tek `smoke_test.dart` var, symlink yok,
-          #   · `flutter` emülatörü göremiyor da DEĞİL — `flutter devices`
-          #     çıktısında emulator-5554 listeleniyor.
+          #     listelendi: tek `smoke_test.dart`, symlink yok,
+          #   · `flutter` emülatörü göremiyor DEĞİL — `flutter devices`
+          #     çıktısında emulator-5554 listeleniyor,
+          #   · `-d` eksikliği de DEĞİL — eklendi, hata aynen sürdü.
           #
-          # Kalan ve işe yarayan fark `-d`. Runner'da üç "cihaz" birden
-          # görünüyor (emülatör + Linux desktop + Chrome); Flutter hedefi
-          # kendi seçemediğinde entegrasyon testini birim testi sayıyor.
-          #
-          # Bu adım workflow yazıldığından beri kırıktı ama GÖRÜLMEDİ:
-          # `supabase start` 0054'ün Vault denetiminde hep önce kırıldığı
-          # için buraya hiç ulaşılamıyordu.
+          # Geriye `currentDirectory` kalıyor: emülatör runner'ın `script`i
+          # repo kökünde koşmuyorsa önek karşılaştırması tutmaz. `cd` +
+          # mutlak yol bu belirsizliği tümden kaldırır; `pwd` de gerçek
+          # dizini logda bırakır (hata sürerse bir sonraki adım orası).
           script: |
-            flutter test integration_test -d emulator-5554 \
+            pwd
+            cd "$GITHUB_WORKSPACE"
+            flutter test "$GITHUB_WORKSPACE/integration_test" -d emulator-5554 \
               --dart-define=SUPABASE_URL=$SUPABASE_URL \
               --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
