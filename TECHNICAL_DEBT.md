@@ -5,9 +5,45 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-14 (fon NAV çapası gözlemle kapandı; 3.16 integration_test için taban şema 0000 + yerel yığın)
+**Son güncelleme:** 2026-09-15 (integration workflow'u 0054'ün Vault denetiminde kırık — açık madde)
 
 ---
+
+## 🟠 AÇIK — Integration workflow'u her push'ta kırık: 0054 Vault'suz yığında patlıyor
+
+**Ne:** `.github/workflows/integration.yml` en az 2026-09-15'ten beri **her
+push'ta** ~47 saniyede kırılıyor; `supabase start` adımında `0054`'ün
+kendini-doğrulama bloğu hata basıyor:
+
+```
+KURULUM EKSIK: ...  ->  select vault.create_secret('<service_role JWT>', 'cron_gateway_jwt');
+```
+
+**Neden:** `0054` gövdesinin sonundaki `do $$` bloğu Vault'ta yedi cron
+secret'ı + `cron_gateway_jwt` arıyor ve yoksa `raise exception` ediyor. Bu
+denetim CANLI için doğru yazıldı — `0054`'ün kendisi "sessizce uygulanmamış
+migration" arızasından doğmuştu ve fail-closed olması bilinçli. Ama taze CI
+yığınında (`supabase start`, boş Vault) o secret'lar hiç yok; migration
+zinciri orada duruyor ve arkasındaki her şey (duman testi, emülatör
+`integration_test/`) hiç koşmuyor.
+
+**Maliyeti:** Integration kapısı şu anda hiçbir şey doğrulamıyor — sürekli
+kırmızı olduğu için sinyal değeri sıfır. Asıl amacı olan "yeni migration taze
+yığında kırılıyor mu" sorusu cevapsız kalıyor ve gerçek bir migration
+regresyonu bu gürültünün içinde fark edilmez. CI (`ci.yml`) ve iOS
+workflow'ları sağlam, yani kırılma tek bir workflow'la sınırlı.
+
+**Neden ertelendi:** Bu turda (2026-09-15, seçici + rozet + tema salınımı)
+kapsam dışıydı; kırılma bu turun getirdiği bir regresyon değil, en az altı
+push öncesinden geliyor. Düzeltmek `0054`'ün doğrulama bloğunu ortama duyarlı
+yapmayı gerektiriyor ve o blok tam olarak "ortama göre gevşeme" yüzünden
+yazılmıştı — dikkatli bir karar, aceleye gelmez.
+
+**Ne zaman:** Integration kapısına güvenmek gerektiğinde (yeni migration
+serisi yazılmadan önce). İki seçenek: (a) `seed.sql` CI'da sahte Vault
+secret'ları yazsın — denetim gerçek kalır, yalnızca yığın beslenir;
+(b) doğrulama bloğu `current_setting('app.env')` benzeri bir kapıya bağlansın.
+**(a) tercih edilmeli**: denetimin canlıdaki sıkılığı hiç gevşemez.
 
 ## 🟠 AÇIK — Dış fiyat API'leri sessizce değişiyor; kanarya yok
 
