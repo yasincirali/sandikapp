@@ -109,8 +109,17 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          # DİZİN verilir, tek dosya DEĞİL. `integration_test/smoke_test.dart`
+          # şu hatayla anında düşer: "Integration tests and unit tests cannot
+          # be run in a single invocation." Tek dosya yolu birim testi
+          # sayılıyor; dizin verilince entegrasyon kipine geçiyor (dosyanın
+          # kendi başlığı da bu komutu yazıyor).
+          #
+          # Bu hata workflow yazıldığından beri buradaydı ama GÖRÜLMEDİ:
+          # `supabase start` 0054'ün Vault denetiminde hep önce kırıldığı
+          # için bu adıma hiç ulaşılamıyordu.
           script: |
-            flutter test integration_test/smoke_test.dart \
+            flutter test integration_test/ \
               --dart-define=SUPABASE_URL=$SUPABASE_URL \
               --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
