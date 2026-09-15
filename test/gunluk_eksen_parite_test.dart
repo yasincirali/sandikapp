@@ -123,11 +123,12 @@ void main() {
   group('X ekseni — performans ekranıyla AYNI kural', () {
     const dk = 60 * 1000;
 
-    test('GÜNLÜK ekseni TAM GÜNÜ kaplar — veride nerede bitildiğine bakmaz',
+    test('GÜNLÜK ekseni son noktanın %18 ötesinde biter — günü KAPLAMAZ',
         () {
-      // Sabah 09:15: seri 9,25 saatlik. Eksen yine de 24 saat olmalı, yoksa
-      // aynı hareket sabah dik, akşam yayvan görünür ve performans ekranıyla
-      // ölçek tutmaz.
+      // Sabah 09:15: seri 555 dk. 2026-09-15'e kadar eksen 24 saate
+      // tamamlanıyordu ("takvim günü" kuralı); kullanıcı bildirimiyle
+      // kaldırıldı — seans ortasında kartın sağ yarısı boş kalıyordu.
+      // Şimdi: 555 / 0,82 ≈ 677 dk, performans ekranıyla aynı kural.
       final geceYarisi = DateTime(2026, 9, 4);
       final e = zamanEkseni(
         ilkMs: ms(geceYarisi).toDouble(),
@@ -136,9 +137,11 @@ void main() {
       );
 
       expect(e.min, ms(geceYarisi).toDouble());
-      expect(e.max - e.min, 1440.0 * dk,
+      expect((e.max - e.min) / dk, closeTo(555 / 0.82, 0.5),
           reason: 'eksen ${(e.max - e.min) / (60 * dk)} saat — '
-              'GÜNLÜK bir takvim günüdür');
+              'son noktanın %18 ötesinde bitmeli, günü doldurmamalı');
+      expect(e.max - e.min, lessThan(1440.0 * dk),
+          reason: '1440 tabanı geri gelmiş: sağ taraf yine boş kalır');
       expect(e.gunIci, isTrue);
     });
 
@@ -185,7 +188,9 @@ void main() {
         expect(d.minute, 0, reason: '$d yuvarlak saatte değil');
         saatler.add(d.hour);
       }
-      expect(saatler, [0, 4, 8, 12, 16, 20]);
+      // 14:30 → eksen 870 / 0,82 = 17:41'de biter; 20:00 tick'i yok.
+      // (2026-09-15'e kadar 1440 tabanı vardı ve eksen 20:00'ı da yazıyordu.)
+      expect(saatler, [0, 4, 8, 12, 16]);
     });
 
     test('UZUN dönemde adım yuvarlak ve GÜN SINIRINA oturur', () {
@@ -295,9 +300,11 @@ void main() {
 
     testWidgets('GÜNLÜK alt ekseni 4 saatlik YUVARLAK etiketler yazar',
         (tester) async {
-      // Seri 00:00 → 14:30 (5 dakikalık). Eksen günün sonuna kadar uzadığı
-      // için verinin bittiği yerden SONRAKİ saatler de etiketlenmeli —
-      // performans ekranının GÜNLÜK sekmesinde olduğu gibi.
+      // Seri 00:00 → 14:30 (5 dakikalık). Eksen son noktanın %18 ötesine
+      // (17:41) uzadığı için verinin bittiği yerden SONRAKİ 16:00 da
+      // etiketlenmeli; 20:00 ise ARTIK yazılmamalı — 2026-09-15'e kadar
+      // 1440 tabanı vardı ve kartın sağı boş kalıyordu. Performans
+      // ekranının GÜNLÜK sekmesiyle aynı kural.
       final gun = DateTime(2026, 9, 4);
       final ham = <int, double>{
         for (var i = 0; i <= 174; i++)
@@ -317,9 +324,10 @@ void main() {
           .where((s) => RegExp(r'^\d{2}:\d{2}$').hasMatch(s))
           .toSet();
 
-      expect(saatler, {'04:00', '08:00', '12:00', '16:00', '20:00'},
+      expect(saatler, {'04:00', '08:00', '12:00', '16:00'},
           reason: 'alt eksende $saatler yazıyor — yuvarlak saatlere '
-              'oturmuyor ya da eksen veri bittiği yerde kesiliyor');
+              'oturmuyor, eksen veri bittiği yerde kesiliyor (16:00 yok) '
+              'ya da 1440 tabanı geri gelmiş (20:00 var)');
 
       // **Etiket metni tek başına yetmez.** Bu test UTC'de koşuyor; orada
       // yerel gece yarısı epoch'un 4 saatlik katlarına zaten denk geldiği
@@ -331,9 +339,11 @@ void main() {
           reason: 'tick tabanı grafiğe geçmemiş — fl_chart 1970-01-01 UTC yi '
               'taban alır ve saat dilimi kayması olan yerlerde etiketler '
               'kayar');
+      // 14:30 = 870 dk → eksen 870 / 0,82 dk; tam gün DEĞİL (1440 tabanı
+      // 2026-09-15'te kaldırıldı — sağ taraf boş kalıyordu).
       expect(data.maxX - data.minX,
-          const Duration(days: 1).inMilliseconds.toDouble(),
-          reason: 'çizilen eksen tam günü kaplamıyor');
+          closeTo(870 / 0.82 * 60 * 1000, 1.0),
+          reason: 'çizilen eksen son noktanın %18 ötesinde bitmeli');
     });
 
     testWidgets('UZUN dönemde eksen saat DEĞİL tarih yazar', (tester) async {

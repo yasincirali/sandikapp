@@ -362,6 +362,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allTypes => 'All';
 
   @override
+  String scopeCategory(String label) {
+    return 'Category: $label';
+  }
+
+  @override
   String get retry => 'Retry';
 
   @override
@@ -2873,6 +2878,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scopeLabel => 'Scope';
+
+  @override
+  String get scopeWho => 'Whose portfolio';
+
+  @override
+  String get scopePartners => 'Partners';
 
   @override
   String get chartTypeTooltip => 'Chart type';

@@ -561,7 +561,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
           Container(
             width: double.infinity,
             color: context.c.surface2,
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 16),
             // Rozet + adres dar ekranda tek satıra sığmıyordu ("sandık ·
             // yasincirali.github.io/sandikapp" tek başına ~200pt).
             // `Wrap` gerektiğinde alt satıra iner, taşma çizgisi çıkmaz.

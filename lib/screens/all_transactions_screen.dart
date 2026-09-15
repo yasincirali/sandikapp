@@ -209,7 +209,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         children: [
           if (activePartners.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 0),
               child: ModernTabSelector(
                 partners: activePartners,
                 selectedId: _view,
@@ -222,7 +222,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
           // ── Arama ────────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 0),
             child: TextField(
               controller: _searchCtrl,
               onChanged: (v) => setState(() {
@@ -251,7 +251,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
           // ── Tarih aralığı ────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 0),
             child: HScrollWithFade(
               child: Row(
                 children: [
@@ -263,7 +263,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
           // ── Varlık türü ──────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 8),
             child: HScrollWithFade(
               child: Row(
                 children: [
@@ -278,7 +278,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
           // ── Sonuç sayacı ─────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 8),
             child: Row(
               children: [
                 Text(
@@ -324,7 +324,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                     child: ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
                       controller: _scrollCtrl,
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 16, SandikSpace.screenH(context), 32),
                       // +1: son satırda "yükleniyor" göstergesi (daha var ise).
                       itemCount: shown + (shown < rows.length ? 1 : 0),
                       itemBuilder: (ctx, i) {

@@ -325,7 +325,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 // Header
                 Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context), vertical: 12),
                   child: Row(
                     children: [
                       Expanded(
@@ -380,8 +380,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       },
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: SandikSpace.screenH(context), vertical: 4),
                       children: [
                         // Oturum çözülmeden bu ekran kurulmaz; null yalnızca
                         // çıkış anındaki son karede görülebilir.

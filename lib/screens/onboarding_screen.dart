@@ -388,8 +388,9 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.kapsamSecici,
       rozet: 'BİZE ÖZEL',
       baslik: 'Kapsam ve mod',
-      govde: 'Bu çip ne gördüğünü yazar: kimin portföyü, hangi varlık türü '
-          've hangi mod. Dokununca üçü de açılır.\n\nGerçek mod dönem '
+      govde: 'Bu çip ne gördüğünü yazar: hangi varlık türü ve hangi mod; '
+          'dokununca ikisi de açılır. Kimin portföyü olduğunu başlıktaki '
+          'kişi çipi seçer.\n\nGerçek mod dönem '
           'içindeki her alım ve satımla gerçek geçmişini çizer; Simülasyon '
           '"bugünkü portföyümü baştan elimde tutsaydım ne olurdu?" sorusunu '
           'yanıtlar.',

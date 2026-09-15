@@ -392,7 +392,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
           controller: _scrollController,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 24),
             child: Column(
               children: [
                 if (!widget.showBackButton)

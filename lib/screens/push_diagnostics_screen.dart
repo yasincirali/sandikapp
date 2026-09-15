@@ -621,7 +621,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   Widget _icerik() {
     final t = _teshis();
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 32),
       children: [
         Container(
           padding: const EdgeInsets.all(16),

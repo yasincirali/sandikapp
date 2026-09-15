@@ -27,7 +27,6 @@ import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
-import '../widgets/modern_tab_selector.dart';
 import '../widgets/share_card.dart';
 import '../widgets/sandik_error_view.dart';
 import '../services/analytics_service.dart';
@@ -53,6 +52,7 @@ import '../widgets/grafik_tipi_secici.dart';
 import '../providers/preferences_provider.dart'
     show leaderboardOptInProvider, yatirimciSeviyesiProvider;
 import 'leaderboard_screen.dart';
+import '../widgets/kapsam_kisi_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
@@ -320,12 +320,14 @@ class _PortfolioPerformanceScreenState
           child: Column(
             children: [
               // ── Header ──────────────────────────────────────────────────
-              // Başlık çubuğu 2026-09-15'te inceldi (20/12 → screenH/8) ve
-              // `fontSize: 22` yerine tema ölçeği kullanılıyor. Kazanılan
-              // ~20pt doğrudan grafiğe gidiyor.
+              // Başlık çubuğu 2026-09-15'te iki kez inceldi: 20/12 →
+              // screenH/8, sonra dikey 8 → 4 ("biraz daha inceltilebilir").
+              // Yükseklik artık 44pt'lik ikon hedefleri + 8 = 52pt; daha
+              // azı ikonların dokunma hedefini keser. `fontSize: 22` yerine
+              // tema ölçeği. Kazanılan alan doğrudan grafiğe gidiyor.
               Padding(
                 padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
-                    SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.sm),
+                    SandikSpace.xs, SandikSpace.screenH(context), SandikSpace.xs),
                 child: Row(
                   children: [
                     if (widget.showBackButton) ...[
@@ -346,10 +348,19 @@ class _PortfolioPerformanceScreenState
                     Expanded(
                       child: Text(
                         context.l10n.performanceTitle,
+                        // Tek satır, kenarda solar: sarmalasa başlık çubuğu
+                        // uzardı, üç noktayla kesilse "Performan…" olurdu.
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.fade,
                         style: context.t.headlineMedium
                             ?.copyWith(color: context.c.text90),
                       ),
                     ),
+                    // Kişi seçimi 2026-09-15'te bir süre buradaydı (çip,
+                    // sonra avatar şeridi); kullanıcı: "o kadar yukarıda
+                    // olması doğru olmadı, aşağıya gelmeli". Artık kontrol
+                    // yığınının ilk satırında (`KapsamKisiSecici`).
                     // Yarış bir GEZİNME girişi, grafik aracı değil: eskiden
                     // grafik araç satırında duruyordu ve o satırın tamamı
                     // kaldırıldı. Yeri üst çubuk.

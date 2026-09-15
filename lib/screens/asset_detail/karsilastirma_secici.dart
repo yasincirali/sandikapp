@@ -262,7 +262,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 8),
                 child: Row(
                   children: [
                     Text(
@@ -282,7 +282,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
                 child: TextField(
                   autofocus: false,
                   style: TextStyle(color: context.c.text90),

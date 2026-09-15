@@ -510,6 +510,8 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 plotWidthPx,
                 viewMinX,
                 viewMaxX,
+                start: start,
+                intraday: intraday,
               )
             : segments.map((seg) {
                 final isActive = seg.thickness > 2.0;
@@ -856,12 +858,22 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
         borderRadius: BorderRadius.circular(SandikRadius.lg),
         border: Border.all(color: context.c.hairline),
       ),
-      child: Column(
+      // Stack: grafik araçları kartın köşelerinde, akışın dışında. Tam
+      // ekran sağ üstte (2026-09-15, "vertical butonu da grafiğin sağ
+      // üstünde olmalı"), tip seçici altta. `clipBehavior: none` — çip
+      // kartın dolgusuna taşar, plot alanından yer yemez.
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Column(
         children: [
           ZoomableChart(
             fullMinX: minX,
             fullMaxX: maxX,
-            height: 360 - 32,
+            // 328'den 296'ya (2026-09-15, "grafik layoutunun yüksekliği
+            // biraz azaltılabilir"). Daha azı Y ekseninde iki etiketi
+            // birbirine yaklaştırıp gün içi bandı (%0,5) okunmaz yapar.
+            height: 296,
             builder: buildData,
             viewportController: viewport,
             // Sağdaki Y ekseni rezervi (rightTitles.reservedSize ile aynı).
@@ -1053,6 +1065,43 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
               ),
             ),
           ],
+          // Grafik tipi seçici — kabın DİBİNDE, etkilediği şeyin yanında.
+          //
+          // 2026-09-15'e kadar dönem satırının sağ ucundaydı; kullanıcı
+          // bildirimi: "chart çizgi göstergesi de grafiğin dibinde olmalı".
+          // Kontrolü uzaktan değil, sonucunun yanından değiştirmek doğru:
+          // tip değişiminin etkisi hemen üstteki seride görünüyor.
+          //
+          // `duz` görünüm: kabuksuz, eksen etiketleriyle aynı tonda. İlk
+          // deneme surface2 + kenarlıklı çipti ve kartın içinde yabancı
+          // duruyordu ("bulunduğu layera uygun olmalı") — kart zaten bir
+          // yüzey, içine ikinci bir yüzey koymak katman hiyerarşisini bozar.
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
+          ),
+        ],
+          ),
+          // Tam ekran — sağ üst köşe, kartın dolgusuna (20/16) oturur;
+          // sağdaki Y ekseni bandının üst etiketi zaten çizilmiyor
+          // (`val == meta.max` gizli), çip veriyi örtmez.
+          Positioned(
+            top: -SandikSpace.sm,
+            right: -SandikSpace.sm,
+            child: ChartFullscreenChip(
+              onTap: () => FullscreenChartRoute.open(
+                context,
+                title: context.l10n.portfolioPerformance,
+                builder: (_) => PortfolioPerformanceScreen(
+                  initialView: _view,
+                  initialTypeFilter: _typeFilter,
+                  // Yatayda grafik hemen görünsün diye kontroller yukarı
+                  // kaydırılır. İki satıra indiler; eski 220 fazla kaçıyordu.
+                  initialScrollOffset: 96,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1226,8 +1275,10 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     List<TransactionSegment> segments,
     double grafikGenisligi,
     double viewMinX,
-    double viewMaxX,
-  ) {
+    double viewMaxX, {
+    required DateTime start,
+    required bool intraday,
+  }) {
     final genislik = grafikGenisligi.isFinite && grafikGenisligi > 0
         ? grafikGenisligi
         : 320.0;
@@ -1235,6 +1286,17 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
         (viewMaxX - viewMinX).isFinite && viewMaxX > viewMinX
             ? viewMaxX - viewMinX
             : null;
+
+    // Ekran X'i epoch DEĞİL: gün içi DAKİKA, diğer dönemler KESİRLİ GÜN
+    // (`seriler.dart`). Türetici epoch ms bekler; dönüşüm
+    // `mumlariGrafikUzayinda`'da ve mumlar ekran biriminde döner.
+    //
+    // 2026-09-15'e kadar noktalar dönüştürülmeden veriliyordu: 0–720 "ms"
+    // 1970'in ilk dakikasına düşüyor, tek mum üretiliyor ve merkezi
+    // görünür aralığın çok dışında kalıyordu — "mum çalışmıyor". Saf
+    // fonksiyon testleri ms ile beslendiği için yakalanmamıştı.
+    final birimMs = intraday ? 60 * 1000.0 : 24 * 60 * 60 * 1000.0;
+    final baslangicMs = start.millisecondsSinceEpoch.toDouble();
 
     final acikSpots = <FlSpot>[];
     final kapaliSpots = <FlSpot>[];
@@ -1244,19 +1306,17 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
 
     final out = <LineChartBarData>[];
     for (final (spots, kapali) in [(acikSpots, false), (kapaliSpots, true)]) {
-      if (spots.length < 2) continue;
-      spots.sort((a, b) => a.x.compareTo(b.x));
-      final span = spots.last.x - spots.first.x;
-      final kova = mumKovasiSec(spanMs: span, noktaSayisi: spots.length);
-      final mumlar = mumlariTuret(spots, kovaMs: kova);
-      if (mumlar.isEmpty) continue;
-
-      final kovaPx =
-          gorunurAralik == null ? 8.0 : genislik * (kova / gorunurAralik);
-      final govde = (kovaPx * 0.65).clamp(2.0, 14.0);
-      final fitil = (govde * 0.25).clamp(1.0, 2.0);
-
+      final mumlar = mumlariGrafikUzayinda(spots,
+          baslangicMs: baslangicMs, birimMs: birimMs);
       for (final m in mumlar) {
+        // Gövde: kovanın piksel karşılığının %65'i (2–14 px) — çubuk tipiyle
+        // aynı oran. Kova artık görünür aralıkla aynı birimde; aylık kova
+        // ay uzunluğuna göre değiştiği için mum başına hesaplanır.
+        final kovaPx = gorunurAralik == null
+            ? 8.0
+            : genislik * (m.kovaMs / gorunurAralik);
+        final govde = (kovaPx * 0.65).clamp(2.0, 14.0);
+        final fitil = (govde * 0.25).clamp(1.0, 2.0);
         final renk = kapali
             ? context.c.text36
             : (m.yukselen ? context.c.gain : context.c.loss);

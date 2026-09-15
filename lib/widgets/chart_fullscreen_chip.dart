@@ -15,7 +15,20 @@ class ChartFullscreenChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
+    // `Semantics(container: true)` ŞART — çip KENDİ düğümü olmalı.
+    //
+    // `Tooltip` + `InkWell` yapılandırması (ipucu + dokunma) tek başına bir
+    // semantik sınırı değil; Flutter bunu, çakışan eylem/bayrak taşıyan bir
+    // kardeş yoksa en yakın ata düğüme BİRLEŞTİRİR. 2026-09-15'e kadar
+    // dönem satırında yanında `onTap`'lı grafik tipi seçici duruyordu ve o
+    // çakışma çipi istemeden kendi düğümü yapıyordu. Seçici grafik kartının
+    // dibine inince çakışma kalktı, çip ata düğüme karıştı ve beş dönem
+    // düğmesi ekran okuyucuya "Grafiği tam ekran aç" kabının çocuğu olarak
+    // duyuruldu (emülatör UI ağacında görüldü). Sınır çipin içinde: hangi
+    // satıra konursa konsun komşusuna bağımlı olmasın.
+    return Semantics(
+      container: true,
+      child: Tooltip(
       message: context.l10n.fullscreenChart,
       child: Material(
       color: Colors.transparent,
@@ -45,6 +58,7 @@ class ChartFullscreenChip extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
       ),
     );

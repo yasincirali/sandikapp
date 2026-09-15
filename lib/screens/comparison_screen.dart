@@ -242,7 +242,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                   onRefresh: () => _changePeriod(_periodIdx),
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 24),
                     children: [
                       _chartCard(p),
                       const SizedBox(height: 16),
@@ -963,7 +963,7 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
   }
 
   Widget _sectionLabel(SandikPalette p, String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 6),
         child: Text(
           text,
           style: TextStyle(
@@ -1032,7 +1032,7 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
             // tek seçenekli bir seçici karar verecek bir şey sunmaz.
             if (widget.portfolioOptions.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 0),
                 child: _SheetTabs(
                   selected: _tab,
                   onChanged: (i) => setState(() => _tab = i),
@@ -1079,7 +1079,7 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                     for (final h in widget.portfolioOptions)
                       _tile(p, h, isPortfolio: true),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 24),
                       child: Text(
                         context.l10n.portfolioSeriesNote,
                         style: TextStyle(

@@ -81,10 +81,11 @@ class PercentComparisonChart extends StatelessWidget {
 
   /// Seçili dönemin gün sayısı — X ekseninin penceresini ve adımını belirler.
   ///
-  /// **Veriden ÇIKARILAMAZ.** GÜNLÜK ekseni son veri noktasının ötesine,
-  /// günün sonuna kadar uzar (bkz. [gunIciEksenSonuDk]); serinin kapladığı
-  /// aralığa bakarak "bu bir gün mü" diye tahmin etmek sabah 09:00'da
-  /// 9 saatlik bir pencere üretirdi. Dönemi bilen taraf çağırandır.
+  /// **Veriden ÇIKARILAMAZ.** GÜNLÜK ekseni 4 saatlik adımla etiketlenir ve
+  /// son noktanın %18 ötesinde biter (bkz. [gunIciEksenSonuDk]); serinin
+  /// kapladığı aralığa bakarak "bu bir gün mü" diye tahmin etmek belirsiz
+  /// (bir günlük seri ile 1H'nin ilk günü aynı görünür). Dönemi bilen taraf
+  /// çağırandır.
   final int periodDays;
 
   /// Kalın çizilecek seri (portföy kıyas çizgisi). Kıyas noktası olduğu

@@ -764,6 +764,12 @@ abstract class AppLocalizations {
   /// **'Tümü'**
   String get allTypes;
 
+  /// No description provided for @scopeCategory.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori: {label}'**
+  String scopeCategory(String label);
+
   /// No description provided for @retry.
   ///
   /// In tr, this message translates to:
@@ -4969,6 +4975,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kapsam'**
   String get scopeLabel;
+
+  /// No description provided for @scopeWho.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kimin portföyü'**
+  String get scopeWho;
+
+  /// No description provided for @scopePartners.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortaklar'**
+  String get scopePartners;
 
   /// No description provided for @chartTypeTooltip.
   ///

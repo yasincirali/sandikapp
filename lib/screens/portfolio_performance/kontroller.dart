@@ -47,63 +47,71 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   ///
   /// Ayrım KULLANIM SIKLIĞINA göre yapıldı, göze göre değil:
   ///   · sık: yüzey (Grafik/Özet) ve dönem → kalıcı satırlarda kaldı
-  ///   · seyrek: kim, hangi tür, hangi mod → tek çipin arkasına alındı
+  ///   · seyrek: hangi tür, hangi mod → tek çipin arkasına alındı
+  ///   · kim → aynı gün kendi satırına, en üste (`KapsamKisiSecici`):
+  ///     panelin arkasında görünmez kalıyordu, oysa ekranın öznesi
   ///
-  /// Çip bunları GİZLEMEZ: seçili kapsamı her zaman yazar ("Birlikte · Fon ·
+  /// Çip bunları GİZLEMEZ: seçili kapsamı her zaman yazar ("Fon ·
   /// Simülasyon"). Bir filtrenin açık olduğunu görmek için paneli açmak
   /// gerekmez — "neden portföyüm eksik görünüyor" sınıfı hatanın kaynağı
   /// tam olarak görünmeyen filtredir.
-  Widget _buildScopeBar(List<AppUser> activePartners) {
+  Widget _buildScopeBar() {
     return Row(
       children: [
         // İkisi de esnek ve eşit: yüzey anahtarı sabit genişlik alsaydı dar
         // ekranda kapsam çipine üç nokta bile sığmıyordu.
         Expanded(child: _buildSurfaceToggle()),
         const SizedBox(width: SandikSpace.sm),
-        Expanded(child: _buildScopeChip(activePartners)),
+        Expanded(child: _buildScopeChip()),
       ],
     );
   }
 
-  /// Kapsamın tek satırlık özeti: "kim · tür · mod".
+  /// Kapsamın tek satırlık özeti: "tür · mod".
   ///
-  /// Ortak yoksa "kim" yazılmaz — ortağı olmayan kullanıcıya "Birlikte"
-  /// demek anlamsız. Mod yalnızca simülasyondayken yazılır: varsayılan
-  /// (Gerçek) her çipte tekrar edilecek bir bilgi değil.
-  String _kapsamOzeti(List<AppUser> activePartners) {
+  /// "Kim" 2026-09-15'te buradan ÇIKTI — kontrol yığınının ilk satırına
+  /// taşındı (`KapsamKisiSecici`). Kullanıcı bildirimi: "ortakları seçtiğim
+  /// filtre daha görülebilir olmalı". Panelin arkasında kalınca kimin
+  /// portföyüne bakıldığı bir metin parçasına indirgeniyordu; oysa bu bir
+  /// filtre ayrıntısı değil, ekranın öznesi.
+  ///
+  /// Mod yalnızca simülasyondayken yazılır: varsayılan (Gerçek) her çipte
+  /// tekrar edilecek bir bilgi değil.
+  ///
+  /// Kategori öneki HEP taşınır ("Kategori: Tümü", "Kategori: Fon") —
+  /// kullanıcı bildirimi 2026-09-15: "varlık kategorisi yazılmalı Tümü
+  /// yerine". Çıplak "Tümü" neyin tümü olduğunu söylemiyordu; çipin bir
+  /// VARLIK KATEGORİSİ seçtiği ancak paneli açınca anlaşılıyordu.
+  String _kapsamOzeti() {
     final l = context.l10n;
-    final parcalar = <String>[
-      if (activePartners.isNotEmpty)
-        if (_view == null)
-          l.scopeTogether
-        else if (_view == '')
-          l.scopeMe
-        else
-          activePartners
-              .firstWhere((p) => p.id == _view,
-                  orElse: () => activePartners.first)
-              .displayName
-              .split(' ')
-              .first,
-      _typeFilter == null ? l.allTypes : _typeFilter!.labelOf(l),
+    final kategori =
+        _typeFilter == null ? l.allTypes : _typeFilter!.labelOf(l);
+    return [
+      l.scopeCategory(kategori),
       if (_simulate) l.modeSim,
-    ];
-    return parcalar.join(' · ');
+    ].join(' · ');
   }
 
-  Widget _buildScopeChip(List<AppUser> activePartners) {
+  Widget _buildScopeChip() {
     final acik = _kapsamAcik;
     // Varsayılan dışına çıkılmışsa çip vurgulanır: ekranda bir filtre
     // olduğunu rengiyle de söyler, yalnız metniyle değil.
-    final filtreli = _typeFilter != null || _view != null || _simulate;
-    final ton = acik || filtreli ? context.c.amberText : context.c.text58;
+    // Kim seçimi artık başlıktaki kişi çipinde; bu çip yalnız tür + mod
+    // filtresini yansıtır. `_view` buraya girince "Ben" seçili her
+    // kullanıcıda çip sürekli amber yanıyordu — filtre yokken de.
+    final filtreli = _typeFilter != null || _simulate;
+    // Varsayılan (filtresiz) durumda da ton koyu: çip soluk `text58` iken
+    // düz bir etiket gibi duruyordu ve dokunulabilir olduğu anlaşılmıyordu
+    // (kullanıcı bildirimi 2026-09-15: "kişi seçimi çok efektif olmamış").
+    // Vurgulu hâl hâlâ ayrışıyor — amber, varsayılan koyu nötr.
+    final ton = acik || filtreli ? context.c.amberText : context.c.text90;
 
     return TourAnchor(
       target: TourTarget.kapsamSecici,
       child: Semantics(
         button: true,
         expanded: acik,
-        label: '${context.l10n.scopeLabel}: ${_kapsamOzeti(activePartners)}',
+        label: '${context.l10n.scopeLabel}: ${_kapsamOzeti()}',
         child: ExcludeSemantics(
           child: CupertinoButton(
             minimumSize: SandikTouch.minSize,
@@ -120,14 +128,18 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
               height: 36,
               padding: const EdgeInsets.symmetric(horizontal: SandikSpace.sm2),
               decoration: BoxDecoration(
+                // Varsayılan hâl `surface2` + `hairline`: yüzeyden ayrışan
+                // bir kabuk, "dokunulabilir" sinyali. Eski `surface1` +
+                // `overlay` arka planla neredeyse aynı tondaydı ve çip
+                // kayboluyordu.
                 color: acik || filtreli
                     ? context.c.amberFill.withValues(alpha: 0.14)
-                    : context.c.surface1,
+                    : context.c.surface2,
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(
                   color: acik || filtreli
                       ? context.c.amberFill.withValues(alpha: 0.55)
-                      : context.c.overlay,
+                      : context.c.hairline,
                 ),
               ),
               child: Row(
@@ -137,7 +149,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                   const SizedBox(width: SandikSpace.xs2),
                   Flexible(
                     child: Text(
-                      _kapsamOzeti(activePartners),
+                      _kapsamOzeti(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: context.t.titleSmall?.copyWith(
@@ -167,7 +179,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   ///
   /// Mod anahtarı yalnızca gün dışı dönemde anlamlı (gün içi seride
   /// simülasyonun karşılığı yok), bu yüzden orada hiç çizilmez.
-  Widget _buildScopePanel(List<AppUser> activePartners, bool isIntraday) {
+  Widget _buildScopePanel(bool isIntraday) {
     return AnimatedCrossFade(
       duration: SandikMotion.surfaceOf(context),
       sizeCurve: SandikMotion.move,
@@ -181,14 +193,6 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (activePartners.isNotEmpty) ...[
-              ModernTabSelector(
-                partners: activePartners,
-                selectedId: _view,
-                onChanged: (v) => _guncelle(() => _view = v),
-              ),
-              const SizedBox(height: SandikSpace.sm),
-            ],
             HScrollWithFade(
               child: Row(
                 children: [
@@ -210,44 +214,65 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
 
   /// Dönem satırı — ekranın kalıcı İKİNCİ kontrol satırı.
   ///
-  /// Dönem en sık dokunulan denetim, bu yüzden genişliğin çoğunu alır ve
-  /// veriye en yakın satırda durur. Grafik araçları (tip, tam ekran) aynı
-  /// satırın sağ ucunda ikon olarak: ikisi de seyrek kullanılıyor ve metinli
-  /// hâlleri tek başına bir satır yiyordu.
-  ///
-  /// [araclar] Özet sekmesinde `false` — orada çizilecek bir grafik yok.
-  Widget _buildPeriodRow({required bool araclar}) {
-    return Row(
-      children: [
-        Expanded(
-          child: TourAnchor(
-            target: TourTarget.donemSecici,
-            child: _buildPeriodToggle(),
-          ),
-        ),
-        if (araclar) ...[
-          const SizedBox(width: SandikSpace.sm),
-          const GrafikTipiSecici(compact: true),
-          const SizedBox(width: SandikSpace.xs2),
-          ChartFullscreenChip(
-            onTap: () => FullscreenChartRoute.open(
-              context,
-              title: context.l10n.portfolioPerformance,
-              builder: (_) => PortfolioPerformanceScreen(
-                initialView: _view,
-                initialTypeFilter: _typeFilter,
-                // Yatayda grafik hemen görünsün diye kontroller yukarı
-                // kaydırılır. İki satıra indiler; eski 220 fazla kaçıyordu.
-                initialScrollOffset: 96,
-              ),
-            ),
-          ),
-        ],
-      ],
+  /// Dönem en sık dokunulan denetim, veriye en yakın satırda durur. Grafik
+  /// araçları 2026-09-15'te bu satırdan grafik kartının İÇİNE taşındı: tip
+  /// seçici kartın dibine, tam ekran kartın sağ üstüne ("vertical butonu da
+  /// grafiğin sağ üstünde olmalı"). Araç etkilediği şeyin üstünde durur,
+  /// satır yalnız dönemi taşır.
+  Widget _buildPeriodRow() {
+    // Tam genişlik: kabuk üstündeki iki satırla (kişi seçici, Grafik|Özet +
+    // kapsam çipi) AYNI hizada biter. İçerik genişliğinde bırakılmıştı ve
+    // sağında asimetrik bir boşluk kalıyordu — kullanıcı bildirimi
+    // 2026-09-15: "time interval da ortalanmalı, tasarımda garip
+    // gözüküyor". Üç satır hizalanınca yığın tek blok okunur.
+    return TourAnchor(
+      target: TourTarget.donemSecici,
+      child: _buildPeriodToggle(),
     );
   }
 
+  /// Dönem seçici — kabuk TAM GENİŞLİK, segmentler İÇERİK ORANINDA pay alır.
+  ///
+  /// ## Neden eşit pay (`Expanded`) DEĞİL
+  /// 2026-09-15'e kadar beş segment `Expanded` ile eşit bölünüyordu; 390pt
+  /// ekranda her biri ~63pt ve altı harfli "GÜNLÜK" oraya sığmıyordu. İkinci
+  /// deneme (`Flexible` + `softWrap: false`) da kesti: içerideki `Center` boş
+  /// alanı doldurup segmentleri yine eşitliyordu. Emülatör render edemediği
+  /// için UI ağacından okunan ölçümler yanıltmıştı; hata gerçek cihaz
+  /// görüntüsünde göründü ("GÜNLÜ" diye kırpılmış).
+  ///
+  /// ## Neden içerik ORANI
+  /// Üçüncü deneme içerik genişliğinde bir kabuktu (kayan satır); bu kez
+  /// kabuk üstündeki iki satırdan dar kalıyor ve sağında asimetrik boşluk
+  /// bırakıyordu ("time interval da ortalanmalı, tasarımda garip
+  /// gözüküyor"). Şimdi kabuk satırı dolduruyor ama pay eşit değil:
+  /// `flex` her segmentin ÖLÇÜLEN metin genişliğinden (+ yan boşluk)
+  /// türetiliyor, yani GÜNLÜK payın ~%29'unu, iki harfliler ~%18'ini alıyor.
+  /// Hem hizalı hem kırpılmasız.
+  ///
+  /// `flex` tam sayı ister; ölçüm 100 ile çarpılıp yuvarlanıyor. Metin
+  /// ölçeği (Dynamic Type) ve dil değişince oranlar kendiliğinden yeniden
+  /// hesaplanır — sabit bir oran tablosu EN "DAILY"de bozulurdu.
   Widget _buildPeriodToggle() {
+    final periods = _PortfolioPerformanceScreenState._periods;
+    final stil = context.t.bodyMedium;
+    // Seçili segment w600 çizilir; ölçüm en GENİŞ hâlle yapılır ki seçim
+    // değiştikçe segmentler yatay zıplamasın.
+    final olcumStili = stil?.copyWith(fontWeight: FontWeight.w600);
+    final olcek = MediaQuery.textScalerOf(context);
+
+    int paySayisi(int i) {
+      final tp = TextPainter(
+        text: TextSpan(
+            text: donemEtiketi(context.l10n, periods[i].label),
+            style: olcumStili),
+        textDirection: Directionality.of(context),
+        textScaler: olcek,
+      )..layout();
+      // + iki yandan 10pt: segmentin kendi nefes payı.
+      return ((tp.width + 2 * SandikSpace.sm2) * 100).round();
+    }
+
     return Container(
       height: 36,
       decoration: BoxDecoration(
@@ -255,9 +280,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
           borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(3),
       child: Row(
-        children: List.generate(_PortfolioPerformanceScreenState._periods.length, (i) {
+        children: List.generate(periods.length, (i) {
           final isSelected = _selectedPeriodIdx == i;
-          return Expanded(
+          return Flexible(
+            flex: paySayisi(i),
             child: CupertinoButton(
               minimumSize: SandikTouch.minSize,
               padding: EdgeInsets.zero,
@@ -266,20 +292,25 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                 _startIntradayTickIfNeeded();
               },
               child: Container(
+                height: double.infinity,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isSelected ? context.c.surface2 : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
-                child: Center(
-                  child: Text(
-                    donemEtiketi(context.l10n,
-                        _PortfolioPerformanceScreenState._periods[i].label),
-                    style: context.t.bodyMedium?.copyWith(
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color:
-                          isSelected ? context.c.amberText : context.c.text36,
-                    ),
+                child: Text(
+                  donemEtiketi(context.l10n, periods[i].label),
+                  maxLines: 1,
+                  softWrap: false,
+                  // Pay metne göre verildiği için taşma beklenmez; çok
+                  // büyük metin ölçeğinde son çare olarak küçültülür —
+                  // kırpmak (`clip`) etiketi okunmaz yapardı.
+                  overflow: TextOverflow.visible,
+                  style: stil?.copyWith(
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color:
+                        isSelected ? context.c.amberText : context.c.text36,
                   ),
                 ),
               ),

@@ -187,3 +187,54 @@ List<Mum> mumlariTuret(List<FlSpot> spots, {required double kovaMs}) {
   kapat();
   return out;
 }
+
+/// Performans ekranının KENDİ X uzayından mum türetir.
+///
+/// Ekran X'i epoch ms DEĞİL, dönem başından itibaren ölçülür: gün içi seride
+/// DAKİKA, diğer dönemlerde KESİRLİ GÜN (`seriler.dart`). [mumlariTuret] ve
+/// [mumKovasiSec] ise epoch ms bekler. 2026-09-15'e kadar ekran noktaları
+/// dönüştürmeden veriyordu: 0–720 "ms" 1970'in ilk dakikasına düşüyor, tek
+/// mum üretiliyor ve merkezi görünür aralığın çok dışında kalıyordu —
+/// kullanıcı "mum çalışmıyor" diye bildirdi. Saf fonksiyonların testleri ms
+/// ile beslendiği için hata yakalanmamıştı; regresyon testi artık bu
+/// fonksiyonda.
+///
+/// Dönüşüm tek yerde: girdi ve çıktı EKRAN uzayında. Dönen mumların [Mum.x]
+/// ve [Mum.kovaMs] alanları ekran birimindedir (dakika ya da gün) — alan adı
+/// ne derse desin.
+///
+/// [baslangicMs] ekran X'inin sıfır noktası (dönem başı, epoch ms).
+/// [birimMs] bir ekran biriminin ms karşılığı: gün içi 60 000, diğerleri
+/// 86 400 000.
+List<Mum> mumlariGrafikUzayinda(
+  List<FlSpot> spots, {
+  required double baslangicMs,
+  required double birimMs,
+  int hedefAdet = 40,
+}) {
+  if (spots.length < 2 || !birimMs.isFinite || birimMs <= 0) return const [];
+  final epoch = [
+    for (final s in spots)
+      if (s.x.isFinite && s.y.isFinite)
+        FlSpot(baslangicMs + s.x * birimMs, s.y),
+  ]..sort((a, b) => a.x.compareTo(b.x));
+  if (epoch.length < 2) return const [];
+
+  final kova = mumKovasiSec(
+    spanMs: epoch.last.x - epoch.first.x,
+    noktaSayisi: epoch.length,
+    hedefAdet: hedefAdet,
+  );
+  return [
+    for (final m in mumlariTuret(epoch, kovaMs: kova))
+      Mum(
+        x: (m.x - baslangicMs) / birimMs,
+        kovaMs: m.kovaMs / birimMs,
+        acilis: m.acilis,
+        enYuksek: m.enYuksek,
+        enDusuk: m.enDusuk,
+        kapanis: m.kapanis,
+        noktaSayisi: m.noktaSayisi,
+      ),
+  ];
+}

@@ -116,4 +116,69 @@ void main() {
       }
     });
   });
+
+  group('ekran uzayı (dakika / kesirli gün) → mum', () {
+    // Regresyon 2026-09-15: performans ekranı X'i epoch ms değil, dönem
+    // başından dakika (gün içi) ya da kesirli gün (diğerleri) tutar. Bu
+    // değerler ms sanılınca tüm noktalar 1970'in ilk dakikasına düşüyor ve
+    // tek, görünmez bir mum çıkıyordu — "mum çalışmıyor".
+    final gunBasi = DateTime(2026, 9, 15).millisecondsSinceEpoch.toDouble();
+
+    test('ham dakika değeri ms sanılırsa tek muma çöker — hatanın kanıtı', () {
+      final dakika = [
+        for (var i = 0; i <= 24; i++) FlSpot(600 + i * 5.0, 100 + (i % 4) * 1.0),
+      ];
+      final kova = mumKovasiSec(spanMs: 120, noktaSayisi: dakika.length);
+      expect(mumlariTuret(dakika, kovaMs: kova).length, 1,
+          reason: 'dönüşümsüz çağrı tek muma çökmeli — çökmüyorsa bu test '
+              'artık hatayı temsil etmiyor');
+    });
+
+    test('gün içi DAKİKA serisi görünür aralıkta birden çok mum üretir', () {
+      // 10:00–12:00, 5 dk aralıkla 25 nokta.
+      final dakika = [
+        for (var i = 0; i <= 24; i++) FlSpot(600 + i * 5.0, 100 + (i % 4) * 1.0),
+      ];
+      final mumlar = mumlariGrafikUzayinda(dakika,
+          baslangicMs: gunBasi, birimMs: 60 * 1000);
+
+      expect(mumlar.length, greaterThanOrEqualTo(4),
+          reason: '15–30 dk kova ile 4+ mum; tek muma çökmemeli');
+      for (final m in mumlar) {
+        // Kova takvime hizalı: ilk kova 10:00'da başlar, son kovanın
+        // MERKEZİ son noktayı kova yarısı kadar aşabilir (12:00 kovası →
+        // 12:07,5). Oluşan mum TradingView'de de böyle çizilir.
+        expect(m.x, inInclusiveRange(600.0, 720.0),
+            reason: 'kova başı ekran uzayının (dakika) dışında: ${m.x}');
+        expect(m.merkezX, lessThanOrEqualTo(720.0 + m.kovaMs / 2));
+        expect(m.kovaMs, lessThan(60.0),
+            reason: 'kova ekran biriminde (dakika) dönmeli, ms değil');
+      }
+      expect(mumlar.first.x, 600.0,
+          reason: '10:00 kovası saat başına hizalı başlar');
+    });
+
+    test('KESİRLİ GÜN serisi (1A) haftalık mum üretir, ekran uzayında kalır', () {
+      final gun = [for (var i = 0; i < 30; i++) FlSpot(i.toDouble(), 100 + i % 3)];
+      final mumlar = mumlariGrafikUzayinda(gun,
+          baslangicMs: gunBasi, birimMs: 24 * 60 * 60 * 1000);
+
+      expect(mumlar.length, inInclusiveRange(4, 6),
+          reason: '30 günlük noktadan 7 günlük kova → ~5 mum');
+      for (final m in mumlar) {
+        // Haftalık kova Pazartesi'ye hizalı: ilk kova dönem başından önce
+        // başlayabilir, son kovanın merkezi son günü aşabilir.
+        expect(m.x, inInclusiveRange(-7.0, 30.0),
+            reason: 'kova başı ekran uzayının (gün) dışında: ${m.x}');
+        expect(m.merkezX, inInclusiveRange(-3.5, 33.5));
+        expect(m.kovaMs, closeTo(7.0, 1e-9),
+            reason: 'kova ekran biriminde (gün)');
+      }
+    });
+
+    test('iki noktadan az → boş', () {
+      expect(mumlariGrafikUzayinda([const FlSpot(1, 1)],
+          baslangicMs: gunBasi, birimMs: 60 * 1000), isEmpty);
+    });
+  });
 }

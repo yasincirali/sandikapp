@@ -4,7 +4,12 @@ import '../models/grafik_tipi.dart';
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 
-/// Grafik tipi seçici — grafik kabının üstündeki chip + açılır menü.
+/// Grafik tipi seçici — açılır menü; üç görünümü var ([GrafikTipiGorunum]).
+///
+/// 2026-09-15: grafik kartının DİBİNE indi (`duz` görünüm). Kullanıcı
+/// bildirimi: "çizgi göstergesi grafiğin dibinde olmalı" ve "butonu
+/// bulunduğu layera uygun olmalı" — kartın içinde kabuklu çip yabancı
+/// duruyordu.
 ///
 /// Kullanıcı isteği (2026-09-12): TradingView'deki gibi bir liste; seçili
 /// olanın yanında tik, seçim oturum boyunca korunuyor.
@@ -14,14 +19,9 @@ import '../theme/sandik.dart';
 /// bağlamı koruyor. Bottom sheet ekranın yarısını kaplar ve grafikle
 /// bağı kopar — kullanıcı seçtiği tipin etkisini göremeden sayfa örtülür.
 class GrafikTipiSecici extends StatelessWidget {
-  const GrafikTipiSecici({super.key, this.compact = false});
+  const GrafikTipiSecici({super.key, this.gorunum = GrafikTipiGorunum.cip});
 
-  /// Yalnız ikon çizer (etiket ve ok yok).
-  ///
-  /// 2026-09-15: dönem satırının sağ ucuna taşındı. Metinli hâli ("Çizgi ▾")
-  /// tek başına bir satır yiyordu; ikon seçili tipe göre değiştiği için
-  /// durumu zaten söylüyor, tam adı da tooltip'te.
-  final bool compact;
+  final GrafikTipiGorunum gorunum;
 
   @override
   Widget build(BuildContext context) {
@@ -83,55 +83,99 @@ class GrafikTipiSecici extends StatelessWidget {
                 ),
               ),
           ],
-          child: compact
-              // Görsel kabuk 32pt, dokunma hedefi 44pt (HIG #37): şeffaf
-              // dolgu hedefi büyütür. `PopupMenuButton`'ın kendi alanı
-              // child'ın boyutunu alıyor, bu yüzden burada açıkça verilir.
-              ? SizedBox(
-                  width: SandikTouch.min,
-                  height: SandikTouch.min,
-                  child: Center(
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: context.c.surface2,
-                        borderRadius: BorderRadius.circular(SandikRadius.md),
-                        border: Border.all(color: context.c.hairline),
+          child: switch (gorunum) {
+            // Görsel kabuk 32pt, dokunma hedefi 44pt (HIG #37): şeffaf
+            // dolgu hedefi büyütür. `PopupMenuButton`'ın kendi alanı
+            // child'ın boyutunu alıyor, bu yüzden burada açıkça verilir.
+            GrafikTipiGorunum.ikon => SizedBox(
+                width: SandikTouch.min,
+                height: SandikTouch.min,
+                child: Center(
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: context.c.surface2,
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
+                      border: Border.all(color: context.c.hairline),
+                    ),
+                    child:
+                        Icon(secili.ikon, size: 16, color: context.c.text58),
+                  ),
+                ),
+              ),
+            // Kabuksuz: kartın içinde ikinci bir yüzey açmaz; ton ve punto
+            // eksen etiketleriyle aynı sınıftan. Dokunma hedefi yine 44pt.
+            GrafikTipiGorunum.duz => ConstrainedBox(
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(secili.ikon, size: 15, color: context.c.text58),
+                      const SizedBox(width: SandikSpace.xs),
+                      Text(
+                        secili.etiket,
+                        style: context.t.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.c.text58,
+                        ),
                       ),
-                      child:
-                          Icon(secili.ikon, size: 16, color: context.c.text58),
-                    ),
+                      const SizedBox(width: SandikSpace.xxs),
+                      Icon(Icons.expand_more_rounded,
+                          size: 15, color: context.c.text36),
+                    ],
                   ),
-                )
-              : Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: context.c.surface2,
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: Border.all(color: context.c.hairline),
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(secili.ikon, size: 15, color: context.c.text58),
-                  const SizedBox(width: SandikSpace.xs),
-                  Text(
-                    secili.etiket,
-                    style: context.t.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: context.c.text58,
+            GrafikTipiGorunum.cip => Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: context.c.surface2,
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
+                  border: Border.all(color: context.c.hairline),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(secili.ikon, size: 15, color: context.c.text58),
+                    const SizedBox(width: SandikSpace.xs),
+                    Text(
+                      secili.etiket,
+                      style: context.t.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.c.text58,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 2),
-                  Icon(Icons.expand_more_rounded,
-                      size: 15, color: context.c.text36),
-                ],
+                    const SizedBox(width: 2),
+                    Icon(Icons.expand_more_rounded,
+                        size: 15, color: context.c.text36),
+                  ],
+                ),
               ),
-            ),
-          ),
+          },
+        ),
         );
       },
     );
   }
+}
+
+/// Seçicinin görünümleri.
+enum GrafikTipiGorunum {
+  /// İkon + etiket + ok, surface2 kabuklu çip — bağımsız kullanım ve
+  /// testlerin varsayılanı.
+  cip,
+
+  /// Yalnız ikon, 32pt kabuk. 2026-09-15'e kadar dönem satırının sağ ucu
+  /// böyleydi; ikon seçili tipe göre değiştiği için durumu söylüyordu.
+  ikon,
+
+  /// Kabuksuz: ikon + etiket + ok, eksen etiketleriyle aynı tonda. Grafik
+  /// kartının İÇİNDE kullanılır — kartın kendisi zaten bir yüzey.
+  duz,
 }

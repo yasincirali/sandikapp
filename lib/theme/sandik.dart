@@ -236,15 +236,22 @@ abstract final class SandikSpace {
   static const double xl = 32;
   static const double xxl = 48;
 
-  /// Ekran kenar boşluğu — dar cihazlarda daralır.
+  /// Ekran kenar boşluğu — TEK değer, her ekranda aynı.
   ///
-  /// 2026-09-15'te 24/16'dan 16/12'ye indirildi (kullanıcı isteği: "yan
-  /// boşlukları da inceltelim, ekranı daha verimli kullanalım"). 360pt'lik
-  /// bir telefonda iki yandan 24'er pt, içeriğe kalan genişliğin %13'ünü
-  /// yiyordu; grafik ve tablo gibi genişliğe aç yüzeylerde bu doğrudan
-  /// okunabilirlik kaybı.
-  static double screenH(BuildContext context) =>
-      MediaQuery.sizeOf(context).width < 360 ? smd : md;
+  /// 2026-09-15'te iki adımda indi: 24/16 → 16/12 ("yan boşlukları da
+  /// inceltelim, ekranı daha verimli kullanalım"), sonra 12 sabit ("yan
+  /// dolgu tüm uygulama genelinde düşürülmeli, her ekranda aynı olmalı").
+  /// 360pt'lik bir telefonda iki yandan 24'er pt içeriğe kalan genişliğin
+  /// %13'ünü yiyordu; grafik ve tablo gibi genişliğe aç yüzeylerde bu
+  /// doğrudan okunabilirlik kaybı.
+  ///
+  /// Dar cihaz dalı kaldırıldı: değer zaten dar cihaz değerine indi ve
+  /// "her ekranda aynı" isteği genişliğe göre değişen bir kenarla çelişir.
+  /// Ekran kenarı BU fonksiyondan gelir; ekranlara `20`/`16` gibi sabit
+  /// yazmak kenarların ekrandan ekrana kaymasının sebebiydi (2026-09-15
+  /// taramasında 19 kaydırılabilir gövde 16/20/24 arasında dağılmıştı).
+  /// `context` parametresi API kararlılığı için duruyor.
+  static double screenH(BuildContext context) => smd;
 }
 
 /// Marka hareket dili — süre ve eğri birlikte seçilir, ayrı ayrı değil.

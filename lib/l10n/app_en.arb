@@ -132,6 +132,10 @@
   "commission": "Commission / Fees",
   "cannotBeNegative": "Cannot be negative",
   "allTypes": "All",
+  "scopeCategory": "Category: {label}",
+  "@scopeCategory": {
+    "placeholders": { "label": { "type": "String" } }
+  },
   "retry": "Retry",
   "cancel": "Cancel",
   "delete": "Delete",
@@ -1963,6 +1967,8 @@
   "scopeTogether": "Together",
   "scopeMe": "Me",
   "scopeLabel": "Scope",
+  "scopeWho": "Whose portfolio",
+  "scopePartners": "Partners",
   "chartTypeTooltip": "Chart type",
   "fullscreenChart": "Open chart full screen"
 }

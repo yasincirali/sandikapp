@@ -171,7 +171,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             children: [
               // ── Header ────────────────────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 12),
                 child: Row(
                   children: [
                     Expanded(
@@ -233,7 +233,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               // Takip listesinin giriş noktası. Gövdenin en üstünde durur;
               // üst bar (sırala · karşılaştır · çıkış) kalabalıklaşmaz.
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 8),
                 child: TourAnchor(
                   target: TourTarget.govdeSekmeleri,
                   child: _BodyTabs(
@@ -265,7 +265,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     child: ListView(
                       physics: const BouncingScrollPhysics(
                           parent: AlwaysScrollableScrollPhysics()),
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 80),
+                      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 80),
                       children: [
                         if (activePartners.isNotEmpty)
                           ModernTabSelector(

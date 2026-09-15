@@ -209,22 +209,25 @@ const double gunIciEksenAdimiDk = 240.0;
 
 /// Gün içi ("GÜNLÜK") X ekseninin SAĞ ucu — gün başlangıcından dakika.
 ///
-/// **Neden 1440'tan (tam günden) küçük olamaz:** GÜNLÜK bir TAKVİM GÜNÜDÜR.
-/// Ekseni son veri noktasında bitirmek sabah 09:00'da grafiği 9 saatlik bir
-/// pencereye sıkıştırır ve gün ilerledikçe eksen büyür — kullanıcı aynı
-/// sekmeye her baktığında farklı bir zaman ölçeği görür. Gün sabit
-/// kaldığında hareket gün içindeki YERİYLE birlikte okunur.
+/// Son nokta viewport'un ~%82'sinde tutulur: sağında %18 pay kalır ki
+/// işaretçisi kırpılmasın ve "daha devam ediyor" hissi korunsun. Eksen gün
+/// ilerledikçe büyür — 09:00'da ~11 saatlik, 21:00'de ~25 saatlik pencere.
 ///
-/// **Neden bazen 1440'tan büyük:** son nokta ekranın en sağ kenarına
-/// yapışırsa hem işaretçisi kırpılır hem de "daha devam ediyor" hissi
-/// kaybolur. Nokta viewport'un ~%82'sinde tutulur; bu ancak 19:41'den sonra
-/// (1440 × 0,82) günü aşan bir eksen üretir.
+/// **2026-09-15'e kadar 1440 dk (tam gün) tabanı vardı:** "GÜNLÜK bir takvim
+/// günüdür, ölçek gün boyunca sabit kalsın; sabah dik görünen hareket akşam
+/// yayvan görünmesin" gerekçesiyle. Kullanıcı bildirimiyle kaldırıldı: seans
+/// 12:00'deyken kartın sağ %60'ı boş kalıyor, hareket sol köşeye sıkışıyordu
+/// ("grafiğin sağ tarafı boş"). Sabit ölçek yerine dolu kart tercih edildi;
+/// günün neresinde olunduğu X etiketlerinde (04:00 · 08:00 · 12:00) zaten
+/// okunuyor. Takip/Karşılaştır grafiği aynı fonksiyondan beslenir — iki
+/// ekran birlikte değişti.
+///
+/// Veri yoksa 4 saatlik (240 dk) asgari pencere: sıfır genişlikli eksen
+/// fl_chart'ı düşürür.
 ///
 /// [sonNoktaDk] serinin son noktasının gün başından dakika cinsinden uzaklığı.
-double gunIciEksenSonuDk(double sonNoktaDk) {
-  final gereken = sonNoktaDk > 0 ? sonNoktaDk / 0.82 : 240.0;
-  return gereken > 1440.0 ? gereken : 1440.0;
-}
+double gunIciEksenSonuDk(double sonNoktaDk) =>
+    sonNoktaDk > 0 ? sonNoktaDk / 0.82 : 240.0;
 
 /// Zaman (X) ekseninin ORTAK kuralı — performans ekranı ile
 /// Takip/Karşılaştır grafiği aynı cebri paylaşsın diye.

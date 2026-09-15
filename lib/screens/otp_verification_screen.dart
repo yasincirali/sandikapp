@@ -191,7 +191,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

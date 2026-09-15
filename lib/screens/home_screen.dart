@@ -151,8 +151,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = ref.watch(authProvider).valueOrNull;
     final baz = ref.watch(bazParaProvider);
     final tryFmt = baz.formatter(digits: 0);
-    final sw = MediaQuery.of(context).size.width;
-    final hp = sw < 360 ? 14.0 : 20.0;
+    // Ekran kenarı tek kaynaktan (2026-09-15): 14/20 yerel değeri kenarı
+    // diğer sekmelerden farklı kılıyordu — "her ekranda aynı olmalı".
+    final hp = SandikSpace.screenH(context);
     final allActivePartners = ref.watch(activePartnersProvider);
 
     // Ham `assets` transaction ledger'ıdır — buy/sell/deleteLog hepsi karışık.
@@ -969,7 +970,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
               ),
               const SizedBox(height: SandikSpace.md),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
                 child: Row(
                   children: [
                     Text(
@@ -1046,7 +1047,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
               const SizedBox(height: SandikSpace.md),
               if (active.isEmpty && history.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                  padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 32),
                   child: Row(
                     children: [
                       Icon(Icons.check_circle_outline_rounded,
@@ -1065,7 +1066,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                     constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.60),
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -1188,8 +1189,8 @@ class _SignalsBottomSheet extends ConsumerWidget {
                     ),
                   ),
                 ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              Padding(
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 16),
                 child: DisclaimerWidget(),
               ),
             ],

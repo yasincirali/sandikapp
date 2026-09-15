@@ -87,7 +87,7 @@ class _PeriodToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(watchlistPeriodProvider);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
       child: Container(
         height: 44,
         decoration: BoxDecoration(
@@ -150,7 +150,7 @@ class _List extends ConsumerWidget {
       },
       child: ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 12),
       // +3: grafik kartı, sayı başlığı ve sondaki ekleme satırı.
       itemCount: items.length + 3,
       separatorBuilder: (_, __) => const SizedBox(height: SandikSpace.sm),
@@ -677,7 +677,7 @@ class _FooterNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 12),
         child: Text(
           context.l10n.notInPortfolioNote,
           textAlign: TextAlign.center,

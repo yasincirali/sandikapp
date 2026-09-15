@@ -32,7 +32,7 @@ class SignalSettingsScreen extends ConsumerWidget {
         title: 'Sinyal Ayarları',
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context), vertical: 12),
         children: [
           const DisclaimerWidget(),
           const SizedBox(height: 16),
@@ -361,7 +361,7 @@ class _FrequencyRow extends StatelessWidget {
           return SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 14, SandikSpace.screenH(context), 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

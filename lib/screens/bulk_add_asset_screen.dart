@@ -290,7 +290,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
 
   Widget _list(List<BulkCartItem> items) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 12),
       itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (_, i) {

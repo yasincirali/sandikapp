@@ -61,7 +61,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       appBar: SandikAppBar(title: context.l10n.csvImportTitle),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 32),
           children: [
             Text(
               context.l10n.csvImportBody,

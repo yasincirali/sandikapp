@@ -59,7 +59,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         child: Stack(
           children: [
             SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 220),
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 220),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -155,7 +155,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       builder: (ctx) => SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 20, SandikSpace.screenH(context), 28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

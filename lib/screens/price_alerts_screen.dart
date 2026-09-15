@@ -104,7 +104,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
             onRefresh: () => ref.read(priceAlertsProvider.notifier).refresh(),
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 96),
               itemCount: liste.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (_, i) => _AlarmSatiri(

@@ -292,7 +292,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 child: ListView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                  padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 24),
                   children: [
                     _sectionLabel(context.l10n.assetType),
                     const SizedBox(height: 10),
@@ -1808,8 +1808,8 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
     final isMulti = _previews.length > 1;
     return Padding(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
+        left: SandikSpace.screenH(context),
+        right: SandikSpace.screenH(context),
         top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
@@ -2262,7 +2262,7 @@ class _PickerShellState extends State<_PickerShell> {
                 borderRadius: BorderRadius.circular(SandikRadius.sm)),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 12),
             child: Row(
               children: [
                 Text(widget.title,
@@ -2289,7 +2289,7 @@ class _PickerShellState extends State<_PickerShell> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 12),
             child: Container(
               height: 44,
               decoration: BoxDecoration(

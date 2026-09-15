@@ -96,7 +96,7 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
       },
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                    padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 24),
                     children: [
                       _PeriodToggle(
                         selected: _periodIdx,
@@ -147,7 +147,7 @@ class _WatchlistDetailScreenState extends ConsumerState<WatchlistDetailScreen> {
   }
 
   Widget _header(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 12),
         child: Row(
           children: [
             SizedBox(

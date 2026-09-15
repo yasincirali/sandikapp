@@ -107,18 +107,32 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      // Yan dolgu başlık çubuğuyla AYNI (`screenH`: 16, dar ekranda 12).
+      // 2026-09-15: 20'den indi — kullanıcı bildirimi, kart kenarındaki
+      // boşluk "sağdan ve soldan azaltılmalı"; başlıkla kart kenarı artık
+      // aynı hizada, grafik 8pt daha geniş.
+      padding: EdgeInsets.symmetric(
+          horizontal: SandikSpace.screenH(context), vertical: SandikSpace.smd),
       children: [
-        // ── Kontroller: İKİ satır ────────────────────────────────────────
+        // ── Kontroller: İKİ satır (+ ortak varsa kişi satırı) ────────────
         //
-        // Yüzey anahtarı kapsam çipiyle AYNI satırda: dönem ikisi için de
-        // geçerli, yüzey ise hangi sunumu gördüğünü belirler. Seyrek
-        // kullanılan üçlü (kim / hangi tür / hangi mod) çipin arkasındaki
-        // panelde — gerekçe `_buildScopeBar` başında.
-        _buildScopeBar(activePartners),
-        _buildScopePanel(activePartners, isIntraday),
+        // Kim: ortak varsa en üstte, tek dokunuşluk segmentler — ekranın
+        // öznesi, sık değiştirilir (gerekçe `KapsamKisiSecici`). Yüzey
+        // anahtarı kapsam çipiyle AYNI satırda: dönem ikisi için de geçerli,
+        // yüzey ise hangi sunumu gördüğünü belirler. Seyrek kullanılan ikili
+        // (hangi tür / hangi mod) çipin arkasında. Gerekçe `_buildScopeBar`.
+        if (activePartners.isNotEmpty) ...[
+          KapsamKisiSecici(
+            partners: activePartners,
+            selectedId: _view,
+            onChanged: (v) => _guncelle(() => _view = v),
+          ),
+          const SizedBox(height: SandikSpace.sm),
+        ],
+        _buildScopeBar(),
+        _buildScopePanel(isIntraday),
         const SizedBox(height: SandikSpace.sm),
-        _buildPeriodRow(araclar: !_ozetSekmesi),
+        _buildPeriodRow(),
         const SizedBox(height: SandikSpace.md),
         // ── ÖZET sekmesi ──────────────────────────────────────────────────
         //

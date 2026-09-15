@@ -230,7 +230,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                   ),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 20),
                     children: [
                       if (available.isEmpty && inPortfolio.isEmpty && !_loading)
                         Padding(
@@ -275,7 +275,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
   }
 
   Widget _header(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 8),
         child: Row(
           children: [
             SizedBox(
@@ -305,7 +305,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
       );
 
   Widget _searchField(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
         child: CupertinoTextField(
           controller: _ctrl,
           onChanged: _sorguDegisti,

@@ -308,8 +308,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (ctx) {
         return Padding(
           padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
+            left: SandikSpace.screenH(ctx),
+            right: SandikSpace.screenH(ctx),
             top: 20,
             bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
           ),

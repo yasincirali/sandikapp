@@ -363,6 +363,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get allTypes => 'Tümü';
 
   @override
+  String scopeCategory(String label) {
+    return 'Kategori: $label';
+  }
+
+  @override
   String get retry => 'Tekrar Dene';
 
   @override
@@ -2865,6 +2870,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get scopeLabel => 'Kapsam';
+
+  @override
+  String get scopeWho => 'Kimin portföyü';
+
+  @override
+  String get scopePartners => 'Ortaklar';
 
   @override
   String get chartTypeTooltip => 'Grafik tipi';

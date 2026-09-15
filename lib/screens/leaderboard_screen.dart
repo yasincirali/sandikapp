@@ -170,7 +170,7 @@ class _RoiInfoSheet extends StatelessWidget {
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 14, SandikSpace.screenH(context), 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,7 +482,7 @@ class _SoloPanelState extends State<_SoloPanel> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -632,7 +632,7 @@ class _PeriodBar extends StatelessWidget {
     // Flex-only. Aktif pill de Stack yerine seçili segment'in Container
     // BoxDecoration'ı ile yapılır — yuvarlama gap'i yok.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 8),
       child: Container(
         height: 44,
         padding: const EdgeInsets.all(4),
@@ -911,7 +911,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         return Stack(
           children: [
             ListView.separated(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 20),
               itemCount: rows.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (_, i) => _LeaderRow(
@@ -1285,7 +1285,7 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 4),
       child: FutureBuilder<_BestPercentile?>(
         future: _future,
         builder: (_, snap) {
@@ -1508,7 +1508,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 6, SandikSpace.screenH(context), 4),
       child: FutureBuilder<List<TopGainerAllocation>>(
         future: _future,
         builder: (_, snap) {

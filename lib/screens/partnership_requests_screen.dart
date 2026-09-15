@@ -111,7 +111,7 @@ class _PartnershipRequestsScreenState
         color: context.c.amberText,
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context), vertical: 20),
           children: [
             Text(
               context.l10n.partnershipApprovalBody,
