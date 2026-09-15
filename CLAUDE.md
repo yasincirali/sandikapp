@@ -150,6 +150,26 @@ yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dö
 + gen-l10n + `context.l10n`. Henüz çevrilmemiş ekranlarda Türkçe literal serbest; İngilizce
 BETA, varsayılan dil Türkçe (`LocaleNotifier`).
 
+**Yenilikler / tanıtım.** "Bunu tanıtımda da gösterelim", "kullanıcı bunu
+görsün", "sürüm notuna ekle" dendiğinde **üç ayak birden** yapılır — biri
+eksikse özellik sessizce görünmez:
+
+1. **Sürüm notu** → `lib/config/surum_notlari.dart`, listenin BAŞINA.
+   `surum` alanına **yayınlanacak** sürümü yaz (pubspec'i **elle bump etme**,
+   fastlane CI'da yapar). Eşleşmezse not hiç gösterilmez — sessiz arıza.
+   Ana yüzey değişiyorsa `onemli: true` (otomatik açılır), yama ise `false`
+   (yalnızca Ayarlar'da).
+2. **Tanıtım turu** → ana yüzeylerden birini değiştiriyorsa
+   `onboarding_screen.dart` → `_adimlariKur()` içine adım ekle
+   (`rozet: 'YENİ'`). Tur uygulamanın GÜNCEL hâlini anlatmalı.
+3. **Yeni `TourTarget` eklediysen** onu bir ekranda `TourAnchor` ile
+   işaretle — `onboarding_tour_test` işaretlenmemiş hedefi kırar.
+
+Gösterim kararı `SurumNotuService.yeniNotlar` saf fonksiyonundadır
+(`test/surum_notu_test.dart`): ilk kurulumda gösterilmez, aynı sürüm ikinci
+kez gösterilmez, atlanan sürümler birikir, notu yazılmamış sürümde susar.
+Bu kuralları değiştirirken testi de güncelle.
+
 ## Doğrulama
 
 Feature/bugfix turunda:
@@ -215,5 +235,5 @@ koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Beti
 gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
 
 ---
-**Son güncelleme:** 2026-09-14 (vadeli mevduat kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/
-emülatör-ilk-kurulum bölümleri kaldırıldı).
+**Son güncelleme:** 2026-09-15 (Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).
