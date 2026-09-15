@@ -10,14 +10,16 @@ içine yerleştirip üstüne başlık metni ekler ve mağazanın istediği boyut
 Kullanım:
     python build_screenshots.py
 
-Girdi : screenshots/raw/NN_ad.png   (sıra numarasına göre eşleşir)
-Çıktı : screenshots/out/<boyut>/NN_ad.png
+Girdi : screenshots/raw/NN_ad.png      (set A — varsayılan)
+        screenshots/raw_v2/NN_ad.jpeg  (set B — `--v2`)
 
-Boyutlar:
-    1242x2688  App Store (6.5")
-    1284x2778  App Store (6.7")
-    1080x1920  Google Play telefon (Play en fazla 2:1 orana izin
-               verir; App Store boyutları bu sınırın dışında kalır)
+Çıktı, mağaza başına ayrı klasöre:
+    android/screenshots/<set>/1080x1920/   → Play Console
+    ios/screenshots/<set>/1242x2688/       → App Store (6.5")
+    ios/screenshots/<set>/1284x2778/       → App Store (6.7")
+
+Play en fazla 2:1 orana izin verir; App Store boyutları (2,16:1) bu
+sınırın dışında kalır — bu yüzden ayrı bir 16:9 hedefi ve ayrı klasör var.
 
 Font: assets/fonts/ altındaki DM Sans — uygulamanın kendi yazı tipi,
 marka tutarlılığı için.
@@ -36,14 +38,19 @@ if hasattr(sys.stdout, "reconfigure"):
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 RAW = os.path.join(HERE, "screenshots", "raw")
-OUT = os.path.join(HERE, "screenshots", "out")
+
+# Çıktı mağaza başına ayrılır: android/ ve ios/. Play ile App Store'un
+# kabul ettiği en-boy oranları farklı (aşağıdaki TARGETS notuna bak) ve
+# Console'a yüklerken "bu boyut hangi mağazanın" sorusu doğmasın diye
+# aynı koşuda ikisi de kendi klasörüne yazılır.
+ANDROID_OUT = os.path.join(HERE, "android", "screenshots")
+IOS_OUT = os.path.join(HERE, "ios", "screenshots")
 
 # İkinci set (2026-09-07): takip listesi + sinyal + canlı etkinlik + yarış.
 # Ayrı klasör, çünkü birinci set BAŞKA bir portföye ait — ikisini tek
 # galeride karıştırmak "aynı portföy tüm karelerde" kuralını bozar
 # (bkz. raw/BURAYA_KOYUN.txt).
 RAW_V2 = os.path.join(HERE, "screenshots", "raw_v2")
-OUT_V2 = os.path.join(HERE, "screenshots", "out_v2")
 
 FONT_BOLD = os.path.join(ROOT, "assets", "fonts", "DMSans-Bold.ttf")
 FONT_MED = os.path.join(ROOT, "assets", "fonts", "DMSans-Medium.ttf")
@@ -65,7 +72,14 @@ TAB_GREY = (108, 120, 115)
 # (uzun kenar, kısa kenarın iki katından fazla olamaz) ve her kenar
 # 320-3840 px arasında kalmalı. App Store boyutları 2,16:1 olduğu için
 # Play yüklemede reddeder — o yüzden ayrı bir 16:9 hedefi var.
-TARGETS = [(1242, 2688), (1284, 2778), (1080, 1920)]
+# (genişlik, yükseklik, hangi mağaza) — mağaza etiketi çıktının hangi
+# klasöre yazılacağını belirler. Boyutu mağazasından ayırmak eski bir
+# hata kaynağıydı: 2,16:1 App Store kareleri Play'e yüklenince reddedilir.
+TARGETS = [
+    (1242, 2688, "ios"),
+    (1284, 2778, "ios"),
+    (1080, 1920, "android"),
+]
 
 # Ham görüntünün üstünden kırpılacak oran (durum çubuğu). 0 = kırpma yok.
 # Ekran görüntülerinde saat/pil görünmesini istemiyorsanız 0.035 deneyin.
@@ -392,10 +406,15 @@ def main():
         write_grid_overlays()
         return
 
-    # İkinci set ayrı klasörden okunur ve ayrı klasöre yazılır.
+    # İkinci set ayrı klasörden okunur ve ayrı SET adına yazılır.
+    #
+    # İki set BAŞKA portföylere ait; tek galeride karıştırmak "aynı
+    # portföy tüm karelerde" tutarlılığını bozar. Bu yüzden set adı
+    # çıktı yolunda kalır (set_a / set_b) — mağaza klasörü altında yan
+    # yana dursalar da Console'a yalnızca biri yüklenir.
     v2 = "--v2" in sys.argv
     src_dir = RAW_V2 if v2 else RAW
-    out_dir_base = OUT_V2 if v2 else OUT
+    set_adi = "set_b" if v2 else "set_a"
     captions = CAPTIONS_V2 if v2 else CAPTIONS
     redactions = REDACTIONS_V2 if v2 else REDACTIONS
 
@@ -428,8 +447,9 @@ def main():
                   % (name, src.width, src.height))
 
         stem = os.path.splitext(name)[0] + ".png"
-        for tw, th in TARGETS:
-            out_dir = os.path.join(out_dir_base, "%dx%d" % (tw, th))
+        for tw, th, magaza in TARGETS:
+            kok = ANDROID_OUT if magaza == "android" else IOS_OUT
+            out_dir = os.path.join(kok, set_adi, "%dx%d" % (tw, th))
             os.makedirs(out_dir, exist_ok=True)
             img = compose(os.path.join(src_dir, name), caption, (tw, th),
                           key=key, redactions=redactions)
@@ -437,7 +457,9 @@ def main():
             made += 1
         print("  + %s" % name)
 
-    print("\n%d dosya uretildi -> %s" % (made, out_dir_base))
+    print("\n%d dosya uretildi (set: %s)" % (made, set_adi))
+    print("  android -> %s" % os.path.join(ANDROID_OUT, set_adi))
+    print("  ios     -> %s" % os.path.join(IOS_OUT, set_adi))
 
 
 if __name__ == "__main__":

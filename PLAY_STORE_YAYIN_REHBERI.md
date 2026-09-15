@@ -23,8 +23,8 @@ tarayıcıda ve elden yapacakların.
 | Data Safety envanteri | ✅ Yazılı · Advertising ID sorusu kapandı — izin manifest'ten düşürüldü (§5.3) |
 | Release keystore | ❌ **SENDE** — yoksa hiçbir şey yüklenemez |
 | Play Console hesabı + doğrulama | 🔄 **Kişisel hesap açıldı**, kimlik doğrulaması Google'da bekliyor (§1) |
-| Ekran görüntüleri | ✅ **Üretildi (2026-09-15)** — `screenshots/out/1080x1920/` (7) + `out_v2/1080x1920/` (8), 1,78:1, alfa yok (§6.2) |
-| Feature graphic (1024×500) + ikon (512×512) | ✅ **Üretildi (2026-09-15)** — `store_listing/graphics/`, betikle tekrar üretilebilir (§6.1, §6.3) |
+| Ekran görüntüleri | ✅ **Üretildi (2026-09-15)** — `store_listing/android/screenshots/set_a` (7) veya `set_b` (8), 1080×1920 = 1,78:1, alfa yok (§6.2) |
+| Feature graphic (1024×500) + ikon (512×512) | ✅ **Üretildi (2026-09-15)** — `store_listing/android/graphics/`, betikle tekrar üretilebilir (§6.1, §6.3) |
 | Supabase `0027_soft_delete_lots.sql` migration | ❌ Uygulanmadı — **Play "hesap silme" şartını kırar** (§7.1) |
 
 **Kritik yol (bunlar bitmeden yayın yok):** hesap tipi kararı → hesap
@@ -352,7 +352,7 @@ güncellendi:
 ```bash
 # ham telefon görüntülerini store_listing/screenshots/raw/ içine koy
 cd store_listing && python build_screenshots.py
-# çıktı: screenshots/out/1080x1920/  ← Play'e bunları yükle
+# çıktı: android/screenshots/set_a/1080x1920/  ← Play'e bunları yükle
 ```
 Kurallar: en az 2 (**pratikte 4-8 kullan**), JPEG veya 24-bit PNG, alfa yok.
 Sıralama önemli — arama sonucunda ilk iki görsel görünür; hangisinin önce

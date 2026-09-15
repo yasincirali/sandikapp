@@ -17,7 +17,7 @@ logo, aynı font). Elle çizilirse bir sonraki sürümde "hangi dosyadan
 Kullanım:
     cd store_listing && python build_store_graphics.py
 
-Çıktı: store_listing/graphics/
+Çıktı: store_listing/android/graphics/
     icon_512.png              → Play Console "Uygulama simgesi"
     feature_graphic_1024x500.png → Play Console "Öne çıkan grafik"
 
@@ -36,7 +36,11 @@ if hasattr(sys.stdout, "reconfigure"):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-OUT = os.path.join(HERE, "graphics")
+# Çıktı Android'e özgü klasöre: ikon 512 ve feature graphic YALNIZCA
+# Play Console alanlarıdır (App Store ikonu ipa içinden gelir, feature
+# graphic'in App Store'da karşılığı yok). Mağaza başına tek klasör,
+# Console'a yüklerken "hangi dosya hangi mağaza" sorusu doğmasın diye.
+OUT = os.path.join(HERE, "android", "graphics")
 
 SRC_ICON = os.path.join(ROOT, "assets", "images", "sandik_icon.png")
 FONT_BOLD = os.path.join(ROOT, "assets", "fonts", "DMSans-Bold.ttf")

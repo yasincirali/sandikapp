@@ -107,13 +107,25 @@ ios/build/
 # Android Gradle build output
 /android/build/
 
-# Store ekran görüntüleri — ham girdiler ve üretilen çıktılar
-# (üretilebilir dosyalar; script ve plan versiyonlanır)
+# Store görselleri — ÜRETİLEN çıktılar izlenmez, kaynak izlenir.
+#
+# Kaynak (commit'li): screenshots/raw_v2/, build_screenshots.py,
+# build_store_graphics.py, SCREENSHOT_PLAN.md. Çıktı bunlardan her an
+# yeniden üretilir; ~16 MB PNG'yi her sürümde repoya yazmak yerine
+# Console'a yüklemeden önce betik koşulur:
+#     cd store_listing && python build_screenshots.py --v2
+#
+# ⚠️ Dizin değil, ÜRETİLEN DOSYA hedeflenir (`android/**/*.png`). Dizini
+# komple yok saymak (`store_listing/android/`) negasyonu etkisiz bırakır:
+# git, ignore'lanmış bir dizinin içine hiç bakmaz, `!.../README.md` kuralı
+# hiç değerlendirilmez ve mağaza README'leri sessizce kaybolur. PNG'yi
+# hedefleyince README.md ve APP_STORE_1.1.3.md kendiliğinden izlenir.
 store_listing/screenshots/raw/*.png
 store_listing/screenshots/raw/*.jpeg
 store_listing/screenshots/raw/*.jpg
 store_listing/screenshots/grid/
-store_listing/screenshots/out/
+store_listing/android/**/*.png
+store_listing/ios/**/*.png
 
 # Geçici çalışma dosyaları — 2026-09 denetiminde canlı bir Vault secret
 # tmp/ altından git'e sızdı. Bu dizin bir daha izlenmez.
