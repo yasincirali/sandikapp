@@ -87,7 +87,35 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
     final veri = _veri;
     if (veri == null) return const SizedBox.shrink();
 
-    final puan = InflationService.spreadPoints(veri.nominal, veri.inflation);
+    return Padding(
+      padding: widget.padding,
+      child: RealReturnBadge(
+        nominal: veri.nominal,
+        inflation: veri.inflation,
+      ),
+    );
+  }
+}
+
+/// Rozetin görsel gövdesi — veri kaynağından ayrı.
+///
+/// `RealReturnStrip` Remote Config + auth + iki servis arkasında; yerleşimi
+/// onun üzerinden test etmek o yığının tamamını kurmayı gerektiriyordu.
+/// Bu parça saf: iki sayı alır, rozeti çizer. Yerleşim testleri (dar ekran,
+/// büyük metin ölçeği, negatif yön) buraya bakar.
+class RealReturnBadge extends StatelessWidget {
+  const RealReturnBadge({
+    super.key,
+    required this.nominal,
+    required this.inflation,
+  });
+
+  final double nominal;
+  final double inflation;
+
+  @override
+  Widget build(BuildContext context) {
+    final puan = InflationService.spreadPoints(nominal, inflation);
     final onde = puan >= 0;
     // Puan farkı da yuvarlanmaz: yanındaki iki ham sayı iki ondalıklı ve
     // kullanıcı farkı elle doğruluyor (nominal − TÜFE). Tek ondalıkta
@@ -96,57 +124,98 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
     final mutlak = fmtNum(puan.abs(), digits: 2);
     final c = context.c;
     final ton = onde ? c.gain : c.loss;
+    final l = context.l10n;
 
-    return Padding(
-      padding: widget.padding,
-      child: Semantics(
-        label: onde
-            ? context.l10n.realReturnSemanticsAhead(mutlak)
-            : context.l10n.realReturnSemanticsBehind(mutlak),
+    return Semantics(
+      label: onde
+          ? l.realReturnSemanticsAhead(mutlak)
+          : l.realReturnSemanticsBehind(mutlak),
+      // Alt parçalar ayrı ayrı okunmaz: rozet TEK bir cümle anlatıyor
+      // ("enflasyonu şu kadar geçtin"), parçalara bölünmüş hâli ekran
+      // okuyucuda anlamsız sayı dizisine dönerdi.
+      child: ExcludeSemantics(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SandikSpace.smd,
+            vertical: SandikSpace.smd,
+          ),
           decoration: BoxDecoration(
             color: c.surface1,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: SandikRadius.mdAll,
             border: Border.all(color: c.text20.withValues(alpha: 0.25)),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Yön RENKLE anlatılmaz — ok her zaman yanında.
-              Text(
-                onde ? '▲' : '▼',
-                style: context.t.labelLarge?.copyWith(
-                  color: ton,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: context.t.bodyMedium
-                        ?.copyWith(height: 1.35, color: c.text58),
-                    children: [
-                      TextSpan(text: context.l10n.lastYearInflation),
-                      TextSpan(
-                        text: onde
-                            ? context.l10n.pointsAhead(mutlak)
-                            : context.l10n.pointsBehind(mutlak),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: ton,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Ham iki sayı da verilir: kullanıcı puan farkını
-              // doğrulayabilmeli, yoksa rozet bir kara kutu olur.
+              // ── Üst satır: ÖNCE rakam ─────────────────────────────
               //
-              // **YUVARLAMA YOK — iki ondalık.** Önceden `digits: 0` idi ve
-              // TÜFE %31,51 ekranda "%32" görünüyordu; kullanıcı bunu
+              // Önceki hâli tek akan cümleydi ("Son bir yılda
+              // enflasyonun **5,89 puan** önündesin") ve dar ekranda
+              // rakam satır sonunda kalıp "puan önündesin" alt satıra
+              // düşüyordu: rozetin tek önemli bilgisi ikiye bölünüyordu.
+              //
+              // Rakam artık cümlenin içinde değil, başında ve kendi
+              // tipografik sınıfında (`numMedium`). Cümle onu takip eden
+              // niteleyici oldu; sardığında bölünen şey artık açıklama.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  // Yön RENKLE anlatılmaz — ok her zaman yanında.
+                  // `Icon` yerine metin oku korunuyor: baseline'a oturan
+                  // tek yön göstergesi bu, `Icon` satırda yüzüyordu.
+                  Text(
+                    onde ? '▲' : '▼',
+                    style: context.t.labelLarge?.copyWith(
+                      color: ton,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: SandikSpace.xs2),
+                  Text(
+                    mutlak,
+                    style: context.t.numMedium.copyWith(color: ton),
+                  ),
+                  const SizedBox(width: SandikSpace.xs),
+                  Text(
+                    l.realReturnPointsUnit,
+                    style: context.t.bodyMedium?.copyWith(
+                      color: ton,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: SandikSpace.xs2),
+                  // Niteleyici esner: dar ekranda kırpılan bu, rakam değil.
+                  Expanded(
+                    child: Text(
+                      onde
+                          ? l.realReturnAheadOfInflation
+                          : l.realReturnBehindInflation,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.bodyMedium?.copyWith(
+                        color: c.text58,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: SandikSpace.sm),
+              // ── Alt satır: doğrulama ──────────────────────────────
+              //
+              // Kendi satırına indi. Eskiden aynı `Row`'un sağ ucundaydı
+              // ve sol taraf iki satıra çıkınca dikeyde kayık duruyordu;
+              // ayrıca iki farklı ağırlıktaki bilgi (mesaj + denetim
+              // sayıları) aynı yatay düzlemde yarışıyordu.
+              //
+              // Ham iki sayı verilmeye devam ediyor: kullanıcı puan
+              // farkını elle doğrulayabilmeli, yoksa rozet kara kutu
+              // olur. Etiketlendiler ("Senin %… · TÜFE %…") — çıplak
+              // yüzde ikilisi hangisinin ne olduğunu söylemiyordu.
+              //
+              // **YUVARLAMA YOK — iki ondalık.** Önceden `digits: 0` idi
+              // ve TÜFE %31,51 ekranda "%32" görünüyordu; kullanıcı bunu
               // TÜİK'in açıkladığı rakamla karşılaştırdığında tutmuyor ve
               // doğrulama amacı boşa çıkıyordu. Daha kötüsü: yuvarlama
               // ARIZAYI GİZLİYORDU — pencere bir ay eksik sayıldığı için
@@ -159,8 +228,11 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
               // varsayılanı); iki yüzey aynı sayıyı farklı yuvarlarsa
               // kullanıcı hangisine güveneceğini bilemez.
               Text(
-                '%${fmtNum(veri.nominal, digits: 2)} · '
-                'TÜFE %${fmtNum(veri.inflation, digits: 2)}',
+                '${l.realReturnYours} %${fmtNum(nominal, digits: 2)}'
+                '  ·  ${l.realReturnCpi} %${fmtNum(inflation, digits: 2)}'
+                '  ·  ${l.realReturnLastYear}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: context.t.bodySmall?.copyWith(color: c.text36),
               ),
             ],

@@ -3428,6 +3428,42 @@ abstract class AppLocalizations {
   /// **'{pts} puan gerisindesin'**
   String pointsBehind(String pts);
 
+  /// No description provided for @realReturnPointsUnit.
+  ///
+  /// In tr, this message translates to:
+  /// **'puan'**
+  String get realReturnPointsUnit;
+
+  /// No description provided for @realReturnAheadOfInflation.
+  ///
+  /// In tr, this message translates to:
+  /// **'enflasyonun önündesin'**
+  String get realReturnAheadOfInflation;
+
+  /// No description provided for @realReturnBehindInflation.
+  ///
+  /// In tr, this message translates to:
+  /// **'enflasyonun gerisindesin'**
+  String get realReturnBehindInflation;
+
+  /// No description provided for @realReturnLastYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'son bir yıl'**
+  String get realReturnLastYear;
+
+  /// No description provided for @realReturnYours.
+  ///
+  /// In tr, this message translates to:
+  /// **'Senin'**
+  String get realReturnYours;
+
+  /// No description provided for @realReturnCpi.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜFE'**
+  String get realReturnCpi;
+
   /// No description provided for @weeklyFlatSemantics.
   ///
   /// In tr, this message translates to:

@@ -1048,6 +1048,12 @@
       }
     }
   },
+  "realReturnPointsUnit": "points",
+  "realReturnAheadOfInflation": "ahead of inflation",
+  "realReturnBehindInflation": "behind inflation",
+  "realReturnLastYear": "last year",
+  "realReturnYours": "Yours",
+  "realReturnCpi": "CPI",
   "weeklyFlatSemantics": "Your portfolio's market return did not change this week",
   "thisWeekFromMarket": "From the market this week: ",
   "noChangeLower": "no change",

@@ -1887,6 +1887,24 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get realReturnPointsUnit => 'puan';
+
+  @override
+  String get realReturnAheadOfInflation => 'enflasyonun önündesin';
+
+  @override
+  String get realReturnBehindInflation => 'enflasyonun gerisindesin';
+
+  @override
+  String get realReturnLastYear => 'son bir yıl';
+
+  @override
+  String get realReturnYours => 'Senin';
+
+  @override
+  String get realReturnCpi => 'TÜFE';
+
+  @override
   String get weeklyFlatSemantics =>
       'Bu hafta portföyün piyasa getirisi değişmedi';
 

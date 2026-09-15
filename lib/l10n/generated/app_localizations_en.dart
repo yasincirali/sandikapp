@@ -1888,6 +1888,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get realReturnPointsUnit => 'points';
+
+  @override
+  String get realReturnAheadOfInflation => 'ahead of inflation';
+
+  @override
+  String get realReturnBehindInflation => 'behind inflation';
+
+  @override
+  String get realReturnLastYear => 'last year';
+
+  @override
+  String get realReturnYours => 'Yours';
+
+  @override
+  String get realReturnCpi => 'CPI';
+
+  @override
   String get weeklyFlatSemantics =>
       'Your portfolio\'s market return did not change this week';
 

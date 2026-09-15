@@ -35,13 +35,17 @@ void main() {
   test('reel getiri şeridi TÜFE ve nominali iki ondalıkla yazar', () {
     final src = kodu('lib/widgets/real_return_strip.dart');
 
+    // İfadenin ADINA değil, BİÇİMİNE bakılır: `veri.inflation` 2026-09-15'te
+    // `inflation` oldu (görsel gövde `RealReturnBadge`'e ayrıldı) ve
+    // isme bağlı kalıp davranış hiç değişmediği hâlde testi kırdı.
+    // Korunacak şey tek: o iki sayının iki ondalıkla yazılması.
     expect(
-      src.contains('fmtNum(veri.inflation, digits: 2)'),
+      src.contains(RegExp(r'fmtNum\([\w.]*inflation, digits: 2\)')),
       isTrue,
       reason: 'TÜFE yuvarlanmamalı — TÜİK rakamıyla karşılaştırılabilmeli.',
     );
     expect(
-      src.contains('fmtNum(veri.nominal, digits: 2)'),
+      src.contains(RegExp(r'fmtNum\([\w.]*nominal, digits: 2\)')),
       isTrue,
       reason: 'Nominal getiri TÜFE ile aynı hassasiyette olmalı.',
     );

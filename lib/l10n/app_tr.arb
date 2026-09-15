@@ -1048,6 +1048,12 @@
       }
     }
   },
+  "realReturnPointsUnit": "puan",
+  "realReturnAheadOfInflation": "enflasyonun önündesin",
+  "realReturnBehindInflation": "enflasyonun gerisindesin",
+  "realReturnLastYear": "son bir yıl",
+  "realReturnYours": "Senin",
+  "realReturnCpi": "TÜFE",
   "weeklyFlatSemantics": "Bu hafta portföyün piyasa getirisi değişmedi",
   "thisWeekFromMarket": "Bu hafta piyasadan ",
   "noChangeLower": "değişim yok",
