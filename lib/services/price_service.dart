@@ -50,17 +50,27 @@ class PriceService {
   // Turkish gold symbols → finans.truncgil.com key names
   //
   // ⚠️ 2026-09-15: truncgil v4 anahtarları DEĞİŞTİ — boşluklu Türkçe adlar
-  // ('Gram Altın') yerine boşluksuz ASCII ('GRA'). Eski adların hiçbiri
-  // yanıtta artık YOK, yani `data[key]` her sembolde null dönüyor ve altın
+  // ('Gram Altın') yerine boşluksuz ASCII. Eski adların hiçbiri yanıtta
+  // artık YOK, yani `data[key]` her sembolde null dönüyor ve altın
   // fiyatları Yahoo GC=F + ons/gram çevrimi olan YEDEĞE düşüyordu
   // (`_goldWeights`). Yedek çalıştığı için belirti sessizdi: fiyat geliyor
   // ama kaynak yanlış, sayı tutarsız.
+  //
+  // ⚠️⚠️ `ALTIN_GRAM` → `YIA`, **`GRA` DEĞİL** (ikinci tur düzeltmesi).
+  // `GRA`'nın adı `GRAMALTIN` ama içeriği 24 ayar HAS altındır (`HAS` ile
+  // %0,5 fark). Buradaki `ALTIN_GRAM` ise 22 ayardır — `asset_categories`
+  // onu '22 Ayar Gram Altın' diye adlandırır ve aşağıdaki `_goldWeights`
+  // ağırlıkları da 22 ayar cinsindendir. Yanlış eşleme kullanıcıya %8 yüksek
+  // fiyat gösterir ve alarmları erken tetikler (2026-09-15, kullanıcı
+  // bildirimi). Çapraz doğrulama: çeyrek/yarım/tam altının gram eşdeğeri
+  // `YIA` ile %1 içinde uyumlu, `GRA` ile %8 sapıyor.
   //
   // Sunucu tarafındaki eşi: `supabase/functions/_shared/live_prices.ts`
   // → `GOLD_KEYS`. İKİSİ BİREBİR AYNI KALMALI — alarm, uygulamada GÖRÜNEN
   // sayı üzerinden tetiklenmeli.
   static const _truncgilGoldKeys = <String, String>{
-    'ALTIN_GRAM': 'GRA',
+    // 22AYARBILEZIK — '22 Ayar Gram Altın' ile aynı ayar.
+    'ALTIN_GRAM': 'YIA',
     'ALTIN_CEYREK': 'CEYREKALTIN',
     'ALTIN_YARIM': 'YARIMALTIN',
     'ALTIN_CUMHURIYET': 'CUMHURIYETALTINI',

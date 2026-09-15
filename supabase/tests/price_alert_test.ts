@@ -107,17 +107,60 @@ Deno.test('v4: Buying/Selling alan adları okunur', ()=>{
   // Alış/Satış önce denenir — API geri dönerse çalışmaya devam etmeli.
   assertEquals(truncgilValue({'Alış':'100,00','Buying':999}), 100);
 });
+// ── AYAR TUTARLILIĞI — 2026-09-15 ikinci tur regresyonu ────────────────────
+//
+// İlk düzeltmede `ALTIN_GRAM` → `GRA` seçilmişti; `GRA`'nın adı `GRAMALTIN`
+// ama içeriği 24 ayar HAS altındır. Uygulamanın `ALTIN_GRAM`'ı 22 ayardır.
+// Sonuç: kullanıcı 6.270 görürken sunucu 6.710 okudu, 6.270 hedefli alarm
+// ERKEN tetiklendi.
+//
+// Bu test "hangi anahtar" sorusunu ADLA değil, ÖLÇÜYLE cevaplar: çeyrek
+// altının gram eşdeğeri (fiyat ÷ 1.75) gram fiyatıyla %2 içinde uyuşmalı.
+// Aynı aile aynı ayarda kote edilir; uyuşmuyorsa yanlış ayar seçilmiştir.
+Deno.test('ALTIN_GRAM 22 ayar ailesiyle tutarlı (GRA=24ayar tuzağı)', ()=>{
+  // Canlı yanıttan alınmış gerçek değerler (2026-09-15 17:42).
+  const data = {
+    'YIA': {'Buying':6112.56,'Type':'Gold','Name':'22AYARBILEZIK'},
+    'GRA': {'Buying':6687.88,'Type':'Gold','Name':'GRAMALTIN'},     // 24 ayar
+    'HAS': {'Buying':6654.45,'Type':'Gold','Name':'GRAMHASALTIN'},  // 24 ayar
+    'CEYREKALTIN': {'Buying':10723.78,'Type':'Gold'},
+    'YARIMALTIN': {'Buying':21380.54,'Type':'Gold'},
+  };
+  const out = extractTruncgil(data, ['ALTIN_GRAM','ALTIN_CEYREK','ALTIN_YARIM']);
+  const gram = out.get('ALTIN_GRAM')!;
+
+  // Çeyrek 1.75 gr, yarım 3.5 gr (istemcideki `_goldWeights` ile aynı).
+  const ceyrekGram = out.get('ALTIN_CEYREK')! / 1.75;
+  const yarimGram = out.get('ALTIN_YARIM')! / 3.5;
+
+  const sapma = (a: number, b: number) => Math.abs(a / b - 1);
+  if (sapma(ceyrekGram, gram) > 0.02) {
+    throw new Error(
+      `ALTIN_GRAM (${gram}) ceyrek altinin gram esdegeriyle (${ceyrekGram.toFixed(2)}) ` +
+      `uyusmuyor — yanlis AYAR secilmis olabilir (GRA=24ayar, YIA=22ayar).`,
+    );
+  }
+  if (sapma(yarimGram, gram) > 0.02) {
+    throw new Error(
+      `ALTIN_GRAM (${gram}) yarim altinin gram esdegeriyle (${yarimGram.toFixed(2)}) uyusmuyor.`,
+    );
+  }
+  // Ve 24 ayar kayıtlarına DÜŞMEMELİ.
+  assertEquals(gram === 6687.88, false, 'GRA (24 ayar) secilmis — yanlis');
+  assertEquals(gram === 6654.45, false, 'HAS (24 ayar) secilmis — yanlis');
+});
+
 Deno.test('v4: gerçek anahtarlarla altın ve döviz çıkarılır', ()=>{
   // Anahtarlar canlı yanıttan alındı (2026-09-15). Eski adlar
   // ('Gram Altın', 'Ata Altını') yanıtta ARTIK YOK.
   const data = {
-    'GRA': {'Buying':6710.67,'Selling':6711.54,'Type':'Gold'},
+    'YIA': {'Buying':6112.56,'Selling':6118.27,'Type':'Gold'},
     'ATAALTIN': {'Buying':44145.84,'Selling':45258.4,'Type':'Gold'},
     'USD': {'Buying':48.6332,'Selling':48.6464,'Type':'Currency'},
     'EUR': {'Buying':56.1795,'Selling':56.1908,'Type':'Currency'},
   };
   const out = extractTruncgil(data, ['ALTIN_GRAM','ALTIN_ATA','USDTRY=X','EURTRY=X']);
-  assertEquals(out.get('ALTIN_GRAM'), 6710.67);
+  assertEquals(out.get('ALTIN_GRAM'), 6112.56);
   assertEquals(out.get('ALTIN_ATA'), 44145.84);
   assertEquals(out.get('USDTRY=X'), 48.6332);
   assertEquals(out.get('EURTRY=X'), 56.1795);

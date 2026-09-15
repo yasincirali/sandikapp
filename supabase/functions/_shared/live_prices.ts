@@ -20,14 +20,34 @@ const USER_AGENT =
 /// `PriceService._truncgilGoldKeys` ile BİREBİR aynı olmalı.
 ///
 /// ⚠️ 2026-09-15: truncgil v4 anahtarları DEĞİŞTİ. Eski adlar boşluklu ve
-/// Türkçe'ydi ('Gram Altın'); yenileri boşluksuz ve ASCII ('GRA').
+/// Türkçe'ydi ('Gram Altın'); yenileri boşluksuz ve ASCII.
 /// Eski adların hiçbiri yanıtta artık YOK — `data[key]` her sembol için
 /// `undefined` dönüyordu ve `fetchLivePrices` boş map veriyordu. Belirtisi:
 /// `check-price-alerts` her turda `{"reason":"Fiyat alinamadi.","sent":0}`
 /// (2026-09-15'te 30 dakikada bir, istisnasız — yani fiyat alarmı özelliği
 /// tümüyle ölüydü ve hata hiçbir yerde görünmüyordu: HTTP 200).
+///
+/// ⚠️⚠️ `ALTIN_GRAM` → `YIA`, **`GRA` DEĞİL** (2026-09-15, ikinci tur).
+///
+/// İlk düzeltmede `GRA` seçilmişti ve bu YANLIŞTI: adı `GRAMALTIN` ama
+/// içeriği **24 ayar has** altındır (`HAS`/`GRAMHASALTIN` ile arasında
+/// yalnızca %0,5 fark var). Uygulamanın `ALTIN_GRAM`'ı ise **22 ayar**dır —
+/// kategori adı bunu açıkça söylüyor (`asset_categories.dart`:
+/// '22 Ayar Gram Altın') ve `_goldWeights` ağırlıkları da 22 ayar cinsinden.
+///
+/// Sonuç: kullanıcı 6.270 (22 ayar) görürken sunucu 6.710 (24 ayar) okudu ve
+/// 6.270 hedefli alarm ERKEN tetiklendi — kullanıcı bildirdi.
+///
+/// Doğrulama (çapraz kontrol, canlı veri 2026-09-15 17:42): çeyrek/yarım/tam
+/// altının gram eşdeğeri (`fiyat ÷ _goldWeights`) 6.109–6.158 çıkıyor; `YIA`
+/// 6.112 ile %1 içinde uyumlu, `GRA` %8 sapıyor. Ailenin geri kalanı zaten
+/// 22 ayar kote edildiği için TEK tutarlı seçim `YIA`'dır.
+///
+/// Bir dahaki sefere: anahtarın ADINA değil, aynı ailedeki başka bir ürünle
+/// GRAM EŞDEĞERİNE bak. 'GRAMALTIN' adı 22 ayar sanmaya davet ediyor.
 const GOLD_KEYS: Record<string, string> = {
-  ALTIN_GRAM: 'GRA',
+  // 22AYARBILEZIK — uygulamadaki '22 Ayar Gram Altın' ile aynı ayar.
+  ALTIN_GRAM: 'YIA',
   ALTIN_CEYREK: 'CEYREKALTIN',
   ALTIN_YARIM: 'YARIMALTIN',
   ALTIN_CUMHURIYET: 'CUMHURIYETALTINI',

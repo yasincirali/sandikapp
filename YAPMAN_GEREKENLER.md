@@ -12,6 +12,54 @@
 
 ---
 
+## 🔴 DÜZELTME: altın ayarı yanlış eşlendi — alarm ERKEN tetiklendi (2026-09-15, 2. tur)
+
+**Kullanıcı bildirdi:** "eşik 6270 idi ama gram altın 6700 oldu diye bildirim
+geldi; varlık ekranında o değere gelmediğini gördüm."
+
+**Haklıydı — hata bendeydi.** İlk truncgil düzeltmesinde `ALTIN_GRAM` → `GRA`
+eşlemesi yapılmıştı. `GRA`'nın adı `GRAMALTIN` ama içeriği **24 ayar has**
+altındır (`HAS`/`GRAMHASALTIN` ile arasında yalnızca %0,5 fark var).
+Uygulamanın `ALTIN_GRAM`'ı ise **22 ayar**: `asset_categories.dart` onu
+'22 Ayar Gram Altın' diye adlandırıyor, `_goldLabel` 'Gram Altın (22K)'
+yazıyor ve `_goldWeights` ağırlıkları 22 ayar cinsinden.
+
+Sonuç: sunucu %8 yüksek fiyat (6.710) okudu, kullanıcı ekranda 6.277 gördü,
+6.270 hedefli alarm erken tetiklendi.
+
+**Doğru anahtar `YIA`** (`22AYARBILEZIK`). Ada değil ÖLÇÜYE bakılarak
+bulundu — çapraz doğrulama (canlı veri 2026-09-15 17:42):
+
+| Sembol | truncgil | ÷ ağırlık = gram eşdeğeri | `YIA` farkı |
+|---|---|---|---|
+| Çeyrek | 10.723,78 | 6.127,87 | %+0,25 |
+| Yarım | 21.380,54 | 6.108,73 | %−0,06 |
+| Cumhuriyet | 44.436 | 6.157,98 | %+0,74 |
+| Ata / Reşat | 44.235,61 | 6.130,21 | %+0,29 |
+| **`YIA`** | **6.112,56** | — | — |
+| `GRA` | 6.687,88 | — | **%+8,4** ✗ |
+
+Ailenin tamamı 22 ayar kote edildiği için tek tutarlı seçim `YIA`.
+
+**Regresyon testi eklendi** (`price_alert_test.ts`): çeyrek ve yarım altının
+gram eşdeğeri, `ALTIN_GRAM` fiyatıyla %2 içinde uyuşmalı. `GRA`'ya geri
+çevrilerek testin gerçekten kırıldığı doğrulandı. Artık bu hata sessizce
+geçemez.
+
+> **Ders:** truncgil anahtarının ADI ayarı söylemiyor ('GRAMALTIN' 22 ayar
+> sanmaya davet ediyor). Doğru yöntem, aynı ailedeki başka bir üründen GRAM
+> EŞDEĞERİ hesaplayıp karşılaştırmak.
+
+**Senin yapacağın:**
+1. Actions → Supabase deploy → `functions=check-price-alerts`, `migrations=false`
+2. Uygulamayı yeniden derle (istemci tarafı da aynı hatayı taşıyordu)
+3. ⚠️ **Mevcut alarmlarını gözden geçir** — 6.270 gibi hedefler 22 ayar
+   ölçeğinde doğru; sunucu artık aynı ölçekte okuyacak, yeniden kurman
+   gerekmiyor. Ama önceki turda ERKEN tetiklenip sönen alarm varsa
+   (`triggered_at` dolu) onu yeniden kurman gerekir.
+
+---
+
 ## 🔔 YENİ: Fiyat alarmları bildirim listesinde + tıklayınca varlığa gider (2026-09-15)
 
 **Kullanıcı isteği.** İki parça vardı, ikisi de yapıldı.
