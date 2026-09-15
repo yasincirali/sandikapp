@@ -10,6 +10,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../utils/polling.dart';
 import 'custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 /// Profile ekranında öne çıkan Yarış hero kartı.
 ///
@@ -73,8 +74,7 @@ class _SoloHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Henüz ortağın yok. Kendi dönem getirini ve küresel '
-                  'dilimini şimdiden görebilirsin.',
+                  context.l10n.raceNoPartnerBody,
                   style: context.t.bodySmall?.copyWith(
                     fontSize: 11.5,
                     color: context.c.text58,
@@ -92,7 +92,7 @@ class _SoloHero extends StatelessWidget {
               borderRadius: BorderRadius.circular(SandikRadius.lg),
             ),
             child: Text(
-              'Gör',
+              context.l10n.viewWord,
               style: context.t.bodySmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: context.c.onAmber,
@@ -145,7 +145,7 @@ class _OptInHero extends StatelessWidget {
                         borderRadius: BorderRadius.circular(SandikRadius.sm),
                       ),
                       child: Text(
-                        'YENİ',
+                        context.l10n.newUpper,
                         style: context.t.labelSmall?.copyWith(
                           fontSize: 8,
                           fontWeight: FontWeight.w900,
@@ -158,7 +158,7 @@ class _OptInHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Ortaklarınla getiri sıralaması. Kim daha iyi kazanıyor?',
+                  context.l10n.racePitch,
                   style: context.t.bodySmall?.copyWith(
                     fontSize: 11.5,
                     color: context.c.text58,
@@ -176,7 +176,7 @@ class _OptInHero extends StatelessWidget {
               borderRadius: BorderRadius.circular(SandikRadius.lg),
             ),
             child: Text(
-              'Katıl',
+              context.l10n.joinWord,
               style: context.t.bodySmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: context.c.onAmber,
@@ -362,7 +362,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         const SizedBox(width: 16),
         Expanded(
           child: Text(
-            'Yarış hesaplanıyor…',
+            context.l10n.raceCalculating,
             style: context.t.bodyMedium?.copyWith(
               color: context.c.text58,
             ),
@@ -389,8 +389,8 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
     // giderir. Sadece 1'i vurgula, 2+'ta rank etiketiyle bilgi ver.
     final periodCap = _capitalize(best.periodLabel);
     final title = best.myRank == 1 && best.total > 1
-        ? '$periodCap sıralamada 1.\'sin'
-        : '$periodCap sıralamada $rankLabel sıradasın';
+        ? context.l10n.rankFirst(periodCap)
+        : context.l10n.rankNth(periodCap, rankLabel);
 
     // Alt satır: liderde motive → "seni yakalamak için X% lazım", değilse
     // → "X'i geçmen için +Y%". Kısa, aksiyona teşvik eder.
@@ -402,14 +402,15 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
               ? _secondRoi(d) ?? (best.myRoi ?? 0)
               : (best.myRoi ?? 0));
       subLine = gap > 0.05
-          ? 'Farkı büyüt — ikinci +${fmtNum(gap, digits: 1)}% geride'
-          : 'Zirvedesin — farkı koru';
+          ? context.l10n.widenTheGap(fmtNum(gap, digits: 1))
+          : context.l10n.atTheTop;
     } else if (best.justAboveName != null && best.justAboveRoi != null) {
       final diff = (best.justAboveRoi! - (best.myRoi ?? 0)).abs();
       subLine =
-          '${best.justAboveName!.split(' ').first}\'i geçmen için +${fmtNum(diff, digits: 1)}%';
+          context.l10n.toPassPerson(
+          best.justAboveName!.split(' ').first, fmtNum(diff, digits: 1));
     } else {
-      subLine = 'Diğer periyotlarda daha üsttesin — dokun, bak';
+      subLine = context.l10n.higherInOtherPeriods;
     }
 
     return Row(

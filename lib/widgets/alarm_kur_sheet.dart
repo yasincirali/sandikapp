@@ -11,6 +11,7 @@ import '../services/analytics_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import '../l10n/l10n.dart';
 
 /// Alarm kurulabilecek bir sembol: fiyat kaynağının kodu + kullanıcı adı +
 /// bilinen güncel fiyat (0 = bilinmiyor).
@@ -55,7 +56,7 @@ Future<PriceAlert?> alarmKurAkisi(
 }) async {
   final liste = sabit != null ? [sabit] : adaylar;
   if (liste.isEmpty) {
-    sandikSnack(context, 'Önce portföyüne ya da takip listene bir varlık ekle.',
+    sandikSnack(context, context.l10n.addAssetFirst,
         kind: SandikSnackKind.warning);
     return null;
   }
@@ -97,16 +98,18 @@ Future<PriceAlert?> alarmKurAkisi(
     if (context.mounted) {
       sandikSnack(
         context,
-        '${sonuc.aday.ad} için alarm kuruldu: '
-        '${fmtTRY(sonuc.hedef, digits: 2)} '
-        '${sonuc.yon == 'above' ? 'üstüne çıkınca' : 'altına inince'}',
+        sonuc.yon == 'above'
+            ? context.l10n.alertSetAbove(
+                sonuc.aday.ad, fmtTRY(sonuc.hedef, digits: 2))
+            : context.l10n.alertSetBelow(
+                sonuc.aday.ad, fmtTRY(sonuc.hedef, digits: 2)),
         kind: SandikSnackKind.success,
       );
     }
     return kayit;
   } catch (e) {
     if (context.mounted) {
-      sandikSnackError(context, e, prefix: 'Alarm kurulamadı');
+      sandikSnackError(context, e, prefix: context.l10n.alertSetFailed);
     }
     return null;
   }
@@ -154,7 +157,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
   void _kaydet() {
     final hedef = _hedef;
     if (hedef == null) {
-      setState(() => _hata = 'Geçerli bir fiyat gir');
+      setState(() => _hata = context.l10n.enterValidPrice);
       return;
     }
     // Yön otomatik: güncel fiyatın üstündeki hedef "yükselince", altındaki
@@ -187,7 +190,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.sabit ? '${_secili.ad} için alarm' : 'Alarm kur',
+            Text(widget.sabit ? context.l10n.alertForAsset(_secili.ad) : 'Alarm kur',
                 style: context.t.headlineSmall?.copyWith(color: c.text90),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
@@ -224,8 +227,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
             ],
             Text(
               fiyatVar
-                  ? 'Şu an ${fmtTRY(_secili.guncelFiyat, digits: 2)}'
-                  : 'Güncel fiyat bilinmiyor',
+                  ? context.l10n.currentlyPrice(fmtTRY(_secili.guncelFiyat, digits: 2))
+                  : context.l10n.currentPriceUnknown,
               style: context.t.bodyMedium?.copyWith(color: c.text58),
             ),
             const SizedBox(height: SandikSpace.md),
@@ -248,7 +251,9 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   for (final y in _hizliYuzdeler)
                     Semantics(
                       button: true,
-                      label: 'Hedef yüzde ${y > 0 ? 'artı' : 'eksi'} ${y.abs()}',
+                      label: context.l10n.targetPctSemantics(
+                          y > 0 ? context.l10n.plusWord : context.l10n.minusWord,
+                          y.abs()),
                       child: SandikTappable(
                         onTap: () => _hizli(y),
                         child: Container(
@@ -279,8 +284,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
             if (yon != null)
               Text(
                 yon == 'above'
-                    ? 'Fiyat bu seviyeye çıkınca haber vereceğiz.'
-                    : 'Fiyat bu seviyeye inince haber vereceğiz.',
+                    ? context.l10n.notifyWhenAbove
+                    : context.l10n.notifyWhenBelow,
                 style: context.t.bodyMedium?.copyWith(color: c.amberText),
               ),
             const SizedBox(height: SandikSpace.lg),
@@ -293,7 +298,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 onPressed: _kaydet,
-                child: const Text('Alarmı kur'),
+                child: Text(context.l10n.setAlert),
               ),
             ),
           ],

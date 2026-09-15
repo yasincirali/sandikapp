@@ -73,9 +73,9 @@ class TransactionRow extends StatelessWidget {
     // sayı bilinmiyor demektir. Her iki durumda düz "Silindi".
     final String kindLabel = isDelete
         ? (asset.deletedCount > 1
-            ? 'Silindi · ${asset.deletedCount} kayıt'
+            ? context.l10n.deletedNRecords(asset.deletedCount)
             : 'Silindi')
-        : (isSell ? 'Satım' : (isDividend ? 'Temettü' : 'Alım'));
+        : (isSell ? context.l10n.txSell : (isDividend ? context.l10n.txDividend : context.l10n.txBuy));
     final String sign = isSell || isDelete ? '−' : '+';
 
     // Yumuşak silinmiş lot: kayıt geçmişte DURUR ama artık portföye

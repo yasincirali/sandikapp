@@ -9,6 +9,7 @@ import '../services/period_summary_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../l10n/l10n.dart';
 
 /// Ana ekrandaki kompakt "Bu hafta" kartı.
 ///
@@ -117,8 +118,11 @@ class _WeeklySummaryChipState extends ConsumerState<WeeklySummaryChip> {
       padding: widget.padding,
       child: Semantics(
         button: true,
-        label: 'Bu hafta portföyün piyasa getirisi '
-            '${s.isFlat ? "değişmedi" : "yüzde $yazi ${s.isNegative ? "ekside" : "artıda"}"}',
+        label: s.isFlat
+            ? context.l10n.weeklyFlatSemantics
+            : (s.isNegative
+                ? context.l10n.weeklyDownSemantics(yazi)
+                : context.l10n.weeklyUpSemantics(yazi)),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -152,11 +156,13 @@ class _WeeklySummaryChipState extends ConsumerState<WeeklySummaryChip> {
                         style: context.t.bodyMedium
                             ?.copyWith(height: 1.35, color: c.text58),
                         children: [
-                          const TextSpan(text: 'Bu hafta piyasadan '),
+                          TextSpan(text: context.l10n.thisWeekFromMarket),
                           TextSpan(
                             text: s.isFlat
-                                ? 'değişim yok'
-                                : '%$yazi ${s.isNegative ? "eksi" : "artı"}',
+                                ? context.l10n.noChangeLower
+                                : (s.isNegative
+                                    ? context.l10n.pctDown(yazi)
+                                    : context.l10n.pctUp(yazi)),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: ton,

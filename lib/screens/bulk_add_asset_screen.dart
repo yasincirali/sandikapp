@@ -49,6 +49,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
 
     final failures = <String>[];
     final portfolio = ref.read(portfolioProvider.notifier);
+    // Sözlük fiyat çekiminden ÖNCE çözülür: `context` async boşluğun ardında
+    // kullanılamaz (`use_build_context_synchronously`).
+    final l = context.l10n;
 
     // ── 1) Eksik fiyatları çek ─────────────────────────────────────────────
     // Bugün seçilmiş item'lar için toplu spot fetch (tek batch).
@@ -141,7 +144,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         if (mounted) setState(() => _saved++);
       } on AssetLimitExceededException {
         limitHit = true;
-        failures.add('${item.name}: varlık limitine ulaşıldı');
+        failures.add(l.assetLimitReachedFor(item.name));
       } catch (e) {
         failures.add('${item.name}: ${friendlyError(e)}');
       }
@@ -179,7 +182,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       await showSandikDialog(
         context: context,
         kind: SandikDialogKind.error,
-        title: 'Bazı Varlıklar Eklenemedi',
+        title: context.l10n.someAssetsNotAdded,
         message:
             '${items.length - failures.length}/${items.length} eklendi.\n\nBaşarısız:\n${failures.take(3).join('\n')}',
       );
@@ -190,7 +193,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     final ok = await showSandikConfirm(
       context: context,
       title: 'Sepeti temizle',
-      message: 'Sepetteki tüm varlıklar silinecek. Emin misin?',
+      message: context.l10n.clearCartConfirm,
       confirmLabel: 'Temizle',
       destructive: true,
     );
@@ -210,7 +213,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           actions: [
             if (!_saving)
               IconButton(
-                tooltip: 'CSV yapıştır',
+                tooltip: context.l10n.pasteCsv,
                 icon: const Icon(Icons.content_paste_go_rounded),
                 onPressed: () => Navigator.of(context).push(
                   adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
@@ -257,12 +260,12 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                   color: context.c.amberText, size: 34),
             ),
             const SizedBox(height: 16),
-            Text('Sepet boş',
+            Text(context.l10n.cartEmpty,
                 style: context.t.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700, color: context.c.text90)),
             const SizedBox(height: 6),
             Text(
-              'Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.',
+              context.l10n.cartEmptyBody,
               textAlign: TextAlign.center,
               style: context.t.bodyMedium
                   ?.copyWith(color: context.c.text58, height: 1.4),
@@ -273,7 +276,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                 adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
               ),
               icon: const Icon(Icons.content_paste_go_rounded, size: 18),
-              label: const Text('Ekstreden / CSV\'den yapıştır'),
+              label: Text(context.l10n.pasteFromStatement),
               style: OutlinedButton.styleFrom(
                 foregroundColor: context.c.amberText,
                 side: BorderSide(color: context.c.hairline),
@@ -365,7 +368,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                     : Text(
                         items.isEmpty
                             ? 'Kaydet'
-                            : 'Tümünü Kaydet (${items.length})',
+                            : context.l10n.saveAllCount(items.length),
                         style: context.t.bodyLarge
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),

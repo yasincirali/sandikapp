@@ -211,7 +211,10 @@ void main() {
           ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
       expect(kaynak.contains('Widget _gecmisYok(BuildContext context)'), isTrue);
       // Durum açıkça söylenir — sessiz boşluk bırakılmaz.
-      expect(kaynak.contains('fiyat geçmişi şu an çekilemedi'), isTrue);
+      // 3.20: metin sözlükte.
+      expect(kaynak.contains('l10n.indicatorsNoHistory'), isTrue);
+      expect(trMetni('indicatorsNoHistory'),
+          contains('fiyat geçmişi şu an çekilemedi'));
       // Ve istek tekrarlanabilir — başarısız future ömür boyu saklanmaz.
       expect(kaynak.contains("'Tekrar dene'"), isTrue);
       expect(kaynak.contains(r"'${widget.subCategory ?? ''}|$_deneme'"), isTrue,

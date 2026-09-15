@@ -961,5 +961,645 @@
         "type": "String"
       }
     }
-  }
+  },
+  "medianAhead": "medyandan {pts} puan önde",
+  "@medianAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "returnRanking": "Getiri sıralaması",
+  "returnRankingWith": "Getiri sıralaması · {detail}",
+  "@returnRankingWith": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "percentileSemantics": "Son 30 günde katılımcıların yüzde {pct} kadarının üstündesin. {detail}",
+  "@percentileSemantics": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "last30DaysLike": "Son 30 günde senin gibi ",
+  "nPeople": "{n} kişi",
+  "@nPeople": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "medianBehind": "medyandan {pts} puan geride",
+  "@medianBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnSemanticsAhead": "Son bir yılda portföyün enflasyonu yüzde {pts} puan geçti",
+  "@realReturnSemanticsAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "lastYearInflation": "Son bir yılda enflasyonun ",
+  "pointsAhead": "{pts} puan önündesin",
+  "@pointsAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnSemanticsBehind": "Son bir yılda portföyün enflasyonun yüzde {pts} puan gerisinde kaldı",
+  "@realReturnSemanticsBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "pointsBehind": "{pts} puan gerisindesin",
+  "@pointsBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyFlatSemantics": "Bu hafta portföyün piyasa getirisi değişmedi",
+  "thisWeekFromMarket": "Bu hafta piyasadan ",
+  "noChangeLower": "değişim yok",
+  "pctDown": "%{pct} eksi",
+  "@pctDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyDownSemantics": "Bu hafta portföyün piyasa getirisi yüzde {pct} ekside",
+  "@weeklyDownSemantics": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyUpSemantics": "Bu hafta portföyün piyasa getirisi yüzde {pct} artıda",
+  "@weeklyUpSemantics": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "pctUp": "%{pct} artı",
+  "@pctUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "totalNetHidden": "Toplam net varlık gizli",
+  "totalNetWorth": "Toplam net varlık {amount}",
+  "@totalNetWorth": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "realisedFromSales": "Satışlardan gerçekleşen: ",
+  "deletedNRecords": "Silindi · {n} kayıt",
+  "@deletedNRecords": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "txSell": "Satım",
+  "txDividend": "Temettü",
+  "txBuy": "Alım",
+  "gainWord": "kazanç",
+  "lossWord": "kayıp",
+  "realisedFromSalesSemantics": "satışlardan gerçekleşen ",
+  "raceNoPartnerBody": "Henüz ortağın yok. Kendi dönem getirini ve küresel dilimini şimdiden görebilirsin.",
+  "viewWord": "Gör",
+  "newUpper": "YENİ",
+  "racePitch": "Ortaklarınla getiri sıralaması. Kim daha iyi kazanıyor?",
+  "joinWord": "Katıl",
+  "raceCalculating": "Yarış hesaplanıyor…",
+  "rankFirst": "{period} sıralamada 1.'sin",
+  "@rankFirst": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "rankNth": "{period} sıralamada {rank} sıradasın",
+  "@rankNth": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "widenTheGap": "Farkı büyüt — ikinci +{gap}% geride",
+  "@widenTheGap": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "atTheTop": "Zirvedesin — farkı koru",
+  "toPassPerson": "{name}'i geçmen için +{diff}%",
+  "@toPassPerson": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "diff": {
+        "type": "String"
+      }
+    }
+  },
+  "higherInOtherPeriods": "Diğer periyotlarda daha üsttesin — dokun, bak",
+  "deleteAssetTitle": "Varlığı Sil",
+  "deleteAssetMulti": "\"{name}\" için {n} işlem kaydı (alım/satım/temettü) kalıcı olarak silinsin mi?",
+  "@deleteAssetMulti": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteAssetSingle": "\"{name}\" kalıcı olarak silinsin mi?",
+  "@deleteAssetSingle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAnyway": "Yine de sil",
+  "deleteAssetWarning": "Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.",
+  "assetDeleted": "Varlık silindi",
+  "undoFailed": "Geri alınamadı",
+  "enterValidAmount": "Geçerli bir tutar girin",
+  "dividendSaved": "Temettü kaydedildi",
+  "dividendPayDate": "Temettü ödeme tarihi",
+  "addDividend": "Temettü Ekle",
+  "netAmountReceived": "{name} · ele geçen net tutar",
+  "@netAmountReceived": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentDate": "Ödeme tarihi: {date}",
+  "@paymentDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendNote": "Temettü miktarı değiştirmez; toplam getirine eklenir.",
+  "enterValidQuantity": "Geçerli bir miktar gir",
+  "enterValidUnitPrice": "Geçerli bir birim fiyat gir",
+  "cannotExceedQuantity": "Mevcut miktarı ({qty}) aşamazsın",
+  "@cannotExceedQuantity": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "boughtAmount": "{qty} {unit} alındı",
+  "@boughtAmount": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "soldAmount": "{qty} {unit} satıldı",
+  "@soldAmount": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionFailed": "İşlem başarısız. {error}",
+  "@transactionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sellAllWarning": "Tüm miktarı satıyorsun — pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.",
+  "saleValue": "Satış değeri",
+  "noPriceAlert": "Fiyat alarmı yok",
+  "nActiveAlerts": "{n} aktif fiyat alarmı",
+  "@nActiveAlerts": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteAlertTitle": "Alarmı sil",
+  "deleteAlertAbove": "{price} üstüne çıkınca alarmı silinsin mi?",
+  "@deleteAlertAbove": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "triggeredAlertSemantics": "Çalışmış alarm {price}, yeniden kurmak için dokun",
+  "@triggeredAlertSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "alertAboveSemantics": "Üstüne çıkınca {price}, silmek için dokun",
+  "@alertAboveSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTriggered": "{price} · çalıştı",
+  "@alertTriggered": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAlertBelow": "{price} altına inince alarmı silinsin mi?",
+  "@deleteAlertBelow": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "alertBelowSemantics": "Altına inince {price}, silmek için dokun",
+  "@alertBelowSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "addAssetFirst": "Önce portföyüne ya da takip listene bir varlık ekle.",
+  "alertSetAbove": "{name} için alarm kuruldu: {price} üstüne çıkınca",
+  "@alertSetAbove": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "alertSetFailed": "Alarm kurulamadı",
+  "enterValidPrice": "Geçerli bir fiyat gir",
+  "alertForAsset": "{name} için alarm",
+  "@alertForAsset": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "currentlyPrice": "Şu an {price}",
+  "@currentlyPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "currentPriceUnknown": "Güncel fiyat bilinmiyor",
+  "targetPctSemantics": "Hedef yüzde {sign} {pct}",
+  "@targetPctSemantics": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "notifyWhenAbove": "Fiyat bu seviyeye çıkınca haber vereceğiz.",
+  "notifyWhenBelow": "Fiyat bu seviyeye inince haber vereceğiz.",
+  "setAlert": "Alarmı kur",
+  "alertSetBelow": "{name} için alarm kuruldu: {price} altına inince",
+  "@alertSetBelow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "plusWord": "artı",
+  "minusWord": "eksi",
+  "widgetStepHold": "Ana ekranda boş bir yere basılı tut",
+  "widgetStepPlus": "Sol üstteki + işaretine dokun",
+  "widgetStepPickIos": "Listeden \"sandık\"ı seç ve ekle",
+  "widgetStepPickAndroid": "\"sandık\"ı bulup ana ekrana sürükle",
+  "widgetInstallTitle": "Portföyünü ana ekranda gör",
+  "widgetInstallBody": "Uygulamayı açmadan toplamını ve günlük değişimini görürsün.",
+  "gotIt": "Anladım",
+  "widgetStepWidgetsTab": "\"Widget'lar\"a dokun",
+  "disclaimerText": "Bu uygulama yalnızca bilgilendirme amaçlıdır. Gösterilen veriler, analizler ve bildirimler kesinlikle yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık niteliği taşımaz. Yatırım kararlarınızı yetkili bir mali danışmana danışarak veriniz. Geçmiş performans gelecekteki sonuçları garanti etmez.",
+  "justNow": "az önce",
+  "minutesAgo": "{n} dk önce",
+  "@minutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{n} sa önce",
+  "@hoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{n} gün önce",
+  "@daysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "signalCalculating": "Sinyal hesaplanıyor…",
+  "trendUp": "YUKARI TREND",
+  "trendDown": "AŞAĞI TREND",
+  "trendFlat": "YATAY",
+  "indicatorsConfidence": "{lehte}/{total} gösterge · güven %{pct}",
+  "@indicatorsConfidence": {
+    "placeholders": {
+      "lehte": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "confidenceOnly": "güven %{pct}",
+  "@confidenceOnly": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "technicalOutlookUpper": "TEKNİK GÖRÜNÜM",
+  "nowUpper": "ŞU AN",
+  "arrowUp": "▲ yukarı",
+  "arrowDown": "▼ aşağı",
+  "arrowFlat": "◆ yatay",
+  "indicatorsCalculating": "Göstergeler hesaplanıyor…",
+  "indicatorsNoHistory": "Bu varlığın fiyat geçmişi şu an çekilemedi — göstergeler hesaplanamıyor.",
+  "noIndicatorsSelected": "Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları'ndan aktifleştir.",
+  "technicalAnalysisUpper": "TEKNİK ANALİZ",
+  "nOfMIndicators": "· {on}/{all} gösterge",
+  "@nOfMIndicators": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "all": {
+        "type": "int"
+      }
+    }
+  },
+  "configureIndicators": "Göstergeleri Ayarla",
+  "buySellNeutralCounts": "{buy} AL · {sell} SAT · {neutral} NÖTR",
+  "@buySellNeutralCounts": {
+    "placeholders": {
+      "buy": {
+        "type": "int"
+      },
+      "sell": {
+        "type": "int"
+      },
+      "neutral": {
+        "type": "int"
+      }
+    }
+  },
+  "confidenceWord": "güven",
+  "csvRowsAddedToCart": "{n} satır sepete eklendi",
+  "@csvRowsAddedToCart": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "csvImportTitle": "CSV ile içe aktar",
+  "csvImportBody": "Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil.",
+  "pasteHere": "Buraya yapıştır",
+  "preview": "Önizle",
+  "csvRowsRead": "{n} satır okundu",
+  "@csvRowsRead": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "csvRowsSkipped": ", {n} satır atlandı",
+  "@csvRowsSkipped": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "closePriceWillBeFetched": "kapanış çekilecek",
+  "unitPiece": "adet",
+  "assetLimitReachedFor": "{name}: varlık limitine ulaşıldı",
+  "@assetLimitReachedFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "someAssetsNotAdded": "Bazı Varlıklar Eklenemedi",
+  "clearCartConfirm": "Sepetteki tüm varlıklar silinecek. Emin misin?",
+  "pasteCsv": "CSV yapıştır",
+  "cartEmpty": "Sepet boş",
+  "cartEmptyBody": "Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.",
+  "pasteFromStatement": "Ekstreden / CSV'den yapıştır",
+  "saveAllCount": "Tümünü Kaydet ({n})",
+  "@saveAllCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromWatchlist": "Takipten çıkar",
+  "removeFromWatchlistConfirm": "{name} takip listenden kaldırılsın mı?",
+  "@removeFromWatchlistConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeWord2": "Çıkar",
+  "removeFromWatchlistFailed": "Takipten çıkarılamadı. Bağlantını kontrol et.",
+  "currentPriceUpper": "GÜNCEL FİYAT",
+  "periodNoChange": "{period} · değişim yok",
+  "@periodNoChange": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "unitPriceDiffNote": "Değişim birim fiyat farkıdır — bu varlığa sahip değilsin.",
+  "notEnoughHistoryForAsset": "Bu varlık için yeterli fiyat geçmişi yok.",
+  "notInYourPortfolio": "Bu varlık portföyüne dahil değildir.",
+  "searchingEllipsis": "Aranıyor…",
+  "startTypingToSearch": "Aramak için yazmaya başla.",
+  "noResultForQuery": "\"{q}\" için sonuç yok.",
+  "@noResultForQuery": {
+    "placeholders": {
+      "q": {
+        "type": "String"
+      }
+    }
+  },
+  "inYourPortfolioUpper": "PORTFÖYÜNDE",
+  "searchAllAssetsHint": "Hisse, fon, endeks, emtia, döviz veya altın ara",
+  "alreadyInPortfolio": "{name}, zaten portföyünde",
+  "@alreadyInPortfolio": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addedToWatchlist": "{name} takibe alındı",
+  "@addedToWatchlist": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistLimitFree": "Ücretsiz planda en fazla {n} varlık takip edebilirsin.",
+  "@watchlistLimitFree": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "partnershipAcceptedShort": "Ortaklık kabul edildi.",
+  "partnershipRejectedShort": "Ortaklık isteği reddedildi.",
+  "partnershipApprovalTitle": "Ortaklık Onayı",
+  "partnershipApprovalBody": "Ortaklık kodunu giren kişileri buradan görüp onaylayabilirsin.",
+  "noPendingRequests": "Bekleyen ortaklık isteği yok.",
+  "userWord": "Kullanıcı",
+  "enteredYourCode": "Ortaklık kodunuzu girdi ve onay bekliyor.",
+  "portfolioChange": "Portföy değişimi",
+  "aheadOfInflationPts": "Enflasyonun {pts} puan önünde",
+  "@aheadOfInflationPts": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "betterThanPctInvestors": "Yatırımcıların %{pct}'inden iyi",
+  "@betterThanPctInvestors": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "nDaysTracked": "{n} gün takip",
+  "@nDaysTracked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trackingWithSandik": "sandık ile takip ediyorum",
+  "shareCardNoAmounts": "Kartta tutar yok; yalnızca yüzde ve etiketler.",
+  "preparingEllipsis": "Hazırlanıyor…",
+  "shareAsImage": "Görsel olarak paylaş",
+  "shareAsText": "Metin olarak paylaş",
+  "behindInflationPts": "Enflasyonun {pts} puan gerisinde",
+  "@behindInflationPts": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "assetNotFound": "Varlık bulunamadı",
+  "myMarketReturn": "Piyasa getirim"
 }

@@ -13,6 +13,13 @@ import 'package:flutter_test/flutter_test.dart';
 /// hata-nedeni dizeleri (`reason:`), analitik olay adları ve henüz
 /// çevrilmemiş alt bölümler (kapsam listesi `docs/YOL_HARITASI_ILERLEME.md`
 /// 3.20 satırında).
+///
+/// TAVANA HİÇ ALINMAYANLAR (ve nedeni):
+///   · `legal_doc_screen` — yasal metinlerin kendisi; çevirisi hukuk işi.
+///   · `push_diagnostics_screen` — yalnız admin'e görünen teşhis aracı.
+///   · `asset_categories` — alt kategori etiketleri `sub_category` sütununda
+///     VERİ olarak saklanıyor; çevirmek kayıtlı satırları bozar.
+///   · `onboarding_screen` — tanıtım turu metinleri, sonraki tur.
 void main() {
   final tr = RegExp("'[^']*[çğıöşüÇĞİÖŞÜ][^']*'");
 
@@ -27,39 +34,62 @@ void main() {
   }
 
   const tavan = <String, int>{
-    'lib/screens/login_screen.dart': 0,
-    'lib/screens/lock_screen.dart': 0,
-    'lib/screens/main_navigation_screen.dart': 0,
-    'lib/screens/disclaimer_acceptance_screen.dart': 0,
-    'lib/screens/forgot_password_screen.dart': 0,
+    'lib/widgets/percentile_strip.dart': 0,
+    'lib/widgets/transaction_row.dart': 0,
+    'lib/widgets/portfolio_summary_widget.dart': 0,
+    'lib/widgets/alarm_kur_sheet.dart': 0,
+    'lib/widgets/disclaimer_widget.dart': 0,
+    'lib/widgets/widget_install_sheet.dart': 0,
+    'lib/screens/partnership_requests_screen.dart': 0,
+    'lib/screens/csv_import_screen.dart': 0,
+    'lib/screens/add_watchlist_screen.dart': 0,
+    'lib/screens/watchlist_detail_screen.dart': 0,
     'lib/screens/otp_verification_screen.dart': 0,
-    'lib/screens/portfolio_screen.dart': 1,
+    'lib/screens/forgot_password_screen.dart': 0,
+    'lib/screens/disclaimer_acceptance_screen.dart': 0,
+    'lib/screens/main_navigation_screen.dart': 0,
+    'lib/screens/lock_screen.dart': 0,
+    'lib/screens/login_screen.dart': 0,
+    'lib/screens/asset_not_found_screen.dart': 1,
     'lib/screens/portfolio_performance_screen.dart': 1,
-    'lib/screens/portfolio_performance/grafik_kabi.dart': 3,
+    'lib/screens/portfolio_screen.dart': 1,
+    'lib/widgets/alarm_seridi.dart': 1,
+    'lib/widgets/bar_interval_selector.dart': 1,
+    'lib/widgets/custom_loading_indicator.dart': 1,
+    'lib/widgets/delete_asset_dialog.dart': 1,
+    'lib/widgets/dividend_dialog.dart': 1,
+    'lib/widgets/quick_adjust_dialog.dart': 1,
+    'lib/widgets/real_return_strip.dart': 1,
+    'lib/screens/asset_detail/sinyal_widgetlari.dart': 2,
     'lib/screens/portfolio_performance/ozet_yan_veri.dart': 2,
-    'lib/screens/home_screen.dart': 3,
-    'lib/screens/asset_detail/seritler.dart': 4,
+    'lib/screens/price_alerts_screen.dart': 2,
+    'lib/widgets/percent_comparison_chart.dart': 2,
+    'lib/widgets/sandik_skeleton.dart': 2,
+    'lib/widgets/zoomable_chart.dart': 2,
+    'lib/models/grafik_tipi.dart': 3,
     'lib/screens/asset_detail/karsilastirma_secici.dart': 3,
-    'lib/screens/price_alerts_screen.dart': 4,
+    'lib/screens/bulk_add_asset_screen.dart': 3,
+    'lib/screens/home_screen.dart': 3,
+    'lib/screens/portfolio_performance/grafik_kabi.dart': 3,
+    'lib/widgets/share_card.dart': 3,
+    'lib/screens/asset_detail/seritler.dart': 4,
+    'lib/widgets/leaderboard_hero_card.dart': 5,
+    'lib/models/signal_frequency.dart': 7,
     'lib/screens/paywall_screen.dart': 7,
-    'lib/screens/watchlist_screen.dart': 8,
     'lib/screens/asset_detail_screen.dart': 8,
+    'lib/screens/watchlist_screen.dart': 8,
+    'lib/models/asset_type.dart': 9,
     'lib/screens/portfolio_performance/tur_dokumu_karti.dart': 10,
-    // Tür adları ve sembol ipuçları sözlükte; `label` alanı TÜRKÇE kalır
-    // (bildirim/özet/paylaşım metinleri ve alt kategori karşılaştırmaları
-    // onu veri gibi kullanıyor — bkz. `AssetType.labelOf`).
-    'lib/models/asset_type.dart': 12,
     'lib/screens/all_transactions_screen.dart': 13,
+    'lib/screens/portfolio_performance/kartlar.dart': 14,
     'lib/screens/profile_screen.dart': 14,
     'lib/screens/recap_screen.dart': 14,
-    'lib/screens/portfolio_performance/kartlar.dart': 14,
     'lib/screens/leaderboard_screen.dart': 19,
-    'lib/screens/add_asset_screen.dart': 21,
-    // Yasal metin blokları (KVKK, açık rıza) bilinçli Türkçe.
+    'lib/screens/signal_settings_screen.dart': 19,
+    'lib/screens/add_asset_screen.dart': 20,
+    'lib/screens/comparison_screen.dart': 23,
     'lib/screens/register_screen.dart': 25,
-    'lib/screens/comparison_screen.dart': 25,
-    'lib/widgets/period_summary_view.dart': 34,
-    // Kalan: Canlı Etkinlik alt bölümü ve teşhis/geliştirici araçları.
+    'lib/widgets/period_summary_view.dart': 28,
     'lib/screens/settings_screen.dart': 39,
   };
 

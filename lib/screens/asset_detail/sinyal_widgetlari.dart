@@ -103,14 +103,16 @@ const int kSinyalPenceresiGun = 90;
 ///
 /// [now] dışarıdan verilir: içeride `DateTime.now()` çağrılsaydı eşik
 /// dalları testte hiç çalışmazdı.
-String goreliZaman(DateTime an, DateTime now) {
+/// [l] sözlüğü çağıran verir: fonksiyon saf ve `BuildContext`'siz kalsın
+/// (test onu doğrudan çağırıyor).
+String goreliZaman(DateTime an, DateTime now, AppLocalizations l) {
   final fark = now.difference(an);
   // Gelecek zaman: sunucu saati ile cihaz saati birkaç saniye kayabilir.
   // "-3 dk önce" yazmaktansa en yakın eşiğe yuvarlıyoruz.
-  if (fark.inMinutes < 1) return 'az önce';
-  if (fark.inMinutes < 60) return '${fark.inMinutes} dk önce';
-  if (fark.inHours < 24) return '${fark.inHours} sa önce';
-  return '${fark.inDays} gün önce';
+  if (fark.inMinutes < 1) return l.justNow;
+  if (fark.inMinutes < 60) return l.minutesAgo(fark.inMinutes);
+  if (fark.inHours < 24) return l.hoursAgo(fark.inHours);
+  return l.daysAgo(fark.inDays);
 }
 
 class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
@@ -161,7 +163,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
                 const CustomLoadingIndicator(size: 13),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text('Sinyal hesaplanıyor…',
+                  child: Text(context.l10n.signalCalculating,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: context.t.bodySmall
@@ -299,10 +301,10 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     // Yasal not: kesin "AL/SAT" yerine trend yönü — ekranın geri kalanıyla
     // aynı dil (bkz. `TechnicalSignalPanel`).
     final etiket = isBuy
-        ? 'YUKARI TREND'
+        ? context.l10n.trendUp
         : isSell
-            ? 'AŞAĞI TREND'
-            : 'YATAY';
+            ? context.l10n.trendDown
+            : context.l10n.trendFlat;
     final ikon = isBuy
         ? Icons.trending_up_rounded
         : isSell
@@ -310,8 +312,8 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
             : Icons.remove_rounded;
 
     final detay = toplam > 0
-        ? '$lehte/$toplam gösterge · güven %${guven.round()}'
-        : 'güven %${guven.round()}';
+        ? context.l10n.indicatorsConfidence(lehte, toplam, guven.round())
+        : context.l10n.confidenceOnly(guven.round());
 
     // Kayıtlı bildirim, CANLI özetten ayrı bir satırda durur. İkisi
     // çeliştiğinde (bildirim "yukarı" derken göstergeler bugün "aşağı"
@@ -331,7 +333,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     // sütunun "ŞU AN" mı yoksa tam tarih mi yazacağını belirler.
     final kayitSatiri = kayit != null
         ? 'Son bildirim: ${_kisaYon(kayit.signal)} · '
-            '${goreliZaman(kayit.detectedAt, DateTime.now())}'
+            '${goreliZaman(kayit.detectedAt, DateTime.now(), context.l10n)}'
         : null;
 
     return _kabuk(
@@ -362,7 +364,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
                 // kullanılıyor — labelSmall + letterSpacing 0.8 + text36.
                 // Sayfayla ahengi kuran şey bu tekrar.
                 Text(
-                  'TEKNİK GÖRÜNÜM',
+                  context.l10n.technicalOutlookUpper,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.labelSmall?.copyWith(
@@ -426,7 +428,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
                   alignment: Alignment.centerRight,
                   child: Text(
                     canli
-                        ? 'ŞU AN'
+                        ? context.l10n.nowUpper
                         : DateFormat('d MMM · HH:mm', 'tr_TR')
                             .format(kayit!.detectedAt),
                     maxLines: 1,
@@ -461,9 +463,9 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
   }
 
   String _kisaYon(SignalType s) => switch (s) {
-        SignalType.buy => '▲ yukarı',
-        SignalType.sell => '▼ aşağı',
-        SignalType.neutral => '◆ yatay',
+        SignalType.buy => context.l10n.arrowUp,
+        SignalType.sell => context.l10n.arrowDown,
+        SignalType.neutral => context.l10n.arrowFlat,
       };
 }
 
@@ -573,7 +575,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                 const SizedBox(width: 10),
                 // Expanded + ellipsis: dar ekranda (320pt) satır taşmasın.
                 Expanded(
-                  child: Text('Göstergeler hesaplanıyor…',
+                  child: Text(context.l10n.indicatorsCalculating,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: context.t.bodySmall
@@ -641,8 +643,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
               const SizedBox(width: SandikSpace.sm),
               Expanded(
                 child: Text(
-                  'Bu varlığın fiyat geçmişi şu an çekilemedi — göstergeler '
-                  'hesaplanamıyor.',
+                  context.l10n.indicatorsNoHistory,
                   style: context.t.bodySmall?.copyWith(color: p.text58),
                 ),
               ),
@@ -714,8 +715,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Bu varlık türü için hiçbir gösterge seçilmemiş. '
-                'Profil → Sinyal Ayarları\'ndan aktifleştir.',
+                context.l10n.noIndicatorsSelected,
                 style: context.t.titleSmall?.copyWith(color: context.c.text58),
               ),
             ),
@@ -729,7 +729,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
 
     final signalColor = isBuy ? context.c.gain : isSell ? context.c.loss : context.c.text58;
     // Yasal not: kesin "AL/SAT" ifadesi yerine trend yönü kullanıyoruz.
-    final signalLabel = isBuy ? 'YUKARI TREND' : isSell ? 'AŞAĞI TREND' : 'YATAY';
+    final signalLabel = isBuy ? context.l10n.trendUp : isSell ? context.l10n.trendDown : context.l10n.trendFlat;
     final signalIcon = isBuy ? Icons.trending_up_rounded
         : isSell ? Icons.trending_down_rounded
         : Icons.remove_rounded;
@@ -744,7 +744,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             // Flexible: önce sayaç, gerekirse başlık kırpılır.
             Flexible(
               child: Text(
-                'TEKNİK ANALİZ',
+                context.l10n.technicalAnalysisUpper,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.labelLarge?.copyWith(
@@ -757,7 +757,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             const SizedBox(width: 8),
             Flexible(
               child: Text(
-                '· ${enabledIds.length}/${IndicatorId.all.length} gösterge',
+                context.l10n.nOfMIndicators(enabledIds.length, IndicatorId.all.length),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.bodySmall?.copyWith(color: context.c.text36),
@@ -775,7 +775,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                   Icon(Icons.tune_rounded, size: 14, color: context.c.amberText),
                   const SizedBox(width: 4),
                   Text(
-                    'Göstergeleri Ayarla',
+                    context.l10n.configureIndicators,
                     style: context.t.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: context.c.amberText,
@@ -829,7 +829,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${summary.buyCount} AL · ${summary.sellCount} SAT · ${indicators.length - summary.buyCount - summary.sellCount} NÖTR',
+                      context.l10n.buySellNeutralCounts(summary.buyCount, summary.sellCount,
+                          indicators.length - summary.buyCount - summary.sellCount),
                       style: context.t.titleSmall?.copyWith(color: context.c.text58),
                     ),
                   ],
@@ -849,7 +850,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
                     ),
                   ),
                   Text(
-                    'güven',
+                    context.l10n.confidenceWord,
                     style: context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),
                 ],

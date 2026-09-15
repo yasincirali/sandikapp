@@ -457,7 +457,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       data: ShareCardData(
         baslik: PeriodSummaryService.donemAdi(widget.period),
         degisimPct: gosterilen.getiriPct,
-        degisimEtiketi: 'Piyasa getirim',
+        degisimEtiketi: context.l10n.myMarketReturn,
         karakter: widget.karakter,
         enflasyonPuan: gosterilen.tufeFarki,
         percentile: _dilim?.percentile,

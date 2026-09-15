@@ -8,6 +8,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import '../l10n/l10n.dart';
 
 /// Paylaşım kartının içeriği — TUTAR YOK.
 ///
@@ -172,12 +173,10 @@ class ShareCard extends StatelessWidget {
                               ikon: Icons.trending_up_rounded,
                               renk: d.enflasyonPuan! >= 0 ? p.gain : p.loss,
                               metin: d.enflasyonPuan! >= 0
-                                  ? 'Enflasyonun '
-                                      '${fmtNum(d.enflasyonPuan!, digits: 1)} '
-                                      'puan önünde'
-                                  : 'Enflasyonun '
-                                      '${fmtNum(d.enflasyonPuan!.abs(), digits: 1)} '
-                                      'puan gerisinde',
+                                  ? context.l10n.aheadOfInflationPts(
+                                      fmtNum(d.enflasyonPuan!, digits: 1))
+                                  : context.l10n.behindInflationPts(
+                                      fmtNum(d.enflasyonPuan!.abs(), digits: 1)),
                             ),
                             const SizedBox(height: SandikSpace.sm),
                           ],
@@ -185,8 +184,7 @@ class ShareCard extends StatelessWidget {
                             _Satir(
                               ikon: Icons.groups_rounded,
                               renk: p.info,
-                              metin: 'Yatırımcıların '
-                                  "%${100 - d.percentile!}'inden iyi",
+                              metin: context.l10n.betterThanPctInvestors(100 - d.percentile!),
                             ),
                             const SizedBox(height: SandikSpace.sm),
                           ],
@@ -194,7 +192,7 @@ class ShareCard extends StatelessWidget {
                             _Satir(
                               ikon: Icons.calendar_month_rounded,
                               renk: p.text58,
-                              metin: '${d.takipGunu} gün takip',
+                              metin: context.l10n.nDaysTracked(d.takipGunu!),
                             ),
                         ],
                       ),
@@ -208,7 +206,7 @@ class ShareCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'sandık ile takip ediyorum',
+                      context.l10n.trackingWithSandik,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: context.t.bodySmall?.copyWith(color: p.text58),
@@ -368,7 +366,7 @@ class _ShareSheetState extends State<_ShareSheet> {
             ),
             const SizedBox(height: SandikSpace.xs),
             Text(
-              'Kartta tutar yok; yalnızca yüzde ve etiketler.',
+              context.l10n.shareCardNoAmounts,
               style: context.t.bodySmall?.copyWith(color: c.text58),
             ),
             const SizedBox(height: SandikSpace.md),
@@ -387,13 +385,13 @@ class _ShareSheetState extends State<_ShareSheet> {
             FilledButton.icon(
               onPressed: _mesgul ? null : _gorsel,
               icon: const Icon(Icons.image_rounded, size: 18),
-              label: Text(_mesgul ? 'Hazırlanıyor…' : 'Görsel olarak paylaş'),
+              label: Text(_mesgul ? context.l10n.preparingEllipsis : context.l10n.shareAsImage),
             ),
             const SizedBox(height: SandikSpace.sm),
             TextButton.icon(
               onPressed: _mesgul ? null : _metin,
               icon: const Icon(Icons.notes_rounded, size: 18),
-              label: const Text('Metin olarak paylaş'),
+              label: Text(context.l10n.shareAsText),
             ),
           ],
         ),

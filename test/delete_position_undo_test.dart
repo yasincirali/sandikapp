@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Varlık silmede "Geri al" (Faz 2.10).
 ///
@@ -41,6 +42,8 @@ void main() {
   test('diyalog "Geri al" sunar ve hatayı sebebiyle söyler', () {
     expect(dialog.contains('onUndo:'), isTrue);
     expect(dialog.contains('restorePositionLots(kayit)'), isTrue);
-    expect(dialog.contains("prefix: 'Geri alınamadı'"), isTrue);
+    // 3.20: metin sözlükte.
+    expect(dialog.contains('prefix: context.l10n.undoFailed'), isTrue);
+    expect(trMetni('undoFailed'), contains('Geri alınamadı'));
   });
 }

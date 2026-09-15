@@ -7,6 +7,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../l10n/l10n.dart';
 
 /// CSV/TSV yapıştır → önizle → sepete ekle.
 ///
@@ -46,7 +47,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     for (final row in r.rows) {
       cart.add(row);
     }
-    sandikSnack(context, '${r.rows.length} satır sepete eklendi',
+    sandikSnack(context, context.l10n.csvRowsAddedToCart(r.rows.length),
         kind: SandikSnackKind.success);
     Navigator.of(context).pop(true);
   }
@@ -57,14 +58,13 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final r = _result;
     return Scaffold(
       backgroundColor: c.background,
-      appBar: const SandikAppBar(title: 'CSV ile içe aktar'),
+      appBar: SandikAppBar(title: context.l10n.csvImportTitle),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           children: [
             Text(
-              'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp '
-              'yapıştır. Başlık satırı olsun; sütun sırası önemli değil.',
+              context.l10n.csvImportBody,
               style: context.t.bodyMedium?.copyWith(color: c.text58),
             ),
             const SizedBox(height: SandikSpace.sm),
@@ -90,7 +90,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 color: c.text90,
                 fontFamily: 'monospace',
               ),
-              decoration: context.inputDecoration('Buraya yapıştır'),
+              decoration: context.inputDecoration(context.l10n.pasteHere),
               onChanged: (_) {
                 if (_result != null) setState(() => _result = null);
               },
@@ -99,13 +99,13 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
             FilledButton.icon(
               onPressed: _ctrl.text.trim().isEmpty ? null : _parse,
               icon: const Icon(Icons.preview_rounded),
-              label: const Text('Önizle'),
+              label: Text(context.l10n.preview),
             ),
             if (r != null) ...[
               const SizedBox(height: SandikSpace.lg),
               Text(
-                '${r.rows.length} satır okundu'
-                '${r.errors.isEmpty ? '' : ', ${r.errors.length} satır atlandı'}',
+                '${context.l10n.csvRowsRead(r.rows.length)}'
+                '${r.errors.isEmpty ? '' : context.l10n.csvRowsSkipped(r.errors.length)}',
                 style: context.t.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: c.text90,
@@ -123,8 +123,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                       Expanded(
                         child: Text(
                           '${row.ticker} · ${fmtNumFlex(row.quantity)} '
-                          '${row.unitType == 'piece' ? 'adet' : row.unitType}'
-                          ' · ${row.price > 0 ? '${fmtNumFlex(row.price)} ${row.currency}' : 'kapanış çekilecek'}',
+                          '${row.unitType == 'piece' ? context.l10n.unitPiece : row.unitType}'
+                          ' · ${row.price > 0 ? '${fmtNumFlex(row.price)} ${row.currency}' : context.l10n.closePriceWillBeFetched}',
                           style: context.t.bodySmall?.copyWith(color: c.text90),
                           overflow: TextOverflow.ellipsis,
                         ),

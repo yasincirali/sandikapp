@@ -45,12 +45,16 @@ void main() {
 
   test('uyarı metni üç şeyi birden söyler', () {
     final w = oku('lib/widgets/disclaimer_widget.dart');
+    // 3.20: metin sözlüğe taşındı; widget doğru ANAHTARI kullanmalı ve o
+    // anahtarın Türkçe metni üç şeyi de söylemeye devam etmeli.
+    expect(w.contains('l10n.disclaimerText'), isTrue);
+    final metin = trMetni('disclaimerText');
     // Üçü de politika metinlerinde ayrı ayrı aranıyor: "tavsiye değil",
     // "danışmana sor", "geçmiş performans garanti değil".
-    expect(w.contains('yatırım tavsiyesi'), isTrue);
-    expect(w.contains('mali danışman'), isTrue);
+    expect(metin.contains('yatırım tavsiyesi'), isTrue);
+    expect(metin.contains('mali danışman'), isTrue);
     expect(
-      w.contains('Geçmiş performans'),
+      metin.contains('Geçmiş performans'),
       isTrue,
       reason: 'Geçmiş getiri gösteren her üründe aranan standart cümle.',
     );

@@ -6,6 +6,7 @@ import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
+import '../l10n/l10n.dart';
 
 /// "Varlığı sil" onayı + silme — tek yerde.
 ///
@@ -26,12 +27,11 @@ Future<bool> confirmAndDeletePosition(
   final multi = lots.length > 1;
   final ok = await showSandikConfirm(
     context: context,
-    title: 'Varlığı Sil',
+    title: context.l10n.deleteAssetTitle,
     message: multi
-        ? '"$name" için ${lots.length} işlem kaydı (alım/satım/temettü) '
-            'kalıcı olarak silinsin mi?'
-        : '"$name" kalıcı olarak silinsin mi?',
-    confirmLabel: 'Yine de sil',
+        ? context.l10n.deleteAssetMulti(name, lots.length)
+        : context.l10n.deleteAssetSingle(name),
+    confirmLabel: context.l10n.deleteAnyway,
     cancelLabel: 'İptal',
     destructive: true,
     detail: Container(
@@ -42,10 +42,7 @@ Future<bool> confirmAndDeletePosition(
         border: Border.all(color: context.c.danger.withValues(alpha: 0.25)),
       ),
       child: Text(
-        'Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve '
-        'geçmiş grafiğinden düşer. İşlem kayıtları "Portföy Hareketleri"nde '
-        'kalır. Sattıysan bunun yerine "Sat" kullan; realize kâr/zararın '
-        'hesaba dahil olur.',
+        context.l10n.deleteAssetWarning,
         style: context.t.bodySmall?.copyWith(
           height: 1.4,
           color: context.c.text90,
@@ -63,7 +60,7 @@ Future<bool> confirmAndDeletePosition(
       // sessizce gelmemesi hata gibi görünürdü.
       sandikSnack(
         context,
-        'Varlık silindi',
+        context.l10n.assetDeleted,
         onUndo: kayit == null
             ? null
             : () async {
@@ -71,7 +68,7 @@ Future<bool> confirmAndDeletePosition(
                   await notifier.restorePositionLots(kayit);
                 } catch (e) {
                   if (context.mounted) {
-                    sandikSnackError(context, e, prefix: 'Geri alınamadı');
+                    sandikSnackError(context, e, prefix: context.l10n.undoFailed);
                   }
                 }
               },

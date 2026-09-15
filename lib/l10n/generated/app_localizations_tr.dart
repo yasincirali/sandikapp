@@ -1825,4 +1825,660 @@ class AppLocalizationsTr extends AppLocalizations {
   String recapCardSubtitle(String character) {
     return 'Bir yılın kısa hikâyesi — $character';
   }
+
+  @override
+  String medianAhead(String pts) {
+    return 'medyandan $pts puan önde';
+  }
+
+  @override
+  String get returnRanking => 'Getiri sıralaması';
+
+  @override
+  String returnRankingWith(String detail) {
+    return 'Getiri sıralaması · $detail';
+  }
+
+  @override
+  String percentileSemantics(int pct, String detail) {
+    return 'Son 30 günde katılımcıların yüzde $pct kadarının üstündesin. $detail';
+  }
+
+  @override
+  String get last30DaysLike => 'Son 30 günde senin gibi ';
+
+  @override
+  String nPeople(int n) {
+    return '$n kişi';
+  }
+
+  @override
+  String medianBehind(String pts) {
+    return 'medyandan $pts puan geride';
+  }
+
+  @override
+  String realReturnSemanticsAhead(String pts) {
+    return 'Son bir yılda portföyün enflasyonu yüzde $pts puan geçti';
+  }
+
+  @override
+  String get lastYearInflation => 'Son bir yılda enflasyonun ';
+
+  @override
+  String pointsAhead(String pts) {
+    return '$pts puan önündesin';
+  }
+
+  @override
+  String realReturnSemanticsBehind(String pts) {
+    return 'Son bir yılda portföyün enflasyonun yüzde $pts puan gerisinde kaldı';
+  }
+
+  @override
+  String pointsBehind(String pts) {
+    return '$pts puan gerisindesin';
+  }
+
+  @override
+  String get weeklyFlatSemantics =>
+      'Bu hafta portföyün piyasa getirisi değişmedi';
+
+  @override
+  String get thisWeekFromMarket => 'Bu hafta piyasadan ';
+
+  @override
+  String get noChangeLower => 'değişim yok';
+
+  @override
+  String pctDown(String pct) {
+    return '%$pct eksi';
+  }
+
+  @override
+  String weeklyDownSemantics(String pct) {
+    return 'Bu hafta portföyün piyasa getirisi yüzde $pct ekside';
+  }
+
+  @override
+  String weeklyUpSemantics(String pct) {
+    return 'Bu hafta portföyün piyasa getirisi yüzde $pct artıda';
+  }
+
+  @override
+  String pctUp(String pct) {
+    return '%$pct artı';
+  }
+
+  @override
+  String get totalNetHidden => 'Toplam net varlık gizli';
+
+  @override
+  String totalNetWorth(String amount) {
+    return 'Toplam net varlık $amount';
+  }
+
+  @override
+  String get realisedFromSales => 'Satışlardan gerçekleşen: ';
+
+  @override
+  String deletedNRecords(int n) {
+    return 'Silindi · $n kayıt';
+  }
+
+  @override
+  String get txSell => 'Satım';
+
+  @override
+  String get txDividend => 'Temettü';
+
+  @override
+  String get txBuy => 'Alım';
+
+  @override
+  String get gainWord => 'kazanç';
+
+  @override
+  String get lossWord => 'kayıp';
+
+  @override
+  String get realisedFromSalesSemantics => 'satışlardan gerçekleşen ';
+
+  @override
+  String get raceNoPartnerBody =>
+      'Henüz ortağın yok. Kendi dönem getirini ve küresel dilimini şimdiden görebilirsin.';
+
+  @override
+  String get viewWord => 'Gör';
+
+  @override
+  String get newUpper => 'YENİ';
+
+  @override
+  String get racePitch =>
+      'Ortaklarınla getiri sıralaması. Kim daha iyi kazanıyor?';
+
+  @override
+  String get joinWord => 'Katıl';
+
+  @override
+  String get raceCalculating => 'Yarış hesaplanıyor…';
+
+  @override
+  String rankFirst(String period) {
+    return '$period sıralamada 1.\'sin';
+  }
+
+  @override
+  String rankNth(String period, String rank) {
+    return '$period sıralamada $rank sıradasın';
+  }
+
+  @override
+  String widenTheGap(String gap) {
+    return 'Farkı büyüt — ikinci +$gap% geride';
+  }
+
+  @override
+  String get atTheTop => 'Zirvedesin — farkı koru';
+
+  @override
+  String toPassPerson(String name, String diff) {
+    return '$name\'i geçmen için +$diff%';
+  }
+
+  @override
+  String get higherInOtherPeriods =>
+      'Diğer periyotlarda daha üsttesin — dokun, bak';
+
+  @override
+  String get deleteAssetTitle => 'Varlığı Sil';
+
+  @override
+  String deleteAssetMulti(String name, int n) {
+    return '\"$name\" için $n işlem kaydı (alım/satım/temettü) kalıcı olarak silinsin mi?';
+  }
+
+  @override
+  String deleteAssetSingle(String name) {
+    return '\"$name\" kalıcı olarak silinsin mi?';
+  }
+
+  @override
+  String get deleteAnyway => 'Yine de sil';
+
+  @override
+  String get deleteAssetWarning =>
+      'Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.';
+
+  @override
+  String get assetDeleted => 'Varlık silindi';
+
+  @override
+  String get undoFailed => 'Geri alınamadı';
+
+  @override
+  String get enterValidAmount => 'Geçerli bir tutar girin';
+
+  @override
+  String get dividendSaved => 'Temettü kaydedildi';
+
+  @override
+  String get dividendPayDate => 'Temettü ödeme tarihi';
+
+  @override
+  String get addDividend => 'Temettü Ekle';
+
+  @override
+  String netAmountReceived(String name) {
+    return '$name · ele geçen net tutar';
+  }
+
+  @override
+  String paymentDate(String date) {
+    return 'Ödeme tarihi: $date';
+  }
+
+  @override
+  String get dividendNote =>
+      'Temettü miktarı değiştirmez; toplam getirine eklenir.';
+
+  @override
+  String get enterValidQuantity => 'Geçerli bir miktar gir';
+
+  @override
+  String get enterValidUnitPrice => 'Geçerli bir birim fiyat gir';
+
+  @override
+  String cannotExceedQuantity(String qty) {
+    return 'Mevcut miktarı ($qty) aşamazsın';
+  }
+
+  @override
+  String boughtAmount(String qty, String unit) {
+    return '$qty $unit alındı';
+  }
+
+  @override
+  String soldAmount(String qty, String unit) {
+    return '$qty $unit satıldı';
+  }
+
+  @override
+  String transactionFailed(String error) {
+    return 'İşlem başarısız. $error';
+  }
+
+  @override
+  String get sellAllWarning =>
+      'Tüm miktarı satıyorsun — pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.';
+
+  @override
+  String get saleValue => 'Satış değeri';
+
+  @override
+  String get noPriceAlert => 'Fiyat alarmı yok';
+
+  @override
+  String nActiveAlerts(int n) {
+    return '$n aktif fiyat alarmı';
+  }
+
+  @override
+  String get deleteAlertTitle => 'Alarmı sil';
+
+  @override
+  String deleteAlertAbove(String price) {
+    return '$price üstüne çıkınca alarmı silinsin mi?';
+  }
+
+  @override
+  String triggeredAlertSemantics(String price) {
+    return 'Çalışmış alarm $price, yeniden kurmak için dokun';
+  }
+
+  @override
+  String alertAboveSemantics(String price) {
+    return 'Üstüne çıkınca $price, silmek için dokun';
+  }
+
+  @override
+  String alertTriggered(String price) {
+    return '$price · çalıştı';
+  }
+
+  @override
+  String deleteAlertBelow(String price) {
+    return '$price altına inince alarmı silinsin mi?';
+  }
+
+  @override
+  String alertBelowSemantics(String price) {
+    return 'Altına inince $price, silmek için dokun';
+  }
+
+  @override
+  String get addAssetFirst =>
+      'Önce portföyüne ya da takip listene bir varlık ekle.';
+
+  @override
+  String alertSetAbove(String name, String price) {
+    return '$name için alarm kuruldu: $price üstüne çıkınca';
+  }
+
+  @override
+  String get alertSetFailed => 'Alarm kurulamadı';
+
+  @override
+  String get enterValidPrice => 'Geçerli bir fiyat gir';
+
+  @override
+  String alertForAsset(String name) {
+    return '$name için alarm';
+  }
+
+  @override
+  String currentlyPrice(String price) {
+    return 'Şu an $price';
+  }
+
+  @override
+  String get currentPriceUnknown => 'Güncel fiyat bilinmiyor';
+
+  @override
+  String targetPctSemantics(String sign, int pct) {
+    return 'Hedef yüzde $sign $pct';
+  }
+
+  @override
+  String get notifyWhenAbove => 'Fiyat bu seviyeye çıkınca haber vereceğiz.';
+
+  @override
+  String get notifyWhenBelow => 'Fiyat bu seviyeye inince haber vereceğiz.';
+
+  @override
+  String get setAlert => 'Alarmı kur';
+
+  @override
+  String alertSetBelow(String name, String price) {
+    return '$name için alarm kuruldu: $price altına inince';
+  }
+
+  @override
+  String get plusWord => 'artı';
+
+  @override
+  String get minusWord => 'eksi';
+
+  @override
+  String get widgetStepHold => 'Ana ekranda boş bir yere basılı tut';
+
+  @override
+  String get widgetStepPlus => 'Sol üstteki + işaretine dokun';
+
+  @override
+  String get widgetStepPickIos => 'Listeden \"sandık\"ı seç ve ekle';
+
+  @override
+  String get widgetStepPickAndroid => '\"sandık\"ı bulup ana ekrana sürükle';
+
+  @override
+  String get widgetInstallTitle => 'Portföyünü ana ekranda gör';
+
+  @override
+  String get widgetInstallBody =>
+      'Uygulamayı açmadan toplamını ve günlük değişimini görürsün.';
+
+  @override
+  String get gotIt => 'Anladım';
+
+  @override
+  String get widgetStepWidgetsTab => '\"Widget\'lar\"a dokun';
+
+  @override
+  String get disclaimerText =>
+      'Bu uygulama yalnızca bilgilendirme amaçlıdır. Gösterilen veriler, analizler ve bildirimler kesinlikle yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık niteliği taşımaz. Yatırım kararlarınızı yetkili bir mali danışmana danışarak veriniz. Geçmiş performans gelecekteki sonuçları garanti etmez.';
+
+  @override
+  String get justNow => 'az önce';
+
+  @override
+  String minutesAgo(int n) {
+    return '$n dk önce';
+  }
+
+  @override
+  String hoursAgo(int n) {
+    return '$n sa önce';
+  }
+
+  @override
+  String daysAgo(int n) {
+    return '$n gün önce';
+  }
+
+  @override
+  String get signalCalculating => 'Sinyal hesaplanıyor…';
+
+  @override
+  String get trendUp => 'YUKARI TREND';
+
+  @override
+  String get trendDown => 'AŞAĞI TREND';
+
+  @override
+  String get trendFlat => 'YATAY';
+
+  @override
+  String indicatorsConfidence(int lehte, int total, int pct) {
+    return '$lehte/$total gösterge · güven %$pct';
+  }
+
+  @override
+  String confidenceOnly(int pct) {
+    return 'güven %$pct';
+  }
+
+  @override
+  String get technicalOutlookUpper => 'TEKNİK GÖRÜNÜM';
+
+  @override
+  String get nowUpper => 'ŞU AN';
+
+  @override
+  String get arrowUp => '▲ yukarı';
+
+  @override
+  String get arrowDown => '▼ aşağı';
+
+  @override
+  String get arrowFlat => '◆ yatay';
+
+  @override
+  String get indicatorsCalculating => 'Göstergeler hesaplanıyor…';
+
+  @override
+  String get indicatorsNoHistory =>
+      'Bu varlığın fiyat geçmişi şu an çekilemedi — göstergeler hesaplanamıyor.';
+
+  @override
+  String get noIndicatorsSelected =>
+      'Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları\'ndan aktifleştir.';
+
+  @override
+  String get technicalAnalysisUpper => 'TEKNİK ANALİZ';
+
+  @override
+  String nOfMIndicators(int on, int all) {
+    return '· $on/$all gösterge';
+  }
+
+  @override
+  String get configureIndicators => 'Göstergeleri Ayarla';
+
+  @override
+  String buySellNeutralCounts(int buy, int sell, int neutral) {
+    return '$buy AL · $sell SAT · $neutral NÖTR';
+  }
+
+  @override
+  String get confidenceWord => 'güven';
+
+  @override
+  String csvRowsAddedToCart(int n) {
+    return '$n satır sepete eklendi';
+  }
+
+  @override
+  String get csvImportTitle => 'CSV ile içe aktar';
+
+  @override
+  String get csvImportBody =>
+      'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil.';
+
+  @override
+  String get pasteHere => 'Buraya yapıştır';
+
+  @override
+  String get preview => 'Önizle';
+
+  @override
+  String csvRowsRead(int n) {
+    return '$n satır okundu';
+  }
+
+  @override
+  String csvRowsSkipped(int n) {
+    return ', $n satır atlandı';
+  }
+
+  @override
+  String get closePriceWillBeFetched => 'kapanış çekilecek';
+
+  @override
+  String get unitPiece => 'adet';
+
+  @override
+  String assetLimitReachedFor(String name) {
+    return '$name: varlık limitine ulaşıldı';
+  }
+
+  @override
+  String get someAssetsNotAdded => 'Bazı Varlıklar Eklenemedi';
+
+  @override
+  String get clearCartConfirm =>
+      'Sepetteki tüm varlıklar silinecek. Emin misin?';
+
+  @override
+  String get pasteCsv => 'CSV yapıştır';
+
+  @override
+  String get cartEmpty => 'Sepet boş';
+
+  @override
+  String get cartEmptyBody =>
+      'Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.';
+
+  @override
+  String get pasteFromStatement => 'Ekstreden / CSV\'den yapıştır';
+
+  @override
+  String saveAllCount(int n) {
+    return 'Tümünü Kaydet ($n)';
+  }
+
+  @override
+  String get removeFromWatchlist => 'Takipten çıkar';
+
+  @override
+  String removeFromWatchlistConfirm(String name) {
+    return '$name takip listenden kaldırılsın mı?';
+  }
+
+  @override
+  String get removeWord2 => 'Çıkar';
+
+  @override
+  String get removeFromWatchlistFailed =>
+      'Takipten çıkarılamadı. Bağlantını kontrol et.';
+
+  @override
+  String get currentPriceUpper => 'GÜNCEL FİYAT';
+
+  @override
+  String periodNoChange(String period) {
+    return '$period · değişim yok';
+  }
+
+  @override
+  String get unitPriceDiffNote =>
+      'Değişim birim fiyat farkıdır — bu varlığa sahip değilsin.';
+
+  @override
+  String get notEnoughHistoryForAsset =>
+      'Bu varlık için yeterli fiyat geçmişi yok.';
+
+  @override
+  String get notInYourPortfolio => 'Bu varlık portföyüne dahil değildir.';
+
+  @override
+  String get searchingEllipsis => 'Aranıyor…';
+
+  @override
+  String get startTypingToSearch => 'Aramak için yazmaya başla.';
+
+  @override
+  String noResultForQuery(String q) {
+    return '\"$q\" için sonuç yok.';
+  }
+
+  @override
+  String get inYourPortfolioUpper => 'PORTFÖYÜNDE';
+
+  @override
+  String get searchAllAssetsHint =>
+      'Hisse, fon, endeks, emtia, döviz veya altın ara';
+
+  @override
+  String alreadyInPortfolio(String name) {
+    return '$name, zaten portföyünde';
+  }
+
+  @override
+  String addedToWatchlist(String name) {
+    return '$name takibe alındı';
+  }
+
+  @override
+  String watchlistLimitFree(int n) {
+    return 'Ücretsiz planda en fazla $n varlık takip edebilirsin.';
+  }
+
+  @override
+  String get partnershipAcceptedShort => 'Ortaklık kabul edildi.';
+
+  @override
+  String get partnershipRejectedShort => 'Ortaklık isteği reddedildi.';
+
+  @override
+  String get partnershipApprovalTitle => 'Ortaklık Onayı';
+
+  @override
+  String get partnershipApprovalBody =>
+      'Ortaklık kodunu giren kişileri buradan görüp onaylayabilirsin.';
+
+  @override
+  String get noPendingRequests => 'Bekleyen ortaklık isteği yok.';
+
+  @override
+  String get userWord => 'Kullanıcı';
+
+  @override
+  String get enteredYourCode => 'Ortaklık kodunuzu girdi ve onay bekliyor.';
+
+  @override
+  String get portfolioChange => 'Portföy değişimi';
+
+  @override
+  String aheadOfInflationPts(String pts) {
+    return 'Enflasyonun $pts puan önünde';
+  }
+
+  @override
+  String betterThanPctInvestors(int pct) {
+    return 'Yatırımcıların %$pct\'inden iyi';
+  }
+
+  @override
+  String nDaysTracked(int n) {
+    return '$n gün takip';
+  }
+
+  @override
+  String get trackingWithSandik => 'sandık ile takip ediyorum';
+
+  @override
+  String get shareCardNoAmounts =>
+      'Kartta tutar yok; yalnızca yüzde ve etiketler.';
+
+  @override
+  String get preparingEllipsis => 'Hazırlanıyor…';
+
+  @override
+  String get shareAsImage => 'Görsel olarak paylaş';
+
+  @override
+  String get shareAsText => 'Metin olarak paylaş';
+
+  @override
+  String behindInflationPts(String pts) {
+    return 'Enflasyonun $pts puan gerisinde';
+  }
+
+  @override
+  String get assetNotFound => 'Varlık bulunamadı';
+
+  @override
+  String get myMarketReturn => 'Piyasa getirim';
 }

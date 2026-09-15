@@ -1827,4 +1827,665 @@ class AppLocalizationsEn extends AppLocalizations {
   String recapCardSubtitle(String character) {
     return 'A short story of the year — $character';
   }
+
+  @override
+  String medianAhead(String pts) {
+    return '$pts points ahead of the median';
+  }
+
+  @override
+  String get returnRanking => 'Return ranking';
+
+  @override
+  String returnRankingWith(String detail) {
+    return 'Return ranking · $detail';
+  }
+
+  @override
+  String percentileSemantics(int pct, String detail) {
+    return 'Over the last 30 days you are above $pct percent of participants. $detail';
+  }
+
+  @override
+  String get last30DaysLike => 'Over the last 30 days you\'re ahead of ';
+
+  @override
+  String nPeople(int n) {
+    return '$n people';
+  }
+
+  @override
+  String medianBehind(String pts) {
+    return '$pts points behind the median';
+  }
+
+  @override
+  String realReturnSemanticsAhead(String pts) {
+    return 'Over the last year your portfolio beat inflation by $pts points';
+  }
+
+  @override
+  String get lastYearInflation => 'Over the last year, inflation-wise you are ';
+
+  @override
+  String pointsAhead(String pts) {
+    return '$pts points ahead';
+  }
+
+  @override
+  String realReturnSemanticsBehind(String pts) {
+    return 'Over the last year your portfolio trailed inflation by $pts points';
+  }
+
+  @override
+  String pointsBehind(String pts) {
+    return '$pts points behind';
+  }
+
+  @override
+  String get weeklyFlatSemantics =>
+      'Your portfolio\'s market return did not change this week';
+
+  @override
+  String get thisWeekFromMarket => 'From the market this week: ';
+
+  @override
+  String get noChangeLower => 'no change';
+
+  @override
+  String pctDown(String pct) {
+    return '$pct% down';
+  }
+
+  @override
+  String weeklyDownSemantics(String pct) {
+    return 'Your portfolio\'s market return is $pct percent down this week';
+  }
+
+  @override
+  String weeklyUpSemantics(String pct) {
+    return 'Your portfolio\'s market return is $pct percent up this week';
+  }
+
+  @override
+  String pctUp(String pct) {
+    return '$pct% up';
+  }
+
+  @override
+  String get totalNetHidden => 'Total net worth hidden';
+
+  @override
+  String totalNetWorth(String amount) {
+    return 'Total net worth $amount';
+  }
+
+  @override
+  String get realisedFromSales => 'Realised from sales: ';
+
+  @override
+  String deletedNRecords(int n) {
+    return 'Deleted · $n records';
+  }
+
+  @override
+  String get txSell => 'Sale';
+
+  @override
+  String get txDividend => 'Dividend';
+
+  @override
+  String get txBuy => 'Purchase';
+
+  @override
+  String get gainWord => 'gain';
+
+  @override
+  String get lossWord => 'loss';
+
+  @override
+  String get realisedFromSalesSemantics => 'realised from sales ';
+
+  @override
+  String get raceNoPartnerBody =>
+      'You have no partners yet. You can already see your own period return and global percentile.';
+
+  @override
+  String get viewWord => 'View';
+
+  @override
+  String get newUpper => 'NEW';
+
+  @override
+  String get racePitch =>
+      'A return ranking with your partners. Who is earning more?';
+
+  @override
+  String get joinWord => 'Join';
+
+  @override
+  String get raceCalculating => 'Calculating the race…';
+
+  @override
+  String rankFirst(String period) {
+    return 'You\'re 1st in the $period ranking';
+  }
+
+  @override
+  String rankNth(String period, String rank) {
+    return 'You\'re $rank in the $period ranking';
+  }
+
+  @override
+  String widenTheGap(String gap) {
+    return 'Widen the gap — second is $gap% behind';
+  }
+
+  @override
+  String get atTheTop => 'You\'re at the top — keep the lead';
+
+  @override
+  String toPassPerson(String name, String diff) {
+    return '+$diff% to pass $name';
+  }
+
+  @override
+  String get higherInOtherPeriods =>
+      'You rank higher in other periods — tap to see';
+
+  @override
+  String get deleteAssetTitle => 'Delete Asset';
+
+  @override
+  String deleteAssetMulti(String name, int n) {
+    return 'Permanently delete $n transaction records (buy/sell/dividend) for \"$name\"?';
+  }
+
+  @override
+  String deleteAssetSingle(String name) {
+    return 'Permanently delete \"$name\"?';
+  }
+
+  @override
+  String get deleteAnyway => 'Delete anyway';
+
+  @override
+  String get deleteAssetWarning =>
+      'This is not a sale — the asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.';
+
+  @override
+  String get assetDeleted => 'Asset deleted';
+
+  @override
+  String get undoFailed => 'Could not undo';
+
+  @override
+  String get enterValidAmount => 'Enter a valid amount';
+
+  @override
+  String get dividendSaved => 'Dividend saved';
+
+  @override
+  String get dividendPayDate => 'Dividend payment date';
+
+  @override
+  String get addDividend => 'Add Dividend';
+
+  @override
+  String netAmountReceived(String name) {
+    return '$name · net amount received';
+  }
+
+  @override
+  String paymentDate(String date) {
+    return 'Payment date: $date';
+  }
+
+  @override
+  String get dividendNote =>
+      'A dividend does not change your quantity; it is added to your total return.';
+
+  @override
+  String get enterValidQuantity => 'Enter a valid quantity';
+
+  @override
+  String get enterValidUnitPrice => 'Enter a valid unit price';
+
+  @override
+  String cannotExceedQuantity(String qty) {
+    return 'You can\'t exceed the current quantity ($qty)';
+  }
+
+  @override
+  String boughtAmount(String qty, String unit) {
+    return 'Bought $qty $unit';
+  }
+
+  @override
+  String soldAmount(String qty, String unit) {
+    return 'Sold $qty $unit';
+  }
+
+  @override
+  String transactionFailed(String error) {
+    return 'Transaction failed. $error';
+  }
+
+  @override
+  String get sellAllWarning =>
+      'You are selling the whole position — it leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.';
+
+  @override
+  String get saleValue => 'Sale value';
+
+  @override
+  String get noPriceAlert => 'No price alert';
+
+  @override
+  String nActiveAlerts(int n) {
+    return '$n active price alerts';
+  }
+
+  @override
+  String get deleteAlertTitle => 'Delete alert';
+
+  @override
+  String deleteAlertAbove(String price) {
+    return 'Delete the alert for rising above $price?';
+  }
+
+  @override
+  String triggeredAlertSemantics(String price) {
+    return 'Triggered alert $price, tap to set it again';
+  }
+
+  @override
+  String alertAboveSemantics(String price) {
+    return 'Above $price, tap to delete';
+  }
+
+  @override
+  String alertTriggered(String price) {
+    return '$price · triggered';
+  }
+
+  @override
+  String deleteAlertBelow(String price) {
+    return 'Delete the alert for falling below $price?';
+  }
+
+  @override
+  String alertBelowSemantics(String price) {
+    return 'Below $price, tap to delete';
+  }
+
+  @override
+  String get addAssetFirst =>
+      'Add an asset to your portfolio or watchlist first.';
+
+  @override
+  String alertSetAbove(String name, String price) {
+    return 'Alert set for $name: rising above $price';
+  }
+
+  @override
+  String get alertSetFailed => 'Could not set the alert';
+
+  @override
+  String get enterValidPrice => 'Enter a valid price';
+
+  @override
+  String alertForAsset(String name) {
+    return 'Alert for $name';
+  }
+
+  @override
+  String currentlyPrice(String price) {
+    return 'Currently $price';
+  }
+
+  @override
+  String get currentPriceUnknown => 'Current price unknown';
+
+  @override
+  String targetPctSemantics(String sign, int pct) {
+    return 'Target percent $sign $pct';
+  }
+
+  @override
+  String get notifyWhenAbove =>
+      'We\'ll let you know when the price rises to this level.';
+
+  @override
+  String get notifyWhenBelow =>
+      'We\'ll let you know when the price falls to this level.';
+
+  @override
+  String get setAlert => 'Set alert';
+
+  @override
+  String alertSetBelow(String name, String price) {
+    return 'Alert set for $name: falling below $price';
+  }
+
+  @override
+  String get plusWord => 'plus';
+
+  @override
+  String get minusWord => 'minus';
+
+  @override
+  String get widgetStepHold =>
+      'Press and hold an empty spot on your home screen';
+
+  @override
+  String get widgetStepPlus => 'Tap the + in the top-left corner';
+
+  @override
+  String get widgetStepPickIos => 'Pick \"sandık\" from the list and add it';
+
+  @override
+  String get widgetStepPickAndroid =>
+      'Find \"sandık\" and drag it to your home screen';
+
+  @override
+  String get widgetInstallTitle => 'See your portfolio on the home screen';
+
+  @override
+  String get widgetInstallBody =>
+      'See your total and daily change without opening the app.';
+
+  @override
+  String get gotIt => 'Got it';
+
+  @override
+  String get widgetStepWidgetsTab => 'Tap \"Widgets\"';
+
+  @override
+  String get disclaimerText =>
+      'This app is for information only. The data, analyses and notifications shown are absolutely not investment advice, a trading recommendation, or financial consultancy. Make your investment decisions in consultation with a licensed financial adviser. Past performance does not guarantee future results.';
+
+  @override
+  String get justNow => 'just now';
+
+  @override
+  String minutesAgo(int n) {
+    return '$n min ago';
+  }
+
+  @override
+  String hoursAgo(int n) {
+    return '$n h ago';
+  }
+
+  @override
+  String daysAgo(int n) {
+    return '$n d ago';
+  }
+
+  @override
+  String get signalCalculating => 'Calculating signal…';
+
+  @override
+  String get trendUp => 'UPTREND';
+
+  @override
+  String get trendDown => 'DOWNTREND';
+
+  @override
+  String get trendFlat => 'FLAT';
+
+  @override
+  String indicatorsConfidence(int lehte, int total, int pct) {
+    return '$lehte/$total indicators · $pct% confidence';
+  }
+
+  @override
+  String confidenceOnly(int pct) {
+    return '$pct% confidence';
+  }
+
+  @override
+  String get technicalOutlookUpper => 'TECHNICAL OUTLOOK';
+
+  @override
+  String get nowUpper => 'NOW';
+
+  @override
+  String get arrowUp => '▲ up';
+
+  @override
+  String get arrowDown => '▼ down';
+
+  @override
+  String get arrowFlat => '◆ flat';
+
+  @override
+  String get indicatorsCalculating => 'Calculating indicators…';
+
+  @override
+  String get indicatorsNoHistory =>
+      'This asset\'s price history could not be fetched — indicators cannot be calculated.';
+
+  @override
+  String get noIndicatorsSelected =>
+      'No indicators are selected for this asset type. Enable them from Profile → Signal Settings.';
+
+  @override
+  String get technicalAnalysisUpper => 'TECHNICAL ANALYSIS';
+
+  @override
+  String nOfMIndicators(int on, int all) {
+    return '· $on/$all indicators';
+  }
+
+  @override
+  String get configureIndicators => 'Configure Indicators';
+
+  @override
+  String buySellNeutralCounts(int buy, int sell, int neutral) {
+    return '$buy BUY · $sell SELL · $neutral NEUTRAL';
+  }
+
+  @override
+  String get confidenceWord => 'confidence';
+
+  @override
+  String csvRowsAddedToCart(int n) {
+    return '$n rows added to the cart';
+  }
+
+  @override
+  String get csvImportTitle => 'Import from CSV';
+
+  @override
+  String get csvImportBody =>
+      'Copy and paste your broker statement or Excel table. Include a header row; column order doesn\'t matter.';
+
+  @override
+  String get pasteHere => 'Paste here';
+
+  @override
+  String get preview => 'Preview';
+
+  @override
+  String csvRowsRead(int n) {
+    return '$n rows read';
+  }
+
+  @override
+  String csvRowsSkipped(int n) {
+    return ', $n rows skipped';
+  }
+
+  @override
+  String get closePriceWillBeFetched => 'close price will be fetched';
+
+  @override
+  String get unitPiece => 'units';
+
+  @override
+  String assetLimitReachedFor(String name) {
+    return '$name: asset limit reached';
+  }
+
+  @override
+  String get someAssetsNotAdded => 'Some Assets Could Not Be Added';
+
+  @override
+  String get clearCartConfirm =>
+      'All assets in the cart will be removed. Are you sure?';
+
+  @override
+  String get pasteCsv => 'Paste CSV';
+
+  @override
+  String get cartEmpty => 'The cart is empty';
+
+  @override
+  String get cartEmptyBody =>
+      'Use the + Add Asset button below to queue several assets and save them all at once.';
+
+  @override
+  String get pasteFromStatement => 'Paste from statement / CSV';
+
+  @override
+  String saveAllCount(int n) {
+    return 'Save All ($n)';
+  }
+
+  @override
+  String get removeFromWatchlist => 'Remove from watchlist';
+
+  @override
+  String removeFromWatchlistConfirm(String name) {
+    return 'Remove $name from your watchlist?';
+  }
+
+  @override
+  String get removeWord2 => 'Remove';
+
+  @override
+  String get removeFromWatchlistFailed =>
+      'Could not remove it. Check your connection.';
+
+  @override
+  String get currentPriceUpper => 'CURRENT PRICE';
+
+  @override
+  String periodNoChange(String period) {
+    return '$period · no change';
+  }
+
+  @override
+  String get unitPriceDiffNote =>
+      'The change is a unit price difference — you don\'t own this asset.';
+
+  @override
+  String get notEnoughHistoryForAsset =>
+      'Not enough price history for this asset.';
+
+  @override
+  String get notInYourPortfolio => 'This asset is not part of your portfolio.';
+
+  @override
+  String get searchingEllipsis => 'Searching…';
+
+  @override
+  String get startTypingToSearch => 'Start typing to search.';
+
+  @override
+  String noResultForQuery(String q) {
+    return 'No results for \"$q\".';
+  }
+
+  @override
+  String get inYourPortfolioUpper => 'IN YOUR PORTFOLIO';
+
+  @override
+  String get searchAllAssetsHint =>
+      'Search stocks, funds, indices, commodities, currency or gold';
+
+  @override
+  String alreadyInPortfolio(String name) {
+    return '$name is already in your portfolio';
+  }
+
+  @override
+  String addedToWatchlist(String name) {
+    return '$name added to your watchlist';
+  }
+
+  @override
+  String watchlistLimitFree(int n) {
+    return 'On the free plan you can watch up to $n assets.';
+  }
+
+  @override
+  String get partnershipAcceptedShort => 'Partnership accepted.';
+
+  @override
+  String get partnershipRejectedShort => 'Partner request rejected.';
+
+  @override
+  String get partnershipApprovalTitle => 'Partnership Approval';
+
+  @override
+  String get partnershipApprovalBody =>
+      'See and approve the people who entered your partner code here.';
+
+  @override
+  String get noPendingRequests => 'No pending partner requests.';
+
+  @override
+  String get userWord => 'User';
+
+  @override
+  String get enteredYourCode =>
+      'Entered your partner code and is waiting for approval.';
+
+  @override
+  String get portfolioChange => 'Portfolio change';
+
+  @override
+  String aheadOfInflationPts(String pts) {
+    return '$pts points ahead of inflation';
+  }
+
+  @override
+  String betterThanPctInvestors(int pct) {
+    return 'Better than $pct% of investors';
+  }
+
+  @override
+  String nDaysTracked(int n) {
+    return '$n days tracked';
+  }
+
+  @override
+  String get trackingWithSandik => 'tracked with sandık';
+
+  @override
+  String get shareCardNoAmounts =>
+      'The card shows no amounts; only percentages and labels.';
+
+  @override
+  String get preparingEllipsis => 'Preparing…';
+
+  @override
+  String get shareAsImage => 'Share as image';
+
+  @override
+  String get shareAsText => 'Share as text';
+
+  @override
+  String behindInflationPts(String pts) {
+    return '$pts points behind inflation';
+  }
+
+  @override
+  String get assetNotFound => 'Asset not found';
+
+  @override
+  String get myMarketReturn => 'My market return';
 }

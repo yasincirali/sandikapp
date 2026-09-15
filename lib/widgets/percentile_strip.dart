@@ -10,6 +10,7 @@ import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../l10n/l10n.dart';
 
 /// Ana ekranda anonim yüzdelik dilim şeridi.
 ///
@@ -125,17 +126,17 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
     final medyan = data.medianDiffPts;
     final medyanMetni = medyan == null
         ? null
-        : 'medyandan ${fmtNum(medyan.abs(), digits: 1)} puan '
-            '${medyan >= 0 ? 'önde' : 'geride'}';
+        : (medyan >= 0
+            ? context.l10n.medianAhead(fmtNum(medyan.abs(), digits: 1))
+            : context.l10n.medianBehind(fmtNum(medyan.abs(), digits: 1)));
     final altSatir = medyanMetni == null
-        ? 'Getiri sıralaması'
-        : 'Getiri sıralaması · $medyanMetni';
+        ? context.l10n.returnRanking
+        : context.l10n.returnRankingWith(medyanMetni);
 
     return Padding(
       padding: widget.padding,
       child: Semantics(
-        label: 'Son 30 günde katılımcıların yüzde $ustundeOlduklari '
-            'kadarının üstündesin. $altSatir',
+        label: context.l10n.percentileSemantics(ustundeOlduklari, altSatir),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
@@ -166,7 +167,7 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
                           color: context.c.text58,
                         ),
                         children: [
-                          const TextSpan(text: 'Son 30 günde senin gibi '),
+                          TextSpan(text: context.l10n.last30DaysLike),
                           TextSpan(
                             text: "yatırımcıların %$ustundeOlduklari'inden",
                             style: TextStyle(
@@ -194,7 +195,7 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
               // geldiğini söylemek hem güveni artırır hem k-anonimliği
               // görünür kılar.
               Text(
-                '${data.total} kişi',
+                context.l10n.nPeople(data.total),
                 style: context.t.bodySmall?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: context.c.text36,

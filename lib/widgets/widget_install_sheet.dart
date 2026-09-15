@@ -7,6 +7,7 @@ import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/retention_tracker.dart';
 import '../theme/sandik.dart';
+import '../l10n/l10n.dart';
 
 /// Ana ekran widget'ı kurulum önerisi.
 ///
@@ -65,16 +66,16 @@ class WidgetInstallSheet extends StatelessWidget {
   /// Metinler iki işletim sisteminin KENDİ sözcükleriyle yazılır
   /// ("Düzenle" / "basılı tut"); genel bir tarif kullanıcıyı ekranda
   /// aradığı düğmeyi bulamaz hâlde bırakır.
-  static List<String> adimlar() => Platform.isIOS
-      ? const [
-          'Ana ekranda boş bir yere basılı tut',
-          'Sol üstteki + işaretine dokun',
-          'Listeden "sandık"ı seç ve ekle',
+  static List<String> adimlar(AppLocalizations l) => Platform.isIOS
+      ? [
+          l.widgetStepHold,
+          l.widgetStepPlus,
+          l.widgetStepPickIos,
         ]
-      : const [
-          'Ana ekranda boş bir yere basılı tut',
-          '"Widget\'lar"a dokun',
-          '"sandık"ı bulup ana ekrana sürükle',
+      : [
+          l.widgetStepHold,
+          l.widgetStepWidgetsTab,
+          l.widgetStepPickAndroid,
         ];
 
   @override
@@ -112,7 +113,7 @@ class WidgetInstallSheet extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Portföyünü ana ekranda gör',
+                  context.l10n.widgetInstallTitle,
                   style: context.t.headlineSmall?.copyWith(color: c.text90),
                 ),
               ),
@@ -120,11 +121,11 @@ class WidgetInstallSheet extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Uygulamayı açmadan toplamını ve günlük değişimini görürsün.',
+            context.l10n.widgetInstallBody,
             style: context.t.bodyLarge?.copyWith(color: c.text58),
           ),
           const SizedBox(height: 20),
-          for (var i = 0; i < adimlar().length; i++) ...[
+          for (var i = 0; i < adimlar(context.l10n).length; i++) ...[
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Row(
@@ -151,7 +152,7 @@ class WidgetInstallSheet extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      adimlar()[i],
+                      adimlar(context.l10n)[i],
                       style: context.t.bodyLarge?.copyWith(color: c.text90),
                     ),
                   ),
@@ -169,7 +170,7 @@ class WidgetInstallSheet extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Anladım'),
+              child: Text(context.l10n.gotIt),
             ),
           ),
         ],

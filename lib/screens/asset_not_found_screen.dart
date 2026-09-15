@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_error_view.dart';
+import '../l10n/l10n.dart';
 
 /// Dışarıdan gelen `sandik://asset/<id>` bağlantısının hedefi bu hesabın
 /// portföyünde yoksa gösterilir.
@@ -23,7 +24,7 @@ class AssetNotFoundScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: const SandikAppBar(title: 'Varlık bulunamadı', transparent: true),
+      appBar: SandikAppBar(title: context.l10n.assetNotFound, transparent: true),
       body: const SandikErrorView(error: VarlikBulunamadiHatasi()),
     );
   }
