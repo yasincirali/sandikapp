@@ -18,34 +18,60 @@ const USER_AGENT =
 
 /// Altın iç sembolü → truncgil anahtarı.
 /// `PriceService._truncgilGoldKeys` ile BİREBİR aynı olmalı.
+///
+/// ⚠️ 2026-09-15: truncgil v4 anahtarları DEĞİŞTİ. Eski adlar boşluklu ve
+/// Türkçe'ydi ('Gram Altın'); yenileri boşluksuz ve ASCII ('GRA').
+/// Eski adların hiçbiri yanıtta artık YOK — `data[key]` her sembol için
+/// `undefined` dönüyordu ve `fetchLivePrices` boş map veriyordu. Belirtisi:
+/// `check-price-alerts` her turda `{"reason":"Fiyat alinamadi.","sent":0}`
+/// (2026-09-15'te 30 dakikada bir, istisnasız — yani fiyat alarmı özelliği
+/// tümüyle ölüydü ve hata hiçbir yerde görünmüyordu: HTTP 200).
 const GOLD_KEYS: Record<string, string> = {
-  ALTIN_GRAM: 'Gram Altın',
-  ALTIN_CEYREK: 'Çeyrek Altın',
-  ALTIN_YARIM: 'Yarım Altın',
-  ALTIN_CUMHURIYET: 'Cumhuriyet Altını',
-  ALTIN_ATA: 'Ata Altını',
-  ALTIN_RESAT: 'Reşat Altını',
+  ALTIN_GRAM: 'GRA',
+  ALTIN_CEYREK: 'CEYREKALTIN',
+  ALTIN_YARIM: 'YARIMALTIN',
+  ALTIN_CUMHURIYET: 'CUMHURIYETALTINI',
+  ALTIN_ATA: 'ATAALTIN',
+  ALTIN_RESAT: 'RESATALTIN',
 };
 
 const FX_SYMBOLS = new Set(['USDTRY=X', 'EURTRY=X', 'GBPTRY=X']);
 
-/// truncgil sayı biçimi: "5.412,37" → 5412.37
+/// truncgil sayı değeri → number.
 ///
-/// Binlik ayıracı NOKTA, ondalık ayıracı VİRGÜL. Doğrudan `parseFloat`
-/// "5.412,37"yi 5.412 okur — yani bin katı hatalı bir fiyat. Alarmların
-/// sessizce yanlış tetiklenmesinin en kolay yolu buydu.
+/// İKİ biçim de desteklenir ve bu bilinçli:
+///
+///   · **number** (v4, 2026-09 sonrası): `6710.67` — API artık JSON sayısı
+///     döndürüyor, string değil.
+///   · **string** (eski biçim): `"5.412,37"` — binlik ayıracı NOKTA,
+///     ondalık ayıracı VİRGÜL. Doğrudan `Number()` bunu 5.412 okur, yani
+///     BİN KATI hatalı bir fiyat. Alarmların sessizce yanlış tetiklenmesinin
+///     en kolay yolu buydu.
+///
+/// Eski dal KORUNUYOR: API biçimi bir kez değiştiyse geri de dönebilir ve
+/// iki biçimi de kabul etmenin maliyeti üç satır.
 export function parseTruncgilNumber(raw: unknown): number | null {
+  if (typeof raw === 'number') {
+    return Number.isFinite(raw) && raw > 0 ? raw : null;
+  }
   if (typeof raw !== 'string') return null;
   const temiz = raw.replaceAll('.', '').replace(',', '.').trim();
   const n = Number(temiz);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-/// truncgil kaydından fiyat: "Alış" yoksa "Satış".
+/// truncgil kaydından fiyat: alış yoksa satış.
+///
+/// ⚠️ 2026-09-15: v4 alan adları Türkçe'den İngilizce'ye döndü
+/// (`Alış`→`Buying`, `Satış`→`Selling`). Eski adlar önce denenir ki API
+/// geri dönerse çalışmaya devam etsin; ikisi de yoksa null.
 export function truncgilValue(entry: unknown): number | null {
   if (typeof entry !== 'object' || entry === null) return null;
   const rec = entry as Record<string, unknown>;
-  return parseTruncgilNumber(rec['Alış']) ?? parseTruncgilNumber(rec['Satış']);
+  return parseTruncgilNumber(rec['Alış']) ??
+    parseTruncgilNumber(rec['Buying']) ??
+    parseTruncgilNumber(rec['Satış']) ??
+    parseTruncgilNumber(rec['Selling']);
 }
 
 export function isGoldSymbol(symbol: string): boolean {

@@ -84,23 +84,59 @@ Deno.test('bozuk/boş değer null', ()=>{
   assertEquals(parseTruncgilNumber(''), null);
   assertEquals(parseTruncgilNumber('abc'), null);
   assertEquals(parseTruncgilNumber('0'), null);
-  assertEquals(parseTruncgilNumber(5412.37), null, 'sayı değil string bekleniyor');
+  assertEquals(parseTruncgilNumber(null), null);
+  assertEquals(parseTruncgilNumber(undefined), null);
+  assertEquals(parseTruncgilNumber(0), null, 'sıfır fiyat geçersiz');
+  assertEquals(parseTruncgilNumber(-5), null, 'negatif fiyat geçersiz');
 });
+
+// ── v4 biçimi (2026-09-15) ──────────────────────────────────────────────
+//
+// API sayıları artık JSON number olarak, alan adlarını da İngilizce
+// döndürüyor. Bu üç test o değişikliğin regresyonunu tutar: ikisi de
+// kırıldığında belirti SESSİZDİ — `check-price-alerts` HTTP 200 ile
+// `{"reason":"Fiyat alinamadi.","sent":0}` dönüyor ve fiyat alarmı
+// özelliği tümüyle ölüyordu.
+Deno.test('v4: sayı tipi doğrudan okunur', ()=>{
+  assertEquals(parseTruncgilNumber(6710.67), 6710.67);
+  assertEquals(parseTruncgilNumber(48), 48);
+});
+Deno.test('v4: Buying/Selling alan adları okunur', ()=>{
+  assertEquals(truncgilValue({'Buying':6710.67,'Selling':6711.54}), 6710.67);
+  assertEquals(truncgilValue({'Selling':99.64}), 99.64);
+  // Alış/Satış önce denenir — API geri dönerse çalışmaya devam etmeli.
+  assertEquals(truncgilValue({'Alış':'100,00','Buying':999}), 100);
+});
+Deno.test('v4: gerçek anahtarlarla altın ve döviz çıkarılır', ()=>{
+  // Anahtarlar canlı yanıttan alındı (2026-09-15). Eski adlar
+  // ('Gram Altın', 'Ata Altını') yanıtta ARTIK YOK.
+  const data = {
+    'GRA': {'Buying':6710.67,'Selling':6711.54,'Type':'Gold'},
+    'ATAALTIN': {'Buying':44145.84,'Selling':45258.4,'Type':'Gold'},
+    'USD': {'Buying':48.6332,'Selling':48.6464,'Type':'Currency'},
+    'EUR': {'Buying':56.1795,'Selling':56.1908,'Type':'Currency'},
+  };
+  const out = extractTruncgil(data, ['ALTIN_GRAM','ALTIN_ATA','USDTRY=X','EURTRY=X']);
+  assertEquals(out.get('ALTIN_GRAM'), 6710.67);
+  assertEquals(out.get('ALTIN_ATA'), 44145.84);
+  assertEquals(out.get('USDTRY=X'), 48.6332);
+  assertEquals(out.get('EURTRY=X'), 56.1795);
+  assertEquals(out.size, 4, 'dört sembolün dördü de çözülmeli');
+});
+
 Deno.test('Alış yoksa Satış kullanılır', ()=>{
   assertEquals(truncgilValue({'Alış':'100,00','Satış':'101,00'}), 100);
   assertEquals(truncgilValue({'Satış':'101,00'}), 101);
   assertEquals(truncgilValue({}), null);
   assertEquals(truncgilValue(null), null);
 });
-Deno.test('altın ve döviz sembolleri çıkarılır', ()=>{
-  const data = {'Gram Altın':{'Alış':'5.412,37'}, 'USD':{'Alış':'42,15'}, 'EUR':{'Alış':'45,90'}};
-  const out = extractTruncgil(data, ['ALTIN_GRAM','USDTRY=X','EURTRY=X']);
-  assertEquals(out.get('ALTIN_GRAM'), 5412.37);
+Deno.test('eski biçim (string + Türkçe alan) hâlâ okunur', ()=>{
+  // Geriye dönük uyum kasıtlı: API biçimi bir kez değiştiyse geri dönebilir.
+  const out = extractTruncgil({'USD':{'Alış':'42,15'}}, ['USDTRY=X']);
   assertEquals(out.get('USDTRY=X'), 42.15);
-  assertEquals(out.get('EURTRY=X'), 45.90);
 });
 Deno.test('kaynakta olmayan sembol atlanır, hata vermez', ()=>{
-  const out = extractTruncgil({'USD':{'Alış':'42,15'}}, ['ALTIN_ATA','USDTRY=X']);
+  const out = extractTruncgil({'USD':{'Buying':48.63}}, ['ALTIN_ATA','USDTRY=X']);
   assertEquals(out.has('ALTIN_ATA'), false);
   assertEquals(out.size, 1);
 });

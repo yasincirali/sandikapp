@@ -48,13 +48,24 @@ class PriceService {
   static const _fxSymbols = {'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'};
 
   // Turkish gold symbols → finans.truncgil.com key names
+  //
+  // ⚠️ 2026-09-15: truncgil v4 anahtarları DEĞİŞTİ — boşluklu Türkçe adlar
+  // ('Gram Altın') yerine boşluksuz ASCII ('GRA'). Eski adların hiçbiri
+  // yanıtta artık YOK, yani `data[key]` her sembolde null dönüyor ve altın
+  // fiyatları Yahoo GC=F + ons/gram çevrimi olan YEDEĞE düşüyordu
+  // (`_goldWeights`). Yedek çalıştığı için belirti sessizdi: fiyat geliyor
+  // ama kaynak yanlış, sayı tutarsız.
+  //
+  // Sunucu tarafındaki eşi: `supabase/functions/_shared/live_prices.ts`
+  // → `GOLD_KEYS`. İKİSİ BİREBİR AYNI KALMALI — alarm, uygulamada GÖRÜNEN
+  // sayı üzerinden tetiklenmeli.
   static const _truncgilGoldKeys = <String, String>{
-    'ALTIN_GRAM': 'Gram Altın',
-    'ALTIN_CEYREK': 'Çeyrek Altın',
-    'ALTIN_YARIM': 'Yarım Altın',
-    'ALTIN_CUMHURIYET': 'Cumhuriyet Altını',
-    'ALTIN_ATA': 'Ata Altını',
-    'ALTIN_RESAT': 'Reşat Altını',
+    'ALTIN_GRAM': 'GRA',
+    'ALTIN_CEYREK': 'CEYREKALTIN',
+    'ALTIN_YARIM': 'YARIMALTIN',
+    'ALTIN_CUMHURIYET': 'CUMHURIYETALTINI',
+    'ALTIN_ATA': 'ATAALTIN',
+    'ALTIN_RESAT': 'RESATALTIN',
   };
 
   // Fallback gold weights in 22K grams (used with Yahoo GC=F if truncgil fails)
@@ -248,11 +259,30 @@ class PriceService {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  /// truncgil kaydından fiyat.
+  ///
+  /// İKİ biçim de desteklenir ve bu bilinçli:
+  ///   · **num** (v4, 2026-09 sonrası): `6710.67` — API artık JSON sayısı
+  ///     döndürüyor ve alan adları İngilizce (`Buying`/`Selling`).
+  ///   · **String** (eski biçim): `"5.412,37"` — binlik NOKTA, ondalık
+  ///     VİRGÜL. Ham `double.tryParse` bunu 5.412 okur, yani BİN KATI
+  ///     hatalı fiyat.
+  ///
+  /// Eski dallar KORUNUYOR: API biçimi bir kez değiştiyse geri de dönebilir.
   double _parseTruncgilValue(dynamic entry) {
     if (entry is! Map) return 0;
-    final raw =
-        (entry['Alış'] ?? entry['Satış'] ?? '').toString();
-    return double.tryParse(raw.replaceAll('.', '').replaceAll(',', '.')) ?? 0;
+    final raw = entry['Alış'] ??
+        entry['Buying'] ??
+        entry['Satış'] ??
+        entry['Selling'];
+    if (raw == null) return 0;
+    // v4: gerçek sayı — string ayrıştırması uygulanmamalı.
+    if (raw is num) {
+      final v = raw.toDouble();
+      return v.isFinite && v > 0 ? v : 0;
+    }
+    final metin = raw.toString();
+    return double.tryParse(metin.replaceAll('.', '').replaceAll(',', '.')) ?? 0;
   }
 
   Map<String, YahooQuote> _extractFx(Map<String, dynamic> data) {

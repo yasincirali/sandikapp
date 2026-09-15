@@ -12,6 +12,193 @@
 
 ---
 
+## 🎯 BULUNDU: truncgil v4 API'si değişti — fiyat alarmları ölüydü (2026-09-15)
+
+**Teşhis tamamlandı.** `net._http_response` okundu: **401/503/500 YOK,
+hepsi 200.** Yani yetki zinciri (gateway JWT + cron secret + FCM secret)
+baştan sona SAĞLAM — aranan arıza orada değildi.
+
+### Arıza 1 — `check-price-alerts` her turda "Fiyat alinamadi." (GERÇEK ARIZA, düzeltildi)
+
+30 dakikada bir, istisnasız: `{"ok":true,"reason":"Fiyat alinamadi.","sent":0}`.
+Aktif alarm VAR (o dal geçilmiş), ama tek bir fiyat bile çekilemiyordu →
+**fiyat alarmı özelliği tümüyle ölüydü.**
+
+**Sebep:** `finans.truncgil.com/v4/today.json` yanıt biçimini değiştirmiş.
+Canlı yanıtla doğrulandı (2026-09-15 16:37):
+
+| | Kodun beklediği | API'nin döndürdüğü |
+|---|---|---|
+| Altın anahtarı | `'Gram Altın'`, `'Ata Altını'` | `'GRA'`, `'ATAALTIN'` |
+| Alan adı | `'Alış'` / `'Satış'` | `'Buying'` / `'Selling'` |
+| Sayı tipi | String `"5.412,37"` | Gerçek number `6710.67` |
+
+Üçü birden değişince `data[key]` her sembolde `undefined` döndü, map boş
+kaldı. **HTTP 200 olduğu için hiçbir yerde hata görünmedi** — 0054'ün
+sessiz arıza deseninin aynısı, bu sefer veri katmanında.
+
+**Düzeltildi:**
+- `supabase/functions/_shared/live_prices.ts` — anahtarlar + `Buying`/`Selling` + number tipi
+- `lib/services/price_service.dart` — **aynı hata istemcide de vardı**
+
+> ⚠️ **İstemci tarafı ayrıca önemli:** uygulama altın fiyatlarını sessizce
+> Yahoo `GC=F` + ons/gram çevrimi olan YEDEĞE düşürüyordu (`_goldWeights`).
+> Yedek çalıştığı için belirti yoktu ama gösterilen sayı truncgil'inkiyle
+> tutmuyordu. Alarm, uygulamada GÖRÜNEN sayı üzerinden tetiklenmeli —
+> bu yüzden iki taraf birlikte düzeltildi ve `GOLD_KEYS` ↔
+> `_truncgilGoldKeys` birebir aynı kalmalı.
+
+Regresyon testi: `supabase/tests/price_alert_test.ts` — v4 biçimi için üç
+yeni test, eski biçim uyumu korunuyor (17/17 geçiyor).
+
+**Senin yapacağın:** Actions → Supabase deploy → `functions=check-price-alerts`.
+İstemci tarafı bir sonraki uygulama derlemesiyle gider.
+
+Doğrulama: deploy sonrası `select public.trigger_check_price_alerts();` →
+birkaç saniye sonra `net._http_response`'ta artık `"Fiyat alinamadi."`
+GÖRMEMELİSİN.
+
+### Arıza 2 — `analyze-signals` `passed_threshold: 0` (muhtemelen NORMAL)
+
+```json
+{"slot":"hourly","users":1,"assets":12,"positions":5,"evaluated":5,
+ "passed_threshold":0,"sent":0,"failed":0,
+ "skipped_by_dedup":0,"skipped_by_frequency":0}
+```
+
+Zincir **kusursuz çalışıyor**: 5 pozisyon değerlendirildi, de-dup engeli
+yok, sıklık engeli yok, hata yok. Hiçbir hisse eşiği geçmedi — yani
+teknik analiz "bugün söyleyecek bir şey yok" dedi.
+
+**Bu büyük olasılıkla arıza DEĞİL.** Ama "hiç sinyal gelmiyor" şikayeti
+sürüyorsa eşik fazla yüksek olabilir; karar senin:
+
+```sql
+select asset_type, threshold, indicators, signals_enabled, frequency,
+       window_start, window_end, notify_hours, last_notified_at
+  from signal_preferences where user_id = auth.uid();
+```
+
+`threshold` değerini düşürüp bir tur bekleyerek sınayabilirsin.
+
+### Bu turda ayrıca: canlı etkinlik push'u ÇALIŞIYOR
+
+`{"sent":9,"removed":0,"total":9}` — 5 dakikada bir, düzenli. Yani
+FCM/APNs boru hattı ayakta. "Hiçbiri çalışmıyor" hissinin kaynağı
+büyük ihtimalle Arıza 1 (alarmlar) + Arıza 2 (sinyal eşiği) birleşimi.
+
+---
+
+## 🔔 AÇIK: "Push'ların hiçbiri çalışmıyor" teşhisi (2026-09-15)
+
+**Durum:** Kod zincirinin tamamı okundu; **yapısal bir arıza bulunamadı.**
+İstemci kaydı, FCM gönderimi, cron header deseni, alıcı filtreleri ve
+zamanlamalar tutarlı. Yani arıza koddaysa bile bu turda görünmüyor —
+**canlı veriden okunması gerekiyor.** Aşağıdaki sıra onu söyler.
+
+Bu turda kapatılan şey **teşhis körlüğüydü** (aşağıda §B).
+
+### A. Önce şunu koş — hangi halkanın koptuğunu SÖYLER
+
+SQL Editor'da, sırayla:
+
+```sql
+-- 1) Cron'lar kurulu ve koşuyor mu? (0064 sonrası hepsi görünür)
+select jobname, schedule, active from cron.job order by jobname;
+
+-- 2) Her job en son ne zaman ve nasıl bitti?
+select coalesce(j.jobname,'(silinmiş #'||d.jobid||')') as job,
+       d.status, d.start_time, left(d.return_message,200) as mesaj
+  from cron.job_run_details d
+  left join cron.job j on j.jobid = d.jobid
+ order by d.start_time desc limit 40;
+
+-- 3) Edge function GERÇEKTE ne döndü? (401=yetki, 503=secret yok, 5xx=içeride hata)
+select id, status_code, left(content,300) as govde, created
+  from net._http_response order by created desc limit 40;
+
+-- 4) Alıcı var mı? Bu sorgu 0 dönerse HİÇBİR push gidemez.
+select platform, count(*) from user_push_tokens group by platform;
+```
+
+**Okuma kılavuzu — kod bu üç durumu farklı döndürür, karıştırma:**
+
+| Gördüğün | Anlamı | Yapılacak |
+|---|---|---|
+| `user_push_tokens` **boş** | Zincirin sunucu tarafı sağlam olsa bile gidecek cihaz yok. En olası sebep bu. | Uygulamada Ayarlar → **Push Teşhisi** → "4. CİHAZ TOKEN'I" bölümü; izin/APNs/FCM ayrımını orada oku. |
+| HTTP **401** | Gateway JWT'si ya da `x-cron-secret` uyuşmuyor | `cron_gateway_jwt` + ilgili `*_cron_secret` Vault ↔ function secret eşitliği |
+| HTTP **503** `cron_secret_missing` | Function secret'ı hiç tanımlı değil | `supabase secrets set <AD>` |
+| HTTP **500** `FCM secret'ları eksik` | `FCM_PROJECT_ID` / `FCM_SERVICE_ACCOUNT_JSON` yok | Secret'ları gir (README: analyze-signals) |
+| HTTP **200** ama `"sent":0` | Yetki TAMAM; gönderimi bir **iş kuralı** durdurdu | Aşağıdaki §C — gövdedeki sayaçlar sebebi söyler |
+
+⚠️ **`200 {"sent":0}` bir arıza DEĞİLDİR** — çoğu zaman doğru davranıştır
+(piyasa kapalı, eşiği geçen hareket yok, de-dup). "Push gelmiyor"u buna
+bakarak teşhis etmek, olmayan bir hatayı kovalamak olur.
+
+### B. Bu turda düzeltilen: teşhis ekranı beş cron'u HİÇ göstermiyordu
+
+`push_cron_jobs()` `0021`'den beri `where jobname like 'analyze-signals%'`
+filtresi taşıyordu. Sonradan eklenen yedi cron (brifing, haftalık özet,
+fiyat alarmı, takvim, enflasyon, canlı etkinlik, TEFAS) ekranda **hiç
+görünmüyordu** — "hangi iş çalışmıyor?" sorusu tam da o ekrandan
+okunamıyordu. `push_cron_runs` `0022`'de açılmıştı, `push_cron_jobs` geride
+kalmıştı.
+
+`0064_push_diagnostics_all_jobs.sql`: filtre kaldırıldı, her job'a
+`son_calisma` + `son_durum` eklendi. Ekran artık **kurulu ama hiç koşmamış**
+job'u kırmızıyla ayrı bir teşhis olarak söylüyor — `0054`'ün sessiz
+arızasının (job aktif görünüyor, gövdesi hiç koşmamış) belirtisi tam buydu
+ve `_runs.isEmpty` onu yakalayamıyordu (liste `live-activity` koşularıyla
+dolu).
+
+**Deploy:** Actions → Supabase deploy → `migrations=true`, `functions=none`.
+
+> ⚠️ **`0064`'ü SQL Editor'dan elle koştuysan ve şu hatayı aldıysan:**
+>
+> ```
+> ERROR: 42P13: cannot change return type of existing function
+> DETAIL: Row type defined by OUT parameters is different.
+> HINT: Use DROP FUNCTION push_cron_jobs() first.
+> ```
+>
+> **Bu beklenen bir hataydı ve dosya düzeltildi** (2026-09-15). Sebebi:
+> Postgres `create or replace` ile bir fonksiyonun **dönüş tipini**
+> değiştirmeye izin vermez. `returns table (...)` sütunları OUT parametresi
+> sayılır — `son_calisma` + `son_durum` eklemek dönüş tipini değiştirmektir.
+> `0021`/`0022`'de yalnızca gövde değiştiği için bu tuzak o turlarda çıkmamıştı.
+>
+> Migration'a `drop function if exists public.push_cron_jobs();` eklendi.
+> **Repodaki güncel `0064`'ü yeniden çek ve tekrar koş** — başka bir şey
+> yapman gerekmiyor.
+>
+> İki nokta, ileride aynı deseni yazarsan:
+> - `if exists` şart — taze yığında (CI, `supabase start`) fonksiyon henüz
+>   yoktur, çıplak `drop` orada migration'ı kırar.
+> - **`drop` GRANT'ları da götürür.** `0064` içindeki `grant execute ... to
+>   authenticated` satırı bu yüzden var; silinirse teşhis ekranı
+>   "Yetkisiz" der ve bu sefer aracın kendisi kırılır.
+
+### C. `200` ama `sent:0` ise — sebebi sayaçlar söyler
+
+`analyze-signals` kuru koşusu gönderim yapmadan hangi kapının kapattığını
+döndürür:
+
+```sql
+select public.trigger_analyze_signals('hourly');
+-- birkaç saniye sonra:
+select left(content,600) from net._http_response order by created desc limit 1;
+```
+
+| Sayaç >0 ise | Gönderim neden durdu |
+|---|---|
+| `skipped_by_dedup` | Aynı sinyal zaten gönderilmiş. Sıfırlamak için: Push Teşhisi → "De-dup sıfırla" |
+| `skipped_by_frequency` | Kullanıcının seçtiği sıklık/pencere henüz izin vermiyor |
+| `closed_or_deleted_lots` | Pozisyon satılmış/silinmiş — **doğru** davranış |
+| `passed_threshold: 0` | Hiçbir hareket eşiği geçmedi — piyasa sakin, arıza değil |
+| `passed_threshold > 0` ama `sent: 0` | **Gerçek arıza** — `failed` ve `errors` alanlarına bak |
+
+---
+
 ## 🚨 ÖNCE BU: 2026-09-13 güvenlik denetimi sonrası (kod tarafı yapıldı, deploy sende)
 
 Kod değişiklikleri `main`'e merge edildi (2026-09-14, `95b49d9`). Aşağıdakiler

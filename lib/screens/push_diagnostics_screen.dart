@@ -400,8 +400,9 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     if (_jobs.isEmpty) {
       return (
         baslik: 'Cron job KURULU DEĞİL',
-        detay: 'analyze-signals cron kaydı yok. 0017 migration uygulanmamış '
-            'demektir — push hiçbir zaman tetiklenmez.',
+        detay: 'Hiçbir cron kaydı yok — migrationlar uygulanmamış demektir '
+            '(0017 sinyal, 0044 brifing, 0046 alarm…). Push hiçbir zaman '
+            'tetiklenmez.',
         renk: context.c.loss,
       );
     }
@@ -410,6 +411,25 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       return (
         baslik: 'Cron job PASİF',
         detay: 'Job kayıtlı ama active=false. Tetiklenmez.',
+        renk: context.c.loss,
+      );
+    }
+    // KURULU ama HİÇ KOŞMAMIŞ job'lar (0064 sonrası görünür).
+    //
+    // `0054`'ün arızası tam buydu: job aktif, çalışma geçmişi başka
+    // job'lardan dolu, ama O job hiç koşmamış. `_runs.isEmpty` bunu
+    // yakalayamaz — liste `live-activity` koşularıyla zaten doludur.
+    final hicKosmamis = _jobs
+        .where((j) =>
+            j is Map && j.containsKey('son_calisma') && j['son_calisma'] == null)
+        .map((j) => j['jobname'])
+        .toList();
+    if (hicKosmamis.isNotEmpty) {
+      return (
+        baslik: '${hicKosmamis.length} cron job HİÇ ÇALIŞMAMIŞ',
+        detay: '${hicKosmamis.join(', ')} — kurulu ve aktif ama tek bir '
+            'çalışma kaydı yok. Yeni kurulduysa ilk slotu bekleyin; '
+            'değilse migration gövdesi koşmamış olabilir (bkz. 0054).',
         renk: context.c.loss,
       );
     }
@@ -671,10 +691,14 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
           ),
         ],
         const SizedBox(height: 20),
+        // `son_calisma` / `son_durum` 0064'te eklendi. Alan YOKSA (migration
+        // henüz koşmamışsa) satır eski biçimde basılır — ekran, sunucunun
+        // geride kalmasından dolayı boş görünmemeli.
         _bolum('1. CRON JOB\'LARI', _jobs.isEmpty ? 'Kayıt yok' : null, [
           for (final j in _jobs)
             '${j['jobname']}  •  ${j['schedule']}  •  '
-                '${j['active'] == true ? 'aktif' : 'PASİF'}',
+                '${j['active'] == true ? 'aktif' : 'PASİF'}'
+                '${_sonCalismaEki(j)}',
         ]),
         _bolum('2. CRON ÇALIŞMA GEÇMİŞİ',
             _runs.isEmpty ? 'Hiç çalışmamış' : null, [
@@ -823,6 +847,22 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     );
   }
 
+  /// Job satırının sonuna "en son ne zaman, nasıl bitti" eki.
+  ///
+  /// **Neden kurulu olmak yetmiyor:** `0054`'ün dersi — yedi tetikleyici
+  /// `cron.job`'da kurulu ve aktif görünüyordu, gövdeleri hiç koşmamıştı.
+  /// "Aktif" bir job'un yanında `hiç çalışmamış` yazması, aranan arızanın
+  /// ta kendisidir; ikinci bir sorgu gerektirmeden görünür olmalı.
+  ///
+  /// Alanlar `0064` öncesi sunucuda YOKTUR; o durumda ek basılmaz.
+  String _sonCalismaEki(dynamic j) {
+    if (j is! Map || !j.containsKey('son_calisma')) return '';
+    final son = j['son_calisma'];
+    if (son == null) return '  •  ⚠ hiç çalışmamış';
+    final durum = j['son_durum'];
+    return '\n   ↳ son: $son${durum == null ? '' : ' ($durum)'}';
+  }
+
   String _metinRapor(({String baslik, String detay, Color renk}) t) {
     final b = StringBuffer()
       ..writeln('=== PUSH TEŞHİSİ ===')
@@ -830,7 +870,8 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       ..writeln()
       ..writeln('CRON JOBS (${_jobs.length}):');
     for (final j in _jobs) {
-      b.writeln('  ${j['jobname']} | ${j['schedule']} | active=${j['active']}');
+      b.writeln('  ${j['jobname']} | ${j['schedule']} | active=${j['active']}'
+          '${_sonCalismaEki(j).replaceAll('\n   ↳ ', ' | ')}');
     }
     b.writeln('\nCRON RUNS (${_runs.length}):');
     for (final r in _runs) {

@@ -9,6 +9,53 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟠 AÇIK — Dış fiyat API'leri sessizce değişiyor; kanarya yok
+
+**Ne:** `finans.truncgil.com/v4/today.json` 2026-09-15'te üç şeyi birden
+değiştirdi — altın anahtarları (`'Gram Altın'`→`'GRA'`), alan adları
+(`'Alış'`→`'Buying'`), sayı tipi (string→number). Sonuç: `fetchLivePrices`
+boş map döndürdü, `check-price-alerts` **her turda** `"Fiyat alinamadi."`
+dedi ve fiyat alarmı özelliği tümüyle öldü. Kod düzeltildi (iki taraf:
+edge function + `PriceService`), ama **asıl borç düzeltmenin kendisi değil.**
+
+**Asıl borç:** Bu arıza HTTP 200 ile dönüyordu ve **hiçbir yerde
+bağırmıyordu.** Kaç tur boyunca ölü kaldığı bilinmiyor — kimse
+`net._http_response`'a bakmadığı sürece görünmezdi. `0054`'ün sessiz
+arızasıyla aynı sınıf, bu sefer veri katmanında:
+
+- `fetchLivePrices` kaynak hatasını `catch (_)` ile yutuyor (bilinçli:
+  tek sembol tüm turu düşürmesin) — ama **hepsi** başarısız olduğunda da
+  aynı sessizlik geçerli.
+- `"Fiyat alinamadi."` bir *reason* string'i, bir alarm değil. `sent: 0`
+  meşru bir sonuç olduğu için (piyasa kapalı, eşik geçilmemiş) izleme
+  tarafında ikisi ayırt edilemiyor.
+- İstemcide daha da sinsi: altın Yahoo `GC=F` + ons/gram çevrimi yedeğine
+  düşüyordu. **Yedek çalıştığı için belirti yoktu** — yalnızca gösterilen
+  sayı kaynakla tutmuyordu.
+
+**Maliyet:** Alarmlar bozulunca kullanıcı bunu bize söyleyemez — "alarm
+kurmuştum, gelmedi" ile "henüz hedefe ulaşmadı" onun için aynı görünür.
+Güven kaybı sessiz birikir.
+
+**Ne zaman:** Yayın öncesi değil ama ilk izleme turunda. Öneriler
+(en ucuzdan pahalıya):
+
+1. `check-price-alerts` alarm sayısı >0 iken fiyat map'i BOŞ dönerse
+   `console.error` + Crashlytics non-fatal — "0 alarm var" ile
+   "alarm var ama fiyat yok" ayrılır.
+2. Sözleşme testi: gerçek API'ye haftalık bir smoke (CI'da `deno test
+   --allow-net`, `main` dışı) — anahtar/alan adı değişimini biz fark
+   edelim, kullanıcı değil.
+3. `_shared/live_prices.ts` ↔ `PriceService` eşitliğini tutan parite
+   testi: iki taraftaki `GOLD_KEYS` / `_truncgilGoldKeys` sabitleri
+   ayrışırsa test kırılsın (bugün ayrışmaları sessizdi).
+
+**İlgili:** `supabase/tests/price_alert_test.ts` v4 regresyonunu tutuyor
+(anahtarlar canlı yanıttan alındı), ama o yalnızca BUGÜNKÜ biçimi korur —
+API bir daha değişirse yine sessiz kalır. Kanarya bunun için gerekli.
+
+---
+
 ## ✅ KAPANDI — TÜFE serisi Ocak 2026'da bitmişti: yeni baz yılına geçildi
 
 **Ölçüldü 2026-09-14, canlı veriyle.** `inflation_index` artık dolu (29
