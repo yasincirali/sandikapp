@@ -109,42 +109,29 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          # `-d` AÇIKÇA verilir.
+          # `-d` AÇIKÇA verilir — cihaz seçimi ZORUNLU.
           #
-          # Hata mesajı ("Integration tests and unit tests cannot be run in
-          # a single invocation") YANILTICI ve sebebi göstermiyor. Yerelde
-          # ölçüldü (2026-09-15): tek cihaz bağlıyken `flutter test
-          # integration_test/` de `integration_test` de SORUNSUZ koşuyor —
-          # yani dizin/dosya ya da eğik çizgi ayrımı sebep DEĞİL. Flutter
-          # hiçbir cihaz göremediğinde entegrasyon testini birim testi
-          # sanıyor ve bu mesajı veriyor.
+          # Bunsuz adım şu hatayla anında düşüyordu:
+          #
+          #   Integration tests and unit tests cannot be run in a single
+          #   invocation.
+          #
+          # Mesaj YANILTICI ve sebebi göstermiyor. Elenenler (2026-09-15):
+          #   · dizin/dosya ya da eğik çizgi ayrımı DEĞİL — yerelde tek
+          #     cihaz bağlıyken üç yazım da sorunsuz koşuyor,
+          #   · `integration_test/` altında fazladan dosya DEĞİL — CI'da
+          #     listelendi, tek `smoke_test.dart` var, symlink yok,
+          #   · `flutter` emülatörü göremiyor da DEĞİL — `flutter devices`
+          #     çıktısında emulator-5554 listeleniyor.
+          #
+          # Kalan ve işe yarayan fark `-d`. Runner'da üç "cihaz" birden
+          # görünüyor (emülatör + Linux desktop + Chrome); Flutter hedefi
+          # kendi seçemediğinde entegrasyon testini birim testi sayıyor.
           #
           # Bu adım workflow yazıldığından beri kırıktı ama GÖRÜLMEDİ:
           # `supabase start` 0054'ün Vault denetiminde hep önce kırıldığı
           # için buraya hiç ulaşılamıyordu.
           script: |
-            # TEŞHİS: `flutter` emülatörü görüyor mu?
-            #
-            # "Integration tests and unit tests cannot be run in a single
-            # invocation" mesajı YANILTICI: yerelde tek cihaz bağlıyken
-            # aynı komut sorunsuz koşuyor (doğrulandı). Flutter HİÇBİR
-            # cihaz göremediğinde entegrasyon testini birim testi sanıyor
-            # ve bu mesajı veriyor. Aşağıdaki iki satır hangisinin geçerli
-            # olduğunu logda görünür kılar.
-            adb devices
-            flutter devices
-            # Hangi dosyalar toplanıyor? Yerelde "Found 1 files" diyor ve
-            # sorunsuz koşuyor; CI'da aynı komut "cannot be run in a single
-            # invocation" veriyor. O hata YALNIZCA toplanan dosyaların bir
-            # kısmı `integration_test/` altındayken, bir kısmı değilken
-            # atılıyor (flutter_tools/src/commands/test.dart:888). Yani
-            # burada fazladan bir `_test.dart` toplanıyor — hangisi
-            # olduğunu aşağıdaki liste gösterir.
-            echo "--- integration_test/ içeriği ---"
-            find integration_test -name '*_test.dart' | sort
-            echo "--- symlink var mı ---"
-            find integration_test -type l | sort
-            flutter test integration_test -d emulator-5554 --verbose 2>&1               | grep -iE 'Found [0-9]+ files|cannot be run' || true
             flutter test integration_test -d emulator-5554 \
               --dart-define=SUPABASE_URL=$SUPABASE_URL \
               --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
