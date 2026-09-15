@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Grafik çizgisi ALANIN BAŞINDAN başlamalı — içeriden değil.
 ///
@@ -22,8 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Çözüm iki parçalı: dönem başı gün başına çekiliyor VE eksenin sol ucu
 /// verinin ilk noktasına oturtuluyor.
 void main() {
-  final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-      .readAsStringSync()
+  final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
       .replaceAll('\r\n', '\n');
 
   /// Boşlukları tek boşluğa indirmiş kaynak.

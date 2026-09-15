@@ -9,6 +9,7 @@ import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
 ///
@@ -101,20 +102,20 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   Future<void> _submit() async {
     final qty = _parse(_qtyCtrl.text);
     if (qty == null || qty <= 0) {
-      setState(() => _error = 'Geçerli bir miktar gir');
+      setState(() => _error = context.l10n.enterValidQuantity);
       return;
     }
 
     if (_isAdd) {
       final price = _parse(_priceCtrl.text);
       if (price == null || price <= 0) {
-        setState(() => _error = 'Geçerli bir birim fiyat gir');
+        setState(() => _error = context.l10n.enterValidUnitPrice);
         return;
       }
     } else {
       if (qty > widget.asset.quantity) {
         setState(() => _error =
-            'Mevcut miktarı (${_fmt(widget.asset.quantity)}) aşamazsın');
+            context.l10n.cannotExceedQuantity(_fmt(widget.asset.quantity)));
         return;
       }
     }
@@ -155,15 +156,15 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       sandikSnack(
         context,
         _isAdd
-            ? '${_fmt(qty)} $_unitLabel alındı'
-            : '${_fmt(qty)} $_unitLabel satıldı',
+            ? context.l10n.boughtAmount(_fmt(qty), _unitLabel)
+            : context.l10n.soldAmount(_fmt(qty), _unitLabel),
         kind: SandikSnackKind.success,
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = 'İşlem başarısız. ${friendlyError(e)}';
+        _error = context.l10n.transactionFailed(friendlyError(e));
       });
     }
   }
@@ -328,11 +329,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Tüm miktarı satıyorsun — pozisyon listeden '
-                          'kalkar ama bu bir satış kaydı olarak durur. '
-                          'İşlem geçmişin ve realize kâr/zararın korunur. '
-                          'Kaydı tamamen silmek istiyorsan varlık detayından '
-                          '"Sil"i kullan.',
+                          context.l10n.sellAllWarning,
                           style: context.t.bodySmall?.copyWith(
                             color: context.c.text58,
                             height: 1.4,
@@ -393,7 +390,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 ),
                 child: Row(
                   children: [
-                    Text(_isAdd ? 'Toplam maliyet' : 'Satış değeri',
+                    Text(_isAdd ? 'Toplam maliyet' : context.l10n.saleValue,
                         style: context.t.titleSmall?.copyWith(color: context.c.text58)),
                     const Spacer(),
                     Text(

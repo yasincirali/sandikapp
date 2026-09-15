@@ -145,6 +145,17 @@ void main() {
         _asset(ticker: 'THYAO.IS', name: 'Türk Hava Yolları'),
       ]);
 
+      // 2026-09-15: tür çipleri artık kalıcı bir satırda değil, kapsam
+      // çipinin açtığı panelde. Panel kapalıyken `AnimatedCrossFade` çipi
+      // ağaçta tutar ama sıfır boyutlu çizer — tap ıskalar. Kullanıcı da
+      // önce kapsamı açmak zorunda, test de öyle yapar.
+      final kapsamCipi = find.bySemanticsLabel(RegExp(r'^Kapsam:'));
+      expect(kapsamCipi, findsOneWidget,
+          reason: 'ön koşul: kapsam çipi çizilmeli');
+      await tester.tap(kapsamCipi);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
       final dovizChip = find.text('Döviz');
       expect(dovizChip, findsWidgets,
           reason: 'ön koşul: tür çipleri çizilmeli');

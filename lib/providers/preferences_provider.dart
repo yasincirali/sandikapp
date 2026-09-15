@@ -11,6 +11,7 @@ import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
 import '../config/pref_keys.dart';
+import '../models/yatirimci_seviyesi.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -123,6 +124,66 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 
 final themeModeProvider =
     NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+
+/// Arayüz dili (3.20). `null` = sistem dili; aksi hâlde sabit `tr` / `en`.
+///
+/// **Varsayılan TÜRKÇE, sistem değil.** İngilizce henüz BETA (bazı ekranlar
+/// Türkçe); İngilizce cihazlı bir kullanıcıya hiç seçmeden karışık bir
+/// arayüz göstermek yerine Türkçe açılır, İngilizce'yi Ayarlar › Görünüm'den
+/// bilinçli seçer. Kapsam tamamlanınca varsayılan "sistem"e çekilebilir.
+///
+/// Tercih diske `PrefKeys.locale` altında 'tr' | 'en' | 'system' yazılır;
+/// `ThemeModeNotifier` ile aynı senkron-okuma deseni (ilk kare doğru dilde).
+class LocaleNotifier extends Notifier<Locale?> {
+  static const _kSystem = 'system';
+
+  @override
+  Locale? build() {
+    final prefs = _prefsSync;
+    if (prefs != null) {
+      final raw = prefs.getString(PrefKeys.locale);
+      if (raw != null) return parse(raw);
+    } else {
+      _loadAsync();
+    }
+    return const Locale('tr', 'TR');
+  }
+
+  /// 'tr' → tr_TR, 'en' → en_US, 'system' → null (sistem), tanınmayan → tr.
+  static Locale? parse(String? raw) {
+    switch (raw) {
+      case 'en':
+        return const Locale('en', 'US');
+      case _kSystem:
+        return null;
+      case 'tr':
+      default:
+        return const Locale('tr', 'TR');
+    }
+  }
+
+  static String encode(Locale? l) =>
+      l == null ? _kSystem : (l.languageCode == 'en' ? 'en' : 'tr');
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(PrefKeys.locale);
+      if (raw != null) state = parse(raw);
+    } catch (_) {}
+  }
+
+  Future<void> set(Locale? locale) async {
+    state = locale;
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setString(PrefKeys.locale, encode(locale));
+    } catch (_) {}
+  }
+}
+
+final localeProvider =
+    NotifierProvider<LocaleNotifier, Locale?>(LocaleNotifier.new);
 
 /// Bildirim kategorileri için tek tip notifier
 /// Uygulama başlarken bir kere warm-up edilen SharedPreferences instance.
@@ -243,6 +304,17 @@ final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 /// cihazı paylaşan iki kullanıcının tercihi karışmasın.
 final baseCurrencyIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(PrefKeys.baseCurrency, 0, perUser: true));
+
+/// Yatırımcı seviyesi (Ayarlar › Görünüm) — `YatirimciSeviyesi.index`.
+/// Varsayılan Orta = bugünkü görünüm; tercih sorulmaz, dayatılmaz (bkz.
+/// `models/yatirimci_seviyesi.dart`). Kişiye özel.
+final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(
+        PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
+        perUser: true));
+
+final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>(
+    (ref) => YatirimciSeviyesi.fromIndex(ref.watch(investorLevelIndexProvider)));
 
 /// Biyometrik / cihaz kilidi — uygulama öne dönünce ve soğuk açılışta
 /// kimlik doğrulaması ister. Varsayılan KAPALI; açarken cihaz destekliyor mu

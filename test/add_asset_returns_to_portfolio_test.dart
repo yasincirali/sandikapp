@@ -71,9 +71,10 @@ void main() {
         reason: 'Portföy `_screens` listesinde ikinci sırada (PortfolioScreen). '
             'Sıra değişirse bu sabit de değişmeli.');
 
-    // Alt barda 1. indeks gerçekten "Portföy" etiketli mi?
+    // Alt barda 1. indeks gerçekten "Portföy" etiketli mi? (3.20 sonrası
+    // etiket `context.l10n.tabPortfolio` — sözlükte "Portföy".)
     expect(
-      RegExp(r"_navItem\(1,[^)]*'Portföy'\)").hasMatch(nav),
+      RegExp(r"_navItem\(1,[^)]*tabPortfolio\)").hasMatch(nav),
       isTrue,
       reason: 'Sekme sırası değişmiş olabilir.',
     );

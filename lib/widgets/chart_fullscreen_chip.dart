@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 
 /// Grafik kartının köşesindeki "tam ekran" ikon çipi.
@@ -14,24 +15,37 @@ class ChartFullscreenChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    return Tooltip(
+      message: context.l10n.fullscreenChart,
+      child: Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(SandikRadius.md),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-          decoration: BoxDecoration(
-            color: context.c.overlay,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(color: context.c.hairline),
-          ),
-          child: Icon(
-            Icons.fullscreen_rounded,
-            size: 16,
-            color: context.c.text58,
+        // Görsel kabuk 32pt, dokunma hedefi 44pt (HIG #37): şeffaf dolgu
+        // hedefi büyütür, kabuk küçük kalır — dönem satırındaki grafik tipi
+        // ikonuyla aynı sınıf denetim gibi görünsün diye.
+        child: SizedBox(
+          width: SandikTouch.min,
+          height: SandikTouch.min,
+          child: Center(
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: context.c.overlay,
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(color: context.c.hairline),
+              ),
+              child: Icon(
+                Icons.fullscreen_rounded,
+                size: 16,
+                color: context.c.text58,
+              ),
+            ),
           ),
         ),
+      ),
       ),
     );
   }

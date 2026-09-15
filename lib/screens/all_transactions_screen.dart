@@ -14,6 +14,7 @@ import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
+import '../l10n/l10n.dart';
 
 /// Portföy hareketleri — tam liste.
 ///
@@ -56,20 +57,21 @@ class AllTransactionsScreen extends ConsumerStatefulWidget {
 enum _DateRange { all, days7, days30, days90, thisYear, custom }
 
 extension _DateRangeLabel on _DateRange {
-  String get label {
+  /// Sözlüğü çağıran verir: `extension` bağlamsız.
+  String labelOf(AppLocalizations l) {
     switch (this) {
       case _DateRange.all:
-        return 'Tüm zamanlar';
+        return l.rangeAllTime;
       case _DateRange.days7:
-        return 'Son 7 gün';
+        return l.rangeLast7;
       case _DateRange.days30:
-        return 'Son 30 gün';
+        return l.rangeLast30;
       case _DateRange.days90:
-        return 'Son 90 gün';
+        return l.rangeLast90;
       case _DateRange.thisYear:
-        return 'Bu yıl';
+        return l.rangeThisYear;
       case _DateRange.custom:
-        return 'Özel';
+        return l.rangeCustom;
     }
   }
 }
@@ -199,8 +201,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: const SandikAppBar(
-        title: 'Portföy Hareketleri',
+      appBar: SandikAppBar(
+        title: context.l10n.portfolioActivityTitle,
         transparent: true,
       ),
       body: Column(
@@ -229,7 +231,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               }),
               style: context.t.bodyMedium?.copyWith(color: context.c.text90),
               decoration: context.inputDecoration(
-                'Varlık adı veya sembol ara',
+                context.l10n.searchAssetOrSymbol,
                 prefixIcon: Icon(Icons.search_rounded,
                     size: 20, color: context.c.text36),
                 suffixIcon: _query.isEmpty
@@ -268,7 +270,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                   _typeChip(null, 'Tümü'),
                   for (final t
                       in AssetType.values)
-                    _typeChip(t, t.label),
+                    _typeChip(t, t.labelOf(context.l10n)),
                 ],
               ),
             ),
@@ -281,15 +283,15 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               children: [
                 Text(
                   rows.isEmpty
-                      ? 'Kayıt yok'
-                      : '${rows.length} kayıt'
-                          '${shown < rows.length ? ' · $shown gösteriliyor' : ''}',
+                      ? context.l10n.noRecords
+                      : '${context.l10n.nRecords(rows.length)}'
+                          '${shown < rows.length ? context.l10n.nShown(shown) : ''}',
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
                 const Spacer(),
                 if (_hasActiveFilter)
                   SandikTappable(
-                    semanticLabel: 'Filtreleri temizle',
+                    semanticLabel: context.l10n.clearFilters,
                     onTap: () => setState(() {
                       _typeFilter = null;
                       _range = _DateRange.all;
@@ -299,7 +301,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       _resetPaging();
                     }),
                     child: Text(
-                      'Filtreleri temizle',
+                      context.l10n.clearFilters,
                       style: context.t.bodySmall?.copyWith(
                           color: context.c.amberText,
                           fontWeight: FontWeight.w600),
@@ -331,7 +333,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 20),
                             child: Center(
                               child: Text(
-                                'Yükleniyor…',
+                                context.l10n.loadingEllipsis,
                                 style: context.t.bodySmall
                                     ?.copyWith(color: context.c.text36),
                               ),
@@ -360,13 +362,13 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             Icon(Icons.inbox_rounded, size: 52, color: context.c.text36),
             const SizedBox(height: 12),
             Text(
-              _hasActiveFilter ? 'Filtreye uyan kayıt yok' : 'Henüz işlem yok',
+              _hasActiveFilter ? context.l10n.noMatchingRecords : context.l10n.noTransactionsYet,
               style: context.t.titleMedium?.copyWith(color: context.c.text36),
             ),
             if (_hasActiveFilter) ...[
               const SizedBox(height: 8),
               Text(
-                'Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.',
+                context.l10n.widenDateRangeHint,
                 textAlign: TextAlign.center,
                 style: context.t.bodySmall?.copyWith(color: context.c.text36),
               ),
@@ -382,7 +384,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final label = r == _DateRange.custom && _customRange != null
         ? '${DateFormat('d MMM', 'tr_TR').format(_customRange!.start)}'
             ' – ${DateFormat('d MMM', 'tr_TR').format(_customRange!.end)}'
-        : r.label;
+        : r.labelOf(context.l10n);
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),

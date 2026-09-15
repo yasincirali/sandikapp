@@ -1,9 +1,9 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/position.dart';
+import 'helpers/kaynak.dart';
 
 /// Net miktarı 0'a düşmüş pozisyonlar ÖN YÜZDE görünmemeli —
 /// ama GEÇMİŞ bozulmamalı.
@@ -126,7 +126,7 @@ void main() {
 
   group('çağrı yerleri ham listeyi GEZMİYOR', () {
     String oku(String yol) =>
-        File(yol).readAsStringSync().replaceAll('\r\n', '\n');
+        ekranKaynagiSync(yol).replaceAll('\r\n', '\n');
 
     test('fiyat alarmı adayları', () {
       final k = oku('lib/screens/price_alerts_screen.dart');

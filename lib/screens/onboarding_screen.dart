@@ -376,21 +376,23 @@ List<_Adim> _adimlariKur() {
       govde: 'GÜNLÜK gün içini saat saat çizer; 1H / 1A / 6A / 1Y daha geniş '
           'pencereler. Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
           'basılı tutarak o anın değerini okuyabilirsin.',
-      gorev: 'GÜNLÜK dışında bir döneme dokun',
-      gorevBitti: 'Dönem değişti',
-      // Gerçek/Simülasyon anahtarı yalnızca gün dışı dönemde çizilir; onun
-      // ağaçta belirmesi "dönem değişti" demektir.
-      bitti: (_) => TourTargets.mounted(TourTarget.modSecici),
+      // 2026-09-15: bu adımın görevi kaldırıldı. Eski ölçüt "Gerçek /
+      // Simülasyon anahtarı belirdi mi" idi; o anahtar artık kapsam
+      // panelinin içinde ve panel kapalıyken de ağaçta duruyor, yani
+      // dönem değişimini ondan okuyamıyoruz. Ölçemediğimiz bir görevi
+      // "tamamlandı" diye göstermektense görevsiz anlatım dürüst.
       giris: (_) => _sekmeyeGec(3),
     ),
     _Adim(
-      id: 'mod',
-      hedef: TourTarget.modSecici,
+      id: 'kapsam',
+      hedef: TourTarget.kapsamSecici,
       rozet: 'BİZE ÖZEL',
-      baslik: 'Gerçek / Simülasyon',
-      govde: 'Gerçek, dönem içindeki her alım ve satımla birlikte gerçek '
-          'geçmişini çizer. Simülasyon ise "bugünkü portföyümü baştan elimde '
-          'tutsaydım ne olurdu?" sorusunu yanıtlar.',
+      baslik: 'Kapsam ve mod',
+      govde: 'Bu çip ne gördüğünü yazar: kimin portföyü, hangi varlık türü '
+          've hangi mod. Dokununca üçü de açılır.\n\nGerçek mod dönem '
+          'içindeki her alım ve satımla gerçek geçmişini çizer; Simülasyon '
+          '"bugünkü portföyümü baştan elimde tutsaydım ne olurdu?" sorusunu '
+          'yanıtlar.',
       giris: (_) => _sekmeyeGec(3),
     ),
     _Adim(

@@ -7,6 +7,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import 'alarm_kur_sheet.dart';
+import '../l10n/l10n.dart';
 
 /// Varlık ekranındaki alarm şeridi — bu sembolün alarmları + "Alarm kur".
 ///
@@ -34,8 +35,8 @@ class AlarmSeridi extends ConsumerWidget {
     return Semantics(
       container: true,
       label: alarmlar.isEmpty
-          ? 'Fiyat alarmı yok'
-          : '${alarmlar.where((a) => a.isActive).length} aktif fiyat alarmı',
+          ? context.l10n.noPriceAlert
+          : context.l10n.nActiveAlerts(alarmlar.where((a) => a.isActive).length),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -71,10 +72,12 @@ class AlarmSeridi extends ConsumerWidget {
                   }
                   final ok = await showSandikConfirm(
                     context: context,
-                    title: 'Alarmı sil',
-                    message: '${fmtTRY(a.targetPrice, digits: 2)} '
-                        '${a.isAbove ? 'üstüne çıkınca' : 'altına inince'} '
-                        'alarmı silinsin mi?',
+                    title: context.l10n.deleteAlertTitle,
+                    message: a.isAbove
+                        ? context.l10n.deleteAlertAbove(
+                            fmtTRY(a.targetPrice, digits: 2))
+                        : context.l10n.deleteAlertBelow(
+                            fmtTRY(a.targetPrice, digits: 2)),
                     confirmLabel: 'Sil',
                     destructive: true,
                   );
@@ -105,9 +108,10 @@ class _AlarmCipi extends StatelessWidget {
       renk: renk,
       zemin: renk.withValues(alpha: tetiklendi ? 0.06 : 0.12),
       semanticLabel: tetiklendi
-          ? 'Çalışmış alarm $fiyat, yeniden kurmak için dokun'
-          : '${alarm.isAbove ? 'Üstüne çıkınca' : 'Altına inince'} $fiyat, '
-              'silmek için dokun',
+          ? context.l10n.triggeredAlertSemantics(fiyat)
+          : (alarm.isAbove
+              ? context.l10n.alertAboveSemantics(fiyat)
+              : context.l10n.alertBelowSemantics(fiyat)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -116,7 +120,7 @@ class _AlarmCipi extends StatelessWidget {
                   ?.copyWith(color: renk, fontWeight: FontWeight.w700)),
           const SizedBox(width: SandikSpace.xs),
           Text(
-            tetiklendi ? '$fiyat · çalıştı' : fiyat,
+            tetiklendi ? context.l10n.alertTriggered(fiyat) : fiyat,
             style: context.t.labelLarge?.copyWith(
               color: tetiklendi ? c.text58 : c.text90,
               fontWeight: FontWeight.w600,

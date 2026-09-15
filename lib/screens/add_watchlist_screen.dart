@@ -19,6 +19,7 @@ import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import 'paywall_screen.dart';
+import '../l10n/l10n.dart';
 
 /// Takibe alınacak varlığı seçme ekranı.
 ///
@@ -223,7 +224,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                 if (_loading)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
-                    child: Text('Aranıyor…',
+                    child: Text(context.l10n.searchingEllipsis,
                         style: context.t.bodySmall
                             ?.copyWith(color: context.c.text36)),
                   ),
@@ -236,8 +237,8 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                           padding: const EdgeInsets.only(top: 40),
                           child: Text(
                             _q.trim().isEmpty
-                                ? 'Aramak için yazmaya başla.'
-                                : '"${_q.trim()}" için sonuç yok.',
+                                ? context.l10n.startTypingToSearch
+                                : context.l10n.noResultForQuery(_q.trim()),
                             textAlign: TextAlign.center,
                             style: context.t.bodyMedium
                                 ?.copyWith(color: context.c.text58),
@@ -250,7 +251,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                       if (inPortfolio.isNotEmpty) ...[
                         const SizedBox(height: SandikSpace.sm),
                         Text(
-                          'PORTFÖYÜNDE',
+                          context.l10n.inYourPortfolioUpper,
                           style: context.t.labelSmall?.copyWith(
                               letterSpacing: 0.9,
                               fontWeight: FontWeight.w700,
@@ -308,7 +309,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
         child: CupertinoTextField(
           controller: _ctrl,
           onChanged: _sorguDegisti,
-          placeholder: 'Hisse, fon, endeks, emtia, döviz veya altın ara',
+          placeholder: context.l10n.searchAllAssetsHint,
           placeholderStyle:
               context.t.bodyMedium?.copyWith(color: context.c.text36),
           style: context.t.bodyMedium?.copyWith(color: context.c.text90),
@@ -336,7 +337,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
       child: SandikTappable(
         onTap: disabled ? null : () => _add(c),
         semanticLabel: owned
-            ? '${c.name}, zaten portföyünde'
+            ? context.l10n.alreadyInPortfolio(c.name)
             : watched
                 ? '${c.name}, zaten takipte'
                 : '${c.name} takibe al',
@@ -365,7 +366,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: context.t.bodyMedium
                             ?.copyWith(color: context.c.text90)),
-                    Text('${c.ticker} · ${c.type.label}',
+                    Text('${c.ticker} · ${c.type.labelOf(context.l10n)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: context.t.bodySmall
@@ -408,7 +409,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
             addedAt: DateTime.now(),
           ));
       if (!mounted) return;
-      sandikSnack(context, '${c.name} takibe alındı',
+      sandikSnack(context, context.l10n.addedToWatchlist(c.name),
           kind: SandikSnackKind.success);
     } on WatchlistLimitException catch (e) {
       if (!mounted) return;
@@ -417,7 +418,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
       // bırakmak kullanıcıyı çıkışsız bırakırdı.
       sandikSnack(
         context,
-        'Ücretsiz planda en fazla ${e.limit} varlık takip edebilirsin.',
+        context.l10n.watchlistLimitFree(e.limit),
         kind: SandikSnackKind.warning,
         action: SnackBarAction(
           label: 'Premium',

@@ -20,6 +20,7 @@ import '../utils/tr_format.dart';
 import '../widgets/percent_comparison_chart.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'add_asset_screen.dart';
+import '../l10n/l10n.dart';
 
 /// Varlık karşılaştırma — "almadığım şey ne yapardı?"
 ///
@@ -353,13 +354,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         children: [
           Icon(Icons.insights_rounded, size: 40, color: p.text36),
           const SizedBox(height: 12),
-          Text('Karşılaştırmak için varlık ekleyin',
+          Text(context.l10n.addAssetsToCompare,
               style: TextStyle(color: p.text58, fontSize: 14)),
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              'Portföyünüzde olmayan varlıkları da ekleyebilirsiniz.',
+              context.l10n.addAssetsToCompareBody,
               textAlign: TextAlign.center,
               style: TextStyle(color: p.text36, fontSize: 12),
             ),
@@ -460,7 +461,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                                         borderRadius: BorderRadius.circular(
                                             SandikRadius.sm),
                                       ),
-                                      child: Text('Portföyümde',
+                                      child: Text(context.l10n.inMyPortfolio,
                                           style: TextStyle(
                                               fontSize: 9,
                                               fontWeight: FontWeight.w700,
@@ -485,7 +486,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
               if (isLoading)
                 const CustomLoadingIndicator(size: 16)
               else if (isFailed)
-                Text('veri yok',
+                Text(context.l10n.noDataShort,
                     style: TextStyle(color: p.text36, fontSize: 11))
               else if (norm != null)
                 _returnBadge(p, norm.totalReturnPct),
@@ -532,7 +533,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           child: OutlinedButton.icon(
             onPressed: () => _openAdd(hit),
             icon: const Icon(Icons.add_rounded, size: 16),
-            label: const Text('Portföyüme ekle'),
+            label: Text(context.l10n.addToMyPortfolio),
             style: OutlinedButton.styleFrom(
               foregroundColor: p.amberText,
               side: BorderSide(color: p.hairline),
@@ -842,9 +843,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   Widget _disclaimer(SandikPalette p) {
     return Text(
-      'Geçmiş performans gelecek getiri için gösterge değildir. '
-      'Grafikteki değerler dönem başına göre yüzde değişimi gösterir; '
-      'komisyon, vergi ve temettü dahil değildir.',
+      context.l10n.comparisonDisclaimer,
       style: TextStyle(color: p.text36, fontSize: 11, height: 1.4),
     );
   }
@@ -1048,7 +1047,7 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                   onChanged: _search,
                   style: TextStyle(color: p.text90),
                   decoration: InputDecoration(
-                    hintText: 'Hisse, fon, altın veya endeks ara',
+                    hintText: context.l10n.searchAssetsHint,
                     hintStyle: TextStyle(color: p.text36, fontSize: 14),
                     prefixIcon: Icon(Icons.search_rounded, color: p.text58),
                     filled: true,
@@ -1065,7 +1064,7 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
               Expanded(
                 child: _results.isEmpty && !_busy
                     ? Center(
-                        child: Text('Sonuç bulunamadı',
+                        child: Text(context.l10n.noResultsFound,
                             style: TextStyle(color: p.text58)),
                       )
                     : ListView(
@@ -1082,9 +1081,7 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                       child: Text(
-                        'Portföyler hesaplanan serilerdir — piyasada kote '
-                        'değiller. Getirileri, tıpkı bir varlık gibi dönem '
-                        'başına göre yüzde olarak çizilir.',
+                        context.l10n.portfolioSeriesNote,
                         style: TextStyle(
                             color: p.text36, fontSize: 11, height: 1.4),
                       ),

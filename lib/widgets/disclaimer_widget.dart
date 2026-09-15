@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/sandik.dart';
+import '../l10n/l10n.dart';
 
 /// Yasal uyarı — sinyal/analiz içeren her ekranın altına eklenir.
 class DisclaimerWidget extends StatelessWidget {
@@ -21,11 +22,7 @@ class DisclaimerWidget extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Bu uygulama yalnızca bilgilendirme amaçlıdır. '
-              'Gösterilen veriler, analizler ve bildirimler kesinlikle '
-              'yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık '
-              'niteliği taşımaz. Yatırım kararlarınızı yetkili bir mali danışmana '
-              'danışarak veriniz. Geçmiş performans gelecekteki sonuçları garanti etmez.',
+              context.l10n.disclaimerText,
               style: context.t.labelMedium?.copyWith(
                 letterSpacing: 0,
                 color: context.c.text36,

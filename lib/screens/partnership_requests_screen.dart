@@ -11,6 +11,7 @@ import '../widgets/sandik_app_bar.dart';
 import '../utils/polling.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 class PartnershipRequestsScreen extends ConsumerStatefulWidget {
   final String? highlightInviteId;
@@ -77,7 +78,7 @@ class _PartnershipRequestsScreenState
       unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
       await _load();
       if (!mounted) return;
-      sandikSnack(context, 'Ortaklık kabul edildi.',
+      sandikSnack(context, context.l10n.partnershipAcceptedShort,
           kind: SandikSnackKind.success);
     } catch (e) {
       if (!mounted) return;
@@ -91,7 +92,7 @@ class _PartnershipRequestsScreenState
       await _load();
       if (!mounted) return;
       // Reddetmek başarılı bir işlem; kırmızı zemin "hata" okunuyordu.
-      sandikSnack(context, 'Ortaklık isteği reddedildi.');
+      sandikSnack(context, context.l10n.partnershipRejectedShort);
     } catch (e) {
       if (!mounted) return;
       sandikSnackError(context, e, prefix: 'Reddedilemedi');
@@ -102,8 +103,8 @@ class _PartnershipRequestsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.c.background,
-      appBar: const SandikAppBar(
-        title: 'Ortaklık Onayı',
+      appBar: SandikAppBar(
+        title: context.l10n.partnershipApprovalTitle,
         transparent: true,
       ),
       body: RefreshIndicator(
@@ -113,7 +114,7 @@ class _PartnershipRequestsScreenState
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Ortaklık kodunu giren kişileri buradan görüp onaylayabilirsin.',
+              context.l10n.partnershipApprovalBody,
               style: context.t.titleMedium?.copyWith(
                 color: context.c.text36,
               ),
@@ -140,7 +141,7 @@ class _PartnershipRequestsScreenState
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Bekleyen ortaklık isteği yok.',
+                      context.l10n.noPendingRequests,
                       style: context.t.titleMedium?.copyWith(
                         color: context.c.text36,
                       ),
@@ -182,7 +183,7 @@ class _ApprovalInviteCard extends StatelessWidget {
     final rawRequesterName =
         ((invite['requester_name'] as String?) ?? '').trim();
     final requesterName =
-        rawRequesterName.isEmpty ? 'Kullanıcı' : rawRequesterName;
+        rawRequesterName.isEmpty ? context.l10n.userWord : rawRequesterName;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -248,7 +249,7 @@ class _ApprovalInviteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Ortaklık kodunuzu girdi ve onay bekliyor.',
+                      context.l10n.enteredYourCode,
                       style: context.t.bodyMedium?.copyWith(
                         color: context.c.text36,
                       ),

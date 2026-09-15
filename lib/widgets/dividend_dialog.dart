@@ -9,6 +9,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import 'custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 /// Nakit temettü kaydı.
 ///
@@ -64,7 +65,7 @@ class _DividendDialogState extends State<_DividendDialog> {
   Future<void> _save() async {
     final amount = _parse(_amount.text);
     if (amount == null || amount <= 0) {
-      setState(() => _error = 'Geçerli bir tutar girin');
+      setState(() => _error = context.l10n.enterValidAmount);
       return;
     }
     setState(() {
@@ -79,7 +80,7 @@ class _DividendDialogState extends State<_DividendDialog> {
           );
       if (!mounted) return;
       Navigator.pop(context);
-      sandikSnack(context, 'Temettü kaydedildi', kind: SandikSnackKind.success);
+      sandikSnack(context, context.l10n.dividendSaved, kind: SandikSnackKind.success);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -93,7 +94,7 @@ class _DividendDialogState extends State<_DividendDialog> {
     final picked = await pickSandikDate(
       context,
       initialDate: _paidAt,
-      helpText: 'Temettü ödeme tarihi',
+      helpText: context.l10n.dividendPayDate,
     );
     if (picked != null) setState(() => _paidAt = picked);
   }
@@ -112,7 +113,7 @@ class _DividendDialogState extends State<_DividendDialog> {
           Icon(Icons.savings_outlined, color: context.c.gain, size: 22),
           const SizedBox(width: 10),
           Expanded(
-            child: Text('Temettü Ekle',
+            child: Text(context.l10n.addDividend,
                 style: context.t.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700, color: context.c.text90)),
           ),
@@ -123,7 +124,7 @@ class _DividendDialogState extends State<_DividendDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${a.displayTicker ?? a.name} · ele geçen net tutar',
+            context.l10n.netAmountReceived(a.displayTicker ?? a.name),
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
           const SizedBox(height: 14),
@@ -161,7 +162,7 @@ class _DividendDialogState extends State<_DividendDialog> {
                   Icon(Icons.event_outlined,
                       size: 18, color: context.c.text58),
                   const SizedBox(width: 8),
-                  Text('Ödeme tarihi: ${dateFmt.format(_paidAt)}',
+                  Text(context.l10n.paymentDate(dateFmt.format(_paidAt)),
                       style:
                           context.t.bodyMedium?.copyWith(color: context.c.text90)),
                 ],
@@ -170,7 +171,7 @@ class _DividendDialogState extends State<_DividendDialog> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Temettü miktarı değiştirmez; toplam getirine eklenir.',
+            context.l10n.dividendNote,
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
           if (_error != null) ...[

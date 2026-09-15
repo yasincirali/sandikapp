@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// X ekseni etiketleri ÜST ÜSTE BİNMEMELİ.
 ///
@@ -18,8 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Düzeltme: çok günlü gün içi eksende adım span'a göre ölçekleniyor
 /// (hedef ~5 etiket) ve etiket kutusu genişliyor.
 void main() {
-  final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-      .readAsStringSync()
+  final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
       .replaceAll('\r\n', '\n');
 
   group('adım etiket uzunluğuna göre açılır', () {

@@ -10,6 +10,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 /// Register (veya login) sonrası email doğrulama ekranı.
 ///
@@ -115,12 +116,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       // Race koruması: 6. haneyi girer girmez auto-submit tetiklenir, ama
       // arada expiry saati bitmiş olabilir. Backend'e çürük kod göndermek
       // yerine kullanıcıya "yeni kod iste" mesajı ver.
-      showAppError(context, 'Kodun süresi doldu. Yeni kod iste.');
+      showAppError(context, context.l10n.otpExpired);
       return;
     }
     final code = _code;
     if (code.length != 6) {
-      showAppError(context, 'Lütfen 6 haneli kodu tam olarak girin.');
+      showAppError(context, context.l10n.otpEnterFull);
       return;
     }
     setState(() => _submitting = true);
@@ -169,8 +170,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       _focusNodes.first.requestFocus();
       unawaited(showAppSuccess(
         context,
-        title: 'Kod gönderildi',
-        message: 'Yeni 6 haneli kod e-postana gönderildi.',
+        title: context.l10n.otpSentTitle,
+        message: context.l10n.otpSentMessage,
       ));
     } catch (e) {
       if (!mounted) return;
@@ -198,7 +199,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               _iconBadge(),
               const SizedBox(height: 28),
               Text(
-                'E-postanı doğrula',
+                context.l10n.otpTitle,
                 textAlign: TextAlign.center,
                 style: context.t.headlineLarge?.copyWith(
                   fontSize: 26,
@@ -264,7 +265,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           height: 1.5,
         ),
         children: [
-          const TextSpan(text: '6 haneli kodu\n'),
+          TextSpan(text: context.l10n.otpSentPrefix),
           TextSpan(
             text: widget.email,
             style: context.t.titleMedium?.copyWith(
@@ -273,7 +274,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               height: 1.5,
             ),
           ),
-          const TextSpan(text: '\nadresine gönderdik.'),
+          TextSpan(text: context.l10n.otpSentSuffix),
         ],
       ),
     );
@@ -392,7 +393,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   color: context.c.loss, size: 14),
               const SizedBox(width: 6),
               Text(
-                'Kodun süresi doldu',
+                context.l10n.otpExpiredShort,
                 style: context.t.titleSmall?.copyWith(
                   color: context.c.loss,
                   fontWeight: FontWeight.w700,
@@ -410,7 +411,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           Icon(Icons.schedule_rounded, color: context.c.text58, size: 14),
           const SizedBox(width: 6),
           Text(
-            'Kod ${_formatMmSs(_expiry)} sonra geçersiz olur',
+            context.l10n.otpExpiresIn(_formatMmSs(_expiry)),
             style: context.t.titleSmall?.copyWith(
               color: context.c.text58,
               fontWeight: FontWeight.w600,
@@ -442,7 +443,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               ? const CustomLoadingIndicator(size: 18)
               : const Icon(Icons.send_rounded, size: 18),
           label: Text(
-            _resending ? 'Gönderiliyor…' : 'Yeni Kod İste',
+            _resending ? context.l10n.sending : context.l10n.requestNewCode,
             style: context.t.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -466,7 +467,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         child: _submitting
             ? const CustomLoadingIndicator(size: 22)
             : Text(
-                'Doğrula',
+                context.l10n.verify,
                 style: context.t.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -486,7 +487,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          'Kodu almadın mı? ',
+          context.l10n.otpNotReceived,
           style: context.t.bodyMedium?.copyWith(
             color: context.c.text58,
           ),
@@ -496,10 +497,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           behavior: HitTestBehavior.opaque,
           child: Text(
             _resending
-                ? 'Gönderiliyor…'
+                ? context.l10n.sending
                 : showCountdown
-                    ? 'Yeniden gönder (${_cooldown}s)'
-                    : 'Yeniden gönder',
+                    ? context.l10n.resendIn(_cooldown)
+                    : context.l10n.resend,
             style: context.t.bodyMedium?.copyWith(
               color: canResend ? context.c.amberText : context.c.text36,
               fontWeight: FontWeight.w700,
@@ -513,7 +514,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Widget _footerHint() {
     return Center(
       child: Text(
-        'Yanlış e-posta mı girdin? Geri dönüp tekrar deneyebilirsin.',
+        context.l10n.otpWrongEmail,
         textAlign: TextAlign.center,
         style: context.t.bodySmall?.copyWith(
           color: context.c.text36,

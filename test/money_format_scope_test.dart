@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// Baz para birimi (3.2) — KAPSAM ratchet'i.
 ///
@@ -55,7 +55,7 @@ void main() {
   group('değer dosyaları ham ₺ biçimleyici kullanmaz', () {
     for (final f in degerDosyalari) {
       test(f, () {
-        final src = File(f).readAsStringSync();
+        final src = ekranKaynagiSync(f);
         final hits = <String>[];
         final lines = src.split('\n');
         for (var i = 0; i < lines.length; i++) {
@@ -74,7 +74,7 @@ void main() {
   group('fiyat dosyaları çevirim yapmaz', () {
     for (final f in fiyatDosyalari) {
       test(f, () {
-        final src = File(f).readAsStringSync();
+        final src = ekranKaynagiSync(f);
         expect(src.contains('BazPara'), isFalse,
             reason: 'kote fiyat baz para birimine çevrilmez');
         expect(src.contains('bazParaProvider'), isFalse);
@@ -85,14 +85,14 @@ void main() {
   group('uygulama dışı yüzeyler ₺ kalır (bilinçli)', () {
     for (final f in disYuzeyler) {
       test(f, () {
-        final src = File(f).readAsStringSync();
+        final src = ekranKaynagiSync(f);
         expect(src.contains('BazPara'), isFalse);
       });
     }
   });
 
   test('karışık dosya: asset_detail — değişim tutarı çevrilir, fiyat ipucu ₺', () {
-    final ad = File('lib/screens/asset_detail_screen.dart').readAsStringSync();
+    final ad = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
     expect(ad.contains('baz.formatter(digits: 0)'), isTrue,
         reason: 'dönem değişim tutarı portföy değeridir');
     expect(ad.contains('tryFormatter(digits: 0)'), isFalse);

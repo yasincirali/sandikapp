@@ -104,7 +104,8 @@ void main() {
     });
 
     test('çekim BİTTİ ve boşsa dürüst mesaj — sonsuz spinner YOK', () {
-      expect(ekran.contains('fiyat geçmişi şu an '), isTrue,
+      // 3.20: metin `context.l10n.priceHistoryFailed`.
+      expect(ekran.contains('l10n.priceHistoryFailed'), isTrue,
           reason: 'Veri hiç gelmeyecekken bile spinner dönüyor.');
     });
   });

@@ -184,7 +184,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Üç seçenek de görünür olmalı.
-      expect(find.text('Sistem'), findsOneWidget);
+      // "Sistem" tema VE dil seçicide (3.20) — en az bir.
+      expect(find.text('Sistem'), findsAtLeastNWidgets(1));
       expect(find.text('Açık'), findsOneWidget);
       expect(find.text('Koyu'), findsOneWidget);
     });

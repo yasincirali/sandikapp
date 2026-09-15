@@ -8,6 +8,7 @@ import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../l10n/l10n.dart';
 
 /// Reel getiri rozeti — "portföyün TÜFE'yi kaç puan geçti".
 ///
@@ -99,8 +100,9 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
     return Padding(
       padding: widget.padding,
       child: Semantics(
-        label: 'Son bir yılda portföyün enflasyonu yüzde $mutlak puan '
-            '${onde ? "geçti" : "gerisinde kaldı"}',
+        label: onde
+            ? context.l10n.realReturnSemanticsAhead(mutlak)
+            : context.l10n.realReturnSemanticsBehind(mutlak),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
@@ -125,9 +127,11 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
                     style: context.t.bodyMedium
                         ?.copyWith(height: 1.35, color: c.text58),
                     children: [
-                      const TextSpan(text: 'Son bir yılda enflasyonun '),
+                      TextSpan(text: context.l10n.lastYearInflation),
                       TextSpan(
-                        text: '$mutlak puan ${onde ? "önündesin" : "gerisindesin"}',
+                        text: onde
+                            ? context.l10n.pointsAhead(mutlak)
+                            : context.l10n.pointsBehind(mutlak),
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: ton,

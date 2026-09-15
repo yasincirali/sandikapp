@@ -130,3 +130,5 @@ store_listing/ios/**/*.png
 # Geçici çalışma dosyaları — 2026-09 denetiminde canlı bir Vault secret
 # tmp/ altından git'e sızdı. Bu dizin bir daha izlenmez.
 tmp/
+# gen-l10n raporu (her üretimde yeniden yazılır)
+lib/l10n/untranslated.json

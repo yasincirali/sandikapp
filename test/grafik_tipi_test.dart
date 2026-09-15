@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/grafik_tipi.dart';
 import 'package:portfoy_takip/widgets/grafik_tipi_secici.dart';
+import 'helpers/kaynak.dart';
 
 /// Grafik tipi seçici — varsayılan, oturum kalıcılığı ve menü.
 ///
@@ -11,11 +12,9 @@ import 'package:portfoy_takip/widgets/grafik_tipi_secici.dart';
 /// seçime göre değişmeli, session bazlı tutulmalı bilgi; default olarak
 /// da line chart şeklinde görülmeli."
 ///
-/// ## Candle neden yok
-/// Mum grafiği OHLC ister. Portföy serisi her zaman dilimi için TEK değer
-/// tutuyor (`Map<int, double>`) — açılış/yüksek/düşük hiç üretilmiyor.
-/// Menüye koyup Line çizmek kullanıcıyı yanıltırdı; kullanıcıya soruldu
-/// ve "şimdilik atla" seçildi.
+/// ## Candle
+/// 2026-09-14'e kadar yoktu (OHLC verisi yok diye). Artık `mum_turetici`
+/// eldeki noktalardan kova bazında OHLC türetiyor; Candle beşinci tip.
 void main() {
   setUp(() => grafikTipiNotifier.value = GrafikTipi.varsayilan);
   tearDown(() => grafikTipiNotifier.value = GrafikTipi.varsayilan);
@@ -26,15 +25,12 @@ void main() {
       expect(grafikTipiNotifier.value, GrafikTipi.line);
     });
 
-    test('dört tip var, Candle YOK', () {
-      expect(GrafikTipi.values.length, 4);
+    test('beş tip var — TradingView kümesi tamam, Candle sonda', () {
+      expect(GrafikTipi.values.length, 5);
       expect(GrafikTipi.values.map((e) => e.name).toList(),
-          ['line', 'mountain', 'baseline', 'bar']);
-      expect(
-        GrafikTipi.values.any((t) => t.name.toLowerCase().contains('candle')),
-        isFalse,
-        reason: 'OHLC verisi yokken Candle sunmak yanıltıcı olur.',
-      );
+          ['line', 'mountain', 'baseline', 'bar', 'candle']);
+      expect(GrafikTipi.candle.etiket, 'Mum',
+          reason: '"OHLC" değil: fitiller örneklenmiş noktaların uçları.');
     });
 
     test('her tipin etiketi ve ikonu var', () {
@@ -120,8 +116,7 @@ void main() {
   });
 
   group('çizim bağlantısı — kaynak denetimi', () {
-    final ekran = File('lib/screens/portfolio_performance_screen.dart')
-        .readAsStringSync()
+    final ekran = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
         .replaceAll('\r\n', '\n');
 
     test('dolgu YALNIZCA mountain\'da', () {

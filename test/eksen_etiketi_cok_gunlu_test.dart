@@ -1,8 +1,8 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/utils/chart_axis.dart';
+import 'helpers/kaynak.dart';
 
 /// Gün içi eksende ÇOK GÜNLÜ seri tarih de yazmalı.
 ///
@@ -72,8 +72,7 @@ void main() {
     // Kaynak denetimi: dönüştürme olmadan eşik her zaman tetiklenir ve
     // hafta içi grafiğe de tarih basılır. Bu, etiket biçiminden
     // anlaşılmayan sessiz bir hata olurdu.
-    final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-        .readAsStringSync()
+    final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
         .replaceAll('\r\n', '\n');
 
     expect(kaynak.contains('spanGun: intraday'), isTrue,

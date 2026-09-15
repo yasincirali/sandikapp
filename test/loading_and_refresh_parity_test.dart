@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/widgets/sandik_skeleton.dart';
+import 'helpers/kaynak.dart';
 
 /// Yükleme ve yenileme dili tek olsun.
 ///
@@ -74,7 +75,7 @@ void main() {
       'lib/screens/partnership_requests_screen.dart',
     ];
     for (final p in dataScreens) {
-      final src = File(p).readAsStringSync();
+      final src = ekranKaynagiSync(p);
       expect(src.contains('RefreshIndicator('), isTrue,
           reason: '$p: aşağı çekince yenileme yok');
     }

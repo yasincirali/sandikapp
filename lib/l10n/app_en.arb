@@ -1,0 +1,1968 @@
+{
+  "@@locale": "en",
+  "appName": "sandık",
+  "loginTagline": "Grow your treasure together.",
+  "email": "Email",
+  "emailInvalid": "Enter a valid email",
+  "password": "Password",
+  "passwordShow": "Show password",
+  "passwordHide": "Hide password",
+  "passwordMin6": "At least 6 characters",
+  "passwordRequired": "Password required",
+  "rememberMe": "Remember me",
+  "forgotPassword": "Forgot password",
+  "signIn": "Sign In",
+  "noAccountRegister": "Don't have an account? Sign up",
+  "register": "Sign Up",
+  "registerWelcome": "Welcome to your sandık.",
+  "registerSubtitle": "Create your account in a few steps.",
+  "fullName": "Full Name",
+  "fullNameRequired": "Enter your full name",
+  "passwordRepeat": "Repeat Password",
+  "passwordsMismatch": "Passwords do not match",
+  "haveAccountSignIn": "Already have an account? Sign in",
+  "exitAppTitle": "Exit the app",
+  "exitAppMessage": "Are you sure you want to exit?",
+  "exit": "Exit",
+  "tabHome": "Home",
+  "tabPortfolio": "Portfolio",
+  "tabPerformance": "Performance",
+  "tabProfile": "Profile",
+  "addAsset": "Add asset",
+  "lockTitle": "sandık is locked",
+  "lockFailed": "Verification failed. Try again.",
+  "lockPrompt": "Verify your identity to see your portfolio.",
+  "lockVerifying": "Verifying…",
+  "unlock": "Unlock",
+  "disclaimerTitle": "Legal Notice",
+  "disclaimerIntro": "To continue using the app, please read and accept the legal notice below.",
+  "disclaimerAcceptRow": "I have read and accept the legal notice above.",
+  "disclaimerMustAccept": "You must accept the legal notice to continue.",
+  "accept": "I Accept",
+  "forgotTitle": "Forgot Password",
+  "forgotIntro": "Enter the email address we should send the code to.",
+  "sendCode": "Send Code",
+  "codeSentTo": "We sent a code to {email}. Enter the code and your new password.",
+  "@codeSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "code": "Code",
+  "codeInvalid": "Code missing or invalid",
+  "newPassword": "New Password",
+  "newPasswordRepeat": "Repeat New Password",
+  "updatePassword": "Update Password",
+  "tryAnotherEmail": "Try with a different email",
+  "passwordUpdatedTitle": "Password updated",
+  "passwordUpdatedMessage": "You can sign in with your new password. You will be taken to the home screen now.",
+  "otpTitle": "Verify your email",
+  "otpExpired": "The code has expired. Request a new one.",
+  "otpEnterFull": "Please enter the full 6-digit code.",
+  "otpSentTitle": "Code sent",
+  "otpSentMessage": "A new 6-digit code was sent to your email.",
+  "otpExpiredShort": "Code expired",
+  "otpExpiresIn": "Code becomes invalid in {time}",
+  "@otpExpiresIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sending": "Sending…",
+  "requestNewCode": "Request New Code",
+  "verify": "Verify",
+  "otpNotReceived": "Didn't get the code? ",
+  "resend": "Resend",
+  "resendIn": "Resend ({seconds}s)",
+  "@resendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "otpWrongEmail": "Entered the wrong email? Go back and try again.",
+  "settings": "Settings",
+  "settingsAppearance": "Appearance",
+  "settingsNotifications": "Notifications",
+  "settingsAccount": "Account & Security",
+  "settingsHelp": "Help & Legal",
+  "settingsAppearanceSubtitle": "Theme, base currency, language, investor level",
+  "settingsAccountSubtitle": "Biometric lock, download your data, delete account",
+  "settingsHelpSubtitle": "Contact us, tour, privacy and terms",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "language": "Language",
+  "languageSystem": "System",
+  "languageTurkish": "Türkçe",
+  "languageEnglish": "English",
+  "languageNote": "English is in beta: legal texts, the intro tour and gold/fund sub-category names stay Turkish.",
+  "investorLevel": "Investor level",
+  "investorLevelNote": "Only changes WHICH metrics are shown; your calculations and data stay the same.",
+  "levelBeginner": "Beginner",
+  "levelIntermediate": "Intermediate",
+  "levelAdvanced": "Advanced",
+  "levelBeginnerDesc": "Simple view: technical signals, percentile, health and XIRR cards are hidden.",
+  "levelIntermediateDesc": "Today's view: technical signals, percentile, health card and money-weighted return (XIRR).",
+  "levelAdvancedDesc": "Intermediate + risk-adjusted return, timing effect and recovery (Summary › 1Y).",
+  "noAssetsYet": "No assets added yet",
+  "noAssetsOfType": "No assets of this type",
+  "noAssetsYetHint": "Start building your sandık by adding your first asset.",
+  "noAssetsOfTypeHint": "Change the filter or add an asset of this type.",
+  "addFirstAsset": "Add Your First Asset",
+  "addAssetTitle": "Add Asset",
+  "editAsset": "Edit",
+  "add": "Add",
+  "update": "Update",
+  "save": "Save",
+  "assetType": "Asset Type",
+  "assetName": "Asset name",
+  "nameRequired": "Name required",
+  "quantity": "Quantity",
+  "quantityInvalid": "Valid quantity",
+  "purchasePrice": "Purchase Price",
+  "optional": "· optional",
+  "auto": "Automatic",
+  "invalid": "Invalid",
+  "commission": "Commission / Fees",
+  "cannotBeNegative": "Cannot be negative",
+  "allTypes": "All",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "sell": "Sell",
+  "dividend": "Dividend",
+  "profile": "Profile",
+  "portfolio": "Portfolio",
+  "myAssets": "My Assets",
+  "watchlist": "Watchlist",
+  "priceUpdateFailed": "Prices could not be updated — showing older data.",
+  "otpSentPrefix": "We sent the 6-digit code to\n",
+  "otpSentSuffix": "",
+  "registerNameMissing": "Enter your full name.",
+  "registerEmailInvalid": "Enter a valid email.",
+  "registerPasswordsMismatch": "Passwords do not match.",
+  "termsMustAccept": "You must accept the legal terms.",
+  "consentMustAccept": "You must give explicit consent to the cross-border data transfer.",
+  "refreshPrices": "Refresh prices",
+  "assetAllocation": "ASSET ALLOCATION",
+  "portfolioActivity": "PORTFOLIO ACTIVITY",
+  "seeAllTransactions": "See all transactions",
+  "seeAllCount": "See All ({count})",
+  "@seeAllCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "signalDeleteFailed": "Could not delete the notification. Check your connection.",
+  "permanentDelete": "Delete permanently",
+  "signalDeleteChoice": "There are {past} past and {active} active notifications. What should be deleted?",
+  "@signalDeleteChoice": {
+    "placeholders": {
+      "past": {
+        "type": "int"
+      },
+      "active": {
+        "type": "int"
+      }
+    }
+  },
+  "cancelShort": "Cancel",
+  "onlyHistory": "History only",
+  "clearAllSignals": "Clear all signals",
+  "clearAllLower": "Clear all",
+  "clearAllSignalsBody": "{count} notifications will move to history. To delete them for good, use the \"Delete History\" button there.",
+  "@clearAllSignalsBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearVerb": "Clear",
+  "clearAllUpper": "Clear All",
+  "noActiveSignals": "No active signals right now",
+  "historyUpper": "HISTORY",
+  "deleteHistoryCount": "Permanently delete {count} notifications from history",
+  "@deleteHistoryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteHistoryTitle": "Delete history",
+  "deleteHistoryBody": "{count} notifications will be deleted PERMANENTLY. This cannot be undone.",
+  "@deleteHistoryBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "permanentDeleteUpper": "Delete Permanently",
+  "deleteHistoryButton": "Delete History",
+  "signalNeutral": "NEUTRAL",
+  "signalDeletedAt": "{date} · deleted",
+  "@signalDeletedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "signalConfidence": "{count} indicators · {pct} confidence",
+  "@signalConfidence": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "showBalance": "Show balance",
+  "hideBalance": "Hide balance",
+  "sortCriterion": "SORT BY",
+  "tabSemanticsCount": "{label}, {count} assets",
+  "@tabSemanticsCount": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noChange": "No change",
+  "buyAction": "Buy",
+  "sellAction": "Sell",
+  "deleteAction": "Delete",
+  "activeAlertsCount": "{count} active price alerts",
+  "@activeAlertsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lastMonth": "Last month",
+  "firstPurchase": "First Purchase",
+  "avgCost": "Avg. Cost",
+  "totalCost": "Total Cost",
+  "currentValue": "Current Value",
+  "lotSummary": "{buys} buys · {sells} removals",
+  "@lotSummary": {
+    "placeholders": {
+      "buys": {
+        "type": "int"
+      },
+      "sells": {
+        "type": "int"
+      }
+    }
+  },
+  "sortMarketValue": "Market Value",
+  "sortHighToLow": "High to Low",
+  "sortLowToHigh": "Low to High",
+  "sortGainTry": "Gain (TRY)",
+  "sortGainPct": "Gain (%)",
+  "sortHighestFirst": "Highest First",
+  "sortLowestFirst": "Lowest First",
+  "assetFullName": "Full Name",
+  "assetTypeStock": "Stocks",
+  "assetTypeFund": "Funds",
+  "assetTypeFx": "Currency",
+  "assetTypeGold": "Gold",
+  "assetTypeCommodity": "Commodities",
+  "assetTypeOther": "Other",
+  "tickerHintStock": "e.g. THYAO.IS, GARAN.IS  (add .IS for Borsa İstanbul)",
+  "tickerHintFund": "Leave empty if there is no Yahoo Finance code and enter the price manually",
+  "tickerHintFx": "e.g. USDTRY=X, EURTRY=X, GBPTRY=X",
+  "tickerHintGold": "e.g. XAUTRY=X (gram gold in TRY) or GC=F (ounce, USD)",
+  "tickerHintCommodity": "e.g. CL=F (oil), NG=F (natural gas), GC=F (gold ounce)",
+  "tickerHintOther": "A Yahoo Finance symbol, or leave it empty",
+  "assetTypeSemantics": "{type} type",
+  "total": "total",
+  "@assetTypeSemantics": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkAdd": "Bulk add",
+  "quickEntryVoice": "Voice / Quick entry",
+  "orNotInList": "or not in the list",
+  "symbolHint": "Type a symbol (e.g. AAPL, THYAO.IS)",
+  "companyNameHint": "Company name (optional — fetched from the symbol)",
+  "goldSemantics": "{kind} gold",
+  "@goldSemantics": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "commissionNote": "Trading commission is added to your cost — profit/loss shows the real figure.",
+  "costPreviewHint": "Enter a quantity and the total cost appears here.",
+  "totalCostUpper": "TOTAL COST",
+  "transactionDate": "Transaction date",
+  "addNote": "Add a note",
+  "notesHint": "Your notes...",
+  "quantitySemantics": "Quantity {value}",
+  "@quantitySemantics": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "quickEntryTitle": "Quick Entry",
+  "quickEntryHelp": "One asset per line. Price is optional — leave it blank and the current price is fetched.\ne.g.  100 dollars  /  10 grams gold 4500 lira  /  GARAN 500 units",
+  "quickEntryPlaceholder": "100 dollars\n10 grams gold 4500 lira\nGARAN 500 units 105 lira",
+  "saveNAssets": "Save {count} assets",
+  "@saveNAssets": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fillTheForm": "Fill the form",
+  "bistStocks": "BIST Stocks",
+  "tefasFunds": "TEFAS Funds",
+  "fundsLoading": "Loading funds...",
+  "pleaseWait": "Please wait",
+  "fundsLoadFailed": "Could not load funds",
+  "searchEllipsis": "Search...",
+  "clearSearch": "Clear search",
+  "pickStockPrompt": "Please pick a stock",
+  "pickStock": "Pick a stock",
+  "pickStockTap": "Tap to pick a stock...",
+  "pickFundPrompt": "Please pick a fund",
+  "pickFund": "Pick a fund",
+  "pickFundTap": "Tap to pick a fund...",
+  "noResults": "No results",
+  "priceNotAvailable": "No price information",
+  "assetFallbackName": "Asset",
+  "commodityHint": "e.g. Oil (Brent)",
+  "identityStock": "Stock",
+  "identityFund": "Fund",
+  "identityGoldKind": "Gold Type",
+  "identityCurrency": "Currency",
+  "identityCommodity": "Commodity",
+  "noResultsFor": "No match for \"{q}\"",
+  "@noResultsFor": {
+    "placeholders": {
+      "q": {
+        "type": "String"
+      }
+    }
+  },
+  "periodDaily": "DAILY",
+  "period1W": "1W",
+  "period1M": "1M",
+  "period6M": "6M",
+  "period1Y": "1Y",
+  "assetPerformanceSemantics": "Performance: {name}",
+  "@assetPerformanceSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "setPriceAlert": "Set a price alert",
+  "priceHistoryFailed": "This asset's price history could not be fetched. Check your connection and try again.",
+  "totalQuantityUpper": "TOTAL QUANTITY",
+  "otherTab": "Other",
+  "periodChangeUpper": "{period} CHANGE",
+  "@periodChangeUpper": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "buyPerUnit": "BUY / {unit}",
+  "@buyPerUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "todayPerUnit": "TODAY / {unit}",
+  "@todayPerUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "noResultsShort": "No results.",
+  "compare": "Compare",
+  "clearShort": "Clear",
+  "searchTickerOrName": "Search ticker or name…",
+  "myPortfolioTab": "My Portfolio",
+  "deleteAccountTitle": "You are about to delete your account",
+  "deleteAccountBody": "This CANNOT be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted within 30 days.\n\nDo you want to continue?",
+  "continueAction": "Continue",
+  "verifyIdentityTitle": "Verify your identity",
+  "verifyIdentityBody": "Your account was created with Apple/Google. You will be asked to sign in once more with the same account before deletion.",
+  "confirmWithPassword": "Confirm with your password",
+  "confirmWithPasswordBody": "For your security you need to confirm with your password.",
+  "deleteAccountUpper": "DELETE ACCOUNT",
+  "accountDeletedTitle": "Your account was deleted",
+  "accountDeletedBody": "See you around.",
+  "investmentDisclaimer": "Investment Advice Disclaimer",
+  "close": "Close",
+  "feedbackTitle": "Feedback & Suggestions",
+  "feedbackHint": "Write your message…",
+  "send": "Send",
+  "deletingAccount": "Deleting your account…",
+  "deletingAccountBody": "This can take a few seconds. Don't close the app.",
+  "diagnosticsUpper": "DIAGNOSTICS",
+  "pushDiagnostics": "Push Diagnostics",
+  "pushDiagnosticsSubtitle": "Where the notification chain is broken; device APNs/FCM token state",
+  "notificationsUpper": "NOTIFICATIONS",
+  "signalNotifications": "Technical signal notifications",
+  "signalNotificationsSubtitle": "Get notified when a BUY/SELL indicator triggers",
+  "signalSettings": "Signal settings",
+  "signalSettingsSubtitle": "Indicator selection per asset type + Premium",
+  "priceAlerts": "Price alerts",
+  "partnerInviteNotifications": "Partner invite notifications",
+  "partnerInviteNotificationsSubtitle": "Get notified when a new partner request arrives",
+  "liveActivitiesUpper": "LIVE ACTIVITIES",
+  "biometricLock": "Biometric lock",
+  "downloadMyData": "Download My Data",
+  "downloadMyDataSubtitle": "Get all your data as a JSON file (KVKK Article 11)",
+  "deleteMyAccount": "Delete My Account",
+  "deleteMyAccountSubtitle": "All your data is permanently deleted",
+  "supportUpper": "SUPPORT",
+  "contactUs": "Contact Us",
+  "replayTour": "Replay the tour",
+  "replayTourSubtitle": "Remind yourself what each screen does",
+  "feedbackSubtitle": "Send us your thoughts",
+  "legalUpper": "LEGAL",
+  "privacyPolicy": "Privacy Policy",
+  "privacyPolicySubtitle": "How your data is processed",
+  "termsOfUse": "Terms of Use",
+  "termsOfUseSubtitle": "Service agreement",
+  "kvkkNotice": "KVKK Disclosure Notice",
+  "kvkkNoticeSubtitle": "Personal data processing notice",
+  "disclaimerSubtitle": "View the legal notice you accepted",
+  "themeSemantics": "{name} theme",
+  "@themeSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "baseCurrencySemantics": "Base currency {name}",
+  "@baseCurrencySemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "levelSemantics": "{name} level",
+  "@levelSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "showAllDay": "Show all day",
+  "showAllDaySubtitle": "When off, it only appears in the hours you choose.",
+  "displayWindow": "Display window",
+  "startTime": "Start",
+  "endTime": "End",
+  "showOnWeekend": "Show on weekends too",
+  "showOnWeekendSubtitle": "BIST is closed on weekends; the banner shows the last close labelled \"Market closed\".",
+  "showAmounts": "Show amounts",
+  "showAmountsSubtitle": "When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.",
+  "partnerActivityNotifications": "Partner activity notifications",
+  "partnerActivityNotificationsSubtitle": "Mention it in the daily brief when your partner adds to their portfolio",
+  "quietHours": "Quiet hours",
+  "biometricLockSubtitle": "Ask for Face ID / fingerprint / device PIN when opening the app",
+  "doneTitle": "Done",
+  "alreadyPartners": "Already Partners",
+  "ownCode": "Your Own Code",
+  "expiredTitle": "Expired",
+  "waitABit": "Hold On",
+  "somethingWentWrong": "Something went wrong",
+  "cancelInviteTitle": "Cancel partner request",
+  "cancelInviteBody": "Are you sure you want to cancel the partner request you sent?",
+  "yesCancel": "Yes, cancel it",
+  "settingsTitle": "Settings",
+  "partnerActionsUpper": "PARTNER ACTIONS",
+  "myPartnersUpper": "MY PARTNERS",
+  "generateInviteCode": "Generate Invite Code",
+  "generateInviteCodeBody": "Send the code to your partner. Once they enter it, you get an approval request.",
+  "enterPartnerCode": "Enter Partner Code",
+  "enterPartnerCodeBody": "Enter the code your partner sent you (e.g. KRHNJ-8P2SW). They then need to approve.",
+  "tooManyAttempts": "Too many attempts — you can try again in {wait}.",
+  "@tooManyAttempts": {
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "awaitingApproval": "Waiting for {name} to approve...",
+  "@awaitingApproval": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelWord": "Cancel",
+  "noPartnersYet": "You have no partners yet",
+  "removePartnerSemantics": "Remove partner",
+  "removePartnerTitle": "Remove partnership",
+  "removePartnerBody": "Are you sure you want to remove your partnership with {name}?",
+  "@removePartnerBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeWord": "Remove",
+  "pendingRequestsUpper": "PENDING PARTNER REQUESTS",
+  "wantsToPartner": "Wants to partner up",
+  "rejectRequest": "Reject partner request",
+  "acceptRequest": "Accept partner request",
+  "sandikPremium": "sandık Premium",
+  "premiumPitch": "Unlimited assets, premium indicators, 2 signal analyses a day",
+  "premiumActive": "Premium active",
+  "premiumActiveBody": "All advanced features unlocked",
+  "codeCopied": "Code generated and copied to clipboard",
+  "tooManyFailedAttempts": "Too many failed attempts.\nYou can try again in {wait}.",
+  "@tooManyFailedAttempts": {
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "partnershipCreated": "You are now partners with {name}!",
+  "@partnershipCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "requestRejected": "The partner request was rejected.",
+  "requestCancelled": "The partner request was cancelled.",
+  "partnershipAccepted": "Partnership accepted!",
+  "sendingEllipsis": "Sending...",
+  "waitFor": "Wait — {wait}",
+  "@waitFor": {
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "requestPartnership": "Request Partnership",
+  "generatingEllipsis": "Generating...",
+  "generateCode": "Generate Code",
+  "switchToDark": "Switch to dark theme",
+  "switchToLight": "Switch to light theme",
+  "tabChart": "Chart",
+  "tabSummary": "Summary",
+  "modeReal": "Actual",
+  "modeSim": "Simulation",
+  "modeInfoSemantics": "About {mode} mode",
+  "@modeInfoSemantics": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "noChartData": "No chart data",
+  "noAssetsYetTitle": "You have no assets yet",
+  "noAssetsOfTypeTitle": "No {type} in your portfolio",
+  "@noAssetsOfTypeTitle": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "noAssetsChartBody": "As you add assets, your portfolio performance turns into a chart here.",
+  "noAssetsOfTypeChartBody": "Add an asset of this type and its performance appears here. You can pick another type.",
+  "noHistoryAllBody": "Price history is not tracked for your assets; their value counts in the total but no time chart can be drawn.",
+  "noHistoryTypeBody": "Price history is not tracked for {type}. Its value counts in the portfolio total, but no time chart can be drawn.",
+  "@noHistoryTypeBody": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "simModeTitle": "Simulation Mode",
+  "realModeTitle": "Actual Mode",
+  "simModeBody": "How the chart would look if you had held today's net portfolio for the whole period — it ignores past buy/sell decisions and shows only the price change of your current position.",
+  "realModeBody": "Each day's value is computed from the net quantity you held that day. Tap a point to see that day's portfolio value and any buy / sell amounts — so you can see exactly why the chart rose or fell.",
+  "portfolioPerformance": "Portfolio Performance",
+  "chartDataFailed": "Could not load chart data",
+  "chartDataFailedBody": "Price history could not be fetched. Check your connection and try again.",
+  "intradayMissingBody": "Intraday prices could not be fetched for {names}. These assets are drawn FLAT at their last known price — a flat line does not mean the market was quiet.",
+  "@intradayMissingBody": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "retryLower": "Try again",
+  "raceUpper": "RACE",
+  "changeByTypeUpper": "CHANGE BY TYPE",
+  "noData": "No data",
+  "tooltipReturn": "\nReturn ",
+  "tooltipBuy": "\nBuy  +",
+  "tooltipSell": "\nSell −",
+  "tooltipNet": "\nNet ",
+  "tooltipInvested": "\nTotal invested ",
+  "tradeVolumeUpper": "TRADE VOLUME",
+  "performanceTitle": "Performance",
+  "intervalWeekly": "Weekly",
+  "intervalMonthly": "Monthly",
+  "intervalYearly": "Yearly",
+  "lastNWeeksNet": "last {n} weeks · net",
+  "@lastNWeeksNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lastNMonthsNet": "last {n} months · net",
+  "@lastNMonthsNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "lastNYearsNet": "last {n} years · net",
+  "@lastNYearsNet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "avgContributingWeek": "Average per contributing week",
+  "avgContributingMonth": "Average per contributing month",
+  "avgContributingYear": "Average per contributing year",
+  "vsLastWeek": "Compared to last week",
+  "vsLastMonth": "Compared to last month",
+  "vsLastYear": "Compared to last year",
+  "ongoingWeek": ", ongoing week",
+  "ongoingMonth": ", ongoing month",
+  "ongoingYear": ", ongoing year",
+  "trendUpWeek": "This week is above your earlier contributions.",
+  "trendUpMonth": "This month is above your earlier contributions.",
+  "trendUpYear": "This year is above your earlier contributions.",
+  "trendDownWeek": "This week is below your earlier contributions.",
+  "trendDownMonth": "This month is below your earlier contributions.",
+  "trendDownYear": "This year is below your earlier contributions.",
+  "trendFlatWeek": "Your contributions are steady week to week.",
+  "trendFlatMonth": "Your contributions are steady month to month.",
+  "trendFlatYear": "Your contributions are steady year to year.",
+  "biggestMoverToday": "Today's biggest mover",
+  "weekExtremes": "This week's extremes",
+  "lastMonthPeriod": "the last month",
+  "last6MonthsPeriod": "the last 6 months",
+  "sixMonthExtremes": "Six-month extremes",
+  "lastYearPeriod": "the last year",
+  "yearCurve": "Year curve",
+  "periodMarketReturn": "{period} market return",
+  "@periodMarketReturn": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "whereItCameFrom": "Where it came from",
+  "periodStart": "Period start",
+  "yourContribution": "Your contribution",
+  "marketWord": "Market",
+  "cashDividend": "Cash dividends within it",
+  "commissionPaid": "Commission paid",
+  "contributionNotReturn": "The blue bar is your own money — it is not a return. The percentage comes only from the market bar.",
+  "periodCourse": "Course over the period",
+  "greenDaysOfTotal": "{up} of {total} trading days closed up.",
+  "@greenDaysOfTotal": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "up": {
+        "type": "int"
+      }
+    }
+  },
+  "againstInflation": "Against inflation",
+  "realReturnPeriod": "Real return · {period}",
+  "@realReturnPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "nominalReturn": "Nominal return",
+  "periodCpi": "Period CPI",
+  "pointDifference": "Point difference",
+  "realReturn": "Real return",
+  "cpiNotLoaded": "Inflation data has not loaded yet.",
+  "cpiNotLoadedBody": "When the inflation index arrives, your portfolio's real return appears here. No estimated figure is shown.",
+  "allocationChange": "Allocation change",
+  "sixMonthComparison": "Six-month comparison",
+  "portfolioCharacter": "Your portfolio's character",
+  "mostPatientAsset": "Your most patient asset",
+  "nDays": "{n} days",
+  "@nDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "shareSummary": "Share your summary",
+  "savingDiscipline": "Your saving discipline",
+  "noNewMoney": "No new money entered your portfolio in this window.",
+  "highestWord": "Highest",
+  "contributingPeriods": "Periods with contributions",
+  "portfolioHealthPeriod": "Portfolio health · {period}",
+  "@portfolioHealthPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "maxDrawdown": "Largest drawdown",
+  "volatility": "Volatility",
+  "volatilityBody": "This is how much your portfolio value swung on average over the year. High is neither good nor bad — it just means bigger ups and downs.",
+  "concentration": "Concentration",
+  "moneyReturnAnnual": "Return on your money (annual)",
+  "xirrBody": "The annual compound return of the money you invested, taking the DATES of your investments into account.",
+  "periodMarketReturnLabel": "Period market return",
+  "xirrVsMarketBody": "The two numbers do not contradict: the top one also accounts for when you bought, the bottom one measures only the market's move.",
+  "advancedMetricsYear": "Advanced metrics · last year",
+  "notEnoughHistory": "Not enough history for {period}",
+  "@notEnoughHistory": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "notEnoughHistoryBody": "The summary appears on its own once this period fills up.",
+  "nAssetsPeriod": "{count} ASSETS · {period}",
+  "@nAssetsPeriod": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "chartLoadFailed": "The chart could not be loaded.",
+  "notEnoughPriceHistory": "Not enough price history for a chart.",
+  "portfolioLineNote": "The {name} line is the scenario where you held today's assets from the start of the period — it is not your realised return.",
+  "@portfolioLineNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openDetailSemantics": "Open {name} details",
+  "@openDetailSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addToPortfolioSemantics": "Add {name} to my portfolio",
+  "@addToPortfolioSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noWatchlistYet": "You are not watching anything yet",
+  "noWatchlistBody": "Watch it before you buy. Track the price without touching your portfolio.",
+  "addToWatchlist": "Add to watchlist",
+  "whyWatchlistUpper": "WHY A WATCHLIST?",
+  "whyWatchlistBody": "You can follow an asset's price without buying it. The watchlist is not part of your portfolio; it does not affect your total value or profit/loss.",
+  "notInPortfolioNote": "These assets are not part of your portfolio.",
+  "addAssetsToCompare": "Add assets to compare",
+  "addAssetsToCompareBody": "You can also add assets you don't own.",
+  "inMyPortfolio": "In my portfolio",
+  "noDataShort": "no data",
+  "addToMyPortfolio": "Add to my portfolio",
+  "comparisonDisclaimer": "Past performance is not an indicator of future returns. Chart values show percentage change from the start of the period; commission, tax and dividends are not included.",
+  "searchAssetsHint": "Search stocks, funds, gold or indices",
+  "noResultsFound": "No results found",
+  "portfolioSeriesNote": "Portfolios are computed series — they are not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.",
+  "portfolioActivityTitle": "Portfolio Activity",
+  "clearFilters": "Clear filters",
+  "loadingEllipsis": "Loading…",
+  "widenDateRangeHint": "Try widening the date range or clearing the search.",
+  "priceAlertsTitle": "Price Alerts",
+  "createAlert": "Create an alert",
+  "noAlertsYet": "You have no alerts yet",
+  "noAlertsBody": "Tap the bell on an asset's screen or create one here; we'll let you know even when the app is closed.",
+  "recreateAlert": "Set again",
+  "raceTitle": "Race",
+  "raceOptions": "Race options",
+  "leaveRace": "Leave the race",
+  "leaveRaceBody": "You leave the ranking; your partners can no longer see your percentage. You can rejoin any time.",
+  "leaveWord": "Leave",
+  "howReturnCalculated": "How is the return calculated?",
+  "selectedPeriodReturn": "Return for the selected period",
+  "depositsDontChangeRank": "Deposits don't change the ranking",
+  "everyoneMeasuredSame": "Everyone is measured the same way",
+  "rankVsPortfolioNote": "This number can DIFFER from the profit/loss percentage on the Portfolio screen — that one shows total profit/loss since your first purchase, this one only what happened in the period you picked.",
+  "rankSwapNote": "If you sold an asset entirely and bought another during the period, the result shows the \"as if you had held the new asset from the start\" scenario. Portfolios without price history are excluded from the ranking.",
+  "notInRace": "You haven't joined the Race",
+  "notInRaceBody": "Turn on participation to appear in the return ranking with your partners. Only partners who opt in can see each other's percentage. Your assets and total TRY value are never shared.",
+  "joinRace": "Join the Race",
+  "addPartnerToRace": "Add a partner and race together",
+  "raceNoListShared": "No one's asset list is shared — only return percentages are ranked.",
+  "yourReturnUpper": "YOUR RETURN",
+  "dataNotReady": "Data is not ready.",
+  "leaderUpper": "LEADER",
+  "loadingUpper": "LOADING",
+  "globalRanking": "Global Ranking",
+  "checkingAnonPool": "Checking the anonymous pool…",
+  "comingSoonUpper": "SOON",
+  "globalRankingSoon": "Your rank opens once there are enough participants — anonymous, KVKK compliant",
+  "topPercentile": "You're in the top {pct}% of the {period} ranking",
+  "@topPercentile": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "topPortfolios": "Top Portfolios",
+  "topGainersAllocation": "{period} top gainers' allocation",
+  "@topGainersAllocation": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "anonymousUpper": "ANONYMOUS",
+  "topPortfoliosSoon": "Top portfolios appear here once there are enough participants. The anonymous pool is forming…",
+  "nthPortfolio": "Portfolio #{n}",
+  "@nthPortfolio": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "selectedPeriodReturnBody": "Your portfolio's value at the end of the period is compared with its value at the start:\n\n(period end − period start) ÷ period start\n\nThe 7D / 30D / 1Y choice above changes the result directly.",
+  "depositsDontChangeRankBody": "The only thing measured is how much your assets gained in the market. Buys and sells during the period do NOT affect the ratio.\n\nThe calculation assumes you held today's assets from the start of the period. Growing your portfolio therefore does not raise your return — you see the same percentage whether you hold 1 lot or 10,000.",
+  "everyoneMeasuredSameBody": "You and your partners are computed with the same formula, at the same moment, from the same prices.\n\nYou don't need to wait for your partner to open the app — the calculation happens on this device.",
+  "planYearly": "Yearly",
+  "planYearlySubtitle": "7 days free, then renews automatically",
+  "planMonthly": "Monthly",
+  "planMonthlySubtitle": "Cancel any time",
+  "subscriptionTerms": "The subscription is billed to your App Store account. It renews automatically; to cancel, manage it under Settings → Apple ID → Subscriptions. The yearly plan starts with a 7-day free trial; unless you cancel, you are charged at the end of the trial.",
+  "premiumUnlocked": "Premium unlocked",
+  "premiumUnlockedBody": "Unlimited assets, 2 signal analyses a day, premium indicators and more are now unlocked.",
+  "greatWord": "Great",
+  "sandikPremiumUpper": "SANDIK PREMIUM",
+  "paywallHeadline": "Track your portfolio\nin more depth",
+  "paywallSubhead": "Unlimited assets, advanced indicators and 2 signal analyses a day.",
+  "restorePurchase": "Restore purchase",
+  "recapTitle": "Your sandık Recap",
+  "recapInYear": "in {year}",
+  "@recapInYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapSubtitle": "A short story of the year.",
+  "recapPoints": "{n} points",
+  "@recapPoints": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "recapDays": "{n} days",
+  "@recapDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "myRecapYear": "My {year} Recap",
+  "@myRecapYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapReady": "Your {year} Recap is ready",
+  "@recapReady": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "recapCardSubtitle": "A short story of the year — {character}",
+  "@recapCardSubtitle": {
+    "placeholders": {
+      "character": {
+        "type": "String"
+      }
+    }
+  },
+  "medianAhead": "{pts} points ahead of the median",
+  "@medianAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "returnRanking": "Return ranking",
+  "returnRankingWith": "Return ranking · {detail}",
+  "@returnRankingWith": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "percentileSemantics": "Over the last 30 days you are above {pct} percent of participants. {detail}",
+  "@percentileSemantics": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "last30DaysLike": "Over the last 30 days you're ahead of ",
+  "nPeople": "{n} people",
+  "@nPeople": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "medianBehind": "{pts} points behind the median",
+  "@medianBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnSemanticsAhead": "Over the last year your portfolio beat inflation by {pts} points",
+  "@realReturnSemanticsAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "lastYearInflation": "Over the last year, inflation-wise you are ",
+  "pointsAhead": "{pts} points ahead",
+  "@pointsAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnSemanticsBehind": "Over the last year your portfolio trailed inflation by {pts} points",
+  "@realReturnSemanticsBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "pointsBehind": "{pts} points behind",
+  "@pointsBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyFlatSemantics": "Your portfolio's market return did not change this week",
+  "thisWeekFromMarket": "From the market this week: ",
+  "noChangeLower": "no change",
+  "pctDown": "{pct}% down",
+  "@pctDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyDownSemantics": "Your portfolio's market return is {pct} percent down this week",
+  "@weeklyDownSemantics": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "weeklyUpSemantics": "Your portfolio's market return is {pct} percent up this week",
+  "@weeklyUpSemantics": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "pctUp": "{pct}% up",
+  "@pctUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "totalNetHidden": "Total net worth hidden",
+  "totalNetWorth": "Total net worth {amount}",
+  "@totalNetWorth": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "realisedFromSales": "Realised from sales: ",
+  "deletedNRecords": "Deleted · {n} records",
+  "@deletedNRecords": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "txSell": "Sale",
+  "txDividend": "Dividend",
+  "txBuy": "Purchase",
+  "gainWord": "gain",
+  "lossWord": "loss",
+  "realisedFromSalesSemantics": "realised from sales ",
+  "raceNoPartnerBody": "You have no partners yet. You can already see your own period return and global percentile.",
+  "viewWord": "View",
+  "newUpper": "NEW",
+  "racePitch": "A return ranking with your partners. Who is earning more?",
+  "joinWord": "Join",
+  "raceCalculating": "Calculating the race…",
+  "rankFirst": "You're 1st in the {period} ranking",
+  "@rankFirst": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "rankNth": "You're {rank} in the {period} ranking",
+  "@rankNth": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "widenTheGap": "Widen the gap — second is {gap}% behind",
+  "@widenTheGap": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "atTheTop": "You're at the top — keep the lead",
+  "toPassPerson": "+{diff}% to pass {name}",
+  "@toPassPerson": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "diff": {
+        "type": "String"
+      }
+    }
+  },
+  "higherInOtherPeriods": "You rank higher in other periods — tap to see",
+  "deleteAssetTitle": "Delete Asset",
+  "deleteAssetMulti": "Permanently delete {n} transaction records (buy/sell/dividend) for \"{name}\"?",
+  "@deleteAssetMulti": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteAssetSingle": "Permanently delete \"{name}\"?",
+  "@deleteAssetSingle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAnyway": "Delete anyway",
+  "deleteAssetWarning": "This is not a sale — the asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.",
+  "assetDeleted": "Asset deleted",
+  "undoFailed": "Could not undo",
+  "enterValidAmount": "Enter a valid amount",
+  "dividendSaved": "Dividend saved",
+  "dividendPayDate": "Dividend payment date",
+  "addDividend": "Add Dividend",
+  "netAmountReceived": "{name} · net amount received",
+  "@netAmountReceived": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentDate": "Payment date: {date}",
+  "@paymentDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendNote": "A dividend does not change your quantity; it is added to your total return.",
+  "enterValidQuantity": "Enter a valid quantity",
+  "enterValidUnitPrice": "Enter a valid unit price",
+  "cannotExceedQuantity": "You can't exceed the current quantity ({qty})",
+  "@cannotExceedQuantity": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "boughtAmount": "Bought {qty} {unit}",
+  "@boughtAmount": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "soldAmount": "Sold {qty} {unit}",
+  "@soldAmount": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionFailed": "Transaction failed. {error}",
+  "@transactionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sellAllWarning": "You are selling the whole position — it leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.",
+  "saleValue": "Sale value",
+  "noPriceAlert": "No price alert",
+  "nActiveAlerts": "{n} active price alerts",
+  "@nActiveAlerts": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteAlertTitle": "Delete alert",
+  "deleteAlertAbove": "Delete the alert for rising above {price}?",
+  "@deleteAlertAbove": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "triggeredAlertSemantics": "Triggered alert {price}, tap to set it again",
+  "@triggeredAlertSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "alertAboveSemantics": "Above {price}, tap to delete",
+  "@alertAboveSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "alertTriggered": "{price} · triggered",
+  "@alertTriggered": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAlertBelow": "Delete the alert for falling below {price}?",
+  "@deleteAlertBelow": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "alertBelowSemantics": "Below {price}, tap to delete",
+  "@alertBelowSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "addAssetFirst": "Add an asset to your portfolio or watchlist first.",
+  "alertSetAbove": "Alert set for {name}: rising above {price}",
+  "@alertSetAbove": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "alertSetFailed": "Could not set the alert",
+  "enterValidPrice": "Enter a valid price",
+  "alertForAsset": "Alert for {name}",
+  "@alertForAsset": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "currentlyPrice": "Currently {price}",
+  "@currentlyPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "currentPriceUnknown": "Current price unknown",
+  "targetPctSemantics": "Target percent {sign} {pct}",
+  "@targetPctSemantics": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "notifyWhenAbove": "We'll let you know when the price rises to this level.",
+  "notifyWhenBelow": "We'll let you know when the price falls to this level.",
+  "setAlert": "Set alert",
+  "alertSetBelow": "Alert set for {name}: falling below {price}",
+  "@alertSetBelow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "plusWord": "plus",
+  "minusWord": "minus",
+  "widgetStepHold": "Press and hold an empty spot on your home screen",
+  "widgetStepPlus": "Tap the + in the top-left corner",
+  "widgetStepPickIos": "Pick \"sandık\" from the list and add it",
+  "widgetStepPickAndroid": "Find \"sandık\" and drag it to your home screen",
+  "widgetInstallTitle": "See your portfolio on the home screen",
+  "widgetInstallBody": "See your total and daily change without opening the app.",
+  "gotIt": "Got it",
+  "widgetStepWidgetsTab": "Tap \"Widgets\"",
+  "disclaimerText": "This app is for information only. The data, analyses and notifications shown are absolutely not investment advice, a trading recommendation, or financial consultancy. Make your investment decisions in consultation with a licensed financial adviser. Past performance does not guarantee future results.",
+  "justNow": "just now",
+  "minutesAgo": "{n} min ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{n} h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{n} d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "signalCalculating": "Calculating signal…",
+  "trendUp": "UPTREND",
+  "trendDown": "DOWNTREND",
+  "trendFlat": "FLAT",
+  "indicatorsConfidence": "{lehte}/{total} indicators · {pct}% confidence",
+  "@indicatorsConfidence": {
+    "placeholders": {
+      "lehte": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "confidenceOnly": "{pct}% confidence",
+  "@confidenceOnly": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "technicalOutlookUpper": "TECHNICAL OUTLOOK",
+  "nowUpper": "NOW",
+  "arrowUp": "▲ up",
+  "arrowDown": "▼ down",
+  "arrowFlat": "◆ flat",
+  "indicatorsCalculating": "Calculating indicators…",
+  "indicatorsNoHistory": "This asset's price history could not be fetched — indicators cannot be calculated.",
+  "noIndicatorsSelected": "No indicators are selected for this asset type. Enable them from Profile → Signal Settings.",
+  "technicalAnalysisUpper": "TECHNICAL ANALYSIS",
+  "nOfMIndicators": "· {on}/{all} indicators",
+  "@nOfMIndicators": {
+    "placeholders": {
+      "on": {
+        "type": "int"
+      },
+      "all": {
+        "type": "int"
+      }
+    }
+  },
+  "configureIndicators": "Configure Indicators",
+  "buySellNeutralCounts": "{buy} BUY · {sell} SELL · {neutral} NEUTRAL",
+  "@buySellNeutralCounts": {
+    "placeholders": {
+      "buy": {
+        "type": "int"
+      },
+      "sell": {
+        "type": "int"
+      },
+      "neutral": {
+        "type": "int"
+      }
+    }
+  },
+  "confidenceWord": "confidence",
+  "csvRowsAddedToCart": "{n} rows added to the cart",
+  "@csvRowsAddedToCart": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "csvImportTitle": "Import from CSV",
+  "csvImportBody": "Copy and paste your broker statement or Excel table. Include a header row; column order doesn't matter.",
+  "pasteHere": "Paste here",
+  "preview": "Preview",
+  "csvRowsRead": "{n} rows read",
+  "@csvRowsRead": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "csvRowsSkipped": ", {n} rows skipped",
+  "@csvRowsSkipped": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "closePriceWillBeFetched": "close price will be fetched",
+  "unitPiece": "units",
+  "assetLimitReachedFor": "{name}: asset limit reached",
+  "@assetLimitReachedFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "someAssetsNotAdded": "Some Assets Could Not Be Added",
+  "clearCartConfirm": "All assets in the cart will be removed. Are you sure?",
+  "pasteCsv": "Paste CSV",
+  "cartEmpty": "The cart is empty",
+  "cartEmptyBody": "Use the + Add Asset button below to queue several assets and save them all at once.",
+  "pasteFromStatement": "Paste from statement / CSV",
+  "saveAllCount": "Save All ({n})",
+  "@saveAllCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "removeFromWatchlist": "Remove from watchlist",
+  "removeFromWatchlistConfirm": "Remove {name} from your watchlist?",
+  "@removeFromWatchlistConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeWord2": "Remove",
+  "removeFromWatchlistFailed": "Could not remove it. Check your connection.",
+  "currentPriceUpper": "CURRENT PRICE",
+  "periodNoChange": "{period} · no change",
+  "@periodNoChange": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "unitPriceDiffNote": "The change is a unit price difference — you don't own this asset.",
+  "notEnoughHistoryForAsset": "Not enough price history for this asset.",
+  "notInYourPortfolio": "This asset is not part of your portfolio.",
+  "searchingEllipsis": "Searching…",
+  "startTypingToSearch": "Start typing to search.",
+  "noResultForQuery": "No results for \"{q}\".",
+  "@noResultForQuery": {
+    "placeholders": {
+      "q": {
+        "type": "String"
+      }
+    }
+  },
+  "inYourPortfolioUpper": "IN YOUR PORTFOLIO",
+  "searchAllAssetsHint": "Search stocks, funds, indices, commodities, currency or gold",
+  "alreadyInPortfolio": "{name} is already in your portfolio",
+  "@alreadyInPortfolio": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addedToWatchlist": "{name} added to your watchlist",
+  "@addedToWatchlist": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistLimitFree": "On the free plan you can watch up to {n} assets.",
+  "@watchlistLimitFree": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "partnershipAcceptedShort": "Partnership accepted.",
+  "partnershipRejectedShort": "Partner request rejected.",
+  "partnershipApprovalTitle": "Partnership Approval",
+  "partnershipApprovalBody": "See and approve the people who entered your partner code here.",
+  "noPendingRequests": "No pending partner requests.",
+  "userWord": "User",
+  "enteredYourCode": "Entered your partner code and is waiting for approval.",
+  "portfolioChange": "Portfolio change",
+  "aheadOfInflationPts": "{pts} points ahead of inflation",
+  "@aheadOfInflationPts": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "betterThanPctInvestors": "Better than {pct}% of investors",
+  "@betterThanPctInvestors": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "nDaysTracked": "{n} days tracked",
+  "@nDaysTracked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trackingWithSandik": "tracked with sandık",
+  "shareCardNoAmounts": "The card shows no amounts; only percentages and labels.",
+  "preparingEllipsis": "Preparing…",
+  "shareAsImage": "Share as image",
+  "shareAsText": "Share as text",
+  "behindInflationPts": "{pts} points behind inflation",
+  "@behindInflationPts": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "assetNotFound": "Asset not found",
+  "myMarketReturn": "My market return",
+  "dataExported": "Your data was prepared as a JSON file and shared.",
+  "mailAppFailed": "Could not open your mail app. Please write to {email}.",
+  "@mailAppFailed": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "notifSubtitleIos": "Signals, price alerts, quiet hours, Live Activity",
+  "notifSubtitleAndroid": "Signals, price alerts, quiet hours",
+  "alertSetFromAssetScreen": "Set from the bell on an asset screen",
+  "noBiometricOnDevice": "No biometrics or PIN is set up on this device.",
+  "biometricPrompt": "Verify your identity to enable the biometric lock",
+  "rateNotFetched": "The exchange rate hasn't been fetched yet; amounts stay in ₺ for now.",
+  "baseCurrencyNote": "Amounts are shown in {unit} at today's rate; calculations stay in ₺.",
+  "@baseCurrencyNote": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "startHour": "Start time",
+  "endHour": "End time",
+  "liveActivityIosNote": "iOS keeps a Live Activity session open for at most 8 hours. Opening the app refreshes it; if you never open it, it may drop off the lock screen.",
+  "marketClosedNote": "When the market is closed, the last close is shown.",
+  "hiddenWeekend": "Not visible right now: weekend display is off. Use the switch above to turn it on.",
+  "hiddenOutsideWindow": "Not visible right now: you're outside the {start}–{end} window. The banner appears at {start}. To see it now, turn on \"Show all day\".",
+  "@hiddenOutsideWindow": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quietStart": "Quiet start",
+  "quietEnd": "Quiet end",
+  "quietHoursOn": "Briefing, summary, calendar and alert pushes are not sent between {start} and {end}",
+  "@quietHoursOn": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quietHoursOff": "Silence all proactive notifications during chosen night hours",
+  "passwordLabel": "Password",
+  "aheadOfInflationPeriod": "This period you are {pts} points ahead of inflation.",
+  "@aheadOfInflationPeriod": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnPositive": "Your portfolio delivered a real return above inflation — your purchasing power grew.",
+  "percentileSentence": "You are above {pct}% of participants.",
+  "@percentileSentence": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "noDrawdown": "Your portfolio did not fall from its peak in this window.",
+  "concentrationBody": "{pct}% of your portfolio sits in {label}; you have {n} positions in total.{tail}",
+  "@concentrationBody": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "tail": {
+        "type": "String"
+      }
+    }
+  },
+  "riskAdjustedReturn": "Risk-adjusted return",
+  "riskAdjustedBody": "Annual return ÷ annual volatility. The Sharpe ratio without a risk-free rate: how many points of return per unit of swing you take on.",
+  "timingEffectBody": "Return on your money (XIRR) − market return. Positive means your buy dates beat the market; negative means you bought in expensive.",
+  "recoveryDays": "{n} days",
+  "@recoveryDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recoveryBody": "Time from the bottom of your largest drawdown back to the old peak.",
+  "notYet": "Not yet",
+  "notRecoveredBody": "After the largest drawdown, the old peak has not been reached again.",
+  "timingEffect": "Timing effect",
+  "recoveryWord": "Recovery",
+  "intradayWord": "Intraday",
+  "todayWord": "Today",
+  "nowWord": "Now",
+  "behindInflationPeriod": "This period you are {pts} points behind inflation.",
+  "@behindInflationPeriod": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnNegative": "Your portfolio fell short of inflation — your purchasing power shrank.",
+  "nPeopleParen": "({n} people)",
+  "@nPeopleParen": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recoveredInDays": " and recovered in {n} days",
+  "@recoveredInDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notRecoveredYet": " and has not returned to that level yet",
+  "singleAssetHeavy": "A single asset's move noticeably affects your portfolio.",
+  "drawdownBody": "Your portfolio fell at most {pct}% from its highest level{tail}.",
+  "@drawdownBody": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "tail": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeAllTime": "All time",
+  "rangeLast7": "Last 7 days",
+  "rangeLast30": "Last 30 days",
+  "rangeLast90": "Last 90 days",
+  "rangeThisYear": "This year",
+  "rangeCustom": "Custom",
+  "searchAssetOrSymbol": "Search asset name or symbol",
+  "noRecords": "No records",
+  "nRecords": "{n} records",
+  "@nRecords": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "nShown": " · {n} shown",
+  "@nShown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "noMatchingRecords": "No records match the filter",
+  "noTransactionsYet": "No transactions yet",
+  "todaysBalanceChange": "Today's balance change",
+  "sinceDateToToday": "{date} → today",
+  "@sinceDateToToday": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceChangeSince": "Balance change since {date}",
+  "@balanceChangeSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "periodChangeSim": "{period} change · simulation",
+  "@periodChangeSim": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "periodBalanceChange": "{period} balance change",
+  "@periodBalanceChange": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "inflowIncludedNote": "You bought {amount} in this period and the figure above INCLUDES it. Market move only: {market}.",
+  "@inflowIncludedNote": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "market": {
+        "type": "String"
+      }
+    }
+  },
+  "outflowIncludedNote": "You sold {amount} in this period and the figure above INCLUDES it. Market move only: {market}.",
+  "@outflowIncludedNote": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "market": {
+        "type": "String"
+      }
+    }
+  },
+  "rowExpandedSemantics": "{label}, expanded. Double tap to collapse.",
+  "@rowExpandedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "gainAmount": "gain {amount}",
+  "@gainAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowBuyLower": "bought {amount} in period",
+  "@flowBuyLower": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rowCollapsedSemantics": "{label}, collapsed. Double tap to see what's inside.",
+  "@rowCollapsedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "lossAmount": "loss {amount}",
+  "@lossAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowSellLower": "sold {amount} in period",
+  "@flowSellLower": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowSellUpper": "Sold {amount} in period",
+  "@flowSellUpper": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowBuyUpper": "Bought {amount} in period",
+  "@flowBuyUpper": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "raceFooterGlobal": "Return is computed by comparing the start and end of the selected period. Rankings and allocations are anonymous — identity, quantity and TRY figures are never shared.",
+  "calculatingEllipsis": "Calculating…",
+  "nThousandPeople": "{n}K PEOPLE",
+  "@nThousandPeople": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nPeopleUpper": "{n} PEOPLE",
+  "@nPeopleUpper": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "toneTop5": "You're in the top few",
+  "toneTop10": "You're in sandık's top 10%",
+  "toneTop25": "Well above average",
+  "toneTop50": "Above average",
+  "toneTop75": "Close to average",
+  "toneRest": "You can do better — follow the 30D view",
+  "raceFooterPartners": "The ranking is the selected period's return (%). Everyone is measured with the same formula; no one's asset list is visible.",
+  "recapYourPortfolio": "Your portfolio",
+  "recapGrewThisYear": "This is how you grew this year.",
+  "recapToughYear": "It was a tough year.",
+  "recapVsInflation": "Against inflation",
+  "recapKeptPower": "You protected your purchasing power and added to it.",
+  "recapInflationWon": "Inflation was ahead this year.",
+  "recapBestAsset": "Biggest winner",
+  "recapReturnedPct": "It returned {pct}% so far.",
+  "@recapReturnedPct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "recapMostPatient": "Your most patient holding",
+  "recapInPortfolioDays": "It has been in your portfolio for {n} days.",
+  "@recapInPortfolioDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recapTypeCount": "Across {n} asset types.",
+  "@recapTypeCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recapForAYear": "For a whole year.",
+  "recapShareTitle": "My sandık Recap {year}",
+  "@recapShareTitle": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "shareWord": "Share",
+  "scopeTogether": "Together",
+  "scopeMe": "Me",
+  "scopeLabel": "Scope",
+  "chartTypeTooltip": "Chart type",
+  "fullscreenChart": "Open chart full screen"
+}

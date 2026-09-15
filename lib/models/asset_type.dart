@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 
 enum AssetType {
@@ -46,6 +47,31 @@ enum AssetType {
         .withLightness(hsl.lightness > 0.28 ? 0.28 : hsl.lightness)
         .toColor();
   }
+
+  /// Ekranda görünen tür adı — dile göre (3.20).
+  ///
+  /// [label] TÜRKÇE kalır ve DEĞİŞMEZ: bildirim/özet metinleri, paylaşım
+  /// kartı ve sunucu tarafı onu kullanıyor; ayrıca alt kategori
+  /// karşılaştırmalarında (`_subCategory == g.label`) veri değeri gibi
+  /// davranıyor. Görüntüleme yüzeyleri bunu çağırır.
+  String labelOf(AppLocalizations l) => switch (this) {
+        AssetType.hisse => l.assetTypeStock,
+        AssetType.fon => l.assetTypeFund,
+        AssetType.doviz => l.assetTypeFx,
+        AssetType.altin => l.assetTypeGold,
+        AssetType.emtia => l.assetTypeCommodity,
+        AssetType.diger => l.assetTypeOther,
+      };
+
+  /// Sembol alanının ipucu — dile göre.
+  String tickerHintOf(AppLocalizations l) => switch (this) {
+        AssetType.hisse => l.tickerHintStock,
+        AssetType.fon => l.tickerHintFund,
+        AssetType.doviz => l.tickerHintFx,
+        AssetType.altin => l.tickerHintGold,
+        AssetType.emtia => l.tickerHintCommodity,
+        AssetType.diger => l.tickerHintOther,
+      };
 
   String get tickerHint {
     switch (this) {

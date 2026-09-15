@@ -13,6 +13,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
+import 'l10n/l10n.dart';
 import 'models/asset.dart';
 import 'models/user_model.dart';
 import 'providers/auth_provider.dart';
@@ -279,6 +280,9 @@ class SandikApp extends ConsumerWidget {
     // edilir. Marka dark-first'tür ama bu, seçim yapmamış kullanıcıya koyu
     // tema dayatmanın gerekçesi değildi (splash dahil her şey koyu açılıyordu).
     final themeMode = ref.watch(themeModeProvider);
+    // Arayüz dili (3.20): varsayılan tr_TR; `null` = sistem (kullanıcı
+    // seçtiyse). İngilizce BETA — bkz. `LocaleNotifier`.
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp(
       title: 'sandık',
@@ -289,18 +293,18 @@ class SandikApp extends ConsumerWidget {
       themeMode: themeMode,
       // Türkçe locale — showDatePicker, showTimePicker vb. tüm Material
       // widget'ları için dd/MM/yyyy formatı, Türkçe ay/gün adları, virgüllü
-      // ondalık ayırıcı. İngilizce yedek locale olarak kalır.
-      locale: const Locale('tr', 'TR'),
+      // ondalık ayırıcı. Kullanıcı İngilizce seçerse en_US.
+      locale: locale,
       localizationsDelegates: const [
+        ...AppLocalizations.localizationsDelegates,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      // Yalnızca tr_TR: `.arb` yok, tüm metinler Türkçe literal. `en_US` ilan
-      // etmek, İngilizce cihazlarda 'tr_TR' vermeyen widget'ların tarih/sayı
-      // biçimini İngilizceye düşürüyordu (2026-09 denetimi). İngilizce arayüz
-      // gelirse (Faz 3.20) buraya .arb ile birlikte eklenir.
-      supportedLocales: const [Locale('tr', 'TR')],
+      // tr_TR + en_US (3.20). en_US 2026-09 denetiminde çıkarılmıştı ("arb yok");
+      // artık .arb var. Varsayılan dil yine Türkçe (`LocaleNotifier`): İngilizce
+      // cihaz, kullanıcı seçmeden İngilizce açılmaz — beta karışıklığı olmasın.
+      supportedLocales: AppLocalizations.supportedLocales,
       // Tanıtım turu Navigator'ın ÜSTÜNDE yaşar: her rota açılıp kapansa da
       // karartma ve kart en üstte kalır (bkz. OnboardingTourHost).
       builder: (context, child) => OnboardingTourHost(child: child!),

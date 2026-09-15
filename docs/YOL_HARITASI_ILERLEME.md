@@ -10,6 +10,78 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > değişiklikleri yalnızca okunarak incelendi; `ci.yml` deno job'ı ilk PR'da
 > gerçek sonucu verecek.
 
+## Son kalınan yer (2026-09-15)
+
+**Performans ekranı yerleşimi — beş kontrol satırı ikiye indi (2026-09-15).** Kullanıcı
+isteği: "en tepedeki header'ı inceltip yan boşlukları da inceltelim, ekranı daha verimli
+kullanalım; tab seçimleri karma karışık ve çok yer kaplıyor."
+
+Ölçülen sorun: grafik açılmadan önce ekranın üst ~%45'i denetimdi. Üst üste beş satır
+(yüzey anahtarı, ortak seçici, tür çipleri, dönem, mod anahtarı) + ayrı bir grafik araç
+çubuğu; hepsi eşit görsel ağırlıkta, yani hiçbirinin hiyerarşisi yok.
+
+Karar — **kalıcı olan iki satır, geri kalanı istek üzerine**:
+1. **Kapsam satırı:** solda yüzey anahtarı (Özet/Grafik), sağda tek bir *kapsam çipi*.
+   Çip ne gördüğünü cümle olarak yazar ("Birlikte · Hisse · Simülasyon") ve varsayılanın
+   dışına çıkılmışsa amber'a döner — filtre olduğunu rengiyle de söyler. Dokununca ortak
+   seçici + tür çipleri + mod anahtarı tek panelde açılır (`AnimatedCrossFade`).
+2. **Dönem satırı:** genişliğin çoğu dönem seçiciye (en sık dokunulan denetim, veriye en
+   yakın satırda); sağ uçta grafik tipi ve tam ekran ikon olarak. İkisi de seyrek
+   kullanılıyordu ve metinli hâlleri tek başına bir satır yiyordu.
+
+Yarış kupası `_LeaderboardChip` olarak kontrol yığınındaydı; başlık çubuğuna ikon olarak
+taşındı (yalnızca yarışa katılmış ve aktif ortağı olan kullanıcıda). Başlık çubuğu
+dikey dolgusu `md`→`sm`, başlık ham `fontSize:` yerine `context.t.headlineMedium`
+(bir token sızıntısı daha düştü). Yan boşluk `SandikSpace.screenH` 24/16 → 16/12.
+
+Erişilebilirlik korundu: küçülen kabukların hepsi (kapsam çipi 36pt, grafik tipi ve tam
+ekran ikonları 32pt) şeffaf dolguyla 44pt dokunma hedefine sarıldı — görsel küçüldü,
+hedef küçülmedi (`touch_target_size_test` yeşil).
+
+Tur adımları izledi: `TourTarget.modSecici` → `kapsamSecici` ("Kapsam ve mod" adımı üç
+denetimi birden anlatıyor). Dönem adımının görevi kaldırıldı — eski ölçüt "mod anahtarı
+belirdi mi" idi, o anahtar artık panelin içinde ve panel kapalıyken de ağaçta; ölçemediğimiz
+bir görevi tamamlandı göstermektense görevsiz anlatım dürüst.
+
+Doğrulama: `flutter analyze lib/ test/` 0 sorun, **2.143 test geçiyor**. Yeni anahtarlar:
+`scopeTogether`, `scopeMe`, `scopeLabel`, `chartTypeTooltip`, `fullscreenChart`.
+⚠️ Görsel doğrulama cihazda yapılmadı (bu ortamda emülatör yok).
+
+**Kullanıcı bildirimi (2026-09-15):** "menülere eklenen feature'lar çalışmıyor; dil
+seçeneği uygulamayı tümüyle İngilizce yapmıyor, yatırımcı seviyesi değiştirildiğinde
+fark göremedim." İkisi de gerçek kusurdu, ikisi de kapandı:
+
+**Yatırımcı seviyesi — tablo tek ve çoğu kullanıcıda BOŞ bir yüzeye bağlıydı.**
+`seviyeGorunurlugu` yalnızca Performans › Özet kartlarını süzüyordu; üçü de 1Y dönemine
+(sağlık/XIRR) ya da k-anonimlik eşiğine (yüzdelik) bağlı. Bir yıllık geçmişi ya da sekiz
+kişilik havuzu olmayan kullanıcıda seviye değiştirmek ekranda hiçbir şeyi değiştirmiyordu.
+Tablo artık ilk açılışta GÖRÜLEN yüzeyleri de kapsıyor (`teknikSinyaller` bayrağı): ana
+ekran yüzdelik şeridi, ana ekran sinyal zili, tekil varlıkta sinyal kartı + gösterge
+paneli. Kural aynı: Başlangıç yalnızca gizler, İleri yalnızca ekler, Orta varsayılan ve
+bugünkü görünüm. `yatirimci_seviyesi_test` hem karar tablosunu hem ekranlara bağlantıyı
+kilitliyor.
+
+**3.20 İngilizce — kapsam ~130 → 780+ anahtar.** `l10n_coverage_test` 87 ekran/widget
+dosyasını yalnızca-azalır tavanlarla bağlıyor; **47'si sıfır Türkçe literal taşıyor**,
+kalan 212 literal 41 dosyaya yayılmış küçük etiketler. Çevrilenler: giriş/kayıt/şifre/OTP,
+gezinme, kilit, yasal uyarı onayı, ana ekran (sinyal sayfası dahil), Portföy, Performans
+(+7 part), Özet kartlarının tamamı, tekil varlık (+4 part), Yarış, Takip listesi,
+Karşılaştırma, Portföy Hareketleri, Fiyat Alarmları, Ayarlar'ın tüm bölümleri, Profil,
+Paywall, Yıllık Özet, CSV/toplu ekleme, tüm diyalog ve şeritler, varlık türü adları.
+
+Dile bağlanan dört enum: `AssetType` (`labelOf`/`tickerHintOf`), dönem etiketleri
+(`donemEtiketi`), `ContributionInterval` (tekil ad ikame etmek yerine tam cümle — Türkçe'de
+ek uyumu sözcüğe göre değişiyor), `_DateRange`. Üçünde `label` alanı TÜRKÇE bırakıldı:
+bildirim/özet/paylaşım metinleri ve alt kategori karşılaştırmaları onu VERİ gibi kullanıyor.
+
+Kasıtlı Türkçe kalan dört ada ve nedenleri `TECHNICAL_DEBT.md`'de: yasal metinler,
+`asset_categories` (sütunda veri), admin teşhis aracı, tanıtım turu. Varsayılan dil bu
+yüzden hâlâ Türkçe.
+
+Kaynak tarayan 11 test anahtar adlarına geçirildi; beşinde iddia ikiye bölündü — ekran
+doğru ANAHTARI kullanıyor mu + o anahtarın Türkçe metni hâlâ o şeyi söylüyor mu
+(`trMetni`, `test/helpers/kaynak.dart`). Tam paket 2.113 test yeşil.
+
 ## Son kalınan yer (2026-09-14)
 
 Main ile birleşik, her adım analyzer + tam Flutter paketi (1.719 test) + Deno paketi (222 test)
@@ -35,10 +107,48 @@ Altın gecikmesi için `slow_history_fetch` teşhis olayı. `seyreltSpots` silin
 "Getiri sıralaması" etiketi. Gün içi karşılaştırma açıldı. TÜFE karşılaştırma
 ekranına basamaklı seri olarak eklendi. Light mode: ölü glass yardımcıları silindi,
 `AssetType.onSurface` ile kategori ikon/metinleri ≥ 4,5:1. **Bilinçli atlananlar:**
-3.2 baz para birimi (58 site, cihaz doğrulaması şart), 3.9 ekran birleştirme, 3.16,
-3.20, `signal_state` yeniden anahtarlama (tetikleyici şikâyet yok), fon NAV çapası
-(TEFAS zaman damgası yok), mum grafik / dev ekran parçalama (kullanıcı kararı),
-yatırımcı seviyesi (profil alanı yok, zorunlu onboarding istenmiyor).
+3.2 baz para birimi (58 site, cihaz doğrulaması şart), 3.9 ekran birleştirme,
+`signal_state` yeniden anahtarlama (tetikleyici şikâyet yok). ~~3.16~~, ~~fon NAV çapası~~,
+~~mum grafik~~, ~~dev ekran parçalama~~, ~~yatırımcı seviyesi~~ ve ~~3.20~~ (beta) aynı gün
+kapandı/açıldı (aşağıda).
+
+**2026-09-14 (dördüncü tur, "dış bağımlılık" ikilisi):** **3.16** — dış bağımlılık
+sanılan şey (test Supabase projesi) aslında eksik taban migration'ıydı; `0000` +
+yerel yığın + seed + duman testi + `integration.yml` ile kapandı (tablo satırı).
+**Fon NAV çapası** — TEFAS damga vermiyor, damga GÖZLEMLE üretildi: `observe-tefas-nav`
+(0063, iş günü 30 dk'da bir) NAV tarihinin ilk görülme anını yazar,
+`HistoryService.fonBasamakAni` basamağı oraya koyar; gözlem yoksa 10:00 aynen.
+Sunucu ayağı `YAPMAN` #24. Deno 222+13 test, Flutter tam paket yeşil.
+
+**2026-09-14 (beşinci tur, "atlananlar"):** **Mum grafik** — OHLC türetilerek
+beşinci tip olarak eklendi (`mum_turetici`, kova bazlı; TECHNICAL_DEBT KAPANDI).
+**Yatırımcı seviyesi** — Ayarlar › Görünüm'de opsiyonel Başlangıç/Orta/İleri
+(varsayılan Orta = bugünkü görünüm); Başlangıç gizler, İleri risk-ayarlı getiri /
+zamanlama etkisi / toparlanma kartı ekler (TECHNICAL_DEBT KAPANDI). **Dev ekran
+parçalama** — `portfolio_performance_screen.dart` 4.600 → 650 satır (7 part:
+`portfolio_performance/grafik_kabi, seriler, kontroller, kartlar, yardimci_widgetlar,
+tur_dokumu_karti, ozet_yan_veri`), `asset_detail_screen.dart` 3.800 → 1.600 satır
+(4 part: `asset_detail/eylemler, sinyal_widgetlari, seritler, karsilastirma_secici`).
+Yöntem `part`/`part of` + State üyeleri için `extension` (aynı kütüphane, private
+erişim aynen, davranış sıfır değişiklik; `setState` yerine `_guncelle` sarmalayıcısı).
+Bölme betikle yapıldı (satır kopyası, elle düzenleme yok). Kaynak tarayan 25 test
+`test/helpers/kaynak.dart` (`ekranKaynagiSync`: ana dosya + part'lar) ile güncellendi.
+`build()` gövdeleri (perf ~600, detay ~1.300 satır) bilinçli olarak yerinde: onları
+bölmek widget ağacını parçalamak demek, ayrı ve görsel doğrulama isteyen bir iş.
+**İngilizce arayüz (3.20) — altyapı + çekirdek akış, BETA:** `l10n.yaml` + `lib/l10n/app_tr.arb`
+(şablon) / `app_en.arb`, üretilen sınıflar `lib/l10n/generated/` (commit'li), `context.l10n`
+(`lib/l10n/l10n.dart`; delegate yoksa Türkçe'ye düşer — 155+ widget testi değişmeden geçer),
+`localeProvider` (`PrefKeys.locale`: tr/en/system; **varsayılan Türkçe**, sistem değil —
+İngilizce cihaz kullanıcı seçmeden karışık arayüz görmesin), Ayarlar › Görünüm › Dil.
+Çevrilen: giriş, kayıt (yasal metinler hariç), şifre sıfırlama, OTP, kilit ekranı, yasal uyarı
+onayı, alt gezinme + çıkış onayı, Ayarlar hub'ı ve Görünüm (tema/dil/yatırımcı seviyesi),
+ana ekran boş durumu + fiyat hatası, Portföy sekme başlıkları + boş durum, varlık ekleme
+formu etiketleri (~130 anahtar). **Kalan (Türkçe):** ~1.900 literal — profil, lider tablosu,
+performans/özet kartları, karşılaştırma, takip listesi, sinyal ayarları, paywall, recap,
+onboarding turu, yasal belgeler (bilinçli), teşhis ekranı (admin). `l10n_coverage_test`
+çevrilen dosyalarda Türkçe literal sayısını yalnızca-azalır tavana bağlar; `l10n_test`
+tr/en anahtar paritesini ve geri dönüşü sabitler. Kapsam bitince varsayılan "sistem"e
+çekilir ve "beta" notu kalkar (TECHNICAL_DEBT).
 
 **Kalanlar ve neden burada durdu:**
 
@@ -51,9 +161,9 @@ yatırımcı seviyesi (profil alanı yok, zorunlu onboarding istenmiyor).
 | 3.9 Performans ekranlarını birleştir | 🟡 İlk adım 2026-09-14: ortak altyapı çıkarıldı — `TransactionSegment` tek model (`widgets/transaction_segment.dart`; tekil varlık ekranındaki ölü `dashed` bayrağı `piyasaKapali` ile birleşti), tam ekran çipi `ChartFullscreenChip`. Asıl birleştirme (8.4k satır, iki ekranın gün içi/kapalı piyasa/fon basamağı davranışları) gerçek cihazda görsel doğrulama ister; parite testleri güvenlik ağı olarak duruyor. |
 | 3.10 `add_asset_screen` Notifier'a taşı | ✅ 2026-09-14: durum makinesi `providers/add_asset_form_provider.dart` (`AddAssetFormNotifier`, `AddAssetPriceLookup` kapısı, `parseQuickEntry`); ekranda `_AddAssetScreenState` içinde `setState` kalmadı (ratchet testi). Metin controller'ları ekranda, geçişler `AlanYazimi` döner. 22 birim testi. |
 | 3.12 Yarış / 3.13 Paywall | Kullanıcı kararı (2026-09-14): ikisi de KALIR; Sybil çözümü 0059 ile uygulandı. 3.14 vadeli mevduat SİLİNDİ (aşağıda). |
-| 3.16 integration_test | Test Supabase projesi + seed verisi ister. |
+| 3.16 integration_test | ✅ 2026-09-14: hosted proje GEREKMİYORDU — asıl eksik taban şemanın migration olarak var olmamasıydı (defter 0007'den başlıyordu, `supabase db reset` sıfırdan ortam kuramıyordu). `0000_base_schema.sql` (git 1b23813'teki `supabase_schema.sql`'in 0008-sonrası, idempotent hâli; canlıda deftere işaretlenecek → `YAPMAN` #24), `supabase/config.toml` + `seed.sql` (tohum kullanıcı `smoke@sandik.test`, onboarding tamam, yasal uyarı bilinçli onaysız). `integration_test/smoke_test.dart`: gerçek `app.main()` → giriş → yasal uyarı → FAB → "Diğer" türü elle fiyatlı varlık → Portföy'de görünür. `tool/supabase_smoke.sh`: aynı akış Flutter'sız (GoTrue token + PostgREST + RLS reddi). `.github/workflows/integration.yml`: `supabase start` → başsız duman → Android emülatörü (api 34, KVM) → integration_test. **Bu oturumda koşulamadı** (Docker daemon ve KVM yok); 0000 + 0008 + seed + 0063 yerel Postgres 16'da stub auth şemasıyla doğrulandı (idempotent, RLS/GRANT), Flutter tarafı analyze temiz. İlk CI koşusunda emülatör işi kırılabilir — `supabase-smoke` işi yeşilse sorun uygulama/emülatör tarafındadır. |
 | 3.18 Swift widget derleme CI | ✅ Zaten kapalı (2026-09-14 tespiti): `ios-testflight.yml` `flutter build ios` ile widget extension'ı her main push'unda derliyor; uygulama TestFlight'ta. Ayrı `xcodebuild` adımı gereksiz. |
-| 3.20 İngilizce arayüz | Yalnızca EN pazarı hedefleniyorsa. |
+| 3.20 İngilizce arayüz | 🟡 BETA (2026-09-14): altyapı + çekirdek akış çevrildi, dil seçici Ayarlar › Görünüm'de; kalan ekranlar Türkçe (yukarıdaki paragraf). |
 | 2.12 / 2.14 | Görsel doğrulama isteyen UI kalemleri (segment kontrolleri, hero yeniden tasarımı); cihazsız yapılmadı. 2.10 ve 2.13 2026-09-14'te kapandı. |
 | 3.8 dış bağlantı köprüsü, 3.19 sertifika pinning | 3.8: ✅ kod tamam (2026-09-14) — `app_links` ile `DeepLinkService` (`sandik://asset/<id>` → `openAssetPerformance`; widget/live-activity host'ları `HomeWidgetService`'e bırakıldı, çift işleme yok). **Cihazda doğrulanmadı** (tarayıcıdan `sandik://asset/<id>` aç). 3.19: ✅ kapandı — pinning yapılmıyor (kullanıcı kararı 2026-09-14), FORCE RLS (L9) ve db_logs retention (L6) 0056 ile canlıda. |
 

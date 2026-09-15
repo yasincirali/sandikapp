@@ -9,6 +9,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/disclaimer_widget.dart';
 import 'paywall_screen.dart';
+import '../l10n/l10n.dart';
 
 /// Kullanıcı her varlık türü için hangi teknik göstergelerin sinyal üretmesini
 /// istediğini seçer. Premium göstergeler premium olmayan kullanıcıya kilitli
@@ -261,7 +262,7 @@ class _CategorySection extends StatelessWidget {
                 Icon(type.icon, size: 18, color: type.onSurface(context)),
                 const SizedBox(width: 10),
                 Text(
-                  type.label,
+                  type.labelOf(context.l10n),
                   style: context.t.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: context.c.text90,

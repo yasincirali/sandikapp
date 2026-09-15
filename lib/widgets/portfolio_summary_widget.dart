@@ -4,6 +4,7 @@ import '../providers/portfolio_provider.dart';
 import '../utils/money_format.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../l10n/l10n.dart';
 
 class PortfolioSummaryWidget extends StatelessWidget {
   final PortfolioState state;
@@ -39,16 +40,16 @@ class PortfolioSummaryWidget extends StatelessWidget {
     // metne yazılır: kazanç/kayıp yalnızca renkle anlatılırsa renk körü
     // kullanıcı ile ekran okuyucu kullanıcısı aynı bilgiyi alamaz.
     final semanticSummary = hideBalance
-        ? 'Toplam net varlık gizli'
+        ? context.l10n.totalNetHidden
         : [
-            'Toplam net varlık ${tryFmt.format(state.totalValue)}',
+            context.l10n.totalNetWorth(tryFmt.format(state.totalValue)),
             if (state.totalCost > 0)
-              '${isPos ? 'kazanç' : 'kayıp'} '
+              '${isPos ? context.l10n.gainWord : context.l10n.lossWord} '
                   '${tryFmt.format(state.gainLoss.abs())}, '
                   '${fmtPct(state.gainLossPercentage.abs(), digits: 2)}',
             if (state.hasRealized)
-              'satışlardan gerçekleşen '
-                  '${state.realizedGainLoss >= 0 ? 'kazanç' : 'kayıp'} '
+              '${context.l10n.realisedFromSalesSemantics}'
+                  '${state.realizedGainLoss >= 0 ? context.l10n.gainWord : context.l10n.lossWord} '
                   '${tryFmt.format(state.realizedGainLoss.abs())}',
           ].join(', ');
 
@@ -170,7 +171,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        'Satışlardan gerçekleşen: '
+                        '${context.l10n.realisedFromSales}'
                         '${state.realizedGainLoss >= 0 ? '+' : ''}'
                         '${tryFmt.format(state.realizedGainLoss)}',
                         style: context.t.bodySmall?.copyWith(

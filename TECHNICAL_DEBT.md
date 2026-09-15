@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-14 (P2-P4 turu: 6 madde kapandı, pinning karar önerisi eklendi)
+**Son güncelleme:** 2026-09-14 (fon NAV çapası gözlemle kapandı; 3.16 integration_test için taban şema 0000 + yerel yığın)
 
 ---
 
@@ -177,7 +177,55 @@ ibaresi eklenerek bugün kapatılabilir.
 
 ---
 
-## 🟡 AÇIK — Yatırımcı seviyesine göre görünüm yok
+## 🟡 AÇIK — İngilizce arayüz BETA: dört ada kasıtlı Türkçe, varsayılan dil Türkçe
+
+**Karar tarihi:** 2026-09-14 · 3.20 · **Kapsam genişletildi 2026-09-15**
+
+Sözlük 780+ anahtar; `l10n_coverage_test` 87 ekran/widget dosyasını yalnızca-
+azalır tavanlarla bağlıyor ve **47'si sıfır Türkçe literal taşıyor**. Giriş,
+kayıt, gezinme, ana ekran, Portföy, Performans (+7 part), Özet kartlarının
+tamamı, tekil varlık, Yarış, Takip listesi, Karşılaştırma, Ayarlar, Profil,
+Paywall, Yıllık Özet, tüm diyaloglar ve şeritler çevrildi. Kalan 212 literal
+41 dosyaya yayılmış küçük etiketler.
+
+**Kasıtlı Türkçe kalan dört ada (tavana hiç alınmadı):**
+
+| Ada | Neden |
+|---|---|
+| `legal_doc_screen` (261) | Yasal metinlerin kendisi; çevirisi hukuk işi, mühendislik değil. |
+| `asset_categories` (218) | Alt kategori etiketleri `sub_category` sütununda **VERİ** olarak saklanıyor (`_subCategory == g.label` karşılaştırmaları dahil). Çevirmek kayıtlı satırları bozar; gösterimi ayırmak için `AssetType.labelOf` deseninde ikinci bir eşleme gerekir. |
+| `push_diagnostics_screen` (112) | Yalnız admin'e görünen teşhis aracı. |
+| `onboarding_screen` (72) | Tanıtım turu; tek seferlik, ayrı bir tur. |
+
+**Varsayılan dil neden hâlâ Türkçe:** yukarıdaki dört ada duruyorken sistem
+diline bağlamak, İngilizce cihazlı kullanıcıya ilk açılışta Türkçe bir
+tanıtım turu gösterirdi. İngilizce, Ayarlar › Görünüm'den bilinçli seçim.
+
+**Ertelemenin maliyeti:** İngilizce seçen kullanıcı tanıtım turunda, yasal
+belgelerde ve altın/fon alt kategori adlarında Türkçe görür. Mağaza
+sayfasında "tam İngilizce arayüz" vaadi henüz verilmemeli.
+
+**Ele alınma zamanı:** EN pazarı hedeflenirse sırayla onboarding →
+alt kategori gösterim eşlemesi → yasal metinler (hukuk onayıyla). Hepsi
+bitince `LocaleNotifier` varsayılanı `system` olur ve `languageNote` kalkar.
+
+---
+
+## ✅ KAPANDI — Yatırımcı seviyesine göre görünüm yok
+
+**KAPANDI 2026-09-14.** Sunucuda alan açmadan, zorunlu onboarding eklemeden:
+Ayarlar › Görünüm'de OPSİYONEL "Yatırımcı seviyesi" (Başlangıç / Orta /
+İleri; `PrefKeys.investorLevel`, kişiye özel, varsayılan **Orta = bugünkü
+görünüm**). Karar tablosu tek yerde (`seviyeGorunurlugu`,
+`models/yatirimci_seviyesi.dart`): Başlangıç sağlık/XIRR/yüzdelik kartlarını
+GİZLER; İleri, Orta'nın üstüne `IleriMetrikKarti` EKLER — risk-ayarlı getiri
+(getiri ÷ yıllık oynaklık, risksiz oransız Sharpe; TL risksiz oranı
+uygulamada tutulmadığı için tanım açıkça yazılı), zamanlama etkisi (XIRR −
+piyasa getirisi) ve toparlanma (en büyük düşüşten zirveye dönüş günü).
+Üçü de zaten hesaplanan girdilerden türetilir; kart yeni veri çekmez.
+Gereksinimdeki "attribution" ve "takip hatası" YOK: ikisi de benchmark
+serisi ister (BIST100/TÜFE'ye göre izleme hatası), karşılaştırma ekranı
+ayrı bir tur. `yatirimci_seviyesi_test` (12).
 
 Ürün gereksinimi başlangıç / orta / ileri seviye için farklı metrik kümesi
 öngörüyordu (ileri seviyede attribution, takip hatası, risk-ayarlı
@@ -503,7 +551,16 @@ ham liste doğru, mülkiyetse `aggregatePositions` şart.
 
 ---
 
-## 🟡 AÇIK — Grafik tipi seçicide Candle (mum) YOK
+## ✅ KAPANDI — Grafik tipi seçicide Candle (mum) YOK
+
+**KAPANDI 2026-09-14.** OHLC çekilmiyor, TÜRETİLİYOR: `utils/mum_turetici.dart`
+seriyi takvime hizalı kovalara böler (gün içi 5 dk'lık noktalardan 30 dk'lık
+mum, 1Y günlük kapanışlardan haftalık mum; kova `mumKovasiSec` ile ~40 mum
+ve ≥2 nokta hedefine log-en-yakın aday). Çizim çubuk tipiyle aynı yolla:
+her mum iki `LineChartBarData` (ince fitil + kalın gövde), fl_chart 0.68'de
+mum çizimi olmadığı için. Doji yuvarlak uçlu nokta. Fitiller ÖRNEKLENMİŞ
+noktaların uçlarıdır — menü etiketi bu yüzden "Mum", "OHLC" değil.
+`mum_turetici_test` (12) + `grafik_tipi_test` (beş tip).
 
 **Karar tarihi:** 2026-09-12 · Kullanıcı kararı
 
@@ -595,7 +652,28 @@ içi ızgaraya genelleştirildiğinde — iki ekran aynı cebri paylaşabilir.
 
 ---
 
-## 🟡 AÇIK — Fonun gün içi NAV basamağı SABİT bir saate çapalı
+## ✅ KAPANDI — Fonun gün içi NAV basamağı SABİT bir saate çapalı
+
+**KAPANDI 2026-09-14 (gözlemle).** Damgayı TEFAS'tan beklemek yerine
+kendimiz üretiyoruz: `observe-tefas-nav` edge function'ı iş günleri TR
+06:00–21:30 arası yarım saatte bir, portföylerdeki her fon kodu için TEFAS'ın
+son NAV satırını çekiyor ve daha önce görülmemiş bir (kod, NAV tarihi)
+çiftini `tefas_nav_gozlem`'e `ilk_gorulme = now()` ile yazıyor (0063; satır
+bir kez yazılır, `onceki_kontrol` bir önceki turun zamanı → yayın anı
+[onceki_kontrol, ilk_gorulme] aralığında). İstemci `HistoryService.
+fonBasamakAni`: NAV tarihi çizilen günse ve ilk görülme o güne düşüyorsa
+basamak `ilk_gorulme` slotuna; her başka durumda **eski davranış aynen**
+(`tefasNavYayinSaati` = 10:00). Bugün tarihli NAV'ı görülen kod o gün bir
+daha sorulmaz (maliyet). Testler: `gun_ici_fon_degisimi_test` (çapa
+öncelik/koruma kuralları), `supabase/tests/tefas_nav_test.ts` (tarih
+biçimleri, TR gün sınırı, yeniden sorma kuralı).
+
+**Kalan yaklaşıklık (bilinçli):** gözlem cron sıklığı kadar kaba (30 dk) ve
+günün ilk turunda (06:00) görülen tarih yalnızca ÜST sınır verir. Daha ince
+çözünürlük daha sık tur = daha çok TEFAS isteği; 30 dk grafikte 6 slot,
+kullanıcı için fark yok. "İkinci yaklaşıklık" (NAV'ın kendi gününe atfı)
+aynen duruyor: kullanıcı kararı, TEFAS'ın kendi "günlük getiri"siyle uyumlu.
+Sunucu ayağı (0063 + fonksiyon + secret) `YAPMAN_GEREKENLER.md` #24.
 
 **Karar tarihi:** 2026-09-10 · Hata turu
 
@@ -629,9 +707,9 @@ gününe ait olabilir. Kullanıcı bunu bilerek istedi (TEFAS'ın kendi sitesi d
 aynı farkı "günlük getiri" diye gösteriyor) — ama tarih bazlı doğru
 atıf yapılacaksa iş burada başlar.
 
-**Ele alınma zamanı:** TEFAS yanıtından yayın zaman damgası çıkarılabilirse
-(ya da güvenilir bir yayın saati doğrulanırsa) basamak oraya taşınır; aynı
-turda NAV tarihine göre atıf da düzeltilebilir.
+**Ele alınma zamanı (o günkü not):** TEFAS yanıtından yayın zaman damgası
+çıkarılabilirse (ya da güvenilir bir yayın saati doğrulanırsa) basamak oraya
+taşınır. → Damga çıkarılamadı; gözlemle üretildi (yukarıdaki kapanış notu).
 
 ---
 

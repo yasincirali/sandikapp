@@ -1,6 +1,7 @@
 import '../models/asset.dart';
 import '../utils/tr_format.dart';
 import 'period_summary_service.dart';
+import '../l10n/l10n.dart';
 
 /// Birikim disiplini — haftalık / aylık / yıllık net katkı serisi.
 ///
@@ -134,6 +135,52 @@ enum ContributionInterval {
   final String tekil;
 
   const ContributionInterval(this.label, this.tekil);
+
+  /// Seçici etiketi — dile göre (3.20). [label] TÜRKÇE kalır: özet/paylaşım
+  /// metinleri onu kullanıyor.
+  String labelOf(AppLocalizations l) => switch (this) {
+        ContributionInterval.haftalik => l.intervalWeekly,
+        ContributionInterval.aylik => l.intervalMonthly,
+        ContributionInterval.yillik => l.intervalYearly,
+      };
+
+  /// "son 6 ay · net" — tekil adı ikame etmek yerine tam cümle, çünkü
+  /// Türkçe'de ek uyumu (aya / haftaya / yıla) sözcüğe göre değişiyor.
+  String sonNDonem(AppLocalizations l, int n) => switch (this) {
+        ContributionInterval.haftalik => l.lastNWeeksNet(n),
+        ContributionInterval.aylik => l.lastNMonthsNet(n),
+        ContributionInterval.yillik => l.lastNYearsNet(n),
+      };
+
+  String ortalamaBasligi(AppLocalizations l) => switch (this) {
+        ContributionInterval.haftalik => l.avgContributingWeek,
+        ContributionInterval.aylik => l.avgContributingMonth,
+        ContributionInterval.yillik => l.avgContributingYear,
+      };
+
+  String gecenDonemeGore(AppLocalizations l) => switch (this) {
+        ContributionInterval.haftalik => l.vsLastWeek,
+        ContributionInterval.aylik => l.vsLastMonth,
+        ContributionInterval.yillik => l.vsLastYear,
+      };
+
+  String devamEden(AppLocalizations l) => switch (this) {
+        ContributionInterval.haftalik => l.ongoingWeek,
+        ContributionInterval.aylik => l.ongoingMonth,
+        ContributionInterval.yillik => l.ongoingYear,
+      };
+
+  String trendCumlesi(AppLocalizations l, int yon) => switch ((this, yon)) {
+        (ContributionInterval.haftalik, 1) => l.trendUpWeek,
+        (ContributionInterval.aylik, 1) => l.trendUpMonth,
+        (ContributionInterval.yillik, 1) => l.trendUpYear,
+        (ContributionInterval.haftalik, -1) => l.trendDownWeek,
+        (ContributionInterval.aylik, -1) => l.trendDownMonth,
+        (ContributionInterval.yillik, -1) => l.trendDownYear,
+        (ContributionInterval.haftalik, _) => l.trendFlatWeek,
+        (ContributionInterval.aylik, _) => l.trendFlatMonth,
+        (ContributionInterval.yillik, _) => l.trendFlatYear,
+      };
 
   /// [geriKova] kadar geriye giden pencerenin uçları.
   ///

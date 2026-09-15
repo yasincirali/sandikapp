@@ -13,6 +13,7 @@ import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_error_view.dart';
+import '../l10n/l10n.dart';
 
 /// Fiyat alarmları — tüm alarmların LİSTESİ.
 ///
@@ -80,15 +81,15 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     final alarmlar = ref.watch(priceAlertsProvider);
     return Scaffold(
       backgroundColor: c.background,
-      appBar: const SandikAppBar(
-        title: 'Fiyat Alarmları',
+      appBar: SandikAppBar(
+        title: context.l10n.priceAlertsTitle,
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: c.amberFill,
         foregroundColor: c.onAmber,
         onPressed: () => alarmKurAkisi(context, ref, adaylar: _adaylar()),
         icon: const Icon(Icons.add_alert_rounded),
-        label: const Text('Alarm kur'),
+        label: Text(context.l10n.createAlert),
       ),
       body: alarmlar.when(
         error: (e, _) => SandikErrorView(
@@ -129,13 +130,12 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               Icon(Icons.notifications_none_rounded, size: 44, color: c.text36),
               const SizedBox(height: 14),
               Text(
-                'Henüz alarmın yok',
+                context.l10n.noAlertsYet,
                 style: context.t.headlineSmall?.copyWith(color: c.text90),
               ),
               const SizedBox(height: 6),
               Text(
-                'Bir varlığın ekranındaki zile dokun ya da buradan kur; '
-                'uygulama kapalıyken bile haber verelim.',
+                context.l10n.noAlertsBody,
                 textAlign: TextAlign.center,
                 style: context.t.bodyLarge?.copyWith(color: c.text58),
               ),
@@ -202,7 +202,7 @@ class _AlarmSatiri extends StatelessWidget {
             ),
           ),
           if (tetiklendi)
-            TextButton(onPressed: onRearm, child: const Text('Yeniden kur')),
+            TextButton(onPressed: onRearm, child: Text(context.l10n.recreateAlert)),
           IconButton(
             onPressed: onDelete,
             icon: Icon(Icons.delete_outline_rounded, color: c.text36),

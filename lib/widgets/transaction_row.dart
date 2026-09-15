@@ -6,6 +6,7 @@ import '../providers/portfolio_provider.dart';
 import '../utils/money_format.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../l10n/l10n.dart';
 
 /// Portföy hareketleri listesindeki tek satır.
 ///
@@ -72,9 +73,9 @@ class TransactionRow extends StatelessWidget {
     // sayı bilinmiyor demektir. Her iki durumda düz "Silindi".
     final String kindLabel = isDelete
         ? (asset.deletedCount > 1
-            ? 'Silindi · ${asset.deletedCount} kayıt'
+            ? context.l10n.deletedNRecords(asset.deletedCount)
             : 'Silindi')
-        : (isSell ? 'Satım' : (isDividend ? 'Temettü' : 'Alım'));
+        : (isSell ? context.l10n.txSell : (isDividend ? context.l10n.txDividend : context.l10n.txBuy));
     final String sign = isSell || isDelete ? '−' : '+';
 
     // Yumuşak silinmiş lot: kayıt geçmişte DURUR ama artık portföye
@@ -163,7 +164,7 @@ class TransactionRow extends StatelessWidget {
                             color: asset.type.color.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(SandikRadius.sm),
                           ),
-                          child: Text(asset.type.label,
+                          child: Text(asset.type.labelOf(context.l10n),
                               style: TextStyle(
                                   fontSize: 10,
                                   color: asset.type.onSurface(context),

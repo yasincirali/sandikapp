@@ -24,6 +24,7 @@ import '../widgets/watchlist_chart.dart';
 import 'add_asset_screen.dart';
 import 'add_watchlist_screen.dart';
 import 'watchlist_detail_screen.dart';
+import '../l10n/l10n.dart';
 
 /// Takip listesinin GÖVDESİ — dönem seçici · grafik · liste · dipnot.
 ///
@@ -161,7 +162,7 @@ class _List extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 4),
             child: Text(
-              '${items.length} VARLIK · $periodLabel',
+              context.l10n.nAssetsPeriod(items.length, periodLabel),
               style: context.t.labelSmall?.copyWith(
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w700,
@@ -248,7 +249,7 @@ class _ChartCard extends ConsumerWidget {
               height: 120,
               child: Center(
                 child: Text(
-                  'Grafik yüklenemedi.',
+                  context.l10n.chartLoadFailed,
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
               ),
@@ -259,7 +260,7 @@ class _ChartCard extends ConsumerWidget {
                   height: 120,
                   child: Center(
                     child: Text(
-                      'Grafik için yeterli fiyat geçmişi yok.',
+                      context.l10n.notEnoughPriceHistory,
                       style: context.t.bodySmall
                           ?.copyWith(color: context.c.text36),
                     ),
@@ -313,9 +314,7 @@ class _ChartCard extends ConsumerWidget {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              '$portfolioLabel çizgisi, bugünkü varlıklarını '
-                              'dönem başından beri tutsaydın senaryosudur — '
-                              'gerçekleşmiş getirin değildir.',
+                              context.l10n.portfolioLineNote(portfolioLabel),
                               style: context.t.bodySmall?.copyWith(
                                   color: context.c.text36,
                                   fontSize: 10,
@@ -413,7 +412,7 @@ class _Row extends ConsumerWidget {
           ),
           onDismissed: (_) => _remove(context, ref),
           child: SandikTappable(
-            semanticLabel: '${item.name} detayını aç',
+            semanticLabel: context.l10n.openDetailSemantics(item.name),
             onTap: () => pushGuarded(
               context,
               adaptiveRoute<void>(builder: (_) => WatchlistDetailScreen(item: item)),
@@ -500,7 +499,7 @@ class _Row extends ConsumerWidget {
                   // Al/Sat burada YOK: takip edilen varlık tanımı gereği
                   // portföyde değildir (iki küme yapısal olarak ayrık).
                   SandikTappable(
-                    semanticLabel: '${item.displayLabel} portföyüme ekle',
+                    semanticLabel: context.l10n.addToPortfolioSemantics(item.displayLabel),
                     onTap: () => Navigator.push(
                       context,
                       adaptiveRoute<void>(
@@ -562,20 +561,20 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.visibility_outlined, size: 40, color: context.c.text36),
           const SizedBox(height: SandikSpace.md),
           Text(
-            'Henüz izlediğin varlık yok',
+            context.l10n.noWatchlistYet,
             textAlign: TextAlign.center,
             style: context.t.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700, color: context.c.text90),
           ),
           const SizedBox(height: SandikSpace.sm),
           Text(
-            'Almadan önce takibe al. Fiyatını portföyüne dokunmadan izle.',
+            context.l10n.noWatchlistBody,
             textAlign: TextAlign.center,
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
           const SizedBox(height: SandikSpace.md),
           SandikTappable(
-            semanticLabel: 'Takibe varlık ekle',
+            semanticLabel: context.l10n.addToWatchlist,
             onTap: () => pushGuarded(
               context,
               adaptiveRoute<void>(
@@ -609,7 +608,7 @@ class _EmptyState extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'NEDEN TAKİP LİSTESİ?',
+                  context.l10n.whyWatchlistUpper,
                   style: context.t.labelSmall?.copyWith(
                       letterSpacing: 0.9,
                       fontWeight: FontWeight.w700,
@@ -617,9 +616,7 @@ class _EmptyState extends StatelessWidget {
                 ),
                 const SizedBox(height: SandikSpace.sm),
                 Text(
-                  'Bir varlığı satın almadan fiyatını izleyebilirsin. '
-                  'Takip listesi portföyüne girmez; toplam değerini ve '
-                  'kâr/zararını etkilemez.',
+                  context.l10n.whyWatchlistBody,
                   style: context.t.bodySmall
                       ?.copyWith(color: context.c.text58, height: 1.5),
                 ),
@@ -640,7 +637,7 @@ class _AddRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SandikTappable(
-      semanticLabel: 'Takibe varlık ekle',
+      semanticLabel: context.l10n.addToWatchlist,
       onTap: () => pushGuarded(
         context,
         adaptiveRoute<void>(
@@ -664,7 +661,7 @@ class _AddRow extends StatelessWidget {
             Icon(Icons.add_rounded, size: 18, color: context.c.amberText),
             const SizedBox(width: 8),
             Text(
-              'Takibe varlık ekle',
+              context.l10n.addToWatchlist,
               style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600, color: context.c.amberText),
             ),
@@ -682,7 +679,7 @@ class _FooterNote extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
         child: Text(
-          'Bu varlıklar portföyüne dahil değildir.',
+          context.l10n.notInPortfolioNote,
           textAlign: TextAlign.center,
           style: context.t.bodySmall
               ?.copyWith(color: context.c.text36, fontSize: 11),

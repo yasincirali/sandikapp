@@ -11,13 +11,13 @@ import 'package:flutter/material.dart';
 /// için o fazladan I/O ve migration yükü anlamına gelirdi. Uygulama
 /// yeniden açıldığında Line'a dönmesi BEKLENEN davranış.
 ///
-/// ## Candle neden YOK
-/// Mum grafiği açılış/en yüksek/en düşük/kapanış ister. Portföy serisi
-/// her zaman dilimi için TEK değer tutuyor (`Map<int, double>` — o andaki
-/// toplam portföy değeri); OHLC veri katmanında hiç üretilmiyor.
-/// Menüye koyup tıklanınca Line çizmek kullanıcıyı yanıltırdı. Gün içi
-/// 5 dakikalık noktalardan türetilebilir ama bu ayrı bir seri ve ayrı
-/// bir iş (bkz. TECHNICAL_DEBT).
+/// ## Candle (2026-09-14'e kadar YOKTU)
+/// Mum grafiği açılış/en yüksek/en düşük/kapanış ister; portföy serisi her
+/// zaman dilimi için TEK değer tutuyor. Menüye koyup Line çizmek yanıltıcı
+/// olurdu, "şimdilik atla" denmişti. Artık OHLC eldeki noktalardan KOVA
+/// bazında türetiliyor (`utils/mum_turetici.dart`: gün içi 5 dk'lık
+/// noktalardan 30 dk'lık mum, günlük kapanışlardan haftalık mum). Fitiller
+/// örneklenmiş noktaların uçlarıdır — etiket bu yüzden "Mum", "OHLC" değil.
 enum GrafikTipi {
   /// Düz çizgi — varsayılan.
   line('Çizgi', Icons.show_chart_rounded),
@@ -29,7 +29,10 @@ enum GrafikTipi {
   baseline('Taban', Icons.multiline_chart_rounded),
 
   /// Her noktada dikey çubuk.
-  bar('Çubuk', Icons.bar_chart_rounded);
+  bar('Çubuk', Icons.bar_chart_rounded),
+
+  /// Kova bazlı mum: gövde açılış→kapanış, fitil en düşük→en yüksek.
+  candle('Mum', Icons.candlestick_chart_rounded);
 
   const GrafikTipi(this.etiket, this.ikon);
 

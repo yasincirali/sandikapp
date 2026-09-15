@@ -15,6 +15,7 @@ import '../widgets/asset_sparkline.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/disclaimer_widget.dart';
 import 'asset_detail_screen.dart' show TechnicalSignalPanel;
+import '../l10n/l10n.dart';
 
 /// Takip edilen bir varlığın detay ekranı — fiyat + teknik göstergeler.
 ///
@@ -201,13 +202,13 @@ class _RemoveButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SandikTappable(
-      semanticLabel: 'Takipten çıkar',
+      semanticLabel: context.l10n.removeFromWatchlist,
       onTap: () async {
         final onay = await showSandikConfirm(
           context: context,
-          title: 'Takipten çıkar',
-          message: '${item.displayLabel} takip listenden kaldırılsın mı?',
-          confirmLabel: 'Çıkar',
+          title: context.l10n.removeFromWatchlist,
+          message: context.l10n.removeFromWatchlistConfirm(item.displayLabel),
+          confirmLabel: context.l10n.removeWord2,
           destructive: true,
         );
         if (!onay || !context.mounted) return;
@@ -219,7 +220,7 @@ class _RemoveButton extends ConsumerWidget {
           if (!context.mounted) return;
           // Provider state'i geri aldı; sebebi söylemek gerekiyor — satırın
           // sessizce kalması kullanıcıya "çalışmadı" hissi verirdi.
-          sandikSnack(context, 'Takipten çıkarılamadı. Bağlantını kontrol et.',
+          sandikSnack(context, context.l10n.removeFromWatchlistFailed,
               kind: SandikSnackKind.error);
         }
       },
@@ -343,7 +344,7 @@ class _PriceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'GÜNCEL FİYAT',
+            context.l10n.currentPriceUpper,
             style: context.t.labelSmall?.copyWith(
                 letterSpacing: 0.9,
                 fontWeight: FontWeight.w700,
@@ -381,7 +382,7 @@ class _PriceCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     isFlat
-                        ? '$periodLabel · değişim yok'
+                        ? context.l10n.periodNoChange(periodLabel)
                         : '${pct >= 0 ? '+' : '−'}${fmtPct(pct.abs())} · '
                             '${diff >= 0 ? '+' : '−'}${fmt.format(diff.abs())} · '
                             '$periodLabel',
@@ -408,7 +409,7 @@ class _PriceCard extends StatelessWidget {
           Text(
             // Birim fiyat farkı olduğu bilgisi AÇIKÇA yazılır — kullanıcı
             // bunu "kazancım" sanmasın; miktarı yok.
-            'Değişim birim fiyat farkıdır — bu varlığa sahip değilsin.',
+            context.l10n.unitPriceDiffNote,
             style: context.t.bodySmall
                 ?.copyWith(color: context.c.text36, fontSize: 11),
           ),
@@ -434,7 +435,7 @@ class _NoData extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Bu varlık için yeterli fiyat geçmişi yok.',
+                context.l10n.notEnoughHistoryForAsset,
                 style: context.t.bodySmall?.copyWith(color: context.c.text58),
               ),
             ),
@@ -448,7 +449,7 @@ class _FooterNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        'Bu varlık portföyüne dahil değildir.',
+        context.l10n.notInYourPortfolio,
         textAlign: TextAlign.center,
         style: context.t.bodySmall
             ?.copyWith(color: context.c.text36, fontSize: 11),

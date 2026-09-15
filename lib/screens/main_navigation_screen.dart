@@ -14,6 +14,7 @@ import 'add_asset_screen.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/notification_service.dart';
 import '../services/remote_config_service.dart';
+import '../l10n/l10n.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -185,9 +186,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Future<void> _confirmExit() async {
     final confirm = await showSandikConfirm(
       context: context,
-      title: 'Uygulamadan çık',
-      message: 'Uygulamadan çıkmak istediğine emin misin?',
-      confirmLabel: 'Çık',
+      title: context.l10n.exitAppTitle,
+      message: context.l10n.exitAppMessage,
+      confirmLabel: context.l10n.exit,
       destructive: true,
     );
     if (confirm) {
@@ -244,11 +245,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _navItem(0, Icons.home_rounded, 'Ana'),
-                _navItem(1, Icons.donut_large_rounded, 'Portföy'),
+                _navItem(0, Icons.home_rounded, context.l10n.tabHome),
+                _navItem(1, Icons.donut_large_rounded, context.l10n.tabPortfolio),
                 _buildFab(),
-                _navItem(3, Icons.show_chart_rounded, 'Performans'),
-                _navItem(4, Icons.person_rounded, 'Profil'),
+                _navItem(3, Icons.show_chart_rounded, context.l10n.tabPerformance),
+                _navItem(4, Icons.person_rounded, context.l10n.tabProfile),
               ],
             ),
           ),
@@ -319,7 +320,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         scale: 0.92,
         // Uygulamanın birincil eylemi: seçim tıkırtısından daha belirgin.
         haptic: SandikHaptic.medium,
-        semanticLabel: 'Varlık ekle',
+        semanticLabel: context.l10n.addAsset,
         child: Center(
           child: TourAnchor(
             target: TourTarget.sekmeEkle,

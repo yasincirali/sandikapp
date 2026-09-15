@@ -1,7 +1,7 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
+import 'helpers/kaynak.dart';
 
 /// Aylık dönemler TAKVİMDEN hesaplanır — sabit gün sayısıyla değil.
 ///
@@ -101,8 +101,7 @@ void main() {
   });
 
   group('ekran bağlantısı', () {
-    final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-        .readAsStringSync()
+    final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
         .replaceAll('\r\n', '\n');
 
     test('1A/6A/1Y takvim kullanır, 1H gün sayısı', () {
@@ -136,8 +135,7 @@ void main() {
   test('dönem başı için dikey KESİKLİ çizgi YOK', () {
     // Kullanıcı isteği: "başlangıcın dikine kesikli çizgilerle
     // gösterilmesini istemiyorum, tüm grafikler aynı deneyimi sunmalı."
-    final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-        .readAsStringSync()
+    final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
         .replaceAll('\r\n', '\n');
 
     expect(kaynak.contains('x: primarySeg.spots.first.x'), isFalse,

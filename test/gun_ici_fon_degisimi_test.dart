@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/models/tefas_nav_gozlem.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 
 /// Gün içi ("GÜNLÜK") seride FONUN günlük değişimi.
@@ -173,6 +174,177 @@ void main() {
               basamakTs: basamak),
       };
       expect(seviyeler, {onceki, guncel});
+    });
+  });
+
+  // ── Çapa: sunucu gözlemi varsa basamak ORAYA, yoksa sabit saate ──────────
+  //
+  // TEFAS yayın damgası vermez; `observe-tefas-nav` (0063) NAV tarihinin
+  // sunucuda ilk görüldüğü anı yazar. `fonBasamakAni` bu gözlemi yalnızca
+  // çizilen güne aitse kullanır; her başka durumda eski davranış
+  // (`tefasNavYayinSaati`) — gözlem olmadan hiçbir şey değişmemeli.
+  group('fonBasamakAni — gözlem çapası', () {
+    int normalize(int ms) {
+      final d = DateTime.fromMillisecondsSinceEpoch(ms);
+      final m = (d.minute ~/ 5) * 5;
+      return DateTime(d.year, d.month, d.day, d.hour, m).millisecondsSinceEpoch;
+    }
+
+    TefasNavGozlem gozlem({
+      required DateTime navTarihi,
+      required DateTime ilkGorulme,
+    }) =>
+        TefasNavGozlem(
+            fonKodu: 'AFT', navTarihi: navTarihi, ilkGorulme: ilkGorulme);
+
+    test('gözlem yoksa varsayılan aynen döner (null dahil)', () {
+      expect(
+        fonBasamakAni(
+            dayStart: gun,
+            nowTs: ts(12),
+            varsayilanTs: basamak,
+            gozlem: null,
+            normalizeSlot: normalize),
+        basamak,
+      );
+      expect(
+        fonBasamakAni(
+            dayStart: gun,
+            nowTs: ts(9),
+            varsayilanTs: null,
+            gozlem: null,
+            normalizeSlot: normalize),
+        isNull,
+      );
+    });
+
+    test('bugünkü NAV bugün görüldüyse basamak ilk görülme slotuna gider', () {
+      final g = gozlem(
+          navTarihi: gun, ilkGorulme: DateTime(2026, 9, 10, 8, 33));
+      expect(
+        fonBasamakAni(
+            dayStart: gun,
+            nowTs: ts(12),
+            varsayilanTs: basamak,
+            gozlem: g,
+            normalizeSlot: normalize),
+        ts(8, 30),
+        reason: '08:33 → 5 dk ızgarada 08:30; sabit 10:00 değil',
+      );
+    });
+
+    test('gözlem 10:00\'dan önceyse basamak varsayılandan ERKEN çizilir', () {
+      // Gün henüz 10:00\'a gelmedi → varsayılan null (basamak yok). Gözlem
+      // 08:30\'da → 09:00\'da basamak ARTIK var.
+      final g = gozlem(
+          navTarihi: gun, ilkGorulme: DateTime(2026, 9, 10, 8, 30));
+      expect(
+        fonBasamakAni(
+            dayStart: gun,
+            nowTs: ts(9),
+            varsayilanTs: null,
+            gozlem: g,
+            normalizeSlot: normalize),
+        ts(8, 30),
+      );
+    });
+
+    test('NAV tarihi çizilen gün değilse gözlem YOK sayılır', () {
+      // Dünkü NAV\'ın gözlemi bugünün basamağını taşıyamaz.
+      final g = gozlem(
+          navTarihi: DateTime(2026, 9, 9),
+          ilkGorulme: DateTime(2026, 9, 9, 8, 30));
+      expect(
+        fonBasamakAni(
+            dayStart: gun,
+            nowTs: ts(12),
+            varsayilanTs: basamak,
+            gozlem: g,
+            normalizeSlot: normalize),
+        basamak,
+      );
+    });
+
+    test('bugünkü NAV DÜN görüldüyse (TEFAS erken yayımladı) varsayılana döner', () {
+      // İlk görülme çizilen güne düşmüyor: basamak dünün içinde kalırdı ve
+      // grafiğin sol ucunda uçurum açılırdı. Sabit saat daha dürüst.
+      final g = gozlem(
+          navTarihi: gun, ilkGorulme: DateTime(2026, 9, 9, 23, 40));
+      expect(
+        fonBasamakAni(
+            dayStart: gun,
+            nowTs: ts(12),
+            varsayilanTs: basamak,
+            gozlem: g,
+            normalizeSlot: normalize),
+        basamak,
+      );
+    });
+
+    test('gözlem ŞİMDİDEN ilerideyse basamak henüz yok (null)', () {
+      // Cihaz saati geri kalmış: hizalama fon için no-op kalmalı, imlece
+      // yapışık uçurum oluşmamalı (2026-09-10 dersi).
+      final g = gozlem(
+          navTarihi: gun, ilkGorulme: DateTime(2026, 9, 10, 11, 0));
+      expect(
+        fonBasamakAni(
+            dayStart: gun,
+            nowTs: ts(10, 30),
+            varsayilanTs: basamak,
+            gozlem: g,
+            normalizeSlot: normalize),
+        isNull,
+      );
+    });
+
+    test('gözlemli basamak "Tümü" ve "Fon" görünümünde aynı yerdedir', () {
+      // Çapa yalnızca gözleme ve güne bağlı; portföydeki başka varlıklara
+      // değil (ilk sürümün hatası buydu).
+      final g = gozlem(
+          navTarihi: gun, ilkGorulme: DateTime(2026, 9, 10, 9, 2));
+      int? hesapla() => fonBasamakAni(
+          dayStart: gun,
+          nowTs: ts(15),
+          varsayilanTs: basamak,
+          gozlem: g,
+          normalizeSlot: normalize);
+      expect(hesapla(), hesapla());
+      expect(hesapla(), ts(9, 0));
+    });
+  });
+
+  group('TefasNavGozlem.fromMap', () {
+    test('date kolonu yerel güne, damgalar yerel saate çevrilir', () {
+      final g = TefasNavGozlem.fromMap({
+        'fon_kodu': 'AFT',
+        'nav_tarihi': '2026-09-10',
+        'ilk_gorulme': '2026-09-10T05:31:07+00:00',
+        'onceki_kontrol': null,
+      });
+      expect(g, isNotNull);
+      expect(g!.navTarihi, DateTime(2026, 9, 10));
+      expect(g.ilkGorulme.isUtc, isFalse);
+      expect(g.ilkGorulme.toUtc(), DateTime.utc(2026, 9, 10, 5, 31, 7));
+      expect(g.oncekiKontrol, isNull);
+    });
+
+    test('eksik/bozuk alan → null (satır atlanır)', () {
+      expect(TefasNavGozlem.fromMap({'fon_kodu': 'AFT'}), isNull);
+      expect(
+        TefasNavGozlem.fromMap({
+          'fon_kodu': '',
+          'nav_tarihi': '2026-09-10',
+          'ilk_gorulme': '2026-09-10T05:31:07Z',
+        }),
+        isNull,
+      );
+    });
+  });
+
+  group('tefasKodu', () {
+    test('önek soyulur, büyük harfe çevrilir', () {
+      expect(tefasKodu('TEFAS:aft'), 'AFT');
+      expect(tefasKodu('AFT'), 'AFT');
     });
   });
 }

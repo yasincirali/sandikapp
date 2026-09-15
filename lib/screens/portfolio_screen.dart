@@ -37,6 +37,7 @@ import 'asset_detail_screen.dart';
 import 'watchlist_screen.dart';
 import '../providers/watchlist_provider.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 enum _SortOrder {
   valueDesc,
@@ -175,7 +176,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Portföy',
+                        context.l10n.portfolio,
                         style: context.t.headlineLarge?.copyWith(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
@@ -452,8 +453,8 @@ class _BodyTabs extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _tab(context, 0, 'Varlıklarım', null),
-          _tab(context, 1, 'Takip Listesi', count > 0 ? count : null),
+          _tab(context, 0, context.l10n.myAssets, null),
+          _tab(context, 1, context.l10n.watchlist, count > 0 ? count : null),
         ],
       ),
     );
@@ -465,7 +466,7 @@ class _BodyTabs extends StatelessWidget {
       child: Semantics(
         button: true,
         selected: secili,
-        label: rozet == null ? label : '$label, $rozet varlık',
+        label: rozet == null ? label : context.l10n.tabSemanticsCount(label, rozet),
         child: ExcludeSemantics(
           child: GestureDetector(
             // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın.
@@ -546,7 +547,7 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(Icons.inbox_rounded, size: 64, color: context.c.text36),
           const SizedBox(height: 16),
-          Text('Henüz varlık eklenmemiş',
+          Text(context.l10n.noAssetsYet,
               style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
         ],
       ),
@@ -597,7 +598,8 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
         : null;
 
     // Ortada gösterilecek metin
-    final centerLabel = touched != null ? touched.key.label : 'toplam';
+    final centerLabel =
+        touched != null ? touched.key.labelOf(context.l10n) : context.l10n.total;
     final centerValue =
         touched != null ? _formatTL(touched.value) : _formatTL(totalVal);
     final centerPct = touched != null
@@ -731,7 +733,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                     // 3×'te 199px taşıyordu.
                     Flexible(
                       child: Text(
-                        '${e.value.key.label} $pct',
+                        '${e.value.key.labelOf(context.l10n)} $pct',
                         style: context.t.bodyMedium?.copyWith(
                           fontWeight:
                               isTouched ? FontWeight.w700 : FontWeight.w500,
@@ -1027,7 +1029,7 @@ class _GainLossLine extends StatelessWidget {
             : Icons.arrow_drop_down_rounded);
 
     final String label = isFlat
-        ? 'Değişim yok'
+        ? context.l10n.noChange
         : '${tryFmt.format(gainLossTRY.abs())} · ${fmtPct(pct.abs(), digits: 2)}';
 
     return FittedBox(
@@ -1178,8 +1180,8 @@ class _AssetCardState extends State<_AssetCard>
                             const SizedBox(height: 3),
                             Text(
                               a.unitIsPrefix
-                                  ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.label}'
-                                  : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.label}',
+                                  ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.labelOf(context.l10n)}'
+                                  : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.labelOf(context.l10n)}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: context.t.bodySmall
@@ -1292,7 +1294,7 @@ class _AssetCardState extends State<_AssetCard>
                 // `onStatus` — light'ta beyaz, dark'ta koyu (5.37/5.73:1).
                 foreground: context.c.onStatus,
                 icon: Icons.trending_up_rounded,
-                label: 'Al',
+                label: context.l10n.buyAction,
               ),
               _rowAction(
                 context,
@@ -1300,7 +1302,7 @@ class _AssetCardState extends State<_AssetCard>
                 background: context.c.loss.withValues(alpha: 0.85),
                 foreground: context.c.onStatus,
                 icon: Icons.trending_down_rounded,
-                label: 'Sat',
+                label: context.l10n.sellAction,
               ),
               // Temettü nakit dağıtan varlıklara özgü — altın/döviz/emtia'da
               // anlamsız.
@@ -1331,7 +1333,7 @@ class _AssetCardState extends State<_AssetCard>
                 // olduğu için mürekkebi de aynı (`onStatus`).
                 foreground: context.c.onStatus,
                 icon: Icons.delete_outline_rounded,
-                label: 'Sil',
+                label: context.l10n.deleteAction,
               ),
             ],
           ),
@@ -1364,7 +1366,7 @@ class _AlarmRozeti extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(left: SandikSpace.xs),
       child: Semantics(
-        label: '$aktif aktif fiyat alarmı',
+        label: context.l10n.activeAlertsCount(aktif),
         child: Icon(Icons.notifications_active_rounded,
             size: 14, color: context.c.amberText),
       ),
@@ -1474,7 +1476,7 @@ class _AssetDetailsPanel extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Son 1 ay',
+              context.l10n.lastMonth,
               style: context.t.bodySmall?.copyWith(color: context.c.text36),
             ),
             const SizedBox(height: 14),
@@ -1482,14 +1484,15 @@ class _AssetDetailsPanel extends StatelessWidget {
           // Tam ad — satırda yalnızca kod (THYAO) gösterilen varlıklar için.
           // Kırpma yok: burada yer var, isim tam okunmalı.
           if (rep.showTicker) ...[
-            _DetailItem(label: 'Tam Adı', value: rep.name, isText: true),
+            _DetailItem(
+                label: context.l10n.assetFullName, value: rep.name, isText: true),
             const SizedBox(height: 12),
           ],
           Row(
             children: [
               Expanded(
                 child: _DetailItem(
-                  label: 'İlk Alış',
+                  label: context.l10n.firstPurchase,
                   value: firstBuyDate != null
                       ? DateFormat('d MMM yyyy', 'tr_TR').format(firstBuyDate)
                       : '—',
@@ -1508,13 +1511,13 @@ class _AssetDetailsPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: _DetailItem(
-                  label: 'Ort. Maliyet',
+                  label: context.l10n.avgCost,
                   value: avgCostStr,
                 ),
               ),
               Expanded(
                 child: _DetailItem(
-                  label: 'Toplam Maliyet',
+                  label: context.l10n.totalCost,
                   value: position.weightedPurchasePrice > 0
                       ? '${costFmt3.format(position.totalCost)} ${rep.currency}'
                       : '—',
@@ -1527,7 +1530,7 @@ class _AssetDetailsPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: _DetailItem(
-                  label: 'Güncel Tutar',
+                  label: context.l10n.currentValue,
                   value: tryFmt3.format(currentValueTRY),
                   emphasize: true,
                 ),
@@ -1537,7 +1540,7 @@ class _AssetDetailsPanel extends StatelessWidget {
           if (position.lots.length > 1) ...[
             const SizedBox(height: 10),
             Text(
-              '${buyLots.length} alım · ${position.lots.where((l) => l.isSell).length} çıkarma',
+              context.l10n.lotSummary(buyLots.length, position.lots.where((l) => l.isSell).length),
               style: context.t.bodySmall?.copyWith(
                   color: context.c.text36, fontWeight: FontWeight.w500),
             ),
@@ -1605,14 +1608,16 @@ class _SortButton extends StatelessWidget {
 
   const _SortButton({required this.current, required this.onChanged});
 
-  static const _options = <(_SortOrder, String, String)>[
-    (_SortOrder.valueDesc, 'Piyasa Değeri', 'Büyükten Küçüğe'),
-    (_SortOrder.valueAsc, 'Piyasa Değeri', 'Küçükten Büyüğe'),
-    (_SortOrder.gainDesc, 'Kazanç (TL)', 'En Yüksek Önce'),
-    (_SortOrder.gainAsc, 'Kazanç (TL)', 'En Düşük Önce'),
-    (_SortOrder.gainPctDesc, 'Kazanç (%)', 'En Yüksek Önce'),
-    (_SortOrder.gainPctAsc, 'Kazanç (%)', 'En Düşük Önce'),
-  ];
+  /// Sıralama seçenekleri — `static const` DEĞİL: etiketler dile bağlı (3.20),
+  /// sözlük ise `context` ister.
+  static List<(_SortOrder, String, String)> _options(AppLocalizations l) => [
+        (_SortOrder.valueDesc, l.sortMarketValue, l.sortHighToLow),
+        (_SortOrder.valueAsc, l.sortMarketValue, l.sortLowToHigh),
+        (_SortOrder.gainDesc, l.sortGainTry, l.sortHighestFirst),
+        (_SortOrder.gainAsc, l.sortGainTry, l.sortLowestFirst),
+        (_SortOrder.gainPctDesc, l.sortGainPct, l.sortHighestFirst),
+        (_SortOrder.gainPctAsc, l.sortGainPct, l.sortLowestFirst),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -1674,7 +1679,7 @@ class _SortSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
             child: Text(
-              'SIRALAMA KRİTERİ',
+              context.l10n.sortCriterion,
               style: context.t.labelLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
@@ -1683,7 +1688,7 @@ class _SortSheet extends StatelessWidget {
             ),
           ),
           Divider(color: context.c.hairline, height: 1),
-          ..._SortButton._options.map((opt) {
+          ..._SortButton._options(context.l10n).map((opt) {
             final (order, group, label) = opt;
             final selected = current == order;
             return ListTile(

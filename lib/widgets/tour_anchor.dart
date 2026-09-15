@@ -38,8 +38,12 @@ enum TourTarget {
   /// Performans: dönem seçici (GÜNLÜK · 1H · 1A …).
   donemSecici,
 
-  /// Performans: Gerçek / Simülasyon.
-  modSecici,
+  /// Performans: kapsam çipi (kim · hangi tür · hangi mod).
+  ///
+  /// 2026-09-15'e kadar `modSecici` idi ve Gerçek/Simülasyon anahtarını
+  /// gösteriyordu. O anahtar artık kapsam panelinin içinde; tur da paneli
+  /// açan çipi işaret ediyor.
+  kapsamSecici,
 
   /// Profil: davet kodu bölümü.
   davetKodu,

@@ -1,7 +1,7 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/utils/chart_line_width.dart';
+import 'helpers/kaynak.dart';
 
 /// **Grafik ne kutusunun ne de Y ekseninin dışına taşar; sıklık ve çizgi
 /// kalınlığı performans ekranıyla birebir aynıdır.**
@@ -27,7 +27,7 @@ void main() {
     /// Denetlenen değişmez ise tek satırlık ve kesin: **bu dosyada
     /// `Clip.none` bulunmamalı.**
     test('zoomable_chart.dart içinde Clip.none kalmadı', () {
-      final src = File('lib/widgets/zoomable_chart.dart').readAsStringSync();
+      final src = ekranKaynagiSync('lib/widgets/zoomable_chart.dart');
 
       // Yorum satırları hariç: açıklamalar eski hatayı ANLATIYOR ve içinde
       // `Clip.none` geçebilir.
@@ -49,7 +49,7 @@ void main() {
       // "Clip.none yok" tek başına yetmez: satır tamamen silinseydi de
       // geçerdi. Niyetin YAZILI olması, bir sonraki düzenlemede yanlışlıkla
       // geri alınmasını zorlaştırır.
-      final src = File('lib/widgets/zoomable_chart.dart').readAsStringSync();
+      final src = ekranKaynagiSync('lib/widgets/zoomable_chart.dart');
       expect('clipBehavior: Clip.hardEdge'.allMatches(src).length,
           greaterThanOrEqualTo(2),
           reason: 'grafik Stack i ve crosshair katmanı ayrı ayrı kırpılmalı');
@@ -64,7 +64,7 @@ void main() {
     /// (kullanıcı ekran görüntüsü: yeşil çizgi "+10,0%" etiketini kesiyor).
     test('percent_comparison_chart clipData.all taşıyor', () {
       final src =
-          File('lib/widgets/percent_comparison_chart.dart').readAsStringSync();
+          ekranKaynagiSync('lib/widgets/percent_comparison_chart.dart');
       expect(src, contains('clipData: const FlClipData.all()'),
           reason: 'clipData olmadan çizgi Y ekseni bandına taşar');
     });
@@ -75,7 +75,7 @@ void main() {
         'lib/screens/asset_detail_screen.dart',
         'lib/screens/portfolio_performance_screen.dart',
       ]) {
-        expect(File(f).readAsStringSync(), contains('FlClipData.all()'),
+        expect(ekranKaynagiSync(f), contains('FlClipData.all()'),
             reason: '$f clipData bayrağını kaybetmiş');
       }
     });
@@ -88,8 +88,7 @@ void main() {
     /// çiziyor. Kullanıcı: "sıklık değeri de performans ekranındaki
     /// charttaki gibi birebir olmalı."
     test('çizim yolunda seyreltme YOK', () {
-      final src = File('lib/widgets/percent_comparison_chart.dart')
-          .readAsStringSync()
+      final src = ekranKaynagiSync('lib/widgets/percent_comparison_chart.dart')
           .split('\n')
           .where((l) => !l.trimLeft().startsWith('//'))
           .where((l) => !l.trimLeft().startsWith('///'))
@@ -106,7 +105,7 @@ void main() {
       // Kırpma seyreltme DEĞİLDİR: görünen nokta sayısını değiştirmez,
       // yalnızca ekran dışındaki noktaları fl_chart'a vermez.
       final src =
-          File('lib/widgets/percent_comparison_chart.dart').readAsStringSync();
+          ekranKaynagiSync('lib/widgets/percent_comparison_chart.dart');
       expect(src, contains('_gorunurSpots'));
     });
   });
@@ -161,7 +160,7 @@ void main() {
         'lib/screens/asset_detail_screen.dart',
         'lib/screens/portfolio_performance_screen.dart',
       ]) {
-        final src = File(f).readAsStringSync();
+        final src = ekranKaynagiSync(f);
         expect(src, contains('CizgiKalinligi('),
             reason: '$f kendi kalınlık merdivenini taşıyor olabilir');
       }

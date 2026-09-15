@@ -18,6 +18,7 @@ import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/social_sign_in_buttons.dart';
+import '../l10n/l10n.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -61,16 +62,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// First missing requirement, in the order the user filled the form.
   /// null → form is valid.
   String? _firstMissingRequirement() {
-    if (_nameCtrl.text.trim().isEmpty) return 'Ad soyad girin.';
-    if (!_isValidEmail(_emailCtrl.text)) return 'Geçerli bir e-posta girin.';
+    if (_nameCtrl.text.trim().isEmpty) return context.l10n.registerNameMissing;
+    if (!_isValidEmail(_emailCtrl.text)) return context.l10n.registerEmailInvalid;
     final passError = AuthService.validatePassword(_passCtrl.text);
     if (passError != null) return passError;
     if (_passCtrl.text != _passConfirmCtrl.text) {
-      return 'Şifreler eşleşmiyor.';
+      return context.l10n.registerPasswordsMismatch;
     }
-    if (!_termsAccepted) return 'Yasal koşulları kabul etmelisin.';
+    if (!_termsAccepted) return context.l10n.termsMustAccept;
     if (!_consentAccepted) {
-      return 'Yurt dışı veri aktarımına açık rıza vermelisin.';
+      return context.l10n.consentMustAccept;
     }
     return null;
   }
@@ -204,7 +205,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       navigationBar: CupertinoNavigationBar(
         backgroundColor: context.c.background,
         border: null,
-        middle: Text('Kayıt Ol',
+        middle: Text(context.l10n.register,
             style: context.t.headlineSmall?.copyWith(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
@@ -229,7 +230,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             children: [
               const SizedBox(height: 4),
               Text(
-                'Sandığına hoş geldin.',
+                context.l10n.registerWelcome,
                 style: context.t.headlineLarge?.copyWith(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -238,7 +239,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Birkaç adımda hesabını oluştur.',
+                context.l10n.registerSubtitle,
                 style: context.t.bodyMedium?.copyWith(color: context.c.text36),
               ),
               const SizedBox(height: 24),
@@ -254,14 +255,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 autofillHints: const [AutofillHints.name],
                 style: context.t.bodyLarge?.copyWith(color: context.c.text90),
                 decoration: context.inputDecoration('',
-                    labelText: 'Ad Soyad',
+                    labelText: context.l10n.fullName,
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.person_outline,
                           color: context.c.text36, size: 20),
                     )),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Ad soyad girin' : null,
+                    (v == null || v.trim().isEmpty) ? context.l10n.fullNameRequired : null,
               ),
               const SizedBox(height: 14),
 
@@ -280,9 +281,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 },
                 onTapOutside: (_) => setState(() => _emailTouched = true),
                 decoration: context.inputDecoration('',
-                    labelText: 'E-posta',
+                    labelText: context.l10n.email,
                     errorText: (_emailTouched && _emailCtrl.text.isNotEmpty && !_isValidEmail(_emailCtrl.text))
-                        ? 'Geçerli e-posta girin'
+                        ? context.l10n.emailInvalid
                         : null,
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -290,7 +291,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           color: context.c.text36, size: 20),
                     )),
                 validator: (v) =>
-                    (v == null || !_isValidEmail(v)) ? 'Geçerli e-posta girin' : null,
+                    (v == null || !_isValidEmail(v)) ? context.l10n.emailInvalid : null,
               ),
               const SizedBox(height: 14),
 
@@ -306,7 +307,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 enableSuggestions: false,
                 style: context.t.bodyLarge?.copyWith(color: context.c.text90),
                 decoration: context.inputDecoration('',
-                    labelText: 'Şifre',
+                    labelText: context.l10n.password,
                     errorText: _passCtrl.text.isEmpty
                         ? null
                         : AuthService.validatePassword(_passCtrl.text),
@@ -328,7 +329,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                     )),
                 validator: (v) =>
-                    v == null ? 'Şifre gerekli' : AuthService.validatePassword(v),
+                    v == null ? context.l10n.passwordRequired : AuthService.validatePassword(v),
               ),
               const SizedBox(height: 14),
 
@@ -344,10 +345,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 enableSuggestions: false,
                 style: context.t.bodyLarge?.copyWith(color: context.c.text90),
                 decoration: context.inputDecoration('',
-                    labelText: 'Şifre Tekrar',
+                    labelText: context.l10n.passwordRepeat,
                     errorText: (_passConfirmCtrl.text.isNotEmpty &&
                             _passConfirmCtrl.text != _passCtrl.text)
-                        ? 'Şifreler eşleşmiyor'
+                        ? context.l10n.passwordsMismatch
                         : null,
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -355,7 +356,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           color: context.c.text36, size: 20),
                     )),
                 validator: (v) =>
-                    v != _passCtrl.text ? 'Şifreler eşleşmiyor' : null,
+                    v != _passCtrl.text ? context.l10n.passwordsMismatch : null,
               ),
               const SizedBox(height: 28),
 
@@ -458,7 +459,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   child: isLoading
                       ? const CustomLoadingIndicator(size: 20)
                       : Text(
-                          'Kayıt Ol',
+                          context.l10n.register,
                           style: context.t.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: context.c.onAmber),
@@ -472,7 +473,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               CupertinoButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Zaten hesabınız var mı? Giriş yapın',
+                  context.l10n.haveAccountSignIn,
                   style: context.t.bodyLarge?.copyWith(color: context.c.amberText),
                 ),
               ),

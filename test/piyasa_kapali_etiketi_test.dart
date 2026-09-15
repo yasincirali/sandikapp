@@ -1,8 +1,8 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/utils/piyasa_kapali_etiketi.dart';
+import 'helpers/kaynak.dart';
 
 /// Rozet, portföydeki TÜRLERE göre dürüst olmalı.
 ///
@@ -112,8 +112,7 @@ void main() {
   });
 
   test('ekran rozeti bu fonksiyondan besleniyor', () {
-    final kaynak = File('lib/screens/portfolio_performance_screen.dart')
-        .readAsStringSync()
+    final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
         .replaceAll('\r\n', '\n');
 
     expect(kaynak.contains('piyasaKapaliEtiketiVarliklardan(targetAssets)'),

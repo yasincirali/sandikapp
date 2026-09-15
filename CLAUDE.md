@@ -81,18 +81,25 @@ lib/models/      Asset (+AssetKind), Position, AssetType, kategori enum'ları, s
 lib/providers/   auth, portfolio, preferences (_BoolPrefNotifier/_IntPrefNotifier deseni),
                  watchlist, signal, bulk_cart
 lib/screens/     Sekmeler: home, portfolio ("Portföy" sekmesi), portfolio_performance ("Performans"),
-                 profile; tekil varlık: asset_detail_screen; ekleme: add_asset, bulk_add, add_deposit
+                 profile; tekil varlık: asset_detail_screen; ekleme: add_asset, bulk_add.
+                 portfolio_performance/ ve asset_detail/ = o ekranların `part` dosyaları
+                 (aynı kütüphane; State üyeleri `extension` + `_guncelle`). Yeni kod ilgili
+                 part'a gider, hub dosyasına değil.
 lib/services/    supabase_service (DB geçidi), price_service/tefas_service (fiyat), history_service
                  (seri motoru), period_summary/recap/daily_summary, notification/remote_push,
                  home_widget/live_activity, leaderboard, inflation, analytics, db_logger
+lib/l10n/        app_tr.arb / app_en.arb, l10n.dart (context.l10n), generated/ (gen-l10n çıktısı)
 lib/theme/       sandik.dart — context.c (renk), context.t (tipografi), SandikSpace/Radius/Motion,
                  adaptiveRoute, SandikCard, SandikSectionHeader
 lib/utils/       tr_format (fmtTRY/fmtPct/parseTrNumber), friendly_error, grafik yardımcıları
 lib/widgets/     zoomable_chart (+ZoomDataController), percent_comparison_chart, sparkline, şeritler
-test/            155 dosya; parite/değişmez testleri (chart_interaction_parity, design_token_leak,
-                 spacing_scale, touch_target_size, reduce_motion_coverage…) kasıtlı ratchet'lerdir
-supabase/        migrations/ (tek şema kaynağı), functions/ (+_shared/cron_auth.ts, fcm.ts),
-                 tests/ (Deno), audit/
+test/            155+ dosya; parite/değişmez testleri (chart_interaction_parity, design_token_leak,
+                 spacing_scale, touch_target_size, reduce_motion_coverage…) kasıtlı ratchet'lerdir.
+                 Kaynak tarayan test ekran dosyasını `helpers/kaynak.dart` (`ekranKaynagiSync`)
+                 ile okur — part'lar dahil; ham `File(...).readAsStringSync()` kullanma.
+integration_test/ smoke_test.dart — gerçek uygulama + yerel Supabase (3.16); CI: integration.yml
+supabase/        migrations/ (tek şema kaynağı; 0000 taban şema), functions/ (+_shared/cron_auth.ts,
+                 fcm.ts), tests/ (Deno), audit/, config.toml + seed.sql (yerel yığın / CI)
 ```
 
 Adlar sekmelerle örtüşür (2026-09 yeniden adlandırması): "Portföy" sekmesi
@@ -136,8 +143,12 @@ yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dö
 **Gizli anahtar.** Repoya asla: `google-services.json`, `GoogleService-Info.plist`,
 `key.properties`, keystore, Vault değerleri, `.env`. `tmp/` gitignore'dadır ve öyle kalır.
 
-**i18n.** Arayüz Türkçe; `en_US` `supportedLocales`'ta ilan edilmiş ama `.arb` yok.
-Yeni metin Türkçe, hitap **sen**.
+**i18n.** Ana dil Türkçe, hitap **sen**. 3.20 (2026-09-14): `lib/l10n/app_tr.arb` (şablon) +
+`app_en.arb`, `flutter gen-l10n` → `lib/l10n/generated/` (commit'li), erişim `context.l10n.anahtar`
+(`lib/l10n/l10n.dart`; delegate yoksa Türkçe'ye düşer). Çevrilmiş ekranlarda (liste
+`test/l10n_coverage_test.dart`) yeni metin **ham literal olarak eklenmez**: iki .arb'a anahtar
++ gen-l10n + `context.l10n`. Henüz çevrilmemiş ekranlarda Türkçe literal serbest; İngilizce
+BETA, varsayılan dil Türkçe (`LocaleNotifier`).
 
 ## Doğrulama
 
@@ -147,7 +158,10 @@ flutter analyze lib/ test/
 flutter test test/<o turda yazılan veya etkilenen>_test.dart
 ```
 Testler yine **yazılır**; tam paket her turda koşulmaz. CI (`.github/workflows/ci.yml`)
-PR'da ve `main`'de tam paketi + `deno check`/`deno test` koşar.
+PR'da ve `main`'de tam paketi + `deno check`/`deno test` koşar; `integration.yml` yerel
+Supabase yığınını (`supabase start`: 0000 + tüm migration'lar + `seed.sql`) kaldırıp
+`tool/supabase_smoke.sh` ve Android emülatöründe `integration_test/` koşar. Yeni migration
+taze yığında kırılırsa orada görünür.
 
 Push / commit öncesi, kullanıcı görsel doğrulama istediğinde ya da bir dizi değişikliğin
 sonunda tam paket + emülatör dağıtımı:

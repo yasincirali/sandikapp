@@ -14,6 +14,7 @@ import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../utils/polling.dart';
+import '../l10n/l10n.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -43,7 +44,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
-        title: 'Yarış',
+        title: context.l10n.raceTitle,
         actions: [
           // "Yarış'a katıl" anahtarı Ayarlar'dan buraya taşındı (2026-09-14):
           // katılım bu ekranın CTA'sı, ayrılma da bu ekranın menüsü. Bir
@@ -51,25 +52,25 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           if (optIn)
             PopupMenuButton<String>(
               icon: Icon(Icons.more_vert_rounded, color: context.c.text58),
-              tooltip: 'Yarış seçenekleri',
+              tooltip: context.l10n.raceOptions,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(SandikRadius.md)),
               onSelected: (v) async {
                 if (v != 'ayril') return;
                 final ok = await showSandikConfirm(
                   context: context,
-                  title: 'Yarıştan ayrıl',
-                  message: 'Sıralamadan çıkarsın; ortakların yüzdeni artık '
-                      'göremez. İstediğin zaman yeniden katılabilirsin.',
-                  confirmLabel: 'Ayrıl',
+                  title: context.l10n.leaveRace,
+                  message: context.l10n.leaveRaceBody,
+                  confirmLabel: context.l10n.leaveWord,
                   destructive: true,
                 );
                 if (ok) {
                   await ref.read(leaderboardOptInProvider.notifier).set(false);
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'ayril', child: Text('Yarıştan ayrıl')),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                    value: 'ayril', child: Text(context.l10n.leaveRace)),
               ],
             ),
           // Yarıştaki getiri (dönemsel) ile Performans ekranındaki yüzde
@@ -78,7 +79,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           IconButton(
             icon: Icon(Icons.info_outline_rounded,
                 color: context.c.text58, size: 22),
-            tooltip: 'Getiri nasıl hesaplanıyor?',
+            tooltip: context.l10n.howReturnCalculated,
             onPressed: () => showModalBottomSheet<void>(
               context: context,
               backgroundColor: context.c.surface1,
@@ -137,13 +138,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         horizontal: 20, vertical: 12),
                     child: Text(
                       activePartners.isEmpty
-                          ? 'Getiri, seçili dönemin başı ile sonu '
-                              'karşılaştırılarak hesaplanır. Sıralamalar ve '
-                              'dağılımlar anonimdir — kimlik, miktar ve TL '
-                              'bilgisi asla paylaşılmaz.'
-                          : 'Sıralama, seçili dönemin getirisidir (%). '
-                              'Herkes aynı formülle ölçülür; kimsenin '
-                              'varlık listesi görünmez.',
+                          ? context.l10n.raceFooterGlobal
+                          : context.l10n.raceFooterPartners,
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
                         color: context.c.text36,
@@ -205,7 +201,7 @@ class _RoiInfoSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Getiri nasıl hesaplanıyor?',
+                    context.l10n.howReturnCalculated,
                     style: context.t.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: context.c.text90,
@@ -226,35 +222,22 @@ class _RoiInfoSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            const _InfoBlock(
+            _InfoBlock(
               icon: Icons.emoji_events_outlined,
-              title: 'Seçili dönemin getirisi',
-              body: 'Portföyünün dönem sonundaki değeri, dönem başındaki '
-                  'değeriyle karşılaştırılır:\n\n'
-                  '(dönem sonu − dönem başı) ÷ dönem başı\n\n'
-                  'Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan '
-                  'değiştirir.',
+              title: context.l10n.selectedPeriodReturn,
+              body: context.l10n.selectedPeriodReturnBody,
             ),
             const SizedBox(height: 12),
-            const _InfoBlock(
+            _InfoBlock(
               icon: Icons.savings_outlined,
-              title: 'Para yatırmak sıralamayı değiştirmez',
-              body: 'Ölçülen tek şey, varlıklarının piyasada ne kadar değer '
-                  'kazandığı. Dönem içinde yaptığın alım ve satımlar oranı '
-                  'ETKİLEMEZ.\n\n'
-                  'Hesap, bugünkü varlıklarını dönem başından beri tutmuşsun '
-                  'gibi yapılır. Bu yüzden portföyünü büyütmek getirini '
-                  'yükseltmez — 1 lot da tutsan 10.000 lot da tutsan aynı '
-                  'yüzdeyi görürsün.',
+              title: context.l10n.depositsDontChangeRank,
+              body: context.l10n.depositsDontChangeRankBody,
             ),
             const SizedBox(height: 12),
-            const _InfoBlock(
+            _InfoBlock(
               icon: Icons.groups_outlined,
-              title: 'Herkes aynı şekilde ölçülür',
-              body: 'Sen ve ortakların aynı formülle, aynı anda, aynı '
-                  'fiyatlarla hesaplanırsınız.\n\n'
-                  'Ortağının uygulamayı açmasını beklemene gerek yok — '
-                  'hesap bu cihazda yapılır.',
+              title: context.l10n.everyoneMeasuredSame,
+              body: context.l10n.everyoneMeasuredSameBody,
             ),
             const SizedBox(height: 16),
             Container(
@@ -273,10 +256,7 @@ class _RoiInfoSheet extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden '
-                      'FARKLI olabilir — orası ilk alımından bugüne olan '
-                      'toplam kâr/zararı gösterir, burası ise yalnızca '
-                      'seçtiğin dönemde ne olduğunu.',
+                      context.l10n.rankVsPortfolioNote,
                       style: context.t.bodySmall?.copyWith(
                         color: context.c.text90,
                         height: 1.45,
@@ -288,10 +268,7 @@ class _RoiInfoSheet extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              'Dönem içinde bir varlığı tamamen satıp yerine başkasını '
-              'aldıysan, sonuç "yeni varlığı dönem başından beri tutsaydın" '
-              'senaryosunu gösterir. Fiyat geçmişi bulunamayan portföyler '
-              'sıralamada yer almaz.',
+              context.l10n.rankSwapNote,
               style: context.t.labelMedium?.copyWith(
                 letterSpacing: 0,
                 color: context.c.text36,
@@ -372,7 +349,7 @@ class _OptInPrompt extends StatelessWidget {
                 size: 48, color: context.c.amberText),
             const SizedBox(height: 16),
             Text(
-              'Yarış\'a katılmadın',
+              context.l10n.notInRace,
               style: context.t.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: context.c.text90,
@@ -381,10 +358,7 @@ class _OptInPrompt extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Ortaklarınla getiri sıralamasında yer almak için '
-              'katılmayı aç. Sadece kaydolan ortaklar birbirinin '
-              'yüzdesini görebilir. Varlıkların ve toplam TRY '
-              'değerin asla paylaşılmaz.',
+              context.l10n.notInRaceBody,
               style: context.t.bodyMedium?.copyWith(
                 color: context.c.text58,
                 height: 1.4,
@@ -400,7 +374,7 @@ class _OptInPrompt extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
-              child: const Text('Yarış\'a katıl'),
+              child: Text(context.l10n.joinRace),
             ),
           ],
         ),
@@ -531,7 +505,7 @@ class _SoloPanelState extends State<_SoloPanel> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ortak ekle, aranızda da yarış',
+                        context.l10n.addPartnerToRace,
                         style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: context.c.text90,
@@ -539,8 +513,7 @@ class _SoloPanelState extends State<_SoloPanel> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Kimsenin varlık listesi paylaşılmaz — yalnız '
-                        'getiri yüzdeleri sıralanır.',
+                        context.l10n.raceNoListShared,
                         style: context.t.bodySmall?.copyWith(
                           color: context.c.text58,
                           height: 1.35,
@@ -571,7 +544,7 @@ class _SoloRoiCard extends StatelessWidget {
         ? context.c.text58
         : (positive ? context.c.gain : context.c.loss);
     final valueText = r == null
-        ? (computing ? 'Hesaplanıyor…' : '—')
+        ? (computing ? context.l10n.calculatingEllipsis : '—')
         : '${positive ? '+' : ''}${fmtNum(r, digits: 2)}%';
 
     return Container(
@@ -616,7 +589,7 @@ class _SoloRoiCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'SENİN GETİRİN',
+                  context.l10n.yourReturnUpper,
                   style: context.t.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
@@ -922,7 +895,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         if (rows.isEmpty) {
           return Center(
             child: Text(
-              'Veri hazır değil.',
+              context.l10n.dataNotReady,
               style: context.t.bodyMedium?.copyWith(color: context.c.text58),
             ),
           );
@@ -1095,7 +1068,7 @@ class _LeaderRow extends StatelessWidget {
                                   BorderRadius.circular(SandikRadius.sm),
                             ),
                             child: Text(
-                              'LİDER',
+                              context.l10n.leaderUpper,
                               style: context.t.labelSmall?.copyWith(
                                 fontSize: 8,
                                 fontWeight: FontWeight.w900,
@@ -1346,9 +1319,9 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
     // Loading
     if (state == ConnectionState.waiting && data == null) {
       return _row(
-        badge: _Badge(text: 'YÜKLENİYOR', color: context.c.text58),
-        title: 'Genel Sıralama',
-        subtitle: 'Anonim havuz kontrol ediliyor…',
+        badge: _Badge(text: context.l10n.loadingUpper, color: context.c.text58),
+        title: context.l10n.globalRanking,
+        subtitle: context.l10n.checkingAnonPool,
         icon: Icons.public_rounded,
         iconColor: context.c.text58,
       );
@@ -1357,10 +1330,10 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
     // k-anonymity altında veya yeterli veri yok
     if (data == null) {
       return _row(
-        badge: _Badge(text: 'YAKINDA', color: context.c.gain),
-        title: 'Genel Sıralama',
+        badge: _Badge(text: context.l10n.comingSoonUpper, color: context.c.gain),
+        title: context.l10n.globalRanking,
         subtitle:
-            'Yeterli katılımcı olunca sıran açılacak — anonim, KVKK uyumlu',
+            context.l10n.globalRankingSoon,
         icon: Icons.public_rounded,
         iconColor: context.c.gain,
       );
@@ -1374,11 +1347,11 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
     return _row(
       badge: _Badge(
         text: total > 1000
-            ? '${fmtNum(total / 1000, digits: 1)}K KİŞİ'
-            : '$total KİŞİ',
+            ? context.l10n.nThousandPeople(fmtNum(total / 1000, digits: 1))
+            : context.l10n.nPeopleUpper(total),
         color: context.c.text58,
       ),
-      title: '$periodCap sıralamada ilk %$pct\'desin',
+      title: context.l10n.topPercentile(periodCap, pct),
       subtitle: tone,
       icon: Icons.public_rounded,
       iconColor: pct <= 25 ? context.c.gain : context.c.amberText,
@@ -1390,12 +1363,12 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
       s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 
   String _toneFor(int pct) {
-    if (pct <= 5) return 'Zirvedeki azınlıktasın';
-    if (pct <= 10) return 'Sandık\'ın en iyi %10\'undasın';
-    if (pct <= 25) return 'Ortalamanın çok üstündesin';
-    if (pct <= 50) return 'Ortalamanın üstündesin';
-    if (pct <= 75) return 'Ortalamaya yakınsın';
-    return 'Daha iyisini yapabilirsin — 30G takip et';
+    if (pct <= 5) return context.l10n.toneTop5;
+    if (pct <= 10) return context.l10n.toneTop10;
+    if (pct <= 25) return context.l10n.toneTop25;
+    if (pct <= 50) return context.l10n.toneTop50;
+    if (pct <= 75) return context.l10n.toneTop75;
+    return context.l10n.toneRest;
   }
 
   Widget _row({
@@ -1618,7 +1591,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Zirvedeki Portföyler',
+                context.l10n.topPortfolios,
                 style: context.t.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: context.c.text90,
@@ -1626,7 +1599,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
               ),
               const SizedBox(height: 1),
               Text(
-                '${_periodLabel.toLowerCase()} en çok kazananların dağılımı',
+                context.l10n.topGainersAllocation(_periodLabel.toLowerCase()),
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
                   color: context.c.text58,
@@ -1642,7 +1615,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
             borderRadius: BorderRadius.circular(SandikRadius.sm),
           ),
           child: Text(
-            'ANONİM',
+            context.l10n.anonymousUpper,
             style: context.t.labelSmall?.copyWith(
               fontSize: 8,
               fontWeight: FontWeight.w900,
@@ -1659,8 +1632,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Text(
-        'Yeterli katılımcı olunca zirve portföyler burada görünecek. '
-        'Anonim havuz oluşuyor…',
+        context.l10n.topPortfoliosSoon,
         style: context.t.bodySmall?.copyWith(
           color: context.c.text58,
           height: 1.35,
@@ -1711,7 +1683,7 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${r.rank}. portföy',
+                        context.l10n.nthPortfolio(r.rank),
                         style: context.t.labelMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: context.c.text58,
@@ -1781,7 +1753,7 @@ class _AllocationDetail extends StatelessWidget {
       ..sort((a, b) => b.value.compareTo(a.value));
     final segments = entries
         .map((e) => (
-              label: _labelFor(e.key),
+              label: _labelFor(context, e.key),
               pct: e.value,
               color: _colorFor(e.key),
             ))
@@ -1824,9 +1796,9 @@ class _AllocationDetail extends StatelessWidget {
     );
   }
 
-  String _labelFor(String typeKey) {
+  String _labelFor(BuildContext context, String typeKey) {
     for (final t in AssetType.values) {
-      if (t.name == typeKey) return t.label;
+      if (t.name == typeKey) return t.labelOf(context.l10n);
     }
     // Bilinmeyen tür (ileride eklenecek yeni tür); kelimeyi düzgün göster.
     if (typeKey.isEmpty) return '—';

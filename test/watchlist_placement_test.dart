@@ -105,8 +105,9 @@ void main() {
     test('Portföy ekranında gövde sekmesi VAR', () {
       expect(charts.contains('class _BodyTabs'), isTrue,
           reason: 'takip listesi bir dokunuşla erişilebilir olmalı');
-      expect(charts.contains("'Takip Listesi'"), isTrue);
-      expect(charts.contains("'Varlıklarım'"), isTrue);
+      expect(charts.contains('l10n.watchlist'), isTrue);
+      // 3.20: sekme başlığı `context.l10n.myAssets` (sözlükte "Varlıklarım").
+      expect(charts.contains('l10n.myAssets'), isTrue);
     });
 
     test('sekme, varlık listesinden ÖNCE gelir', () {

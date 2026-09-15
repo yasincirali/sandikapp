@@ -1,6 +1,6 @@
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 
 /// **Grafikler click ve swipe olaylarında birebir aynı çalışmalı.**
 ///
@@ -37,7 +37,7 @@ String _yorumsuz(String src) => src.split('\n').where((l) {
     }).join('\n');
 
 Future<String> _oku(String yol) async =>
-    _yorumsuz(await File(yol).readAsString());
+    _yorumsuz(await ekranKaynagi(yol));
 
 void main() {
   group('tek motor: ZoomableChart', () {

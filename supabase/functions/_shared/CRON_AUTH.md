@@ -98,6 +98,7 @@ ilk hâli tam olarak sessizliğinden dolayı dört ay yaşadı.
 | `INFLATION_FETCH_CRON_SECRET` | `inflation_fetch_cron_secret` |
 | `CALENDAR_NUDGE_CRON_SECRET` | `calendar_nudge_cron_secret` |
 | `PRICE_ALERTS_CRON_SECRET` | `price_alerts_cron_secret` |
+| `TEFAS_NAV_CRON_SECRET` | `tefas_nav_cron_secret` |
 | `live_activity_cron_secret` | *(fonksiyon doğrulamıyor — yalnız Vault)* |
 
 Her biri için **farklı** bir string üret (`openssl rand -hex 32`). Aynı sırrı

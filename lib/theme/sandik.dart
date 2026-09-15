@@ -237,8 +237,14 @@ abstract final class SandikSpace {
   static const double xxl = 48;
 
   /// Ekran kenar boşluğu — dar cihazlarda daralır.
+  ///
+  /// 2026-09-15'te 24/16'dan 16/12'ye indirildi (kullanıcı isteği: "yan
+  /// boşlukları da inceltelim, ekranı daha verimli kullanalım"). 360pt'lik
+  /// bir telefonda iki yandan 24'er pt, içeriğe kalan genişliğin %13'ünü
+  /// yiyordu; grafik ve tablo gibi genişliğe aç yüzeylerde bu doğrudan
+  /// okunabilirlik kaybı.
   static double screenH(BuildContext context) =>
-      MediaQuery.sizeOf(context).width < 360 ? md : lg;
+      MediaQuery.sizeOf(context).width < 360 ? smd : md;
 }
 
 /// Marka hareket dili — süre ve eğri birlikte seçilir, ayrı ayrı değil.

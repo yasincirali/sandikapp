@@ -1,8 +1,8 @@
-import 'dart:io';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/utils/spot_lookup.dart';
+import 'helpers/kaynak.dart';
 
 /// Piyasa kapalı bölgesinde de crosshair GEZİNEBİLMELİ.
 ///
@@ -18,8 +18,7 @@ import 'package:portfoy_takip/utils/spot_lookup.dart';
 ///
 /// Düzeltme: dokunma TÜM çizilmiş noktaları görür (`crosshairSpots`).
 void main() {
-  final ekran = File('lib/screens/portfolio_performance_screen.dart')
-      .readAsStringSync()
+  final ekran = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
       .replaceAll('\r\n', '\n');
 
   group('birleştirilmiş nokta listesi', () {
