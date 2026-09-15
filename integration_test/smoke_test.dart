@@ -116,7 +116,22 @@ void main() {
     // `HScrollWithFade` içinde yatay kaydırmalı ve "Diğer" SON sırada,
     // yani dar ekranda görünür alanın dışında kalıyor. `tap` merkez
     // noktası istediği için ekran dışındaki bir widget'a dokunamaz.
-    final digerCip = find.bySemanticsLabel('Diğer türü');
+    // Çip METNİNDEN bulunuyor, semantics etiketinden DEĞİL.
+    //
+    // `find.bySemanticsLabel('Diğer türü')` CI'da hiç eşleşmedi; teşhis
+    // ekranda "Diğer" metninin VARLIĞINI doğruladı (tür çipleri
+    // yerindeydi, tur katmanı da kapatılmıştı). Semantics etiketi
+    // `assetTypeSemantics` şablonundan üretiliyor ve eşleşmenin neden
+    // tutmadığı belirsizdi — metin finder'ı o belirsizliğin tamamını
+    // atlıyor ve testin asıl ölçtüğü şeye (akış) odaklanıyor.
+    //
+    // Erişilebilirlik etiketinin kendisi ayrıca `touch_target_size_test`
+    // ve widget testleriyle korunuyor; duman testinin işi o değil.
+    // `.first`: "Diğer" bu ekranın dışında da geçebilir (dağılım
+    // listesinde bir kategori adı olarak). Tür çipi satırı VARLIK TÜRÜ
+    // başlığının hemen altında ve ağaç sırasında önce gelir — sayfadaki
+    // ilk "Diğer" odur.
+    final digerCip = find.text('Diğer').first;
     await _bekle(tester, digerCip, neden: 'tür çipleri (Diğer)');
     // `ensureVisible` doğru Scrollable'ı widget'ın KENDİ ağacından bulur;
     // `scrollUntilVisible` + `byType(Scrollable).first` sayfadaki başka
@@ -214,6 +229,19 @@ Future<void> _bekleKosul(
   // varlığını ayrıca bildir (2026-09-15 teşhisi).
   debugPrint('TUR KATMANI VAR MI: '
       '${find.byType(ModalBarrier).evaluate().length} ModalBarrier');
+  // Semantics ETİKETLERİ — `find.bySemanticsLabel` TAM eşleşme arıyor ve
+  // aradığı dize, ekranda görünen metinden farklı olabiliyor. Ağaçtaki
+  // `Semantics` widget'larının kendi `label`'larını basmak bu belirsizliği
+  // tek turda bitirir.
+  final etiketler = find
+      .byType(Semantics)
+      .evaluate()
+      .map((e) => (e.widget as Semantics).properties.label)
+      .whereType<String>()
+      .where((l) => l.trim().isNotEmpty)
+      .take(50)
+      .toList();
+  debugPrint('SEMANTICS ETİKETLERİ: $etiketler');
   debugDumpApp();
   fail('Beklenen görünmedi: $neden (${sure.inSeconds} sn)');
 }
