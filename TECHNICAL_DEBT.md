@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-15 (integration workflow'u 0054 içi Vault tohumuyla kapandı)
+**Son güncelleme:** 2026-09-15 (integration workflow'u tümden yeşil: Vault tohumu + beş katman)
 
 ---
 
@@ -60,8 +60,48 @@ Değerler açıkça `local-stack-only` diyor — gerçek secret gibi görünmeme
 varlığı, tohumun doğrulamadan önce gelmesi, JWT biçimi, placeholder'ın
 ayırt edilebilirliği, yedi secret'ın tamlığı. **Deno 261/261 geçiyor.**
 
-⚠️ **Yerelde `supabase start` ile doğrulanmadı** (Docker kapalıydı, kullanıcı
-kararı) — gerçek doğrulama ilk Integration koşusunda.
+**Doğrulandı (2026-09-15):** `supabase start` ilk koşuda geçti.
+
+## Arkasından çıkan beş katman
+
+Vault kapısı açılınca kapının arkasındaki adımlar İLK KEZ koştu ve her biri
+bir sonrakini görünür kıldı. Hepsi workflow yazıldığından beri oradaydı ama
+`supabase start` hep önce kırıldığı için hiç görülmemişti:
+
+1. **`\` satır devamı çalışmıyor.** `android-emulator-runner` `script`
+   bloğunu satır satır ayrı `sh -c` çağrılarıyla koşuyor; kabuk devam
+   satırı hiç birleşmiyor. Flutter argüman olarak bir `\` alıyor, onu test
+   yolu sanıyor ve `_shouldRunAsIntegrationTests` "Integration tests and
+   unit tests cannot be run in a single invocation" diyordu. Mesaj sebebi
+   hiç göstermiyor — beş hipotez (dizin/dosya yazımı, eğik çizgi, fazladan
+   `_test.dart`, cihazın görünmemesi, `-d` eksikliği) ölçülerek elendi.
+   Komut tek satıra indirildi.
+2. **Tür çipi: bekleme + kaydırma.** Ekran açılır açılmaz `tap`
+   çağrılıyordu; çipler `HScrollWithFade` içinde ve "Diğer" son sırada.
+   `_bekle` + `ensureVisible`.
+3. **Tanıtım turu katmanı.** `OnboardingTourHost` Navigator'ı sarıyor
+   (kasıtlı) ve tur açıkken dokunmaları yutuyor.
+   `OnboardingScreen.turuKapatTestIcin()` eklendi (`@visibleForTesting`).
+4. **Semantics etiketi eşleşmiyor.** `find.bySemanticsLabel('Diğer türü')`
+   CI'da hiç tutmadı; teşhis ekranın açık, çiplerin yerinde ve dilin Türkçe
+   olduğunu gösterdi. Finder metne çevrildi (`find.text('Diğer').first`).
+   ⚠️ **Sebep ÇÖZÜLMEDİ, etrafından dolaşıldı** — o etiket erişilebilirlik
+   için gerekliyse ayrı bir widget testi yazılmalı.
+5. **`SemanticsHandle` dispose.** Akışın tamamı geçtikten sonra yalnızca
+   temizlikte düşüyordu: `addTearDown` yetmiyor, çünkü tearDown'lar gövdeden
+   SONRA koşuyor ama handle denetimi gövde biter bitmez yapılıyor.
+
+**Sonuç:** Integration yeşil — `supabase start` ✓, başsız duman ✓,
+emülatörde `integration_test/` ✓ (`🎉 1 test passed`). Kapı artık gerçekten
+bir şey doğruluyor.
+
+## Ders
+
+Hata mesajı sebebi göstermediğinde tahmin turu pahalı. Dönüm noktası
+`_bekle`'ye teşhis çıktısı eklemekti (ekrandaki metinler + ModalBarrier
+sayısı + semantics etiketleri); o tek değişiklik dört hipotezi birden
+eledi. Teşhis satırları BIRAKILDI — bir sonraki kırılmada aynı bilgi
+ücretsiz gelir.
 
 ## 🟠 AÇIK — Dış fiyat API'leri sessizce değişiyor; kanarya yok
 
