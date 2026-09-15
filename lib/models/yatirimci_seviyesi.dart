@@ -51,19 +51,56 @@ enum YatirimciSeviyesi {
   static const varsayilan = YatirimciSeviyesi.orta;
 }
 
-/// Seviyeye göre Özet kartlarının görünürlüğü — saf karar tablosu.
+/// Seviyeye göre metrik yüzeylerinin görünürlüğü — saf karar tablosu.
 ///
 /// Tek yerde durur ki "Başlangıç'ta X görünüyor mu" sorusu ekran koduna
-/// dağılmasın; `_OzetYanVeri` bunu okuyup ilgili parametreyi `null` geçer.
-({bool saglik, bool xirr, bool percentile, bool ileri}) seviyeGorunurlugu(
-    YatirimciSeviyesi s) {
+/// dağılmasın; her ekran bunu okuyup ilgili bloğu çizer ya da çizmez.
+///
+/// ## Neden Özet sekmesiyle sınırlı DEĞİL (2026-09-15)
+/// İlk sürümde yalnızca Performans › Özet kartlarını süzüyordu. Üç kart da
+/// **1Y dönemine** bağlı (sağlık/XIRR) ya da k-anonimlik eşiğine (yüzdelik);
+/// bir yıllık geçmişi ya da sekiz kişilik havuzu olmayan kullanıcıda seviye
+/// değiştirmek EKRANDA HİÇBİR ŞEYİ değiştirmiyordu — "ayar çalışmıyor"
+/// (kullanıcı bildirimi 2026-09-15). Şimdi ilk açılışta görülen yüzeyleri de
+/// kapsıyor: ana ekranın yüzdelik şeridi ve teknik sinyal yüzeyleri
+/// (ana ekran sinyal zili, tekil varlıkta sinyal kartı + gösterge paneli).
+///
+/// Kural değişmedi: **Başlangıç yalnızca GİZLER, İleri yalnızca EKLER**,
+/// Orta bugünkü görünümdür. Hiçbir hesap seviyeye bakmaz.
+typedef SeviyeGorunurluk = ({
+  bool saglik,
+  bool xirr,
+  bool percentile,
+  bool teknikSinyaller,
+  bool ileri,
+});
+
+SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s) {
   switch (s) {
     case YatirimciSeviyesi.baslangic:
-      return (saglik: false, xirr: false, percentile: false, ileri: false);
+      return (
+        saglik: false,
+        xirr: false,
+        percentile: false,
+        teknikSinyaller: false,
+        ileri: false,
+      );
     case YatirimciSeviyesi.orta:
-      return (saglik: true, xirr: true, percentile: true, ileri: false);
+      return (
+        saglik: true,
+        xirr: true,
+        percentile: true,
+        teknikSinyaller: true,
+        ileri: false,
+      );
     case YatirimciSeviyesi.ileri:
-      return (saglik: true, xirr: true, percentile: true, ileri: true);
+      return (
+        saglik: true,
+        xirr: true,
+        percentile: true,
+        teknikSinyaller: true,
+        ileri: true,
+      );
   }
 }
 

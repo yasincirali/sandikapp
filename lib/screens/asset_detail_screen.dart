@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
@@ -24,6 +25,7 @@ import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
+import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
 import '../widgets/fullscreen_chart_route.dart';
 import '../widgets/chart_fullscreen_chip.dart';
@@ -129,6 +131,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// kullanıcı şeride dokununca oraya kaydırılır. Aksi halde özet, cevabı
   /// olmayan bir merak uyandırırdı.
   final GlobalKey _sinyalPaneliKey = GlobalKey();
+
+  /// Teknik sinyal yüzeyleri (kart + gösterge paneli) çizilsin mi?
+  /// Yatırımcı seviyesi Başlangıç ise hayır — bkz. `seviyeGorunurlugu`.
+  bool get _sinyalYuzeyleri =>
+      seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller;
 
   /// Gün içi serinin çizildiği günün 00:00'ı.
   ///
@@ -334,7 +341,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
-        title: 'Performans: ${widget.asset.name}',
+        title: context.l10n.assetPerformanceSemantics(widget.asset.name),
         transparent: true,
         showBack: widget.showBackButton,
         actions: [
@@ -343,7 +350,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           // fiyatlı) varlıkta zil yok — sunucu fiyatını izleyemez.
           if (_alarmSembolu != null)
             IconButton(
-              tooltip: 'Fiyat alarmı kur',
+              tooltip: context.l10n.setPriceAlert,
               icon: Icon(Icons.add_alert_outlined, color: context.c.text90),
               onPressed: () => alarmKurAkisi(
                 context,
@@ -431,10 +438,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 // Kayıtlı bildirim varsa şeridin ikinci satırında durur —
                 // "şu an ne diyor" ile "bana ne bildirilmişti" farklı
                 // sorulardır.
-                AssetSignalCard(
-                  asset: widget.asset,
-                  onTap: _sinyalPaneline,
-                ),
+                // Sinyal kartı ve aşağıdaki gösterge paneli Başlangıç
+                // seviyesinde GİZLİ (`seviyeGorunurlugu`): AL/SAT göstergesi
+                // yorumlanmadan okunduğunda yanıltıcıdır. Varsayılan Orta.
+                if (_sinyalYuzeyleri)
+                  AssetSignalCard(
+                    asset: widget.asset,
+                    onTap: _sinyalPaneline,
+                  ),
                 if (_alarmSembolu != null) ...[
                   AlarmSeridi(
                     sembol: _alarmSembolu!,
@@ -492,9 +503,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(SandikSpace.lg),
                                   child: Text(
-                                    'Bu varlığın fiyat geçmişi şu an '
-                                    'çekilemedi. Bağlantını kontrol edip '
-                                    'tekrar dene.',
+                                    context.l10n.priceHistoryFailed,
                                     textAlign: TextAlign.center,
                                     style: context.t.bodyMedium
                                         ?.copyWith(color: context.c.text58),
@@ -1559,7 +1568,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     children: [
                       Flexible(
                         child: Text(
-                          'TOPLAM MİKTAR',
+                          context.l10n.totalQuantityUpper,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: context.t.labelLarge?.copyWith(
@@ -1598,9 +1607,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                TechnicalSignalPanel.forAsset(widget.asset,
-                    key: _sinyalPaneliKey, detayli: true),
+                if (_sinyalYuzeyleri) ...[
+                  const SizedBox(height: 24),
+                  TechnicalSignalPanel.forAsset(widget.asset,
+                      key: _sinyalPaneliKey, detayli: true),
+                ],
               ],
             ),
           ),

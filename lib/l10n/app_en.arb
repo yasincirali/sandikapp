@@ -103,13 +103,13 @@
   "languageEnglish": "English",
   "languageNote": "English is in beta: some screens are still Turkish.",
   "investorLevel": "Investor level",
-  "investorLevelNote": "Only changes the card set in Performance › Summary; calculations stay the same.",
+  "investorLevelNote": "Only changes WHICH metrics are shown; your calculations and data stay the same.",
   "levelBeginner": "Beginner",
   "levelIntermediate": "Intermediate",
   "levelAdvanced": "Advanced",
-  "levelBeginnerDesc": "Simple summary: return, inflation and contribution. No health, XIRR or percentile.",
-  "levelIntermediateDesc": "Today's view: health card, money-weighted return (XIRR), percentile.",
-  "levelAdvancedDesc": "Intermediate + risk-adjusted return, timing effect and recovery.",
+  "levelBeginnerDesc": "Simple view: technical signals, percentile, health and XIRR cards are hidden.",
+  "levelIntermediateDesc": "Today's view: technical signals, percentile, health card and money-weighted return (XIRR).",
+  "levelAdvancedDesc": "Intermediate + risk-adjusted return, timing effect and recovery (Summary › 1Y).",
   "noAssetsYet": "No assets added yet",
   "noAssetsOfType": "No assets of this type",
   "noAssetsYetHint": "Start building your sandık by adding your first asset.",
@@ -148,5 +148,442 @@
   "registerEmailInvalid": "Enter a valid email.",
   "registerPasswordsMismatch": "Passwords do not match.",
   "termsMustAccept": "You must accept the legal terms.",
-  "consentMustAccept": "You must give explicit consent to the cross-border data transfer."
+  "consentMustAccept": "You must give explicit consent to the cross-border data transfer.",
+  "refreshPrices": "Refresh prices",
+  "assetAllocation": "ASSET ALLOCATION",
+  "portfolioActivity": "PORTFOLIO ACTIVITY",
+  "seeAllTransactions": "See all transactions",
+  "seeAllCount": "See All ({count})",
+  "@seeAllCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "signalDeleteFailed": "Could not delete the notification. Check your connection.",
+  "permanentDelete": "Delete permanently",
+  "signalDeleteChoice": "There are {past} past and {active} active notifications. What should be deleted?",
+  "@signalDeleteChoice": {
+    "placeholders": {
+      "past": {
+        "type": "int"
+      },
+      "active": {
+        "type": "int"
+      }
+    }
+  },
+  "cancelShort": "Cancel",
+  "onlyHistory": "History only",
+  "clearAllSignals": "Clear all signals",
+  "clearAllLower": "Clear all",
+  "clearAllSignalsBody": "{count} notifications will move to history. To delete them for good, use the \"Delete History\" button there.",
+  "@clearAllSignalsBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearVerb": "Clear",
+  "clearAllUpper": "Clear All",
+  "noActiveSignals": "No active signals right now",
+  "historyUpper": "HISTORY",
+  "deleteHistoryCount": "Permanently delete {count} notifications from history",
+  "@deleteHistoryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteHistoryTitle": "Delete history",
+  "deleteHistoryBody": "{count} notifications will be deleted PERMANENTLY. This cannot be undone.",
+  "@deleteHistoryBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "permanentDeleteUpper": "Delete Permanently",
+  "deleteHistoryButton": "Delete History",
+  "signalNeutral": "NEUTRAL",
+  "signalDeletedAt": "{date} · deleted",
+  "@signalDeletedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "signalConfidence": "{count} indicators · {pct} confidence",
+  "@signalConfidence": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "showBalance": "Show balance",
+  "hideBalance": "Hide balance",
+  "sortCriterion": "SORT BY",
+  "tabSemanticsCount": "{label}, {count} assets",
+  "@tabSemanticsCount": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noChange": "No change",
+  "buyAction": "Buy",
+  "sellAction": "Sell",
+  "deleteAction": "Delete",
+  "activeAlertsCount": "{count} active price alerts",
+  "@activeAlertsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lastMonth": "Last month",
+  "firstPurchase": "First Purchase",
+  "avgCost": "Avg. Cost",
+  "totalCost": "Total Cost",
+  "currentValue": "Current Value",
+  "lotSummary": "{buys} buys · {sells} removals",
+  "@lotSummary": {
+    "placeholders": {
+      "buys": {
+        "type": "int"
+      },
+      "sells": {
+        "type": "int"
+      }
+    }
+  },
+  "sortMarketValue": "Market Value",
+  "sortHighToLow": "High to Low",
+  "sortLowToHigh": "Low to High",
+  "sortGainTry": "Gain (TRY)",
+  "sortGainPct": "Gain (%)",
+  "sortHighestFirst": "Highest First",
+  "sortLowestFirst": "Lowest First",
+  "assetFullName": "Full Name",
+  "assetTypeStock": "Stocks",
+  "assetTypeFund": "Funds",
+  "assetTypeFx": "Currency",
+  "assetTypeGold": "Gold",
+  "assetTypeCommodity": "Commodities",
+  "assetTypeOther": "Other",
+  "tickerHintStock": "e.g. THYAO.IS, GARAN.IS  (add .IS for Borsa İstanbul)",
+  "tickerHintFund": "Leave empty if there is no Yahoo Finance code and enter the price manually",
+  "tickerHintFx": "e.g. USDTRY=X, EURTRY=X, GBPTRY=X",
+  "tickerHintGold": "e.g. XAUTRY=X (gram gold in TRY) or GC=F (ounce, USD)",
+  "tickerHintCommodity": "e.g. CL=F (oil), NG=F (natural gas), GC=F (gold ounce)",
+  "tickerHintOther": "A Yahoo Finance symbol, or leave it empty",
+  "assetTypeSemantics": "{type} type",
+  "total": "total",
+  "@assetTypeSemantics": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "bulkAdd": "Bulk add",
+  "quickEntryVoice": "Voice / Quick entry",
+  "orNotInList": "or not in the list",
+  "symbolHint": "Type a symbol (e.g. AAPL, THYAO.IS)",
+  "companyNameHint": "Company name (optional — fetched from the symbol)",
+  "goldSemantics": "{kind} gold",
+  "@goldSemantics": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "commissionNote": "Trading commission is added to your cost — profit/loss shows the real figure.",
+  "costPreviewHint": "Enter a quantity and the total cost appears here.",
+  "totalCostUpper": "TOTAL COST",
+  "transactionDate": "Transaction date",
+  "addNote": "Add a note",
+  "notesHint": "Your notes...",
+  "quantitySemantics": "Quantity {value}",
+  "@quantitySemantics": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "quickEntryTitle": "Quick Entry",
+  "quickEntryHelp": "One asset per line. Price is optional — leave it blank and the current price is fetched.\ne.g.  100 dollars  /  10 grams gold 4500 lira  /  GARAN 500 units",
+  "quickEntryPlaceholder": "100 dollars\n10 grams gold 4500 lira\nGARAN 500 units 105 lira",
+  "saveNAssets": "Save {count} assets",
+  "@saveNAssets": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fillTheForm": "Fill the form",
+  "bistStocks": "BIST Stocks",
+  "tefasFunds": "TEFAS Funds",
+  "fundsLoading": "Loading funds...",
+  "pleaseWait": "Please wait",
+  "fundsLoadFailed": "Could not load funds",
+  "searchEllipsis": "Search...",
+  "clearSearch": "Clear search",
+  "pickStockPrompt": "Please pick a stock",
+  "pickStock": "Pick a stock",
+  "pickStockTap": "Tap to pick a stock...",
+  "pickFundPrompt": "Please pick a fund",
+  "pickFund": "Pick a fund",
+  "pickFundTap": "Tap to pick a fund...",
+  "noResults": "No results",
+  "priceNotAvailable": "No price information",
+  "assetFallbackName": "Asset",
+  "commodityHint": "e.g. Oil (Brent)",
+  "identityStock": "Stock",
+  "identityFund": "Fund",
+  "identityGoldKind": "Gold Type",
+  "identityCurrency": "Currency",
+  "identityCommodity": "Commodity",
+  "noResultsFor": "No match for \"{q}\"",
+  "@noResultsFor": {
+    "placeholders": {
+      "q": {
+        "type": "String"
+      }
+    }
+  },
+  "periodDaily": "DAILY",
+  "period1W": "1W",
+  "period1M": "1M",
+  "period6M": "6M",
+  "period1Y": "1Y",
+  "assetPerformanceSemantics": "Performance: {name}",
+  "@assetPerformanceSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "setPriceAlert": "Set a price alert",
+  "priceHistoryFailed": "This asset's price history could not be fetched. Check your connection and try again.",
+  "totalQuantityUpper": "TOTAL QUANTITY",
+  "otherTab": "Other",
+  "periodChangeUpper": "{period} CHANGE",
+  "@periodChangeUpper": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "buyPerUnit": "BUY / {unit}",
+  "@buyPerUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "todayPerUnit": "TODAY / {unit}",
+  "@todayPerUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "noResultsShort": "No results.",
+  "compare": "Compare",
+  "clearShort": "Clear",
+  "searchTickerOrName": "Search ticker or name…",
+  "myPortfolioTab": "My Portfolio",
+  "deleteAccountTitle": "You are about to delete your account",
+  "deleteAccountBody": "This CANNOT be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted within 30 days.\n\nDo you want to continue?",
+  "continueAction": "Continue",
+  "verifyIdentityTitle": "Verify your identity",
+  "verifyIdentityBody": "Your account was created with Apple/Google. You will be asked to sign in once more with the same account before deletion.",
+  "confirmWithPassword": "Confirm with your password",
+  "confirmWithPasswordBody": "For your security you need to confirm with your password.",
+  "deleteAccountUpper": "DELETE ACCOUNT",
+  "accountDeletedTitle": "Your account was deleted",
+  "accountDeletedBody": "See you around.",
+  "investmentDisclaimer": "Investment Advice Disclaimer",
+  "close": "Close",
+  "feedbackTitle": "Feedback & Suggestions",
+  "feedbackHint": "Write your message…",
+  "send": "Send",
+  "deletingAccount": "Deleting your account…",
+  "deletingAccountBody": "This can take a few seconds. Don't close the app.",
+  "diagnosticsUpper": "DIAGNOSTICS",
+  "pushDiagnostics": "Push Diagnostics",
+  "pushDiagnosticsSubtitle": "Where the notification chain is broken; device APNs/FCM token state",
+  "notificationsUpper": "NOTIFICATIONS",
+  "signalNotifications": "Technical signal notifications",
+  "signalNotificationsSubtitle": "Get notified when a BUY/SELL indicator triggers",
+  "signalSettings": "Signal settings",
+  "signalSettingsSubtitle": "Indicator selection per asset type + Premium",
+  "priceAlerts": "Price alerts",
+  "partnerInviteNotifications": "Partner invite notifications",
+  "partnerInviteNotificationsSubtitle": "Get notified when a new partner request arrives",
+  "liveActivitiesUpper": "LIVE ACTIVITIES",
+  "biometricLock": "Biometric lock",
+  "downloadMyData": "Download My Data",
+  "downloadMyDataSubtitle": "Get all your data as a JSON file (KVKK Article 11)",
+  "deleteMyAccount": "Delete My Account",
+  "deleteMyAccountSubtitle": "All your data is permanently deleted",
+  "supportUpper": "SUPPORT",
+  "contactUs": "Contact Us",
+  "replayTour": "Replay the tour",
+  "replayTourSubtitle": "Remind yourself what each screen does",
+  "feedbackSubtitle": "Send us your thoughts",
+  "legalUpper": "LEGAL",
+  "privacyPolicy": "Privacy Policy",
+  "privacyPolicySubtitle": "How your data is processed",
+  "termsOfUse": "Terms of Use",
+  "termsOfUseSubtitle": "Service agreement",
+  "kvkkNotice": "KVKK Disclosure Notice",
+  "kvkkNoticeSubtitle": "Personal data processing notice",
+  "disclaimerSubtitle": "View the legal notice you accepted",
+  "themeSemantics": "{name} theme",
+  "@themeSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "baseCurrencySemantics": "Base currency {name}",
+  "@baseCurrencySemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "levelSemantics": "{name} level",
+  "@levelSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "showAllDay": "Show all day",
+  "showAllDaySubtitle": "When off, it only appears in the hours you choose.",
+  "displayWindow": "Display window",
+  "startTime": "Start",
+  "endTime": "End",
+  "showOnWeekend": "Show on weekends too",
+  "showOnWeekendSubtitle": "BIST is closed on weekends; the banner shows the last close labelled \"Market closed\".",
+  "showAmounts": "Show amounts",
+  "showAmountsSubtitle": "When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.",
+  "partnerActivityNotifications": "Partner activity notifications",
+  "partnerActivityNotificationsSubtitle": "Mention it in the daily brief when your partner adds to their portfolio",
+  "quietHours": "Quiet hours",
+  "biometricLockSubtitle": "Ask for Face ID / fingerprint / device PIN when opening the app",
+  "doneTitle": "Done",
+  "alreadyPartners": "Already Partners",
+  "ownCode": "Your Own Code",
+  "expiredTitle": "Expired",
+  "waitABit": "Hold On",
+  "somethingWentWrong": "Something went wrong",
+  "cancelInviteTitle": "Cancel partner request",
+  "cancelInviteBody": "Are you sure you want to cancel the partner request you sent?",
+  "yesCancel": "Yes, cancel it",
+  "settingsTitle": "Settings",
+  "partnerActionsUpper": "PARTNER ACTIONS",
+  "myPartnersUpper": "MY PARTNERS",
+  "generateInviteCode": "Generate Invite Code",
+  "generateInviteCodeBody": "Send the code to your partner. Once they enter it, you get an approval request.",
+  "enterPartnerCode": "Enter Partner Code",
+  "enterPartnerCodeBody": "Enter the code your partner sent you (e.g. KRHNJ-8P2SW). They then need to approve.",
+  "tooManyAttempts": "Too many attempts — you can try again in {wait}.",
+  "@tooManyAttempts": {
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "awaitingApproval": "Waiting for {name} to approve...",
+  "@awaitingApproval": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelWord": "Cancel",
+  "noPartnersYet": "You have no partners yet",
+  "removePartnerSemantics": "Remove partner",
+  "removePartnerTitle": "Remove partnership",
+  "removePartnerBody": "Are you sure you want to remove your partnership with {name}?",
+  "@removePartnerBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeWord": "Remove",
+  "pendingRequestsUpper": "PENDING PARTNER REQUESTS",
+  "wantsToPartner": "Wants to partner up",
+  "rejectRequest": "Reject partner request",
+  "acceptRequest": "Accept partner request",
+  "sandikPremium": "sandık Premium",
+  "premiumPitch": "Unlimited assets, premium indicators, 2 signal analyses a day",
+  "premiumActive": "Premium active",
+  "premiumActiveBody": "All advanced features unlocked",
+  "codeCopied": "Code generated and copied to clipboard",
+  "tooManyFailedAttempts": "Too many failed attempts.\nYou can try again in {wait}.",
+  "@tooManyFailedAttempts": {
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "partnershipCreated": "You are now partners with {name}!",
+  "@partnershipCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "requestRejected": "The partner request was rejected.",
+  "requestCancelled": "The partner request was cancelled.",
+  "partnershipAccepted": "Partnership accepted!",
+  "sendingEllipsis": "Sending...",
+  "waitFor": "Wait — {wait}",
+  "@waitFor": {
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "requestPartnership": "Request Partnership",
+  "generatingEllipsis": "Generating...",
+  "generateCode": "Generate Code",
+  "switchToDark": "Switch to dark theme",
+  "switchToLight": "Switch to light theme"
 }

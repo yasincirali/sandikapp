@@ -12,6 +12,7 @@ import '../services/recap_service.dart' show PortfolioCharacter, RecapAsset;
 import '../theme/sandik.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
+import '../l10n/l10n.dart';
 
 /// Özet sekmesinin gövdesi — üç blok, her dönemde aynı iskelet.
 ///
@@ -1086,7 +1087,7 @@ class _DagilimSatiri extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            tur.label,
+            tur.labelOf(context.l10n),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: context.t.bodyMedium?.copyWith(color: context.c.text90),

@@ -82,12 +82,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // 1. Kademe — uyarı
     final firstConfirm = await showSandikConfirm(
       context: context,
-      title: 'Hesabını silmek üzeresin',
-      message: 'Bu işlem GERİ ALINAMAZ.\n\n'
-          'Tüm portföy kayıtların, performans geçmişin ve ortaklık '
-          'bağlantıların 30 gün içinde kalıcı olarak silinecek.\n\n'
-          'Devam etmek istiyor musun?',
-      confirmLabel: 'Devam et',
+      title: context.l10n.deleteAccountTitle,
+      message: context.l10n.deleteAccountBody,
+      confirmLabel: context.l10n.continueAction,
       destructive: true,
       barrierDismissible: false,
     );
@@ -99,10 +96,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!AuthService.instance.hasPasswordIdentity) {
       final social = await showSandikConfirm(
         context: context,
-        title: 'Kimliğini doğrula',
-        message: 'Hesabın Apple/Google ile açılmış. Silmeden önce aynı '
-            'hesapla bir kez daha giriş yapman istenecek.',
-        confirmLabel: 'Devam et',
+        title: context.l10n.verifyIdentityTitle,
+        message: context.l10n.verifyIdentityBody,
+        confirmLabel: context.l10n.continueAction,
         destructive: true,
         barrierDismissible: false,
       );
@@ -120,14 +116,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (dialogCtx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
           backgroundColor: context.c.surface2,
-          title: Text('Şifrenle onayla',
+          title: Text(context.l10n.confirmWithPassword,
               style: TextStyle(color: context.c.text90)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Güvenliğin için şifrenle onay vermen gerekiyor.',
+                context.l10n.confirmWithPasswordBody,
                 style: TextStyle(color: context.c.text58, fontSize: 13),
               ),
               const SizedBox(height: 16),
@@ -161,7 +157,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, true),
-              child: Text('HESABI SİL',
+              child: Text(context.l10n.deleteAccountUpper,
                   style: TextStyle(
                       color: context.c.loss, fontWeight: FontWeight.bold)),
             ),
@@ -188,8 +184,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       await showAppSuccess(
         context,
-        title: 'Hesabın silindi',
-        message: 'Görüşmek üzere.',
+        title: context.l10n.accountDeletedTitle,
+        message: context.l10n.accountDeletedBody,
       );
     } on SocialSignInCancelled {
       // Sağlayıcı ekranında vazgeçti — hata değil.
@@ -229,7 +225,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Yatırım Tavsiyesi Reddi',
+                context.l10n.investmentDisclaimer,
                 style: TextStyle(color: context.c.text90, fontSize: 16),
               ),
             ),
@@ -252,7 +248,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Kapat', style: TextStyle(color: context.c.amberText)),
+            child: Text(context.l10n.close, style: TextStyle(color: context.c.amberText)),
           ),
         ],
       ),
@@ -323,7 +319,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Şikayet & Tavsiye',
+                  context.l10n.feedbackTitle,
                   style: context.t.headlineSmall?.copyWith(
                     color: context.c.text90,
                     fontWeight: FontWeight.w700,
@@ -359,7 +355,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   minLines: 4,
                   style: TextStyle(color: context.c.text90),
                   decoration: InputDecoration(
-                    hintText: 'Mesajınızı yazın…',
+                    hintText: context.l10n.feedbackHint,
                     hintStyle: TextStyle(color: context.c.text36),
                     filled: true,
                     fillColor: context.c.surface1,
@@ -382,7 +378,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ctx,
                             {'type': type, 'body': controller.text.trim()},
                           ),
-                  child: const Text('Gönder',
+                  child: Text(context.l10n.send,
                       style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ],
@@ -452,13 +448,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         const CustomLoadingIndicator(size: 32),
                         SizedBox(height: SandikSpace.md),
                         Text(
-                          'Hesabın siliniyor…',
+                          context.l10n.deletingAccount,
                           style: context.t.titleMedium
                               ?.copyWith(color: context.c.text90),
                         ),
                         SizedBox(height: SandikSpace.xs),
                         Text(
-                          'Bu işlem birkaç saniye sürebilir. Uygulamayı kapatma.',
+                          context.l10n.deletingAccountBody,
                           textAlign: TextAlign.center,
                           style: context.t.bodySmall
                               ?.copyWith(color: context.c.text58),
@@ -526,13 +522,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // hesap admin değil" diyen 943 satırlık bir ekrana çıkıyordu.
             if (ref.watch(isPushAdminProvider).valueOrNull == true) ...[
               const SizedBox(height: 28),
-              const SandikSectionHeader(title: 'TANILAMA'),
+              SandikSectionHeader(title: context.l10n.diagnosticsUpper),
               const SizedBox(height: 12),
               _SettingsTile(
                 icon: Icons.notifications_active_outlined,
-                title: 'Push Teşhisi',
-                subtitle: 'Bildirim zincirinin neresi kopuk; '
-                    'cihaz APNs/FCM token durumu',
+                title: context.l10n.pushDiagnostics,
+                subtitle: context.l10n.pushDiagnosticsSubtitle,
                 onTap: () => Navigator.of(context).push(
                   adaptiveRoute<void>(
                     builder: (_) => const PushDiagnosticsScreen(),
@@ -587,12 +582,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ];
 
   List<Widget> _bildirimler() => [
-            const SandikSectionHeader(title: 'BİLDİRİMLER'),
+            SandikSectionHeader(title: context.l10n.notificationsUpper),
             const SizedBox(height: 12),
             _SwitchTile(
               icon: Icons.notifications_active_outlined,
-              title: 'Teknik sinyal bildirimleri',
-              subtitle: 'AL/SAT göstergesi tetiklendiğinde bildirim al',
+              title: context.l10n.signalNotifications,
+              subtitle: context.l10n.signalNotificationsSubtitle,
               value: ref.watch(signalNotificationsProvider),
               onChanged: (v) async {
                 await ref.read(signalNotificationsProvider.notifier).set(v);
@@ -603,8 +598,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             _SettingsTile(
               icon: Icons.tune_rounded,
-              title: 'Sinyal ayarları',
-              subtitle: 'Her varlık türü için gösterge seçimi + Premium',
+              title: context.l10n.signalSettings,
+              subtitle: context.l10n.signalSettingsSubtitle,
               onTap: () => Navigator.push(
                 context,
                 adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
@@ -615,7 +610,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // ekrana girmeden durumu görsün.
             _SettingsTile(
               icon: Icons.add_alert_outlined,
-              title: 'Fiyat alarmları',
+              title: context.l10n.priceAlerts,
               subtitle: () {
                 final aktif = ref
                         .watch(priceAlertsProvider)
@@ -636,8 +631,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 8),
             _SwitchTile(
               icon: Icons.people_outline_rounded,
-              title: 'Ortaklık daveti bildirimleri',
-              subtitle: 'Yeni ortaklık isteği geldiğinde bildirim al',
+              title: context.l10n.partnerInviteNotifications,
+              subtitle: context.l10n.partnerInviteNotificationsSubtitle,
               value: ref.watch(partnerNotificationsProvider),
               onChanged: (v) =>
                   ref.read(partnerNotificationsProvider.notifier).set(v),
@@ -665,7 +660,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // ve `sync` ilk satırda döner (bkz. LiveActivityService).
             // Çalışmayan bir ayarı göstermek kullanıcıyı yanıltır.
             if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-              const SandikSectionHeader(title: 'CANLI ETKİNLİKLER'),
+              SandikSectionHeader(title: context.l10n.liveActivitiesUpper),
               const SizedBox(height: 12),
               const _LiveActivitySection(),
               const SizedBox(height: 28),
@@ -677,9 +672,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 4),
             _SwitchTile(
               icon: Icons.fingerprint_rounded,
-              title: 'Biyometrik kilit',
+              title: context.l10n.biometricLock,
               subtitle:
-                  'Uygulamayı açarken Face ID / parmak izi / cihaz PIN\'i iste',
+                  context.l10n.biometricLockSubtitle,
               value: ref.watch(biometricLockProvider),
               onChanged: (v) async {
                 if (v) {
@@ -703,16 +698,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             _SettingsTile(
               icon: Icons.download_outlined,
-              title: 'Verilerimi İndir',
-              subtitle: 'Tüm verilerini JSON dosyası olarak al (KVKK Madde 11)',
+              title: context.l10n.downloadMyData,
+              subtitle: context.l10n.downloadMyDataSubtitle,
               trailing:
                   _exporting ? const CustomLoadingIndicator(size: 18) : null,
               onTap: _exporting ? null : _exportData,
             ),
             _SettingsTile(
               icon: Icons.delete_forever_outlined,
-              title: 'Hesabımı Sil',
-              subtitle: 'Tüm verilerin kalıcı olarak silinir',
+              title: context.l10n.deleteMyAccount,
+              subtitle: context.l10n.deleteMyAccountSubtitle,
               destructive: true,
               trailing:
                   _deleting ? const CustomLoadingIndicator(size: 18) : null,
@@ -721,56 +716,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ];
 
   List<Widget> _yardim() => [
-            const SandikSectionHeader(title: 'DESTEK'),
+            SandikSectionHeader(title: context.l10n.supportUpper),
             const SizedBox(height: 12),
             _SettingsTile(
               icon: Icons.mail_outline_rounded,
-              title: 'Bize Ulaş',
+              title: context.l10n.contactUs,
               subtitle: _supportEmail,
               onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
             ),
             _SettingsTile(
               icon: Icons.explore_outlined,
-              title: 'Tanıtım turunu yeniden izle',
-              subtitle: 'Ekranların ne işe yaradığını hatırla',
+              title: context.l10n.replayTour,
+              subtitle: context.l10n.replayTourSubtitle,
               // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
               // köke dönülür ve katman orada açılır.
               onTap: () => OnboardingScreen.yenidenBaslat(context),
             ),
             _SettingsTile(
               icon: Icons.rate_review_outlined,
-              title: 'Şikayet & Tavsiye',
-              subtitle: 'Görüşünü bize ilet',
+              title: context.l10n.feedbackTitle,
+              subtitle: context.l10n.feedbackSubtitle,
               onTap: _openFeedbackSheet,
             ),
             const SizedBox(height: 28),
-            const SandikSectionHeader(title: 'YASAL'),
+            SandikSectionHeader(title: context.l10n.legalUpper),
             const SizedBox(height: 12),
             _SettingsTile(
               icon: Icons.privacy_tip_outlined,
-              title: 'Gizlilik Politikası',
-              subtitle: 'Verilerin nasıl işleniyor',
-              onTap: () => _showLegalDoc('Gizlilik Politikası',
+              title: context.l10n.privacyPolicy,
+              subtitle: context.l10n.privacyPolicySubtitle,
+              onTap: () => _showLegalDoc(context.l10n.privacyPolicy,
                   LegalDocs.privacy, Icons.privacy_tip_outlined),
             ),
             _SettingsTile(
               icon: Icons.gavel_outlined,
-              title: 'Kullanım Koşulları',
-              subtitle: 'Hizmet sözleşmesi',
+              title: context.l10n.termsOfUse,
+              subtitle: context.l10n.termsOfUseSubtitle,
               onTap: () => _showLegalDoc(
-                  'Kullanım Koşulları', LegalDocs.terms, Icons.gavel_outlined),
+                  context.l10n.termsOfUse, LegalDocs.terms, Icons.gavel_outlined),
             ),
             _SettingsTile(
               icon: Icons.shield_outlined,
-              title: 'KVKK Aydınlatma Metni',
-              subtitle: 'Kişisel veri işleme aydınlatması',
-              onTap: () => _showLegalDoc('KVKK Aydınlatma Metni',
+              title: context.l10n.kvkkNotice,
+              subtitle: context.l10n.kvkkNoticeSubtitle,
+              onTap: () => _showLegalDoc(context.l10n.kvkkNotice,
                   LegalDocs.kvkk, Icons.shield_outlined),
             ),
             _SettingsTile(
               icon: Icons.gavel_rounded,
-              title: 'Yatırım Tavsiyesi Reddi',
-              subtitle: 'Onayladığın yasal uyarı metnini görüntüle',
+              title: context.l10n.investmentDisclaimer,
+              subtitle: context.l10n.disclaimerSubtitle,
               onTap: _showDisclaimerText,
             ),
             const SizedBox(height: 28),
@@ -833,7 +828,7 @@ class _ThemeModePicker extends ConsumerWidget {
           for (final (mode, icon, label) in options)
             Expanded(
               child: SandikTappable(
-                semanticLabel: '$label tema',
+                semanticLabel: context.l10n.themeSemantics(label),
                 // Uygulama DIŞI yüzeylere (kilit ekranı + widget) itiş
                 // BURADA YAPILMAZ.
                 //
@@ -921,7 +916,7 @@ class _BaseCurrencyPicker extends ConsumerWidget {
               for (final (birim, icon) in _options)
                 Expanded(
                   child: SandikTappable(
-                    semanticLabel: 'Baz para birimi ${birim.label}',
+                    semanticLabel: context.l10n.baseCurrencySemantics(birim.label),
                     onTap: () => setBaseCurrency(ref, birim),
                     child: AnimatedContainer(
                       duration: SandikMotion.stateOf(context),
@@ -1005,7 +1000,7 @@ class _InvestorLevelPicker extends ConsumerWidget {
               for (final s in YatirimciSeviyesi.values)
                 Expanded(
                   child: SandikTappable(
-                    semanticLabel: '${s.etiket(context)} seviye',
+                    semanticLabel: context.l10n.levelSemantics(s.etiket(context)),
                     onTap: () => ref
                         .read(investorLevelIndexProvider.notifier)
                         .set(s.index),
@@ -1329,8 +1324,8 @@ class _LiveActivitySection extends ConsumerWidget {
       children: [
         _SwitchTile(
           icon: Icons.schedule_rounded,
-          title: 'Gün boyu göster',
-          subtitle: 'Kapalıyken yalnızca seçtiğin saat aralığında görünür.',
+          title: context.l10n.showAllDay,
+          subtitle: context.l10n.showAllDaySubtitle,
           value: isAllDay,
           onChanged: (v) => _setAllDay(ref, v),
         ),
@@ -1342,7 +1337,7 @@ class _LiveActivitySection extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
             child: Text(
-              'Gösterim aralığı',
+              context.l10n.displayWindow,
               style: TextStyle(
                   color: p.text90, fontSize: 14, fontWeight: FontWeight.w600),
             ),
@@ -1351,7 +1346,7 @@ class _LiveActivitySection extends ConsumerWidget {
             children: [
               Expanded(
                 child: _TimeBox(
-                  label: 'Başlangıç',
+                  label: context.l10n.startTime,
                   value: _fmt(start),
                   onTap: () => _pick(context, ref, isStart: true),
                 ),
@@ -1359,7 +1354,7 @@ class _LiveActivitySection extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _TimeBox(
-                  label: 'Bitiş',
+                  label: context.l10n.endTime,
                   value: _fmt(end),
                   onTap: () => _pick(context, ref, isStart: false),
                 ),
@@ -1371,9 +1366,8 @@ class _LiveActivitySection extends ConsumerWidget {
         const SizedBox(height: 4),
         _SwitchTile(
           icon: Icons.weekend_outlined,
-          title: 'Hafta sonu da göster',
-          subtitle: 'Hafta sonu BIST kapalıdır; banner son kapanışı '
-              '"Piyasa kapalı" etiketiyle gösterir.',
+          title: context.l10n.showOnWeekend,
+          subtitle: context.l10n.showOnWeekendSubtitle,
           value: weekend,
           onChanged: (v) async {
             await ref.read(liveActivityWeekendProvider.notifier).set(v);
@@ -1393,10 +1387,8 @@ class _LiveActivitySection extends ConsumerWidget {
         const _SubSectionTitle('Gizlilik'),
         _SwitchTile(
           icon: Icons.visibility_off_outlined,
-          title: 'Tutarları göster',
-          subtitle: 'Kapalıyken yalnızca günlük yüzde ve grafik görünür. '
-              'Kilit ekranı telefonunuz açılmadan görülebildiği için '
-              'varsayılan olarak kapalıdır.',
+          title: context.l10n.showAmounts,
+          subtitle: context.l10n.showAmountsSubtitle,
           value: ref.watch(lockScreenAmountsProvider),
           onChanged: (v) async {
             await ref.read(lockScreenAmountsProvider.notifier).set(v);
@@ -1585,8 +1577,8 @@ class _PartnerActivitySwitchState
   Widget build(BuildContext context) {
     return _SwitchTile(
       icon: Icons.favorite_border_rounded,
-      title: 'Ortak hareketi bildirimleri',
-      subtitle: 'Ortağın portföyüne ekleme yaptığında günlük özette an',
+      title: context.l10n.partnerActivityNotifications,
+      subtitle: context.l10n.partnerActivityNotificationsSubtitle,
       value: _deger ?? true,
       onChanged: _yaz,
     );
@@ -1709,7 +1701,7 @@ class _QuietHoursTile extends ConsumerWidget {
       children: [
         _SwitchTile(
           icon: Icons.bedtime_outlined,
-          title: 'Sessiz saatler',
+          title: context.l10n.quietHours,
           subtitle: q.enabled
               ? 'Brifing, özet, takvim ve alarm push\'ları '
                   '${_fmt(q.start!)}–${_fmt(q.end!)} arası gönderilmez'
@@ -1727,7 +1719,7 @@ class _QuietHoursTile extends ConsumerWidget {
               children: [
                 Expanded(
                   child: _TimeBox(
-                    label: 'Başlangıç',
+                    label: context.l10n.startTime,
                     value: _fmt(q.start!),
                     onTap: () => _pick(context, ref, isStart: true),
                   ),
@@ -1735,7 +1727,7 @@ class _QuietHoursTile extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _TimeBox(
-                    label: 'Bitiş',
+                    label: context.l10n.endTime,
                     value: _fmt(q.end!),
                     onTap: () => _pick(context, ref, isStart: false),
                   ),

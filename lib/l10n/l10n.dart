@@ -21,3 +21,19 @@ extension L10nX on BuildContext {
   AppLocalizations get l10n =>
       AppLocalizations.of(this) ?? AppLocalizationsTr();
 }
+
+/// Dönem kimliği → ekranda görünen etiket (3.20).
+///
+/// İki ekranın (`portfolio_performance`, `asset_detail`) dönem listeleri
+/// `static const` ve öyle kalmalı: indeksleri durum makinesinin parçası.
+/// Bu yüzden listedeki Türkçe etiket artık bir KİMLİKTİR, gösterim buradan
+/// geçer. Tanınmayan kimlik olduğu gibi döner (yeni dönem eklenirse sessizce
+/// kaybolmasın).
+String donemEtiketi(AppLocalizations l, String kimlik) => switch (kimlik) {
+      'GÜNLÜK' => l.periodDaily,
+      '1H' => l.period1W,
+      '1A' => l.period1M,
+      '6A' => l.period6M,
+      '1Y' => l.period1Y,
+      _ => kimlik,
+    };

@@ -49,7 +49,7 @@ class _PeriodChangeRow extends StatelessWidget {
           // tutarı taşırıyordu (320pt'de 54px). Değer zaten Flexible.
           Flexible(
             child: Text(
-              '$label DEĞİŞİM',
+              context.l10n.periodChangeUpper(label),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: context.t.labelSmall?.copyWith(
@@ -164,7 +164,7 @@ class _PnlSummaryStrip extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('ALIŞ / $unitLabel',
+                Text(context.l10n.buyPerUnit(unitLabel),
                     style: context.t.labelSmall?.copyWith(
                         letterSpacing: 0.8,
                         fontWeight: FontWeight.w700,
@@ -190,7 +190,7 @@ class _PnlSummaryStrip extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('BUGÜN / $unitLabel',
+                Text(context.l10n.todayPerUnit(unitLabel),
                     style: context.t.labelSmall?.copyWith(
                         letterSpacing: 0.8,
                         fontWeight: FontWeight.w700,

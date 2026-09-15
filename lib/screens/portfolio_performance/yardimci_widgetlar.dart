@@ -77,7 +77,8 @@ class _GunIciVeriYokNotu extends StatelessWidget {
   Widget build(BuildContext context) {
     // Sıra deterministik olsun — küme sırası tur başına değişebilir ve
     // aynı ekran her build'de farklı okunurdu.
-    final adlar = (turler.map((t) => t.label).toList()..sort()).join(', ');
+    final adlar =
+        (turler.map((t) => t.labelOf(context.l10n)).toList()..sort()).join(', ');
     return Container(
       padding:
           const EdgeInsets.symmetric(horizontal: SandikSpace.md, vertical: 12),

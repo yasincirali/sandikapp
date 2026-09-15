@@ -7,6 +7,7 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
 import '../services/analytics_service.dart';
@@ -349,7 +350,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     target: TourTarget.yenileTusu,
                     child: _HeaderIconButton(
                       onTap: _reload,
-                      semanticLabel: 'Fiyatları yenile',
+                      semanticLabel: context.l10n.refreshPrices,
                       child: _reloading
                           ? const CustomLoadingIndicator(size: 20)
                           : Icon(Icons.refresh_rounded,
@@ -369,8 +370,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // (Severity: High) çiğniyordu. Takip listesi bir VARLIK
                   // LİSTESİDİR; yeri Portföy sekmesinin gövdesi
                   // (`portfolio_screen.dart`), üst bar değil.
-                  _SignalBadgeButton(onTap: _scrollToSignals),
-                  const SizedBox(width: SandikSpace.sm),
+                  // Teknik sinyal zili Başlangıç seviyesinde GİZLİ
+                  // (`seviyeGorunurlugu`): sinyal, gösterge okumayı bilen
+                  // kullanıcıya hitap eder. Varsayılan Orta olduğu için
+                  // seçim yapmayan hiç kimse bunu kaybetmez.
+                  if (seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
+                      .teknikSinyaller) ...[
+                    _SignalBadgeButton(onTap: _scrollToSignals),
+                    const SizedBox(width: SandikSpace.sm),
+                  ],
                   SandikLogoutButton(
                       onPressed: () => confirmAndLogout(context, ref)),
                 ],
@@ -457,13 +465,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
               ),
             ),
-            SliverToBoxAdapter(
-              child: PercentileStrip(
-                myAssets: myState.assets,
-                toTRY: myState.toTRY,
-                padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+            // Yüzdelik dilim Başlangıç seviyesinde GİZLİ: sosyal
+            // karşılaştırma, yeni başlayanın ihtiyacı olan ilk bilgi değil
+            // (`seviyeGorunurlugu`). Şerit kendi kapılarını (bayrak,
+            // opt-in, k-anonimlik) ayrıca kuruyor.
+            if (seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
+                .percentile)
+              SliverToBoxAdapter(
+                child: PercentileStrip(
+                  myAssets: myState.assets,
+                  toTRY: myState.toTRY,
+                  padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+                ),
               ),
-            ),
             // "Bu hafta" kartı en SONA gelir: diğer ikisi alım gücü ve
             // sosyal karşılaştırma gibi yavaş değişen bağlamlar, bu ise
             // haftalık bir rakam. Üstüne konsa daha kalıcı olan iki
@@ -537,7 +551,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       _typeChip(null, context.l10n.allTypes),
                       for (final t
                           in AssetType.values)
-                        _typeChip(t, t.label),
+                        _typeChip(t, t.labelOf(context.l10n)),
                     ],
                   ),
                 ),
@@ -548,7 +562,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, 16, hp, 8),
-                child: const SandikSectionHeader(title: 'VARLIK DAĞILIMI'),
+                child: SandikSectionHeader(title: context.l10n.assetAllocation),
               ),
             ),
           if (!isEmptyOwn)
@@ -563,7 +577,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, 24, hp, 8),
-                child: const SandikSectionHeader(title: 'PORTFÖY HAREKETLERİ'),
+                child: SandikSectionHeader(title: context.l10n.portfolioActivity),
               ),
             ),
           // Recent transaction list (show individual asset transactions newest -> oldest)
@@ -619,7 +633,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
                 child: SandikTappable(
-                  semanticLabel: 'Tüm hareketleri gör',
+                  semanticLabel: context.l10n.seeAllTransactions,
                   onTap: () => pushGuarded(
                     context,
                     adaptiveRoute<void>(
@@ -640,7 +654,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Tümünü Gör ($ledgerCount)',
+                            context.l10n.seeAllCount(ledgerCount),
                             style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: context.c.amberText,
@@ -759,7 +773,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(width: SandikSpace.sm),
               Expanded(
                 flex: 2,
-                child: Text(e.key.label,
+                child: Text(e.key.labelOf(context.l10n),
                     style: context.t.titleMedium
                         ?.copyWith(color: context.c.text90)),
               ),
@@ -837,7 +851,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
   /// yeniden açılınca kayıt geri gelir ve uygulamaya güveni sarsılır.
   static void _hataGoster(BuildContext context) {
     if (!context.mounted) return;
-    sandikSnack(context, 'Bildirim silinemedi. Bağlantını kontrol et.',
+    sandikSnack(context, context.l10n.signalDeleteFailed,
         kind: SandikSnackKind.error);
   }
 
@@ -880,19 +894,18 @@ class _SignalsBottomSheet extends ConsumerWidget {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kalıcı sil'),
+        title: Text(context.l10n.permanentDelete),
         content: Text(
-          'Geçmişte $gecmis, aktif $aktif bildirim var. '
-          'Ne silinsin?',
+          context.l10n.signalDeleteChoice(gecmis, aktif),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Vazgeç'),
+            child: Text(context.l10n.cancelShort),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Yalnızca geçmiş'),
+            child: Text(context.l10n.onlyHistory),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -992,7 +1005,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                     // devreye girer (aşağıda, GEÇMİŞ başlığının yanında).
                     if (active.isNotEmpty)
                       SandikTappable(
-                        semanticLabel: 'Tüm sinyalleri temizle',
+                        semanticLabel: context.l10n.clearAllSignals,
                         // Toplu ve geri alınamaz bir işlem: HIG "forgiveness"
                         // ilkesi onay ister. Tek satır silmede onay yok
                         // (aşırıya kaçmamak için), ama "tümü" farklıdır.
@@ -1003,16 +1016,14 @@ class _SignalsBottomSheet extends ConsumerWidget {
                         onTap: () async {
                           final onay = await _onayAl(
                             context,
-                            baslik: 'Tümünü temizle',
+                            baslik: context.l10n.clearAllLower,
                             // "Kaldırılacak" DEĞİL "geçmişe taşınacak":
                             // bu işlem kalıcı silmez, kayıtlar GEÇMİŞ
                             // bölümünde durur. Eski metin kullanıcıya
                             // silineceklerini söylüyordu ve bu yüzden
                             // "sildim ama duruyor" hissi doğuyordu.
-                            mesaj: '${active.length} bildirim geçmişe '
-                                'taşınacak. Kalıcı silmek için geçmişteki '
-                                '"Geçmişi Sil" düğmesini kullan.',
-                            eylem: 'Temizle',
+                            mesaj: context.l10n.clearAllSignalsBody(active.length),
+                            eylem: context.l10n.clearVerb,
                           );
                           if (!onay) return;
                           try {
@@ -1023,7 +1034,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                           }
                         },
                         child: Text(
-                          'Tümünü Temizle',
+                          context.l10n.clearAllUpper,
                           style: context.t.titleSmall?.copyWith(
                               color: context.c.text36,
                               decoration: TextDecoration.none),
@@ -1041,7 +1052,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                       Icon(Icons.check_circle_outline_rounded,
                           color: context.c.gain, size: 22),
                       const SizedBox(width: SandikSpace.md),
-                      Text('Şu an aktif sinyal yok',
+                      Text(context.l10n.noActiveSignals,
                           style: context.t.titleMedium?.copyWith(
                               color: context.c.text58,
                               decoration: TextDecoration.none)),
@@ -1087,7 +1098,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                               child: Row(
                                 children: [
                                   Text(
-                                    'GEÇMİŞ',
+                                    context.l10n.historyUpper,
                                     style: context.t.labelMedium?.copyWith(
                                         fontWeight: FontWeight.w800,
                                         letterSpacing: 1.2,
@@ -1097,8 +1108,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                   const Spacer(),
                                   SandikTappable(
                                     semanticLabel:
-                                        'Geçmişteki ${history.length} bildirimi '
-                                        'kalıcı olarak sil',
+                                        context.l10n.deleteHistoryCount(history.length),
                                     onTap: () async {
                                       // Aktif sinyal de varsa kullanıcıya
                                       // KAPSAM sorulur: yalnızca geçmiş mi,
@@ -1116,11 +1126,9 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                       if (!hepsiniSil) {
                                         final onay = await _onayAl(
                                           context,
-                                          baslik: 'Geçmişi sil',
-                                          mesaj: '${history.length} bildirim '
-                                              'KALICI olarak silinecek. '
-                                              'Geri alınamaz.',
-                                          eylem: 'Kalıcı Sil',
+                                          baslik: context.l10n.deleteHistoryTitle,
+                                          mesaj: context.l10n.deleteHistoryBody(history.length),
+                                          eylem: context.l10n.permanentDeleteUpper,
                                         );
                                         if (!onay) return;
                                       }
@@ -1148,7 +1156,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                               size: 15, color: context.c.loss),
                                           const SizedBox(width: 4),
                                           Text(
-                                            'Geçmişi Sil',
+                                            context.l10n.deleteHistoryButton,
                                             style: context.t.titleSmall
                                                 ?.copyWith(
                                                     color: context.c.loss,
@@ -1215,7 +1223,7 @@ class _SignalTile extends StatelessWidget {
     final isSell = alert.signal == SignalType.sell;
     final Color color =
         isBuy ? context.c.gain : (isSell ? context.c.loss : context.c.text58);
-    final String label = isBuy ? 'AL' : (isSell ? 'SAT' : 'NÖTR');
+    final String label = isBuy ? 'AL' : (isSell ? 'SAT' : context.l10n.signalNeutral);
     final IconData icon = isBuy
         ? Icons.trending_up_rounded
         : (isSell
@@ -1286,8 +1294,8 @@ class _SignalTile extends StatelessWidget {
                   const SizedBox(height: SandikSpace.xs),
                   Text(
                     faded
-                        ? '${_formatDate(alert.detectedAt)} · silindi'
-                        : '$count gösterge · ${fmtPct(alert.confidence, digits: 0)} güven',
+                        ? context.l10n.signalDeletedAt(_formatDate(alert.detectedAt))
+                        : context.l10n.signalConfidence(count, fmtPct(alert.confidence, digits: 0)),
                     style: context.t.bodySmall?.copyWith(
                         color: context.c.text58.withValues(alpha: alphaFactor),
                         decoration: TextDecoration.none),
@@ -1338,7 +1346,7 @@ class _BalanceToggleButton extends ConsumerWidget {
     final hidden = ref.watch(balanceHiddenProvider);
     return SandikTappable(
       onTap: () => ref.read(balanceHiddenProvider.notifier).set(!hidden),
-      semanticLabel: hidden ? 'Bakiyeyi göster' : 'Bakiyeyi gizle',
+      semanticLabel: hidden ? context.l10n.showBalance : context.l10n.hideBalance,
       child: Container(
         width: 44,
         height: 44,

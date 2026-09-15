@@ -122,7 +122,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       typeRows.add((
         type: e.key,
         row: _BreakdownRow(
-          label: e.key.label,
+          label: e.key.labelOf(context.l10n),
           first: ep.first,
           last: ep.last,
           flow: flowOf[e.key] ?? 0,
@@ -136,7 +136,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
         final pep = _endpoints(p.value);
         if (pep == null) continue;
         kids.add(_BreakdownRow(
-          label: _positionLabel(p.key, e.key),
+          label: _positionLabel(p.key, e.key, context.l10n),
           first: pep.first,
           last: pep.last,
         ));

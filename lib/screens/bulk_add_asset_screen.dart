@@ -14,6 +14,7 @@ import 'add_asset_screen.dart';
 import 'csv_import_screen.dart';
 import 'paywall_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../l10n/l10n.dart';
 
 class BulkAddAssetScreen extends ConsumerStatefulWidget {
   const BulkAddAssetScreen({super.key});
@@ -456,7 +457,7 @@ class _BulkItemTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.name.isEmpty ? item.type.label : item.name,
+                    item.name.isEmpty ? item.type.labelOf(context.l10n) : item.name,
                     style: context.t.bodyLarge?.copyWith(
                         color: context.c.text90, fontWeight: FontWeight.w600),
                     maxLines: 1,

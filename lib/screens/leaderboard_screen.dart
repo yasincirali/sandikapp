@@ -14,6 +14,7 @@ import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../utils/polling.dart';
+import '../l10n/l10n.dart';
 
 class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
@@ -1781,7 +1782,7 @@ class _AllocationDetail extends StatelessWidget {
       ..sort((a, b) => b.value.compareTo(a.value));
     final segments = entries
         .map((e) => (
-              label: _labelFor(e.key),
+              label: _labelFor(context, e.key),
               pct: e.value,
               color: _colorFor(e.key),
             ))
@@ -1824,9 +1825,9 @@ class _AllocationDetail extends StatelessWidget {
     );
   }
 
-  String _labelFor(String typeKey) {
+  String _labelFor(BuildContext context, String typeKey) {
     for (final t in AssetType.values) {
-      if (t.name == typeKey) return t.label;
+      if (t.name == typeKey) return t.labelOf(context.l10n);
     }
     // Bilinmeyen tür (ileride eklenecek yeni tür); kelimeyi düzgün göster.
     if (typeKey.isEmpty) return '—';

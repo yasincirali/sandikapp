@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_en.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/models/yatirimci_seviyesi.dart';
+
+import 'helpers/kaynak.dart';
 import 'package:portfoy_takip/services/insight_metrics_service.dart';
 
 /// Yatırımcı seviyesi — görünürlük tablosu ve ileri metrik cebri.
@@ -34,9 +36,18 @@ void main() {
   });
 
   group('seviyeGorunurlugu', () {
-    test('Orta = bugünkü küme (sağlık, XIRR, yüzdelik açık; ileri kapalı)', () {
+    test('Orta = bugünkü küme (ileri kart hariç her şey açık)', () {
       final g = seviyeGorunurlugu(YatirimciSeviyesi.orta);
-      expect(g, (saglik: true, xirr: true, percentile: true, ileri: false));
+      expect(
+        g,
+        (
+          saglik: true,
+          xirr: true,
+          percentile: true,
+          teknikSinyaller: true,
+          ileri: false
+        ),
+      );
     });
 
     test('Başlangıç yalnızca gizler', () {
@@ -44,6 +55,7 @@ void main() {
       expect(g.saglik, isFalse);
       expect(g.xirr, isFalse);
       expect(g.percentile, isFalse);
+      expect(g.teknikSinyaller, isFalse);
       expect(g.ileri, isFalse);
     });
 
@@ -53,7 +65,19 @@ void main() {
       expect(ileri.saglik, orta.saglik);
       expect(ileri.xirr, orta.xirr);
       expect(ileri.percentile, orta.percentile);
+      expect(ileri.teknikSinyaller, orta.teknikSinyaller);
       expect(ileri.ileri, isTrue);
+    });
+
+    test('Başlangıç ilk açılışta GÖRÜNEN yüzeyleri de kapatır', () {
+      // Asıl şikâyet buydu (2026-09-15): tablo yalnızca 1Y'ye bağlı Özet
+      // kartlarını süzerken, bir yıllık geçmişi olmayan kullanıcı seviye
+      // değiştirince hiçbir fark görmüyordu. Ana ekran yüzdelik şeridi ve
+      // teknik sinyal yüzeyleri dönemden ve havuz eşiğinden bağımsız.
+      final b = seviyeGorunurlugu(YatirimciSeviyesi.baslangic);
+      expect(b.teknikSinyaller, isFalse,
+          reason: 'ana ekran sinyal zili + tekil varlık sinyal kartı/paneli');
+      expect(b.percentile, isFalse, reason: 'ana ekran yüzdelik şeridi');
     });
   });
 
@@ -99,6 +123,43 @@ void main() {
             getiriPct: null, volatilitePct: null, xirrPct: null, drawdown: null),
         isNull,
       );
+    });
+  });
+
+  // ── Bağlantı denetimi: tablo GERÇEKTEN ekranlara bağlı mı ────────────────
+  //
+  // Karar tablosunun doğru olması yetmez; şikâyetin kökü tablonun yalnızca
+  // tek bir (ve çoğu kullanıcıda boş kalan) yüzeye bağlı olmasıydı. Bu grup
+  // bağlantının kendisini kilitler.
+  group('ekranlara bağlı', () {
+    test('ana ekran: yüzdelik şeridi ve sinyal zili seviyeye bakar', () {
+      final src = ekranKaynagiSync('lib/screens/home_screen.dart');
+      expect(src.contains('seviyeGorunurlugu'), isTrue,
+          reason: 'ana ekran seviye tablosunu okumuyor');
+      expect(RegExp(r'\.percentile\)\s*\n\s*SliverToBoxAdapter\(\s*\n\s*child: PercentileStrip')
+          .hasMatch(src), isTrue,
+          reason: 'yüzdelik şeridi seviyeye bağlı değil');
+      expect(src.contains('.teknikSinyaller) ...['), isTrue,
+          reason: 'sinyal zili seviyeye bağlı değil');
+    });
+
+    test('tekil varlık: sinyal kartı ve gösterge paneli seviyeye bakar', () {
+      final src = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
+      expect(src.contains('_sinyalYuzeyleri'), isTrue);
+      expect(src.contains('if (_sinyalYuzeyleri)\n                  AssetSignalCard'),
+          isTrue,
+          reason: 'sinyal kartı seviyeye bağlı değil');
+      expect(src.contains('if (_sinyalYuzeyleri) ...[\n                  const SizedBox(height: 24),\n                  TechnicalSignalPanel'),
+          isTrue,
+          reason: 'gösterge paneli seviyeye bağlı değil');
+    });
+
+    test('Özet: dört kart da seviyeye bakar', () {
+      final src =
+          ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart');
+      for (final alan in ['gorunur.saglik', 'gorunur.ileri', 'gorunur.percentile', 'gorunur.xirr']) {
+        expect(src.contains(alan), isTrue, reason: '$alan bağlı değil');
+      }
     });
   });
 }

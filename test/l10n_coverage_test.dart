@@ -33,12 +33,19 @@ void main() {
     'lib/screens/disclaimer_acceptance_screen.dart': 0,
     'lib/screens/forgot_password_screen.dart': 0,
     'lib/screens/otp_verification_screen.dart': 0,
+    'lib/screens/portfolio_screen.dart': 1,
+    'lib/screens/home_screen.dart': 3,
+    'lib/screens/asset_detail_screen.dart': 8,
+    // Tür adları ve sembol ipuçları sözlükte; `label` alanı TÜRKÇE kalır
+    // (bildirim/özet/paylaşım metinleri ve alt kategori karşılaştırmaları
+    // onu veri gibi kullanıyor — bkz. `AssetType.labelOf`).
+    'lib/models/asset_type.dart': 12,
+    'lib/screens/profile_screen.dart': 14,
+    'lib/screens/add_asset_screen.dart': 21,
     // Yasal metin blokları (KVKK, açık rıza) bilinçli Türkçe.
     'lib/screens/register_screen.dart': 25,
-    'lib/screens/home_screen.dart': 30,
-    'lib/screens/portfolio_screen.dart': 21,
-    'lib/screens/add_asset_screen.dart': 54,
-    'lib/screens/settings_screen.dart': 102,
+    // Kalan: Canlı Etkinlik alt bölümü ve teşhis/geliştirici araçları.
+    'lib/screens/settings_screen.dart': 39,
   };
 
   for (final e in tavan.entries) {

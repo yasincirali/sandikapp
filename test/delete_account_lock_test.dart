@@ -58,7 +58,9 @@ void main() {
           'kapatmaya çalışır. Görsel karşılığı olmalı.',
     );
     expect(
-      duz.contains('Hesabın siliniyor'),
+      // 3.20: metin `context.l10n.deletingAccount` (sözlükte
+      // "Hesabın siliniyor…").
+      duz.contains('l10n.deletingAccount'),
       isTrue,
       reason: 'Örtü ne olduğunu söylemeli.',
     );

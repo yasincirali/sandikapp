@@ -19,6 +19,7 @@ import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import 'paywall_screen.dart';
+import '../l10n/l10n.dart';
 
 /// Takibe alınacak varlığı seçme ekranı.
 ///
@@ -365,7 +366,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: context.t.bodyMedium
                             ?.copyWith(color: context.c.text90)),
-                    Text('${c.ticker} · ${c.type.label}',
+                    Text('${c.ticker} · ${c.type.labelOf(context.l10n)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: context.t.bodySmall

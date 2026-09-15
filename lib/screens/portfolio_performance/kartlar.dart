@@ -122,7 +122,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
             children: [
               _typeChip(null, 'Tümü'),
               for (final t in AssetType.values)
-                _typeChip(t, t.label),
+                _typeChip(t, t.labelOf(context.l10n)),
             ],
           ),
         ),
@@ -402,7 +402,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         : (positive ? context.c.gain : context.c.loss);
 
     final tryFmt = ref.watch(bazParaProvider).formatter(digits: 0);
-    final periodLabel = _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].label;
+    final periodLabel = donemEtiketi(context.l10n,
+        _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].label);
     // Yıl, iki uç FARKLI yıla düşüyorsa yazılır.
     //
     // Sabit `d MMM` biçimi 1Y periyodunda "31 Ağu → 31 Ağu" üretiyordu:
@@ -630,7 +631,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       // `_positionLabel` ham `positionKey`'i insan-okunur hale getirir;
       // yoksa ekranda "altin|sub:çeyrek|TRY" görünürdü.
       etiket: (k) =>
-          _positionLabel(k, breakdown.positionType[k] ?? AssetType.diger),
+          _positionLabel(k, breakdown.positionType[k] ?? AssetType.diger,
+              context.l10n),
     );
 
     // Tür dağılımı canlı portföyden — karakter etiketi için.

@@ -253,7 +253,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             TourAnchor(
               target: TourTarget.topluEkle,
               child: IconButton(
-              tooltip: 'Toplu ekle',
+              tooltip: context.l10n.bulkAdd,
               icon: Icon(Icons.playlist_add_rounded, color: context.c.text58),
               // Toplu ekleme başarıyla bittiğinde `true` döner; o zaman bu
               // ekran da kapanır ve kullanıcı portföye ulaşır. Aksi halde
@@ -271,7 +271,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             TourAnchor(
               target: TourTarget.hizliGiris,
               child: IconButton(
-                tooltip: 'Sesli / Hızlı giriş',
+                tooltip: context.l10n.quickEntryVoice,
                 icon: Icon(Icons.mic_none_rounded, color: context.c.text58),
                 onPressed: _showQuickEntrySheet,
               ),
@@ -349,12 +349,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── Bağlama göre "kimlik" alanının etiketi ─────────────────────────────────
   String _identityLabel() {
-    if (_isBist100 || _type == AssetType.hisse) return 'Hisse';
-    if (_isFon) return 'Fon';
-    if (_type == AssetType.altin) return 'Altın Türü';
-    if (_isDoviz) return 'Para Birimi';
-    if (_type == AssetType.emtia) return 'Emtia';
-    return 'Varlık';
+    if (_isBist100 || _type == AssetType.hisse) return context.l10n.identityStock;
+    if (_isFon) return context.l10n.identityFund;
+    if (_type == AssetType.altin) return context.l10n.identityGoldKind;
+    if (_isDoviz) return context.l10n.identityCurrency;
+    if (_type == AssetType.emtia) return context.l10n.identityCommodity;
+    return context.l10n.assetFallbackName;
   }
 
   // ── Kimlik bölümü: hisse/fon → picker; altın → chip grid; döviz → 4 kart
@@ -368,14 +368,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       children: [
         _brandInput(
           controller: _name,
-          hint: _type == AssetType.emtia ? 'Örn: Petrol (Brent)' : context.l10n.assetName,
+          hint: _type == AssetType.emtia ? context.l10n.commodityHint : context.l10n.assetName,
           validator: (v) =>
               (v == null || v.trim().isEmpty) ? context.l10n.nameRequired : null,
         ),
         const SizedBox(height: 8),
         _brandInput(
           controller: _ticker,
-          hint: _type.tickerHint,
+          hint: _type.tickerHintOf(context.l10n),
           textCapitalization: TextCapitalization.characters,
           autocorrect: false,
           onChanged: (v) {
@@ -407,7 +407,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             Flexible(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text('veya listede yok',
+                child: Text(context.l10n.orNotInList,
                     style:
                         context.t.bodySmall?.copyWith(color: context.c.text36),
                     maxLines: 1,
@@ -423,7 +423,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         const SizedBox(height: 8),
         _brandInput(
           controller: _ticker,
-          hint: 'Sembol yaz (örn: AAPL, THYAO.IS)',
+          hint: context.l10n.symbolHint,
           textCapitalization: TextCapitalization.characters,
           autocorrect: false,
           onChanged: (v) {
@@ -434,7 +434,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         const SizedBox(height: 8),
         _brandInput(
           controller: _name,
-          hint: 'Şirket adı (opsiyonel — semboldan otomatik çekilir)',
+          hint: context.l10n.companyNameHint,
         ),
       ],
     );
@@ -452,7 +452,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         return Semantics(
           button: true,
           selected: selected,
-          label: '${g.label} altın',
+          label: context.l10n.goldSemantics(g.label),
           child: GestureDetector(
           onTap: () {
             _yaz(_n.selectGold(g));
@@ -602,7 +602,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          'Alım-satım komisyonu maliyete eklenir — kâr/zarar gerçek rakamı gösterir.',
+          context.l10n.commissionNote,
           style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
       ],
@@ -662,7 +662,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Miktar girince toplam maliyet burada görünecek.',
+                context.l10n.costPreviewHint,
                 style: context.t.titleSmall?.copyWith(color: context.c.text58),
               ),
             ),
@@ -745,7 +745,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('TOPLAM MALİYET',
+                Text(context.l10n.totalCostUpper,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.labelLarge?.copyWith(
@@ -915,7 +915,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         final picked = await pickSandikDate(
           context,
           initialDate: _addedDate,
-          helpText: 'İşlem tarihi',
+          helpText: context.l10n.transactionDate,
         );
         if (picked != null) {
           _n.setDate(picked);
@@ -944,7 +944,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             // (320pt) "İşlem tarihi" + "14 Mart 2026" 38px taşıyordu.
             // `Spacer` boşluğu doldurur ama kimseyi daraltmaz.
             Flexible(
-              child: Text('İşlem tarihi',
+              child: Text(context.l10n.transactionDate,
                   style: context.t.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600, color: context.c.text90),
                   maxLines: 1,
@@ -988,7 +988,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 children: [
                   Icon(Icons.notes_rounded, size: 16, color: context.c.text58),
                   const SizedBox(width: 10),
-                  Text('Not ekle',
+                  Text(context.l10n.addNote,
                       style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: context.c.text90)),
@@ -1030,7 +1030,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 controller: _notes,
                 style: context.t.titleMedium?.copyWith(color: context.c.text90),
                 maxLines: 3,
-                decoration: context.inputDecoration('Notlarınız...'),
+                decoration: context.inputDecoration(context.l10n.notesHint),
               ),
             ),
           ),
@@ -1133,7 +1133,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             child: Semantics(
               button: true,
               selected: selected,
-              label: '${t.label} türü',
+              label: context.l10n.assetTypeSemantics(t.labelOf(context.l10n)),
               child: GestureDetector(
               onTap: () async {
                 _yaz(_n.selectType(t));
@@ -1169,7 +1169,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     Icon(t.icon,
                         size: 18, color: selected ? t.color : context.c.text58),
                     const SizedBox(width: 8),
-                    Text(t.label,
+                    Text(t.labelOf(context.l10n),
                         style: context.t.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: selected ? context.c.text90 : context.c.text58,
@@ -1273,7 +1273,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             child: Semantics(
               button: true,
               selected: selected,
-              label: 'Miktar $v',
+              label: context.l10n.quantitySemantics(v),
               child: GestureDetector(
               onTap: () => _quantity.text = v,
               child: AnimatedContainer(
@@ -1334,12 +1334,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
     return FormField<String>(
       validator: (_) => _isBist100 && _bist100SelectedTicker == null
-          ? 'Lütfen bir hisse seçin'
+          ? context.l10n.pickStockPrompt
           : null,
       builder: (state) => Semantics(
         button: true,
         label: selectedName == null
-            ? 'Hisse seç'
+            ? context.l10n.pickStock
             : 'Seçili hisse: $selectedName. Değiştirmek için çift dokun.',
         child: GestureDetector(
         onTap: _showBist100Picker,
@@ -1348,7 +1348,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           hasValue: _bist100SelectedTicker != null,
           hasError: state.hasError,
           badgeText: ticker,
-          mainText: selectedName ?? 'Hisse seçmek için dokunun...',
+          mainText: selectedName ?? context.l10n.pickStockTap,
           color: AssetType.hisse.color,
         ),
       )),
@@ -1379,11 +1379,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Widget _tefasSelectorField(ColorScheme cs) {
     return FormField<String>(
       validator: (_) =>
-          _isFon && _selectedFund == null ? 'Lütfen bir fon seçin' : null,
+          _isFon && _selectedFund == null ? context.l10n.pickFundPrompt : null,
       builder: (state) => Semantics(
         button: true,
         label: _selectedFund == null
-            ? 'Fon seç'
+            ? context.l10n.pickFund
             : 'Seçili fon: ${_selectedFund!.name}. Değiştirmek için çift dokun.',
         child: GestureDetector(
         onTap: _showTefasPicker,
@@ -1392,7 +1392,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           hasValue: _selectedFund != null,
           hasError: state.hasError,
           badgeText: _selectedFund?.code,
-          mainText: _selectedFund?.name ?? 'Fon seçmek için dokunun...',
+          mainText: _selectedFund?.name ?? context.l10n.pickFundTap,
           color: AssetType.fon.color,
         ),
       )),
@@ -1524,6 +1524,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       _yaz(_n.applyParsedEntry(entry));
 
   Future<void> _saveBatch(List<ParsedEntry> entries) async {
+    // Sözlük döngüden ÖNCE çözülür: `context` async boşlukların ardında
+    // kullanılamaz (`use_build_context_synchronously`), tür adı ise fiyat
+    // çekiminden sonra gerekiyor.
+    final l = context.l10n;
     if (entries.isEmpty) return;
     if (entries.length == 1) {
       _applyParsedEntry(entries.first);
@@ -1557,7 +1561,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         }
 
         if (assetName.isEmpty) {
-          assetName = entry.subCategory ?? entry.type.label;
+          assetName = entry.subCategory ?? entry.type.labelOf(l);
         }
 
         await ref.read(portfolioProvider.notifier).addAsset(
@@ -1599,7 +1603,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // ── Sepete ekleme modu: bulkCartProvider'a push, fiyat çekme yok ──
     if (widget.cartMode) {
       if (assetName.isEmpty) {
-        assetName = ticker.isNotEmpty ? ticker : (_subCategory ?? _type.label);
+        assetName =
+            ticker.isNotEmpty ? ticker : (_subCategory ?? _type.labelOf(context.l10n));
       }
       final item = BulkCartItem(
         id: widget.cartInitial?.id ?? _addAssetUuid.v4(),
@@ -1651,7 +1656,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     }
 
     if (assetName.isEmpty) {
-      assetName = ticker.isNotEmpty ? ticker : 'Varlık';
+      assetName = ticker.isNotEmpty ? ticker : context.l10n.assetFallbackName;
     }
 
     _n.setSaving(true);
@@ -1817,7 +1822,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
               Icon(Icons.bolt_rounded, color: context.c.amberText, size: 22),
               const SizedBox(width: 8),
               Text(
-                'Hızlı Giriş',
+                context.l10n.quickEntryTitle,
                 style: context.t.headlineSmall?.copyWith(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -1828,8 +1833,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Her satıra bir varlık yazın. Fiyat opsiyonel — boş bırakırsanız güncel fiyat otomatik çekilir.\n'
-            'Örn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet',
+            context.l10n.quickEntryHelp,
             style: context.t.titleSmall
                 ?.copyWith(color: context.c.text58, height: 1.5),
           ),
@@ -1843,7 +1847,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
             style: context.t.titleMedium?.copyWith(color: context.c.text90),
             decoration: InputDecoration(
               hintText:
-                  '100 dolar\n10 gram altın 4500 lira\nGARAN 500 adet 105 lira',
+                  context.l10n.quickEntryPlaceholder,
               hintStyle:
                   context.t.bodyMedium?.copyWith(color: context.c.text36),
               filled: true,
@@ -1881,7 +1885,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '${e.type.label}  ·  ${e.qty % 1 == 0 ? e.qty.toInt() : e.qty}'
+                          '${e.type.labelOf(context.l10n)}  ·  ${e.qty % 1 == 0 ? e.qty.toInt() : e.qty}'
                           '${e.subCategory != null ? '  ${e.subCategory}' : ''}'
                           '${e.price > 0 ? '  @ ${e.price % 1 == 0 ? e.price.toInt() : e.price} ₺' : '  (fiyat otomatik)'}',
                           style: context.t.titleSmall
@@ -1915,7 +1919,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                             backgroundColor: context.c.amberFill,
                             foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.playlist_add_check_rounded),
-                        label: Text('${_previews.length} varlığı kaydet',
+                        label: Text(context.l10n.saveNAssets(_previews.length),
                             style: context.t.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w700)),
                       )
@@ -1927,7 +1931,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                             backgroundColor: context.c.amberFill,
                             foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.check_rounded),
-                        label: Text('Formu doldur',
+                        label: Text(context.l10n.fillTheForm,
                             style: context.t.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w700)),
                       ),
@@ -1978,7 +1982,7 @@ class _Bist100PickerState extends State<_Bist100Picker> {
     final cs = Theme.of(context).colorScheme;
     final filtered = _filtered;
     return _PickerShell(
-      title: 'BIST Hisseleri',
+      title: context.l10n.bistStocks,
       count: filtered.length,
       color: AssetType.hisse.color,
       searchCtrl: _ctrl,
@@ -1986,7 +1990,7 @@ class _Bist100PickerState extends State<_Bist100Picker> {
       query: _q,
       cs: cs,
       child: filtered.isEmpty
-          ? _emptySearch(_q, cs)
+          ? _emptySearch(context, _q, cs)
           : ListView.builder(
               itemCount: filtered.length,
               itemBuilder: (_, i) {
@@ -2116,7 +2120,7 @@ class _TefasPickerState extends State<_TefasPicker> {
     final fmt = qtyFormatter(maxDigits: 6);
 
     return _PickerShell(
-      title: 'TEFAS Fonları',
+      title: context.l10n.tefasFunds,
       count: filtered.length,
       color: AssetType.fon.color,
       searchCtrl: _ctrl,
@@ -2141,11 +2145,11 @@ class _TefasPickerState extends State<_TefasPicker> {
                 children: [
                   const CustomLoadingIndicator(),
                   const SizedBox(height: 12),
-                  Text('Fonlar yükleniyor...',
+                  Text(context.l10n.fundsLoading,
                       style: TextStyle(color: cs.onSurfaceVariant)),
                   const SizedBox(height: 6),
                   Text(
-                    'Lütfen bekleyin',
+                    context.l10n.pleaseWait,
                     style: TextStyle(
                         fontSize: 11,
                         color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
@@ -2164,7 +2168,7 @@ class _TefasPickerState extends State<_TefasPicker> {
                             color: cs.error, size: 40),
                         const SizedBox(height: 12),
                         Text(
-                          'Fonlar yüklenemedi',
+                          context.l10n.fundsLoadFailed,
                           style: TextStyle(
                               fontWeight: FontWeight.w700, color: cs.onSurface),
                         ),
@@ -2186,7 +2190,7 @@ class _TefasPickerState extends State<_TefasPicker> {
                   ),
                 )
               : filtered.isEmpty
-                  ? _emptySearch(_q, cs)
+                  ? _emptySearch(context, _q, cs)
                   : ListView.builder(
                       itemCount: filtered.length,
                       itemBuilder: (_, i) {
@@ -2197,7 +2201,7 @@ class _TefasPickerState extends State<_TefasPicker> {
                           title: f.name,
                           subtitle: f.price > 0
                               ? '₺ ${fmt.format(f.price)}'
-                              : 'Fiyat bilgisi yok',
+                              : context.l10n.priceNotAvailable,
                           isSelected: isSelected,
                           color: AssetType.fon.color,
                           cs: cs,
@@ -2306,7 +2310,7 @@ class _PickerShellState extends State<_PickerShell> {
                       autofocus: true,
                       style: TextStyle(fontSize: 14, color: cs.onSurface),
                       decoration: InputDecoration(
-                        hintText: 'Ara...',
+                        hintText: context.l10n.searchEllipsis,
                         hintStyle: TextStyle(
                             color: cs.onSurfaceVariant.withValues(alpha: 0.6),
                             fontSize: 14),
@@ -2322,7 +2326,7 @@ class _PickerShellState extends State<_PickerShell> {
                   if (widget.query.isNotEmpty)
                     Semantics(
                       button: true,
-                      label: 'Aramayı temizle',
+                      label: context.l10n.clearSearch,
                       child: GestureDetector(
                       onTap: () {
                         widget.searchCtrl.clear();
@@ -2431,7 +2435,8 @@ class _PickerRow extends StatelessWidget {
   }
 }
 
-Widget _emptySearch(String q, ColorScheme cs) => Center(
-      child: Text(q.isEmpty ? 'Sonuç bulunamadı' : '"$q" bulunamadı',
+Widget _emptySearch(BuildContext context, String q, ColorScheme cs) => Center(
+      child: Text(
+          q.isEmpty ? context.l10n.noResults : context.l10n.noResultsFor(q),
           style: TextStyle(color: cs.onSurfaceVariant)),
     );

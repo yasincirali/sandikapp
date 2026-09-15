@@ -22,6 +22,7 @@ import 'settings_screen.dart';
 import '../widgets/leaderboard_hero_card.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
+import '../l10n/l10n.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -42,34 +43,34 @@ Future<void> _showPartnerMsg(
   final msg = rawMessage.replaceFirst(RegExp(r'^Exception:\s*'), '');
 
   if (!isError) {
-    await showAppSuccess(context, title: 'Tamamlandı', message: msg);
+    await showAppSuccess(context, title: context.l10n.doneTitle, message: msg);
     return;
   }
 
   // Belirli senaryolar için bilgi rozeti (hata değil bilgilendirme):
   if (msg.contains('zaten ortağın')) {
-    await showAppInfo(context, title: 'Zaten Ortaksınız', message: msg);
+    await showAppInfo(context, title: context.l10n.alreadyPartners, message: msg);
     return;
   }
   if (msg.contains('Kendi ürettiğin')) {
-    await showAppInfo(context, title: 'Kendi Kodun', message: msg);
+    await showAppInfo(context, title: context.l10n.ownCode, message: msg);
     return;
   }
   if (msg.contains('süresi dolmuş')) {
-    await showAppInfo(context, title: 'Süresi Doldu', message: msg);
+    await showAppInfo(context, title: context.l10n.expiredTitle, message: msg);
     return;
   }
   // Rate limit bir arıza değil, geçici bekleme — mesaj kalan süreyi
   // taşır ("... 4 dakika sonra tekrar deneyin"), bu yüzden genel
   // "Bir sorun oluştu" başlığı yerine kendi başlığıyla gösterilir.
   if (msg.contains('Çok fazla başarısız deneme')) {
-    await showAppInfo(context, title: 'Biraz Bekle', message: msg);
+    await showAppInfo(context, title: context.l10n.waitABit, message: msg);
     return;
   }
   await showSandikDialog(
     context: context,
     kind: SandikDialogKind.error,
-    title: 'Bir sorun oluştu',
+    title: context.l10n.somethingWentWrong,
     message: msg,
   );
 }
@@ -127,11 +128,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _generating = true;
       _busy = true;
     });
+    // Sözlük await'lerden ÖNCE çözülür: `context` async boşluğun ardında
+    // kullanılamaz (`use_build_context_synchronously`).
+    final kopyalandi = context.l10n.codeCopied;
     try {
       final code = await AuthService.instance.generatePartnerCode(user.id);
       setState(() => _generatedCode = code);
       await Clipboard.setData(ClipboardData(text: code));
-      await _showMsg('Kod üretildi ve panoya kopyalandı');
+      await _showMsg(kopyalandi);
     } catch (e) {
       await _showMsg(friendlyError(e), isError: true);
     } finally {
@@ -170,13 +174,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         await showSandikDialog(
           context: context,
           kind: SandikDialogKind.info,
-          title: 'Biraz Bekle',
+          title: context.l10n.waitABit,
           message: friendlyError(e),
           liveMessage: () {
             final kalan = _rateLimitRemaining;
             if (kalan <= 0) return null; // dialog kapanır
-            return 'Çok fazla başarısız deneme.\n'
-                '$_rateLimitLabel sonra tekrar deneyebilirsin.';
+            return context.l10n.tooManyFailedAttempts(_rateLimitLabel);
           },
         );
       }
@@ -250,7 +253,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _pendingInviteId = null;
               _pendingPartnerName = null;
             });
-            await _showMsg('$name ile ortaklık kuruldu!');
+            await _showMsg(context.l10n.partnershipCreated(name ?? ''));
           }
           return true;
         }
@@ -260,7 +263,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _pendingInviteId = null;
               _pendingPartnerName = null;
             });
-            await _showMsg('Ortaklık isteği reddedildi.', isError: true);
+            await _showMsg(context.l10n.requestRejected, isError: true);
           }
           return true;
         }
@@ -275,9 +278,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final confirm = await showSandikConfirm(
       context: context,
-      title: 'Ortaklık isteğini iptal et',
-      message: 'Gönderdiğin ortaklık isteğini iptal etmek istediğine emin misin?',
-      confirmLabel: 'Evet, iptal et',
+      title: context.l10n.cancelInviteTitle,
+      message: context.l10n.cancelInviteBody,
+      confirmLabel: context.l10n.yesCancel,
       destructive: true,
     );
     if (!confirm) return;
@@ -291,7 +294,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _pendingInviteId = null;
           _pendingPartnerName = null;
         });
-        await _showMsg('Ortaklık isteği iptal edildi.');
+        await _showMsg(context.l10n.requestCancelled);
       }
     } catch (e) {
       if (mounted) {
@@ -353,7 +356,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           icon: Icons.settings_outlined,
                           color: context.c.text90,
                           disabled: _busy,
-                          semanticLabel: 'Ayarlar',
+                          semanticLabel: context.l10n.settingsTitle,
                         ),
                         ),
                       ),
@@ -392,11 +395,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         const RecapBanner(),
                         _PendingRequestsSection(userId: user?.id ?? ''),
                         const SizedBox(height: 8),
-                        const SandikSectionHeader(title: 'ORTAKLIK İŞLEMLERİ'),
+                        SandikSectionHeader(title: context.l10n.partnerActionsUpper),
                         const SizedBox(height: 16),
                         _buildInviteSection(),
                         const SizedBox(height: 32),
-                        const SandikSectionHeader(title: 'ORTAKLARIM'),
+                        SandikSectionHeader(title: context.l10n.myPartnersUpper),
                         const SizedBox(height: 16),
                         partnersAsync.when(
                           loading: () => const CustomLoadingView(),
@@ -517,13 +520,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Davet Kodu Üret',
+              Text(context.l10n.generateInviteCode,
                   style: context.t.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
-                'Kodu ortağınıza gönderin. Ortak kodu girince size onay isteği gelir.',
+                context.l10n.generateInviteCodeBody,
                 style: context.t.bodyMedium?.copyWith(color: context.c.text36),
               ),
               const SizedBox(height: 20),
@@ -579,7 +582,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    _generating ? 'Üretiliyor...' : 'Kod Üret',
+                    _generating ? context.l10n.generatingEllipsis : context.l10n.generateCode,
                     style: context.t.titleMedium?.copyWith(
                         color: context.c.amberText, fontWeight: FontWeight.w600),
                   ),
@@ -598,7 +601,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Ortak Kodunu Gir',
+              Text(context.l10n.enterPartnerCode,
                   style: context.t.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: context.c.text90)),
@@ -607,7 +610,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 // Örnek kod gerçek alfabeden seçilmeli: 0/1/I/O üretimde
                 // kullanılmıyor, "ABCDE-12345" hiç üretilemeyecek bir
                 // koddu ve kullanıcıyı yanıltıyordu.
-                'Ortağınızın size gönderdiği kodu girin (örn: KRHNJ-8P2SW). Onay vermesi beklenir.',
+                context.l10n.enterPartnerCodeBody,
                 style: context.t.bodyMedium?.copyWith(color: context.c.text36),
               ),
               const SizedBox(height: 16),
@@ -649,8 +652,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Çok fazla deneme — $_rateLimitLabel sonra '
-                          'tekrar deneyebilirsin.',
+                          context.l10n.tooManyAttempts(_rateLimitLabel),
                           style: context.t.bodySmall
                               ?.copyWith(color: context.c.text36),
                         ),
@@ -675,10 +677,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     alignment: Alignment.center,
                     child: Text(
                       _submitting
-                          ? 'Gönderiliyor...'
+                          ? context.l10n.sendingEllipsis
                           : (_rateLimitRemaining > 0
-                              ? 'Bekle — $_rateLimitLabel'
-                              : 'Ortaklık İste'),
+                              ? context.l10n.waitFor(_rateLimitLabel)
+                              : context.l10n.requestPartnership),
                       style: context.t.titleMedium?.copyWith(
                           color: _rateLimitRemaining > 0
                               ? context.c.text36
@@ -712,7 +714,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '$_pendingPartnerName onayı bekleniyor...',
+                  context.l10n.awaitingApproval(_pendingPartnerName ?? ''),
                   style: context.t.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: context.c.text90),
@@ -726,7 +728,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // HIG 44pt — 13pt metin sıfır padding'de ~17pt hedef veriyordu.
             minimumSize: const Size(44, 44),
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text('İptal',
+            child: Text(context.l10n.cancelWord,
                 style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
           ),
         ],
@@ -745,7 +747,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               size: 48, color: context.c.text36),
           const SizedBox(height: 16),
           Text(
-            'Henüz ortağınız yok',
+            context.l10n.noPartnersYet,
             style: context.t.titleMedium?.copyWith(color: context.c.text36),
             textAlign: TextAlign.center,
           ),
@@ -824,7 +826,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               icon: Icons.delete_outline_rounded,
               color: context.c.loss,
               disabled: _busy,
-              semanticLabel: 'Ortağı sil',
+              semanticLabel: context.l10n.removePartnerSemantics,
             ),
           ),
         ],
@@ -835,9 +837,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _confirmRemove(String partnerId, String name) async {
     final confirm = await showSandikConfirm(
       context: context,
-      title: 'Ortaklığı kaldır',
-      message: '$name ile ortaklığı kaldırmak istediğine emin misin?',
-      confirmLabel: 'Kaldır',
+      title: context.l10n.removePartnerTitle,
+      message: context.l10n.removePartnerBody(name),
+      confirmLabel: context.l10n.removeWord,
       destructive: true,
     );
     if (confirm && mounted) {
@@ -891,13 +893,14 @@ class _PendingRequestsSectionState
       _showPartnerMsg(context, msg, isError: isError);
 
   Future<void> _accept(Map<String, dynamic> invite) async {
+    final kabulEdildi = context.l10n.partnershipAccepted;
     try {
       await ref
           .read(partnersProvider.notifier)
           .acceptInvite(invite['id'] as String);
       unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
       await _load();
-      await _showMsg('Ortaklık kabul edildi!');
+      await _showMsg(kabulEdildi);
     } catch (e) {
       await _showMsg(friendlyError(e), isError: true);
     }
@@ -921,7 +924,7 @@ class _PendingRequestsSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SandikSectionHeader(title: 'BEKLEYEN ORTAKLIK İSTEKLERİ'),
+        SandikSectionHeader(title: context.l10n.pendingRequestsUpper),
         const SizedBox(height: 12),
         ..._pendingInvites.map((invite) => _PendingInviteTile(
               invite: invite,
@@ -1004,7 +1007,7 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
                     style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: context.c.text90)),
-                Text('Ortaklık istiyor',
+                Text(context.l10n.wantsToPartner,
                     style:
                         context.t.titleSmall?.copyWith(color: context.c.text36)),
               ],
@@ -1018,7 +1021,7 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
             onPressed: widget.onReject,
             child: Semantics(
               button: true,
-              label: 'Ortaklık isteğini reddet',
+              label: context.l10n.rejectRequest,
               child:
                   Icon(Icons.close_rounded, color: context.c.loss, size: 22),
             ),
@@ -1029,7 +1032,7 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
             onPressed: widget.onAccept,
             child: Semantics(
               button: true,
-              label: 'Ortaklık isteğini kabul et',
+              label: context.l10n.acceptRequest,
               child:
                   Icon(Icons.check_rounded, color: context.c.gain, size: 22),
             ),
@@ -1099,7 +1102,7 @@ class _ThemeToggleButton extends ConsumerWidget {
 
     return SandikTappable(
       semanticLabel:
-          showingLight ? 'Koyu temaya geç' : 'Açık temaya geç',
+          showingLight ? context.l10n.switchToDark : context.l10n.switchToLight,
       onTap: () => ref.read(themeModeProvider.notifier).set(next),
       child: Container(
         width: 44,
@@ -1180,13 +1183,13 @@ class _ProfilePremiumBanner extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Sandık Premium',
+                  Text(context.l10n.sandikPremium,
                       style: context.t.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: context.c.text90)),
                   const SizedBox(height: 2),
                   Text(
-                    'Sınırsız varlık, premium göstergeler, günde 2 sinyal analizi',
+                    context.l10n.premiumPitch,
                     style: context.t.bodySmall?.copyWith(
                         color: context.c.text58,
                         height: 1.35),
@@ -1235,12 +1238,12 @@ class _PremiumActiveBadge extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Premium aktif',
+                Text(context.l10n.premiumActive,
                     style: context.t.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: context.c.text90)),
                 const SizedBox(height: 2),
-                Text('Tüm gelişmiş özellikler açık',
+                Text(context.l10n.premiumActiveBody,
                     style: context.t.bodySmall?.copyWith(color: context.c.text58)),
               ],
             ),

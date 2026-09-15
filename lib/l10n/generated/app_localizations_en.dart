@@ -270,7 +270,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get investorLevelNote =>
-      'Only changes the card set in Performance › Summary; calculations stay the same.';
+      'Only changes WHICH metrics are shown; your calculations and data stay the same.';
 
   @override
   String get levelBeginner => 'Beginner';
@@ -283,15 +283,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get levelBeginnerDesc =>
-      'Simple summary: return, inflation and contribution. No health, XIRR or percentile.';
+      'Simple view: technical signals, percentile, health and XIRR cards are hidden.';
 
   @override
   String get levelIntermediateDesc =>
-      'Today\'s view: health card, money-weighted return (XIRR), percentile.';
+      'Today\'s view: technical signals, percentile, health card and money-weighted return (XIRR).';
 
   @override
   String get levelAdvancedDesc =>
-      'Intermediate + risk-adjusted return, timing effect and recovery.';
+      'Intermediate + risk-adjusted return, timing effect and recovery (Summary › 1Y).';
 
   @override
   String get noAssetsYet => 'No assets added yet';
@@ -413,4 +413,776 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get consentMustAccept =>
       'You must give explicit consent to the cross-border data transfer.';
+
+  @override
+  String get refreshPrices => 'Refresh prices';
+
+  @override
+  String get assetAllocation => 'ASSET ALLOCATION';
+
+  @override
+  String get portfolioActivity => 'PORTFOLIO ACTIVITY';
+
+  @override
+  String get seeAllTransactions => 'See all transactions';
+
+  @override
+  String seeAllCount(int count) {
+    return 'See All ($count)';
+  }
+
+  @override
+  String get signalDeleteFailed =>
+      'Could not delete the notification. Check your connection.';
+
+  @override
+  String get permanentDelete => 'Delete permanently';
+
+  @override
+  String signalDeleteChoice(int past, int active) {
+    return 'There are $past past and $active active notifications. What should be deleted?';
+  }
+
+  @override
+  String get cancelShort => 'Cancel';
+
+  @override
+  String get onlyHistory => 'History only';
+
+  @override
+  String get clearAllSignals => 'Clear all signals';
+
+  @override
+  String get clearAllLower => 'Clear all';
+
+  @override
+  String clearAllSignalsBody(int count) {
+    return '$count notifications will move to history. To delete them for good, use the \"Delete History\" button there.';
+  }
+
+  @override
+  String get clearVerb => 'Clear';
+
+  @override
+  String get clearAllUpper => 'Clear All';
+
+  @override
+  String get noActiveSignals => 'No active signals right now';
+
+  @override
+  String get historyUpper => 'HISTORY';
+
+  @override
+  String deleteHistoryCount(int count) {
+    return 'Permanently delete $count notifications from history';
+  }
+
+  @override
+  String get deleteHistoryTitle => 'Delete history';
+
+  @override
+  String deleteHistoryBody(int count) {
+    return '$count notifications will be deleted PERMANENTLY. This cannot be undone.';
+  }
+
+  @override
+  String get permanentDeleteUpper => 'Delete Permanently';
+
+  @override
+  String get deleteHistoryButton => 'Delete History';
+
+  @override
+  String get signalNeutral => 'NEUTRAL';
+
+  @override
+  String signalDeletedAt(String date) {
+    return '$date · deleted';
+  }
+
+  @override
+  String signalConfidence(int count, String pct) {
+    return '$count indicators · $pct confidence';
+  }
+
+  @override
+  String get showBalance => 'Show balance';
+
+  @override
+  String get hideBalance => 'Hide balance';
+
+  @override
+  String get sortCriterion => 'SORT BY';
+
+  @override
+  String tabSemanticsCount(String label, int count) {
+    return '$label, $count assets';
+  }
+
+  @override
+  String get noChange => 'No change';
+
+  @override
+  String get buyAction => 'Buy';
+
+  @override
+  String get sellAction => 'Sell';
+
+  @override
+  String get deleteAction => 'Delete';
+
+  @override
+  String activeAlertsCount(int count) {
+    return '$count active price alerts';
+  }
+
+  @override
+  String get lastMonth => 'Last month';
+
+  @override
+  String get firstPurchase => 'First Purchase';
+
+  @override
+  String get avgCost => 'Avg. Cost';
+
+  @override
+  String get totalCost => 'Total Cost';
+
+  @override
+  String get currentValue => 'Current Value';
+
+  @override
+  String lotSummary(int buys, int sells) {
+    return '$buys buys · $sells removals';
+  }
+
+  @override
+  String get sortMarketValue => 'Market Value';
+
+  @override
+  String get sortHighToLow => 'High to Low';
+
+  @override
+  String get sortLowToHigh => 'Low to High';
+
+  @override
+  String get sortGainTry => 'Gain (TRY)';
+
+  @override
+  String get sortGainPct => 'Gain (%)';
+
+  @override
+  String get sortHighestFirst => 'Highest First';
+
+  @override
+  String get sortLowestFirst => 'Lowest First';
+
+  @override
+  String get assetFullName => 'Full Name';
+
+  @override
+  String get assetTypeStock => 'Stocks';
+
+  @override
+  String get assetTypeFund => 'Funds';
+
+  @override
+  String get assetTypeFx => 'Currency';
+
+  @override
+  String get assetTypeGold => 'Gold';
+
+  @override
+  String get assetTypeCommodity => 'Commodities';
+
+  @override
+  String get assetTypeOther => 'Other';
+
+  @override
+  String get tickerHintStock =>
+      'e.g. THYAO.IS, GARAN.IS  (add .IS for Borsa İstanbul)';
+
+  @override
+  String get tickerHintFund =>
+      'Leave empty if there is no Yahoo Finance code and enter the price manually';
+
+  @override
+  String get tickerHintFx => 'e.g. USDTRY=X, EURTRY=X, GBPTRY=X';
+
+  @override
+  String get tickerHintGold =>
+      'e.g. XAUTRY=X (gram gold in TRY) or GC=F (ounce, USD)';
+
+  @override
+  String get tickerHintCommodity =>
+      'e.g. CL=F (oil), NG=F (natural gas), GC=F (gold ounce)';
+
+  @override
+  String get tickerHintOther => 'A Yahoo Finance symbol, or leave it empty';
+
+  @override
+  String assetTypeSemantics(String type) {
+    return '$type type';
+  }
+
+  @override
+  String get total => 'total';
+
+  @override
+  String get bulkAdd => 'Bulk add';
+
+  @override
+  String get quickEntryVoice => 'Voice / Quick entry';
+
+  @override
+  String get orNotInList => 'or not in the list';
+
+  @override
+  String get symbolHint => 'Type a symbol (e.g. AAPL, THYAO.IS)';
+
+  @override
+  String get companyNameHint =>
+      'Company name (optional — fetched from the symbol)';
+
+  @override
+  String goldSemantics(String kind) {
+    return '$kind gold';
+  }
+
+  @override
+  String get commissionNote =>
+      'Trading commission is added to your cost — profit/loss shows the real figure.';
+
+  @override
+  String get costPreviewHint =>
+      'Enter a quantity and the total cost appears here.';
+
+  @override
+  String get totalCostUpper => 'TOTAL COST';
+
+  @override
+  String get transactionDate => 'Transaction date';
+
+  @override
+  String get addNote => 'Add a note';
+
+  @override
+  String get notesHint => 'Your notes...';
+
+  @override
+  String quantitySemantics(String value) {
+    return 'Quantity $value';
+  }
+
+  @override
+  String get quickEntryTitle => 'Quick Entry';
+
+  @override
+  String get quickEntryHelp =>
+      'One asset per line. Price is optional — leave it blank and the current price is fetched.\ne.g.  100 dollars  /  10 grams gold 4500 lira  /  GARAN 500 units';
+
+  @override
+  String get quickEntryPlaceholder =>
+      '100 dollars\n10 grams gold 4500 lira\nGARAN 500 units 105 lira';
+
+  @override
+  String saveNAssets(int count) {
+    return 'Save $count assets';
+  }
+
+  @override
+  String get fillTheForm => 'Fill the form';
+
+  @override
+  String get bistStocks => 'BIST Stocks';
+
+  @override
+  String get tefasFunds => 'TEFAS Funds';
+
+  @override
+  String get fundsLoading => 'Loading funds...';
+
+  @override
+  String get pleaseWait => 'Please wait';
+
+  @override
+  String get fundsLoadFailed => 'Could not load funds';
+
+  @override
+  String get searchEllipsis => 'Search...';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get pickStockPrompt => 'Please pick a stock';
+
+  @override
+  String get pickStock => 'Pick a stock';
+
+  @override
+  String get pickStockTap => 'Tap to pick a stock...';
+
+  @override
+  String get pickFundPrompt => 'Please pick a fund';
+
+  @override
+  String get pickFund => 'Pick a fund';
+
+  @override
+  String get pickFundTap => 'Tap to pick a fund...';
+
+  @override
+  String get noResults => 'No results';
+
+  @override
+  String get priceNotAvailable => 'No price information';
+
+  @override
+  String get assetFallbackName => 'Asset';
+
+  @override
+  String get commodityHint => 'e.g. Oil (Brent)';
+
+  @override
+  String get identityStock => 'Stock';
+
+  @override
+  String get identityFund => 'Fund';
+
+  @override
+  String get identityGoldKind => 'Gold Type';
+
+  @override
+  String get identityCurrency => 'Currency';
+
+  @override
+  String get identityCommodity => 'Commodity';
+
+  @override
+  String noResultsFor(String q) {
+    return 'No match for \"$q\"';
+  }
+
+  @override
+  String get periodDaily => 'DAILY';
+
+  @override
+  String get period1W => '1W';
+
+  @override
+  String get period1M => '1M';
+
+  @override
+  String get period6M => '6M';
+
+  @override
+  String get period1Y => '1Y';
+
+  @override
+  String assetPerformanceSemantics(String name) {
+    return 'Performance: $name';
+  }
+
+  @override
+  String get setPriceAlert => 'Set a price alert';
+
+  @override
+  String get priceHistoryFailed =>
+      'This asset\'s price history could not be fetched. Check your connection and try again.';
+
+  @override
+  String get totalQuantityUpper => 'TOTAL QUANTITY';
+
+  @override
+  String get otherTab => 'Other';
+
+  @override
+  String periodChangeUpper(String period) {
+    return '$period CHANGE';
+  }
+
+  @override
+  String buyPerUnit(String unit) {
+    return 'BUY / $unit';
+  }
+
+  @override
+  String todayPerUnit(String unit) {
+    return 'TODAY / $unit';
+  }
+
+  @override
+  String get noResultsShort => 'No results.';
+
+  @override
+  String get compare => 'Compare';
+
+  @override
+  String get clearShort => 'Clear';
+
+  @override
+  String get searchTickerOrName => 'Search ticker or name…';
+
+  @override
+  String get myPortfolioTab => 'My Portfolio';
+
+  @override
+  String get deleteAccountTitle => 'You are about to delete your account';
+
+  @override
+  String get deleteAccountBody =>
+      'This CANNOT be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted within 30 days.\n\nDo you want to continue?';
+
+  @override
+  String get continueAction => 'Continue';
+
+  @override
+  String get verifyIdentityTitle => 'Verify your identity';
+
+  @override
+  String get verifyIdentityBody =>
+      'Your account was created with Apple/Google. You will be asked to sign in once more with the same account before deletion.';
+
+  @override
+  String get confirmWithPassword => 'Confirm with your password';
+
+  @override
+  String get confirmWithPasswordBody =>
+      'For your security you need to confirm with your password.';
+
+  @override
+  String get deleteAccountUpper => 'DELETE ACCOUNT';
+
+  @override
+  String get accountDeletedTitle => 'Your account was deleted';
+
+  @override
+  String get accountDeletedBody => 'See you around.';
+
+  @override
+  String get investmentDisclaimer => 'Investment Advice Disclaimer';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get feedbackTitle => 'Feedback & Suggestions';
+
+  @override
+  String get feedbackHint => 'Write your message…';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get deletingAccount => 'Deleting your account…';
+
+  @override
+  String get deletingAccountBody =>
+      'This can take a few seconds. Don\'t close the app.';
+
+  @override
+  String get diagnosticsUpper => 'DIAGNOSTICS';
+
+  @override
+  String get pushDiagnostics => 'Push Diagnostics';
+
+  @override
+  String get pushDiagnosticsSubtitle =>
+      'Where the notification chain is broken; device APNs/FCM token state';
+
+  @override
+  String get notificationsUpper => 'NOTIFICATIONS';
+
+  @override
+  String get signalNotifications => 'Technical signal notifications';
+
+  @override
+  String get signalNotificationsSubtitle =>
+      'Get notified when a BUY/SELL indicator triggers';
+
+  @override
+  String get signalSettings => 'Signal settings';
+
+  @override
+  String get signalSettingsSubtitle =>
+      'Indicator selection per asset type + Premium';
+
+  @override
+  String get priceAlerts => 'Price alerts';
+
+  @override
+  String get partnerInviteNotifications => 'Partner invite notifications';
+
+  @override
+  String get partnerInviteNotificationsSubtitle =>
+      'Get notified when a new partner request arrives';
+
+  @override
+  String get liveActivitiesUpper => 'LIVE ACTIVITIES';
+
+  @override
+  String get biometricLock => 'Biometric lock';
+
+  @override
+  String get downloadMyData => 'Download My Data';
+
+  @override
+  String get downloadMyDataSubtitle =>
+      'Get all your data as a JSON file (KVKK Article 11)';
+
+  @override
+  String get deleteMyAccount => 'Delete My Account';
+
+  @override
+  String get deleteMyAccountSubtitle => 'All your data is permanently deleted';
+
+  @override
+  String get supportUpper => 'SUPPORT';
+
+  @override
+  String get contactUs => 'Contact Us';
+
+  @override
+  String get replayTour => 'Replay the tour';
+
+  @override
+  String get replayTourSubtitle => 'Remind yourself what each screen does';
+
+  @override
+  String get feedbackSubtitle => 'Send us your thoughts';
+
+  @override
+  String get legalUpper => 'LEGAL';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get privacyPolicySubtitle => 'How your data is processed';
+
+  @override
+  String get termsOfUse => 'Terms of Use';
+
+  @override
+  String get termsOfUseSubtitle => 'Service agreement';
+
+  @override
+  String get kvkkNotice => 'KVKK Disclosure Notice';
+
+  @override
+  String get kvkkNoticeSubtitle => 'Personal data processing notice';
+
+  @override
+  String get disclaimerSubtitle => 'View the legal notice you accepted';
+
+  @override
+  String themeSemantics(String name) {
+    return '$name theme';
+  }
+
+  @override
+  String baseCurrencySemantics(String name) {
+    return 'Base currency $name';
+  }
+
+  @override
+  String levelSemantics(String name) {
+    return '$name level';
+  }
+
+  @override
+  String get showAllDay => 'Show all day';
+
+  @override
+  String get showAllDaySubtitle =>
+      'When off, it only appears in the hours you choose.';
+
+  @override
+  String get displayWindow => 'Display window';
+
+  @override
+  String get startTime => 'Start';
+
+  @override
+  String get endTime => 'End';
+
+  @override
+  String get showOnWeekend => 'Show on weekends too';
+
+  @override
+  String get showOnWeekendSubtitle =>
+      'BIST is closed on weekends; the banner shows the last close labelled \"Market closed\".';
+
+  @override
+  String get showAmounts => 'Show amounts';
+
+  @override
+  String get showAmountsSubtitle =>
+      'When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.';
+
+  @override
+  String get partnerActivityNotifications => 'Partner activity notifications';
+
+  @override
+  String get partnerActivityNotificationsSubtitle =>
+      'Mention it in the daily brief when your partner adds to their portfolio';
+
+  @override
+  String get quietHours => 'Quiet hours';
+
+  @override
+  String get biometricLockSubtitle =>
+      'Ask for Face ID / fingerprint / device PIN when opening the app';
+
+  @override
+  String get doneTitle => 'Done';
+
+  @override
+  String get alreadyPartners => 'Already Partners';
+
+  @override
+  String get ownCode => 'Your Own Code';
+
+  @override
+  String get expiredTitle => 'Expired';
+
+  @override
+  String get waitABit => 'Hold On';
+
+  @override
+  String get somethingWentWrong => 'Something went wrong';
+
+  @override
+  String get cancelInviteTitle => 'Cancel partner request';
+
+  @override
+  String get cancelInviteBody =>
+      'Are you sure you want to cancel the partner request you sent?';
+
+  @override
+  String get yesCancel => 'Yes, cancel it';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get partnerActionsUpper => 'PARTNER ACTIONS';
+
+  @override
+  String get myPartnersUpper => 'MY PARTNERS';
+
+  @override
+  String get generateInviteCode => 'Generate Invite Code';
+
+  @override
+  String get generateInviteCodeBody =>
+      'Send the code to your partner. Once they enter it, you get an approval request.';
+
+  @override
+  String get enterPartnerCode => 'Enter Partner Code';
+
+  @override
+  String get enterPartnerCodeBody =>
+      'Enter the code your partner sent you (e.g. KRHNJ-8P2SW). They then need to approve.';
+
+  @override
+  String tooManyAttempts(String wait) {
+    return 'Too many attempts — you can try again in $wait.';
+  }
+
+  @override
+  String awaitingApproval(String name) {
+    return 'Waiting for $name to approve...';
+  }
+
+  @override
+  String get cancelWord => 'Cancel';
+
+  @override
+  String get noPartnersYet => 'You have no partners yet';
+
+  @override
+  String get removePartnerSemantics => 'Remove partner';
+
+  @override
+  String get removePartnerTitle => 'Remove partnership';
+
+  @override
+  String removePartnerBody(String name) {
+    return 'Are you sure you want to remove your partnership with $name?';
+  }
+
+  @override
+  String get removeWord => 'Remove';
+
+  @override
+  String get pendingRequestsUpper => 'PENDING PARTNER REQUESTS';
+
+  @override
+  String get wantsToPartner => 'Wants to partner up';
+
+  @override
+  String get rejectRequest => 'Reject partner request';
+
+  @override
+  String get acceptRequest => 'Accept partner request';
+
+  @override
+  String get sandikPremium => 'sandık Premium';
+
+  @override
+  String get premiumPitch =>
+      'Unlimited assets, premium indicators, 2 signal analyses a day';
+
+  @override
+  String get premiumActive => 'Premium active';
+
+  @override
+  String get premiumActiveBody => 'All advanced features unlocked';
+
+  @override
+  String get codeCopied => 'Code generated and copied to clipboard';
+
+  @override
+  String tooManyFailedAttempts(String wait) {
+    return 'Too many failed attempts.\nYou can try again in $wait.';
+  }
+
+  @override
+  String partnershipCreated(String name) {
+    return 'You are now partners with $name!';
+  }
+
+  @override
+  String get requestRejected => 'The partner request was rejected.';
+
+  @override
+  String get requestCancelled => 'The partner request was cancelled.';
+
+  @override
+  String get partnershipAccepted => 'Partnership accepted!';
+
+  @override
+  String get sendingEllipsis => 'Sending...';
+
+  @override
+  String waitFor(String wait) {
+    return 'Wait — $wait';
+  }
+
+  @override
+  String get requestPartnership => 'Request Partnership';
+
+  @override
+  String get generatingEllipsis => 'Generating...';
+
+  @override
+  String get generateCode => 'Generate Code';
+
+  @override
+  String get switchToDark => 'Switch to dark theme';
+
+  @override
+  String get switchToLight => 'Switch to light theme';
 }

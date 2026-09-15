@@ -232,7 +232,8 @@ void main() {
       // yorumlanmış bir çağrı testi geçiriyordu. Çağrının GERÇEKTEN kodda
       // olması gerekiyor.
       final src = _yorumsuz(await _oku('lib/screens/home_screen.dart'));
-      expect(src.contains('Geçmişi Sil'), isTrue,
+      // 3.20: düğme metni `context.l10n.deleteHistoryButton`.
+      expect(src.contains('l10n.deleteHistoryButton'), isTrue,
           reason: 'kalıcı silme eylemi ekranda görünmeli');
       expect(src.contains('await onDeleteHistory()'), isTrue,
           reason: 'düğme provider metodunu ÇAĞIRMALI (yorum sayılmaz)');

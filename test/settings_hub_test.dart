@@ -84,14 +84,15 @@ void main() {
     final destek = tester.getTopLeft(find.text('Bize Ulaş')).dy;
     final yasal = tester.getTopLeft(find.text('Gizlilik Politikası')).dy;
     expect(destek, lessThan(yasal));
-    expect(find.text('Tanıtım turunu yeniden izle'), findsOneWidget);
+    expect(find.text(_tr.replayTour), findsOneWidget);
   });
 
   test('alarm kurma yeri varlık ekranı; Yarış anahtarı lider tablosunda', () {
     String oku(String p) => File(p).readAsStringSync();
     final detay = oku('lib/screens/asset_detail_screen.dart');
     expect(detay.contains('AlarmSeridi('), isTrue);
-    expect(detay.contains("tooltip: 'Fiyat alarmı kur'"), isTrue);
+    // 3.20: tooltip `context.l10n.setPriceAlert`.
+    expect(detay.contains('tooltip: context.l10n.setPriceAlert'), isTrue);
     expect(oku('lib/screens/portfolio_screen.dart').contains('_AlarmRozeti('),
         isTrue, reason: 'Portföy kartında alarm rozeti');
     final lider = oku('lib/screens/leaderboard_screen.dart');

@@ -12,12 +12,12 @@ part of '../portfolio_performance_screen.dart';
 /// **Neden üst seviyeye çıktı:** iki yer okuyor — tür dökümü kartı ve Özet
 /// sekmesinin en iyi/en zayıf satırları. Kopyalamak bu projede ons→gram
 /// formülünü beş yere dağıtan sınıf hatanın aynısıydı.
-String _positionLabel(String key, AssetType type) {
+String _positionLabel(String key, AssetType type, AppLocalizations l) {
   final parts = key.split('|');
   var core = parts.length > 1 ? parts[1] : key;
   if (core.startsWith('sub:')) core = core.substring(4);
   if (core.startsWith('name:')) core = core.substring(5);
-  if (core.isEmpty) return type.label;
+  if (core.isEmpty) return type.labelOf(l);
   // Alt kategoriler küçük harfle saklanır (`positionKey`), ticker'lar büyük.
   // İlk harfi büyüterek "çeyrek" → "Çeyrek" yapıyoruz; ticker'a dokunmaz.
   return core.length > 1

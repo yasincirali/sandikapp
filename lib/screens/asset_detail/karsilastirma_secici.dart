@@ -199,7 +199,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
     if (items.isEmpty) {
       return Center(
         child: Text(
-          'Sonuç yok.',
+          context.l10n.noResultsShort,
           style: context.t.bodyMedium?.copyWith(color: context.c.text58),
         ),
       );
@@ -266,7 +266,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 child: Row(
                   children: [
                     Text(
-                      'Karşılaştır',
+                      context.l10n.compare,
                       style: context.t.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: context.c.text90,
@@ -276,7 +276,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                     if (widget.currentSelectionTicker != null)
                       TextButton(
                         onPressed: () => widget.onSelected(null),
-                        child: const Text('Temizle'),
+                        child: Text(context.l10n.clearShort),
                       ),
                   ],
                 ),
@@ -289,7 +289,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.search_rounded,
                         color: context.c.text58),
-                    hintText: 'Ticker veya isim ara…',
+                    hintText: context.l10n.searchTickerOrName,
                     hintStyle:
                         TextStyle(color: context.c.text36, fontSize: 13),
                     filled: true,
@@ -319,9 +319,9 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                 unselectedLabelColor: context.c.text58,
                 labelStyle: context.t.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w700),
-                tabs: const [
-                  Tab(text: 'Portföyüm'),
-                  Tab(text: 'Diğer'),
+                tabs: [
+                  Tab(text: context.l10n.myPortfolioTab),
+                  Tab(text: context.l10n.otherTab),
                 ],
               ),
               Expanded(

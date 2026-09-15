@@ -246,7 +246,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      _periods[i].label,
+                      donemEtiketi(context.l10n, _periods[i].label),
                       maxLines: 1,
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,

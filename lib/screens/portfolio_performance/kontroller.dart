@@ -62,7 +62,8 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                 ),
                 child: Center(
                   child: Text(
-                    _PortfolioPerformanceScreenState._periods[i].label,
+                    donemEtiketi(context.l10n,
+                        _PortfolioPerformanceScreenState._periods[i].label),
                     style: context.t.bodyMedium?.copyWith(
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,

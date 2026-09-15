@@ -14,6 +14,7 @@ import '../utils/tr_format.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
+import '../l10n/l10n.dart';
 
 /// Portföy hareketleri — tam liste.
 ///
@@ -268,7 +269,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                   _typeChip(null, 'Tümü'),
                   for (final t
                       in AssetType.values)
-                    _typeChip(t, t.label),
+                    _typeChip(t, t.labelOf(context.l10n)),
                 ],
               ),
             ),
