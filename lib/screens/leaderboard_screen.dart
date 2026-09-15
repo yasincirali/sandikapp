@@ -138,13 +138,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         horizontal: 20, vertical: 12),
                     child: Text(
                       activePartners.isEmpty
-                          ? 'Getiri, seçili dönemin başı ile sonu '
-                              'karşılaştırılarak hesaplanır. Sıralamalar ve '
-                              'dağılımlar anonimdir — kimlik, miktar ve TL '
-                              'bilgisi asla paylaşılmaz.'
-                          : 'Sıralama, seçili dönemin getirisidir (%). '
-                              'Herkes aynı formülle ölçülür; kimsenin '
-                              'varlık listesi görünmez.',
+                          ? context.l10n.raceFooterGlobal
+                          : context.l10n.raceFooterPartners,
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
                         color: context.c.text36,
@@ -549,7 +544,7 @@ class _SoloRoiCard extends StatelessWidget {
         ? context.c.text58
         : (positive ? context.c.gain : context.c.loss);
     final valueText = r == null
-        ? (computing ? 'Hesaplanıyor…' : '—')
+        ? (computing ? context.l10n.calculatingEllipsis : '—')
         : '${positive ? '+' : ''}${fmtNum(r, digits: 2)}%';
 
     return Container(
@@ -1352,8 +1347,8 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
     return _row(
       badge: _Badge(
         text: total > 1000
-            ? '${fmtNum(total / 1000, digits: 1)}K KİŞİ'
-            : '$total KİŞİ',
+            ? context.l10n.nThousandPeople(fmtNum(total / 1000, digits: 1))
+            : context.l10n.nPeopleUpper(total),
         color: context.c.text58,
       ),
       title: context.l10n.topPercentile(periodCap, pct),
@@ -1368,12 +1363,12 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
       s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 
   String _toneFor(int pct) {
-    if (pct <= 5) return 'Zirvedeki azınlıktasın';
-    if (pct <= 10) return 'Sandık\'ın en iyi %10\'undasın';
-    if (pct <= 25) return 'Ortalamanın çok üstündesin';
-    if (pct <= 50) return 'Ortalamanın üstündesin';
-    if (pct <= 75) return 'Ortalamaya yakınsın';
-    return 'Daha iyisini yapabilirsin — 30G takip et';
+    if (pct <= 5) return context.l10n.toneTop5;
+    if (pct <= 10) return context.l10n.toneTop10;
+    if (pct <= 25) return context.l10n.toneTop25;
+    if (pct <= 50) return context.l10n.toneTop50;
+    if (pct <= 75) return context.l10n.toneTop75;
+    return context.l10n.toneRest;
   }
 
   Widget _row({

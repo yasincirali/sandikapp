@@ -263,7 +263,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageNote =>
-      'English is in beta: some screens are still Turkish.';
+      'English is in beta: legal texts, the intro tour and gold/fund sub-category names stay Turkish.';
 
   @override
   String get investorLevel => 'Investor level';
@@ -2488,4 +2488,380 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myMarketReturn => 'My market return';
+
+  @override
+  String get dataExported =>
+      'Your data was prepared as a JSON file and shared.';
+
+  @override
+  String mailAppFailed(String email) {
+    return 'Could not open your mail app. Please write to $email.';
+  }
+
+  @override
+  String get notifSubtitleIos =>
+      'Signals, price alerts, quiet hours, Live Activity';
+
+  @override
+  String get notifSubtitleAndroid => 'Signals, price alerts, quiet hours';
+
+  @override
+  String get alertSetFromAssetScreen => 'Set from the bell on an asset screen';
+
+  @override
+  String get noBiometricOnDevice =>
+      'No biometrics or PIN is set up on this device.';
+
+  @override
+  String get biometricPrompt =>
+      'Verify your identity to enable the biometric lock';
+
+  @override
+  String get rateNotFetched =>
+      'The exchange rate hasn\'t been fetched yet; amounts stay in ₺ for now.';
+
+  @override
+  String baseCurrencyNote(String unit) {
+    return 'Amounts are shown in $unit at today\'s rate; calculations stay in ₺.';
+  }
+
+  @override
+  String get startHour => 'Start time';
+
+  @override
+  String get endHour => 'End time';
+
+  @override
+  String get liveActivityIosNote =>
+      'iOS keeps a Live Activity session open for at most 8 hours. Opening the app refreshes it; if you never open it, it may drop off the lock screen.';
+
+  @override
+  String get marketClosedNote =>
+      'When the market is closed, the last close is shown.';
+
+  @override
+  String get hiddenWeekend =>
+      'Not visible right now: weekend display is off. Use the switch above to turn it on.';
+
+  @override
+  String hiddenOutsideWindow(String start, String end) {
+    return 'Not visible right now: you\'re outside the $start–$end window. The banner appears at $start. To see it now, turn on \"Show all day\".';
+  }
+
+  @override
+  String get quietStart => 'Quiet start';
+
+  @override
+  String get quietEnd => 'Quiet end';
+
+  @override
+  String quietHoursOn(String start, String end) {
+    return 'Briefing, summary, calendar and alert pushes are not sent between $start and $end';
+  }
+
+  @override
+  String get quietHoursOff =>
+      'Silence all proactive notifications during chosen night hours';
+
+  @override
+  String get passwordLabel => 'Password';
+
+  @override
+  String aheadOfInflationPeriod(String pts) {
+    return 'This period you are $pts points ahead of inflation.';
+  }
+
+  @override
+  String get realReturnPositive =>
+      'Your portfolio delivered a real return above inflation — your purchasing power grew.';
+
+  @override
+  String percentileSentence(int pct) {
+    return 'You are above $pct% of participants.';
+  }
+
+  @override
+  String get noDrawdown =>
+      'Your portfolio did not fall from its peak in this window.';
+
+  @override
+  String concentrationBody(String pct, String label, int n, String tail) {
+    return '$pct% of your portfolio sits in $label; you have $n positions in total.$tail';
+  }
+
+  @override
+  String get riskAdjustedReturn => 'Risk-adjusted return';
+
+  @override
+  String get riskAdjustedBody =>
+      'Annual return ÷ annual volatility. The Sharpe ratio without a risk-free rate: how many points of return per unit of swing you take on.';
+
+  @override
+  String get timingEffectBody =>
+      'Return on your money (XIRR) − market return. Positive means your buy dates beat the market; negative means you bought in expensive.';
+
+  @override
+  String recoveryDays(int n) {
+    return '$n days';
+  }
+
+  @override
+  String get recoveryBody =>
+      'Time from the bottom of your largest drawdown back to the old peak.';
+
+  @override
+  String get notYet => 'Not yet';
+
+  @override
+  String get notRecoveredBody =>
+      'After the largest drawdown, the old peak has not been reached again.';
+
+  @override
+  String get timingEffect => 'Timing effect';
+
+  @override
+  String get recoveryWord => 'Recovery';
+
+  @override
+  String get intradayWord => 'Intraday';
+
+  @override
+  String get todayWord => 'Today';
+
+  @override
+  String get nowWord => 'Now';
+
+  @override
+  String behindInflationPeriod(String pts) {
+    return 'This period you are $pts points behind inflation.';
+  }
+
+  @override
+  String get realReturnNegative =>
+      'Your portfolio fell short of inflation — your purchasing power shrank.';
+
+  @override
+  String nPeopleParen(int n) {
+    return '($n people)';
+  }
+
+  @override
+  String recoveredInDays(int n) {
+    return ' and recovered in $n days';
+  }
+
+  @override
+  String get notRecoveredYet => ' and has not returned to that level yet';
+
+  @override
+  String get singleAssetHeavy =>
+      'A single asset\'s move noticeably affects your portfolio.';
+
+  @override
+  String drawdownBody(String pct, String tail) {
+    return 'Your portfolio fell at most $pct% from its highest level$tail.';
+  }
+
+  @override
+  String get rangeAllTime => 'All time';
+
+  @override
+  String get rangeLast7 => 'Last 7 days';
+
+  @override
+  String get rangeLast30 => 'Last 30 days';
+
+  @override
+  String get rangeLast90 => 'Last 90 days';
+
+  @override
+  String get rangeThisYear => 'This year';
+
+  @override
+  String get rangeCustom => 'Custom';
+
+  @override
+  String get searchAssetOrSymbol => 'Search asset name or symbol';
+
+  @override
+  String get noRecords => 'No records';
+
+  @override
+  String nRecords(int n) {
+    return '$n records';
+  }
+
+  @override
+  String nShown(int n) {
+    return ' · $n shown';
+  }
+
+  @override
+  String get noMatchingRecords => 'No records match the filter';
+
+  @override
+  String get noTransactionsYet => 'No transactions yet';
+
+  @override
+  String get todaysBalanceChange => 'Today\'s balance change';
+
+  @override
+  String sinceDateToToday(String date) {
+    return '$date → today';
+  }
+
+  @override
+  String balanceChangeSince(String date) {
+    return 'Balance change since $date';
+  }
+
+  @override
+  String periodChangeSim(String period) {
+    return '$period change · simulation';
+  }
+
+  @override
+  String periodBalanceChange(String period) {
+    return '$period balance change';
+  }
+
+  @override
+  String inflowIncludedNote(String amount, String market) {
+    return 'You bought $amount in this period and the figure above INCLUDES it. Market move only: $market.';
+  }
+
+  @override
+  String outflowIncludedNote(String amount, String market) {
+    return 'You sold $amount in this period and the figure above INCLUDES it. Market move only: $market.';
+  }
+
+  @override
+  String rowExpandedSemantics(String label) {
+    return '$label, expanded. Double tap to collapse.';
+  }
+
+  @override
+  String gainAmount(String amount) {
+    return 'gain $amount';
+  }
+
+  @override
+  String flowBuyLower(String amount) {
+    return 'bought $amount in period';
+  }
+
+  @override
+  String rowCollapsedSemantics(String label) {
+    return '$label, collapsed. Double tap to see what\'s inside.';
+  }
+
+  @override
+  String lossAmount(String amount) {
+    return 'loss $amount';
+  }
+
+  @override
+  String flowSellLower(String amount) {
+    return 'sold $amount in period';
+  }
+
+  @override
+  String flowSellUpper(String amount) {
+    return 'Sold $amount in period';
+  }
+
+  @override
+  String flowBuyUpper(String amount) {
+    return 'Bought $amount in period';
+  }
+
+  @override
+  String get raceFooterGlobal =>
+      'Return is computed by comparing the start and end of the selected period. Rankings and allocations are anonymous — identity, quantity and TRY figures are never shared.';
+
+  @override
+  String get calculatingEllipsis => 'Calculating…';
+
+  @override
+  String nThousandPeople(String n) {
+    return '${n}K PEOPLE';
+  }
+
+  @override
+  String nPeopleUpper(int n) {
+    return '$n PEOPLE';
+  }
+
+  @override
+  String get toneTop5 => 'You\'re in the top few';
+
+  @override
+  String get toneTop10 => 'You\'re in sandık\'s top 10%';
+
+  @override
+  String get toneTop25 => 'Well above average';
+
+  @override
+  String get toneTop50 => 'Above average';
+
+  @override
+  String get toneTop75 => 'Close to average';
+
+  @override
+  String get toneRest => 'You can do better — follow the 30D view';
+
+  @override
+  String get raceFooterPartners =>
+      'The ranking is the selected period\'s return (%). Everyone is measured with the same formula; no one\'s asset list is visible.';
+
+  @override
+  String get recapYourPortfolio => 'Your portfolio';
+
+  @override
+  String get recapGrewThisYear => 'This is how you grew this year.';
+
+  @override
+  String get recapToughYear => 'It was a tough year.';
+
+  @override
+  String get recapVsInflation => 'Against inflation';
+
+  @override
+  String get recapKeptPower =>
+      'You protected your purchasing power and added to it.';
+
+  @override
+  String get recapInflationWon => 'Inflation was ahead this year.';
+
+  @override
+  String get recapBestAsset => 'Biggest winner';
+
+  @override
+  String recapReturnedPct(String pct) {
+    return 'It returned $pct% so far.';
+  }
+
+  @override
+  String get recapMostPatient => 'Your most patient holding';
+
+  @override
+  String recapInPortfolioDays(int n) {
+    return 'It has been in your portfolio for $n days.';
+  }
+
+  @override
+  String recapTypeCount(int n) {
+    return 'Across $n asset types.';
+  }
+
+  @override
+  String get recapForAYear => 'For a whole year.';
+
+  @override
+  String recapShareTitle(int year) {
+    return 'My sandık Recap $year';
+  }
+
+  @override
+  String get shareWord => 'Share';
 }

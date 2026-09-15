@@ -10,6 +10,43 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 > değişiklikleri yalnızca okunarak incelendi; `ci.yml` deno job'ı ilk PR'da
 > gerçek sonucu verecek.
 
+## Son kalınan yer (2026-09-15)
+
+**Kullanıcı bildirimi (2026-09-15):** "menülere eklenen feature'lar çalışmıyor; dil
+seçeneği uygulamayı tümüyle İngilizce yapmıyor, yatırımcı seviyesi değiştirildiğinde
+fark göremedim." İkisi de gerçek kusurdu, ikisi de kapandı:
+
+**Yatırımcı seviyesi — tablo tek ve çoğu kullanıcıda BOŞ bir yüzeye bağlıydı.**
+`seviyeGorunurlugu` yalnızca Performans › Özet kartlarını süzüyordu; üçü de 1Y dönemine
+(sağlık/XIRR) ya da k-anonimlik eşiğine (yüzdelik) bağlı. Bir yıllık geçmişi ya da sekiz
+kişilik havuzu olmayan kullanıcıda seviye değiştirmek ekranda hiçbir şeyi değiştirmiyordu.
+Tablo artık ilk açılışta GÖRÜLEN yüzeyleri de kapsıyor (`teknikSinyaller` bayrağı): ana
+ekran yüzdelik şeridi, ana ekran sinyal zili, tekil varlıkta sinyal kartı + gösterge
+paneli. Kural aynı: Başlangıç yalnızca gizler, İleri yalnızca ekler, Orta varsayılan ve
+bugünkü görünüm. `yatirimci_seviyesi_test` hem karar tablosunu hem ekranlara bağlantıyı
+kilitliyor.
+
+**3.20 İngilizce — kapsam ~130 → 780+ anahtar.** `l10n_coverage_test` 87 ekran/widget
+dosyasını yalnızca-azalır tavanlarla bağlıyor; **47'si sıfır Türkçe literal taşıyor**,
+kalan 212 literal 41 dosyaya yayılmış küçük etiketler. Çevrilenler: giriş/kayıt/şifre/OTP,
+gezinme, kilit, yasal uyarı onayı, ana ekran (sinyal sayfası dahil), Portföy, Performans
+(+7 part), Özet kartlarının tamamı, tekil varlık (+4 part), Yarış, Takip listesi,
+Karşılaştırma, Portföy Hareketleri, Fiyat Alarmları, Ayarlar'ın tüm bölümleri, Profil,
+Paywall, Yıllık Özet, CSV/toplu ekleme, tüm diyalog ve şeritler, varlık türü adları.
+
+Dile bağlanan dört enum: `AssetType` (`labelOf`/`tickerHintOf`), dönem etiketleri
+(`donemEtiketi`), `ContributionInterval` (tekil ad ikame etmek yerine tam cümle — Türkçe'de
+ek uyumu sözcüğe göre değişiyor), `_DateRange`. Üçünde `label` alanı TÜRKÇE bırakıldı:
+bildirim/özet/paylaşım metinleri ve alt kategori karşılaştırmaları onu VERİ gibi kullanıyor.
+
+Kasıtlı Türkçe kalan dört ada ve nedenleri `TECHNICAL_DEBT.md`'de: yasal metinler,
+`asset_categories` (sütunda veri), admin teşhis aracı, tanıtım turu. Varsayılan dil bu
+yüzden hâlâ Türkçe.
+
+Kaynak tarayan 11 test anahtar adlarına geçirildi; beşinde iddia ikiye bölündü — ekran
+doğru ANAHTARI kullanıyor mu + o anahtarın Türkçe metni hâlâ o şeyi söylüyor mu
+(`trMetni`, `test/helpers/kaynak.dart`). Tam paket 2.113 test yeşil.
+
 ## Son kalınan yer (2026-09-14)
 
 Main ile birleşik, her adım analyzer + tam Flutter paketi (1.719 test) + Deno paketi (222 test)

@@ -77,10 +77,10 @@ class _RecapScreenState extends State<RecapScreen> {
     if (d.changePct != null) {
       final artis = d.changePct! >= 0;
       out.add(_Sayfa(
-        ustBaslik: 'Portföyün',
+        ustBaslik: context.l10n.recapYourPortfolio,
         baslik:
             '${artis ? '+' : '−'}%${fmtNum(d.changePct!.abs(), digits: 1)}',
-        altBaslik: artis ? 'Bu yıl böyle büyüdün.' : 'Zor bir yıl oldu.',
+        altBaslik: artis ? context.l10n.recapGrewThisYear : context.l10n.recapToughYear,
         ikon: artis ? Icons.trending_up_rounded : Icons.trending_down_rounded,
         renk: artis ? c.gain : c.loss,
       ));
@@ -89,12 +89,12 @@ class _RecapScreenState extends State<RecapScreen> {
     if (d.inflationSpread != null) {
       final onde = d.inflationSpread! >= 0;
       out.add(_Sayfa(
-        ustBaslik: 'Enflasyona karşı',
+        ustBaslik: context.l10n.recapVsInflation,
         baslik:
             context.l10n.recapPoints(fmtNum(d.inflationSpread!.abs(), digits: 1)),
         altBaslik: onde
-            ? 'Alım gücünü korudun ve üstüne koydun.'
-            : 'Bu yıl enflasyon öndeydi.',
+            ? context.l10n.recapKeptPower
+            : context.l10n.recapInflationWon,
         ikon: Icons.shield_moon_rounded,
         renk: onde ? c.gain : c.loss,
       ));
@@ -102,13 +102,13 @@ class _RecapScreenState extends State<RecapScreen> {
 
     if (d.bestAsset != null) {
       out.add(_Sayfa(
-        ustBaslik: 'En çok kazandıran',
+        ustBaslik: context.l10n.recapBestAsset,
         baslik: d.bestAsset!.name,
         // "Yılın en iyisi" DEĞİL: elimizdeki ömürlük getiri, döneme ait
         // değil. Üç yıl önce alınmış bir varlığı "yılın yıldızı" diye
         // sunmak yanlış olurdu.
         altBaslik:
-            'Bugüne kadar %${fmtNum(d.bestAsset!.changePct, digits: 1)} getirdi.',
+            context.l10n.recapReturnedPct(fmtNum(d.bestAsset!.changePct, digits: 1)),
         ikon: Icons.workspace_premium_rounded,
         renk: c.gain,
       ));
@@ -116,9 +116,9 @@ class _RecapScreenState extends State<RecapScreen> {
 
     if (d.mostPatientDays != null && d.mostPatientDays! >= 90) {
       out.add(_Sayfa(
-        ustBaslik: 'En sabırlı olduğun',
+        ustBaslik: context.l10n.recapMostPatient,
         baslik: d.mostPatient!.name,
-        altBaslik: '${d.mostPatientDays} gündür portföyünde.',
+        altBaslik: context.l10n.recapInPortfolioDays(d.mostPatientDays ?? 0),
         ikon: Icons.hourglass_bottom_rounded,
         renk: c.amberText,
       ));
@@ -129,8 +129,8 @@ class _RecapScreenState extends State<RecapScreen> {
         ustBaslik: 'Takipteydin',
         baslik: context.l10n.recapDays(d.trackedDays),
         altBaslik: d.typeCount > 1
-            ? '${d.typeCount} türde varlık ile.'
-            : 'Bir yıl boyunca.',
+            ? context.l10n.recapTypeCount(d.typeCount)
+            : context.l10n.recapForAYear,
         ikon: Icons.visibility_rounded,
         renk: c.info,
       ));
@@ -153,7 +153,7 @@ class _RecapScreenState extends State<RecapScreen> {
         takipGunu: d.trackedDays,
       ),
       metin: metin,
-      subject: 'sandık Özetim ${widget.year}',
+      subject: context.l10n.recapShareTitle(widget.year),
       analyticsPeriod: d.period,
     );
   }
@@ -225,7 +225,7 @@ class _RecapScreenState extends State<RecapScreen> {
                             duration: SandikMotion.surfaceOf(context),
                             curve: SandikMotion.enter,
                           ),
-                  child: Text(sonSayfa ? 'Paylaş' : 'Devam'),
+                  child: Text(sonSayfa ? context.l10n.shareWord : 'Devam'),
                 ),
               ),
             ),

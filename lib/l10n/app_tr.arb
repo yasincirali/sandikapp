@@ -101,7 +101,7 @@
   "languageSystem": "Sistem",
   "languageTurkish": "Türkçe",
   "languageEnglish": "English",
-  "languageNote": "İngilizce beta: bazı ekranlar henüz Türkçe.",
+  "languageNote": "İngilizce beta: yasal metinler, tanıtım turu ve altın/fon alt kategori adları Türkçe kalır.",
   "investorLevel": "Yatırımcı seviyesi",
   "investorLevelNote": "Yalnızca hangi metriklerin GÖSTERİLECEĞİNİ değiştirir; hesaplar ve verilerin aynı kalır.",
   "levelBeginner": "Başlangıç",
@@ -1601,5 +1601,363 @@
     }
   },
   "assetNotFound": "Varlık bulunamadı",
-  "myMarketReturn": "Piyasa getirim"
+  "myMarketReturn": "Piyasa getirim",
+  "dataExported": "Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.",
+  "mailAppFailed": "Mail uygulaması açılamadı. Lütfen {email} adresine yaz.",
+  "@mailAppFailed": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "notifSubtitleIos": "Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik",
+  "notifSubtitleAndroid": "Sinyaller, fiyat alarmları, sessiz saatler",
+  "alertSetFromAssetScreen": "Varlık ekranındaki zil ile kurulur",
+  "noBiometricOnDevice": "Bu cihazda biyometrik doğrulama ya da PIN tanımlı değil.",
+  "biometricPrompt": "Biyometrik kilidi açmak için kimliğini doğrula",
+  "rateNotFetched": "Kur henüz çekilmedi; tutarlar şimdilik ₺ görünür.",
+  "baseCurrencyNote": "Tutarlar bugünkü kurla {unit} cinsinden gösterilir; hesaplar ₺ üzerinden yapılır.",
+  "@baseCurrencyNote": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "startHour": "Başlangıç saati",
+  "endHour": "Bitiş saati",
+  "liveActivityIosNote": "iOS, Live Activity oturumunu en fazla 8 saat açık tutar. Uygulamayı açtıkça süre yenilenir; hiç açmazsanız kilit ekranından düşebilir.",
+  "marketClosedNote": "Piyasa kapalıyken son kapanış gösterilir.",
+  "hiddenWeekend": "Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullanın.",
+  "hiddenOutsideWindow": "Şu an görünmüyor: saat {start}–{end} aralığının dışındasınız. Banner {start}'da görünecek. Hemen görmek için \"Gün boyu göster\"i açın.",
+  "@hiddenOutsideWindow": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quietStart": "Sessizlik başlangıcı",
+  "quietEnd": "Sessizlik bitişi",
+  "quietHoursOn": "Brifing, özet, takvim ve alarm push'ları {start}–{end} arası gönderilmez",
+  "@quietHoursOn": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quietHoursOff": "Gece belirli saatlerde hiçbir proaktif bildirim gelmesin",
+  "passwordLabel": "Şifre",
+  "aheadOfInflationPeriod": "Bu dönem enflasyonun {pts} puan önünde.",
+  "@aheadOfInflationPeriod": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnPositive": "Portföyün enflasyonun üzerinde reel getiri sağladı — alım gücün arttı.",
+  "percentileSentence": "Katılımcıların %{pct} kadarının üstündesin.",
+  "@percentileSentence": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "noDrawdown": "Bu pencerede portföyün zirvesinden gerilemedi.",
+  "concentrationBody": "Portföyünün %{pct}'i {label} içinde; toplam {n} pozisyonun var.{tail}",
+  "@concentrationBody": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "tail": {
+        "type": "String"
+      }
+    }
+  },
+  "riskAdjustedReturn": "Risk-ayarlı getiri",
+  "riskAdjustedBody": "Yıllık getiri ÷ yıllık oynaklık. Sharpe oranının risksiz oransız hâli: aldığın her birim dalgalanma için kaç puan getiri.",
+  "timingEffectBody": "Paranın getirisi (XIRR) − piyasa getirisi. Pozitifse alım tarihlerin piyasayı yendi; negatifse pahalıya girmişsin.",
+  "recoveryDays": "{n} gün",
+  "@recoveryDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recoveryBody": "En büyük düşüşün dibinden eski zirveye dönüş süresi.",
+  "notYet": "Henüz yok",
+  "notRecoveredBody": "En büyük düşüşün ardından eski zirveye henüz dönülmedi.",
+  "timingEffect": "Zamanlama etkisi",
+  "recoveryWord": "Toparlanma",
+  "intradayWord": "Gün içi",
+  "todayWord": "Bugün",
+  "nowWord": "Şimdi",
+  "behindInflationPeriod": "Bu dönem enflasyonun {pts} puan gerisinde.",
+  "@behindInflationPeriod": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnNegative": "Portföyün enflasyonun altında kaldı — alım gücün geriledi.",
+  "nPeopleParen": "({n} kişi)",
+  "@nPeopleParen": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recoveredInDays": " ve {n} günde toparladı",
+  "@recoveredInDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notRecoveredYet": " ve henüz o seviyeye dönmedi",
+  "singleAssetHeavy": "Tek varlığın hareketi portföyünü belirgin etkiler.",
+  "drawdownBody": "Portföyün, gördüğü en yüksek seviyeden en fazla %{pct} geriledi{tail}.",
+  "@drawdownBody": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "tail": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeAllTime": "Tüm zamanlar",
+  "rangeLast7": "Son 7 gün",
+  "rangeLast30": "Son 30 gün",
+  "rangeLast90": "Son 90 gün",
+  "rangeThisYear": "Bu yıl",
+  "rangeCustom": "Özel",
+  "searchAssetOrSymbol": "Varlık adı veya sembol ara",
+  "noRecords": "Kayıt yok",
+  "nRecords": "{n} kayıt",
+  "@nRecords": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "nShown": " · {n} gösteriliyor",
+  "@nShown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "noMatchingRecords": "Filtreye uyan kayıt yok",
+  "noTransactionsYet": "Henüz işlem yok",
+  "todaysBalanceChange": "Bugünkü birikim değişimi",
+  "sinceDateToToday": "{date} → bugün",
+  "@sinceDateToToday": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceChangeSince": "{date} birikim değişimi",
+  "@balanceChangeSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "periodChangeSim": "{period} değişim · simülasyon",
+  "@periodChangeSim": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "periodBalanceChange": "{period} birikim değişimi",
+  "@periodBalanceChange": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "inflowIncludedNote": "Bu dönemde {amount} tutarında alım yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.",
+  "@inflowIncludedNote": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "market": {
+        "type": "String"
+      }
+    }
+  },
+  "outflowIncludedNote": "Bu dönemde {amount} tutarında satış yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.",
+  "@outflowIncludedNote": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "market": {
+        "type": "String"
+      }
+    }
+  },
+  "rowExpandedSemantics": "{label}, açık. Kapatmak için çift dokun.",
+  "@rowExpandedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "gainAmount": "kazanç {amount}",
+  "@gainAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowBuyLower": "dönem içi alım {amount}",
+  "@flowBuyLower": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rowCollapsedSemantics": "{label}, kapalı. İçindeki ürünleri görmek için çift dokun.",
+  "@rowCollapsedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "lossAmount": "kayıp {amount}",
+  "@lossAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowSellLower": "dönem içi satış {amount}",
+  "@flowSellLower": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowSellUpper": "Dönem içi satış {amount}",
+  "@flowSellUpper": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowBuyUpper": "Dönem içi alım {amount}",
+  "@flowBuyUpper": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "raceFooterGlobal": "Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir — kimlik, miktar ve TL bilgisi asla paylaşılmaz.",
+  "calculatingEllipsis": "Hesaplanıyor…",
+  "nThousandPeople": "{n}K KİŞİ",
+  "@nThousandPeople": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nPeopleUpper": "{n} KİŞİ",
+  "@nPeopleUpper": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "toneTop5": "Zirvedeki azınlıktasın",
+  "toneTop10": "Sandık'ın en iyi %10'undasın",
+  "toneTop25": "Ortalamanın çok üstündesin",
+  "toneTop50": "Ortalamanın üstündesin",
+  "toneTop75": "Ortalamaya yakınsın",
+  "toneRest": "Daha iyisini yapabilirsin — 30G takip et",
+  "raceFooterPartners": "Sıralama, seçili dönemin getirisidir (%). Herkes aynı formülle ölçülür; kimsenin varlık listesi görünmez.",
+  "recapYourPortfolio": "Portföyün",
+  "recapGrewThisYear": "Bu yıl böyle büyüdün.",
+  "recapToughYear": "Zor bir yıl oldu.",
+  "recapVsInflation": "Enflasyona karşı",
+  "recapKeptPower": "Alım gücünü korudun ve üstüne koydun.",
+  "recapInflationWon": "Bu yıl enflasyon öndeydi.",
+  "recapBestAsset": "En çok kazandıran",
+  "recapReturnedPct": "Bugüne kadar %{pct} getirdi.",
+  "@recapReturnedPct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "recapMostPatient": "En sabırlı olduğun",
+  "recapInPortfolioDays": "{n} gündür portföyünde.",
+  "@recapInPortfolioDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recapTypeCount": "{n} türde varlık ile.",
+  "@recapTypeCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recapForAYear": "Bir yıl boyunca.",
+  "recapShareTitle": "sandık Özetim {year}",
+  "@recapShareTitle": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "shareWord": "Paylaş"
 }

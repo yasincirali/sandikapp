@@ -177,30 +177,37 @@ ibaresi eklenerek bugün kapatılabilir.
 
 ---
 
-## 🟡 AÇIK — İngilizce arayüz BETA: kapsam kısmi, varsayılan dil Türkçe
+## 🟡 AÇIK — İngilizce arayüz BETA: dört ada kasıtlı Türkçe, varsayılan dil Türkçe
 
-**Karar tarihi:** 2026-09-14 · 3.20
+**Karar tarihi:** 2026-09-14 · 3.20 · **Kapsam genişletildi 2026-09-15**
 
-Altyapı tam (`l10n.yaml`, iki .arb, `context.l10n`, dil seçici, `l10n_test`,
-`l10n_coverage_test`), ama çeviri çekirdek akışla sınırlı: giriş/kayıt/şifre/OTP,
-kilit, yasal uyarı onayı, gezinme, Ayarlar hub + Görünüm, ana ekran ve
-Portföy boş durumları, varlık ekleme formu (~130 anahtar). ~1.900 Türkçe
-literal duruyor: profil, lider tablosu, performans/özet kartları,
-karşılaştırma, takip listesi, sinyal ayarları, paywall, recap, onboarding.
+Sözlük 780+ anahtar; `l10n_coverage_test` 87 ekran/widget dosyasını yalnızca-
+azalır tavanlarla bağlıyor ve **47'si sıfır Türkçe literal taşıyor**. Giriş,
+kayıt, gezinme, ana ekran, Portföy, Performans (+7 part), Özet kartlarının
+tamamı, tekil varlık, Yarış, Takip listesi, Karşılaştırma, Ayarlar, Profil,
+Paywall, Yıllık Özet, tüm diyaloglar ve şeritler çevrildi. Kalan 212 literal
+41 dosyaya yayılmış küçük etiketler.
 
-**Neden burada durdu:** her literal için anahtar + iki dilde metin + çağrı
-yeri; `const` zincirleri ve yer tutuculu cümleler elle bakım ister. Yarım
-İngilizce'yi sistem diline bağlamak İngilizce cihazlı kullanıcıya seçmeden
-karışık arayüz gösterirdi — bu yüzden **varsayılan Türkçe**, İngilizce
-Ayarlar'dan bilinçli seçim ve "beta" notu.
+**Kasıtlı Türkçe kalan dört ada (tavana hiç alınmadı):**
 
-**Ertelemenin maliyeti:** İngilizce seçen kullanıcı derin ekranlarda Türkçe
-görür. Mağaza sayfasında "İngilizce arayüz" vaadi verilmemeli.
+| Ada | Neden |
+|---|---|
+| `legal_doc_screen` (261) | Yasal metinlerin kendisi; çevirisi hukuk işi, mühendislik değil. |
+| `asset_categories` (218) | Alt kategori etiketleri `sub_category` sütununda **VERİ** olarak saklanıyor (`_subCategory == g.label` karşılaştırmaları dahil). Çevirmek kayıtlı satırları bozar; gösterimi ayırmak için `AssetType.labelOf` deseninde ikinci bir eşleme gerekir. |
+| `push_diagnostics_screen` (112) | Yalnız admin'e görünen teşhis aracı. |
+| `onboarding_screen` (72) | Tanıtım turu; tek seferlik, ayrı bir tur. |
 
-**Ele alınma zamanı:** EN pazarı hedeflenirse ekran ekran (öncelik: profil →
-performans/özet → lider tablosu → takip listesi → onboarding). Her ekran
-bitince `l10n_coverage_test` tavanı sıfıra iner; hepsi bitince
-`LocaleNotifier` varsayılanı `system` olur ve `languageNote` kalkar.
+**Varsayılan dil neden hâlâ Türkçe:** yukarıdaki dört ada duruyorken sistem
+diline bağlamak, İngilizce cihazlı kullanıcıya ilk açılışta Türkçe bir
+tanıtım turu gösterirdi. İngilizce, Ayarlar › Görünüm'den bilinçli seçim.
+
+**Ertelemenin maliyeti:** İngilizce seçen kullanıcı tanıtım turunda, yasal
+belgelerde ve altın/fon alt kategori adlarında Türkçe görür. Mağaza
+sayfasında "tam İngilizce arayüz" vaadi henüz verilmemeli.
+
+**Ele alınma zamanı:** EN pazarı hedeflenirse sırayla onboarding →
+alt kategori gösterim eşlemesi → yasal metinler (hukuk onayıyla). Hepsi
+bitince `LocaleNotifier` varsayılanı `system` olur ve `languageNote` kalkar.
 
 ---
 

@@ -263,7 +263,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get languageEnglish => 'English';
 
   @override
-  String get languageNote => 'İngilizce beta: bazı ekranlar henüz Türkçe.';
+  String get languageNote =>
+      'İngilizce beta: yasal metinler, tanıtım turu ve altın/fon alt kategori adları Türkçe kalır.';
 
   @override
   String get investorLevel => 'Yatırımcı seviyesi';
@@ -2481,4 +2482,378 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get myMarketReturn => 'Piyasa getirim';
+
+  @override
+  String get dataExported =>
+      'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.';
+
+  @override
+  String mailAppFailed(String email) {
+    return 'Mail uygulaması açılamadı. Lütfen $email adresine yaz.';
+  }
+
+  @override
+  String get notifSubtitleIos =>
+      'Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik';
+
+  @override
+  String get notifSubtitleAndroid =>
+      'Sinyaller, fiyat alarmları, sessiz saatler';
+
+  @override
+  String get alertSetFromAssetScreen => 'Varlık ekranındaki zil ile kurulur';
+
+  @override
+  String get noBiometricOnDevice =>
+      'Bu cihazda biyometrik doğrulama ya da PIN tanımlı değil.';
+
+  @override
+  String get biometricPrompt =>
+      'Biyometrik kilidi açmak için kimliğini doğrula';
+
+  @override
+  String get rateNotFetched =>
+      'Kur henüz çekilmedi; tutarlar şimdilik ₺ görünür.';
+
+  @override
+  String baseCurrencyNote(String unit) {
+    return 'Tutarlar bugünkü kurla $unit cinsinden gösterilir; hesaplar ₺ üzerinden yapılır.';
+  }
+
+  @override
+  String get startHour => 'Başlangıç saati';
+
+  @override
+  String get endHour => 'Bitiş saati';
+
+  @override
+  String get liveActivityIosNote =>
+      'iOS, Live Activity oturumunu en fazla 8 saat açık tutar. Uygulamayı açtıkça süre yenilenir; hiç açmazsanız kilit ekranından düşebilir.';
+
+  @override
+  String get marketClosedNote => 'Piyasa kapalıyken son kapanış gösterilir.';
+
+  @override
+  String get hiddenWeekend =>
+      'Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullanın.';
+
+  @override
+  String hiddenOutsideWindow(String start, String end) {
+    return 'Şu an görünmüyor: saat $start–$end aralığının dışındasınız. Banner $start\'da görünecek. Hemen görmek için \"Gün boyu göster\"i açın.';
+  }
+
+  @override
+  String get quietStart => 'Sessizlik başlangıcı';
+
+  @override
+  String get quietEnd => 'Sessizlik bitişi';
+
+  @override
+  String quietHoursOn(String start, String end) {
+    return 'Brifing, özet, takvim ve alarm push\'ları $start–$end arası gönderilmez';
+  }
+
+  @override
+  String get quietHoursOff =>
+      'Gece belirli saatlerde hiçbir proaktif bildirim gelmesin';
+
+  @override
+  String get passwordLabel => 'Şifre';
+
+  @override
+  String aheadOfInflationPeriod(String pts) {
+    return 'Bu dönem enflasyonun $pts puan önünde.';
+  }
+
+  @override
+  String get realReturnPositive =>
+      'Portföyün enflasyonun üzerinde reel getiri sağladı — alım gücün arttı.';
+
+  @override
+  String percentileSentence(int pct) {
+    return 'Katılımcıların %$pct kadarının üstündesin.';
+  }
+
+  @override
+  String get noDrawdown => 'Bu pencerede portföyün zirvesinden gerilemedi.';
+
+  @override
+  String concentrationBody(String pct, String label, int n, String tail) {
+    return 'Portföyünün %$pct\'i $label içinde; toplam $n pozisyonun var.$tail';
+  }
+
+  @override
+  String get riskAdjustedReturn => 'Risk-ayarlı getiri';
+
+  @override
+  String get riskAdjustedBody =>
+      'Yıllık getiri ÷ yıllık oynaklık. Sharpe oranının risksiz oransız hâli: aldığın her birim dalgalanma için kaç puan getiri.';
+
+  @override
+  String get timingEffectBody =>
+      'Paranın getirisi (XIRR) − piyasa getirisi. Pozitifse alım tarihlerin piyasayı yendi; negatifse pahalıya girmişsin.';
+
+  @override
+  String recoveryDays(int n) {
+    return '$n gün';
+  }
+
+  @override
+  String get recoveryBody =>
+      'En büyük düşüşün dibinden eski zirveye dönüş süresi.';
+
+  @override
+  String get notYet => 'Henüz yok';
+
+  @override
+  String get notRecoveredBody =>
+      'En büyük düşüşün ardından eski zirveye henüz dönülmedi.';
+
+  @override
+  String get timingEffect => 'Zamanlama etkisi';
+
+  @override
+  String get recoveryWord => 'Toparlanma';
+
+  @override
+  String get intradayWord => 'Gün içi';
+
+  @override
+  String get todayWord => 'Bugün';
+
+  @override
+  String get nowWord => 'Şimdi';
+
+  @override
+  String behindInflationPeriod(String pts) {
+    return 'Bu dönem enflasyonun $pts puan gerisinde.';
+  }
+
+  @override
+  String get realReturnNegative =>
+      'Portföyün enflasyonun altında kaldı — alım gücün geriledi.';
+
+  @override
+  String nPeopleParen(int n) {
+    return '($n kişi)';
+  }
+
+  @override
+  String recoveredInDays(int n) {
+    return ' ve $n günde toparladı';
+  }
+
+  @override
+  String get notRecoveredYet => ' ve henüz o seviyeye dönmedi';
+
+  @override
+  String get singleAssetHeavy =>
+      'Tek varlığın hareketi portföyünü belirgin etkiler.';
+
+  @override
+  String drawdownBody(String pct, String tail) {
+    return 'Portföyün, gördüğü en yüksek seviyeden en fazla %$pct geriledi$tail.';
+  }
+
+  @override
+  String get rangeAllTime => 'Tüm zamanlar';
+
+  @override
+  String get rangeLast7 => 'Son 7 gün';
+
+  @override
+  String get rangeLast30 => 'Son 30 gün';
+
+  @override
+  String get rangeLast90 => 'Son 90 gün';
+
+  @override
+  String get rangeThisYear => 'Bu yıl';
+
+  @override
+  String get rangeCustom => 'Özel';
+
+  @override
+  String get searchAssetOrSymbol => 'Varlık adı veya sembol ara';
+
+  @override
+  String get noRecords => 'Kayıt yok';
+
+  @override
+  String nRecords(int n) {
+    return '$n kayıt';
+  }
+
+  @override
+  String nShown(int n) {
+    return ' · $n gösteriliyor';
+  }
+
+  @override
+  String get noMatchingRecords => 'Filtreye uyan kayıt yok';
+
+  @override
+  String get noTransactionsYet => 'Henüz işlem yok';
+
+  @override
+  String get todaysBalanceChange => 'Bugünkü birikim değişimi';
+
+  @override
+  String sinceDateToToday(String date) {
+    return '$date → bugün';
+  }
+
+  @override
+  String balanceChangeSince(String date) {
+    return '$date birikim değişimi';
+  }
+
+  @override
+  String periodChangeSim(String period) {
+    return '$period değişim · simülasyon';
+  }
+
+  @override
+  String periodBalanceChange(String period) {
+    return '$period birikim değişimi';
+  }
+
+  @override
+  String inflowIncludedNote(String amount, String market) {
+    return 'Bu dönemde $amount tutarında alım yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: $market.';
+  }
+
+  @override
+  String outflowIncludedNote(String amount, String market) {
+    return 'Bu dönemde $amount tutarında satış yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: $market.';
+  }
+
+  @override
+  String rowExpandedSemantics(String label) {
+    return '$label, açık. Kapatmak için çift dokun.';
+  }
+
+  @override
+  String gainAmount(String amount) {
+    return 'kazanç $amount';
+  }
+
+  @override
+  String flowBuyLower(String amount) {
+    return 'dönem içi alım $amount';
+  }
+
+  @override
+  String rowCollapsedSemantics(String label) {
+    return '$label, kapalı. İçindeki ürünleri görmek için çift dokun.';
+  }
+
+  @override
+  String lossAmount(String amount) {
+    return 'kayıp $amount';
+  }
+
+  @override
+  String flowSellLower(String amount) {
+    return 'dönem içi satış $amount';
+  }
+
+  @override
+  String flowSellUpper(String amount) {
+    return 'Dönem içi satış $amount';
+  }
+
+  @override
+  String flowBuyUpper(String amount) {
+    return 'Dönem içi alım $amount';
+  }
+
+  @override
+  String get raceFooterGlobal =>
+      'Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir — kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
+
+  @override
+  String get calculatingEllipsis => 'Hesaplanıyor…';
+
+  @override
+  String nThousandPeople(String n) {
+    return '${n}K KİŞİ';
+  }
+
+  @override
+  String nPeopleUpper(int n) {
+    return '$n KİŞİ';
+  }
+
+  @override
+  String get toneTop5 => 'Zirvedeki azınlıktasın';
+
+  @override
+  String get toneTop10 => 'Sandık\'ın en iyi %10\'undasın';
+
+  @override
+  String get toneTop25 => 'Ortalamanın çok üstündesin';
+
+  @override
+  String get toneTop50 => 'Ortalamanın üstündesin';
+
+  @override
+  String get toneTop75 => 'Ortalamaya yakınsın';
+
+  @override
+  String get toneRest => 'Daha iyisini yapabilirsin — 30G takip et';
+
+  @override
+  String get raceFooterPartners =>
+      'Sıralama, seçili dönemin getirisidir (%). Herkes aynı formülle ölçülür; kimsenin varlık listesi görünmez.';
+
+  @override
+  String get recapYourPortfolio => 'Portföyün';
+
+  @override
+  String get recapGrewThisYear => 'Bu yıl böyle büyüdün.';
+
+  @override
+  String get recapToughYear => 'Zor bir yıl oldu.';
+
+  @override
+  String get recapVsInflation => 'Enflasyona karşı';
+
+  @override
+  String get recapKeptPower => 'Alım gücünü korudun ve üstüne koydun.';
+
+  @override
+  String get recapInflationWon => 'Bu yıl enflasyon öndeydi.';
+
+  @override
+  String get recapBestAsset => 'En çok kazandıran';
+
+  @override
+  String recapReturnedPct(String pct) {
+    return 'Bugüne kadar %$pct getirdi.';
+  }
+
+  @override
+  String get recapMostPatient => 'En sabırlı olduğun';
+
+  @override
+  String recapInPortfolioDays(int n) {
+    return '$n gündür portföyünde.';
+  }
+
+  @override
+  String recapTypeCount(int n) {
+    return '$n türde varlık ile.';
+  }
+
+  @override
+  String get recapForAYear => 'Bir yıl boyunca.';
+
+  @override
+  String recapShareTitle(int year) {
+    return 'sandık Özetim $year';
+  }
+
+  @override
+  String get shareWord => 'Paylaş';
 }

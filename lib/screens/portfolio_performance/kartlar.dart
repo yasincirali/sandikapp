@@ -432,16 +432,18 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // ("11 Eyl → bugün"): eksen artık tek gün değil, kullanıcı isteği
     // gereği hafta sonunu da kapsıyor (2026-09-12).
     final gunIciBaslik = gunIciBugun
-        ? 'Bugünkü birikim değişimi'
+        ? context.l10n.todaysBalanceChange
         : kapaliKuyruk
-            ? '${DateFormat('d MMM', 'tr_TR').format(start)} → bugün'
-            : '${DateFormat('d MMMM', 'tr_TR').format(start)} birikim değişimi';
+            ? context.l10n.sinceDateToToday(
+                DateFormat('d MMM', 'tr_TR').format(start))
+            : context.l10n.balanceChangeSince(
+                DateFormat('d MMMM', 'tr_TR').format(start));
 
     final title = intraday
         ? gunIciBaslik
         : _simulate
-            ? '$periodLabel değişim · simülasyon'
-            : '$periodLabel birikim değişimi';
+            ? context.l10n.periodChangeSim(periodLabel)
+            : context.l10n.periodBalanceChange(periodLabel);
 
     return Container(
       padding:
@@ -568,14 +570,12 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 Expanded(
                   child: Text(
                     netInflow > 0
-                        ? 'Bu dönemde ${tryFmt.format(netInflow)} tutarında alım '
-                            'yapıldı ve yukarıdaki rakam bunu İÇERİR. '
-                            'Yalnızca piyasa hareketi: '
-                            '${tryFmt.format(grossChange - netInflow)}.'
-                        : 'Bu dönemde ${tryFmt.format(netInflow.abs())} tutarında '
-                            'satış yapıldı ve yukarıdaki rakam bunu İÇERİR. '
-                            'Yalnızca piyasa hareketi: '
-                            '${tryFmt.format(grossChange - netInflow)}.',
+                        ? context.l10n.inflowIncludedNote(
+                            tryFmt.format(netInflow),
+                            tryFmt.format(grossChange - netInflow))
+                        : context.l10n.outflowIncludedNote(
+                            tryFmt.format(netInflow.abs()),
+                            tryFmt.format(grossChange - netInflow)),
                     style:
                         context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),

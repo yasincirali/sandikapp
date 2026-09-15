@@ -498,7 +498,7 @@ class _KopruKarti extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
             baz: baz,
-            etiket: s.period.intraday ? 'Bugün' : 'Şimdi',
+            etiket: s.period.intraday ? context.l10n.todayWord : context.l10n.nowWord,
             deger: son,
             oran: son.abs() / enBuyuk,
             // Marka amberi METİN rengi olarak kullanılır; zemin amberFill
@@ -658,9 +658,12 @@ class _CubukSatiri extends StatelessWidget {
 /// eğri çizilir.
 class _GunIciEgriKarti extends StatelessWidget {
   final PeriodSummary summary;
-  final String baslik;
 
-  const _GunIciEgriKarti({required this.summary, this.baslik = 'Gün içi'});
+  /// `null` ise "Gün içi" (sözlükten). Varsayılan parametre olarak
+  /// verilemez: `context` const bir başlangıç değerinde kullanılamaz.
+  final String? baslik;
+
+  const _GunIciEgriKarti({required this.summary, this.baslik});
 
   @override
   Widget build(BuildContext context) {
@@ -669,7 +672,7 @@ class _GunIciEgriKarti extends StatelessWidget {
         : (summary.isNegative ? context.c.loss : context.c.gain);
 
     return _BaglamKarti(
-      baslik: baslik,
+      baslik: baslik ?? context.l10n.intradayWord,
       child: SizedBox(
         height: 64,
         width: double.infinity,
@@ -841,8 +844,8 @@ class _TufeKarti extends StatelessWidget {
           Expanded(
             child: Text(
               onde
-                  ? 'Bu dönem enflasyonun $mutlak puan önünde.'
-                  : 'Bu dönem enflasyonun $mutlak puan gerisinde.',
+                  ? context.l10n.aheadOfInflationPeriod(mutlak)
+                  : context.l10n.behindInflationPeriod(mutlak),
               style: context.t.bodyMedium?.copyWith(color: context.c.text58),
             ),
           ),
@@ -922,9 +925,8 @@ class _ReelGetiriKarti extends StatelessWidget {
           const SizedBox(height: SandikSpace.xs),
           Text(
             onde
-                ? 'Portföyün enflasyonun üzerinde reel getiri sağladı — '
-                    'alım gücün arttı.'
-                : 'Portföyün enflasyonun altında kaldı — alım gücün geriledi.',
+                ? context.l10n.realReturnPositive
+                : context.l10n.realReturnNegative,
             style: context.t.bodySmall?.copyWith(color: c.text58),
           ),
           // Ham girdiler: kullanıcı sayıyı TÜİK'le doğrulayabilmeli.
@@ -1161,8 +1163,8 @@ class _BenchmarkKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.sm),
           Text(
-            'Katılımcıların %$ustundeOlduklari kadarının üstündesin.'
-            '${katilimci != null ? ' ($katilimci kişi)' : ''}',
+            '${context.l10n.percentileSentence(ustundeOlduklari)}'
+            '${katilimci != null ? ' ${context.l10n.nPeopleParen(katilimci!)}' : ''}',
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
         ],
@@ -1611,10 +1613,12 @@ class SaglikKarti extends StatelessWidget {
               baslik: context.l10n.maxDrawdown,
               deger: d.isFlat ? '—' : '%${fmtNum(d.yuzde, digits: 1)}',
               aciklama: d.isFlat
-                  ? 'Bu pencerede portföyün zirvesinden gerilemedi.'
-                  : 'Portföyün, gördüğü en yüksek seviyeden en fazla '
-                      '%${fmtNum(d.yuzde, digits: 1)} geriledi'
-                      '${d.toparlandi ? " ve ${d.toparlanmaGun} günde toparladı" : " ve henüz o seviyeye dönmedi"}.',
+                  ? context.l10n.noDrawdown
+                  : context.l10n.drawdownBody(
+                      fmtNum(d.yuzde, digits: 1),
+                      d.toparlandi
+                          ? context.l10n.recoveredInDays(d.toparlanmaGun ?? 0)
+                          : context.l10n.notRecoveredYet),
               ton: d.isFlat ? c.text58 : c.loss,
             ),
           ],
@@ -1633,10 +1637,11 @@ class SaglikKarti extends StatelessWidget {
             _SaglikSatiri(
               baslik: context.l10n.concentration,
               deger: '%${fmtNum(y.enBuyukPay, digits: 0)}',
-              aciklama: 'Portföyünün %${fmtNum(y.enBuyukPay, digits: 0)}\'i '
-                  '${y.enBuyukEtiket} içinde; toplam ${y.pozisyonSayisi} '
-                  'pozisyonun var.'
-                  '${y.tekVarlikAgir ? " Tek varlığın hareketi portföyünü belirgin etkiler." : ""}',
+              aciklama: context.l10n.concentrationBody(
+                  fmtNum(y.enBuyukPay, digits: 0),
+                  y.enBuyukEtiket,
+                  y.pozisyonSayisi,
+                  y.tekVarlikAgir ? ' ${context.l10n.singleAssetHeavy}' : ''),
               ton: y.tekVarlikAgir ? c.amberText : c.text58,
             ),
           ],
@@ -1786,34 +1791,32 @@ class IleriMetrikKarti extends StatelessWidget {
     final risk = m.riskAyarliGetiri;
     if (risk != null) {
       satir(
-        'Risk-ayarlı getiri',
+        context.l10n.riskAdjustedReturn,
         fmtNum(risk),
-        'Yıllık getiri ÷ yıllık oynaklık. Sharpe oranının risksiz oransız '
-        'hâli: aldığın her birim dalgalanma için kaç puan getiri.',
+        context.l10n.riskAdjustedBody,
         ton: context.signColor(risk),
       );
     }
     final zamanlama = m.zamanlamaEtkisi;
     if (zamanlama != null) {
       satir(
-        'Zamanlama etkisi',
+        context.l10n.timingEffect,
         '${zamanlama >= 0 ? '+' : ''}${fmtNum(zamanlama, digits: 1)} puan',
-        'Paranın getirisi (XIRR) − piyasa getirisi. Pozitifse alım '
-        'tarihlerin piyasayı yendi; negatifse pahalıya girmişsin.',
+        context.l10n.timingEffectBody,
         ton: context.signColor(zamanlama),
       );
     }
     if (m.toparlanmaGun != null) {
       satir(
-        'Toparlanma',
-        '${m.toparlanmaGun} gün',
-        'En büyük düşüşün dibinden eski zirveye dönüş süresi.',
+        context.l10n.recoveryWord,
+        context.l10n.recoveryDays(m.toparlanmaGun!),
+        context.l10n.recoveryBody,
       );
     } else if (m.toparlanmadi) {
       satir(
-        'Toparlanma',
-        'Henüz yok',
-        'En büyük düşüşün ardından eski zirveye henüz dönülmedi.',
+        context.l10n.recoveryWord,
+        context.l10n.notYet,
+        context.l10n.notRecoveredBody,
         ton: c.loss,
       );
     }

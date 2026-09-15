@@ -313,9 +313,8 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
           // dokunulduğunu belli etmemesi ekranın geri kalanıyla da çelişiyordu.
           SandikTappable(
             semanticLabel: isOpen
-                ? '${row.label}, açık. Kapatmak için çift dokun.'
-                : '${row.label}, kapalı. İçindeki ürünleri görmek için '
-                    'çift dokun.',
+                ? context.l10n.rowExpandedSemantics(row.label)
+                : context.l10n.rowCollapsedSemantics(row.label),
             onTap: () => setState(() {
               if (!_expanded.remove(type)) _expanded.add(type);
             }),
@@ -412,13 +411,15 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       if (isFlat)
         'değişim yok'
       else ...[
-        '${pnl >= 0 ? 'kazanç' : 'kayıp'} ${tryFmt.format(pnl.abs())}',
+        pnl >= 0
+            ? context.l10n.gainAmount(tryFmt.format(pnl.abs()))
+            : context.l10n.lossAmount(tryFmt.format(pnl.abs())),
         if (pct != null) fmtPct(pct.abs(), digits: 2),
       ],
       if (!widget.simulate && flow.abs() > 0.5)
         flow > 0
-            ? 'dönem içi alım ${tryFmt.format(flow)}'
-            : 'dönem içi satış ${tryFmt.format(flow.abs())}',
+            ? context.l10n.flowBuyLower(tryFmt.format(flow))
+            : context.l10n.flowSellLower(tryFmt.format(flow.abs())),
     ].join(', ');
 
     return Semantics(
@@ -484,8 +485,8 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
               if (!widget.simulate && flow.abs() > 0.5)
                 Text(
                   flow > 0
-                      ? 'Dönem içi alım ${tryFmt.format(flow)}'
-                      : 'Dönem içi satış ${tryFmt.format(flow.abs())}',
+                      ? context.l10n.flowBuyUpper(tryFmt.format(flow))
+                      : context.l10n.flowSellUpper(tryFmt.format(flow.abs())),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.bodySmall

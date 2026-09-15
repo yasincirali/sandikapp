@@ -101,7 +101,7 @@
   "languageSystem": "System",
   "languageTurkish": "Türkçe",
   "languageEnglish": "English",
-  "languageNote": "English is in beta: some screens are still Turkish.",
+  "languageNote": "English is in beta: legal texts, the intro tour and gold/fund sub-category names stay Turkish.",
   "investorLevel": "Investor level",
   "investorLevelNote": "Only changes WHICH metrics are shown; your calculations and data stay the same.",
   "levelBeginner": "Beginner",
@@ -1601,5 +1601,363 @@
     }
   },
   "assetNotFound": "Asset not found",
-  "myMarketReturn": "My market return"
+  "myMarketReturn": "My market return",
+  "dataExported": "Your data was prepared as a JSON file and shared.",
+  "mailAppFailed": "Could not open your mail app. Please write to {email}.",
+  "@mailAppFailed": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "notifSubtitleIos": "Signals, price alerts, quiet hours, Live Activity",
+  "notifSubtitleAndroid": "Signals, price alerts, quiet hours",
+  "alertSetFromAssetScreen": "Set from the bell on an asset screen",
+  "noBiometricOnDevice": "No biometrics or PIN is set up on this device.",
+  "biometricPrompt": "Verify your identity to enable the biometric lock",
+  "rateNotFetched": "The exchange rate hasn't been fetched yet; amounts stay in ₺ for now.",
+  "baseCurrencyNote": "Amounts are shown in {unit} at today's rate; calculations stay in ₺.",
+  "@baseCurrencyNote": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "startHour": "Start time",
+  "endHour": "End time",
+  "liveActivityIosNote": "iOS keeps a Live Activity session open for at most 8 hours. Opening the app refreshes it; if you never open it, it may drop off the lock screen.",
+  "marketClosedNote": "When the market is closed, the last close is shown.",
+  "hiddenWeekend": "Not visible right now: weekend display is off. Use the switch above to turn it on.",
+  "hiddenOutsideWindow": "Not visible right now: you're outside the {start}–{end} window. The banner appears at {start}. To see it now, turn on \"Show all day\".",
+  "@hiddenOutsideWindow": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quietStart": "Quiet start",
+  "quietEnd": "Quiet end",
+  "quietHoursOn": "Briefing, summary, calendar and alert pushes are not sent between {start} and {end}",
+  "@quietHoursOn": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "quietHoursOff": "Silence all proactive notifications during chosen night hours",
+  "passwordLabel": "Password",
+  "aheadOfInflationPeriod": "This period you are {pts} points ahead of inflation.",
+  "@aheadOfInflationPeriod": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnPositive": "Your portfolio delivered a real return above inflation — your purchasing power grew.",
+  "percentileSentence": "You are above {pct}% of participants.",
+  "@percentileSentence": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "noDrawdown": "Your portfolio did not fall from its peak in this window.",
+  "concentrationBody": "{pct}% of your portfolio sits in {label}; you have {n} positions in total.{tail}",
+  "@concentrationBody": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "tail": {
+        "type": "String"
+      }
+    }
+  },
+  "riskAdjustedReturn": "Risk-adjusted return",
+  "riskAdjustedBody": "Annual return ÷ annual volatility. The Sharpe ratio without a risk-free rate: how many points of return per unit of swing you take on.",
+  "timingEffectBody": "Return on your money (XIRR) − market return. Positive means your buy dates beat the market; negative means you bought in expensive.",
+  "recoveryDays": "{n} days",
+  "@recoveryDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recoveryBody": "Time from the bottom of your largest drawdown back to the old peak.",
+  "notYet": "Not yet",
+  "notRecoveredBody": "After the largest drawdown, the old peak has not been reached again.",
+  "timingEffect": "Timing effect",
+  "recoveryWord": "Recovery",
+  "intradayWord": "Intraday",
+  "todayWord": "Today",
+  "nowWord": "Now",
+  "behindInflationPeriod": "This period you are {pts} points behind inflation.",
+  "@behindInflationPeriod": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "realReturnNegative": "Your portfolio fell short of inflation — your purchasing power shrank.",
+  "nPeopleParen": "({n} people)",
+  "@nPeopleParen": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recoveredInDays": " and recovered in {n} days",
+  "@recoveredInDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notRecoveredYet": " and has not returned to that level yet",
+  "singleAssetHeavy": "A single asset's move noticeably affects your portfolio.",
+  "drawdownBody": "Your portfolio fell at most {pct}% from its highest level{tail}.",
+  "@drawdownBody": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "tail": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeAllTime": "All time",
+  "rangeLast7": "Last 7 days",
+  "rangeLast30": "Last 30 days",
+  "rangeLast90": "Last 90 days",
+  "rangeThisYear": "This year",
+  "rangeCustom": "Custom",
+  "searchAssetOrSymbol": "Search asset name or symbol",
+  "noRecords": "No records",
+  "nRecords": "{n} records",
+  "@nRecords": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "nShown": " · {n} shown",
+  "@nShown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "noMatchingRecords": "No records match the filter",
+  "noTransactionsYet": "No transactions yet",
+  "todaysBalanceChange": "Today's balance change",
+  "sinceDateToToday": "{date} → today",
+  "@sinceDateToToday": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceChangeSince": "Balance change since {date}",
+  "@balanceChangeSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "periodChangeSim": "{period} change · simulation",
+  "@periodChangeSim": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "periodBalanceChange": "{period} balance change",
+  "@periodBalanceChange": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "inflowIncludedNote": "You bought {amount} in this period and the figure above INCLUDES it. Market move only: {market}.",
+  "@inflowIncludedNote": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "market": {
+        "type": "String"
+      }
+    }
+  },
+  "outflowIncludedNote": "You sold {amount} in this period and the figure above INCLUDES it. Market move only: {market}.",
+  "@outflowIncludedNote": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "market": {
+        "type": "String"
+      }
+    }
+  },
+  "rowExpandedSemantics": "{label}, expanded. Double tap to collapse.",
+  "@rowExpandedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "gainAmount": "gain {amount}",
+  "@gainAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowBuyLower": "bought {amount} in period",
+  "@flowBuyLower": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "rowCollapsedSemantics": "{label}, collapsed. Double tap to see what's inside.",
+  "@rowCollapsedSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "lossAmount": "loss {amount}",
+  "@lossAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowSellLower": "sold {amount} in period",
+  "@flowSellLower": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowSellUpper": "Sold {amount} in period",
+  "@flowSellUpper": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "flowBuyUpper": "Bought {amount} in period",
+  "@flowBuyUpper": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "raceFooterGlobal": "Return is computed by comparing the start and end of the selected period. Rankings and allocations are anonymous — identity, quantity and TRY figures are never shared.",
+  "calculatingEllipsis": "Calculating…",
+  "nThousandPeople": "{n}K PEOPLE",
+  "@nThousandPeople": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nPeopleUpper": "{n} PEOPLE",
+  "@nPeopleUpper": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "toneTop5": "You're in the top few",
+  "toneTop10": "You're in sandık's top 10%",
+  "toneTop25": "Well above average",
+  "toneTop50": "Above average",
+  "toneTop75": "Close to average",
+  "toneRest": "You can do better — follow the 30D view",
+  "raceFooterPartners": "The ranking is the selected period's return (%). Everyone is measured with the same formula; no one's asset list is visible.",
+  "recapYourPortfolio": "Your portfolio",
+  "recapGrewThisYear": "This is how you grew this year.",
+  "recapToughYear": "It was a tough year.",
+  "recapVsInflation": "Against inflation",
+  "recapKeptPower": "You protected your purchasing power and added to it.",
+  "recapInflationWon": "Inflation was ahead this year.",
+  "recapBestAsset": "Biggest winner",
+  "recapReturnedPct": "It returned {pct}% so far.",
+  "@recapReturnedPct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "recapMostPatient": "Your most patient holding",
+  "recapInPortfolioDays": "It has been in your portfolio for {n} days.",
+  "@recapInPortfolioDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recapTypeCount": "Across {n} asset types.",
+  "@recapTypeCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "recapForAYear": "For a whole year.",
+  "recapShareTitle": "My sandık Recap {year}",
+  "@recapShareTitle": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "shareWord": "Share"
 }

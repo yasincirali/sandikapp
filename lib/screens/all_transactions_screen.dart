@@ -57,20 +57,21 @@ class AllTransactionsScreen extends ConsumerStatefulWidget {
 enum _DateRange { all, days7, days30, days90, thisYear, custom }
 
 extension _DateRangeLabel on _DateRange {
-  String get label {
+  /// Sözlüğü çağıran verir: `extension` bağlamsız.
+  String labelOf(AppLocalizations l) {
     switch (this) {
       case _DateRange.all:
-        return 'Tüm zamanlar';
+        return l.rangeAllTime;
       case _DateRange.days7:
-        return 'Son 7 gün';
+        return l.rangeLast7;
       case _DateRange.days30:
-        return 'Son 30 gün';
+        return l.rangeLast30;
       case _DateRange.days90:
-        return 'Son 90 gün';
+        return l.rangeLast90;
       case _DateRange.thisYear:
-        return 'Bu yıl';
+        return l.rangeThisYear;
       case _DateRange.custom:
-        return 'Özel';
+        return l.rangeCustom;
     }
   }
 }
@@ -230,7 +231,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               }),
               style: context.t.bodyMedium?.copyWith(color: context.c.text90),
               decoration: context.inputDecoration(
-                'Varlık adı veya sembol ara',
+                context.l10n.searchAssetOrSymbol,
                 prefixIcon: Icon(Icons.search_rounded,
                     size: 20, color: context.c.text36),
                 suffixIcon: _query.isEmpty
@@ -282,9 +283,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               children: [
                 Text(
                   rows.isEmpty
-                      ? 'Kayıt yok'
-                      : '${rows.length} kayıt'
-                          '${shown < rows.length ? ' · $shown gösteriliyor' : ''}',
+                      ? context.l10n.noRecords
+                      : '${context.l10n.nRecords(rows.length)}'
+                          '${shown < rows.length ? context.l10n.nShown(shown) : ''}',
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
                 const Spacer(),
@@ -361,7 +362,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
             Icon(Icons.inbox_rounded, size: 52, color: context.c.text36),
             const SizedBox(height: 12),
             Text(
-              _hasActiveFilter ? 'Filtreye uyan kayıt yok' : 'Henüz işlem yok',
+              _hasActiveFilter ? context.l10n.noMatchingRecords : context.l10n.noTransactionsYet,
               style: context.t.titleMedium?.copyWith(color: context.c.text36),
             ),
             if (_hasActiveFilter) ...[
@@ -383,7 +384,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final label = r == _DateRange.custom && _customRange != null
         ? '${DateFormat('d MMM', 'tr_TR').format(_customRange!.start)}'
             ' – ${DateFormat('d MMM', 'tr_TR').format(_customRange!.end)}'
-        : r.label;
+        : r.labelOf(context.l10n);
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),

@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageNote.
   ///
   /// In tr, this message translates to:
-  /// **'İngilizce beta: bazı ekranlar henüz Türkçe.'**
+  /// **'İngilizce beta: yasal metinler, tanıtım turu ve altın/fon alt kategori adları Türkçe kalır.'**
   String get languageNote;
 
   /// No description provided for @investorLevel.
@@ -4375,6 +4375,582 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Piyasa getirim'**
   String get myMarketReturn;
+
+  /// No description provided for @dataExported.
+  ///
+  /// In tr, this message translates to:
+  /// **'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.'**
+  String get dataExported;
+
+  /// No description provided for @mailAppFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mail uygulaması açılamadı. Lütfen {email} adresine yaz.'**
+  String mailAppFailed(String email);
+
+  /// No description provided for @notifSubtitleIos.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik'**
+  String get notifSubtitleIos;
+
+  /// No description provided for @notifSubtitleAndroid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyaller, fiyat alarmları, sessiz saatler'**
+  String get notifSubtitleAndroid;
+
+  /// No description provided for @alertSetFromAssetScreen.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık ekranındaki zil ile kurulur'**
+  String get alertSetFromAssetScreen;
+
+  /// No description provided for @noBiometricOnDevice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu cihazda biyometrik doğrulama ya da PIN tanımlı değil.'**
+  String get noBiometricOnDevice;
+
+  /// No description provided for @biometricPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Biyometrik kilidi açmak için kimliğini doğrula'**
+  String get biometricPrompt;
+
+  /// No description provided for @rateNotFetched.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kur henüz çekilmedi; tutarlar şimdilik ₺ görünür.'**
+  String get rateNotFetched;
+
+  /// No description provided for @baseCurrencyNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutarlar bugünkü kurla {unit} cinsinden gösterilir; hesaplar ₺ üzerinden yapılır.'**
+  String baseCurrencyNote(String unit);
+
+  /// No description provided for @startHour.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başlangıç saati'**
+  String get startHour;
+
+  /// No description provided for @endHour.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bitiş saati'**
+  String get endHour;
+
+  /// No description provided for @liveActivityIosNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'iOS, Live Activity oturumunu en fazla 8 saat açık tutar. Uygulamayı açtıkça süre yenilenir; hiç açmazsanız kilit ekranından düşebilir.'**
+  String get liveActivityIosNote;
+
+  /// No description provided for @marketClosedNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Piyasa kapalıyken son kapanış gösterilir.'**
+  String get marketClosedNote;
+
+  /// No description provided for @hiddenWeekend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullanın.'**
+  String get hiddenWeekend;
+
+  /// No description provided for @hiddenOutsideWindow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an görünmüyor: saat {start}–{end} aralığının dışındasınız. Banner {start}\'da görünecek. Hemen görmek için \"Gün boyu göster\"i açın.'**
+  String hiddenOutsideWindow(String start, String end);
+
+  /// No description provided for @quietStart.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sessizlik başlangıcı'**
+  String get quietStart;
+
+  /// No description provided for @quietEnd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sessizlik bitişi'**
+  String get quietEnd;
+
+  /// No description provided for @quietHoursOn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Brifing, özet, takvim ve alarm push\'ları {start}–{end} arası gönderilmez'**
+  String quietHoursOn(String start, String end);
+
+  /// No description provided for @quietHoursOff.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gece belirli saatlerde hiçbir proaktif bildirim gelmesin'**
+  String get quietHoursOff;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre'**
+  String get passwordLabel;
+
+  /// No description provided for @aheadOfInflationPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönem enflasyonun {pts} puan önünde.'**
+  String aheadOfInflationPeriod(String pts);
+
+  /// No description provided for @realReturnPositive.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün enflasyonun üzerinde reel getiri sağladı — alım gücün arttı.'**
+  String get realReturnPositive;
+
+  /// No description provided for @percentileSentence.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katılımcıların %{pct} kadarının üstündesin.'**
+  String percentileSentence(int pct);
+
+  /// No description provided for @noDrawdown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu pencerede portföyün zirvesinden gerilemedi.'**
+  String get noDrawdown;
+
+  /// No description provided for @concentrationBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyünün %{pct}\'i {label} içinde; toplam {n} pozisyonun var.{tail}'**
+  String concentrationBody(String pct, String label, int n, String tail);
+
+  /// No description provided for @riskAdjustedReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Risk-ayarlı getiri'**
+  String get riskAdjustedReturn;
+
+  /// No description provided for @riskAdjustedBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık getiri ÷ yıllık oynaklık. Sharpe oranının risksiz oransız hâli: aldığın her birim dalgalanma için kaç puan getiri.'**
+  String get riskAdjustedBody;
+
+  /// No description provided for @timingEffectBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paranın getirisi (XIRR) − piyasa getirisi. Pozitifse alım tarihlerin piyasayı yendi; negatifse pahalıya girmişsin.'**
+  String get timingEffectBody;
+
+  /// No description provided for @recoveryDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gün'**
+  String recoveryDays(int n);
+
+  /// No description provided for @recoveryBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'En büyük düşüşün dibinden eski zirveye dönüş süresi.'**
+  String get recoveryBody;
+
+  /// No description provided for @notYet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz yok'**
+  String get notYet;
+
+  /// No description provided for @notRecoveredBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'En büyük düşüşün ardından eski zirveye henüz dönülmedi.'**
+  String get notRecoveredBody;
+
+  /// No description provided for @timingEffect.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zamanlama etkisi'**
+  String get timingEffect;
+
+  /// No description provided for @recoveryWord.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toparlanma'**
+  String get recoveryWord;
+
+  /// No description provided for @intradayWord.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün içi'**
+  String get intradayWord;
+
+  /// No description provided for @todayWord.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün'**
+  String get todayWord;
+
+  /// No description provided for @nowWord.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şimdi'**
+  String get nowWord;
+
+  /// No description provided for @behindInflationPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönem enflasyonun {pts} puan gerisinde.'**
+  String behindInflationPeriod(String pts);
+
+  /// No description provided for @realReturnNegative.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün enflasyonun altında kaldı — alım gücün geriledi.'**
+  String get realReturnNegative;
+
+  /// No description provided for @nPeopleParen.
+  ///
+  /// In tr, this message translates to:
+  /// **'({n} kişi)'**
+  String nPeopleParen(int n);
+
+  /// No description provided for @recoveredInDays.
+  ///
+  /// In tr, this message translates to:
+  /// **' ve {n} günde toparladı'**
+  String recoveredInDays(int n);
+
+  /// No description provided for @notRecoveredYet.
+  ///
+  /// In tr, this message translates to:
+  /// **' ve henüz o seviyeye dönmedi'**
+  String get notRecoveredYet;
+
+  /// No description provided for @singleAssetHeavy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tek varlığın hareketi portföyünü belirgin etkiler.'**
+  String get singleAssetHeavy;
+
+  /// No description provided for @drawdownBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün, gördüğü en yüksek seviyeden en fazla %{pct} geriledi{tail}.'**
+  String drawdownBody(String pct, String tail);
+
+  /// No description provided for @rangeAllTime.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm zamanlar'**
+  String get rangeAllTime;
+
+  /// No description provided for @rangeLast7.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 7 gün'**
+  String get rangeLast7;
+
+  /// No description provided for @rangeLast30.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 30 gün'**
+  String get rangeLast30;
+
+  /// No description provided for @rangeLast90.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 90 gün'**
+  String get rangeLast90;
+
+  /// No description provided for @rangeThisYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu yıl'**
+  String get rangeThisYear;
+
+  /// No description provided for @rangeCustom.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özel'**
+  String get rangeCustom;
+
+  /// No description provided for @searchAssetOrSymbol.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık adı veya sembol ara'**
+  String get searchAssetOrSymbol;
+
+  /// No description provided for @noRecords.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kayıt yok'**
+  String get noRecords;
+
+  /// No description provided for @nRecords.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} kayıt'**
+  String nRecords(int n);
+
+  /// No description provided for @nShown.
+  ///
+  /// In tr, this message translates to:
+  /// **' · {n} gösteriliyor'**
+  String nShown(int n);
+
+  /// No description provided for @noMatchingRecords.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtreye uyan kayıt yok'**
+  String get noMatchingRecords;
+
+  /// No description provided for @noTransactionsYet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz işlem yok'**
+  String get noTransactionsYet;
+
+  /// No description provided for @todaysBalanceChange.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü birikim değişimi'**
+  String get todaysBalanceChange;
+
+  /// No description provided for @sinceDateToToday.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} → bugün'**
+  String sinceDateToToday(String date);
+
+  /// No description provided for @balanceChangeSince.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} birikim değişimi'**
+  String balanceChangeSince(String date);
+
+  /// No description provided for @periodChangeSim.
+  ///
+  /// In tr, this message translates to:
+  /// **'{period} değişim · simülasyon'**
+  String periodChangeSim(String period);
+
+  /// No description provided for @periodBalanceChange.
+  ///
+  /// In tr, this message translates to:
+  /// **'{period} birikim değişimi'**
+  String periodBalanceChange(String period);
+
+  /// No description provided for @inflowIncludedNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemde {amount} tutarında alım yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.'**
+  String inflowIncludedNote(String amount, String market);
+
+  /// No description provided for @outflowIncludedNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemde {amount} tutarında satış yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.'**
+  String outflowIncludedNote(String amount, String market);
+
+  /// No description provided for @rowExpandedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{label}, açık. Kapatmak için çift dokun.'**
+  String rowExpandedSemantics(String label);
+
+  /// No description provided for @gainAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'kazanç {amount}'**
+  String gainAmount(String amount);
+
+  /// No description provided for @flowBuyLower.
+  ///
+  /// In tr, this message translates to:
+  /// **'dönem içi alım {amount}'**
+  String flowBuyLower(String amount);
+
+  /// No description provided for @rowCollapsedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{label}, kapalı. İçindeki ürünleri görmek için çift dokun.'**
+  String rowCollapsedSemantics(String label);
+
+  /// No description provided for @lossAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'kayıp {amount}'**
+  String lossAmount(String amount);
+
+  /// No description provided for @flowSellLower.
+  ///
+  /// In tr, this message translates to:
+  /// **'dönem içi satış {amount}'**
+  String flowSellLower(String amount);
+
+  /// No description provided for @flowSellUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem içi satış {amount}'**
+  String flowSellUpper(String amount);
+
+  /// No description provided for @flowBuyUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem içi alım {amount}'**
+  String flowBuyUpper(String amount);
+
+  /// No description provided for @raceFooterGlobal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir — kimlik, miktar ve TL bilgisi asla paylaşılmaz.'**
+  String get raceFooterGlobal;
+
+  /// No description provided for @calculatingEllipsis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesaplanıyor…'**
+  String get calculatingEllipsis;
+
+  /// No description provided for @nThousandPeople.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n}K KİŞİ'**
+  String nThousandPeople(String n);
+
+  /// No description provided for @nPeopleUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} KİŞİ'**
+  String nPeopleUpper(int n);
+
+  /// No description provided for @toneTop5.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zirvedeki azınlıktasın'**
+  String get toneTop5;
+
+  /// No description provided for @toneTop10.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sandık\'ın en iyi %10\'undasın'**
+  String get toneTop10;
+
+  /// No description provided for @toneTop25.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortalamanın çok üstündesin'**
+  String get toneTop25;
+
+  /// No description provided for @toneTop50.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortalamanın üstündesin'**
+  String get toneTop50;
+
+  /// No description provided for @toneTop75.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortalamaya yakınsın'**
+  String get toneTop75;
+
+  /// No description provided for @toneRest.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daha iyisini yapabilirsin — 30G takip et'**
+  String get toneRest;
+
+  /// No description provided for @raceFooterPartners.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıralama, seçili dönemin getirisidir (%). Herkes aynı formülle ölçülür; kimsenin varlık listesi görünmez.'**
+  String get raceFooterPartners;
+
+  /// No description provided for @recapYourPortfolio.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün'**
+  String get recapYourPortfolio;
+
+  /// No description provided for @recapGrewThisYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu yıl böyle büyüdün.'**
+  String get recapGrewThisYear;
+
+  /// No description provided for @recapToughYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zor bir yıl oldu.'**
+  String get recapToughYear;
+
+  /// No description provided for @recapVsInflation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyona karşı'**
+  String get recapVsInflation;
+
+  /// No description provided for @recapKeptPower.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alım gücünü korudun ve üstüne koydun.'**
+  String get recapKeptPower;
+
+  /// No description provided for @recapInflationWon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu yıl enflasyon öndeydi.'**
+  String get recapInflationWon;
+
+  /// No description provided for @recapBestAsset.
+  ///
+  /// In tr, this message translates to:
+  /// **'En çok kazandıran'**
+  String get recapBestAsset;
+
+  /// No description provided for @recapReturnedPct.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugüne kadar %{pct} getirdi.'**
+  String recapReturnedPct(String pct);
+
+  /// No description provided for @recapMostPatient.
+  ///
+  /// In tr, this message translates to:
+  /// **'En sabırlı olduğun'**
+  String get recapMostPatient;
+
+  /// No description provided for @recapInPortfolioDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gündür portföyünde.'**
+  String recapInPortfolioDays(int n);
+
+  /// No description provided for @recapTypeCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} türde varlık ile.'**
+  String recapTypeCount(int n);
+
+  /// No description provided for @recapForAYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir yıl boyunca.'**
+  String get recapForAYear;
+
+  /// No description provided for @recapShareTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık Özetim {year}'**
+  String recapShareTitle(int year);
+
+  /// No description provided for @shareWord.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylaş'**
+  String get shareWord;
 }
 
 class _AppLocalizationsDelegate

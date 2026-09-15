@@ -133,7 +133,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 autofocus: true,
                 style: TextStyle(color: context.c.text90),
                 decoration: context.inputDecoration(
-                  'Şifre',
+                  context.l10n.passwordLabel,
                   prefixIcon: Icon(Icons.lock_outline,
                       color: context.c.text36, size: 20),
                   suffixIcon: IconButton(
@@ -204,7 +204,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await DataExportService.instance.exportAndShare();
       if (!mounted) return;
       sandikSnack(
-          context, 'Verilerin JSON dosyası olarak hazırlandı ve paylaşıldı.',
+          context, context.l10n.dataExported,
           kind: SandikSnackKind.success, duration: const Duration(seconds: 4));
     } catch (e) {
       if (!mounted) return;
@@ -283,7 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       sandikSnack(context,
-          'Mail uygulaması açılamadı. Lütfen $_supportEmail adresine yaz.',
+          context.l10n.mailAppFailed(_supportEmail),
           kind: SandikSnackKind.warning, duration: const Duration(seconds: 5));
     }
   }
@@ -487,8 +487,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           icon: Icons.notifications_outlined,
           title: SettingsBolum.bildirimler.baslik(context),
           subtitle: defaultTargetPlatform == TargetPlatform.iOS
-              ? 'Sinyaller, fiyat alarmları, sessiz saatler, Canlı Etkinlik'
-              : 'Sinyaller, fiyat alarmları, sessiz saatler',
+              ? context.l10n.notifSubtitleIos
+              : context.l10n.notifSubtitleAndroid,
           onTap: () => _bolumAc(SettingsBolum.bildirimler),
         ),
         _SettingsTile(
@@ -619,7 +619,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         .length ??
                     0;
                 return aktif == 0
-                    ? 'Varlık ekranındaki zil ile kurulur'
+                    ? context.l10n.alertSetFromAssetScreen
                     : '$aktif aktif alarm';
               }(),
               onTap: () => Navigator.push(
@@ -685,12 +685,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (!await svc.available) {
                     if (!mounted) return;
                     sandikSnack(context,
-                        'Bu cihazda biyometrik doğrulama ya da PIN tanımlı değil.',
+                        context.l10n.noBiometricOnDevice,
                         kind: SandikSnackKind.warning);
                     return;
                   }
-                  final ok = await svc.authenticate(
-                      reason: 'Biyometrik kilidi açmak için kimliğini doğrula');
+                  if (!mounted) return;
+                  // Sözlük await'ten ÖNCE okunur.
+                  final istem = context.l10n.biometricPrompt;
+                  final ok = await svc.authenticate(reason: istem);
                   if (!ok) return;
                 }
                 await ref.read(biometricLockProvider.notifier).set(v);
@@ -963,9 +965,9 @@ class _BaseCurrencyPicker extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
           child: Text(
             kurYok
-                ? 'Kur henüz çekilmedi; tutarlar şimdilik ₺ görünür.'
-                : 'Tutarlar bugünkü kurla ${baz.etkinBirim.label.toLowerCase()} '
-                    'cinsinden gösterilir; hesaplar ₺ üzerinden yapılır.',
+                ? context.l10n.rateNotFetched
+                : context.l10n.baseCurrencyNote(
+                    baz.etkinBirim.label.toLowerCase()),
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
         ),
@@ -1277,7 +1279,7 @@ class _LiveActivitySection extends ConsumerWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
-      helpText: isStart ? 'Başlangıç saati' : 'Bitiş saati',
+      helpText: isStart ? context.l10n.startHour : context.l10n.endHour,
       builder: (ctx, child) => MediaQuery(
         // 24 saat biçimi: TR kullanıcısı AM/PM beklemez.
         data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
@@ -1434,7 +1436,7 @@ class _LiveActivitySection extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _whyHidden(start, end, weekend),
+                    _whyHidden(context.l10n, start, end, weekend),
                     style:
                         TextStyle(color: p.text58, fontSize: 11, height: 1.35),
                   ),
@@ -1447,10 +1449,8 @@ class _LiveActivitySection extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
           child: Text(
             exceedsAppleLimit
-                ? 'iOS, Live Activity oturumunu en fazla 8 saat açık '
-                    'tutar. Uygulamayı açtıkça süre yenilenir; hiç '
-                    'açmazsanız kilit ekranından düşebilir.'
-                : 'Piyasa kapalıyken son kapanış gösterilir.',
+                ? context.l10n.liveActivityIosNote
+                : context.l10n.marketClosedNote,
             style: TextStyle(color: p.text36, fontSize: 11, height: 1.35),
           ),
         ),
@@ -1463,18 +1463,16 @@ class _LiveActivitySection extends ConsumerWidget {
   /// Hafta sonu kontrolü ÖNCE gelir: cumartesi 14:00'te hem "hafta sonu
   /// kapalı" hem "saat aralığı dışında" doğru olabilir ama kullanıcının
   /// düzeltmesi gereken ayar hafta sonu anahtarıdır.
-  static String _whyHidden(int start, int end, bool weekend) {
+  static String _whyHidden(
+      AppLocalizations l, int start, int end, bool weekend) {
     final now = DateTime.now();
     final isWeekend =
         now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
 
     if (!weekend && isWeekend) {
-      return 'Şu an görünmüyor: hafta sonu gösterimi kapalı. '
-          'Açmak için yukarıdaki anahtarı kullanın.';
+      return l.hiddenWeekend;
     }
-    return 'Şu an görünmüyor: saat ${_fmt(start)}–${_fmt(end)} aralığının '
-        'dışındasınız. Banner ${_fmt(start)}\'da görünecek. Hemen görmek '
-        'için "Gün boyu göster"i açın.';
+    return l.hiddenOutsideWindow(_fmt(start), _fmt(end));
   }
 }
 
@@ -1679,7 +1677,7 @@ class _QuietHoursTile extends ConsumerWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: isStart ? start : end, minute: 0),
-      helpText: isStart ? 'Sessizlik başlangıcı' : 'Sessizlik bitişi',
+      helpText: isStart ? context.l10n.quietStart : context.l10n.quietEnd,
       builder: (ctx, child) => MediaQuery(
         data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true),
         child: child!,
@@ -1703,9 +1701,8 @@ class _QuietHoursTile extends ConsumerWidget {
           icon: Icons.bedtime_outlined,
           title: context.l10n.quietHours,
           subtitle: q.enabled
-              ? 'Brifing, özet, takvim ve alarm push\'ları '
-                  '${_fmt(q.start!)}–${_fmt(q.end!)} arası gönderilmez'
-              : 'Gece belirli saatlerde hiçbir proaktif bildirim gelmesin',
+              ? context.l10n.quietHoursOn(_fmt(q.start!), _fmt(q.end!))
+              : context.l10n.quietHoursOff,
           value: q.enabled,
           onChanged: (v) => ref.read(quietHoursProvider.notifier).set(
                 start: v ? _defaultStart : null,
