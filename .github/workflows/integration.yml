@@ -109,17 +109,31 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          # DİZİN verilir, tek dosya DEĞİL. `integration_test/smoke_test.dart`
-          # şu hatayla anında düşer: "Integration tests and unit tests cannot
-          # be run in a single invocation." Tek dosya yolu birim testi
-          # sayılıyor; dizin verilince entegrasyon kipine geçiyor (dosyanın
-          # kendi başlığı da bu komutu yazıyor).
+          # `-d` AÇIKÇA verilir.
           #
-          # Bu hata workflow yazıldığından beri buradaydı ama GÖRÜLMEDİ:
+          # Hata mesajı ("Integration tests and unit tests cannot be run in
+          # a single invocation") YANILTICI ve sebebi göstermiyor. Yerelde
+          # ölçüldü (2026-09-15): tek cihaz bağlıyken `flutter test
+          # integration_test/` de `integration_test` de SORUNSUZ koşuyor —
+          # yani dizin/dosya ya da eğik çizgi ayrımı sebep DEĞİL. Flutter
+          # hiçbir cihaz göremediğinde entegrasyon testini birim testi
+          # sanıyor ve bu mesajı veriyor.
+          #
+          # Bu adım workflow yazıldığından beri kırıktı ama GÖRÜLMEDİ:
           # `supabase start` 0054'ün Vault denetiminde hep önce kırıldığı
-          # için bu adıma hiç ulaşılamıyordu.
+          # için buraya hiç ulaşılamıyordu.
           script: |
-            flutter test integration_test/ \
+            # TEŞHİS: `flutter` emülatörü görüyor mu?
+            #
+            # "Integration tests and unit tests cannot be run in a single
+            # invocation" mesajı YANILTICI: yerelde tek cihaz bağlıyken
+            # aynı komut sorunsuz koşuyor (doğrulandı). Flutter HİÇBİR
+            # cihaz göremediğinde entegrasyon testini birim testi sanıyor
+            # ve bu mesajı veriyor. Aşağıdaki iki satır hangisinin geçerli
+            # olduğunu logda görünür kılar.
+            adb devices
+            flutter devices
+            flutter test integration_test -d emulator-5554 \
               --dart-define=SUPABASE_URL=$SUPABASE_URL \
               --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
