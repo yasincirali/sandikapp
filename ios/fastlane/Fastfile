@@ -393,7 +393,57 @@ platform :ios do
       xcargs: is_ci ? "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_path}'" : nil
     )
 
-    # 5) TestFlight upload
+    # 5) dSYM'leri Crashlytics'e yükle — SEMBOLİZASYON İÇİN ŞART.
+    #
+    #    Xcode Release yapılandırması dSYM ÜRETİYOR (`DEBUG_INFORMATION_FORMAT
+    #    = dwarf-with-dsym`, pbxproj) ama üretmek yetmez: Crashlytics onları
+    #    ayrıca almalı. Bu adım yokken her iOS build'i Firebase'de
+    #    "Missing dSYM (required)" uyarısı bırakıyordu ve crash'lerin stack
+    #    trace'i HAM ADRES olarak kalıyordu — yani üretimde çöken kodun hangi
+    #    satır olduğu OKUNAMIYORDU (12 build, 1.1.4'ün tamamı).
+    #
+    #    Neden TestFlight upload'undan ÖNCE: upload_to_testflight uzun sürer
+    #    ve `skip_waiting_for_build_processing: true` ile bile ağ hatasında
+    #    düşebilir. Sembol yükleme ucuz; crash görünürlüğünü dağıtımın
+    #    başarısına bağlamıyoruz.
+    #
+    #    `dsym_path` lane context'ten gelir — `build_app` arşivden çıkardığı
+    #    .dSYM.zip'in yolunu oraya yazar. Sabit yol YAZMIYORUZ: gym'in çıktı
+    #    adı output_name/şemaya göre değişir ve elle yazılan yol sessizce
+    #    ıskalar (ıskalanırsa bu adım hata vermeden hiçbir şey yüklemez).
+    dsym_path = lane_context[SharedValues::DSYM_OUTPUT_PATH]
+
+    # `upload-symbols` FirebaseCrashlytics pod'uyla gelir. Yolu AÇIKÇA
+    # veriyoruz: fastlane binary'yi bulamazsa bu action sessizce hiçbir şey
+    # yüklemeden "başarılı" döner — bizi buraya getiren hata sınıfının ta
+    # kendisi. Yoksa aşağıdaki `File.exist?` kontrolü sesli düşürür.
+    upload_symbols_binary =
+      File.expand_path("../Pods/FirebaseCrashlytics/upload-symbols", __dir__)
+
+    if dsym_path && File.exist?(dsym_path) && File.exist?(upload_symbols_binary)
+      upload_symbols_to_crashlytics(
+        dsym_path: dsym_path,
+        binary_path: upload_symbols_binary,
+        # Plist, uygulamanın Firebase app id'sini taşır; workflow bunu
+        # secret'tan decode ediyor. Yolu açıkça veriyoruz çünkü fastlane
+        # çalışma dizini ios/fastlane, plist ise ios/Runner altında.
+        gsp_path: File.expand_path("../Runner/GoogleService-Info.plist", __dir__)
+      )
+      UI.success("dSYM Crashlytics'e yüklendi: #{dsym_path}")
+    else
+      # Sessiz geçmiyoruz: sembolsüz bir build, çöktüğünde teşhis edilemez.
+      # Dağıtımı bunun için DURDURMUYORUZ (build zaten imzalı ve geçerli),
+      # ama log'da aranabilir bir uyarı bırakıyoruz.
+      UI.important(
+        "dSYM Crashlytics'e YÜKLENMEDİ — bu build sembolsüz kalacak.\n" \
+        "  dSYM yolu:        #{dsym_path.inspect} " \
+        "(var mı: #{dsym_path ? File.exist?(dsym_path) : false})\n" \
+        "  upload-symbols:   #{upload_symbols_binary} " \
+        "(var mı: #{File.exist?(upload_symbols_binary)})"
+      )
+    end
+
+    # 6) TestFlight upload
     upload_to_testflight(
       api_key: api_key,
       ipa: "./build/sandik.ipa",
