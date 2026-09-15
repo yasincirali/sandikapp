@@ -784,7 +784,25 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // Servis singleton'ları `false` (koyu) doğar ve karar değişmemiş
     // sayıldığı için normal yolda itilmezdi: açık temalı kullanıcı, ilk
     // portföy yayınına kadar koyu palet görüyordu.
-    _applySurfaceTheme(trustDeviceBrightness: true, force: true);
+    //
+    // **Parlaklığa BURADA güvenilmez.** `initState` uygulamanın önplanda
+    // olduğunu GARANTİ ETMEZ: iOS süreci arka planda başlatabilir (sessiz
+    // push, arka plan tazeleme) ve o anda `platformBrightness` ters
+    // raporlanır — `SurfaceTheme` dokümantasyonundaki 2. madde. Tercih
+    // "Sistem" ise (varsayılan tam olarak bu) ters değer okunup diske
+    // YAZILIYOR, sunucu satırına gidiyor ve bir sonraki öne dönüşe kadar
+    // kilit ekranında kalıyordu: kullanıcının "ara sıra gidip geliyor"
+    // dediği salınımın geriye kalan kaynağı buydu.
+    //
+    // Güvenilmediğinde karar tablosu son kararı KORUR (diskten okunan
+    // değer), yani açılışta doğru palet zaten elimizdedir. Cihaz görünümü
+    // gerçekten değiştiyse `didChangePlatformBrightness` ya da öne dönüş
+    // onu önplanda yakalar.
+    _applySurfaceTheme(
+      trustDeviceBrightness:
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
+      force: true,
+    );
     _authSubscription = ref.listenManual(authProvider, (_, next) {
       final user = next.valueOrNull;
 

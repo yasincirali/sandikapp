@@ -242,6 +242,31 @@ void main() {
       expect(govde.contains('AppLifecycleState.resumed'), isTrue,
           reason: 'arka plan anlık görüntüsü kapısı kaldırılmış');
     });
+
+    test('açılıştaki ilk hizalama parlaklığa KÖRÜ KÖRÜNE güvenmiyor', () {
+      // `initState` uygulamanın önplanda olduğunu GARANTİ ETMEZ: iOS
+      // süreci arka planda başlatabilir (sessiz push, arka plan
+      // tazeleme) ve o anda `platformBrightness` ters raporlanır.
+      // Tercih "Sistem" iken (varsayılan) ters değer diske yazılıyor,
+      // sunucu satırına gidiyor ve bir sonraki öne dönüşe kadar kilit
+      // ekranında kalıyordu.
+      final i = kaynak.indexOf('_applySurfaceTheme(');
+      expect(i, greaterThan(0), reason: 'açılış hizalaması bulunmalı');
+
+      // İlk çağrı `force: true` olan açılış hizalamasıdır; ondaki
+      // parlaklık güveni lifecycle'a BAĞLI olmalı, sabit `true` değil.
+      final acilis = kaynak.substring(
+          i, (i + 260).clamp(i, kaynak.length).toInt());
+      expect(
+        acilis.contains('trustDeviceBrightness: true') &&
+            acilis.contains('force: true'),
+        isFalse,
+        reason: 'açılışta sabit `true` — arka planda doğan süreç ters '
+            'parlaklığı kabul eder ve palet salınır',
+      );
+      expect(acilis.contains('AppLifecycleState.resumed'), isTrue,
+          reason: 'açılış hizalaması lifecycle kapısı taşımalı');
+    });
   });
 
   group('tema süreçten BAĞIMSIZ taşınıyor', () {

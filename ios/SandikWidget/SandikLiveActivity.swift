@@ -140,17 +140,30 @@ struct SandikLiveActivity: Widget {
                                 .minimumScaleFactor(0.75)
                         } else {
                             HStack(spacing: 5) {
-                                Text(directionArrow(context.state.isPositive))
-                                    .font(.sandikLabel(11, weight: .black))
+                                // Ok YALNIZCA gerçek bir yön varken.
+                                // Koşulsuz basıldığında iki durumda
+                                // yanlış bilgi veriyordu: değişim
+                                // ölçülemediğinde (`changePctText == "—"`)
+                                // ekranda `▲ —`, sıfır değişimde ise
+                                // `▲ %0,00` çıkıyor ve olmayan bir
+                                // hareketi varmış gibi gösteriyordu.
+                                // Renk zaten `hasDirection`'a bakıyordu;
+                                // ok ile renk aynı koşula bağlanır.
+                                if context.state.hasDirection {
+                                    Text(directionArrow(
+                                        context.state.isPositive))
+                                        .font(.sandikLabel(11, weight: .black))
+                                }
                                 Text(context.state.changePctText)
                                     .font(.sandikNumber(20, weight: .bold))
                                     .tracking(-0.2)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.75)
                             }
-                            .foregroundStyle(
-                                palette.statusColor(
-                                    isPositive: context.state.isPositive))
+                            .foregroundStyle(context.state.hasDirection
+                                ? palette.statusColor(
+                                    isPositive: context.state.isPositive)
+                                : palette.text58)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -180,14 +193,31 @@ struct SandikLiveActivity: Widget {
                 }
 
             } compactLeading: {
+                // Piyasa kapalıyken logo SOLUKLAŞIR.
+                //
+                // Compact alanda "Piyasa kapalı" yazacak yer yok, ama
+                // donuk bir yüzde kullanıcıya "bozuk mu?" dedirtiyordu —
+                // kilit ekranı banner'ı bu ayrımı kelimeyle yapıyor
+                // (`isMarketOpen`), Ada'nın compact hâli hiç yapmıyordu.
+                // Soluk logo, rakamın neden hareketsiz olduğunu tek bir
+                // görsel ipucuyla söyler.
+                //
+                // Opaklık TEK sinyal değil: yüzdenin yanında durur ve
+                // ayrıntı genişletildiğinde yazıyla tekrarlanır.
                 SandikLogoMark(width: 20)
+                    .opacity(context.state.isMarketOpen ? 1.0 : 0.55)
 
             } compactTrailing: {
                 // Yön oku + yüzde. Tutar BURAYA girmez: compact alan dar,
                 // uzun bir rakam sistem tarafından kırpılır.
                 HStack(spacing: 2) {
-                    Text(directionArrow(context.state.isPositive))
-                        .font(.sandikLabel(9, weight: .black))
+                    // Ok, rengiyle AYNI koşula bağlı. Koşulsuz basıldığında
+                    // veri yokken `▲ —`, sıfır değişimde `▲ %0,00`
+                    // görünüyordu: nötr renkte ama yanıltıcı bir yukarı oku.
+                    if context.state.hasDirection {
+                        Text(directionArrow(context.state.isPositive))
+                            .font(.sandikLabel(9, weight: .black))
+                    }
                     Text(context.state.isHidden ? "••" : context.state.changePctText)
                         .font(.sandikNumber(13, weight: .semibold))
                 }
@@ -196,9 +226,31 @@ struct SandikLiveActivity: Widget {
                     : palette.text58)
 
             } minimal: {
-                // Minimal: birden fazla Live Activity yarıştığında görünür.
-                // Marka kimliği tek bir işarete iner.
-                SandikLogoMark(width: 16)
+                // Minimal: birden fazla Live Activity yarıştığında görünen
+                // TEK şey bu — yaklaşık 16pt'lik bir daire.
+                //
+                // Burada logo DEĞİL, DURUM gösterilir. Logo marka kimliği
+                // taşıyor ama bilgi taşımıyordu: kullanıcı zaten hangi
+                // uygulama olduğunu ikonun yerinden biliyor, bilmediği şey
+                // portföyün ne yaptığı. Bu alan o soruya cevap verebilecek
+                // kadar yer bırakıyor — tek bir yön işareti.
+                //
+                // Yüzde BURAYA sığmaz (`%12,34` bu çapta okunmaz); yön tek
+                // başına "iyi mi kötü mü" sorusunu yanıtlar, ayrıntı için
+                // kullanıcı Ada'yı genişletir.
+                //
+                // Yön yoksa (veri yok ya da sıfır değişim) logoya düşülür:
+                // nötr bir ok, olmayan bir hareketi ima ederdi.
+                Group {
+                    if context.state.hasDirection {
+                        Text(directionArrow(context.state.isPositive))
+                            .font(.sandikLabel(13, weight: .black))
+                            .foregroundStyle(palette.statusColor(
+                                isPositive: context.state.isPositive))
+                    } else {
+                        SandikLogoMark(width: 16)
+                    }
+                }
             }
             .keylineTint(SandikTheme.amber)
             // Ada'ya dokunuş da performans ekranına gider.
