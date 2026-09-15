@@ -35,6 +35,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:portfoy_takip/main.dart' as app;
+import 'package:portfoy_takip/screens/onboarding_screen.dart';
 
 /// `seed.sql` ile birebir.
 const _smokeEmail = 'smoke@sandik.test';
@@ -88,6 +89,15 @@ void main() {
     // sonra ana gezinme açılır.
     await _bekle(tester, anaEkranFab,
         neden: 'ana ekran (Varlık ekle FAB)', sure: const Duration(seconds: 45));
+
+    // Tanıtım turu AÇIKSA kapat — katman Navigator'ı sarıyor ve her
+    // rotanın üstünde durup dokunmaları yutuyor (`OnboardingTourHost`).
+    // Tohum kullanıcısı `onboarding_completed = true` taşıyor ama tur
+    // başka bir yoldan da açılabiliyor (sürüm notu / "yenilikler"); CI'da
+    // varlık ekleme ekranındaki tür çipleri bu yüzden hiç bulunamıyordu.
+    // Açık değilse bu çağrı zararsızdır.
+    OnboardingScreen.turuKapatTestIcin();
+    await tester.pump();
     await tester.tap(anaEkranFab);
     await _bekle(tester, find.text('Varlık Ekle'), neden: 'varlık ekleme ekranı');
 
@@ -188,6 +198,22 @@ Future<void> _bekleKosul(
     await tester.pump(const Duration(milliseconds: 200));
     if (kosul()) return;
   }
+  // Ağaç dökümü CI logunda KIRPILIYOR (derinlik yüzünden satırlar çok
+  // uzun) ve "hangi ekrandaydık" sorusunu yanıtlamıyordu. Ekrandaki
+  // görünür metinler o soruyu tek satırda yanıtlar — asıl aranan bu.
+  final metinler = find
+      .byType(Text)
+      .evaluate()
+      .map((e) => (e.widget as Text).data)
+      .whereType<String>()
+      .where((t) => t.trim().isNotEmpty)
+      .take(40)
+      .toList();
+  debugPrint('EKRANDAKİ METİNLER: $metinler');
+  // Tanıtım turu ekranın üstüne biniyorsa dokunmalar ona gider;
+  // varlığını ayrıca bildir (2026-09-15 teşhisi).
+  debugPrint('TUR KATMANI VAR MI: '
+      '${find.byType(ModalBarrier).evaluate().length} ModalBarrier');
   debugDumpApp();
   fail('Beklenen görünmedi: $neden (${sure.inSeconds} sn)');
 }

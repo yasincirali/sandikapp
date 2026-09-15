@@ -115,6 +115,23 @@ class OnboardingScreen extends StatefulWidget {
     _Tur.baslat(onBitti: onBitti);
   }
 
+  /// Tur açıksa KAPATIR — yalnızca entegrasyon testi için.
+  ///
+  /// `integration_test/smoke_test.dart` gerçek uygulamayı açıyor ve tur
+  /// katmanı `OnboardingTourHost` içinde Navigator'ı SARIYOR, yani her
+  /// rotanın üstünde duruyor ve dokunmaları yutuyor. Tohum kullanıcısı
+  /// `onboarding_completed = true` taşısa bile tur başka bir yoldan
+  /// açılırsa (sürüm notu, "yenilikler" akışı) duman testi sessizce
+  /// bloklanır — CI'da tam olarak bu yaşandı (2026-09-15).
+  ///
+  /// `onBitti` ÇAĞRILMAZ: bu bir kullanıcı eylemi değil, test kurulumu.
+  /// Çağırmak `markCompleted` yazımını tetikler ve testin ölçtüğü akışı
+  /// kirletirdi.
+  @visibleForTesting
+  static void turuKapatTestIcin() {
+    _Tur.oturum.value = null;
+  }
+
   /// Ayarlar → "Tanıtım turunu yeniden izle".
   ///
   /// Tur gerçek sekmelerin üstünde çalıştığı için önce köke dönülür; aksi
