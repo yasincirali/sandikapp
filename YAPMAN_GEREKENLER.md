@@ -12,11 +12,75 @@
 
 ---
 
-## 🎯 BULUNDU: truncgil v4 API'si değişti — fiyat alarmları ölüydü (2026-09-15)
+## 🔔 YENİ: Fiyat alarmları bildirim listesinde + tıklayınca varlığa gider (2026-09-15)
+
+**Kullanıcı isteği.** İki parça vardı, ikisi de yapıldı.
+
+### 1. Bildirime tıklanınca varlık ekranı, GÜNLÜK sekmesinde açılıyor
+
+Önceki davranış bilinçliydi (kod yorumunda gerekçesiyle duruyordu): alarm
+bildirimi ana ekranda bırakılıyordu çünkü "kullanıcı fiyatı öğrenmek için
+geliyor, alarm listesini yönetmek için değil". Gerekçenin ilk yarısı doğru,
+çıkarımı yanlıştı — doğru varış yeri alarm listesi değil ama ana ekran da
+değil, alarmın konusu olan **varlık**. Karar değiştirildi, eski gerekçe
+kod yorumunda korunuyor.
+
+⚠️ **Sembol → varlık eşlemesi:** alarm payload'ı `asset_id` TAŞIMAZ
+(`price_alerts` sembol üstünden kurulur, sunucu hangi lot'tan geldiğini
+bilmez). Eşleme istemcide `alarmSembolu()` ile yapılır — alarm kurarken
+hangi kural uygulandıysa aynısı tersine çevrilir. İki yönün AYNI fonksiyonu
+kullanması şart; ayrışırsa alarm kurulabilen ama bildirimi açılamayan bir
+varlık ortaya çıkar.
+
+### 2. Alarmlar artık çan sayfasında görünüyor (0065)
+
+`signal_notifications`'a **sadece** `analyze-signals` yazıyordu; fiyat
+alarmı tetiklendiğinde push gidiyor ama uygulama içinde iz kalmıyordu.
+Push'u kaçıran kullanıcı için "alarm kurmuştum, çalıştı mı?" sorusunun
+cevabı yoktu.
+
+**Ayrı tablo** (`price_alert_notifications`), çünkü `SignalAlert` teknik
+sinyale özgü (`buy_count`, `sell_count`, `confidence`) ve alarmda hiçbirinin
+karşılığı yok. Birleştirme istemcide, zaman sırasına göre (`bildirimAkisi`).
+
+Kayıt push'un sonucundan **bağımsız** yazılır: bildirim izni kapalı ya da
+token bayat olsa bile alarmın çalıştığı uygulamada görünmeli.
+
+**Senin yapacağın — İKİ adım:**
+
+1. Actions → Supabase deploy → `migrations=true`, `functions=check-price-alerts`
+2. Uygulamayı yeniden derle (istemci tarafı)
+
+Doğrulama: bir alarmı tetikle → çan rozetinde sayı artmalı, sayfada "ALARM"
+rozetli satır çıkmalı, satıra dokununca varlık GÜNLÜK sekmesinde açılmalı.
+
+> `price_alert_notifications` tablosunda istemcinin **INSERT yetkisi yok**
+> (bilinçli): satırı yalnızca edge function yazar. Kullanıcının kendi adına
+> sahte "alarm tetiklendi" kaydı yazabilmesi için sebep yok.
+
+Testler: `bildirim_akisi_test.dart` (7 test — sıralama, tür ayrımı, kararlı
+sıra), tam paket 2165 test yeşil.
+
+---
+
+## ✅ KAPANDI: truncgil v4 API'si değişti — fiyat alarmları ölüydü (2026-09-15)
 
 **Teşhis tamamlandı.** `net._http_response` okundu: **401/503/500 YOK,
 hepsi 200.** Yani yetki zinciri (gateway JWT + cron secret + FCM secret)
 baştan sona SAĞLAM — aranan arıza orada değildi.
+
+> **✅ CANLIDA DOĞRULANDI (2026-09-15 14:00):**
+> ```json
+> {"ok":true,"checked":1,"priced":1,"triggered":1,"sent":2,
+>  "skipped_quiet_hours":0,"dry_run":false}
+> ```
+> `priced:1` fiyatın çekildiğini, `sent:2` bildirimin GİTTİĞİNİ söyler.
+> Düzeltme `c0e4cbb` ile main'e girdi ve deploy edildi.
+>
+> ⚠️ **Deploy tuzağı (bu turda yaşandı):** ilk deploy denemesi eski kodu
+> dağıttı — düzeltme henüz commit EDİLMEMİŞTİ. Actions repodan checkout
+> yapar; `main`'de olmayan kod deploy edilemez. Edge function düzeltmesi
+> yaptıysan **önce commit + push, sonra Actions.**
 
 ### Arıza 1 — `check-price-alerts` her turda "Fiyat alinamadi." (GERÇEK ARIZA, düzeltildi)
 

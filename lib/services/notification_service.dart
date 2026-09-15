@@ -18,6 +18,9 @@ import '../screens/asset_detail_screen.dart';
 import '../screens/asset_not_found_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
 import '../config/pref_keys.dart';
+// `alarmSembolu`: alarm kurarken kullanılan sembol kuralı. Bildirimi
+// varlığa geri eşlemek için AYNI fonksiyon kullanılmalı.
+import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
 import 'analytics_service.dart';
 import 'crash_reporter.dart';
 import 'retention_tracker.dart';
@@ -457,10 +460,22 @@ class NotificationService {
     // portföyün geneline dair.
     if (type == dailyBriefType) return;
 
-    // Fiyat alarmı da ana ekranda bırakılır. Alarm ekranına yönlendirmek
-    // yanlış olurdu: kullanıcı fiyatı öğrenmek için geliyor, alarm listesini
-    // yönetmek için değil.
-    if (type == priceAlertType) return;
+    // Fiyat alarmı: alarmın kurulduğu varlığın ekranı, GÜNLÜK sekmesinde.
+    //
+    // ÖNCEKİ KARAR ve neden değişti (2026-09-15, kullanıcı isteği): bildirim
+    // ana ekranda bırakılıyordu — gerekçe "kullanıcı fiyatı öğrenmek için
+    // geliyor, alarm listesini yönetmek için değil"di. Gerekçenin ilk yarısı
+    // DOĞRU, çıkarımı yanlıştı: doğru varış yeri alarm listesi değil ama ana
+    // ekran da değil, alarmın konusu olan VARLIK. Ana ekran kullanıcıya
+    // "hangi varlık?" sorusunu tekrar sordurtuyordu.
+    //
+    // Hedef sembolle taşınır (`asset_id` yok — bkz. [openPriceAlertAsset]).
+    if (type == priceAlertType) {
+      final symbol = data['symbol']?.toString();
+      if (symbol == null || symbol.isEmpty) return;
+      openPriceAlertAsset(symbol);
+      return;
+    }
 
     // Sinyal bildirimine dokunulduğunda o varlığın performans ekranı açılır
     // (grafiğin altında teknik sinyal paneli var — kullanıcının bildirimden
@@ -551,6 +566,7 @@ class NotificationService {
     String assetId, {
     int deneme = 0,
     VoidCallback? onNotFound,
+    int? initialPeriodDays,
   }) {
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;
@@ -563,6 +579,7 @@ class NotificationService {
           assetId,
           deneme: deneme + 1,
           onNotFound: onNotFound,
+          initialPeriodDays: initialPeriodDays,
         ),
       );
       return;
@@ -588,6 +605,7 @@ class NotificationService {
           assetId,
           deneme: deneme + 1,
           onNotFound: onNotFound,
+          initialPeriodDays: initialPeriodDays,
         ),
       );
       return;
@@ -620,8 +638,95 @@ class NotificationService {
           asset: asset!,
           showBackButton: true,
           lots: lots,
+          initialPeriodDays: initialPeriodDays,
         ),
       ),
+    );
+  }
+
+  /// Fiyat alarmı bildiriminden varlık ekranını açar — GÜNLÜK sekmesinde.
+  ///
+  /// **Neden ayrı bir yol:** alarm payload'ı `asset_id` TAŞIMAZ, `symbol`
+  /// taşır (`ALTIN_GRAM`, `THYAO.IS`…). Sunucu tarafı alarmı sembol üstünden
+  /// kurar ve kullanıcının hangi lot'undan geldiğini bilmez; zaten aynı
+  /// sembolde birden çok lot olabilir. Eşleştirme burada, istemcide yapılır:
+  /// `alarmSembolu` alarm kurarken hangi kuralı uyguladıysa aynısı tersine
+  /// çevrilir — iki yönün AYNI fonksiyonu kullanması şart, aksi halde alarm
+  /// kurulabilen ama bildirimi açılamayan bir varlık ortaya çıkar.
+  ///
+  /// **Neden GÜNLÜK:** kullanıcı "hedefi geçti" bildirimine dokunduğunda tek
+  /// bir seansı sorar, trendi değil. Varsayılan sekme (1H) o soruyu
+  /// cevaplamıyordu.
+  ///
+  /// Aynı sembolde birden çok lot varsa ilki açılır: `openAssetPerformance`
+  /// zaten `positionKey` ile tüm lot'ları toplayıp grafiğe marker basar,
+  /// yani hangi lot'la girildiği ekranda fark yaratmaz.
+  void openPriceAlertAsset(
+    String symbol, {
+    int deneme = 0,
+    VoidCallback? onNotFound,
+  }) {
+    final navigator = _navigatorKey?.currentState;
+    final context = navigator?.overlay?.context;
+
+    if (navigator == null || context == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(
+        _yenidenDenemeAraligi,
+        () => openPriceAlertAsset(
+          symbol,
+          deneme: deneme + 1,
+          onNotFound: onNotFound,
+        ),
+      );
+      return;
+    }
+
+    final container = ProviderScope.containerOf(context, listen: false);
+    final assets = container.read(portfolioProvider).valueOrNull?.assets;
+
+    // Soğuk açılış: portföy birkaç saniye sonra düşer (bkz.
+    // [openAssetPerformance] — aynı bekleme kuralı).
+    if (assets == null || assets.isEmpty) {
+      if (deneme >= _yenidenDenemeSiniri) {
+        final user = container.read(authProvider).valueOrNull;
+        if (user != null) onNotFound?.call();
+        return;
+      }
+      Future<void>.delayed(
+        _yenidenDenemeAraligi,
+        () => openPriceAlertAsset(
+          symbol,
+          deneme: deneme + 1,
+          onNotFound: onNotFound,
+        ),
+      );
+      return;
+    }
+
+    final hedef = symbol.trim().toUpperCase();
+    Asset? eslesen;
+    for (final a in assets) {
+      final sembol = alarmSembolu(a.ticker, a.subCategory);
+      if (sembol != null && sembol.toUpperCase() == hedef) {
+        eslesen = a;
+        break;
+      }
+    }
+
+    // Varlık satılmış/silinmiş olabilir — alarm sunucuda kalmış olsa bile.
+    // Sessiz geçmek doğru: olmayan varlık için boş ekran açmak yanıltıcı.
+    if (eslesen == null) {
+      onNotFound?.call();
+      return;
+    }
+
+    openAssetPerformance(
+      eslesen.id,
+      onNotFound: onNotFound,
+      // days: 0 → GÜNLÜK. Desteklenmiyorsa (elle fiyatlanan varlık) ekran
+      // sessizce varsayılana düşer.
+      initialPeriodDays: 0,
     );
   }
 

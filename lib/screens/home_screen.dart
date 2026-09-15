@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/price_alert_notification_provider.dart';
+import '../models/price_alert_notification.dart';
+import '../models/bildirim_akisi.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
@@ -10,6 +13,7 @@ import '../providers/portfolio_provider.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
+import '../services/notification_service.dart';
 import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
@@ -17,6 +21,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import '../widgets/price_alert_tile.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/percentile_strip.dart';
 import '../widgets/real_return_strip.dart';
@@ -99,6 +104,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       AssetDetailScreen(asset: asset, showBackButton: true)),
             );
           }
+        },
+        onAlarmDismiss: (id) =>
+            ref.read(priceAlertNotificationProvider.notifier).dismiss(id),
+        onAlarmDelete: (id) =>
+            ref.read(priceAlertNotificationProvider.notifier).delete(id),
+        onAlarmTap: (bildirim) {
+          Navigator.pop(context);
+          // Push bildirimiyle AYNI varış yeri: alarmın konusu olan varlık,
+          // GÜNLÜK sekmesinde. İki yol (push / liste) aynı yere çıkmalı,
+          // aksi halde kullanıcı iki farklı davranış öğrenir.
+          //
+          // Sembolden varlığa eşleme `alarmSembolu` üstünden yapılır —
+          // alarm payload'ı `asset_id` taşımaz (bkz. migration 0065).
+          NotificationService.instance.openPriceAlertAsset(
+            bildirim.symbol,
+            onNotFound: () => NotificationService.instance.showAssetNotFound(),
+          );
         },
       ),
     );
@@ -837,6 +859,14 @@ class _SignalsBottomSheet extends ConsumerWidget {
 
   final void Function(SignalAlert alert) onTap;
 
+  // ── Fiyat alarmı eylemleri (0065) ────────────────────────────────────────
+  //
+  // Sinyalinkinden AYRI: iki tablo, iki notifier. Aynı callback'e bağlamak
+  // kimlikleri karıştırırdı (uuid uzayları ayrı).
+  final void Function(PriceAlertNotification bildirim) onAlarmTap;
+  final Future<void> Function(String id) onAlarmDismiss;
+  final Future<void> Function(String id) onAlarmDelete;
+
   const _SignalsBottomSheet({
     required this.onDismiss,
     required this.onDelete,
@@ -844,7 +874,46 @@ class _SignalsBottomSheet extends ConsumerWidget {
     required this.onDeleteHistory,
     required this.onDeleteAll,
     required this.onTap,
+    required this.onAlarmTap,
+    required this.onAlarmDismiss,
+    required this.onAlarmDelete,
   });
+
+  /// Akıştaki bir öğeyi kendi satırına çevirir.
+  ///
+  /// Tür ayrımı TEK yerde: iki döngü (aktif + geçmiş) aynı yardımcıyı
+  /// çağırır, yani yeni bir bildirim türü eklendiğinde dokunulacak tek nokta
+  /// burasıdır. Eylemler türe göre AYRI notifier'a gider — iki tablo, iki
+  /// uuid uzayı, kimlikler çakışabilir (bkz. `BildirimOgesi.kimlik`).
+  Widget _satir(BuildContext context, BildirimOgesi e, {required bool faded}) {
+    switch (e) {
+      case FiyatAlarmiOgesi(:final bildirim):
+        return PriceAlertTile(
+          bildirim: bildirim,
+          faded: faded,
+          onTap: () => onAlarmTap(bildirim),
+          // Geçmişte dismiss yok, kalıcı silme var — sinyal tarafıyla
+          // aynı sözleşme.
+          onDismiss: faded
+              ? null
+              : _guarded(context, () => onAlarmDismiss(bildirim.id)),
+          onDelete: faded
+              ? _guarded(context, () => onAlarmDelete(bildirim.id))
+              : null,
+        );
+      case SinyalOgesi(:final alert):
+        final id = alert.id;
+        return _SignalTile(
+          alert: alert,
+          faded: faded,
+          onTap: () => onTap(alert),
+          onDismiss: (!faded && id != null)
+              ? _guarded(context, () => onDismiss(id))
+              : null,
+          onDelete: id != null ? _guarded(context, () => onDelete(id)) : null,
+        );
+    }
+  }
 
   /// Başarısız silmeyi kullanıcıya SÖYLE.
   ///
@@ -937,8 +1006,13 @@ class _SignalsBottomSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final signals = ref.watch(signalProvider).valueOrNull ?? const [];
-    final active = signals.where((a) => !a.isDismissed).toList();
-    final history = signals.where((a) => a.isDismissed).toList();
+    // Fiyat alarmları AYRI tablodan gelir (0065) ve burada tek zaman
+    // akışında harmanlanır — ayrılık veri modelinde, birlik sunumda.
+    final alarmlar =
+        ref.watch(priceAlertNotificationProvider).valueOrNull ?? const [];
+    final akis = bildirimAkisi(signals, alarmlar);
+    final active = akis.where((e) => !e.dismissEdilmis).toList();
+    final history = akis.where((e) => e.dismissEdilmis).toList();
     return DefaultTextStyle(
       style: sandikFont(
           color: context.c.text90, decoration: TextDecoration.none),
@@ -974,14 +1048,16 @@ class _SignalsBottomSheet extends ConsumerWidget {
                 child: Row(
                   children: [
                     Text(
-                      'Teknik Sinyaller',
+                      // Başlık artık iki türü birden kapsıyor: liste hem
+                      // teknik sinyalleri hem fiyat alarmlarını taşıyor.
+                      'Bildirimler',
                       style: context.t.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: context.c.text90,
                           decoration: TextDecoration.none),
                     ),
                     const SizedBox(width: SandikSpace.sm),
-                    if (signals.isNotEmpty)
+                    if (akis.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
@@ -993,7 +1069,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                   context.c.amberFill.withValues(alpha: 0.3)),
                         ),
                         child: Text(
-                          '${signals.length}',
+                          '${akis.length}',
                           style: context.t.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: context.c.amberText,
@@ -1070,18 +1146,8 @@ class _SignalsBottomSheet extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          for (final a in active) ...[
-                            _SignalTile(
-                              alert: a,
-                              faded: false,
-                              onTap: () => onTap(a),
-                              onDismiss: a.id != null
-                                  ? _guarded(context, () => onDismiss(a.id!))
-                                  : null,
-                              onDelete: a.id != null
-                                  ? _guarded(context, () => onDelete(a.id!))
-                                  : null,
-                            ),
+                          for (final e in active) ...[
+                            _satir(context, e, faded: false),
                             const SizedBox(height: SandikSpace.sm),
                           ],
                           if (history.isNotEmpty) ...[
@@ -1171,16 +1237,8 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            for (final a in history) ...[
-                              _SignalTile(
-                                alert: a,
-                                faded: true,
-                                onTap: () => onTap(a),
-                                onDismiss: null,
-                                onDelete: a.id != null
-                                    ? _guarded(context, () => onDelete(a.id!))
-                                    : null,
-                              ),
+                            for (final e in history) ...[
+                              _satir(context, e, faded: true),
                               const SizedBox(height: SandikSpace.sm),
                             ],
                           ],
@@ -1399,11 +1457,15 @@ class _SignalBadgeButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(activeSignalsProvider).length;
+    // Rozet İKİ türü birden sayar: kullanıcı için çan tek bir yer ve
+    // "3 bildirim" dediğinde açtığında üçünü de görmeli. Yalnızca
+    // sinyalleri saymak, alarm gelince rozetin kıpırdamaması demekti.
+    final count = ref.watch(activeSignalsProvider).length +
+        ref.watch(activePriceAlertNotificationsProvider).length;
 
     return SandikTappable(
       onTap: onTap,
-      semanticLabel: count > 0 ? '$count yeni sinyal' : 'Sinyaller',
+      semanticLabel: count > 0 ? '$count yeni bildirim' : 'Bildirimler',
       child: Stack(
         clipBehavior: Clip.none,
         children: [

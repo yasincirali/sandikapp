@@ -16,6 +16,7 @@ import 'config/supabase_config.dart';
 import 'l10n/l10n.dart';
 import 'models/asset.dart';
 import 'models/user_model.dart';
+import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
@@ -1074,6 +1075,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Öne dönüş açılış olarak sayılır; servis kısa arka plan
         // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
         unawaited(RetentionTracker.instance.recordLaunch(source: 'resume'));
+        // Fiyat alarmı bildirimleri SUNUCUDA yazılır (0065) ve uygulama
+        // arkadayken gelir; tazelenmezse kullanıcı push'u görüp uygulamayı
+        // açtığında çan sayfası boş kalırdı. Sinyal listesi kendi akışında
+        // zaten güncelleniyor.
+        if (ref.read(authProvider).valueOrNull != null) {
+          unawaited(
+            ref.read(priceAlertNotificationProvider.notifier).refresh(),
+          );
+        }
         // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
         // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
         // devam etsin, elle "Tekrar Dene"ye basmak zorunda kalmasın.

@@ -224,6 +224,29 @@ Deno.serve(async (request) => {
         continue;
       }
 
+      // Uygulama içi bildirim listesi kaydı (0065).
+      //
+      // Token döngüsünden ÖNCE ve push'un sonucundan BAĞIMSIZ yazılır:
+      // kullanıcı push'u kaçırsa da (bildirim izni kapalı, token bayat,
+      // cihaz kapalı) alarmın çalıştığını uygulamada görebilmeli. Push'a
+      // bağlasaydık "alarm kurmuştum, çalıştı mı?" sorusu yine cevapsız
+      // kalırdı — bu tablonun var olma sebebi tam olarak o.
+      //
+      // Hata YUTULUR: liste kaydı yazılamadı diye bildirimi göndermemek
+      // daha kötü olurdu. Alarm zaten damgalandı, geri dönüşü yok.
+      const { error: kayitHatasi } = await admin
+        .from('price_alert_notifications')
+        .insert({
+          user_id: alarm.user_id,
+          alert_id: alarm.id,
+          symbol: alarm.symbol,
+          label: alarm.label,
+          target_price: alarm.target_price,
+          triggered_price: fiyat,
+          direction: alarm.direction,
+        });
+      if (kayitHatasi) failures.push(`liste: ${kayitHatasi.message}`);
+
       for (const t of tokensByUser.get(alarm.user_id) ?? []) {
         const r = await sendFcmNotification({
           accessToken,

@@ -68,12 +68,24 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
   /// header'a döner.
   final double initialScrollOffset;
 
+  /// Açılışta seçili olacak periyot (`_allPeriods[].days`). null → varsayılan.
+  ///
+  /// **Neden gerekli:** fiyat alarmı bildirimine dokunan kullanıcı TEK BİR
+  /// SEANSI sorar ("altın hedefi geçti, bugün ne oldu?"), trendi değil.
+  /// Varsayılan sekme (1H) o soruyu cevaplamıyordu ve kullanıcı her seferinde
+  /// elle GÜNLÜK'e geçiyordu.
+  ///
+  /// Desteklenmeyen bir değer (örn. elle fiyatlanan varlıkta `days: 0`)
+  /// sessizce YOK SAYILIR ve varsayılan seçilir — bkz. `_gunIciDestekli`.
+  final int? initialPeriodDays;
+
   const AssetDetailScreen({
     super.key,
     required this.asset,
     this.showBackButton = false,
     this.lots,
     this.initialScrollOffset = 0,
+    this.initialPeriodDays,
   });
 
   @override
@@ -160,6 +172,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // detayına giren kullanıcı çoğunlukla trendi arıyor, tek seansı değil.
     // Gün içi görünüm bir tıkla, hep aynı yerde (en solda) duruyor.
     _selectedPeriodIdx = _gunIciDestekli ? 1 : 0;
+
+    // Çağıran özel bir periyot istediyse (fiyat alarmı bildirimi → GÜNLÜK)
+    // onu seç. `indexWhere` -1 dönerse istek DESTEKLENMİYOR demektir
+    // (elle fiyatlanan varlıkta gün içi yok) ve varsayılan korunur —
+    // sessizce düşmesi kasıtlı: bildirim yine de doğru varlığı açmalı.
+    final istenen = widget.initialPeriodDays;
+    if (istenen != null) {
+      final idx = _periods.indexWhere((p) => p.days == istenen);
+      if (idx >= 0) _selectedPeriodIdx = idx;
+    }
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);

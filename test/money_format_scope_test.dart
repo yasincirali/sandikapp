@@ -34,6 +34,10 @@ void main() {
     'lib/screens/price_alerts_screen.dart',
     'lib/widgets/alarm_kur_sheet.dart',
     'lib/widgets/alarm_seridi.dart',
+    // Alarm bildirimi satırı: tetiklenme ve hedef fiyatı kendi biriminde
+    // yazar — bir hissenin TL fiyatını dolara çevirmek borsadaki sayıyla
+    // çelişirdi (0065).
+    'lib/widgets/price_alert_tile.dart',
     'lib/screens/watchlist_screen.dart',
     'lib/screens/watchlist_detail_screen.dart',
     'lib/screens/add_asset_screen.dart',

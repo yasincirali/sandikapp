@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/price_alert_notification.dart';
 import '../models/asset.dart';
 import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
@@ -1096,6 +1097,64 @@ class SupabaseService {
       return alert;
     }
     return SignalAlert.fromMap(rows.first);
+  }
+
+  // ── Fiyat alarmı bildirimleri (0065) ──────────────────────────────────────
+  //
+  // Ayrı tablo, ayrı metotlar: `signal_notifications` teknik sinyale özgü
+  // alanlar taşır (bkz. `PriceAlertNotification` sınıf notu). Birleştirme
+  // istemcide, sunum katmanında yapılır.
+
+  Future<List<PriceAlertNotification>> fetchPriceAlertNotifications({
+    required String userId,
+    int limit = 100,
+  }) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchPriceAlertNotifications',
+      table: 'price_alert_notifications',
+      op: 'SELECT',
+      request: {'user_id': userId, 'limit': limit},
+      call: () => _db
+          .from('price_alert_notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('sent_at', ascending: false)
+          .limit(limit),
+    );
+    return rows
+        .map<PriceAlertNotification>(PriceAlertNotification.fromMap)
+        .toList();
+  }
+
+  /// Birden çok alarm bildirimini TEK istekte dismiss eder
+  /// (sinyal tarafındaki `dismissSignalNotifications` ile aynı gerekçe).
+  Future<void> dismissPriceAlertNotifications(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _log.log<void>(
+      source: 'SupabaseService.dismissPriceAlertNotifications',
+      table: 'price_alert_notifications',
+      op: 'UPDATE',
+      request: {'ids': ids.length, 'dismissed_at': 'now()'},
+      call: () => _db
+          .from('price_alert_notifications')
+          .update({'dismissed_at': DateTime.now().toIso8601String()})
+          .inFilter('id', ids),
+    );
+  }
+
+  /// Satırları KALICI siler — dismiss'ten farkı, geçmişte de durmamaları.
+  Future<void> deletePriceAlertNotifications(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _log.log<void>(
+      source: 'SupabaseService.deletePriceAlertNotifications',
+      table: 'price_alert_notifications',
+      op: 'DELETE',
+      request: {'ids': ids.length},
+      call: () => _db
+          .from('price_alert_notifications')
+          .delete()
+          .inFilter('id', ids),
+    );
   }
 
   Future<void> dismissSignalNotification(String id) async {
