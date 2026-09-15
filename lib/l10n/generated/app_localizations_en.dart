@@ -2864,4 +2864,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareWord => 'Share';
+
+  @override
+  String get scopeTogether => 'Together';
+
+  @override
+  String get scopeMe => 'Me';
+
+  @override
+  String get scopeLabel => 'Scope';
+
+  @override
+  String get chartTypeTooltip => 'Chart type';
+
+  @override
+  String get fullscreenChart => 'Open chart full screen';
 }

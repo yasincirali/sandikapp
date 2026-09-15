@@ -1959,5 +1959,10 @@
       }
     }
   },
-  "shareWord": "Paylaş"
+  "shareWord": "Paylaş",
+  "scopeTogether": "Birlikte",
+  "scopeMe": "Ben",
+  "scopeLabel": "Kapsam",
+  "chartTypeTooltip": "Grafik tipi",
+  "fullscreenChart": "Grafiği tam ekran aç"
 }

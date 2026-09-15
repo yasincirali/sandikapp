@@ -127,9 +127,9 @@ class _EvSahibiState extends State<_EvSahibi> {
           _tus(TourTarget.govdeSekmeleri, 'sekmeler'),
           _tus(TourTarget.donemSecici, 'dönem',
               ek: () => setState(() => _donemSecildi = true)),
-          // Gerçek ekranda Gerçek/Simülasyon yalnızca gün dışı dönemde
-          // çizilir; burada dönem tuşuna dokununca belirir.
-          if (_donemSecildi) _tus(TourTarget.modSecici, 'mod'),
+          // Gerçek ekranda kapsam çipi (tür/ortak/mod) dönem satırının
+          // üstünde durur; burada dönem tuşuna dokununca belirir.
+          if (_donemSecildi) _tus(TourTarget.kapsamSecici, 'kapsam'),
           if (widget.davetKoduVar) _tus(TourTarget.davetKodu, 'davet'),
           _tus(TourTarget.ayarlar, 'ayarlar'),
           const SizedBox(height: 400),
@@ -412,16 +412,18 @@ void main() {
       expect(find.text('Performans sekmesi'), findsOneWidget);
     });
 
-    testWidgets('dönem görevi: mod seçici belirince tamamlanır',
+    // 2026-09-15: dönem adımı görevsiz (bkz. onboarding_screen.dart).
+    // Ölçü artık "görev tamamlandı mı" değil, "görevsiz adım da akışı
+    // sürdürüyor mu": Dene: satırı çizilmez, Devam kapsam adımına geçer.
+    testWidgets('dönem adımı görevsiz — akış kapsam adımına geçer',
         (tester) async {
       await _pump(tester);
       await _adimaGit(tester, 'Dönem seç');
-      expect(find.textContaining('Dene:'), findsOneWidget);
+      expect(find.textContaining('Dene:'), findsNothing);
       await tester.tap(find.text('dönem'));
       await _bekle(tester);
-      expect(find.text('Dönem değişti'), findsOneWidget);
       await _devam(tester);
-      expect(find.text('Gerçek / Simülasyon'), findsOneWidget);
+      expect(find.text('Kapsam ve mod'), findsOneWidget);
     });
   });
 

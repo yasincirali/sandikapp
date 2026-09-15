@@ -4951,6 +4951,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Paylaş'**
   String get shareWord;
+
+  /// No description provided for @scopeTogether.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birlikte'**
+  String get scopeTogether;
+
+  /// No description provided for @scopeMe.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ben'**
+  String get scopeMe;
+
+  /// No description provided for @scopeLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapsam'**
+  String get scopeLabel;
+
+  /// No description provided for @chartTypeTooltip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafik tipi'**
+  String get chartTypeTooltip;
+
+  /// No description provided for @fullscreenChart.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafiği tam ekran aç'**
+  String get fullscreenChart;
 }
 
 class _AppLocalizationsDelegate

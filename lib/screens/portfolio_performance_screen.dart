@@ -6,8 +6,6 @@ import 'package:flutter/material.dart'
         LinearProgressIndicator,
         Icons,
         TextStyle,
-        Material,
-        InkWell,
         RefreshIndicator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
@@ -134,6 +132,14 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
 
 class _PortfolioPerformanceScreenState
     extends ConsumerState<PortfolioPerformanceScreen> {
+
+  /// Kapsam paneli açık mı? (kim / hangi tür / hangi mod)
+  ///
+  /// Kapalı başlar: üç denetim de seyrek kullanılıyor ve ilk açılışta
+  /// grafiğe ayrılan dikey alanı yemeleri için bir sebep yok. Seçili kapsam
+  /// panel kapalıyken de çipin üstünde yazılı (bkz. `_buildScopeBar`).
+  bool _kapsamAcik = false;
+
   int _selectedPeriodIdx = 0; // Günlük (intraday)
   late String? _view;
   late AssetType? _typeFilter;
@@ -314,8 +320,12 @@ class _PortfolioPerformanceScreenState
           child: Column(
             children: [
               // ── Header ──────────────────────────────────────────────────
+              // Başlık çubuğu 2026-09-15'te inceldi (20/12 → screenH/8) ve
+              // `fontSize: 22` yerine tema ölçeği kullanılıyor. Kazanılan
+              // ~20pt doğrudan grafiğe gidiyor.
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                    SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.sm),
                 child: Row(
                   children: [
                     if (widget.showBackButton) ...[
@@ -336,12 +346,34 @@ class _PortfolioPerformanceScreenState
                     Expanded(
                       child: Text(
                         context.l10n.performanceTitle,
-                        style: context.t.headlineLarge?.copyWith(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: context.c.text90),
+                        style: context.t.headlineMedium
+                            ?.copyWith(color: context.c.text90),
                       ),
                     ),
+                    // Yarış bir GEZİNME girişi, grafik aracı değil: eskiden
+                    // grafik araç satırında duruyordu ve o satırın tamamı
+                    // kaldırıldı. Yeri üst çubuk.
+                    if (ref.watch(leaderboardOptInProvider) &&
+                        activePartners.isNotEmpty) ...[
+                      Semantics(
+                        button: true,
+                        label: context.l10n.raceTitle,
+                        child: ExcludeSemantics(
+                          child: CupertinoButton(
+                            minimumSize: SandikTouch.minSize,
+                            padding: EdgeInsets.zero,
+                            onPressed: () => Navigator.push(
+                              context,
+                              adaptiveRoute<void>(
+                                  builder: (_) => const LeaderboardScreen()),
+                            ),
+                            child: Icon(Icons.emoji_events_rounded,
+                                size: 20, color: context.c.amberText),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: SandikSpace.xs2),
+                    ],
                     // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
                     // beklenmeyen bir eylem olurdu.
                     if (!widget.showBackButton)

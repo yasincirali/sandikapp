@@ -12,6 +12,41 @@ Bu dosya her adımda güncellenir; **son kalınan yer** en üstte.
 
 ## Son kalınan yer (2026-09-15)
 
+**Performans ekranı yerleşimi — beş kontrol satırı ikiye indi (2026-09-15).** Kullanıcı
+isteği: "en tepedeki header'ı inceltip yan boşlukları da inceltelim, ekranı daha verimli
+kullanalım; tab seçimleri karma karışık ve çok yer kaplıyor."
+
+Ölçülen sorun: grafik açılmadan önce ekranın üst ~%45'i denetimdi. Üst üste beş satır
+(yüzey anahtarı, ortak seçici, tür çipleri, dönem, mod anahtarı) + ayrı bir grafik araç
+çubuğu; hepsi eşit görsel ağırlıkta, yani hiçbirinin hiyerarşisi yok.
+
+Karar — **kalıcı olan iki satır, geri kalanı istek üzerine**:
+1. **Kapsam satırı:** solda yüzey anahtarı (Özet/Grafik), sağda tek bir *kapsam çipi*.
+   Çip ne gördüğünü cümle olarak yazar ("Birlikte · Hisse · Simülasyon") ve varsayılanın
+   dışına çıkılmışsa amber'a döner — filtre olduğunu rengiyle de söyler. Dokununca ortak
+   seçici + tür çipleri + mod anahtarı tek panelde açılır (`AnimatedCrossFade`).
+2. **Dönem satırı:** genişliğin çoğu dönem seçiciye (en sık dokunulan denetim, veriye en
+   yakın satırda); sağ uçta grafik tipi ve tam ekran ikon olarak. İkisi de seyrek
+   kullanılıyordu ve metinli hâlleri tek başına bir satır yiyordu.
+
+Yarış kupası `_LeaderboardChip` olarak kontrol yığınındaydı; başlık çubuğuna ikon olarak
+taşındı (yalnızca yarışa katılmış ve aktif ortağı olan kullanıcıda). Başlık çubuğu
+dikey dolgusu `md`→`sm`, başlık ham `fontSize:` yerine `context.t.headlineMedium`
+(bir token sızıntısı daha düştü). Yan boşluk `SandikSpace.screenH` 24/16 → 16/12.
+
+Erişilebilirlik korundu: küçülen kabukların hepsi (kapsam çipi 36pt, grafik tipi ve tam
+ekran ikonları 32pt) şeffaf dolguyla 44pt dokunma hedefine sarıldı — görsel küçüldü,
+hedef küçülmedi (`touch_target_size_test` yeşil).
+
+Tur adımları izledi: `TourTarget.modSecici` → `kapsamSecici` ("Kapsam ve mod" adımı üç
+denetimi birden anlatıyor). Dönem adımının görevi kaldırıldı — eski ölçüt "mod anahtarı
+belirdi mi" idi, o anahtar artık panelin içinde ve panel kapalıyken de ağaçta; ölçemediğimiz
+bir görevi tamamlandı göstermektense görevsiz anlatım dürüst.
+
+Doğrulama: `flutter analyze lib/ test/` 0 sorun, **2.143 test geçiyor**. Yeni anahtarlar:
+`scopeTogether`, `scopeMe`, `scopeLabel`, `chartTypeTooltip`, `fullscreenChart`.
+⚠️ Görsel doğrulama cihazda yapılmadı (bu ortamda emülatör yok).
+
 **Kullanıcı bildirimi (2026-09-15):** "menülere eklenen feature'lar çalışmıyor; dil
 seçeneği uygulamayı tümüyle İngilizce yapmıyor, yatırımcı seviyesi değiştirildiğinde
 fark göremedim." İkisi de gerçek kusurdu, ikisi de kapandı:

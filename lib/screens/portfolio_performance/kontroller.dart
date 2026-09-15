@@ -37,13 +37,223 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     );
   }
 
+  /// Kapsam + yüzey çubuğu — ekranın kalıcı İLK kontrol satırı.
+  ///
+  /// ## Neden tek satır (2026-09-15)
+  /// Bu ekranda beş kontrol satırı üst üste duruyordu: ortak seçici, tür
+  /// çipleri, Grafik/Özet, dönem ve grafik araçları. 390pt'lik bir telefonda
+  /// grafik ekranın %60'ından sonra başlıyordu — kullanıcı bildirimi: "tab
+  /// seçimleri karma karışık ve ekranda çok yer kaplıyor".
+  ///
+  /// Ayrım KULLANIM SIKLIĞINA göre yapıldı, göze göre değil:
+  ///   · sık: yüzey (Grafik/Özet) ve dönem → kalıcı satırlarda kaldı
+  ///   · seyrek: kim, hangi tür, hangi mod → tek çipin arkasına alındı
+  ///
+  /// Çip bunları GİZLEMEZ: seçili kapsamı her zaman yazar ("Birlikte · Fon ·
+  /// Simülasyon"). Bir filtrenin açık olduğunu görmek için paneli açmak
+  /// gerekmez — "neden portföyüm eksik görünüyor" sınıfı hatanın kaynağı
+  /// tam olarak görünmeyen filtredir.
+  Widget _buildScopeBar(List<AppUser> activePartners) {
+    return Row(
+      children: [
+        // İkisi de esnek ve eşit: yüzey anahtarı sabit genişlik alsaydı dar
+        // ekranda kapsam çipine üç nokta bile sığmıyordu.
+        Expanded(child: _buildSurfaceToggle()),
+        const SizedBox(width: SandikSpace.sm),
+        Expanded(child: _buildScopeChip(activePartners)),
+      ],
+    );
+  }
+
+  /// Kapsamın tek satırlık özeti: "kim · tür · mod".
+  ///
+  /// Ortak yoksa "kim" yazılmaz — ortağı olmayan kullanıcıya "Birlikte"
+  /// demek anlamsız. Mod yalnızca simülasyondayken yazılır: varsayılan
+  /// (Gerçek) her çipte tekrar edilecek bir bilgi değil.
+  String _kapsamOzeti(List<AppUser> activePartners) {
+    final l = context.l10n;
+    final parcalar = <String>[
+      if (activePartners.isNotEmpty)
+        if (_view == null)
+          l.scopeTogether
+        else if (_view == '')
+          l.scopeMe
+        else
+          activePartners
+              .firstWhere((p) => p.id == _view,
+                  orElse: () => activePartners.first)
+              .displayName
+              .split(' ')
+              .first,
+      _typeFilter == null ? l.allTypes : _typeFilter!.labelOf(l),
+      if (_simulate) l.modeSim,
+    ];
+    return parcalar.join(' · ');
+  }
+
+  Widget _buildScopeChip(List<AppUser> activePartners) {
+    final acik = _kapsamAcik;
+    // Varsayılan dışına çıkılmışsa çip vurgulanır: ekranda bir filtre
+    // olduğunu rengiyle de söyler, yalnız metniyle değil.
+    final filtreli = _typeFilter != null || _view != null || _simulate;
+    final ton = acik || filtreli ? context.c.amberText : context.c.text58;
+
+    return TourAnchor(
+      target: TourTarget.kapsamSecici,
+      child: Semantics(
+        button: true,
+        expanded: acik,
+        label: '${context.l10n.scopeLabel}: ${_kapsamOzeti(activePartners)}',
+        child: ExcludeSemantics(
+          child: CupertinoButton(
+            minimumSize: SandikTouch.minSize,
+            padding: EdgeInsets.zero,
+            onPressed: () => _guncelle(() => _kapsamAcik = !_kapsamAcik),
+            // Görsel kabuk 36pt, dokunma hedefi 44pt (HIG #37): şeffaf dolgu
+            // ile büyütülür, kabuk büyütülmez.
+            child: SizedBox(
+              height: SandikTouch.min,
+              child: Center(
+                child: AnimatedContainer(
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.sm2),
+              decoration: BoxDecoration(
+                color: acik || filtreli
+                    ? context.c.amberFill.withValues(alpha: 0.14)
+                    : context.c.surface1,
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(
+                  color: acik || filtreli
+                      ? context.c.amberFill.withValues(alpha: 0.55)
+                      : context.c.overlay,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.tune_rounded, size: 15, color: ton),
+                  const SizedBox(width: SandikSpace.xs2),
+                  Flexible(
+                    child: Text(
+                      _kapsamOzeti(activePartners),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: ton,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: acik ? 0.5 : 0,
+                    duration: SandikMotion.stateOf(context),
+                    curve: SandikMotion.enter,
+                    child: Icon(Icons.expand_more_rounded, size: 16, color: ton),
+                  ),
+                ],
+              ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Kapsam paneli — çipe dokununca açılan seyrek kontroller.
+  ///
+  /// Mod anahtarı yalnızca gün dışı dönemde anlamlı (gün içi seride
+  /// simülasyonun karşılığı yok), bu yüzden orada hiç çizilmez.
+  Widget _buildScopePanel(List<AppUser> activePartners, bool isIntraday) {
+    return AnimatedCrossFade(
+      duration: SandikMotion.surfaceOf(context),
+      sizeCurve: SandikMotion.move,
+      firstCurve: SandikMotion.enter,
+      secondCurve: SandikMotion.enter,
+      crossFadeState:
+          _kapsamAcik ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      firstChild: const SizedBox(width: double.infinity),
+      secondChild: Padding(
+        padding: const EdgeInsets.only(top: SandikSpace.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (activePartners.isNotEmpty) ...[
+              ModernTabSelector(
+                partners: activePartners,
+                selectedId: _view,
+                onChanged: (v) => _guncelle(() => _view = v),
+              ),
+              const SizedBox(height: SandikSpace.sm),
+            ],
+            HScrollWithFade(
+              child: Row(
+                children: [
+                  _typeChip(null, context.l10n.allTypes),
+                  for (final t in AssetType.values)
+                    _typeChip(t, t.labelOf(context.l10n)),
+                ],
+              ),
+            ),
+            if (!isIntraday && !_ozetSekmesi) ...[
+              const SizedBox(height: SandikSpace.sm),
+              _buildModeToggle(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Dönem satırı — ekranın kalıcı İKİNCİ kontrol satırı.
+  ///
+  /// Dönem en sık dokunulan denetim, bu yüzden genişliğin çoğunu alır ve
+  /// veriye en yakın satırda durur. Grafik araçları (tip, tam ekran) aynı
+  /// satırın sağ ucunda ikon olarak: ikisi de seyrek kullanılıyor ve metinli
+  /// hâlleri tek başına bir satır yiyordu.
+  ///
+  /// [araclar] Özet sekmesinde `false` — orada çizilecek bir grafik yok.
+  Widget _buildPeriodRow({required bool araclar}) {
+    return Row(
+      children: [
+        Expanded(
+          child: TourAnchor(
+            target: TourTarget.donemSecici,
+            child: _buildPeriodToggle(),
+          ),
+        ),
+        if (araclar) ...[
+          const SizedBox(width: SandikSpace.sm),
+          const GrafikTipiSecici(compact: true),
+          const SizedBox(width: SandikSpace.xs2),
+          ChartFullscreenChip(
+            onTap: () => FullscreenChartRoute.open(
+              context,
+              title: context.l10n.portfolioPerformance,
+              builder: (_) => PortfolioPerformanceScreen(
+                initialView: _view,
+                initialTypeFilter: _typeFilter,
+                // Yatayda grafik hemen görünsün diye kontroller yukarı
+                // kaydırılır. İki satıra indiler; eski 220 fazla kaçıyordu.
+                initialScrollOffset: 96,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildPeriodToggle() {
     return Container(
-      height: 44,
+      height: 36,
       decoration: BoxDecoration(
           color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md)),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       child: Row(
         children: List.generate(_PortfolioPerformanceScreenState._periods.length, (i) {
           final isSelected = _selectedPeriodIdx == i;
@@ -82,9 +292,11 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
 
   /// Grafik | Özet yüzey anahtarı.
   ///
-  /// `_buildModeToggle` ile aynı kabuk (44px, surface1, SandikRadius.md) —
+  /// `_buildModeToggle` ile aynı kabuk (36px, surface1, SandikRadius.md) —
   /// iki anahtar yan yana durabildiği için aynı görünmek zorundalar, yoksa
-  /// kullanıcı ikisini farklı sınıf denetimler sanır.
+  /// kullanıcı ikisini farklı sınıf denetimler sanır. Yükseklik 2026-09-15'te
+  /// 44'ten 36'ya indi; dokunma hedefi `SandikTouch.minSize` ile 44pt kalır
+  /// (görsel kabuk küçülür, dokunulabilir alan küçülmez).
   ///
   /// Dönem seçici DEĞİŞMEZ: `_selectedPeriodIdx` iki sekmede paylaşılıyor.
   Widget _buildSurfaceToggle() {
@@ -93,11 +305,11 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       (label: context.l10n.tabSummary, ozet: true),
     ];
     return Container(
-      height: 44,
+      height: 36,
       decoration: BoxDecoration(
           color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md)),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       child: Row(
         children: options.map((o) {
           final selected = _ozetSekmesi == o.ozet;
@@ -147,11 +359,11 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       (label: context.l10n.modeSim, sim: true),
     ];
     return Container(
-      height: 44,
+      height: 36,
       decoration: BoxDecoration(
           color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md)),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       child: Row(
         children: options.map((o) {
           final selected = _simulate == o.sim;

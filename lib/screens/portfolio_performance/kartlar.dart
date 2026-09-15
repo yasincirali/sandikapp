@@ -109,45 +109,17 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       children: [
-        if (activePartners.isNotEmpty) ...[
-          ModernTabSelector(
-            partners: activePartners,
-            selectedId: _view,
-            onChanged: (v) => _guncelle(() => _view = v),
-          ),
-          const SizedBox(height: 12),
-        ],
-        HScrollWithFade(
-          child: Row(
-            children: [
-              _typeChip(null, 'Tümü'),
-              for (final t in AssetType.values)
-                _typeChip(t, t.labelOf(context.l10n)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Sekme anahtarı dönem seçicinin ÜSTÜNDE: dönem ikisi için de
-        // geçerli, sekme ise hangi sunumu gördüğünü belirler. Tersi sırada
-        // dönem seçici sekmeye aitmiş gibi okunuyordu.
-        _buildSurfaceToggle(),
-        const SizedBox(height: 12),
-        TourAnchor(
-          target: TourTarget.donemSecici,
-          child: _buildPeriodToggle(),
-        ),
-        // Simülasyon anahtarı yalnızca GRAFİK sekmesinde anlamlı: Özet
-        // gerçek nakit akışını ayırmak için var ve simülasyon tam olarak o
-        // akışı yok sayıyor. İkisini birleştirmek "katkın ₺0" yazan bir
-        // köprü üretirdi.
-        if (!isIntraday && !_ozetSekmesi) ...[
-          const SizedBox(height: 12),
-          TourAnchor(
-            target: TourTarget.modSecici,
-            child: _buildModeToggle(),
-          ),
-        ],
-        const SizedBox(height: 24),
+        // ── Kontroller: İKİ satır ────────────────────────────────────────
+        //
+        // Yüzey anahtarı kapsam çipiyle AYNI satırda: dönem ikisi için de
+        // geçerli, yüzey ise hangi sunumu gördüğünü belirler. Seyrek
+        // kullanılan üçlü (kim / hangi tür / hangi mod) çipin arkasındaki
+        // panelde — gerekçe `_buildScopeBar` başında.
+        _buildScopeBar(activePartners),
+        _buildScopePanel(activePartners, isIntraday),
+        const SizedBox(height: SandikSpace.sm),
+        _buildPeriodRow(araclar: !_ozetSekmesi),
+        const SizedBox(height: SandikSpace.md),
         // ── ÖZET sekmesi ──────────────────────────────────────────────────
         //
         // Erken `return` YOK: filtre denetimleri (ortak sekmeleri, tür
@@ -176,49 +148,6 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 color: context.c.amberFill,
               ),
             ),
-          Row(
-            // `spaceBetween` + `Spacer` YOK: bu satır yatay kaydırılabilir
-            // bir bağlamda çiziliyor ve `Spacer` sonsuz genişlik isteyip
-            // RenderFlex'i 98.674px taşırıyordu (ölçüldü — boş durum metni
-            // hiç render edilmiyordu).
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Grafik tipi seçici — gün içi sekmesinde de geçerli.
-              const GrafikTipiSecici(),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (ref.watch(leaderboardOptInProvider) &&
-                      activePartners.isNotEmpty) ...[
-                    _LeaderboardChip(
-                      onTap: () => Navigator.push(
-                        context,
-                        adaptiveRoute<void>(
-                            builder: (_) => const LeaderboardScreen()),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                  ChartFullscreenChip(
-                    onTap: () {
-                      FullscreenChartRoute.open(
-                        context,
-                        title: context.l10n.portfolioPerformance,
-                        builder: (_) => PortfolioPerformanceScreen(
-                          initialView: _view,
-                          initialTypeFilter: _typeFilter,
-                          // Landscape'te grafik hemen görünsün diye header'ları
-                          // aşağı kaydır. Yukarı swipe ile tab/filtre/period gelir.
-                          initialScrollOffset: 220,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
           // ── Akıcı geçiş tasarımı ────────────────────────────────────────
           // `LineChart` bir ImplicitlyAnimatedWidget: yeni `LineChartData`
           // verildiğinde eski veriden yenisine kendi lerp'liyor (150ms).

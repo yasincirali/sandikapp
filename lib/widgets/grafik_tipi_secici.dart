@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/grafik_tipi.dart';
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 
 /// Grafik tipi seçici — grafik kabının üstündeki chip + açılır menü.
@@ -13,7 +14,14 @@ import '../theme/sandik.dart';
 /// bağlamı koruyor. Bottom sheet ekranın yarısını kaplar ve grafikle
 /// bağı kopar — kullanıcı seçtiği tipin etkisini göremeden sayfa örtülür.
 class GrafikTipiSecici extends StatelessWidget {
-  const GrafikTipiSecici({super.key});
+  const GrafikTipiSecici({super.key, this.compact = false});
+
+  /// Yalnız ikon çizer (etiket ve ok yok).
+  ///
+  /// 2026-09-15: dönem satırının sağ ucuna taşındı. Metinli hâli ("Çizgi ▾")
+  /// tek başına bir satır yiyordu; ikon seçili tipe göre değiştiği için
+  /// durumu zaten söylüyor, tam adı da tooltip'te.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +42,7 @@ class GrafikTipiSecici extends StatelessWidget {
         return Material(
           type: MaterialType.transparency,
           child: PopupMenuButton<GrafikTipi>(
-          tooltip: 'Grafik tipi',
+          tooltip: context.l10n.chartTypeTooltip,
           position: PopupMenuPosition.under,
           color: context.c.surface2,
           shape: RoundedRectangleBorder(
@@ -75,7 +83,28 @@ class GrafikTipiSecici extends StatelessWidget {
                 ),
               ),
           ],
-          child: Container(
+          child: compact
+              // Görsel kabuk 32pt, dokunma hedefi 44pt (HIG #37): şeffaf
+              // dolgu hedefi büyütür. `PopupMenuButton`'ın kendi alanı
+              // child'ın boyutunu alıyor, bu yüzden burada açıkça verilir.
+              ? SizedBox(
+                  width: SandikTouch.min,
+                  height: SandikTouch.min,
+                  child: Center(
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: context.c.surface2,
+                        borderRadius: BorderRadius.circular(SandikRadius.md),
+                        border: Border.all(color: context.c.hairline),
+                      ),
+                      child:
+                          Icon(secili.ikon, size: 16, color: context.c.text58),
+                    ),
+                  ),
+                )
+              : Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: context.c.surface2,

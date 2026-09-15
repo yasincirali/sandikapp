@@ -1959,5 +1959,10 @@
       }
     }
   },
-  "shareWord": "Share"
+  "shareWord": "Share",
+  "scopeTogether": "Together",
+  "scopeMe": "Me",
+  "scopeLabel": "Scope",
+  "chartTypeTooltip": "Chart type",
+  "fullscreenChart": "Open chart full screen"
 }

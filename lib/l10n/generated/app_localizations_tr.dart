@@ -2856,4 +2856,19 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get shareWord => 'Paylaş';
+
+  @override
+  String get scopeTogether => 'Birlikte';
+
+  @override
+  String get scopeMe => 'Ben';
+
+  @override
+  String get scopeLabel => 'Kapsam';
+
+  @override
+  String get chartTypeTooltip => 'Grafik tipi';
+
+  @override
+  String get fullscreenChart => 'Grafiği tam ekran aç';
 }
