@@ -93,7 +93,27 @@ void main() {
 
     // "Diğer" türü: sembolsüz, elle fiyatlı — ağ araması yok, TEFAS/Yahoo
     // erişimi olmayan bir CI koşucusunda bile deterministik.
-    await tester.tap(find.bySemanticsLabel('Diğer türü'));
+    //
+    // ## Neden beklemek ve kaydırmak ZORUNLU (CI, 2026-09-15)
+    // Ekran açılır açılmaz `tap` çağrılıyordu ve CI'da şu hatayla
+    // düşüyordu:
+    //
+    //   Found 0 widgets with a semantics label named "Diğer türü"
+    //
+    // İki ayrı sebep birden: (a) `Varlık Ekle` başlığı görünse bile tür
+    // çiplerinin semantics ağacı henüz kurulmamış olabiliyor — yerelde
+    // hızlı makinede denk gelmiyor, CI emülatöründe geliyor; (b) çipler
+    // `HScrollWithFade` içinde yatay kaydırmalı ve "Diğer" SON sırada,
+    // yani dar ekranda görünür alanın dışında kalıyor. `tap` merkez
+    // noktası istediği için ekran dışındaki bir widget'a dokunamaz.
+    final digerCip = find.bySemanticsLabel('Diğer türü');
+    await _bekle(tester, digerCip, neden: 'tür çipleri (Diğer)');
+    // `ensureVisible` doğru Scrollable'ı widget'ın KENDİ ağacından bulur;
+    // `scrollUntilVisible` + `byType(Scrollable).first` sayfadaki başka
+    // bir kaydırıcıyı yakalayabilirdi.
+    await tester.ensureVisible(digerCip);
+    await tester.pump();
+    await tester.tap(digerCip, warnIfMissed: false);
     await tester.pump();
     await _bekle(tester, _ipucu(tester, 'Varlık adı'), neden: 'ad alanı');
     await tester.enterText(_ipucu(tester, 'Varlık adı'), _varlikAdi);
