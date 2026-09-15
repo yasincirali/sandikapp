@@ -133,6 +133,18 @@ jobs:
             # olduğunu logda görünür kılar.
             adb devices
             flutter devices
+            # Hangi dosyalar toplanıyor? Yerelde "Found 1 files" diyor ve
+            # sorunsuz koşuyor; CI'da aynı komut "cannot be run in a single
+            # invocation" veriyor. O hata YALNIZCA toplanan dosyaların bir
+            # kısmı `integration_test/` altındayken, bir kısmı değilken
+            # atılıyor (flutter_tools/src/commands/test.dart:888). Yani
+            # burada fazladan bir `_test.dart` toplanıyor — hangisi
+            # olduğunu aşağıdaki liste gösterir.
+            echo "--- integration_test/ içeriği ---"
+            find integration_test -name '*_test.dart' | sort
+            echo "--- symlink var mı ---"
+            find integration_test -type l | sort
+            flutter test integration_test -d emulator-5554 --verbose 2>&1               | grep -iE 'Found [0-9]+ files|cannot be run' || true
             flutter test integration_test -d emulator-5554 \
               --dart-define=SUPABASE_URL=$SUPABASE_URL \
               --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
