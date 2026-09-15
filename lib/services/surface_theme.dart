@@ -33,11 +33,16 @@ import '../config/pref_keys.dart';
 ///      tam olarak bu salınımdır.
 ///
 /// ## Değişmez
-/// Karar YALNIZCA üç meşru tetikleyiciyle değişir:
-///   * kullanıcı tema tercihini değiştirdi (Ayarlar üçlüsü ya da Profil
-///     başlığındaki hızlı geçiş — ikisi de aynı provider'ı yazar),
-///   * uygulama ÖNPLANDAYKEN cihaz görünümü değişti **ve** tercih "Sistem",
-///   * uygulama öne döndü (arkada olan bir sistem değişimi burada yakalanır).
+/// Karar YALNIZCA kullanıcının AÇIK tercihiyle değişir: Ayarlar üçlüsü ya
+/// da Profil başlığındaki hızlı geçiş (ikisi de aynı provider'ı yazar).
+///
+/// **"Sistem" artık cihaza düşmüyor** (2026-09-15): tercih belirtilmemişse
+/// yüzeyler KOYU kalır ve cihaz görünümü hiç okunmaz — gerekçe [decide]
+/// dokümantasyonunda. Yukarıdaki 1. maddede anlatılan salınımın kaynağı
+/// böylece tümden kapandı; 2. ve 3. maddeler (arka plan anlık görüntüsü,
+/// sunucu push'u) yalnızca "Sistem" dalını ilgilendirdiği için onlar da
+/// artık tetiklenemiyor. Uygulamanın KENDİ teması bundan etkilenmez;
+/// `ThemeModeNotifier` "Sistem"de cihazı izlemeye devam eder.
 ///
 /// Bunların dışındaki her okuma son kararı AYNEN döndürür. Karar
 /// `SharedPreferences`'a yazılır: süreç yeniden başladığında servis
@@ -61,10 +66,10 @@ class SurfaceTheme {
 
   /// Kararın türetildiği son tercih — TEŞHİS içindir.
   ///
-  /// "Sistem" seçiliyken yüzeyin cihazı izlemesi DOĞRU davranıştır; bu
-  /// ayrım bilinmeden "tema kendiliğinden değişiyor" bulgusu hatalı
-  /// yorumlanır (bkz. `push_diagnostics_screen`). İlk [update] çağrısına
-  /// kadar `null`.
+  /// "Sistem" seçiliyken yüzeyin KOYU kalması doğru davranıştır (bkz.
+  /// [decide]); bu ayrım bilinmeden "tema açık seçtim ama kilit ekranı
+  /// koyu" bulgusu hatalı yorumlanır (`push_diagnostics_screen` bu alanı
+  /// gösteriyor). İlk [update] çağrısına kadar `null`.
   ThemeMode? get lastResolvedMode => _lastMode;
 
   /// Kalıcı kararı yükler. `main()` içinde, ilk frame'den önce çağrılır.
@@ -107,9 +112,33 @@ class SurfaceTheme {
 
   /// Saf karar tablosu — durum tutmaz, testte doğrudan doğrulanır.
   ///
-  /// "Sistem" + güvenilmeyen parlaklık → **son karar korunur**. Burada
-  /// cihaz görünümüne düşmek, arka plandaki ters raporu kalıcı hâle
-  /// getirirdi.
+  /// ## "Sistem" → uygulama DIŞI yüzeylerde KOYU (2026-09-15)
+  ///
+  /// Uygulamanın kendi teması `ThemeMode.system` iken cihazı izler ve bu
+  /// DOĞRU: kullanıcı telefonunu açık moda aldıysa uygulamayı da açık
+  /// görmeli (`ThemeModeNotifier.build` gerekçesi). Ama kilit ekranı ve
+  /// widget farklı bir yüzey:
+  ///
+  ///   * Marka zemini koyu yeşil; kilit ekranı çoğunlukla koyu duvar
+  ///     kâğıdı üzerinde duruyor ve açık palet orada yabancı kalıyor.
+  ///   * "Sistem" cihazın OTOMATİK görünümüyle birlikte gün içinde
+  ///     kendiliğinden dönüyor. Uygulamada bu beklenen bir davranış
+  ///     (kullanıcı ekrana bakarken olur); kilit ekranında ise banner
+  ///     kullanıcı hiçbir şey yapmadan renk değiştiriyor ve "bozuk mu?"
+  ///     izlenimi veriyor.
+  ///
+  /// Bu yüzden yüzeyler yalnızca AÇIK BİR TERCİHİ izler: kullanıcı
+  /// Ayarlar'dan "Açık" dediyse açık, "Koyu" dediyse koyu, seçim
+  /// yapmadıysa (Sistem) **koyu**. Uygulamanın kendi teması bundan
+  /// etkilenmez — `ThemeModeNotifier` olduğu gibi kalır.
+  ///
+  /// `trustDeviceBrightness` artık yalnızca geçmişe dönük bir kapı:
+  /// "Sistem" zaten cihaza hiç bakmadığı için parlaklık okunmuyor. Alan
+  /// KALDIRILMADI çünkü tercih açık/koyu iken de çağrılıyor ve imzayı
+  /// değiştirmek dört çağrı yerini birden dokunmayı gerektirirdi;
+  /// ayrıca karar tekrar cihaza bağlanırsa (geri alınırsa) kapı yerinde
+  /// olmalı — arka plan anlık görüntüsünün ters parlaklığı ondan
+  /// korunuyordu.
   @visibleForTesting
   static bool decide(
     ThemeMode mode, {
@@ -117,7 +146,9 @@ class SurfaceTheme {
     required bool trustDeviceBrightness,
     Brightness? brightness,
   }) {
-    if (mode == ThemeMode.system && !trustDeviceBrightness) return current;
+    // Tercih yok → yüzeyler koyu. Cihaz görünümü HİÇ okunmaz, dolayısıyla
+    // `trustDeviceBrightness` bu dalda anlamsızdır.
+    if (mode == ThemeMode.system) return false;
     return resolveThemeIsLightWith(
       mode,
       brightness ??

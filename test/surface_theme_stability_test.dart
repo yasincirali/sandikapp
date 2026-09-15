@@ -27,9 +27,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///      bir sonraki öne dönüşe kadar kilit ekranında kalıyor, öne dönüşte
 ///      düzeliyor, sonra yine bozuluyordu.
 ///
-/// Bu testin doğruladığı: karar artık kalıcı, tek noktada ve yalnızca meşru
-/// tetikleyicilerle değişiyor. Görsel doğrulama gerçek cihazda yapılır
-/// (emülatörler Flutter'ı render edemiyor — bkz. CLAUDE.md).
+/// Bu testin doğruladığı: karar artık kalıcı, tek noktada ve yalnızca
+/// kullanıcının AÇIK tercihiyle değişiyor.
+///
+/// **2026-09-15 — "Sistem" artık cihaza düşmüyor.** Yukarıdaki 1. madde
+/// yapısal olarak kapandı: tercih belirtilmemişse yüzeyler KOYU kalır ve
+/// cihaz görünümü hiç okunmaz (gerekçe `SurfaceTheme.decide`). 2. ve 3.
+/// maddeler yalnızca "Sistem" dalını ilgilendirdiği için onlar da artık
+/// tetiklenemiyor. Uygulamanın KENDİ teması etkilenmedi — `ThemeModeNotifier`
+/// "Sistem"de cihazı izlemeye devam ediyor.
+///
+/// Görsel doğrulama gerçek cihazda yapılır (emülatörler Flutter'ı render
+/// edemiyor — bkz. CLAUDE.md).
 String _yorumsuz(String src) => src.split('\n').where((l) {
       final t = l.trimLeft();
       return !t.startsWith('//') && !t.startsWith('///');
@@ -83,14 +92,26 @@ void main() {
       );
     });
 
-    test('Sistem + önplan → cihaz görünümüne düşer', () {
+    test('Sistem → cihazdan BAĞIMSIZ koyu', () {
+      // 2026-09-15: yüzeyler "Sistem"de cihazı İZLEMEZ.
+      //
+      // Uygulamanın kendi teması cihazı izlemeye devam ediyor (doğru:
+      // kullanıcı telefonu açık moda aldıysa uygulamayı da açık görmeli).
+      // Ama kilit ekranı/widget farklı bir yüzey: marka zemini koyu yeşil,
+      // banner çoğunlukla koyu duvar kâğıdı üzerinde duruyor ve "Sistem"
+      // cihazın otomatik görünümüyle gün içinde kendiliğinden dönüyordu —
+      // kullanıcı hiçbir şey yapmadan renk değişiyor, "bozuk mu?" izlenimi
+      // veriyordu.
+      //
+      // Cihaz AÇIK olsa bile koyu:
       expect(
         SurfaceTheme.decide(ThemeMode.system,
             current: false,
             trustDeviceBrightness: true,
             brightness: Brightness.light),
-        isTrue,
+        isFalse,
       );
+      // Cihaz koyuyken de koyu (aynı sonuç, farklı yol):
       expect(
         SurfaceTheme.decide(ThemeMode.system,
             current: true,
@@ -100,24 +121,23 @@ void main() {
       );
     });
 
-    test('Sistem + arka plan → SON KARAR korunur', () {
-      // iOS arka plan anlık görüntüsünün ters parlaklığı burada yutulur.
-      // Bu satır düşerse hata aynen geri gelir.
-      expect(
-        SurfaceTheme.decide(ThemeMode.system,
-            current: true,
-            trustDeviceBrightness: false,
-            brightness: Brightness.dark),
-        isTrue,
-        reason: 'güvenilmeyen parlaklık son kararı EZMEMELİ',
-      );
-      expect(
-        SurfaceTheme.decide(ThemeMode.system,
-            current: false,
-            trustDeviceBrightness: false,
-            brightness: Brightness.light),
-        isFalse,
-      );
+    test('Sistem + arka plan → yine koyu, parlaklık HİÇ okunmuyor', () {
+      // iOS arka plan anlık görüntüsünün ters parlaklığı artık yapısal
+      // olarak zararsız: "Sistem" dalı cihaz görünümüne hiç bakmıyor.
+      // `trustDeviceBrightness` bu dalda anlamsız — iki değerde de aynı
+      // sonuç çıkmalı.
+      for (final guven in [true, false]) {
+        for (final parlaklik in [Brightness.light, Brightness.dark]) {
+          expect(
+            SurfaceTheme.decide(ThemeMode.system,
+                current: true,
+                trustDeviceBrightness: guven,
+                brightness: parlaklik),
+            isFalse,
+            reason: 'Sistem her koşulda koyu (guven=$guven, $parlaklik)',
+          );
+        }
+      }
     });
   });
 
@@ -141,22 +161,34 @@ void main() {
       expect(s.isLight, isTrue);
     });
 
-    test('Sistem modunda arka plan raporu kararı bozmaz', () {
+    test("Açık tercihten Sistem'e dönünce yüzeyler koyulaşır", () {
       final s = SurfaceTheme.instance;
       s.update(ThemeMode.light, trustDeviceBrightness: true);
       expect(s.isLight, isTrue);
 
-      // Uygulama arkaya alınıyor; iOS kareyi koyu görünümde yakalıyor ve
-      // tercih bu arada "Sistem"e çekilmiş olsa bile karar KORUNUR.
+      // Kullanıcı tercihi "Sistem"e çekerse bu AÇIK bir seçimdir ve
+      // yüzeyler koyuya döner — cihaz ne olursa olsun.
       expect(
         s.update(
           ThemeMode.system,
-          trustDeviceBrightness: false,
-          brightness: Brightness.dark,
+          trustDeviceBrightness: true,
+          brightness: Brightness.light,
         ),
-        isFalse,
+        isTrue,
+        reason: 'gerçek bir değişim: açık → koyu',
       );
-      expect(s.isLight, isTrue, reason: 'palet salınmamalı');
+      expect(s.isLight, isFalse);
+    });
+
+    test("Sistem'de tekrarlanan güncelleme yüzeyleri BOŞUNA tazelemez", () {
+      final s = SurfaceTheme.instance;
+      // Varsayılan zaten koyu; "Sistem" de koyu diyor → değişim YOK.
+      expect(
+        s.update(ThemeMode.system, trustDeviceBrightness: true),
+        isFalse,
+        reason: 'aynı sonuç, yüzeyler tazelenmemeli',
+      );
+      expect(s.isLight, isFalse);
     });
 
     test('karar diske yazılır ve süreç yeniden başlarken geri okunur',

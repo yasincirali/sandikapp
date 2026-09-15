@@ -845,8 +845,18 @@ class _SubSectionTitle extends StatelessWidget {
 /// Tema modu seçici — Sistem / Açık / Koyu.
 ///
 /// Seçim [themeModeProvider] üzerinden `SharedPreferences`'a yazılır ve
-/// `MaterialApp.themeMode`'u besler. Varsayılan koyudur: sandık dark-first
-/// bir markadır, sistem takibi kullanıcının açık tercihidir.
+/// `MaterialApp.themeMode`'u besler. Varsayılan `ThemeMode.system`:
+/// cihazı açık moda almış kullanıcı uygulamayı da açık görmeli
+/// (`ThemeModeNotifier.build` gerekçesi).
+///
+/// ⚠️ **"Sistem" uygulama DIŞI yüzeylerde farklı davranır** (2026-09-15):
+/// kilit ekranı ve widget cihazı izlemez, KOYU kalır. Sebep `SurfaceTheme
+/// .decide`'da: "Sistem" cihazın otomatik görünümüyle gün içinde
+/// kendiliğinden dönüyor ve banner kullanıcı hiçbir şey yapmadan renk
+/// değiştiriyordu. Yüzeyler yalnızca açık/koyu SEÇİMİNİ izler.
+///
+/// Bu ayrım kasıtlıdır ve arayüzde ayrıca anlatılmıyor: "Sistem" seçen
+/// kullanıcının beklentisi uygulamanın cihazı izlemesi, o korunuyor.
 class _ThemeModePicker extends ConsumerWidget {
   const _ThemeModePicker();
 
