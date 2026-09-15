@@ -109,37 +109,33 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          # Çalışma dizini SABİTLENİR + yol MUTLAK verilir.
+          # TEK SATIR — ters eğik çizgiyle satır devamı BURADA ÇALIŞMAZ.
           #
-          # Adım şu hatayla anında düşüyordu:
+          # `android-emulator-runner` bu `script` bloğunu satır satır ayrı
+          # `sh -c` çağrılarıyla koşuyor (CI logunda görülüyor: her satır
+          # kendi `[command]/usr/bin/sh -c ...` satırını basıyor). Bir kabuk
+          # devam satırı (`\`) bu yüzden hiç birleşmiyor: komut ters eğik
+          # çizgide bitiyor, `--dart-define` satırları hiç geçmiyor ve
+          # Flutter argüman olarak bir ters eğik çizgi görüyor. Onu bir
+          # test YOLU sanınca toplanan dosya kümesi
+          # `<cwd>/integration_test` önekinin dışına çıkıyor ve
+          # `_shouldRunAsIntegrationTests` (flutter_tools/src/commands/
+          # test.dart) şu hatayı atıyor:
           #
           #   Integration tests and unit tests cannot be run in a single
           #   invocation.
           #
-          # Mesaj YANILTICI. flutter_tools'un koşulu (src/commands/test.dart,
-          # `_shouldRunAsIntegrationTests`) şu: toplanan test dosyalarının
-          # HEPSİ `<currentDirectory>/integration_test` önekiyle başlamalı;
-          # bir kısmı başlayıp bir kısmı başlamazsa bu hata atılır.
+          # Mesaj sebebi hiç göstermediği için beş hipotez ölçülerek
+          # elendi (2026-09-15): dizin/dosya yazımı, eğik çizgi, fazladan
+          # `_test.dart` (CI'da listelendi — tek dosya, symlink yok),
+          # cihazın görünmemesi (`flutter devices` onu listeliyordu) ve
+          # `-d` eksikliği. `pwd` de repo kökünü doğruladı.
           #
-          # Elenenler (2026-09-15, ölçülerek):
-          #   · dizin/dosya ve eğik çizgi ayrımı DEĞİL — yerelde üç yazım
-          #     da sorunsuz koşuyor,
-          #   · `integration_test/` altında fazladan dosya DEĞİL — CI'da
-          #     listelendi: tek `smoke_test.dart`, symlink yok,
-          #   · `flutter` emülatörü göremiyor DEĞİL — `flutter devices`
-          #     çıktısında emulator-5554 listeleniyor,
-          #   · `-d` eksikliği de DEĞİL — eklendi, hata aynen sürdü.
-          #
-          # Geriye `currentDirectory` kalıyor: emülatör runner'ın `script`i
-          # repo kökünde koşmuyorsa önek karşılaştırması tutmaz. `cd` +
-          # mutlak yol bu belirsizliği tümden kaldırır; `pwd` de gerçek
-          # dizini logda bırakır (hata sürerse bir sonraki adım orası).
+          # Bu adım workflow yazıldığından beri kırıktı ama GÖRÜLMEDİ:
+          # `supabase start` 0054'ün Vault denetiminde hep önce kırıldığı
+          # için buraya hiç ulaşılamıyordu.
           script: |
-            pwd
-            cd "$GITHUB_WORKSPACE"
-            flutter test "$GITHUB_WORKSPACE/integration_test" -d emulator-5554 \
-              --dart-define=SUPABASE_URL=$SUPABASE_URL \
-              --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+            flutter test "$GITHUB_WORKSPACE/integration_test" -d emulator-5554 --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
       - name: supabase stop
         if: always()
