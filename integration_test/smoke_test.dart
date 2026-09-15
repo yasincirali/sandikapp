@@ -48,9 +48,28 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('giriş → varlık ekle → portföyde görünür', (tester) async {
-    // Semantics etiketleriyle bulma (`Varlık ekle`, `Diğer türü`) için.
+    // Semantics etiketiyle bulma (`Varlık ekle` FAB'ı) için.
+    //
+    // `addTearDown` BURADA YETMİYOR: `IntegrationTestWidgetsFlutterBinding`
+    // tearDown'ları test gövdesinden SONRA koşuyor, ama handle denetimi
+    // (`_verifySemanticsHandlesWereDisposed`) gövde biter bitmez yapılıyor.
+    // Sonuç CI'da tam olarak şuydu — akışın tamamı geçti, test yalnızca
+    // temizlikte düştü:
+    //
+    //   A SemanticsHandle was active at the end of the test.
+    //
+    // Bu yüzden gövdenin sonunda AÇIKÇA dispose ediliyor. `addTearDown`
+    // yine de duruyor: gövde bir `fail` ile erken çıkarsa handle orada
+    // kapanır ve tek bir hata iki hata gibi raporlanmaz.
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
+    var semanticsKapandi = false;
+    void semanticsKapat() {
+      if (semanticsKapandi) return;
+      semanticsKapandi = true;
+      semantics.dispose();
+    }
+
+    addTearDown(semanticsKapat);
 
     app.main();
 
@@ -159,6 +178,9 @@ void main() {
     // değiştirmez; metin arama onların altında da bulur.
     await _bekle(tester, find.textContaining(_varlikAdi),
         neden: 'portföyde yeni varlık', sure: const Duration(seconds: 45));
+
+    // Gövdenin SONUNDA — yukarıdaki gerekçe.
+    semanticsKapat();
   });
 }
 
