@@ -267,10 +267,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         rightInitial = partners.isNotEmpty && partners[0].displayName.isNotEmpty
             ? partners[0].displayName[0].toUpperCase()
             : 'O';
+        // `positionedAssets` — "Ben" kartıyla AYNI ölçü. Ham `isBuy`
+        // toplamı satışları düşmüyordu: ortak bir şey sattığında kart
+        // şişik görünüyor, iki kart farklı şey ölçüyordu.
+        //
+        // Her ortak AYRI indirgenir, lot'lar tek havuzda toplanmaz:
+        // `positionKey` sahip taşımaz, birleştirilirse iki ortağın aynı
+        // hissesi tek pozisyona karışır ve birinin satışı diğerinin
+        // lot'unu düşer.
         for (final assets in allPartnerAssets.values) {
-          for (final a in assets) {
-            // `isActive`: yumuşak silinmiş lot toplama girmemeli.
-            if (!a.isBuy || !a.isActive) continue;
+          for (final a in positionedAssets(assets)) {
             rightTotal += myState.toTRY(a.totalValue, a.currency);
           }
         }
@@ -286,8 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final name = p.displayName.isEmpty ? 'Ortak' : p.displayName;
         rightLabel = name.split(' ').first;
         rightInitial = name[0].toUpperCase();
-        for (final a in allPartnerAssets[_view!] ?? <Asset>[]) {
-          if (!a.isBuy || !a.isActive) continue;
+        for (final a in positionedAssets(allPartnerAssets[_view!] ?? const [])) {
           rightTotal += myState.toTRY(a.totalValue, a.currency);
         }
       }
