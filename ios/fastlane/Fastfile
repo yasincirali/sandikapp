@@ -413,14 +413,30 @@ platform :ios do
     #    ıskalar (ıskalanırsa bu adım hata vermeden hiçbir şey yüklemez).
     dsym_path = lane_context[SharedValues::DSYM_OUTPUT_PATH]
 
-    # `upload-symbols` FirebaseCrashlytics pod'uyla gelir. Yolu AÇIKÇA
-    # veriyoruz: fastlane binary'yi bulamazsa bu action sessizce hiçbir şey
-    # yüklemeden "başarılı" döner — bizi buraya getiren hata sınıfının ta
-    # kendisi. Yoksa aşağıdaki `File.exist?` kontrolü sesli düşürür.
-    upload_symbols_binary =
-      File.expand_path("../Pods/FirebaseCrashlytics/upload-symbols", __dir__)
+    # `upload-symbols` binary'sini BUL — sabit yol yazma.
+    #
+    # ⚠️ Bu proje CocoaPods DEĞİL, Swift Package Manager kullanıyor
+    # (`ios/Podfile.lock` yok; Flutter'ın SPM entegrasyonu). Yani
+    # `Pods/FirebaseCrashlytics/upload-symbols` HİÇ OLUŞMUYOR — ilk
+    # denemede oraya bakılmış ve build sembolsüz gitmişti
+    # (run 34978673552: "upload-symbols ... var mı: false").
+    #
+    # SPM checkout'ları DerivedData altında ve yol her koşuda değişiyor,
+    # bu yüzden aranıyor. `find` çıktısının ilki alınır: aynı binary'nin
+    # birden çok kopyası olabilir, hepsi aynı işi yapar.
+    upload_symbols_binary = begin
+      derived = File.expand_path("~/Library/Developer/Xcode/DerivedData")
+      hits = Dir.glob(
+        "#{derived}/**/SourcePackages/checkouts/firebase-ios-sdk/" \
+        "Crashlytics/upload-symbols"
+      )
+      # Yedek: SPM düzeni değişirse adıyla geniş ara (DerivedData büyük
+      # olduğundan yalnızca ilk arama boş dönünce çalışır).
+      hits = Dir.glob("#{derived}/**/upload-symbols") if hits.empty?
+      hits.find { |p| File.file?(p) && File.executable?(p) }
+    end
 
-    if dsym_path && File.exist?(dsym_path) && File.exist?(upload_symbols_binary)
+    if dsym_path && File.exist?(dsym_path) && upload_symbols_binary
       upload_symbols_to_crashlytics(
         dsym_path: dsym_path,
         binary_path: upload_symbols_binary,
@@ -438,8 +454,7 @@ platform :ios do
         "dSYM Crashlytics'e YÜKLENMEDİ — bu build sembolsüz kalacak.\n" \
         "  dSYM yolu:        #{dsym_path.inspect} " \
         "(var mı: #{dsym_path ? File.exist?(dsym_path) : false})\n" \
-        "  upload-symbols:   #{upload_symbols_binary} " \
-        "(var mı: #{File.exist?(upload_symbols_binary)})"
+        "  upload-symbols:   #{upload_symbols_binary.inspect} (arama sonucu)"
       )
     end
 
