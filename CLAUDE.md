@@ -50,6 +50,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 | Dokümantasyon | `code-documenter` |
 | Dokümansız kodu çözme | `spec-miner` |
 | Bir kararı zorlatma / pre-mortem | `the-fool` |
+| Video / tanıtım filmi / motion graphics | `remotion-motion-graphics` (**her video talebinde**; araç Remotion, npm'den) |
 | Uygulamayı çalıştırıp görme | `/run`, `tool/deploy_emulators.sh` |
 
 **Çakışma kuralı — skill CLAUDE.md'yi asla ezmez.** Skill ile bu dosya çeliştiğinde
