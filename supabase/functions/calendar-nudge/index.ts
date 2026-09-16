@@ -74,6 +74,37 @@ export function annualInflation(
   return (son / onOnceki - 1) * 100;
 }
 
+/// Bir seriden, [sonPeriod]'dan tam [ayGeri] ay önceki satırın endeksini
+/// bulur. Yoksa `null`.
+///
+/// **Neden dizi indeksi KULLANILMAZ (2026-09-16).** Eskiden `seri[12]` "12
+/// ay öncesi", `seri[1]` de "bir önceki ay" varsayılıyordu. `limit(13)`
+/// SATIR sayısıdır, tarih değil: seride bir ay eksikse (ki bu projede bir
+/// kez yaşandı — TÜİK Ocak 2026'da baz yılını değiştirdi ve eski seri orada
+/// bitti) `seri[12]` 13 ay öncesi olur ve push bildirimi YANLIŞ bir yıllık
+/// TÜFE gönderir. Uygulama tarafındaki hesaplar tarih anahtarıyla çalışıyor
+/// (`InflationService.changePct`); burası tek istisnaydı.
+///
+/// Bildirim geri alınamaz: yanlış rakam telefonlara gider ve kullanıcı onu
+/// TÜİK'in açıkladığıyla karşılaştırır. Eksik ay varsa hesap yapılmaması,
+/// yanlış hesaptan iyidir.
+export function endeksAyGeri(
+  seri: Array<{ period: string; tufe_index: number }>,
+  sonPeriod: string,
+  ayGeri: number,
+): number | null {
+  const [yil, ay] = sonPeriod.split('-').map(Number);
+  if (!Number.isFinite(yil) || !Number.isFinite(ay)) return null;
+  // Date.UTC ay taşmasını kendisi çevirir (ay 0 → önceki yılın Aralık'ı).
+  const hedef = new Date(Date.UTC(yil, ay - 1 - ayGeri, 1));
+  const anahtar = `${hedef.getUTCFullYear()}-` +
+    `${(hedef.getUTCMonth() + 1).toString().padStart(2, '0')}`;
+  const satir = seri.find((r) => r.period.slice(0, 7) === anahtar);
+  if (!satir) return null;
+  const v = Number(satir.tufe_index);
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
 export function buildInflationMessage(
   aylik: number | null,
   yillik: number | null,
@@ -163,13 +194,14 @@ Deno.serve(async (request) => {
       });
     }
 
-    const aylik = monthlyInflation(
-      Number(seri[1].tufe_index),
-      Number(seri[0].tufe_index),
-    );
-    const yillik = seri.length >= 13
-      ? annualInflation(Number(seri[12].tufe_index), Number(seri[0].tufe_index))
-      : null;
+    // Uçlar TARİHTEN seçilir, dizi indeksinden değil ([endeksAyGeri]).
+    const son = Number(seri[0].tufe_index);
+    const oncekiAy = endeksAyGeri(seri, sonPeriod, 1);
+    const onIkiAyOnce = endeksAyGeri(seri, sonPeriod, 12);
+    const aylik = oncekiAy === null ? null : monthlyInflation(oncekiAy, son);
+    const yillik = onIkiAyOnce === null
+      ? null
+      : annualInflation(onIkiAyOnce, son);
     if (aylik === null && yillik === null) {
       return jsonResponse({ ok: true, reason: 'Hesap yapilamadi.', sent: 0 });
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset.dart';
@@ -51,7 +52,7 @@ class RealReturnStrip extends ConsumerStatefulWidget {
 }
 
 class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
-  ({double nominal, double inflation})? _veri;
+  ({double nominal, double inflation, InflationWindow pencere})? _veri;
   bool _istendi = false;
 
   @override
@@ -78,7 +79,8 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
     }
     if (r == null || !mounted) return;
 
-    setState(() => _veri = (nominal: r!.nominal, inflation: r.inflation));
+    setState(() => _veri =
+        (nominal: r!.nominal, inflation: r.inflation, pencere: r.pencere));
   }
 
   @override
@@ -91,9 +93,21 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
       child: RealReturnBadge(
         nominal: veri.nominal,
         inflation: veri.inflation,
+        pencere: veri.pencere,
       ),
     );
   }
+}
+
+/// Pencere uçlarını kısa ay biçiminde yazar ("Ağu 2025 – Ağu 2026").
+///
+/// Rozet tek satır ve `ellipsis` ile kırpılıyor; uzun ay adları sayıları
+/// taşırdı. Kart (`_ReelGetiriKarti`) aynı bilgiyi uzun biçimde yazıyor —
+/// orada yer var.
+String _aralik(BuildContext context, InflationWindow w) {
+  final loc = Localizations.localeOf(context).toString();
+  final f = DateFormat('MMM yyyy', loc);
+  return '${f.format(w.seriBaslangici)} – ${f.format(w.seriBitisi)}';
 }
 
 /// Rozetin görsel gövdesi — veri kaynağından ayrı.
@@ -107,10 +121,20 @@ class RealReturnBadge extends StatelessWidget {
     super.key,
     required this.nominal,
     required this.inflation,
+    this.pencere,
   });
 
   final double nominal;
   final double inflation;
+
+  /// İki sayının ÖLÇÜLDÜĞÜ aralık.
+  ///
+  /// Alt satır eskiden sabit "son 1 yıl" yazıyordu; TÜFE aylık yayımlandığı
+  /// için pencere bugüne kadar GELMEZ (son açıklanmış ayda biter). Sabit
+  /// etiket, kullanıcının rakamı bugüne kadarki bir aralık sanmasına yol
+  /// açıyordu. Verildiğinde gerçek uçlar yazılır. Yerleşim testleri bunu
+  /// vermeden de kurabilsin diye opsiyonel.
+  final InflationWindow? pencere;
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +253,7 @@ class RealReturnBadge extends StatelessWidget {
               Text(
                 '${l.realReturnYours} %${fmtNum(nominal, digits: 2)}'
                 '  ·  ${l.realReturnCpi} %${fmtNum(inflation, digits: 2)}'
-                '  ·  ${l.realReturnLastYear}',
+                '  ·  ${pencere == null ? l.realReturnLastYear : _aralik(context, pencere!)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.bodySmall?.copyWith(color: c.text36),

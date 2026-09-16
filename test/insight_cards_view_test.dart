@@ -30,6 +30,12 @@ void main() {
     double? fark,
     double? temettu,
     double? komisyon,
+    // TÜFE karşılaştırmasının KENDİ nominali. Varsayılanı [pct]: üretimde
+    // `_tufeIle` üç alanı (nominal, TÜFE, aralık) birlikte doldurur ve
+    // TÜFE varken nominalin boş kalması gerçekte olmayan bir durumdur.
+    // Ayrı alan olmasının gerekçesi `PeriodSummary.tufeNominalPct`
+    // notunda: iki pencere örtüşmüyor.
+    double? tufeNominal,
   }) =>
       PeriodSummary(
         period: period,
@@ -43,6 +49,9 @@ void main() {
         tufePct: tufePct,
         reelGetiriPct: reel,
         tufeFarki: fark,
+        tufeNominalPct: tufePct == null ? null : (tufeNominal ?? pct),
+        tufeBaslangic: tufePct == null ? null : DateTime(2025, 8, 31),
+        tufeBitis: tufePct == null ? null : DateTime(2026, 8, 31),
         temettuTRY: temettu,
         komisyonTRY: komisyon,
       );

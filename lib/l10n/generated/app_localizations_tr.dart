@@ -1445,6 +1445,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get nominalReturn => 'Nominal getiri';
 
   @override
+  String cpiWindowRange(String start, String end) {
+    return 'Ölçüm aralığı: $start – $end';
+  }
+
+  @override
   String get periodCpi => 'Dönem TÜFE';
 
   @override

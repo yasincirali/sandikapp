@@ -183,9 +183,15 @@ class PeriodSummaryView extends StatelessWidget {
         if (summary.reelGetiriPct != null) {
           bloklar.add(_ReelGetiriKarti(
             reel: summary.reelGetiriPct!,
-            nominal: summary.getiriPct,
+            // `getiriPct` DEĞİL: TÜFE karşılaştırması kendi penceresinde
+            // hesaplanmış nominali kullanır (bkz. `tufeNominalPct`).
+            // Dönem kartının yüzdesini buraya koymak, kartın üç satırını
+            // (nominal − TÜFE = fark) elle doğrulanamaz hale getirirdi.
+            nominal: summary.tufeNominalPct,
             tufe: summary.tufePct,
             fark: summary.tufeFarki,
+            baslangic: summary.tufeBaslangic,
+            bitis: summary.tufeBitis,
             donemEtiketi: context.l10n.lastMonthPeriod,
           ));
         } else if (summary.tufeFarki != null) {
@@ -207,9 +213,15 @@ class PeriodSummaryView extends StatelessWidget {
         if (summary.reelGetiriPct != null) {
           bloklar.add(_ReelGetiriKarti(
             reel: summary.reelGetiriPct!,
-            nominal: summary.getiriPct,
+            // `getiriPct` DEĞİL: TÜFE karşılaştırması kendi penceresinde
+            // hesaplanmış nominali kullanır (bkz. `tufeNominalPct`).
+            // Dönem kartının yüzdesini buraya koymak, kartın üç satırını
+            // (nominal − TÜFE = fark) elle doğrulanamaz hale getirirdi.
+            nominal: summary.tufeNominalPct,
             tufe: summary.tufePct,
             fark: summary.tufeFarki,
+            baslangic: summary.tufeBaslangic,
+            bitis: summary.tufeBitis,
             donemEtiketi: context.l10n.last6MonthsPeriod,
           ));
         } else if (summary.tufeFarki != null) {
@@ -239,9 +251,15 @@ class PeriodSummaryView extends StatelessWidget {
         if (summary.reelGetiriPct != null) {
           bloklar.add(_ReelGetiriKarti(
             reel: summary.reelGetiriPct!,
-            nominal: summary.getiriPct,
+            // `getiriPct` DEĞİL: TÜFE karşılaştırması kendi penceresinde
+            // hesaplanmış nominali kullanır (bkz. `tufeNominalPct`).
+            // Dönem kartının yüzdesini buraya koymak, kartın üç satırını
+            // (nominal − TÜFE = fark) elle doğrulanamaz hale getirirdi.
+            nominal: summary.tufeNominalPct,
             tufe: summary.tufePct,
             fark: summary.tufeFarki,
+            baslangic: summary.tufeBaslangic,
+            bitis: summary.tufeBitis,
             donemEtiketi: context.l10n.lastYearPeriod,
           ));
         } else if (summary.tufeFarki != null) {
@@ -869,6 +887,15 @@ class _TufeKarti extends StatelessWidget {
 /// yazıyor (nominal, TÜFE, fark). Kullanıcı TÜİK'in açıkladığı rakamla
 /// doğrulayabilmeli — yoksa kart bir kara kutu olur ve bu ekranın bütün
 /// değeri güvenilir olmasından geliyor.
+/// TÜFE penceresinin uçlarını AY olarak yazar ("Ağustos 2025").
+///
+/// Gün yazılmaz: endeks aylık bir ölçüm ve "31 Ağustos" yazmak, o gün
+/// yapılmış bir ölçüm varmış izlenimi verirdi. Locale delegate yoksa
+/// `context.l10n` Türkçe'ye düştüğü gibi biçim de 'tr_TR'ye düşer.
+String _ayEtiketi(BuildContext context, DateTime t) =>
+    DateFormat('MMMM yyyy', Localizations.localeOf(context).toString())
+        .format(t);
+
 class _ReelGetiriKarti extends StatelessWidget {
   /// Bileşik reel getiri (%). Ana rakam.
   final double reel;
@@ -886,12 +913,23 @@ class _ReelGetiriKarti extends StatelessWidget {
   /// dönemsiz bir enflasyon karşılaştırması doğrulanamaz.
   final String donemEtiketi;
 
+  /// Karşılaştırmanın GERÇEK uçları.
+  ///
+  /// Etiket ("son 1 yıl") yaklaşık; TÜFE aylık yayımlandığı için pencere
+  /// son açıklanmış ayda biter ve bugüne kadar gelmez. Tarihleri yazmak o
+  /// farkı görünür kılar — yazmazsak kullanıcı rakamı bugüne kadarki bir
+  /// aralık sanır ve TÜİK'le kıyasladığında tutmadığını görür.
+  final DateTime? baslangic;
+  final DateTime? bitis;
+
   const _ReelGetiriKarti({
     required this.reel,
     required this.donemEtiketi,
     this.nominal,
     this.tufe,
     this.fark,
+    this.baslangic,
+    this.bitis,
   });
 
   @override
@@ -944,6 +982,16 @@ class _ReelGetiriKarti extends StatelessWidget {
                 deger: '${fark! >= 0 ? '+' : '−'}'
                     '${fmtNum(fark!.abs(), digits: 1)} puan',
                 ton: fark! >= 0 ? c.gain : c.loss,
+              ),
+            ],
+            if (baslangic != null && bitis != null) ...[
+              const SizedBox(height: SandikSpace.xs2),
+              Text(
+                context.l10n.cpiWindowRange(
+                  _ayEtiketi(context, baslangic!),
+                  _ayEtiketi(context, bitis!),
+                ),
+                style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
             ],
           ],

@@ -12,6 +12,7 @@ import { assertEquals } from 'jsr:@std/assert@1';
 import {
   annualInflation,
   buildInflationMessage,
+  endeksAyGeri,
   formatPct,
   monthlyInflation,
 } from '../functions/calendar-nudge/index.ts';
@@ -62,4 +63,58 @@ Deno.test('mesaj KİŞİYE ÖZEL rakam iddia etmez', () => {
   for (const yasak of ['portföyün %', 'senin getirin', 'kazandın']) {
     assertEquals(s.includes(yasak), false, `iddia: ${yasak}`);
   }
+});
+
+
+// ── Uçlar TARİHTEN seçilir, dizi indeksinden değil (2026-09-16) ──────────
+//
+// Eskiden `seri[12]` "12 ay öncesi" varsayılıyordu. `limit(13)` SATIR
+// sayısıdır: seride bir ay eksikse `seri[12]` 13 ay öncesi olur ve bildirim
+// yanlış bir yıllık TÜFE taşır. Bu projede tam olarak öyle bir kesinti
+// yaşandı (TÜİK Ocak 2026'da baz yılını değiştirdi).
+
+function seri(
+  aylar: Array<[string, number]>,
+): Array<{ period: string; tufe_index: number }> {
+  // Sorgu azalan sırada geliyor; test de o şekli taklit eder.
+  return aylar.map(([period, tufe_index]) => ({
+    period: `${period}-01`,
+    tufe_index,
+  }));
+}
+
+Deno.test('endeksAyGeri tarihle bulur — tam seri', () => {
+  const s = seri([
+    ['2026-08', 131.51],
+    ['2026-07', 129.0],
+    ['2025-08', 100.0],
+  ]);
+  assertEquals(endeksAyGeri(s, '2026-08', 1), 129.0);
+  assertEquals(endeksAyGeri(s, '2026-08', 12), 100.0);
+});
+
+Deno.test('EKSİK ay: null döner — komşu satır 12 ay sanılmaz', () => {
+  // 2025-08 yok; indeks tabanlı eski kod 2025-07'yi (13 ay öncesi) alır ve
+  // yıllık TÜFE'yi olduğundan YÜKSEK gösterirdi.
+  const s = seri([
+    ['2026-08', 131.51],
+    ['2025-07', 98.0],
+  ]);
+  assertEquals(endeksAyGeri(s, '2026-08', 12), null);
+  assertEquals(annualInflation(98.0, 131.51) !== null, true,
+    'hesap kendi başına çalışıyor — kapı UÇ SEÇİMİNDE');
+});
+
+Deno.test('yıl sınırını doğru geçer — Ocak ayından 12 ay geri', () => {
+  const s = seri([
+    ['2026-01', 120.0],
+    ['2025-01', 100.0],
+  ]);
+  assertEquals(endeksAyGeri(s, '2026-01', 12), 100.0);
+  assertEquals(endeksAyGeri(s, '2026-01', 1), null); // 2025-12 tabloda yok
+});
+
+Deno.test('bozuk endeks değeri null sayılır', () => {
+  const s = seri([['2026-08', 131.51], ['2025-08', 0]]);
+  assertEquals(endeksAyGeri(s, '2026-08', 12), null);
 });

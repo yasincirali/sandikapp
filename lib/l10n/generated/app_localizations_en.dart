@@ -1445,6 +1445,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nominalReturn => 'Nominal return';
 
   @override
+  String cpiWindowRange(String start, String end) {
+    return 'Measured: $start – $end';
+  }
+
+  @override
   String get periodCpi => 'Period CPI';
 
   @override

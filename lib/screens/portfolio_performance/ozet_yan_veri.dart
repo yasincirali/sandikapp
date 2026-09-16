@@ -61,7 +61,19 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
 }
 
 class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
-  double? _enflasyon;
+  /// TÜFE ölçümü ve ÖLÇÜLDÜĞÜ pencere.
+  ///
+  /// Yüzde tek başına tutulmuyor (2026-09-16): ekran nominal getiriyi bu
+  /// pencereye hizalamak ZORUNDA, yoksa çıkarma iki farklı zaman dilimini
+  /// kıyaslar. Gerekçe `InflationService.pencere` notunda.
+  InflationWindow? _tufePencere;
+
+  /// [_tufePencere] ile AYNI aralıkta hesaplanmış nominal getiri.
+  ///
+  /// `widget.summary.getiriPct` bunun yerine KULLANILAMAZ: o, takvimden
+  /// türetilen pencerenin (bugünden geriye) getirisi ve TÜFE penceresiyle
+  /// örtüşmüyor — 1A'da hiç kesişmiyordu.
+  double? _hizaliNominal;
 
   /// `inflation_index` tablosu tamamen boş mu? (Kurulum eksik.)
   ///
@@ -114,7 +126,8 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   void didUpdateWidget(_OzetYanVeri old) {
     super.didUpdateWidget(old);
     if (old.period != widget.period) {
-      _enflasyon = null;
+      _tufePencere = null;
+      _hizaliNominal = null;
       // Endeks boşluğu döneme bağlı değil ama `_yukle` yeniden koşup onu
       // tazeleyecek; arada eski değeri tutmak yanlış kart göstermez
       // (boşsa yine boş çıkar) ama sıfırlamak durumu tek yerde tutuyor.
@@ -149,25 +162,47 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     await _yukleUzunDonem();
     await _yukleDilim();
 
-    // GÜNLÜK'te TÜFE sorulmaz: endeks AYLIK yayımlanıyor, bir günlük
-    // pencerede enflasyon farkı tanımsız.
-    if (widget.period == SummaryPeriod.gunluk) return;
+    // GÜNLÜK ve 1H'de TÜFE sorulmaz: endeks AYLIK yayımlanıyor.
+    //
+    // **1H de kapının ARKASINDA (2026-09-16).** Eskiden yalnızca GÜNLÜK
+    // eleniyordu ve 1H için `inflationForPeriod(7)` çağrılıyordu;
+    // `aySayisi(7)` tabanı 1'e kırptığı için bir HAFTALIK getiri bir AYLIK
+    // TÜFE ile kıyaslanan bir sayı üretiliyordu. Kart 1H'de çizilmediği
+    // için ekranda görünmüyordu ama paylaşım metni enflasyon bağlanmış
+    // özetten üretiliyor: kullanıcı "enflasyonun X puan önündeyim" yazan
+    // bir kartı paylaşabiliyordu. Ölçülmemiş bir karşılaştırma, ekranda
+    // olmasa da paylaşılmamalı.
+    if (widget.period == SummaryPeriod.gunluk ||
+        widget.period == SummaryPeriod.birHafta) {
+      return;
+    }
 
-    // 1A'da AYLIK enflasyon sorulur, yıllık değil.
+    // 1A'da pencere BİR AYDIR (son açıklanmış ay), 6A/1Y'de dönemin ayı.
     //
     // Yıllık TÜFE'yi bir aylık pencereye uygulamak portföyü haksız yere
     // kötü gösterirdi: %31,5 yıllık enflasyonu bir ayın getirisinden
-    // düşmek o ayı otomatik kayıp yazar. `monthlyInflation` son açıklanmış
-    // ayın bir önceki aya göre değişimini verir ve kart o ayın gerçek
-    // eşiğiyle karşılaştırır.
+    // düşmek o ayı otomatik kayıp yazar.
     //
-    // Diğer dönemlerde `inflationForPeriod` zaten gün sayısını aya çevirip
-    // son açıklanmış aydan geriye sayıyor.
-    final enf = widget.period == SummaryPeriod.birAy
-        ? await InflationService.instance.monthlyInflation()
-        : await InflationService.instance.inflationForPeriod(
-            widget.period.days,
-          );
+    // `pencere()` yüzdeyle birlikte UÇLARI da veriyor; nominal getiri
+    // birazdan o uçlara hizalanacak.
+    final w = await InflationService.instance.pencere(
+      widget.period == SummaryPeriod.birAy ? 30 : widget.period.days,
+    );
+
+    // Nominal AYNI pencerede yeniden hesaplanır — `widget.summary.getiriPct`
+    // takvimden türetilen (bugünden geriye) pencerenin getirisi ve TÜFE
+    // penceresiyle örtüşmüyor. Gerekçe `RealReturnService.piyasaGetirisi`
+    // notunda; hesap da orada, burada kopyalanmıyor.
+    double? nominal;
+    if (w != null) {
+      try {
+        nominal = await RealReturnService.piyasaGetirisi(widget.assets, w);
+      } catch (_) {
+        // Seri kurulamazsa kart hiç çizilmez: hizasız bir farkı göstermek,
+        // hiç göstermemekten kötü.
+      }
+    }
+    final enf = nominal == null ? null : w?.pct;
 
     // `enf == null` üç sebepten olabilir; ekranın hangisi olduğunu bilmesi
     // gerekiyor:
@@ -186,7 +221,8 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
 
     if (!mounted) return;
     setState(() {
-      _enflasyon = enf;
+      _tufePencere = enf == null ? null : w;
+      _hizaliNominal = enf == null ? null : nominal;
       _endeksBos = bosMu;
     });
   }
@@ -361,9 +397,10 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     // hesabı yapılmış özeti enflasyonla yeniden kurmak yerine yalnızca
     // farkı hesaplayıp view'a veriyoruz.
     final s = widget.summary;
-    final enf = _enflasyon;
-    final gosterilen =
-        (enf != null && s.getiriPct != null) ? _tufeIle(s, enf) : s;
+    final w = _tufePencere;
+    final nominal = _hizaliNominal;
+    // İkisi de TÜFE penceresinden: biri eksikse kart hiç çizilmez.
+    final gosterilen = (w != null && nominal != null) ? _tufeIle(s, w, nominal) : s;
 
     // Paylaşım metni ENFLASYON BAĞLANDIKTAN SONRAKİ özetten üretilir:
     // `gosterilen` yerine `s` verilirse "enflasyonun X puan önündeyim"
@@ -522,12 +559,23 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// enflasyonun AĞDAN sonradan gelmesinin sonucu (servis saf ve ağa
   /// çıkmıyor). Formüller iki yerde de aynı `InflationService`
   /// fonksiyonlarına bakıyor, kopyalanmıyor.
-  PeriodSummary _tufeIle(PeriodSummary s, double enflasyon) {
-    final nominal = s.getiriPct!;
+  PeriodSummary _tufeIle(
+    PeriodSummary s,
+    InflationWindow w,
+    double nominal,
+  ) {
+    final enflasyon = w.pct;
     final reel = InflationService.realReturnPct(nominal, enflasyon);
 
     return PeriodSummary(
       period: s.period,
+      // **Uçlar ÖZETİN kalır, TÜFE penceresininki değil.** Bu kopya
+      // yalnızca enflasyon alanlarını ekliyor; `start`/`end` dönem
+      // kartının ve paylaşım başlığının tarih aralığı ("son 1 ay") ve o
+      // aralık `getiriPct`/köprü ile tutarlı olmak zorunda. TÜFE
+      // karşılaştırmasının kendi aralığı [tufeBaslangic]/[tufeBitis]'te
+      // ayrı taşınır — iki farklı soru, iki farklı aralık, ikisi de
+      // ekranda yazılı.
       start: s.start,
       end: s.end,
       baslangicTRY: s.baslangicTRY,
@@ -539,6 +587,11 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       enZayif: s.enZayif,
       tufeFarki: InflationService.spreadPoints(nominal, enflasyon),
       tufePct: enflasyon,
+      // Karşılaştırmanın KENDİ nominali ve aralığı. `getiriPct` dönem
+      // kartının sayısı olarak kalıyor; reel getiri kartı bunu okur.
+      tufeNominalPct: nominal,
+      tufeBaslangic: w.seriBaslangici,
+      tufeBitis: w.seriBitisi,
       // NaN filtresi: −%100 enflasyonda payda sıfırlanıyor ve ekrana
       // "%NaN" basılırdı (servis tarafındaki `_sonluVeyaNull` ile aynı
       // kapı).

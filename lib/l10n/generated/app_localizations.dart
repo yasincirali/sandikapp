@@ -2696,6 +2696,12 @@ abstract class AppLocalizations {
   /// **'Nominal getiri'**
   String get nominalReturn;
 
+  /// TÜFE karşılaştırmasının gerçek pencere uçları
+  ///
+  /// In tr, this message translates to:
+  /// **'Ölçüm aralığı: {start} – {end}'**
+  String cpiWindowRange(String start, String end);
+
   /// No description provided for @periodCpi.
   ///
   /// In tr, this message translates to:

@@ -742,6 +742,11 @@
     }
   },
   "nominalReturn": "Nominal return",
+  "cpiWindowRange": "Measured: {start} – {end}",
+  "@cpiWindowRange": {
+    "description": "Actual window ends of the CPI comparison",
+    "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
+  },
   "periodCpi": "Period CPI",
   "pointDifference": "Point difference",
   "realReturn": "Real return",

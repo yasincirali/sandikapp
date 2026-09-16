@@ -212,7 +212,31 @@ class InflationService {
   /// Doğrusu: 365 gün = 12 ay ve 12 ay geriye sayılacak uç, bugünün ayı
   /// değil son açıklanmış aydır. TÜİK "yıllık enflasyon"u da böyle kurar
   /// (Ağustos 2025 → Ağustos 2026).
-  Future<double?> inflationForPeriod(int gun, {DateTime? now}) async {
+  Future<double?> inflationForPeriod(int gun, {DateTime? now}) async =>
+      (await pencere(gun, now: now))?.pct;
+
+  /// TÜFE değişimi ve ÖLÇÜLDÜĞÜ pencere birlikte.
+  ///
+  /// **Neden yüzde tek başına yetmiyor (2026-09-16).** Ölçüldü: nominal
+  /// getiri bugünden geriye sayılıyordu (`donemBaslangici(now, 12)` →
+  /// 2025-09-16 … 2026-09-16), TÜFE ise son açıklanmış aydan
+  /// (2025-08-01 … 2026-08-01). İki sayı aynı satırda "nominal − TÜFE"
+  /// diye çıkarılıyordu ama FARKLI zaman dilimlerine aitti: 1Y'de ~1,5 ay
+  /// kayma, 1A'da pencereler HİÇ KESİŞMİYORDU (portföyün 16 Ağustos–16
+  /// Eylül getirisi Temmuz enflasyonuyla kıyaslanıyordu).
+  ///
+  /// TÜFE ucunun son açıklanmış ay olması DOĞRU ve korunuyor — TÜİK'in
+  /// "yıllık enflasyon"u böyle kurulur ve kullanıcı rakamı oradan
+  /// doğruluyor. Düzeltme ters yönde: nominal getiri bu pencereye
+  /// hizalanır. Bunun için çağıranın uçları BİLMESİ gerekiyor, yüzdeyi
+  /// değil — [InflationWindow] onları taşır.
+  ///
+  /// [ilkAy] ve [sonAy] endeks tablosunun anahtarlarıdır (ayın 1'i).
+  /// Portföy serisi için anlamlı uçlar [seriBaslangici] ve [seriBitisi]:
+  /// endeks bir AYIN ortalama seviyesini değil, o ayın ölçümünü taşır ve
+  /// TÜİK karşılaştırması "Ağustos → Ağustos" olduğu için portföy penceresi
+  /// de ilk ayın SONUNDAN son ayın SONUNA kurulur.
+  Future<InflationWindow?> pencere(int gun, {DateTime? now}) async {
     final endeks = await _yukle();
     if (endeks.isEmpty) return null;
     final bugun = now ?? DateTime.now();
@@ -229,8 +253,10 @@ class InflationService {
     if (gecenAy > bayatlikEsigiAy) return null;
 
     // Uç, son açıklanmış aydan geriye sayılır (yukarıdaki nota bakın).
-    final baslangic = DateTime(sonAy.year, sonAy.month - aySayisi(gun), 1);
-    return changePct(endeks, baslangic, sonAy);
+    final ilkAy = DateTime(sonAy.year, sonAy.month - aySayisi(gun), 1);
+    final pct = changePct(endeks, ilkAy, sonAy);
+    if (pct == null) return null;
+    return InflationWindow(ilkAy: ilkAy, sonAy: sonAy, pct: pct);
   }
 
   /// Son açıklanmış ayın AYLIK TÜFE değişimi (bir önceki aya göre).
@@ -256,4 +282,47 @@ class InflationService {
     final oncekiAy = DateTime(sonAy.year, sonAy.month - 1, 1);
     return changePct(endeks, oncekiAy, sonAy);
   }
+}
+
+/// Bir TÜFE ölçümü ve ÖLÇÜLDÜĞÜ pencere.
+///
+/// **Neden uçlar taşınıyor (2026-09-16).** Yüzde tek başına gönderildiğinde
+/// çağıran onu kendi penceresiyle kıyaslıyordu ve iki pencere tutmuyordu
+/// (bkz. `InflationService.pencere`). Uçlar sayının YANINDA yolculuk edince
+/// nominal getiri aynı aralığa kurulabiliyor ve ekran tarih aralığını
+/// yazabiliyor — kullanıcı "hangi tarihler arası" sorusunu sorabilmeli,
+/// yoksa rakam kara kutu olur.
+class InflationWindow {
+  const InflationWindow({
+    required this.ilkAy,
+    required this.sonAy,
+    required this.pct,
+  });
+
+  /// Pencerenin ilk ayı (endeks anahtarı — ayın 1'i). Bu ayın ENDEKSİ taban
+  /// alınır, yani karşılaştırma bu ayın SONUNDAN başlar ([seriBaslangici]).
+  final DateTime ilkAy;
+
+  /// Pencerenin son ayı — son açıklanmış TÜFE ayı.
+  final DateTime sonAy;
+
+  /// [ilkAy] → [sonAy] TÜFE değişimi (yüzde).
+  final double pct;
+
+  /// Portföy serisinin başlangıcı: [ilkAy]'ın SON günü.
+  ///
+  /// Endeks bir ayın ölçümüdür, ayın ortalaması değil. TÜİK "Ağustos 2025 →
+  /// Ağustos 2026" derken iki ÖLÇÜM noktasını kıyaslar; portföyün de aynı
+  /// iki noktada değerlenmesi gerekir. Ayın 1'ini almak pencereyi bir ay
+  /// uzatır ve farkı sistematik olarak bozardı.
+  DateTime get seriBaslangici => DateTime(ilkAy.year, ilkAy.month + 1, 0);
+
+  /// Portföy serisinin bitişi: [sonAy]'ın SON günü ([seriBaslangici] ile
+  /// aynı gerekçe).
+  DateTime get seriBitisi => DateTime(sonAy.year, sonAy.month + 1, 0);
+
+  /// Pencere kaç ay sayıyor — ekranın "12 aylık" gibi bir etiket yazması
+  /// ve testlerin uzunluğu doğrulaması için.
+  int get ayAdedi =>
+      (sonAy.year - ilkAy.year) * 12 + (sonAy.month - ilkAy.month);
 }

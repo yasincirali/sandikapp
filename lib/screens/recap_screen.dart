@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
-import '../services/inflation_service.dart';
 import '../services/real_return_service.dart';
 import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
@@ -355,16 +354,20 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
       // eksilir. Boş dönmek, özeti tamamen kaçırmaktan iyidir.
     }
 
-    final enflasyon = await InflationService.instance
-        .inflationForPeriod(RealReturnService.periodDays);
-
-    // Enflasyon karşılaştırması ana ekran rozetiyle AYNI sayıdan: nakit
-    // akışı düzeltmeli 1Y piyasa getirisi. Seri kurulamazsa yalnızca
-    // enflasyon sayfası eksilir.
-    double? piyasa;
+    // TÜFE ve nominal TEK pencereden okunur.
+    //
+    // İki ayrı çağrı (biri `inflationForPeriod`, diğeri kendi penceresini
+    // kuran getiri hesabı) iki FARKLI aralık demekti ve çıkarma ölçülmemiş
+    // bir dönemi içeriyordu — gerekçe `RealReturnService.piyasaGetirisi`
+    // notunda. `yillik` ikisini de aynı pencereden verir.
+    //
+    // Seri kurulamazsa yalnızca enflasyon sayfası eksilir.
+    RealReturn? rr;
     try {
-      piyasa = await RealReturnService.yillikPiyasaGetirisi(state.assets);
+      rr = await RealReturnService.yillik(state.assets);
     } catch (_) {}
+    final enflasyon = rr?.inflation;
+    final piyasa = rr?.nominal;
 
     final d = RecapService.compute(
       period: 'yearly',

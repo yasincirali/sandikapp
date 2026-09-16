@@ -117,6 +117,26 @@ class PeriodSummary {
   /// okunabilirliği feda ederdi.
   final double? reelGetiriPct;
 
+  /// TÜFE karşılaştırmasında kullanılan NOMİNAL getiri (yüzde).
+  ///
+  /// **[getiriPct]'ten farklı olabilir ve bu kasıtlı (2026-09-16).** Dönem
+  /// kartının penceresi takvimden türetilir (bugünden geriye: "son 1 ay" =
+  /// 16 Ağustos–16 Eylül). TÜFE ise AYLIK yayımlanır ve son açıklanmış aya
+  /// kadardır (Temmuz sonu–Ağustos sonu). İki pencere örtüşmüyor; 1A'da
+  /// hiç kesişmiyordu. Fark bu yüzden [getiriPct] üzerinden değil, TÜFE
+  /// penceresinde YENİDEN hesaplanmış bu nominal üzerinden alınır.
+  ///
+  /// Endeks yoksa `null` — o zaman [tufeFarki] de yoktur.
+  final double? tufeNominalPct;
+
+  /// [tufeNominalPct] ve [tufePct]'in ölçüldüğü ORTAK aralık.
+  ///
+  /// [start]/[end] ile karıştırılmamalı: onlar dönem kartının aralığı.
+  /// Kart bu ikisini ayrıca yazar ki kullanıcı "%31,51 hangi tarihler
+  /// arası" sorusunu TÜİK'te doğrulayabilsin.
+  final DateTime? tufeBaslangic;
+  final DateTime? tufeBitis;
+
   /// Dönem içinde tahsil edilen nakit temettü (TRY). Yoksa `null`.
   ///
   /// Akışa (`katkiTRY`) GİRMEZ, `piyasaTRY` içinde ERİR — temettü ödendiğinde
@@ -158,6 +178,9 @@ class PeriodSummary {
     this.tufeFarki,
     this.tufePct,
     this.reelGetiriPct,
+    this.tufeNominalPct,
+    this.tufeBaslangic,
+    this.tufeBitis,
     this.temettuTRY,
     this.komisyonTRY,
     this.dagilimBasi,
@@ -476,8 +499,17 @@ class PeriodSummaryService {
     DailySummary? gunlukOzet,
     double? inflationPct,
     String Function(String positionKey)? etiket,
+    DateTime? pencereBaslangici,
   }) {
-    final p = pencere(period, now, seansGunu: breakdown.seansGunu);
+    // [pencereBaslangici] verildiğinde takvimden TÜRETİLEN başlangıç
+    // yerine o kullanılır. Tek çağıranı `RealReturnService`: TÜFE
+    // karşılaştırmasında pencere endeksin son açıklanmış ayından gelir,
+    // bugünden değil (gerekçe orada). Dışarıdan pencere geçirmek yerine
+    // `now`'ı oynatmak yetmezdi — `pencere()` başlangıcı `now`'dan
+    // türetiyor ve hizalama geri alınırdı.
+    final p = pencereBaslangici == null
+        ? pencere(period, now, seansGunu: breakdown.seansGunu)
+        : (start: dayKey(pencereBaslangici), end: now);
     final fromMs = p.start.millisecondsSinceEpoch;
     final toMs = p.end.millisecondsSinceEpoch;
 

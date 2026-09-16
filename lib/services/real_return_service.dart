@@ -35,30 +35,59 @@ class RealReturnService {
 
   /// Nakit akışı düzeltmeli son 12 ay piyasa getirisi (yüzde).
   ///
-  /// Performans sekmesinin 1Y bloğuyla AYNI hesap: aynı pencere
-  /// (`donemBaslangici(now, 12)`), aynı çözünürlük, aynı `compute`. Seri
-  /// kurulamıyorsa ya da taban sıfırsa `null` — tahmin yürütülmez.
+  /// Pencere TÜFE'nin penceresine HİZALIDIR: uçlar `InflationWindow`'dan
+  /// gelir, bugünden geriye sayılmaz ([piyasaGetirisi] notuna bakın).
+  /// Endeks yoksa karşılaştırılacak bir şey de yok — `null` döner.
   static Future<double?> yillikPiyasaGetirisi(
     List<Asset> assets, {
     DateTime? now,
   }) async {
     if (assets.isEmpty) return null;
-    final t = now ?? DateTime.now();
-    final from = PeriodSummaryService.donemBaslangici(t, 12);
-    final tier =
-        ResolutionTierMeta.pickForSpan(SummaryPeriod.birYil.days.toDouble());
+    final w = await InflationService.instance.pencere(periodDays, now: now);
+    if (w == null) return null;
+    return piyasaGetirisi(assets, w);
+  }
+
+  /// Verilen TÜFE penceresinde nakit akışı düzeltmeli piyasa getirisi.
+  ///
+  /// **Pencere TÜFE'den gelir, bugünden değil (2026-09-16).** Ölçüldü:
+  /// nominal `donemBaslangici(now, 12)` ile (2025-09-16 … 2026-09-16),
+  /// TÜFE son açıklanmış aydan (2025-08-01 … 2026-08-01) hesaplanıyordu ve
+  /// ikisi "nominal − TÜFE" diye çıkarılıyordu. 1Y'de ~1,5 ay kayma vardı;
+  /// 1A'da pencereler hiç kesişmiyordu. Fark, ölçülmemiş bir aralığın
+  /// getirisini içeriyordu.
+  ///
+  /// TÜFE ucu doğru olan taraf (TÜİK'in yıllık enflasyonu böyle kurulur ve
+  /// kullanıcı rakamı oradan doğruluyor), bu yüzden hizalama nominal
+  /// tarafta yapılır: seri [InflationWindow.seriBaslangici] →
+  /// [InflationWindow.seriBitisi] arasında çekilir.
+  ///
+  /// `compute`'un `now`'ı da pencerenin BİTİŞİDİR: `pencere()` dönem
+  /// başlangıcını `now`'dan türetiyor, bugünü geçirmek hizalamayı geri
+  /// alırdı.
+  ///
+  /// Seri kurulamıyorsa ya da taban sıfırsa `null` — tahmin yürütülmez.
+  static Future<double?> piyasaGetirisi(
+    List<Asset> assets,
+    InflationWindow w,
+  ) async {
+    if (assets.isEmpty) return null;
+    final tier = ResolutionTierMeta.pickForSpan(
+      w.seriBitisi.difference(w.seriBaslangici).inDays.toDouble(),
+    );
     final bd = await HistoryService.instance
         .getPortfolioHistoryBreakdownAtResolution(
       assets: assets,
-      from: from,
-      to: t,
+      from: w.seriBaslangici,
+      to: w.seriBitisi,
       tier: tier,
     );
     return PeriodSummaryService.compute(
       period: SummaryPeriod.birYil,
       assets: assets,
       breakdown: bd,
-      now: t,
+      now: w.seriBitisi,
+      pencereBaslangici: w.seriBaslangici,
     ).getiriPct;
   }
 
@@ -69,21 +98,31 @@ class RealReturnService {
   /// olan seri hesabına hiç girilmez.
   static Future<RealReturn?> yillik(List<Asset> assets, {DateTime? now}) async {
     if (assets.isEmpty) return null;
-    final enflasyon = await InflationService.instance
-        .inflationForPeriod(periodDays, now: now);
-    if (enflasyon == null) return null;
-    final nominal = await yillikPiyasaGetirisi(assets, now: now);
+    final w = await InflationService.instance.pencere(periodDays, now: now);
+    if (w == null) return null;
+    // Nominal AYNI pencereden hesaplanır — iki ayrı çağrı iki ayrı pencere
+    // demekti ve fark ölçülmemiş bir aralığı içeriyordu.
+    final nominal = await piyasaGetirisi(assets, w);
     if (nominal == null) return null;
-    return RealReturn(nominal: nominal, inflation: enflasyon);
+    return RealReturn(nominal: nominal, inflation: w.pct, pencere: w);
   }
 }
 
 /// Yıllık nominal getiri ve TÜFE; türevleri tek yerden.
 class RealReturn {
-  const RealReturn({required this.nominal, required this.inflation});
+  const RealReturn({
+    required this.nominal,
+    required this.inflation,
+    required this.pencere,
+  });
 
   final double nominal;
   final double inflation;
+
+  /// İki sayının da ölçüldüğü ORTAK pencere. Rozet bunu tarih aralığı
+  /// olarak yazabiliyor; kullanıcı "hangi tarihler arası" diye
+  /// sorabilmeli.
+  final InflationWindow pencere;
 
   /// Puan farkı (nominal − TÜFE) — gündelik dilin okuduğu sayı.
   double get puan => InflationService.spreadPoints(nominal, inflation);

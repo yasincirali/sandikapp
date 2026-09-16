@@ -742,6 +742,11 @@
     }
   },
   "nominalReturn": "Nominal getiri",
+  "cpiWindowRange": "Ölçüm aralığı: {start} – {end}",
+  "@cpiWindowRange": {
+    "description": "TÜFE karşılaştırmasının gerçek pencere uçları",
+    "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
+  },
   "periodCpi": "Dönem TÜFE",
   "pointDifference": "Puan farkı",
   "realReturn": "Reel getiri",

@@ -33,6 +33,7 @@ import '../services/analytics_service.dart';
 import '../services/daily_summary.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
+import '../services/real_return_service.dart';
 import '../services/leaderboard_service.dart';
 import '../services/contribution_history_service.dart';
 import '../services/insight_metrics_service.dart';

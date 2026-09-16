@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/services/inflation_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/real_return_strip.dart';
 
@@ -21,6 +22,7 @@ Future<void> _pump(
   required double inflation,
   double width = 390,
   double textScale = 1.0,
+  InflationWindow? pencere,
 }) async {
   await tester.pumpWidget(MaterialApp(
     theme: ThemeData(
@@ -33,7 +35,11 @@ Future<void> _pump(
         body: Center(
           child: SizedBox(
             width: width,
-            child: RealReturnBadge(nominal: nominal, inflation: inflation),
+            child: RealReturnBadge(
+              nominal: nominal,
+              inflation: inflation,
+              pencere: pencere,
+            ),
           ),
         ),
       ),
@@ -43,6 +49,7 @@ Future<void> _pump(
 }
 
 void main() {
+  _aralikTestleri();
   group('yerleşim', () {
     // Ekran görüntüsündeki gerçek değerler.
     for (final w in <double>[320, 360, 390, 430]) {
@@ -155,6 +162,58 @@ void main() {
         findsOneWidget,
       );
       handle.dispose();
+    });
+  });
+}
+
+
+// ── Ölçüm aralığı (2026-09-16) ──────────────────────────────────────────
+//
+// Alt satır sabit "son 1 yıl" yazıyordu. TÜFE aylık yayımlandığı için
+// pencere bugüne KADAR GELMEZ — son açıklanmış ayda biter. Sabit etiket,
+// kullanıcının rakamı bugüne kadarki bir aralık sanmasına yol açıyordu ve
+// TÜİK'le kıyasladığında neden tutmadığını anlayamıyordu.
+void _aralikTestleri() {
+  group('ölçüm aralığı', () {
+    testWidgets('pencere verildiğinde GERÇEK uçlar yazılır', (tester) async {
+      await _pump(
+        tester,
+        nominal: 48.20,
+        inflation: 31.51,
+        pencere: InflationWindow(
+          ilkAy: DateTime(2025, 8, 1),
+          sonAy: DateTime(2026, 8, 1),
+          pct: 31.51,
+        ),
+      );
+
+      final metin = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data ?? '')
+          .join(' ');
+      expect(metin.contains('2025'), isTrue);
+      expect(metin.contains('2026'), isTrue);
+    });
+
+    testWidgets('pencere yoksa eski etiket korunur — rozet susmaz',
+        (tester) async {
+      await _pump(tester, nominal: 48.20, inflation: 31.51);
+      expect(find.byType(RealReturnBadge), findsOneWidget);
+    });
+
+    testWidgets('aralık satırı dar ekranda taşmaz', (tester) async {
+      await _pump(
+        tester,
+        nominal: 48.20,
+        inflation: 31.51,
+        width: 320,
+        pencere: InflationWindow(
+          ilkAy: DateTime(2025, 8, 1),
+          sonAy: DateTime(2026, 8, 1),
+          pct: 31.51,
+        ),
+      );
+      expect(tester.takeException(), isNull);
     });
   });
 }

@@ -5,7 +5,44 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-15 (integration workflow'u tümden yeşil: Vault tohumu + beş katman)
+**Son güncelleme:** 2026-09-16 (TÜFE/nominal pencere hizalaması)
+
+---
+
+## 🟡 AÇIK — Performans kartında İKİ nominal getiri var (dönem ve TÜFE)
+
+**Ne.** `PeriodSummary` artık iki nominal taşıyor: `getiriPct` (dönem
+kartının sayısı, takvimden türetilen pencere — "son 1 ay" = 16 Ağustos–16
+Eylül) ve `tufeNominalPct` (TÜFE karşılaştırmasının sayısı, son açıklanmış
+aya kadar — Temmuz sonu–Ağustos sonu). Aynı ekranda birbirinden farklı iki
+yüzde görünebilir.
+
+**Neden böyle (2026-09-16).** Tek sayıya indirmenin iki yolu vardı ve
+ikisi de daha kötü:
+
+1. *Dönem kartını TÜFE penceresine çekmek.* "Son 1 ay" etiketi bugüne
+   kadar gelmeyen bir aralığı gösterirdi; kullanıcı dünkü alımını
+   kartta göremezdi.
+2. *TÜFE'yi dönem penceresine çekmek.* Ölçülen arızanın ta kendisi:
+   endeks aylık yayımlanıyor, ay ortasında biten bir pencere için TÜFE
+   YOK. Eskiden bu yüzden farklı aralıklar çıkarılıyordu (1A'da hiç
+   kesişmeyen iki pencere).
+
+Karar: iki soru gerçekten farklı, iki sayı da ekranda ve ikisinin de
+aralığı YAZILI (`cpiWindowRange`). Kart üç satırı (nominal − TÜFE = fark)
+kendi içinde tutarlı ve elle doğrulanabilir.
+
+**Maliyeti.** Dikkatli bir kullanıcı dönem kartındaki yüzde ile reel
+getiri kartındaki nominali karşılaştırıp "neden farklı" diye sorabilir.
+Aralık satırı cevabı veriyor ama bir tık dikkat gerektiriyor.
+
+**Ne zaman ele alınmalı.** Kullanıcıdan "iki sayı neden farklı" geri
+bildirimi gelirse. Çözüm kartta değil ANLATIDA: reel getiri kartına tek
+cümlelik "TÜFE aylık yayımlandığı için karşılaştırma son açıklanan ayda
+biter" notu. Kod değişikliği gerekmiyor.
+
+**İlgili.** `RealReturnService.piyasaGetirisi`, `InflationService.pencere`,
+`test/inflation_window_alignment_test.dart`.
 
 ---
 
