@@ -238,30 +238,32 @@ CAPTIONS_V3 = {
 # rakamlar uydurma değil, demo portföyün gerçek hesabı. Abartılı değil,
 # mağaza görselinde inandırıcı duruyor.
 REDACTIONS_V3 = {
-    # Ölçüm: `python build_screenshots.py --v3 --grid` ile ham görüntü
-    # (1126×2436) üzerinde okundu. İlk tahminler tutmadı — ortak seçicinin
-    # dikey yeri ekrana VE o ekranın kaydırma konumuna göre değişiyor.
+    # ── Ekran kaydı göstergesi (kullanıcı bildirimi, 2026-09-17) ────────
     #
-    # Ana ekran: seçici 0,655–0,695 şeridinde ("Birlikte / Ben / Test").
-    "01": [(0.655, 0.6540, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    # Durum çubuğunun SOL üstünde iOS'un kayıt rozeti duruyordu; kayıt 1'de
+    # kırmızı yuvarlak, kayıt 2'de kırmızı zeminli saat. İkisi de videonun
+    # /görselin ekran kaydı olduğunu ele veriyor ve mağaza sayfasında
+    # amatör duruyor.
     #
-    # 03 Performans/Özet: ekran kaydırılmamış, seçici 0,127-0,168'de.
-    "03": [(0.655, 0.1270, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    # Kırpmak yerine yama: CROP_TOP ile üstü kesmek kadrajı kaydırır ve
+    # telefon çerçevesinin içi tuhaf görünür. Yalnızca sol üçte bir
+    # örtülüp nötr bir saat yazılıyor; sağdaki sinyal/wifi/pil kalıyor —
+    # onlar gerçek bir telefonun doğal parçası.
     #
-    # 05 Performans/Grafik: 03 ile aynı kaydırma konumu, seçici görünür.
-    "05": [(0.655, 0.1370, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
-    #
-    # 02: bu karede ekran KAYDIRILMIŞ ve ortak seçici görünmüyor
-    # (sayfa başlığı ile kartlar var). Maske koymak boş zemine yama
-    # basardı — ilk denemede tam bu oldu, kart metninin üstüne "Ayşe"
-    # düştü. Aynı ekranın iki karesi aynı maskeyi almaz; kaydırma
-    # konumu belirleyici.
-    #
-    # 04/06 Portföy: seçici yerine "Varlıklarım / Takip Listesi" var.
-    # 07 paylaşım kartı: sheet ekranı kaplıyor.
-    #
-    # 08 Birlikte: seçici Portföy başlığının altında, 0,235–0,275.
-    "08": [(0.655, 0.2350, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    # "9:41" Apple'ın kendi tanıtım materyallerinin saati: nötr ve tanıdık.
+
+    "01": [(0.000, 0.0060, 0.340, 0.0390, "9:41", "c", 0.0125, TEXT),
+           (0.655, 0.6540, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    "02": [(0.000, 0.0060, 0.340, 0.0390, "9:41", "c", 0.0125, TEXT)],
+    "03": [(0.000, 0.0060, 0.340, 0.0390, "9:41", "c", 0.0125, TEXT),
+           (0.655, 0.1270, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    "04": [(0.000, 0.0060, 0.340, 0.0390, "9:41", "c", 0.0125, TEXT)],
+    "05": [(0.000, 0.0060, 0.340, 0.0390, "9:41", "c", 0.0125, TEXT),
+           (0.655, 0.1370, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    "06": [(0.000, 0.0060, 0.340, 0.0390, "9:41", "c", 0.0125, TEXT)],
+    "07": [(0.000, 0.0060, 0.340, 0.0390, "9:41", "c", 0.0125, TEXT)],
+    "08": [(0.000, 0.0060, 0.340, 0.0390, "9:41", "c", 0.0125, TEXT),
+           (0.655, 0.2350, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
 }
 
 

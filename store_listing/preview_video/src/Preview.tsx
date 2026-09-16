@@ -13,6 +13,7 @@ import { Caption } from "./components/Caption";
 import { SceneWrap } from "./components/Motion";
 import { Outro } from "./scenes/Outro";
 import { PrivacyMask } from "./components/PrivacyMask";
+import { StatusBarPatch } from "./components/StatusBarPatch";
 
 const F = SPEC.fps;
 
@@ -208,6 +209,9 @@ export const Preview: React.FC = () => {
                 speed={"speed" in s ? (s as { speed: number }).speed : 1}
                 src={"src" in s ? (s as { src: string }).src : undefined}
               />
+              {/* Kayıt göstergesi HER sahnede örtülür — iki kaydın ikisinde
+                  de var (biri kırmızı rozet, biri kırmızı zeminli saat). */}
+              <StatusBarPatch />
               {"maskTop" in s ? (
                 <PrivacyMask topRatio={(s as { maskTop: number }).maskTop} />
               ) : null}
