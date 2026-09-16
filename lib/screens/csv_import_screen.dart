@@ -91,8 +91,25 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 fontFamily: 'monospace',
               ),
               decoration: context.inputDecoration(context.l10n.pasteHere),
+              // HER değişimde setState — koşulsuz.
+              //
+              // **Ölçülen arıza (kullanıcı bildirimi, 2026-09-16):** metin
+              // yapıştırıldığı hâlde "Önizle" pasif kalıyordu. Koşul
+              // `_result != null` idi; ilk yazışta `_result` zaten null
+              // olduğu için setState HİÇ çağrılmıyor, ekran yeniden
+              // çizilmiyor ve buton `_ctrl.text` BOŞKEN hesaplanmış
+              // `onPressed: null` hâliyle kalıyordu. Kullanıcı ancak başka
+              // bir şey rebuild tetiklerse (kaydırma, odak değişimi)
+              // butonu açabiliyordu.
+              //
+              // Buton `_ctrl.text`'i doğrudan okuyor, yani metnin her
+              // değişimi bir rebuild gerektiriyor. Eski önizlemeyi temizleme
+              // işi koşullu kalabilir ama setState kalamaz.
               onChanged: (_) {
-                if (_result != null) setState(() => _result = null);
+                setState(() {
+                  // Metin değişti: önceki önizleme artık o metne ait değil.
+                  if (_result != null) _result = null;
+                });
               },
             ),
             const SizedBox(height: SandikSpace.md),
