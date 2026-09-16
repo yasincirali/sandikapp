@@ -233,8 +233,24 @@ class SupabaseService {
     );
   }
 
+  /// Varlığı günceller — **silme damgasına DOKUNMAZ.**
+  ///
+  /// `deleted_at` gövdeden çıkarılır (2026-09-16). `toSupabase()` tüm
+  /// alanları yazıyor ve elindeki nesne damgasızsa UPDATE damgayı NULL'a
+  /// çekiyordu: kullanıcının sildiği varlık, bir sonraki fiyat
+  /// güncellemesinde DİRİLİYORDU. Uygulama kapatılıp açıldığında silinenler
+  /// geri geliyordu ve kullanıcı aynı varlığı defalarca siliyordu (logda
+  /// dört ayrı silme turu görüldü).
+  ///
+  /// Damga yalnızca [softDeleteAssets] / [restoreAssets] ile değişir —
+  /// ikisi de dönen satırlarla doğrulanıyor. Bu metodun işi fiyat, miktar,
+  /// not gibi alanlar; silinmişlik durumu onun sorumluluğu değil.
+  ///
+  /// Çağıran tarafta da kapı var (`refreshPrices` `isActive` kontrolü) ama
+  /// bu satır YAPISAL koruma: yeni bir çağrı yeri eklendiğinde kimse bu
+  /// tuzağa düşmesin.
   Future<void> updateAsset(Asset asset) async {
-    final body = asset.toSupabase();
+    final body = asset.toSupabase()..remove('deleted_at');
     await _log.log<void>(
       source: 'SupabaseService.updateAsset',
       table: 'assets',

@@ -680,6 +680,15 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       // Kendi varlıklarını güncelle
       final updated = baseAssets.map((asset) {
+        // **Silinmiş lot'a YAZMA — dirilirdi (kullanıcı bildirimi,
+        // 2026-09-16).** `updateAsset` gövdenin tamamını yazıyor ve
+        // `toSupabase()` `deleted_at` alanını da içeriyor; elindeki nesne
+        // damgasızsa UPDATE o damgayı NULL'a çekiyor ve kullanıcının
+        // sildiği varlık uygulamayı kapatıp açınca geri geliyordu.
+        //
+        // Yukarıdaki `symbols` döngüsü zaten `!a.isActive` diye eliyor
+        // (fiyat çekmemek için); yazma tarafında aynı kapı yoktu.
+        if (!asset.isActive) return asset;
         if (!asset.isManualPrice && asset.ticker.isNotEmpty) {
           final price = quotes[asset.ticker.toUpperCase()]?.regularMarketPrice;
           if (price != null) {
