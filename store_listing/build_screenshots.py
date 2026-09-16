@@ -12,6 +12,7 @@ Kullanım:
 
 Girdi : screenshots/raw/NN_ad.png      (set A — varsayılan)
         screenshots/raw_v2/NN_ad.jpeg  (set B — `--v2`)
+        screenshots/raw_v3/NN_ad.jpg   (set C — `--v3`, GÜNCEL)
 
 Çıktı, mağaza başına ayrı klasöre:
     android/screenshots/<set>/1080x1920/   → Play Console
@@ -51,6 +52,20 @@ IOS_OUT = os.path.join(HERE, "ios", "screenshots")
 # galeride karıştırmak "aynı portföy tüm karelerde" kuralını bozar
 # (bkz. raw/BURAYA_KOYUN.txt).
 RAW_V2 = os.path.join(HERE, "screenshots", "raw_v2")
+
+# Üçüncü set (2026-09-16): ÖNİZLEME VİDEOSUNUN kaydından çıkarıldı.
+#
+# Neden yeni set: set A/B ham kareleri Ağustos–Eylül başından ve o gün
+# uygulamada olmayan şeyler var (ekran adları değişti, mevduat kaldırıldı).
+# Daha önemlisi: TÜFE/reel getiri yüzeyleri o karelerde ya yok ya hatalı
+# hesaplanmış hâlde — ürünün en ayırt edici iddiası galeride görünmüyordu.
+#
+# Kaynak preview_video/public/shots/kayit.mov (1126×2436, 60 fps). Video
+# için zaten saniye saniye taranmış ve her karenin ne gösterdiği
+# doğrulanmıştı; aynı kareler burada tam çözünürlükte tekrar kullanılıyor.
+# Tek kaynak olması şu garantiyi veriyor: galeri ile video AYNI portföyü
+# gösteriyor, rakamlar tutuyor.
+RAW_V3 = os.path.join(HERE, "screenshots", "raw_v3")
 
 FONT_BOLD = os.path.join(ROOT, "assets", "fonts", "DMSans-Bold.ttf")
 FONT_MED = os.path.join(ROOT, "assets", "fonts", "DMSans-Medium.ttf")
@@ -180,6 +195,76 @@ REDACTIONS_V2 = {
 }
 
 
+# ══ ÜÇÜNCÜ SET ═══════════════════════════════════════════════════════════
+#
+# Sıra: EN GÜÇLÜ İDDİA ÖNCE (SCREENSHOT_PLAN.md ilkesi).
+#
+# Mağaza arama listesinde yalnızca ilk iki kare görünür; kullanıcı
+# açıklamayı okumadan karar verir. Bu yüzden 1 ve 2, ürünün rakiplerde
+# OLMAYAN şeyini söylemeli.
+#
+# sandık'ın ayırt edici iddiası TÜFE'ye göre reel getiri. Türkiye'de
+# portföy uygulaması bol; "enflasyonu geçtin mi" sorusunu yanıtlayan yok
+# denecek kadar az. Kullanıcının gerçek sorusu "param arttı mı" değil,
+# "param eridi mi".
+#
+#  01 ana ekran   → toplam + ENFLASYON ROZETİ. Tek karede vaat.
+#  02 reel getiri → iddianın rakamla kanıtı: nominal, TÜFE, puan farkı
+#  03 nereden geldi→ katkı ile piyasayı AYIRIYOR — kimse bunu yapmıyor
+#  04 portföy      → kategori beklentisi: karışık türler, tek liste
+#  05 grafik       → "ciddi araç" izlenimi + etkileşim (crosshair)
+#  06 dağılım      → renk çeşitliliği, galeriyi kaydırmayı teşvik eder
+#  07 paylaşım     → sosyal kanca; kartta TUTAR YOK, yalnızca yüzde
+#  08 birlikte     → ortak portföy, rakiplerde seyrek
+CAPTIONS_V3 = {
+    "01": ("Enflasyonu\ngeçtin mi?", "Portföyün TÜFE ile yan yana"),
+    "02": ("Nominal değil,\nREEL getiri", "Nominal, TÜFE ve puan farkı ayrı ayrı"),
+    "03": ("Katkın mı,\npiyasa mı?", "Yatırdığın para getiriye sayılmaz"),
+    "04": ("Hisse, fon, altın,\ndöviz tek ekranda", "Hepsi tek toplamda, tek dağılımda"),
+    "05": ("Zaman içinde\nne kazandın", "Dokun, o günün değerini gör"),
+    "06": ("Ağırlığın nerede,\ntek bakışta", "Dilime dokun, o türü öne çıkar"),
+    "07": ("Paylaş — ama\ntutarın sende kalsın", "Kartta yalnızca yüzde görünür"),
+    "08": ("Eşinle, ortağınla\naynı portföy", "Herkesin katkısı ayrı hesaplanır"),
+}
+
+# Maskeleme — gerçek hesap adı mağaza görseline GİTMEZ (Apple 2.3.9).
+#
+# Kayıt kurgusal hesapla değil gerçek hesapla alındı: ortak seçicide
+# "Birlikte / Ben / Test" yazıyor ve "Test" gerçek bir hesap adı.
+# Segment şeridinin dikey konumu ekrana göre değişiyor, bu yüzden her
+# kare ayrı ölçüldü (1126×2436 ham görüntü üzerinde).
+#
+# Tutarlara DOKUNULMUYOR: portföy demo değerlerinde (₺973.501) ve bu
+# rakamlar uydurma değil, demo portföyün gerçek hesabı. Abartılı değil,
+# mağaza görselinde inandırıcı duruyor.
+REDACTIONS_V3 = {
+    # Ölçüm: `python build_screenshots.py --v3 --grid` ile ham görüntü
+    # (1126×2436) üzerinde okundu. İlk tahminler tutmadı — ortak seçicinin
+    # dikey yeri ekrana VE o ekranın kaydırma konumuna göre değişiyor.
+    #
+    # Ana ekran: seçici 0,655–0,695 şeridinde ("Birlikte / Ben / Test").
+    "01": [(0.655, 0.6540, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    #
+    # 03 Performans/Özet: ekran kaydırılmamış, seçici 0,127-0,168'de.
+    "03": [(0.655, 0.1270, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    #
+    # 05 Performans/Grafik: 03 ile aynı kaydırma konumu, seçici görünür.
+    "05": [(0.655, 0.1370, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+    #
+    # 02: bu karede ekran KAYDIRILMIŞ ve ortak seçici görünmüyor
+    # (sayfa başlığı ile kartlar var). Maske koymak boş zemine yama
+    # basardı — ilk denemede tam bu oldu, kart metninin üstüne "Ayşe"
+    # düştü. Aynı ekranın iki karesi aynı maskeyi almaz; kaydırma
+    # konumu belirleyici.
+    #
+    # 04/06 Portföy: seçici yerine "Varlıklarım / Takip Listesi" var.
+    # 07 paylaşım kartı: sheet ekranı kaplıyor.
+    #
+    # 08 Birlikte: seçici Portföy başlığının altında, 0,235–0,275.
+    "08": [(0.655, 0.2350, 0.250, 0.0420, "Ayşe", "c", 0.0120, TAB_GREY)],
+}
+
+
 def gradient(size):
     """Dikey degrade zemin."""
     w, h = size
@@ -294,7 +379,8 @@ def write_grid_overlays():
     out_dir = os.path.join(HERE, "screenshots", "grid")
     os.makedirs(out_dir, exist_ok=True)
 
-    src_dir = RAW_V2 if "--v2" in sys.argv else RAW
+    src_dir = (RAW_V3 if "--v3" in sys.argv
+               else RAW_V2 if "--v2" in sys.argv else RAW)
     for name in sorted(f for f in os.listdir(src_dir)
                        if f.lower().endswith((".png", ".jpg", ".jpeg"))):
         im = Image.open(os.path.join(src_dir, name)).convert("RGB")
@@ -412,11 +498,20 @@ def main():
     # portföy tüm karelerde" tutarlılığını bozar. Bu yüzden set adı
     # çıktı yolunda kalır (set_a / set_b) — mağaza klasörü altında yan
     # yana dursalar da Console'a yalnızca biri yüklenir.
-    v2 = "--v2" in sys.argv
-    src_dir = RAW_V2 if v2 else RAW
-    set_adi = "set_b" if v2 else "set_a"
-    captions = CAPTIONS_V2 if v2 else CAPTIONS
-    redactions = REDACTIONS_V2 if v2 else REDACTIONS
+    # Üç set: varsayılan (A), --v2 (B), --v3 (C).
+    #
+    # Setler AYRI portföylere ait; tek galeride karıştırmak "aynı portföy
+    # tüm karelerde" tutarlılığını bozar. Bu yüzden set adı çıktı yolunda
+    # kalır ve Console'a yalnızca biri yüklenir.
+    if "--v3" in sys.argv:
+        src_dir, set_adi = RAW_V3, "set_c"
+        captions, redactions = CAPTIONS_V3, REDACTIONS_V3
+    elif "--v2" in sys.argv:
+        src_dir, set_adi = RAW_V2, "set_b"
+        captions, redactions = CAPTIONS_V2, REDACTIONS_V2
+    else:
+        src_dir, set_adi = RAW, "set_a"
+        captions, redactions = CAPTIONS, REDACTIONS
 
     if not os.path.isdir(src_dir):
         sys.exit("Ham görüntü klasörü yok: %s" % src_dir)

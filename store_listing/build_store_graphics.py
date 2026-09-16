@@ -53,11 +53,20 @@ AMBER = (245, 166, 35)
 TEXT = (255, 255, 255)
 SUBTLE = (176, 190, 183)
 
-# Feature graphic sloganı. PLAY_STORE_YAYIN_REHBERI.md §6.3'te önerilen
-# metin; ürünün ne yaptığını tek cümlede söylüyor ve "kazanç vaat etme"
-# tuzağına düşmüyor (finansal uygulama politikası).
-SLOGAN = "Gerçek kâr/zarar, tek ekranda"
-ALT_SLOGAN = "BIST · Fon · Döviz · Altın"
+# Feature graphic sloganı.
+#
+# 2026-09-16: "Gerçek kâr/zarar, tek ekranda" → enflasyon ekseni.
+#
+# Eski slogan doğruydu ama AYIRT EDİCİ değildi: her portföy uygulaması
+# "kâr/zararını gör" der. Galeri set_c ve önizleme videosu artık tek bir
+# iddia etrafında kuruldu — TÜFE'ye göre reel getiri — ve feature graphic
+# onlarla aynı şeyi söylemeli. Mağaza sayfasında üç yüzey (grafik, galeri,
+# video) farklı vaat verirse kullanıcı ne aldığını anlamaz.
+#
+# "Kazanç vaat etme" tuzağına düşmüyor (Play finansal uygulama politikası):
+# soru soruyor, getiri sözü vermiyor.
+SLOGAN = "Enflasyonu geçtin mi?"
+ALT_SLOGAN = "BIST · Fon · Döviz · Altın — TÜFE ile yan yana"
 
 
 def dikey_gradyan(w: int, h: int) -> Image.Image:
