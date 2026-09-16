@@ -19,71 +19,130 @@ const F = SPEC.fps;
 /**
  * Sahne tablosu.
  *
- * `from`/`dur` — kurgudaki yeri (kare).
- * `startFrom`  — GERÇEK kayıtta bu anın başladığı kare. Kayıt geldiğinde
- *                bu değerler kaydın gerçek zamanlamasına göre güncellenir;
- *                şimdilik çekim senaryosundaki tahmini sıraya göre.
- * `shot`       — kayıt yokken gösterilecek gerçek ekran görüntüsü.
+ * `from`/`dur` — kurgudaki yeri (kare, 30 fps).
+ * `startFrom`  — kaydın hangi SANİYESİNDEN alınacağı × F. Değerler
+ *                public/shots/kayit.mov taranarak ölçüldü (aşağıda).
+ * `shot`       — kayıt yokken gösterilecek yedek ekran görüntüsü.
+ * `speed`      — kayıt oynatma hızı; ölü beklemeyi toparlar.
+ *
+ * ## Kaydın haritası (ölçüldü, 2026-09-16)
+ *
+ *   0–7 sn    Ana ekran: toplam varlık + ENFLASYON ROZETİ
+ *   8–12 sn   Ana ekranda scroll, dağılım barları, hareketler
+ *  13–19 sn   Portföy: donut + varlık listesi
+ *  20–28 sn   Performans/Özet: sağlık kartları, "Dengeli"
+ *  29–33 sn   Performans/Grafik: 1Y çizgi + CROSSHAIR gezdirme
+ *  34–37 sn   Performans/Özet: "NEREDEN GELDİ" çubukları
+ *  38–45 sn   Reel getiri kartı: nominal %63 · TÜFE %31,51 · +31,5 puan
+ *  56–60 sn   Varlık detayı (KCHOL): maliyet kırılımı
+ *  64–72 sn   Donut'ta DİLİM SEÇİMİ: Fon → Altın → Döviz
+ *  80–88 sn   Birlikte sekmesi: ortak toplam
+ *  92–94 sn   Ana ekrana dönüş
+ *
+ * ## Sıralama gerekçesi
+ *
+ * CEKIM_SENARYOSU.md §1: en güçlü iddia önce. sandık'ın rakiplerde
+ * olmayan şeyi TÜFE'ye göre reel getiri — video onunla açılıp onunla
+ * kapanıyor. "Nereden geldi" çubukları ikinci sırada çünkü iddianın
+ * KANITI orası: katkı ile piyasa hareketini ayırıyor.
+ *
+ * Kayıtta güçlü ama videoya ALINMAYANLAR ve nedenleri:
+ *   - Portföy sağlığı / "Dengeli"  → iyi kart ama 24 sn'ye sığmıyor;
+ *     mesaj enflasyon ekseninden sapıyor
+ *   - Birlikte sekmesi             → "Test" yazan gerçek hesap adı var
+ *   - Varlık detayı (KCHOL)        → "Koç Holding" gerçek veri (2.3.9)
  */
 const SCENES = [
   {
-    key: "ana",
+    key: "rozet",
     from: 0,
-    dur: 5 * F,
+    // 3,4 sn: kayıtta scroll 3,5 sn'de başlıyor. Daha uzun tutulursa sahne
+    // kaydırmayı yakalıyor ve açılış karesi kayıyor.
+    dur: 3.4 * F,
     shot: "shots/01_ana.png",
-    startFrom: Math.round(CAPTURE_START_SECONDS * F),
-    text: "Tüm yatırımların tek ekranda",
-    highlight: "tek",
-    zoomTo: 1.07,
-    // Ortak seçicideki gerçek isim bu yükseklikte (kare 40'ta ölçüldü)
-    maskTop: 0.503,
+    // 0,9 sn: TOPLAM VARLIK kartı + rozet aynı karede duruyor.
+    //
+    // 1,5 sn denendi ve kadraj kaydı: kullanıcı ~3,5 sn'de scroll etmeye
+    // başlıyor, toplam kartı yukarı çıkıp kesiliyor. Sahne 4,5 sn sürdüğü
+    // için başlangıç geç alınırsa videonun EN KRİTİK karesi (toplam + rozet
+    // birlikte) hiç görünmüyor. 0,9 sn'de kayıt çubuğu da oturmuş oluyor.
+    startFrom: Math.round(0.9 * F),
+    text: "Enflasyonu geçtin mi?",
+    highlight: "Enflasyonu",
+    zoomTo: 1.05,
+    speed: 1,
+    // Ana ekranda ortak seçici "Birlikte / Ben / Test" — "Test" gerçek
+    // hesap adı. Kurgusal adla örtülür (2.3.9).
+    //
+    // 0,647: 886×1920 render'ında segmentin ÜST kenarı (merkez y≈1287,
+    // yükseklik ≈86). İki kez still render'da ölçülerek düzeltildi —
+    // 0,695 boşluğa, 0,517 ortak kartına düşüyordu.
+    maskTop: 0.647,
   },
   {
-    key: "portfoy",
-    from: 5 * F,
-    dur: 4 * F,
-    shot: "shots/02_portfoy.png",
-    startFrom: Math.round((CAPTURE_START_SECONDS + 8) * F),
-    text: "Hisse, fon, altın, döviz birlikte",
-    highlight: "birlikte",
-    zoomTo: 1.06,
-  },
-  {
-    key: "varlik",
-    from: 9 * F,
-    dur: 5 * F,
-    shot: "shots/04_varlik.png",
-    startFrom: Math.round((CAPTURE_START_SECONDS + 13) * F),
-    // FARKLILAŞTIRICI mesaj — rakiplerin yapmadığı şey.
-    text: "Komisyon ve temettü dahil gerçek kâr",
-    highlight: "gerçek",
-    zoomTo: 1.08,
-  },
-  {
-    key: "performans",
-    from: 14 * F,
-    dur: 5 * F,
+    key: "kanit",
+    from: 3.4 * F,
+    // 3,2 sn: kayıt bu sahnede scroll ediyor. Uzun tutulursa kadraj aşağı
+    // inip "Portföyünün %35'i Koç Holding içinde" satırını yakalıyor
+    // (gerçek veri, 2.3.9). Kart okunacak kadar duruyor, sonra kesiliyor.
+    dur: 3.2 * F,
     shot: "shots/03_performans.png",
-    startFrom: Math.round((CAPTURE_START_SECONDS + 19) * F),
-    text: "Zaman içinde ne kazandın, gör",
+    // 38,9 sn: reel getiri kartı ekranın ORTASINDA — %23,95 reel, nominal
+    // %63,00, TÜFE %31,51, +31,5 puan aynı karede.
+    //
+    // 38,6 denendi ve kadraj aşağı kayıp "Portföyünün %35'i Koç Holding
+    // içinde" satırını aldı — gerçek veri (2.3.9). Maskelemek yerine
+    // kadraj kaydırıldı: metin satırının ortasına yama koymak göze
+    // batıyordu, kartın kendisi zaten daha yukarıda duruyor.
+    startFrom: Math.round(38.2 * F),
+    text: "Nominal değil, reel getiri",
+    highlight: "reel",
+    zoomTo: 1.04,
+    speed: 1,
+  },
+  {
+    key: "nereden",
+    from: 6.6 * F,
+    dur: 4.6 * F,
+    shot: "shots/03_performans.png",
+    // 34 sn: "Nereden geldi" — Dönem başı / Katkın / Piyasa / Şimdi.
+    // Kurgunun en işlevsel karesi: katkı ile piyasayı AYIRIYOR.
+    startFrom: Math.round(34.2 * F),
+    text: "Katkın mı, piyasa mı?",
+    highlight: "piyasa",
+    zoomTo: 1.05,
+    speed: 1,
+  },
+  {
+    key: "grafik",
+    from: 11.2 * F,
+    dur: 4.3 * F,
+    shot: "shots/03_performans.png",
+    // 29,5 sn: 1Y grafiği + crosshair gezdirme. Etkileşimi gösteren tek yer.
+    startFrom: Math.round(29.5 * F),
+    text: "Zaman içinde ne kazandın",
     highlight: "kazandın",
-    zoomTo: 1.07,
-    // Performans ekranında seçici daha yukarıda (kare 470'te ölçüldü)
-    maskTop: 0.147,
+    zoomTo: 1.03,
+    speed: 1,
+    // Grafik sahnesinde seçici ekranın ÜSTÜNDE (merkez y≈312, yükseklik
+    // ≈86) — ana ekrandakinden çok daha yukarıda.
+    maskTop: 0.14,
   },
   {
     key: "dagilim",
-    from: 19 * F,
-    dur: 2.5 * F,
+    from: 15.5 * F,
+    dur: 4.2 * F,
     shot: "shots/05_dagilim.jpeg",
-    startFrom: Math.round((CAPTURE_START_SECONDS + 25) * F),
-    text: "Ağırlığın nerede, tek bakışta",
+    // 64,5 sn: donut'ta dilim seçimi — Fon → Altın geçişi canlı.
+    startFrom: Math.round(64.5 * F),
+    text: "Ağırlığın nerede",
     highlight: "nerede",
-    zoomTo: 1.06,
+    zoomTo: 1.04,
+    speed: 1.15,
   },
 ] as const;
 
-const OUTRO_FROM = 21.5 * F;
+const OUTRO_FROM = 19.7 * F;
 
 export const Preview: React.FC = () => {
   return (
@@ -123,7 +182,12 @@ export const Preview: React.FC = () => {
         <Sequence key={s.key} from={s.from} durationInFrames={s.dur}>
           <SceneWrap durationInFrames={s.dur}>
             <AbsoluteFill>
-              <Capture shot={s.shot} startFrom={s.startFrom} zoomTo={s.zoomTo} />
+              <Capture
+                shot={s.shot}
+                startFrom={s.startFrom}
+                zoomTo={s.zoomTo}
+                speed={"speed" in s ? (s as { speed: number }).speed : 1}
+              />
               {"maskTop" in s ? (
                 <PrivacyMask topRatio={(s as { maskTop: number }).maskTop} />
               ) : null}
