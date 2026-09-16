@@ -104,6 +104,14 @@ const List<SurumNotu> surumNotlari = [
     baslik: 'Fiyat alarmları ve bildirim merkezi',
     yenilikler: [
       Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Daha dolu bir paylaşım kartı',
+        aciklama: 'Performans özetini ve yıl sonu özetini paylaşırken kart '
+            'artık en iyi / en zayıf varlığını, artıda kapanan gün oranını, '
+            'reel getiriyi ve portföy dağılımını da gösteriyor. Tutar yine '
+            'yok. iPad\'de paylaş düğmesinin hata vermesi de düzeltildi.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.bildirim,
         baslik: 'Fiyat alarmı kur',
         aciklama: 'Bir varlık hedeflediğin fiyata gelince haber ver. '

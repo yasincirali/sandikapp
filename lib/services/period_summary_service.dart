@@ -707,9 +707,14 @@ class PeriodSummaryService {
   /// Ölçülebilir bir yüzde yoksa `null` döner ve çağıran taraf paylaşım
   /// butonunu HİÇ göstermez: içinde tek bir sayı olmayan bir kart
   /// paylaşılmaz.
+  ///
+  /// [xirrPct] özetin parçası değil (ağdan sonra, ayrı hesaplanıyor) ve
+  /// yalnızca gösterildiği seviyede geçirilir — ekranda görünmeyen bir
+  /// sayı paylaşıma girmez.
   static String? shareText(
     PeriodSummary s, {
     PortfolioCharacter? karakter,
+    double? xirrPct,
   }) {
     if (s.getiriPct == null) return null;
 
@@ -719,6 +724,11 @@ class PeriodSummaryService {
       degisimPct: s.getiriPct,
       degisimEtiketi: 'Piyasa getirim',
       enflasyonPuan: s.tufeFarki,
+      reelGetiriPct: s.reelGetiriPct,
+      enIyi: s.enIyi,
+      enZayif: s.enZayif,
+      gunSayimi: s.gunSayimi,
+      xirrPct: xirrPct,
     );
   }
 }

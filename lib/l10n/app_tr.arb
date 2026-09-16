@@ -1994,5 +1994,52 @@
         "type": "String"
       }
     }
+  },
+  "shareCardBest": "En iyi",
+  "shareCardWorst": "En zayıf",
+  "shareCardUpDays": "Artıda gün",
+  "shareCardUpDaysValue": "{up}/{total}",
+  "@shareCardUpDaysValue": {
+    "placeholders": {
+      "up": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "shareCardReal": "reel {pct}",
+  "@shareCardReal": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "shareCardXirr": "Yıllık (XIRR)",
+  "shareCardDrawdown": "En derin düşüş",
+  "shareCardPatient": "En sabırlı",
+  "shareCardAllocation": "Dağılım",
+  "shareCardTracked": "Takip",
+  "shareCardInvestors": "Yatırımcıların",
+  "shareCardBetterThanPct": "%{pct}'inden iyi",
+  "@shareCardBetterThanPct": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "shareCardRange": "{start} – {end}",
+  "@shareCardRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -1994,5 +1994,52 @@
         "type": "String"
       }
     }
+  },
+  "shareCardBest": "Best",
+  "shareCardWorst": "Weakest",
+  "shareCardUpDays": "Up days",
+  "shareCardUpDaysValue": "{up}/{total}",
+  "@shareCardUpDaysValue": {
+    "placeholders": {
+      "up": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "shareCardReal": "real {pct}",
+  "@shareCardReal": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "shareCardXirr": "Annualized (XIRR)",
+  "shareCardDrawdown": "Max drawdown",
+  "shareCardPatient": "Most patient",
+  "shareCardAllocation": "Allocation",
+  "shareCardTracked": "Tracked",
+  "shareCardInvestors": "Better than",
+  "shareCardBetterThanPct": "{pct}% of investors",
+  "@shareCardBetterThanPct": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "shareCardRange": "{start} – {end}",
+  "@shareCardRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
   }
 }

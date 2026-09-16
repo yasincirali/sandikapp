@@ -37,3 +37,18 @@ String donemEtiketi(AppLocalizations l, String kimlik) => switch (kimlik) {
       '1Y' => l.period1Y,
       _ => kimlik,
     };
+
+/// Dile duyarlı BÜYÜK HARF.
+///
+/// Dart'ın `toUpperCase()`'i Türkçe bilmez: "En iyi" → "EN IYI" (noktasız).
+/// Türkçe'de i→İ ve ı→I ayrı harflerdir; "EN İYİ" yazılmalı. İngilizce'de
+/// ise i→I doğru olan ("Annualized" → "ANNUALIZED"), o yüzden dönüşüm
+/// yalnızca `localeName` Türkçeyken uygulanır. Etiketleri .arb'da hazır
+/// büyük harfle tutmak yerine burada çevirmek, aynı anahtarın düz metin
+/// olarak da kullanılabilmesini korur.
+String ustHarf(String s, AppLocalizations l) {
+  if (l.localeName.startsWith('tr')) {
+    s = s.replaceAll('i', 'İ').replaceAll('ı', 'I');
+  }
+  return s.toUpperCase();
+}

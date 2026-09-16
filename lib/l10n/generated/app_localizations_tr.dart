@@ -2914,4 +2914,51 @@ class AppLocalizationsTr extends AppLocalizations {
   String appVersionLabel(String surum) {
     return 'sandık — sürüm $surum';
   }
+
+  @override
+  String get shareCardBest => 'En iyi';
+
+  @override
+  String get shareCardWorst => 'En zayıf';
+
+  @override
+  String get shareCardUpDays => 'Artıda gün';
+
+  @override
+  String shareCardUpDaysValue(int up, int total) {
+    return '$up/$total';
+  }
+
+  @override
+  String shareCardReal(String pct) {
+    return 'reel $pct';
+  }
+
+  @override
+  String get shareCardXirr => 'Yıllık (XIRR)';
+
+  @override
+  String get shareCardDrawdown => 'En derin düşüş';
+
+  @override
+  String get shareCardPatient => 'En sabırlı';
+
+  @override
+  String get shareCardAllocation => 'Dağılım';
+
+  @override
+  String get shareCardTracked => 'Takip';
+
+  @override
+  String get shareCardInvestors => 'Yatırımcıların';
+
+  @override
+  String shareCardBetterThanPct(int pct) {
+    return '%$pct\'inden iyi';
+  }
+
+  @override
+  String shareCardRange(String start, String end) {
+    return '$start – $end';
+  }
 }

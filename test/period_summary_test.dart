@@ -1000,6 +1000,36 @@ void main() {
       );
     });
 
+    test('en iyi / en zayıf / gün oranı / XIRR metne girer', () {
+      final s = PeriodSummary(
+        period: SummaryPeriod.birYil,
+        start: DateTime(2025, 9, 14),
+        end: DateTime(2026, 9, 13),
+        baslangicTRY: 2489186,
+        sonTRY: 2685684,
+        katkiTRY: 120000,
+        piyasaTRY: 76498,
+        getiriPct: 2.72,
+        tufeFarki: 6.4,
+        reelGetiriPct: 4.1,
+        enIyi: const RecapAsset('THYAO', 82.15),
+        enZayif: const RecapAsset('SISE', -12.04),
+        gunSayimi: (artida: 132, toplam: 250),
+      );
+      final metin = PeriodSummaryService.shareText(s, xirrPct: 41.2)!;
+      expect(metin.contains('Enflasyonun 6,4 puan önündeyim (reel +%4,1)'),
+          isTrue);
+      expect(metin.contains('En iyi: THYAO +%82,2'), isTrue);
+      expect(metin.contains('En zayıf: SISE −%12,0'), isTrue);
+      expect(metin.contains("250 işlem gününün 132'i artıda"), isTrue);
+      expect(metin.contains('Yıllıklandırılmış getiri (XIRR): +%41,2'), isTrue);
+      // Zengin satırlar da tutar kuralına uyar.
+      expect(metin.contains('₺'), isFalse);
+      expect(RegExp(r'\d{4,}').hasMatch(metin), isFalse);
+      // XIRR verilmezse satırı yok — seviye kapısı çağıranda.
+      expect(PeriodSummaryService.shareText(s)!.contains('XIRR'), isFalse);
+    });
+
     test('ölçülebilir yüzde yoksa null — buton çizilmez', () {
       expect(PeriodSummaryService.shareText(ozet(pct: null)), isNull,
           reason: 'içinde tek bir sayı olmayan kart paylaşılmaz');
