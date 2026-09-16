@@ -112,7 +112,11 @@ class _WeeklySummaryChipState extends ConsumerState<WeeklySummaryChip> {
     // Sıfır bir YÖN taşımaz — nötr tonda yazılır.
     final ton = s.isFlat ? c.text36 : (s.isNegative ? c.loss : c.gain);
     final pct = s.getiriPct!;
-    final yazi = fmtPct(pct.abs(), digits: 1);
+    // `fmtNum` — `fmtPct` DEĞİL: hem `pctDown`/`pctUp` şablonları hem de
+    // erişilebilirlik cümleleri yüzde işaretini/kelimesini KENDİLERİ
+    // taşıyor. `fmtPct` bir "%" daha ekleyince ekranda "%%1,2 eksi",
+    // ekran okuyucuda "yüzde %1,2 ekside" çıkıyordu (2026-09-16).
+    final yazi = fmtNum(pct.abs(), digits: 1);
 
     return Padding(
       padding: widget.padding,
