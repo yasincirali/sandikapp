@@ -396,9 +396,26 @@ class RecapService {
     // hesaplandı" başlığı, açıklama olmamasından kötüdür.
     final aciklama = <String>[];
     if (degisimPct != null) {
-      aciklama.add('· $degisimEtiketi: (dönem sonu − dönem başı − net para '
-          'girişi) ÷ (dönem başı + net para girişi). Alım/satım hesaptan '
-          'ayıklanır, kalan saf piyasa hareketidir.');
+      // Pay ve payda AYRI AYRI açıklanır, gerekçeleriyle.
+      //
+      // İlk hâli tek cümleydi: "(sonu − başı − net para girişi) ÷ (başı +
+      // net para girişi)". Aynı terim bir yerde çıkarılıp bir yerde
+      // eklendiği için okuyan kişi çelişki sanıyordu (kullanıcı sorusu,
+      // 2026-09-16). İki farklı soruyu ölçüyorlar:
+      //   · pay   → "ne kadar KAZANDIM": yatırdığın para kazanç değildir,
+      //     çıkarılır; yoksa para yatıran herkes kâr etmiş görünür,
+      //   · payda → "bu kazancı HANGİ SERMAYE üretti": yatırdığın para da
+      //     piyasada çalıştı, tabana girer; yoksa yüzde şişer (ölçüldü:
+      //     %36,5 yerine %43,1).
+      aciklama.add('· $degisimEtiketi iki adımda:');
+      aciklama.add('  1) Kazanç = (dönem sonu − dönem başı) − yatırdığın '
+          'net para. Yatırdığın para kazanç değildir, ayıklanır; kalan '
+          'saf piyasa hareketidir.');
+      aciklama.add('  2) Yüzde = Kazanç ÷ (dönem başı + yatırdığın net '
+          'para). Yatırdığın para da dönem içinde piyasada çalıştı, bu '
+          'yüzden tabana dahildir; yoksa yüzde olduğundan yüksek çıkar.');
+      aciklama.add('  (Net satış yaptıysan taban artmaz: satılan para '
+          'artık piyasada değil.)');
       if (donemAralik != null) {
         aciklama.add('  Ölçüm aralığı: $donemAralik');
       }

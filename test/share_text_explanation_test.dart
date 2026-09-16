@@ -27,8 +27,29 @@ void main() {
       // Ekranda bile sorulan soru: "para yatırdım, yüzdem neden artmadı".
       final m = tamMetin();
       expect(m.contains('Nasıl hesaplandı'), isTrue);
-      expect(m.contains('net para girişi'), isTrue);
+      expect(m.contains('yatırdığın net para'), isTrue);
       expect(m.contains('saf piyasa hareketidir'), isTrue);
+    });
+
+    test('pay ve payda AYRI adımlar — aynı terim çelişki sanılmasın', () {
+      // Kullanıcı sorusu (2026-09-16): "net para girişi paydadan
+      // çıkarılırken neden paya eklendi?" Tek cümlede iki farklı soruyu
+      // ölçen iki rol vardı ve gerekçesi yazılı değildi.
+      final m = tamMetin();
+      expect(m.contains('iki adımda'), isTrue);
+      expect(m.contains('1) Kazanç ='), isTrue);
+      expect(m.contains('2) Yüzde ='), isTrue);
+      // Payda gerekçesi: yatırılan para da piyasada çalıştı.
+      expect(m.contains('piyasada çalıştı'), isTrue);
+      expect(m.contains('tabana dahildir'), isTrue);
+      // Pay gerekçesi: yatırılan para kazanç değildir.
+      expect(m.contains('kazanç değildir'), isTrue);
+    });
+
+    test('net satışta tabanın artmadığı da söyleniyor', () {
+      // `getiriPct` negatif katkıyı tabana EKLEMİYOR; metin bunu atlarsa
+      // formül satış yapan kullanıcıda tutmaz.
+      expect(tamMetin().contains('Net satış yaptıysan taban artmaz'), isTrue);
     });
 
     test('puan farkı çıkarması elle doğrulanabilir', () {
@@ -73,7 +94,7 @@ void main() {
       expect(m.contains('TÜİK'), isFalse);
       expect(m.contains('Reel getiri:'), isFalse);
       expect(m.contains('XIRR:'), isFalse);
-      expect(m.contains('net para girişi'), isTrue);
+      expect(m.contains('yatırdığın net para'), isTrue);
     });
 
     test('yıl sonu özetinde enflasyon PENCERESİ metne girer', () {
