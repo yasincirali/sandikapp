@@ -24,7 +24,12 @@ void main() {
     expect(r.rows[1].addedDate, DateTime(2026, 1, 10));
     expect(r.rows[2].type, AssetType.doviz);
     expect(r.rows[2].ticker, 'USDTRY=X');
-    expect(r.rows[2].currency, 'USD');
+    // 'USD' DEĞİL 'TRY' (2026-09-16 düzeltmesi): dövizde `purchasePrice`
+    // kurun kendisidir, yani zaten TL cinsindendir. 'USD' yazılınca
+    // `totalCostTRY` fiyatı bir kez daha `purchaseFxRate` ile çarpıyor ve
+    // maliyet kur katı şişiyordu (ölçüldü: ₺84.700 → ₺3.260.950).
+    // `add_asset_screen` de 'TRY' yazıyor; iki yol ayrışamaz.
+    expect(r.rows[2].currency, 'TRY');
     expect(r.rows[2].price, 0, reason: 'boş fiyat → kapanış çekilecek');
     expect(r.rows[2].addedDate, today);
   });
@@ -60,6 +65,40 @@ void main() {
     final r = CsvImportService.parse('THYAO;1;1;01.01.2027', today: today);
     expect(r.rows, isEmpty);
     expect(r.errors.single, contains('gelecekte'));
+  });
+
+  // ── Döviz maliyeti ÇİFTE ÇEVRİLMEZ (2026-09-16) ────────────────────────
+  //
+  // Ölçülen arıza: `USD;2200;38,50` satırı `currency: 'USD'` ile
+  // kaydediliyordu. `Asset.totalCostTRY` = miktar × fiyat ×
+  // `purchaseFxRate` olduğu için fiyat bir kez daha kurla çarpılıyor,
+  // maliyet ₺84.700 yerine ₺3.260.950 çıkıyordu (38 kat). Portföy toplamı
+  // ve bütün getiri yüzdeleri bozuluyordu.
+
+  test('döviz satırı TRY olarak kaydedilir — fiyat zaten kurun kendisi', () {
+    final r = CsvImportService.parse(
+        'Sembol;Adet;Fiyat;Tarih\nUSD;2200;38,50;03.10.2025');
+    expect(r.errors, isEmpty);
+    final row = r.rows.single;
+    expect(row.type, AssetType.doviz);
+    expect(row.ticker, 'USDTRY=X');
+    expect(row.currency, 'TRY',
+        reason: 'USD yazılırsa totalCostTRY fiyatı ikinci kez kurla çarpar');
+    expect(row.price, 38.50);
+  });
+
+  test('EUR ve GBP de aynı kuralı izler', () {
+    final r = CsvImportService.parse(
+        'Sembol;Adet;Fiyat\nEUR;100;45,20\nGBP;50;52,10');
+    expect(r.rows.map((e) => e.currency).toSet(), {'TRY'});
+    expect(r.rows.map((e) => e.ticker).toList(), ['EURTRY=X', 'GBPTRY=X']);
+  });
+
+  test('döviz DIŞI türlerde para birimi değişmez', () {
+    // Düzeltme yalnızca dövizi ilgilendiriyor; hisse/fon/altın TRY kalmalı.
+    final r = CsvImportService.parse(
+        'Sembol;Adet;Fiyat\nTHYAO;10;300\nAFT;100;0,98\nALTIN_CEYREK;2;7850');
+    expect(r.rows.map((e) => e.currency).toSet(), {'TRY'});
   });
 
   test('inferType', () {

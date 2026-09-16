@@ -256,7 +256,21 @@ class CsvImportService {
           name: code,
           subCategory: code,
           unitType: 'piece',
-          currency: code,
+          // **`code` DEĞİL 'TRY' — dövizde fiyat KURUN KENDİSİDİR.**
+          //
+          // Ölçülen arıza (kullanıcı bildirimi, 2026-09-16): CSV'den
+          // `USD;2200;38,50` girilince satır `currency: 'USD'` ile
+          // kaydediliyordu. `totalCostTRY` = miktar × fiyat ×
+          // `purchaseFxRate` olduğu için maliyet kur kadar ÇARPILIYOR ve
+          // ₺84.700 yerine ₺3.260.950 çıkıyordu — 38 kat. Portföy toplamı
+          // ve bütün yüzdeler bozuluyordu.
+          //
+          // Dövizde `purchasePrice` "1 birim kaç TL" demektir, yani zaten
+          // TL cinsindendir; ikinci bir çevrim yapılmamalı.
+          // `add_asset_screen` bunu 2026'dan beri böyle yazıyor
+          // (`currency = 'TRY'`); CSV yolu o kuralı kaçırmıştı. İki yol
+          // aynı varlığı aynı şekilde kaydetmek ZORUNDA.
+          currency: 'TRY',
         );
       case AssetType.altin:
         // Varsayılan 22 ayar gram; çeyrek/yarım gibi alt türler metinden.
