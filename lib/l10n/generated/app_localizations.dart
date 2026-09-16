@@ -4937,7 +4937,7 @@ abstract class AppLocalizations {
   /// No description provided for @recapVsInflation.
   ///
   /// In tr, this message translates to:
-  /// **'Enflasyona karşı'**
+  /// **'Enflasyona karşı · son 12 ay'**
   String get recapVsInflation;
 
   /// No description provided for @recapKeptPower.
@@ -4949,8 +4949,14 @@ abstract class AppLocalizations {
   /// No description provided for @recapInflationWon.
   ///
   /// In tr, this message translates to:
-  /// **'Bu yıl enflasyon öndeydi.'**
+  /// **'Son 12 ayda enflasyon öndeydi.'**
   String get recapInflationWon;
+
+  /// Yil sonu ozetinde enflasyon karsilastirmasinin gercek pencere uclari
+  ///
+  /// In tr, this message translates to:
+  /// **'Ölçüm: {start} – {end} (TÜFE aylık yayımlandığı için pencere son açıklanan ayda biter)'**
+  String recapInflationWindow(String start, String end);
 
   /// No description provided for @recapBestAsset.
   ///

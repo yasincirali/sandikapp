@@ -71,6 +71,23 @@ class RecapData {
   /// Endeks ya da piyasa getirisi yoksa null.
   final double? inflationSpread;
 
+  /// [inflationSpread]'in ölçüldüğü GERÇEK pencere.
+  ///
+  /// **Özetin başlığıyla aynı aralık DEĞİL (2026-09-16).** Başlık takvim
+  /// yılını söyler ("Özetim 2026") ve [changePct] gerçekten 1 Ocak'tan beri
+  /// ölçülür. Enflasyon sayfası ise son 12 AYIN kayan penceresidir ve TÜFE
+  /// aylık yayımlandığı için son açıklanan ayda biter — 31 Aralık'ta
+  /// açıldığında pencere 30 Kasım'da kapanır, yani Aralık 2025 içeride,
+  /// Aralık 2026 dışarıda kalır.
+  ///
+  /// İki pencereyi eşitlemek mümkün değil: takvim yılının Aralık TÜFE'si
+  /// ertesi ayın 3'ünde yayımlanıyor, o tarihe kadar sayfa hiç
+  /// gösterilemezdi. Bu yüzden pencere olduğu gibi kalıyor ve UÇLARI
+  /// yazılıyor — sayfa hangi aralığı ölçtüğünü söylemek zorunda, yoksa
+  /// kullanıcı başlıktaki yılı varsayar.
+  final DateTime? inflationStart;
+  final DateTime? inflationEnd;
+
   /// Bugünkü tür dağılımı (TRY). Paylaşım kartı bunu yalnızca ORAN olarak
   /// çizer (dağılım şeridi) — tutar kartta yoktur, kural `share_card_test`
   /// ile kilitli. Boşsa şerit çizilmez.
@@ -90,6 +107,8 @@ class RecapData {
     this.mostPatientDays,
     this.marketReturnPct,
     this.inflationSpread,
+    this.inflationStart,
+    this.inflationEnd,
     this.valueByType = const {},
   });
 
@@ -188,6 +207,8 @@ class RecapService {
     required DateTime now,
     double? inflationPct,
     double? marketReturnPct,
+    DateTime? inflationStart,
+    DateTime? inflationEnd,
   }) {
     final aktif = assets.where((a) => a.isBuy && a.isActive).toList();
 
@@ -256,6 +277,10 @@ class RecapService {
       inflationSpread: (marketReturnPct != null && inflationPct != null)
           ? marketReturnPct - inflationPct
           : null,
+      // Uçlar farkla BİRLİKTE taşınır: fark tek başına hangi aralığı
+      // ölçtüğünü söylemiyor ve başlıktaki yıl yanıltıcı (alan notuna bak).
+      inflationStart: inflationStart,
+      inflationEnd: inflationEnd,
     );
   }
 
@@ -263,12 +288,15 @@ class RecapService {
   ///
   /// Virgüllü ve tek ondalıklı: "12,4". Türkçe ondalık ayırıcı virgüldür ve
   /// paylaşılan metin ekran görüntüsü gibi okunuyor.
-  static String _yuzde(double v) =>
+  /// Yüzdenin ondalık gövdesi ("12,4"). Ortak biçim: paylaşım metninin
+  /// tamamı — açıklama satırları dahil — aynı yuvarlamayı kullanmalı,
+  /// yoksa "36,5 − 31,5 = 5,0" çıkarması metin içinde tutmaz.
+  static String yuzde(double v) =>
       v.abs().toStringAsFixed(1).replaceAll('.', ',');
 
   /// İşaretli yüzde: "+%12,4" / "−%3,1". Eksi işareti tipografik (U+2212),
   /// ekrandaki kartla aynı.
-  static String _isaretli(double v) => '${v >= 0 ? '+' : '−'}%${_yuzde(v)}';
+  static String isaretli(double v) => '${v >= 0 ? '+' : '−'}%${yuzde(v)}';
 
   /// Paylaşım metninin ÇEKİRDEĞİ — tek kaynak.
   ///
@@ -310,6 +338,12 @@ class RecapService {
     ({int artida, int toplam})? gunSayimi,
     double? xirrPct,
     int? takipGunu,
+    /// "Nasıl hesaplandı" bölümü için ham girdiler. Hepsi opsiyonel ve
+    /// verilmeyen satır hiç yazılmaz (bkz. bölümün kendi notu).
+    String? nominalPct,
+    String? tufePct,
+    String? donemAralik,
+    String? nominalAralik,
   }) {
     final satirlar = <String>[baslik, ''];
 
@@ -317,23 +351,23 @@ class RecapService {
       satirlar.add('${karakter.label} — ${karakter.tagline}');
     }
     if (degisimPct != null) {
-      satirlar.add('$degisimEtiketi: ${_isaretli(degisimPct)}');
+      satirlar.add('$degisimEtiketi: ${isaretli(degisimPct)}');
     }
     if (enflasyonPuan != null) {
       final reel =
-          reelGetiriPct == null ? '' : ' (reel ${_isaretli(reelGetiriPct)})';
+          reelGetiriPct == null ? '' : ' (reel ${isaretli(reelGetiriPct)})';
       satirlar.add(enflasyonPuan >= 0
-          ? 'Enflasyonun ${_yuzde(enflasyonPuan)} puan önündeyim$reel'
-          : 'Enflasyonun ${_yuzde(enflasyonPuan)} puan gerisindeyim$reel');
+          ? 'Enflasyonun ${yuzde(enflasyonPuan)} puan önündeyim$reel'
+          : 'Enflasyonun ${yuzde(enflasyonPuan)} puan gerisindeyim$reel');
     }
     if (xirrPct != null) {
-      satirlar.add('Yıllıklandırılmış getiri (XIRR): ${_isaretli(xirrPct)}');
+      satirlar.add('Yıllıklandırılmış getiri (XIRR): ${isaretli(xirrPct)}');
     }
     if (enIyi != null) {
-      satirlar.add('En iyi: ${enIyi.name} ${_isaretli(enIyi.changePct)}');
+      satirlar.add('En iyi: ${enIyi.name} ${isaretli(enIyi.changePct)}');
     }
     if (enZayif != null) {
-      satirlar.add('En zayıf: ${enZayif.name} ${_isaretli(enZayif.changePct)}');
+      satirlar.add('En zayıf: ${enZayif.name} ${isaretli(enZayif.changePct)}');
     }
     if (gunSayimi != null && gunSayimi.toplam > 0) {
       satirlar.add(
@@ -341,6 +375,68 @@ class RecapService {
     }
     if (takipGunu != null && takipGunu > 0) {
       satirlar.add('$takipGunu gün takip ettim');
+    }
+
+    // ── Nasıl hesaplandı ────────────────────────────────────────────────
+    //
+    // **Neden metne giriyor (2026-09-16).** Paylaşılan metin ekrandan KOPUK
+    // dolaşıyor: alan gören kişi kartı değil yalnızca bu satırları okuyor ve
+    // "enflasyonun 5 puan önündeyim" iddiasını doğrulayacak hiçbir şeyi yok.
+    // Kart içindeyken ham sayılar (nominal, TÜFE) ve ölçüm aralığı ekranda
+    // duruyordu; metne geçerken düşüyorlardı.
+    //
+    // Özellikle iki şey açıkça yazılmalı, çünkü ekranda bile sorulan şeyler
+    // bunlar:
+    //   · piyasa getirisinin nakit akışından ARINDIRILMIŞ olduğu — yoksa
+    //     "para yatırdım, yüzdem neden artmadı" sorusu doğuyor,
+    //   · TÜFE penceresinin bugüne kadar GELMEDİĞİ — endeks aylık
+    //     yayımlanıyor ve pencere son açıklanan ayda bitiyor.
+    //
+    // Satırlar KOŞULLU: verilmeyen alan hiç yazılmaz. Boş bir "Nasıl
+    // hesaplandı" başlığı, açıklama olmamasından kötüdür.
+    final aciklama = <String>[];
+    if (degisimPct != null) {
+      aciklama.add('· $degisimEtiketi: (dönem sonu − dönem başı − net para '
+          'girişi) ÷ (dönem başı + net para girişi). Alım/satım hesaptan '
+          'ayıklanır, kalan saf piyasa hareketidir.');
+      if (donemAralik != null) {
+        aciklama.add('  Ölçüm aralığı: $donemAralik');
+      }
+    }
+    if (enflasyonPuan != null) {
+      if (nominalPct != null && tufePct != null) {
+        aciklama.add('· Puan farkı: $nominalPct (getirim) − $tufePct (TÜFE) '
+            '= ${yuzde(enflasyonPuan)} puan.');
+      } else {
+        aciklama.add('· Puan farkı: getirim − TÜFE.');
+      }
+      if (reelGetiriPct != null) {
+        aciklama.add('· Reel getiri: (1+getiri) ÷ (1+TÜFE) − 1. Puan '
+            'farkından farklıdır; bileşik hesap yüksek enflasyonda daha '
+            'doğru sonucu verir.');
+      }
+      aciklama.add('· TÜFE TÜİK verisidir (TCMB EVDS). Aylık yayımlandığı '
+          'için karşılaştırma son açıklanan ayda biter, bugüne kadar '
+          'gelmez.');
+      if (nominalAralik != null) {
+        aciklama.add('  Enflasyon ölçüm aralığı: $nominalAralik');
+      }
+    }
+    if (xirrPct != null) {
+      aciklama.add('· XIRR: her para giriş/çıkışını tarihiyle '
+          'ağırlıklandıran yıllıklandırılmış getiri. Piyasa getirisinden '
+          'farklı olması normaldir — o dönemi, bu para akışını ölçer.');
+    }
+    if (enIyi != null || enZayif != null) {
+      aciklama.add('· En iyi/en zayıf: varlığın ALIŞ fiyatına göre ömürlük '
+          'getirisi; döneme ait değildir.');
+    }
+
+    if (aciklama.isNotEmpty) {
+      satirlar
+        ..add('')
+        ..add('Nasıl hesaplandı')
+        ..addAll(aciklama);
     }
 
     satirlar
@@ -366,5 +462,28 @@ class RecapService {
         enIyi: d.bestAsset,
         enZayif: d.worstAsset,
         takipGunu: d.trackedDays,
+        // Enflasyon penceresi başlıktaki YILDAN farklı (son 12 ayın kayan
+        // penceresi, bkz. `RecapData.inflationStart`). Metinde yazılmazsa
+        // okuyan kişi başlıktaki yılı varsayar.
+        nominalAralik: (d.inflationStart == null || d.inflationEnd == null)
+            ? null
+            : '${_ayYilMetni(d.inflationStart!)} – '
+                '${_ayYilMetni(d.inflationEnd!)}',
       );
+
+  /// "Ağustos 26" — paylaşım metninde ay adı.
+  ///
+  /// `intl` kullanılmıyor: bu servis saf ve `BuildContext` taşımıyor
+  /// (testler ağsız/locale'siz koşuyor). Ay adları Türkçe sabit — metnin
+  /// tamamı zaten Türkçe.
+  ///
+  /// **Yıl İKİ haneli:** paylaşım metninde dört haneli sayı yasak (tutar
+  /// sızıntısının imzası), bkz. `PeriodSummaryService._aralikMetni`.
+  static String _ayYilMetni(DateTime t) {
+    const aylar = [
+      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+    ];
+    return '${aylar[t.month - 1]} ${(t.year % 100).toString().padLeft(2, '0')}';
+  }
 }

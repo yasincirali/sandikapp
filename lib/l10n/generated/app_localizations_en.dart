@@ -2852,14 +2852,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recapToughYear => 'It was a tough year.';
 
   @override
-  String get recapVsInflation => 'Against inflation';
+  String get recapVsInflation => 'Against inflation · last 12 months';
 
   @override
   String get recapKeptPower =>
       'You protected your purchasing power and added to it.';
 
   @override
-  String get recapInflationWon => 'Inflation was ahead this year.';
+  String get recapInflationWon =>
+      'Inflation was ahead over the last 12 months.';
+
+  @override
+  String recapInflationWindow(String start, String end) {
+    return 'Measured: $start – $end (CPI is published monthly, so the window ends at the last released month)';
+  }
 
   @override
   String get recapBestAsset => 'Biggest winner';

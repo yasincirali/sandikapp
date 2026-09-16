@@ -743,6 +743,24 @@ class PeriodSummaryService {
   /// [xirrPct] özetin parçası değil (ağdan sonra, ayrı hesaplanıyor) ve
   /// yalnızca gösterildiği seviyede geçirilir — ekranda görünmeyen bir
   /// sayı paylaşıma girmez.
+  /// Bir pencereyi paylaşım metni için yazar: "31.08.25 – 31.08.26".
+  ///
+  /// Gün DAHİL: dönem penceresi (1A/6A/1Y) ay ortasında başlayıp bitebiliyor
+  /// ve yalnızca ay yazmak aralığı yanlış gösterirdi.
+  ///
+  /// **Yıl İKİ haneli — gizlilik kuralı gereği.** Paylaşım metninde dört
+  /// haneli sayı YASAK: tutar sızıntısının tek imzası o ve kural
+  /// `period_summary_test`/`recap_service_test` ile kilitli
+  /// (`RegExp(r'\d{4,}')`). "2025" o kalıba takılıyor ve testi kırıyordu.
+  /// İki hane aralığı belirsizleştirmiyor — metin zaten "son 1 yıl" gibi bir
+  /// dönem adıyla başlıyor.
+  static String _aralikMetni(DateTime bas, DateTime bit) {
+    String g(DateTime t) => '${t.day.toString().padLeft(2, '0')}.'
+        '${t.month.toString().padLeft(2, '0')}.'
+        '${(t.year % 100).toString().padLeft(2, '0')}';
+    return '${g(bas)} – ${g(bit)}';
+  }
+
   static String? shareText(
     PeriodSummary s, {
     PortfolioCharacter? karakter,
@@ -761,6 +779,21 @@ class PeriodSummaryService {
       enZayif: s.enZayif,
       gunSayimi: s.gunSayimi,
       xirrPct: xirrPct,
+      // "Nasıl hesaplandı" bölümünün ham girdileri.
+      //
+      // Nominal, dönem kartının `getiriPct`'i DEĞİL `tufeNominalPct`:
+      // puan farkı onun üzerinden alınıyor ve metindeki çıkarma elle
+      // doğrulanabilmeli (gerekçe `PeriodSummary.tufeNominalPct`).
+      nominalPct: s.tufeNominalPct == null
+          ? null
+          : RecapService.isaretli(s.tufeNominalPct!),
+      // TÜFE İŞARETSİZ: enflasyon pratikte hep pozitif ve "+%36,5 − +%31,5"
+      // okunaksız. Çıkarmanın kendisi metinde zaten yazılı.
+      tufePct: s.tufePct == null ? null : '%${RecapService.yuzde(s.tufePct!)}',
+      donemAralik: _aralikMetni(s.start, s.end),
+      nominalAralik: (s.tufeBaslangic == null || s.tufeBitis == null)
+          ? null
+          : _aralikMetni(s.tufeBaslangic!, s.tufeBitis!),
     );
   }
 }

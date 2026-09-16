@@ -2845,13 +2845,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get recapToughYear => 'Zor bir yıl oldu.';
 
   @override
-  String get recapVsInflation => 'Enflasyona karşı';
+  String get recapVsInflation => 'Enflasyona karşı · son 12 ay';
 
   @override
   String get recapKeptPower => 'Alım gücünü korudun ve üstüne koydun.';
 
   @override
-  String get recapInflationWon => 'Bu yıl enflasyon öndeydi.';
+  String get recapInflationWon => 'Son 12 ayda enflasyon öndeydi.';
+
+  @override
+  String recapInflationWindow(String start, String end) {
+    return 'Ölçüm: $start – $end (TÜFE aylık yayımlandığı için pencere son açıklanan ayda biter)';
+  }
 
   @override
   String get recapBestAsset => 'En çok kazandıran';

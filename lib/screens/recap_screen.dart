@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
@@ -88,13 +89,28 @@ class _RecapScreenState extends State<RecapScreen> {
 
     if (d.inflationSpread != null) {
       final onde = d.inflationSpread! >= 0;
+      // Pencere uçları alt başlığa EKLENİR, üst başlık da "son 12 ay" der.
+      //
+      // Bu sayfa özetin başlığıyla AYNI aralığı ölçmüyor: başlık takvim
+      // yılını söyler, burası son 12 ayın kayan penceresidir ve TÜFE aylık
+      // yayımlandığı için son açıklanan ayda biter (gerekçe
+      // `RecapData.inflationStart` notunda). Aralık yazılmazsa kullanıcı
+      // başlıktaki yılı varsayar ve rakamı TÜİK'in yıl sonu verisiyle
+      // karşılaştırıp tutmadığını görür.
+      final aralik = (d.inflationStart != null && d.inflationEnd != null)
+          ? '\n${context.l10n.recapInflationWindow(
+              _ayYil(context, d.inflationStart!),
+              _ayYil(context, d.inflationEnd!),
+            )}'
+          : '';
       out.add(_Sayfa(
         ustBaslik: context.l10n.recapVsInflation,
         baslik:
             context.l10n.recapPoints(fmtNum(d.inflationSpread!.abs(), digits: 1)),
-        altBaslik: onde
-            ? context.l10n.recapKeptPower
-            : context.l10n.recapInflationWon,
+        altBaslik: (onde
+                ? context.l10n.recapKeptPower
+                : context.l10n.recapInflationWon) +
+            aralik,
         ikon: Icons.shield_moon_rounded,
         renk: onde ? c.gain : c.loss,
       ));
@@ -249,6 +265,15 @@ class _RecapScreenState extends State<RecapScreen> {
 }
 
 /// Tek bir hikâye sayfası.
+/// Bir tarihi "Ağustos 2026" biçiminde yazar.
+///
+/// Gün yazılmaz: TÜFE aylık bir ölçüm ve "31 Ağustos" yazmak o gün yapılmış
+/// bir ölçüm varmış izlenimi verirdi (`period_summary_view._ayEtiketi` ile
+/// aynı gerekçe).
+String _ayYil(BuildContext context, DateTime t) =>
+    DateFormat('MMMM yyyy', Localizations.localeOf(context).toString())
+        .format(t);
+
 class _Sayfa extends StatelessWidget {
   final String ustBaslik;
   final String baslik;
@@ -377,6 +402,11 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
       now: simdi,
       inflationPct: enflasyon,
       marketReturnPct: piyasa,
+      // Pencere uçları da geçer: sayfa hangi aralığı ölçtüğünü YAZMAK
+      // zorunda. Başlık takvim yılını söylüyor ama bu sayfa son 12 ayın
+      // kayan penceresi (bkz. `RecapData.inflationStart`).
+      inflationStart: rr?.pencere.seriBaslangici,
+      inflationEnd: rr?.pencere.seriBitisi,
     );
     if (!mounted || !d.isMeaningful) return;
     setState(() => _veri = d);

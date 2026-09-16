@@ -1940,9 +1940,14 @@
   "recapYourPortfolio": "Portföyün",
   "recapGrewThisYear": "Bu yıl böyle büyüdün.",
   "recapToughYear": "Zor bir yıl oldu.",
-  "recapVsInflation": "Enflasyona karşı",
+  "recapVsInflation": "Enflasyona karşı · son 12 ay",
   "recapKeptPower": "Alım gücünü korudun ve üstüne koydun.",
-  "recapInflationWon": "Bu yıl enflasyon öndeydi.",
+  "recapInflationWon": "Son 12 ayda enflasyon öndeydi.",
+  "recapInflationWindow": "Ölçüm: {start} – {end} (TÜFE aylık yayımlandığı için pencere son açıklanan ayda biter)",
+  "@recapInflationWindow": {
+    "description": "Yil sonu ozetinde enflasyon karsilastirmasinin gercek pencere uclari",
+    "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
+  },
   "recapBestAsset": "En çok kazandıran",
   "recapReturnedPct": "Bugüne kadar %{pct} getirdi.",
   "@recapReturnedPct": {

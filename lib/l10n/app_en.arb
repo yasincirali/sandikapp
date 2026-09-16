@@ -1940,9 +1940,14 @@
   "recapYourPortfolio": "Your portfolio",
   "recapGrewThisYear": "This is how you grew this year.",
   "recapToughYear": "It was a tough year.",
-  "recapVsInflation": "Against inflation",
+  "recapVsInflation": "Against inflation · last 12 months",
   "recapKeptPower": "You protected your purchasing power and added to it.",
-  "recapInflationWon": "Inflation was ahead this year.",
+  "recapInflationWon": "Inflation was ahead over the last 12 months.",
+  "recapInflationWindow": "Measured: {start} – {end} (CPI is published monthly, so the window ends at the last released month)",
+  "@recapInflationWindow": {
+    "description": "Yil sonu ozetinde enflasyon karsilastirmasinin gercek pencere uclari",
+    "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
+  },
   "recapBestAsset": "Biggest winner",
   "recapReturnedPct": "It returned {pct}% so far.",
   "@recapReturnedPct": {
