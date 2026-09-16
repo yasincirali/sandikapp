@@ -216,10 +216,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _exporting = true);
     try {
       await DataExportService.instance.exportAndShare();
-      if (!mounted) return;
-      sandikSnack(
-          context, context.l10n.dataExported,
-          kind: SandikSnackKind.success, duration: const Duration(seconds: 4));
+      // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): `exportAndShare`
+      // sistem paylaşım sayfasını açıyor, kullanıcı dosyayı zaten orada
+      // görüyor. Toast paylaşım sayfasının ARKASINDA kalıyordu.
     } catch (e) {
       if (!mounted) return;
       showAppError(context, e);

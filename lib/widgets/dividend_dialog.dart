@@ -7,7 +7,6 @@ import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
-import '../utils/sandik_snack.dart';
 import 'custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
 
@@ -79,8 +78,10 @@ class _DividendDialogState extends State<_DividendDialog> {
             paidAt: _paidAt,
           );
       if (!mounted) return;
+      // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): diyalog kapanıyor
+      // ve temettü hareket listesine düşüyor. Hata yolu `_error` ile diyalogda
+      // kalmaya devam eder.
       Navigator.pop(context);
-      sandikSnack(context, context.l10n.dividendSaved, kind: SandikSnackKind.success);
     } catch (e) {
       if (!mounted) return;
       setState(() {

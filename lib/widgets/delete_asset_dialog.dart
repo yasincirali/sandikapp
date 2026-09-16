@@ -53,27 +53,19 @@ Future<bool> confirmAndDeletePosition(
   if (!ok || !context.mounted) return false;
   try {
     final notifier = ref.read(portfolioProvider.notifier);
-    final kayit = await notifier.deletePositionLots(lots);
-    if (context.mounted) {
-      // Geri alma: HIG yıkıcı eylemde geri alma ister; silme yumuşak olduğu
-      // için ucuz. Geri alma başarısız olursa sebep söylenir — satırın
-      // sessizce gelmemesi hata gibi görünürdü.
-      sandikSnack(
-        context,
-        context.l10n.assetDeleted,
-        onUndo: kayit == null
-            ? null
-            : () async {
-                try {
-                  await notifier.restorePositionLots(kayit);
-                } catch (e) {
-                  if (context.mounted) {
-                    sandikSnackError(context, e, prefix: context.l10n.undoFailed);
-                  }
-                }
-              },
-      );
-    }
+    // ## Neden "Geri al" toast'ı YOK (kullanıcı kararı, 2026-09-16)
+    //
+    // Önceden silme sonrası "Varlık silindi" + "Geri al" toast'ı çıkıyordu.
+    // Kullanıcı bunu gereksiz buldu: silme ZATEN onay diyaloğunun arkasında
+    // (yukarıdaki `showSandikConfirm`, yıkıcı buton + uyarı kutusu), yani
+    // kazara silme yolu kapalı. HIG'in geri alma beklentisi onaysız yıkıcı
+    // eylem içindir; burada onay o işlevi görüyor.
+    //
+    // `deletePositionLots` makbuzu döndürmeye DEVAM ediyor ve
+    // `restorePositionLots` provider'da duruyor — sunucu tarafı geri alma
+    // yeteneği korunuyor (silme yumuşak, `deleted_at`). Yalnızca UI girişi
+    // kaldırıldı; geri alma tekrar istendiğinde sıfırdan yazılmaz.
+    await notifier.deletePositionLots(lots);
     return true;
   } catch (e) {
     if (context.mounted) sandikSnackError(context, e, prefix: 'Silinemedi');

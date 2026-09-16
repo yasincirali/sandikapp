@@ -528,17 +528,20 @@ class _Row extends ConsumerWidget {
     );
   }
 
-  /// Siler ve GERİ ALMA sunar.
+  /// Takipten çıkarır.
   ///
-  /// HIG: yıkıcı kaydırma eylemi geri alma sunmalı. Kullanıcı yanlışlıkla
-  /// kaydırdığında kaydı yeniden aramak zorunda kalmamalı.
+  /// ## Neden "Geri al" toast'ı YOK (kullanıcı kararı, 2026-09-16)
+  ///
+  /// Önceden "… takipten çıkarıldı" + "Geri al" toast'ı çıkıyordu; kullanıcı
+  /// bunu gereksiz buldu. Takibe geri alma ucuz: satır listede kayboluyor,
+  /// yanlışlıkla çıkarılan sembol arama ekranından tek dokunuşla geri
+  /// eklenebiliyor (silme gibi geçmiş kaybı yok — takip listesi yalnızca bir
+  /// sembol kümesi). BAŞARISIZLIK yolu toast'ını KORUR: orada satır sessizce
+  /// geri gelir ve bu hata gibi görünür.
   Future<void> _remove(BuildContext context, WidgetRef ref) async {
     final notifier = ref.read(watchlistProvider.notifier);
     try {
       await notifier.remove(item.id);
-      if (!context.mounted) return;
-      sandikSnack(context, '${item.displayLabel} takipten çıkarıldı',
-          onUndo: () => notifier.add(item));
     } catch (_) {
       if (!context.mounted) return;
       // Provider state'i zaten geri aldı; burada SEBEBİ söylüyoruz — satırın

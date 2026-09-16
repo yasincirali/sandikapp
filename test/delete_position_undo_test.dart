@@ -1,14 +1,23 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'helpers/kaynak.dart';
 
-/// Varlık silmede "Geri al" (Faz 2.10).
+/// Varlık silmede geri alma YETENEĞİ (Faz 2.10).
 ///
 /// Silme yumuşaktır (`deleted_at`) ve bir mezar taşı ekler; geri alma tam
 /// tersini yapmalı: damga temizlenir, mezar taşı fiziksel silinir. Provider
 /// Supabase istediği için akış kaynak denetimiyle kilitlenir (projede aynı
 /// örüntü: onboarding_tour_test "akış korundu").
+///
+/// ## 2026-09-16: UI girişi kaldırıldı, YETENEK korundu
+///
+/// Kullanıcı silme sonrası "Varlık silindi" + "Geri al" toast'ını gereksiz
+/// buldu (silme zaten onay diyaloğunun arkasında). Toast kaldırıldı, ama
+/// `deletePositionLots` makbuzu döndürmeye ve `restorePositionLots` geri
+/// almaya DEVAM ediyor. Bu testin amacı da değişti: artık "diyalog Geri al
+/// sunuyor mu"yu değil, "sunucu tarafı geri alma yolu hâlâ sağlam mı"yı
+/// kilitliyor. Yetenek bozulursa geri alma tekrar istendiğinde sessizce
+/// yarım çalışan bir şey bulunur.
 void main() {
   final provider =
       File('lib/providers/portfolio_provider.dart').readAsStringSync();
@@ -39,11 +48,18 @@ void main() {
         reason: 'Mezar taşı kalırsa hareket listesinde olmamış bir silme durur.');
   });
 
-  test('diyalog "Geri al" sunar ve hatayı sebebiyle söyler', () {
-    expect(dialog.contains('onUndo:'), isTrue);
-    expect(dialog.contains('restorePositionLots(kayit)'), isTrue);
-    // 3.20: metin sözlükte.
-    expect(dialog.contains('prefix: context.l10n.undoFailed'), isTrue);
-    expect(trMetni('undoFailed'), contains('Geri alınamadı'));
+  test('diyalog başarı/geri alma toast\'ı GÖSTERMEZ', () {
+    // Kullanıcı kararı 2026-09-16. Onay diyaloğu zaten kazara silmeyi
+    // engelliyor; silme sonrası ikinci bir bildirim fazlalıktı.
+    expect(dialog.contains('onUndo:'), isFalse,
+        reason: 'Silme sonrası "Geri al" toast\'ı kaldırıldı.');
+    expect(dialog.contains('context.l10n.assetDeleted'), isFalse,
+        reason: '"Varlık silindi" başarı toast\'ı kaldırıldı.');
+  });
+
+  test('BAŞARISIZ silme hâlâ sebebiyle söylenir', () {
+    // Sessiz başarısızlık kalmadı: kullanıcı sildiğini sanıp uygulamayı
+    // açtığında kaydı geri görürse uygulamaya güveni sarsılır.
+    expect(dialog.contains("prefix: 'Silinemedi'"), isTrue);
   });
 }

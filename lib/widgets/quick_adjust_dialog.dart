@@ -6,7 +6,6 @@ import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
-import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import 'custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
@@ -152,14 +151,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       }
 
       if (!mounted) return;
+      // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): sheet kapanıyor ve
+      // varlığın miktarı arkadaki listede anında değişiyor — onay zaten
+      // ekranda. Hata yolu sessiz değil; `_error` ile sheet içinde kalır.
       Navigator.pop(context);
-      sandikSnack(
-        context,
-        _isAdd
-            ? context.l10n.boughtAmount(_fmt(qty), _unitLabel)
-            : context.l10n.soldAmount(_fmt(qty), _unitLabel),
-        kind: SandikSnackKind.success,
-      );
     } catch (e) {
       if (!mounted) return;
       setState(() {

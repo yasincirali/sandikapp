@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../services/csv_import_service.dart';
 import '../theme/sandik.dart';
-import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../l10n/l10n.dart';
@@ -47,8 +46,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     for (final row in r.rows) {
       cart.add(row);
     }
-    sandikSnack(context, context.l10n.csvRowsAddedToCart(r.rows.length),
-        kind: SandikSnackKind.success);
+    // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): ekran kapanıp toplu
+    // ekleme sepetine dönülüyor, satırlar orada listeleniyor. Sayıyı ayrıca
+    // söylemek aynı bilgiyi iki kez veriyordu.
     Navigator.of(context).pop(true);
   }
 

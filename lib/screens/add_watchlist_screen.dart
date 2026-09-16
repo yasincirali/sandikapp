@@ -408,9 +408,9 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
             currency: c.currency,
             addedAt: DateTime.now(),
           ));
-      if (!mounted) return;
-      sandikSnack(context, context.l10n.addedToWatchlist(c.name),
-          kind: SandikSnackKind.success);
+      // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): satırdaki "+"
+      // ikonu eklendi durumuna geçiyor, onay orada. Hata yolları (limit,
+      // çakışma) toast'ını KORUR — orada geri bildirim tek kanal.
     } on WatchlistLimitException catch (e) {
       if (!mounted) return;
       // Limit hatası ağ hatasından AYRI ele alınır: kullanıcıya neden
