@@ -2042,6 +2042,47 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is not a sale — the asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.';
 
   @override
+  String alarmAlsoDeleteTitle(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Delete the $n alerts too?',
+      one: 'Delete the alert too?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String alarmAlsoDeleteBody(int n, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other:
+          '$name was deleted. The $n alerts you set for this symbol are still active. They can keep watching the price even though you no longer hold it.',
+      one:
+          '$name was deleted. The alert you set for this symbol is still active. It can keep watching the price even though you no longer hold it.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String alarmAlsoDeleteConfirm(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Delete alerts',
+      one: 'Delete alert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get alarmKeep => 'Keep alert';
+
+  @override
+  String get alarmDeleteFailed => 'Could not delete alerts';
+
+  @override
   String get assetDeleted => 'Asset deleted';
 
   @override

@@ -2041,6 +2041,47 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.';
 
   @override
+  String alarmAlsoDeleteTitle(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n alarm da silinsin mi?',
+      one: 'Alarm da silinsin mi?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String alarmAlsoDeleteBody(int n, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other:
+          '$name silindi. Bu sembol için kurduğun $n alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilirler.',
+      one:
+          '$name silindi. Bu sembol için kurduğun alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilir.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String alarmAlsoDeleteConfirm(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Alarmları sil',
+      one: 'Alarmı sil',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get alarmKeep => 'Alarm kalsın';
+
+  @override
+  String get alarmDeleteFailed => 'Alarmlar silinemedi';
+
+  @override
   String get assetDeleted => 'Varlık silindi';
 
   @override

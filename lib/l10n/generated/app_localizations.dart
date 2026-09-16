@@ -3674,6 +3674,36 @@ abstract class AppLocalizations {
   /// **'Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.'**
   String get deleteAssetWarning;
 
+  /// No description provided for @alarmAlsoDeleteTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{Alarm da silinsin mi?} other{{n} alarm da silinsin mi?}}'**
+  String alarmAlsoDeleteTitle(int n);
+
+  /// No description provided for @alarmAlsoDeleteBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{{name} silindi. Bu sembol için kurduğun alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilir.} other{{name} silindi. Bu sembol için kurduğun {n} alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilirler.}}'**
+  String alarmAlsoDeleteBody(int n, String name);
+
+  /// No description provided for @alarmAlsoDeleteConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{Alarmı sil} other{Alarmları sil}}'**
+  String alarmAlsoDeleteConfirm(int n);
+
+  /// No description provided for @alarmKeep.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kalsın'**
+  String get alarmKeep;
+
+  /// No description provided for @alarmDeleteFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmlar silinemedi'**
+  String get alarmDeleteFailed;
+
   /// No description provided for @assetDeleted.
   ///
   /// In tr, this message translates to:

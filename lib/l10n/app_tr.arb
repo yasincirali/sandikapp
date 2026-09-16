@@ -1186,6 +1186,20 @@
   },
   "deleteAnyway": "Yine de sil",
   "deleteAssetWarning": "Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.",
+  "alarmAlsoDeleteTitle": "{n, plural, =1{Alarm da silinsin mi?} other{{n} alarm da silinsin mi?}}",
+  "@alarmAlsoDeleteTitle": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "alarmAlsoDeleteBody": "{n, plural, =1{{name} silindi. Bu sembol için kurduğun alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilir.} other{{name} silindi. Bu sembol için kurduğun {n} alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilirler.}}",
+  "@alarmAlsoDeleteBody": {
+    "placeholders": { "n": { "type": "int" }, "name": { "type": "String" } }
+  },
+  "alarmAlsoDeleteConfirm": "{n, plural, =1{Alarmı sil} other{Alarmları sil}}",
+  "@alarmAlsoDeleteConfirm": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "alarmKeep": "Alarm kalsın",
+  "alarmDeleteFailed": "Alarmlar silinemedi",
   "assetDeleted": "Varlık silindi",
   "undoFailed": "Geri alınamadı",
   "enterValidAmount": "Geçerli bir tutar girin",
