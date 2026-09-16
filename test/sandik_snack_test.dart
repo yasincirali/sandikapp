@@ -30,6 +30,35 @@ void main() {
     await t.pump(const Duration(milliseconds: 800));
   }
 
+  // ── Süre (2026-09-16) ──────────────────────────────────────────────────
+  //
+  // Kullanıcı bildirimi: takip listesinde sola kaydırıp silince "Geri al"
+  // toast'ı alt menünün üstünde ÇOK UZUN duruyordu (5 sn). Silme kaydırmayla
+  // yapılıyor, yani eylem zaten bilinçli.
+
+  testWidgets('geri alınabilir snackbar 4 saniye durur', (t) async {
+    await pump(t, (ctx) => sandikSnack(ctx, 'silindi', onUndo: () {}));
+    final bar = t.widget<SnackBar>(find.byType(SnackBar));
+    expect(bar.duration, const Duration(seconds: 4));
+    expect(bar.action, isNotNull, reason: 'süre kuralı eyleme bağlı');
+  });
+
+  testWidgets('eylemsiz snackbar 3 saniye — daha kısa kalır', (t) async {
+    await pump(t, (ctx) => sandikSnack(ctx, 'kaydedildi'));
+    final bar = t.widget<SnackBar>(find.byType(SnackBar));
+    expect(bar.duration, const Duration(seconds: 3));
+  });
+
+  testWidgets('açıkça verilen süre kuralı EZER', (t) async {
+    await pump(
+      t,
+      (ctx) => sandikSnack(ctx, 'x',
+          onUndo: () {}, duration: const Duration(seconds: 9)),
+    );
+    expect(t.widget<SnackBar>(find.byType(SnackBar)).duration,
+        const Duration(seconds: 9));
+  });
+
   testWidgets('sandikSnackError ham exception metnini göstermez', (t) async {
     const raw = 'relation "public.assets" violates check constraint';
     await pump(

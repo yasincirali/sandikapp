@@ -77,10 +77,21 @@ void sandikSnack(
               ),
       ),
       backgroundColor: background,
-      // Geri alınabilir eylemde kullanıcıya düşünme payı bırak.
+      // Geri alınabilir eylemde kullanıcıya düşünme payı bırak — ama
+      // ekranı da bloke etme.
+      //
+      // 5 sn'den 4'e çekildi (kullanıcı bildirimi, 2026-09-16): takip
+      // listesinde sola kaydırıp silince toast alt menünün üstünde çok uzun
+      // duruyordu. Silme kaydırmayla yapılıyor, yani kullanıcı eylemi zaten
+      // bilinçli; 5 sn geri alma değil bekleme hissi veriyordu.
+      //
+      // 4 sn Material'ın kendi varsayılanı ve HIG'in eylem içeren bildirim
+      // için verdiği alt sınırın üstünde. Daha kısası (3 sn) eylemli
+      // snackbar'da erişilebilirlik sorunudur: ekran okuyucu metni
+      // bitirmeden kapanabilir.
       duration: duration ??
           (resolvedAction != null
-              ? const Duration(seconds: 5)
+              ? const Duration(seconds: 4)
               : const Duration(seconds: 3)),
       action: resolvedAction,
     ),
