@@ -112,6 +112,15 @@ const List<SurumNotu> surumNotlari = [
             'yok. iPad\'de paylaş düğmesinin hata vermesi de düzeltildi.',
       ),
       Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Enflasyon farkı her yerde aynı',
+        aciklama: 'Ana ekrandaki "enflasyonun X puan önündesin" rozeti, '
+            'Performans kartı ve paylaşım kartı artık aynı hesabı kullanıyor: '
+            'son 12 ayın nakit akışı düzeltilmiş piyasa getirisi. Eskiden ana '
+            'ekran yıl içinde eklediğin parayı görmüyor ve farklı bir puan '
+            'söylüyordu.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.bildirim,
         baslik: 'Fiyat alarmı kur',
         aciklama: 'Bir varlık hedeflediğin fiyata gelince haber ver. '

@@ -46,6 +46,7 @@ void main() {
     List<Asset> assets = const [],
     List<({int ts, Map<String, double> values})> snapshots = const [],
     double? inflationPct,
+    double? marketReturnPct,
   }) =>
       RecapService.compute(
         period: 'yearly',
@@ -54,6 +55,7 @@ void main() {
         toTRY: toTRY,
         now: now,
         inflationPct: inflationPct,
+        marketReturnPct: marketReturnPct,
       );
 
   group('karakter etiketi', () {
@@ -204,7 +206,35 @@ void main() {
   });
 
   group('enflasyon farkı', () {
-    test('değişim ve enflasyon varsa puan farkı', () {
+    // Fark PİYASA getirisinden (RealReturnService, nakit akışı düzeltmeli),
+    // portföy değeri değişiminden DEĞİL: ana ekran rozeti ve Performans
+    // kartıyla aynı puan çıkmalı (2026-09-16 tek kaynak kararı).
+    test('piyasa getirisi ve enflasyon varsa puan farkı', () {
+      final d = run(marketReturnPct: 46, inflationPct: 40);
+      expect(d.inflationSpread, closeTo(6, 1e-9));
+      expect(d.marketReturnPct, 46);
+    });
+
+    test('portföy değeri değişimi farkı BELİRLEMEZ', () {
+      // Snapshot'lar %46 büyüme söylüyor ama piyasa getirisi %30: katkının
+      // şişirdiği rakam TÜFE ile kıyaslanmaz.
+      final d = run(
+        snapshots: [
+          _snap(DateTime(2026, 1, 2), 100),
+          _snap(DateTime(2026, 12, 20), 146),
+        ],
+        marketReturnPct: 30,
+        inflationPct: 40,
+      );
+      expect(d.changePct, closeTo(46, 1e-9));
+      expect(d.inflationSpread, closeTo(-10, 1e-9));
+    });
+
+    test('enflasyon yoksa null', () {
+      expect(run(marketReturnPct: 46).inflationSpread, isNull);
+    });
+
+    test('piyasa getirisi yoksa enflasyon tek başına anlam taşımaz', () {
       final d = run(
         snapshots: [
           _snap(DateTime(2026, 1, 2), 100),
@@ -212,19 +242,7 @@ void main() {
         ],
         inflationPct: 40,
       );
-      expect(d.inflationSpread, closeTo(6, 1e-9));
-    });
-
-    test('enflasyon yoksa null', () {
-      final d = run(snapshots: [
-        _snap(DateTime(2026, 1, 2), 100),
-        _snap(DateTime(2026, 12, 20), 146),
-      ]);
       expect(d.inflationSpread, isNull);
-    });
-
-    test('değişim yoksa enflasyon tek başına anlam taşımaz', () {
-      expect(run(inflationPct: 40).inflationSpread, isNull);
     });
   });
 
@@ -239,8 +257,12 @@ void main() {
           _snap(DateTime(2026, 12, 20), 400000),
         ],
         inflationPct: 40,
+        marketReturnPct: 47.5,
       );
       final metin = RecapService.shareText(d, year: 2026);
+      expect(metin.contains('Piyasa getirim: +%47,5'), isTrue,
+          reason: 'yüzde enflasyon satırıyla aynı sayı olmalı');
+      expect(metin.contains('7,5 puan önündeyim'), isTrue);
       expect(metin.contains('₺'), isFalse);
       expect(metin.contains('250'), isFalse);
       expect(metin.contains('400'), isFalse);

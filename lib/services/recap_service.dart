@@ -60,7 +60,15 @@ class RecapData {
   /// Portföydeki farklı varlık türü sayısı.
   final int typeCount;
 
-  /// Enflasyonun kaç puan önünde/gerisinde. Endeks yoksa null.
+  /// Son 12 ayın nakit akışı düzeltmeli PİYASA getirisi (yüzde) —
+  /// `RealReturnService.yillikPiyasaGetirisi`. [changePct]'ten farkı:
+  /// o portföy DEĞERİNİN değişimi (katkı dahil), bu piyasanın varlıklara
+  /// ne yaptığı. Enflasyon karşılaştırması BUNUN üzerinden yapılır ki ana
+  /// ekran rozeti ve Performans kartıyla aynı puan çıksın. Seri yoksa null.
+  final double? marketReturnPct;
+
+  /// Enflasyonun kaç puan önünde/gerisinde: [marketReturnPct] − TÜFE.
+  /// Endeks ya da piyasa getirisi yoksa null.
   final double? inflationSpread;
 
   /// Bugünkü tür dağılımı (TRY). Paylaşım kartı bunu yalnızca ORAN olarak
@@ -80,6 +88,7 @@ class RecapData {
     this.worstAsset,
     this.mostPatient,
     this.mostPatientDays,
+    this.marketReturnPct,
     this.inflationSpread,
     this.valueByType = const {},
   });
@@ -178,6 +187,7 @@ class RecapService {
     required double Function(double value, String currency) toTRY,
     required DateTime now,
     double? inflationPct,
+    double? marketReturnPct,
   }) {
     final aktif = assets.where((a) => a.isBuy && a.isActive).toList();
 
@@ -239,8 +249,12 @@ class RecapService {
           enEski == null ? null : now.difference(enEski.addedDate).inDays,
       typeCount: valueByType.keys.length,
       valueByType: valueByType,
-      inflationSpread: (degisim != null && inflationPct != null)
-          ? degisim - inflationPct
+      marketReturnPct: marketReturnPct,
+      // Portföy değeri değişimi (`degisim`) DEĞİL, piyasa getirisi:
+      // katkının şişirdiği bir rakamı TÜFE ile kıyaslamak, para yatıran
+      // herkesi "enflasyonu yendi" gösterirdi ve ana ekranla tutmazdı.
+      inflationSpread: (marketReturnPct != null && inflationPct != null)
+          ? marketReturnPct - inflationPct
           : null,
     );
   }
@@ -338,10 +352,16 @@ class RecapService {
   /// Yıllık özetin paylaşım metni.
   ///
   /// [composeShareText]'e delege eder; biçim kuralları orada.
+  ///
+  /// Yüzde olarak PİYASA getirisi paylaşılır (enflasyon satırıyla aynı
+  /// sayı); seri yoksa portföy değeri değişimine düşer ve etiket de onu
+  /// söyler.
   static String shareText(RecapData d, {required int year}) => composeShareText(
         baslik: 'sandık Özetim $year',
         karakter: d.character,
-        degisimPct: d.changePct,
+        degisimPct: d.marketReturnPct ?? d.changePct,
+        degisimEtiketi:
+            d.marketReturnPct != null ? 'Piyasa getirim' : 'Portföy değişimi',
         enflasyonPuan: d.inflationSpread,
         enIyi: d.bestAsset,
         enZayif: d.worstAsset,
