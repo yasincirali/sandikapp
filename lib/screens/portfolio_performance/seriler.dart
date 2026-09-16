@@ -36,12 +36,27 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       final nowMinutesX = (nowMs - startDate.millisecondsSinceEpoch) / 60000.0;
       final simdiEksendeVar = nowMinutesX >= 0;
       final spots = <FlSpot>[];
+      // BAŞTAKİ sıfırlar atlanır, SONRAKİLER çizilir.
+      //
+      // Eskiden koşulsuz `if (y <= 0) continue;` vardı ve iki farklı şeyi
+      // aynı sayıyordu: borsa açılmadan önceki VERİSİZ slotlar ile
+      // portföyün gerçekten sıfırlandığı slotlar. Tamamı satılan bir
+      // portföyde satış sonrası noktalar çizimden düşüyordu ve çizgi son
+      // değerde asılı kalıyordu — kullanıcı "varlığımın 0'a indiğini
+      // görmüyorum" dedi (2026-09-16). Ölçüldü: gün içi seri 16:45'ten
+      // sonra 0 üretiyordu ama grafikte o noktalar yoktu.
+      //
+      // Ayrım ilk gerçek değere göre: ondan ÖNCEKİ sıfırlar veri yokluğu,
+      // SONRAKİLER ölçümdür ve sıfır da bir ölçümdür.
+      var ilkDegerGoruldu = false;
       for (final ts in sortedTs) {
         if (ts > nowMs) break;
         final y = history[ts] ?? 0;
-        // 0 dönen slotlar (borsa saatleri dışı ilk slotlar) atlanır; kullanıcı
-        // ilk fiyat oluşan noktadan itibaren çizgiyi görür.
-        if (y <= 0) continue;
+        if (y > 0) {
+          ilkDegerGoruldu = true;
+        } else if (!ilkDegerGoruldu) {
+          continue;
+        }
         final minutes = (ts - startDate.millisecondsSinceEpoch) / 60000.0;
         spots.add(FlSpot(minutes, y));
       }

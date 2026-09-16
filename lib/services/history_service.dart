@@ -1379,9 +1379,20 @@ class HistoryService {
       // açılmadan önceki slotların hepsi seed'dir ve aynı değeri taşır.
       var slotGercekVeri = false;
 
+      // O anda defterde kayıt var mıydı — net miktar sıfır olsa bile.
+      // Uzun dönem yolundaki `anyLedger` ile aynı gerekçe: aynı gün alınıp
+      // satılan bir pozisyonda her varlık `qty == 0` verir, `anyCovered`
+      // hiç true olmaz ve GÜNLÜK grafiği tamamen boş kalırdı.
+      bool anyLedger = false;
+
       // Ölçülemeyen varlıklar burada YOK (bkz. `olculebilir`).
       for (final a in olculebilir) {
         try {
+          if (!a.isDeleted &&
+              !a.isQuantityNeutral &&
+              a.addedDate.millisecondsSinceEpoch <= hourTs) {
+            anyLedger = true;
+          }
           final qty = signedQtyOnSlot(a, hourTs);
           if (qty == 0) continue;
           expected++;
@@ -1504,7 +1515,8 @@ class HistoryService {
         }
       }
 
-      if (!anyCovered) continue;
+      // Sıfır da bir ölçümdür: portföy o an VARDI ve değeri sıfırdı.
+      if (!anyCovered && !anyLedger) continue;
       // Negatif toplam kırpılırsa dağılım da düşer — aksi halde
       // `Σ byType != total` olur (aynı kural günlük seride de var).
       if (total < 0) {
@@ -1877,11 +1889,31 @@ class HistoryService {
 
       double total = 0.0;
       bool anyCovered = false;
+      // Bu slot'ta portföyde HİÇ kayıt var mıydı? (net miktar sıfır olsa
+      // bile). `anyCovered`'dan farkı: o "fiyatlanabilir pozisyon bulundu"
+      // der, bu "o tarihte bir portföy vardı" der.
+      //
+      // **Neden gerekli (kullanıcı bildirimi, 2026-09-16):** portföyün
+      // tamamı satıldığında her varlık için `qty == 0` oluyor, hiçbiri
+      // `anyCovered`'ı true yapmıyor ve SLOT SERİYE HİÇ GİRMİYORDU. Grafik
+      // satış gününden önce bitiyor, son değerde asılı kalıyordu — ölçüldü:
+      // seri 14.09'da ₺330.804'te bitmiş, satışın yapıldığı 16.09 slotu
+      // yok. Kullanıcı "varlığımın 0'a indiğini görmüyorum" dedi; haklıydı,
+      // düşüş çizilmiyordu çünkü o gün seride yoktu.
+      bool anyLedger = false;
       // Bu slot'un tür ve pozisyon kırılımı. `total`a giren her `v` ikisine
       // de girer — tek yerden beslendikleri için toplamları ayrışamaz.
       final slotByType = <AssetType, double>{};
       final slotByPosition = <String, double>{};
       for (final a in assets) {
+        // Defterde o tarihte kayıt var mı — miktarı sıfırlanmış olsa bile.
+        // Silinmiş ve miktar-nötr (temettü/mezar taşı) satırlar sayılmaz:
+        // ilki "hiç olmamış", ikincisi zaten miktar taşımıyor.
+        if (!a.isDeleted &&
+            !a.isQuantityNeutral &&
+            a.addedDate.millisecondsSinceEpoch <= cursor) {
+          anyLedger = true;
+        }
         final qty = signedQtyOnSlot(a, cursor);
         if (qty == 0) continue;
         double? v;
@@ -1930,7 +1962,10 @@ class HistoryService {
         positionType[pk] = a.type;
         anyCovered = true;
       }
-      if (anyCovered) {
+      // `anyLedger` tek başına da yeter: o tarihte portföy VARDI ve net
+      // değeri sıfırdı. Sıfır bir ölçümdür, ölçüm yokluğu değil — grafik
+      // düşüşü çizebilmeli.
+      if (anyCovered || anyLedger) {
         // Negatif toplam kırpılırsa dağılım da AYNI ORANDA kırpılmalı;
         // aksi halde `Σ byType != total` olur ve tür dökümü üst kartı
         // tutmaz. Pratikte buraya nadiren düşülür (satış lot'ları alımı
