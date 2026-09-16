@@ -309,7 +309,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // başlıktan SONRA, listenin en altında bir "İlk varlığını ekle" düğmesi
     // vardı — 27 adımlık turdan çıkan kullanıcı bir duvar sıfır görüyordu.
     final ownView = !(_view != null && _view!.isNotEmpty);
-    final isEmptyOwn = ownView && myState.assets.isEmpty;
+    // **Boşluk ölçüsü AÇIK POZİSYON, ham satır sayısı DEĞİL** (kullanıcı
+    // bildirimi, 2026-09-16).
+    //
+    // `assets.isEmpty` ham defteri sayıyordu; tamamı satılmış bir portföyde
+    // alım ve satım satırları durduğu için "boş değil" çıkıyor ve şeritler
+    // çiziliyordu. Ekran kendi içinde çelişiyordu: üstte "TOPLAM NET VARLIK
+    // ₺0", hemen altında "enflasyonun 2,64 puan öndesin" ve "bu hafta
+    // piyasadan %82,3 artı". Sıfır lirası olan bir portföyün enflasyonu
+    // yenmesi diye bir şey yok.
+    //
+    // `aktifLotlar` bugünkü MÜLKİYETİ soruyor: silinmişleri ve net miktarı
+    // sıfıra inmiş pozisyonları birlikte eliyor (bkz. `models/position.dart`).
+    // Hareket listesi ham defteri kullanmaya DEVAM eder — geçmiş orada
+    // duruyor ve doğrusu da bu.
+    final isEmptyOwn = ownView && aktifLotlar(myState.assets).isEmpty;
 
     return RefreshIndicator(
       color: context.c.amberText,
