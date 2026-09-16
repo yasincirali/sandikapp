@@ -5059,6 +5059,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'sandık — sürüm {surum}'**
   String appVersionLabel(String surum);
+
+  /// No description provided for @shareCardBest.
+  ///
+  /// In tr, this message translates to:
+  /// **'En iyi'**
+  String get shareCardBest;
+
+  /// No description provided for @shareCardWorst.
+  ///
+  /// In tr, this message translates to:
+  /// **'En zayıf'**
+  String get shareCardWorst;
+
+  /// No description provided for @shareCardUpDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'Artıda gün'**
+  String get shareCardUpDays;
+
+  /// No description provided for @shareCardUpDaysValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{up}/{total}'**
+  String shareCardUpDaysValue(int up, int total);
+
+  /// No description provided for @shareCardReal.
+  ///
+  /// In tr, this message translates to:
+  /// **'reel {pct}'**
+  String shareCardReal(String pct);
+
+  /// No description provided for @shareCardXirr.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık (XIRR)'**
+  String get shareCardXirr;
+
+  /// No description provided for @shareCardDrawdown.
+  ///
+  /// In tr, this message translates to:
+  /// **'En derin düşüş'**
+  String get shareCardDrawdown;
+
+  /// No description provided for @shareCardPatient.
+  ///
+  /// In tr, this message translates to:
+  /// **'En sabırlı'**
+  String get shareCardPatient;
+
+  /// No description provided for @shareCardAllocation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılım'**
+  String get shareCardAllocation;
+
+  /// No description provided for @shareCardTracked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip'**
+  String get shareCardTracked;
+
+  /// No description provided for @shareCardInvestors.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırımcıların'**
+  String get shareCardInvestors;
+
+  /// No description provided for @shareCardBetterThanPct.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{pct}\'inden iyi'**
+  String shareCardBetterThanPct(int pct);
+
+  /// No description provided for @shareCardRange.
+  ///
+  /// In tr, this message translates to:
+  /// **'{start} – {end}'**
+  String shareCardRange(String start, String end);
 }
 
 class _AppLocalizationsDelegate

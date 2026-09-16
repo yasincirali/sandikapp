@@ -63,6 +63,11 @@ class RecapData {
   /// Enflasyonun kaç puan önünde/gerisinde. Endeks yoksa null.
   final double? inflationSpread;
 
+  /// Bugünkü tür dağılımı (TRY). Paylaşım kartı bunu yalnızca ORAN olarak
+  /// çizer (dağılım şeridi) — tutar kartta yoktur, kural `share_card_test`
+  /// ile kilitli. Boşsa şerit çizilmez.
+  final Map<AssetType, double> valueByType;
+
   const RecapData({
     required this.period,
     required this.character,
@@ -76,6 +81,7 @@ class RecapData {
     this.mostPatient,
     this.mostPatientDays,
     this.inflationSpread,
+    this.valueByType = const {},
   });
 
   /// Gösterilmeye değer mi?
@@ -232,6 +238,7 @@ class RecapService {
       mostPatientDays:
           enEski == null ? null : now.difference(enEski.addedDate).inDays,
       typeCount: valueByType.keys.length,
+      valueByType: valueByType,
       inflationSpread: (degisim != null && inflationPct != null)
           ? degisim - inflationPct
           : null,
@@ -244,6 +251,10 @@ class RecapService {
   /// paylaşılan metin ekran görüntüsü gibi okunuyor.
   static String _yuzde(double v) =>
       v.abs().toStringAsFixed(1).replaceAll('.', ',');
+
+  /// İşaretli yüzde: "+%12,4" / "−%3,1". Eksi işareti tipografik (U+2212),
+  /// ekrandaki kartla aynı.
+  static String _isaretli(double v) => '${v >= 0 ? '+' : '−'}%${_yuzde(v)}';
 
   /// Paylaşım metninin ÇEKİRDEĞİ — tek kaynak.
   ///
@@ -265,12 +276,25 @@ class RecapService {
   ///
   /// [baslik] "sandık Özetim 2026" ya da "sandık · Bu ay" gibi tek satır.
   /// Yıl DIŞINDA dört haneli sayı içermemeli, yoksa tutar sanılır.
+  ///
+  /// ## Zengin satırlar (2026-09-16)
+  /// Kartla AYNI kaynaktan beslenen ek satırlar: reel getiri, en iyi / en
+  /// zayıf varlık, artıda kapanan gün oranı, yıllıklandırılmış getiri.
+  /// Hepsi yüzde ya da gün sayısı — tutar kuralı değişmedi. Varlık adı
+  /// olduğu gibi yazılır; adında dört haneli sayı olan bir varlık
+  /// (ör. bir vade yılı) metinde tutar sanılabilir, ama adı kırpmak onu
+  /// tanınmaz kılardı — bilinçli tercih.
   static String composeShareText({
     required String baslik,
     PortfolioCharacter? karakter,
     double? degisimPct,
     String degisimEtiketi = 'Portföy değişimi',
     double? enflasyonPuan,
+    double? reelGetiriPct,
+    RecapAsset? enIyi,
+    RecapAsset? enZayif,
+    ({int artida, int toplam})? gunSayimi,
+    double? xirrPct,
     int? takipGunu,
   }) {
     final satirlar = <String>[baslik, ''];
@@ -279,13 +303,27 @@ class RecapService {
       satirlar.add('${karakter.label} — ${karakter.tagline}');
     }
     if (degisimPct != null) {
-      final yon = degisimPct >= 0 ? '+' : '−';
-      satirlar.add('$degisimEtiketi: $yon%${_yuzde(degisimPct)}');
+      satirlar.add('$degisimEtiketi: ${_isaretli(degisimPct)}');
     }
     if (enflasyonPuan != null) {
+      final reel =
+          reelGetiriPct == null ? '' : ' (reel ${_isaretli(reelGetiriPct)})';
       satirlar.add(enflasyonPuan >= 0
-          ? 'Enflasyonun ${_yuzde(enflasyonPuan)} puan önündeyim'
-          : 'Enflasyonun ${_yuzde(enflasyonPuan)} puan gerisindeyim');
+          ? 'Enflasyonun ${_yuzde(enflasyonPuan)} puan önündeyim$reel'
+          : 'Enflasyonun ${_yuzde(enflasyonPuan)} puan gerisindeyim$reel');
+    }
+    if (xirrPct != null) {
+      satirlar.add('Yıllıklandırılmış getiri (XIRR): ${_isaretli(xirrPct)}');
+    }
+    if (enIyi != null) {
+      satirlar.add('En iyi: ${enIyi.name} ${_isaretli(enIyi.changePct)}');
+    }
+    if (enZayif != null) {
+      satirlar.add('En zayıf: ${enZayif.name} ${_isaretli(enZayif.changePct)}');
+    }
+    if (gunSayimi != null && gunSayimi.toplam > 0) {
+      satirlar.add(
+          '${gunSayimi.toplam} işlem gününün ${gunSayimi.artida}\'i artıda');
     }
     if (takipGunu != null && takipGunu > 0) {
       satirlar.add('$takipGunu gün takip ettim');
@@ -305,6 +343,8 @@ class RecapService {
         karakter: d.character,
         degisimPct: d.changePct,
         enflasyonPuan: d.inflationSpread,
+        enIyi: d.bestAsset,
+        enZayif: d.worstAsset,
         takipGunu: d.trackedDays,
       );
 }

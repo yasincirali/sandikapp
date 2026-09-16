@@ -191,6 +191,16 @@ void main() {
       expect(d.bestAsset, isNull);
       expect(d.typeCount, 0);
     });
+
+    test('valueByType kartın dağılım şeridi için dolu — TRY değerle', () {
+      final d = run(assets: [
+        _lot(id: 'a', type: AssetType.altin, quantity: 3, currentPrice: 100),
+        _lot(id: 'b', type: AssetType.hisse, quantity: 1, currentPrice: 100),
+      ]);
+      expect(d.valueByType[AssetType.altin], closeTo(300, 1e-9));
+      expect(d.valueByType[AssetType.hisse], closeTo(100, 1e-9));
+      expect(run().valueByType, isEmpty);
+    });
   });
 
   group('enflasyon farkı', () {
@@ -250,6 +260,53 @@ void main() {
       final metin = RecapService.shareText(run(), year: 2026);
       expect(metin.contains('Portföy değişimi'), isFalse);
       expect(metin.contains('Enflasyonun'), isFalse);
+      expect(metin.contains('En iyi'), isFalse);
+      expect(metin.contains('En zayıf'), isFalse);
+    });
+
+    test('en iyi / en zayıf varlık metne girer — ömürlük yüzdeyle', () {
+      final d = run(assets: [
+        _lot(id: 'a', type: AssetType.hisse, name: 'THYAO',
+            purchasePrice: 100, currentPrice: 180),
+        _lot(id: 'b', type: AssetType.hisse, name: 'SISE',
+            purchasePrice: 100, currentPrice: 88),
+      ]);
+      final metin = RecapService.shareText(d, year: 2026);
+      expect(metin.contains('En iyi: THYAO +%80,0'), isTrue);
+      expect(metin.contains('En zayıf: SISE −%12,0'), isTrue);
+    });
+
+    test('composeShareText zengin satırlar — hepsi yüzde/gün, tutar yok', () {
+      final metin = RecapService.composeShareText(
+        baslik: 'sandık · Bu yıl',
+        degisimPct: 47.3,
+        degisimEtiketi: 'Piyasa getirim',
+        enflasyonPuan: 11.4,
+        reelGetiriPct: 8.34,
+        enIyi: const RecapAsset('THYAO', 82.15),
+        enZayif: const RecapAsset('SISE', -12.04),
+        gunSayimi: (artida: 132, toplam: 250),
+        xirrPct: 41.2,
+      );
+      expect(metin.contains('Piyasa getirim: +%47,3'), isTrue);
+      expect(metin.contains('Enflasyonun 11,4 puan önündeyim (reel +%8,3)'),
+          isTrue);
+      expect(metin.contains('Yıllıklandırılmış getiri (XIRR): +%41,2'), isTrue);
+      expect(metin.contains('En iyi: THYAO +%82,2'), isTrue);
+      expect(metin.contains('En zayıf: SISE −%12,0'), isTrue);
+      expect(metin.contains("250 işlem gününün 132'i artıda"), isTrue);
+      expect(metin.contains('₺'), isFalse);
+      expect(RegExp(r'\d{4,}').hasMatch(metin), isFalse);
+    });
+
+    test('reel getiri enflasyon satırı olmadan yazılmaz', () {
+      // Reel getiri TÜFE'nin türevi; TÜFE yoksa kuyruk da yok.
+      final metin = RecapService.composeShareText(
+        baslik: 'x',
+        degisimPct: 5,
+        reelGetiriPct: 2,
+      );
+      expect(metin.contains('reel'), isFalse);
     });
   });
 

@@ -371,9 +371,16 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     //
     // Metin null ise (ölçülebilir yüzde yok) buton HİÇ çizilmez: içinde tek
     // bir sayı olmayan bir kart paylaşılmaz.
+    //
+    // Seviye kapıları paylaşımda da geçerli (`gorunur` aşağıda): ekranda
+    // görünmeyen XIRR / düşüş / dilim karta ve metne de girmez — kullanıcı
+    // görmediği bir sayıyı paylaşmış olmasın.
+    final gorunur = seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider));
+    final xirrPaylasim = gorunur.xirr ? _xirr : null;
     final paylasimMetni = PeriodSummaryService.shareText(
       gosterilen,
       karakter: widget.karakter,
+      xirrPct: xirrPaylasim,
     );
 
     // Birikim kartı: saf hesap, her build'de yeniden kurulur. Ağa çıkmıyor
@@ -398,7 +405,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     // Yatırımcı seviyesi yalnızca GÖRÜNÜRLÜĞÜ değiştirir (bkz.
     // `seviyeGorunurlugu`): Başlangıç'ta sağlık/XIRR/yüzdelik çizilmez,
     // İleri'de ek kart gelir. Hesaplar seviyeden bağımsız yapılır.
-    final gorunur = seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider));
+    // (`gorunur` yukarıda, paylaşım metninden önce hesaplanıyor.)
 
     final saglik = widget.period == SummaryPeriod.birYil && gorunur.saglik
         ? SaglikKarti(
@@ -429,7 +436,13 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       percentileKatilimci: gorunur.percentile ? _dilim?.total : null,
       onShare: paylasimMetni == null
           ? null
-          : () => _paylas(paylasimMetni, gosterilen),
+          : () => _paylas(
+                paylasimMetni,
+                gosterilen,
+                xirrPct: xirrPaylasim,
+                drawdownPct: gorunur.saglik ? _drawdown?.yuzde : null,
+                percentile: gorunur.percentile ? _dilim?.percentile : null,
+              ),
       katkiKarti: katki == null
           ? null
           : ContributionKarti(
@@ -451,16 +464,42 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// Önizlemeli paylaşım (bkz. `showShareSheet`). Kart metinle AYNI
   /// kaynaktan kurulur (`gosterilen`: enflasyon bağlanmış özet) — ikisi
   /// ayrışmasın. Analytics sayfanın içinde, seçilen kanala göre yazılır.
-  Future<void> _paylas(String metin, PeriodSummary gosterilen) {
+  ///
+  /// Kart, ekrandaki özetin TUTARSIZ ölçülerini taşır: yüzdeler, gün
+  /// sayıları, varlık adları ve dağılım ORANI. `dagilimSonu` TRY değer
+  /// taşır ama kart yalnızca payı çizer (`ShareCardData.dagilim` notu).
+  /// XIRR / düşüş / dilim seviye kapısından geçmiş hâliyle gelir.
+  Future<void> _paylas(
+    String metin,
+    PeriodSummary gosterilen, {
+    double? xirrPct,
+    double? drawdownPct,
+    int? percentile,
+  }) {
+    // Aralık gün-ay-yıl: kart bir GÖRSEL, metindeki "dört haneli sayı tutar
+    // sanılır" kaygısı burada yok — aksine "Bu yıl"ın takvim yılı değil son
+    // 12 ay olduğunu ancak aralık söyler.
+    final f = DateFormat('d MMM yyyy', 'tr_TR');
     return showShareSheet(
       context,
       data: ShareCardData(
         baslik: PeriodSummaryService.donemAdi(widget.period),
+        tarihAraligi: context.l10n
+            .shareCardRange(f.format(gosterilen.start), f.format(gosterilen.end)),
         degisimPct: gosterilen.getiriPct,
         degisimEtiketi: context.l10n.myMarketReturn,
         karakter: widget.karakter,
         enflasyonPuan: gosterilen.tufeFarki,
-        percentile: _dilim?.percentile,
+        reelGetiriPct: gosterilen.reelGetiriPct,
+        enIyi: gosterilen.enIyi,
+        enZayif: gosterilen.enZayif,
+        gunSayimi: gosterilen.gunSayimi,
+        percentile: percentile,
+        xirrPct: xirrPct,
+        drawdownPct: drawdownPct,
+        enSabirli: widget.enSabirli?.name,
+        enSabirliGun: widget.enSabirliGun,
+        dagilim: gosterilen.dagilimSonu ?? const {},
       ),
       metin: metin,
       subject: 'sandık · ${PeriodSummaryService.donemAdi(widget.period)}',

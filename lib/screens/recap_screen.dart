@@ -150,7 +150,14 @@ class _RecapScreenState extends State<RecapScreen> {
         degisimPct: d.changePct,
         karakter: d.character,
         enflasyonPuan: d.inflationSpread,
+        // Ömürlük getiri, döneme ait değil (bkz. `RecapData.bestAsset`) —
+        // kartta "En iyi" etiketi bu yüzden "yılın" demiyor.
+        enIyi: d.bestAsset,
+        enZayif: d.worstAsset,
+        enSabirli: d.mostPatient?.name,
+        enSabirliGun: d.mostPatientDays,
         takipGunu: d.trackedDays,
+        dagilim: d.valueByType,
       ),
       metin: metin,
       subject: context.l10n.recapShareTitle(widget.year),
