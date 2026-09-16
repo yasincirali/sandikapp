@@ -243,17 +243,29 @@ class PeriodSummaryService {
   static double netInflow(
     List<Asset> assets,
     DateTime start,
-    DateTime end,
-  ) {
-    final startMs =
-        dayKey(start).millisecondsSinceEpoch;
+    DateTime end, {
+    int? startExclusiveMs,
+  }) {
+    // [startExclusiveMs] verildiğinde gün yuvarlaması YAPILMAZ: sayım o
+    // damgadan SONRA başlar.
+    //
+    // Neden gerekli: taban (`u.first`) bir SLOT damgasında ölçülüyor ve o
+    // slotta zaten portföyde olan varlıklar (`addedDate <= slotTs`) tabanın
+    // içinde. Aynı günün erken saatindeki bir alım gün yuvarlamasıyla
+    // katkıya da girerse iki kez sayılır. Damga sınırı ikisini ayırır.
+    final startMs = startExclusiveMs ?? dayKey(start).millisecondsSinceEpoch;
     final endMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
         .millisecondsSinceEpoch;
 
     var total = 0.0;
     for (final a in assets) {
       final ms = a.addedDate.millisecondsSinceEpoch;
-      if (ms < startMs || ms > endMs) continue;
+      if (startExclusiveMs != null) {
+        if (ms <= startExclusiveMs) continue;
+      } else if (ms < startMs) {
+        continue;
+      }
+      if (ms > endMs) continue;
       total += flowOf(a);
     }
     return total;
@@ -551,7 +563,31 @@ class PeriodSummaryService {
       );
     }
 
-    final katki = netInflow(assets, p.start, p.end);
+    // Katkı, serinin GERÇEK ilk ölçümünden sayılır — `p.start`'tan değil.
+    //
+    // **Çifte sayım (kullanıcı bildirimi, 2026-09-16).** `u.first` serinin
+    // ilk DOLU slotudur ve pencere başından sonra olabilir: yeni kullanıcıda
+    // portföy o tarihte henüz boştur, ya da fiyat serisi o aralığı
+    // kapsamaz. İkisi ayrıştığında aradaki alımlar HEM `u.first` değerinin
+    // içinde (varlık o slotta zaten portföyde) HEM de `netInflow`'da
+    // sayılıyordu; formül onları iki kez düşüyordu.
+    //
+    // Ölçüldü: pencere 31.08.2025 başlıyor, seri 15.09.2025'te; 08.09'da
+    // alınan ₺195.879'luk altın iki kez sayılıp getiri %20,73 yerine
+    // −%7,30 çıkıyordu. Portföyü 4'e katlamış bir kullanıcı ana ekranda
+    // "enflasyonun 38,81 puan gerisindesin" görüyordu.
+    //
+    // Doğrusu: taban hangi ANDA ölçüldüyse katkı da o andan sonrasını
+    // saymalı. `u.firstTs` o an.
+    // Sınır DAMGA bazlı: `u.firstTs` slotunda zaten portföyde olan varlık
+    // (`addedDate <= slotTs`) tabanın içinde ve katkıya girmemeli; o
+    // damgadan sonraki alım ise gerçek bir katkıdır.
+    final katki = netInflow(
+      assets,
+      p.start,
+      p.end,
+      startExclusiveMs: u.firstTs,
+    );
     final brut = u.last - u.first;
     final piyasa = brut - katki;
 
