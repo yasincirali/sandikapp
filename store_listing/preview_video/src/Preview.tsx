@@ -17,6 +17,27 @@ import { PrivacyMask } from "./components/PrivacyMask";
 const F = SPEC.fps;
 
 /**
+ * ## İKİ KAYIT
+ *
+ * `kayit.mov`  (94 sn) — birinci çekim. Ana ekran + Performans/Özet
+ *                        yüzeyleri burada: TOPLAM VARLIK, enflasyon rozeti,
+ *                        reel getiri kartı, "Nereden geldi" çubukları.
+ * `kayit2.MP4` (77 sn) — ikinci çekim. İŞLEVSELLİK burada: varlık ekleme
+ *                        formu, alarm kurma, takip listesi ve endeks
+ *                        karşılaştırması (Portföyüm vs XU100 vs THYAO).
+ *
+ * Neden ikisi birden: ilk kurgu tek kayıttan yapıldı ve 20 saniyenin 13'ü
+ * tek ekranda (Performans) geçiyordu. İzleyici "bu uygulama ne yapıyor"
+ * sorusunun cevabını alamıyordu — ekleme, alarm, takip hiç görünmüyordu.
+ * İkinci çekim tam o eksikleri kapatıyor ama ana ekranla başlamıyor, yani
+ * enflasyon iddiası onda yok.
+ *
+ * Bu yüzden iddia birinci kayıttan, işlevsellik ikinciden alınıyor.
+ * Apple 2.3.4 buna izin verir: ikisi de AYNI uygulamanın ekran kaydı.
+ */
+const SRC2 = "shots/kayit2.MP4";
+
+/**
  * Sahne tablosu.
  *
  * `from`/`dur` — kurgudaki yeri (kare, 30 fps).
@@ -56,44 +77,22 @@ const SCENES = [
   {
     key: "rozet",
     from: 0,
-    // 3,4 sn: kayıtta scroll 3,5 sn'de başlıyor. Daha uzun tutulursa sahne
-    // kaydırmayı yakalıyor ve açılış karesi kayıyor.
-    dur: 3.4 * F,
+    dur: 3.2 * F,
     shot: "shots/01_ana.png",
-    // 0,9 sn: TOPLAM VARLIK kartı + rozet aynı karede duruyor.
-    //
-    // 1,5 sn denendi ve kadraj kaydı: kullanıcı ~3,5 sn'de scroll etmeye
-    // başlıyor, toplam kartı yukarı çıkıp kesiliyor. Sahne 4,5 sn sürdüğü
-    // için başlangıç geç alınırsa videonun EN KRİTİK karesi (toplam + rozet
-    // birlikte) hiç görünmüyor. 0,9 sn'de kayıt çubuğu da oturmuş oluyor.
+    // Kayıt 1 · 0,9 sn: TOPLAM VARLIK + enflasyon rozeti aynı karede.
     startFrom: Math.round(0.9 * F),
     text: "Enflasyonu geçtin mi?",
     highlight: "Enflasyonu",
     zoomTo: 1.05,
     speed: 1,
-    // Ana ekranda ortak seçici "Birlikte / Ben / Test" — "Test" gerçek
-    // hesap adı. Kurgusal adla örtülür (2.3.9).
-    //
-    // 0,647: 886×1920 render'ında segmentin ÜST kenarı (merkez y≈1287,
-    // yükseklik ≈86). İki kez still render'da ölçülerek düzeltildi —
-    // 0,695 boşluğa, 0,517 ortak kartına düşüyordu.
     maskTop: 0.647,
   },
   {
     key: "kanit",
-    from: 3.4 * F,
-    // 3,2 sn: kayıt bu sahnede scroll ediyor. Uzun tutulursa kadraj aşağı
-    // inip "Portföyünün %35'i Koç Holding içinde" satırını yakalıyor
-    // (gerçek veri, 2.3.9). Kart okunacak kadar duruyor, sonra kesiliyor.
-    dur: 3.2 * F,
+    from: 3.2 * F,
+    dur: 3.0 * F,
     shot: "shots/03_performans.png",
-    // 38,9 sn: reel getiri kartı ekranın ORTASINDA — %23,95 reel, nominal
-    // %63,00, TÜFE %31,51, +31,5 puan aynı karede.
-    //
-    // 38,6 denendi ve kadraj aşağı kayıp "Portföyünün %35'i Koç Holding
-    // içinde" satırını aldı — gerçek veri (2.3.9). Maskelemek yerine
-    // kadraj kaydırıldı: metin satırının ortasına yama koymak göze
-    // batıyordu, kartın kendisi zaten daha yukarıda duruyor.
+    // Kayıt 1 · 38,2 sn: reel %23,95 · nominal %63 · TÜFE %31,51 · +31,5 puan
     startFrom: Math.round(38.2 * F),
     text: "Nominal değil, reel getiri",
     highlight: "reel",
@@ -101,39 +100,59 @@ const SCENES = [
     speed: 1,
   },
   {
-    key: "nereden",
-    from: 6.6 * F,
-    dur: 4.6 * F,
-    shot: "shots/03_performans.png",
-    // 34 sn: "Nereden geldi" — Dönem başı / Katkın / Piyasa / Şimdi.
-    // Kurgunun en işlevsel karesi: katkı ile piyasayı AYIRIYOR.
-    startFrom: Math.round(34.2 * F),
-    text: "Katkın mı, piyasa mı?",
-    highlight: "piyasa",
-    zoomTo: 1.05,
+    key: "ekle",
+    from: 6.2 * F,
+    dur: 3.4 * F,
+    shot: "shots/02_portfoy.png",
+    // Kayıt 2 · 18,6 sn: fon arayıp ekleme formu — miktar, otomatik fiyat.
+    startFrom: Math.round(18.6 * F),
+    src: SRC2,
+    text: "Ekle, gerisini o halleder",
+    highlight: "gerisini",
+    zoomTo: 1.03,
+    // Form dolduruluyor; hafif hızlandırma tuş tuş beklemeyi toparlıyor.
+    speed: 1.25,
+  },
+  {
+    key: "alarm",
+    from: 9.6 * F,
+    dur: 3.2 * F,
+    shot: "shots/04_varlik.png",
+    // Kayıt 2 · 34,3 sn: "KCHOL için alarm kuruldu: ₺216,83 üstüne çıkınca"
+    // Onay şeridi kareye giriyor — kurulan alarmın SONUCU görünüyor.
+    startFrom: Math.round(34.3 * F),
+    src: SRC2,
+    text: "Hedefe gelince haber ver",
+    highlight: "haber",
+    zoomTo: 1.04,
     speed: 1,
   },
   {
-    key: "grafik",
-    from: 11.2 * F,
-    dur: 4.3 * F,
+    key: "takip",
+    from: 12.8 * F,
+    dur: 3.6 * F,
     shot: "shots/03_performans.png",
-    // 29,5 sn: 1Y grafiği + crosshair gezdirme. Etkileşimi gösteren tek yer.
-    startFrom: Math.round(29.5 * F),
-    text: "Zaman içinde ne kazandın",
-    highlight: "kazandın",
+    // Kayıt 2 · 67,8 sn: dört çizgi ve DÖRT LEJANT birlikte okunuyor —
+    // Portföyüm −%0,9 · ALTIN_GRAM −%2,2 · XU100 −%7,1 · THYAO −%9,3.
+    //
+    // Crosshair'li an (65,2) denendi ve BIRAKILDI: baloncuk kayıtta ancak
+    // ~1 saniye açık kalıyor, 3,6 saniyelik sahnenin çoğunda yok. Üstelik
+    // o kadrajda ortak seçici görünüyor ve maske gerekiyordu. 67,8'de
+    // seçici kaydırılıp kaybolmuş, ekran duruyor ve karşılaştırma
+    // lejanttan zaten okunuyor — maskeye de gerek kalmıyor.
+    startFrom: Math.round(67.8 * F),
+    src: SRC2,
+    text: "Endeksi geçiyor musun?",
+    highlight: "Endeksi",
     zoomTo: 1.03,
     speed: 1,
-    // Grafik sahnesinde seçici ekranın ÜSTÜNDE (merkez y≈312, yükseklik
-    // ≈86) — ana ekrandakinden çok daha yukarıda.
-    maskTop: 0.14,
   },
   {
     key: "dagilim",
-    from: 15.5 * F,
-    dur: 4.2 * F,
+    from: 16.4 * F,
+    dur: 3.4 * F,
     shot: "shots/05_dagilim.jpeg",
-    // 64,5 sn: donut'ta dilim seçimi — Fon → Altın geçişi canlı.
+    // Kayıt 1 · 64,5 sn: donut dilim seçimi — Fon → Altın geçişi canlı.
     startFrom: Math.round(64.5 * F),
     text: "Ağırlığın nerede",
     highlight: "nerede",
@@ -142,7 +161,7 @@ const SCENES = [
   },
 ] as const;
 
-const OUTRO_FROM = 19.7 * F;
+const OUTRO_FROM = 19.8 * F;
 
 export const Preview: React.FC = () => {
   return (
@@ -187,6 +206,7 @@ export const Preview: React.FC = () => {
                 startFrom={s.startFrom}
                 zoomTo={s.zoomTo}
                 speed={"speed" in s ? (s as { speed: number }).speed : 1}
+                src={"src" in s ? (s as { src: string }).src : undefined}
               />
               {"maskTop" in s ? (
                 <PrivacyMask topRatio={(s as { maskTop: number }).maskTop} />

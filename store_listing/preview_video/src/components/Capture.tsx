@@ -53,12 +53,13 @@ export const CAPTURE_START_SECONDS = 3;
  * senaryo gereği her dokunuştan sonra 1–2 sn bekledi). Kurguda o bekleme
  * ölü zaman; hafif hızlandırma akışı toparlıyor.
  */
-const RealCapture: React.FC<{ startFrom: number; speed?: number }> = ({
-  startFrom,
-  speed = 1,
-}) => (
+const RealCapture: React.FC<{
+  startFrom: number;
+  speed?: number;
+  src?: string;
+}> = ({ startFrom, speed = 1, src = "shots/kayit.mov" }) => (
   <OffthreadVideo
-    src={staticFile("shots/kayit.mov")}
+    src={staticFile(src)}
     startFrom={startFrom}
     playbackRate={speed}
     style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -117,10 +118,12 @@ export const Capture: React.FC<{
   startFrom: number;
   zoomTo?: number;
   speed?: number;
-}> = ({ shot, startFrom, zoomTo, speed }) => (
+  /** Hangi kayıt — varsayılan birinci çekim. Bkz. Preview.tsx İKİ KAYIT. */
+  src?: string;
+}> = ({ shot, startFrom, zoomTo, speed, src }) => (
   <AbsoluteFill>
     {HAS_CAPTURE ? (
-      <RealCapture startFrom={startFrom} speed={speed} />
+      <RealCapture startFrom={startFrom} speed={speed} src={src} />
     ) : (
       <PlaceholderShot src={shot} zoomTo={zoomTo} />
     )}
