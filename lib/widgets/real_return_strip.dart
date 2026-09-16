@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../providers/auth_provider.dart';
 import '../services/inflation_service.dart';
-import '../services/leaderboard_service.dart';
+import '../services/real_return_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -21,6 +21,11 @@ import '../l10n/l10n.dart';
 /// hesaplanabilmesi (yeterli geçmiş), ve `inflation_index` tablosunda hem
 /// başlangıç hem bitiş ayının bulunması. Biri eksikse rozet HİÇ çizilmez —
 /// eksik veriyle tahmin yürütmek, hesap yapmamaktan kötüdür.
+///
+/// **Sayı `RealReturnService`'ten gelir, yarış ROI'sinden DEĞİL** (2026-09-16):
+/// eskiden `LeaderboardService.computeROI` (simülasyon, nakit akışı yok)
+/// kullanılıyordu ve rozet Performans/paylaşım kartıyla farklı bir puan
+/// söylüyordu (5,7 önde / 1,0 geride). Artık üçü aynı hesabı okuyor.
 class RealReturnStrip extends ConsumerStatefulWidget {
   final List<Asset> myAssets;
   final double Function(double value, String currency) toTRY;
@@ -33,13 +38,13 @@ class RealReturnStrip extends ConsumerStatefulWidget {
     this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 0),
   });
 
-  /// Karşılaştırma penceresi.
+  /// Karşılaştırma penceresi — `RealReturnService.periodDays` (365).
   ///
   /// Bir yıl: enflasyon aylık yayımlandığı için kısa pencerede tek ayın
   /// gürültüsü sonucu belirler; yıllık pencere hem TÜİK'in "yıllık
   /// enflasyon" diliyle örtüşür hem de kullanıcının kafasındaki soruya
   /// ("bu yıl eridim mi") denk düşer.
-  static const periodDays = 365;
+  static const periodDays = RealReturnService.periodDays;
 
   @override
   ConsumerState<RealReturnStrip> createState() => _RealReturnStripState();
@@ -63,23 +68,17 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
     final me = ref.read(authProvider).valueOrNull;
     if (me == null) return;
 
-    // Enflasyon ÖNCE sorulur: tablo boşsa (olağan başlangıç durumu) pahalı
-    // olan ROI hesabına hiç girilmez.
-    final enflasyon = await InflationService.instance
-        .inflationForPeriod(RealReturnStrip.periodDays);
-    if (enflasyon == null || !mounted) return;
+    RealReturn? r;
+    try {
+      r = await RealReturnService.yillik(widget.myAssets);
+    } catch (_) {
+      // Rozet ikincil: seri kurulamazsa hiç çizilmez, ana ekran bozulmaz.
+      // (Eski ROI yolu da aynı sessiz sözleşmeyi taşıyordu.)
+      return;
+    }
+    if (r == null || !mounted) return;
 
-    final servis = LeaderboardService.instance;
-    final nominal = await servis.computeROI(
-      assets: widget.myAssets,
-      periodDays: RealReturnStrip.periodDays,
-      currentValueTRY: servis.totalValueTRY(widget.myAssets, widget.toTRY),
-      toTRY: widget.toTRY,
-      cacheKey: me.id,
-    );
-    if (nominal == null || !mounted) return;
-
-    setState(() => _veri = (nominal: nominal, inflation: enflasyon));
+    setState(() => _veri = (nominal: r!.nominal, inflation: r.inflation));
   }
 
   @override

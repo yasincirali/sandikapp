@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/inflation_service.dart';
+import '../services/real_return_service.dart';
 import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
@@ -147,7 +148,12 @@ class _RecapScreenState extends State<RecapScreen> {
       context,
       data: ShareCardData(
         baslik: context.l10n.myRecapYear(widget.year),
-        degisimPct: d.changePct,
+        // Kartın yüzdesi enflasyon satırıyla AYNI sayı (piyasa getirisi);
+        // seri yoksa portföy değişimi ve etiket ona göre.
+        degisimPct: d.marketReturnPct ?? d.changePct,
+        degisimEtiketi: d.marketReturnPct != null
+            ? context.l10n.myMarketReturn
+            : context.l10n.portfolioChange,
         karakter: d.character,
         enflasyonPuan: d.inflationSpread,
         // Ömürlük getiri, döneme ait değil (bkz. `RecapData.bestAsset`) —
@@ -349,7 +355,16 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
       // eksilir. Boş dönmek, özeti tamamen kaçırmaktan iyidir.
     }
 
-    final enflasyon = await InflationService.instance.inflationForPeriod(365);
+    final enflasyon = await InflationService.instance
+        .inflationForPeriod(RealReturnService.periodDays);
+
+    // Enflasyon karşılaştırması ana ekran rozetiyle AYNI sayıdan: nakit
+    // akışı düzeltmeli 1Y piyasa getirisi. Seri kurulamazsa yalnızca
+    // enflasyon sayfası eksilir.
+    double? piyasa;
+    try {
+      piyasa = await RealReturnService.yillikPiyasaGetirisi(state.assets);
+    } catch (_) {}
 
     final d = RecapService.compute(
       period: 'yearly',
@@ -358,6 +373,7 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
       toTRY: state.toTRY,
       now: simdi,
       inflationPct: enflasyon,
+      marketReturnPct: piyasa,
     );
     if (!mounted || !d.isMeaningful) return;
     setState(() => _veri = d);
