@@ -132,3 +132,18 @@ store_listing/ios/**/*.png
 tmp/
 # gen-l10n raporu (her üretimde yeniden yazılır)
 lib/l10n/untranslated.json
+
+# ── Remotion önizleme videosu (store_listing/preview_video/) ──────────────
+#
+# Kaynak izlenir (src/, scripts/, config, CEKIM_SENARYOSU.md ≈ 60 KB);
+# üretilen ve indirilen dosyalar izlenmez:
+#   node_modules/  702 MB — npm ci ile geri gelir
+#   out/            41 MB — render çıktısı
+#   public/shots/    5 MB — ham ekran kaydı (.mov), repoya girmez
+#
+# Dizin değil ÜRETİLEN hedeflenir: `preview_video/` komple yok sayılsaydı
+# git içine hiç bakmaz, senaryo ve kurgu kaynağı sessizce kaybolurdu —
+# store_listing/android/ için aynı tuzak yukarıda anlatılıyor.
+store_listing/preview_video/node_modules/
+store_listing/preview_video/out/
+store_listing/preview_video/public/shots/

@@ -1,0 +1,7 @@
+node_modules/
+out/
+# Ham ekran kaydı büyük ve kişisel veri içerebilir — repoya girmez
+public/shots/*.mov
+public/shots/*.mp4
+# Sentetik ses üretilebilir (npm run sfx), commit gereksiz
+public/sfx/

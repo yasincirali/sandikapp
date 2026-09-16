@@ -1,0 +1,22 @@
+{
+  "name": "sandik-app-preview",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts SandikPreview out/sandik_preview_iphone.mp4 --codec h264 --video-bitrate 11M --audio-codec aac --audio-bitrate 256k --overwrite",
+    "sfx": "node scripts/gen-sfx.mjs",
+    "render:ipad": "remotion render src/index.ts SandikPreviewIpad out/sandik_preview_ipad.mp4 --codec h264 --video-bitrate 11M --audio-codec aac --audio-bitrate 256k --overwrite"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.525",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.525"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
