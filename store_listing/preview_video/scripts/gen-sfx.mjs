@@ -118,8 +118,20 @@ function pad(durSec = 24.5) {
       v += Math.sin(2 * Math.PI * p.f * t) * p.a;
       v += Math.sin(2 * Math.PI * (p.f * 1.003) * t) * p.a * 0.6;
     }
-    // Çok yavaş genlik dalgalanması — "nefes"
-    v *= 0.55 + 0.45 * Math.sin(2 * Math.PI * 0.055 * t);
+    // Çok yavaş genlik dalgalanması — "nefes".
+    //
+    // Derinlik 0,45 → 0,14 (2026-09-16). Ölçülen arıza: 0,055 Hz'in
+    // periyodu 18,2 sn ve 24 sn'lik videoda çukur tam 12–14. saniyeye
+    // düşüyordu. Çarpan orada 0,10'a iniyor, yani pad SUSUYORDU: render
+    // edilen sesin saniyelik RMS'i 13. sn'de 81'e düşüp 19. sn'de 2890'a
+    // fırlıyordu (36× fark). İzleyici sesi kısık sanıp ya da kesinti var
+    // sanıp bırakıyor.
+    //
+    // "Nefes" etkisi korunuyor ama artık duyulabilir bir dalga, sessizlik
+    // değil: 0,86–1,00 arası. Tek bir LFO periyodunun videodan uzun
+    // olması sorunun kaynağıydı; derinliği kısmak periyodu değiştirmeden
+    // çözüyor ve pad'in karakterini bozmuyor.
+    v *= 0.86 + 0.14 * Math.sin(2 * Math.PI * 0.055 * t);
     // Giriş/çıkış fade
     const fadeIn = Math.min(1, t / 2.0);
     const fadeOut = Math.min(1, (durSec - t) / 2.5);
