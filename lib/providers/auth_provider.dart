@@ -304,3 +304,72 @@ final isPushAdminProvider = FutureProvider<bool>((ref) async {
   if (userId == null) return false;
   return SupabaseService.instance.isPushAdmin();
 });
+
+// ── Bekleyen ortaklık istekleri — TEK kaynak ─────────────────────────────────
+
+/// Onay bekleyen ortaklık istekleri.
+///
+/// ## Neden provider'a taşındı (kullanıcı bildirimi, 2026-09-16)
+///
+/// **Ölçülen arıza:** kullanıcı bildirimden gelen isteği onaylıyor, geri
+/// dönünce istek Profil ekranında DURMAYA devam ediyor; ikinci kez
+/// "Onayla"ya basınca "Bu davet zaten yanıtlanmış" hatası alıyor.
+///
+/// Sebep: iki ekran aynı listeyi AYRI AYRI tutuyordu.
+///   - `PartnershipRequestsScreen._pendingInvites`  (bildirimden açılan)
+///   - `profile_screen._PendingRequestsSectionState._pendingInvites`
+///
+/// Bildirim yolu ikinci ekranı birincinin ÜSTÜNE `push` ediyor. Üstteki
+/// ekranda onay verilince o kendi listesini tazeliyor, ama alttaki ekranın
+/// state'i dokunulmadan kalıyor — Navigator geri dönerken `initState`
+/// yeniden çalışmaz, `ForegroundPoller` da yalnızca uygulama arka plandan
+/// dönünce tetikleniyor (ekranlar arası geçişte değil).
+///
+/// Böylece kullanıcı SİLİNMİŞ bir daveti gösteren bayat bir kart görüyor.
+/// Ona basınca sunucu doğru davranıp 409 `already_processed` dönüyor —
+/// yani hata mesajı arızanın kendisi değil, SEMPTOMU. Sunucu tarafında
+/// yanlış bir şey yok (`accept-invite/index.ts` kabulde `used=true` yazıyor
+/// ve liste sorgusu `used=false` filtreliyor).
+///
+/// Tek kaynağa alınca her iki ekran aynı state'i izler: biri onayladığında
+/// öteki kendiliğinden güncellenir.
+class PendingInvitesNotifier
+    extends AsyncNotifier<List<Map<String, dynamic>>> {
+  @override
+  Future<List<Map<String, dynamic>>> build() async {
+    // Kullanıcı değişince (çıkış/giriş) liste kendiliğinden yeniden kurulur.
+    final user = ref.watch(authProvider).valueOrNull;
+    if (user == null) return const [];
+    return SupabaseService.instance.getPendingInvitesForMe(user.id);
+  }
+
+  /// Sunucudan tazele. Onay/ret sonrası ve elle çekmede çağrılır.
+  Future<void> refresh() async {
+    final user = ref.read(authProvider).valueOrNull;
+    if (user == null) {
+      state = const AsyncData([]);
+      return;
+    }
+    state = await AsyncValue.guard(
+      () => SupabaseService.instance.getPendingInvitesForMe(user.id),
+    );
+  }
+
+  /// Daveti listeden HEMEN düşür — sunucu turunu beklemeden.
+  ///
+  /// Onay/ret sonrası `refresh()` zaten çağrılıyor ama o bir ağ turu sürüyor;
+  /// o arada kart ekranda duruyor ve ikinci kez basılabiliyordu. Bu tam da
+  /// bildirilen arızanın oluştuğu aralık.
+  void kaldir(String inviteId) {
+    final mevcut = state.valueOrNull;
+    if (mevcut == null) return;
+    state = AsyncData(
+      mevcut.where((i) => i['id'] != inviteId).toList(growable: false),
+    );
+  }
+}
+
+final pendingInvitesProvider =
+    AsyncNotifierProvider<PendingInvitesNotifier, List<Map<String, dynamic>>>(
+  PendingInvitesNotifier.new,
+);

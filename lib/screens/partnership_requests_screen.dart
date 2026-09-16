@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
-import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/polling.dart';
@@ -28,15 +27,15 @@ class PartnershipRequestsScreen extends ConsumerStatefulWidget {
 
 class _PartnershipRequestsScreenState
     extends ConsumerState<PartnershipRequestsScreen> {
-  List<Map<String, dynamic>> _pendingInvites = [];
-  bool _loading = true;
+  // Liste `pendingInvitesProvider`'da — bu ekranın KENDİ kopyası YOK.
+  // Gerekçe provider'ın başında (iki ekran ayrı liste tutunca onaylanmış
+  // davet ötekinde kalıyordu).
   late final ForegroundPoller _poller =
       ForegroundPoller(interval: const Duration(seconds: 20), onTick: _load);
 
   @override
   void initState() {
     super.initState();
-    _load();
     _poller.start();
   }
 
@@ -46,34 +45,26 @@ class _PartnershipRequestsScreenState
     super.dispose();
   }
 
-  Future<void> _load() async {
-    final user = ref.read(authProvider).valueOrNull;
-    if (user == null) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      return;
-    }
+  Future<void> _load() => ref.read(pendingInvitesProvider.notifier).refresh();
 
-    final invites =
-        await SupabaseService.instance.getPendingInvitesForMe(user.id);
-
-    invites.sort((a, b) {
+  /// Bildirimden gelinen davet en üste.
+  List<Map<String, dynamic>> _sirali(List<Map<String, dynamic>> invites) {
+    final sorted = [...invites];
+    sorted.sort((a, b) {
       final aHighlighted = a['id'] == widget.highlightInviteId;
       final bHighlighted = b['id'] == widget.highlightInviteId;
       if (aHighlighted == bHighlighted) return 0;
       return aHighlighted ? -1 : 1;
     });
-
-    if (!mounted) return;
-    setState(() {
-      _pendingInvites = invites;
-      _loading = false;
-    });
+    return sorted;
   }
 
   Future<void> _accept(String inviteId) async {
     try {
       await ref.read(partnersProvider.notifier).acceptInvite(inviteId);
+      // Sunucu turunu BEKLEMEDEN düşür: `refresh()` bir ağ turu sürüyor ve
+      // o arada kart ekranda kalıp ikinci kez basılabiliyordu.
+      ref.read(pendingInvitesProvider.notifier).kaldir(inviteId);
       unawaited(AnalyticsService.instance.logPartnerInviteAccepted());
       unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
       await _load();
@@ -89,6 +80,7 @@ class _PartnershipRequestsScreenState
   Future<void> _reject(String inviteId) async {
     try {
       await ref.read(partnersProvider.notifier).rejectInvite(inviteId);
+      ref.read(pendingInvitesProvider.notifier).kaldir(inviteId);
       await _load();
       if (!mounted) return;
       // Reddetmek başarılı bir işlem; kırmızı zemin "hata" okunuyordu.
@@ -101,6 +93,10 @@ class _PartnershipRequestsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final invitesAsync = ref.watch(pendingInvitesProvider);
+    final loading = invitesAsync.isLoading && !invitesAsync.hasValue;
+    final pendingInvites = _sirali(invitesAsync.valueOrNull ?? const []);
+
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
@@ -120,12 +116,12 @@ class _PartnershipRequestsScreenState
               ),
             ),
             const SizedBox(height: 20),
-            if (_loading)
+            if (loading)
               const Padding(
                 padding: EdgeInsets.only(top: 40),
                 child: CustomLoadingView(),
               )
-            else if (_pendingInvites.isEmpty)
+            else if (pendingInvites.isEmpty)
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -150,7 +146,7 @@ class _PartnershipRequestsScreenState
                 ),
               )
             else
-              ..._pendingInvites.map(
+              ...pendingInvites.map(
                 (invite) => _ApprovalInviteCard(
                   invite: invite,
                   highlighted: invite['id'] == widget.highlightInviteId,

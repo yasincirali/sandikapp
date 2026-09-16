@@ -393,7 +393,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // takvim penceresi (26 Aralık–10 Ocak) ve verinin
                         // anlamlı olması. Yılın 11 ayı hiç görünmez.
                         const RecapBanner(),
-                        _PendingRequestsSection(userId: user?.id ?? ''),
+                        const _PendingRequestsSection(),
                         const SizedBox(height: 8),
                         SandikSectionHeader(title: context.l10n.partnerActionsUpper),
                         const SizedBox(height: 16),
@@ -853,8 +853,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 // ── Bekleyen onay istekleri (kod sahibine gösterilir) ─────────────────────────
 
 class _PendingRequestsSection extends ConsumerStatefulWidget {
-  final String userId;
-  const _PendingRequestsSection({required this.userId});
+  // `userId` parametresi KALDIRILDI: liste artık `pendingInvitesProvider`'dan
+  // geliyor ve o kullanıcıyı `authProvider`'dan okuyor. Parametre kalsaydı
+  // iki kaynak oluşur, çıkış/giriş sonrası biri eskiyebilirdi.
+  const _PendingRequestsSection();
 
   @override
   ConsumerState<_PendingRequestsSection> createState() =>
@@ -863,16 +865,24 @@ class _PendingRequestsSection extends ConsumerStatefulWidget {
 
 class _PendingRequestsSectionState
     extends ConsumerState<_PendingRequestsSection> {
-  List<Map<String, dynamic>> _pendingInvites = [];
-  // 5 sn sabit poll yerine 20 sn + arka planda durur. Davetler ayrıca
-  // realtime dinleyiciyle geliyor; bu yalnızca güvenlik ağı.
+  // Liste `pendingInvitesProvider`'da — bu bölümün KENDİ kopyası YOK.
+  //
+  // **Ölçülen arıza (kullanıcı bildirimi, 2026-09-16):** kullanıcı bildirimden
+  // gelen isteği onaylıyor, geri dönünce istek BURADA duruyordu; ikinci kez
+  // basınca "Bu davet zaten yanıtlanmış" hatası alıyordu. Bildirim yolu
+  // `PartnershipRequestsScreen`'i bu ekranın ÜSTÜNE push ediyor; orada onay
+  // verilince burası haberdar olmuyordu (`initState` geri dönüşte yeniden
+  // çalışmaz, `ForegroundPoller` yalnızca uygulama arka plandan dönünce
+  // tetikleniyor). Gerekçenin tamamı `pendingInvitesProvider`'da.
+  //
+  // Poller güvenlik ağı olarak kalıyor: aynı anda karşı taraf yeni bir istek
+  // gönderirse ekranı açık tutan kullanıcı 20 sn içinde görür.
   late final ForegroundPoller _poller =
       ForegroundPoller(interval: const Duration(seconds: 20), onTick: _load);
 
   @override
   void initState() {
     super.initState();
-    _load();
     _poller.start();
   }
 
@@ -882,22 +892,18 @@ class _PendingRequestsSectionState
     super.dispose();
   }
 
-  Future<void> _load() async {
-    if (widget.userId.isEmpty) return;
-    final invites =
-        await SupabaseService.instance.getPendingInvitesForMe(widget.userId);
-    if (mounted) setState(() => _pendingInvites = invites);
-  }
+  Future<void> _load() => ref.read(pendingInvitesProvider.notifier).refresh();
 
   Future<void> _showMsg(String msg, {bool isError = false}) =>
       _showPartnerMsg(context, msg, isError: isError);
 
   Future<void> _accept(Map<String, dynamic> invite) async {
     final kabulEdildi = context.l10n.partnershipAccepted;
+    final inviteId = invite['id'] as String;
     try {
-      await ref
-          .read(partnersProvider.notifier)
-          .acceptInvite(invite['id'] as String);
+      await ref.read(partnersProvider.notifier).acceptInvite(inviteId);
+      // Sunucu turunu beklemeden düşür — o aralıkta kart basılabilir kalıyordu.
+      ref.read(pendingInvitesProvider.notifier).kaldir(inviteId);
       unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
       await _load();
       await _showMsg(kabulEdildi);
@@ -907,10 +913,10 @@ class _PendingRequestsSectionState
   }
 
   Future<void> _reject(Map<String, dynamic> invite) async {
+    final inviteId = invite['id'] as String;
     try {
-      await ref
-          .read(partnersProvider.notifier)
-          .rejectInvite(invite['id'] as String);
+      await ref.read(partnersProvider.notifier).rejectInvite(inviteId);
+      ref.read(pendingInvitesProvider.notifier).kaldir(inviteId);
       await _load();
     } catch (e) {
       await _showMsg(friendlyError(e), isError: true);
@@ -919,14 +925,16 @@ class _PendingRequestsSectionState
 
   @override
   Widget build(BuildContext context) {
-    if (_pendingInvites.isEmpty) return const SizedBox.shrink();
+    final pendingInvites =
+        ref.watch(pendingInvitesProvider).valueOrNull ?? const [];
+    if (pendingInvites.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SandikSectionHeader(title: context.l10n.pendingRequestsUpper),
         const SizedBox(height: 12),
-        ..._pendingInvites.map((invite) => _PendingInviteTile(
+        ...pendingInvites.map((invite) => _PendingInviteTile(
               invite: invite,
               onAccept: () => _accept(invite),
               onReject: () => _reject(invite),
