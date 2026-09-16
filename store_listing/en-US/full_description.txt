@@ -1,3 +1,16 @@
+Did your money grow, or did it just melt?
+
+If your portfolio gained 40% while inflation was 45%, your purchasing power went DOWN. Most trackers won't tell you that — sandik will.
+
+sandik puts your portfolio side by side with Turkey's official CPI: your nominal return, the period's inflation and the gap between them, each shown separately. Green if you beat inflation, red if you didn't.
+
+REAL RETURN AGAINST INFLATION
+
+• Your portfolio compared with CPI — 1 month, 6 months, 1 year
+• Nominal return, period CPI and the point difference, separately
+• Real return: what's left after inflation is stripped out
+• Data sourced from TurkStat/CBRT, not made up
+
 sandık is a personal portfolio tracker that lets you manage all your investments from one place.
 
 CORE FEATURES

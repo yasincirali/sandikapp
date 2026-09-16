@@ -1,3 +1,16 @@
+Paran arttı mı, yoksa sadece eridi mi?
+
+Portföyün %40 kazandırdı ama enflasyon %45 olduysa, alım gücün AZALDI. Çoğu takip uygulaması bunu söylemez — sandık söyler.
+
+sandık, portföyünü TÜİK'in açıkladığı TÜFE ile yan yana koyar: nominal getirin, dönem enflasyonu ve aradaki puan farkı ayrı ayrı görünür. Enflasyonu geçtiysen yeşil, geçemediysen kırmızı.
+
+ENFLASYONA KARŞI GERÇEK GETİRİ
+
+• Portföyün TÜFE ile karşılaştırılır — 1 ay, 6 ay, 1 yıl
+• Nominal getiri, dönem TÜFE'si ve puan farkı ayrı ayrı
+• Reel getiri: enflasyon arındırıldıktan sonra kalan
+• Veri TÜİK/TCMB kaynaklı, uydurma değil
+
 Altın mı, dolar mı, hisse mi daha çok kazandırdı? sandık hepsini tek ekranda toplar ve sana tek bir şeyi net söyler: gerçekte ne kadar kazandın.
 
 Çoğu takip uygulaması alış fiyatını bugünkü fiyattan çıkarır ve buna "kâr" der. sandık komisyonu maliyete ekler, aldığın temettüyü kazanca yazar. Gördüğün rakam, cebindeki rakamdır.
