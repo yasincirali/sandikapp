@@ -5,7 +5,171 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-16 (TÜFE/nominal pencere hizalaması)
+**Son güncelleme:** 2026-09-17 (fiyat kaynağı sözleşmesi + tek çekim kapısı)
+
+---
+
+## ✅ KAPANDI — Grafik çekimleri üç ayrı kapıdan geçiyordu (timeout/tekilleştirme/negatif önbellek yok)
+
+**Ne.** Dört grafik yolu üç ayrı yerel closure ile çekim yapıyordu
+(`getHistorySafe`, `getHistorySafeFor`, `_fetchSafe`). Üçü de aynı işi
+yapıyor görünüyordu ama ayrışmışlardı ve her ayrışmanın ölçülebilir bir
+maliyeti vardı:
+
+1. **Timeout yalnızca birinde vardı.** 2026-09-13'te konan 8 saniyelik üst
+   sınır (`_grafikCekimSuresi`) yalnızca `_fetchSafe`'e uygulanmıştı; gün içi
+   ve günlük yollarda tek koruma alt katmandaki 15 saniyeydi. "Uzun süre
+   bekleyince geldi, kimse bu kadar beklemez" şikâyeti o yollarda hâlâ
+   geçerliydi — üstelik o tarihte yazılan test `.timeout(...)` metnini
+   dosyada bulduğu için YEŞİL görünüyordu.
+2. **Uçuşan istek tekilleştirmesi hiçbirinde yoktu.** Takip listesinde 10
+   satır aynı anda `USDTRY=X` isterse 10 ayrı HTTP çağrısı gidiyordu.
+3. **Boş yanıt hatırlanmıyordu.** Veri vermeyen sembol her tazelemede
+   yeniden isteniyor ve her seferinde timeout'a kadar bekletiyordu; altın
+   kaynağının "bazen spot, bazen vadeli" savrulmasının yakıtı da buydu.
+
+**Çözüm.** Tek kapı: `HistoryService.seriCek` — önbellek (range'e göre TTL)
+→ negatif önbellek (60 sn) → uçuşan istek tekilleştirme → timeout → ölçüm.
+Tier yolu da ham noktaları aynı kapıdan alıyor, yani performans ekranı,
+karşılaştırma ve takip listesi aynı sembol+range+interval için tek istek
+paylaşıyor. Kapı `seriCekici` ile enjekte edilebilir; davranış ağa çıkmadan
+ölçülüyor (`test/seri_cekim_kapisi_test.dart`, `fake_async`).
+
+---
+
+## 🟡 AÇIK — Fiyat kaynağı sözleşmesi kuruldu; CANLI kotasyon tarafı henüz dışarıda
+
+**Ne yapıldı (2026-09-17, kullanıcı kararı).** *"Tüm varlıklar her yerde tek
+kaynaktan ve tutarlı şekilde çekilmelidir."* Sözleşme
+`lib/services/fiyat_kaynagi.dart`'ta toplandı: sembol kararı
+(`seriSembolleri`), altın merdiveni (`altinGramSerisi`), ölçek hizalaması
+(`olcekCarpani`, `kurSerisiniHizala`, `altinKalibrasyonHaritasi`). Dört
+grafik yolu + sparkline oradan geçiyor; `fiyat_kaynagi_sozlesmesi_test`
+sözleşmenin dışına sızan ham sembolü ve uydurma kur sabitini tarıyor.
+
+**Kapanan üç ayrışma:**
+- sparkline altını `GC=F` (ons/USD şekli) çiziyordu → artık gram22k TL,
+- grafik yolları kur bulunamayınca `35.0`/`40.0` uyduruyordu → artık canlı
+  kur (oturumda görülen son gerçek değer), o da yoksa nokta seriye girmez,
+- kur serisi Yahoo mid'di, ekrandaki TL karşılığı truncgil `USD` (Alış) —
+  seri artık canlı kura hizalanıyor, yani USD kote bir hissede kâr/zarar
+  çipi ile grafiğin son noktası aynı sayıyı veriyor.
+
+**Neden hâlâ AÇIK.** `PriceService` CANLI kotasyon tarafının kendi
+merdivenini taşımaya devam ediyor (truncgil → er-api → Yahoo; altın anahtar
+tablosu `_truncgilGoldKeys`). Sözleşme dosyası şimdilik yalnızca SERİ
+tarafını yönetiyor; testteki sembol taraması bu yüzden `price_service.dart`
+için muaf. İki taraf ayrışırsa (ör. truncgil bir sembolü bırakır) yine
+sessiz bir sapma oluşur.
+
+**Ne zaman ele alınmalı.** `PriceService`'in kaynak seçimi sözleşmeye
+taşınırken; aynı turda sunucu tarafındaki eşi (`_shared/live_prices.ts`
+`GOLD_KEYS`) ile parite testi de yazılmalı (bkz. "Dış fiyat API'leri
+sessizce değişiyor" maddesi).
+
+**İlgili.** `test/fiyat_kaynagi_sozlesmesi_test.dart`, `CLAUDE.md` →
+"Fiyat kaynağı" kuralı.
+
+---
+
+## ✅ KAPANDI — Altın serisinin kaynağı istekten isteğe değişiyordu (ARALIKLI sapma)
+
+**Belirti (kullanıcı, 2026-09-17).** Altın grafiğinin son noktası sahte bir
+düşüş çiziyordu; ikinci bildirim kritik ipucuydu: **"Her zaman da olmuyor,
+şu anda düzeldi."** Kalıcı bir ölçek farkı bunu açıklamaz — aralıklı bir
+şey olmalıydı.
+
+**Kök sebep.** Altın serisi iki AYRI enstrümandan kurulabiliyordu:
+
+| Kaynak | Ne | Seviye |
+|---|---|---|
+| `XAUTRY=X` | spot altın, doğrudan TRY | referans |
+| `GC=F × USDTRY=X` | COMEX **vadeli** sözleşmesi | taşıma maliyeti kadar ÜSTÜNDE (~%1-2) + ikinci bir çevrim hatası |
+
+Merdiven **dört kopyaya ayrılmıştı**: yalnızca gün içi yolu spot'u tercih
+ediyordu; günlük, tier ve tek-sembol yolları vadeliyi TEK kaynak sayıyordu.
+Üstelik Yahoo `XAUTRY=X` için aralıklı olarak boş liste/404/429 döner ya da
+8 saniyelik `_grafikCekimSuresi` sınırını aşar — ve **boş yanıtlar
+önbelleğe alınmadığı için her tazelemede zar yeniden atılır.** Aynı grafik
+bir açılışta spot, beş dakika sonra vadeli ölçeğinde çiziliyordu. Serinin
+son noktası canlı (yurt içi) fiyata sabitlendiğinden fark "ŞİMDİ"
+imlecinde sahte bir düşüş oluyordu: bazen var, bazen yok.
+
+**Yanında çıkan ikinci sessiz sapma.** Vadeli çevrimde kur bulunamazsa iki
+uzun dönem yolu uydurma sabit kullanıyordu — `35.0` (günlük) ve `40.0`
+(tier). `USDTRY=X` düştüğü an altın serisi ~%17'ye varan sapmayla, hiçbir
+uyarı vermeden çiziliyordu. Gün içi yolunda bu sabit zaten kaldırılmıştı;
+diğer ikisi o dersin dışında kalmıştı (yine kopya sorunu).
+
+**Çözüm.** Merdiven tek yerde: `altinGramSerisi` (spot → vadeli, karışım
+yok, uydurma kur yok) ve dört yol da oradan geçiyor. `debugSonAltinKaynagi`
+hangi kaynağın kullanıldığını dışarıdan görülebilir yapıyor. Kalıcı makas
+için ikinci savunma hattı `altinKalibrasyonu` (aşağıdaki madde).
+
+**İlgili.** `test/altin_seri_kaynagi_test.dart`,
+`test/altin_grafik_gecikmesi_test.dart`.
+
+---
+
+## 🟡 AÇIK — Altında gün içi ŞEKİL uluslararası spot'tan, SEVİYE yurt içi kotasyondan
+
+**Ne.** Altın grafiği artık canlı fiyat ölçeğine kalibre ediliyor
+(`altinKalibrasyonu`): Yahoo'dan (`XAUTRY=X` / `GC=F`) gelen seri, sembol
+başına bir çarpanla truncgil kotasyonunun seviyesine taşınıyor. Yani
+çizginin **şekli** uluslararası spot'un, **seviyesi** yurt içi
+kotasyonundur.
+
+**Neden böyle (2026-09-17).** Yurt içi gram altının gün içi serisini veren
+bir kaynağımız yok; elimizde yalnızca ANLIK kotasyon var. Üç seçenekten:
+
+1. *Hiçbir şey yapmama.* Ölçülen arıza buydu: seri bir ölçekte ilerliyor,
+   son nokta canlı değere sabitlendiği için diğerine atlıyordu — kullanıcı
+   ekranında %1,7'lik, fiyat hareketi olmayan dik bir düşüş
+   (bildirim 2026-09-17, ekran görüntüsüyle).
+2. *Son noktayı canlı değerle ezmeyi bırakmak.* Grafiğin ucu ile kâr/zarar
+   çipi ve ana ekran toplamı ayrışırdı — bu projede tekrar eden ve her
+   seferinde güven kıran hata sınıfı.
+3. *Kalibrasyon* (seçilen): oransal olan her şey korunur (gün içi şekil,
+   dönem yüzdesi, MA20, RSI), yalnızca seviye hizalanır.
+
+**Maliyeti.** İki kalıntı var:
+- Gün içi "AÇILIŞ" değeri yurt içi açılış kotasyonu DEĞİL, bugünkü
+  çarpanla ölçeklenmiş uluslararası açılıştır. Günlük yüzde uluslararası
+  spot'un yüzdesidir; kuyumcu vitrinindeki yüzdeden birkaç onda bir puan
+  ayrışabilir.
+- Çarpan serinin son barından türetildiği için Yahoo'nun ~15 dakikalık
+  gecikmesi de seviyeye karışır; o gecikme içindeki gerçek hareket
+  grafikte küçük bir basamak olarak kalır (uçurum değil).
+
+**Ne zaman ele alınmalı.** Yurt içi gün içi altın serisi veren bir kaynak
+bulunursa (truncgil yalnızca anlık veriyor) kalibrasyon tümüyle gereksiz
+hale gelir — seri doğrudan doğru ölçekten gelir.
+
+**Ayrıca açık:** Takip listesi (`getSymbolHistory` → `watchlist_provider`)
+altın için hâlâ KALİBRESİZ (kaynak merdiveni artık ortak, ölçek
+kalibrasyonu değil), yani orada gösterilen gram altın fiyatı portföydekinden
+birkaç lira farklı olabilir. Bilerek dokunulmadı: o yol sembol bazlı ve saf
+geçmiş verisi; canlı kotasyon bağımlılığı eklemek aynı seriyi kullanan
+sinyal motorunu da ağ hatasına açar. Kullanıcı iki ekranda farklı fiyat
+bildirirse ilk iş burası.
+
+**Ayrıca açık (2):** Ana ekran kartlarındaki sparkline (`SparklineService`)
+altın için hâlâ `GC=F` çiziyor, yani TL değil ONS/USD eğrisi. Şekil 0..1
+normalize edildiği için ölçek sorunu yok ama TL'deki hareket (kur etkisi)
+görünmüyor. Tek satırlık bir değişiklik (`XAUTRY=X`) ama o sembolün
+aralıklı boş dönmesi burada yedeksiz kalır ve sparkline tümden kaybolur —
+`seriesFor` tek sembollü. Merdiveni buraya da taşımak gerekiyor.
+
+**Ayrıca açık (3):** Hangi kaynağın kullanıldığı yalnızca
+`debugSonAltinKaynagi` ile (test gözlemi) görülüyor; üretimde telemetri
+yok. Vadeliye düşüş SESSİZ bir bozulma: kullanıcı "bazen oluyor" demeden
+fark edilmiyor. "Dış fiyat API'leri sessizce değişiyor; kanarya yok"
+maddesiyle aynı aile — çözümü de aynı yerde (fallback'e düşünce Crashlytics
+non-fatal / analytics olayı).
+
+**İlgili.** `HistoryService.altinKalibrasyonu`,
+`altinKalibrasyonHaritasi`, `test/altin_grafik_olcek_kalibrasyonu_test.dart`,
+`test/altin_agirlik_carpani_parite_test.dart`.
 
 ---
 

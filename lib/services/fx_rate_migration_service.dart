@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/pref_keys.dart';
 import 'price_service.dart';
+import 'fiyat_kaynagi.dart';
 
 /// purchase_fx_rate = 1.0 olan non-TRY varlıklar için alım tarihindeki
 /// tarihsel kuru Yahoo Finance'ten çekip Supabase'e yazar.
@@ -19,7 +20,7 @@ class FxRateMigrationService {
   FxRateMigrationService._();
 
   static const _fxSymbolFor = {
-    'USD': 'USDTRY=X',
+    'USD': FiyatKaynagi.usdTry,
     'EUR': 'EURTRY=X',
     'GBP': 'GBPTRY=X',
   };

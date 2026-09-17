@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/asset_categories.dart';
 import 'tefas_service.dart';
+import 'fiyat_kaynagi.dart';
 
 /// Portföy serilerinin sanal ticker önekleri.
 ///
@@ -121,7 +122,7 @@ class SymbolSearchService {
 
     // Döviz — karşılaştırmada sık istenen pariteler.
     const fx = {
-      'USDTRY=X': 'Amerikan Doları',
+      FiyatKaynagi.usdTry: 'Amerikan Doları',
       'EURTRY=X': 'Euro',
       'GBPTRY=X': 'İngiliz Sterlini',
     };
@@ -149,7 +150,7 @@ class SymbolSearchService {
     // `getSymbolHistory` bunları USD kabul edip o günün kuruyla TRY'ye
     // çevirir.
     const commodities = {
-      'GC=F': 'Altın (Ons)',
+      FiyatKaynagi.xauUsd: 'Altın (Ons)',
       'SI=F': 'Gümüş (Ons)',
       'BZ=F': 'Petrol (Brent)',
       'CL=F': 'Petrol (WTI)',
@@ -266,7 +267,10 @@ class SymbolSearchService {
             ticker: 'XU100.IS', name: 'BIST 100 Endeksi', source: 'Endeks'),
         SymbolHit(
             ticker: 'ALTIN_GRAM', name: '22 Ayar Gram Altın', source: 'Altın'),
-        SymbolHit(ticker: 'USDTRY=X', name: 'Amerikan Doları', source: 'Döviz'),
+        SymbolHit(
+            ticker: FiyatKaynagi.usdTry,
+            name: 'Amerikan Doları',
+            source: 'Döviz'),
         SymbolHit(
             ticker: 'THYAO.IS', name: 'Türk Hava Yolları', source: 'BIST'),
         SymbolHit(ticker: 'GARAN.IS', name: 'Garanti BBVA', source: 'BIST'),

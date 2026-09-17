@@ -130,6 +130,31 @@ class PriceService {
   /// önbellek atlanır ve fiyatlar kaynaktan tazelenir.
   void invalidateQuoteCache() => _quoteCache.clear();
 
+  /// Bu oturumda GÖRÜLMÜŞ son canlı fiyatlar (sembol → TL/kotasyon).
+  ///
+  /// [_quoteCache]'ten farkı: TTL ile düşmez. Amacı "şu an taze mi" değil,
+  /// **"en son ölçülen gerçek değer neydi"**.
+  ///
+  /// ## Neden var
+  /// Grafik yolları kur bulunamadığında `35.0` / `40.0` gibi SABİTLER
+  /// kullanıyordu. Bu sayılar ölçüm değil; gerçek kurdan saptıkça portföyü
+  /// sessizce yanlış gösteriyorlardı (ölçülen en kötü hâl ~%17). Doğrusu
+  /// sırayla: (1) serinin kendi kuru, (2) bu oturumda görülen son canlı kur,
+  /// (3) hiçbiri yoksa noktayı ATLA.
+  ///
+  /// Ayrıca ekranın gösterdiği TL karşılığı (`PortfolioState.toTRY`) de bu
+  /// kurdan hesaplanır — seri buna hizalanınca (`kurSerisiniHizala`) grafiğin
+  /// son noktası ile kâr/zarar çipi aynı sayıyı verir.
+  final Map<String, double> _sonBilinenFiyat = {};
+
+  /// Bu oturumda görülmüş son canlı fiyat — yoksa `null` (uydurma YOK).
+  double? sonBilinenFiyat(String symbol) =>
+      _sonBilinenFiyat[symbol.trim().toUpperCase()];
+
+  /// Testler için: oturum belleğini sıfırlar.
+  @visibleForTesting
+  void sonBilinenFiyatlariTemizle() => _sonBilinenFiyat.clear();
+
   Future<Map<String, YahooQuote>> fetchQuotes(
     List<String> symbols, {
     bool forceRefresh = false,
@@ -245,8 +270,12 @@ class PriceService {
     // önbelleklenirse TTL boyunca hatalı fiyat gösterilir.
     final cachedAt = DateTime.now();
     for (final e in results.entries) {
-      if ((e.value.regularMarketPrice ?? 0) > 0) {
+      final p = e.value.regularMarketPrice ?? 0;
+      if (p > 0) {
         _quoteCache[e.key] = (quote: e.value, at: cachedAt);
+        // TTL'siz oturum belleği: grafik yolları kur/fiyat bulamadığında
+        // sabit uydurmak yerine buraya bakar (bkz. `sonBilinenFiyat`).
+        _sonBilinenFiyat[e.key] = p;
       }
     }
 

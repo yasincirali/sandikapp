@@ -4,6 +4,7 @@ import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../utils/tr_format.dart';
+import 'fiyat_kaynagi.dart';
 
 /// Yapıştırılan CSV/TSV metnini sepet kalemlerine çevirir — SAF, ağ yok.
 ///
@@ -213,11 +214,11 @@ class CsvImportService {
   /// BIST 4-6 harf (`.IS` olsun olmasın) → diğer.
   static AssetType inferType(String raw) {
     final t = raw.trim().toUpperCase();
-    if (const {'USD', 'EUR', 'GBP', 'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'}
+    if (const {'USD', 'EUR', 'GBP', FiyatKaynagi.usdTry, 'EURTRY=X', 'GBPTRY=X'}
         .contains(t)) {
       return AssetType.doviz;
     }
-    if (t.contains('ALTIN') || t.contains('ALTİN') || t == 'XAUTRY=X') {
+    if (t.contains('ALTIN') || t.contains('ALTİN') || t == FiyatKaynagi.xauTry) {
       return AssetType.altin;
     }
     final core = t.endsWith('.IS') ? t.substring(0, t.length - 3) : t;

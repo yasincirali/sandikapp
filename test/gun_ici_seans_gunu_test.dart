@@ -194,10 +194,10 @@ void main() {
       final src =
           await File('lib/services/history_service.dart').readAsString();
 
-      expect(src.contains("getHistorySafe('XAUTRY=X')"), isTrue,
+      expect(src.contains('getHistorySafe(FiyatKaynagi.xauTry)'), isTrue,
           reason: 'doğrudan TRY kaynağı birincil olmalı — kur çevrimi '
               'gerektirmez ve GC=F düşse bile altın düz çizgiye inmez');
-      expect(src.contains("getHistorySafe('GC=F')"), isTrue,
+      expect(src.contains('getHistorySafe(FiyatKaynagi.xauUsd)'), isTrue,
           reason: 'yedek kaynak korunmalı');
     });
 
@@ -205,20 +205,36 @@ void main() {
       // Eski yedek yol `closestOrNull(usdTrySlots, ts) ?? 40.0` yazıyordu.
       // Gerçek kurdan sapan bu sayı altını olduğundan ucuz/pahalı gösteren
       // yapay bir basamak üretir; slotu atlamak doğru davranıştır.
-      final src = File('lib/services/history_service.dart').readAsStringSync();
-      // Yalnızca GÜN İÇİ altın bloğu — günlük (period) yolunun kendi
-      // bloğu ayrıdır ve bu testin konusu değildir.
-      final bas = src.indexOf('// 1) XAU/TRY doğrudan');
-      final son =
-          src.indexOf('// Fiyat serileri yukarıda paralel başlatıldı');
-      expect(bas, greaterThan(0), reason: 'gün içi altın bloğu bulunamadı');
-      expect(son, greaterThan(bas));
+      //
+      // ## KURAL TAŞINDI (2026-09-17)
+      // Bu iki değişmez (uydurma kur yok + yedek yalnızca birincisi boşken)
+      // gün içi bloğunun içinde yaşıyordu ve uzun dönem yolları onları
+      // görmüyordu: orada `35.0` ve `40.0` sabitleri duruyor, spot kaynak
+      // hiç denenmiyordu. Kural artık `altinGramSerisi`'nde ve dört yol da
+      // oradan geçiyor. Test o tek yere bakar; davranışın kendisi
+      // `altin_seri_kaynagi_test.dart`'ta ölçülür.
+      // Merdiven `fiyat_kaynagi.dart`'a TAŞINDI (kaynak sözleşmesi).
+      final src = File('lib/services/fiyat_kaynagi.dart').readAsStringSync();
+      final imza = src.indexOf('}) altinGramSerisi({');
+      expect(imza, greaterThan(0), reason: 'altın kaynak merdiveni bulunamadı');
+      // Gövde parametre listesinden SONRA başlar (`}) {`), yoksa aşağıdaki
+      // "satır başındaki ilk `}`" araması parametre listesini kapatan
+      // parantezi bulur ve blok boş kalır.
+      final govde = src.indexOf('}) {', imza);
+      final son = src.indexOf('\n}', govde);
+      expect(son, greaterThan(govde));
+      final goldBlock = src.substring(govde, son);
 
-      final goldBlock = src.substring(bas, son);
       expect(goldBlock.contains('?? 40.0'), isFalse,
           reason: 'altın çevriminde uydurma kur kalmış');
-      expect(goldBlock.contains('if (goldSlots.isEmpty)'), isTrue,
-          reason: 'yedek kaynak yalnızca birincisi boşken çalışmalı');
+      expect(goldBlock.contains('35.0'), isFalse,
+          reason: 'altın çevriminde uydurma kur kalmış');
+      expect(goldBlock.contains('if (kur == null || kur <= 0) continue;'),
+          isTrue,
+          reason: 'kuru bilinmeyen nokta artık atlanmıyor');
+      // Yedek yol yalnızca spot yetersizken çalışır (karışım yok).
+      expect(goldBlock.contains('spotYeterli'), isTrue,
+          reason: 'yedek kaynak yalnızca birincisi boş/yetersizken çalışmalı');
     });
 
     test('CANLI altın yedeği portföyün bileşimine bağlı DEĞİL', () {

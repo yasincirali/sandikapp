@@ -58,7 +58,15 @@ void main() {
     test('birincil kaynak hâlâ TERCİH ediliyor', () {
       // Paralel başlatmak, önceliği değiştirmemeli: `XAUTRY=X` doluysa
       // `GC=F` sonucu kullanılmaz (kur çevrimi hatası eklemesin).
-      expect(servis.contains('if (goldSlots.isEmpty)'), isTrue,
+      //
+      // ## KURAL TAŞINDI (2026-09-17)
+      // Öncelik eskiden burada, gün içi yolunun içinde bir `if
+      // (goldSlots.isEmpty)` dalıydı. Uzun dönem yolları o dalı hiç
+      // görmediği için yalnızca `GC=F` çekiyordu — aynı altın, tabına göre
+      // iki ayrı ölçekte. Kural artık `altinGramSerisi` içinde ve dört yol da
+      // oradan geçiyor; testi de oraya bakacak şekilde güncellendi
+      // (`altin_seri_kaynagi_test.dart` davranışı doğrudan ölçüyor).
+      expect(servis.contains('altinGramSerisi('), isTrue,
           reason: 'Öncelik kuralı kaybolmuş — iki kaynak karışır.');
     });
   });

@@ -48,6 +48,11 @@ dev_dependencies:
   # yerel Supabase yığını. CI: .github/workflows/integration.yml
   integration_test:
     sdk: flutter
+  # Sahte zaman: `seri_cekim_kapisi_test` timeout davranışını 8 saniye
+  # BEKLEMEDEN ölçüyor. `flutter_test` bunu zaten geçişli olarak getiriyor
+  # ama doğrudan import edildiği için açıkça bildiriliyor
+  # (`depend_on_referenced_packages`).
+  fake_async: ^1.3.1
   # Build-time ikon üretici; runtime bağımlılığı değil (2026-09'da taşındı).
   flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0

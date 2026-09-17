@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import 'fiyat_kaynagi.dart';
 import 'price_service.dart';
 
 /// Varlık satırlarındaki mini trend grafiği (sparkline) için tek-sembol
@@ -53,12 +54,24 @@ class SparklineService {
         a.type == AssetType.fon;
   }
 
+  /// Altın serisinin önbellek anahtarı — gerçek bir Yahoo sembolü değil.
+  ///
+  /// Altın için tek bir sembol çekilmiyor: seri `fiyat_kaynagi.dart`
+  /// merdiveninden (spot → vadeli) geliyor ve sonuç gram22k TL oluyor.
+  static const String _altinAnahtari = 'ALTIN_GRAM22K';
+
   /// Yahoo/TEFAS sembolü. Altın iç sembolleri (`ALTIN_GRAM` vb.) gerçek bir
-  /// enstrüman değil; hepsi aynı ons eğrisini (GC=F) takip eder — ağırlık
+  /// enstrüman değil; hepsi aynı gram22k TL eğrisini takip eder — ağırlık
   /// çarpanı eğrinin ŞEKLİNİ değiştirmediği için normalize edilmiş
   /// sparkline'da çarpan uygulamaya gerek yok.
+  ///
+  /// **Eskiden burası doğrudan `GC=F` döndürüyordu** ve bu, uygulamanın geri
+  /// kalanıyla ayrışan DÖRDÜNCÜ altın kaynağıydı: ons/USD eğrisi. Kullanıcı
+  /// TL tutuyor; kurun hareket ettiği bir günde kart grafiği düz, portföy
+  /// satırı artıda görünebiliyordu. Kaynak sözleşmesi gereği (bkz.
+  /// `fiyat_kaynagi.dart`) artık burada da aynı merdiven kullanılıyor.
   static String? _symbolFor(Asset a) {
-    if (a.type == AssetType.altin) return 'GC=F';
+    if (a.type == AssetType.altin) return _altinAnahtari;
     final t = a.ticker.trim();
     return t.isEmpty ? null : t;
   }
@@ -124,7 +137,9 @@ class SparklineService {
 
   Future<List<double>> _fetch(String symbol) async {
     try {
-      final raw = await PriceService.instance.fetchHistory(symbol, _range);
+      final raw = symbol == _altinAnahtari
+          ? await _altinSerisi()
+          : await PriceService.instance.fetchHistory(symbol, _range);
       final series = normalize(raw);
       // Boş sonucu da cache'le: 404 veren sembol için her kaydırmada
       // yeniden ağa çıkmanın anlamı yok.
@@ -135,6 +150,40 @@ class SparklineService {
       _cache[symbol] = const [];
       return const [];
     }
+  }
+
+  /// Altının gram22k TL serisi — uygulamanın geri kalanıyla AYNI merdiven.
+  ///
+  /// Üç sembol de PARALEL başlar (bkz. `FiyatKaynagi.seriSembolleri`);
+  /// hangisinin kullanılacağına `altinGramSerisi` veri geldikten sonra
+  /// karar verir.
+  Future<List<(int, double)>> _altinSerisi() async {
+    Future<Map<int, double>> cek(String sym) async => {
+          for (final p
+              in await PriceService.instance.fetchHistory(sym, _range))
+            p.$1: p.$2,
+        };
+    final sonuc = await Future.wait([
+      cek(FiyatKaynagi.xauTry),
+      cek(FiyatKaynagi.xauUsd),
+      cek(FiyatKaynagi.usdTry),
+    ]);
+    final seri = altinGramSerisi(
+      xauTry: sonuc[0],
+      xauUsd: sonuc[1],
+      usdTry: sonuc[2],
+      kurBul: (kur, ts) {
+        if (kur.isEmpty) return null;
+        final keys = kur.keys.toList()..sort();
+        double? bulunan;
+        for (final k in keys) {
+          if (k <= ts) bulunan = kur[k];
+        }
+        return bulunan ?? kur[keys.first];
+      },
+    ).seri;
+    final keys = seri.keys.toList()..sort();
+    return [for (final k in keys) (k, seri[k]!)];
   }
 
   /// Ham (ts, price) noktalarını 0..1 aralığına indirger.

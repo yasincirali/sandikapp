@@ -147,6 +147,16 @@ const List<SurumNotu> surumNotlari = [
             'kaynağındaki bir değişiklik yüzünden bir süredir farklı bir '
             'ayardan okunuyordu; düzeltildi.',
       ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Altın grafiğindeki sahte düşüş gitti',
+        aciklama: 'Altın grafiğinin son noktası, olmayan bir düşüş gibi '
+            'aşağı iniyordu — üstelik bazen. Sebep iki ayrı fiyat '
+            'kaynağıydı: veri gelmediğinde grafik, spot altın yerine vadeli '
+            'sözleşmeye düşüyor ve tüm çizgi biraz yukarı kayıyordu. Artık '
+            'tüm dönem sekmeleri aynı kaynağı aynı sırayla kullanıyor ve '
+            'seri güncel fiyatın ölçeğine oturuyor.',
+      ),
     ],
   ),
 ];
