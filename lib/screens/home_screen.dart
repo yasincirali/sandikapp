@@ -90,18 +90,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ticker: alert.assetTicker,
             action: alert.signal.name,
           );
-          final asset = ref
-              .read(portfolioProvider)
-              .valueOrNull
-              ?.assets
-              .where((a) => a.id == alert.assetId)
-              .firstOrNull;
+          final assets = ref.read(portfolioProvider).valueOrNull?.assets;
+          final asset = assets?.where((a) => a.id == alert.assetId).firstOrNull;
           if (asset != null) {
+            // Portföy listesiyle AYNI nesne: pozisyon görünümü. Ham lot
+            // satış/silinmiş kayıtsa grafik boş kalır (bkz. `pozisyonGorunumu`).
+            final gorunum = pozisyonGorunumu(assets!, asset);
             Navigator.push(
               context,
               adaptiveRoute<void>(
-                  builder: (_) =>
-                      AssetDetailScreen(asset: asset, showBackButton: true)),
+                  builder: (_) => AssetDetailScreen(
+                        asset: gorunum?.asset ?? asset,
+                        lots: gorunum?.lots ?? [asset],
+                        showBackButton: true,
+                      )),
             );
           }
         },

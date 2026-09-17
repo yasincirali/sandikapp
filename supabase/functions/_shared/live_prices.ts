@@ -129,7 +129,42 @@ async function fetchTruncgil(): Promise<Record<string, unknown>> {
     signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) throw new Error(`Truncgil HTTP ${res.status}`);
-  return await res.json() as Record<string, unknown>;
+  return parseTruncgilBody(await res.text());
+}
+
+/// truncgil gövdesini ayrıştırır; KESİK gövdeden tam girişleri kurtarır.
+///
+/// `PriceService.parseTruncgilBody` ile AYNI kural — alarm, uygulamada
+/// görünen sayıyla tetiklenmeli.
+///
+/// 2026-09-17: truncgil `v4/today.json`'u 6.805 baytta kesik gönderiyor
+/// (`Content-Length` de kesik uzunlukta). `res.json()` reddediyor,
+/// `fetchLivePrices` altın/döviz için boş dönüyor ve o alarmlar her turda
+/// sessizce atlanıyordu (HTTP 200, hata yok). Gövde düz bir sözlük; kesim
+/// noktasına kadarki `"KEY":{...}` girişleri bütündür, tek tek kurtarılır.
+/// Gövde `{` ile başlamıyorsa (HTML hata sayfası) kurtarma DENENMEZ.
+export function parseTruncgilBody(body: string): Record<string, unknown> {
+  try {
+    const decoded = JSON.parse(body);
+    if (decoded && typeof decoded === 'object' && !Array.isArray(decoded)) {
+      return decoded as Record<string, unknown>;
+    }
+    throw new SyntaxError('truncgil: kök nesne değil');
+  } catch (e) {
+    if (!body.trimStart().startsWith('{')) throw e;
+    const out: Record<string, unknown> = {};
+    // İç içe süslü parantez yok — `[^{}]*` bir girişi tam sınırlarıyla yakalar.
+    for (const m of body.matchAll(/"([A-Za-z0-9_]+)"\s*:\s*(\{[^{}]*\})/g)) {
+      try {
+        const v = JSON.parse(m[2]);
+        if (v && typeof v === 'object') out[m[1]] = v;
+      } catch (_) {
+        // Girişin kendisi bozuksa atla; komşuları hâlâ kurtarılabilir.
+      }
+    }
+    if (Object.keys(out).length === 0) throw e;
+    return out;
+  }
 }
 
 /// Yahoo chart'tan tek sembolün son fiyatı.

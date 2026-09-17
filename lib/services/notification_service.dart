@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/asset.dart';
-import '../models/position.dart' show positionKey;
+import '../models/position.dart' show pozisyonGorunumu;
 import '../models/technical_signal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -627,17 +627,21 @@ class NotificationService {
       return;
     }
 
-    // Aynı pozisyonun tüm lot'ları — grafik üstündeki işlem marker'ları için.
-    // `positionKey` sahip taşımaz; ortak lot'ları AYRI tutulur.
-    final anahtar = positionKey(asset);
-    final lots = assets.where((a) => positionKey(a) == anahtar).toList();
+    // Ekrana PORTFÖY LİSTESİYLE AYNI nesne gider: pozisyonun net miktarlı
+    // görüntü varlığı + aktif lot'ları (marker'lar için). Eskiden ham lot
+    // veriliyordu; eşleşen lot bir satış ya da silinmiş kayıtsa
+    // `HistoryService` onu fiyatlamıyor ve grafik "veri çekilemedi"
+    // diyordu — aynı altın portföyden açılınca çiziliyordu (kullanıcı
+    // bildirimi 2026-09-17). Pozisyon kapalıysa (tamamı satılmış) ham
+    // lot'a düşülür: kullanıcı yine de kendi kaydını görebilmeli.
+    final gorunum = pozisyonGorunumu(assets, asset);
 
     navigator.push(
       adaptiveRoute<void>(
         builder: (_) => AssetDetailScreen(
-          asset: asset!,
+          asset: gorunum?.asset ?? asset!,
           showBackButton: true,
-          lots: lots,
+          lots: gorunum?.lots ?? [asset!],
           initialPeriodDays: initialPeriodDays,
         ),
       ),

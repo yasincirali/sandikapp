@@ -19,6 +19,7 @@ import {
 } from '../functions/check-price-alerts/index.ts';
 import {
   extractTruncgil,
+  parseTruncgilBody,
   parseTruncgilNumber,
   truncgilValue,
 } from '../functions/_shared/live_prices.ts';
@@ -182,4 +183,30 @@ Deno.test('kaynakta olmayan sembol atlanır, hata vermez', ()=>{
   const out = extractTruncgil({'USD':{'Buying':48.63}}, ['ALTIN_ATA','USDTRY=X']);
   assertEquals(out.has('ALTIN_ATA'), false);
   assertEquals(out.size, 1);
+});
+
+// ── kesik gövde kurtarma ────────────────────────────────────────────────
+// 2026-09-17: truncgil v4 gövdesi 6.805 baytta kesik geliyor; `res.json()`
+// reddedince altın/döviz alarmları her turda sessizce atlanıyordu.
+const TAM_GOVDE = '{"Update_Date":"2026-09-17 19:12:01",' +
+  '"USD":{"Buying":48.6717,"Type":"Currency","Selling":48.6767,"Change":0.04},' +
+  '"YIA":{"Buying":6212.28,"Type":"Gold","Name":"22AYARBILEZIK","Selling":6219.29,"Change":0.59},' +
+  '"GRAMPALADYUM":{"Buying":2019.87,"Type":"Palladium","Name":"GRAMPALADYUM","Selling":2028.42,"Change":1.43}}';
+
+Deno.test('parseTruncgilBody: tam gövde JSON.parse ile aynı', () => {
+  assertEquals(parseTruncgilBody(TAM_GOVDE), JSON.parse(TAM_GOVDE));
+});
+Deno.test('parseTruncgilBody: kesik gövdeden bütün girişler kurtarılır', () => {
+  const kesik = TAM_GOVDE.slice(0, TAM_GOVDE.indexOf('"Change":1.43'));
+  const d = parseTruncgilBody(kesik) as Record<string, Record<string, unknown>>;
+  assertEquals(d.USD.Buying, 48.6717);
+  assertEquals(d.YIA.Buying, 6212.28);
+  assertEquals('GRAMPALADYUM' in d, false, 'yarım giriş uydurulmamalı');
+  // Alarm hattı: kurtarılan gövdeden altın fiyatı okunabilmeli.
+  assertEquals(extractTruncgil(d, ['ALTIN_GRAM']).get('ALTIN_GRAM'), 6212.28);
+});
+Deno.test('parseTruncgilBody: HTML gövdede kurtarma denenmez', () => {
+  let hata = false;
+  try { parseTruncgilBody('<html>"USD":{"Buying":1}</html>'); } catch { hata = true; }
+  assertEquals(hata, true);
 });

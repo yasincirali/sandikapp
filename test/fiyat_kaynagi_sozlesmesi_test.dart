@@ -166,7 +166,10 @@ void main() {
           .listSync()
           .whereType<File>()
           .where((f) => f.path.endsWith('.dart')))
-        f.path: f.readAsStringSync(),
+        // Windows `lib/services\x.dart` döndürür; aşağıdaki muafiyet ve
+        // sözlük anahtarları `/` ile yazılı — normalize edilmezse test
+        // yalnızca Windows'ta düşer (CI Linux'ta geçerken).
+        f.path.replaceAll('\\', '/'): f.readAsStringSync(),
     };
 
     test('ham altın sembolü yalnızca sözleşme dosyasında geçer', () {

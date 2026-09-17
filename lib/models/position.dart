@@ -277,6 +277,29 @@ List<Asset> gosterilecekVarliklar(Iterable<Asset> assets) =>
         .map((p) => p.asDisplayAsset())
         .toList();
 
+/// [lot]'un ait olduğu AÇIK pozisyonun ekran görünümü: toplam miktarlı
+/// görüntü varlığı + pozisyonun aktif lot'ları. Pozisyon kapalıysa
+/// (tamamı satılmış / silinmiş) `null`.
+///
+/// ## Neden (2026-09-17, "alarmdan tıklayınca altın grafiği çizilmiyor")
+/// Varlık ekranı seriyi `getPortfolioHistory([asset])` ile, yani verilen
+/// TEK nesneden kurar. Portföy listesi ona `asDisplayAsset()` verir (net
+/// miktarlı sentetik alım). Bildirim ve derin bağlantı yolları ise ham
+/// DEFTERDEN sembolle eşleşen İLK lot'u veriyordu — o lot bir satış ya da
+/// silinmiş kayıt olabilir; `HistoryService` satışı tek başına fiyatlamaz
+/// (`isBuy` değil) ve seri boş döner: "veri çekilemedi". Aynı altın
+/// portföyden açılınca çiziliyordu, çünkü oradan pozisyon geliyordu.
+///
+/// İki giriş yolu aynı nesneyi vermeli; bu yardımcı o tek kaynaktır.
+({Asset asset, List<Asset> lots})? pozisyonGorunumu(
+    Iterable<Asset> assets, Asset lot) {
+  final anahtar = positionKey(lot);
+  for (final p in aggregatePositions(assets.toList())) {
+    if (p.key == anahtar) return (asset: p.asDisplayAsset(), lots: p.lots);
+  }
+  return null;
+}
+
 List<Position> aggregatePositions(List<Asset> assets) {
   final map = <String, List<Asset>>{};
   for (final a in assets) {

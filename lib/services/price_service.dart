@@ -307,8 +307,57 @@ class PriceService {
     if (res.statusCode != 200) {
       throw Exception('Truncgil HTTP ${res.statusCode}');
     }
-    return jsonDecode(res.body) as Map<String, dynamic>;
+    return parseTruncgilBody(res.body);
   }
+
+  /// truncgil gövdesini ayrıştırır; KESİK gövdeden tam girişleri kurtarır.
+  ///
+  /// ## Neden düz `jsonDecode` yetmiyor (2026-09-17, ölçüldü)
+  /// truncgil `v4/today.json`'u sunucu tarafında 6.805 baytta KESİK
+  /// gönderiyor (`Content-Length` de 6805; gövde `"Chang` ile bitiyor, gzip
+  /// istenince bağlantı kopuyor; üç ardışık istekte aynı). `jsonDecode`
+  /// bunu `FormatException` ile reddediyor ve birincil kaynak o turda
+  /// "düşmüş" sayılıyordu — yani yedek yol (Yahoo paritesi, ~%1,8 farklı
+  /// ölçek) devreye giriyordu. `OlcekHafizasi` o farkı örtüyor ama oranı
+  /// öğrenmek için en az bir birincil gözlem ister; kaynak kalıcı kesikse
+  /// hiç öğrenemez. Gövdeyi kurtarmak sorunu kaynağında kapatır: birincil
+  /// fiyat gerçekten elde olduğu sürece yedeğe hiç inilmez.
+  ///
+  /// Gövde DÜZ bir sözlüktür (`{"USD":{...},"EUR":{...},...}`, iç içe nesne
+  /// yok); kesik olsa da kesim noktasına kadarki girişler bütündür. USD ve
+  /// tüm altın anahtarları ilk ~6.400 baytta geliyor, yalnızca sondaki
+  /// (paladyum vb.) kayıp. Bu yüzden tam `"KEY":{...}` çiftleri tek tek
+  /// kurtarılır; yalnızca hiçbiri kurtarılamazsa ayrıştırma başarısız sayılır.
+  ///
+  /// Gövde `{` ile başlamıyorsa (HTML hata sayfası, boş yanıt) kurtarma
+  /// DENENMEZ — çöp sayfadan tesadüfen eşleşen bir çift fiyat üretmemeli.
+  /// Sunucu eşi: `_shared/live_prices.ts` → `parseTruncgilBody`.
+  @visibleForTesting
+  static Map<String, dynamic> parseTruncgilBody(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) return decoded;
+      throw const FormatException('truncgil: kök nesne değil');
+    } on FormatException {
+      if (!body.trimLeft().startsWith('{')) rethrow;
+      final out = <String, dynamic>{};
+      for (final m in _truncgilGirisDeseni.allMatches(body)) {
+        try {
+          final v = jsonDecode(m.group(2)!);
+          if (v is Map<String, dynamic>) out[m.group(1)!] = v;
+        } on FormatException {
+          // Girişin kendisi bozuksa atla; komşuları hâlâ kurtarılabilir.
+        }
+      }
+      if (out.isEmpty) rethrow;
+      return out;
+    }
+  }
+
+  /// `"KEY":{ ...düz alanlar... }` — iç içe süslü parantez YOK, o yüzden
+  /// `[^{}]*` bir girişi tam sınırlarıyla yakalar.
+  static final _truncgilGirisDeseni =
+      RegExp(r'"([A-Za-z0-9_]+)"\s*:\s*(\{[^{}]*\})');
 
   /// truncgil kaydından fiyat.
   ///
