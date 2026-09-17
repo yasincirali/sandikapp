@@ -66,4 +66,12 @@ class PrefKeys {
 
   /// Son bilinen varlık defteri (JSON); kullanıcı kimliği soneklenir.
   static const portfolioCachePrefix = 'portfolio_cache_v1_';
+
+  /// Mağaza değerlendirme istemi (`ReviewPromptService`). Cihaza özgü ve
+  /// kasıtlı: mağaza kotası cihaz+hesap başınadır, hesap değişince
+  /// sıfırlansaydı aynı telefona ikinci kez sorardık.
+  static const reviewDone = 'review_done'; // bool — "Değerlendir" seçildi
+  static const reviewLastAskedMs = 'review_last_asked_ms'; // int
+  static const reviewAskCount = 'review_ask_count'; // int
+  static const reviewFeedbackMs = 'review_feedback_ms'; // int — "Sorun var"
 }

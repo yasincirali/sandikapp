@@ -1685,3 +1685,31 @@ diyor; iki ses kaynağının hakkı **senin elinle** doğrulanmalı:
 Kalıcı iyileştirme (isteğe bağlı): kayıt hâlâ gerçek hesapla; "Test" ortak adı
 videoda "Ayşe" maskesiyle örtülü. Demo hesapla yeniden çekim
 (`CEKIM_SENARYOSU.md` §2) maskeyi gereksiz kılar.
+
+## 📈 Kurulum büyüme planı (2026-09-18)
+
+Plan ve haftalık ölçüm: `docs/KURULUM_BUYUME_PLANI_2026_09.md`, sıralama betiği
+`python tool/aso_siralama.py`. Elden yapılacak ilk adımlar (Faz 0, kod yok):
+
+- [ ] App Store Connect → Localizations → **Turkish** ekle; Türkçe metni oraya, `en-US/` metnini İngilizce alana taşı (şu an sayfa "Diller: İngilizce" gösteriyor, ikinci keyword alanı boş)
+- [ ] Subtitle: `Hisse, Fon, Altın Takibi`
+- [ ] Apple Search Ads marka kampanyası, exact match `sandık` / `sandik` / `sandık portföy` — "sandık" aramasında görünmemenin tek anında çözümü
+- [ ] Play Console başlığı `store_listing/tr-TR/title.txt` ile aynı mı kontrol et
+
+## ⭐ Mağaza değerlendirme istemi (2026-09-18) — kod bitti, iki elle iş
+
+Kodda varsayılanlar açık; bunlar yalnızca **uzaktan kapatabilmek** için:
+
+- [ ] Firebase Console → Remote Config → iki boolean parametre ekle:
+  `review_prompt_enabled` = true (tamamen kapatır),
+  `review_prompt_soft_gate` = true. **Play incelemesi "karttan önce soru
+  sormayın" der ve takılırsanız** `soft_gate`'i false yap → ön soru atlanır,
+  doğrudan sistem puan kartı açılır; yayın gerekmez.
+- [ ] Gerçek cihazda dene (emülatörde Play Store yok → mağaza sayfasına
+  düşer): Ayarlar → **sandık'ı değerlendir** satırı mağazayı açmalı.
+  Otomatik istemi görmek için kurulumdan ≥3 gün ve ≥3 aktif gün gerekir;
+  hemen görmek istersen `ReviewPromptService.instance.sifirla()` yetmez,
+  `retention_*` sayaçları da gerekir — TestFlight'ta doğal akışla bekle.
+- Ölçüm: Analytics `review_prompt` olayı, `action` = shown/later/feedback/review,
+  `moment` = kilometreTasi/paylasim/topluEkleme/settings. Hangi anın puana
+  dönüştüğü buradan okunur; dönüşmeyen an kaldırılır.

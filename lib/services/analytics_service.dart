@@ -253,6 +253,22 @@ class AnalyticsService {
   }) =>
       _log('milestone_reached', {'kind': kind, 'value': value});
 
+  /// Mağaza değerlendirme istemi hunisi.
+  ///
+  /// [action]: `shown` | `later` | `feedback` | `review`.
+  /// [moment]: `ReviewAni.name` ya da `settings`. Hangi anın puana
+  /// dönüştüğü buradan okunur; dönüşmeyen an listeden çıkarılır.
+  Future<void> logReviewPrompt({
+    required String action,
+    required String moment,
+    String? source,
+  }) =>
+      _log('review_prompt', {
+        'action': action,
+        'moment': moment,
+        if (source != null) 'source': source,
+      });
+
   Future<void> logPercentileViewed({
     required int bucket,
     required int periodDays,

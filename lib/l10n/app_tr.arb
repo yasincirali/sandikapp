@@ -2071,5 +2071,12 @@
   "notifTypeWeekly": "HAFTALIK",
   "notifTypeReminder": "HATIRLATMA",
   "notifToday": "Bugün {time}",
-  "@notifToday": {"placeholders": {"time": {"type": "String"}}}
+  "@notifToday": {"placeholders": {"time": {"type": "String"}}},
+  "reviewPromptTitle": "sandık'ı seviyor musun?",
+  "reviewPromptBody": "Kısa bir puan, uygulamanın daha çok yatırımcıya ulaşmasını sağlar. İstersen sonra da verebilirsin.",
+  "reviewPromptYes": "Evet, değerlendir",
+  "reviewPromptLater": "Sonra",
+  "reviewPromptIssue": "Bir sorun var",
+  "rateAppTitle": "sandık'ı değerlendir",
+  "rateAppSubtitle": "Mağazada puan ver"
 }

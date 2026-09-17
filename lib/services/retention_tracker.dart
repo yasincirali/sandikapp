@@ -73,6 +73,15 @@ class RetentionTracker {
     return fark < 0 ? 0 : fark; // cihaz saati geriye alınmışsa negatife düşme
   }
 
+  /// Şimdiye kadar sayılan aktif gün (günde bir kez artar).
+  ///
+  /// `ReviewPromptService` "fikri oluşmuş kullanıcı" kapısı için okur;
+  /// analytics'e giden kova ([aktifGunKovasi]) bunun türevidir.
+  Future<int> activeDayCount() async {
+    final prefs = await _p();
+    return prefs.getInt(_kActiveDayCount) ?? 0;
+  }
+
   /// Uygulama açılışını kaydeder.
   ///
   /// [source]: `cold` | `resume` | `push` | `widget` | `live_activity`.

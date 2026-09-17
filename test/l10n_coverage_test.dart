@@ -65,6 +65,9 @@ void main() {
     'lib/widgets/grafik_tipi_secici.dart': 0,
     'lib/widgets/h_scroll_with_fade.dart': 0,
     'lib/widgets/milestone_sheet.dart': 0,
+    // review_prompt_sheet: 2 literal e-posta İÇERİĞİ (konu + imza), UI
+    // metni değil; UI metinlerinin tamamı l10n'da.
+    'lib/widgets/review_prompt_sheet.dart': 2,
     'lib/widgets/modern_tab_selector.dart': 0,
     'lib/widgets/percentile_strip.dart': 0,
     'lib/widgets/portfolio_summary_widget.dart': 0,

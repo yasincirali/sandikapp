@@ -5,11 +5,13 @@ import '../models/asset_type.dart';
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/recap_service.dart' show PortfolioCharacter, RecapAsset;
+import '../services/review_prompt_service.dart';
 import '../services/share_card_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import 'review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
 
 /// Paylaşım kartının içeriği — TUTAR YOK.
@@ -738,9 +740,13 @@ Future<void> showShareSheet(
   required String metin,
   required String subject,
   required String analyticsPeriod,
-}) {
+}) async {
   final key = GlobalKey();
-  return showModalBottomSheet<void>(
+  // Sheet içinde bir paylaşım GERÇEKLEŞTİ mi — değerlendirme istemi bunu
+  // sheet kapandıktan sonra sorar. Sheet'in üstüne açmak iki katman
+  // modal olurdu; kullanıcı kartı kapatınca, ekranına dönmüşken sorulur.
+  var paylasildi = false;
+  await showModalBottomSheet<void>(
     context: context,
     backgroundColor: context.c.surface1,
     isScrollControlled: true,
@@ -753,8 +759,14 @@ Future<void> showShareSheet(
       metin: metin,
       subject: subject,
       analyticsPeriod: analyticsPeriod,
+      onPaylasildi: () => paylasildi = true,
     ),
   );
+  // Paylaşmak "gördüğümü göstermek istiyorum" demektir — memnuniyetin
+  // en somut işareti. Karar ve sıklık `ReviewPromptService`'te.
+  if (paylasildi && context.mounted) {
+    await ReviewPromptSheet.belkiGoster(context, ReviewAni.paylasim);
+  }
 }
 
 class _ShareSheet extends StatefulWidget {
@@ -763,6 +775,7 @@ class _ShareSheet extends StatefulWidget {
     required this.data,
     required this.metin,
     required this.subject,
+    required this.onPaylasildi,
     required this.analyticsPeriod,
   });
 
@@ -771,6 +784,9 @@ class _ShareSheet extends StatefulWidget {
   final String metin;
   final String subject;
   final String analyticsPeriod;
+
+  /// Görsel ya da metin paylaşımı hatasız tamamlandığında çağrılır.
+  final VoidCallback onPaylasildi;
 
   @override
   State<_ShareSheet> createState() => _ShareSheetState();
@@ -803,6 +819,7 @@ class _ShareSheetState extends State<_ShareSheet> {
         subject: widget.subject,
         origin: origin,
       );
+      widget.onPaylasildi();
     } catch (e, st) {
       // Crashlytics'e BİLDİR — yoksa hata yalnızca kullanıcının ekranında
       // bir saniye görünüp kayboluyordu. `friendlyError` tanımadığı
@@ -835,6 +852,7 @@ class _ShareSheetState extends State<_ShareSheet> {
         subject: widget.subject,
         origin: origin,
       );
+      widget.onPaylasildi();
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'share text');
       if (mounted) {

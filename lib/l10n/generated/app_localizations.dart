@@ -5209,6 +5209,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bugün {time}'**
   String notifToday(String time);
+
+  /// No description provided for @reviewPromptTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık\'ı seviyor musun?'**
+  String get reviewPromptTitle;
+
+  /// No description provided for @reviewPromptBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kısa bir puan, uygulamanın daha çok yatırımcıya ulaşmasını sağlar. İstersen sonra da verebilirsin.'**
+  String get reviewPromptBody;
+
+  /// No description provided for @reviewPromptYes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evet, değerlendir'**
+  String get reviewPromptYes;
+
+  /// No description provided for @reviewPromptLater.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonra'**
+  String get reviewPromptLater;
+
+  /// No description provided for @reviewPromptIssue.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir sorun var'**
+  String get reviewPromptIssue;
+
+  /// No description provided for @rateAppTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık\'ı değerlendir'**
+  String get rateAppTitle;
+
+  /// No description provided for @rateAppSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mağazada puan ver'**
+  String get rateAppSubtitle;
 }
 
 class _AppLocalizationsDelegate

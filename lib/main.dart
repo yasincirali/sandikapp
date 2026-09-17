@@ -46,11 +46,13 @@ import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
 import 'services/milestone_repository.dart';
 import 'services/milestone_service.dart';
+import 'services/review_prompt_service.dart';
 import 'services/retention_tracker.dart';
 import 'services/surface_theme.dart';
 import 'theme/sandik.dart';
 import 'widgets/sandik_error_view.dart';
 import 'widgets/milestone_sheet.dart';
+import 'widgets/review_prompt_sheet.dart';
 import 'widgets/widget_install_sheet.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
@@ -1026,6 +1028,14 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     await MilestoneRepository.markCelebrated();
     await repo.markShown(user.id, secilen);
     if (ctx.mounted) await MilestoneSheet.show(ctx, secilen);
+
+    // Kutlama KAPANDIKTAN sonra değerlendirme istemi. Kutlamanın üstüne
+    // binmez: iki sheet art arda, ikisi de kapatılabilir. Kullanıcı az önce
+    // "portföyün büyüdü" diye tebrik edildi — puan istemek için en doğru an
+    // budur; karar ve sıklık `ReviewPromptService`'te.
+    if (ctx.mounted) {
+      await ReviewPromptSheet.belkiGoster(ctx, ReviewAni.kilometreTasi);
+    }
   }
 
   String _bucketAssetCount(int n) {

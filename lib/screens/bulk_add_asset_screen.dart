@@ -7,6 +7,7 @@ import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
+import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
@@ -14,6 +15,7 @@ import 'add_asset_screen.dart';
 import 'csv_import_screen.dart';
 import 'paywall_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
 
 class BulkAddAssetScreen extends ConsumerStatefulWidget {
@@ -177,7 +179,27 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       // (MainNav → AddAssetScreen → BulkAddAssetScreen). Sadece kendini
       // kapatmak kullanıcıyı boş varlık ekleme formunda bırakıyordu.
       // Sonuç `AddAssetScreen`'e gider, o da kendini kapatır.
-      if (mounted) Navigator.of(context).pop(true);
+      //
+      // Değerlendirme istemi bu ekran KAPANDIKTAN sonra, kök navigator
+      // bağlamında sorulur: kullanıcı portföyünde yeni satırları görürken.
+      // Üç ve üzeri varlık eşiği bilinçli — bir-iki kalemlik ekleme
+      // "aracı kurumdan taşıdım" rahatlaması değil, gündelik iştir.
+      final sayi = items.length;
+      if (mounted) {
+        final rootCtx = Navigator.of(context, rootNavigator: true).context;
+        // İKİ pop art arda (bu ekran → AddAssetScreen → sekmeler) bitsin,
+        // ana ekran yerleşsin; hemen sormak kapanan ekranın üstüne sheet
+        // açardı. Süre yüzey geçişinin iki katı: iki geçiş var. Pop'tan
+        // ÖNCE okunur; sonrasında bu State'in bağlamı geçersiz.
+        final bekle = SandikMotion.surfaceOf(context) * 2;
+        Navigator.of(context).pop(true);
+        if (sayi >= 3) {
+          await Future<void>.delayed(bekle);
+          if (rootCtx.mounted) {
+            await ReviewPromptSheet.belkiGoster(rootCtx, ReviewAni.topluEkleme);
+          }
+        }
+      }
     } else {
       await showSandikDialog(
         context: context,

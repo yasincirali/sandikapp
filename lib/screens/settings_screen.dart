@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../config/destek.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../models/yatirimci_seviyesi.dart';
@@ -17,6 +18,7 @@ import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
 import '../widgets/yenilikler_sheet.dart';
 import '../services/surum_notu_service.dart';
+import '../services/review_prompt_service.dart';
 import '../services/data_export_service.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
@@ -81,7 +83,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// sürüm satırı). Yüklenene kadar null.
   String? _surum;
 
-  static const _supportEmail = 'sandikapp.destek@gmail.com';
+  static const _supportEmail = kDestekEposta;
 
   @override
   void initState() {
@@ -742,6 +744,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: context.l10n.contactUs,
               subtitle: _supportEmail,
               onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
+            ),
+            _SettingsTile(
+              icon: Icons.star_outline_rounded,
+              title: context.l10n.rateAppTitle,
+              subtitle: context.l10n.rateAppSubtitle,
+              // Kapı yok: kullanıcı bilerek geliyor. Otomatik istemi
+              // "Sonra" diye geçiştirdiyse puanı buradan verir.
+              onTap: () => ReviewPromptService.instance.magazayiAc(),
             ),
             _SettingsTile(
               icon: Icons.auto_awesome_outlined,

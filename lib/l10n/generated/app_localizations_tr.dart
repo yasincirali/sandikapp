@@ -3029,4 +3029,26 @@ class AppLocalizationsTr extends AppLocalizations {
   String notifToday(String time) {
     return 'Bugün $time';
   }
+
+  @override
+  String get reviewPromptTitle => 'sandık\'ı seviyor musun?';
+
+  @override
+  String get reviewPromptBody =>
+      'Kısa bir puan, uygulamanın daha çok yatırımcıya ulaşmasını sağlar. İstersen sonra da verebilirsin.';
+
+  @override
+  String get reviewPromptYes => 'Evet, değerlendir';
+
+  @override
+  String get reviewPromptLater => 'Sonra';
+
+  @override
+  String get reviewPromptIssue => 'Bir sorun var';
+
+  @override
+  String get rateAppTitle => 'sandık\'ı değerlendir';
+
+  @override
+  String get rateAppSubtitle => 'Mağazada puan ver';
 }

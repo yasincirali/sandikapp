@@ -123,6 +123,16 @@ class RemoteConfigService {
     // ekrana eklenen her satır dikkat bütçesinden yiyor ve geri alınabilir
     // olması gerekiyor.
     'period_summary_enabled': true,
+
+    // Mağaza değerlendirme istemi (`ReviewPromptService`). Kapatınca hiçbir
+    // mutlu anda sorulmaz; Ayarlar'daki elle satır bayraktan bağımsızdır.
+    'review_prompt_enabled': true,
+
+    // Ön soru ("sandık'ı seviyor musun?") gösterilsin mi. Google Play
+    // tasarım kılavuzu sistem kartından ÖNCE soru sormamayı önerir; mağaza
+    // incelemesinde takılırsa bayrak kapatılır ve doğrudan sistem kartı
+    // istenir — yayın beklemeden, aynı gün.
+    'review_prompt_soft_gate': true,
   };
 
   Future<void> init() async {
@@ -217,4 +227,12 @@ class RemoteConfigService {
   bool get periodSummaryEnabled =>
       _rc?.getBool('period_summary_enabled') ??
       _defaults['period_summary_enabled'] as bool;
+
+  bool get reviewPromptEnabled =>
+      _rc?.getBool('review_prompt_enabled') ??
+      _defaults['review_prompt_enabled'] as bool;
+
+  bool get reviewPromptSoftGate =>
+      _rc?.getBool('review_prompt_soft_gate') ??
+      _defaults['review_prompt_soft_gate'] as bool;
 }

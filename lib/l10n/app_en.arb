@@ -2071,5 +2071,12 @@
   "notifTypeWeekly": "WEEKLY",
   "notifTypeReminder": "REMINDER",
   "notifToday": "Today {time}",
-  "@notifToday": {"placeholders": {"time": {"type": "String"}}}
+  "@notifToday": {"placeholders": {"time": {"type": "String"}}},
+  "reviewPromptTitle": "Enjoying sandık?",
+  "reviewPromptBody": "A quick rating helps more investors find the app. You can always do it later.",
+  "reviewPromptYes": "Yes, rate it",
+  "reviewPromptLater": "Later",
+  "reviewPromptIssue": "Something's off",
+  "rateAppTitle": "Rate sandık",
+  "rateAppSubtitle": "Leave a rating on the store"
 }
