@@ -77,16 +77,32 @@ def version_open_for_builds?(version, api_key)
   app = Spaceship::ConnectAPI::App.find("com.sandik.app")
   return true if app.nil?
 
-  # Bu sürüm için App Store sürüm kaydı var mı ve düzenlenebilir mi?
-  # READY_FOR_SALE / PENDING_APPLE_RELEASE gibi durumlar train'i kapatır.
-  closed_states = %w[
-    READY_FOR_SALE
-    PENDING_APPLE_RELEASE
-    PENDING_DEVELOPER_RELEASE
-    PROCESSING_FOR_APP_STORE
-    IN_REVIEW
-    WAITING_FOR_REVIEW
-    REPLACED_WITH_NEW_INFO
+  # Bu sürüm için App Store sürüm kaydı var mı ve HÂLÂ build kabul ediyor mu?
+  #
+  # ## Liste neden TERS ÇEVRİLDİ (2026-09-17)
+  # Burada bir "kapalı durumlar" kara listesi vardı ve ASC durum adları
+  # değişince SESSİZCE yanlış cevap verdi: 1.1.4 onaylandıktan sonra sürüm
+  # `READY_FOR_SALE` değil `READY_FOR_DISTRIBUTION` oldu, liste bunu
+  # tanımadı, sürüm "açık" sayıldı ve upload şu hatayla reddedildi:
+  #
+  #   Invalid Pre-Release Train. The train version '1.1.4' is closed
+  #   for new build submissions (90186)
+  #   ... must contain a higher version than the previously approved [1.1.4]
+  #
+  # Kara liste bu iş için YANLIŞ araç: Apple'ın eklediği her yeni durum adı
+  # "açık" tarafına düşer ve derleme kırılır. Beyaz liste tersini yapar —
+  # tanımadığımız durum "kapalı" sayılır, patch bir artar ve upload geçer.
+  # En kötü maliyeti bir sürüm numarası atlamak; alternatifin maliyeti
+  # başarısız bir TestFlight derlemesi.
+  #
+  # Düzenlenebilir (yani hâlâ build kabul eden) durumlar:
+  editable_states = %w[
+    PREPARE_FOR_SUBMISSION
+    DEVELOPER_REJECTED
+    REJECTED
+    METADATA_REJECTED
+    INVALID_BINARY
+    WAITING_FOR_EXPORT_COMPLIANCE
   ]
   versions = app.get_app_store_versions(
     filter: { versionString: version },
@@ -94,7 +110,11 @@ def version_open_for_builds?(version, api_key)
   )
   return true if versions.nil? || versions.empty?
 
-  versions.none? { |v| closed_states.include?(v.app_store_state) }
+  durumlar = versions.map(&:app_store_state)
+  acik = durumlar.all? { |d| editable_states.include?(d) }
+  UI.message("ASC sürüm #{version} durumu: #{durumlar.join(', ')} → " \
+             "#{acik ? 'açık' : 'KAPALI (patch artacak)'}")
+  acik
 rescue StandardError => e
   # ASC sorgusu başarısız olursa sürümü "açık" kabul et: yanlışlıkla
   # sürüm atlamaktansa upload'ın kendi hatasını vermesi daha iyi.
@@ -368,30 +388,39 @@ platform :ios do
 
     # 4) Flutter release build (workflow build_ios adımından geliyor;
     #    burada sadece gym ile Xcode archive + export yapılır)
-    build_app(
-      workspace: "Runner.xcworkspace",
-      scheme: "Runner",
-      configuration: "Release",
-      export_method: "app-store",
-      export_options: {
-        provisioningProfiles: {
-          "com.sandik.app" => "match AppStore com.sandik.app",
-          # Uzantı da export haritasında olmalı; eksikse `gym` .ipa'yı
-          # paketlerken uzantı için profil bulamaz.
-          "com.sandik.app.SandikWidget" =>
-            "match AppStore com.sandik.app.SandikWidget"
-        }
-      },
-      output_directory: "./build",
-      output_name: "sandik.ipa",
-      clean: true,
-      silent: false,
-      suppress_xcode_output: false,
-      # OTHER_CODE_SIGN_FLAGS: codesign'a hangi keychain'i kullanacağını
-      # açıkça söyler. Bu olmadan arama sırası `login` keychain'e düşebilir
-      # ve yeniden parola istemi tetiklenir.
-      xcargs: is_ci ? "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_path}'" : nil
-    )
+    # Derleme TEK TANIM: aşağıdaki "kapalı train" yeniden denemesi de bunu
+    # çağırır. İki ayrı `build_app` çağrısı tutmak bu projede tekrar eden
+    # hata sınıfı — ilk kopyada duran `configuration`, `clean` ve keychain
+    # bayrağı ikincisinde eksik kalır ve yeniden deneme imzasız/yanlış
+    # yapılandırmada derlerdi.
+    derle = lambda do
+      build_app(
+        workspace: "Runner.xcworkspace",
+        scheme: "Runner",
+        configuration: "Release",
+        export_method: "app-store",
+        export_options: {
+          provisioningProfiles: {
+            "com.sandik.app" => "match AppStore com.sandik.app",
+            # Uzantı da export haritasında olmalı; eksikse `gym` .ipa'yı
+            # paketlerken uzantı için profil bulamaz.
+            "com.sandik.app.SandikWidget" =>
+              "match AppStore com.sandik.app.SandikWidget"
+          }
+        },
+        output_directory: "./build",
+        output_name: "sandik.ipa",
+        clean: true,
+        silent: false,
+        suppress_xcode_output: false,
+        # OTHER_CODE_SIGN_FLAGS: codesign'a hangi keychain'i kullanacağını
+        # açıkça söyler. Bu olmadan arama sırası `login` keychain'e düşebilir
+        # ve yeniden parola istemi tetiklenir.
+        xcargs: is_ci ? "OTHER_CODE_SIGN_FLAGS='--keychain #{keychain_path}'" : nil
+      )
+    end
+
+    derle.call
 
     # 5) dSYM'leri Crashlytics'e yükle — SEMBOLİZASYON İÇİN ŞART.
     #
@@ -459,12 +488,50 @@ platform :ios do
     end
 
     # 6) TestFlight upload
-    upload_to_testflight(
-      api_key: api_key,
-      ipa: "./build/sandik.ipa",
-      skip_waiting_for_build_processing: true,
-      changelog: testflight_changelog(next_build_number)
-    )
+    #
+    # ## Kapalı train'e karşı SON SAVUNMA (2026-09-17)
+    # Yukarıdaki ASC sorgusu sürümün açık olduğunu söylese bile upload
+    # reddedilebiliyor (durum adları değişir, sorgu düşer, yarış olur).
+    # O noktada elde imzalı bir IPA var ama sürüm numarası yanlış: tek
+    # çözüm sürümü artırıp YENİDEN derlemek.
+    #
+    # Sessizce kırılmak yerine bir kez bunu deniyoruz — "TestFlight'a at"
+    # komutunun elle müdahale istemesi, bu projede tekrar eden bir zaman
+    # kaybıydı. İkinci denemede de reddedilirse hata olduğu gibi yükselir.
+    kapali_train = lambda do |e|
+      m = e.message.to_s
+      m.include?("90186") || m.include?("90062") ||
+        m.include?("closed for new build submissions") ||
+        m.include?("must contain a higher version")
+    end
+
+    begin
+      upload_to_testflight(
+        api_key: api_key,
+        ipa: "./build/sandik.ipa",
+        skip_waiting_for_build_processing: true,
+        changelog: testflight_changelog(next_build_number)
+      )
+    rescue StandardError => e
+      raise unless kapali_train.call(e)
+
+      yeni_surum = next_open_version(
+        flutter_version_name.split(".").tap { |p| p[2] = (p[2].to_i + 1).to_s }.join("."),
+        api_key
+      )
+      UI.important(
+        "Upload kapalı train yüzünden reddedildi. Sürüm #{yeni_surum} ile " \
+        "YENİDEN derleniyor (tek deneme)."
+      )
+      set_flutter_version_name(yeni_surum)
+      derle.call
+      upload_to_testflight(
+        api_key: api_key,
+        ipa: "./build/sandik.ipa",
+        skip_waiting_for_build_processing: true,
+        changelog: testflight_changelog(next_build_number)
+      )
+    end
 
     UI.success("Build #{next_build_number} TestFlight'a upload edildi 🚀")
   end
