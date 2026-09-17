@@ -5,7 +5,46 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-17 (altın ölçek kalibrasyonu)
+**Son güncelleme:** 2026-09-17 (altın kaynak merdiveni + ölçek kalibrasyonu)
+
+---
+
+## ✅ KAPANDI — Altın serisinin kaynağı istekten isteğe değişiyordu (ARALIKLI sapma)
+
+**Belirti (kullanıcı, 2026-09-17).** Altın grafiğinin son noktası sahte bir
+düşüş çiziyordu; ikinci bildirim kritik ipucuydu: **"Her zaman da olmuyor,
+şu anda düzeldi."** Kalıcı bir ölçek farkı bunu açıklamaz — aralıklı bir
+şey olmalıydı.
+
+**Kök sebep.** Altın serisi iki AYRI enstrümandan kurulabiliyordu:
+
+| Kaynak | Ne | Seviye |
+|---|---|---|
+| `XAUTRY=X` | spot altın, doğrudan TRY | referans |
+| `GC=F × USDTRY=X` | COMEX **vadeli** sözleşmesi | taşıma maliyeti kadar ÜSTÜNDE (~%1-2) + ikinci bir çevrim hatası |
+
+Merdiven **dört kopyaya ayrılmıştı**: yalnızca gün içi yolu spot'u tercih
+ediyordu; günlük, tier ve tek-sembol yolları vadeliyi TEK kaynak sayıyordu.
+Üstelik Yahoo `XAUTRY=X` için aralıklı olarak boş liste/404/429 döner ya da
+8 saniyelik `_grafikCekimSuresi` sınırını aşar — ve **boş yanıtlar
+önbelleğe alınmadığı için her tazelemede zar yeniden atılır.** Aynı grafik
+bir açılışta spot, beş dakika sonra vadeli ölçeğinde çiziliyordu. Serinin
+son noktası canlı (yurt içi) fiyata sabitlendiğinden fark "ŞİMDİ"
+imlecinde sahte bir düşüş oluyordu: bazen var, bazen yok.
+
+**Yanında çıkan ikinci sessiz sapma.** Vadeli çevrimde kur bulunamazsa iki
+uzun dönem yolu uydurma sabit kullanıyordu — `35.0` (günlük) ve `40.0`
+(tier). `USDTRY=X` düştüğü an altın serisi ~%17'ye varan sapmayla, hiçbir
+uyarı vermeden çiziliyordu. Gün içi yolunda bu sabit zaten kaldırılmıştı;
+diğer ikisi o dersin dışında kalmıştı (yine kopya sorunu).
+
+**Çözüm.** Merdiven tek yerde: `altinGramSerisi` (spot → vadeli, karışım
+yok, uydurma kur yok) ve dört yol da oradan geçiyor. `debugSonAltinKaynagi`
+hangi kaynağın kullanıldığını dışarıdan görülebilir yapıyor. Kalıcı makas
+için ikinci savunma hattı `altinKalibrasyonu` (aşağıdaki madde).
+
+**İlgili.** `test/altin_seri_kaynagi_test.dart`,
+`test/altin_grafik_gecikmesi_test.dart`.
 
 ---
 
@@ -44,11 +83,26 @@ bulunursa (truncgil yalnızca anlık veriyor) kalibrasyon tümüyle gereksiz
 hale gelir — seri doğrudan doğru ölçekten gelir.
 
 **Ayrıca açık:** Takip listesi (`getSymbolHistory` → `watchlist_provider`)
-altın için hâlâ KALİBRESİZ, yani orada gösterilen gram altın fiyatı
-portföydekinden birkaç lira farklı olabilir. Bilerek dokunulmadı: o yol
-sembol bazlı ve saf geçmiş verisi; canlı kotasyon bağımlılığı eklemek aynı
-seriyi kullanan sinyal motorunu da ağ hatasına açar. Kullanıcı iki ekranda
-farklı fiyat bildirirse ilk iş burası.
+altın için hâlâ KALİBRESİZ (kaynak merdiveni artık ortak, ölçek
+kalibrasyonu değil), yani orada gösterilen gram altın fiyatı portföydekinden
+birkaç lira farklı olabilir. Bilerek dokunulmadı: o yol sembol bazlı ve saf
+geçmiş verisi; canlı kotasyon bağımlılığı eklemek aynı seriyi kullanan
+sinyal motorunu da ağ hatasına açar. Kullanıcı iki ekranda farklı fiyat
+bildirirse ilk iş burası.
+
+**Ayrıca açık (2):** Ana ekran kartlarındaki sparkline (`SparklineService`)
+altın için hâlâ `GC=F` çiziyor, yani TL değil ONS/USD eğrisi. Şekil 0..1
+normalize edildiği için ölçek sorunu yok ama TL'deki hareket (kur etkisi)
+görünmüyor. Tek satırlık bir değişiklik (`XAUTRY=X`) ama o sembolün
+aralıklı boş dönmesi burada yedeksiz kalır ve sparkline tümden kaybolur —
+`seriesFor` tek sembollü. Merdiveni buraya da taşımak gerekiyor.
+
+**Ayrıca açık (3):** Hangi kaynağın kullanıldığı yalnızca
+`debugSonAltinKaynagi` ile (test gözlemi) görülüyor; üretimde telemetri
+yok. Vadeliye düşüş SESSİZ bir bozulma: kullanıcı "bazen oluyor" demeden
+fark edilmiyor. "Dış fiyat API'leri sessizce değişiyor; kanarya yok"
+maddesiyle aynı aile — çözümü de aynı yerde (fallback'e düşünce Crashlytics
+non-fatal / analytics olayı).
 
 **İlgili.** `HistoryService.altinKalibrasyonu`,
 `altinKalibrasyonHaritasi`, `test/altin_grafik_olcek_kalibrasyonu_test.dart`,

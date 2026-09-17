@@ -151,10 +151,11 @@ const List<SurumNotu> surumNotlari = [
         ikon: YenilikIkonu.grafik,
         baslik: 'Altın grafiğindeki sahte düşüş gitti',
         aciklama: 'Altın grafiğinin son noktası, olmayan bir düşüş gibi '
-            'aşağı iniyordu: çizgi uluslararası altın fiyatından, "şimdi" '
-            'noktası ise yurt içi kotasyondan geliyor ve ikisi aynı ölçekte '
-            'değildi. Seri artık güncel fiyatın ölçeğine oturuyor — gün içi '
-            'hareket aynı, uçurum yok.',
+            'aşağı iniyordu — üstelik bazen. Sebep iki ayrı fiyat '
+            'kaynağıydı: veri gelmediğinde grafik, spot altın yerine vadeli '
+            'sözleşmeye düşüyor ve tüm çizgi biraz yukarı kayıyordu. Artık '
+            'tüm dönem sekmeleri aynı kaynağı aynı sırayla kullanıyor ve '
+            'seri güncel fiyatın ölçeğine oturuyor.',
       ),
     ],
   ),

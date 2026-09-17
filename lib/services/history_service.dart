@@ -440,6 +440,13 @@ class HistoryService {
     final usdFuture = needsUsd
         ? getHistorySafe('USDTRY=X')
         : Future.value(const <(int, double)>[]);
+    // Altın: spot (`XAUTRY=X`) ÖNCE, vadeli (`GC=F`) yedek — merdiven
+    // `altinGramSerisi`'nde. İkisi de burada PARALEL başlar; eskiden bu yol
+    // yalnızca `GC=F` çekiyordu, yani gün içi tabı spot ölçeğindeyken 1H/1A/
+    // 6A/1Y tabları kalıcı olarak vadeli (primli) ölçekteydi.
+    final goldTryFuture = needsGold
+        ? getHistorySafe('XAUTRY=X')
+        : Future.value(const <(int, double)>[]);
     final goldFuture = needsGold
         ? getHistorySafe('GC=F')
         : Future.value(const <(int, double)>[]);
@@ -466,23 +473,20 @@ class HistoryService {
     }
 
     if (needsGold) {
-      final xauPoints = await goldFuture;
-      for (final p in xauPoints) {
-        final dTs = normalizeTs(p.$1);
-        final xauUsd = p.$2;
-        double usdRate = 35.0;
-        if (usdTryHistory.containsKey(dTs)) {
-          usdRate = usdTryHistory[dTs]!;
-        } else if (usdTryHistory.isNotEmpty) {
-          final closest = usdTryHistory.entries.lastWhere((e) => e.key <= dTs,
-              orElse: () => usdTryHistory.entries.first);
-          usdRate = closest.value;
-        }
-
-        final xauTry = xauUsd * usdRate;
-        final gram22k = PriceService.gram22kFromXauTry(xauTry);
-        goldHistory[dTs] = gram22k;
-      }
+      final xauTryPoints = await goldTryFuture;
+      final xauUsdPoints = await goldFuture;
+      final sonuc = altinGramSerisi(
+        xauTry: {for (final p in xauTryPoints) normalizeTs(p.$1): p.$2},
+        xauUsd: {for (final p in xauUsdPoints) normalizeTs(p.$1): p.$2},
+        usdTry: usdTryHistory,
+        // Burada eskiden `usdRate = 35.0` varsayılanı vardı: kur serisi boş
+        // dönünce (Yahoo düşer/429 verir) TÜM altın günleri uydurma bir kurla
+        // fiyatlanıyor ve seri sessizce ~%17 aşağı kayıyordu. Artık kuru
+        // bulunamayan nokta seriye hiç girmez.
+        kurBul: (kur, ts) => _closestOrNull(kur, ts),
+      );
+      goldHistory.addAll(sonuc.seri);
+      debugSonAltinKaynagi = sonuc.kaynak;
     }
 
     // Altın serisi CANLI ölçeğe kalibre edilir — gerekçe `altinKalibrasyonu`
@@ -699,6 +703,15 @@ class HistoryService {
   /// yakalanamıyordu (sabotaj denendi, tüm testler geçti).
   @visibleForTesting
   static String? debugSonKullanilanRange;
+
+  /// Altın serisinin son çağrıda hangi kaynaktan kurulduğu.
+  ///
+  /// Aynı gerekçe: kaynak seçimi yerel bir karardı ve ARALIKLI bir arızanın
+  /// (spot ↔ vadeli geçişi, bkz. [altinGramSerisi]) hangi tarafta olduğu
+  /// dışarıdan görülemiyordu. Kullanıcı "bazen oluyor" dediğinde bakılacak
+  /// yer burası.
+  @visibleForTesting
+  static AltinSeriKaynagi? debugSonAltinKaynagi;
 
   /// Portföy serisinin zaman ızgarası — `{ normalize edilmiş UNIX_MILLIS }`,
   /// eskiden yeniye sıralı.
@@ -1085,30 +1098,22 @@ class HistoryService {
     }
 
     if (needsGold) {
-      // 1) XAU/TRY doğrudan (tek istek, kur çevrimi yok).
+      // Merdiven (spot → vadeli) `altinGramSerisi`'nde; iki kaynak da
+      // yukarıda PARALEL başlatıldı, burada yalnızca sonuçları alıyoruz.
       final xauTryPts = await goldTryFuture;
-      for (final p in xauTryPts) {
-        goldSlots[normalizeSlot(p.$1)] =
-            PriceService.gram22kFromXauTry(p.$2);
-      }
-
-      // 2) Boşsa eski yol: XAU/USD (GC=F) × USDTRY. Yalnızca birinci
-      //    kaynak hiç nokta vermediğinde çağrılır — normal günde ek
-      //    istek yapılmaz.
-      if (goldSlots.isEmpty) {
-        // Paralel başlatıldı (yukarıda) — burada yalnızca sonucu alıyoruz.
-        final xauUsdPts = await goldUsdFuture;
-        for (final p in xauUsdPts) {
-          final ts = normalizeSlot(p.$1);
-          final usdRate = closestOrNull(usdTrySlots, ts);
-          // Kur bilinmiyorsa slotu ATLA. Eskiden 40.0 sabiti kullanılıyordu
-          // ve gerçek kurdan sapan bu sayı altını olduğundan ucuz/pahalı
-          // gösteren yapay bir basamak üretiyordu.
-          if (usdRate == null) continue;
-          goldSlots[ts] =
-              PriceService.gram22kFromXauTry(p.$2 * usdRate);
-        }
-      }
+      final xauUsdPts = await goldUsdFuture;
+      final sonuc = altinGramSerisi(
+        xauTry: {
+          for (final p in xauTryPts) normalizeSlot(p.$1): p.$2,
+        },
+        xauUsd: {
+          for (final p in xauUsdPts) normalizeSlot(p.$1): p.$2,
+        },
+        usdTry: usdTrySlots,
+        kurBul: (kur, ts) => closestOrNull(kur, ts),
+      );
+      goldSlots.addAll(sonuc.seri);
+      debugSonAltinKaynagi = sonuc.kaynak;
     }
 
     // Fiyat serileri yukarıda paralel başlatıldı — burada sonuçlar toplanır.
@@ -1840,14 +1845,19 @@ class HistoryService {
     }
     Future<Map<int, double>>? usdFuture;
     Future<Map<int, double>>? goldFuture;
+    Future<Map<int, double>>? goldTryFuture;
     if (needsUsd) usdFuture = _fetchTickerAtTier('USDTRY=X', tier);
     if (needsGold) goldFuture = _fetchTickerAtTier('GC=F', tier);
+    // Spot altın ÖNCE denenir (bkz. `altinGramSerisi`); bu yol eskiden
+    // yalnızca vadeliyi (`GC=F`) tanıyordu.
+    if (needsGold) goldTryFuture = _fetchTickerAtTier('XAUTRY=X', tier);
 
     // Paralel bekle.
     await Future.wait([
       ...tickerFutures.values,
       if (usdFuture != null) usdFuture,
       if (goldFuture != null) goldFuture,
+      if (goldTryFuture != null) goldTryFuture,
     ]);
 
     final tickerMaps = <String, Map<int, double>>{};
@@ -1856,16 +1866,20 @@ class HistoryService {
     }
     final usdMap = usdFuture != null ? await usdFuture : <int, double>{};
     final xauMap = goldFuture != null ? await goldFuture : <int, double>{};
+    final xauTryMap =
+        goldTryFuture != null ? await goldTryFuture : <int, double>{};
 
-    // XAU → gram22k TRY seri
-    final goldMap = <int, double>{};
-    for (final entry in xauMap.entries) {
-      final ts = entry.key;
-      final xauUsd = entry.value;
-      final usdRate = _closestOrNull(usdMap, ts) ?? 40.0;
-      final xauTry = xauUsd * usdRate;
-      goldMap[ts] = PriceService.gram22kFromXauTry(xauTry);
-    }
+    // XAU → gram22k TRY seri. Merdiven ve kur kuralı `altinGramSerisi`'nde:
+    // burada duran `?? 40.0` varsayılanı, kur serisi boş döndüğünde altını
+    // gerçek kurdan sapan uydurma bir fiyata oturtuyordu.
+    final altinSonuc = altinGramSerisi(
+      xauTry: xauTryMap,
+      xauUsd: xauMap,
+      usdTry: usdMap,
+      kurBul: (kur, ts) => _closestOrNull(kur, ts),
+    );
+    final goldMap = altinSonuc.seri;
+    debugSonAltinKaynagi = altinSonuc.kaynak;
 
     // Ağırlık tablosu `PriceService`'te tutulur; buradaki yerel kopya
     // ALTIN_RESAT'ı ATLIYORDU (tabloda 7.216 ile var ama switch'te yoktu),
@@ -2196,20 +2210,24 @@ class HistoryService {
     Future<Map<int, double>> series(String s) async =>
         _normalized(await _fetchSafe(s, range, tier.yahooInterval), tier);
 
-    // Altın: XAU/USD × USD/TRY → 22 ayar gram → ürün ağırlığı.
+    // Altın: spot (`XAUTRY=X`) → yoksa vadeli (`GC=F` × `USDTRY=X`) →
+    // 22 ayar gram → ürün ağırlığı. Merdiven `altinGramSerisi`'nde: bu yol da
+    // yalnızca vadeliyi tanıyordu, yani takip listesi ile portföy grafiği
+    // aynı altını iki ayrı ölçekte gösterebiliyordu.
     if (sym.startsWith('ALTIN_')) {
-      final results = await Future.wait([series('GC=F'), series('USDTRY=X')]);
-      final xau = results[0];
-      final usd = results[1];
+      final results = await Future.wait(
+          [series('XAUTRY=X'), series('GC=F'), series('USDTRY=X')]);
       final weight = PriceService.goldWeightFactor(sym);
-      final out = <int, double>{};
-      for (final e in xau.entries) {
-        final rate = _closestOrNull(usd, e.key);
-        // Kur bulunamazsa noktayı ATLA — sabit bir varsayılan kur (eski
-        // kodda 40.0) geçmişte tamamen uydurma bir TL fiyatı üretirdi.
-        if (rate == null) continue;
-        out[e.key] = PriceService.gram22kFromXauTry(e.value * rate) * weight;
-      }
+      final sonuc = altinGramSerisi(
+        xauTry: results[0],
+        xauUsd: results[1],
+        usdTry: results[2],
+        kurBul: (kur, ts) => _closestOrNull(kur, ts),
+      );
+      debugSonAltinKaynagi = sonuc.kaynak;
+      final out = <int, double>{
+        for (final e in sonuc.seri.entries) e.key: e.value * weight,
+      };
       // Kırpma ÇEVRİMDEN SONRA yapılır: önce kırpsaydık USD/TRY serisinde
       // eşleşecek komşu nokta kalmayabilir ve `_closestOrNull` kenardaki
       // noktaları düşürürdü.
@@ -2571,6 +2589,99 @@ double gunIciFonBirimFiyati({
   if (oncekiNav == null || oncekiNav <= 0) return guncelNav;
   if (basamakTs == null) return guncelNav;
   return slotTs < basamakTs ? oncekiNav : guncelNav;
+}
+
+/// Altın gram22k serisinin hangi kaynaktan kurulduğu.
+///
+/// Teşhis için gerekli: iki kaynak AYNI ŞEYİ ÖLÇMEZ (bkz. [altinGramSerisi])
+/// ve hangisinin kullanıldığı kullanıcıya gösterilen sayıyı değiştirir.
+enum AltinSeriKaynagi {
+  /// `XAUTRY=X` — spot altın, doğrudan TRY. TERCİH EDİLEN.
+  spotTry,
+
+  /// `GC=F × USDTRY=X` — COMEX VADELİ sözleşmesi, USD üzerinden çevrilmiş.
+  vadeliUsd,
+
+  /// Hiçbir kaynak nokta vermedi.
+  yok,
+}
+
+/// Altının gram22k TL serisini kurar — KAYNAK MERDİVENİ TEK KOPYA.
+///
+/// ## Kök sebep bu merdivenin dört kopyaya ayrılmasıydı (2026-09-17)
+/// Kullanıcı bildirimi: "Her zaman da olmuyor, şu anda düzeldi." Yani
+/// altın grafiğindeki sapma KALICI değil, ARALIKLI — ve aralıklı olmasının
+/// sebebi serinin kaynağının istekten isteğe DEĞİŞMESİdir:
+///
+///   * `XAUTRY=X` **spot** altındır (ons/TRY, çevrim yok),
+///   * `GC=F` **COMEX vadeli sözleşmesi**dir; taşıma maliyeti yüzünden
+///     spot'un yapısal olarak ~%1-2 ÜSTÜNDE işlem görür, üstelik USD
+///     üzerinden ikinci bir çevrim (`USDTRY=X`) daha ekler.
+///
+/// Gün içi yolu birinciyi tercih edip boş dönerse ikinciye düşüyordu; üç
+/// uzun dönem yolu ise İKİNCİYİ TEK KAYNAK olarak kullanıyordu. Yahoo
+/// `XAUTRY=X` için bazen veri vermiyor (boş liste, 404, 429) ya da 8
+/// saniyelik `_grafikCekimSuresi` sınırını aşıyor; boş yanıtlar
+/// önbelleğe de ALINMADIĞI için her tazelemede zar yeniden atılıyor.
+/// Sonuç: aynı grafik bir açılışta spot ölçeğinde, beş dakika sonra vadeli
+/// ölçeğinde çiziliyordu. Serinin son noktası canlı (yurt içi) fiyata
+/// sabitlendiği için fark, "ŞİMDİ" imlecinde ~%1-2'lik SAHTE BİR DÜŞÜŞ
+/// olarak görünüyordu — bazen var, bazen yok.
+///
+/// Bu yüzden merdiven tek yerde: dört yolun dördü de aynı sırayı kullanır
+/// ve aynı serinin iki tabı iki ayrı ölçekte çizilemez. (İki merdiven tutmak
+/// bu projede tekrar eden hata sınıfı — `rangeForPeriod` ve `_tierStepMs`
+/// aynı sebeple tek kaynağa indirilmişti.)
+///
+/// ## Karışım YASAK
+/// Vadeli yol yalnızca spot serisi TAMAMEN boşken kullanılır. İki kaynağın
+/// noktaları tek seride birleşseydi, aradaki prim serinin ORTASINDA bir
+/// basamak olurdu — kullanıcı için okunamaz bir "hareket".
+///
+/// ## Uydurma kur YOK
+/// Vadeli yolda kuru bulunamayan nokta ATLANIR. Sabit 35.0/40.0 gibi
+/// varsayılanlar (iki uzun dönem yolunda duruyordu) gerçek kurdan saptıkça
+/// altını olduğundan ucuz/pahalı gösteriyordu: kur serisi düştüğü an,
+/// ~%17'ye varan sessiz bir sapma.
+///
+/// [kurBul] kur serisinden bir ts için oran bulur (yolun kendi "en yakın
+/// geçmiş" kuralı geçerli); `null` dönerse nokta atlanır.
+@visibleForTesting
+({Map<int, double> seri, AltinSeriKaynagi kaynak}) altinGramSerisi({
+  required Map<int, double> xauTry,
+  required Map<int, double> xauUsd,
+  required Map<int, double> usdTry,
+  required double? Function(Map<int, double> kurSerisi, int ts) kurBul,
+}) {
+  // Spot TERCİH edilir — ama KAPSAMI da yeterliyse.
+  //
+  // Yahoo aynı range için iki sembole farklı uzunlukta seri verebiliyor.
+  // Koşulsuz "spot doluysa spot" kuralı, spot üç nokta döndüğünde 1Y
+  // grafiğini üç noktaya indirirdi: sapma yerine EKSİK GEÇMİŞ — aynı sınıf
+  // bir yanlış gösterim. Vadelinin yarısı kadar nokta eşiği, kısa bir spot
+  // yanıtını eler ama normal gündeki küçük farkları (bir-iki eksik bar)
+  // umursamaz.
+  final spotYeterli = xauTry.isNotEmpty &&
+      (xauUsd.isEmpty || xauTry.length * 2 >= xauUsd.length);
+  if (spotYeterli) {
+    return (
+      seri: <int, double>{
+        for (final e in xauTry.entries)
+          e.key: PriceService.gram22kFromXauTry(e.value),
+      },
+      kaynak: AltinSeriKaynagi.spotTry,
+    );
+  }
+  final out = <int, double>{};
+  for (final e in xauUsd.entries) {
+    final kur = kurBul(usdTry, e.key);
+    if (kur == null || kur <= 0) continue;
+    out[e.key] = PriceService.gram22kFromXauTry(e.value * kur);
+  }
+  return (
+    seri: out,
+    kaynak: out.isEmpty ? AltinSeriKaynagi.yok : AltinSeriKaynagi.vadeliUsd,
+  );
 }
 
 /// Altın serisinin canlı fiyat ölçeğine kalibrasyonu için KABUL ARALIĞI.
