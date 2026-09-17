@@ -21,6 +21,10 @@ import {
   sendFcmNotification,
   ServiceAccount,
 } from '../_shared/fcm.ts';
+import {
+  appNotificationRow,
+  recordAppNotification,
+} from '../_shared/app_notifications.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
 
@@ -261,10 +265,26 @@ Deno.serve(async (request) => {
     let sent = 0;
     let skippedQuietHours = 0;
     const failures: string[] = [];
+    // Çan kaydı kullanıcı başına TEK (çok cihaz) — bkz. app_notifications.ts.
+    const cankaydi = new Set<string>();
     // Sessiz saatler (0057): takvim hatırlatması zamana bağlı değil, atlanır.
     const sessiz = await sessizKullanicilar(admin, tokens.map((t) => t.user_id));
     for (const t of tokens) {
       if (sessiz.has(t.user_id)) { skippedQuietHours += 1; continue; }
+      // Çan sayfası kaydı — push'tan bağımsız (token reddedilse de kalır).
+      const kayitHatasi = await recordAppNotification(
+        admin,
+        appNotificationRow({
+          userId: t.user_id,
+          type: 'calendar_nudge',
+          title: mesaj.title,
+          body: mesaj.body,
+          data: { occasion: 'inflation_day' },
+        }),
+        cankaydi,
+      );
+      if (kayitHatasi) failures.push(kayitHatasi);
+
       const r = await sendFcmNotification({
         accessToken,
         projectId: fcmProjectId,

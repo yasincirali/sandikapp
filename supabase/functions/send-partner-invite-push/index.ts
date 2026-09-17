@@ -8,6 +8,10 @@ import {
   sendFcmNotification,
   ServiceAccount,
 } from '../_shared/fcm.ts';
+import {
+  appNotificationRow,
+  recordAppNotification,
+} from '../_shared/app_notifications.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -89,6 +93,20 @@ Deno.serve(async (request) => {
     if (invite.status !== 'pending' || invite.used === true) {
       return jsonResponse({ error: 'Davet artik push gonderilebilir durumda degil.' }, 409);
     }
+
+    // Çan sayfası kaydı — token yoksa ya da push düşse de davet listede
+    // görünsün. Kayıt hatası gönderimi düşürmez; yanıta da yazılmaz (ham DB
+    // mesajı istemciye dönmez).
+    await recordAppNotification(
+      adminClient,
+      appNotificationRow({
+        userId: invite.from_user_id,
+        type: 'partner_invite',
+        title: 'Yeni ortaklik istegi',
+        body: `${String(invite.requester_name ?? '').trim() || 'Bir kullanici'} ortaklik kodunuzu girdi.`,
+        data: { invite_id: inviteId },
+      }),
+    );
 
     const { data: tokens, error: tokenError } = await adminClient
       .from('user_push_tokens')

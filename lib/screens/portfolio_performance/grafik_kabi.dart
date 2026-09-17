@@ -5,6 +5,17 @@ part of '../portfolio_performance_screen.dart';
 /// part = aynı kütüphane, private alanlara erişim ve davranış AYNEN; yalnızca
 /// dosya sınırı değişti. `setState` yerine `_guncelle` (bkz. ana dosya).
 extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
+  /// Grafik yüksekliği: tam ekranda ekranı doldurur (dönem satırı + dolgular
+  /// düşülür), normal ekranda 296 (gerekçe `ZoomableChart` çağrısındaki not).
+  /// Yatayda 296 sabit kalsaydı grafik 360pt'lik ekranın yarısında dururdu —
+  /// "büyütme" büyütmezdi.
+  double get _grafikYuksekligi => widget.sadeceGrafik
+      ? (MediaQuery.sizeOf(context).height -
+              MediaQuery.viewPaddingOf(context).vertical -
+              150)
+          .clamp(220.0, 900.0)
+      : 296;
+
   Widget _buildChartContainer(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets,
       {bool intraday = false, List<Asset>? allTargetAssets}) {
@@ -873,7 +884,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             // 328'den 296'ya (2026-09-15, "grafik layoutunun yüksekliği
             // biraz azaltılabilir"). Daha azı Y ekseninde iki etiketi
             // birbirine yaklaştırıp gün içi bandı (%0,5) okunmaz yapar.
-            height: 296,
+            height: _grafikYuksekligi,
             builder: buildData,
             viewportController: viewport,
             // Sağdaki Y ekseni rezervi (rightTitles.reservedSize ile aynı).
@@ -1085,6 +1096,8 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           // Tam ekran — sağ üst köşe, kartın dolgusuna (20/16) oturur;
           // sağdaki Y ekseni bandının üst etiketi zaten çizilmiyor
           // (`val == meta.max` gizli), çip veriyi örtmez.
+          // Tam ekranda ikinci bir tam ekran yok.
+          if (!widget.sadeceGrafik)
           Positioned(
             top: -SandikSpace.sm,
             right: -SandikSpace.sm,
@@ -1095,9 +1108,8 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 builder: (_) => PortfolioPerformanceScreen(
                   initialView: _view,
                   initialTypeFilter: _typeFilter,
-                  // Yatayda grafik hemen görünsün diye kontroller yukarı
-                  // kaydırılır. İki satıra indiler; eski 220 fazla kaçıyordu.
-                  initialScrollOffset: 96,
+                  // Yalnızca dönem satırı + grafik (bkz. FullscreenChartRoute).
+                  sadeceGrafik: true,
                 ),
               ),
             ),

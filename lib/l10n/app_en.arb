@@ -2065,5 +2065,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "notifTypePartner": "PARTNER",
+  "notifTypeDailyBrief": "DAILY",
+  "notifTypeWeekly": "WEEKLY",
+  "notifTypeReminder": "REMINDER",
+  "notifToday": "Today {time}",
+  "@notifToday": {"placeholders": {"time": {"type": "String"}}}
 }

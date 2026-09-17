@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/price_alert_notification.dart';
+import '../models/app_notification.dart';
 import '../models/asset.dart';
 import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
@@ -1170,6 +1171,57 @@ class SupabaseService {
           .from('price_alert_notifications')
           .delete()
           .inFilter('id', ids),
+    );
+  }
+
+  // ── Genel bildirimler (0066) ──────────────────────────────────────────────
+  //
+  // Ortaklık daveti, günlük/haftalık özet, takvim — tek tablo, `type` sütunu.
+  // Alarm tarafıyla AYNI sözleşme: yalnızca okuma, dismiss ve silme; satırı
+  // edge function yazar.
+
+  Future<List<AppNotification>> fetchAppNotifications({
+    required String userId,
+    int limit = 100,
+  }) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchAppNotifications',
+      table: 'app_notifications',
+      op: 'SELECT',
+      request: {'user_id': userId, 'limit': limit},
+      call: () => _db
+          .from('app_notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('sent_at', ascending: false)
+          .limit(limit),
+    );
+    return rows.map<AppNotification>(AppNotification.fromMap).toList();
+  }
+
+  Future<void> dismissAppNotifications(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _log.log<void>(
+      source: 'SupabaseService.dismissAppNotifications',
+      table: 'app_notifications',
+      op: 'UPDATE',
+      request: {'ids': ids.length, 'dismissed_at': 'now()'},
+      call: () => _db
+          .from('app_notifications')
+          .update({'dismissed_at': DateTime.now().toIso8601String()})
+          .inFilter('id', ids),
+    );
+  }
+
+  Future<void> deleteAppNotifications(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await _log.log<void>(
+      source: 'SupabaseService.deleteAppNotifications',
+      table: 'app_notifications',
+      op: 'DELETE',
+      request: {'ids': ids.length},
+      call: () =>
+          _db.from('app_notifications').delete().inFilter('id', ids),
     );
   }
 

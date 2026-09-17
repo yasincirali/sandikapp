@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/price_alert_notification_provider.dart';
+import '../providers/app_notification_provider.dart';
+import '../models/app_notification.dart';
 import '../models/price_alert_notification.dart';
 import '../models/bildirim_akisi.dart';
 import '../models/asset.dart';
@@ -22,6 +24,7 @@ import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/price_alert_tile.dart';
+import '../widgets/app_notification_tile.dart';
 import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/percentile_strip.dart';
 import '../widgets/real_return_strip.dart';
@@ -34,6 +37,7 @@ import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
 import 'all_transactions_screen.dart';
 import 'asset_detail_screen.dart';
+import 'portfolio_performance_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
@@ -80,10 +84,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       builder: (_) => _SignalsBottomSheet(
         onDismiss: (id) => ref.read(signalProvider.notifier).dismiss(id),
         onDelete: (id) => ref.read(signalProvider.notifier).delete(id),
-        onDismissAll: () => ref.read(signalProvider.notifier).dismissAll(),
-        onDeleteHistory: () =>
-            ref.read(signalProvider.notifier).deleteHistory(),
-        onDeleteAll: () => ref.read(signalProvider.notifier).deleteAll(),
+        // Toplu eylemler ÜÇ kaynağı birden kapsar (kullanıcı bildirimi
+        // 2026-09-17: "tümünü sil / hepsini temizle çalışmıyor"). Eskiden
+        // yalnızca sinyal notifier'ı çağrılıyordu; liste alarm ve genel
+        // bildirimlerle harmanlandığı için o satırlar yerinde kalıyor,
+        // kullanıcı "çalışmıyor" görüyordu. Tekil silme türüne göre zaten
+        // doğru notifier'a gidiyordu — o yüzden çalışıyordu.
+        onDismissAll: () => Future.wait([
+              ref.read(signalProvider.notifier).dismissAll(),
+              ref.read(priceAlertNotificationProvider.notifier).dismissAll(),
+              ref.read(appNotificationProvider.notifier).dismissAll(),
+            ]),
+        onDeleteHistory: () => Future.wait([
+              ref.read(signalProvider.notifier).deleteHistory(),
+              ref
+                  .read(priceAlertNotificationProvider.notifier)
+                  .deleteHistory(),
+              ref.read(appNotificationProvider.notifier).deleteHistory(),
+            ]),
+        onDeleteAll: () => Future.wait([
+              ref.read(signalProvider.notifier).deleteAll(),
+              ref.read(priceAlertNotificationProvider.notifier).deleteAll(),
+              ref.read(appNotificationProvider.notifier).deleteAll(),
+            ]),
         onTap: (alert) {
           Navigator.pop(context);
           AnalyticsService.instance.logSignalViewed(
@@ -111,6 +134,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ref.read(priceAlertNotificationProvider.notifier).dismiss(id),
         onAlarmDelete: (id) =>
             ref.read(priceAlertNotificationProvider.notifier).delete(id),
+        onGenelTap: (bildirim) {
+          Navigator.pop(context);
+          _genelBildirimeGit(bildirim);
+        },
+        onGenelDismiss: (id) =>
+            ref.read(appNotificationProvider.notifier).dismiss(id),
+        onGenelDelete: (id) =>
+            ref.read(appNotificationProvider.notifier).delete(id),
         onAlarmTap: (bildirim) {
           Navigator.pop(context);
           // Push bildirimiyle AYNI varış yeri: alarmın konusu olan varlık,
@@ -126,6 +157,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
       ),
     );
+  }
+
+  /// Genel bildirime dokunuş — push'a dokunulmuş gibi aynı yere (0066).
+  ///
+  /// Ortaklık → davet akışı; günlük/haftalık özet → Performans "Özet"
+  /// (bildirimin anlattığı rakam orada); takvim hatırlatması → ana ekran
+  /// (zaten buradayız, yalnızca liste kapanır).
+  void _genelBildirimeGit(AppNotification b) {
+    switch (b.type) {
+      case AppNotification.partnerInvite:
+        final inviteId = b.data['invite_id']?.toString() ?? '';
+        if (inviteId.isNotEmpty) {
+          NotificationService.instance.openPartnerInvite(inviteId);
+        }
+      case AppNotification.dailyBrief || AppNotification.weeklySummary:
+        Navigator.push(
+          context,
+          adaptiveRoute<void>(
+            builder: (_) => const PortfolioPerformanceScreen(
+              showBackButton: true,
+              initialOzet: true,
+            ),
+          ),
+        );
+      default:
+        break;
+    }
   }
 
   @override
@@ -501,23 +559,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // bahsedildiğini belirsizleştirir. Kendi kendini kapatan bir
           // widget (bayrak/opt-in/k-anonimlik) olduğu için burada başka
           // koşul yok.
-          if (ownView && !isEmptyOwn) ...[
+          // Enflasyon ve haftalık piyasa şeritleri SEÇİLİ KAPSAM için
+          // hesaplanır (kullanıcı 2026-09-17): "Ortak" sekmesinde ortağın
+          // defteri, "Birlikte"de ikisi birlikte. Aynı fonksiyon, aynı
+          // canlı kur — ortağın kendi ekranında gördüğü sayıyla birebir
+          // aynı çıkar; ikinci bir hesap yolu YOK. Eskiden yalnızca kendi
+          // görünümünde çiziliyordu. `key` kapsamı taşır: şeritler seriyi
+          // bir kez (initState) kurar, sekme değişince yeniden kurulmalı.
+          if (aktifLotlar(ledgerAssets).isNotEmpty) ...[
             // Reel getiri percentile'den ÖNCE gelir: "eridim mi?" sorusu
             // "başkalarına göre nerdeyim?" sorusundan önce gelir — biri
             // alım gücü, diğeri sosyal karşılaştırma.
             SliverToBoxAdapter(
               child: RealReturnStrip(
-                myAssets: myState.assets,
+                key: ValueKey('reel-${_view ?? '*'}'),
+                myAssets: ledgerAssets,
                 toTRY: myState.toTRY,
                 padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
               ),
             ),
-            // Yüzdelik dilim Başlangıç seviyesinde GİZLİ: sosyal
-            // karşılaştırma, yeni başlayanın ihtiyacı olan ilk bilgi değil
-            // (`seviyeGorunurlugu`). Şerit kendi kapılarını (bayrak,
+            // Yüzdelik dilim yalnızca KENDİ görünümünde: şerit kullanıcının
+            // kendi dilimini anlatır, ortağın portföyüne bakarken hangi
+            // portföyden bahsedildiği belirsizleşir. Başlangıç seviyesinde
+            // ayrıca GİZLİ (`seviyeGorunurlugu`): sosyal karşılaştırma yeni
+            // başlayanın ilk ihtiyacı değil. Şerit kendi kapılarını (bayrak,
             // opt-in, k-anonimlik) ayrıca kuruyor.
-            if (seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
-                .percentile)
+            if (ownView &&
+                seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
+                    .percentile)
               SliverToBoxAdapter(
                 child: PercentileStrip(
                   myAssets: myState.assets,
@@ -534,7 +603,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // yüzde), bu yüzden burada ek koşul yok.
             SliverToBoxAdapter(
               child: WeeklySummaryChip(
-                myAssets: myState.assets,
+                key: ValueKey('hafta-${_view ?? '*'}'),
+                myAssets: ledgerAssets,
                 padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
               ),
             ),
@@ -891,6 +961,11 @@ class _SignalsBottomSheet extends ConsumerWidget {
   final Future<void> Function(String id) onAlarmDismiss;
   final Future<void> Function(String id) onAlarmDelete;
 
+  // ── Genel bildirim eylemleri (0066) ──────────────────────────────────────
+  final void Function(AppNotification bildirim) onGenelTap;
+  final Future<void> Function(String id) onGenelDismiss;
+  final Future<void> Function(String id) onGenelDelete;
+
   const _SignalsBottomSheet({
     required this.onDismiss,
     required this.onDelete,
@@ -901,6 +976,9 @@ class _SignalsBottomSheet extends ConsumerWidget {
     required this.onAlarmTap,
     required this.onAlarmDismiss,
     required this.onAlarmDelete,
+    required this.onGenelTap,
+    required this.onGenelDismiss,
+    required this.onGenelDelete,
   });
 
   /// Akıştaki bir öğeyi kendi satırına çevirir.
@@ -923,6 +1001,18 @@ class _SignalsBottomSheet extends ConsumerWidget {
               : _guarded(context, () => onAlarmDismiss(bildirim.id)),
           onDelete: faded
               ? _guarded(context, () => onAlarmDelete(bildirim.id))
+              : null,
+        );
+      case GenelOgesi(:final bildirim):
+        return AppNotificationTile(
+          bildirim: bildirim,
+          faded: faded,
+          onTap: () => onGenelTap(bildirim),
+          onDismiss: faded
+              ? null
+              : _guarded(context, () => onGenelDismiss(bildirim.id)),
+          onDelete: faded
+              ? _guarded(context, () => onGenelDelete(bildirim.id))
               : null,
         );
       case SinyalOgesi(:final alert):
@@ -1034,7 +1124,8 @@ class _SignalsBottomSheet extends ConsumerWidget {
     // akışında harmanlanır — ayrılık veri modelinde, birlik sunumda.
     final alarmlar =
         ref.watch(priceAlertNotificationProvider).valueOrNull ?? const [];
-    final akis = bildirimAkisi(signals, alarmlar);
+    final genel = ref.watch(appNotificationProvider).valueOrNull ?? const [];
+    final akis = bildirimAkisi(signals, alarmlar, genel);
     final active = akis.where((e) => !e.dismissEdilmis).toList();
     final history = akis.where((e) => e.dismissEdilmis).toList();
     return DefaultTextStyle(
@@ -1485,7 +1576,8 @@ class _SignalBadgeButton extends ConsumerWidget {
     // "3 bildirim" dediğinde açtığında üçünü de görmeli. Yalnızca
     // sinyalleri saymak, alarm gelince rozetin kıpırdamaması demekti.
     final count = ref.watch(activeSignalsProvider).length +
-        ref.watch(activePriceAlertNotificationsProvider).length;
+        ref.watch(activePriceAlertNotificationsProvider).length +
+        ref.watch(activeAppNotificationsProvider).length;
 
     return SandikTappable(
       onTap: onTap,

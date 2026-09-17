@@ -3012,4 +3012,21 @@ class AppLocalizationsTr extends AppLocalizations {
   String shareCardRange(String start, String end) {
     return '$start – $end';
   }
+
+  @override
+  String get notifTypePartner => 'ORTAKLIK';
+
+  @override
+  String get notifTypeDailyBrief => 'GÜNLÜK';
+
+  @override
+  String get notifTypeWeekly => 'HAFTALIK';
+
+  @override
+  String get notifTypeReminder => 'HATIRLATMA';
+
+  @override
+  String notifToday(String time) {
+    return 'Bugün $time';
+  }
 }

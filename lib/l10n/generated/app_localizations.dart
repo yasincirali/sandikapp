@@ -5179,6 +5179,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{start} – {end}'**
   String shareCardRange(String start, String end);
+
+  /// No description provided for @notifTypePartner.
+  ///
+  /// In tr, this message translates to:
+  /// **'ORTAKLIK'**
+  String get notifTypePartner;
+
+  /// No description provided for @notifTypeDailyBrief.
+  ///
+  /// In tr, this message translates to:
+  /// **'GÜNLÜK'**
+  String get notifTypeDailyBrief;
+
+  /// No description provided for @notifTypeWeekly.
+  ///
+  /// In tr, this message translates to:
+  /// **'HAFTALIK'**
+  String get notifTypeWeekly;
+
+  /// No description provided for @notifTypeReminder.
+  ///
+  /// In tr, this message translates to:
+  /// **'HATIRLATMA'**
+  String get notifTypeReminder;
+
+  /// No description provided for @notifToday.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün {time}'**
+  String notifToday(String time);
 }
 
 class _AppLocalizationsDelegate

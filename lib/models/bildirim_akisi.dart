@@ -1,3 +1,4 @@
+import 'app_notification.dart';
 import 'price_alert_notification.dart';
 import 'signal_alert.dart';
 
@@ -56,6 +57,21 @@ class FiyatAlarmiOgesi extends BildirimOgesi {
   String get kimlik => bildirim.id;
 }
 
+/// Genel bildirim satırı (0066): ortaklık, günlük/haftalık özet, takvim.
+class GenelOgesi extends BildirimOgesi {
+  const GenelOgesi(this.bildirim);
+  final AppNotification bildirim;
+
+  @override
+  DateTime get zaman => bildirim.sentAt;
+
+  @override
+  bool get dismissEdilmis => bildirim.isDismissed;
+
+  @override
+  String get kimlik => bildirim.id;
+}
+
 /// İki bildirim türünü TEK zaman akışında birleştirir — en yeni önce.
 ///
 /// Saf fonksiyon: provider'a, context'e, servise dokunmaz. Sıralama kuralı
@@ -68,8 +84,11 @@ class FiyatAlarmiOgesi extends BildirimOgesi {
 /// tamamen bellekte.
 List<BildirimOgesi> bildirimAkisi(
   List<SignalAlert> sinyaller,
-  List<PriceAlertNotification> alarmlar,
-) {
+  List<PriceAlertNotification> alarmlar, [
+  // Üçüncü kaynak (0066) isteğe bağlı: eski çağıranlar ve testler iki
+  // listeyle çalışmaya devam eder.
+  List<AppNotification> genel = const [],
+]) {
   final hepsi = <BildirimOgesi>[
     // Kimliksiz sinyal satırı dismiss/delete edilemez (id'siz kayıt yerel
     // bir artık olabilir) — listeye alınmaz, aksi halde dokunulunca hiçbir
@@ -77,6 +96,7 @@ List<BildirimOgesi> bildirimAkisi(
     for (final s in sinyaller)
       if ((s.id ?? '').isNotEmpty) SinyalOgesi(s),
     for (final a in alarmlar) FiyatAlarmiOgesi(a),
+    for (final g in genel) GenelOgesi(g),
   ];
   // En yeni önce. Eşit zamanda sıra belirsiz kalmasın diye kimliğe düşülür:
   // aynı saniyede yazılmış iki bildirimin her build'de yer değiştirmesi

@@ -522,6 +522,10 @@ class NotificationService {
     _openPartnerInvite(inviteId);
   }
 
+  /// Çan sayfasındaki ortaklık bildirimine dokunuş — push'a dokunulmuş
+  /// gibi aynı davet akışı (0066).
+  void openPartnerInvite(String inviteId) => _openPartnerInvite(inviteId);
+
   void _openPartnerInvite(String inviteId) {
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;

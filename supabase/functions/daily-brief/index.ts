@@ -49,6 +49,10 @@ import {
   ServiceAccount,
   shortLabel,
 } from '../_shared/fcm.ts';
+import {
+  appNotificationRow,
+  recordAppNotification,
+} from '../_shared/app_notifications.ts';
 import { loadPriceHistories, resolveSymbol } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
@@ -381,6 +385,8 @@ Deno.serve(async (request) => {
     let skippedQuiet = 0;
     let skippedQuietHours = 0;
     const failures: string[] = [];
+    // Çan kaydı kullanıcı başına TEK (çok cihaz) — bkz. app_notifications.ts.
+    const cankaydi = new Set<string>();
 
     // Sessiz saatler (0057): kullanıcı "bu saatte yazma" dediyse brifing
     // ATLANIR (ertelenmez — ertesi sabah zaten yeni brifing var).
@@ -422,6 +428,20 @@ Deno.serve(async (request) => {
         sent += 1;
         continue;
       }
+
+      // Çan sayfası kaydı — push'tan bağımsız (token reddedilse de kalır).
+      const kayitHatasi = await recordAppNotification(
+        admin,
+        appNotificationRow({
+          userId: tokenRow.user_id,
+          type: 'daily_brief',
+          title: mesaj.title,
+          body: mesaj.body,
+          data: { sent_on: bugun, variant },
+        }),
+        cankaydi,
+      );
+      if (kayitHatasi) failures.push(kayitHatasi);
 
       const r = await sendFcmNotification({
         accessToken,
