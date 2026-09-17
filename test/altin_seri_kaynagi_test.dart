@@ -67,16 +67,18 @@ void main() {
     test('İKİ KAYNAK TEK SERİDE BİRLEŞMEZ', () {
       // Birleşseydi aradaki vadeli primi serinin ORTASINDA bir basamak
       // olurdu — kullanıcı için okunamaz, sahte bir "hareket".
-      // Spot'ta 3, vadelide 4 nokta: kapsam yeterli, spot kazanmalı ve
+      // Kapsam yeterli (spot 40 birim, vadeli 50 → %80), spot kazanmalı ve
       // vadelinin fazladan noktası seriye SIZMAMALI.
       final sonuc = altinGramSerisi(
-        xauTry: {1: 100000.0, 2: 100000.0, 3: 100000.0},
-        xauUsd: {1: 5000.0, 2: 5000.0, 3: 5000.0, 4: 5000.0},
-        usdTry: {1: 42.0, 2: 42.0, 3: 42.0, 4: 42.0},
+        xauTry: {10: 100000.0, 20: 100000.0, 30: 100000.0, 40: 100000.0,
+                 50: 100000.0},
+        xauUsd: {10: 5000.0, 20: 5000.0, 30: 5000.0, 40: 5000.0, 50: 5000.0,
+                 60: 5000.0},
+        usdTry: {for (int i = 10; i <= 60; i += 10) i: 42.0},
         kurBul: kurBul,
       );
       expect(sonuc.kaynak, AltinSeriKaynagi.spotTry);
-      expect(sonuc.seri.keys.toList()..sort(), [1, 2, 3],
+      expect(sonuc.seri.keys.toList()..sort(), [10, 20, 30, 40, 50],
           reason: 'Vadeli noktalar spot serisine sızmış.');
       // Değerler de spot'tan: vadeli çevrimi 5000×42 = 210.000 ≠ 100.000.
       for (final v in sonuc.seri.values) {
@@ -129,7 +131,7 @@ void main() {
         AltinSeriKaynagi.vadeliUsd,
       );
 
-      // Kapsam yeterliyse yine spot kazanır (birkaç eksik bar sorun değil).
+      // Kapsam yeterliyse (süre olarak %80+) yine spot kazanır.
       final tamSpot = {for (int i = 1; i <= 90; i++) i: 210000.0};
       expect(
         altinGramSerisi(
@@ -140,6 +142,25 @@ void main() {
             .kaynak,
         AltinSeriKaynagi.spotTry,
       );
+    });
+
+    test('SEYREK ama tam kapsamlı spot elenmez — ölçüt SÜRE, sayı değil', () {
+      // Vadeli sözleşme borsa saatlerinde işlem görür, spot parite 7/24 kote
+      // edilir: aynı pencerede nokta SAYILARI çok farklı olabilir. Sayıya
+      // bakan bir ölçüt, geçmişi tam kapsayan spot seriyi haksız yere eler
+      // ve grafiği kalıcı olarak vadeli (primli) ölçeğe düşürürdü.
+      final yogunVadeli = {for (int i = 1; i <= 100; i++) i: 5000.0};
+      final seyrekSpot = {for (int i = 1; i <= 100; i += 10) i: 210000.0};
+
+      final sonuc = altinGramSerisi(
+        xauTry: seyrekSpot,
+        xauUsd: yogunVadeli,
+        usdTry: {for (int i = 1; i <= 100; i++) i: 42.0},
+        kurBul: kurBul,
+      );
+      expect(sonuc.kaynak, AltinSeriKaynagi.spotTry,
+          reason: '10 nokta 100 noktanın onda biri ama AYNI geçmişi '
+              'kapsıyor — kapsam ölçütü süre olmalı.');
     });
 
     test('spot yolu kur serisine HİÇ bakmaz', () {

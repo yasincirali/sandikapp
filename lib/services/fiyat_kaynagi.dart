@@ -137,14 +137,32 @@ enum AltinSeriKaynagi {
 }) {
   // Spot TERCİH edilir — ama KAPSAMI da yeterliyse.
   //
-  // Yahoo aynı range için iki sembole farklı uzunlukta seri verebiliyor.
-  // Koşulsuz "spot doluysa spot" kuralı, spot üç nokta döndüğünde 1Y
-  // grafiğini üç noktaya indirirdi: sapma yerine EKSİK GEÇMİŞ — aynı sınıf
-  // bir yanlış gösterim. Vadelinin yarısı kadar nokta eşiği, kısa bir spot
-  // yanıtını eler ama normal gündeki küçük farkları (bir-iki eksik bar)
-  // umursamaz.
+  // Yahoo aynı range için iki sembole farklı uzunlukta/aralıkta seri
+  // verebiliyor. Koşulsuz "spot doluysa spot" kuralı, spot üç nokta
+  // döndüğünde 1Y grafiğini üç noktaya indirirdi: sapma yerine EKSİK GEÇMİŞ
+  // — aynı sınıf bir yanlış gösterim.
+  //
+  // Ölçüt SÜRE (ilk→son damga), nokta sayısı değil. Sayı yanıltıcı olabilir:
+  // vadeli sözleşme borsa saatlerinde işlem görürken spot parite 7/24 kote
+  // edilir; aynı pencerede biri diğerinden çok daha SIK örneklenir. Süre ise
+  // "aynı geçmişi kapsıyor mu" sorusunu doğrudan yanıtlar. Tek noktalı spot
+  // yanıtının süresi sıfırdır ve bu ölçütle zaten elenir.
+  //
+  // %80 eşiği: bir-iki eksik bar ya da geç açılan seans spot'u elemez, ama
+  // pencerenin beşte birinden fazlasını kaçıran bir yanıt elenir.
+  double sure(Map<int, double> m) {
+    if (m.length < 2) return 0;
+    var enKucuk = m.keys.first, enBuyuk = m.keys.first;
+    for (final k in m.keys) {
+      if (k < enKucuk) enKucuk = k;
+      if (k > enBuyuk) enBuyuk = k;
+    }
+    return (enBuyuk - enKucuk).toDouble();
+  }
+
+  final vadeliSure = sure(xauUsd);
   final spotYeterli = xauTry.isNotEmpty &&
-      (xauUsd.isEmpty || xauTry.length * 2 >= xauUsd.length);
+      (xauUsd.length < 2 || sure(xauTry) >= vadeliSure * 0.8);
   if (spotYeterli) {
     return (
       seri: <int, double>{

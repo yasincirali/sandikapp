@@ -5,7 +5,35 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-17 (fiyat kaynağı sözleşmesi)
+**Son güncelleme:** 2026-09-17 (fiyat kaynağı sözleşmesi + tek çekim kapısı)
+
+---
+
+## ✅ KAPANDI — Grafik çekimleri üç ayrı kapıdan geçiyordu (timeout/tekilleştirme/negatif önbellek yok)
+
+**Ne.** Dört grafik yolu üç ayrı yerel closure ile çekim yapıyordu
+(`getHistorySafe`, `getHistorySafeFor`, `_fetchSafe`). Üçü de aynı işi
+yapıyor görünüyordu ama ayrışmışlardı ve her ayrışmanın ölçülebilir bir
+maliyeti vardı:
+
+1. **Timeout yalnızca birinde vardı.** 2026-09-13'te konan 8 saniyelik üst
+   sınır (`_grafikCekimSuresi`) yalnızca `_fetchSafe`'e uygulanmıştı; gün içi
+   ve günlük yollarda tek koruma alt katmandaki 15 saniyeydi. "Uzun süre
+   bekleyince geldi, kimse bu kadar beklemez" şikâyeti o yollarda hâlâ
+   geçerliydi — üstelik o tarihte yazılan test `.timeout(...)` metnini
+   dosyada bulduğu için YEŞİL görünüyordu.
+2. **Uçuşan istek tekilleştirmesi hiçbirinde yoktu.** Takip listesinde 10
+   satır aynı anda `USDTRY=X` isterse 10 ayrı HTTP çağrısı gidiyordu.
+3. **Boş yanıt hatırlanmıyordu.** Veri vermeyen sembol her tazelemede
+   yeniden isteniyor ve her seferinde timeout'a kadar bekletiyordu; altın
+   kaynağının "bazen spot, bazen vadeli" savrulmasının yakıtı da buydu.
+
+**Çözüm.** Tek kapı: `HistoryService.seriCek` — önbellek (range'e göre TTL)
+→ negatif önbellek (60 sn) → uçuşan istek tekilleştirme → timeout → ölçüm.
+Tier yolu da ham noktaları aynı kapıdan alıyor, yani performans ekranı,
+karşılaştırma ve takip listesi aynı sembol+range+interval için tek istek
+paylaşıyor. Kapı `seriCekici` ile enjekte edilebilir; davranış ağa çıkmadan
+ölçülüyor (`test/seri_cekim_kapisi_test.dart`, `fake_async`).
 
 ---
 

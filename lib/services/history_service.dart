@@ -356,6 +356,117 @@ class HistoryService {
   static void clearCache() {
     _cache.clear();
     _cacheAt.clear();
+    _bosYanitAt.clear();
+    _ucusanIstekler.clear();
+  }
+
+  // ── TEK ÇEKİM KAPISI ──────────────────────────────────────────────────────
+  //
+  // Dört grafik yolu buraya kadar üç ayrı yerel closure ile çekim yapıyordu
+  // (`getHistorySafe`, `getHistorySafeFor`, `_fetchSafe`). Üçü de aynı şeyi
+  // yapıyor gibi görünüyordu ama AYRIŞMIŞLARDI:
+  //   · timeout YALNIZCA `_fetchSafe`'te vardı — 2026-09-13'te konan 8
+  //     saniyelik üst sınır gün içi ve günlük yollarda hiç uygulanmıyordu
+  //     (tek koruma alt katmandaki 15 sn'ydi, yani "kimse bu kadar beklemez"
+  //     şikâyeti o yollarda hâlâ geçerliydi),
+  //   · uçuşan istek tekilleştirmesi hiçbirinde yoktu: takip listesindeki 10
+  //     satır aynı anda `USDTRY=X` isterse 10 ayrı HTTP çağrısı gidiyordu,
+  //   · boş yanıt hiç hatırlanmıyordu, bu yüzden veri VERMEYEN bir sembol her
+  //     tazelemede yeniden isteniyor ve her seferinde timeout'a kadar
+  //     bekletiyordu (altın kaynağının "bazen spot, bazen vadeli" savrulmasının
+  //     da yakıtı buydu).
+  //
+  // Tek kapı üçünü birden çözer ve ölçüm (`_cekimSuresiniKaydet`) tek yerden
+  // akar.
+
+  /// Aynı anahtar için uçuşan istek — ikinci çağıran AYNI future'a biner.
+  static final Map<String, Future<List<(int, double)>>> _ucusanIstekler = {};
+
+  /// Boş dönen anahtarın zaman damgası (negatif önbellek).
+  static final Map<String, DateTime> _bosYanitAt = {};
+
+  /// Boş yanıt bu süre boyunca tekrar SORULMAZ.
+  ///
+  /// Kalıcı önbelleğe almak yanlış olurdu: Yahoo'nun boşluğu çoğu zaman
+  /// geçici (429, kısa kesinti) ve 15 dakika boyunca veriyi reddetmek
+  /// grafiği gereksiz yere sakat bırakırdı. 60 saniye, bir ekran açılışı
+  /// boyunca aynı ölü sembolü defalarca sormayı keser ama toparlanmayı da
+  /// geciktirmez.
+  static const _bosYanitTtl = Duration(seconds: 60);
+
+  /// Ham seri çekimi — TESTLER için değiştirilebilir.
+  ///
+  /// `tefasNavGozlemKaynagi` ile aynı desen: servis singleton ve http
+  /// istemcisi private olduğu için ağ mock'lanamıyor; enjekte edilebilir tek
+  /// kapı, önbellek/tekilleştirme davranışını ağa çıkmadan ölçülebilir yapar.
+  @visibleForTesting
+  static Future<List<(int, double)>> Function(
+    String sym,
+    String range,
+    String? interval,
+  ) seriCekici = _agdanCek;
+
+  /// Testler enjeksiyonu geri almak için bunu kullanır.
+  @visibleForTesting
+  static Future<List<(int, double)>> Function(String, String, String?)
+      get varsayilanSeriCekici => _agdanCek;
+
+  static Future<List<(int, double)>> _agdanCek(
+          String sym, String range, String? interval) =>
+      interval == null
+          ? PriceService.instance.fetchHistory(sym, range)
+          : PriceService.instance.fetchHistoryAtInterval(sym, range, interval);
+
+  /// Fiyat serisi çeker: önbellek → negatif önbellek → uçuşan istek → ağ.
+  ///
+  /// Hata ve zaman aşımı BOŞ LİSTE döner (karar, istisna değil): çağıran
+  /// yedek kaynağa ya da `currentPrice` seed'ine düşer.
+  Future<List<(int, double)>> seriCek(String sym, String range,
+      {String? interval}) {
+    final key = interval == null ? '${sym}_$range' : '${sym}_${range}_$interval';
+    // Gün içi seriler daha çabuk eskir (bkz. `_intradayCacheTtl`).
+    final cached = _cacheGet(key, ttl: range == '1d' ? _intradayCacheTtl : null);
+    if (cached != null) return Future.value(cached);
+
+    final bosAt = _bosYanitAt[key];
+    if (bosAt != null && DateTime.now().difference(bosAt) <= _bosYanitTtl) {
+      return Future.value(const []);
+    }
+
+    final ucusan = _ucusanIstekler[key];
+    if (ucusan != null) return ucusan;
+
+    final istek = _seriCekHam(sym, range, interval, key);
+    _ucusanIstekler[key] = istek;
+    return istek.whenComplete(() => _ucusanIstekler.remove(key));
+  }
+
+  Future<List<(int, double)>> _seriCekHam(
+      String sym, String range, String? interval, String key) async {
+    final sure = Stopwatch()..start();
+    try {
+      final pts =
+          await seriCekici(sym, range, interval).timeout(_grafikCekimSuresi);
+      _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, pts.length,
+          timedOut: false);
+      if (pts.isNotEmpty) {
+        _cachePut(key, pts);
+        _bosYanitAt.remove(key);
+      } else {
+        _bosYanitAt[key] = DateTime.now();
+      }
+      return pts;
+    } on TimeoutException {
+      // Zaman aşımı HATA DEĞİL, bir karar: grafik o kaynak olmadan
+      // çizilir (altında yedek kaynak ya da `currentPrice` seed'i var).
+      _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, 0, timedOut: true);
+      _bosYanitAt[key] = DateTime.now();
+      return const [];
+    } catch (e) {
+      if (kDebugMode) debugPrint('seriCek($sym) failed: $e');
+      _bosYanitAt[key] = DateTime.now();
+      return const [];
+    }
   }
 
   /// Verilen varlıkların ilgili periyot için (örn. 365 gün) geçmiş fiyatlarını
@@ -419,18 +530,9 @@ class HistoryService {
     final bool needsGold = assets.any((a) => a.type == AssetType.altin);
     final bool needsUsd = assets.any((a) => a.currency == 'USD') || needsGold;
 
-    Future<List<(int, double)>> getHistorySafe(String sym) async {
-      final cacheKey = '${sym}_$range';
-      final cached = _cacheGet(cacheKey);
-      if (cached != null) return cached;
-      try {
-        final pts = await PriceService.instance.fetchHistory(sym, range);
-        if (pts.isNotEmpty) _cachePut(cacheKey, pts);
-        return pts;
-      } catch (e) {
-        return [];
-      }
-    }
+    // Önbellek, tekilleştirme, timeout ve ölçüm TEK KAPIDA (bkz. `seriCek`).
+    Future<List<(int, double)>> getHistorySafe(String sym) =>
+        seriCek(sym, range);
 
     // -- Ağ çağrıları --
     //
@@ -638,8 +740,11 @@ class HistoryService {
         } catch (e) {
           // Bir lot'un günü hesaplanamazsa, sadece o günkü işaretli
           // katkıyı fallback ile ekle — yine de negatif olamaz. Fallback de
-          // ölçülemiyorsa (kur yok) o lot bu güne HİÇ girmez.
-          dayTotalValue += _flatFallback(a) ?? 0.0;
+          // ölçülemiyorsa (kur yok) o lot bu güne HİÇ girmez: sıfır EKLEMEK
+          // "değeri sıfırdı" demek olurdu, oysa doğru ifade "ölçülemedi".
+          final f = _flatFallback(a);
+          if (f == null) continue;
+          dayTotalValue += f;
         }
       }
 
@@ -1032,20 +1137,10 @@ class HistoryService {
     final Map<int, double> usdTrySlots = {};
     final Map<int, double> goldSlots = {}; // TRY / gram22k
 
-    Future<List<(int, double)>> getHistorySafeFor(String sym, String r) async {
-      final cacheKey = '${sym}_$r';
-      // Gün içi seriler daha çabuk eskir (bkz. `_intradayCacheTtl`).
-      final cached =
-          _cacheGet(cacheKey, ttl: r == '1d' ? _intradayCacheTtl : null);
-      if (cached != null) return cached;
-      try {
-        final pts = await PriceService.instance.fetchHistory(sym, r);
-        if (pts.isNotEmpty) _cachePut(cacheKey, pts);
-        return pts;
-      } catch (_) {
-        return [];
-      }
-    }
+    // Önbellek/TTL, tekilleştirme, timeout ve ölçüm TEK KAPIDA (`seriCek`).
+    // Gün içi TTL'i kapı `range == '1d'` ölçütünden kendisi seçer.
+    Future<List<(int, double)>> getHistorySafeFor(String sym, String r) =>
+        seriCek(sym, r);
 
     Future<List<(int, double)>> getHistorySafe(String sym) =>
         getHistorySafeFor(sym, range);
@@ -1823,8 +1918,11 @@ class HistoryService {
     final cached = _tierCache[key];
     if (cached != null && _tierCacheTaze(key, tier)) return cached;
     try {
-      final pts = await PriceService.instance
-          .fetchHistoryAtInterval(ticker, tier.yahooRange, tier.yahooInterval);
+      // Ham noktalar TEK KAPIDAN: böylece aynı sembol+range+interval için
+      // performans ekranı, karşılaştırma ve takip listesi AYNI isteği
+      // paylaşır (uçuşan istek tekilleştirmesi + ortak önbellek).
+      final pts = await seriCek(ticker, tier.yahooRange,
+          interval: tier.yahooInterval);
       final map = <int, double>{};
       for (final p in pts) {
         map[tier.normalizeTs(p.$1)] = p.$2;
@@ -2307,8 +2405,23 @@ class HistoryService {
         kurBul: (kur, ts) => _closestOrNull(kur, ts),
       );
       debugSonAltinKaynagi = sonuc.kaynak;
+      // Seri, portföy yollarındaki gibi CANLI kotasyonun ölçeğine oturur.
+      // Oturmasaydı takip listesindeki gram altın ile portföydeki gram altın
+      // birkaç lira farklı görünürdü — aynı üründe iki fiyat.
+      // Ek ağ maliyeti yok: canlı değer bu oturumda zaten ölçülmüş olan
+      // kotasyondur (`PriceService.sonBilinenFiyat`).
+      final sonGramTs = sonuc.seri.isEmpty
+          ? null
+          : sonuc.seri.keys.reduce((a, b) => a > b ? a : b);
+      final canliBirim = PriceService.instance.sonBilinenFiyat(sym);
+      final kal = (sonGramTs == null || canliBirim == null)
+          ? 1.0
+          : altinKalibrasyonu(
+              seriSonBirimTRY: sonuc.seri[sonGramTs]! * weight,
+              canliBirimTRY: canliBirim,
+            );
       final out = <int, double>{
-        for (final e in sonuc.seri.entries) e.key: e.value * weight,
+        for (final e in sonuc.seri.entries) e.key: e.value * weight * kal,
       };
       // Kırpma ÇEVRİMDEN SONRA yapılır: önce kırpsaydık USD/TRY serisinde
       // eşleşecek komşu nokta kalmayabilir ve `_closestOrNull` kenardaki
@@ -2476,29 +2589,8 @@ class HistoryService {
   /// Anahtara interval de girer: aynı range farklı çözünürlükle istenebilir
   /// ve iki çekim birbirini ezmemelidir.
   Future<List<(int, double)>> _fetchSafe(
-      String sym, String range, String interval) async {
-    final key = '${sym}_${range}_$interval';
-    final cached = _cacheGet(key);
-    if (cached != null) return cached;
-    final sure = Stopwatch()..start();
-    try {
-      final pts = await PriceService.instance
-          .fetchHistoryAtInterval(sym, range, interval)
-          .timeout(_grafikCekimSuresi);
-      _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, pts.length,
-          timedOut: false);
-      if (pts.isNotEmpty) _cachePut(key, pts);
-      return pts;
-    } on TimeoutException {
-      // Zaman aşımı HATA DEĞİL, bir karar: grafik o kaynak olmadan
-      // çizilir (altında yedek kaynak ya da `currentPrice` seed'i var).
-      _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, 0, timedOut: true);
-      return const [];
-    } catch (e) {
-      if (kDebugMode) debugPrint('getSymbolHistory($sym) failed: $e');
-      return const [];
-    }
-  }
+          String sym, String range, String interval) =>
+      seriCek(sym, range, interval: interval);
 
   /// Bu sürenin üstündeki çekimler analytics'e düşer.
   static const _yavasCekimEsigi = Duration(seconds: 3);
@@ -2517,7 +2609,7 @@ class HistoryService {
   void _cekimSuresiniKaydet(String sym, int ms, int nokta,
       {required bool timedOut}) {
     if (kDebugMode) {
-      debugPrint('getSymbolHistory($sym) ${ms}ms, $nokta nokta'
+      debugPrint('seriCek($sym) ${ms}ms, $nokta nokta'
           '${timedOut ? ' — ZAMAN AŞIMI' : ''}');
     }
     if (!timedOut && ms < _yavasCekimEsigi.inMilliseconds) return;
