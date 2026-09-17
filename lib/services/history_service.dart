@@ -610,7 +610,10 @@ class HistoryService {
     // dokümantasyonunda. Bu yolda da son nokta `liveTotal` ile eziliyor,
     // yani kalibrasyon olmadan sağ uçta aynı yapay basamak oluşur.
     final altinKalibre =
-        altinKalibrasyonHaritasi(assets: assets, gramSerisi: goldHistory);
+        altinKalibrasyonHaritasi(
+            assets: assets,
+            gramSerisi: goldHistory,
+            kaynak: debugSonAltinKaynagi);
 
     // Hisse, Emtia, Döviz ve TEFAS Fon API Verileri.
     // Fiyat serileri yukarıda zaten paralel başlatıldı (sadece BUY lot'ları,
@@ -1364,7 +1367,8 @@ class HistoryService {
     // kalıcı makas "ŞİMDİ" imlecine yapışık dik bir uçurum olarak görünür
     // (kullanıcı bildirimi 2026-09-17).
     final altinKalibre =
-        altinKalibrasyonHaritasi(assets: assets, gramSerisi: goldSlots);
+        altinKalibrasyonHaritasi(
+            assets: assets, gramSerisi: goldSlots, kaynak: debugSonAltinKaynagi);
     double goldKal(String ticker) => altinKalibre[ticker] ?? 1.0;
 
     final groupedPoints = <int, double>{};
@@ -2059,7 +2063,8 @@ class HistoryService {
     // noktayı `currentTotalOverride` ile canlı toplama sabitliyor; kalibrasyon
     // olmadan altın ağırlıklı portföyde sağ uçta yapay bir basamak kalırdı.
     final altinKalibre =
-        altinKalibrasyonHaritasi(assets: assets, gramSerisi: goldMap);
+        altinKalibrasyonHaritasi(
+            assets: assets, gramSerisi: goldMap, kaynak: debugSonAltinKaynagi);
     double goldKal(String ticker) => altinKalibre[ticker] ?? 1.0;
 
     // Signed quantity per slot

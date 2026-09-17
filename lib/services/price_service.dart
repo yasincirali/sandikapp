@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'crash_reporter.dart';
+import 'fiyat_kaynagi.dart';
 import 'tefas_service.dart';
 
 class YahooQuote {
@@ -146,6 +148,16 @@ class PriceService {
   /// kurdan hesaplanır — seri buna hizalanınca (`kurSerisiniHizala`) grafiğin
   /// son noktası ile kâr/zarar çipi aynı sayıyı verir.
   final Map<String, double> _sonBilinenFiyat = {};
+
+  /// Sembolün SON fiyatını hangi kaynak verdi.
+  ///
+  /// Teşhis için: "fiyat zıplıyor" bildirimi geldiğinde ilk soru kaynağın
+  /// değişip değişmediğidir ve bu, dışarıdan görülemiyordu.
+  final Map<String, FiyatKaynagiEtiketi> _sonKaynak = {};
+
+  /// Sembolün son fiyatını veren kaynak — yoksa `null`.
+  FiyatKaynagiEtiketi? sonKaynak(String symbol) =>
+      _sonKaynak[symbol.trim().toUpperCase()];
 
   /// Bu oturumda görülmüş son canlı fiyat — yoksa `null` (uydurma YOK).
   double? sonBilinenFiyat(String symbol) =>
@@ -329,6 +341,7 @@ class PriceService {
     final eurTry = _parseTruncgilValue(data['EUR']);
     final gbpTry = _parseTruncgilValue(data['GBP']);
     if (usdTry <= 0) throw Exception('USD rate missing from Truncgil');
+    _sonKaynak[FiyatKaynagi.usdTry] = FiyatKaynagiEtiketi.yurtIci;
     return {
       'USDTRY=X': _fxQ('USDTRY=X', usdTry),
       'EURTRY=X': _fxQ('EURTRY=X', eurTry > 0 ? eurTry : usdTry * 1.1),
@@ -344,6 +357,7 @@ class PriceService {
       if (key == null) continue;
       final price = _parseTruncgilValue(data[key]);
       if (price > 0) {
+        _sonKaynak[sym] = FiyatKaynagiEtiketi.yurtIci;
         result[sym] = YahooQuote(
           symbol: sym,
           regularMarketPrice: price,
@@ -369,10 +383,30 @@ class PriceService {
     final usdEur = (rates['EUR'] as num?)?.toDouble() ?? 1;
     final usdGbp = (rates['GBP'] as num?)?.toDouble() ?? 1;
     if (usdTry == 0) throw Exception('TRY rate missing');
+    // Kur yedeği de başka bir ölçektedir (er-api mid, truncgil `Alış`).
+    // Altınla aynı gerekçe: kaynak değişince kullanıcının USD kote
+    // varlıkları zıplamamalı.
+    double hizala(String sembol, double ham) {
+      // Altındaki ile aynı kural: oran yoksa bu oturumda birincil kaynaktan
+      // görülmüş son kurdan öğren.
+      if (OlcekHafizasi.instance.oran(sembol, FiyatKaynagiEtiketi.erApi) ==
+              null &&
+          _sonKaynak[sembol] == FiyatKaynagiEtiketi.yurtIci) {
+        final sonBirincil = _sonBilinenFiyat[sembol];
+        if (sonBirincil != null && sonBirincil > 0 && ham > 0) {
+          OlcekHafizasi.instance.ogren(sembol, FiyatKaynagiEtiketi.erApi,
+              birincil: sonBirincil, yedek: ham);
+        }
+      }
+      _sonKaynak[sembol] = FiyatKaynagiEtiketi.erApi;
+      return OlcekHafizasi.instance
+          .hizala(sembol, FiyatKaynagiEtiketi.erApi, ham);
+    }
+
     return {
-      'USDTRY=X': _fxQ('USDTRY=X', usdTry),
-      'EURTRY=X': _fxQ('EURTRY=X', usdTry / usdEur),
-      'GBPTRY=X': _fxQ('GBPTRY=X', usdTry / usdGbp),
+      FiyatKaynagi.usdTry: _fxQ(FiyatKaynagi.usdTry, hizala(FiyatKaynagi.usdTry, usdTry)),
+      'EURTRY=X': _fxQ('EURTRY=X', hizala('EURTRY=X', usdTry / usdEur)),
+      'GBPTRY=X': _fxQ('GBPTRY=X', hizala('GBPTRY=X', usdTry / usdGbp)),
     };
   }
 
@@ -410,14 +444,20 @@ class PriceService {
     //    Eşik ons başına TRY için düşük ama anlamlı bir taban: gerçek değer
     //    yüz binler mertebesinde, 1000 yalnızca çöp/placeholder'ı eler.
     double? xauTry;
+    // Hangi yedek yol kullanıldı — ölçek hafızasının anahtarı buna bağlı:
+    // spot ile vadeli AYNI ölçekte değil, tek bir "yedek" etiketi ikisini
+    // karıştırır ve yanlış oranla düzeltme yapardı.
+    var xauTrySpotMuydu = true;
     try {
-      final direct = (await _fetchOneChart('XAUTRY=X'))?.regularMarketPrice;
+      final direct =
+          (await _fetchOneChart(FiyatKaynagi.xauTry))?.regularMarketPrice;
       if (direct != null && direct > 1000) xauTry = direct;
     } catch (_) {}
 
     // 2) Eski yol: GC=F (ons/USD) × USD/TRY.
     if (xauTry == null) {
-      final q = await _fetchOneChart('GC=F');
+      xauTrySpotMuydu = false;
+      final q = await _fetchOneChart(FiyatKaynagi.xauUsd);
       final xauUsd = q?.regularMarketPrice;
       if (xauUsd == null || xauUsd <= 500) {
         throw Exception('GC=F unavailable');
@@ -428,15 +468,55 @@ class PriceService {
     }
 
     final gram22k = gram22kFromXauTry(xauTry);
-    return {
-      for (final sym in goldSymbols)
-        sym: YahooQuote(
-          symbol: sym,
-          regularMarketPrice: gram22k * (_goldWeights[sym] ?? 1.0),
-          currency: 'TRY',
-          shortName: _goldLabel(sym),
-        ),
-    };
+    // ── Yedek kaynak BAŞKA BİR ÖLÇEKTEDİR ────────────────────────────────
+    //
+    // Birincil kaynak truncgil'dir: yurt içi kotasyon. Buradaki sayı ise
+    // uluslararası spot (ya da vadeli) çevrimidir ve aralarında kalıcı bir
+    // makas vardır (~%1-2). Ham dönerse, truncgil'in bir tur cevap
+    // vermediği her seferde kullanıcının fiyatı zıplar ve bir sonraki turda
+    // geri döner: portföy toplamı, grafiğin son noktası ve Live Activity'nin
+    // "bugünkü değişim"i aynı anda işaret değiştirir (kullanıcı bildirimi,
+    // TestFlight 2026-09-17). Hareket değil, ÖLÇEK değişimi.
+    //
+    // Bu yüzden değer, öğrenilmiş oranla birincilin ölçeğine taşınır. Oran
+    // grafik yollarında zaten hesaplanıyor (`altinKalibrasyonHaritasi`),
+    // ek ağ maliyeti yok. Oran bilinmiyorsa ham kullanılır — uydurma
+    // çarpan yok — ve durum teşhise açık kalır (`sonKaynak`).
+    final etiket = xauTrySpotMuydu
+        ? FiyatKaynagiEtiketi.spot
+        : FiyatKaynagiEtiketi.vadeli;
+    final out = <String, YahooQuote>{};
+    for (final sym in goldSymbols) {
+      final ham = gram22k * (_goldWeights[sym] ?? 1.0);
+      // Oran henüz öğrenilmemişse (grafik hiç çizilmediyse) BU GEÇİŞTE
+      // öğren: bu oturumda birincil kaynaktan görülmüş son fiyat elimizde.
+      // Aradan geçen sürede gerçekleşmiş küçük bir hareketi ölçeğe
+      // katmak, %1-2'lik bir ölçek sıçramasını kullanıcıya göstermekten
+      // iyidir — ve bir sonraki grafik çizimi oranı zaten tazeleyecek.
+      if (OlcekHafizasi.instance.oran(sym, etiket) == null &&
+          _sonKaynak[sym] == FiyatKaynagiEtiketi.yurtIci) {
+        final sonBirincil = _sonBilinenFiyat[sym];
+        if (sonBirincil != null && sonBirincil > 0 && ham > 0) {
+          OlcekHafizasi.instance
+              .ogren(sym, etiket, birincil: sonBirincil, yedek: ham);
+        }
+      }
+      final hizali = OlcekHafizasi.instance.hizala(sym, etiket, ham);
+      _sonKaynak[sym] = etiket;
+      out[sym] = YahooQuote(
+        symbol: sym,
+        regularMarketPrice: hizali,
+        currency: 'TRY',
+        shortName: _goldLabel(sym),
+      );
+    }
+    CrashReporter.report(
+      'altın yedek kaynak devrede: ${etiket.name} '
+      '(ölçek hafızası: ${OlcekHafizasi.instance.oran(goldSymbols.first, etiket) == null ? "YOK" : "var"})',
+      StackTrace.current,
+      reason: 'fiyat_yedek_kaynak',
+    );
+    return out;
   }
 
   String _goldLabel(String sym) => switch (sym) {

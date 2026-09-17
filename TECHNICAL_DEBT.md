@@ -5,7 +5,47 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-17 (fiyat kaynağı sözleşmesi + tek çekim kapısı)
+**Son güncelleme:** 2026-09-17 (ölçek hafızası — canlı kaynak geçişi)
+
+---
+
+## 🟡 AÇIK — Ölçek hafızası OTURUM İÇİ; soğuk açılışta birincil kaynak düşükse ölçek bilinmez
+
+**Ne çözüldü (TestFlight bildirimi, 2026-09-17).** *"Çok kısa zaman
+içerisinde yüksek sıçramalar ve düşüşler... canlı etkinliklerden fark
+ettim, bir eksi de bir artı da gözüküyordu."*
+
+Sebep fiyat hareketi değil KAYNAK DEĞİŞİMİydi: canlı altın birincil
+kaynaktan (truncgil, yurt içi kotasyon) gelir; o kaynak bir tur cevap
+vermezse yedek yol uluslararası spot/vadeli çevriminden sayı üretiyordu ve
+iki ölçek arasında kalıcı ~%1-2 makas var. 45 saniyelik kotasyon
+önbelleğiyle birlikte fiyat dakikalar içinde ileri geri zıplıyor; portföy
+toplamı, grafiğin son noktası ve Live Activity'nin "bugünkü değişim"i aynı
+anda işaret değiştiriyordu. Aynı sınıf makas kurda da var (truncgil `Alış`
+↔ er-api mid).
+
+`OlcekHafizasi` yedeğin sayısını birincilin ölçeğine taşıyor. Oran ek ağ
+maliyeti olmadan öğreniliyor: grafik yolları zaten her çizimde canlı ÷ seri
+oranını hesaplıyor (`altinKalibrasyonHaritasi`, `kurSerisiniHizala`). Oran
+spot ve vadeli için AYRI tutuluyor (ikisi aynı ölçek değil) ve sınır dışı
+bir oran (ör. atlanmış ağırlık çarpanı → 7,2 kat) öğrenilmiyor — kalibrasyon
+bir ölçek hatasını örtmemeli.
+
+**Neden hâlâ AÇIK.** Hafıza oturum içi. Uygulama soğuk açılırken truncgil
+düşükse ve bu oturumda hiç birincil fiyat görülmediyse oran bilinmez; yedek
+HAM kullanılır (uydurma çarpan yok, ama ölçek farkı görünür). Pratikte ilk
+grafik çizimi saniyeler içinde oranı öğreniyor ve ilk geçişte oturumda
+görülmüş son birincil fiyattan da öğrenilebiliyor — yine de kalıcılaştırma
+(`shared_preferences`) bu boşluğu tamamen kapatır.
+
+**Ne zaman ele alınmalı.** Kullanıcı "açılışta bir an farklı fiyat gördüm"
+derse ya da `fiyat_yedek_kaynak` non-fatal'ı üretimde sık görülürse.
+
+**Teşhis.** Yedek kaynak devreye girdiğinde Crashlytics'e
+`fiyat_yedek_kaynak` non-fatal'ı düşüyor (hangi kaynak + ölçek hafızası var
+mı). `PriceService.sonKaynak(sembol)` son fiyatı kimin verdiğini söylüyor.
+
+**İlgili.** `test/olcek_hafizasi_test.dart`, `lib/services/fiyat_kaynagi.dart`.
 
 ---
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import 'price_service.dart';
@@ -262,6 +263,9 @@ double altinKalibrasyonu({
 Map<String, double> altinKalibrasyonHaritasi({
   required Iterable<Asset> assets,
   required Map<int, double> gramSerisi,
+  /// Serinin hangi kaynaktan geldiği — biliniyorsa ölçek hafızası ÖĞRENİR
+  /// (bkz. [OlcekHafizasi]). Ek ağ maliyeti yok: oran zaten hesaplanıyor.
+  AltinSeriKaynagi? kaynak,
 }) {
   final out = <String, double>{};
   if (gramSerisi.isEmpty) return out;
@@ -272,12 +276,128 @@ Map<String, double> altinKalibrasyonHaritasi({
     if (a.type != AssetType.altin) continue;
     if (a.currentPrice <= 0) continue;
     if (out.containsKey(a.ticker)) continue;
+    final seriBirim = sonGram * PriceService.goldWeightFactor(a.ticker);
     out[a.ticker] = altinKalibrasyonu(
-      seriSonBirimTRY: sonGram * PriceService.goldWeightFactor(a.ticker),
+      seriSonBirimTRY: seriBirim,
       canliBirimTRY: a.currentPrice,
     );
+    // Canlı kaynak düştüğünde yedeğin aynı ölçeğe taşınabilmesi için oran
+    // hatırlanır. `a.currentPrice` yurt içi kotasyondur (truncgil).
+    final etiket = switch (kaynak) {
+      AltinSeriKaynagi.spotTry => FiyatKaynagiEtiketi.spot,
+      AltinSeriKaynagi.vadeliUsd => FiyatKaynagiEtiketi.vadeli,
+      _ => null,
+    };
+    if (etiket != null) {
+      OlcekHafizasi.instance.ogren(a.ticker, etiket,
+          birincil: a.currentPrice, yedek: seriBirim);
+    }
   }
   return out;
+}
+
+/// Bir fiyatın hangi kaynaktan geldiği — ölçek hafızasının anahtarı.
+///
+/// Ölçek kaynağa bağlıdır: yurt içi kotasyon (truncgil) ile uluslararası
+/// spot çevrimi arasında kalıcı bir makas vardır, vadeli sözleşme ise
+/// spot'un da üstündedir. Aynı sembolün iki kaynağı AYNI SAYIYI VERMEZ.
+enum FiyatKaynagiEtiketi {
+  /// Yurt içi kotasyon (truncgil) — kullanıcıya gösterilen ÖLÇEK budur.
+  yurtIci,
+
+  /// `XAUTRY=X` spot çevrimi ya da Yahoo `USDTRY=X`.
+  spot,
+
+  /// `GC=F × USDTRY` — vadeli sözleşme çevrimi.
+  vadeli,
+
+  /// `open.er-api.com` kur servisi.
+  erApi,
+}
+
+/// **Kaynaklar arası ölçek hafızası — "kaynak değişti diye sayı zıplamasın".**
+///
+/// ## Ölçülen arıza (kullanıcı, TestFlight 2026-09-17)
+/// "Çok kısa zaman içerisinde yüksek sıçramalar ve düşüşler gösteriyordu.
+/// Canlı etkinliklerden fark ettim: bir eksi de bir artı da gözüküyordu."
+///
+/// Sebep: canlı altın fiyatı BİRİNCİL kaynaktan (truncgil, yurt içi
+/// kotasyon) gelir; o kaynak bir tur cevap vermezse `_fetchGoldFallback`
+/// devreye girer ve **başka bir ölçekten** (uluslararası spot çevrimi) sayı
+/// üretir. İki ölçek arasında ~%1-2 makas var. 45 saniyelik kotasyon
+/// önbelleğiyle birlikte bu, dakikalar içinde ileri geri zıplayan bir fiyat
+/// demek: portföy toplamı, gün içi grafiğin son noktası ve Live Activity'nin
+/// "bugünkü değişim"i aynı anda işaret değiştiriyor. Fiyat hareketi yok —
+/// ölçek değişiyor.
+///
+/// ## Çözüm
+/// Yedek kaynak ham haliyle KULLANILMAZ: birincil ile arasındaki ORAN
+/// hatırlanır ve yedeğin sayısı o oranla birincilin ölçeğine taşınır.
+/// Böylece kaynak değişse bile kullanıcının gördüğü sayı sürekli kalır;
+/// gerçek fiyat hareketi ise yedek kaynağın kendi hareketinden gelmeye
+/// devam eder (donmuş/bayat bir sayı göstermiyoruz).
+///
+/// ## Oran nereden öğrenilir — ek ağ maliyeti YOK
+/// Grafik yolları zaten her çizimde bu oranı hesaplıyor
+/// ([altinKalibrasyonHaritasi], [kurSerisiniHizala]): canlı kotasyon ÷
+/// serinin son noktası. Öğrenme oradan akar. Yani uygulama bir kez grafik
+/// çizdiyse, canlı kaynak düştüğünde ölçek zaten biliniyordur.
+///
+/// Oran bilinmiyorsa yedek HAM kullanılır (uydurma çarpan yok) ve bu durum
+/// [sonKaynak] üzerinden teşhise açık kalır.
+///
+/// **Oturum içi bellek.** Soğuk açılışta birincil kaynak düşükse ölçek
+/// bilinmez; kalıcılaştırma (SharedPreferences) `TECHNICAL_DEBT`'te açık
+/// madde — ilk grafik çizimi saniyeler içinde oranı zaten öğreniyor.
+class OlcekHafizasi {
+  OlcekHafizasi._();
+  static final OlcekHafizasi instance = OlcekHafizasi._();
+
+  final Map<String, double> _oranlar = {};
+
+  static String _anahtar(String sembol, FiyatKaynagiEtiketi kaynak) =>
+      '${sembol.trim().toUpperCase()}|${kaynak.name}';
+
+  /// Birincil ÷ yedek oranını öğrenir.
+  ///
+  /// Sınır [altinKalibreAltSinir]–[altinKalibreUstSinir]: bunun dışındaki bir
+  /// oran makas değil HATADIR (yanlış sembol, atlanmış ağırlık çarpanı) ve
+  /// hafızaya yazılırsa hatayı kalıcılaştırırdı.
+  void ogren(
+    String sembol,
+    FiyatKaynagiEtiketi kaynak, {
+    required double birincil,
+    required double yedek,
+  }) {
+    final oran = olcekCarpani(
+      seriSon: yedek,
+      canli: birincil,
+      alt: altinKalibreAltSinir,
+      ust: altinKalibreUstSinir,
+    );
+    // 1.0 iki şey demek olabilir: gerçekten aynı ölçek ya da sınır dışı
+    // olduğu için reddedilmiş bir oran. İkisi de "düzeltme gerekmiyor"
+    // sonucunu verir; yazmak da zarar vermez, kaydı tazeler.
+    _oranlar[_anahtar(sembol, kaynak)] = oran;
+  }
+
+  /// Bilinen oran — yoksa `null`.
+  double? oran(String sembol, FiyatKaynagiEtiketi kaynak) =>
+      _oranlar[_anahtar(sembol, kaynak)];
+
+  /// Yedek kaynaktan gelen [deger]i birincilin ölçeğine taşır.
+  ///
+  /// Oran bilinmiyorsa değer OLDUĞU GİBİ döner — tahmin edilmiş bir çarpan,
+  /// hiç çarpan olmamasından daha kötüdür.
+  double hizala(String sembol, FiyatKaynagiEtiketi kaynak, double deger) {
+    if (deger <= 0 || !deger.isFinite) return deger;
+    final o = oran(sembol, kaynak);
+    return o == null ? deger : deger * o;
+  }
+
+  /// Testler için.
+  @visibleForTesting
+  void temizle() => _oranlar.clear();
 }
 
 /// Kur serisini uygulamanın CANLI kuruna hizalar — tek kur gerçeği.
@@ -295,6 +415,13 @@ Map<int, double> kurSerisiniHizala(Map<int, double> seri, double? canliKur) {
   if (seri.isEmpty || canliKur == null || canliKur <= 0) return seri;
   final sonTs = seri.keys.reduce((a, b) => a > b ? a : b);
   final son = seri[sonTs] ?? 0;
+  // Kur serisi Yahoo'dan (spot/mid), canlı kotasyon yurt içinden gelir.
+  // Oran hatırlanır ki canlı kur kaynağı düştüğünde yedek aynı ölçeğe
+  // taşınabilsin (bkz. `OlcekHafizasi`).
+  if (son > 0) {
+    OlcekHafizasi.instance.ogren(FiyatKaynagi.usdTry, FiyatKaynagiEtiketi.spot,
+        birincil: canliKur, yedek: son);
+  }
   final k = olcekCarpani(
     seriSon: son,
     canli: canliKur,

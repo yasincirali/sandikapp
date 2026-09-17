@@ -246,7 +246,8 @@ void main() {
 
       expect(src.contains('_resolveUsdTry'), isTrue,
           reason: 'yedek yol kendi kurunu arayabilmeli');
-      expect(src.contains("_fetchOneChart('XAUTRY=X')"), isTrue,
+      // Sembol artık sözleşme sabiti (`FiyatKaynagi.xauTry`).
+      expect(src.contains('_fetchOneChart(FiyatKaynagi.xauTry)'), isTrue,
           reason: 'kur çevrimi gerektirmeyen doğrudan kaynak birincil olmalı');
 
       // Kapının geri gelmediğini kanıtla: çağrı yeri koşulsuz olmalı.
