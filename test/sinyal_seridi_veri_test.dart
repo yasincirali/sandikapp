@@ -110,7 +110,7 @@ void main() {
             'kullanıcı hangi sinyalin geldiğini bilemez.');
   });
 
-  testWidgets('sağ sütunda MUTLAK tarih+saat ve yön ikonu', (tester) async {
+  testWidgets('sağ sütunda MUTLAK tarih+saat; yön ikonu TEK', (tester) async {
     // Testte ağ yok → fiyat geçmişi boş → şerit CANLI hesap yapamaz ve
     // kaydı gösterir. Bu, push bildiriminin açtığı gerçek durumla aynı
     // yol; sağ sütun "ŞU AN" değil TAM tarih+saat yazmalı.
@@ -123,9 +123,12 @@ void main() {
         reason: 'Mutlak tarih+saat kayıp — kullanıcı bildirimin tam '
             'zamanını kaçırmamalı. Ekrandaki metin:\n$metin');
 
-    // Yön ikonu iki kez: solda daire içinde, sağda sütunda (örnekteki gibi).
-    expect(find.byIcon(Icons.trending_down_rounded), findsNWidgets(2),
-        reason: 'Sağ sütundaki yön ikonu kayıp.');
+    // Yön ikonu YALNIZCA solda, daire içinde. Sağ sütundaki tekrar
+    // 2026-09-18'de kaldırıldı: bilgi eklemiyordu ve kart dört parçaya
+    // bölünmüş görünüyordu (kullanıcı: "estetikten uzak"). Sağda artık
+    // yalnızca zaman pili var. İkinci ikon geri gelirse bu test kırılsın.
+    expect(find.byIcon(Icons.trending_down_rounded), findsOneWidget,
+        reason: 'Yön ikonu ya kayıp ya da sağ sütunda yeniden çoğaltılmış.');
   });
 
   testWidgets('göreli VE mutlak zaman BİRLİKTE durur', (tester) async {

@@ -97,13 +97,29 @@ void main() {
       });
     }
 
-    testWidgets('alarm yok — boş durum taşmaz, 320pt', (tester) async {
+    testWidgets('alarm yok — şerit HİÇ çizilmez (tek giriş app bar zili)',
+        (tester) async {
       await _pump(
         tester,
         const AlarmSeridi(sembol: 'X', ad: 'X', guncelFiyat: 1),
         width: 320,
       );
       expect(tester.takeException(), isNull);
+      // 2026-09-18: boş şerit "Alarm kur" çipi gösteriyordu ve app bar'daki
+      // zille aynı eylemi ikinci kez ekrana koyuyordu. Boşken hiçbir
+      // dokunulabilir öğe kalmamalı.
+      expect(find.byType(SandikTappable), findsNothing);
+    });
+
+    testWidgets('alarm varken sonda tek bir "+" çipi', (tester) async {
+      await _pump(
+        tester,
+        const AlarmSeridi(sembol: 'THYAO.IS', ad: 'THY', guncelFiyat: 312.4),
+        rows: _alarmlar(2),
+      );
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      // Metinli "Alarm kur" butonu geri gelmesin.
+      expect(find.text('Alarm kur'), findsNothing);
     });
   });
 

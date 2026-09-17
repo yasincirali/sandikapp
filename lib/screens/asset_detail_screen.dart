@@ -34,6 +34,7 @@ import '../providers/signal_provider.dart';
 import '../models/asset_categories.dart';
 import '../services/tefas_service.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../providers/price_alert_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
 
@@ -368,10 +369,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           // Fiyat alarmı BURADAN kurulur (2026-09-14): alarm varlığa aittir,
           // Ayarlar'daki liste yalnızca gösterir. Sembolü olmayan (manuel
           // fiyatlı) varlıkta zil yok — sunucu fiyatını izleyemez.
+          //
+          // Tek giriş noktası burası (2026-09-18): sinyal kartının altındaki
+          // "Alarm kur" butonu kaldırıldı, aynı eylem iki yerde duruyordu.
+          // Zil DURUM taşır: aktif alarm varsa dolu ikon + amber — kullanıcı
+          // ekrana girer girmez "bu varlıkta alarmım var" der.
           if (_alarmSembolu != null)
             IconButton(
               tooltip: context.l10n.setPriceAlert,
-              icon: Icon(Icons.add_alert_outlined, color: context.c.text90),
+              icon: ref
+                      .watch(symbolAlertsProvider(_alarmSembolu!))
+                      .any((a) => a.isActive)
+                  ? Icon(Icons.notifications_active_rounded,
+                      color: context.c.amberText)
+                  : Icon(Icons.add_alert_outlined, color: context.c.text90),
               onPressed: () => alarmKurAkisi(
                 context,
                 ref,
@@ -466,14 +477,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     asset: widget.asset,
                     onTap: _sinyalPaneline,
                   ),
-                if (_alarmSembolu != null) ...[
+                // Kurulu alarmlar (boşken hiç çizilmez; alt boşluğunu kendi
+                // taşır — bkz. AlarmSeridi).
+                if (_alarmSembolu != null)
                   AlarmSeridi(
                     sembol: _alarmSembolu!,
                     ad: widget.asset.name,
                     guncelFiyat: widget.asset.currentPrice,
                   ),
-                  const SizedBox(height: SandikSpace.smd),
-                ],
                 _buildPeriodToggle(),
                 const SizedBox(height: 24),
                 FutureBuilder<Map<int, double>>(

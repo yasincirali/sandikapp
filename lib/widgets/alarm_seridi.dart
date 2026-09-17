@@ -9,12 +9,21 @@ import '../utils/tr_format.dart';
 import 'alarm_kur_sheet.dart';
 import '../l10n/l10n.dart';
 
-/// Varlık ekranındaki alarm şeridi — bu sembolün alarmları + "Alarm kur".
+/// Varlık ekranındaki alarm şeridi — bu sembolün KURULU alarmları.
 ///
 /// Alarm varlığa aittir; kullanıcı "THY 320'yi geçince" derken varlığın
-/// ekranındadır, Ayarlar'da değil. Şerit boşken de görünür (tek bir "Alarm
-/// kur" çipi) — özellik keşfedilebilir olsun. Sembolü olmayan (manuel
-/// fiyatlı) varlıkta hiç çizilmez: sunucu onun fiyatını izleyemez.
+/// ekranındadır, Ayarlar'da değil. Sembolü olmayan (manuel fiyatlı) varlıkta
+/// hiç çizilmez: sunucu onun fiyatını izleyemez.
+///
+/// ## Boşken çizilmez (2026-09-18)
+/// Eskiden şerit boşken de tek bir "Alarm kur" çipi gösteriyordu — "özellik
+/// keşfedilebilir olsun" diye. O karar app bar'a zil eklenmeden (2026-09-14)
+/// önce verilmişti; zil geldikten sonra aynı eylem ekranda İKİ kez duruyordu
+/// (sağ üstte ikon, sinyal kartının altında yalnız bir sarı buton) ve
+/// kullanıcı bunu "estetikten uzak" diye bildirdi. Giriş noktası artık tek:
+/// app bar'daki zil. Şerit yalnızca kurulu alarm varken görünür; sonuna
+/// küçük bir "+" çipi eklenir ki ikinci alarm mevcut olanların yanından
+/// kurulabilsin.
 class AlarmSeridi extends ConsumerWidget {
   final String sembol;
   final String ad;
@@ -31,61 +40,63 @@ class AlarmSeridi extends ConsumerWidget {
     final c = context.c;
     final alarmlar = ref.watch(symbolAlertsProvider(sembol));
     final n = ref.read(priceAlertsProvider.notifier);
+    if (alarmlar.isEmpty) return const SizedBox.shrink();
 
-    return Semantics(
-      container: true,
-      label: alarmlar.isEmpty
-          ? context.l10n.noPriceAlert
-          : context.l10n.nActiveAlerts(alarmlar.where((a) => a.isActive).length),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _Cip(
-              onTap: () => alarmKurAkisi(context, ref,
-                  sabit: AlarmAdayi(sembol, ad, guncelFiyat)),
-              renk: c.amberText,
-              zemin: c.amberFill.withValues(alpha: 0.12),
-              semanticLabel: 'Fiyat alarmı kur',
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_alert_outlined, size: 16, color: c.amberText),
-                  const SizedBox(width: SandikSpace.xs),
-                  Text('Alarm kur',
-                      style: context.t.labelLarge?.copyWith(
-                          color: c.amberText, fontWeight: FontWeight.w700)),
-                ],
-              ),
-            ),
-            for (final a in alarmlar) ...[
+    // Alt boşluk şeridin KENDİ sorumluluğu: üst ekran "şerit + SizedBox"
+    // dizerse boş durumda boşluk tek başına kalır ve sinyal kartıyla periyot
+    // seçici arasında açıklanamayan bir delik açılırdı.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.smd),
+      child: Semantics(
+        container: true,
+        label: context.l10n
+            .nActiveAlerts(alarmlar.where((a) => a.isActive).length),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final a in alarmlar) ...[
+                if (a != alarmlar.first)
+                  const SizedBox(width: SandikSpace.xs2),
+                _AlarmCipi(
+                  alarm: a,
+                  // Tetiklenmiş alarm dokununca yeniden kurulur; aktif alarm
+                  // dokununca silme sorulur. İki durumun tek dokunuşu vardır,
+                  // ikinci bir ikon şeridi sıkıştırırdı.
+                  onTap: () async {
+                    if (a.triggeredAt != null) {
+                      await n.rearm(a.id);
+                      return;
+                    }
+                    final ok = await showSandikConfirm(
+                      context: context,
+                      title: context.l10n.deleteAlertTitle,
+                      message: a.isAbove
+                          ? context.l10n.deleteAlertAbove(
+                              fmtTRY(a.targetPrice, digits: 2))
+                          : context.l10n.deleteAlertBelow(
+                              fmtTRY(a.targetPrice, digits: 2)),
+                      confirmLabel: 'Sil',
+                      destructive: true,
+                    );
+                    if (ok) await n.delete(a.id);
+                  },
+                ),
+              ],
               const SizedBox(width: SandikSpace.xs2),
-              _AlarmCipi(
-                alarm: a,
-                // Tetiklenmiş alarm dokununca yeniden kurulur; aktif alarm
-                // dokununca silme sorulur. İki durumun tek dokunuşu vardır,
-                // ikinci bir ikon şeridi sıkıştırırdı.
-                onTap: () async {
-                  if (a.triggeredAt != null) {
-                    await n.rearm(a.id);
-                    return;
-                  }
-                  final ok = await showSandikConfirm(
-                    context: context,
-                    title: context.l10n.deleteAlertTitle,
-                    message: a.isAbove
-                        ? context.l10n.deleteAlertAbove(
-                            fmtTRY(a.targetPrice, digits: 2))
-                        : context.l10n.deleteAlertBelow(
-                            fmtTRY(a.targetPrice, digits: 2)),
-                    confirmLabel: 'Sil',
-                    destructive: true,
-                  );
-                  if (ok) await n.delete(a.id);
-                },
+              // "+" — yalnızca ikon: metin app bar'daki zilin tooltip'inde
+              // zaten var, burada tekrar edilse şerit yine ikinci bir "Alarm
+              // kur" butonuna dönerdi.
+              _Cip(
+                onTap: () => alarmKurAkisi(context, ref,
+                    sabit: AlarmAdayi(sembol, ad, guncelFiyat)),
+                renk: c.amberText,
+                zemin: c.amberFill.withValues(alpha: 0.12),
+                semanticLabel: context.l10n.setPriceAlert,
+                child: Icon(Icons.add_rounded, size: 18, color: c.amberText),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );

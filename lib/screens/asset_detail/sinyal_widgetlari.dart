@@ -388,9 +388,13 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
                   ),
                 ),
                 const SizedBox(height: 2),
+                // İki satır: büyük yazı ölçeğinde "1/2 gösterge · güven %50"
+                // tek satırda "güven …" diye kesiliyordu — güven yüzdesi
+                // satırın tek sayısal bilgisiydi ve kayboluyordu (kullanıcı
+                // ekran görüntüsü 2026-09-18).
                 Text(
                   detay,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style:
                       context.t.bodySmall?.copyWith(color: context.c.text58),
@@ -409,44 +413,41 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
             ),
           ),
           const SizedBox(width: 8),
-          // `Flexible` + `FittedBox`: sağdaki sütun sabit genişlik istiyordu
-          // ve büyük yazı ölçeğinde satırı 39px taşırıyordu (ölçüldü:
-          // 320pt × 1.6). Kayıt gösterilirken metin "ŞU AN" değil
-          // "10 Eyl · 11:00" oluyor — iki katından uzun. Artık daralınca
-          // küçülür, taşmaz.
+          // Zaman etiketi tek bir sakin PİL içinde. Eskiden burada "ŞU AN"
+          // yazısı + altında yön ikonunun TEKRARI duruyordu; ikon bilgi
+          // eklemiyordu ("sağ sütunu dengelesin" diye konmuştu) ve solda
+          // ikon, ortada metin, sağda yine ikon + chevron dizilince kart
+          // dört parçaya bölünmüş görünüyordu (kullanıcı bildirimi
+          // 2026-09-18: "estetikten uzak"). Pil tek parça, tek ağırlık.
+          //
+          // `Flexible` + `FittedBox` kalıyor: kayıt gösterilirken metin
+          // "10 Eyl · 11:00" oluyor ve 320pt × 1.6 ölçekte taşıyordu.
+          // Canlı hesapta "ŞU AN", kayıtta TAM tarih+saat — göreli ifade
+          // soldaki "Son bildirim" satırında duruyor, mutlak olan burada.
           Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Üst satır her zaman ZAMANI taşır. Canlı hesapta "ŞU AN",
-                // kayıt gösterilirken TAM tarih+saat — göreli ifade soldaki
-                // "Son bildirim" satırında duruyor, mutlak olan burada.
-                // İkisi birlikte: hem hızlı okunur hem bilgi kaybı olmaz.
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    canli
-                        ? context.l10n.nowUpper
-                        : DateFormat('d MMM · HH:mm', 'tr_TR')
-                            .format(kayit!.detectedAt),
-                    maxLines: 1,
-                    style: context.t.labelSmall?.copyWith(
-                      letterSpacing: 0.8,
-                      fontWeight: FontWeight.w700,
-                      color: context.c.text36,
-                    ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
+                decoration: BoxDecoration(
+                  color: renk.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
+                ),
+                child: Text(
+                  canli
+                      ? context.l10n.nowUpper
+                      : DateFormat('d MMM · HH:mm', 'tr_TR')
+                          .format(kayit!.detectedAt),
+                  maxLines: 1,
+                  style: context.t.labelSmall?.copyWith(
+                    letterSpacing: 0.8,
+                    fontWeight: FontWeight.w700,
+                    color: renk,
                   ),
                 ),
-                const SizedBox(height: 4),
-                // Yön ikonunun TEKRARI. Soldaki daire içi ikonla aynı
-                // sembol; tasarım örneğinde de böyle. Bilgi eklemiyor,
-                // sağ sütunu görsel olarak dengeliyor — solda ikon+metin
-                // varken sağda tek satır metin kalıyordu ve şerit sağa
-                // doğru boşalıyordu.
-                Icon(ikon, color: renk, size: 18),
-              ],
+              ),
             ),
           ),
           // Chevron sütunun ALTINDA değil YANINDA ve dikey ortada — "bu
