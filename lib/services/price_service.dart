@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'tefas_service.dart';
@@ -163,9 +165,77 @@ class PriceService {
   double? sonBilinenFiyat(String symbol) =>
       _sonBilinenFiyat[symbol.trim().toUpperCase()];
 
-  /// Testler için: oturum belleğini sıfırlar.
+  /// Testler için: oturum belleğini sıfırlar (disk değil).
   @visibleForTesting
-  void sonBilinenFiyatlariTemizle() => _sonBilinenFiyat.clear();
+  void sonBilinenFiyatlariTemizle() {
+    _sonBilinenFiyat.clear();
+    _sonKaynak.clear();
+    _birincilYukleme = null;
+  }
+
+  // ── Birincil kaynağın son fiyatı: KALICI bellek ─────────────────────────
+  //
+  // `OlcekHafizasi` oranı ilk yedek geçişinde "bu oturumda görülmüş son
+  // birincil fiyat"tan öğreniyor (bkz. `_fetchGoldFallback`). Soğuk açılışta
+  // o fiyat yoktu → oran öğrenilemiyor → yedek HAM ölçekte kalıyordu.
+  // Kullanıcının "bazen doğru, bazen zıplıyor" dediği artığın ikinci ayağı.
+  //
+  // Bu yüzden truncgil'in verdiği son fiyatlar diske yazılır ve ilk
+  // `fetchQuotes`'ta geri okunur. TTL 6 saat: oran öğrenirken aradan geçen
+  // hareket de orana karışır; birkaç saatlik hareket %0,5'in altındadır ve
+  // ilk grafik çizimi oranı zaten tazeler, ama dünkü fiyattan öğrenilen
+  // oran bir günlük hareketi kalıcılaştırırdı.
+  static const _prefsBirincilKey = 'son_birincil_fiyat_v1';
+  static const _birincilTtl = Duration(hours: 6);
+  Future<void>? _birincilYukleme;
+
+  /// Diskteki son birincil fiyatları bir kez yükler (bu oturumda görülmüş
+  /// değerlere DOKUNMAZ). `fetchQuotes` her çağrıda bekler; ilk çağrıdan
+  /// sonra ücretsizdir.
+  @visibleForTesting
+  Future<void> birincilHafizayiYukle() => _birincilYukleme ??= _birincilYukle();
+
+  Future<void> _birincilYukle() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ham = prefs.getString(_prefsBirincilKey);
+      if (ham == null) return;
+      final map = jsonDecode(ham) as Map<String, dynamic>;
+      final now = DateTime.now();
+      for (final e in map.entries) {
+        final v = e.value as Map<String, dynamic>;
+        final p = (v['p'] as num?)?.toDouble();
+        final ts = v['ts'] as int?;
+        if (p == null || p <= 0 || !p.isFinite || ts == null) continue;
+        if (now.difference(DateTime.fromMillisecondsSinceEpoch(ts)) >
+            _birincilTtl) {
+          continue;
+        }
+        // Bu oturumda zaten bir fiyat görüldüyse o kazanır.
+        if (_sonBilinenFiyat.containsKey(e.key)) continue;
+        _sonBilinenFiyat[e.key] = p;
+        _sonKaynak[e.key] = FiyatKaynagiEtiketi.yurtIci;
+      }
+    } catch (_) {
+      // Bozuk kayıt — yok say; bir sonraki başarılı çekim üstüne yazar.
+    }
+  }
+
+  /// Yalnızca BİRİNCİL kaynaktan gelmiş fiyatlar yazılır: yedeğin sayısını
+  /// "birincil" diye saklamak ölçek hafızasını yanlış oranla zehirlerdi.
+  Future<void> _birincilHafizayiKaydet() async {
+    final map = <String, Map<String, dynamic>>{};
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    for (final e in _sonBilinenFiyat.entries) {
+      if (_sonKaynak[e.key] != FiyatKaynagiEtiketi.yurtIci) continue;
+      map[e.key] = {'p': e.value, 'ts': ts};
+    }
+    if (map.isEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefsBirincilKey, jsonEncode(map));
+    } catch (_) {}
+  }
 
   Future<Map<String, YahooQuote>> fetchQuotes(
     List<String> symbols, {
@@ -177,6 +247,13 @@ class PriceService {
         .toSet()
         .toList();
     if (cleaned.isEmpty) return {};
+
+    // Soğuk açılışta yedek yol hiçbir oran/birincil fiyat bilmeden
+    // koşmasın — iki kalıcı bellek de ağa çıkmadan ÖNCE hazır olmalı.
+    await Future.wait([
+      birincilHafizayiYukle(),
+      OlcekHafizasi.instance.yukle(),
+    ]);
 
     // Taze önbellek girişlerini ayır; yalnızca eksikler için ağa çık.
     final cachedHits = <String, YahooQuote>{};
@@ -290,6 +367,11 @@ class PriceService {
         _sonBilinenFiyat[e.key] = p;
       }
     }
+    // Birincil kaynaktan bir şey geldiyse kalıcı belleği tazele.
+    if (results.keys
+        .any((k) => _sonKaynak[k] == FiyatKaynagiEtiketi.yurtIci)) {
+      unawaited(_birincilHafizayiKaydet());
+    }
 
     results.addAll(cachedHits);
     return results;
@@ -391,10 +473,16 @@ class PriceService {
     final gbpTry = _parseTruncgilValue(data['GBP']);
     if (usdTry <= 0) throw Exception('USD rate missing from Truncgil');
     _sonKaynak[FiyatKaynagi.usdTry] = FiyatKaynagiEtiketi.yurtIci;
+    // EUR/GBP yoksa UYDURULMAZ (eskiden `usdTry × 1,1` / `× 1,28`): sabit
+    // çapraz kur gerçek paritenin %5-10 dışında kalabilir ve kaynak bir
+    // sonraki turda dönünce EUR varlıkları zıplardı. Anahtar verilmez;
+    // provider son bilinen kuru korur (`?? current.eurTry`).
+    if (eurTry > 0) _sonKaynak['EURTRY=X'] = FiyatKaynagiEtiketi.yurtIci;
+    if (gbpTry > 0) _sonKaynak['GBPTRY=X'] = FiyatKaynagiEtiketi.yurtIci;
     return {
       'USDTRY=X': _fxQ('USDTRY=X', usdTry),
-      'EURTRY=X': _fxQ('EURTRY=X', eurTry > 0 ? eurTry : usdTry * 1.1),
-      'GBPTRY=X': _fxQ('GBPTRY=X', gbpTry > 0 ? gbpTry : usdTry * 1.28),
+      if (eurTry > 0) 'EURTRY=X': _fxQ('EURTRY=X', eurTry),
+      if (gbpTry > 0) 'GBPTRY=X': _fxQ('GBPTRY=X', gbpTry),
     };
   }
 

@@ -5,11 +5,27 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-17 (ölçek hafızası — canlı kaynak geçişi)
+**Son güncelleme:** 2026-09-17 (ölçek hafızası kalıcılaştırıldı — soğuk açılış boşluğu kapandı)
 
 ---
 
-## 🟡 AÇIK — Ölçek hafızası OTURUM İÇİ; soğuk açılışta birincil kaynak düşükse ölçek bilinmez
+## ✅ KAPANDI — Ölçek hafızası OTURUM İÇİYDİ; soğuk açılışta birincil kaynak düşükse ölçek bilinmiyordu
+
+**Nasıl kapandı (2026-09-17, aynı gün).** Kullanıcı: "Bazen doğru gösteriyordu
+ancak bazen zıplamalar oluyordu, ihtimalleri de bitirmen gerek." İki bellek
+de `shared_preferences`'a kalıcılaştırıldı:
+· `OlcekHafizasi` oranları (`olcek_hafizasi_v1`) — `ogren` diske yazar,
+  `yukle` ilk kullanımda okur; bu oturumda öğrenilen oran diskteki eskiyi ezer.
+· `PriceService` son birincil fiyatları (`son_birincil_fiyat_v1`, yalnızca
+  truncgil kaynaklı, TTL 6 saat) — ilk yedek geçişinde oran buradan öğrenilir.
+`fetchQuotes` ağa çıkmadan önce ikisini de bekler. Ayrıca `_extractFx`'teki
+uydurma `USD×1,1`/`×1,28` çapraz kuru kaldırıldı; EUR/GBP yoksa anahtar
+verilmez, provider son bilinen kuru korur. Test:
+`test/olcek_hafizasi_kalicilik_test.dart`. Kalan tek boşluk: ilk kurulumda
+(diskte hiçbir kayıt yokken) truncgil tümüyle ulaşılamazsa yedek ham kalır —
+karşılaştırılacak önceki değer de olmadığı için "zıplama" görünmez.
+
+**Aşağısı kapanış öncesi kayıt.**
 
 **Ne çözüldü (TestFlight bildirimi, 2026-09-17).** *"Çok kısa zaman
 içerisinde yüksek sıçramalar ve düşüşler... canlı etkinliklerden fark

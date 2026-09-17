@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import 'price_service.dart';
@@ -346,14 +349,48 @@ enum FiyatKaynagiEtiketi {
 /// Oran bilinmiyorsa yedek HAM kullanılır (uydurma çarpan yok) ve bu durum
 /// [sonKaynak] üzerinden teşhise açık kalır.
 ///
-/// **Oturum içi bellek.** Soğuk açılışta birincil kaynak düşükse ölçek
-/// bilinmez; kalıcılaştırma (SharedPreferences) `TECHNICAL_DEBT`'te açık
-/// madde — ilk grafik çizimi saniyeler içinde oranı zaten öğreniyor.
+/// **Kalıcı bellek (2026-09-17, ikinci tur).** Hafıza ilk sürümde oturum
+/// içiydi: uygulama soğuk açılırken birincil kaynak düşükse ve henüz grafik
+/// çizilmediyse oran bilinmiyor, yedek HAM kullanılıyordu — kullanıcının
+/// "bazen doğru, bazen zıplıyor" dediği artığın bir kaynağı buydu. Oranlar
+/// artık `SharedPreferences`'a yazılır ve ilk kullanımda okunur: prim
+/// haftalar ölçeğinde değişir, dünkü oran bugün de geçerlidir. Bu oturumda
+/// öğrenilen oran diskteki eskiyi ezer (öğrenme her çizimde tazeler).
 class OlcekHafizasi {
   OlcekHafizasi._();
   static final OlcekHafizasi instance = OlcekHafizasi._();
 
   final Map<String, double> _oranlar = {};
+
+  static const _prefsKey = 'olcek_hafizasi_v1';
+  Future<void>? _yukleme;
+
+  /// Diskteki oranları bir kez yükler; bu oturumda öğrenilmiş olanlara
+  /// DOKUNMAZ (taze oran eskiyi kazanır). Tekrar çağrılması ücretsizdir.
+  Future<void> yukle() => _yukleme ??= _yukle();
+
+  Future<void> _yukle() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ham = prefs.getString(_prefsKey);
+      if (ham == null) return;
+      final map = jsonDecode(ham) as Map<String, dynamic>;
+      for (final e in map.entries) {
+        final v = (e.value as num?)?.toDouble();
+        if (v == null || !v.isFinite || v <= 0) continue;
+        _oranlar.putIfAbsent(e.key, () => v);
+      }
+    } catch (_) {
+      // Bozuk kayıt — sessizce yok say; oran öğrenildikçe üstüne yazılır.
+    }
+  }
+
+  Future<void> _kaydet() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefsKey, jsonEncode(_oranlar));
+    } catch (_) {}
+  }
 
   static String _anahtar(String sembol, FiyatKaynagiEtiketi kaynak) =>
       '${sembol.trim().toUpperCase()}|${kaynak.name}';
@@ -379,6 +416,8 @@ class OlcekHafizasi {
     // olduğu için reddedilmiş bir oran. İkisi de "düzeltme gerekmiyor"
     // sonucunu verir; yazmak da zarar vermez, kaydı tazeler.
     _oranlar[_anahtar(sembol, kaynak)] = oran;
+    // Diske de yaz — bir sonraki soğuk açılış bu oranla başlasın.
+    unawaited(_kaydet());
   }
 
   /// Bilinen oran — yoksa `null`.
@@ -395,9 +434,12 @@ class OlcekHafizasi {
     return o == null ? deger : deger * o;
   }
 
-  /// Testler için.
+  /// Testler için: hem RAM hem "yüklendi" durumu sıfırlanır (disk değil).
   @visibleForTesting
-  void temizle() => _oranlar.clear();
+  void temizle() {
+    _oranlar.clear();
+    _yukleme = null;
+  }
 }
 
 /// Kur serisini uygulamanın CANLI kuruna hizalar — tek kur gerçeği.
