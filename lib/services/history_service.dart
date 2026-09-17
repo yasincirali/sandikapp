@@ -485,6 +485,12 @@ class HistoryService {
       }
     }
 
+    // Altın serisi CANLI ölçeğe kalibre edilir — gerekçe `altinKalibrasyonu`
+    // dokümantasyonunda. Bu yolda da son nokta `liveTotal` ile eziliyor,
+    // yani kalibrasyon olmadan sağ uçta aynı yapay basamak oluşur.
+    final altinKalibre =
+        altinKalibrasyonHaritasi(assets: assets, gramSerisi: goldHistory);
+
     // Hisse, Emtia, Döviz ve TEFAS Fon API Verileri.
     // Fiyat serileri yukarıda zaten paralel başlatıldı (sadece BUY lot'ları,
     // ticker başına tek istek) — burada yalnızca sonuçlar toplanır.
@@ -570,7 +576,8 @@ class HistoryService {
               // "grafik yok ama kâr/zarar var" ayrışması tam olarak buradan.
               final double factor = PriceService.goldWeightFactor(a.ticker);
               final double price = _getClosestPrice(goldHistory, dayTs, null);
-              assetDayVal = price * factor * qty;
+              final double kal = altinKalibre[a.ticker] ?? 1.0;
+              assetDayVal = price * factor * kal * qty;
             } else {
               assetDayVal = _flatFallback(a) * (qty / a.quantity);
             }
@@ -613,8 +620,15 @@ class HistoryService {
     // son gün datası bazen geç güncellenir; ana ekranla tutarlılık için).
     //
     // NOT: Altın için `currentPrice` adet fiyatı (Cumhuriyet ~40k gibi) iken
-    // geçmiş serisi gram22k × factor × qty üzerinden hesaplanır — ölçekler
-    // aynı olduğu için sadece live veri varsa altın için de kullan.
+    // geçmiş serisi gram22k × factor × qty üzerinden hesaplanır.
+    //
+    // ⚠️ Burada eskiden "ölçekler aynı" yazıyordu; DEĞİLDİ. Geçmiş seri
+    // uluslararası spot'tan (`XAUTRY=X` / `GC=F`), canlı fiyat ise yurt içi
+    // kotasyondan (truncgil) geliyor ve aralarında kalıcı bir makas var.
+    // Bu satırın varsayımı yüzünden altın grafiklerinin SAĞ UCUNDA fiyat
+    // hareketi olmayan dik bir basamak oluşuyordu. Seri artık yukarıda
+    // `altinKalibre` ile canlı ölçeğe taşınıyor; aşağıdaki hizalama da o
+    // sayede süreklilik bozmadan çalışıyor.
     final todayTs = normalizeTs(now.millisecondsSinceEpoch);
     if (groupedPoints.containsKey(todayTs)) {
       double liveTotal = 0.0;
@@ -1187,6 +1201,15 @@ class HistoryService {
     // 7.216 kat düşük görünüyordu.
     double goldFactor(String ticker) => PriceService.goldWeightFactor(ticker);
 
+    // Altın serisi CANLI ölçeğe kalibre edilir (bkz. `altinKalibrasyonu`).
+    // Yapılmazsa seri uluslararası spot ölçeğinde ilerler, son slot ise
+    // aşağıdaki `liveTotal` hizalamasıyla yurt içi kotasyona iner: aradaki
+    // kalıcı makas "ŞİMDİ" imlecine yapışık dik bir uçurum olarak görünür
+    // (kullanıcı bildirimi 2026-09-17).
+    final altinKalibre =
+        altinKalibrasyonHaritasi(assets: assets, gramSerisi: goldSlots);
+    double goldKal(String ticker) => altinKalibre[ticker] ?? 1.0;
+
     final groupedPoints = <int, double>{};
     // Tür/pozisyon dağılımı — `groupedPoints` ile AYNI döngüde birikir.
     final byType = <AssetType, Map<int, double>>{};
@@ -1291,7 +1314,11 @@ class HistoryService {
             ? null
             : goldSlots.keys.reduce((x, y) => x < y ? x : y);
         if (firstTs != null) {
-          unitTRY = goldSlots[firstTs]! * goldFactor(a.ticker);
+          // Seed de KALİBRE edilir: else dalındaki `currentPrice` canlı
+          // ölçektedir, ikisi ayrışırsa seans öncesi plato ile ilk gerçek
+          // slot arasında yapay bir basamak kalırdı.
+          unitTRY =
+              goldSlots[firstTs]! * goldFactor(a.ticker) * goldKal(a.ticker);
         } else if (a.currentPrice > 0) {
           unitTRY = a.currentPrice;
         }
@@ -1402,7 +1429,7 @@ class HistoryService {
             gunIciBeklenenTurler.add(a.type);
             final gram = pastOrNull(goldSlots, hourTs);
             if (gram != null) {
-              v = gram * goldFactor(a.ticker) * qty;
+              v = gram * goldFactor(a.ticker) * goldKal(a.ticker) * qty;
               slotGercekVeri = true;
               gunIciGercekTurler.add(a.type);
             }
@@ -1846,6 +1873,14 @@ class HistoryService {
     // 7.216 kat düşük görünüyordu.
     double goldFactor(String ticker) => PriceService.goldWeightFactor(ticker);
 
+    // Altın serisi CANLI ölçeğe kalibre edilir — gerekçe `altinKalibrasyonu`
+    // dokümantasyonunda. Bu yolun serisini performans ekranı çiziyor ve son
+    // noktayı `currentTotalOverride` ile canlı toplama sabitliyor; kalibrasyon
+    // olmadan altın ağırlıklı portföyde sağ uçta yapay bir basamak kalırdı.
+    final altinKalibre =
+        altinKalibrasyonHaritasi(assets: assets, gramSerisi: goldMap);
+    double goldKal(String ticker) => altinKalibre[ticker] ?? 1.0;
+
     // Signed quantity per slot
     double signedQtyOnSlot(Asset a, int slotTs) {
       // Temettü nakit hareketidir, miktara girmez. deleteLog da mezar taşı.
@@ -1922,7 +1957,9 @@ class HistoryService {
           // veri yoksa serinin en yakın gelecek noktasına düş. Böylece yeni
           // eklenmiş bir altın için düz plato + dik sıçrama olmaz.
           final gram = _closestOrNull(goldMap, cursor);
-          if (gram != null) v = gram * goldFactor(a.ticker) * qty;
+          if (gram != null) {
+            v = gram * goldFactor(a.ticker) * goldKal(a.ticker) * qty;
+          }
         } else if (a.type == AssetType.hisse ||
             a.type == AssetType.emtia ||
             a.type == AssetType.doviz ||
@@ -2534,6 +2571,104 @@ double gunIciFonBirimFiyati({
   if (oncekiNav == null || oncekiNav <= 0) return guncelNav;
   if (basamakTs == null) return guncelNav;
   return slotTs < basamakTs ? oncekiNav : guncelNav;
+}
+
+/// Altın serisinin canlı fiyat ölçeğine kalibrasyonu için KABUL ARALIĞI.
+///
+/// Kalibrasyon yalnızca **ölçek farkını** (yurt içi kotasyon ile uluslararası
+/// spot çevriminin arasındaki makas) kapatmak içindir; bir **ölçek HATASINI**
+/// (ağırlık çarpanı uygulanmamış, ons/gram çevrimi atlanmış) örtmek için
+/// değil. Reşat hatasında oran 7,2 idi: böyle bir sapma sessizce "düzeltilirse"
+/// grafik doğru görünür ama pozisyon değeri yanlış kalır ve
+/// `altin_agirlik_carpani_parite_test` gibi korumalar da kör olur.
+///
+/// Bu yüzden aralık dar: yurt içi makas birkaç yüzdedir, ziynet/eski çeyrek
+/// primi en kötü %20 mertebesinde. Dışına çıkan oran KALİBRE EDİLMEZ (çarpan
+/// 1.0 kalır) — hata görünür kalsın.
+@visibleForTesting
+const double altinKalibreAltSinir = 0.75;
+@visibleForTesting
+const double altinKalibreUstSinir = 1.33;
+
+/// Altın geçmiş serisini CANLI fiyat ölçeğine taşıyan çarpan.
+///
+/// ## Neden gerekli (kullanıcı bildirimi 2026-09-17, ekran görüntüsüyle)
+/// "Altın grafiği böyle sert düşüş gözüküyor şimdi anında ancak aslında
+/// böyle olmaması gerekiyor."
+///
+/// Altında grafik ile canlı fiyat İKİ FARKLI KAYNAKTAN gelir:
+///   * seri    → Yahoo `XAUTRY=X` (yoksa `GC=F × USDTRY`) → `gram22kFromXauTry`,
+///     yani uluslararası spot'un saf 22/24 çevrimi,
+///   * canlı   → truncgil `YIA`/`CEYREKALTIN`/… yani YURT İÇİ kotasyon
+///     (üstelik `Alış` tarafı, bkz. `PriceService._parseTruncgilValue`).
+///
+/// İkisinin arasında kalıcı bir makas vardır (ziynet primi, alış-satış
+/// farkı). Her grafik son noktasını canlı değere sabitlediği için
+/// (`getPortfolioHistory`'nin `liveTotal`'ı, gün içi yolun son slot
+/// hizalaması, ekranın `currentUnitPriceOverride`'ı) bu makas grafikte TEK
+/// NOKTALIK DİK BİR UÇURUM olarak görünüyordu: seri 6.250 ₺ çizgisinde
+/// ilerlerken "ŞİMDİ" imleci 6.142 ₺'ye iniyordu. Fiyat hareketi değil,
+/// ÖLÇEK farkı.
+///
+/// Aynı makas günlük değişim yüzdesini de bozuyordu: "AÇILIŞ" serinin
+/// ölçeğinde, "ŞİMDİ" canlı ölçekte okunuyor ve aradaki fark gerçek olmayan
+/// bir düşüş gibi yazılıyordu.
+///
+/// ## Neden ÇARPAN (fark değil)
+/// Çarpan seride oransal olan her şeyi korur: gün içi hareketin şekli, dönem
+/// yüzdesi, MA20, RSI hepsi aynı kalır — yalnızca serinin SEVİYESİ canlı
+/// kaynağın seviyesine oturur. Sabit bir fark eklemek yüzdeleri bozardı.
+///
+/// Kalan tek fark, Yahoo'nun son barı ile canlı kotasyon arasındaki
+/// GECİKMEDİR (~15 dk). O gerçek bir fiyat hareketidir ve grafikte küçük bir
+/// basamak olarak kalması doğrudur.
+///
+/// [seriSonBirimTRY] serinin son noktasının BİRİM (ürün başına) TL değeri,
+/// yani `gram22k × ağırlık çarpanı`. [canliBirimTRY] `Asset.currentPrice`.
+@visibleForTesting
+double altinKalibrasyonu({
+  required double seriSonBirimTRY,
+  required double canliBirimTRY,
+}) {
+  if (!seriSonBirimTRY.isFinite || !canliBirimTRY.isFinite) return 1.0;
+  if (seriSonBirimTRY <= 0 || canliBirimTRY <= 0) return 1.0;
+  final k = canliBirimTRY / seriSonBirimTRY;
+  if (k < altinKalibreAltSinir || k > altinKalibreUstSinir) return 1.0;
+  return k;
+}
+
+/// Portföydeki her altın sembolü için [altinKalibrasyonu] çarpanı.
+///
+/// **Sembol BAŞINA hesaplanır, tek bir genel çarpan YETMEZ:** gram altının
+/// makası ile çeyreğin/Cumhuriyet'in primi aynı değildir. Aynı sınıf hata
+/// gün içi hizalamada yaşandı ("tek toplam çarpanı bir türdeki hareketi tüm
+/// türlere yayıyordu") ve çözümü de aynıydı: her şeyi kendi ölçeğinde
+/// hesapla.
+///
+/// [gramSerisi] `{ts: gram22k TL}` — üç grafik yolunun da elindeki ham altın
+/// serisi. Boşsa harita boş döner ve çağıran tarafta çarpan 1.0 kalır.
+///
+/// Çarpan serinin SON noktasından türetilir: hizalanması gereken uç orasıdır.
+@visibleForTesting
+Map<String, double> altinKalibrasyonHaritasi({
+  required Iterable<Asset> assets,
+  required Map<int, double> gramSerisi,
+}) {
+  final out = <String, double>{};
+  if (gramSerisi.isEmpty) return out;
+  final sonTs = gramSerisi.keys.reduce((a, b) => a > b ? a : b);
+  final sonGram = gramSerisi[sonTs] ?? 0;
+  if (sonGram <= 0) return out;
+  for (final a in assets) {
+    if (a.type != AssetType.altin) continue;
+    if (a.currentPrice <= 0) continue;
+    if (out.containsKey(a.ticker)) continue;
+    out[a.ticker] = altinKalibrasyonu(
+      seriSonBirimTRY: sonGram * PriceService.goldWeightFactor(a.ticker),
+      canliBirimTRY: a.currentPrice,
+    );
+  }
+  return out;
 }
 
 /// Tek noktalık "V" artefaktlarını temizler.

@@ -5,7 +5,54 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-16 (TÜFE/nominal pencere hizalaması)
+**Son güncelleme:** 2026-09-17 (altın ölçek kalibrasyonu)
+
+---
+
+## 🟡 AÇIK — Altında gün içi ŞEKİL uluslararası spot'tan, SEVİYE yurt içi kotasyondan
+
+**Ne.** Altın grafiği artık canlı fiyat ölçeğine kalibre ediliyor
+(`altinKalibrasyonu`): Yahoo'dan (`XAUTRY=X` / `GC=F`) gelen seri, sembol
+başına bir çarpanla truncgil kotasyonunun seviyesine taşınıyor. Yani
+çizginin **şekli** uluslararası spot'un, **seviyesi** yurt içi
+kotasyonundur.
+
+**Neden böyle (2026-09-17).** Yurt içi gram altının gün içi serisini veren
+bir kaynağımız yok; elimizde yalnızca ANLIK kotasyon var. Üç seçenekten:
+
+1. *Hiçbir şey yapmama.* Ölçülen arıza buydu: seri bir ölçekte ilerliyor,
+   son nokta canlı değere sabitlendiği için diğerine atlıyordu — kullanıcı
+   ekranında %1,7'lik, fiyat hareketi olmayan dik bir düşüş
+   (bildirim 2026-09-17, ekran görüntüsüyle).
+2. *Son noktayı canlı değerle ezmeyi bırakmak.* Grafiğin ucu ile kâr/zarar
+   çipi ve ana ekran toplamı ayrışırdı — bu projede tekrar eden ve her
+   seferinde güven kıran hata sınıfı.
+3. *Kalibrasyon* (seçilen): oransal olan her şey korunur (gün içi şekil,
+   dönem yüzdesi, MA20, RSI), yalnızca seviye hizalanır.
+
+**Maliyeti.** İki kalıntı var:
+- Gün içi "AÇILIŞ" değeri yurt içi açılış kotasyonu DEĞİL, bugünkü
+  çarpanla ölçeklenmiş uluslararası açılıştır. Günlük yüzde uluslararası
+  spot'un yüzdesidir; kuyumcu vitrinindeki yüzdeden birkaç onda bir puan
+  ayrışabilir.
+- Çarpan serinin son barından türetildiği için Yahoo'nun ~15 dakikalık
+  gecikmesi de seviyeye karışır; o gecikme içindeki gerçek hareket
+  grafikte küçük bir basamak olarak kalır (uçurum değil).
+
+**Ne zaman ele alınmalı.** Yurt içi gün içi altın serisi veren bir kaynak
+bulunursa (truncgil yalnızca anlık veriyor) kalibrasyon tümüyle gereksiz
+hale gelir — seri doğrudan doğru ölçekten gelir.
+
+**Ayrıca açık:** Takip listesi (`getSymbolHistory` → `watchlist_provider`)
+altın için hâlâ KALİBRESİZ, yani orada gösterilen gram altın fiyatı
+portföydekinden birkaç lira farklı olabilir. Bilerek dokunulmadı: o yol
+sembol bazlı ve saf geçmiş verisi; canlı kotasyon bağımlılığı eklemek aynı
+seriyi kullanan sinyal motorunu da ağ hatasına açar. Kullanıcı iki ekranda
+farklı fiyat bildirirse ilk iş burası.
+
+**İlgili.** `HistoryService.altinKalibrasyonu`,
+`altinKalibrasyonHaritasi`, `test/altin_grafik_olcek_kalibrasyonu_test.dart`,
+`test/altin_agirlik_carpani_parite_test.dart`.
 
 ---
 
