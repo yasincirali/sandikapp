@@ -194,10 +194,10 @@ void main() {
       final src =
           await File('lib/services/history_service.dart').readAsString();
 
-      expect(src.contains("getHistorySafe('XAUTRY=X')"), isTrue,
+      expect(src.contains('getHistorySafe(FiyatKaynagi.xauTry)'), isTrue,
           reason: 'doğrudan TRY kaynağı birincil olmalı — kur çevrimi '
               'gerektirmez ve GC=F düşse bile altın düz çizgiye inmez');
-      expect(src.contains("getHistorySafe('GC=F')"), isTrue,
+      expect(src.contains('getHistorySafe(FiyatKaynagi.xauUsd)'), isTrue,
           reason: 'yedek kaynak korunmalı');
     });
 
@@ -213,7 +213,8 @@ void main() {
       // hiç denenmiyordu. Kural artık `altinGramSerisi`'nde ve dört yol da
       // oradan geçiyor. Test o tek yere bakar; davranışın kendisi
       // `altin_seri_kaynagi_test.dart`'ta ölçülür.
-      final src = File('lib/services/history_service.dart').readAsStringSync();
+      // Merdiven `fiyat_kaynagi.dart`'a TAŞINDI (kaynak sözleşmesi).
+      final src = File('lib/services/fiyat_kaynagi.dart').readAsStringSync();
       final imza = src.indexOf('}) altinGramSerisi({');
       expect(imza, greaterThan(0), reason: 'altın kaynak merdiveni bulunamadı');
       // Gövde parametre listesinden SONRA başlar (`}) {`), yoksa aşağıdaki

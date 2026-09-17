@@ -131,6 +131,15 @@ Crashlytics'e non-fatal bildir.
 veri erişimi `SupabaseService` / provider'lar üzerinden. Hesaplama `build()` içinde değil,
 model/servis katmanında.
 
+**Fiyat kaynağı.** *"Tüm varlıklar her yerde tek kaynaktan ve tutarlı şekilde
+çekilmelidir"* (kullanıcı kararı 2026-09-17). Sözleşme `lib/services/fiyat_kaynagi.dart`:
+(1) bir varlığın hangi seriden besleneceğine **yalnızca orası** karar verir —
+yeni yüzey (widget, sparkline, rapor) kendi sembol merdivenini kurmaz;
+(2) ekranda görünen fiyat ile serinin **ölçeği** aynı olmalı — farklı sağlayıcı varsa
+seri canlı kotasyona hizalanır (`kurSerisiniHizala`, `altinKalibrasyonHaritasi`);
+(3) **uydurma sayı yasak** — kur/fiyat bilinmiyorsa nokta seriye girmez,
+`35.0`/`40.0` gibi sabit yazılmaz. `fiyat_kaynagi_sozlesmesi_test` üçünü de tarar.
+
 **Kapanmış pozisyon.** Bugünkü mülkiyeti soran yerler `aktifLotlar(...)` kullanır; geçmişi
 soran yerler (hareket listesi, `HistoryService`, dönem hesapları) ham defteri kullanmaya
 **devam eder** (`TECHNICAL_DEBT.md` "Net miktarı 0'a düşmüş varlık").

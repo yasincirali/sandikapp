@@ -234,9 +234,10 @@ void main() {
         .replaceAll('\r\n', '\n');
 
     test('üç yol da haritayı kurar', () {
+      // Tanım `fiyat_kaynagi.dart`'a TAŞINDI (kaynak sözleşmesi, 2026-09-17);
+      // burada sayılan şey KULLANIM: üç grafik yolu.
       final sayi = 'altinKalibrasyonHaritasi('.allMatches(servis).length;
-      // 1 tanım + 3 kullanım.
-      expect(sayi, greaterThanOrEqualTo(4),
+      expect(sayi, greaterThanOrEqualTo(3),
           reason: 'Bir grafik yolu kalibrasyonsuz kalmış — o yolda uçurum '
               'geri gelir.');
     });

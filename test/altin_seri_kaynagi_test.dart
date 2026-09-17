@@ -188,22 +188,27 @@ void main() {
   group('DÖRT yol da aynı merdivenden geçer', () {
     // Merdivenin kopyalanması bu arızanın kök sebebiydi: gün içi yolu spot'u
     // biliyordu, diğer üçü bilmiyordu.
-    final servis = File('lib/services/history_service.dart')
-        .readAsStringSync()
-        .replaceAll('\r\n', '\n');
+    // Merdivenin TANIMI `fiyat_kaynagi.dart`'ta; burada sayılan KULLANIM.
+    final servis = [
+      File('lib/services/history_service.dart').readAsStringSync(),
+      File('lib/services/sparkline_service.dart').readAsStringSync(),
+    ].join('\n').replaceAll('\r\n', '\n');
 
     test('her altın yolu `altinGramSerisi` çağırır', () {
       final cagri = 'altinGramSerisi('.allMatches(servis).length;
-      // 1 tanım + 4 kullanım (gün içi, günlük, tier, tek sembol).
+      // Gün içi, günlük, tier, tek sembol + sparkline.
       expect(cagri, greaterThanOrEqualTo(5),
           reason: 'Bir yol merdivenin dışında kalmış — o yolda altın yine '
               'vadeli ölçeğinde çizilir.');
     });
 
-    test('hiçbir yol `GC=F` çekerken `XAUTRY=X` çekmeyi atlamaz', () {
-      final gcf = "'GC=F'".allMatches(servis).length;
-      final xau = "'XAUTRY=X'".allMatches(servis).length;
-      expect(xau, greaterThanOrEqualTo(gcf),
+    test('hiçbir yol vadeliyi çekip spotu atlamaz', () {
+      // Semboller artık sözleşme sabitleriyle yazılıyor
+      // (`FiyatKaynagi.xauUsd` / `.xauTry`); ham metin araması yerine
+      // sabitlerin sayısı karşılaştırılır.
+      final vadeli = 'FiyatKaynagi.xauUsd'.allMatches(servis).length;
+      final spot = 'FiyatKaynagi.xauTry'.allMatches(servis).length;
+      expect(spot, greaterThanOrEqualTo(vadeli),
           reason: 'Vadeli çekilip spot çekilmeyen bir yol var.');
     });
 

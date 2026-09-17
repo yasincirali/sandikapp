@@ -5,7 +5,42 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-17 (altın kaynak merdiveni + ölçek kalibrasyonu)
+**Son güncelleme:** 2026-09-17 (fiyat kaynağı sözleşmesi)
+
+---
+
+## 🟡 AÇIK — Fiyat kaynağı sözleşmesi kuruldu; CANLI kotasyon tarafı henüz dışarıda
+
+**Ne yapıldı (2026-09-17, kullanıcı kararı).** *"Tüm varlıklar her yerde tek
+kaynaktan ve tutarlı şekilde çekilmelidir."* Sözleşme
+`lib/services/fiyat_kaynagi.dart`'ta toplandı: sembol kararı
+(`seriSembolleri`), altın merdiveni (`altinGramSerisi`), ölçek hizalaması
+(`olcekCarpani`, `kurSerisiniHizala`, `altinKalibrasyonHaritasi`). Dört
+grafik yolu + sparkline oradan geçiyor; `fiyat_kaynagi_sozlesmesi_test`
+sözleşmenin dışına sızan ham sembolü ve uydurma kur sabitini tarıyor.
+
+**Kapanan üç ayrışma:**
+- sparkline altını `GC=F` (ons/USD şekli) çiziyordu → artık gram22k TL,
+- grafik yolları kur bulunamayınca `35.0`/`40.0` uyduruyordu → artık canlı
+  kur (oturumda görülen son gerçek değer), o da yoksa nokta seriye girmez,
+- kur serisi Yahoo mid'di, ekrandaki TL karşılığı truncgil `USD` (Alış) —
+  seri artık canlı kura hizalanıyor, yani USD kote bir hissede kâr/zarar
+  çipi ile grafiğin son noktası aynı sayıyı veriyor.
+
+**Neden hâlâ AÇIK.** `PriceService` CANLI kotasyon tarafının kendi
+merdivenini taşımaya devam ediyor (truncgil → er-api → Yahoo; altın anahtar
+tablosu `_truncgilGoldKeys`). Sözleşme dosyası şimdilik yalnızca SERİ
+tarafını yönetiyor; testteki sembol taraması bu yüzden `price_service.dart`
+için muaf. İki taraf ayrışırsa (ör. truncgil bir sembolü bırakır) yine
+sessiz bir sapma oluşur.
+
+**Ne zaman ele alınmalı.** `PriceService`'in kaynak seçimi sözleşmeye
+taşınırken; aynı turda sunucu tarafındaki eşi (`_shared/live_prices.ts`
+`GOLD_KEYS`) ile parite testi de yazılmalı (bkz. "Dış fiyat API'leri
+sessizce değişiyor" maddesi).
+
+**İlgili.** `test/fiyat_kaynagi_sozlesmesi_test.dart`, `CLAUDE.md` →
+"Fiyat kaynağı" kuralı.
 
 ---
 
