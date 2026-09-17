@@ -25,16 +25,14 @@ void main() {
     });
 
     test('diğer parametreler geri butonundan bağımsız', () {
-      // Tam ekran grafik yolu showBackButton VERMEZ (kendi kapatma butonu
-      // var, ikisi birden çift buton olurdu) ama diğer ayarları geçer.
-      const tamEkran = PortfolioPerformanceScreen(
+      // Başka bir ayar verilmesi geri butonunu açmaz; varsayılan kapalı.
+      const ekran = PortfolioPerformanceScreen(
         initialView: 'daily',
         initialScrollOffset: 220,
       );
-      expect(tamEkran.showBackButton, isFalse,
-          reason: 'FullscreenChartRoute kendi kapatma butonunu sağlıyor');
-      expect(tamEkran.initialScrollOffset, 220);
-      expect(tamEkran.initialView, 'daily');
+      expect(ekran.showBackButton, isFalse);
+      expect(ekran.initialScrollOffset, 220);
+      expect(ekran.initialView, 'daily');
     });
   });
 }

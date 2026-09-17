@@ -121,7 +121,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // anahtarı kapsam çipiyle AYNI satırda: dönem ikisi için de geçerli,
         // yüzey ise hangi sunumu gördüğünü belirler. Seyrek kullanılan ikili
         // (hangi tür / hangi mod) çipin arkasında. Gerekçe `_buildScopeBar`.
-        if (activePartners.isNotEmpty && !widget.sadeceGrafik) ...[
+        if (activePartners.isNotEmpty) ...[
           KapsamKisiSecici(
             partners: activePartners,
             selectedId: _view,
@@ -129,12 +129,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ),
           const SizedBox(height: SandikSpace.sm),
         ],
-        // Tam ekranda yalnızca dönem satırı kalır (bkz. FullscreenChartRoute).
-        if (!widget.sadeceGrafik) ...[
-          _buildScopeBar(),
-          _buildScopePanel(isIntraday),
-          const SizedBox(height: SandikSpace.sm),
-        ],
+        _buildScopeBar(),
+        _buildScopePanel(isIntraday),
+        const SizedBox(height: SandikSpace.sm),
         _buildPeriodRow(),
         const SizedBox(height: SandikSpace.md),
         // ── ÖZET sekmesi ──────────────────────────────────────────────────
@@ -143,7 +140,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // çipleri, dönem seçici) ağaçta KALMALI, yoksa kullanıcı Özet'e
         // geçtiğinde dönemini değiştiremez hale gelir. Aynı gerekçe
         // `_buildChartWithData`'nın koşulsuz çağrılmasının da sebebi.
-        if (_ozetSekmesi && !widget.sadeceGrafik) ...[
+        if (_ozetSekmesi) ...[
           _buildOzetSekmesi(
             breakdown: breakdown,
             targetAssets: targetAssets,
@@ -176,7 +173,6 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           //   • Özet kartı bayatken gizlenmez — yerini korusun diye
           //     opaklığı düşer (layout zıplaması da olmaz).
           //   • Spinner yalnızca hiç veri yokken (ilk açılış) görünür.
-          if (!widget.sadeceGrafik)
           AnimatedOpacity(
             opacity: stale ? 0.45 : 1.0,
             duration: SandikMotion.stateOf(context),
@@ -244,14 +240,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           // alınamıyor acaba" — 2026-09-07). Fon/mevduat gibi gün içi fiyatı
           // ZATEN olmayan türler bu listeye girmez, yoksa uyarı kalıcı
           // gürültüye dönerdi.
-          if (!widget.sadeceGrafik &&
-              isIntraday &&
-              breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
+          if (isIntraday && breakdown.gunIciVerisiYokTurler.isNotEmpty) ...[
             const SizedBox(height: SandikSpace.sm),
             _GunIciVeriYokNotu(turler: breakdown.gunIciVerisiYokTurler),
           ],
-          // Tam ekranda grafik altı yok (bkz. FullscreenChartRoute).
-          if (!widget.sadeceGrafik) ...[
           const SizedBox(height: 24),
           // Tür bazlı kâr/zarar dökümü — seçili dönem ve sekmeye göre.
           //
@@ -278,7 +270,6 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           const SizedBox(height: 12),
           const DisclaimerWidget(),
           const SizedBox(height: 16),
-          ],
         ],
       ],
     ),

@@ -194,8 +194,8 @@ class _RoiInfoSheet extends StatelessWidget {
             // neredeyse tamamı kaplandığı için "dışarı dokun" alanı da bir
             // şeride iniyordu. Açık bir çıkış düğmesi şart.
             //
-            // Desen `paywall_screen.dart` ve `fullscreen_chart_route.dart` ile
-            // aynı: `Icons.close_rounded`, 44pt hedef.
+            // Desen `paywall_screen.dart` ile aynı: `Icons.close_rounded`,
+            // 44pt hedef.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

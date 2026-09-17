@@ -27,8 +27,6 @@ import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
-import '../widgets/fullscreen_chart_route.dart';
-import '../widgets/chart_fullscreen_chip.dart';
 import '../widgets/transaction_segment.dart';
 import 'signal_settings_screen.dart';
 import '../models/signal_alert.dart';
@@ -79,12 +77,6 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
   /// sessizce YOK SAYILIR ve varsayılan seçilir — bkz. `_gunIciDestekli`.
   final int? initialPeriodDays;
 
-  /// Yalnızca dönem seçici + grafik; çubuk, sekmeler, şeritler ve grafik
-  /// altı yok. Tam ekran route'u bununla açar (bkz. `FullscreenChartRoute`
-  /// — eski `initialScrollOffset: 240` yolu tüm sayfayı kaydırarak
-  /// basıyordu, yatayda "izlenebilir" değildi).
-  final bool sadeceGrafik;
-
   const AssetDetailScreen({
     super.key,
     required this.asset,
@@ -92,7 +84,6 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
     this.lots,
     this.initialScrollOffset = 0,
     this.initialPeriodDays,
-    this.sadeceGrafik = false,
   });
 
   @override
@@ -153,9 +144,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
   /// Teknik sinyal yüzeyleri (kart + gösterge paneli) çizilsin mi?
   /// Yatırımcı seviyesi Başlangıç ise hayır — bkz. `seviyeGorunurlugu`.
-  /// Tam ekranda (`sadeceGrafik`) da hayır: orada yalnızca grafik var.
   bool get _sinyalYuzeyleri =>
-      !widget.sadeceGrafik &&
       seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller;
 
   /// Gün içi serinin çizildiği günün 00:00'ı.
@@ -336,15 +325,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // gider. Yalnızca DEĞER tutarları (PnL, dönem değişimi) çevrilir;
     // grafiğin ekseni/ipucu kote FİYATTIR ve ₺ kalır.
     final baz = ref.watch(bazParaProvider);
-    // Tam ekranda grafik ekranı doldurur (dönem satırı + dolgular düşülür);
-    // normal ekranda sabit 400. Yatayda 400 sabit kalsaydı 360pt'lik ekranda
-    // kaydırma gerekirdi — "büyütme" küçültürdü.
-    final grafikYuksekligi = widget.sadeceGrafik
-        ? (MediaQuery.sizeOf(context).height -
-                MediaQuery.viewPaddingOf(context).vertical -
-                150)
-            .clamp(220.0, 900.0)
-        : 400.0;
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final isIntraday = period.days == 0;
@@ -380,10 +360,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
     return Scaffold(
       backgroundColor: context.c.background,
-      // Tam ekranda çubuk yok — route kendi kapat düğmesini koyar.
-      appBar: widget.sadeceGrafik
-          ? null
-          : SandikAppBar(
+      appBar: SandikAppBar(
         title: context.l10n.assetPerformanceSemantics(widget.asset.name),
         transparent: true,
         showBack: widget.showBackButton,
@@ -438,7 +415,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
             padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 24),
             child: Column(
               children: [
-                if (!widget.showBackButton && !widget.sadeceGrafik)
+                if (!widget.showBackButton)
                   allPartnerAssetsAsync.maybeWhen(
                     data: (allAssetsMap) {
                       // Sekme yalnızca bu ürüne SAHİP ortaklar için çıkar.
@@ -489,7 +466,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     asset: widget.asset,
                     onTap: _sinyalPaneline,
                   ),
-                if (_alarmSembolu != null && !widget.sadeceGrafik) ...[
+                if (_alarmSembolu != null) ...[
                   AlarmSeridi(
                     sembol: _alarmSembolu!,
                     ad: widget.asset.name,
@@ -539,7 +516,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       // dürüst bir mesaj. Sonsuz spinner, veri hiç
                       // gelmeyecekken bile "birazdan gelir" der.
                       return SizedBox(
-                        height: grafikYuksekligi,
+                        height: 400,
                         child: waiting
                             ? const CustomLoadingView()
                             : Center(
@@ -953,25 +930,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     .set(!logOn);
                               },
                             ),
-                            const SizedBox(width: 6),
-                            // Tam ekranda ikinci bir tam ekran yok.
-                            if (!widget.sadeceGrafik)
-                            ChartFullscreenChip(
-                              onTap: () {
-                                FullscreenChartRoute.open(
-                                  context,
-                                  title: widget.asset.name,
-                                  builder: (_) => AssetDetailScreen(
-                                    asset: widget.asset,
-                                    lots: widget.lots,
-                                    showBackButton: false,
-                                    // Yalnızca dönem seçici + grafik
-                                    // (bkz. FullscreenChartRoute).
-                                    sadeceGrafik: true,
-                                  ),
-                                );
-                              },
-                            ),
+                            // Tam ekran çipi KALDIRILDI (kullanıcı kararı,
+                            // 2026-09-17): "çok da bir avantajı yok gibi,
+                            // ilerde talep edilirse yaparız." Geçmiş
+                            // uygulama ve yön davranışı git geçmişinde
+                            // (ea7bc0a).
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -1039,7 +1002,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
                               curve: SandikMotion.enter,
                               child: Container(
-                          height: grafikYuksekligi,
+                          height: 400,
                           decoration: BoxDecoration(
                             color: context.c.surface1,
                             borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -1095,7 +1058,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             return ZoomableChart(
                             fullMinX: focusMin,
                             fullMaxX: focusMax,
-                            height: grafikYuksekligi - 36 - 16,
+                            height: 400 - 36 - 16,
                             plotPaddingRight: 60,
                             builder: (viewMinX, viewMaxX) {
                               final yBounds = computeY(
@@ -1595,8 +1558,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     );
                   },
                 ),
-                // Tam ekranda grafik altı yok (bkz. FullscreenChartRoute).
-                if (!widget.sadeceGrafik) ...[
                 const SizedBox(height: 24),
                 // Miktar Bilgisi
                 Container(
@@ -1658,7 +1619,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   const SizedBox(height: 24),
                   TechnicalSignalPanel.forAsset(widget.asset,
                       key: _sinyalPaneliKey, detayli: true),
-                ],
                 ],
               ],
             ),

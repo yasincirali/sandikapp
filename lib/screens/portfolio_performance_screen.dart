@@ -46,8 +46,6 @@ import '../widgets/disclaimer_widget.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/zoomable_chart.dart';
 import '../models/grafik_tipi.dart';
-import '../widgets/fullscreen_chart_route.dart';
-import '../widgets/chart_fullscreen_chip.dart';
 import '../widgets/transaction_segment.dart';
 import '../widgets/grafik_tipi_secici.dart';
 import '../providers/preferences_provider.dart'
@@ -71,11 +69,6 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   final AssetType? initialTypeFilter;
 
   final double initialScrollOffset;
-
-  /// Yalnızca dönem satırı + grafik; başlık, kapsam/tür denetimleri, özet
-  /// kartı ve döküm yok. Tam ekran route'u bununla açar
-  /// (bkz. `FullscreenChartRoute`).
-  final bool sadeceGrafik;
 
   /// Geri butonu gösterilsin mi.
   ///
@@ -107,7 +100,6 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
     this.initialView = '',
     this.initialTypeFilter,
     this.initialScrollOffset = 0,
-    this.sadeceGrafik = false,
     this.showBackButton = false,
     this.initialOzet = false,
     this.initialPeriodIdx,
@@ -332,7 +324,6 @@ class _PortfolioPerformanceScreenState
               // Yükseklik artık 44pt'lik ikon hedefleri + 8 = 52pt; daha
               // azı ikonların dokunma hedefini keser. `fontSize: 22` yerine
               // tema ölçeği. Kazanılan alan doğrudan grafiğe gidiyor.
-              if (!widget.sadeceGrafik)
               Padding(
                 padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
                     SandikSpace.xs, SandikSpace.screenH(context), SandikSpace.xs),
