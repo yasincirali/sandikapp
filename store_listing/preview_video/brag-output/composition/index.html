@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=886, height=1920" />
+    <title>sandık — mağaza önizlemesi (brag)</title>
+    <!-- GSAP yerel: render ağa çıkmasın (determinizm). -->
+    <script src="vendor/gsap.min.js"></script>
+    <style>
+      /* DM Sans — uygulamanın kendi font dosyaları. Sistem yığını yedek. */
+      @font-face { font-family: "DM Sans"; font-weight: 500; src: url("assets/fonts/DMSans-Medium.ttf") format("truetype"); }
+      @font-face { font-family: "DM Sans"; font-weight: 600; src: url("assets/fonts/DMSans-SemiBold.ttf") format("truetype"); }
+      @font-face { font-family: "DM Sans"; font-weight: 700; src: url("assets/fonts/DMSans-Bold.ttf") format("truetype"); }
+      @font-face { font-family: "DM Sans"; font-weight: 800; src: url("assets/fonts/DMSans-ExtraBold.ttf") format("truetype"); }
+
+      /* Palet: lib/theme/sandik.dart SandikPalette.dark — birebir. */
+      :root {
+        --bg: #0a1e15;
+        --surface1: #112e28;
+        --amber: #f5a623;
+        --gold: #f5c842;
+        --text: #ffffff;
+        --text-dim: rgba(255, 255, 255, 0.72);
+        --glow: rgba(245, 166, 35, 0.4);
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 886px; height: 1920px; overflow: hidden; background: var(--bg); }
+      body { font-family: "DM Sans", -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+
+      /* Zamanlanmamış tam kare sarmalayıcılar: video crossfade'i bunların
+         opacity'siyle yapılır (video elemanının kendisi tween'lenmez). */
+      .shot { position: absolute; inset: 0; opacity: 0; will-change: opacity, transform; }
+      .shot video { position: absolute; inset: 0; width: 886px; height: 1920px; object-fit: cover; }
+
+      /* Zamanlanmış UI katmanları (durum çubuğu yaması, maske, alt yazı). */
+      .clip { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+
+      /* Ekran kaydı göstergesini örten yama: sol üçte bir, nötr saat. Oranlar
+         Remotion kurgusundaki StatusBarPatch ölçümleriyle aynı. */
+      .statusbar {
+        position: absolute; top: 0.6%; left: 0; width: 34%; height: 3.9%;
+        background: var(--bg); display: flex; align-items: center; justify-content: center;
+        font-size: 34px; font-weight: 600; letter-spacing: -0.01em; color: var(--text);
+      }
+
+      /* Gerçek hesap adını ("Test") örten kurgusal ad. Apple 2.3.9. */
+      .mask {
+        position: absolute; top: 64.7%; right: 6.3%; width: 22.6%; height: 4.4%;
+        background: var(--surface1); border-radius: 999px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 38px; font-weight: 500; color: var(--text-dim);
+      }
+
+      /* Alt yazı paneli: ekran kaydı üstünde çıplak metin kayboluyordu; neredeyse
+         opak zemin + amber çerçeve. Alt sekme çubuğunun ÜSTÜNDE durur. */
+      .cap-wrap {
+        position: absolute; left: 64px; right: 64px;
+        display: flex; justify-content: center;
+      }
+      .cap-wrap.bottom { bottom: 440px; }
+      .cap-wrap.top { top: 230px; }
+      .cap {
+        opacity: 0;
+        background: rgba(7, 22, 15, 0.96);
+        border: 1px solid rgba(245, 166, 35, 0.25);
+        border-radius: 28px;
+        padding: 30px 36px;
+        box-shadow: 0 30px 70px -18px rgba(0, 0, 0, 0.85);
+        font-size: 52px; font-weight: 700; line-height: 1.12; letter-spacing: -0.03em;
+        text-align: center; color: var(--text);
+      }
+      .cap em { font-style: normal; color: var(--gold); }
+
+      /* Vinyet: kaydı ve grafiği tek görünüme bağlar. En üstte, dokunulmaz. */
+      .vignette {
+        position: absolute; inset: 0; z-index: 20; pointer-events: none;
+        background:
+          linear-gradient(180deg, rgba(0,0,0,0.14), transparent 22%, transparent 78%, rgba(0,0,0,0.22)),
+          radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,0.28) 100%);
+      }
+
+      /* Kapanış */
+      #outro {
+        z-index: 15;
+        background: radial-gradient(ellipse at center, var(--surface1) 0%, var(--bg) 70%);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0;
+      }
+      #outro-icon { width: 176px; height: 176px; border-radius: 40px; box-shadow: 0 30px 80px -20px rgba(0,0,0,0.8); opacity: 0; }
+      #outro-mark {
+        margin-top: 34px; font-size: 132px; font-weight: 800; letter-spacing: -0.04em;
+        color: var(--gold); text-shadow: 0 0 70px var(--glow); opacity: 0; line-height: 1;
+      }
+      #outro-sub {
+        margin-top: 26px; font-size: 40px; font-weight: 500; letter-spacing: -0.01em;
+        color: var(--text-dim); opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="sandik-brag" data-start="0" data-width="886" data-height="1920" data-duration="28.4" data-fps="30">
+
+      <!-- ===== Katman 0: ekran kaydı klipleri =====
+           Her video kök seviyesinde ve yalnızca kendi data-start'ını taşır
+           (lint: video_nested_in_timed_element). Sarmalayıcı zamanlanmamış,
+           crossfade onun opacity'sinde. Süreler bir sonraki sahneye 0,45 sn
+           taşar: üstteki sahne o sürede üzerine açılır. -->
+      <div class="shot" id="shot-1"><video id="v1" src="assets/clips/rozet.mp4"   data-start="0"     data-duration="5.2"  data-track-index="0" muted playsinline></video></div>
+      <div class="shot" id="shot-2"><video id="v2" src="assets/clips/kanit.mp4"   data-start="4.75"  data-duration="6.24" data-track-index="0" muted playsinline></video></div>
+      <div class="shot" id="shot-3"><video id="v3" src="assets/clips/ekle.mp4"    data-start="10.54" data-duration="6.25" data-track-index="0" muted playsinline></video></div>
+      <div class="shot" id="shot-4"><video id="v4" src="assets/clips/alarm.mp4"   data-start="16.34" data-duration="3.6"  data-track-index="0" muted playsinline></video></div>
+      <div class="shot" id="shot-5"><video id="v5" src="assets/clips/takip.mp4"   data-start="19.49" data-duration="5.2"  data-track-index="0" muted playsinline></video></div>
+
+      <!-- ===== Katman 1: sahne başına UI örtüleri + alt yazı ===== -->
+      <section class="clip" id="ui-1" data-start="0" data-duration="4.75" data-track-index="1">
+        <div class="statusbar">9:41</div>
+        <div class="mask">Ayşe</div>
+        <div class="cap-wrap bottom"><div class="cap" id="cap-1"><em>Enflasyonu</em> geçtin mi?</div></div>
+      </section>
+      <section class="clip" id="ui-2" data-start="4.75" data-duration="5.79" data-track-index="1">
+        <div class="statusbar">9:41</div>
+        <div class="cap-wrap bottom"><div class="cap" id="cap-2">Nominal değil, <em>reel</em> getiri</div></div>
+      </section>
+      <section class="clip" id="ui-3" data-start="10.54" data-duration="5.8" data-track-index="1">
+        <div class="statusbar">9:41</div>
+        <div class="cap-wrap bottom"><div class="cap" id="cap-3">Ekle, <em>gerisi</em> otomatik</div></div>
+      </section>
+      <section class="clip" id="ui-4" data-start="16.34" data-duration="3.15" data-track-index="1">
+        <div class="statusbar">9:41</div>
+        <div class="cap-wrap bottom"><div class="cap" id="cap-4">Hedefe gelince <em>bildirim</em></div></div>
+      </section>
+      <section class="clip" id="ui-5" data-start="19.49" data-duration="4.74" data-track-index="1">
+        <div class="statusbar">9:41</div>
+        <!-- Üstte: lejant (Portföyüm / XU100 / THYAO) kapanmasın. -->
+        <div class="cap-wrap top"><div class="cap" id="cap-5"><em>Endeksi</em> geçiyor musun?</div></div>
+      </section>
+
+      <!-- ===== Kapanış — beat-locked: 24.23s (vol-11 strong cue) ===== -->
+      <section class="clip" id="outro" data-start="24.23" data-duration="4.17" data-track-index="2">
+        <img id="outro-icon" src="assets/brand/sandik_icon.png" alt="" />
+        <div id="outro-mark">sandık</div>
+        <div id="outro-sub">Portföyün, tek sandıkta</div>
+      </section>
+
+      <div class="vignette"></div>
+
+      <!-- ===== Ses =====
+           Müzik 10, anlatım 3, SFX 11+ (örtüşen klipler ayrı track'te). -->
+      <audio id="music" src="assets/music/happy-beats-business-moves-vol-11-by-ende-dot-app.mp3" data-start="0" data-duration="28.4" data-track-index="10" data-audio-group="music"></audio>
+
+      <audio id="vo-1" src="assets/vo/a_01_rozet.wav" data-start="0.55"  data-duration="3.95" data-track-index="3" data-volume="1" data-audio-group="voiceover"></audio>
+      <audio id="vo-2" src="assets/vo/a_02_kanit.wav" data-start="5.05"  data-duration="5.25" data-track-index="3" data-volume="1" data-audio-group="voiceover"></audio>
+      <audio id="vo-3" src="assets/vo/a_03_ekle.wav"  data-start="10.84" data-duration="4.8"  data-track-index="3" data-volume="1" data-audio-group="voiceover"></audio>
+      <audio id="vo-4" src="assets/vo/a_04_alarm.wav" data-start="16.64" data-duration="1.95" data-track-index="3" data-volume="1" data-audio-group="voiceover"></audio>
+      <audio id="vo-5" src="assets/vo/a_05_takip.wav" data-start="19.79" data-duration="3.54" data-track-index="3" data-volume="1" data-audio-group="voiceover"></audio>
+      <audio id="vo-6" src="assets/vo/a_07_outro.wav" data-start="24.6"  data-duration="3.55" data-track-index="3" data-volume="1" data-audio-group="voiceover"></audio>
+
+      <audio id="sfx-cap-1" src="assets/sfx/interface/drop_001.ogg" data-start="0.4" data-duration="0.11" data-track-index="11" data-volume="0.55" data-audio-group="sfx"></audio>
+      <audio id="sfx-cap-2" src="assets/sfx/interface/drop_001.ogg" data-start="5.1" data-duration="0.11" data-track-index="12" data-volume="0.55" data-audio-group="sfx"></audio>
+      <audio id="sfx-cap-3" src="assets/sfx/interface/drop_001.ogg" data-start="10.89" data-duration="0.11" data-track-index="13" data-volume="0.55" data-audio-group="sfx"></audio>
+      <audio id="sfx-cap-4" src="assets/sfx/interface/drop_001.ogg" data-start="16.69" data-duration="0.11" data-track-index="14" data-volume="0.55" data-audio-group="sfx"></audio>
+      <audio id="sfx-cap-5" src="assets/sfx/interface/drop_001.ogg" data-start="19.84" data-duration="0.11" data-track-index="15" data-volume="0.55" data-audio-group="sfx"></audio>
+      <audio id="sfx-bell"  src="assets/sfx/impact/impactBell_heavy_000.ogg" data-start="24.3" data-duration="1.48" data-track-index="16" data-volume="0.5" data-audio-group="sfx"></audio>
+    </div>
+
+    <script>
+      // Tek, duraklatılmış timeline. Tüm zamanlar KOMPOZİSYON saniyesi (global).
+      const tl = gsap.timeline({ paused: true });
+      const EASE_OUT = "expo.out";
+
+      // Sahne tablosu — brag-plan.md storyboard'uyla birebir.
+      //   start/end : sahne penceresi
+      //   capAt     : alt yazı paneli girişi (sahne başından itibaren)
+      //   voAt/voLen: anlatım penceresi (müzik ducking için)
+      const SCENES = [
+        { n: 1, start: 0,     end: 4.75,  capAt: 0.4,  voAt: 0.55,  voLen: 3.92 },
+        { n: 2, start: 4.75,  end: 10.54, capAt: 0.35, voAt: 5.05,  voLen: 5.23 }, // beat-grid 4.75
+        { n: 3, start: 10.54, end: 16.34, capAt: 0.35, voAt: 10.84, voLen: 4.76 }, // beat-grid 10.54
+        { n: 4, start: 16.34, end: 19.49, capAt: 0.35, voAt: 16.64, voLen: 1.93 }, // beat-grid 16.34
+        { n: 5, start: 19.49, end: 24.23, capAt: 0.35, voAt: 19.79, voLen: 3.54 }, // beat-grid 19.49
+      ];
+      const XFADE = 0.45;
+
+      SCENES.forEach((s, i) => {
+        const shot = `#shot-${s.n}`;
+        if (i === 0) {
+          // Açılış: karanlıktan yumuşak açılma.
+          tl.fromTo(shot, { opacity: 0, scale: 1.04 }, { opacity: 1, scale: 1, duration: 0.6, ease: EASE_OUT }, 0);
+        } else {
+          // Crossfade: önceki klip 0,45 sn daha görünür; bu sahne üzerine açılır.
+          tl.fromTo(shot, { opacity: 0, scale: 1.035 }, { opacity: 1, scale: 1, duration: XFADE, ease: EASE_OUT }, s.start);
+        }
+        // Alt yazı: panel hızlı girer, sonunda kısa çıkar (fast-in, hold, out).
+        tl.fromTo(`#cap-${s.n}`, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: EASE_OUT }, s.start + s.capAt);
+        tl.to(`#cap-${s.n}`, { opacity: 0, duration: 0.25, ease: "power2.in" }, s.end - 0.3);
+      });
+
+      // Kapanış — 24.23 strong cue'ya kilitli. // beat-locked: 24.23s
+      tl.fromTo("#outro", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 24.23);
+      tl.fromTo("#outro-icon", { opacity: 0, scale: 0.7, y: 24 }, { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: "back.out(1.6)" }, 24.33);
+      tl.fromTo("#outro-mark", { opacity: 0, scale: 0.86, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: "back.out(1.4)" }, 24.4);
+      tl.fromTo("#outro-sub", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7, ease: EASE_OUT }, 24.75);
+      // Son 0,35 sn sakin kapanış (pencere yarı açık: son kare 28.4'ten önce).
+      tl.to("#outro", { opacity: 0, duration: 0.35, ease: "power2.in" }, 28.0);
+
+      // ===== Müzik: giriş → anlatım altında 0,13 → aralarda 0,30 → çıkış =====
+      // data-volume yok: tween değerleri taban yerine geçer (lint: audio_volume_tween_overrides_gain).
+      const BED = 0.34, DUCK = 0.16;
+      tl.fromTo("#music", { volume: 0 }, { volume: BED, duration: 0.8, ease: "power1.out" }, 0);
+      const VO = [...SCENES.map(s => ({ at: s.voAt, len: s.voLen })), { at: 24.6, len: 3.52 }];
+      VO.forEach(v => {
+        tl.to("#music", { volume: DUCK, duration: 0.25, ease: "power1.out" }, Math.max(0.8, v.at - 0.2));
+        tl.to("#music", { volume: BED,  duration: 0.6,  ease: "power1.inOut" }, v.at + v.len + 0.1);
+      });
+      tl.to("#music", { volume: 0, duration: 1.2, ease: "power1.in" }, 27.1);
+
+      window.__timelines["sandik-brag"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

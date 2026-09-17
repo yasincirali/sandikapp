@@ -1657,3 +1657,31 @@ Bir karara varman gerekirse aşağıdakileri net söyle, ona göre kod ve doküm
    - **Settings'e tema toggle / bildirim toggle** (~3 saat)
 
 Şimdi söyleyebileceğin en yararlı şey: **1, 2, 3 numaralı kararlar.** Onlar olunca placeholder'ları silip tek bir commit ile her şeyi gerçek değerlerle güncellerim.
+
+
+---
+
+## 📹 Anlatımlı önizleme videosu — yükleme ÖNCESİ iki doğrulama (2026-09-17)
+
+**Güncel teslim (2026-09-18):** `store_listing/preview_video/brag-output-2026-09-18-store/brag.mp4`
+(aynısı `out/sandik_preview_iphone_aciklamali.mp4`) — seslendirmesiz, açıklamalı; 886×1920,
+30 fps, H.264 11 Mbps, AAC 256k, 28,0 sn. Seslendirme olmadığı için aşağıdaki **2. madde bu
+sürüm için geçerli değil**; yalnızca müzik lisansı (1) kaldı. Anlatımlı sürüm
+(`brag-output/brag.mp4`) yedek olarak duruyor; onu yüklersen 2. madde de gerekir. Apple 2.3.9 "haklar sende"
+diyor; iki ses kaynağının hakkı **senin elinle** doğrulanmalı:
+
+1. **Müzik** — ✅ **DOĞRULANDI (2026-09-18):** ende.app tüm parçaları CC BY 4.0 ile
+   dağıtıyor, ticari kullanım açıkça serbest, atıf yazar tarafından isteğe bağlı
+   bırakılmış, ücret yok. Ayrıntı ve iki yasak (Spotify'a kendi şarkın gibi yükleme,
+   Content ID'ye kaydetme): `store_listing/preview_video/SES_LISANS.md`. Yapman
+   gereken tek şey isteğe bağlı: oradaki atıf satırını Hakkında/Lisanslar ekranına
+   veya mağaza açıklamasına koy.
+2. **Anlatım** — edge-tts (Microsoft Edge çevrimiçi neural TTS,
+   `tr-TR-AhmetNeural`). Ticari kullanım için Azure Speech'in resmi hizmeti
+   önerilir (aynı ses, ücretli ama lisanslı). Kabul etmiyorsan
+   `scripts/prep_media.py` içindeki komutla Azure'dan üretilen mp3'leri
+   `assets/vo/` altına koy, betiği çalıştır, yeniden render et.
+
+Kalıcı iyileştirme (isteğe bağlı): kayıt hâlâ gerçek hesapla; "Test" ortak adı
+videoda "Ayşe" maskesiyle örtülü. Demo hesapla yeniden çekim
+(`CEKIM_SENARYOSU.md` §2) maskeyi gereksiz kılar.

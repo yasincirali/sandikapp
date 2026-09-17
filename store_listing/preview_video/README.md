@@ -33,6 +33,30 @@ sayılmayabilir. Kurgu zaten gerçek kaydı bekleyecek şekilde yazıldı:
 4. `PrivacyMask` gereksizleşir (kurgusal hesapla çekildiyse) — kaldır.
 5. Yeniden render et.
 
+## Anlatımlı sürüm — `brag-output/` (2026-09-17)
+
+Kullanıcı isteği: "daha profesyonel, basit açıklayıcı cümleler, profesyonel ses".
+`/brag --voice --tone app-store` ile ikinci bir hat kuruldu: aynı ekran
+kayıtlarından, altı sahne + kapanış, Türkçe anlatım (edge-tts AhmetNeural),
+müzik yatağı ve seyrek SFX; render **Hyperframes**. Teslim dosyası
+`brag-output/brag.mp4` = `out/sandik_preview_iphone_anlatimli.mp4`.
+Kararlar ve yeniden üretim: `brag-output/README.md`. Bu Remotion kurgusu
+(`src/`) sessiz/SFX'li sürüm olarak duruyor; ikisi bağımsızdır.
+
+## Açıklamalı, seslendirmesiz mağaza sürümü — `brag-output-2026-09-18-store/` (2026-09-18) ← GÜNCEL
+
+Launch videosunun sade üslubu mağaza videosuna taşındı: gerçek ekran kayıtları,
+her sahnede özellik başlığı + tek açıklayıcı cümle, seslendirme yok, müzik + seyrek
+SFX. Teslim: `brag-output-2026-09-18-store/brag.mp4` = `out/sandik_preview_iphone_aciklamali.mp4`
+(886×1920 · 30 fps · CBR 11 Mbps · AAC 256k · 28,0 s). Anlatımlı sürüm yedek olarak duruyor.
+
+## Launch videosu — `brag-output-2026-09-17-launch/` (2026-09-17)
+
+Mağaza videosundan **bağımsız** üçüncü hat: ekran kaydı yok, arayüz HTML/GSAP ile
+yeniden çizildi (brag "recreate a working-app moment"), 1920×1080, 21,6 sn,
+müzik + SFX, anlatım yok. Paylaşım için (X / LinkedIn / README). Sayılar
+`DEMO_PORTFOY.md`'den. Kararlar: o klasördeki README.
+
 ## Komutlar
 
 ```bash

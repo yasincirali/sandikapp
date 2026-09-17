@@ -1,0 +1,17 @@
+{
+  "name": "sandik-brag",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "hyperframes preview",
+    "lint": "hyperframes lint",
+    "check": "hyperframes check",
+    "render": "hyperframes render --quality delivery --output ../brag.mp4"
+  },
+  "devDependencies": {
+    "@hyperframes/core": "^0.8.46",
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0",
+    "hyperframes": "^0.8.46"
+  }
+}

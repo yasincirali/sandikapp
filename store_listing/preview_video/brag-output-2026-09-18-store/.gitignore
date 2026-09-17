@@ -1,0 +1,17 @@
+# Üretilen / büyük / kişisel veri içeren şeyler — repoya girmez.
+composition/node_modules/
+# ffmpeg-static + ffprobe-static kopyası (~145 MB); README'deki komutla yeniden kurulur
+composition/tools/
+composition/renders/
+composition/snapshots/
+composition/.hyperframes/
+# ham kayıttan türetildi; kayıt gibi gerçek hesap adı içerir
+composition/assets/clips/
+composition/assets/vo/*.mp3
+*.mp4
+
+# Repoda kopya tutulmaz — kaynaktan yeniden kopyalanır (README "Yeniden üretmek"):
+# müzik ~/.claude/skills/brag/assets/music, fontlar ../../assets/fonts, anlatım edge-tts
+composition/assets/music/
+composition/assets/fonts/
+composition/assets/vo/

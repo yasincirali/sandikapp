@@ -51,6 +51,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 | Dokümansız kodu çözme | `spec-miner` |
 | Bir kararı zorlatma / pre-mortem | `the-fool` |
 | Video / tanıtım filmi / motion graphics | `remotion-motion-graphics` (**her video talebinde**; araç Remotion, npm'den) |
+| Anlatımlı tanıtım / launch videosu ("brag") | `brag` → Hyperframes (`npx hyperframes`); çıktı `store_listing/preview_video/brag-output/`. Türkçe ses Kokoro'da yok → edge-tts `tr-TR-*Neural` |
 | Uygulamayı çalıştırıp görme | `/run`, `tool/deploy_emulators.sh` |
 
 **Çakışma kuralı — skill CLAUDE.md'yi asla ezmez.** Skill ile bu dosya çeliştiğinde
@@ -211,6 +212,10 @@ başka bilgisayar) **geçerli değildir** ve buradaki yollar bulunamazsa bu bir 
 
 - flutter: `/c/flutter/bin/flutter` (PATH'te yok, Bash ile çağır)
 - adb: `C:\Users\vasin\Android\sdk\platform-tools\adb.exe`
+- ffmpeg: PATH'te **yok**. Tam sürüm `store_listing/preview_video/brag-output/composition/tools/`
+  (ffmpeg-static). `@remotion/compositor`'ın ffmpeg'i kısıtlı build — filtergraph ve
+  `silenceremove` çalışmaz, Hyperframes onunla render edemez. Git Bash'te `scale=886:1920`
+  gibi `:`'li argümanlar MSYS yol dönüşümüne takılır; ffmpeg'i Python `subprocess` ile çağır.
 - Emülatörler: `pixel7_1` (emulator-5554) ve `pixel7_2` (emulator-5556); kapalıysa
   `flutter emulators --launch pixel7_1` / `pixel7_2`. `hw.keyboard = yes` (2026-05-09).
 - ⚠️ Bu emülatörler Flutter'ı **render edemiyor** (ekran görüntüsü siyah; süreç yaşıyor,
@@ -245,5 +250,5 @@ koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Beti
 gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
 
 ---
-**Son güncelleme:** 2026-09-15 (Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+**Son güncelleme:** 2026-09-17 (brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
 kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).

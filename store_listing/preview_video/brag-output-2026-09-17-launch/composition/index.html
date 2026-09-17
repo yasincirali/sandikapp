@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>sandık — launch (brag)</title>
+    <script src="vendor/gsap.min.js"></script>
+    <!-- Önceden çıkarılmış ses bantları: bass → glow nefesi. Web Audio yok, determinist. -->
+    <script src="audio-data.js"></script>
+    <style>
+      @font-face { font-family: "DM Sans"; font-weight: 500; src: url("assets/fonts/DMSans-Medium.ttf") format("truetype"); }
+      @font-face { font-family: "DM Sans"; font-weight: 600; src: url("assets/fonts/DMSans-SemiBold.ttf") format("truetype"); }
+      @font-face { font-family: "DM Sans"; font-weight: 700; src: url("assets/fonts/DMSans-Bold.ttf") format("truetype"); }
+      @font-face { font-family: "DM Sans"; font-weight: 800; src: url("assets/fonts/DMSans-ExtraBold.ttf") format("truetype"); }
+      @font-face { font-family: "DM Sans"; font-weight: 900; src: url("assets/fonts/DMSans-Black.ttf") format("truetype"); }
+
+      /* Palet: lib/theme/sandik.dart SandikPalette.dark — birebir. Tek vurgu rengi: amber/gold. */
+      :root {
+        --bg: #0a1e15; --surface1: #112e28; --surface2: #1a3d2e;
+        --amber: #f5a623; --gold: #f5c842; --gain: #3db77f; --loss: #ff6b52;
+        --text: #ffffff; --dim: rgba(255,255,255,0.64); --on-amber: #112e28;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+      body { font-family: "DM Sans", -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+      .clip { position: absolute; inset: 0; }
+
+      /* ===== Arka plan katmanı (zamanlanmamış) ===== */
+      .bg { position: absolute; inset: 0; pointer-events: none; }
+      .glow { position: absolute; border-radius: 50%; filter: blur(70px); will-change: transform; }
+      #glow-amber { width: 1400px; height: 1400px; left: -520px; top: -640px;
+        background: radial-gradient(circle, rgba(245,166,35,0.30), rgba(245,166,35,0) 62%); }
+      #glow-gain { width: 1100px; height: 1100px; right: -420px; bottom: -560px;
+        background: radial-gradient(circle, rgba(61,183,127,0.22), rgba(61,183,127,0) 64%); }
+      #ghost { position: absolute; left: -30px; bottom: -150px; font-size: 560px; font-weight: 900;
+        letter-spacing: -0.06em; color: rgba(245,200,66,0.07); line-height: 1; white-space: nowrap; }
+      #grain { position: absolute; inset: 0; opacity: 0.11; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+        background-size: 260px; }
+      /* Ön plan aksanları: köşe etiketleri + alt çizgi (üretilmiş his) */
+      .meta { position: absolute; font-size: 22px; font-weight: 600; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--dim); }
+      #meta-tl { left: 120px; top: 64px; }
+      #meta-tr { right: 120px; top: 64px; text-align: right; }
+      #rule { position: absolute; left: 120px; right: 120px; bottom: 72px; height: 2px;
+        background: rgba(245,166,35,0.45); transform-origin: left center; }
+      #rule-dot { position: absolute; left: 120px; bottom: 66px; width: 14px; height: 14px; border-radius: 50%; background: var(--amber); }
+
+      /* ===== Sol zon: sahne metinleri ===== */
+      .left { position: absolute; left: 120px; top: 190px; width: 1000px; }
+      .label { font-size: 26px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gain); }
+      .hero-num { font-size: 230px; font-weight: 900; letter-spacing: -0.05em; line-height: 1.06; color: var(--gold); margin-top: 30px; }
+      .row-tufe { font-size: 64px; font-weight: 600; color: var(--dim); margin-top: 22px; letter-spacing: -0.02em; line-height: 1.1; }
+      .row-tufe b { color: var(--text); font-weight: 700; }
+      .hook { font-size: 92px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.06; margin-top: 36px; white-space: nowrap; }
+      .hook em, .h2 em { font-style: normal; color: var(--gold); }
+      .brand { display: flex; align-items: center; gap: 34px; }
+      .brand img { width: 150px; height: 150px; border-radius: 34px; box-shadow: 0 30px 70px -20px rgba(0,0,0,0.8); }
+      .brand .mark { font-size: 168px; font-weight: 900; letter-spacing: -0.05em; color: var(--gold); line-height: 1;
+        text-shadow: 0 0 60px rgba(245,166,35,0.35); }
+      .tagline { font-size: 44px; font-weight: 500; color: var(--dim); margin-top: 26px; letter-spacing: -0.01em; }
+      .kinds { margin-top: 10px; }
+      .kinds div { font-size: 104px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.1; }
+      .kinds div:nth-child(2) { color: var(--gold); } .kinds div:nth-child(4) { color: var(--gain); }
+      .kinds-sub { font-size: 44px; font-weight: 500; color: var(--dim); margin-top: 26px; }
+      .h2 { font-size: 88px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.08; }
+      .h3 { font-size: 58px; font-weight: 700; letter-spacing: -0.03em; color: var(--gain); margin-top: 30px; line-height: 1.15; }
+      .left > * { will-change: transform, opacity; }
+
+      /* ===== Sağ zon: telefon mock'u (zamanlanmamış; sahneler içeriğini değiştirir) ===== */
+      #phone-glow { position: absolute; left: 1120px; top: 40px; width: 620px; height: 1000px; border-radius: 50%;
+        background: radial-gradient(ellipse, rgba(245,166,35,0.28), rgba(245,166,35,0) 65%); filter: blur(40px); opacity: 0; }
+      #phone { position: absolute; left: 1200px; top: 92px; width: 500px; height: 900px; border-radius: 62px;
+        background: #0b2119; border: 3px solid var(--surface2); overflow: hidden; opacity: 0;
+        box-shadow: 0 50px 120px -30px rgba(0,0,0,0.85); will-change: transform, opacity; }
+      #phone .status { position: absolute; top: 0; left: 0; right: 0; height: 64px; display: flex; align-items: center;
+        justify-content: space-between; padding: 0 34px; font-size: 22px; font-weight: 600; color: var(--text); }
+      #phone .island { position: absolute; top: 16px; left: 50%; width: 120px; height: 32px; margin-left: -60px;
+        border-radius: 20px; background: #061510; }
+      #phone .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 96px; background: rgba(6,21,16,0.9);
+        border-top: 2px solid var(--surface2); display: flex; align-items: center; justify-content: space-around;
+        padding: 0 18px; font-size: 18px; font-weight: 600; color: var(--dim); }
+      #phone .tabbar .plus { width: 62px; height: 62px; border-radius: 50%; background: var(--amber); color: var(--on-amber);
+        display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; margin-top: -30px; }
+      #phone .tabbar .on { color: var(--amber); }
+      .panel { position: absolute; left: 0; right: 0; top: 70px; bottom: 96px; padding: 22px 26px; opacity: 0; }
+      .panel > * { will-change: transform, opacity; }
+      .card { background: var(--surface1); border-radius: 22px; padding: 22px 24px; }
+      .plabel { font-size: 18px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gain); }
+      #total { font-size: 66px; font-weight: 800; letter-spacing: -0.04em; color: var(--gold); line-height: 1.05; margin-top: 8px; }
+      #gainline { font-size: 24px; font-weight: 600; color: var(--gain); margin-top: 8px; }
+      #badge { margin-top: 16px; border: 2px solid rgba(61,183,127,0.55); }
+      #badge .big { font-size: 30px; font-weight: 800; color: var(--gain); }
+      #badge .big span { color: var(--text); font-weight: 600; font-size: 26px; }
+      #badge .sub { font-size: 20px; color: var(--dim); margin-top: 6px; }
+      #dist { margin-top: 16px; }
+      #dist .plabel { color: var(--dim); }
+      .bar { display: flex; align-items: center; gap: 14px; margin-top: 12px; font-size: 20px; font-weight: 600; }
+      .bar .n { width: 66px; } .bar .v { width: 62px; text-align: right; color: var(--dim); }
+      .bar .t { flex: 1; height: 10px; border-radius: 6px; background: var(--surface2); overflow: hidden; }
+      .bar .f { height: 100%; border-radius: 6px; transform-origin: left center; }
+      .ptitle { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; }
+      .seg { display: flex; background: var(--surface1); border-radius: 18px; padding: 6px; margin-top: 14px; font-size: 20px; font-weight: 700; }
+      .seg div { flex: 1; text-align: center; padding: 12px 0; border-radius: 13px; color: var(--dim); }
+      .seg .on { background: var(--amber); color: var(--on-amber); }
+      .row { display: flex; align-items: center; gap: 16px; background: var(--surface1); border-radius: 20px; padding: 16px 18px; margin-top: 12px; }
+      .row .ic { width: 46px; height: 46px; border-radius: 14px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; }
+      .row .nm { flex: 1; } .row .nm b { display: block; font-size: 24px; font-weight: 700; } .row .nm span { font-size: 18px; color: var(--dim); }
+      .row .vl { text-align: right; } .row .vl b { display: block; font-size: 24px; font-weight: 700; }
+      .row .vl span { font-size: 18px; font-weight: 600; color: var(--gain); } .row .vl span.loss { color: var(--loss); }
+      #chart { margin-top: 16px; }
+      #chart svg { width: 100%; height: 190px; display: block; }
+      .legend { display: flex; gap: 22px; margin-top: 12px; font-size: 20px; font-weight: 600; }
+      .legend i { display: inline-block; width: 26px; height: 5px; border-radius: 3px; vertical-align: middle; margin-right: 8px; }
+      #toast { position: absolute; left: 22px; right: 22px; bottom: 20px; background: var(--gain); color: var(--on-amber);
+        border-radius: 18px; padding: 18px 20px; font-size: 22px; font-weight: 600; line-height: 1.25; opacity: 0;
+        box-shadow: 0 20px 50px -14px rgba(0,0,0,0.7); }
+
+      /* ===== Kapanış ===== */
+      #s5 .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      #s5 img { width: 200px; height: 200px; border-radius: 46px; box-shadow: 0 40px 90px -24px rgba(0,0,0,0.85); opacity: 0; }
+      #s5 .mark { font-size: 190px; font-weight: 900; letter-spacing: -0.05em; color: var(--gold); line-height: 1; margin-top: 30px;
+        text-shadow: 0 0 80px rgba(245,166,35,0.4); opacity: 0; }
+      #s5 .tag { font-size: 52px; font-weight: 500; color: var(--dim); margin-top: 22px; opacity: 0; }
+      #s5 .kinds-meta { font-size: 24px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--amber); margin-top: 40px; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="sandik-launch" data-start="0" data-width="1920" data-height="1080" data-duration="21.6" data-fps="30">
+
+      <!-- Arka plan: iki glow (biri bass'a nefes alır), hayalet wordmark, grain -->
+      <div class="bg">
+        <div class="glow" id="glow-amber"></div>
+        <div class="glow" id="glow-gain"></div>
+        <div id="ghost" data-layout-ignore aria-hidden="true">sandık</div>
+        <div id="grain"></div>
+      </div>
+      <div class="meta" id="meta-tl">sandık · portföy takibi</div>
+      <div class="meta" id="meta-tr">demo portföy · eylül 2026</div>
+      <div id="rule"></div>
+      <div id="rule-dot"></div>
+
+      <!-- Telefon (zamanlanmamış): 3,4–17,4 sn arası görünür, içerik sahneyle değişir -->
+      <div id="phone-glow"></div>
+      <div id="phone">
+        <div class="island"></div>
+        <div class="status"><span>9:41</span><span>●●● ᯤ ▮</span></div>
+
+        <div class="panel" id="p-home">
+          <div class="card" id="home-card">
+            <div class="plabel">Toplam net varlık</div>
+            <div id="total">₺0</div>
+            <div id="gainline">▲ +₺196.091 · %34,35</div>
+          </div>
+          <div class="card" id="badge">
+            <div class="big">▲ +2,85 puan <span>enflasyonun önündesin</span></div>
+            <div class="sub">Getirin %34,35 · Enflasyon %31,51 · son 12 ay</div>
+          </div>
+          <div id="dist">
+            <div class="plabel">Varlık dağılımı</div>
+            <div class="bar"><span class="n">Fon</span><span class="t"><span class="f" style="width:35%;background:#4f8fe8"></span></span><span class="v">%35,0</span></div>
+            <div class="bar"><span class="n">Altın</span><span class="t"><span class="f" style="width:28.2%;background:var(--gold)"></span></span><span class="v">%28,2</span></div>
+            <div class="bar"><span class="n">Hisse</span><span class="t"><span class="f" style="width:22.8%;background:var(--amber)"></span></span><span class="v">%22,8</span></div>
+            <div class="bar"><span class="n">Döviz</span><span class="t"><span class="f" style="width:14%;background:var(--gain)"></span></span><span class="v">%14,0</span></div>
+          </div>
+        </div>
+
+        <div class="panel" id="p-list">
+          <div class="ptitle" id="list-title">Portföy</div>
+          <div class="seg" id="list-seg"><div class="on">Varlıklarım</div><div>Takip Listesi</div></div>
+          <div class="row"><div class="ic" style="color:var(--gold)">★</div><div class="nm"><b>Çeyrek Altın</b><span>20 adet · Altın</span></div><div class="vl"><b>₺216.554</b><span>▲ +₺59.554 · %37,9</span></div></div>
+          <div class="row"><div class="ic" style="color:#4f8fe8">◐</div><div class="nm"><b>DLY</b><span>32.000 adet · Fon</span></div><div class="vl"><b>₺199.520</b><span>▲ +₺61.920 · %45,0</span></div></div>
+          <div class="row"><div class="ic" style="color:var(--amber)">↗</div><div class="nm"><b>KCHOL</b><span>620 lot · Hisse</span></div><div class="vl"><b>₺127.782</b><span>▲ +₺36.022 · %39,3</span></div></div>
+          <div class="row"><div class="ic" style="color:var(--gain)">$</div><div class="nm"><b>ABD Doları</b><span>2.200 · Döviz</span></div><div class="vl"><b>₺107.030</b><span>▲ +₺22.330 · %26,4</span></div></div>
+          <div class="row"><div class="ic" style="color:var(--amber)">↗</div><div class="nm"><b>SAHOL</b><span>550 lot · Hisse</span></div><div class="vl"><b>₺47.300</b><span class="loss">▼ −₺4.125 · %8,0</span></div></div>
+        </div>
+
+        <div class="panel" id="p-chart">
+          <div class="ptitle" id="chart-title">Takip Listesi</div>
+          <div class="seg" id="chart-seg"><div>Günlük</div><div>1H</div><div class="on">1A</div><div>6A</div><div>1Y</div></div>
+          <div class="card" id="chart">
+            <div class="plabel" style="color:var(--dim)">Dönem başına göre · 1A</div>
+            <svg viewBox="0 0 400 240" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.10)" stroke-width="1.5"/>
+              <line x1="0" y1="180" x2="400" y2="180" stroke="rgba(255,255,255,0.10)" stroke-width="1.5"/>
+              <line id="zero" x1="0" y1="120" x2="400" y2="120" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-dasharray="8 8"/>
+              <path id="line-xu" fill="none" stroke="#ff6b52" stroke-opacity="0.75" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path id="line-me" fill="none" stroke="#f5c842" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle id="dot-me" r="7" fill="#f5c842" opacity="0"/>
+            </svg>
+            <div class="legend">
+              <span><i style="background:var(--gold)"></i>Portföyüm <b style="color:var(--gain)">+%3,9</b></span>
+              <span><i style="background:var(--loss)"></i>BIST 100 <b style="color:var(--loss)">−%7,1</b></span>
+            </div>
+          </div>
+          <div class="row" id="alarm-card" style="margin-top:14px"><div class="ic" style="color:var(--amber)">↗</div><div class="nm"><b>KCHOL</b><span>₺206,50 · ▲ %42,54</span></div><div class="vl"><b style="font-size:20px;color:var(--amber);border:2px solid var(--amber);border-radius:12px;padding:8px 14px">🔔 Alarm kur</b></div></div>
+          <div id="toast">🔔 KCHOL için alarm kuruldu: ₺216,83 üstüne çıkınca</div>
+        </div>
+
+        <div class="tabbar"><span class="on">Ana</span><span>Portföy</span><span class="plus">+</span><span>Performans</span><span>Profil</span></div>
+      </div>
+
+      <!-- ===== Sahne 1 — Hook (0–4,23) ===== -->
+      <section class="clip" id="s1" data-start="0" data-duration="4.23" data-track-index="1">
+        <div class="left">
+          <div class="label" id="s1-label">Portföy getirisi · son 12 ay</div>
+          <div class="hero-num" id="s1-num">%0,00</div>
+          <div class="row-tufe" id="s1-tufe">Enflasyon <b>%31,51</b></div>
+          <div class="hook" id="s1-hook"><em>Enflasyonu</em> geçtin mi?</div>
+        </div>
+      </section>
+
+      <!-- ===== Sahne 2 — Reveal (4,23–8,44) · beat-locked: 4.23s ===== -->
+      <section class="clip" id="s2" data-start="4.23" data-duration="4.21" data-track-index="1">
+        <div class="left">
+          <div class="brand"><img id="s2-icon" src="assets/brand/sandik_icon.png" alt="" /><div class="mark" id="s2-mark">sandık</div></div>
+          <div class="tagline" id="s2-tag">Hisse, fon, altın ve döviz — tek uygulamada.</div>
+          <div class="h3" id="s2-h3" style="color:var(--dim)">Kârını enflasyonla kıyaslar: <em style="font-style:normal;color:var(--gain)">gerçek kazancını</em> görürsün.</div>
+        </div>
+      </section>
+
+      <!-- ===== Sahne 3 — Varlıklar (8,44–12,65) · beat-locked: 8.44s ===== -->
+      <section class="clip" id="s3" data-start="8.44" data-duration="4.21" data-track-index="1">
+        <div class="left">
+          <div class="kinds" id="s3-kinds"><div>Hisse</div><div>Fon</div><div>Altın</div><div>Döviz</div></div>
+          <div class="kinds-sub" id="s3-sub">Varlığını ekle; fiyat ve kâr/zarar kendiliğinden güncellenir.</div>
+        </div>
+      </section>
+
+      <!-- ===== Sahne 4 — Karşılaştır + Alarm (12,65–17,38) · beat-locked: 12.65s ===== -->
+      <section class="clip" id="s4" data-start="12.65" data-duration="4.73" data-track-index="1">
+        <div class="left">
+          <div class="h2" id="s4-h2">Portföyünü <em>BIST 100</em> ile karşılaştır.</div>
+          <div class="h3" id="s4-h3">Hedef fiyata gelince bildirim al.</div>
+        </div>
+      </section>
+
+      <!-- ===== Sahne 5 — Kapanış (17,38–21,6) ===== -->
+      <section class="clip" id="s5" data-start="17.38" data-duration="4.22" data-track-index="1">
+        <div class="center">
+          <img id="s5-icon" src="assets/brand/sandik_icon_outro.png" alt="" />
+          <div class="mark" id="s5-mark">sandık</div>
+          <div class="tag" id="s5-tag">Portföyün, tek sandıkta</div>
+          <div class="kinds-meta" id="s5-meta">Hisse · Fon · Altın · Döviz</div>
+        </div>
+      </section>
+
+      <!-- ===== Ses ===== -->
+      <audio id="music" src="assets/music/happy-beats-business-moves-vol-9-by-ende-dot-app.mp3" data-start="0" data-duration="21.6" data-track-index="10" data-audio-group="music"></audio>
+      <audio id="sfx-count"  src="assets/sfx/interface/drop_001.ogg"          data-start="0.3"   data-duration="0.11" data-track-index="11" data-volume="0.6"  data-audio-group="sfx"></audio>
+      <audio id="sfx-hook"   src="assets/sfx/impact/impactSoft_medium_000.ogg" data-start="2.55"  data-duration="0.12" data-track-index="12" data-volume="0.7"  data-audio-group="sfx"></audio>
+      <audio id="sfx-mark"   src="assets/sfx/impact/impactSoft_medium_000.ogg" data-start="4.2"   data-duration="0.12" data-track-index="11" data-volume="0.8"  data-audio-group="sfx"></audio>
+      <audio id="sfx-badge"  src="assets/sfx/interface/drop_002.ogg"          data-start="6.3"   data-duration="0.11" data-track-index="12" data-volume="0.65" data-audio-group="sfx"></audio>
+      <!-- beat-grid: kartlar 8.96 · 9.50 · 10.01 · 10.54 · 11.06 -->
+      <audio id="sfx-c1" src="assets/sfx/casino/card-place-1.ogg" data-start="8.92"  data-duration="0.3" data-track-index="11" data-volume="0.5" data-audio-group="sfx"></audio>
+      <audio id="sfx-c2" src="assets/sfx/casino/card-place-2.ogg" data-start="9.46"  data-duration="0.3" data-track-index="12" data-volume="0.5" data-audio-group="sfx"></audio>
+      <audio id="sfx-c3" src="assets/sfx/casino/card-place-3.ogg" data-start="9.97"  data-duration="0.3" data-track-index="13" data-volume="0.5" data-audio-group="sfx"></audio>
+      <audio id="sfx-c4" src="assets/sfx/casino/card-place-4.ogg" data-start="10.50" data-duration="0.3" data-track-index="14" data-volume="0.5" data-audio-group="sfx"></audio>
+      <audio id="sfx-c5" src="assets/sfx/casino/card-slide-1.ogg" data-start="11.02" data-duration="0.4" data-track-index="15" data-volume="0.55" data-audio-group="sfx"></audio>
+      <audio id="sfx-chart"  src="assets/sfx/interface/drop_001.ogg"          data-start="12.62" data-duration="0.11" data-track-index="11" data-volume="0.6"  data-audio-group="sfx"></audio>
+      <audio id="sfx-alarm"  src="assets/sfx/interface/switch_001.ogg"        data-start="15.24" data-duration="0.3"  data-track-index="12" data-volume="0.6"  data-audio-group="sfx"></audio>
+      <audio id="sfx-bell"   src="assets/sfx/impact/impactBell_heavy_000.ogg" data-start="17.42" data-duration="1.48" data-track-index="13" data-volume="0.55" data-audio-group="sfx"></audio>
+    </div>
+
+    <script>
+      // ---------- yardımcılar (tr_format ile aynı biçim: ₺766.876 · %34,35) ----------
+      const grp = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      const fmtTRY = (n) => "₺" + grp(n);
+      const fmtPct = (n) => "%" + n.toFixed(2).replace(".", ",");
+
+      // Grafik yolları: sabit veri (uydurma değil — demo portföyün 1A seyri, DEMO_PORTFOY.md).
+      // Ölçek: +5% → y 60 · 0 → 120 · −10% → 240 (viewBox 400×240).
+      const yOf = (v) => 120 - v * 12;
+      const ME = [0, 1.2, 3.4, 4.1, 3.9, 2.6, 2.8, 2.1, 3.0, 3.6, 3.3, 3.9];
+      const XU = [0, 0.8, 2.2, 1.0, -0.5, -1.8, -0.6, -2.4, -1.2, -3.0, -4.8, -7.1];
+      const toPath = (arr) => arr.map((v, i) => `${i ? "L" : "M"}${20 + (i * 360) / (arr.length - 1)},${yOf(v)}`).join(" ");
+      const lineMe = document.getElementById("line-me"), lineXu = document.getElementById("line-xu");
+      lineMe.setAttribute("d", toPath(ME)); lineXu.setAttribute("d", toPath(XU));
+      // Uzunluklar kurulumda BİR KEZ ölçülür (tween anında DOM ölçümü yok).
+      const LME = lineMe.getTotalLength(), LXU = lineXu.getTotalLength();
+      gsap.set(lineMe, { strokeDasharray: LME, strokeDashoffset: LME });
+      gsap.set(lineXu, { strokeDasharray: LXU, strokeDashoffset: LXU });
+      gsap.set("#dot-me", { attr: { cx: 380, cy: yOf(3.9) } });
+
+      // Ses bantları: bass EMA ile yumuşatılır (determinist, kurulumda).
+      const AD = (typeof AUDIO_DATA !== "undefined") ? AUDIO_DATA : null;
+      const bass = [];
+      if (AD) { let e = 0; for (const f of AD.frames) { const b = (f.bands[0] + f.bands[1]) / 2; e = e * 0.72 + b * 0.28; bass.push(e); } }
+
+      const tl = gsap.timeline({ paused: true });
+      const OUT = "expo.out", BACK = "back.out(1.5)";
+
+      // ---------- ambient: dekoratifler hiç durmaz ----------
+      tl.fromTo("#glow-amber", { x: -40, y: -20 }, { x: 50, y: 30, duration: 5.4, ease: "sine.inOut", repeat: 3, yoyo: true }, 0);
+      tl.fromTo("#glow-gain", { scale: 0.92 }, { scale: 1.1, duration: 4.5, ease: "sine.inOut", repeat: 4, yoyo: true }, 0);
+      tl.fromTo("#ghost", { x: -60 }, { x: 60, duration: 21.6, ease: "none" }, 0);
+      tl.fromTo("#rule", { scaleX: 0 }, { scaleX: 1, duration: 1.4, ease: OUT }, 0.2);
+      tl.fromTo("#rule-dot", { scale: 0 }, { scale: 1, duration: 0.5, ease: BACK }, 1.5);
+      tl.fromTo("#meta-tl", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.6, ease: OUT }, 0.3);
+      tl.fromTo("#meta-tr", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.6, ease: OUT }, 0.45);
+      // Audio-reactive: bass → amber glow ölçeği (1–1,12) ve telefon ışığı. Waveform yok.
+      if (AD) {
+        for (let f = 0; f < AD.totalFrames; f++) {
+          const b = bass[f];
+          tl.call(((v) => () => { gsap.set("#glow-amber", { scale: 1 + v * 0.12 }); gsap.set("#phone-glow", { opacity: 0.55 + v * 0.45 }); })(b), [], f / AD.fps);
+        }
+      }
+
+      // ---------- Sahne 1 — Hook ----------
+      tl.fromTo("#s1-label", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.5, ease: OUT }, 0.15);
+      const cnt = { v: 0 };
+      tl.fromTo("#s1-num", { opacity: 0, y: 40, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: OUT }, 0.3);
+      tl.to(cnt, { v: 34.35, duration: 1.5, ease: "power3.out", onUpdate: () => { document.getElementById("s1-num").textContent = fmtPct(cnt.v); } }, 0.3);
+      tl.fromTo("#s1-tufe", { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.55, ease: OUT }, 1.95);
+      tl.fromTo("#s1-hook", { opacity: 0, y: 30, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: BACK }, 2.55);
+      // Telefon çerçevesi hook sırasında belirmeye başlar (sağ zon boş kalmasın)
+      tl.fromTo("#phone", { opacity: 0, y: 60, rotate: -3 }, { opacity: 1, y: 0, rotate: 0, duration: 1.1, ease: OUT }, 3.3);
+      tl.fromTo("#phone-glow", { opacity: 0 }, { opacity: 0.6, duration: 1.0, ease: OUT }, 3.3);
+      // Sahne 1 çıkışı (pencere 4,23'te kapanır — önce bitir)
+      tl.to("#s1 .left > *", { opacity: 0, y: -24, duration: 0.3, ease: "power2.in", stagger: 0.04 }, 3.85);
+
+      // ---------- Sahne 2 — Reveal · beat-locked: 4.23s ----------
+      tl.fromTo("#s2-icon", { opacity: 0, scale: 0.6, rotate: -8 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.7, ease: BACK }, 4.23);
+      tl.fromTo("#s2-mark", { opacity: 0, y: 50, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: BACK }, 4.3);
+      tl.fromTo("#s2-tag", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.55, ease: OUT }, 4.75);
+      tl.fromTo("#s2-h3", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.55, ease: OUT }, 5.7);
+      // Telefon: ana ekran paneli
+      tl.fromTo("#p-home", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 4.3);
+      tl.fromTo("#home-card", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: OUT }, 4.35);
+      const tot = { v: 0 };
+      tl.to(tot, { v: 766876, duration: 1.6, ease: "power3.out", onUpdate: () => { document.getElementById("total").textContent = fmtTRY(tot.v); } }, 4.45);
+      tl.fromTo("#gainline", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 5.4);
+      tl.fromTo("#badge", { opacity: 0, x: 80, scale: 0.96 }, { opacity: 1, x: 0, scale: 1, duration: 0.6, ease: BACK }, 6.34); // beat-locked: 6.34s
+      tl.fromTo("#dist", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: OUT }, 6.9);
+      tl.fromTo("#dist .f", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: OUT, stagger: 0.08 }, 7.0);
+      tl.to("#s2 .left > *", { opacity: 0, x: -30, duration: 0.3, ease: "power2.in", stagger: 0.04 }, 8.08);
+      tl.to("#p-home", { opacity: 0, duration: 0.25 }, 8.15);
+
+      // ---------- Sahne 3 — Varlıklar · beat-locked: 8.44s ----------
+      tl.fromTo("#s3-kinds div", { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.5, ease: OUT, stagger: 0.11 }, 8.44);
+      tl.fromTo("#s3-sub", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: OUT }, 9.1);
+      tl.fromTo("#p-list", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 8.44);
+      tl.fromTo("#list-title", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.4, ease: OUT }, 8.5);
+      tl.fromTo("#list-seg", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: OUT }, 8.6);
+      // beat-grid: 8.96 · 9.50 · 10.01 · 10.54 · 11.06 (vol-9) — her kart bir beat; set 11,06'dan sonra 1,6 sn tutulur
+      [8.96, 9.50, 10.01, 10.54, 11.06].forEach((t, i) => {
+        tl.fromTo(document.querySelectorAll("#p-list .row")[i], { opacity: 0, y: -26, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: BACK }, t);
+      });
+      tl.to("#s3 .left > *", { opacity: 0, y: -24, duration: 0.3, ease: "power2.in", stagger: 0.03 }, 12.3);
+      tl.to("#p-list", { opacity: 0, duration: 0.25 }, 12.35);
+
+      // ---------- Sahne 4 — Karşılaştır + Alarm · beat-locked: 12.65s ----------
+      tl.fromTo("#s4-h2", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease: OUT }, 12.65);
+      tl.fromTo("#p-chart", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 12.65);
+      tl.fromTo("#chart-title, #chart-seg", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.4, ease: OUT, stagger: 0.08 }, 12.7);
+      tl.fromTo("#chart", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: OUT }, 12.85);
+      tl.to(lineXu, { strokeDashoffset: 0, duration: 1.6, ease: "power2.inOut" }, 13.1);
+      tl.to(lineMe, { strokeDashoffset: 0, duration: 1.7, ease: "power2.inOut" }, 13.2);
+      tl.fromTo("#dot-me", { opacity: 0, scale: 0, transformOrigin: "center" }, { opacity: 1, scale: 1, duration: 0.35, ease: BACK }, 14.85);
+      tl.fromTo("#chart .legend", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 14.6);
+      tl.fromTo("#alarm-card", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: OUT }, 14.4);
+      tl.to("#alarm-card .vl b", { scale: 0.92, duration: 0.12, yoyo: true, repeat: 1, ease: "power1.inOut" }, 15.1); // dokunuş
+      // Alarm şeridi — beat 15.28
+      tl.fromTo("#toast", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.55, ease: BACK }, 15.28);
+      tl.fromTo("#s4-h3", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.5, ease: OUT }, 15.32);
+      // Sahne 4 + telefon çıkışı
+      tl.to("#s4 .left > *", { opacity: 0, y: -24, duration: 0.3, ease: "power2.in", stagger: 0.04 }, 17.0);
+      tl.to("#phone", { opacity: 0, y: 40, scale: 0.97, duration: 0.4, ease: "power2.in" }, 16.95);
+      tl.to("#phone-glow", { opacity: 0, duration: 0.4 }, 16.95);
+
+      // ---------- Sahne 5 — Kapanış ----------
+      tl.fromTo("#s5-icon", { opacity: 0, scale: 0.5, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.75, ease: BACK }, 17.42);
+      tl.fromTo("#s5-mark", { opacity: 0, scale: 0.85, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: BACK }, 17.5);
+      tl.fromTo("#s5-tag", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: OUT }, 17.95);
+      tl.fromTo("#s5-meta", { opacity: 0, scaleX: 1.25, y: 12 }, { opacity: 1, scaleX: 1, y: 0, duration: 0.8, ease: OUT }, 18.3);
+      tl.to("#s5 .center > *", { opacity: 0, duration: 0.4, ease: "power2.in" }, 21.1);
+      tl.to("#meta-tl, #meta-tr, #rule, #rule-dot", { opacity: 0, duration: 0.4 }, 21.1);
+
+      // ---------- Müzik zarfı ----------
+      tl.fromTo("#music", { volume: 0 }, { volume: 0.5, duration: 0.6, ease: "power1.out" }, 0);
+      tl.to("#music", { volume: 0, duration: 1.5, ease: "power1.in" }, 20.0);
+
+      window.__timelines["sandik-launch"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+*.mp4
+composition/audio-data.json
+
+# Repoda kopya tutulmaz — kaynaktan yeniden kopyalanır (README "Yeniden üretmek"):
+# müzik ~/.claude/skills/brag/assets/music, fontlar ../../assets/fonts, anlatım edge-tts
+composition/assets/music/
+composition/assets/fonts/
+composition/assets/vo/
