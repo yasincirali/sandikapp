@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' show ClientException;
 import 'db_logger.dart';
 
 /// Yakalanan ama YUTULAN hataların Crashlytics'e non-fatal olarak gitmesi.
@@ -64,10 +65,17 @@ class CrashReporter {
   /// Kapsam bilerek DAR — tanımadığımız hata fatal sayılır; yanlış tarafa
   /// düşmek gerekiyorsa gürültü değil, görünürlük tarafına düşsün.
   static bool agHatasiMi(Object? error) {
+    // `ClientException` (package:http) TİP olarak da tanınır. Bugünkü
+    // `toString()` "ClientException: <mesaj>" biçiminde, yani aşağıdaki
+    // metin taraması da yakalıyor — ama o tarama SINIF ADI ÖNEKİNE bağlı;
+    // önek değişirse (paket sürümü) ya da `toString()`'i ezen bir alt sınıf
+    // gelirse sessizce kaçardı. Üretim raporu 2026-09-19 bu tipti
+    // (`IOClient.send → DbLogger.log → SupabaseService.updateAsset`).
     if (error is TimeoutException ||
         error is SocketException ||
         error is HttpException ||
-        error is HandshakeException) {
+        error is HandshakeException ||
+        error is ClientException) {
       return true;
     }
     final metin = error.toString();
@@ -82,6 +90,11 @@ class CrashReporter {
       'Connection refused',
       'Software caused connection abort',
       'Network is unreachable',
+      // `ClientException` mesajları — hata tipini kaybetmiş, metne çevrilmiş
+      // hâlde geldiğinde (ör. başka bir katman `toString()` yapıp taşımışsa).
+      'Connection closed before full header was received',
+      'Connection attempt cancelled',
+      'Request has been aborted',
     ]) {
       if (metin.contains(iz)) return true;
     }

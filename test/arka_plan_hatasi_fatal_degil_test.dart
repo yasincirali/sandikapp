@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' show ClientException;
 import 'package:portfoy_takip/services/crash_reporter.dart';
 
 /// Üretim çökmesinin (Crashlytics, 2026-09-19) tekrar etmemesi için ratchet.
@@ -38,6 +39,16 @@ void main() {
         CrashReporter.agHatasiMi('ClientException: Connection closed'),
         isTrue,
       );
+      // Üretim raporu 2026-09-19 bu tipti (`IOClient.send`).
+      expect(
+        CrashReporter.agHatasiMi(ClientException(
+            'Connection closed before full header was received')),
+        isTrue,
+      );
+      // Metin taraması SINIF ADI ÖNEKİNE bağlı; `toString()`'i ezen bir alt
+      // sınıf o önekten geçmez. Tip kontrolü kuralı ayakta tutar.
+      expect(CrashReporter.agHatasiMi(_SessizClientException('boom')), isTrue,
+          reason: 'sınıflandırma metne değil TİPE de bakmalı');
     });
 
     test('program hataları ağ hatası DEĞİLDİR — fatal kalmalı', () {
@@ -125,6 +136,21 @@ void main() {
       );
     });
 
+    test('varlık kaydetme ekranı hatayı yakalar', () {
+      // `onPressed: _save` future'ı kimse beklemiyor; genel `catch`
+      // olmadan ağ hatası zone handler'ına düşüp ÇÖKME sayılıyordu ve
+      // kullanıcı kaydın olmadığını hiç öğrenmiyordu.
+      final kaynak =
+          File('lib/screens/add_asset_screen.dart').readAsStringSync();
+      expect(
+        kaynak.contains("reason: 'AddAssetScreen.save'"),
+        isTrue,
+        reason: 'kayıt hatası Crashlytics\'e bildirilmeli',
+      );
+      expect(kaynak.contains('friendlyError(e)'), isTrue,
+          reason: 'kullanıcı kaydın olmadığını görmeli');
+    });
+
     test('refreshPrices fiyat yazımını başıboş bırakmaz', () {
       final kaynak =
           File('lib/providers/portfolio_provider.dart').readAsStringSync();
@@ -166,4 +192,12 @@ Iterable<File> _dartDosyalari(String kok) sync* {
   for (final e in Directory(kok).listSync(recursive: true)) {
     if (e is File && e.path.endsWith('.dart')) yield e;
   }
+}
+
+/// `toString()`'i sınıf adını yazmayacak şekilde ezen bir `ClientException`.
+/// Metin taramasının tek başına neden yetmediğini gösterir.
+class _SessizClientException extends ClientException {
+  _SessizClientException(super.message);
+  @override
+  String toString() => message;
 }

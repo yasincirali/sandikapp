@@ -13,6 +13,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../services/crash_reporter.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -1738,6 +1739,26 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         Navigator.pop(context);
         unawaited(_save());
       }
+      return;
+    } catch (e, st) {
+      // ## Neden genel bir catch
+      // YOKTU. `onPressed: _save` bir `Future` döndürüyor ve kimse onu
+      // beklemiyor: kayıt sırasında ağ koparsa (`ClientException`,
+      // `TimeoutException`) hata `runZonedGuarded` handler'ına düşüp
+      // Crashlytics'te ÇÖKME olarak kaydediliyordu — üretim raporu
+      // 2026-09-19: `IOClient.send → DbLogger.log →
+      // SupabaseService.updateAsset`.
+      //
+      // Kullanıcı tarafı daha kötüydü: hiçbir şey olmuyordu. Form açık
+      // kalıyor, "kaydediliyor" durumu sıfırlanıyor, ama varlık
+      // KAYDEDİLMEMİŞ oluyordu ve bunu söyleyen tek satır yoktu.
+      //
+      // `return` şart: aşağıdaki `Navigator.pop(context, true)` çağıran
+      // ekrana "kayıt oldu" sinyali gönderiyor. Yutup devam etmek
+      // başarısız kaydı başarı gibi gösterirdi.
+      CrashReporter.report(e, st, reason: 'AddAssetScreen.save');
+      if (!mounted) return;
+      sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
       return;
     } finally {
       _n.setSaving(false);

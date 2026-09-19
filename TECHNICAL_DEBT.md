@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-19 (arka plan future'larının çökme olarak raporlanması)
+**Son güncelleme:** 2026-09-19 (sahipsiz future'lar: arka plan işleri + catch'siz buton handler'ları)
 
 ---
 
@@ -29,9 +29,16 @@ kaydediyor (`CrashReporter.agHatasiMi`).
 senkronu. Hepsini bir turda taşımak bu düzeltmenin yüzeyini gereksiz
 genişletirdi ve her birinin doğru `reason` etiketi ayrı karardır.
 
+**Aynı ailenin ikinci yüzü: `catch`siz async buton handler'ı.**
+`onPressed: _birSey` bir `Future` döndürür ve kimse beklemez — `unawaited`
+yazmasa da sahipsizdir. `add_asset_screen._save` böyleydi (2026-09-19'da
+kapandı): ağ koparsa Crashlytics ÇÖKME kaydediyor, kullanıcı ise kaydın
+olmadığını hiç öğrenmiyordu. Ekranlarda bu desenin tam taraması YAPILMADI;
+kırılgan olanları (ağ/DB yazan handler'lar) elden geçirmek ayrı bir tur.
+
 **Maliyet.** Bu çağrılardan biri AĞ DIŞI bir hata fırlatırsa (ör. platform
 kanalı eksik, null cast) hâlâ fatal çökme olarak raporlanır. Gürültü riski;
-veri kaybı riski yok.
+`catch`siz handler'da ayrıca kullanıcı sessiz başarısızlık görür.
 
 **Ne zaman.** Crashlytics'te arka plan işlerinden gelen ağ dışı fatal
 görülürse, ya da bir sadeleştirme turunda toptan
