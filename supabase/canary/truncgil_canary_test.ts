@@ -80,3 +80,12 @@ Deno.test('truncgil: USD/TRY makul aralıkta (ölçek hatası yakalayıcı)', as
   const usd = extractTruncgil(data, ['USDTRY=X']).get('USDTRY=X');
   assert(usd !== undefined && usd > 5 && usd < 500, `USDTRY=X: ${usd}`);
 });
+
+Deno.test('TEFAS: fon NAV degeri canlidan aliniyor (alarm icin)', async () => {
+  // 2026-09-19: fon alarmları sunucuda hiç fiyatlanmıyordu. Uç nokta ya da
+  // alan adı (`fiyat`/`tarih`) değişirse bu test kırılır.
+  const { fetchLivePrices } = await import('../functions/_shared/live_prices.ts');
+  const fiyat = await fetchLivePrices(new Set(['TEFAS:DLY']));
+  const nav = fiyat.get('TEFAS:DLY');
+  assert(nav !== undefined && nav > 0 && nav < 10_000, `TEFAS:DLY NAV: ${nav}`);
+});

@@ -12,6 +12,8 @@
 // tetiklenmeli. Farklı kaynak kullansaydık kullanıcı ekranda 5.401 görürken
 // 5.400 alarmının çalışmadığını fark eder ve haklı olarak "bozuk" der.
 
+import { sonNavSatiri } from './tefas_nav.ts';
+
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
@@ -202,6 +204,61 @@ async function fetchYahooLast(symbol: string): Promise<number | null> {
   }
 }
 
+/// Fon sembolü öneki — `assets.ticker` ve `price_alerts.symbol` aynı biçim.
+const TEFAS_PREFIX = 'TEFAS:';
+
+export function isTefasSymbol(symbol: string): boolean {
+  return symbol.startsWith(TEFAS_PREFIX);
+}
+
+/// Sembolleri kaynağına ayırır — saf, test edilebilir.
+///
+/// 2026-09-19'a kadar `TEFAS:` sembolleri Yahoo'ya gidiyordu ve orada hiç
+/// bulunamıyordu: canlıda `checked:9, priced:3` — fon alarmları HİÇ
+/// tetiklenmiyor, kullanıcı da "hedefe gelmedi" sanıyordu. Kanarya buna
+/// takılmaz (map tamamen boş değil); bu yüzden ayrım burada açık yazıldı.
+export function kaynakAyir(symbols: Iterable<string>): {
+  truncgil: string[];
+  tefas: string[];
+  yahoo: string[];
+} {
+  const truncgil: string[] = [];
+  const tefas: string[] = [];
+  const yahoo: string[] = [];
+  for (const s of symbols) {
+    if (isGoldSymbol(s) || isFxSymbol(s)) truncgil.push(s);
+    else if (isTefasSymbol(s)) tefas.push(s);
+    else yahoo.push(s);
+  }
+  return { truncgil, tefas, yahoo };
+}
+
+/// Fonun son NAV'ı — `observe-tefas-nav` ile aynı uç nokta ve aynı süzgeç
+/// (`sonNavSatiri`). Fon günde bir kez fiyatlanır; alarm için son NAV
+/// "anlık fiyat"tır ve uygulamada görünen sayıyla aynıdır.
+async function fetchTefasLast(symbol: string): Promise<number | null> {
+  const kod = symbol.slice(TEFAS_PREFIX.length).trim().toUpperCase();
+  if (!/^[A-Z0-9]{2,6}$/.test(kod)) return null;
+  try {
+    const res = await fetch('https://www.tefas.gov.tr/api/funds/fonFiyatBilgiGetir', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json, text/plain, */*',
+        'User-Agent': USER_AGENT,
+      },
+      body: JSON.stringify({ fonKodu: kod, dil: 'TR', periyod: 1 }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return sonNavSatiri(data?.resultList)?.fiyat ?? null;
+  } catch (_) {
+    // Tek fonun başarısızlığı turu düşürmemeli.
+    return null;
+  }
+}
+
 /// Verilen sembollerin anlık fiyatı (TRY ya da sembolün kendi kotasyonu).
 ///
 /// Dönen map yalnızca fiyatı ALINABİLEN sembolleri içerir; eksik sembol için
@@ -212,9 +269,17 @@ export async function fetchLivePrices(
   const out = new Map<string, number>();
   if (symbols.size === 0) return out;
 
-  const hepsi = [...symbols];
-  const truncgilList = hepsi.filter((s) => isGoldSymbol(s) || isFxSymbol(s));
-  const yahooList = hepsi.filter((s) => !isGoldSymbol(s) && !isFxSymbol(s));
+  const { truncgil: truncgilList, tefas: tefasList, yahoo: yahooList } = kaynakAyir(symbols);
+
+  // Fonlar: kod başına tek istek, sınırlı paralellik (TEFAS'ı boğma).
+  for (let i = 0; i < tefasList.length; i += 4) {
+    const dilim = tefasList.slice(i, i + 4);
+    const sonuc = await Promise.all(dilim.map(fetchTefasLast));
+    dilim.forEach((sym, j) => {
+      const p = sonuc[j];
+      if (p !== null) out.set(sym, p);
+    });
+  }
 
   if (truncgilList.length > 0) {
     try {
