@@ -29,6 +29,8 @@ import '../services/disclaimer_service.dart';
 import '../services/supabase_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/hedef_sheet.dart';
+
 import '../widgets/sandik_app_bar.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/friendly_error.dart';
@@ -603,6 +605,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const _ThemeModePicker(),
             const SizedBox(height: 12),
             const _BaseCurrencyPicker(),
+            const SizedBox(height: 12),
+            // Portföy hedefi — Bugün kartındaki ilerleme çubuğunun kaynağı.
+            // Kartın kendisinden de kurulur; burası "nereden değiştiririm"
+            // sorusunun beklenen adresi.
+            _SettingsTile(
+              icon: Icons.flag_outlined,
+              title: context.l10n.goalTitle,
+              subtitle: context.l10n.goalSettingsSubtitle,
+              onTap: () => showHedefSheet(context, ref),
+            ),
             const SizedBox(height: 12),
             const _InvestorLevelPicker(),
             const SizedBox(height: 12),

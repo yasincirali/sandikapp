@@ -1449,7 +1449,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nominalReturn => 'Nominal return';
+  String get nominalReturn => 'Your return';
 
   @override
   String cpiWindowRange(String start, String end) {
@@ -1457,10 +1457,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get periodCpi => 'Period CPI';
+  String get periodCpi => 'Inflation (CPI)';
 
   @override
-  String get pointDifference => 'Point difference';
+  String get pointDifference => 'Difference';
 
   @override
   String get realReturn => 'Real return';
@@ -3162,4 +3162,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goalRemove => 'Remove goal';
+
+  @override
+  String get goalSettingsSubtitle =>
+      'Pick a target; track progress on the Today card';
 }

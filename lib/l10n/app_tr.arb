@@ -743,14 +743,14 @@
       }
     }
   },
-  "nominalReturn": "Nominal getiri",
+  "nominalReturn": "Senin getirin",
   "cpiWindowRange": "Ölçüm aralığı: {start} – {end}",
   "@cpiWindowRange": {
     "description": "TÜFE karşılaştırmasının gerçek pencere uçları",
     "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
   },
-  "periodCpi": "Dönem TÜFE",
-  "pointDifference": "Puan farkı",
+  "periodCpi": "Enflasyon (TÜFE)",
+  "pointDifference": "Aradaki fark",
   "realReturn": "Reel getiri",
   "cpiNotLoaded": "TÜFE verisi henüz yüklenmedi.",
   "cpiNotLoadedBody": "Enflasyon endeksi geldiğinde portföyünün reel getirisi burada görünecek. Tahmini bir sayı gösterilmiyor.",
@@ -2199,5 +2199,6 @@
   "goalTitle": "Portföy hedefi",
   "goalHint": "Yalnızca gösterim için; hesapları değiştirmez.",
   "goalInvalid": "Geçerli bir tutar gir",
-  "goalRemove": "Hedefi kaldır"
+  "goalRemove": "Hedefi kaldır",
+  "goalSettingsSubtitle": "Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör"
 }

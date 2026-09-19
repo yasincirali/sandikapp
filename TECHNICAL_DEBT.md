@@ -131,6 +131,36 @@ paylaşıyor. Kapı `seriCekici` ile enjekte edilebilir; davranış ağa çıkma
 
 ---
 
+## 🟡 AÇIK — "Bugün" kartı: takvimin kişisel yarısı ve tur kısaltma yapılmadı
+
+**Ne yapıldı (2026-09-20, `feat/gunluk-ilgi`).** Ana ekrana her gün değişen
+"Bugün" kartı (`services/bugun_service.dart`, `widgets/bugun_karti.dart`):
+günün hareketi / sonraki açılış, dönüşümlü içgörü (artıdaki varlık oranı,
+hedefe kalan, yaklaşan TÜİK-tatil-ay sonu), ayın ilk 3 günü aylık özet girişi;
+portföy hedefi (`portfolioGoalProvider`, Ayarlar › Görünüm ve karttan).
+TÜFE kartı etiketleri sade dile ("Senin getirin / Enflasyon (TÜFE) / Aradaki fark").
+
+**Bilerek yapılmayan / ertelenen:**
+1. **Kişisel takvim** — temettü ödeme tarihleri (KAP), fon kesinti günleri.
+   Yeni bir veri kaynağı (KAP API/scrape) ve sunucu tarafı tablo ister; ulusal
+   takvim (TÜİK, BIST tatili, ay sonu) `BistTakvimi` ile bedavaya geldi,
+   kişisel olan gelmedi. En yüksek geri getirme değeri burada — ilk izleme
+   turunda Bugün kartının `todayEventCpi` satırına dokunma/görüntülenme
+   oranı ölçülünce karar verilir.
+2. **Tanıtım turu 27 adım.** İlk 10 dakika kritik; tur 5 adıma inmeli,
+   kalanı ilgili ekranda ilk girişte tek ipucu olmalı. Ayrı tasarım turu;
+   `onboarding_screen.dart` `_adimlariKur` + `onboarding_tour_test`.
+3. **Aylık özet ekranı yok** — giriş Performans › Özet › 1A'ya gidiyor.
+   Yıllık `RecapScreen`'in aylık sürümü (karakter sayfası hariç) ucuz ama
+   ayrı bir yüzey; önce girişin tıklanıp tıklanmadığı ölçülsün.
+4. **Kart içi ölçüm yok.** Analytics olayı eklenmedi; hangi satırın gezme
+   sebebi olduğu bilinmeden 1–3'e karar verilemez. İlk iş bu.
+
+**Ne zaman.** Bugün kartı TestFlight'ta bir hafta kalıp kullanıcı geri
+bildirimi alındıktan sonra; 4 → 1 → 3 → 2 sırasıyla.
+
+---
+
 ## 🟡 AÇIK — Fiyat kaynağı sözleşmesi kuruldu; CANLI kotasyon tarafı henüz dışarıda
 
 **Ne yapıldı (2026-09-17, kullanıcı kararı).** *"Tüm varlıklar her yerde tek

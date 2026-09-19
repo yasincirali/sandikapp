@@ -1449,7 +1449,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get nominalReturn => 'Nominal getiri';
+  String get nominalReturn => 'Senin getirin';
 
   @override
   String cpiWindowRange(String start, String end) {
@@ -1457,10 +1457,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get periodCpi => 'Dönem TÜFE';
+  String get periodCpi => 'Enflasyon (TÜFE)';
 
   @override
-  String get pointDifference => 'Puan farkı';
+  String get pointDifference => 'Aradaki fark';
 
   @override
   String get realReturn => 'Reel getiri';
@@ -3153,4 +3153,8 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get goalRemove => 'Hedefi kaldır';
+
+  @override
+  String get goalSettingsSubtitle =>
+      'Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör';
 }

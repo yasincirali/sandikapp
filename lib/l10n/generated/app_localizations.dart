@@ -2705,7 +2705,7 @@ abstract class AppLocalizations {
   /// No description provided for @nominalReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Nominal getiri'**
+  /// **'Senin getirin'**
   String get nominalReturn;
 
   /// TÜFE karşılaştırmasının gerçek pencere uçları
@@ -2717,13 +2717,13 @@ abstract class AppLocalizations {
   /// No description provided for @periodCpi.
   ///
   /// In tr, this message translates to:
-  /// **'Dönem TÜFE'**
+  /// **'Enflasyon (TÜFE)'**
   String get periodCpi;
 
   /// No description provided for @pointDifference.
   ///
   /// In tr, this message translates to:
-  /// **'Puan farkı'**
+  /// **'Aradaki fark'**
   String get pointDifference;
 
   /// No description provided for @realReturn.
@@ -5401,6 +5401,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hedefi kaldır'**
   String get goalRemove;
+
+  /// No description provided for @goalSettingsSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör'**
+  String get goalSettingsSubtitle;
 }
 
 class _AppLocalizationsDelegate

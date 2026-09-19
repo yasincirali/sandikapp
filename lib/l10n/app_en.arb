@@ -743,14 +743,14 @@
       }
     }
   },
-  "nominalReturn": "Nominal return",
+  "nominalReturn": "Your return",
   "cpiWindowRange": "Measured: {start} – {end}",
   "@cpiWindowRange": {
     "description": "Actual window ends of the CPI comparison",
     "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
   },
-  "periodCpi": "Period CPI",
-  "pointDifference": "Point difference",
+  "periodCpi": "Inflation (CPI)",
+  "pointDifference": "Difference",
   "realReturn": "Real return",
   "cpiNotLoaded": "Inflation data has not loaded yet.",
   "cpiNotLoadedBody": "When the inflation index arrives, your portfolio's real return appears here. No estimated figure is shown.",
@@ -2199,5 +2199,6 @@
   "goalTitle": "Portfolio goal",
   "goalHint": "Display only; it does not change any calculation.",
   "goalInvalid": "Enter a valid amount",
-  "goalRemove": "Remove goal"
+  "goalRemove": "Remove goal",
+  "goalSettingsSubtitle": "Pick a target; track progress on the Today card"
 }
