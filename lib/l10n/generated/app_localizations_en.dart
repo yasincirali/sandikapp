@@ -1449,7 +1449,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nominalReturn => 'Nominal return';
+  String get nominalReturn => 'Your return';
 
   @override
   String cpiWindowRange(String start, String end) {
@@ -1457,10 +1457,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get periodCpi => 'Period CPI';
+  String get periodCpi => 'Inflation (CPI)';
 
   @override
-  String get pointDifference => 'Point difference';
+  String get pointDifference => 'Difference';
 
   @override
   String get realReturn => 'Real return';
@@ -3067,4 +3067,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rateAppSubtitle => 'Leave a rating on the store';
+
+  @override
+  String get todayTitle => 'Today';
+
+  @override
+  String todayUp(String amount, String pct) {
+    return '$amount · up $pct%';
+  }
+
+  @override
+  String todayDown(String amount, String pct) {
+    return '$amount · down $pct%';
+  }
+
+  @override
+  String get todayFlat => 'No change today';
+
+  @override
+  String todayAt(String time) {
+    return 'today at $time';
+  }
+
+  @override
+  String todayMarketClosed(String when) {
+    return 'Market closed · opens $when';
+  }
+
+  @override
+  String todayGreenShare(int green, int total) {
+    return '$green of $total holdings in the green';
+  }
+
+  @override
+  String get todayGoalSet => 'Set a goal';
+
+  @override
+  String get todayGoalSetHint =>
+      'Pick a target for your portfolio and track what\'s left every day.';
+
+  @override
+  String todayGoalProgress(int pct, String left) {
+    return '$pct% to goal · $left to go';
+  }
+
+  @override
+  String todayGoalReached(String goal) {
+    return 'Goal reached: $goal';
+  }
+
+  @override
+  String get todayWordToday => 'today';
+
+  @override
+  String get todayWordTomorrow => 'tomorrow';
+
+  @override
+  String todayInDays(int n) {
+    return 'in $n days';
+  }
+
+  @override
+  String todayEventCpi(String when) {
+    return 'TurkStat releases inflation $when';
+  }
+
+  @override
+  String todayEventHoliday(String when) {
+    return 'Exchange closed $when (public holiday)';
+  }
+
+  @override
+  String todayEventMonthEnd(String when) {
+    return 'Month ends $when; your monthly summary will be ready';
+  }
+
+  @override
+  String todayMonthlySummary(String month) {
+    return 'Your $month summary is ready';
+  }
+
+  @override
+  String get todayMonthlySummaryHint =>
+      'Return, inflation gap and your best holding';
+
+  @override
+  String get goalTitle => 'Portfolio goal';
+
+  @override
+  String get goalHint => 'Display only; it does not change any calculation.';
+
+  @override
+  String get goalInvalid => 'Enter a valid amount';
+
+  @override
+  String get goalRemove => 'Remove goal';
+
+  @override
+  String get goalSettingsSubtitle =>
+      'Pick a target; track progress on the Today card';
 }

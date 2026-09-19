@@ -2705,7 +2705,7 @@ abstract class AppLocalizations {
   /// No description provided for @nominalReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Nominal getiri'**
+  /// **'Senin getirin'**
   String get nominalReturn;
 
   /// TÜFE karşılaştırmasının gerçek pencere uçları
@@ -2717,13 +2717,13 @@ abstract class AppLocalizations {
   /// No description provided for @periodCpi.
   ///
   /// In tr, this message translates to:
-  /// **'Dönem TÜFE'**
+  /// **'Enflasyon (TÜFE)'**
   String get periodCpi;
 
   /// No description provided for @pointDifference.
   ///
   /// In tr, this message translates to:
-  /// **'Puan farkı'**
+  /// **'Aradaki fark'**
   String get pointDifference;
 
   /// No description provided for @realReturn.
@@ -5263,6 +5263,150 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Mağazada puan ver'**
   String get rateAppSubtitle;
+
+  /// No description provided for @todayTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün'**
+  String get todayTitle;
+
+  /// No description provided for @todayUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · %{pct} artıda'**
+  String todayUp(String amount, String pct);
+
+  /// No description provided for @todayDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · %{pct} eksi'**
+  String todayDown(String amount, String pct);
+
+  /// No description provided for @todayFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün değişmedi'**
+  String get todayFlat;
+
+  /// No description provided for @todayAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'bugün {time}'**
+  String todayAt(String time);
+
+  /// No description provided for @todayMarketClosed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Piyasa kapalı · {when} açılır'**
+  String todayMarketClosed(String when);
+
+  /// No description provided for @todayGreenShare.
+  ///
+  /// In tr, this message translates to:
+  /// **'{green}/{total} varlığın artıda'**
+  String todayGreenShare(int green, int total);
+
+  /// No description provided for @todayGoalSet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir hedef belirle'**
+  String get todayGoalSet;
+
+  /// No description provided for @todayGoalSetHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün için bir tutar seç; ne kadar kaldığını her gün burada gör.'**
+  String get todayGoalSetHint;
+
+  /// No description provided for @todayGoalProgress.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefe %{pct} · {left} kaldı'**
+  String todayGoalProgress(int pct, String left);
+
+  /// No description provided for @todayGoalReached.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefine ulaştın: {goal}'**
+  String todayGoalReached(String goal);
+
+  /// No description provided for @todayWordToday.
+  ///
+  /// In tr, this message translates to:
+  /// **'bugün'**
+  String get todayWordToday;
+
+  /// No description provided for @todayWordTomorrow.
+  ///
+  /// In tr, this message translates to:
+  /// **'yarın'**
+  String get todayWordTomorrow;
+
+  /// No description provided for @todayInDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gün sonra'**
+  String todayInDays(int n);
+
+  /// No description provided for @todayEventCpi.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜİK enflasyonu {when} açıklıyor'**
+  String todayEventCpi(String when);
+
+  /// No description provided for @todayEventHoliday.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borsa {when} kapalı (resmî tatil)'**
+  String todayEventHoliday(String when);
+
+  /// No description provided for @todayEventMonthEnd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay {when} bitiyor; aylık özetin hazır olacak'**
+  String todayEventMonthEnd(String when);
+
+  /// No description provided for @todayMonthlySummary.
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} özetin hazır'**
+  String todayMonthlySummary(String month);
+
+  /// No description provided for @todayMonthlySummaryHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getirin, enflasyon farkı ve en iyi varlığın'**
+  String get todayMonthlySummaryHint;
+
+  /// No description provided for @goalTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy hedefi'**
+  String get goalTitle;
+
+  /// No description provided for @goalHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnızca gösterim için; hesapları değiştirmez.'**
+  String get goalHint;
+
+  /// No description provided for @goalInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçerli bir tutar gir'**
+  String get goalInvalid;
+
+  /// No description provided for @goalRemove.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefi kaldır'**
+  String get goalRemove;
+
+  /// No description provided for @goalSettingsSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör'**
+  String get goalSettingsSubtitle;
 }
 
 class _AppLocalizationsDelegate

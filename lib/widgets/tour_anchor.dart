@@ -45,6 +45,10 @@ enum TourTarget {
   /// açan çipi işaret ediyor.
   kapsamSecici,
 
+  /// Ana ekran: "Bugün" kartı (günün hareketi, hedef, yaklaşan tarihler).
+  /// Portföy boşken çizilmez; tur hedefi bulamazsa adımı atlar.
+  bugunKarti,
+
   /// Ana ekran: bildirim çanı (teknik sinyaller + fiyat alarmları).
   ///
   /// 1.2.0'da eklendi — tur, uygulamanın güncel hâlini anlatmalı. Yeni

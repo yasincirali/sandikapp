@@ -743,14 +743,14 @@
       }
     }
   },
-  "nominalReturn": "Nominal return",
+  "nominalReturn": "Your return",
   "cpiWindowRange": "Measured: {start} – {end}",
   "@cpiWindowRange": {
     "description": "Actual window ends of the CPI comparison",
     "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
   },
-  "periodCpi": "Period CPI",
-  "pointDifference": "Point difference",
+  "periodCpi": "Inflation (CPI)",
+  "pointDifference": "Difference",
   "realReturn": "Real return",
   "cpiNotLoaded": "Inflation data has not loaded yet.",
   "cpiNotLoadedBody": "When the inflation index arrives, your portfolio's real return appears here. No estimated figure is shown.",
@@ -2080,5 +2080,125 @@
   "reviewPromptLater": "Later",
   "reviewPromptIssue": "Something's off",
   "rateAppTitle": "Rate sandık",
-  "rateAppSubtitle": "Leave a rating on the store"
+  "rateAppSubtitle": "Leave a rating on the store",
+  "todayTitle": "Today",
+  "todayUp": "{amount} · up {pct}%",
+  "@todayUp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayDown": "{amount} · down {pct}%",
+  "@todayDown": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayFlat": "No change today",
+  "todayAt": "today at {time}",
+  "@todayAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMarketClosed": "Market closed · opens {when}",
+  "@todayMarketClosed": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreenShare": "{green} of {total} holdings in the green",
+  "@todayGreenShare": {
+    "placeholders": {
+      "green": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGoalSet": "Set a goal",
+  "todayGoalSetHint": "Pick a target for your portfolio and track what's left every day.",
+  "todayGoalProgress": "{pct}% to goal · {left} to go",
+  "@todayGoalProgress": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGoalReached": "Goal reached: {goal}",
+  "@todayGoalReached": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWordToday": "today",
+  "todayWordTomorrow": "tomorrow",
+  "todayInDays": "in {n} days",
+  "@todayInDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "todayEventCpi": "TurkStat releases inflation {when}",
+  "@todayEventCpi": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHoliday": "Exchange closed {when} (public holiday)",
+  "@todayEventHoliday": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEnd": "Month ends {when}; your monthly summary will be ready",
+  "@todayEventMonthEnd": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlySummary": "Your {month} summary is ready",
+  "@todayMonthlySummary": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlySummaryHint": "Return, inflation gap and your best holding",
+  "goalTitle": "Portfolio goal",
+  "goalHint": "Display only; it does not change any calculation.",
+  "goalInvalid": "Enter a valid amount",
+  "goalRemove": "Remove goal",
+  "goalSettingsSubtitle": "Pick a target; track progress on the Today card"
 }

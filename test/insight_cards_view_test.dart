@@ -114,9 +114,9 @@ void main() {
       );
 
       expect(find.textContaining('Reel getiri'), findsOneWidget);
-      expect(find.text('Nominal getiri'), findsOneWidget);
-      expect(find.text('Dönem TÜFE'), findsOneWidget);
-      expect(find.text('Puan farkı'), findsOneWidget);
+      expect(find.text('Senin getirin'), findsOneWidget);
+      expect(find.text('Enflasyon (TÜFE)'), findsOneWidget);
+      expect(find.text('Aradaki fark'), findsOneWidget);
       // Ana rakam bileşik reel getiri, puan farkı DEĞİL.
       expect(find.textContaining('%8,34'), findsOneWidget);
       expect(find.textContaining('11,4 puan'), findsOneWidget);
@@ -135,7 +135,7 @@ void main() {
     testWidgets('reel getiri yoksa kart çizilmez', (t) async {
       await pump(t, PeriodSummaryView(summary: ozet()));
       expect(find.textContaining('Reel getiri'), findsNothing);
-      expect(find.text('Dönem TÜFE'), findsNothing);
+      expect(find.text('Enflasyon (TÜFE)'), findsNothing);
     });
 
     testWidgets('6A döneminde de reel getiri kartı çizilir', (t) async {
@@ -152,7 +152,7 @@ void main() {
         ),
       );
       expect(find.textContaining('son 6 ay'), findsWidgets);
-      expect(find.text('Dönem TÜFE'), findsOneWidget);
+      expect(find.text('Enflasyon (TÜFE)'), findsOneWidget);
     });
 
     testWidgets('negatif reel getiride kutlama dili yok', (t) async {
@@ -217,7 +217,7 @@ void main() {
         ),
       );
       expect(find.text('TÜFE verisi henüz yüklenmedi.'), findsNothing);
-      expect(find.text('Dönem TÜFE'), findsOneWidget);
+      expect(find.text('Enflasyon (TÜFE)'), findsOneWidget);
     });
 
     testWidgets('bekleyen-veri hâli uyarı tonu taşımaz', (t) async {

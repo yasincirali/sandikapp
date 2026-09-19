@@ -21,6 +21,7 @@ import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../widgets/bugun_karti.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/price_alert_tile.dart';
@@ -573,6 +574,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // görünümünde çiziliyordu. `key` kapsamı taşır: şeritler seriyi
           // bir kez (initState) kurar, sekme değişince yeniden kurulmalı.
           if (aktifLotlar(ledgerAssets).isNotEmpty) ...[
+            // "Bugün" kartı EN ÜSTTE: her gün değişen tek yüzey, sabit
+            // bağlamlardan (enflasyon, yüzdelik) önce gelir. Yalnızca kendi
+            // görünümünde — ortağın "bugünü"nü onun ekranı anlatır.
+            if (ownView)
+              SliverToBoxAdapter(
+                child: TourAnchor(
+                  target: TourTarget.bugunKarti,
+                  child: BugunKarti(
+                    key: ValueKey('bugun-${_view ?? '*'}'),
+                    state: myState,
+                    padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+                  ),
+                ),
+              ),
             // Reel getiri percentile'den ÖNCE gelir: "eridim mi?" sorusu
             // "başkalarına göre nerdeyim?" sorusundan önce gelir — biri
             // alım gücü, diğeri sosyal karşılaştırma.

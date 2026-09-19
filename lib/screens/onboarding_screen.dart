@@ -322,6 +322,17 @@ List<_Adim> _adimlariKur() {
     // yenisini kaçırmamalı (bkz. `config/surum_notlari.dart` — `onemli`
     // işaretli sürümler tura girmeye adaydır).
     _Adim(
+      id: 'bugun',
+      hedef: TourTarget.bugunKarti,
+      baslik: 'Bugün ne oldu?',
+      govde: 'Günün hareketi, hedefine kalan yol ve yaklaşan tarihler '
+          '(enflasyon açıklaması, tatil, ay sonu) burada. Her gün değişir; '
+          'hedefi buradan belirlersin.',
+      rozet: 'YENİ',
+      giris: (_) => _sekmeyeGec(0),
+      dokunulabilir: false,
+    ),
+    _Adim(
       id: 'bildirimler',
       hedef: TourTarget.bildirimCani,
       rozet: 'YENİ',

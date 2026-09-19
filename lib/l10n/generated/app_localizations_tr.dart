@@ -1449,7 +1449,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get nominalReturn => 'Nominal getiri';
+  String get nominalReturn => 'Senin getirin';
 
   @override
   String cpiWindowRange(String start, String end) {
@@ -1457,10 +1457,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get periodCpi => 'Dönem TÜFE';
+  String get periodCpi => 'Enflasyon (TÜFE)';
 
   @override
-  String get pointDifference => 'Puan farkı';
+  String get pointDifference => 'Aradaki fark';
 
   @override
   String get realReturn => 'Reel getiri';
@@ -3058,4 +3058,103 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rateAppSubtitle => 'Mağazada puan ver';
+
+  @override
+  String get todayTitle => 'Bugün';
+
+  @override
+  String todayUp(String amount, String pct) {
+    return '$amount · %$pct artıda';
+  }
+
+  @override
+  String todayDown(String amount, String pct) {
+    return '$amount · %$pct eksi';
+  }
+
+  @override
+  String get todayFlat => 'Bugün değişmedi';
+
+  @override
+  String todayAt(String time) {
+    return 'bugün $time';
+  }
+
+  @override
+  String todayMarketClosed(String when) {
+    return 'Piyasa kapalı · $when açılır';
+  }
+
+  @override
+  String todayGreenShare(int green, int total) {
+    return '$green/$total varlığın artıda';
+  }
+
+  @override
+  String get todayGoalSet => 'Bir hedef belirle';
+
+  @override
+  String get todayGoalSetHint =>
+      'Portföyün için bir tutar seç; ne kadar kaldığını her gün burada gör.';
+
+  @override
+  String todayGoalProgress(int pct, String left) {
+    return 'Hedefe %$pct · $left kaldı';
+  }
+
+  @override
+  String todayGoalReached(String goal) {
+    return 'Hedefine ulaştın: $goal';
+  }
+
+  @override
+  String get todayWordToday => 'bugün';
+
+  @override
+  String get todayWordTomorrow => 'yarın';
+
+  @override
+  String todayInDays(int n) {
+    return '$n gün sonra';
+  }
+
+  @override
+  String todayEventCpi(String when) {
+    return 'TÜİK enflasyonu $when açıklıyor';
+  }
+
+  @override
+  String todayEventHoliday(String when) {
+    return 'Borsa $when kapalı (resmî tatil)';
+  }
+
+  @override
+  String todayEventMonthEnd(String when) {
+    return 'Ay $when bitiyor; aylık özetin hazır olacak';
+  }
+
+  @override
+  String todayMonthlySummary(String month) {
+    return '$month özetin hazır';
+  }
+
+  @override
+  String get todayMonthlySummaryHint =>
+      'Getirin, enflasyon farkı ve en iyi varlığın';
+
+  @override
+  String get goalTitle => 'Portföy hedefi';
+
+  @override
+  String get goalHint => 'Yalnızca gösterim için; hesapları değiştirmez.';
+
+  @override
+  String get goalInvalid => 'Geçerli bir tutar gir';
+
+  @override
+  String get goalRemove => 'Hedefi kaldır';
+
+  @override
+  String get goalSettingsSubtitle =>
+      'Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör';
 }

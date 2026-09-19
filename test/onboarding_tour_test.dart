@@ -108,6 +108,8 @@ class _EvSahibiState extends State<_EvSahibi> {
             target: TourTarget.heroKart,
             child: SizedBox(height: 120, child: Text('HERO')),
           ),
+          // "Bugün" kartı — gerçek ekranda hero'nun altında (2026-09-20).
+          _tus(TourTarget.bugunKarti, 'bugün'),
           Row(
             children: [
               Expanded(child: _tus(TourTarget.yenileTusu, 'yenile')),

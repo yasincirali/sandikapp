@@ -104,6 +104,20 @@ const List<SurumNotu> surumNotlari = [
     baslik: 'Fiyat alarmları ve bildirim merkezi',
     yenilikler: [
       Yenilik(
+        ikon: YenilikIkonu.genel,
+        baslik: 'Ana ekranda "Bugün" kartı',
+        aciklama: 'Günün hareketi, kaç varlığının artıda olduğu, hedefine '
+            'kalan yol ve yaklaşan tarihler (TÜİK enflasyon açıklaması, '
+            'borsa tatili, ay sonu) tek kartta. Her gün değişir; ayın ilk '
+            'günlerinde geçen ayın özetine buradan gidersin.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Portföy hedefi',
+        aciklama: 'Bir tutar belirle, ilerlemeyi ve kalanı her gün Bugün '
+            'kartında gör. Yalnızca gösterim; hesapları değiştirmez.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Daha dolu bir paylaşım kartı',
         aciklama: 'Performans özetini ve yıl sonu özetini paylaşırken kart '
