@@ -58,8 +58,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _reload() async {
     if (_reloading) return;
     setState(() => _reloading = true);
-    await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
-    if (mounted) setState(() => _reloading = false);
+    // `refreshPrices` hatayı kendi içinde yakalar; finally yalnızca beklenmeyen
+    // bir istisnada döner butonunun sonsuza dek kilitli kalmamasını sağlar
+    // (handler sahipsiz: onPressed future'ı beklemiyor).
+    try {
+      await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
+    } finally {
+      if (mounted) setState(() => _reloading = false);
+    }
   }
 
   @override

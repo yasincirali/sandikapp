@@ -398,7 +398,25 @@ sayısı + semantics etiketleri); o tek değişiklik dört hipotezi birden
 eledi. Teşhis satırları BIRAKILDI — bir sonraki kırılmada aynı bilgi
 ücretsiz gelir.
 
-## 🟠 AÇIK — Dış fiyat API'leri sessizce değişiyor; kanarya yok
+## 🟢 BÜYÜK ÖLÇÜDE KAPANDI — Dış fiyat API'leri sessizce değişiyor; kanarya yok
+
+**2026-09-19 — üç öneri de kuruldu (dal `feat/aciliyet-turu-2026-09-19`):**
+1. `_shared/kanarya.ts` — `check-price-alerts` alarm varken fiyat map'i boş
+   dönerse `console.error` + `db_logs` (`op='kanarya'`, `is_error`) + `push_admins`'e
+   push (12 saatte en çok bir kez, `kanaryaBildirilmeliMi`; test `kanarya_test.ts`).
+   Yanıta `kanarya` alanı eklendi; `"sent":0` ile ayırt edilir.
+2. `.github/workflows/price-canary.yml` — Pazartesi 07:00 UTC gerçek truncgil'e
+   `supabase/canary/truncgil_canary_test.ts` (anahtarlar, gram eşdeğeri, ölçek).
+   `supabase/tests/` DIŞINDA: CI kapısı dış servise bağımlı olamaz.
+3. `test/altin_anahtar_paritesi_test.dart` — `_truncgilGoldKeys` ↔ `GOLD_KEYS`
+   kaynak paritesi; `ALTIN_GRAM == YIA` ayrıca kilitli.
+
+**Kalan (bilinçli):** istemci tarafındaki Yahoo `GC=F` yedeğine düşüş hâlâ sessiz
+(kullanıcı fark etmez, sayı yalnızca kaynakla tutmaz). Ölçek hafızası bunu
+yumuşatıyor; Crashlytics non-fatal "yedek kaynağa düşüldü" olayı ayrı bir tur.
+
+### Karar kaydı (2026-09-15)
+
 
 **Ne:** `finans.truncgil.com/v4/today.json` 2026-09-15'te üç şeyi birden
 değiştirdi — altın anahtarları (`'Gram Altın'`→`'GRA'`), alan adları

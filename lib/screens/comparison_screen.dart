@@ -8,6 +8,7 @@ import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
 import '../services/symbol_search_service.dart';
@@ -954,12 +955,19 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
   Future<void> _search(String q) async {
     final mySeq = ++_seq;
     setState(() => _busy = true);
-    final r = await SymbolSearchService.instance.search(q);
-    if (!mounted || mySeq != _seq) return;
-    setState(() {
-      _results = r;
-      _busy = false;
-    });
+    // `onChanged`/`onSubmitted` bu future'ı beklemez: sahipsiz bir hata zone
+    // handler'ına düşer ve `_busy` sonsuza dek açık kalır (iskelet donar).
+    // Servis ağ hatasını kendi içinde yutuyor; try/finally yalnızca beklenmeyen
+    // (program) hatasında bayrağı toparlar — hata yine raporlanır.
+    try {
+      final r = await SymbolSearchService.instance.search(q);
+      if (!mounted || mySeq != _seq) return;
+      setState(() => _results = r);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ComparisonScreen.search');
+    } finally {
+      if (mounted && mySeq == _seq) setState(() => _busy = false);
+    }
   }
 
   Widget _sectionLabel(SandikPalette p, String text) => Padding(

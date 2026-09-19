@@ -694,7 +694,10 @@ Ayrıntı: `supabase/functions/weekly-summary/README.md`
 
 ---
 
-## 🚨 BEKLEYEN DEPLOY: satılan/silinen varlık için push (2026-09-07 → 2026-09-10)
+## ✅ KAPANDI (2026-09-14 toplu dağıtım): satılan/silinen varlık için push (2026-09-07 → 2026-09-10)
+
+> 11 edge function 2026-09-14'te yeniden dağıtıldı (üstteki 🚨 bölüm, #6); `_shared/positions.ts` düzeltmesi canlıda. Aşağısı tarihçe.
+
 
 **Belirti:** Tamamen SATILMIŞ hisseler için sinyal bildirimi gelmeye devam
 ediyordu ("AVOD ve AGHOL varlıklarımda olmamasına rağmen push'ları geliyor").
@@ -765,7 +768,10 @@ göre ARTMALI: artık tek lot'lu silmeler de eleniyor.
 
 ---
 
-## 🚨 BEKLEYEN DEPLOY: kilit ekranı teması (2026-09-11) — EN OLASI SEBEP
+## ✅ KAPANDI (2026-09-14): kilit ekranı teması (2026-09-11)
+
+> `push-live-activity` 2026-09-14'te dağıtıldı ve `trigger_live_activity_push()` canlıda `200 {"sent":5}` döndü (#3). Aşağısı tarihçe.
+
 
 **Belirti:** "Canlı etkinlikler tema rengi sürekli değişiyor; uygulamayı
 kill etsem de son seçilen tema kalmalı."
@@ -843,7 +849,10 @@ açıkça Açık ya da Koyu seçilmeli.
 
 ---
 
-## 🗄️ BEKLEYEN MIGRATION: `0049_partner_activity_push.sql` (2026-09-07)
+## ✅ KAPANDI: `0049_partner_activity_push.sql` (2026-09-07)
+
+> Defter 2026-09-14'te onarıldı, `db push --dry-run` "up to date" (#19/#20). Aşağısı tarihçe.
+
 
 `profiles` tablosuna `partner_activity_push` sütunu ekler. Çalıştırılmazsa:
 Ayarlar'daki "Ortak hareketi bildirimleri" anahtarı yazmaya çalışır ve hata
@@ -1107,7 +1116,10 @@ Ayrıntı: `supabase/functions/daily-brief/README.md`
 
 ---
 
-## 🗄️ BEKLEYEN MIGRATION: `0027_soft_delete_lots.sql` (2026-08-11)
+## ✅ KAPANDI: `0027_soft_delete_lots.sql` (2026-08-11)
+
+> Canlıda uygulanmış (yumuşak silme aylardır çalışıyor; defter 2026-09-14'te doğrulandı). Aşağısı tarihçe.
+
 
 **Ne:** `assets` tablosuna `deleted_at TIMESTAMPTZ` sütunu + aktif kayıtlar
 için kısmi indeks.
