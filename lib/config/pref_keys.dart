@@ -74,4 +74,9 @@ class PrefKeys {
   static const reviewLastAskedMs = 'review_last_asked_ms'; // int
   static const reviewAskCount = 'review_ask_count'; // int
   static const reviewFeedbackMs = 'review_feedback_ms'; // int — "Sorun var"
+
+  /// Portföy hedefi (TRY, tam sayı; 0 = hedef yok). Kullanıcı kimliği
+  /// soneklenir (`perUser`): hedef kişiseldir, aynı cihazdaki başka hesaba
+  /// taşınmaz. Ana ekrandaki "Bugün" kartı ilerlemeyi buradan okur.
+  static const portfolioGoalTRY = 'portfolio_goal_try';
 }

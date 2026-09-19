@@ -322,6 +322,11 @@ final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>(
 final biometricLockProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.biometricLock, false, perUser: true));
 
+/// Portföy hedefi (TRY). 0 = hedef belirlenmedi. Yalnızca gösterim:
+/// hedef hiçbir hesabı değiştirmez, "Bugün" kartında ilerleme çubuğu olur.
+final portfolioGoalProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.portfolioGoalTRY, 0, perUser: true));
+
 /// Kilit ekranı Live Activity'sinde para tutarı gösterilsin mi?
 ///
 /// **Varsayılan KAPALI.** Kilit ekranı telefon açılmadan görülebilen bir

@@ -2080,5 +2080,124 @@
   "reviewPromptLater": "Sonra",
   "reviewPromptIssue": "Bir sorun var",
   "rateAppTitle": "sandık'ı değerlendir",
-  "rateAppSubtitle": "Mağazada puan ver"
+  "rateAppSubtitle": "Mağazada puan ver",
+  "todayTitle": "Bugün",
+  "todayUp": "{amount} · %{pct} artıda",
+  "@todayUp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayDown": "{amount} · %{pct} eksi",
+  "@todayDown": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayFlat": "Bugün değişmedi",
+  "todayAt": "bugün {time}",
+  "@todayAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMarketClosed": "Piyasa kapalı · {when} açılır",
+  "@todayMarketClosed": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreenShare": "{green}/{total} varlığın artıda",
+  "@todayGreenShare": {
+    "placeholders": {
+      "green": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGoalSet": "Bir hedef belirle",
+  "todayGoalSetHint": "Portföyün için bir tutar seç; ne kadar kaldığını her gün burada gör.",
+  "todayGoalProgress": "Hedefe %{pct} · {left} kaldı",
+  "@todayGoalProgress": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGoalReached": "Hedefine ulaştın: {goal}",
+  "@todayGoalReached": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWordToday": "bugün",
+  "todayWordTomorrow": "yarın",
+  "todayInDays": "{n} gün sonra",
+  "@todayInDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "todayEventCpi": "TÜİK enflasyonu {when} açıklıyor",
+  "@todayEventCpi": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHoliday": "Borsa {when} kapalı (resmî tatil)",
+  "@todayEventHoliday": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEnd": "Ay {when} bitiyor; aylık özetin hazır olacak",
+  "@todayEventMonthEnd": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlySummary": "{month} özetin hazır",
+  "@todayMonthlySummary": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlySummaryHint": "Getirin, enflasyon farkı ve en iyi varlığın",
+  "goalTitle": "Portföy hedefi",
+  "goalHint": "Yalnızca gösterim için; hesapları değiştirmez.",
+  "goalInvalid": "Geçerli bir tutar gir",
+  "goalRemove": "Hedefi kaldır"
 }
