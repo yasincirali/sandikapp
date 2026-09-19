@@ -1,7 +1,13 @@
 import React from "react";
-import { Composition } from "remotion";
+import { Composition, Still } from "remotion";
 import { Preview } from "./Preview";
 import { SPEC } from "./theme";
+// Reklam kompozisyonları (2026-09-19). Fontlar modül import'uyla yüklenir.
+import "./reklam/fonts";
+import { Reel, REEL } from "./reklam/Reel";
+import { Square, SQUARE } from "./reklam/Square";
+import { Bumper, BUMPER } from "./reklam/Bumper";
+import { StillBanner, StillSquare, StillStory } from "./reklam/Stills";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -24,6 +30,36 @@ export const RemotionRoot: React.FC = () => {
         width={1200}
         height={1600}
       />
+
+      {/* ---- Reklam videoları ---- */}
+      <Composition id="AdReel" component={Reel} {...REEL} />
+      <Composition id="AdSquare" component={Square} {...SQUARE} />
+      <Composition id="AdBumper" component={Bumper} {...BUMPER} />
+
+      {/* ---- Reklam görselleri ---- */}
+      <Still
+        id="StillSquareEnflasyon"
+        component={StillSquare}
+        width={1080}
+        height={1080}
+        defaultProps={{ variant: "enflasyon" as const }}
+      />
+      <Still
+        id="StillSquareAltin"
+        component={StillSquare}
+        width={1080}
+        height={1080}
+        defaultProps={{ variant: "altin" as const }}
+      />
+      <Still
+        id="StillSquareOrtak"
+        component={StillSquare}
+        width={1080}
+        height={1080}
+        defaultProps={{ variant: "ortak" as const }}
+      />
+      <Still id="StillStory" component={StillStory} width={1080} height={1920} />
+      <Still id="StillBanner" component={StillBanner} width={1600} height={900} />
     </>
   );
 };

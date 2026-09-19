@@ -1713,3 +1713,18 @@ Kodda varsayılanlar açık; bunlar yalnızca **uzaktan kapatabilmek** için:
 - Ölçüm: Analytics `review_prompt` olayı, `action` = shown/later/feedback/review,
   `moment` = kilometreTasi/paylasim/topluEkleme/settings. Hangi anın puana
   dönüştüğü buradan okunur; dönüşmeyen an kaldırılır.
+
+## 📣 Reklam paketi hazır — yükleme sende (2026-09-19)
+
+`store_listing/reklam/out/`: üç video (Reels 9:16 15 sn · kare 1:1 12 sn ·
+YouTube bumper 16:9 6 sn) + beş görsel (kare enflasyon/altın/ortak, hikâye,
+1600×900 banner). Kararlar `store_listing/reklam/README.md`.
+
+- [ ] Instagram/TikTok/Shorts'a Reel'i yükle; gönderi metnine *"Örnek portföy;
+  yatırım tavsiyesi değildir."* satırını ekle (görsellerdeki getiri demo).
+- [ ] X / LinkedIn profil başlığı: `sandik_banner_1600x900.png`.
+- [ ] Apple Search Ads "Custom Product Page" için kare görseller kullanılabilir;
+  marka kampanyası (KURULUM_BUYUME_PLANI §Faz 0) ile birlikte aç.
+- [ ] Android Play'e çıkınca `src/reklam/ui.tsx` → `StoreLine` metnini
+  "App Store ve Google Play'de" yap, `node scripts/render_reklam.mjs` ile yeniden üret.
+- Müzik CC BY 4.0 (ende.app), atıf isteğe bağlı — `SES_LISANS.md`.

@@ -1,0 +1,6 @@
+# Video master'ları büyük ve render'la yeniden üretilir (brag-output ile aynı kural).
+# PNG görseller commit'lenir: mağaza/sosyal medyaya doğrudan yüklenen teslim dosyalarıdır.
+out/*.mp4
+# Gözle kontrol kareleri — teslim değil.
+check/
+render.log
