@@ -1127,7 +1127,7 @@ günün ilk turunda (06:00) görülen tarih yalnızca ÜST sınır verir. Daha i
 çözünürlük daha sık tur = daha çok TEFAS isteği; 30 dk grafikte 6 slot,
 kullanıcı için fark yok. "İkinci yaklaşıklık" (NAV'ın kendi gününe atfı)
 aynen duruyor: kullanıcı kararı, TEFAS'ın kendi "günlük getiri"siyle uyumlu.
-Sunucu ayağı (0063 + fonksiyon + secret) `YAPMAN_GEREKENLER.md` #24.
+Sunucu ayağı 2026-09-19'da canlıda doğrulandı: ilk tur 13 fon, 13 gözlem (`YAPMAN` #24 kapandı).
 
 **Karar tarihi:** 2026-09-10 · Hata turu
 
