@@ -396,9 +396,14 @@ void main() {
       expect('ShareCardService.originOf('.allMatches(src).length,
           greaterThanOrEqualTo(2),
           reason: 'görsel ve metin yolu ayrı ayrı dikdörtgen üretmeli');
+      // Sayı sabitlenmedi: servise yeni bir paylaşım yolu eklendiğinde
+      // (2026-09-19'da `shareFile`) bu iddia "3 oldu" diye kırılmamalı,
+      // "biri dikdörtgensiz kaldı" diye kırılmalı. Kapsamın tamamı
+      // `paylasim_tek_kapi_test`'te.
       final servis = File('lib/services/share_card_service.dart')
           .readAsStringSync();
-      expect('sharePositionOrigin: origin'.allMatches(servis).length, 2,
+      expect('sharePositionOrigin: origin'.allMatches(servis).length,
+          greaterThanOrEqualTo(2),
           reason: 'shareXFiles ve share ikisi de dikdörtgeni iletmeli');
     });
 

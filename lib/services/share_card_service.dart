@@ -26,6 +26,17 @@ import 'package:share_plus/share_plus.dart';
 /// AYNI kontrolden geçiyor; iki yol da dikdörtgeni taşır. Çağıran taraf
 /// dikdörtgeni dokunulan düğmeden üretir (`_ShareSheet`), böylece popover
 /// oku da doğru yere bakar.
+///
+/// ## `Share.*` çağrılarının TEK kapısı burasıdır
+/// Aynı hata iki kez sahadan döndü çünkü paylaşım üç ayrı yerden
+/// çağrılıyordu ve dikdörtgen kuralı yalnızca birinde vardı: ortak daveti
+/// (`profile_screen`) ve veri dışa aktarımı (`data_export_service`) doğrudan
+/// `Share.share` / `Share.shareXFiles` çağırıyordu — dikdörtgensiz, ortak
+/// davetinde ayrıca `catch`siz. iPad'de fırlayan hata kimsenin yakalamadığı
+/// bir future'dan zone handler'ına düşüp ÇÖKME olarak kaydediliyordu
+/// (Crashlytics: `MethodChannelShare.share → _ShareSheetState._metin`).
+/// Artık her paylaşım bu sınıftan geçer; `paylasim_tek_kapi_test` başka
+/// dosyada `Share.` görürse kırılır.
 class ShareCardService {
   const ShareCardService._();
 
@@ -65,6 +76,24 @@ class ShareCardService {
     Rect? origin,
   }) =>
       Share.share(text, subject: subject, sharePositionOrigin: origin);
+
+  /// Hazır bir dosyayı paylaşır (veri dışa aktarımı).
+  ///
+  /// `XFile` burada kurulur ki çağıran taraf `share_plus`'ı hiç tanımasın —
+  /// dikdörtgen kuralını atlamanın yolu kalmaz.
+  static Future<void> shareFile(
+    String path, {
+    required String mimeType,
+    required String subject,
+    String? text,
+    Rect? origin,
+  }) =>
+      Share.shareXFiles(
+        [XFile(path, mimeType: mimeType)],
+        text: text,
+        subject: subject,
+        sharePositionOrigin: origin,
+      );
 
   /// Bir widget'ın ekrandaki dikdörtgeni — `sharePositionOrigin` için.
   ///

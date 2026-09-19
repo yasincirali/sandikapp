@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -14,6 +13,7 @@ import '../theme/sandik.dart';
 import '../utils/polling.dart';
 import 'recap_screen.dart';
 import '../services/crash_reporter.dart';
+import '../services/share_card_service.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
@@ -121,6 +121,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _showMsg(String msg, {bool isError = false}) =>
       _showPartnerMsg(context, msg, isError: isError);
+
+  /// Ortak davetini sistem paylaşım sayfasına verir.
+  ///
+  /// Eskiden bu çağrı düğmenin `onPressed`'inde çıplaktı: dikdörtgen YOK,
+  /// `catch` YOK. iPad'de share_plus fırlatıyor, hatayı kimse yakalamıyor ve
+  /// `runZonedGuarded` onu ÇÖKME olarak kaydediyordu — Crashlytics'teki
+  /// `MethodChannelShare.share` raporunun aynısı, yalnızca başka düğmeden.
+  /// Kullanıcı tarafında ise hiçbir şey olmuyordu: davet paylaşılmıyor,
+  /// ekranda tek kelime yok.
+  Future<void> _davetiPaylas(BuildContext dugmeContext) async {
+    final kod = _generatedCode;
+    if (kod == null) return;
+    final shortCode = kod.split(':')[0];
+    final msg =
+        'Merhaba! Sandık portföy uygulamasında seninle ortak olmak istiyorum.\n\n'
+        'Ortak kodun: $shortCode\n\n'
+        'Uygulamayı aç → Profil → "Ortak Kodu Gir" bölümünden bu kodu gir.';
+    final origin = ShareCardService.originOf(dugmeContext);
+    try {
+      await ShareCardService.shareText(
+        msg,
+        subject: 'Sandık Ortak Daveti',
+        origin: origin,
+      );
+      unawaited(AnalyticsService.instance.logPartnerInviteSent());
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ProfileScreen.shareInviteCode');
+      if (mounted) await _showMsg(friendlyError(e), isError: true);
+    }
+  }
 
   Future<void> _generateCode() async {
     final user = ref.read(authProvider).valueOrNull;
@@ -554,20 +584,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                       ),
-                      CupertinoButton(
-                        minimumSize: SandikTouch.minSize,
-                        padding: EdgeInsets.zero,
-                        onPressed: () async {
-                          final shortCode = _generatedCode!.split(':')[0];
-                          final msg =
-                              'Merhaba! Sandık portföy uygulamasında seninle ortak olmak istiyorum.\n\n'
-                              'Ortak kodun: $shortCode\n\n'
-                              'Uygulamayı aç → Profil → "Ortak Kodu Gir" bölümünden bu kodu gir.';
-                          await Share.share(msg, subject: 'Sandık Ortak Daveti');
-                          unawaited(AnalyticsService.instance.logPartnerInviteSent());
-                        },
-                        child: Icon(Icons.share_rounded,
-                            color: context.c.amberText),
+                      // `Builder`: `sharePositionOrigin` dokunulan DÜĞMENİN
+                      // dikdörtgeninden üretilir, ekranın tamamından değil —
+                      // iPad popover'ının oku düğmeyi göstersin.
+                      Builder(
+                        builder: (dugmeContext) => CupertinoButton(
+                          minimumSize: SandikTouch.minSize,
+                          padding: EdgeInsets.zero,
+                          onPressed: () => _davetiPaylas(dugmeContext),
+                          child: Icon(Icons.share_rounded,
+                              color: context.c.amberText),
+                        ),
                       ),
                     ],
                   ),

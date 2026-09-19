@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'dart:ui' show Rect;
+
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'crash_reporter.dart';
 import 'db_logger.dart';
+import 'share_card_service.dart';
 
 /// Kullanıcının tüm verisini JSON formatında dışa aktarır.
 ///
@@ -17,7 +19,7 @@ import 'db_logger.dart';
 /// 1. Tüm tablolardaki kullanıcı kayıtlarını paralel olarak çek
 /// 2. Tek bir JSON dokümanına derle (versiyon + meta + payload)
 /// 3. Geçici dosyaya yaz
-/// 4. share_plus ile sistem paylaş sheet'ini aç
+/// 4. [ShareCardService] üzerinden sistem paylaş sheet'ini aç
 class DataExportService {
   static final DataExportService instance = DataExportService._();
   DataExportService._();
@@ -122,7 +124,13 @@ class DataExportService {
 
   /// Tüm verileri JSON olarak indirip cihazın paylaş sheet'ini açar.
   /// Hata olursa [Exception] fırlatır.
-  Future<void> exportAndShare() async {
+  /// [paylasimKaynagi] — dokunulan düğmenin ekrandaki dikdörtgeni.
+  ///
+  /// iPad'de ZORUNLU: `UIActivityViewController` popover olarak açılıyor ve
+  /// kaynak dikdörtgen yoksa share_plus fırlatıyor (aynı kök neden
+  /// `ShareCardService` dokümanında). Burası eskiden dikdörtgeni hiç
+  /// taşımıyordu; iPad'de "verilerimi indir" hata veriyordu.
+  Future<void> exportAndShare({Rect? paylasimKaynagi}) async {
     final user = _db.auth.currentUser;
     if (user == null) {
       throw Exception('Oturum açık değil.');
@@ -154,11 +162,13 @@ class DataExportService {
 
     // 4. Share sheet
     try {
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'application/json')],
+      await ShareCardService.shareFile(
+        file.path,
+        mimeType: 'application/json',
         subject: 'sandık veri export',
         text: 'sandık uygulamasındaki kişisel verilerimin tam dökümü '
             '(${ad.replaceAll('sandik-veri-export-', '').replaceAll('.json', '')}).',
+        origin: paylasimKaynagi,
       );
     } finally {
       // E3 fix: PII içeren JSON cihazın geçici klasöründe kalmasın.

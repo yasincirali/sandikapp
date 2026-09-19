@@ -19,7 +19,9 @@ import '../providers/quiet_hours_provider.dart';
 import '../widgets/yenilikler_sheet.dart';
 import '../services/surum_notu_service.dart';
 import '../services/review_prompt_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/data_export_service.dart';
+import '../services/share_card_service.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../services/biometric_lock_service.dart';
@@ -213,15 +215,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// Dokunulan karonun dikdörtgeni — iPad popover'ı buradan açılır.
+  final _disaAktarKaroKey = GlobalKey();
+
   Future<void> _exportData() async {
     if (_exporting) return;
+    // Dikdörtgen setState'ten ÖNCE: karo "yükleniyor" hâline geçtiğinde
+    // trailing değişiyor, ölçüm kararlı hâlden yapılsın.
+    final origin = ShareCardService.originOf(_disaAktarKaroKey.currentContext);
     setState(() => _exporting = true);
     try {
-      await DataExportService.instance.exportAndShare();
+      await DataExportService.instance.exportAndShare(paylasimKaynagi: origin);
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): `exportAndShare`
       // sistem paylaşım sayfasını açıyor, kullanıcı dosyayı zaten orada
       // görüyor. Toast paylaşım sayfasının ARKASINDA kalıyordu.
-    } catch (e) {
+    } catch (e, st) {
+      // Sessiz kalmasın: "verilerimi indir" sahada hata verdiğinde elimizde
+      // tek iz yoktu (CLAUDE.md "servis catch'leri sessiz kalmasın").
+      CrashReporter.report(e, st, reason: 'SettingsScreen.exportData');
       if (!mounted) return;
       showAppError(context, e);
     } finally {
@@ -718,6 +729,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
             _SettingsTile(
+              key: _disaAktarKaroKey,
               icon: Icons.download_outlined,
               title: context.l10n.downloadMyData,
               subtitle: context.l10n.downloadMyDataSubtitle,
@@ -1213,6 +1225,7 @@ class _SettingsTile extends StatelessWidget {
   final Widget? trailing;
 
   const _SettingsTile({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
