@@ -57,6 +57,14 @@ yeniden çizildi (brag "recreate a working-app moment"), 1920×1080, 21,6 sn,
 müzik + SFX, anlatım yok. Paylaşım için (X / LinkedIn / README). Sayılar
 `DEMO_PORTFOY.md`'den. Kararlar: o klasördeki README.
 
+## Reklam paketi — `../reklam/` (2026-09-19)
+
+Aynı Remotion projesinde ayrı kompozisyonlar (`src/reklam/`): Reels 9:16 15 sn,
+kare 1:1 12 sn, YouTube bumper 16:9 6 sn + beş statik görsel (kare ×3, hikâye,
+banner). Arayüz ekran kaydı değil, HTML ile yeniden çizim (mağaza önizlemesinde
+KULLANILMAZ — Apple 2.3.4). Kararlar ve yeniden üretim: `../reklam/README.md`;
+render `node scripts/render_reklam.mjs`.
+
 ## Komutlar
 
 ```bash

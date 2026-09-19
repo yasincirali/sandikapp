@@ -15,6 +15,7 @@ import {
   ServiceAccount,
 } from '../_shared/fcm.ts';
 import { fetchLivePrices } from '../_shared/live_prices.ts';
+import { fiyatKaynagiKanaryasi } from '../_shared/kanarya.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
 
@@ -142,7 +143,25 @@ Deno.serve(async (request) => {
     const semboller = new Set(alerts.map((a) => a.symbol));
     const fiyatlar = await fetchLivePrices(semboller);
     if (fiyatlar.size === 0) {
-      return jsonResponse({ ok: true, reason: 'Fiyat alinamadi.', sent: 0 });
+      // KANARYA: alarm var ama TEK sembol bile fiyatlanamadı. 2026-09-15'te
+      // truncgil'in anahtar değişimi böyle görünmüştü ve HTTP 200 ile iki gün
+      // sessiz kaldı. `sent: 0` meşru bir sonuç olduğundan ("piyasa kapalı")
+      // izleme tarafında ayırt edilemiyordu; şimdi db_logs'a is_error satırı
+      // düşer ve admin'e (12 saatte en çok bir kez) push gider.
+      const kanarya = await fiyatKaynagiKanaryasi(admin, {
+        kaynak: 'check-price-alerts',
+        alarmSayisi: alerts.length,
+        semboller: [...semboller],
+        fcm: dryRun
+          ? null
+          : { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson, channelId: CHANNEL_ID },
+      });
+      return jsonResponse({
+        ok: true,
+        reason: 'Fiyat alinamadi.',
+        sent: 0,
+        kanarya,
+      });
     }
 
     const tetiklenen = alerts.filter((a) => {

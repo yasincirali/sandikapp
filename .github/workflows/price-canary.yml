@@ -1,0 +1,28 @@
+# Haftalık fiyat kaynağı kanaryası.
+#
+# Neden: truncgil 2026-09-15'te anahtar adlarını, alan adlarını ve sayı tipini
+# aynı anda değiştirdi; fiyat alarmları HTTP 200 ile günlerce ölü kaldı.
+# `supabase/tests/` yalnızca BUGÜNKÜ biçimi korur (kayıtlı yanıt); bu iş gerçek
+# API'ye gider. Kırılırsa GitHub workflow e-postası gelir — kullanıcı değil biz
+# fark ederiz. (TECHNICAL_DEBT "Dış fiyat API'leri sessizce değişiyor", öneri 2.)
+#
+# PR/main'de KOŞMAZ: dış servise bağımlı bir test CI kapısı olamaz.
+name: Fiyat kaynağı kanaryası
+
+on:
+  schedule:
+    # Pazartesi 07:00 UTC (TR 10:00) — BIST açılışından önce, hafta başı.
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: truncgil canlı sözleşme
+        run: deno test --allow-net supabase/canary/

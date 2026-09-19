@@ -41,6 +41,14 @@ on:
         description: "Defterde 'uygulandı' görünse bile TÜM migration'ları koş (yanlış repair'i telafi eder)"
         type: boolean
         default: false
+      secrets_list:
+        description: "Function secret ADLARINI listele (değer değil) — 'X secret'ı girildi mi?' sorusu için"
+        type: boolean
+        default: false
+      sql:
+        description: "Salt okunur rapor sorgusu (Management API, tek SELECT). Vault DEĞERİ döndüren sorgu YAZMA — log'a düşer"
+        type: string
+        default: ""
 
 concurrency:
   group: supabase-deploy
@@ -114,6 +122,24 @@ jobs:
         if: ${{ inputs.migrations && !inputs.dry_run }}
         run: |
           supabase db push ${{ inputs.include_all && '--include-all' || '' }}
+
+      # Secret adları — "girildi mi?" sorusu için. Değer basılmaz (CLI zaten
+      # yalnızca ad + özet gösterir). Vault tarafı için `sql` girdisini kullan:
+      # `select name from vault.secrets` — adlar; `decrypted_secrets` ASLA.
+      - name: Function secret adları
+        if: ${{ inputs.secrets_list }}
+        run: supabase secrets list --project-ref "$PROJECT_REF"
+
+      # Salt okunur rapor — Management API'nin query ucu access token ile
+      # çalışır, DB şifresi/pooler adresi gerektirmez. Çıktı Actions log'una
+      # düşer: gizli değer döndüren sorgu yazma.
+      - name: SQL raporu
+        if: ${{ inputs.sql != '' }}
+        env:
+          SQL: ${{ inputs.sql }}
+        run: |
+          body=$(jq -n --arg q "$SQL" '{query: $q}')
+          curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             -H "Content-Type: application/json"             -d "$body" | jq .
 
       - name: Edge Function'lar
         if: ${{ inputs.functions != 'none' && !inputs.dry_run }}
