@@ -108,6 +108,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockVerifying => 'Verifying…';
 
   @override
+  String get lockNoDeviceCredential =>
+      'Your device has no screen lock (Face ID, fingerprint or passcode) set up, so it cannot verify you.';
+
+  @override
+  String get lockDisableAndContinue => 'Turn off the lock and continue';
+
+  @override
   String get unlock => 'Unlock';
 
   @override

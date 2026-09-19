@@ -33,6 +33,8 @@
   "lockFailed": "Doğrulama yapılamadı. Tekrar dene.",
   "lockPrompt": "Portföyünü görmek için kimliğini doğrula.",
   "lockVerifying": "Doğrulanıyor…",
+  "lockNoDeviceCredential": "Cihazında ekran kilidi (Face ID, parmak izi ya da şifre) tanımlı değil. Doğrulama yapılamıyor.",
+  "lockDisableAndContinue": "Kilidi kapat ve devam et",
   "unlock": "Kilidi aç",
   "disclaimerTitle": "Yasal Uyarı",
   "disclaimerIntro": "Uygulamayı kullanmaya devam etmek için lütfen aşağıdaki yasal uyarıyı okuyun ve onaylayın.",

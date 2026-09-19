@@ -108,6 +108,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get lockVerifying => 'Doğrulanıyor…';
 
   @override
+  String get lockNoDeviceCredential =>
+      'Cihazında ekran kilidi (Face ID, parmak izi ya da şifre) tanımlı değil. Doğrulama yapılamıyor.';
+
+  @override
+  String get lockDisableAndContinue => 'Kilidi kapat ve devam et';
+
+  @override
   String get unlock => 'Kilidi aç';
 
   @override

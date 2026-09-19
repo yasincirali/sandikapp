@@ -296,6 +296,18 @@ abstract class AppLocalizations {
   /// **'Doğrulanıyor…'**
   String get lockVerifying;
 
+  /// No description provided for @lockNoDeviceCredential.
+  ///
+  /// In tr, this message translates to:
+  /// **'Cihazında ekran kilidi (Face ID, parmak izi ya da şifre) tanımlı değil. Doğrulama yapılamıyor.'**
+  String get lockNoDeviceCredential;
+
+  /// No description provided for @lockDisableAndContinue.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilidi kapat ve devam et'**
+  String get lockDisableAndContinue;
+
   /// No description provided for @unlock.
   ///
   /// In tr, this message translates to:

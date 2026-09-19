@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/biometric_lock_service.dart';
+import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../l10n/l10n.dart';
 
@@ -12,12 +13,29 @@ import '../l10n/l10n.dart';
 /// görünen tutar kilidi anlamsız kılardı.
 ///
 /// Açılışta doğrulama KENDİLİĞİNDEN istenir; kullanıcı iptal ederse
-/// düğmeyle tekrar dener. Çıkış yolu yok — kilidi kapatmanın yeri Ayarlar
-/// ve oraya kilit açılmadan gidilemez; bu bilinçli.
+/// düğmeyle tekrar dener. Normalde çıkış yolu yok — kilidi kapatmanın yeri
+/// Ayarlar ve oraya kilit açılmadan gidilemez; bu bilinçli.
+///
+/// **Tek istisna: cihazda doğrulanacak bir şey kalmadıysa**
+/// ([BiyometrikSonuc.kullanilamaz]). Kullanıcı kilidi açtıktan SONRA
+/// telefonunun ekran kilidini kaldırırsa sistem artık kimseyi
+/// doğrulayamıyor; "tekrar dene" sonsuza kadar aynı sonucu verir ve
+/// kullanıcı kendi portföyünden kalıcı olarak dışarıda kalırdı (tek çare
+/// uygulamayı silip kurmak). O durumda — ve YALNIZCA o durumda — kilidi
+/// kapatıp devam etme seçeneği gösterilir: cihaz kimseyi doğrulayamadığı
+/// için kilit zaten koruma sağlamıyor.
 class LockScreen extends StatefulWidget {
-  const LockScreen({super.key, required this.onUnlocked});
+  const LockScreen({
+    super.key,
+    required this.onUnlocked,
+    required this.onKilidiKapat,
+  });
 
   final VoidCallback onUnlocked;
+
+  /// Cihaz doğrulama yapamaz hâldeyken kullanıcının seçtiği çıkış:
+  /// biyometrik kilit tercihini kapatıp içeri al.
+  final VoidCallback onKilidiKapat;
 
   @override
   State<LockScreen> createState() => _LockScreenState();
@@ -25,7 +43,9 @@ class LockScreen extends StatefulWidget {
 
 class _LockScreenState extends State<LockScreen> {
   bool _busy = false;
-  bool _failed = false;
+
+  /// Son denemenin sonucu — `null` ise henüz denenmedi.
+  BiyometrikSonuc? _sonSonuc;
 
   @override
   void initState() {
@@ -37,15 +57,40 @@ class _LockScreenState extends State<LockScreen> {
     if (_busy) return;
     setState(() {
       _busy = true;
-      _failed = false;
+      _sonSonuc = null;
     });
-    final ok = await BiometricLockService.instance.authenticate();
-    if (!mounted) return;
-    setState(() {
-      _busy = false;
-      _failed = !ok;
-    });
-    if (ok) widget.onUnlocked();
+    // `try/finally` YAPISAL koruma: `_busy` her yoldan düşer. Eskiden
+    // `await`ten sonra düz `setState` vardı ve servis fırlattığında o satır
+    // hiç çalışmıyordu — ekran "Doğrulanıyor…"da donuyor, düğme bir daha
+    // etkinleşmiyordu (üretim çökmesi 2026-09-19'un asıl kullanıcı etkisi).
+    // Servis artık fırlatmıyor; yine de sözleşmeye değil yapıya güveniyoruz.
+    try {
+      final sonuc = await BiometricLockService.instance.authenticate();
+      if (!mounted) return;
+      setState(() => _sonSonuc = sonuc);
+      if (sonuc.basariliMi) widget.onUnlocked();
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'LockScreen.tryUnlock');
+      if (mounted) setState(() => _sonSonuc = BiyometrikSonuc.hata);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Duruma göre alt başlık. İptal ile "cihazda kilit yok" aynı cümleyi
+  /// paylaşmaz: ikincisinde tekrar denemenin bir anlamı yok.
+  String _durumMetni(BuildContext context) {
+    switch (_sonSonuc) {
+      case null:
+      case BiyometrikSonuc.iptal:
+        return context.l10n.lockPrompt;
+      case BiyometrikSonuc.kullanilamaz:
+        return context.l10n.lockNoDeviceCredential;
+      case BiyometrikSonuc.reddedildi:
+      case BiyometrikSonuc.hata:
+      case BiyometrikSonuc.basarili:
+        return context.l10n.lockFailed;
+    }
   }
 
   @override
@@ -82,9 +127,7 @@ class _LockScreenState extends State<LockScreen> {
                 ),
                 const SizedBox(height: SandikSpace.sm),
                 Text(
-                  _failed
-                      ? context.l10n.lockFailed
-                      : context.l10n.lockPrompt,
+                  _durumMetni(context),
                   textAlign: TextAlign.center,
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
@@ -97,6 +140,18 @@ class _LockScreenState extends State<LockScreen> {
                     label: Text(_busy ? context.l10n.lockVerifying : context.l10n.unlock),
                   ),
                 ),
+                // Yalnızca cihaz doğrulama YAPAMAZ hâldeyken: tekrar
+                // denemenin sonucu değişmez, kullanıcı içeri giremez.
+                if (_sonSonuc == BiyometrikSonuc.kullanilamaz) ...[
+                  const SizedBox(height: SandikSpace.sm),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: _busy ? null : widget.onKilidiKapat,
+                      child: Text(context.l10n.lockDisableAndContinue),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

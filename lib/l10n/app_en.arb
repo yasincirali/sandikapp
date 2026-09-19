@@ -33,6 +33,8 @@
   "lockFailed": "Verification failed. Try again.",
   "lockPrompt": "Verify your identity to see your portfolio.",
   "lockVerifying": "Verifying…",
+  "lockNoDeviceCredential": "Your device has no screen lock (Face ID, fingerprint or passcode) set up, so it cannot verify you.",
+  "lockDisableAndContinue": "Turn off the lock and continue",
   "unlock": "Unlock",
   "disclaimerTitle": "Legal Notice",
   "disclaimerIntro": "To continue using the app, please read and accept the legal notice below.",

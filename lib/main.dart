@@ -1462,6 +1462,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       return LockScreen(
         key: const ValueKey('lock'),
         onUnlocked: () => setState(() => _locked = false),
+        // Cihaz artık kimseyi doğrulayamıyorsa (ekran kilidi kaldırılmış)
+        // kilit koruma sağlamıyor, yalnızca sahibini dışarıda tutuyor.
+        // Tercihi kapat ve içeri al — bkz. `LockScreen` dokümanı.
+        onKilidiKapat: () async {
+          await ref.read(biometricLockProvider.notifier).set(false);
+          if (mounted) setState(() => _locked = false);
+        },
       );
     }
 

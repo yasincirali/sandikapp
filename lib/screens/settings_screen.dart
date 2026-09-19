@@ -722,8 +722,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (!mounted) return;
                   // Sözlük await'ten ÖNCE okunur.
                   final istem = context.l10n.biometricPrompt;
-                  final ok = await svc.authenticate(reason: istem);
-                  if (!ok) return;
+                  final sonuc = await svc.authenticate(reason: istem);
+                  if (!sonuc.basariliMi) {
+                    // Cihazda kilit yoksa yukarıdaki `available` kapısı
+                    // geçirmişti ama doğrulama yine de yapılamadı: anahtarı
+                    // açmak kullanıcıyı çıkışsız kilit ekranına düşürürdü.
+                    if (sonuc == BiyometrikSonuc.kullanilamaz && mounted) {
+                      sandikSnack(context, context.l10n.noBiometricOnDevice,
+                          kind: SandikSnackKind.warning);
+                    }
+                    return;
+                  }
                 }
                 await ref.read(biometricLockProvider.notifier).set(v);
               },
