@@ -33,7 +33,7 @@ import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
 import 'services/daily_summary.dart';
-import 'services/db_logger.dart';
+import 'services/crash_reporter.dart';
 import 'config/pref_keys.dart';
 import 'services/disclaimer_service.dart';
 import 'services/secure_session_storage.dart';
@@ -107,9 +107,9 @@ Future<void> _initDeferredServices() async {
     try {
       await step.$2();
     } catch (e, st) {
-      if (kDebugMode) debugPrint('${step.$1} init failed: $e');
-      unawaited(FirebaseCrashlytics.instance
-          .recordError(e, st, reason: '${step.$1} deferred init'));
+      // `CrashReporter` üzerinden: ham hata metni PII taşıyabiliyordu
+      // (e-posta/UUID/JWT). `report` sanitize eder ve debug'da zaten yazar.
+      CrashReporter.report(e, st, reason: '${step.$1} deferred init');
     }
   }
 }
@@ -144,20 +144,31 @@ void main() async {
           .setCrashlyticsCollectionEnabled(!kDebugMode);
 
       // Senkron Flutter framework hataları
+      //
+      // `fatal` kararı `CrashReporter.agHatasiMi`'den gelir: timeout/soket
+      // hatası kullanıcının BAĞLANTISIDIR, uygulamanın çökmesi değil. Hepsini
+      // `fatal: true` yazmak "çökmesiz kullanıcı" oranını olmayan çökmelerle
+      // düşürüyor ve gerçek çökmeleri gürültüde gizliyordu (2026-09-19).
       FlutterError.onError = (details) {
         FlutterError.presentError(details);
-        final sanitized = DbLogger.sanitize(details.exceptionAsString());
-        FirebaseCrashlytics.instance.recordError(
-          sanitized, details.stack, fatal: true,
-          reason: details.context?.toDescription(),
+        CrashReporter.report(
+          // Metin `exceptionAsString()` (FlutterError'ın kendi biçimi
+          // korunsun), sınıflandırma TİP üzerinden.
+          details.exceptionAsString(),
+          details.stack,
+          reason: details.context?.toDescription() ?? 'FlutterError.onError',
+          fatal: !CrashReporter.agHatasiMi(details.exception),
         );
       };
 
       // Native platform hataları (engine seviyesi)
       PlatformDispatcher.instance.onError = (error, stack) {
-        final sanitized = DbLogger.sanitize(error.toString());
-        FirebaseCrashlytics.instance
-            .recordError(sanitized, stack, fatal: true);
+        CrashReporter.report(
+          error,
+          stack,
+          reason: 'PlatformDispatcher.onError',
+          fatal: !CrashReporter.agHatasiMi(error),
+        );
         return true;
       };
 
@@ -210,13 +221,15 @@ void main() async {
     ));
     runApp(const ProviderScope(child: SandikApp()));
   }, (error, stack) {
-    // Zone-level: yakalanmayan async hataları
-    try {
-      FirebaseCrashlytics.instance.recordError(
-        DbLogger.sanitize(error.toString()), stack, fatal: true);
-    } catch (_) {
-      // Crashlytics hazır değilse swallow
-    }
+    // Zone-level: yakalanmayan async hataları.
+    // `CrashReporter` Firebase kurulu değilse sessizce no-op'tur; ağ hatası
+    // burada da non-fatal (yukarıdaki gerekçe).
+    CrashReporter.report(
+      error,
+      stack,
+      reason: 'runZonedGuarded',
+      fatal: !CrashReporter.agHatasiMi(error),
+    );
   });
 }
 

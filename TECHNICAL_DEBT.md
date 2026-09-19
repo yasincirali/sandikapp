@@ -5,7 +5,38 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-17 (ölçek hafızası kalıcılaştırıldı — soğuk açılış boşluğu kapandı)
+**Son güncelleme:** 2026-09-19 (arka plan future'larının çökme olarak raporlanması)
+
+---
+
+## Kalan `unawaited(...)` çağrıları hatayı hâlâ zone handler'a sızdırıyor
+
+**Ne.** `unawaited()` yalnızca `unawaited_futures` lint'ini susturur; hatayı
+YUTMAZ. Await edilmeyen bir future hata ile biterse hata `main.dart`'taki
+`runZonedGuarded` handler'ına düşer ve Crashlytics'e ÇÖKME olarak gider —
+uygulama çalışmaya devam etse bile. Üretimdeki örneği buydu: "Fatal
+Exception: FlutterError → `DbLogger.log` → `SupabaseService.updateAsset`"
+(2026-09-19), gerçekte 15 saniyelik timeout'a düşmüş bir fiyat yazımı.
+
+**Ne yapıldı.** Çökmenin kaynağı (`refreshPrices` fiyat yazımı) düzeltildi;
+ağa dokunan ateşle-unut çağrıları (`refreshPrices` tetikleyicisi, liderlik
+snapshot upload'ları, ortak varlık tazeleme) `CrashReporter.arkaPlan(...)`
+sarmalayıcısına alındı; global handler'lar ağ hatasını artık `fatal: false`
+kaydediyor (`CrashReporter.agHatasiMi`).
+
+**Neden açık.** Geriye ~60 `unawaited(...)` kaldı: çoğu Analytics/Retention
+(Firebase SDK kendi içinde yutar), tercih yazımı, widget/Live Activity
+senkronu. Hepsini bir turda taşımak bu düzeltmenin yüzeyini gereksiz
+genişletirdi ve her birinin doğru `reason` etiketi ayrı karardır.
+
+**Maliyet.** Bu çağrılardan biri AĞ DIŞI bir hata fırlatırsa (ör. platform
+kanalı eksik, null cast) hâlâ fatal çökme olarak raporlanır. Gürültü riski;
+veri kaybı riski yok.
+
+**Ne zaman.** Crashlytics'te arka plan işlerinden gelen ağ dışı fatal
+görülürse, ya da bir sadeleştirme turunda toptan
+(`test/arka_plan_hatasi_fatal_degil_test.dart` taramasını Supabase
+yazmalarından tüm servis çağrılarına genişleterek).
 
 ---
 

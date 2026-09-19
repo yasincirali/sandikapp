@@ -1,10 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../screens/leaderboard_screen.dart';
+import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -257,11 +257,14 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         cacheKey: me.id,
       );
       if (myRoi != null) {
-        unawaited(LeaderboardService.instance.uploadRoiSnapshot(
-          userId: me.id,
-          periodDays: periodDays,
-          roiPct: myRoi,
-        ));
+        CrashReporter.arkaPlan(
+          LeaderboardService.instance.uploadRoiSnapshot(
+            userId: me.id,
+            periodDays: periodDays,
+            roiPct: myRoi,
+          ),
+          reason: 'LeaderboardHeroCard.uploadRoiSnapshot',
+        );
       }
 
       // Ortakların kâr/zararı BURADA hesaplanır — sunucu snapshot'ı beklenmez.

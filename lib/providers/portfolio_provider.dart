@@ -12,6 +12,7 @@ import '../services/retention_tracker.dart';
 import '../services/sparkline_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
+import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
 import '../services/crash_reporter.dart';
 import '../services/portfolio_cache.dart';
@@ -648,17 +649,24 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // Aktif ortakların varlıklarını yükle
     final activePartners = ref.read(activePartnersProvider);
     final partnerAssetsMap = <String, List<Asset>>{};
-    for (final partner in activePartners) {
-      final assets = await SupabaseService.instance.fetchByUser(partner.id);
-      partnerAssetsMap[partner.id] = assets;
-      for (final a in assets) {
-        if (a.ticker.isNotEmpty && !a.isManualPrice) {
-          symbols.add(a.ticker.toUpperCase());
+
+    // `try` BURADAN başlar (eskiden ortak yüklemesinin ALTINDAN başlıyordu).
+    // Ortak listesini çekerken bağlantı kopması `refreshPrices`'tan dışarı
+    // fırlıyordu: çağıranlardan biri (`MainNavigation` sekme yenilemesi) bunu
+    // await etmediği için hata zone handler'ına düşüyor ve ÇÖKME olarak
+    // kaydediliyordu. Ortak listesi yenilemenin ZORUNLU parçası değil;
+    // başarısızlığı "fiyatlar güncellenemedi" mesajına dönüşmeli.
+    try {
+      for (final partner in activePartners) {
+        final assets = await SupabaseService.instance.fetchByUser(partner.id);
+        partnerAssetsMap[partner.id] = assets;
+        for (final a in assets) {
+          if (a.ticker.isNotEmpty && !a.isManualPrice) {
+            symbols.add(a.ticker.toUpperCase());
+          }
         }
       }
-    }
 
-    try {
       final quotes = await PriceService.instance
           .fetchQuotes(symbols.toList(), forceRefresh: force);
 
@@ -679,6 +687,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           usdTry: usd, eurTry: eur, gbpTry: gbp, goldGramTry: gold);
 
       // Kendi varlıklarını güncelle
+      final fiyatiDegisenler = <Asset>[];
       final updated = baseAssets.map((asset) {
         // **Silinmiş lot'a YAZMA — dirilirdi (kullanıcı bildirimi,
         // 2026-09-16).** `updateAsset` gövdenin tamamını yazıyor ve
@@ -698,11 +707,15 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
             if (asset.purchasePrice == 0) {
               asset.purchasePrice = price;
             }
-            SupabaseService.instance.updateAsset(asset);
+            fiyatiDegisenler.add(asset);
           }
         }
         return asset;
       }).toList();
+
+      // Sunucuya yazma ekranı BEKLETMEZ ama BAŞIBOŞ da bırakılmaz —
+      // bkz. [_fiyatlariYaz].
+      _fiyatlariYaz(fiyatiDegisenler);
 
       // Ortak varlıkları sadece okunur (RLS) — fiyatları bellekte güncelliyoruz
       for (final assets in partnerAssetsMap.values) {
@@ -760,13 +773,63 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       //      function → FCM data-message → `_AuthGate._triggerSignalAnalysis`
       //   2. Uygulama açılışında `signalProvider.build()` DB'den okur
       //      (yeni analiz yapmaz, sadece geçmişi yükler).
-    } catch (e) {
+    } catch (e, st) {
+      // Ham `$e` kullanıcıya gösterilmez (CLAUDE.md "Hata gösterimi"):
+      // "Fiyatlar güncellenemedi: TimeoutException after 0:00:15.000000"
+      // kullanıcıya hiçbir şey anlatmıyordu. Hata yine de görünür kalmalı,
+      // o yüzden non-fatal olarak Crashlytics'e gider.
+      CrashReporter.report(e, st, reason: 'PortfolioNotifier.refreshPrices');
       final current = state.valueOrNull ?? s;
       state = AsyncData(current.copyWith(
         isLoading: false,
-        errorMessage: 'Fiyatlar güncellenemedi: $e',
+        errorMessage: 'Fiyatlar güncellenemedi. ${friendlyError(e)}',
       ));
     }
+  }
+
+  /// Yenilenen fiyatları sunucuya yazar — ÜRETİM ÇÖKMESİNİN kaynağı burasıydı.
+  ///
+  /// Crashlytics (2026-09-19): "Fatal Exception: FlutterError → `Future.timeout`
+  /// → `DbLogger.log` → `SupabaseService.updateAsset`". Bu yazma eskiden
+  /// [refreshPrices] içinde `await`siz, `unawaited`sız tek satırdı
+  /// (`SupabaseService.instance.updateAsset(asset)`). Zayıf bağlantıda
+  /// `DbLogger.defaultTimeout` (15 sn) dolunca doğan `TimeoutException`
+  /// hiçbir yerde yakalanmıyor, `runZonedGuarded` handler'ına düşüyor ve
+  /// orada `fatal: true` ile kaydediliyordu. Kullanıcı açısından hiçbir şey
+  /// olmuyordu — fiyat zaten bellekte güncellenmişti, ekran doğruydu — ama
+  /// Crashlytics'te ÇÖKME görünüyordu.
+  ///
+  /// Kural: fiyat yazımı EN İYİ ÇABA'dır. Ekrandaki değer bellekte zaten
+  /// güncel; sunucuya yazmak widget / ortak / başka cihaz içindir. Bu yüzden:
+  /// - hata varlık BAŞINA yakalanır, tur ilk hatada kırılmaz;
+  /// - turun tamamı için TEK non-fatal rapor gider (varlık başına rapor,
+  ///   bağlantı koptuğunda Crashlytics'i boğardı).
+  ///
+  /// Eşzamanlılık bilerek korundu: yazmalar eskiden de paralel gidiyordu,
+  /// sıraya dizmek 50 lotluk portföyde yenilemeyi dakikaya çıkarırdı.
+  void _fiyatlariYaz(List<Asset> assets) {
+    if (assets.isEmpty) return;
+    Object? ilkHata;
+    StackTrace? ilkStack;
+    var basarisiz = 0;
+    CrashReporter.arkaPlan(
+      Future.wait(assets.map((asset) async {
+        try {
+          await SupabaseService.instance.updateAsset(asset);
+        } catch (e, st) {
+          basarisiz++;
+          ilkHata ??= e;
+          ilkStack ??= st;
+        }
+      })).then((_) {
+        final hata = ilkHata;
+        if (hata == null) return;
+        CrashReporter.report(hata, ilkStack,
+            reason: 'refreshPrices fiyat yazımı '
+                '($basarisiz/${assets.length} varlık)');
+      }),
+      reason: 'refreshPrices fiyat yazımı (beklenmeyen)',
+    );
   }
 
   // ---- Snapshot / history --------------------------------------------------

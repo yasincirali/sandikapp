@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
@@ -7,6 +6,7 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -466,11 +466,14 @@ class _SoloPanelState extends State<_SoloPanel> {
     );
     if (roi != null) {
       // Fire-and-forget snapshot — global percentile için.
-      unawaited(LeaderboardService.instance.uploadRoiSnapshot(
-        userId: me.id,
-        periodDays: widget.periodDays,
-        roiPct: roi,
-      ));
+      CrashReporter.arkaPlan(
+        LeaderboardService.instance.uploadRoiSnapshot(
+          userId: me.id,
+          periodDays: widget.periodDays,
+          roiPct: roi,
+        ),
+        reason: 'LeaderboardScreen.uploadRoiSnapshot',
+      );
     }
     if (!mounted) return;
     setState(() {
@@ -825,22 +828,28 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       );
       if (myRoi != null) {
         // Await ETMİYORUZ, snapshot upload + partner fetch paralel gitsin.
-        unawaited(LeaderboardService.instance.uploadRoiSnapshot(
-          userId: me.id,
-          periodDays: widget.periodDays,
-          roiPct: myRoi,
-        ));
+        CrashReporter.arkaPlan(
+          LeaderboardService.instance.uploadRoiSnapshot(
+            userId: me.id,
+            periodDays: widget.periodDays,
+            roiPct: myRoi,
+          ),
+          reason: 'LeaderboardScreen.uploadRoiSnapshot',
+        );
         // Top gainers allocation feature'ı için anonim tür dağılımını da
         // gönder — miktar/TL yok, sadece {tür: %}. RPC k-anonymity + min
         // type_count filtreleri ile agregat gösterir.
         final alloc = LeaderboardService.instance
             .computeAllocation(widget.myAssets, widget.pnlToTRY);
         if (alloc.length >= 2) {
-          unawaited(LeaderboardService.instance.uploadAllocationSnapshot(
-            userId: me.id,
-            allocation: alloc,
-            typeCount: alloc.length,
-          ));
+          CrashReporter.arkaPlan(
+            LeaderboardService.instance.uploadAllocationSnapshot(
+              userId: me.id,
+              allocation: alloc,
+              typeCount: alloc.length,
+            ),
+            reason: 'LeaderboardScreen.uploadAllocationSnapshot',
+          );
         }
       }
     }

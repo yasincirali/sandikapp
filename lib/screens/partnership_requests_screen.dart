@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/crash_reporter.dart';
 import '../services/analytics_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -66,7 +67,9 @@ class _PartnershipRequestsScreenState
       // o arada kart ekranda kalıp ikinci kez basılabiliyordu.
       ref.read(pendingInvitesProvider.notifier).kaldir(inviteId);
       unawaited(AnalyticsService.instance.logPartnerInviteAccepted());
-      unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
+      CrashReporter.arkaPlan(
+          ref.read(allPartnerAssetsProvider.notifier).reload(),
+          reason: 'PartnershipRequests.reloadPartnerAssets');
       await _load();
       if (!mounted) return;
       sandikSnack(context, context.l10n.partnershipAcceptedShort,

@@ -13,6 +13,7 @@ import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
 import '../utils/polling.dart';
 import 'recap_screen.dart';
+import '../services/crash_reporter.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/supabase_service.dart';
@@ -246,7 +247,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             await SupabaseService.instance.getInviteStatus(inviteId);
         if (status == 'accepted') {
           await ref.read(partnersProvider.notifier).refresh();
-          unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
+          CrashReporter.arkaPlan(
+              ref.read(allPartnerAssetsProvider.notifier).reload(),
+              reason: 'ProfileScreen.reloadPartnerAssets');
           if (mounted) {
             final name = _pendingPartnerName;
             setState(() {
@@ -376,7 +379,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       color: context.c.amberText,
       onRefresh: () async {
         await ref.read(partnersProvider.notifier).refresh();
-        unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
+        CrashReporter.arkaPlan(
+            ref.read(allPartnerAssetsProvider.notifier).reload(),
+            reason: 'ProfileScreen.reloadPartnerAssets');
       },
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -904,7 +909,9 @@ class _PendingRequestsSectionState
       await ref.read(partnersProvider.notifier).acceptInvite(inviteId);
       // Sunucu turunu beklemeden düşür — o aralıkta kart basılabilir kalıyordu.
       ref.read(pendingInvitesProvider.notifier).kaldir(inviteId);
-      unawaited(ref.read(allPartnerAssetsProvider.notifier).reload());
+      CrashReporter.arkaPlan(
+          ref.read(allPartnerAssetsProvider.notifier).reload(),
+          reason: 'ProfileScreen.reloadPartnerAssets');
       await _load();
       await _showMsg(kabulEdildi);
     } catch (e) {

@@ -12,6 +12,7 @@ import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
 import 'add_asset_screen.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/crash_reporter.dart';
 import '../services/notification_service.dart';
 import '../services/remote_config_service.dart';
 import '../l10n/l10n.dart';
@@ -180,7 +181,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       setState(() => _currentIndex = _portfolioTab);
       MainNavigationScreen.aktifSekme.value = _portfolioTab;
     }
-    unawaited(ref.read(portfolioProvider.notifier).refreshPrices());
+    CrashReporter.arkaPlan(
+      ref.read(portfolioProvider.notifier).refreshPrices(),
+      reason: 'MainNavigation.refreshPrices',
+    );
   }
 
   Future<void> _confirmExit() async {
