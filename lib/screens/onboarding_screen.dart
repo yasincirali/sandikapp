@@ -302,8 +302,9 @@ List<_Adim> _adimlariKur() {
       baslik: 'Toplam net varlığın',
       govde: 'Tüm varlıkların tek toplamda; altındaki satır bugün ne kadar '
           'kazandığını ya da kaybettiğini söyler. Ortağın varsa başlıktaki '
-          'çipten Ben / ortak / Birlikte görünümünü seçersin. İlk '
-          'varlığını eklediğinde burası dolmaya başlar.',
+          'çipe dokunup Ben / ortak / Birlikte seçersin (her birinin toplamı '
+          'listede yazar); kartı sağa-sola kaydırmak da sıradakine geçer. '
+          'İlk varlığını eklediğinde burası dolmaya başlar.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
     ),

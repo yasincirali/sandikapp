@@ -2032,6 +2032,17 @@
   "scopeTogether": "Together",
   "scopeMe": "Me",
   "scopeLabel": "Scope",
+  "scopeSearch": "Search partners",
+  "scopePeopleCount": "{n} people",
+  "@scopePeopleCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scopeSwipeHint": "You can also swipe the card left/right",
+  "scopeNoMatch": "No matching partner",
   "scopeWho": "Whose portfolio",
   "scopePartners": "Partners",
   "chartTypeTooltip": "Chart type",

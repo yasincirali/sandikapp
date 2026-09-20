@@ -2032,6 +2032,17 @@
   "scopeTogether": "Birlikte",
   "scopeMe": "Ben",
   "scopeLabel": "Kapsam",
+  "scopeSearch": "Ortak ara",
+  "scopePeopleCount": "{n} kişi",
+  "@scopePeopleCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "scopeSwipeHint": "Kartı sağa/sola kaydırarak da geçebilirsin",
+  "scopeNoMatch": "Eşleşen ortak yok",
   "scopeWho": "Kimin portföyü",
   "scopePartners": "Ortaklar",
   "chartTypeTooltip": "Grafik tipi",

@@ -2957,6 +2957,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scopeLabel => 'Scope';
 
   @override
+  String get scopeSearch => 'Search partners';
+
+  @override
+  String scopePeopleCount(int n) {
+    return '$n people';
+  }
+
+  @override
+  String get scopeSwipeHint => 'You can also swipe the card left/right';
+
+  @override
+  String get scopeNoMatch => 'No matching partner';
+
+  @override
   String get scopeWho => 'Whose portfolio';
 
   @override

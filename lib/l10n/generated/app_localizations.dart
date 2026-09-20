@@ -5066,6 +5066,30 @@ abstract class AppLocalizations {
   /// **'Kapsam'**
   String get scopeLabel;
 
+  /// No description provided for @scopeSearch.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak ara'**
+  String get scopeSearch;
+
+  /// No description provided for @scopePeopleCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} kişi'**
+  String scopePeopleCount(int n);
+
+  /// No description provided for @scopeSwipeHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kartı sağa/sola kaydırarak da geçebilirsin'**
+  String get scopeSwipeHint;
+
+  /// No description provided for @scopeNoMatch.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşleşen ortak yok'**
+  String get scopeNoMatch;
+
   /// No description provided for @scopeWho.
   ///
   /// In tr, this message translates to:

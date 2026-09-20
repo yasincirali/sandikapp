@@ -2948,6 +2948,20 @@ class AppLocalizationsTr extends AppLocalizations {
   String get scopeLabel => 'Kapsam';
 
   @override
+  String get scopeSearch => 'Ortak ara';
+
+  @override
+  String scopePeopleCount(int n) {
+    return '$n kişi';
+  }
+
+  @override
+  String get scopeSwipeHint => 'Kartı sağa/sola kaydırarak da geçebilirsin';
+
+  @override
+  String get scopeNoMatch => 'Eşleşen ortak yok';
+
+  @override
   String get scopeWho => 'Kimin portföyü';
 
   @override

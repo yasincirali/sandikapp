@@ -286,6 +286,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // iki ekranda farklı görünüyordu.
     const positionedAssets = gosterilecekVarliklar;
 
+    // Görünüm toplamları — çipin alt sayfası her görünümün toplamını
+    // geçmeden gösterir (2026-09-21). Her ortak AYRI indirgenir (aşağıdaki
+    // "positionKey sahip taşımaz" gerekçesi), Birlikte = toplamların toplamı.
+    Map<String?, double> gorunumToplamlari = const {};
+    if (allActivePartners.isNotEmpty) {
+      double toplam(List<Asset> assets) {
+        var t = 0.0;
+        for (final a in positionedAssets(assets)) {
+          t += myState.toTRY(a.totalValue, a.currency);
+        }
+        return t;
+      }
+
+      final benim = toplam(myState.assets);
+      var birlikte = benim;
+      final m = <String?, double>{'': benim};
+      for (final p in allActivePartners) {
+        final t = toplam(allPartnerAssets[p.id] ?? const []);
+        m[p.id] = t;
+        birlikte += t;
+      }
+      m[null] = birlikte;
+      gorunumToplamlari = m;
+    }
+
     final List<Asset> displayedAssets;
     if (_view == '') {
       displayedAssets = positionedAssets(myState.assets);
@@ -584,18 +609,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               padding: EdgeInsets.symmetric(horizontal: hp),
               child: TourAnchor(
                 target: TourTarget.heroKart,
-                child: PortfolioSummaryWidget(
-                  state: displayedState,
-                  hideBalance: ref.watch(balanceHiddenProvider),
-                  baz: baz,
-                  // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
-                  trailing: allActivePartners.isEmpty
+                // Ortak varken kartı sağa/sola kaydırmak sıradaki görünüme
+                // geçer (Ben → ortaklar → Birlikte). Çip ve alt sayfa hedefe
+                // doğrudan gider; kaydırma "bir sonrakine bak" hareketi.
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onHorizontalDragEnd: allActivePartners.isEmpty
                       ? null
-                      : GorunumCipi(
-                          partners: allActivePartners,
-                          selectedId: _view,
-                          onChanged: (v) => setState(() => _view = v),
-                        ),
+                      : (d) {
+                          final v = d.primaryVelocity ?? 0;
+                          if (v.abs() < 200) return;
+                          SandikHaptic.selection.perform();
+                          setState(() => _view = GorunumCipi.sonraki(
+                              allActivePartners, _view,
+                              ileri: v < 0));
+                        },
+                  child: PortfolioSummaryWidget(
+                    state: displayedState,
+                    hideBalance: ref.watch(balanceHiddenProvider),
+                    baz: baz,
+                    // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
+                    trailing: allActivePartners.isEmpty
+                        ? null
+                        : GorunumCipi(
+                            partners: allActivePartners,
+                            selectedId: _view,
+                            toplamlar: gorunumToplamlari,
+                            gizli: ref.watch(balanceHiddenProvider),
+                            onChanged: (v) => setState(() => _view = v),
+                          ),
+                  ),
                 ),
               ),
             ),
