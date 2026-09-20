@@ -89,6 +89,15 @@ jobs:
         with:
           version: latest
 
+      # Runner saatini yığından ÖNCE eşitle (2026-09-21): NTP düzeltmesi
+      # koşunun ortasında saati geri çekerse GoTrue'nun verdiği JWT
+      # PostgREST'e göre "gelecekten" gelir (PGRST303) ve giriş düşer.
+      # Best-effort: araç yoksa sessizce geç; asıl güvence test döngüsü.
+      - name: Saat eşitle
+        run: |
+          sudo chronyc -a makestep >/dev/null 2>&1 || sudo timedatectl set-ntp true >/dev/null 2>&1 || true
+          date -u
+
       - name: supabase start
         run: supabase start
 
@@ -134,8 +143,25 @@ jobs:
           # Bu adım workflow yazıldığından beri kırıktı ama GÖRÜLMEDİ:
           # `supabase start` 0054'ün Vault denetiminde hep önce kırıldığı
           # için buraya hiç ulaşılamıyordu.
+          # İKİ DENEME (2026-09-21). Aynı gün iki kez şu flake görüldü:
+          # giriş `PGRST303 "JWT issued at future"` ile düştü, yeniden koşuda
+          # geçti. Sebep runner saati: NTP düzeltmesi saati GERİ çekince
+          # GoTrue'nun az önce verdiği JWT PostgREST'e göre gelecekten
+          # geliyor. Kodla ilgisi yok; aşağıdaki saat eşitleme adımı riski
+          # azaltır, bu döngü kalanını yakalar. İkinci deneme de düşerse
+          # gerçek hata — kırmızı kalır.
           script: |
-            flutter test "$GITHUB_WORKSPACE/integration_test" -d emulator-5554 --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+            for deneme in 1 2; do
+              if flutter test "$GITHUB_WORKSPACE/integration_test" -d emulator-5554 --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY; then
+                exit 0
+              fi
+              if [ "$deneme" = "1" ]; then
+                echo "::warning::integration_test ilk denemede düştü — 15 sn sonra bir kez daha (emülatör/saat kayması flake'i)"
+                date -u
+                sleep 15
+              fi
+            done
+            exit 1
 
       - name: supabase stop
         if: always()
