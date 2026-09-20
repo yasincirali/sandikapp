@@ -150,18 +150,11 @@ jobs:
           # geliyor. Kodla ilgisi yok; aşağıdaki saat eşitleme adımı riski
           # azaltır, bu döngü kalanını yakalar. İkinci deneme de düşerse
           # gerçek hata — kırmızı kalır.
-          script: |
-            for deneme in 1 2; do
-              if flutter test "$GITHUB_WORKSPACE/integration_test" -d emulator-5554 --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY; then
-                exit 0
-              fi
-              if [ "$deneme" = "1" ]; then
-                echo "::warning::integration_test ilk denemede düştü — 15 sn sonra bir kez daha (emülatör/saat kayması flake'i)"
-                date -u
-                sleep 15
-              fi
-            done
-            exit 1
+          # ⚠️ TEK SATIR: emulator-runner `script:` satırlarını ayrı ayrı
+          # `sh -c` ile koşturur; döngü/if buraya yazılamaz (2026-09-21'de
+          # "Syntax error: end of file unexpected" ile kırıldı). Mantık
+          # `tool/integration_test_retry.sh`'ta.
+          script: bash "$GITHUB_WORKSPACE/tool/integration_test_retry.sh" emulator-5554
 
       - name: supabase stop
         if: always()
