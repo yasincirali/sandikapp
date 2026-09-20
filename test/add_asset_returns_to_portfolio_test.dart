@@ -42,8 +42,10 @@ void main() {
   });
 
   test('_showAddAsset sonucu OKUR — yok saymaz', () {
+    // 2026-09-20: sonuç `bool` ya da `AlarmAdayi` (alarm önerisi) — tip
+    // `Object`. Tipsiz `pushGuarded(` yine yasak: `added` daima null olurdu.
     expect(
-      RegExp(r'await pushGuarded<bool>\(').hasMatch(nav),
+      RegExp(r'await pushGuarded<(bool|Object)>\(').hasMatch(nav),
       isTrue,
       reason: 'Sonuç tipi belirtilmezse `added` daima null olur ve sekme '
           'geçişi hiç çalışmaz.',
@@ -81,8 +83,12 @@ void main() {
   });
 
   test('AddAssetScreen kayıt sonrası `true` döndürür', () {
+    // `_save()` 2026-09-20'den beri `alarmAdayi ?? true` döndürür (alarm
+    // önerisi); `true` sinyali yine korunur — aday yoksa `true`.
     expect(
-      RegExp(r'Navigator\.pop\(context,\s*true\)').allMatches(add).length,
+      RegExp(r'Navigator\.pop\(context,\s*(true|alarmAdayi \?\? true)\)')
+          .allMatches(add)
+          .length,
       greaterThanOrEqualTo(2),
       reason: 'Hem `_save()` hem hızlı giriş kaydı sinyal döndürmeli. '
           'Sonuçsuz `pop` sinyali yutar ve sekme geçişi sessizce çalışmaz.',

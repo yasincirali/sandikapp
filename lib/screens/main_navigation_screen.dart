@@ -199,7 +199,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // Tekli eklemede sorun fark edilmiyordu çünkü kullanıcı çoğunlukla
     // zaten Portföy'de olup FAB'a basıyor. Toplu eklemeye ise Portföy'den
     // girilse bile araya AddAssetScreen giriyor ve akış uzuyor.
-    if (added == true) {
+    if (added == true || added is AlarmAdayi) {
       setState(() => _currentIndex = _portfolioTab);
       MainNavigationScreen.aktifSekme.value = _portfolioTab;
     }

@@ -1656,6 +1656,58 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
     }
   }
 
+  /// İki seçenekli sayfa. Satır içi seçici (SegmentedButton) 360pt'te
+  /// taşıyordu; para birimi seçici gibi sayfa açmak hem sığar hem tutarlı.
+  Future<void> _sec() async {
+    final l10n = context.l10n;
+    final mevcut = _slot ?? 'morning';
+    final secim = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: context.c.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  SandikSpace.lg, SandikSpace.lg, SandikSpace.lg, SandikSpace.sm),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  l10n.briefSlotTitle,
+                  style: ctx.t.titleMedium?.copyWith(
+                    color: ctx.c.text90,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            for (final (deger, etiket) in [
+              ('morning', l10n.briefSlotMorning),
+              ('evening', l10n.briefSlotEvening),
+            ])
+              ListTile(
+                leading: Icon(
+                  deger == mevcut
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                  color: deger == mevcut ? ctx.c.amberText : ctx.c.text58,
+                ),
+                title: Text(etiket,
+                    style: ctx.t.bodyLarge?.copyWith(color: ctx.c.text90)),
+                onTap: () => Navigator.pop(ctx, deger),
+              ),
+            const SizedBox(height: SandikSpace.sm),
+          ],
+        ),
+      ),
+    );
+    if (secim != null && secim != mevcut) await _yaz(secim);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -1663,21 +1715,8 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
     return _SettingsTile(
       icon: Icons.schedule_rounded,
       title: l10n.briefSlotTitle,
-      subtitle: l10n.briefSlotSubtitle,
-      onTap: () => _yaz(slot == 'morning' ? 'evening' : 'morning'),
-      trailing: SegmentedButton<String>(
-        showSelectedIcon: false,
-        style: const ButtonStyle(
-          visualDensity: VisualDensity.compact,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-        segments: [
-          ButtonSegment(value: 'morning', label: Text(l10n.briefSlotMorning)),
-          ButtonSegment(value: 'evening', label: Text(l10n.briefSlotEvening)),
-        ],
-        selected: {slot},
-        onSelectionChanged: (s) => _yaz(s.first),
-      ),
+      subtitle: slot == 'evening' ? l10n.briefSlotEvening : l10n.briefSlotMorning,
+      onTap: _sec,
     );
   }
 }

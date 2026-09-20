@@ -496,10 +496,9 @@ class PriceService {
   static double? _truncgilChange(dynamic entry) {
     if (entry is! Map) return null;
     final raw = entry['Change'];
+    // Yalnızca sayı (v4). Eski string biçiminde ("-0,30" / "-0.30") ondalık
+    // ayırıcı belirsiz — tahmin etmektense değişim yazılmaz.
     if (raw is num) return raw.isFinite ? raw.toDouble() : null;
-    if (raw is String) {
-      return double.tryParse(raw.replaceAll('%', '').replaceAll(',', '.'));
-    }
     return null;
   }
 
