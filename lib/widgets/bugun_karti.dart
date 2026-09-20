@@ -21,6 +21,10 @@ import '../services/analytics_service.dart';
 import '../services/bugun_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
+import '../services/history_service.dart';
+import '../services/period_summary_service.dart';
+import '../services/real_return_service.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'hedef_sheet.dart';
@@ -41,6 +45,8 @@ class BugunKarti extends ConsumerStatefulWidget {
 
 class _BugunKartiState extends ConsumerState<BugunKarti> {
   Map<int, double>? _seri;
+  ReelGetiriSatiri? _reel;
+  double? _haftalik;
   bool _istendi = false;
 
   @override
@@ -49,10 +55,18 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
   }
 
+  /// Üç yükleme birbirinden bağımsız ve tek seferlik (`_istendi`): kart her
+  /// fiyat yenilemesinde yeniden kurulur, ama bu seriler oturumda bir kez
+  /// çekilir — eski `RealReturnStrip` / `WeeklySummaryChip` ile aynı
+  /// disiplin. Her biri kendi try/catch'inde: biri düşerse diğerleri çizilir.
   Future<void> _yukle() async {
     if (_istendi || !mounted) return;
     _istendi = true;
     if (widget.state.assets.isEmpty) return;
+    await Future.wait<void>([_seriYukle(), _reelYukle(), _haftalikYukle()]);
+  }
+
+  Future<void> _seriYukle() async {
     try {
       final s = await IntradaySeriesCache.instance.get(widget.state);
       if (!mounted) return;
@@ -61,6 +75,50 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       // Seri gelmezse kart yine çizilir (hareket satırı düşer); ağ hatası
       // kullanıcıya gösterilmez, sessiz kalmasın diye raporlanır.
       CrashReporter.report(e, st, reason: 'BugunKarti.intraday');
+    }
+  }
+
+  /// Yıllık reel getiri — eski `RealReturnStrip` ile AYNI kaynak
+  /// (`RealReturnService.yillik`), aynı bayrak. Kapı: bayrak kapalıysa ya da
+  /// pencere/seri kurulamıyorsa satır hiç çizilmez (uydurma yok).
+  Future<void> _reelYukle() async {
+    if (!RemoteConfigService.instance.realReturnEnabled) return;
+    try {
+      final r = await RealReturnService.yillik(widget.state.assets);
+      if (!mounted || r == null) return;
+      setState(() =>
+          _reel = ReelGetiriSatiri(nominal: r.nominal, inflation: r.inflation));
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'BugunKarti.reelGetiri');
+    }
+  }
+
+  /// Geçen haftanın piyasa getirisi — eski `WeeklySummaryChip` ile aynı
+  /// hesap (`PeriodSummaryService.compute`, 1H penceresi), aynı bayrak.
+  Future<void> _haftalikYukle() async {
+    if (!RemoteConfigService.instance.periodSummaryEnabled) return;
+    try {
+      final now = DateTime.now();
+      final p = PeriodSummaryService.pencere(SummaryPeriod.birHafta, now);
+      final bd = await HistoryService.instance
+          .getPortfolioHistoryBreakdownAtResolution(
+        assets: widget.state.assets,
+        from: p.start,
+        to: p.end,
+        tier: ResolutionTierMeta.pickForSpan(
+            SummaryPeriod.birHafta.days.toDouble()),
+      );
+      if (!mounted) return;
+      final s = PeriodSummaryService.compute(
+        period: SummaryPeriod.birHafta,
+        assets: widget.state.assets,
+        breakdown: bd,
+        now: now,
+      );
+      if (s.getiriPct == null) return;
+      setState(() => _haftalik = s.getiriPct);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'BugunKarti.haftalik');
     }
   }
 
@@ -78,6 +136,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       ozet: ozet,
       hedefTRY: ref.watch(portfolioGoalProvider),
       now: now,
+      reel: _reel,
+      haftalikGetiriPct: _haftalik,
     );
     if (veri.bos) return const SizedBox.shrink();
     _gosterimiOlc(veri, now);
@@ -88,8 +148,12 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         ? 'en_US'
         : 'tr_TR';
 
+    // Sıra: günün hareketi → reel getiri (sabit) → haftalık (sabit, Pzt–Sal)
+    // → dönüşen içgörüler → aylık özet.
     final satirlar = <Widget>[
       if (veri.birincil != null) _satirWidget(veri.birincil!, gizli),
+      if (veri.reel != null) _satirWidget(veri.reel!, gizli),
+      if (veri.haftalik != null) _satirWidget(veri.haftalik!, gizli),
       for (final s in veri.ikincil) _satirWidget(s, gizli),
       if (veri.aylik != null) _satirWidget(veri.aylik!, gizli),
     ];
@@ -219,6 +283,28 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           renk: context.c.text58,
           metin: metin,
         );
+      case ReelGetiriSatiri():
+        // Eski şeritle aynı hedef: Performans › Özet › 1Y (reel getiri kartı).
+        final puan = fmtNum(s.fark.abs(), digits: 1);
+        return _Satir(
+          ikon: s.onde ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+          renk: s.onde ? context.c.gain : context.c.loss,
+          metin: s.onde
+              ? l10n.todayRealReturnAhead('+$puan')
+              : l10n.todayRealReturnBehind('−$puan'),
+          onTap: _olcerek(s, () => _ozeteGit(periodIdx: 4)),
+        );
+      case HaftalikOzetSatiri():
+        // Eski çiple aynı hedef: Özet › 1H.
+        final pct = fmtPct(s.getiriPct.abs());
+        return _Satir(
+          ikon: Icons.date_range_rounded,
+          renk: s.getiriPct >= 0 ? context.c.gain : context.c.loss,
+          metin: s.getiriPct >= 0
+              ? l10n.todayWeeklyUp(pct)
+              : l10n.todayWeeklyDown(pct),
+          onTap: _olcerek(s, () => _ozeteGit(periodIdx: 1)),
+        );
       case AylikOzetSatiri():
         return _Satir(
           ikon: Icons.summarize_rounded,
@@ -246,6 +332,18 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   String get _dil =>
       Localizations.localeOf(context).languageCode == 'en' ? 'en_US' : 'tr_TR';
 
+  /// Performans › Özet, verilen dönemde (0 GÜNLÜK · 1 1H · 2 1A · 3 6A · 4 1Y).
+  void _ozeteGit({required int periodIdx}) => pushGuarded<void>(
+        context,
+        adaptiveRoute<void>(
+          builder: (_) => PortfolioPerformanceScreen(
+            showBackButton: true,
+            initialOzet: true,
+            initialPeriodIdx: periodIdx,
+          ),
+        ),
+      );
+
   /// Gösterim ölçümü — gün + satır bileşimi başına BİR olay.
   ///
   /// Kart her fiyat yenilemesinde yeniden kurulur; her build'i saymak
@@ -257,6 +355,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   void _gosterimiOlc(BugunKartiVerisi veri, DateTime now) {
     final turler = [
       if (veri.birincil != null) _tur(veri.birincil!),
+      if (veri.reel != null) _tur(veri.reel!),
+      if (veri.haftalik != null) _tur(veri.haftalik!),
       for (final s in veri.ikincil) _tur(s),
       if (veri.aylik != null) _tur(veri.aylik!),
     ];
@@ -273,6 +373,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         PiyasaKapaliSatiri() => 'kapali',
         YesilOranSatiri() => 'yesil',
         HedefSatiri() => s.belirlenmedi ? 'hedef_yok' : 'hedef',
+        ReelGetiriSatiri() => 'reel',
+        HaftalikOzetSatiri() => 'haftalik',
         YaklasanOlaySatiri() => switch (s.tur) {
             BugunOlayTuru.tuikAciklamasi => 'olay_tuik',
             BugunOlayTuru.bistTatili => 'olay_tatil',

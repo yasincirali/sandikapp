@@ -495,6 +495,10 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       ileriKarti: ileri == null ? null : IleriMetrikKarti(metrikler: ileri),
       xirr: gorunur.xirr ? _xirr : null,
       enflasyonVerisiBekleniyor: _endeksBos,
+      // Derinlik bölümü (XIRR, sağlık, ileri metrikler…) ileri seviyede açık
+      // gelir, diğerlerinde katlı: özet önce "bu dönem"i anlatsın.
+      derinlikAcik:
+          ref.watch(yatirimciSeviyesiProvider) == YatirimciSeviyesi.ileri,
     );
   }
 

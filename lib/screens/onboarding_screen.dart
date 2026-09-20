@@ -301,8 +301,9 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.heroKart,
       baslik: 'Toplam net varlığın',
       govde: 'Tüm varlıkların tek toplamda; altındaki satır bugün ne kadar '
-          'kazandığını ya da kaybettiğini söyler. İlk varlığını eklediğinde '
-          'burası dolmaya başlar.',
+          'kazandığını ya da kaybettiğini söyler. Ortağın varsa başlıktaki '
+          'çipten Ben / ortak / Birlikte görünümünü seçersin. İlk '
+          'varlığını eklediğinde burası dolmaya başlar.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
     ),
@@ -332,9 +333,10 @@ List<_Adim> _adimlariKur() {
       id: 'bugun',
       hedef: TourTarget.bugunKarti,
       baslik: 'Bugün ne oldu?',
-      govde: 'Günün hareketi, hedefine kalan yol ve yaklaşan tarihler '
-          '(enflasyon açıklaması, tatil, ay sonu) burada. Her gün değişir; '
-          'hedefi buradan belirlersin.',
+      govde: 'Günün hareketi, enflasyonu geçip geçmediğin (yıllık reel '
+          'getiri), geçen haftanın özeti, hedefine kalan yol ve yaklaşan '
+          'tarihler tek kartta. Her gün değişir; hedefi buradan '
+          'belirlersin, satırlara dokununca ayrıntı açılır.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,

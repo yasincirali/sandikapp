@@ -13,11 +13,16 @@ class PortfolioSummaryWidget extends StatelessWidget {
   /// Gösterim birimi (Faz 3.2); varsayılan ₺ — testler ve eski çağıranlar
   /// değişmeden çalışır.
   final BazPara baz;
+
+  /// Başlık satırının sağı — görünüm çipi (Ben/ortak/Birlikte). Yoksa boş.
+  final Widget? trailing;
+
   const PortfolioSummaryWidget({
     super.key,
     required this.state,
     this.hideBalance = false,
     this.baz = const BazPara.lira(),
+    this.trailing,
   });
 
   @override
@@ -93,18 +98,30 @@ class PortfolioSummaryWidget extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'TOPLAM NET VARLIK',
-                    style: context.t.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      // Alfa düşürmek kontrastı da düşürür. Light'ta tam
-                      // opak gain (5.14:1) kullanılır; dark'ta zemin zaten
-                      // koyu olduğu için hafif yumuşatma güvenli.
-                      color: context.isLight
-                          ? context.c.gain
-                          : context.c.gain.withValues(alpha: 0.8),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'TOPLAM NET VARLIK',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                            // Alfa düşürmek kontrastı da düşürür. Light'ta tam
+                            // opak gain (5.14:1) kullanılır; dark'ta zemin zaten
+                            // koyu olduğu için hafif yumuşatma güvenli.
+                            color: context.isLight
+                                ? context.c.gain
+                                : context.c.gain.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ),
+                      // Görünüm çipi (Ben/ortak/Birlikte) — 2026-09-21'de
+                      // kendi satırından buraya; kart "kimin toplamı"nı
+                      // başlığında söyler.
+                      if (trailing != null) trailing!,
+                    ],
                   ),
                   const SizedBox(height: 6),
                   FittedBox(

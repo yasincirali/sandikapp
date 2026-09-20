@@ -2287,5 +2287,43 @@
   "briefSlotTitle": "Brifing saati",
   "briefSlotSubtitle": "Portföyündeki günlük hareket özeti ne zaman gelsin",
   "briefSlotMorning": "Sabah 09:45",
-  "briefSlotEvening": "Akşam 18:30 (kapanış)"
+  "briefSlotEvening": "Akşam 18:30 (kapanış)",
+  "todayRealReturnAhead": "{pts} puan enflasyonun önündesin · yıllık",
+  "@todayRealReturnAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealReturnBehind": "{pts} puan enflasyonun gerisindesin · yıllık",
+  "@todayRealReturnBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeeklyUp": "Geçen hafta piyasadan +{pct} · özetin hazır",
+  "@todayWeeklyUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeeklyDown": "Geçen hafta piyasadan −{pct} · özetin hazır",
+  "@todayWeeklyDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionThisPeriod": "BU DÖNEM",
+  "sectionAssets": "VARLIKLAR",
+  "sectionDepth": "DERİNLİK",
+  "sectionDepthHint": "XIRR, sağlık, ileri metrikler, karakter",
+  "myAlarms": "Alarmlarım",
+  "viewChipLabel": "Görünüm"
 }

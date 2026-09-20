@@ -132,15 +132,24 @@ void main() {
   // tek bir (ve çoğu kullanıcıda boş kalan) yüzeye bağlı olmasıydı. Bu grup
   // bağlantının kendisini kilitler.
   group('ekranlara bağlı', () {
-    test('ana ekran: yüzdelik şeridi ve sinyal zili seviyeye bakar', () {
+    test('ana ekran: sinyal zili seviyeye bakar', () {
       final src = ekranKaynagiSync('lib/screens/home_screen.dart');
       expect(src.contains('seviyeGorunurlugu'), isTrue,
           reason: 'ana ekran seviye tablosunu okumuyor');
-      expect(RegExp(r'\.percentile\)\s*\n\s*SliverToBoxAdapter\(\s*\n\s*child: PercentileStrip')
-          .hasMatch(src), isTrue,
-          reason: 'yüzdelik şeridi seviyeye bağlı değil');
       expect(src.contains('.teknikSinyaller) ...['), isTrue,
           reason: 'sinyal zili seviyeye bağlı değil');
+    });
+
+    // 2026-09-21: yüzdelik şeridi ana ekrandan Profil'e (Yarış kartının
+    // altına) taşındı; seviye kapısı onunla birlikte gitti.
+    test('profil: yüzdelik şeridi seviyeye bakar', () {
+      final src = ekranKaynagiSync('lib/screens/profile_screen.dart');
+      expect(
+          RegExp(r'seviyeGorunurlugu\(ref\.watch\(yatirimciSeviyesiProvider\)\)\s*\n\s*\.percentile\)')
+              .hasMatch(src),
+          isTrue,
+          reason: 'yüzdelik şeridi seviyeye bağlı değil');
+      expect(src.contains('PercentileStrip('), isTrue);
     });
 
     test('tekil varlık: sinyal kartı ve gösterge paneli seviyeye bakar', () {

@@ -95,17 +95,53 @@ class AylikOzetSatiri extends BugunSatiri {
 
 /// Kartın tamamı. [birincil] hareket satırı, [ikincil] günün içgörüleri
 /// (en fazla [BugunService.ikincilSayisi]), [aylik] ayın başında girişi.
+/// Yıllık reel getiri — "eridim mi?" (2026-09-21, sadeleştirme).
+///
+/// Eskiden ana ekranda ayrı bir şeritti (`RealReturnStrip`); kart aynı
+/// soruyu ("nasıl gidiyorum") cevapladığı için SABİT satır olarak buraya
+/// girdi — dönüşüme girmez, markanın kalbi her gün görünür. Sayı yine
+/// `RealReturnService.yillik`'ten gelir (tek hesap yolu).
+class ReelGetiriSatiri extends BugunSatiri {
+  const ReelGetiriSatiri({required this.nominal, required this.inflation});
+  final double nominal;
+  final double inflation;
+
+  /// Puan farkı: getiri − TÜFE.
+  double get fark => nominal - inflation;
+  bool get onde => fark >= 0;
+}
+
+/// Geçen haftanın piyasa getirisi — eski `WeeklySummaryChip`'in satırı.
+///
+/// Haftanın ilk iki günü SABİT (özet taze), sonra dönüşüm havuzunda: hafta
+/// ilerledikçe "geçen hafta" eskir ama bilgi kaybolmaz.
+class HaftalikOzetSatiri extends BugunSatiri {
+  const HaftalikOzetSatiri({required this.getiriPct});
+  final double getiriPct;
+}
+
 class BugunKartiVerisi {
   const BugunKartiVerisi({
     required this.birincil,
     required this.ikincil,
     required this.aylik,
+    this.reel,
+    this.haftalik,
   });
   final BugunSatiri? birincil;
   final List<BugunSatiri> ikincil;
   final AylikOzetSatiri? aylik;
 
-  bool get bos => birincil == null && ikincil.isEmpty && aylik == null;
+  /// Sabit satırlar (dönüşüm dışı); veri yoksa null.
+  final ReelGetiriSatiri? reel;
+  final HaftalikOzetSatiri? haftalik;
+
+  bool get bos =>
+      birincil == null &&
+      ikincil.isEmpty &&
+      aylik == null &&
+      reel == null &&
+      haftalik == null;
 }
 
 abstract final class BugunService {
@@ -204,6 +240,8 @@ abstract final class BugunService {
     required DailySummary? ozet,
     required int hedefTRY,
     required DateTime now,
+    ReelGetiriSatiri? reel,
+    double? haftalikGetiriPct,
   }) {
     BugunSatiri? birincil;
     if (ozet != null && ozet.hasChange) {
@@ -224,6 +262,17 @@ abstract final class BugunService {
     final olaylar = yaklasanOlaylar(now);
     if (olaylar.isNotEmpty) adaylar.add(olaylar.first);
 
+    // Haftalık: Pazartesi–Salı sabit satır (özet taze), sonra havuzda.
+    HaftalikOzetSatiri? haftalik;
+    if (haftalikGetiriPct != null) {
+      final satir = HaftalikOzetSatiri(getiriPct: haftalikGetiriPct);
+      if (now.weekday <= DateTime.tuesday) {
+        haftalik = satir;
+      } else {
+        adaylar.add(satir);
+      }
+    }
+
     final ikincil = <BugunSatiri>[];
     if (adaylar.isNotEmpty) {
       final bas = now.difference(DateTime(now.year)).inDays % adaylar.length;
@@ -236,6 +285,12 @@ abstract final class BugunService {
         ? AylikOzetSatiri(ay: DateTime(now.year, now.month - 1, 1))
         : null;
 
-    return BugunKartiVerisi(birincil: birincil, ikincil: ikincil, aylik: aylik);
+    return BugunKartiVerisi(
+      birincil: birincil,
+      ikincil: ikincil,
+      aylik: aylik,
+      reel: reel,
+      haftalik: haftalik,
+    );
   }
 }

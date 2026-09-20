@@ -22,6 +22,8 @@ import '../utils/friendly_error.dart';
 import '../utils/partner_code_formatter.dart';
 import 'settings_screen.dart';
 import '../widgets/leaderboard_hero_card.dart';
+import '../widgets/percentile_strip.dart';
+import '../models/yatirimci_seviyesi.dart' show seviyeGorunurlugu;
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
@@ -456,6 +458,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ],
                                 ),
                         ),
+                        // Yüzdelik dilim şeridi 2026-09-21'de ana ekrandan
+                        // buraya: sosyal karşılaştırma Yarış'ın yanında.
+                        // Kapıları (bayrak, opt-in, k-anonimlik, yatırımcı
+                        // seviyesi) değişmedi; boşken hiç çizilmez.
+                        if (seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
+                            .percentile)
+                          Builder(builder: (context) {
+                            final ps = ref.watch(portfolioProvider).valueOrNull;
+                            if (ps == null) return const SizedBox.shrink();
+                            return PercentileStrip(
+                              myAssets: ps.assets,
+                              toTRY: ps.toTRY,
+                              padding: const EdgeInsets.only(top: 12),
+                            );
+                          }),
                         const SizedBox(height: 40),
                       ],
                     ),

@@ -12,6 +12,43 @@
 
 ---
 
+## 🧭 2026-09-21 sadeleştirme turu — TestFlight testi + video/ekran görüntüsü kaydı
+
+Kod: `feat/sadelestirme-2026-09-21`. Hiçbir özellik silinmedi; yer ve sıra
+değişti. Plan ve yerleşim: https://claude.ai/artifact/7aCK2SKzeCF5Yrnn9DYoif
+
+### Cihazda (10 dk)
+1. **Ana ekran** — sıra: piyasa bandı → toplam kartı → Bugün kartı → dağılım
+   → hareketler. Ayrı reel getiri / yüzdelik / haftalık şeritleri YOK; reel
+   getiri ("+31,5 puan enflasyonun önündesin · yıllık") ve haftalık özet
+   (Pzt–Sal sabit, sonra dönüşümlü) Bugün kartının satırları. Satıra dokun →
+   Performans › Özet ilgili dönemde (1Y / 1H).
+2. **Görünüm çipi** — ortağın varsa toplam kartının başlığında "Ben ▾" çipi;
+   dokun → Ben / Ayşe / Birlikte sayfası. Ortak seçince eski şeritler o
+   görünümde yine görünür (kart kişisel olduğu için ortak görünümünde yok).
+3. **Performans › Özet** — üç başlık: BU DÖNEM, VARLIKLAR, DERİNLİK. Derinlik
+   ileri seviyede açık, diğerinde katlı; dokununca açılır. Grafik'te
+   Gerçek/Simülasyon anahtarı aynen duruyor.
+4. **Profil** — Yarış kartının altında yüzdelik dilim şeridi (opt-in + 8 kişi
+   dolunca görünür; şimdilik boş olması normal).
+5. **Çan sayfası** — başlıkta "Alarmlarım" düğmesi → alarm listesi.
+6. **Ayarlar** — Görünüm'de hedef satırı yok (Bugün kartından); Bildirimler'de
+   "Sinyal ayarları" tek satır, sağında anahtar.
+
+### Video ve mağaza görseli (senden kayıt, ~10 dk)
+Önizleme videosunun 1. ve 2. sahnesi ve `set_c` 1. ekran görüntüsü eski
+ana ekranı gösteriyor. Yeni build'de iPhone'da kaydet (Ayarlar › Kontrol
+Merkezi › Ekran Kaydı, ses kapalı, dikey):
+- **kayit_ana.mov** — ana ekran, 6 sn sabit: piyasa bandı akarken, Bugün
+  kartında reel getiri satırı görünür olsun (portföy "Ben" görünümünde).
+- **kayit_ozet.mov** — Performans › Özet › 1Y, 6 sn: BU DÖNEM başlığı ve
+  reel getiri kartı ekranda.
+- **ss_1.png** — ana ekranın ekran görüntüsü (aynı kare) → `set_c` 1. kare.
+Dosyaları `store_listing/preview_video/raw/` altına koy ve söyle; Remotion
+kurgusunu (altyazı/ses aynı) ben yeniden render ederim.
+
+---
+
 ## 📲 2026-09-20 günlük giriş turu — TestFlight'ta test edeceklerin
 
 Kod: `feat/gunluk-giris-2026-09-20`. Beş özellik: piyasa şeridi, takip
