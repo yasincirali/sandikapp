@@ -30,6 +30,7 @@ import '../widgets/portfolio_summary_widget.dart';
 import '../widgets/real_return_strip.dart';
 import '../widgets/weekly_summary_chip.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../widgets/kaydirmali_gecis.dart';
 import 'price_alerts_screen.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_error_view.dart';
@@ -612,18 +613,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // Ortak varken kartı sağa/sola kaydırmak sıradaki görünüme
                 // geçer (Ben → ortaklar → Birlikte). Çip ve alt sayfa hedefe
                 // doğrudan gider; kaydırma "bir sonrakine bak" hareketi.
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onHorizontalDragEnd: allActivePartners.isEmpty
-                      ? null
-                      : (d) {
-                          final v = d.primaryVelocity ?? 0;
-                          if (v.abs() < 200) return;
-                          SandikHaptic.selection.perform();
-                          setState(() => _view = GorunumCipi.sonraki(
-                              allActivePartners, _view,
-                              ileri: v < 0));
-                        },
+                // Kart parmağı takip eder, kenarda hedefin adı belirir,
+                // bırakınca kayarak geçer (`KaydirmaliGecis`).
+                child: KaydirmaliGecis(
+                  anahtar: _view,
+                  etkin: allActivePartners.isNotEmpty,
+                  hedefEtiketi: (ileri) => GorunumCipi.etiketi(
+                    context,
+                    allActivePartners,
+                    GorunumCipi.sonraki(allActivePartners, _view, ileri: ileri),
+                  ),
+                  onGecis: (ileri) => setState(() => _view = GorunumCipi.sonraki(
+                      allActivePartners, _view,
+                      ileri: ileri)),
                   child: PortfolioSummaryWidget(
                     state: displayedState,
                     hideBalance: ref.watch(balanceHiddenProvider),

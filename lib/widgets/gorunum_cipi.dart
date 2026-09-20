@@ -121,11 +121,18 @@ class GorunumCipi extends StatelessWidget {
     return null;
   }
 
-  String _etiket(BuildContext context) {
+  String _etiket(BuildContext context) => etiketi(context, partners, selectedId);
+
+  /// Görünümün kısa adı: Ben / ilk ad / Birlikte. Kaydırma ipucu da bunu
+  /// kullanır ki çip ile kenar etiketi aynı kelimeyi söylesin.
+  static String etiketi(BuildContext context, List<AppUser> partners, String? id) {
     final l = context.l10n;
-    if (selectedId == '') return l.scopeMe;
-    if (selectedId == null) return l.scopeTogether;
-    return ilkAd(_ortak(selectedId)?.displayName ?? l.scopeMe);
+    if (id == '') return l.scopeMe;
+    if (id == null) return l.scopeTogether;
+    for (final p in partners) {
+      if (p.id == id) return ilkAd(p.displayName);
+    }
+    return l.scopeMe;
   }
 
   /// Ortak avatar rengi — kimlikten türetilir ki aynı kişi her yerde aynı
