@@ -42,6 +42,10 @@ class AppNotificationTile extends StatelessWidget {
           Icons.calendar_view_week_rounded,
           l10n.notifTypeWeekly
         ),
+      AppNotification.monthlySummary => (
+          Icons.calendar_month_rounded,
+          l10n.notifTypeMonthly
+        ),
       _ => (Icons.event_note_rounded, l10n.notifTypeReminder),
     };
     // Bilgi bildirimi: yön/kazanç anlamı yok, marka vurgusu (amber).

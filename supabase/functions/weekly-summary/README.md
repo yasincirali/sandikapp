@@ -55,6 +55,34 @@ testli.
 Bayat uçlarla hesaplanan yüzde, kullanıcının uygulamada gördüğü sayıyla
 uyuşmaz ve güveni bozar. Kapsama yoksa `skipped_coverage`.
 
+## Aylık özet — aynı fonksiyon, `{"period":"month"}` (2026-09-20)
+
+Migration `0067` her ayın 1'i TR 09:30'da (`30 6 1 * *`) aynı fonksiyonu
+`period=month` gövdesiyle çağırır; **geçen takvim ayı** anlatılır
+(`ayPenceresi`, Europe/Istanbul). Haftalıktan farkları:
+
+| | Haftalık | Aylık |
+|---|---|---|
+| Akış (alım/satım) varsa | gönderilmez (`skipped_flow`) | gönderilir, **sayısız** ("Ağustos özetin hazır") |
+| Kapsama yoksa | gönderilmez | gönderilir, sayısız |
+| Sessiz eşik (`min_move_pct`) | var | yok |
+| `type` | `weekly_summary` | `monthly_summary` |
+| Defter | `weekly_summary_log` | `weekly_summary_log` **+ `daily_brief_log`** |
+
+İkinci defter kaydı bütçe içindir: aylık 09:30'da gider, 09:45'teki
+brifing/haftalık aynı kullanıcıyı "bugün gönderildi" görüp atlar — günde
+tek proaktif push korunur. Tercih sütunu ortak (`weekly_summary_push`).
+
+Kuru koşu:
+```bash
+curl -X POST "$SUPABASE_URL/functions/v1/weekly-summary" \
+  -H "x-cron-secret: $WEEKLY_SUMMARY_CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"period":"month","dry_run":true}'
+```
+Yanıtta `period: "month"`; `skipped_flow` aylıkta hep 0'dır (kapı susturmaz).
+Testler: `supabase/tests/monthly_summary_test.ts`.
+
 ## Secret'lar
 
 | Ad | Nerede |

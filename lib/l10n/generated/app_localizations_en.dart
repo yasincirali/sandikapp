@@ -3166,4 +3166,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get goalSettingsSubtitle =>
       'Pick a target; track progress on the Today card';
+
+  @override
+  String partnerInviteMessage(String code, String link) {
+    return 'Hi! I\'d like to share my sandık portfolio with you.\n\nYour partner code: $code\n\nInstall the app, then enter this code under Profile → \"Enter Partner Code\":\n$link';
+  }
+
+  @override
+  String get partnerInviteSubject => 'sandık partner invite';
+
+  @override
+  String get notifTypeMonthly => 'MONTHLY';
+
+  @override
+  String raceJoinedCount(int count, int min) {
+    return '$count joined · ranking opens at $min';
+  }
+
+  @override
+  String raceRunningCount(int count) {
+    return '$count people racing';
+  }
+
+  @override
+  String get emptyPasteHint =>
+      'Copy your broker statement and paste it; every line becomes an asset.';
 }

@@ -6,6 +6,8 @@
 //
 // Kendi kapılarını kendi kurar: kendi görünümü + açık pozisyon varken
 // çizilir; seri gelmeden de kalan satırları gösterir (boş kart yok).
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -15,6 +17,7 @@ import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../screens/portfolio_performance_screen.dart';
+import '../services/analytics_service.dart';
 import '../services/bugun_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
@@ -77,6 +80,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       now: now,
     );
     if (veri.bos) return const SizedBox.shrink();
+    _gosterimiOlc(veri, now);
 
     final gizli = ref.watch(balanceHiddenProvider);
     final l10n = context.l10n;
@@ -185,7 +189,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             renk: context.c.amberText,
             metin: l10n.todayGoalSet,
             altMetin: l10n.todayGoalSetHint,
-            onTap: () => showHedefSheet(context, ref),
+            onTap: _olcerek(s, () => showHedefSheet(context, ref)),
           );
         }
         final yuzde = (s.oran * 100).floor();
@@ -197,7 +201,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
               : l10n.todayGoalProgress(
                   yuzde, gizli ? '••••' : fmtTRYCompact(s.kalan)),
           cubuk: s.oran,
-          onTap: () => showHedefSheet(context, ref),
+          onTap: _olcerek(s, () => showHedefSheet(context, ref)),
         );
       case YaklasanOlaySatiri():
         final ne = switch (s.gunKaldi) {
@@ -221,14 +225,17 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           renk: context.c.amberText,
           metin: l10n.todayMonthlySummary(DateFormat.MMMM(_dil).format(s.ay)),
           altMetin: l10n.todayMonthlySummaryHint,
-          onTap: () => pushGuarded<void>(
-            context,
-            adaptiveRoute<void>(
-              builder: (_) => const PortfolioPerformanceScreen(
-                showBackButton: true,
-                initialOzet: true,
-                // 1A — geçen ayın özeti; Özet sekmesi TÜFE farkını da taşır.
-                initialPeriodIdx: 2,
+          onTap: _olcerek(
+            s,
+            () => pushGuarded<void>(
+              context,
+              adaptiveRoute<void>(
+                builder: (_) => const PortfolioPerformanceScreen(
+                  showBackButton: true,
+                  initialOzet: true,
+                  // 1A — geçen ayın özeti; Özet sekmesi TÜFE farkını da taşır.
+                  initialPeriodIdx: 2,
+                ),
               ),
             ),
           ),
@@ -238,6 +245,47 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
 
   String get _dil =>
       Localizations.localeOf(context).languageCode == 'en' ? 'en_US' : 'tr_TR';
+
+  /// Gösterim ölçümü — gün + satır bileşimi başına BİR olay.
+  ///
+  /// Kart her fiyat yenilemesinde yeniden kurulur; her build'i saymak
+  /// "kaç kez görüldü"yü değil "kaç kez çizildi"yi ölçerdi. Anahtar
+  /// uygulama ömrü boyunca statik: aynı gün ikinci açılışta tekrar
+  /// sayılmaz, ertesi gün sayılır.
+  static String? _sonOlculen;
+
+  void _gosterimiOlc(BugunKartiVerisi veri, DateTime now) {
+    final turler = [
+      if (veri.birincil != null) _tur(veri.birincil!),
+      for (final s in veri.ikincil) _tur(s),
+      if (veri.aylik != null) _tur(veri.aylik!),
+    ];
+    final anahtar = '${dayKey(now)}|${turler.join(',')}';
+    if (_sonOlculen == anahtar) return;
+    _sonOlculen = anahtar;
+    for (final t in turler) {
+      unawaited(AnalyticsService.instance.logTodayRowShown(kind: t));
+    }
+  }
+
+  static String _tur(BugunSatiri s) => switch (s) {
+        GunlukDegisimSatiri() => 'degisim',
+        PiyasaKapaliSatiri() => 'kapali',
+        YesilOranSatiri() => 'yesil',
+        HedefSatiri() => s.belirlenmedi ? 'hedef_yok' : 'hedef',
+        YaklasanOlaySatiri() => switch (s.tur) {
+            BugunOlayTuru.tuikAciklamasi => 'olay_tuik',
+            BugunOlayTuru.bistTatili => 'olay_tatil',
+            BugunOlayTuru.aySonu => 'olay_aysonu',
+          },
+        AylikOzetSatiri() => 'aylik',
+      };
+
+  /// Dokunuş ölçümü — satırın kendi eylemini sarar.
+  VoidCallback _olcerek(BugunSatiri s, VoidCallback eylem) => () {
+        unawaited(AnalyticsService.instance.logTodayRowTapped(kind: _tur(s)));
+        eylem();
+      };
 }
 
 class _Satir extends StatelessWidget {

@@ -93,6 +93,79 @@ const DEFAULT_MIN_MOVE_PCT = 2.0;
 /// kenarlarına yakın olmazsa yüzde başka bir dönemi anlatır.
 const UC_TAZELIK_SAAT = 48;
 
+// ── Aylık özet (2026-09-20) ─────────────────────────────────────────────────
+//
+// Aynı fonksiyon `{"period":"month"}` gövdesiyle ayın 1'inde koşar
+// (migration 0067, `monthly-summary` cron'u) ve GEÇEN takvim ayını anlatır.
+// Ayrı fonksiyon yazılmadı: token, tercih, sessiz saat, snapshot ve FCM
+// akışı birebir aynı; yalnızca pencere, mesaj ve iki kapı farklı.
+//
+// Haftalıktan İKİ fark:
+//   · Akış kapısı ATLANMAZ ama SUSTURMAZ: ay içinde alım/satım yapan
+//     kullanıcıya yüzde gönderilmez (yanlış olurdu), "özetin hazır" gider.
+//     Bir ayda hiç işlem yapmayan kullanıcı azınlık; herkesi susturmak
+//     bildirimi fiilen kapatırdı. Sayısız mesaj yalan söylemez.
+//   · Sessiz eşik (min_move_pct) yok: ay tek bir cümle hak eder.
+//
+// Aynı gün ikinci push yok: gönderim hem `weekly_summary_log`'a (Pazartesi
+// 1'ine denk gelirse haftalık susar) hem `daily_brief_log`'a yazılır
+// (brifing 06:45'te "bugün gönderildi" görür ve atlar; aylık 06:30'da).
+export type Donem = 'week' | 'month';
+
+/** Türkçe ay adları — `intl` yok; `BugunKarti`/`RecapService` ile aynı sabit. */
+const AY_ADLARI = [
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+];
+
+/**
+ * GEÇEN takvim ayının penceresi, Europe/Istanbul (UTC+3, DST yok).
+ *
+ * `now` 1 Eylül 06:30 UTC ise → 1 Ağustos 00:00 TR … 1 Eylül 00:00 TR.
+ * Ayın 1'i yerine gecikmeli koşsa da (2'si, 3'ü) yine geçen ayı verir.
+ */
+export function ayPenceresi(now: Date): { fromMs: number; toMs: number; ayAdi: string } {
+  const TR_OFFSET_MS = 3 * 3600_000;
+  const tr = new Date(now.getTime() + TR_OFFSET_MS);
+  const y = tr.getUTCFullYear();
+  const m = tr.getUTCMonth(); // bu ay (0-11)
+  const buAyBasi = Date.UTC(y, m, 1) - TR_OFFSET_MS;
+  const gecenAyBasi = Date.UTC(y, m - 1, 1) - TR_OFFSET_MS;
+  const gecenAy = ((m - 1) % 12 + 12) % 12;
+  return { fromMs: gecenAyBasi, toMs: buAyBasi, ayAdi: AY_ADLARI[gecenAy] };
+}
+
+/**
+ * Aylık mesaj. [changePct] null → ay içinde akış vardı ya da kapsama yok:
+ * sayı yazılmaz, yalnızca "hazır" denir. Kurallar haftalıkla aynı
+ * (uyarı tonu yok, emoji yok, tutar yok, tavsiye yok).
+ */
+export function buildMonthlyMessage(
+  ayAdi: string,
+  changePct: number | null,
+  uzunDonemPct: number | null,
+): { title: string; body: string } {
+  if (changePct === null) {
+    return {
+      title: `${ayAdi} özetin hazır`,
+      body: 'Getirin, enflasyon farkı ve en iyi varlığın Özet\'te. Yatırım tavsiyesi değildir.',
+    };
+  }
+  const yukari = changePct >= 0;
+  const mutlak = Math.abs(changePct).toFixed(1).replace('.', ',');
+  const baslik = yukari
+    ? `▲ ${ayAdi}: piyasadan %${mutlak}`
+    : `▼ ${ayAdi}: piyasadan −%${mutlak}`;
+  let govde: string;
+  if (!yukari && uzunDonemPct !== null && uzunDonemPct > 0) {
+    const u = uzunDonemPct.toFixed(1).replace('.', ',');
+    govde = `Ay ekside. Daha uzun pencerede hâlâ +%${u}. Enflasyon farkı Özet'te.`;
+  } else {
+    govde = 'Enflasyon farkı ve en iyi varlığın Özet\'te. Yatırım tavsiyesi değildir.';
+  }
+  return { title: baslik, body: govde };
+}
+
 type SnapshotRow = {
   user_id: string;
   ts: string;
@@ -238,11 +311,15 @@ Deno.serve(async (request) => {
 
     let dryRun = false;
     let minMovePct = DEFAULT_MIN_MOVE_PCT;
+    let donem: Donem = 'week';
     try {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
       if (typeof body?.min_move_pct === 'number') minMovePct = body.min_move_pct;
+      if (body?.period === 'month') donem = 'month';
     } catch (_) { /* gövde opsiyonel */ }
+    const aylik = donem === 'month';
+    const bildirimTipi = aylik ? 'monthly_summary' : 'weekly_summary';
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -294,8 +371,12 @@ Deno.serve(async (request) => {
     }
 
     // ── 4) Dönem penceresi ──────────────────────────────────────────────────
+    // Haftalık: son 7 gün, şimdiye kadar. Aylık: geçen TAKVİM ayı — uçlar
+    // ayın ilk/son gününe yakın snapshot'lardan (tazelik kuralı aynı).
     const simdi = Date.now();
-    const fromMs = simdi - 7 * 24 * 60 * 60 * 1000;
+    const ay = ayPenceresi(new Date(simdi));
+    const fromMs = aylik ? ay.fromMs : simdi - 7 * 24 * 60 * 60 * 1000;
+    const toMs = aylik ? ay.toMs : simdi;
     const yilFromMs = simdi - 365 * 24 * 60 * 60 * 1000;
 
     // ── 5) HAFTA İÇİNDE AKIŞ OLAN kullanıcıları ele ─────────────────────────
@@ -316,7 +397,8 @@ Deno.serve(async (request) => {
         .in('user_id', userIds)
         .in('kind', ['buy', 'sell'])
         .is('deleted_at', null)
-        .gte('added_date', new Date(fromMs).toISOString());
+        .gte('added_date', new Date(fromMs).toISOString())
+        .lt('added_date', new Date(toMs).toISOString());
       for (const r of (akisRows ?? []) as Array<Record<string, unknown>>) {
         akisliKullanicilar.add(String(r.user_id));
       }
@@ -373,25 +455,33 @@ Deno.serve(async (request) => {
       if (istemeyen.has(uid)) { skippedOptOut += 1; continue; }
       if (sessiz.has(uid)) { skippedQuietHours += 1; continue; }
 
-      // AKIŞ KAPISI — en önemlisi.
-      if (akisliKullanicilar.has(uid)) { skippedFlow += 1; continue; }
+      // AKIŞ KAPISI — en önemlisi. Haftalıkta susturur; aylıkta yüzdeyi
+      // düşürür, bildirimi değil (bkz. "Aylık özet" notu).
+      const akisVar = akisliKullanicilar.has(uid);
+      if (akisVar && !aylik) { skippedFlow += 1; continue; }
 
       const rows = kullaniciSnap.get(uid) ?? [];
-      const uclar = pickEndpoints(rows, fromMs, simdi);
+      const uclar = pickEndpoints(rows, fromMs, toMs);
+      let degisim: number | null = null;
       if ('reason' in uclar) {
         if (uclar.reason === 'coverage') skippedCoverage += 1;
+        // Aylıkta kapsama yoksa da "hazır" mesajı gider: kullanıcı ayın
+        // özetini uygulamada yine görebilir, yalnızca push'ta sayı yok.
+        if (!aylik) continue;
+      } else if (!akisVar) {
+        degisim = periodChangePct(uclar.bas, uclar.son);
+        if (degisim === null && !aylik) continue;
+      }
+      if (!aylik && degisim !== null && Math.abs(degisim) < minMovePct) {
+        skippedQuiet += 1;
         continue;
       }
-
-      const degisim = periodChangePct(uclar.bas, uclar.son);
-      if (degisim === null) continue;
-      if (Math.abs(degisim) < minMovePct) { skippedQuiet += 1; continue; }
 
       // Uzun pencere bağlamı — YALNIZCA kayıp haftasında kullanılıyor.
       // Yıllık uçlar için tazelik denetimi aranmaz: bağlam cümlesi ikincil
       // ve yaklaşık olması kabul edilebilir.
       let uzunDonemPct: number | null = null;
-      if (degisim < 0) {
+      if (degisim !== null && degisim < 0) {
         const yilSirali = rows
           .map((r) => ({ ts: Date.parse(r.ts), total: snapshotTotal(r.data) }))
           .filter((r) => Number.isFinite(r.ts) && r.total > 0)
@@ -404,7 +494,11 @@ Deno.serve(async (request) => {
         }
       }
 
-      const mesaj = buildWeeklyMessage(degisim, uzunDonemPct);
+      // Haftalık yol buraya `degisim` dolu gelir (yukarıdaki kapılar);
+      // aylıkta null olabilir ve mesaj sayısız kurulur.
+      const mesaj = aylik
+        ? buildMonthlyMessage(ay.ayAdi, degisim, uzunDonemPct)
+        : buildWeeklyMessage(degisim ?? 0, uzunDonemPct);
 
       if (dryRun) { sent += 1; continue; }
 
@@ -413,7 +507,7 @@ Deno.serve(async (request) => {
         admin,
         appNotificationRow({
           userId: tokenRow.user_id,
-          type: 'weekly_summary',
+          type: bildirimTipi,
           title: mesaj.title,
           body: mesaj.body,
           data: { sent_on: bugun },
@@ -429,7 +523,7 @@ Deno.serve(async (request) => {
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
-        data: { type: 'weekly_summary', sent_on: bugun },
+        data: { type: bildirimTipi, sent_on: bugun },
       });
 
       if (r.ok) {
@@ -442,6 +536,16 @@ Deno.serve(async (request) => {
             { user_id: uid, sent_on: bugun },
             { onConflict: 'user_id,sent_on' },
           );
+        // Aylık push günün TEK proaktif mesajı: brifing defterine de
+        // yazılır ki 06:45'teki daily-brief bu kullanıcıyı atlasın.
+        if (aylik) {
+          await admin
+            .from('daily_brief_log')
+            .upsert(
+              { user_id: uid, sent_on: bugun },
+              { onConflict: 'user_id,sent_on' },
+            );
+        }
       } else {
         failures.push(r.rawText.slice(0, 200));
         if (r.shouldDeleteToken) {
@@ -455,6 +559,7 @@ Deno.serve(async (request) => {
 
     return jsonResponse({
       ok: true,
+      period: donem,
       sent,
       skipped_flow: skippedFlow,
       skipped_coverage: skippedCoverage,
@@ -465,9 +570,9 @@ Deno.serve(async (request) => {
       failures: failures.slice(0, 5),
     });
   } catch (error) {
-    return jsonResponse(
-      { error: error instanceof Error ? error.message : String(error) },
-      500,
-    );
+    // Ayrıntı yalnızca günlüğe: yanıtta `error.message` dönmek tablo/sütun
+    // adlarını ve secret adlarını dışarı sızdırır (CLAUDE.md sunucu kuralı).
+    console.error('[weekly-summary] hata:', error);
+    return jsonResponse({ error: 'Ozet gonderimi basarisiz.' }, 500);
   }
 });

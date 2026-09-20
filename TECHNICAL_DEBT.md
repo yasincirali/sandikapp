@@ -9,7 +9,16 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
-## Kalan `unawaited(...)` çağrıları hatayı hâlâ zone handler'a sızdırıyor
+## ✅ KAPANDI — Kalan `unawaited(...)` çağrıları hatayı zone handler'a sızdırıyordu
+
+**Kapanış (2026-09-20, `feat/buyume-turu`).** 40 çıplak `unawaited(...)`
+`CrashReporter.arkaPlan(..., reason:)`'a taşındı (`arkaPlan` artık
+`Future<Object?>` alıyor; sonuçlu işler de bırakılabiliyor). Geriye
+kalanlar bilinçli: Analytics (`_log` kendi yakalar), `.catchError(` taşıyan,
+`SystemNavigator`/`slidable`/`showAppSuccess` (UI). Kural artık
+ratchet: `test/arka_plan_hata_yutma_test.dart` `lib/` içinde çıplak
+`unawaited` görürse kırılır. `catch`siz buton handler'ı yüzü
+`buton_handler_sahipsiz_test` ile ayrıca kilitli (2026-09-19).
 
 **Ne.** `unawaited()` yalnızca `unawaited_futures` lint'ini susturur; hatayı
 YUTMAZ. Await edilmeyen bir future hata ile biterse hata `main.dart`'taki
@@ -44,6 +53,45 @@ kanalı eksik, null cast) hâlâ fatal çökme olarak raporlanır. Gürültü ri
 görülürse, ya da bir sadeleştirme turunda toptan
 (`test/arka_plan_hatasi_fatal_degil_test.dart` taramasını Supabase
 yazmalarından tüm servis çağrılarına genişleterek).
+
+---
+
+## 🟡 AÇIK — Dönem özeti push'unun istemcide kapatma anahtarı yok
+
+**Ne.** Haftalık (0052) ve aylık (0067) özet push'u `profiles.weekly_summary_push`
+sütununu okuyor ama Ayarlar › Bildirimler'de bu sütunu yazan bir anahtar
+YOK; kullanıcı yalnızca sistem kanalından (`summary_channel`, Android) ya
+da sessiz saatlerle susturabiliyor. iOS'ta kanal kavramı olmadığı için
+tek yol bildirimleri toptan kapatmak.
+
+**Neden açık.** Anahtar ucuz (`_SettingsTile` + `SupabaseService`
+`update profiles`), ama `daily_brief` tercihi de aynı durumda; ikisi tek
+"Proaktif bildirimler" grubu olarak tasarlanmalı (brifing / dönem özeti /
+takvim) — ayrı ayrı üç anahtar Ayarlar'ı şişirir.
+
+**Ne zaman.** Aylık push'un ilk iki gönderiminden sonra (Ekim–Kasım 2026);
+`push_opened` oranı %3'ün altına düşen tipe kapatma anahtarı şart olur.
+
+---
+
+## 🟡 AÇIK — Universal Links / App Links yok; paylaşılan bağlantı web sayfasına iner
+
+**Ne.** Paylaşım kartı ve ortak daveti artık `…/sandikapp/indir/` bağlantısı
+taşıyor (2026-09-20). Uygulama kuruluysa bile bağlantı tarayıcıda açılır;
+Universal Link olsa doğrudan uygulama açılır ve `kod=` ile ortak kodu
+kendiliğinden girilirdi.
+
+**Neden açık.** AASA dosyası alan adının KÖKÜNDE olmalı
+(`https://<domain>/.well-known/apple-app-site-association`); site
+`yasincirali.github.io/sandikapp/` alt yolunda — kök başka bir repo.
+Özel alan adı (ör. `sandik.app`) ya da `yasincirali.github.io` kök
+reposu gerekir; ikisi de kullanıcı kararı (`YAPMAN_GEREKENLER.md`).
+Entitlement/manifest değişikliği alan adı olmadan yapılmadı: Associated
+Domains yeteneği App ID'de açık değilse fastlane match imzalamayı kırar.
+
+**Ne zaman.** Alan adı alınınca: AASA + `assetlinks.json` (`docs/.well-known/`),
+`Runner.entitlements` `applinks:`, `AndroidManifest` `autoVerify` intent
+filter, `DeepLinkService`'e `indir?kod=` yolu. Yarım gün.
 
 ---
 
@@ -147,17 +195,20 @@ TÜFE kartı etiketleri sade dile ("Senin getirin / Enflasyon (TÜFE) / Aradaki 
    kişisel olan gelmedi. En yüksek geri getirme değeri burada — ilk izleme
    turunda Bugün kartının `todayEventCpi` satırına dokunma/görüntülenme
    oranı ölçülünce karar verilir.
-2. **Tanıtım turu 27 adım.** İlk 10 dakika kritik; tur 5 adıma inmeli,
-   kalanı ilgili ekranda ilk girişte tek ipucu olmalı. Ayrı tasarım turu;
-   `onboarding_screen.dart` `_adimlariKur` + `onboarding_tour_test`.
+2. ✅ **Tanıtım turu kısaltıldı (2026-09-20).** İlk açılış 19 → 5 adım
+   (`_kisaAdimlar`: karşılama, toplam, Bugün, +, ekstre yapıştır); tam tur
+   Ayarlar'dan. "İlgili ekranda ilk girişte tek ipucu" kısmı YAPILMADI —
+   kısa turun kurulum→ilk varlık dönüşümü ölçülmeden ikinci katman gereksiz.
 3. **Aylık özet ekranı yok** — giriş Performans › Özet › 1A'ya gidiyor.
    Yıllık `RecapScreen`'in aylık sürümü (karakter sayfası hariç) ucuz ama
-   ayrı bir yüzey; önce girişin tıklanıp tıklanmadığı ölçülsün.
-4. **Kart içi ölçüm yok.** Analytics olayı eklenmedi; hangi satırın gezme
-   sebebi olduğu bilinmeden 1–3'e karar verilemez. İlk iş bu.
+   ayrı bir yüzey; önce girişin tıklanıp tıklanmadığı ölçülsün. Aylık
+   özet PUSH'u ise var (2026-09-20, `weekly-summary` `period=month`, 0067).
+4. ✅ **Kart içi ölçüm (2026-09-20).** `today_row_shown` / `today_row_tapped`
+   (kind: degisim|kapali|yesil|hedef|hedef_yok|olay_*|aylik, gün başına bir
+   gösterim) ve `goal_set` (tutar kovası). Firebase DebugView'da doğrula.
 
 **Ne zaman.** Bugün kartı TestFlight'ta bir hafta kalıp kullanıcı geri
-bildirimi alındıktan sonra; 4 → 1 → 3 → 2 sırasıyla.
+bildirimi alındıktan sonra; ölçüm → 1 → 3 sırasıyla.
 
 ---
 

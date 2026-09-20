@@ -13,6 +13,7 @@ export type AppNotificationType =
   | 'partner_invite'
   | 'daily_brief'
   | 'weekly_summary'
+  | 'monthly_summary' // 0067 — CHECK kısıtı da orada genişletildi
   | 'calendar_nudge';
 
 export interface AppNotificationRow {

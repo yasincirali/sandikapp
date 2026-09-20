@@ -36,6 +36,7 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/transaction_row.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
+import 'csv_import_screen.dart';
 import 'all_transactions_screen.dart';
 import 'asset_detail_screen.dart';
 import 'portfolio_performance_screen.dart';
@@ -185,6 +186,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             builder: (_) => const PortfolioPerformanceScreen(
               showBackButton: true,
               initialOzet: true,
+            ),
+          ),
+        );
+      case AppNotification.monthlySummary:
+        // Aylık özet → 1A dönemi; bildirimin anlattığı ay orada.
+        Navigator.push(
+          context,
+          adaptiveRoute<void>(
+            builder: (_) => const PortfolioPerformanceScreen(
+              showBackButton: true,
+              initialOzet: true,
+              initialPeriodIdx: 2,
             ),
           ),
         );
@@ -1713,6 +1726,31 @@ class _EmptyPortfolioCta extends StatelessWidget {
             ),
           ),
         ),
+        // İkinci yol: ekstre yapıştır (2026-09-20). Portföyünü ilk kez kuran
+        // kullanıcı için en hızlı yol bu; eskiden yalnızca + › Toplu › Yapıştır
+        // ile üç dokunuş derindeydi ve ilk 10 dakikada bulunmuyordu. Yalnızca
+        // gerçekten boş portföyde — tür filtresi boş çıkınca anlamsız.
+        if (!filtered) ...[
+          const SizedBox(height: SandikSpace.md),
+          TextButton.icon(
+            onPressed: () => pushGuarded(
+              context,
+              adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+            ),
+            icon: Icon(Icons.content_paste_go_rounded,
+                size: 18, color: context.c.text58),
+            label: Text(
+              context.l10n.pasteFromStatement,
+              style: context.t.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600, color: context.c.text58),
+            ),
+          ),
+          Text(
+            context.l10n.emptyPasteHint,
+            textAlign: TextAlign.center,
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
+          ),
+        ],
       ],
     );
   }

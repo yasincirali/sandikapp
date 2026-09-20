@@ -5407,6 +5407,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör'**
   String get goalSettingsSubtitle;
+
+  /// No description provided for @partnerInviteMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Merhaba! sandık portföy uygulamasında seninle ortak olmak istiyorum.\n\nOrtak kodun: {code}\n\nUygulamayı indir, Profil → \"Ortak Kodu Gir\" bölümünden bu kodu gir:\n{link}'**
+  String partnerInviteMessage(String code, String link);
+
+  /// No description provided for @partnerInviteSubject.
+  ///
+  /// In tr, this message translates to:
+  /// **'sandık ortak daveti'**
+  String get partnerInviteSubject;
+
+  /// No description provided for @notifTypeMonthly.
+  ///
+  /// In tr, this message translates to:
+  /// **'AYLIK'**
+  String get notifTypeMonthly;
+
+  /// No description provided for @raceJoinedCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} kişi katıldı · sıralama {min} kişide açılır'**
+  String raceJoinedCount(int count, int min);
+
+  /// No description provided for @raceRunningCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} kişi yarışıyor'**
+  String raceRunningCount(int count);
+
+  /// No description provided for @emptyPasteHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur.'**
+  String get emptyPasteHint;
 }
 
 class _AppLocalizationsDelegate

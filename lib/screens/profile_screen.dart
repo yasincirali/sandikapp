@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../config/magaza.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -134,15 +135,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final kod = _generatedCode;
     if (kod == null) return;
     final shortCode = kod.split(':')[0];
-    final msg =
-        'Merhaba! Sandık portföy uygulamasında seninle ortak olmak istiyorum.\n\n'
-        'Ortak kodun: $shortCode\n\n'
-        'Uygulamayı aç → Profil → "Ortak Kodu Gir" bölümünden bu kodu gir.';
+    // Davet metni indirme bağlantısı taşır (2026-09-20): eşi uygulamayı
+    // henüz kurmamış olan kullanıcı "Uygulamayı aç" cümlesiyle mağazada
+    // "sandık" arıyor ve bulamıyordu (ı→i katlaması, ASO_2026_09.md).
+    // Bağlantı kodu da taşır; `/indir/` sayfası kodu görünür yazar.
+    final l10n = context.l10n;
+    final msg = l10n.partnerInviteMessage(
+      shortCode,
+      Magaza.indirBaglantisi(kaynak: 'invite', kampanya: 'ortak', kod: shortCode),
+    );
     final origin = ShareCardService.originOf(dugmeContext);
     try {
       await ShareCardService.shareText(
         msg,
-        subject: 'Sandık Ortak Daveti',
+        subject: l10n.partnerInviteSubject,
         origin: origin,
       );
       unawaited(AnalyticsService.instance.logPartnerInviteSent());

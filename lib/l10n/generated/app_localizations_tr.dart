@@ -3157,4 +3157,29 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get goalSettingsSubtitle =>
       'Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör';
+
+  @override
+  String partnerInviteMessage(String code, String link) {
+    return 'Merhaba! sandık portföy uygulamasında seninle ortak olmak istiyorum.\n\nOrtak kodun: $code\n\nUygulamayı indir, Profil → \"Ortak Kodu Gir\" bölümünden bu kodu gir:\n$link';
+  }
+
+  @override
+  String get partnerInviteSubject => 'sandık ortak daveti';
+
+  @override
+  String get notifTypeMonthly => 'AYLIK';
+
+  @override
+  String raceJoinedCount(int count, int min) {
+    return '$count kişi katıldı · sıralama $min kişide açılır';
+  }
+
+  @override
+  String raceRunningCount(int count) {
+    return '$count kişi yarışıyor';
+  }
+
+  @override
+  String get emptyPasteHint =>
+      'Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur.';
 }

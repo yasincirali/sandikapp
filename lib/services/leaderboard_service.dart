@@ -425,4 +425,23 @@ class LeaderboardService {
       return null;
     }
   }
+
+  /// k-anonimlik eşiği — `get_percentile_bucket` / `get_top_gainers`
+  /// (migration 0031, `k_min`). Sunucudaki sayı değişirse burası da.
+  static const kMinKatilimci = 8;
+
+  /// Yarış havuzunda kaç kişi var (son 24 saatte 30 günlük ROI yazan tekil
+  /// kullanıcı; migration 0067 `leaderboard_pool_size`).
+  ///
+  /// Eşik dolmadan "Yakında" demek özelliği ölü gösteriyordu; sayı
+  /// "3 kişi katıldı, 8'de açılır" diyebilmek için. Hata → null, UI sayı
+  /// yazmaz (uydurma sayı yok).
+  Future<int?> fetchPoolSize() async {
+    try {
+      final r = await Supabase.instance.client.rpc<dynamic>('leaderboard_pool_size');
+      return (r as num?)?.toInt();
+    } catch (_) {
+      return null;
+    }
+  }
 }

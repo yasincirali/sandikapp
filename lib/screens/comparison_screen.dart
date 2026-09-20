@@ -100,7 +100,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         for (final t in widget.initialTickers) {
           final hits = await SymbolSearchService.instance.search(t);
           final hit = hits.where((h) => h.ticker == t).firstOrNull;
-          if (hit != null && mounted) unawaited(_add(hit));
+          if (hit != null && mounted) CrashReporter.arkaPlan(_add(hit), reason: 'comparison_screen._add');
         }
       });
     }
@@ -693,7 +693,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     setState(() {});
     for (final s in _selected) {
       if (PortfolioSeries.isPortfolio(s.ticker)) {
-        unawaited(_load(s.ticker));
+        CrashReporter.arkaPlan(_load(s.ticker), reason: 'comparison_screen._load');
       }
     }
   }
@@ -710,7 +710,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     setState(() {});
     for (final s in _selected) {
       if (PortfolioSeries.isPortfolio(s.ticker)) {
-        unawaited(_load(s.ticker));
+        CrashReporter.arkaPlan(_load(s.ticker), reason: 'comparison_screen._load');
       }
     }
   }

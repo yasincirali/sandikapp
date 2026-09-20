@@ -295,4 +295,34 @@ class AnalyticsService {
   /// gönderilecek bir karşılığı yok demektir.
   Future<void> logPeriodSummaryViewed({required String period}) =>
       _log('period_summary_viewed', {'period': period});
+
+  // ── "Bugün" kartı ve hedef (2026-09-20) ─────────────────────────────────
+  //
+  // Kart "her gün değişen yüzey" olarak kuruldu; hangi satırın gerçekten
+  // dokunulduğunu bilmeden hangisinin kalacağına karar verilemez. Gösterim
+  // günde bir kez (kart her build'de yeniden kurulur, her build ayrı olay
+  // olmamalı — tekrar eleme `BugunKarti`'nda).
+  //
+  // [kind]: degisim | kapali | yesil | hedef | hedef_yok | olay_tuik |
+  //         olay_tatil | olay_aysonu | aylik
+  Future<void> logTodayRowShown({required String kind}) =>
+      _log('today_row_shown', {'kind': kind});
+
+  Future<void> logTodayRowTapped({required String kind}) =>
+      _log('today_row_tapped', {'kind': kind});
+
+  /// Hedef belirlendi / kaldırıldı. Tutar gönderilmez (mahremiyet);
+  /// yalnızca büyüklük kovası — "kim ne kadar" değil "kaç kişi kullanıyor".
+  Future<void> logGoalSet({required int amountTRY}) => _log(
+        'goal_set',
+        {
+          'bucket': amountTRY <= 0
+              ? 'removed'
+              : amountTRY < 500000
+                  ? 'lt_500k'
+                  : amountTRY < 2000000
+                      ? 'lt_2m'
+                      : 'gte_2m',
+        },
+      );
 }

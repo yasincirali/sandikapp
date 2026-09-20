@@ -105,6 +105,19 @@ const List<SurumNotu> surumNotlari = [
     yenilikler: [
       Yenilik(
         ikon: YenilikIkonu.genel,
+        baslik: 'Aylık özet bildirimi',
+        aciklama: 'Her ayın 1\'inde geçen ayın özeti cebine gelir; '
+            'dokununca Özet\'te getirin, enflasyon farkı ve en iyi varlığın '
+            'açılır. Sessiz saatlerine uyar.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
+        baslik: 'Paylaşımlarda indirme bağlantısı',
+        aciklama: 'Özet kartını ya da ortak davetini paylaştığında mesaja '
+            'indirme bağlantısı eklenir; karşı taraf mağazada aramaz.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
         baslik: 'Ana ekranda "Bugün" kartı',
         aciklama: 'Günün hareketi, kaç varlığının artıda olduğu, hedefine '
             'kalan yol ve yaklaşan tarihler (TÜİK enflasyon açıklaması, '

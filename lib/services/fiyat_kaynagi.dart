@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import 'price_service.dart';
+import 'crash_reporter.dart';
 
 /// **Fiyat kaynağı sözleşmesi — bir varlık HER YERDE aynı yerden beslenir.**
 ///
@@ -417,7 +418,7 @@ class OlcekHafizasi {
     // sonucunu verir; yazmak da zarar vermez, kaydı tazeler.
     _oranlar[_anahtar(sembol, kaynak)] = oran;
     // Diske de yaz — bir sonraki soğuk açılış bu oranla başlasın.
-    unawaited(_kaydet());
+    CrashReporter.arkaPlan(_kaydet(), reason: 'fiyat_kaynagi._kaydet');
   }
 
   /// Bilinen oran — yoksa `null`.

@@ -181,7 +181,7 @@ void main() async {
       //   - RemoteConfigService: getter'ları init edilmemişken default'lara
       //     düşer, yani erken okuma güvenli.
       // Hataları yutmuyoruz; yalnızca beklemiyoruz.
-      unawaited(_initDeferredServices());
+      CrashReporter.arkaPlan(_initDeferredServices(), reason: 'main._initDeferredServices');
     } catch (e, st) {
       // Firebase config dosyalari yoksa veya init başarısızsa
       // sessizce devam et; uygulama remote push + crashlytics olmadan çalışır.
@@ -210,7 +210,7 @@ void main() async {
     await NotificationService.instance.init(navigatorKey: appNavigatorKey);
     // Dış kaynaklı sandik:// bağlantıları (3.8). Bildirim servisinden SONRA:
     // hedefe gidiş `openAssetPerformance` üzerinden, o da navigatorKey ister.
-    unawaited(DeepLinkService.instance.init());
+    CrashReporter.arkaPlan(DeepLinkService.instance.init(), reason: 'main.DeepLinkService.init');
     // Yalnızca zemini şeffaf yap. İkon parlaklığı BURADA sabitlenmez:
     // `Brightness.light` (beyaz ikon) light temada açık zemin üzerinde
     // okunmuyordu. İkon rengi tema ile birlikte değişmeli, bu yüzden
@@ -884,7 +884,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Onboarding'den AYRI ve ondan sonra gelir: yeni kullanıcı tanıtım
         // turunu görür, sürüm notunu görmez (`yeniNotlar` ilk kurulumda boş
         // döner). Karar `SurumNotuService`'te; burada yalnızca tetiklenir.
-        unawaited(_yenilikleriKontrolEt());
+        CrashReporter.arkaPlan(_yenilikleriKontrolEt(), reason: 'main._yenilikleriKontrolEt');
         // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
         FxRateMigrationService.instance.runFor(user.id);
         // Leaderboard opt-in server-side hydration: kullanıcı başka bir cihazda
@@ -943,7 +943,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // ayarlarını ezmesine yol açıyordu.
         //
         // Beklenmez (unawaited): push kurulumunu ve açılışı yavaşlatmasın.
-        unawaited(syncSignalPreferencesOnLogin(ref));
+        CrashReporter.arkaPlan(syncSignalPreferencesOnLogin(ref), reason: 'main.syncSignalPreferencesOnLogin');
         return;
       }
 
@@ -1099,7 +1099,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
     // Widget: palet bayrağı yazılır ve hemen yenilenir. Değeri servis
     // `SurfaceTheme`'den kendisi okur — buradan bool GEÇİLMEZ.
-    unawaited(HomeWidgetService.instance.applyTheme());
+    CrashReporter.arkaPlan(HomeWidgetService.instance.applyTheme(), reason: 'main.HomeWidgetService.applyTheme');
 
     final la = LiveActivityService.instance;
     // Kilit ekranının SUNUCU ucu: tema satıra hemen yazılır.
@@ -1108,7 +1108,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // yazılmasını BEKLEMEZ: tema değişimi gösterim penceresi dışında
     // yapıldığında `sync` oturumu bitirip erken döner ve özet hiç
     // yazılmazdı — kullanıcı bulgusu "kill edince tema değişiyor" buydu.
-    unawaited(la.pushThemeToServer());
+    CrashReporter.arkaPlan(la.pushThemeToServer(), reason: 'main.la.pushThemeToServer');
     // Kilit ekranının YEREL ucu: ActivityKit'e update gitsin ki uygulama
     // önplandayken de anında dönsün.
     //
@@ -1118,10 +1118,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     if (_checkedUserId == null) return;
     final snapshot = ref.read(portfolioProvider).valueOrNull;
     if (snapshot != null && snapshot.assets.isNotEmpty) {
-      unawaited(la.sync(
+      CrashReporter.arkaPlan(la.sync(
         snapshot,
         hideBalance: ref.read(balanceHiddenProvider),
-      ));
+      ), reason: 'main.la.sync');
     }
   }
 
@@ -1146,9 +1146,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden) {
       _backgroundedAt = DateTime.now();
-      unawaited(_persistBackgroundedAt(_backgroundedAt));
+      CrashReporter.arkaPlan(_persistBackgroundedAt(_backgroundedAt), reason: 'main._persistBackgroundedAt');
     } else if (state == AppLifecycleState.resumed) {
-      unawaited(_persistBackgroundedAt(null));
+      CrashReporter.arkaPlan(_persistBackgroundedAt(null), reason: 'main._persistBackgroundedAt');
       // Arkadayken olan bir sistem görünümü değişimi burada yakalanır:
       // önplanda olmadığı için `didChangePlatformBrightness` onu bilinçli
       // olarak yutmuştu.
@@ -1170,14 +1170,14 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _backgroundedAt = null;
         // Öne dönüş açılış olarak sayılır; servis kısa arka plan
         // dönüşlerini kendi eler (bkz. RetentionTracker.oturumBoslugu).
-        unawaited(RetentionTracker.instance.recordLaunch(source: 'resume'));
+        CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'resume'), reason: 'main.RetentionTracker.recordLaunch');
         // Fiyat alarmı bildirimleri SUNUCUDA yazılır (0065) ve uygulama
         // arkadayken gelir; tazelenmezse kullanıcı push'u görüp uygulamayı
         // açtığında çan sayfası boş kalırdı. Sinyal listesi kendi akışında
         // zaten güncelleniyor.
         if (ref.read(authProvider).valueOrNull != null) {
-          unawaited(
-            ref.read(priceAlertNotificationProvider.notifier).refresh(),
+          CrashReporter.arkaPlan(
+            ref.read(priceAlertNotificationProvider.notifier).refresh(), reason: 'main.ref.read'
           );
         }
         // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
@@ -1267,7 +1267,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (ilkVarlikEklendi) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final ctx = appNavigatorKey.currentContext;
-          if (ctx != null) unawaited(WidgetInstallSheet.maybeShow(ctx));
+          if (ctx != null) CrashReporter.arkaPlan(WidgetInstallSheet.maybeShow(ctx), reason: 'main.WidgetInstallSheet.maybeShow');
         });
       }
 
@@ -1278,7 +1278,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // kaçınılmaz olarak birini atlar.
       final snapshotMs = next.valueOrNull;
       if (snapshotMs != null && snapshotMs.assets.isNotEmpty) {
-        unawaited(_kilometreTasiKontrol(snapshotMs));
+        CrashReporter.arkaPlan(_kilometreTasiKontrol(snapshotMs), reason: 'main._kilometreTasiKontrol');
       }
 
       // Ana ekran widget'ını tazele.
@@ -1310,10 +1310,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Karar artık [SurfaceTheme] içinde yaşar; iki servis de onu
         // getter üzerinden okur (`themeIsLight`), yani atanacak bir alan
         // kalmadı — itmeyi unutmak mümkün değil.
-        unawaited(HomeWidgetService.instance.updateWithChart(
+        CrashReporter.arkaPlan(HomeWidgetService.instance.updateWithChart(
           snapshot,
           hideBalance: hideBalance,
-        ));
+        ), reason: 'main.HomeWidgetService.updateWithChart');
         // iOS kilit ekranı / Dynamic Island. Aynı dinleyiciye bağlanır çünkü
         // aynı gerekçe geçerli: portföy 10'dan fazla yerden yazılıyor ve
         // her birine tek tek çağrı koymak kaçınılmaz olarak birini atlar.
@@ -1326,10 +1326,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         la.startMinute = ref.read(liveActivityStartProvider);
         la.endMinute = ref.read(liveActivityEndProvider);
         la.includeWeekend = ref.read(liveActivityWeekendProvider);
-        unawaited(LiveActivityService.instance.sync(
+        CrashReporter.arkaPlan(LiveActivityService.instance.sync(
           snapshot,
           hideBalance: hideBalance,
-        ));
+        ), reason: 'main.LiveActivityService.sync');
       }
     });
 

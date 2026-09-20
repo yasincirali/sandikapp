@@ -17,6 +17,7 @@ import 'deep_link_router.dart';
 import 'notification_service.dart';
 import 'retention_tracker.dart';
 import 'surface_theme.dart';
+import 'crash_reporter.dart';
 
 /// Telefonun ANA EKRANINDAKİ widget'a veri besler (uygulama dışı yüzey).
 ///
@@ -163,9 +164,9 @@ class HomeWidgetService {
       await _ensureInit();
       _clickSub = HomeWidget.widgetClicked.listen((uri) {
         if (uri == null) return;
-        unawaited(RetentionTracker.instance
-            .recordWidgetTap(surface: 'home_widget'));
-        unawaited(RetentionTracker.instance.recordLaunch(source: 'widget'));
+        CrashReporter.arkaPlan(RetentionTracker.instance
+            .recordWidgetTap(surface: 'home_widget'), reason: 'home_widget_service.recordWidgetTap');
+        CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'widget'), reason: 'home_widget_service.RetentionTracker.recordLaunch');
         // Uygulama AÇIKKEN gelen dokunuş: yeni ekran push EDİLMEZ, yalnızca
         // sekme değişir. Push etmek, kullanıcı zaten uygulamadayken üst üste
         // yığılan kopyalar üretirdi.

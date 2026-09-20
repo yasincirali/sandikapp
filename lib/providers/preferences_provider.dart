@@ -12,6 +12,7 @@ import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
 import '../config/pref_keys.dart';
 import '../models/yatirimci_seviyesi.dart';
+import '../services/crash_reporter.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -583,12 +584,12 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
     if (kDebugMode) {
       debugPrint('[signal_pref] ${type.name} sunucuya yazılamadı: $e');
     }
-    unawaited(FirebaseCrashlytics.instance.recordError(
+    CrashReporter.arkaPlan(FirebaseCrashlytics.instance.recordError(
       e,
       st,
       reason: 'signal_preferences upsert (${type.name})',
       fatal: false,
-    ));
+    ), reason: 'preferences_provider.FirebaseCrashlytics.recordError');
   }
 }
 

@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import 'fiyat_kaynagi.dart';
 import 'price_service.dart';
+import 'crash_reporter.dart';
 
 /// Varlık satırlarındaki mini trend grafiği (sparkline) için tek-sembol
 /// fiyat serisi sağlar.
@@ -131,7 +132,7 @@ class SparklineService {
       // Hata yutulur: prefetch bir kolaylıktır, başarısızlığı kullanıcıya
       // gösterilecek bir olay değil. Kart açıldığında `seriesFor` yine
       // denenir (boş cache girişi orada da yazılır).
-      unawaited(seriesFor(a));
+      CrashReporter.arkaPlan(seriesFor(a), reason: 'sparkline_service.seriesFor');
     }
   }
 

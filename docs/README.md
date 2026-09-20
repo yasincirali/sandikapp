@@ -25,6 +25,7 @@ Bu komut `_build_legal.py` içindeki sayfa listesindeki her Markdown'ı okur, or
 ```
 docs/
 ├── index.html               → https://yasincirali.github.io/sandikapp/
+├── indir/index.html         → /indir/ — indirme kapısı (paylaşım/davet bağlantıları; ?kod=, utm_*)
 ├── favicon.svg
 ├── privacy/index.html       → /privacy
 ├── privacy-en/index.html    → /privacy-en

@@ -111,8 +111,11 @@ class OnboardingScreen extends StatefulWidget {
   /// Katman [OnboardingTourHost] içinde açılır; tur zaten açıksa ikinci kez
   /// açılmaz. [onBitti] turun nasıl kapandığını söyler: `true` sonuna kadar
   /// gezildi, `false` "Atla" ile bırakıldı.
-  static void baslatTur({required void Function(bool tamamlandi) onBitti}) {
-    _Tur.baslat(onBitti: onBitti);
+  static void baslatTur({
+    required void Function(bool tamamlandi) onBitti,
+    bool kisa = false,
+  }) {
+    _Tur.baslat(onBitti: onBitti, kisa: kisa);
   }
 
   /// Tur açıksa KAPATIR — yalnızca entegrasyon testi için.
@@ -162,10 +165,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _turuAc() {
     if (!mounted || _acildi) return;
     _acildi = true;
-    _Tur.baslat(onBitti: (tamamlandi) async {
-      await OnboardingScreen.markCompleted(widget.userId);
-      if (mounted) widget.onComplete();
-    });
+    // İlk açılış KISA tur (bkz. `_kisaAdimlar`); tam tur Ayarlar'dan.
+    _Tur.baslat(
+      kisa: true,
+      onBitti: (tamamlandi) async {
+        await OnboardingScreen.markCompleted(widget.userId);
+        if (mounted) widget.onComplete();
+      },
+    );
   }
 
   @override
@@ -491,6 +498,43 @@ List<_Adim> _adimlariKur() {
   ];
 }
 
+/// İLK AÇILIŞ turu — beş adım (2026-09-20).
+///
+/// Tam tur 19 adım ve yeni kullanıcının ilk on dakikasını yiyordu; ölçü
+/// "kaç özellik anlattık" değil "ilk varlık ne kadar çabuk girildi". Bu tur
+/// yalnızca o yola çıkarır: toplam → bugün kartı → + tuşu → ekstre yapıştır.
+/// Kalan her şey Ayarlar › "Tanıtım turunu yeniden izle" ile tam tur olarak
+/// açılır ([OnboardingScreen.yenidenBaslat]) — uygulamanın güncel hâlini
+/// anlatma sorumluluğu (sürüm notu kuralı) tam turda kalır.
+///
+/// Son adım Varlık Ekle'yi AÇIK bırakır: "Sandığımı Aç" dendiğinde kullanıcı
+/// zaten yapıştırma tuşunun önündedir; tam turdaki gibi kapatıp "+ tuşuna
+/// dokun" demek bir adım geri gitmek olurdu.
+List<_Adim> _kisaAdimlar() {
+  final tam = {for (final a in _adimlariKur()) a.id: a};
+  return [
+    const _Adim(
+      id: 'karsilama',
+      baslik: 'Sandığına hoş geldin',
+      govde: 'Hisse, fon, döviz, altın — hepsi tek toplamda. Bir dakikada '
+          'ilk varlığını girelim; gerisini uygulama kendi anlatır.',
+    ),
+    tam['hero']!,
+    tam['bugun']!,
+    tam['ekle']!,
+    _Adim(
+      id: 'toplu_son',
+      hedef: TourTarget.topluEkle,
+      baslik: 'Hazırsın',
+      govde: 'En hızlı yol: aracı kurum ekstreni kopyala, "Toplu ekle" › '
+          'yapıştır; her satır bir varlık olur. Tek tek girmek istersen tür '
+          'seçmen yeter, fiyat kendiliğinden gelir.',
+      giris: (_) => _varlikEkleAc(),
+      dokunulabilir: false,
+    ),
+  ];
+}
+
 // ─── Tur denetleyicisi ───────────────────────────────────────────────────────
 
 /// Açık tur oturumu — adımlar ve kapanış geri çağrısı.
@@ -507,9 +551,15 @@ abstract final class _Tur {
 
   static bool get aktif => oturum.value != null;
 
-  static void baslat({required void Function(bool tamamlandi) onBitti}) {
+  static void baslat({
+    required void Function(bool tamamlandi) onBitti,
+    bool kisa = false,
+  }) {
     if (aktif) return;
-    oturum.value = _Oturum(adimlar: _adimlariKur(), onBitti: onBitti);
+    oturum.value = _Oturum(
+      adimlar: kisa ? _kisaAdimlar() : _adimlariKur(),
+      onBitti: onBitti,
+    );
     AnalyticsService.instance.logOnboardingStep(0);
   }
 

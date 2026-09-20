@@ -747,7 +747,14 @@
   "cpiWindowRange": "Ölçüm aralığı: {start} – {end}",
   "@cpiWindowRange": {
     "description": "TÜFE karşılaştırmasının gerçek pencere uçları",
-    "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
   },
   "periodCpi": "Enflasyon (TÜFE)",
   "pointDifference": "Aradaki fark",
@@ -1190,15 +1197,30 @@
   "deleteAssetWarning": "Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.",
   "alarmAlsoDeleteTitle": "{n, plural, =1{Alarm da silinsin mi?} other{{n} alarm da silinsin mi?}}",
   "@alarmAlsoDeleteTitle": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "alarmAlsoDeleteBody": "{n, plural, =1{{name} silindi. Bu sembol için kurduğun alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilir.} other{{name} silindi. Bu sembol için kurduğun {n} alarm duruyor. Portföyünde olmasa da fiyatı izlemeye devam edebilirler.}}",
   "@alarmAlsoDeleteBody": {
-    "placeholders": { "n": { "type": "int" }, "name": { "type": "String" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "alarmAlsoDeleteConfirm": "{n, plural, =1{Alarmı sil} other{Alarmları sil}}",
   "@alarmAlsoDeleteConfirm": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "alarmKeep": "Alarm kalsın",
   "alarmDeleteFailed": "Alarmlar silinemedi",
@@ -1962,7 +1984,14 @@
   "recapInflationWindow": "Ölçüm: {start} – {end} (TÜFE aylık yayımlandığı için pencere son açıklanan ayda biter)",
   "@recapInflationWindow": {
     "description": "Yil sonu ozetinde enflasyon karsilastirmasinin gercek pencere uclari",
-    "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
   },
   "recapBestAsset": "En çok kazandıran",
   "recapReturnedPct": "Bugüne kadar %{pct} getirdi.",
@@ -2073,7 +2102,13 @@
   "notifTypeWeekly": "HAFTALIK",
   "notifTypeReminder": "HATIRLATMA",
   "notifToday": "Bugün {time}",
-  "@notifToday": {"placeholders": {"time": {"type": "String"}}},
+  "@notifToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "reviewPromptTitle": "sandık'ı seviyor musun?",
   "reviewPromptBody": "Kısa bir puan, uygulamanın daha çok yatırımcıya ulaşmasını sağlar. İstersen sonra da verebilirsin.",
   "reviewPromptYes": "Evet, değerlendir",
@@ -2200,5 +2235,38 @@
   "goalHint": "Yalnızca gösterim için; hesapları değiştirmez.",
   "goalInvalid": "Geçerli bir tutar gir",
   "goalRemove": "Hedefi kaldır",
-  "goalSettingsSubtitle": "Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör"
+  "goalSettingsSubtitle": "Bir tutar belirle; ilerlemeyi ana ekrandaki Bugün kartında gör",
+  "partnerInviteMessage": "Merhaba! sandık portföy uygulamasında seninle ortak olmak istiyorum.\n\nOrtak kodun: {code}\n\nUygulamayı indir, Profil → \"Ortak Kodu Gir\" bölümünden bu kodu gir:\n{link}",
+  "@partnerInviteMessage": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "partnerInviteSubject": "sandık ortak daveti",
+  "notifTypeMonthly": "AYLIK",
+  "raceJoinedCount": "{count} kişi katıldı · sıralama {min} kişide açılır",
+  "@raceJoinedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "raceRunningCount": "{count} kişi yarışıyor",
+  "@raceRunningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "emptyPasteHint": "Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur."
 }

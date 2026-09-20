@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sandık — İndir</title>
+<meta name="description" content="sandık portföy takibi uygulamasını App Store'dan indir.">
+<meta name="apple-itunes-app" content="app-id=6786837699">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<!--
+  İndirme kapısı. Paylaşım kartı ve ortak daveti buraya bağlanır
+  (lib/config/magaza.dart). Neden doğrudan mağaza URL'si değil:
+  · iOS/Android ayrımını sayfa yapar; Play yayını başlayınca eski
+    paylaşımlardaki link değişmeden çalışmaya devam eder.
+  · `?kod=XXXX` ortak kodunu görünür yazar — alan kişi uygulamayı kurduktan
+    sonra kodu mesajın içinde aramaz.
+  · utm_* parametreleri mağaza linkine aynen aktarılır (App Store
+    Connect › Analytics kampanya ölçümü için `ct`/`pt` yerine utm yeterli;
+    Play Console'da utm_source doğrudan görünür).
+  Play henüz yayında değil: Android'e "yakında" + iOS bağlantısı.
+-->
+<style>
+:root { --bg:#0A1E15; --surface:#10281E; --border:rgba(255,255,255,0.06); --text:rgba(255,255,255,0.90); --text-58:rgba(255,255,255,0.58); --amber:#F5A623; --gold:#F5C842; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','DM Sans',sans-serif; line-height:1.5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.card { max-width:420px; width:100%; text-align:center; }
+.logo { width:88px; height:88px; background:linear-gradient(135deg,var(--gold),var(--amber)); border-radius:22px; display:inline-flex; align-items:center; justify-content:center; font-weight:900; color:#0A1E15; font-size:48px; margin-bottom:20px; box-shadow:0 12px 40px rgba(245,166,35,0.25); }
+h1 { font-size:34px; font-weight:800; letter-spacing:-1px; margin-bottom:6px; }
+p { color:var(--text-58); font-size:15px; }
+.kod { margin:24px 0 8px; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; display:none; }
+.kod b { display:block; font-size:28px; letter-spacing:4px; color:var(--gold); margin-top:6px; font-variant-numeric:tabular-nums; }
+.btn { display:block; margin:24px auto 0; background:var(--amber); color:#0A1E15; font-weight:800; text-decoration:none; padding:16px 20px; border-radius:14px; font-size:17px; }
+.btn.ikincil { background:transparent; color:var(--text-58); border:1px solid var(--border); font-weight:600; margin-top:12px; }
+.not { font-size:12px; color:rgba(255,255,255,0.36); margin-top:28px; }
+a.geri { color:var(--text-58); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">S</div>
+  <h1>sandık</h1>
+  <p>Hisse, fon, döviz, altın — tek toplamda. Getirin enflasyonu geçti mi, tek bakışta.</p>
+
+  <div class="kod" id="kod">
+    <span>Ortak kodun</span>
+    <b id="kodDeger"></b>
+    <p style="margin-top:8px">Uygulamayı kur, Profil → "Ortak Kodu Gir" bölümüne bu kodu yaz.</p>
+  </div>
+
+  <a class="btn" id="ios" href="https://apps.apple.com/tr/app/id6786837699">App Store'dan indir</a>
+  <a class="btn ikincil" id="android" href="#" hidden>Android sürümü yakında — bekleme listesine yaz</a>
+
+  <p class="not"><a class="geri" href="../">sandık hakkında</a> · Ücretsiz · Yatırım tavsiyesi değildir</p>
+</div>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var utm = '';
+  q.forEach(function (v, k) { if (k.indexOf('utm_') === 0) utm += (utm ? '&' : '?') + encodeURIComponent(k) + '=' + encodeURIComponent(v); });
+  var ios = document.getElementById('ios');
+  ios.href += utm;
+
+  var kod = (q.get('kod') || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 16);
+  if (kod) {
+    document.getElementById('kodDeger').textContent = kod;
+    document.getElementById('kod').style.display = 'block';
+  }
+
+  var ua = navigator.userAgent || '';
+  var android = /Android/i.test(ua);
+  var iosCihaz = /iPhone|iPad|iPod/i.test(ua);
+  if (android) {
+    // Play yayını başlayınca: href = play.google.com/store/apps/details?id=com.sandik.app + utm
+    var a = document.getElementById('android');
+    a.hidden = false;
+    a.href = 'mailto:sandikapp.destek@gmail.com?subject=' + encodeURIComponent('sandık Android bekleme listesi');
+  } else if (iosCihaz && !kod) {
+    // Kodsuz iOS ziyaretçisini bekletmeden mağazaya geçir; kodlu ziyaretçi
+    // önce kodu görsün (mağazadan dönünce sayfa kapanmış olabilir).
+    setTimeout(function () { location.replace(ios.href); }, 600);
+  }
+})();
+</script>
+</body>
+</html>

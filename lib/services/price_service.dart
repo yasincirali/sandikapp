@@ -370,7 +370,7 @@ class PriceService {
     // Birincil kaynaktan bir şey geldiyse kalıcı belleği tazele.
     if (results.keys
         .any((k) => _sonKaynak[k] == FiyatKaynagiEtiketi.yurtIci)) {
-      unawaited(_birincilHafizayiKaydet());
+      CrashReporter.arkaPlan(_birincilHafizayiKaydet(), reason: 'price_service._birincilHafizayiKaydet');
     }
 
     results.addAll(cachedHits);
