@@ -301,10 +301,11 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.heroKart,
       baslik: 'Toplam net varlığın',
       govde: 'Tüm varlıkların tek toplamda; altındaki satır bugün ne kadar '
-          'kazandığını ya da kaybettiğini söyler. Ortağın varsa başlıktaki '
-          'çipe dokunup Ben / ortak / Birlikte seçersin (her birinin toplamı '
-          'listede yazar); kartı sağa-sola kaydırmak da sıradakine geçer. '
-          'İlk varlığını eklediğinde burası dolmaya başlar.',
+          'kazandığını ya da kaybettiğini söyler. Ortağın varsa kartı '
+          'sağa-sola kaydır: sıradaki kişinin kartı yandan gelir, alttaki '
+          'noktalar kimde olduğunu gösterir. Başlıktaki çip de aynı işi '
+          'yapar; listede herkesin toplamı yazar. İlk varlığını '
+          'eklediğinde burası dolmaya başlar.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
     ),
@@ -359,7 +360,8 @@ List<_Adim> _adimlariKur() {
       rozet: 'YENİ',
       baslik: 'Bildirim merkezi',
       govde: 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
-          'toplanır. Bir varlığın ekranındaki zilden fiyat alarmı '
+          'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir '
+          'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
           'uygulama kapalıyken de çalışır.',
       giris: (_) => _sekmeyeGec(0),
@@ -426,7 +428,8 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.sekmePerformans,
       baslik: 'Performans sekmesi',
       govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden bir yıla kadar her '
-          'dönemi görebilirsin.',
+          'dönemi görebilirsin. Özet üç başlıkta: BU DÖNEM, VARLIKLAR ve '
+          'istersen açtığın DERİNLİK.',
       gorev: 'Performans sekmesine dokun',
       gorevBitti: 'Performans açıldı',
       bitti: (_) => _sekmede(3),
@@ -480,7 +483,9 @@ List<_Adim> _adimlariKur() {
       baslik: 'Eşinle tek portföy',
       govde: 'Kodunu eşine gönder ya da onunkini gir. Karşı taraf '
           'onayladığında portföyleriniz tek ekranda birleşir; "Birlikte" '
-          'ikinizin toplamı, "Ben" yalnız senin. İstediğiniz an ayrılırsınız.',
+          'herkesin toplamı, "Ben" yalnız senin. Birden çok ortağın olabilir; '
+          'ana ekranda kartı kaydırarak aralarında geçersin. İstediğiniz an '
+          'ayrılırsınız.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
     ),
@@ -488,9 +493,9 @@ List<_Adim> _adimlariKur() {
       id: 'ayarlar',
       hedef: TourTarget.ayarlar,
       baslik: 'Ayarlar',
-      govde: 'Bildirimler, sinyal ayarları, fiyat alarmları, tema, sessiz '
-          'saatler ve yasal belgeler. Bu turu da buradan yeniden '
-          'izleyebilirsin.',
+      govde: 'Bildirimler, sinyal ayarları, günlük brifingin saati (sabah / '
+          'akşam), fiyat alarmları, tema, sessiz saatler ve yasal belgeler. '
+          'Bu turu da buradan yeniden izleyebilirsin.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
     ),
