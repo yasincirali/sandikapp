@@ -574,7 +574,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: TourAnchor(
                 target: TourTarget.piyasaSeridi,
                 child: PiyasaSeridi(
-                  padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.smd),
+                  padding: EdgeInsets.symmetric(horizontal: hp),
                 ),
               ),
             ),

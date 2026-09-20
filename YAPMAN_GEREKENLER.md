@@ -20,8 +20,11 @@ brifing saati (sabah/akşam). Sunucu: migration `0068` + `check-price-alerts`,
 `daily-brief`, `fetch-inflation` fonksiyonları (deploy'u Claude koşar).
 
 ### Cihazda (TestFlight, 10 dk)
-1. **Piyasa şeridi** — ana ekranda hero kartın ÜSTÜNDE dört kutu: Dolar,
-   Euro, Gram altın, BIST 100; fiyat + günlük yüzde (renkli). Kutu yoksa
+1. **Piyasa bandı** — ana ekranda hero kartın ÜSTÜNDE 30pt'lik kayan bant:
+   Dolar · Euro · Gram altın · BIST 100, fiyat + günlük yüzde (▲ yeşil /
+   ▼ kırmızı), soldan sağa sürekli akar (~17 sn'de bir tur). Dokun → durur
+   ve elle kaydırılır; tekrar dokun → akar. iOS Ayarlar › Erişilebilirlik ›
+   Hareket › "Hareketi azalt" açıkken bant durağan olmalı. Bant hiç yoksa
    fiyat kaynağı düşmüş demektir, söyle. Ayarlar › Tanıtım turunu yeniden
    izle → "Piyasa bir bakışta" adımı gelmeli (YENİ rozeti).
 2. **Alarm önerisi** — + ile bir hisse/altın ekle ve kaydet. Portföy'e
