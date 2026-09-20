@@ -1,0 +1,61 @@
+Gold, dollars or stocks — which one really paid off? sandık brings them together on one screen and tells you one thing clearly: what you actually earned, and whether you beat inflation.
+
+Most trackers subtract the purchase price from today's price and call it "profit". sandık adds commissions to your cost and dividends to your gains. The number you see is the number in your pocket.
+
+REAL RETURN VS. INFLATION
+• Your portfolio next to Turkey's official CPI (TurkStat) — 1 month, 6 months, 1 year
+• Your return, inflation and the gap, each shown separately
+• Green if you beat inflation, red if you didn't
+• Data from TurkStat / the Central Bank — never estimated
+
+WHAT YOU CAN TRACK
+• Turkish stocks (BIST) and mutual funds (TEFAS)
+• Currencies — USD, EUR, GBP
+• Gold (gram, quarter, half, full, Republic and Ata coins), silver
+• Commodities
+• Prices update automatically; enter your own price when you prefer
+• Paste a broker statement and import everything at once
+
+TRUE PROFIT & LOSS
+• Purchase commissions included in cost
+• Cash dividends counted as gains
+• Backdated purchases — your history starts on the right day
+• Foreign-currency assets use the exchange rate on the purchase date
+• Realized profit from sales shown separately
+
+SOMETHING NEW EVERY DAY
+• "Today" card: today's move, how many holdings are in the green, distance to your goal, upcoming inflation releases and market holidays
+• Set a portfolio goal and watch progress daily
+• Price alerts: get notified when a target price is hit
+• Morning briefing and weekly summary notifications — quiet hours are yours to set
+• Home screen widget and Lock Screen Live Activity (iOS)
+
+PERFORMANCE
+• Explore your history on a professional chart — line or candles, pinch to zoom, crosshair
+• Day, week, month, year — returns over any range
+• See how much each holding contributed
+• Compare your portfolio with BIST 100, the dollar and gold
+• Balance your weights with the allocation chart
+• Show amounts in USD, EUR or grams of gold
+
+SHARED PORTFOLIO
+• Track the same portfolio with your spouse, family or business partner
+• Everyone's contribution and return calculated separately
+• End the partnership whenever you like
+
+SHARE
+• Share a period summary as a visual card — amounts never appear, only percentages
+• Year-end "sandık Recap"
+
+PRIVACY & SECURITY
+• Sign in with Apple
+• Biometric lock (Face ID / Touch ID)
+• Hide your balance with one tap
+• The app hides itself in the task switcher
+• Delete your account and all data at any time; export your data as JSON
+• KVKK and GDPR compliant
+
+Open your sandık and see what you earned.
+
+---
+sandık does not provide investment advice. Data is for information only; consult a professional before making investment decisions.
