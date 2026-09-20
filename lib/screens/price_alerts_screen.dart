@@ -87,6 +87,11 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: c.amberFill,
         foregroundColor: c.onAmber,
+        // Tema FAB'ı `CircleBorder` yapıyor (main.dart); uzatılmış FAB'a da
+        // uygulanınca simge ve yazı dairenin dışına taşıyordu (kullanıcı
+        // ekran görüntüsü, 2026-09-21). Uzatılmış biçim stadyum ister.
+        shape: const StadiumBorder(),
+        extendedPadding: const EdgeInsets.symmetric(horizontal: SandikSpace.lgs),
         onPressed: () => alarmKurAkisi(context, ref, adaylar: _adaylar()),
         icon: const Icon(Icons.add_alert_rounded),
         label: Text(context.l10n.createAlert),
