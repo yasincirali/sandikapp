@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -123,6 +124,47 @@ void main() {
   // Tarih aralığı `DateFormat(..., 'tr_TR')` ile biçimlenir; locale verisi
   // yüklenmeden DateFormat kurulamaz.
   setUpAll(() => initializeDateFormatting('tr_TR'));
+
+  group('Material atası olmayan iskele', () {
+    // Performans sekmesi CupertinoPageScaffold altında yaşar; Derinlik
+    // başlığındaki InkWell Material atası bulamayınca cihazda kırmızı
+    // "No Material widget found" bastı (2026-09-21, ekran görüntüsü).
+    // Widget kendi Material'ını taşımalı — burada iskele kasıtlı olarak
+    // Material vermez.
+    testWidgets('Derinlik başlığı Cupertino iskelesinde çizilir ve açılır',
+        (t) async {
+      t.view.physicalSize = const Size(390, 1400);
+      t.view.devicePixelRatio = 1.0;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(
+            brightness: Brightness.light,
+            extensions: const [SandikPalette.light],
+          ),
+          home: CupertinoPageScaffold(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              // Derinlik bölümü yalnızca içerik varsa çizilir; 1Y'de
+              // karakter kartı onu doldurur.
+              child: PeriodSummaryView(
+                summary: _ozet(period: SummaryPeriod.birYil),
+                karakter: PortfolioCharacter.dengeli,
+                derinlikAcik: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+      expect(find.byType(InkWell), findsOneWidget);
+
+      await t.tap(find.byType(InkWell));
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+    });
+  });
 
   group('kazanç tonu', () {
     testWidgets('ana rakam ve yüzde rozeti çizilir', (t) async {

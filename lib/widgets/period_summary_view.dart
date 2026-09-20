@@ -5,8 +5,7 @@ import '../models/asset_type.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/contribution_history_service.dart';
 import '../services/daily_summary.dart' show DailySummary;
-import '../services/insight_metrics_service.dart'
-    show Concentration, Drawdown;
+import '../services/insight_metrics_service.dart' show Concentration, Drawdown;
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart' show PortfolioCharacter, RecapAsset;
 import '../theme/sandik.dart';
@@ -144,8 +143,7 @@ class PeriodSummaryView extends StatelessWidget {
       children: [
         SandikSectionHeader(title: l10n.sectionThisPeriod),
         const SizedBox(height: SandikSpace.sm),
-        _AnaRakamKarti(
-            summary: summary, uzunDonemPct: uzunDonemPct, baz: baz),
+        _AnaRakamKarti(summary: summary, uzunDonemPct: uzunDonemPct, baz: baz),
         const SizedBox(height: SandikSpace.smd),
         _KopruKarti(summary: summary, baz: baz),
         ..._arali(g.buDonem, once: true),
@@ -330,7 +328,8 @@ class _AnaRakamKarti extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  context.l10n.periodMarketReturn(donemEtiketi(context.l10n, s.period.label)),
+                  context.l10n.periodMarketReturn(
+                      donemEtiketi(context.l10n, s.period.label)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style:
@@ -490,7 +489,9 @@ class _KopruKarti extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
             baz: baz,
-            etiket: s.period.intraday ? context.l10n.todayWord : context.l10n.nowWord,
+            etiket: s.period.intraday
+                ? context.l10n.todayWord
+                : context.l10n.nowWord,
             deger: son,
             oran: son.abs() / enBuyuk,
             // Marka amberi METİN rengi olarak kullanılır; zemin amberFill
@@ -946,7 +947,8 @@ class _ReelGetiriKarti extends StatelessWidget {
             const SizedBox(height: SandikSpace.smd),
             Divider(color: c.hairline, height: 1),
             const SizedBox(height: SandikSpace.smd),
-            _KucukSatir(etiket: context.l10n.nominalReturn, deger: fmtPct(nominal!)),
+            _KucukSatir(
+                etiket: context.l10n.nominalReturn, deger: fmtPct(nominal!)),
             const SizedBox(height: SandikSpace.xs2),
             _KucukSatir(etiket: context.l10n.periodCpi, deger: fmtPct(tufe!)),
             if (fark != null) ...[
@@ -1004,14 +1006,14 @@ class _EnflasyonBekleniyorKarti extends StatelessWidget {
                 children: [
                   Text(
                     context.l10n.cpiNotLoaded,
-                    style: context.t.bodyMedium
-                        ?.copyWith(color: context.c.text58),
+                    style:
+                        context.t.bodyMedium?.copyWith(color: context.c.text58),
                   ),
                   const SizedBox(height: SandikSpace.xs),
                   Text(
                     context.l10n.cpiNotLoadedBody,
-                    style: context.t.bodySmall
-                        ?.copyWith(color: context.c.text36),
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),
                 ],
               ),
@@ -1753,7 +1755,8 @@ class XirrKarti extends StatelessWidget {
                     ?.copyWith(color: ton, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: SandikSpace.sm),
-              Text(fmtPct(xirr), style: context.t.numMedium.copyWith(color: ton)),
+              Text(fmtPct(xirr),
+                  style: context.t.numMedium.copyWith(color: ton)),
             ],
           ),
           const SizedBox(height: SandikSpace.xs),
@@ -1873,7 +1876,8 @@ class _BosDurum extends StatelessWidget {
             Icon(Icons.timelapse_rounded, size: 28, color: context.c.text36),
             const SizedBox(height: SandikSpace.smd),
             Text(
-              context.l10n.notEnoughHistory(donemEtiketi(context.l10n, period.label)),
+              context.l10n
+                  .notEnoughHistory(donemEtiketi(context.l10n, period.label)),
               textAlign: TextAlign.center,
               style: context.t.bodyMedium?.copyWith(color: context.c.text58),
             ),
@@ -1920,37 +1924,43 @@ class _DerinlikBolumuState extends State<_DerinlikBolumu> {
           button: true,
           expanded: _acik,
           label: l10n.sectionDepth,
-          child: InkWell(
-            onTap: () => setState(() => _acik = !_acik),
-            borderRadius: BorderRadius.circular(SandikRadius.sm),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: SandikTouch.min),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SandikSectionHeader(title: l10n.sectionDepth),
-                        Text(
-                          l10n.sectionDepthHint,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.bodySmall
-                              ?.copyWith(color: context.c.text58),
-                        ),
-                      ],
+          // Performans sekmesi CupertinoPageScaffold altında; InkWell'in
+          // mürekkep katmanı için Material atası şart, yoksa cihazda kırmızı
+          // "No Material widget found" (2026-09-21, ekran görüntüsü).
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: () => setState(() => _acik = !_acik),
+              borderRadius: BorderRadius.circular(SandikRadius.sm),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: SandikTouch.min),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SandikSectionHeader(title: l10n.sectionDepth),
+                          Text(
+                            l10n.sectionDepthHint,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.t.bodySmall
+                                ?.copyWith(color: context.c.text58),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  AnimatedRotation(
-                    turns: _acik ? 0.5 : 0,
-                    duration: SandikMotion.stateOf(context),
-                    curve: SandikMotion.enter,
-                    child: Icon(Icons.expand_more_rounded,
-                        color: context.c.text58),
-                  ),
-                ],
+                    AnimatedRotation(
+                      turns: _acik ? 0.5 : 0,
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      child: Icon(Icons.expand_more_rounded,
+                          color: context.c.text58),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
