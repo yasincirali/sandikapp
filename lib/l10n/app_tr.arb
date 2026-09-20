@@ -2249,7 +2249,7 @@
   },
   "partnerInviteSubject": "sandık ortak daveti",
   "notifTypeMonthly": "AYLIK",
-  "raceJoinedCount": "{count} kişi katıldı · sıralama {min} kişide açılır",
+  "raceJoinedCount": "{count} kişi bugün yarışta · sıralama {min} kişide açılır",
   "@raceJoinedCount": {
     "placeholders": {
       "count": {
@@ -2260,7 +2260,7 @@
       }
     }
   },
-  "raceRunningCount": "{count} kişi yarışıyor",
+  "raceRunningCount": "{count} kişi bugün yarışıyor",
   "@raceRunningCount": {
     "placeholders": {
       "count": {

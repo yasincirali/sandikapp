@@ -5429,13 +5429,13 @@ abstract class AppLocalizations {
   /// No description provided for @raceJoinedCount.
   ///
   /// In tr, this message translates to:
-  /// **'{count} kişi katıldı · sıralama {min} kişide açılır'**
+  /// **'{count} kişi bugün yarışta · sıralama {min} kişide açılır'**
   String raceJoinedCount(int count, int min);
 
   /// No description provided for @raceRunningCount.
   ///
   /// In tr, this message translates to:
-  /// **'{count} kişi yarışıyor'**
+  /// **'{count} kişi bugün yarışıyor'**
   String raceRunningCount(int count);
 
   /// No description provided for @emptyPasteHint.

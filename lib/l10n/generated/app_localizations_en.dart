@@ -3180,12 +3180,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String raceJoinedCount(int count, int min) {
-    return '$count joined · ranking opens at $min';
+    return '$count racing today · ranking opens at $min';
   }
 
   @override
   String raceRunningCount(int count) {
-    return '$count people racing';
+    return '$count racing today';
   }
 
   @override

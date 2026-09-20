@@ -3171,12 +3171,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String raceJoinedCount(int count, int min) {
-    return '$count kişi katıldı · sıralama $min kişide açılır';
+    return '$count kişi bugün yarışta · sıralama $min kişide açılır';
   }
 
   @override
   String raceRunningCount(int count) {
-    return '$count kişi yarışıyor';
+    return '$count kişi bugün yarışıyor';
   }
 
   @override

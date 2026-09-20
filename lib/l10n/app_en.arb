@@ -2249,7 +2249,7 @@
   },
   "partnerInviteSubject": "sandık partner invite",
   "notifTypeMonthly": "MONTHLY",
-  "raceJoinedCount": "{count} joined · ranking opens at {min}",
+  "raceJoinedCount": "{count} racing today · ranking opens at {min}",
   "@raceJoinedCount": {
     "placeholders": {
       "count": {
@@ -2260,7 +2260,7 @@
       }
     }
   },
-  "raceRunningCount": "{count} people racing",
+  "raceRunningCount": "{count} racing today",
   "@raceRunningCount": {
     "placeholders": {
       "count": {
