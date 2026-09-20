@@ -117,7 +117,7 @@ void main() {
     'lib/screens/watchlist_screen.dart': 8,
     'lib/models/asset_type.dart': 9,
     'lib/screens/settings_screen.dart': 12,
-    'lib/screens/profile_screen.dart': 14,
+    'lib/screens/profile_screen.dart': 11,
     'lib/screens/signal_settings_screen.dart': 19,
     'lib/screens/add_asset_screen.dart': 20,
     'lib/screens/comparison_screen.dart': 23,

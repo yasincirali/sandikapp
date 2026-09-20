@@ -36,6 +36,20 @@ export function kanaryaBildirilmeliMi(
   return farkMs >= sessizlikSaat * 3600_000;
 }
 
+/**
+ * KISMİ arıza: sembollerin yarısından azı fiyatlandı mı?
+ *
+ * 2026-09-19'da fon alarmları (TEFAS) 9 sembolün 6'sında sessizce
+ * fiyatlanmıyordu; "hiçbiri fiyatlanamadı" kanaryası susuyordu çünkü
+ * altın/döviz fiyatlanıyordu. Tek sembollü havuzda oran anlamsız — en az
+ * iki sembol gerekir; tam arıza (0 fiyat) zaten öbür yoldan bağırır.
+ */
+export function kanaryaKismiMi(fiyatlanan: number, toplam: number): boolean {
+  if (toplam < 2) return false;
+  if (fiyatlanan <= 0) return false;
+  return fiyatlanan * 2 < toplam;
+}
+
 export type KanaryaSonucu = {
   /** db_logs satırı yazıldı mı */
   kaydedildi: boolean;
@@ -49,14 +63,25 @@ export async function fiyatKaynagiKanaryasi(
   args: {
     kaynak: string;
     alarmSayisi: number;
+    /** Fiyatlanamayan semboller (kısmi arızada yalnızca eksikler). */
     semboller: string[];
+    /**
+     * Kısmi arıza: kaç sembol fiyatlandı. Verilmezse TAM arıza (hiçbiri).
+     * Mesaj ve kayıt buna göre kurulur; sessizlik penceresi ortak — kısmi
+     * ve tam arıza aynı kaynağın aynı alarmıdır, ikisine ayrı push yağmaz.
+     */
+    fiyatlanan?: number;
     /** null → kuru koşu / FCM yok: yalnızca kayıt */
     fcm: { projectId: string; serviceAccountJson: string; channelId: string } | null;
   },
 ): Promise<KanaryaSonucu> {
-  const { kaynak, alarmSayisi, semboller, fcm } = args;
+  const { kaynak, alarmSayisi, semboller, fcm, fiyatlanan } = args;
+  const kismi = fiyatlanan !== undefined && fiyatlanan > 0;
+  const ozet = kismi
+    ? `${semboller.length} sembol fiyatlanamadı (${fiyatlanan} fiyatlandı)`
+    : `${semboller.length} sembolün hiçbiri fiyatlanamadı`;
   console.error(
-    `[kanarya] ${kaynak}: ${alarmSayisi} alarm bekliyor ama ${semboller.length} sembolün hiçbiri fiyatlanamadı: ${semboller.join(', ')}`,
+    `[kanarya] ${kaynak}: ${alarmSayisi} alarm bekliyor ama ${ozet}: ${semboller.join(', ')}`,
   );
 
   // Son kayıt — sessizlik penceresi için. Kayıt sorgusu düşerse bildirim
@@ -85,7 +110,11 @@ export async function fiyatKaynagiKanaryasi(
       table_name: 'price_alerts',
       op: 'kanarya',
       request_json: { semboller },
-      response_json: { alarmSayisi, mesaj: 'fiyat kaynağı boş döndü' },
+      response_json: {
+        alarmSayisi,
+        fiyatlanan: fiyatlanan ?? 0,
+        mesaj: kismi ? 'fiyat kaynağı kısmi döndü' : 'fiyat kaynağı boş döndü',
+      },
       duration_ms: 0,
       is_error: true,
     });
@@ -122,7 +151,7 @@ export async function fiyatKaynagiKanaryasi(
         projectId: fcm.projectId,
         token: t.token,
         title: 'sandık kanarya',
-        body: `${kaynak}: ${alarmSayisi} alarm bekliyor, fiyat kaynağı boş döndü.`,
+        body: `${kaynak}: ${alarmSayisi} alarm bekliyor, ${ozet}.`,
         // Çağıranın kanalı: istemcide kayıtlı bir kanal olsun ki Android
         // bildirimi varsayılana düşürmesin.
         channelId: fcm.channelId,

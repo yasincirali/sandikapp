@@ -747,7 +747,14 @@
   "cpiWindowRange": "Measured: {start} – {end}",
   "@cpiWindowRange": {
     "description": "Actual window ends of the CPI comparison",
-    "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
   },
   "periodCpi": "Inflation (CPI)",
   "pointDifference": "Difference",
@@ -1190,15 +1197,30 @@
   "deleteAssetWarning": "This is not a sale — the asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.",
   "alarmAlsoDeleteTitle": "{n, plural, =1{Delete the alert too?} other{Delete the {n} alerts too?}}",
   "@alarmAlsoDeleteTitle": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "alarmAlsoDeleteBody": "{n, plural, =1{{name} was deleted. The alert you set for this symbol is still active. It can keep watching the price even though you no longer hold it.} other{{name} was deleted. The {n} alerts you set for this symbol are still active. They can keep watching the price even though you no longer hold it.}}",
   "@alarmAlsoDeleteBody": {
-    "placeholders": { "n": { "type": "int" }, "name": { "type": "String" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "alarmAlsoDeleteConfirm": "{n, plural, =1{Delete alert} other{Delete alerts}}",
   "@alarmAlsoDeleteConfirm": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "alarmKeep": "Keep alert",
   "alarmDeleteFailed": "Could not delete alerts",
@@ -1962,7 +1984,14 @@
   "recapInflationWindow": "Measured: {start} – {end} (CPI is published monthly, so the window ends at the last released month)",
   "@recapInflationWindow": {
     "description": "Yil sonu ozetinde enflasyon karsilastirmasinin gercek pencere uclari",
-    "placeholders": { "start": {"type": "String"}, "end": {"type": "String"} }
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
   },
   "recapBestAsset": "Biggest winner",
   "recapReturnedPct": "It returned {pct}% so far.",
@@ -2073,7 +2102,13 @@
   "notifTypeWeekly": "WEEKLY",
   "notifTypeReminder": "REMINDER",
   "notifToday": "Today {time}",
-  "@notifToday": {"placeholders": {"time": {"type": "String"}}},
+  "@notifToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "reviewPromptTitle": "Enjoying sandık?",
   "reviewPromptBody": "A quick rating helps more investors find the app. You can always do it later.",
   "reviewPromptYes": "Yes, rate it",
@@ -2200,5 +2235,38 @@
   "goalHint": "Display only; it does not change any calculation.",
   "goalInvalid": "Enter a valid amount",
   "goalRemove": "Remove goal",
-  "goalSettingsSubtitle": "Pick a target; track progress on the Today card"
+  "goalSettingsSubtitle": "Pick a target; track progress on the Today card",
+  "partnerInviteMessage": "Hi! I'd like to share my sandık portfolio with you.\n\nYour partner code: {code}\n\nInstall the app, then enter this code under Profile → \"Enter Partner Code\":\n{link}",
+  "@partnerInviteMessage": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "partnerInviteSubject": "sandık partner invite",
+  "notifTypeMonthly": "MONTHLY",
+  "raceJoinedCount": "{count} joined · ranking opens at {min}",
+  "@raceJoinedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "raceRunningCount": "{count} people racing",
+  "@raceRunningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "emptyPasteHint": "Copy your broker statement and paste it; every line becomes an asset."
 }

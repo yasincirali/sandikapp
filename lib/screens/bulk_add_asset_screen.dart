@@ -17,6 +17,7 @@ import 'paywall_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
+import '../services/crash_reporter.dart';
 
 class BulkAddAssetScreen extends ConsumerStatefulWidget {
   const BulkAddAssetScreen({super.key});
@@ -160,7 +161,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       );
       if (upgraded == true && mounted) {
         // Kullanıcı premium'a geçti — kalan item'ları tekrar dene.
-        unawaited(_saveAll());
+        CrashReporter.arkaPlan(_saveAll(), reason: 'bulk_add_asset_screen._saveAll');
       }
       return;
     }

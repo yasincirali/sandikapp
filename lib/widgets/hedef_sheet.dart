@@ -3,11 +3,14 @@
 // Hedef yalnızca gösterimdir: hiçbir hesabı değiştirmez, "Bugün" kartında
 // ilerleme çubuğu olur. Hazır tutarlar Türkiye ölçeğinde (250 bin – 2,5 M)
 // — ilk hedefi yazmak yerine dokunmak daha kolay; istenirse elle girilir.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart';
+import '../services/analytics_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 
@@ -26,6 +29,8 @@ Future<void> showHedefSheet(BuildContext context, WidgetRef ref) async {
   );
   if (sonuc == null) return;
   await ref.read(portfolioGoalProvider.notifier).set(sonuc);
+  // Kaç kişinin hedef kullandığı, kartın bu satırı hak edip etmediğini söyler.
+  unawaited(AnalyticsService.instance.logGoalSet(amountTRY: sonuc));
 }
 
 class _HedefSheet extends StatefulWidget {

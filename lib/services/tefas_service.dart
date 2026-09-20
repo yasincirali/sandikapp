@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'crash_reporter.dart';
 
 class TefasFund {
   final String code;
@@ -232,7 +233,7 @@ class TefasService {
         _cachedFunds = funds;
         _cacheTime = DateTime.now();
         // Diske asenkron yaz — çağıranı bekletme.
-        unawaited(_saveToDisk());
+        CrashReporter.arkaPlan(_saveToDisk(), reason: 'tefas_service._saveToDisk');
         return funds;
       }
     } catch (e) {
@@ -296,7 +297,7 @@ class TefasService {
           dirty = true;
         }
       }
-      if (dirty) unawaited(_savePricesToDisk());
+      if (dirty) CrashReporter.arkaPlan(_savePricesToDisk(), reason: 'tefas_service._savePricesToDisk');
     } catch (e) {
       _log('fetchPrices error: $e');
     }
@@ -392,7 +393,7 @@ class TefasService {
     _cachedFunds = liste;
     // Kurucu-only fonlar da kalıcı olsun — kullanıcı bir kez eklediğinde
     // sonraki açılışlarda yeniden lookup gerektirmesin.
-    unawaited(_saveToDisk());
+    CrashReporter.arkaPlan(_saveToDisk(), reason: 'tefas_service._saveToDisk');
     return fund;
   }
 
@@ -448,7 +449,7 @@ class TefasService {
       if (latest == null || price == null) return null;
 
       _priceCache[normalized] = (price: price, ts: DateTime.now());
-      unawaited(_savePricesToDisk());
+      CrashReporter.arkaPlan(_savePricesToDisk(), reason: 'tefas_service._savePricesToDisk');
 
       return (
         price: price,
@@ -518,7 +519,7 @@ class TefasService {
     _diskLoaded = false;
     _priceCache.clear();
     _priceDiskLoaded = false;
-    unawaited(_clearDiskCache());
+    CrashReporter.arkaPlan(_clearDiskCache(), reason: 'tefas_service._clearDiskCache');
   }
 
   Future<void> _clearDiskCache() async {

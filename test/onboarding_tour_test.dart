@@ -208,6 +208,7 @@ Future<void> _pump(
   double textScale = 1.0,
   Brightness parlaklik = Brightness.dark,
   bool hareketiAzalt = false,
+  bool kisa = false,
   bool davetKoduVar = true,
 }) async {
   tester.view.physicalSize = Size(width * 3, height * 3);
@@ -234,7 +235,7 @@ Future<void> _pump(
     ),
   );
   await tester.pump();
-  OnboardingScreen.baslatTur(onBitti: (t) => _sonuc = t);
+  OnboardingScreen.baslatTur(onBitti: (t) => _sonuc = t, kisa: kisa);
   await _bekle(tester);
 }
 
@@ -330,6 +331,45 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await _bekle(tester);
       expect(find.text('Toplam net varlığın'), findsOneWidget);
+    });
+  });
+
+  group('kısa tur — ilk açılış', () {
+    // 2026-09-20: ilk açılış 19 adımdan 5'e indi. Ölçü "ilk varlık ne
+    // kadar çabuk girildi"; tam tur Ayarlar'dan (`yenidenBaslat`) açılır.
+    //
+    // Oturum STATİK (`_Tur.oturum`): önceki test turu kapatmadan bitmişse
+    // `baslat` erken döner ve eski (tam) tur görünür. Temiz başla.
+    setUp(OnboardingScreen.turuKapatTestIcin);
+
+    testWidgets('beş adımda biter ve "Hazırsın" ile kapanır', (tester) async {
+      await _pump(tester, kisa: true);
+      expect(find.text('Sandığına hoş geldin'), findsOneWidget);
+      final adim = await _turuGez(tester);
+      expect(adim, 4, reason: 'karşılama + 4 adım = 5 kart');
+      expect(find.text('Hazırsın'), findsOneWidget);
+      await tester.tap(find.text('Sandığımı Aç'));
+      await _bekle(tester);
+      expect(_sonuc, isTrue);
+    });
+
+    testWidgets('kısa tur "Bugün" kartını ve + tuşunu anlatır, göz tuşunu anlatmaz',
+        (tester) async {
+      await _pump(tester, kisa: true);
+      var bugun = false, gizle = false;
+      for (var i = 0; i < 6; i++) {
+        if (find.text('Bugün ne oldu?').evaluate().isNotEmpty) bugun = true;
+        if (find.text('Tutarları gizle').evaluate().isNotEmpty) gizle = true;
+        if (find.text('Sandığımı Aç').evaluate().isNotEmpty) break;
+        await _devam(tester);
+      }
+      expect(bugun, isTrue, reason: 'En yeni yüzey ilk turda anlatılmalı.');
+      expect(gizle, isFalse, reason: 'İkincil özellikler tam tura ait.');
+    });
+
+    testWidgets('tam tur (Ayarlar) hâlâ uzun', (tester) async {
+      await _pump(tester);
+      expect(await _turuGez(tester), greaterThan(10));
     });
   });
 

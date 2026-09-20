@@ -190,7 +190,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     try {
       assets = await SupabaseService.instance.fetchByUser(user.id);
       // Başarılı çekim → son bilinen defteri diske yaz (PortfolioCache).
-      unawaited(PortfolioCache.write(user.id, assets));
+      CrashReporter.arkaPlan(PortfolioCache.write(user.id, assets), reason: 'portfolio_provider.PortfolioCache.write');
     } catch (e, st) {
       // Ağ yok / sunucu yok: son bilinen defterle aç. Eskiden burada hata
       // fırlıyor ve uçak modunda uygulama boş ekran + "Tekrar dene" ile
@@ -312,7 +312,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         pozisyonlar.add('${a.type.name}|${a.ticker}|${a.currency}');
       }
     }
-    unawaited(RetentionTracker.instance.recordAssetCount(pozisyonlar.length));
+    CrashReporter.arkaPlan(RetentionTracker.instance.recordAssetCount(pozisyonlar.length), reason: 'portfolio_provider.RetentionTracker.recordAssetCount');
 
     final current = state.valueOrNull;
     if (current != null) {
@@ -821,7 +821,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           ilkHata ??= e;
           ilkStack ??= st;
         }
-      })).then((_) {
+      })).then<void>((_) {
         final hata = ilkHata;
         if (hata == null) return;
         CrashReporter.report(hata, ilkStack,

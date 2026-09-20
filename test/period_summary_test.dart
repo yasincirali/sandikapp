@@ -1070,7 +1070,13 @@ void main() {
         degisimPct: 2.72,
       );
       expect(metin.startsWith('sandık · Bu ay'), isTrue);
-      expect(metin.endsWith('sandık ile takip ediyorum'), isTrue);
+      // Kapanış: imza + indirme bağlantısı (2026-09-20). Dört haneli sayı
+      // yasağı metnin tamamında sürer; bağlantıda mağaza id'si YOK
+      // (`/indir/` kapısı), yoksa 6786837699 tutar gibi okunurdu.
+      final satirlar = metin.split('\n');
+      expect(satirlar[satirlar.length - 2], 'sandık ile takip ediyorum');
+      expect(satirlar.last, contains('sandikapp/indir/'));
+      expect(satirlar.last, contains('utm_source=share_card'));
       expect(RegExp(r'\d{4,}').hasMatch(metin), isFalse);
     });
   });

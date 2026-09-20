@@ -1,3 +1,4 @@
+import '../config/magaza.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 
@@ -344,6 +345,8 @@ class RecapService {
     String? tufePct,
     String? donemAralik,
     String? nominalAralik,
+    /// UTM kampanya etiketi (dönem adı gibi); ölçüm içindir, metne girmez.
+    String kampanya = 'ozet',
   }) {
     final satirlar = <String>[baslik, ''];
 
@@ -456,9 +459,19 @@ class RecapService {
         ..addAll(aciklama);
     }
 
+    // Kapanış: imza + indirme bağlantısı.
+    //
+    // Link 2026-09-20'de girdi. Paylaşılan metin uygulamanın tek organik
+    // yayılma kanalı; "sandık ile takip ediyorum" alan kişiyi mağazada
+    // aramaya yolluyordu ve "sandık" araması Apple'ın ı→i katlaması yüzünden
+    // uygulamayı GETİRMİYOR (ASO_2026_09.md §1). Bağlantı `Magaza`'dan,
+    // kanal etiketi `utm_source=share_card` — hangi kanalın kurulum
+    // getirdiğini ölçmek için. Dört haneli sayı yasağı URL'yi kapsamaz:
+    // URL tutar sanılmaz.
     satirlar
       ..add('')
-      ..add('sandık ile takip ediyorum');
+      ..add('sandık ile takip ediyorum')
+      ..add(Magaza.indirBaglantisi(kaynak: 'share_card', kampanya: kampanya));
     return satirlar.join('\n');
   }
 
@@ -471,6 +484,7 @@ class RecapService {
   /// söyler.
   static String shareText(RecapData d, {required int year}) => composeShareText(
         baslik: 'sandık Özetim $year',
+        kampanya: 'yillik',
         karakter: d.character,
         degisimPct: d.marketReturnPct ?? d.changePct,
         degisimEtiketi:

@@ -12,6 +12,99 @@
 
 ---
 
+## 🚀 2026-09-20 büyüme turu — senin paralelde yapacakların
+
+Kod tarafı bitti (`feat/buyume-turu-2026-09-20`): paylaşım/davet metninde
+indirme bağlantısı + UTM, web sayfasında Safari akıllı banner + mağaza
+düğmeleri, `/indir/` kapısı, Bugün kartı ölçümü, 5 adımlık ilk tur, boş
+portföyde "ekstreden yapıştır", aylık özet push'u (0067), kısmi kanarya,
+yarış havuzu sayısı, `unawaited` süpürmesi. Aşağıdakiler kod dışı.
+
+### A. Android imzalı AAB provası — 4 GitHub secret + keystore (30 dk)
+
+`android-release.yml` hiç koşmadı çünkü secret'lar yok (`gh secret list`:
+ANDROID_* ve GOOGLE_SERVICES_JSON_BASE64 eksik). Play kapalı testine
+girmeden bir kuru koşu şart.
+
+1. Keystore (bir kez, §4.1 ile aynı; **yedekle** — kaybedersen Play'e
+   güncelleme yükleyemezsin):
+   ```bash
+   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 \
+     -validity 10000 -alias upload
+   ```
+2. Secret'ları GitHub'a yaz (repo → Settings → Secrets → Actions, ya da CLI).
+   Değerleri Claude'a YAZMA; komutları sen koş:
+   ```bash
+   gh secret set ANDROID_KEYSTORE_BASE64 --body "$(base64 -w0 upload-keystore.jks)"
+   gh secret set ANDROID_KEY_ALIAS --body upload
+   gh secret set ANDROID_KEY_PASSWORD        # sorunca yapıştır
+   gh secret set ANDROID_STORE_PASSWORD
+   gh secret set GOOGLE_SERVICES_JSON_BASE64 --body "$(base64 -w0 android/app/google-services.json)"
+   ```
+   (`google-services.json` Firebase Console › Project settings › Android
+   uygulaması › indir; repoya KOYMA.)
+3. Prova: Actions › "Android — Release AAB" › Run workflow (`build_apk`
+   kapalı). Yeşilse artefakttan `symbols/` klasörünü indirip sakla.
+   Kırmızıysa log'u Claude'a ver.
+
+### B. Universal Links için alan adı kararı (10 dk karar, 1 gün yayılma)
+
+Paylaşılan bağlantı `yasincirali.github.io/sandikapp/indir/`. Uygulamayı
+doğrudan açması için AASA dosyası alan adının KÖKÜNDE olmalı; alt yolda
+çalışmaz. İki seçenek:
+- **`sandik.app` gibi özel alan adı** (yıllık ~1.000 ₺): GitHub Pages ›
+  Custom domain'e yaz, DNS'te CNAME → `yasincirali.github.io`. Sonra
+  Claude AASA + entitlements + manifest'i yapar (TECHNICAL_DEBT "Universal
+  Links").
+- **`yasincirali.github.io` kök reposu**: `yasincirali/yasincirali.github.io`
+  adlı repo aç, `.well-known/` oraya gider. Ücretsiz ama marka dışı adres.
+Kararı söyle; Apple Developer › Identifiers › `com.sandik.app` ›
+**Associated Domains** yeteneğini de sen açarsın (match profil yeniler).
+
+### C. Firebase Remote Config — iki parametre (5 dk)
+
+Console › Remote Config › Add parameter (yoksa uygulama varsayılanı
+kullanır, ama kapatma düğmesi elinde olsun):
+- `review_prompt_enabled` = `true` (Boolean)
+- `review_prompt_soft_gate` = `true` (Boolean)
+- (var olmalı) `paywall_enabled` = `false`
+Publish changes. İlk mağaza yorumları olumsuz gelirse `review_prompt_enabled`
+→ `false` anında susturur.
+
+### D. Aylık özet — ilk kuru koşu (deploy sonrası, 2 dk)
+
+Main'e merge + `supabase-deploy` (migrations + `weekly-summary
+check-price-alerts`) sonrası, gerçek gönderim OLMADAN:
+```bash
+gh workflow run supabase-deploy.yml -f migrations=false -f functions=none \
+  -f sql="select jobname, schedule, active from cron.job where jobname in ('monthly-summary','weekly-summary','daily-brief') order by 1"
+```
+Üç satır, `monthly-summary` = `30 6 1 * *`, `active = t` olmalı. Gerçek ilk
+gönderim 1 Ekim 09:30 (TR). O sabah çan sayfasında "AYLIK" rozeti +
+push'a dokununca Özet › 1A açılmalı.
+
+### E. TestFlight cihaz testi — bu turun görünen kısmı (15 dk)
+
+Emülatör render etmiyor; gerçek cihazda:
+1. Yeni hesapla giriş → tur **5 kart** olmalı, sonuncusu "Hazırsın" ve
+   Varlık Ekle açık kalmalı. Ayarlar › Tanıtım turunu yeniden izle → tam tur.
+2. Boş portföyde "Ekstreden / CSV'den yapıştır" düğmesi + alt ipucu görünmeli.
+3. Performans › Özet › Paylaş → metin **son satırda bağlantı** taşımalı; bağlantıya
+   dokununca `/indir/` sayfası açılmalı (iOS'ta 0,6 sn sonra App Store).
+4. Profil › Ortak kodu paylaş → mesajda bağlantı `?kod=XXXX`; sayfa kodu
+   büyük yazmalı.
+5. Ana ekran Yarış kartı → "N kişi katıldı · sıralama 8 kişide açılır".
+6. Firebase › Analytics › DebugView (cihazı debug moda al) → `today_row_shown`,
+   `today_row_tapped`, `goal_set` düşmeli.
+
+### F. Web sayfası (otomatik, kontrol 1 dk)
+
+Merge'den 1–2 dk sonra https://yasincirali.github.io/sandikapp/ — iPhone
+Safari'de üstte "sandık — App Store'da aç" şeridi, sayfada App Store düğmesi;
+https://yasincirali.github.io/sandikapp/indir/?kod=TEST kod kutusunu göstermeli.
+
+---
+
 ## 📣 YENİ: "Yenilikler" (What's New) — her sürümde yapman gereken TEK iş
 
 **Kullanıcı isteği.** Güncelleme sonrası neyin değiştiği uygulama içinde

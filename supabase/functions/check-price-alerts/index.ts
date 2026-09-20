@@ -15,7 +15,11 @@ import {
   ServiceAccount,
 } from '../_shared/fcm.ts';
 import { fetchLivePrices } from '../_shared/live_prices.ts';
-import { fiyatKaynagiKanaryasi } from '../_shared/kanarya.ts';
+import {
+  fiyatKaynagiKanaryasi,
+  kanaryaKismiMi,
+  type KanaryaSonucu,
+} from '../_shared/kanarya.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
 
@@ -164,6 +168,24 @@ Deno.serve(async (request) => {
       });
     }
 
+    // KISMİ KANARYA (2026-09-20): sembollerin yarısından azı fiyatlandıysa
+    // da öter. 2026-09-19'da fon alarmları (TEFAS) 9 sembolün 6'sında
+    // sessizce fiyatlanmıyordu; altın/döviz fiyatlandığı için "boş döndü"
+    // kanaryası susuyordu. Yalnızca EKSİK semboller listelenir; sessizlik
+    // penceresi tam arızayla ortak (aynı kaynak, aynı alarm).
+    let kanaryaKismi: KanaryaSonucu | undefined;
+    if (kanaryaKismiMi(fiyatlar.size, semboller.size)) {
+      kanaryaKismi = await fiyatKaynagiKanaryasi(admin, {
+        kaynak: 'check-price-alerts',
+        alarmSayisi: alerts.length,
+        semboller: [...semboller].filter((s) => !fiyatlar.has(s)),
+        fiyatlanan: fiyatlar.size,
+        fcm: dryRun
+          ? null
+          : { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson, channelId: CHANNEL_ID },
+      });
+    }
+
     const tetiklenen = alerts.filter((a) => {
       const p = fiyatlar.get(a.symbol);
       // Fiyatı alınamayan sembol DEĞERLENDİRİLMEZ: yanlış tetiklemektense
@@ -175,6 +197,7 @@ Deno.serve(async (request) => {
         ok: true,
         checked: alerts.length,
         priced: fiyatlar.size,
+      kanarya: kanaryaKismi,
         sent: 0,
       });
     }
@@ -291,6 +314,7 @@ Deno.serve(async (request) => {
       ok: true,
       checked: alerts.length,
       priced: fiyatlar.size,
+      kanarya: kanaryaKismi,
       triggered: tetiklenen.length,
       sent,
       skipped_quiet_hours: skippedQuietHours,

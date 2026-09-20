@@ -112,8 +112,13 @@ class CrashReporter {
   ///
   /// Yeni bir "ateşle ve unut" çağrısı yazarken `unawaited(...)` yerine bunu
   /// kullan — `arka_plan_hata_yutma_test` ağ dokunan çağrıları tarar.
-  static void arkaPlan(Future<void> future, {required String reason}) {
-    unawaited(future.catchError(
+  ///
+  /// Parametre `Future<Object?>`: `Future<bool>` (fetchAndActivate),
+  /// `Future<List>` (seri ön-ısıtma) gibi sonuçlu işler de arka plana
+  /// bırakılabiliyor; sonuç zaten kullanılmıyor (2026-09-20 süpürmesi,
+  /// 73 → az sayıda `unawaited`, geri kalanı analitik ve UI).
+  static void arkaPlan(Future<Object?> future, {required String reason}) {
+    unawaited(future.then<void>((_) {}).catchError(
       (Object e, StackTrace st) => report(e, st, reason: reason),
     ));
   }

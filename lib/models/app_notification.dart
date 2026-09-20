@@ -9,6 +9,8 @@ class AppNotification {
   static const partnerInvite = 'partner_invite';
   static const dailyBrief = 'daily_brief';
   static const weeklySummary = 'weekly_summary';
+  /// Ayın 1'i, geçen ayın özeti (`weekly-summary` fonksiyonu, `period: month`).
+  static const monthlySummary = 'monthly_summary';
   static const calendarNudge = 'calendar_nudge';
 
   final String id;

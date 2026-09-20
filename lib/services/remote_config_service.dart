@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
+import 'crash_reporter.dart';
 
 
 /// Firebase Remote Config wrapper.
@@ -147,7 +148,7 @@ class RemoteConfigService {
       ));
       await _rc!.setDefaults(_defaults);
       // Fetch başlat ama beklet — offline'da default'lar geçerli olur.
-      unawaited(_rc!.fetchAndActivate());
+      CrashReporter.arkaPlan(_rc!.fetchAndActivate(), reason: 'remote_config_service.fetchAndActivate');
       _initialized = true;
     } catch (e) {
       if (kDebugMode) debugPrint('RemoteConfigService init failed: $e');

@@ -14,6 +14,7 @@ import '../models/technical_signal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../screens/partnership_requests_screen.dart';
+import '../screens/portfolio_performance_screen.dart';
 import '../screens/asset_detail_screen.dart';
 import '../screens/asset_not_found_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
@@ -51,6 +52,8 @@ class NotificationService {
   /// payload'ını sistem göstermez; bu tipi görünce bildirimi biz basarız.
   static const signalAlertType = 'signal_alert';
   static const dailyBriefType = 'daily_brief';
+  static const weeklySummaryType = 'weekly_summary';
+  static const monthlySummaryType = 'monthly_summary';
   static const priceAlertType = 'price_alert';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
@@ -111,12 +114,12 @@ class NotificationService {
     _initialized = true;
 
     // Açılışı bloklamaz: izin durumu sonucu beklenmeden okunur.
-    unawaited(_iosIzinDurumunuOlc());
+    CrashReporter.arkaPlan(_iosIzinDurumunuOlc(), reason: 'notification_service._iosIzinDurumunuOlc');
 
     final launchPayload = launchDetails?.notificationResponse?.payload;
     if (launchPayload != null) {
-      unawaited(Future<void>.microtask(
-          () => _handleNotificationPayload(launchPayload)));
+      CrashReporter.arkaPlan(Future<void>.microtask(
+          () => _handleNotificationPayload(launchPayload)), reason: 'notification_service.launchPayload');
     }
   }
 
@@ -179,6 +182,18 @@ class NotificationService {
         'brief_channel',
         'Gunluk Brifing',
         description: 'Portfoyunuzdeki gunluk hareket ozeti',
+        importance: Importance.defaultImportance,
+      ),
+    );
+    // Haftalık/aylık özet (`weekly-summary` fonksiyonu `summary_channel`
+    // gönderiyor). Kanal istemcide KAYITLI DEĞİLDİ (2026-09-20'ye kadar):
+    // Android bilinmeyen kanalı varsayılana düşürüyor, kullanıcı özeti
+    // ayrı kapatamıyordu. Brifingle aynı önem: kesme hak etmez.
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'summary_channel',
+        'Donem Ozeti',
+        description: 'Haftalik ve aylik portfoy ozeti',
         importance: Importance.defaultImportance,
       ),
     );
@@ -451,7 +466,7 @@ class NotificationService {
     if (type != null && type != signalAnalyzeRequestType) {
       AnalyticsService.instance.logPushOpened(type: type);
       if (!fromColdStart) {
-        unawaited(RetentionTracker.instance.recordLaunch(source: 'push'));
+        CrashReporter.arkaPlan(RetentionTracker.instance.recordLaunch(source: 'push'), reason: 'notification_service.RetentionTracker.recordLaunch');
       }
     }
 
@@ -459,6 +474,15 @@ class NotificationService {
     // ayrıca bir yere yönlendirilmez. Bildirim tek bir varlığa değil
     // portföyün geneline dair.
     if (type == dailyBriefType) return;
+
+    // Haftalık/aylık özet → Performans › Özet: bildirimin anlattığı rakam
+    // orada. Aylıkta 1A dönemi. Çan sayfasındaki dokunuşla aynı hedef
+    // (`home_screen._genelBildirimeGit`). 2026-09-20'ye kadar haftalık
+    // push ana ekranda kalıyordu — kullanıcı özeti aramak zorundaydı.
+    if (type == weeklySummaryType || type == monthlySummaryType) {
+      _openOzet(periodIdx: type == monthlySummaryType ? 2 : null);
+      return;
+    }
 
     // Fiyat alarmı: alarmın kurulduğu varlığın ekranı, GÜNLÜK sekmesinde.
     //
@@ -525,6 +549,32 @@ class NotificationService {
   /// Çan sayfasındaki ortaklık bildirimine dokunuş — push'a dokunulmuş
   /// gibi aynı davet akışı (0066).
   void openPartnerInvite(String inviteId) => _openPartnerInvite(inviteId);
+
+  /// Dönem özeti push'undan Performans › Özet'e.
+  ///
+  /// [periodIdx] null → ekranın varsayılan dönemi (haftalık için 1H'yi
+  /// zorlamıyoruz; Özet sekmesi en son bakılan dönemi hatırlar), 2 → 1A.
+  /// Navigator hazır değilse [_openPartnerInvite] ile aynı yeniden deneme.
+  void _openOzet({int? periodIdx, int deneme = 0}) {
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(
+        _yenidenDenemeAraligi,
+        () => _openOzet(periodIdx: periodIdx, deneme: deneme + 1),
+      );
+      return;
+    }
+    navigator.push(
+      adaptiveRoute<void>(
+        builder: (_) => PortfolioPerformanceScreen(
+          showBackButton: true,
+          initialOzet: true,
+          initialPeriodIdx: periodIdx,
+        ),
+      ),
+    );
+  }
 
   void _openPartnerInvite(String inviteId) {
     final navigator = _navigatorKey?.currentState;

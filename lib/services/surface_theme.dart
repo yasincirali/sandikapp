@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/theme_resolution.dart';
 import '../config/pref_keys.dart';
+import 'crash_reporter.dart';
 
 /// Uygulama DIŞI yüzeylerin (iOS Live Activity + ana ekran widget'ı) paletine
 /// karar veren TEK nokta — ve kararın KALICI hâli.
@@ -160,12 +161,12 @@ class SurfaceTheme {
     // Beklenmez: yüzey güncellemesi bir disk yazımını beklemesin. Yazım
     // başarısız olursa karar süreç içinde yine doğrudur; yalnızca bir
     // sonraki açılışta eski değerden başlanır.
-    unawaited(() async {
+    CrashReporter.arkaPlan(() async {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool(prefKey, isLight);
       } catch (_) {}
-    }());
+    }(), reason: 'surface_theme._persist');
   }
 
   /// Süreç içi durumu sıfırlar — singleton olduğu için testler arasında

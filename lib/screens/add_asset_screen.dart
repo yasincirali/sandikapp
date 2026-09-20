@@ -1737,7 +1737,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       if (upgraded == true && mounted) {
         // Kullanıcı premium'a geçti — save'i yeniden dene.
         Navigator.pop(context);
-        unawaited(_save());
+        CrashReporter.arkaPlan(_save(), reason: 'add_asset_screen._save');
       }
       return;
     } catch (e, st) {

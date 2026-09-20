@@ -830,6 +830,7 @@ class PeriodSummaryService {
       nominalAralik: (s.tufeBaslangic == null || s.tufeBitis == null)
           ? null
           : _aralikMetni(s.tufeBaslangic!, s.tufeBitis!),
+      kampanya: s.period.name,
     );
   }
 }

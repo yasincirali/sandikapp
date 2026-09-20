@@ -11,6 +11,7 @@ import '../config/pref_keys.dart';
 import 'notification_service.dart';
 import 'push_message_router.dart';
 import 'supabase_service.dart';
+import 'crash_reporter.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -145,12 +146,12 @@ class RemotePushService {
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      unawaited(Future<void>.microtask(
+      CrashReporter.arkaPlan(Future<void>.microtask(
         () => NotificationService.instance.handleRemoteMessageData(
           initialMessage.data,
           fromColdStart: true,
         ),
-      ));
+      ), reason: 'remote_push_service.getInitialMessage');
     }
 
     return true;

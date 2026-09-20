@@ -1498,10 +1498,10 @@ class _LiveActivitySection extends ConsumerWidget {
 
             final snapshot = ref.read(portfolioProvider).valueOrNull;
             if (snapshot != null) {
-              unawaited(svc.sync(
+              CrashReporter.arkaPlan(svc.sync(
                 snapshot,
                 hideBalance: ref.read(balanceHiddenProvider),
-              ));
+              ), reason: 'settings_screen.svc.sync');
             }
           },
         ),
