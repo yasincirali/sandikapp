@@ -10,7 +10,6 @@ void main() {
   Widget kur({
     required ValueChanged<bool> onGecis,
     bool reduce = false,
-    Object? anahtar = 'a',
     bool ipucu = false,
     VoidCallback? onIpucu,
   }) =>
@@ -23,12 +22,13 @@ void main() {
               child: SizedBox(
                 width: 320,
                 child: KaydirmaliGecis(
-                  anahtar: anahtar,
                   etkin: true,
                   onGecis: onGecis,
                   ipucu: ipucu,
                   onIpucuGosterildi: onIpucu,
-                  hedefEtiketi: (ileri) => ileri ? 'Ayşe' : 'Birlikte',
+                  // Komşu kart: sürüklerken yanda görünen içerik.
+                  komsu: (ileri) => SizedBox(
+                      height: 120, child: Text(ileri ? 'Ayşe' : 'Birlikte')),
                   child: const SizedBox(height: 120, child: Text('kart')),
                 ),
               ),
@@ -44,7 +44,8 @@ void main() {
     final g = await t.startGesture(t.getCenter(find.text('kart')));
     await g.moveBy(const Offset(-120, 0));
     await t.pump();
-    expect(find.text('Ayşe'), findsOneWidget, reason: 'sürüklerken hedef görünür');
+    expect(find.text('Ayşe'), findsOneWidget,
+        reason: 'sürüklerken komşu kart görünür');
     await g.up();
     await t.pumpAndSettle();
     expect(yon, isTrue);
@@ -56,7 +57,8 @@ void main() {
     await t.drag(find.text('kart'), const Offset(-30, 0));
     await t.pumpAndSettle();
     expect(cagrildi, isFalse);
-    expect(find.text('Ayşe'), findsNothing, reason: 'yaylanınca ipucu kaybolur');
+    expect(find.text('Ayşe'), findsNothing,
+        reason: 'yaylanınca komşu kart pencereden çıkar');
   });
 
   testWidgets('sağa kaydırma geri yönü bildirir', (t) async {

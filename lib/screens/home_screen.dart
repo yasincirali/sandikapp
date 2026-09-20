@@ -312,17 +312,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       gorunumToplamlari = m;
     }
 
-    final List<Asset> displayedAssets;
-    if (_view == '') {
-      displayedAssets = positionedAssets(myState.assets);
-    } else if (_view != null && _view!.isNotEmpty) {
-      displayedAssets = positionedAssets(allPartnerAssets[_view!] ?? const []);
-    } else {
-      displayedAssets = [
+    // Görünüme göre gösterilecek varlıklar ('' Ben, id ortak, null Birlikte).
+    // Yardımcı: kaydırma sırasında KOMŞU görünümün kartı da aynı hesapla
+    // kurulur (`KaydirmaliGecis.komsu`), iki yol ayrışmasın.
+    List<Asset> gorunumVarliklari(String? view) {
+      if (view == '') return positionedAssets(myState.assets);
+      if (view != null && view.isNotEmpty) {
+        return positionedAssets(allPartnerAssets[view] ?? const []);
+      }
+      return [
         ...positionedAssets(myState.assets),
         for (final list in allPartnerAssets.values) ...positionedAssets(list),
       ];
     }
+
+    final displayedAssets = gorunumVarliklari(_view);
 
     // "PORTFÖY HAREKETLERİ" listesi aggregate'i KULLANAMAZ.
     //
@@ -364,13 +368,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final myBuyTotal = positionedAssets(myState.assets)
         .fold<double>(0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
 
-    final displayedState = PortfolioState(
-      assets: filteredForSummary,
-      usdTry: myState.usdTry,
-      eurTry: myState.eurTry,
-      gbpTry: myState.gbpTry,
-      lastUpdated: myState.lastUpdated,
-    );
+    PortfolioState gorunumDurumu(List<Asset> varliklar) => PortfolioState(
+          assets: varliklar,
+          usdTry: myState.usdTry,
+          eurTry: myState.eurTry,
+          gbpTry: myState.gbpTry,
+          lastUpdated: myState.lastUpdated,
+        );
+    final displayedState = gorunumDurumu(filteredForSummary);
 
     final bool showRightCard = _view != '';
     String rightLabel = '';
@@ -616,17 +621,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // Kart parmağı takip eder, kenarda hedefin adı belirir,
                 // bırakınca kayarak geçer (`KaydirmaliGecis`).
                 child: KaydirmaliGecis(
-                  anahtar: _view,
                   etkin: allActivePartners.isNotEmpty,
                   ipucu: !ref.watch(kaydirmaIpucuGosterildiProvider),
                   onIpucuGosterildi: () => ref
                       .read(kaydirmaIpucuGosterildiProvider.notifier)
                       .set(true),
-                  hedefEtiketi: (ileri) => GorunumCipi.etiketi(
-                    context,
-                    allActivePartners,
-                    GorunumCipi.sonraki(allActivePartners, _view, ileri: ileri),
-                  ),
+                  // Komşu kart: o görünümün toplamı ve çipi, aynı hesapla.
+                  // Tür filtresi uygulanmaz — kart "o kişinin toplamı"dır.
+                  komsu: (ileri) {
+                    final hedef = GorunumCipi.sonraki(allActivePartners, _view,
+                        ileri: ileri);
+                    return PortfolioSummaryWidget(
+                      state: gorunumDurumu(gorunumVarliklari(hedef)),
+                      hideBalance: ref.watch(balanceHiddenProvider),
+                      baz: baz,
+                      trailing: GorunumCipi(
+                        partners: allActivePartners,
+                        selectedId: hedef,
+                        toplamlar: gorunumToplamlari,
+                        gizli: ref.watch(balanceHiddenProvider),
+                        onChanged: (_) {},
+                      ),
+                    );
+                  },
                   onGecis: (ileri) => setState(() => _view = GorunumCipi.sonraki(
                       allActivePartners, _view,
                       ileri: ileri)),
