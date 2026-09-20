@@ -211,11 +211,15 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             ? context.c.text58
             : context.signColor(s.changeTRY);
         final tutar = gizli ? '••••' : fmtTRY(s.changeTRY.abs());
+        // Şablon yüzde işaretini kendisi taşır (TR "%{pct}", EN "{pct}%");
+        // `fmtPct` de taşıdığı için cihazda "%%0,00" çıkıyordu (ekran
+        // görüntüsü, 2026-09-21). Sayı çıplak verilir.
+        final yuzde = fmtNum(s.changePct.abs());
         final metin = s.flat
             ? l10n.todayFlat
             : (s.changeTRY > 0
-                ? l10n.todayUp(tutar, fmtPct(s.changePct.abs()))
-                : l10n.todayDown(tutar, fmtPct(s.changePct.abs())));
+                ? l10n.todayUp(tutar, yuzde)
+                : l10n.todayDown(tutar, yuzde));
         return _Satir(
           ikon: s.flat
               ? Icons.remove_rounded
