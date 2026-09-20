@@ -647,6 +647,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onGecis: (ileri) => setState(() => _view = GorunumCipi.sonraki(
                       allActivePartners, _view,
                       ileri: ileri)),
+                  // Sayfa noktaları kartın altında; sürüklerken canlı.
+                  altBilgi: (ctx, ilerleme) {
+                    final sira = GorunumCipi.sira(allActivePartners);
+                    return SayfaNoktalari(
+                      sayi: sira.length,
+                      secili: sira.indexOf(_view).clamp(0, sira.length - 1),
+                      ilerleme: ilerleme,
+                    );
+                  },
                   child: PortfolioSummaryWidget(
                     state: displayedState,
                     hideBalance: ref.watch(balanceHiddenProvider),

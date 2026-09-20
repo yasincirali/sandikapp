@@ -29,9 +29,15 @@ class KaydirmaliGecis extends StatefulWidget {
     required this.onGecis,
     required this.komsu,
     required this.child,
+    this.altBilgi,
     this.ipucu = false,
     this.onIpucuGosterildi,
   });
+
+  /// Kartın altına çizilen satır (sayfa noktaları); [ilerleme] sürükleme
+  /// oranıdır (−1..1). Yalnızca bu sarmalayıcı yeniden kurulur — her
+  /// sürükleme karesinde ana ekranın tamamı build edilmez.
+  final Widget Function(BuildContext context, double ilerleme)? altBilgi;
 
   /// Ortak yoksa hareket kapalı: kart sürüklenmez, jest tüketilmez.
   final bool etkin;
@@ -162,12 +168,28 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   Widget build(BuildContext context) {
     if (!widget.etkin) return widget.child;
 
+    final tam = _genislik + KaydirmaliGecis.aralik;
+    final ilerleme = _genislik <= 0 ? 0.0 : (_dx / tam).clamp(-1.0, 1.0);
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragUpdate: _surukle,
       onHorizontalDragEnd: _birak,
       onHorizontalDragCancel: () => setState(() => _dx = 0),
-      child: LayoutBuilder(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _kartPenceresi(),
+          if (widget.altBilgi != null)
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.sm),
+              child: Center(child: widget.altBilgi!(context, ilerleme)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _kartPenceresi() => LayoutBuilder(
         builder: (context, k) {
           _genislik = k.maxWidth;
           final ileri = _dx < 0;
@@ -194,7 +216,5 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
             ],
           );
         },
-      ),
-    );
-  }
+      );
 }

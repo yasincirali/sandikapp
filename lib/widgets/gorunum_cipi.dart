@@ -230,44 +230,34 @@ class GorunumCipi extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: SandikTouch.min),
             padding: const EdgeInsets.symmetric(horizontal: SandikSpace.sm2),
             alignment: Alignment.centerRight,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.fromLTRB(SandikSpace.xs,
-                      SandikSpace.xs, SandikSpace.sm, SandikSpace.xs),
-                  decoration: BoxDecoration(
-                    color: c.amberFill.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(SandikRadius.lg),
-                    border:
-                        Border.all(color: c.amberFill.withValues(alpha: 0.45)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      avatar,
-                      const SizedBox(width: SandikSpace.xs2),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 88),
-                        child: Text(
-                          '$etiket$sayi',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: c.amberText,
-                          ),
-                        ),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(SandikSpace.xs, SandikSpace.xs,
+                  SandikSpace.sm, SandikSpace.xs),
+              decoration: BoxDecoration(
+                color: c.amberFill.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(SandikRadius.lg),
+                border: Border.all(color: c.amberFill.withValues(alpha: 0.45)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  avatar,
+                  const SizedBox(width: SandikSpace.xs2),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 88),
+                    child: Text(
+                      '$etiket$sayi',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: c.amberText,
                       ),
-                      Icon(Icons.unfold_more_rounded,
-                          size: 16, color: c.amberText),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: SandikSpace.xs),
-                _Konum(sayi: gorunumler.length, secili: konum),
-              ],
+                  Icon(Icons.unfold_more_rounded, size: 16, color: c.amberText),
+                ],
+              ),
             ),
           ),
         ),
@@ -276,20 +266,35 @@ class GorunumCipi extends StatelessWidget {
   }
 }
 
-/// Kaydırma dilinin kalıcı işareti: çipin altında sayfa noktaları — hangi
-/// görünümdesin, kaç görünüm var. Dörde kadar nokta; daha çok ortakta
-/// noktalar sayılamaz, "3 / 9" yazısına düşer. Süs değil bilgi: kaydırma
-/// yönünü ve kaç adım kaldığını söyler.
-class _Konum extends StatelessWidget {
-  const _Konum({required this.sayi, required this.secili});
+/// Kaydırma dilinin kalıcı işareti — toplam kartının ALTINDA, ortada
+/// (2026-09-21, kullanıcı: "çipin altında değil, tüm kartın altında;
+/// kaydırırken canlı güncellensin"). Hangi görünümdesin, kaç görünüm var.
+///
+/// [ilerleme] sürükleme oranıdır (−1..1; eksi = sıradakine). Seçili hap
+/// parmakla birlikte komşu noktaya AKAR: genişlik ve renk iki nokta
+/// arasında oranla paylaşılır; bırakınca ya tamamlanır ya geri döner.
+/// Animasyon widget'ı yok — değer kullanıcının parmağından gelir.
+/// Dörde kadar nokta; daha çok ortakta noktalar sayılamaz, "3 / 9" yazısı.
+class SayfaNoktalari extends StatelessWidget {
+  const SayfaNoktalari({
+    super.key,
+    required this.sayi,
+    required this.secili,
+    this.ilerleme = 0,
+  });
+
   final int sayi;
   final int secili;
+  final double ilerleme;
 
   static const int noktaSiniri = 4;
+  static const double _kisa = SandikSpace.xs;
+  static const double _uzun = SandikSpace.smd;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    if (sayi <= 1) return const SizedBox.shrink();
     if (sayi > noktaSiniri) {
       return Text(
         '${secili + 1} / $sayi',
@@ -299,19 +304,29 @@ class _Konum extends StatelessWidget {
         ),
       );
     }
+    final p = ilerleme.clamp(-1.0, 1.0);
+    final hedef = (secili + (p < 0 ? 1 : -1) + sayi) % sayi;
+    final oran = p.abs();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < sayi; i++)
           Padding(
             padding: EdgeInsets.only(left: i == 0 ? 0 : SandikSpace.xs),
-            child: AnimatedContainer(
-              duration: SandikMotion.stateOf(context),
-              curve: SandikMotion.move,
-              width: i == secili ? SandikSpace.smd : SandikSpace.xs,
-              height: SandikSpace.xs,
+            child: Container(
+              key: ValueKey('nokta-$i'),
+              width: i == secili
+                  ? _uzun - (_uzun - _kisa) * oran
+                  : i == hedef
+                      ? _kisa + (_uzun - _kisa) * oran
+                      : _kisa,
+              height: _kisa,
               decoration: BoxDecoration(
-                color: i == secili ? c.amberText : c.text20,
+                color: i == secili
+                    ? Color.lerp(c.amberText, c.text20, oran)
+                    : i == hedef
+                        ? Color.lerp(c.text20, c.amberText, oran)
+                        : c.text20,
                 borderRadius: BorderRadius.circular(SandikRadius.sm),
               ),
             ),

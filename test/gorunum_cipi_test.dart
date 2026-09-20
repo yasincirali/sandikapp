@@ -34,25 +34,38 @@ void main() {
     expect(GorunumCipi.listeSirasi(ortaklar, 'q'), [null, '']);
   });
 
-  Widget cip(List<AppUser> p, String? secili) => MaterialApp(
+  Widget noktalar(int sayi, int secili, double ilerleme) => MaterialApp(
         theme: ThemeData(extensions: const [SandikPalette.light]),
         home: Scaffold(
-          body: Align(
-            alignment: Alignment.topRight,
-            child: GorunumCipi(partners: p, selectedId: secili, onChanged: (_) {}),
+          body: Center(
+            child: SayfaNoktalari(
+                sayi: sayi, secili: secili, ilerleme: ilerleme),
           ),
         ),
       );
 
-  testWidgets('konum: dörde kadar nokta, üstünde "i / n" yazısı', (t) async {
-    await t.pumpWidget(cip(ortaklar.take(2).toList(), 'p1'));
-    expect(find.text('2 / 4'), findsNothing);
-    expect(find.byType(AnimatedContainer), findsNWidgets(4));
+  double genislik(WidgetTester t, int i) =>
+      t.getSize(find.byKey(ValueKey('nokta-$i'))).width;
 
-    await t.pumpWidget(cip(ortaklar, null)); // 5 görünüm
-    await t.pumpAndSettle();
-    expect(find.byType(AnimatedContainer), findsNothing);
+  testWidgets('noktalar: dörde kadar nokta, üstünde "i / n" yazısı', (t) async {
+    await t.pumpWidget(noktalar(4, 1, 0));
+    expect(genislik(t, 1), SandikSpace.smd, reason: 'seçili hap uzun');
+    expect(genislik(t, 0), SandikSpace.xs);
+
+    await t.pumpWidget(noktalar(5, 4, 0));
+    expect(find.byKey(const ValueKey('nokta-0')), findsNothing);
     expect(find.text('5 / 5'), findsOneWidget);
+  });
+
+  testWidgets('noktalar: sürüklerken hap komşuya akar, uçta sarar', (t) async {
+    // Yarı yolda: seçili ile sıradaki aynı genişlikte.
+    await t.pumpWidget(noktalar(4, 1, -0.5));
+    expect(genislik(t, 1), closeTo(genislik(t, 2), 0.01));
+    expect(genislik(t, 0), SandikSpace.xs);
+    // Sona gelmiş, geri: hedef ilk nokta değil, sondan bir önceki.
+    await t.pumpWidget(noktalar(4, 0, 1.0));
+    expect(genislik(t, 3), SandikSpace.smd);
+    expect(genislik(t, 0), SandikSpace.xs);
   });
 
   test('ad yardımcıları', () {
