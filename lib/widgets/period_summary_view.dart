@@ -102,6 +102,11 @@ class PeriodSummaryView extends StatelessWidget {
   /// hiçbir şey çizilmez — o kullanıcıya özel ve geçici bir durum.
   final bool enflasyonVerisiBekleniyor;
 
+  /// Derinlik bölümü (XIRR, sağlık, ileri metrikler, karakter, sabır,
+  /// benchmark) başlangıçta açık mı? İleri seviye yatırımcıda açık, diğerinde
+  /// katlı (2026-09-21 sadeleştirme). Testler varsayılanı açık görür.
+  final bool derinlikAcik;
+
   const PeriodSummaryView({
     super.key,
     required this.summary,
@@ -118,188 +123,157 @@ class PeriodSummaryView extends StatelessWidget {
     this.ileriKarti,
     this.xirr,
     this.enflasyonVerisiBekleniyor = false,
+    this.derinlikAcik = true,
   });
 
   @override
   Widget build(BuildContext context) {
     if (!summary.isMeaningful) return _BosDurum(period: summary.period);
 
+    // 2026-09-21 sadeleştirme: on altı kart art arda değil, üç başlık.
+    //   · BU DÖNEM  — ana rakam, köprü, reel getiri/TÜFE, gün sayımı, eğri,
+    //                paylaş: dönemin kendisi.
+    //   · VARLIKLAR — en iyi/en zayıf, dağılım, katkı: portföyün içi.
+    //   · DERİNLİK  — XIRR, sağlık, ileri metrikler, karakter, sabır,
+    //                benchmark: katlanır; ileri seviyede açık gelir.
+    // Hiçbir kart kaldırılmadı; yalnızca yer ve sıra değişti.
+    final g = _gruplar(context);
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        SandikSectionHeader(title: l10n.sectionThisPeriod),
+        const SizedBox(height: SandikSpace.sm),
         _AnaRakamKarti(
             summary: summary, uzunDonemPct: uzunDonemPct, baz: baz),
         const SizedBox(height: SandikSpace.smd),
         _KopruKarti(summary: summary, baz: baz),
-        const SizedBox(height: SandikSpace.smd),
-        ..._baglamBloklari(context),
+        ..._arali(g.buDonem, once: true),
+        if (g.varliklar.isNotEmpty) ...[
+          const SizedBox(height: SandikSpace.md),
+          SandikSectionHeader(title: l10n.sectionAssets),
+          const SizedBox(height: SandikSpace.sm),
+          ..._arali(g.varliklar),
+        ],
+        if (g.derinlik.isNotEmpty) ...[
+          const SizedBox(height: SandikSpace.md),
+          _DerinlikBolumu(
+            baslangictaAcik: derinlikAcik,
+            cocuklar: _arali(g.derinlik),
+          ),
+        ],
       ],
     );
   }
 
-  /// Blok 3 — döneme göre değişen tek parça.
-  List<Widget> _baglamBloklari(BuildContext context) {
-    final bloklar = <Widget>[];
+  /// Blokların arasına standart boşluk; [once] true ise ilkinin önüne de.
+  static List<Widget> _arali(List<Widget> bloklar, {bool once = false}) {
+    final out = <Widget>[];
+    for (var i = 0; i < bloklar.length; i++) {
+      if (i > 0 || once) out.add(const SizedBox(height: SandikSpace.smd));
+      out.add(bloklar[i]);
+    }
+    return out;
+  }
 
-    // Birikim kartı dönemden BAĞIMSIZ (alan notuna bakın) ve köprünün hemen
-    // ardına gelir: köprü "katkın şu kadardı" der, bu kart "katkı alışkanlığın
-    // şöyle" diye devam eder. Araya dönemsel bir kart girseydi ikisi
-    // arasındaki bağ kopardı.
-    //
-    // GÜNLÜK dışında: bir günlük pencerede birikim serisi göstermek,
-    // kullanıcının o gün bir şey yapmasını bekliyormuş gibi okunur.
-    if (katkiKarti != null && summary.period != SummaryPeriod.gunluk) {
-      bloklar.add(katkiKarti!);
+  ({List<Widget> buDonem, List<Widget> varliklar, List<Widget> derinlik})
+      _gruplar(BuildContext context) {
+    final buDonem = <Widget>[];
+    final varliklar = <Widget>[];
+    final derinlik = <Widget>[];
+
+    void reelYaDaTufe(String donemEtiketi) {
+      if (summary.reelGetiriPct != null) {
+        buDonem.add(_ReelGetiriKarti(
+          reel: summary.reelGetiriPct!,
+          nominal: summary.tufeNominalPct,
+          tufe: summary.tufePct,
+          fark: summary.tufeFarki,
+          baslangic: summary.tufeBaslangic,
+          bitis: summary.tufeBitis,
+          donemEtiketi: donemEtiketi,
+        ));
+      } else if (summary.tufeFarki != null) {
+        buDonem.add(_TufeKarti(fark: summary.tufeFarki!));
+      } else if (enflasyonVerisiBekleniyor) {
+        buDonem.add(const _EnflasyonBekleniyorKarti());
+      }
+    }
+
+    void varlikKarti(String baslik) {
+      if (summary.enIyi != null || summary.enZayif != null) {
+        varliklar.add(_VarlikKarti(
+          baslik: baslik,
+          enIyi: summary.enIyi,
+          enZayif: summary.enZayif,
+        ));
+      }
     }
 
     switch (summary.period) {
       case SummaryPeriod.gunluk:
         if (summary.sparkline.length >= 2) {
-          bloklar.add(_GunIciEgriKarti(summary: summary));
+          buDonem.add(_GunIciEgriKarti(summary: summary));
         }
-        if (summary.enIyi != null || summary.enZayif != null) {
-          bloklar.add(_VarlikKarti(
-            baslik: context.l10n.biggestMoverToday,
-            enIyi: summary.enIyi,
-            enZayif: summary.enZayif,
-          ));
-        }
+        varlikKarti(context.l10n.biggestMoverToday);
 
       case SummaryPeriod.birHafta:
-        if (summary.enIyi != null || summary.enZayif != null) {
-          bloklar.add(_VarlikKarti(
-            baslik: context.l10n.weekExtremes,
-            enIyi: summary.enIyi,
-            enZayif: summary.enZayif,
-          ));
-        }
         if (summary.gunSayimi != null) {
-          bloklar.add(_GunSayimiKarti(sayim: summary.gunSayimi!));
+          buDonem.add(_GunSayimiKarti(sayim: summary.gunSayimi!));
         }
+        varlikKarti(context.l10n.weekExtremes);
 
       case SummaryPeriod.birAy:
-        // 1A'da da tam kart: TÜFE aylık yayımlandığı için bir aylık pencere
-        // enflasyonla karşılaştırılabilir en KISA anlamlı dönem.
-        if (summary.reelGetiriPct != null) {
-          bloklar.add(_ReelGetiriKarti(
-            reel: summary.reelGetiriPct!,
-            // `getiriPct` DEĞİL: TÜFE karşılaştırması kendi penceresinde
-            // hesaplanmış nominali kullanır (bkz. `tufeNominalPct`).
-            // Dönem kartının yüzdesini buraya koymak, kartın üç satırını
-            // (nominal − TÜFE = fark) elle doğrulanamaz hale getirirdi.
-            nominal: summary.tufeNominalPct,
-            tufe: summary.tufePct,
-            fark: summary.tufeFarki,
-            baslangic: summary.tufeBaslangic,
-            bitis: summary.tufeBitis,
-            donemEtiketi: context.l10n.lastMonthPeriod,
-          ));
-        } else if (summary.tufeFarki != null) {
-          bloklar.add(_TufeKarti(fark: summary.tufeFarki!));
-        } else if (enflasyonVerisiBekleniyor) {
-          bloklar.add(const _EnflasyonBekleniyorKarti());
-        }
+        reelYaDaTufe(context.l10n.lastMonthPeriod);
         if (summary.dagilimBasi != null && summary.dagilimSonu != null) {
-          bloklar.add(_DagilimKarti(
+          varliklar.add(_DagilimKarti(
             basi: summary.dagilimBasi!,
             sonu: summary.dagilimSonu!,
           ));
         }
 
       case SummaryPeriod.altiAy:
-        // 6A da enflasyonla karşılaştırılabilir bir pencere — altı aylık
-        // TÜFE TÜİK dilinde de kurulan bir cümle. Daha önce yalnızca 1A ve
-        // 1Y'de gösteriliyordu ve aradaki pencere sebepsiz boştu.
-        if (summary.reelGetiriPct != null) {
-          bloklar.add(_ReelGetiriKarti(
-            reel: summary.reelGetiriPct!,
-            // `getiriPct` DEĞİL: TÜFE karşılaştırması kendi penceresinde
-            // hesaplanmış nominali kullanır (bkz. `tufeNominalPct`).
-            // Dönem kartının yüzdesini buraya koymak, kartın üç satırını
-            // (nominal − TÜFE = fark) elle doğrulanamaz hale getirirdi.
-            nominal: summary.tufeNominalPct,
-            tufe: summary.tufePct,
-            fark: summary.tufeFarki,
-            baslangic: summary.tufeBaslangic,
-            bitis: summary.tufeBitis,
-            donemEtiketi: context.l10n.last6MonthsPeriod,
-          ));
-        } else if (summary.tufeFarki != null) {
-          bloklar.add(_TufeKarti(fark: summary.tufeFarki!));
-        } else if (enflasyonVerisiBekleniyor) {
-          bloklar.add(const _EnflasyonBekleniyorKarti());
-        }
+        reelYaDaTufe(context.l10n.last6MonthsPeriod);
+        varlikKarti(context.l10n.sixMonthExtremes);
         if (percentile != null) {
-          bloklar.add(_BenchmarkKarti(
+          derinlik.add(_BenchmarkKarti(
             percentile: percentile!,
             katilimci: percentileKatilimci,
           ));
         }
-        if (summary.enIyi != null || summary.enZayif != null) {
-          bloklar.add(_VarlikKarti(
-            baslik: context.l10n.sixMonthExtremes,
-            enIyi: summary.enIyi,
-            enZayif: summary.enZayif,
-          ));
-        }
 
       case SummaryPeriod.birYil:
-        // Reel getiri 1Y'nin BİRİNCİ kartı: yıllık pencere hem TÜİK'in
-        // "yıllık enflasyon" diliyle hem kullanıcının "bu yıl eridim mi"
-        // sorusuyla örtüşüyor (`RealReturnStrip.periodDays` ile aynı
-        // gerekçe).
-        if (summary.reelGetiriPct != null) {
-          bloklar.add(_ReelGetiriKarti(
-            reel: summary.reelGetiriPct!,
-            // `getiriPct` DEĞİL: TÜFE karşılaştırması kendi penceresinde
-            // hesaplanmış nominali kullanır (bkz. `tufeNominalPct`).
-            // Dönem kartının yüzdesini buraya koymak, kartın üç satırını
-            // (nominal − TÜFE = fark) elle doğrulanamaz hale getirirdi.
-            nominal: summary.tufeNominalPct,
-            tufe: summary.tufePct,
-            fark: summary.tufeFarki,
-            baslangic: summary.tufeBaslangic,
-            bitis: summary.tufeBitis,
-            donemEtiketi: context.l10n.lastYearPeriod,
-          ));
-        } else if (summary.tufeFarki != null) {
-          // Bileşik hesap yapılamadı ama puan farkı var — eski davranış
-          // korunur, yeni kart sessizce kaybolmaz.
-          bloklar.add(_TufeKarti(fark: summary.tufeFarki!));
-        } else if (enflasyonVerisiBekleniyor) {
-          bloklar.add(const _EnflasyonBekleniyorKarti());
+        reelYaDaTufe(context.l10n.lastYearPeriod);
+        if (summary.sparkline.length >= 2) {
+          buDonem.add(_GunIciEgriKarti(
+              summary: summary, baslik: context.l10n.yearCurve));
         }
         if (xirr != null) {
-          bloklar.add(XirrKarti(
+          derinlik.add(XirrKarti(
             xirr: xirr!,
             piyasaGetirisi: summary.getiriPct,
           ));
         }
-        if (saglik != null) bloklar.add(saglik!);
-        if (ileriKarti != null) bloklar.add(ileriKarti!);
+        if (saglik != null) derinlik.add(saglik!);
+        if (ileriKarti != null) derinlik.add(ileriKarti!);
         if (karakter != null) {
-          bloklar.add(_KarakterKarti(karakter: karakter!));
+          derinlik.add(_KarakterKarti(karakter: karakter!));
         }
         if (enSabirli != null && enSabirliGun != null) {
-          bloklar.add(_SabirKarti(varlik: enSabirli!, gun: enSabirliGun!));
-        }
-        if (summary.sparkline.length >= 2) {
-          bloklar.add(_GunIciEgriKarti(summary: summary, baslik: context.l10n.yearCurve));
-        }
-        if (onShare != null) {
-          bloklar.add(_PaylasButonu(onShare: onShare!));
+          derinlik.add(_SabirKarti(varlik: enSabirli!, gun: enSabirliGun!));
         }
     }
 
-    // Aralar burada verilir; her kart kendi dışına boşluk koymaz.
-    final out = <Widget>[];
-    for (var i = 0; i < bloklar.length; i++) {
-      out.add(bloklar[i]);
-      if (i < bloklar.length - 1) {
-        out.add(const SizedBox(height: SandikSpace.smd));
-      }
+    // Katkı kartı: gün içi hariç her dönemde, varlıklar bloğunda.
+    if (katkiKarti != null && summary.period != SummaryPeriod.gunluk) {
+      varliklar.add(katkiKarti!);
     }
-    return out;
+    // Paylaş dönemin altında: kart paylaşılan şeyin hemen yanında.
+    if (onShare != null) {
+      buDonem.add(_PaylasButonu(onShare: onShare!));
+    }
+
+    return (buDonem: buDonem, varliklar: varliklar, derinlik: derinlik);
   }
 }
 
@@ -1912,4 +1886,90 @@ class _BosDurum extends StatelessWidget {
           ],
         ),
       );
+}
+
+/// Derinlik — katlanır bölüm (2026-09-21).
+///
+/// Başlık satırı her zaman görünür ("DERİNLİK · XIRR, sağlık…"), içerik
+/// dokununca açılır. `AnimatedSize` yalnızca yükseklik geçişi yapar; kapalı
+/// durumda çocuklar ağaçta DEĞİLDİR — kapalıyken hesaplama/çizim maliyeti
+/// sıfır (CPU/GPU kaygısı). Açık/kapalı durumu oturum içi, tercih değil.
+class _DerinlikBolumu extends StatefulWidget {
+  const _DerinlikBolumu({
+    required this.baslangictaAcik,
+    required this.cocuklar,
+  });
+
+  final bool baslangictaAcik;
+  final List<Widget> cocuklar;
+
+  @override
+  State<_DerinlikBolumu> createState() => _DerinlikBolumuState();
+}
+
+class _DerinlikBolumuState extends State<_DerinlikBolumu> {
+  late bool _acik = widget.baslangictaAcik;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          expanded: _acik,
+          label: l10n.sectionDepth,
+          child: InkWell(
+            onTap: () => setState(() => _acik = !_acik),
+            borderRadius: BorderRadius.circular(SandikRadius.sm),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SandikSectionHeader(title: l10n.sectionDepth),
+                        Text(
+                          l10n.sectionDepthHint,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.bodySmall
+                              ?.copyWith(color: context.c.text58),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _acik ? 0.5 : 0,
+                    duration: SandikMotion.stateOf(context),
+                    curve: SandikMotion.enter,
+                    child: Icon(Icons.expand_more_rounded,
+                        color: context.c.text58),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: SandikMotion.surfaceOf(context),
+          curve: SandikMotion.move,
+          alignment: Alignment.topCenter,
+          child: _acik
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: SandikSpace.sm),
+                    ...widget.cocuklar,
+                  ],
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
+    );
+  }
 }

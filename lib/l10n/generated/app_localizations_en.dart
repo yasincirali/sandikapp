@@ -3230,4 +3230,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get briefSlotEvening => 'Evening 18:30 (close)';
+
+  @override
+  String todayRealReturnAhead(String pts) {
+    return '$pts pts ahead of inflation · yearly';
+  }
+
+  @override
+  String todayRealReturnBehind(String pts) {
+    return '$pts pts behind inflation · yearly';
+  }
+
+  @override
+  String todayWeeklyUp(String pct) {
+    return 'Last week market +$pct · summary ready';
+  }
+
+  @override
+  String todayWeeklyDown(String pct) {
+    return 'Last week market −$pct · summary ready';
+  }
+
+  @override
+  String get sectionThisPeriod => 'THIS PERIOD';
+
+  @override
+  String get sectionAssets => 'ASSETS';
+
+  @override
+  String get sectionDepth => 'DEPTH';
+
+  @override
+  String get sectionDepthHint => 'XIRR, health, advanced metrics, character';
+
+  @override
+  String get myAlarms => 'My alerts';
+
+  @override
+  String get viewChipLabel => 'View';
 }

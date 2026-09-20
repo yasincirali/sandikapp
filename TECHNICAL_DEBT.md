@@ -273,6 +273,17 @@ TÜFE kartı etiketleri sade dile ("Senin getirin / Enflasyon (TÜFE) / Aradaki 
 **Ne zaman.** Bugün kartı TestFlight'ta bir hafta kalıp kullanıcı geri
 bildirimi alındıktan sonra; ölçüm → 1 → 3 sırasıyla.
 
+**Ek (2026-09-21, sadeleştirme).** Reel getiri ve haftalık özet şeritleri
+kendi görünümünde kartın satırı oldu (`ReelGetiriSatiri`,
+`HaftalikOzetSatiri`); ortak/birlikte görünümünde eski şeritler duruyor
+çünkü kart kişisel (hedef, takvim). Kart artık üç ayrı ağ işi başlatıyor
+(gün içi seri, yıllık reel getiri, haftalık kırılım) — üçü de oturumda bir
+kez ve önbellekli; ama kart `key`'i görünümle değiştiği için Ben→Ayşe→Ben
+geçişi yeniden çeker. Ölçülürse (`today_row_shown` kind=reel) satırın
+kalması kararı burada; ayrıca Performans kontrol yığınının iki satırda
+kalması `performans_kontrol_yigini_test` (320pt'te beş dönem etiketi)
+yüzünden — ekran daha da sadeleşecekse dönem seçici kaydırılabilir olmalı.
+
 ---
 
 ## 🟡 AÇIK — Fiyat kaynağı sözleşmesi kuruldu; CANLI kotasyon tarafı henüz dışarıda

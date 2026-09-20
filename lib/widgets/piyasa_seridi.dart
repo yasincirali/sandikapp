@@ -213,17 +213,21 @@ class _KayanBantState extends State<KayanBant>
                 horizontal: BorderSide(color: context.c.hairline),
               ),
             ),
-            child: ExcludeSemantics(
-              child: ListView.builder(
-                controller: _scroll,
-                scrollDirection: Axis.horizontal,
-                // Akarken parmakla kaydırma yok (ticker ile çatışır); durunca
-                // ve hareketi azaltta serbest.
-                physics: akiyor
-                    ? const NeverScrollableScrollPhysics()
-                    : const BouncingScrollPhysics(),
-                itemBuilder: (context, i) =>
-                    _Oge(oge: ogeler[i % ogeler.length]),
+            // RepaintBoundary: bant her karede kayar; sınır olmadan hero
+            // kart ve üst çubuk da her karede yeniden boyanırdı (GPU).
+            child: RepaintBoundary(
+              child: ExcludeSemantics(
+                child: ListView.builder(
+                  controller: _scroll,
+                  scrollDirection: Axis.horizontal,
+                  // Akarken parmakla kaydırma yok (ticker ile çatışır); durunca
+                  // ve hareketi azaltta serbest.
+                  physics: akiyor
+                      ? const NeverScrollableScrollPhysics()
+                      : const BouncingScrollPhysics(),
+                  itemBuilder: (context, i) =>
+                      _Oge(oge: ogeler[i % ogeler.length]),
+                ),
               ),
             ),
           ),

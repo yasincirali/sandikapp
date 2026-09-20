@@ -27,10 +27,10 @@ import '../utils/tr_format.dart';
 import '../widgets/price_alert_tile.dart';
 import '../widgets/app_notification_tile.dart';
 import '../widgets/portfolio_summary_widget.dart';
-import '../widgets/percentile_strip.dart';
 import '../widgets/real_return_strip.dart';
 import '../widgets/weekly_summary_chip.dart';
-import '../widgets/modern_tab_selector.dart';
+import '../widgets/gorunum_cipi.dart';
+import 'price_alerts_screen.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/transaction_row.dart';
@@ -588,6 +588,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   state: displayedState,
                   hideBalance: ref.watch(balanceHiddenProvider),
                   baz: baz,
+                  // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
+                  trailing: allActivePartners.isEmpty
+                      ? null
+                      : GorunumCipi(
+                          partners: allActivePartners,
+                          selectedId: _view,
+                          onChanged: (v) => setState(() => _view = v),
+                        ),
                 ),
               ),
             ),
@@ -631,44 +639,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Reel getiri percentile'den ÖNCE gelir: "eridim mi?" sorusu
             // "başkalarına göre nerdeyim?" sorusundan önce gelir — biri
             // alım gücü, diğeri sosyal karşılaştırma.
-            SliverToBoxAdapter(
-              child: RealReturnStrip(
-                key: ValueKey('reel-${_view ?? '*'}'),
-                myAssets: ledgerAssets,
-                toTRY: myState.toTRY,
-                padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
-              ),
-            ),
-            // Yüzdelik dilim yalnızca KENDİ görünümünde: şerit kullanıcının
-            // kendi dilimini anlatır, ortağın portföyüne bakarken hangi
-            // portföyden bahsedildiği belirsizleşir. Başlangıç seviyesinde
-            // ayrıca GİZLİ (`seviyeGorunurlugu`): sosyal karşılaştırma yeni
-            // başlayanın ilk ihtiyacı değil. Şerit kendi kapılarını (bayrak,
-            // opt-in, k-anonimlik) ayrıca kuruyor.
-            if (ownView &&
-                seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
-                    .percentile)
+            // 2026-09-21: KENDİ görünümünde bu iki şerit Bugün kartının
+            // satırlarıdır (`BugunKarti` reel + haftalık). Ortak/Birlikte
+            // görünümünde kart yok (kart kişisel: hedef, takvim), o yüzden
+            // şeritler orada olduğu gibi kalır — kapsamın defterini alır.
+            if (!ownView)
               SliverToBoxAdapter(
-                child: PercentileStrip(
-                  myAssets: myState.assets,
+                child: RealReturnStrip(
+                  key: ValueKey('reel-${_view ?? '*'}'),
+                  myAssets: ledgerAssets,
                   toTRY: myState.toTRY,
                   padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
                 ),
               ),
-            // "Bu hafta" kartı en SONA gelir: diğer ikisi alım gücü ve
-            // sosyal karşılaştırma gibi yavaş değişen bağlamlar, bu ise
-            // haftalık bir rakam. Üstüne konsa daha kalıcı olan iki
-            // bilgiyi aşağı iterdi.
-            //
-            // Kendi kapılarını kendi kuruyor (bayrak + seri + ölçülebilir
-            // yüzde), bu yüzden burada ek koşul yok.
-            SliverToBoxAdapter(
-              child: WeeklySummaryChip(
-                key: ValueKey('hafta-${_view ?? '*'}'),
-                myAssets: ledgerAssets,
-                padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+            // Yüzdelik dilim şeridi 2026-09-21'de Profil'e (Yarış kartının
+            // altına) taşındı: ana ekranın sorusu "nasıl gidiyorum", sosyal
+            // karşılaştırma değil. Kapıları (bayrak, opt-in, k-anonimlik,
+            // yatırımcı seviyesi) aynen orada.
+            if (!ownView)
+              SliverToBoxAdapter(
+                child: WeeklySummaryChip(
+                  key: ValueKey('hafta-${_view ?? '*'}'),
+                  myAssets: ledgerAssets,
+                  padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+                ),
               ),
-            ),
           ],
           // Mini cards
           if (!isEmptyOwn)
@@ -706,18 +701,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
-          // Tab bar
-          if (allActivePartners.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 0, hp, 8),
-                child: ModernTabSelector(
-                  partners: allActivePartners,
-                  selectedId: _view,
-                  onChanged: (v) => setState(() => _view = v),
-                ),
-              ),
-            ),
+          // Görünüm seçici (Ben / ortak / Birlikte) 2026-09-21'de toplam
+          // kartının başlığına taşındı (`GorunumCipi`); kendi satırı yok.
           // Asset type filter chips
           if (!isEmptyOwn)
             SliverToBoxAdapter(
@@ -1253,6 +1238,35 @@ class _SignalsBottomSheet extends ConsumerWidget {
                         ),
                       ),
                     const Spacer(),
+                    // Alarm LİSTESİ buradan (2026-09-21): alarm bir portföy
+                    // aracı, bildirim ayarı değil; Ayarlar › Bildirimler'de
+                    // saklıydı. Ayarlar'daki satır da duruyor (kapı olarak).
+                    SandikTappable(
+                      semanticLabel: context.l10n.myAlarms,
+                      onTap: () => Navigator.of(context).push(
+                        adaptiveRoute<void>(
+                            builder: (_) => const PriceAlertsScreen()),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.add_alert_outlined,
+                                size: 16, color: context.c.amberText),
+                            const SizedBox(width: SandikSpace.xs),
+                            Text(
+                              context.l10n.myAlarms,
+                              style: context.t.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: context.c.amberText,
+                                  decoration: TextDecoration.none),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     // Aktif sinyal varsa "Temizle" (pasife al). Hepsi zaten
                     // geçmişteyse bu buton anlamsız — orada "Geçmişi Sil"
                     // devreye girer (aşağıda, GEÇMİŞ başlığının yanında).

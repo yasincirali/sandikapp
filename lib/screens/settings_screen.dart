@@ -29,7 +29,6 @@ import '../services/disclaimer_service.dart';
 import '../services/supabase_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
-import '../widgets/hedef_sheet.dart';
 
 import '../widgets/sandik_app_bar.dart';
 import '../utils/sandik_snack.dart';
@@ -606,16 +605,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 12),
             const _BaseCurrencyPicker(),
             const SizedBox(height: 12),
-            // Portföy hedefi — Bugün kartındaki ilerleme çubuğunun kaynağı.
-            // Kartın kendisinden de kurulur; burası "nereden değiştiririm"
-            // sorusunun beklenen adresi.
-            _SettingsTile(
-              icon: Icons.flag_outlined,
-              title: context.l10n.goalTitle,
-              subtitle: context.l10n.goalSettingsSubtitle,
-              onTap: () => showHedefSheet(context, ref),
-            ),
-            const SizedBox(height: 12),
+            // Portföy hedefi satırı 2026-09-21'de kaldırıldı: görünüm ayarı
+            // değil; hedef ana ekrandaki Bugün kartından kurulup düzenleniyor
+            // (`showHedefSheet`). İki giriş aynı sheet'i açıyordu.
             const _InvestorLevelPicker(),
             const SizedBox(height: 12),
             const _LanguagePicker(),
@@ -626,25 +618,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   List<Widget> _bildirimler() => [
             SandikSectionHeader(title: context.l10n.notificationsUpper),
             const SizedBox(height: 12),
-            _SwitchTile(
-              icon: Icons.notifications_active_outlined,
-              title: context.l10n.signalNotifications,
-              subtitle: context.l10n.signalNotificationsSubtitle,
-              value: ref.watch(signalNotificationsProvider),
-              onChanged: (v) async {
-                await ref.read(signalNotificationsProvider.notifier).set(v);
-                // Sunucuya da yaz: sinyal push'unu sunucu gönderiyor, bu
-                // anahtar orada bilinmezse kapatmak işe yaramaz.
-                await syncSignalsEnabledPreference(ref);
-              },
-            ),
+            // Teknik sinyaller TEK satır (2026-09-21): anahtar bildirimi
+            // açar/kapar, satırın kendisi ayarlara götürür. Eskiden iki
+            // ayrı satırdı (bildirim anahtarı + ayar bağlantısı) ve aynı
+            // konu iki yerde görünüyordu.
             _SettingsTile(
               icon: Icons.tune_rounded,
               title: context.l10n.signalSettings,
-              subtitle: context.l10n.signalSettingsSubtitle,
+              subtitle: context.l10n.signalNotificationsSubtitle,
               onTap: () => Navigator.push(
                 context,
                 adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
+              ),
+              trailing: Semantics(
+                label: context.l10n.signalNotifications,
+                child: Switch.adaptive(
+                  value: ref.watch(signalNotificationsProvider),
+                  activeTrackColor: context.c.amberFill,
+                  onChanged: (v) async {
+                    await ref.read(signalNotificationsProvider.notifier).set(v);
+                    // Sunucuya da yaz: sinyal push'unu sunucu gönderiyor, bu
+                    // anahtar orada bilinmezse kapatmak işe yaramaz.
+                    await syncSignalsEnabledPreference(ref);
+                  },
+                ),
               ),
             ),
             // Alarm KURMA yeri varlık ekranıdır (zil ikonu); burada yalnızca

@@ -105,6 +105,14 @@ const List<SurumNotu> surumNotlari = [
     yenilikler: [
       Yenilik(
         ikon: YenilikIkonu.genel,
+        baslik: 'Ana ekran ve Performans sadeleşti',
+        aciklama: 'Reel getiri ve haftalık özet artık Bugün kartının '
+            'satırları; Ben/ortak/Birlikte seçimi toplam kartının başlığında. '
+            'Performans › Özet üç başlığa ayrıldı: Bu dönem, Varlıklar, '
+            'Derinlik (katlanır). Hiçbir bilgi kaldırılmadı, yeri değişti.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
         baslik: 'Ana ekranda piyasa şeridi',
         aciklama: 'Dolar, euro, gram altın ve BIST 100 günlük değişimiyle '
             'ana ekranın en üstünde. Portföyüne bakmadan önce piyasayı gör.',

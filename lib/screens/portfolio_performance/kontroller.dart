@@ -60,6 +60,12 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       children: [
         // İkisi de esnek ve eşit: yüzey anahtarı sabit genişlik alsaydı dar
         // ekranda kapsam çipine üç nokta bile sığmıyordu.
+        //
+        // 2026-09-21'de dönem seçicisi bu satıra alınıp yüzey anahtarı kendi
+        // satırına çıkarılmak istendi; GERİ ALINDI: beş dönem etiketi
+        // 320pt'te ancak tam genişlikte kırpılmadan sığıyor
+        // (`performans_kontrol_yigini_test`). Sadeleşme Özet'in içinde
+        // (üç başlık + katlanır Derinlik), kontrol yığını iki satır kalır.
         Expanded(child: _buildSurfaceToggle()),
         const SizedBox(width: SandikSpace.sm),
         Expanded(child: _buildScopeChip()),

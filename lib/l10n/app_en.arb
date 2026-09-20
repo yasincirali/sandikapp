@@ -2287,5 +2287,43 @@
   "briefSlotTitle": "Brief time",
   "briefSlotSubtitle": "When your daily portfolio move summary arrives",
   "briefSlotMorning": "Morning 09:45",
-  "briefSlotEvening": "Evening 18:30 (close)"
+  "briefSlotEvening": "Evening 18:30 (close)",
+  "todayRealReturnAhead": "{pts} pts ahead of inflation · yearly",
+  "@todayRealReturnAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealReturnBehind": "{pts} pts behind inflation · yearly",
+  "@todayRealReturnBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeeklyUp": "Last week market +{pct} · summary ready",
+  "@todayWeeklyUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeeklyDown": "Last week market −{pct} · summary ready",
+  "@todayWeeklyDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "sectionThisPeriod": "THIS PERIOD",
+  "sectionAssets": "ASSETS",
+  "sectionDepth": "DEPTH",
+  "sectionDepthHint": "XIRR, health, advanced metrics, character",
+  "myAlarms": "My alerts",
+  "viewChipLabel": "View"
 }

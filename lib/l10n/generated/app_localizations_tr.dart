@@ -3221,4 +3221,42 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get briefSlotEvening => 'Akşam 18:30 (kapanış)';
+
+  @override
+  String todayRealReturnAhead(String pts) {
+    return '$pts puan enflasyonun önündesin · yıllık';
+  }
+
+  @override
+  String todayRealReturnBehind(String pts) {
+    return '$pts puan enflasyonun gerisindesin · yıllık';
+  }
+
+  @override
+  String todayWeeklyUp(String pct) {
+    return 'Geçen hafta piyasadan +$pct · özetin hazır';
+  }
+
+  @override
+  String todayWeeklyDown(String pct) {
+    return 'Geçen hafta piyasadan −$pct · özetin hazır';
+  }
+
+  @override
+  String get sectionThisPeriod => 'BU DÖNEM';
+
+  @override
+  String get sectionAssets => 'VARLIKLAR';
+
+  @override
+  String get sectionDepth => 'DERİNLİK';
+
+  @override
+  String get sectionDepthHint => 'XIRR, sağlık, ileri metrikler, karakter';
+
+  @override
+  String get myAlarms => 'Alarmlarım';
+
+  @override
+  String get viewChipLabel => 'Görünüm';
 }

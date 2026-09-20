@@ -5515,6 +5515,66 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Akşam 18:30 (kapanış)'**
   String get briefSlotEvening;
+
+  /// No description provided for @todayRealReturnAhead.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pts} puan enflasyonun önündesin · yıllık'**
+  String todayRealReturnAhead(String pts);
+
+  /// No description provided for @todayRealReturnBehind.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pts} puan enflasyonun gerisindesin · yıllık'**
+  String todayRealReturnBehind(String pts);
+
+  /// No description provided for @todayWeeklyUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen hafta piyasadan +{pct} · özetin hazır'**
+  String todayWeeklyUp(String pct);
+
+  /// No description provided for @todayWeeklyDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen hafta piyasadan −{pct} · özetin hazır'**
+  String todayWeeklyDown(String pct);
+
+  /// No description provided for @sectionThisPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'BU DÖNEM'**
+  String get sectionThisPeriod;
+
+  /// No description provided for @sectionAssets.
+  ///
+  /// In tr, this message translates to:
+  /// **'VARLIKLAR'**
+  String get sectionAssets;
+
+  /// No description provided for @sectionDepth.
+  ///
+  /// In tr, this message translates to:
+  /// **'DERİNLİK'**
+  String get sectionDepth;
+
+  /// No description provided for @sectionDepthHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'XIRR, sağlık, ileri metrikler, karakter'**
+  String get sectionDepthHint;
+
+  /// No description provided for @myAlarms.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarmlarım'**
+  String get myAlarms;
+
+  /// No description provided for @viewChipLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görünüm'**
+  String get viewChipLabel;
 }
 
 class _AppLocalizationsDelegate
