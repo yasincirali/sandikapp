@@ -181,6 +181,19 @@ Gösterim kararı `SurumNotuService.yeniNotlar` saf fonksiyonundadır
 kez gösterilmez, atlanan sürümler birikir, notu yazılmamış sürümde susar.
 Bu kuralları değiştirirken testi de güncelle.
 
+**Tur metni arayüzle birlikte değişir (kullanıcı kuralı, 2026-09-21).**
+Yukarıdaki üç ayak "tanıtımda göster" dendiğinde çalışır; bu kural
+İSTENMEDEN de geçerlidir: bir tur adımının anlattığı yüzeyde UI/UX
+değişikliği yapıyorsan (yerleşim, etkileşim, satır ekleme/çıkarma, ad
+değişikliği) **aynı değişiklikte** o adımın metnini de güncelle — tur
+gerçek ekranın üstünde çalıştığı için eski metin yeni ekranı yanlış
+anlatır ve bunu hiçbir test yakalamaz. Çalışma sırası: `onboarding_screen.dart`
+→ `_adimlariKur()` içinde `hedef:` alanı değişen yüzeye işaret eden adımları
+bul (`TourTarget.*`), metni yeni davranışa göre yaz; kısa tur (`_kisaAdimlar`)
+aynı adımları paylaşır, ayrıca bakma. Adımın anlattığı şey kalktıysa adımı
+kaldır ya da yeniden hedefle. Özette "tur adımı X güncellendi" diye yaz;
+gerekmiyorsa "tur etkilenmedi" diye yaz ki karar görünür olsun.
+
 ## Doğrulama
 
 Feature/bugfix turunda:
@@ -250,5 +263,5 @@ koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Beti
 gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
 
 ---
-**Son güncelleme:** 2026-09-17 (brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+**Son güncelleme:** 2026-09-21 (tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
 kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).
