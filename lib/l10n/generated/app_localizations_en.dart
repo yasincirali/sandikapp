@@ -3069,6 +3069,101 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateAppSubtitle => 'Leave a rating on the store';
 
   @override
+  String get todayMarketOnly => 'market effect only';
+
+  @override
+  String todaySessionOpen(String close) {
+    return 'Session open · closes $close';
+  }
+
+  @override
+  String todayOpensAt(String when) {
+    return 'opens $when';
+  }
+
+  @override
+  String get todayClosedWord => 'Market closed';
+
+  @override
+  String get todayLoading => 'Intraday data loading';
+
+  @override
+  String get todayRealLabel => 'Versus inflation';
+
+  @override
+  String get todayRealHint => 'Yearly return minus CPI';
+
+  @override
+  String todayPoints(String pts) {
+    return '$pts pts';
+  }
+
+  @override
+  String get todayWeekLabel => 'Last week';
+
+  @override
+  String get todayWeekHint => 'Market effect on your portfolio · summary ready';
+
+  @override
+  String get todayGoalLabel => 'Goal';
+
+  @override
+  String get todayGoalSetShort => 'Pick an amount, see what\'s left daily';
+
+  @override
+  String get todayGoalAction => 'Set';
+
+  @override
+  String todayGoalLeftHint(String goal) {
+    return 'Left to $goal';
+  }
+
+  @override
+  String todayGoalValue(int pct, String left) {
+    return '$pct% · $left';
+  }
+
+  @override
+  String get todayGoalDone => 'Reached';
+
+  @override
+  String todayGoalDoneHint(String goal) {
+    return 'Goal $goal · pick a new one';
+  }
+
+  @override
+  String get todayGreenLabel => 'Holdings in the green';
+
+  @override
+  String get todayGreenHint => 'Above their buy price';
+
+  @override
+  String todayGreenValue(int green, int total) {
+    return '$green / $total';
+  }
+
+  @override
+  String get todayOpenAction => 'Open';
+
+  @override
+  String todayEventCpiShort(String date) {
+    return 'CPI release · $date';
+  }
+
+  @override
+  String todayEventHolidayShort(String date) {
+    return 'Market holiday · $date';
+  }
+
+  @override
+  String get todayEventMonthEndShort => 'Month end · monthly summary';
+
+  @override
+  String todayDaysShort(int n) {
+    return '$n days';
+  }
+
+  @override
   String get todayTitle => 'Today';
 
   @override

@@ -3060,6 +3060,101 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rateAppSubtitle => 'Mağazada puan ver';
 
   @override
+  String get todayMarketOnly => 'sadece piyasa etkisi';
+
+  @override
+  String todaySessionOpen(String close) {
+    return 'Seans açık · $close kapanış';
+  }
+
+  @override
+  String todayOpensAt(String when) {
+    return '$when açılır';
+  }
+
+  @override
+  String get todayClosedWord => 'Piyasa kapalı';
+
+  @override
+  String get todayLoading => 'Gün içi veri geliyor';
+
+  @override
+  String get todayRealLabel => 'Enflasyona göre';
+
+  @override
+  String get todayRealHint => 'Yıllık getirin ile TÜFE farkı';
+
+  @override
+  String todayPoints(String pts) {
+    return '$pts puan';
+  }
+
+  @override
+  String get todayWeekLabel => 'Geçen hafta';
+
+  @override
+  String get todayWeekHint => 'Piyasanın portföyüne etkisi · özet hazır';
+
+  @override
+  String get todayGoalLabel => 'Hedef';
+
+  @override
+  String get todayGoalSetShort => 'Tutar seç, kalanı her gün gör';
+
+  @override
+  String get todayGoalAction => 'Belirle';
+
+  @override
+  String todayGoalLeftHint(String goal) {
+    return '$goal hedefe kalan';
+  }
+
+  @override
+  String todayGoalValue(int pct, String left) {
+    return '%$pct · $left';
+  }
+
+  @override
+  String get todayGoalDone => 'Ulaşıldı';
+
+  @override
+  String todayGoalDoneHint(String goal) {
+    return 'Hedefin $goal · yenisini seç';
+  }
+
+  @override
+  String get todayGreenLabel => 'Artıdaki varlık';
+
+  @override
+  String get todayGreenHint => 'Alış fiyatının üstündekiler';
+
+  @override
+  String todayGreenValue(int green, int total) {
+    return '$green / $total';
+  }
+
+  @override
+  String get todayOpenAction => 'Aç';
+
+  @override
+  String todayEventCpiShort(String date) {
+    return 'TÜİK enflasyonu · $date';
+  }
+
+  @override
+  String todayEventHolidayShort(String date) {
+    return 'Borsa kapalı · $date';
+  }
+
+  @override
+  String get todayEventMonthEndShort => 'Ay sonu · aylık özet';
+
+  @override
+  String todayDaysShort(int n) {
+    return '$n gün';
+  }
+
+  @override
   String get todayTitle => 'Bugün';
 
   @override

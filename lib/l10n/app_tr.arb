@@ -2116,6 +2116,107 @@
   "reviewPromptIssue": "Bir sorun var",
   "rateAppTitle": "sandık'ı değerlendir",
   "rateAppSubtitle": "Mağazada puan ver",
+  "todayMarketOnly": "sadece piyasa etkisi",
+  "todaySessionOpen": "Seans açık · {close} kapanış",
+  "@todaySessionOpen": {
+    "placeholders": {
+      "close": {
+        "type": "String"
+      }
+    }
+  },
+  "todayOpensAt": "{when} açılır",
+  "@todayOpensAt": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayClosedWord": "Piyasa kapalı",
+  "todayLoading": "Gün içi veri geliyor",
+  "todayRealLabel": "Enflasyona göre",
+  "todayRealHint": "Yıllık getirin ile TÜFE farkı",
+  "todayPoints": "{pts} puan",
+  "@todayPoints": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekLabel": "Geçen hafta",
+  "todayWeekHint": "Piyasanın portföyüne etkisi · özet hazır",
+  "todayGoalLabel": "Hedef",
+  "todayGoalSetShort": "Tutar seç, kalanı her gün gör",
+  "todayGoalAction": "Belirle",
+  "todayGoalLeftHint": "{goal} hedefe kalan",
+  "@todayGoalLeftHint": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGoalValue": "%{pct} · {left}",
+  "@todayGoalValue": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGoalDone": "Ulaşıldı",
+  "todayGoalDoneHint": "Hedefin {goal} · yenisini seç",
+  "@todayGoalDoneHint": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreenLabel": "Artıdaki varlık",
+  "todayGreenHint": "Alış fiyatının üstündekiler",
+  "todayGreenValue": "{green} / {total}",
+  "@todayGreenValue": {
+    "placeholders": {
+      "green": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "todayOpenAction": "Aç",
+  "todayEventCpiShort": "TÜİK enflasyonu · {date}",
+  "@todayEventCpiShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHolidayShort": "Borsa kapalı · {date}",
+  "@todayEventHolidayShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEndShort": "Ay sonu · aylık özet",
+  "todayDaysShort": "{n} gün",
+  "@todayDaysShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "todayTitle": "Bugün",
   "todayUp": "{amount} · %{pct} artıda",
   "@todayUp": {

@@ -18,6 +18,19 @@ Kod: `feat/sadelestirme-2026-09-21`. Hiçbir özellik silinmedi; yer ve sıra
 değişti. Plan ve yerleşim: https://claude.ai/artifact/7aCK2SKzeCF5Yrnn9DYoif
 
 ### Cihazda (10 dk)
+0. **Bugün kartı — almanak düzeni (2026-09-21, seçenek A;
+   https://claude.ai/artifact/7zsuzQpSAFfXcVTi5aVQd4)** — solda büyük gün
+   rakamı + ay + gün adı; sağda "BUGÜN · sadece piyasa etkisi", altında
+   günün hareketi (örn. "−₺13  %0,00") ve durum satırı ("Piyasa kapalı ·
+   Pazartesi 10:00 açılır" / "Seans açık · 18:00 kapanış"). Seans açıkken
+   sayının sağında küçük gün içi çizgi (320pt'te gizlenir). Altında defter
+   satırları: "Enflasyona göre ····· −0,8 puan ›", "Geçen hafta ·····
+   −%4,64 ›", "Hedef ····· Belirle ›", "Artıdaki varlık ····· 4 / 7"; her
+   birinin altında tek satır açıklama. En altta yaklaşan tarih: "TÜİK
+   enflasyonu · 3 Ekim ····· 13 gün". Kontrol: (a) "%%" yok; (b) hedef
+   belirleyince satır "%64 · ₺540B" + ince çubuk olur; (c) gizli bakiyede
+   yalnızca ₺ tutarlar "••••", yüzde/puan kalır; (d) hiçbir satır taşmıyor
+   (iPhone SE dahil); (e) tur adımı "Bugün ne oldu?" yeni kartı anlatıyor.
 1. **Ana ekran** — sıra: piyasa bandı → toplam kartı → Bugün kartı → dağılım
    → hareketler. Ayrı reel getiri / yüzdelik / haftalık şeritleri YOK; reel
    getiri ("+31,5 puan enflasyonun önündesin · yıllık") ve haftalık özet

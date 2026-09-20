@@ -2116,6 +2116,107 @@
   "reviewPromptIssue": "Something's off",
   "rateAppTitle": "Rate sandık",
   "rateAppSubtitle": "Leave a rating on the store",
+  "todayMarketOnly": "market effect only",
+  "todaySessionOpen": "Session open · closes {close}",
+  "@todaySessionOpen": {
+    "placeholders": {
+      "close": {
+        "type": "String"
+      }
+    }
+  },
+  "todayOpensAt": "opens {when}",
+  "@todayOpensAt": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "todayClosedWord": "Market closed",
+  "todayLoading": "Intraday data loading",
+  "todayRealLabel": "Versus inflation",
+  "todayRealHint": "Yearly return minus CPI",
+  "todayPoints": "{pts} pts",
+  "@todayPoints": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekLabel": "Last week",
+  "todayWeekHint": "Market effect on your portfolio · summary ready",
+  "todayGoalLabel": "Goal",
+  "todayGoalSetShort": "Pick an amount, see what's left daily",
+  "todayGoalAction": "Set",
+  "todayGoalLeftHint": "Left to {goal}",
+  "@todayGoalLeftHint": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGoalValue": "{pct}% · {left}",
+  "@todayGoalValue": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGoalDone": "Reached",
+  "todayGoalDoneHint": "Goal {goal} · pick a new one",
+  "@todayGoalDoneHint": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "todayGreenLabel": "Holdings in the green",
+  "todayGreenHint": "Above their buy price",
+  "todayGreenValue": "{green} / {total}",
+  "@todayGreenValue": {
+    "placeholders": {
+      "green": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "todayOpenAction": "Open",
+  "todayEventCpiShort": "CPI release · {date}",
+  "@todayEventCpiShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHolidayShort": "Market holiday · {date}",
+  "@todayEventHolidayShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEndShort": "Month end · monthly summary",
+  "todayDaysShort": "{n} days",
+  "@todayDaysShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "todayTitle": "Today",
   "todayUp": "{amount} · up {pct}%",
   "@todayUp": {

@@ -69,7 +69,8 @@ class HedefSatiri extends BugunSatiri {
   bool get belirlenmedi => hedefTRY <= 0;
   bool get ulasildi => hedefTRY > 0 && deger >= hedefTRY;
   double get oran => hedefTRY <= 0 ? 0 : (deger / hedefTRY).clamp(0.0, 1.0);
-  double get kalan => hedefTRY <= 0 ? 0 : (hedefTRY - deger).clamp(0.0, double.infinity);
+  double get kalan =>
+      hedefTRY <= 0 ? 0 : (hedefTRY - deger).clamp(0.0, double.infinity);
 }
 
 class YaklasanOlaySatiri extends BugunSatiri {
@@ -127,6 +128,7 @@ class BugunKartiVerisi {
     required this.aylik,
     this.reel,
     this.haftalik,
+    this.olay,
   });
   final BugunSatiri? birincil;
   final List<BugunSatiri> ikincil;
@@ -136,12 +138,18 @@ class BugunKartiVerisi {
   final ReelGetiriSatiri? reel;
   final HaftalikOzetSatiri? haftalik;
 
+  /// Ufuktaki en yakın ulusal olay — kartın AYAK NOTU (2026-09-21 almanak
+  /// düzeni). Eskiden dönüşüm havuzundaydı; bir tarih "bazı günler görünen"
+  /// bir şey olamaz, kalan gün sayısı her gün değişir ve her gün okunur.
+  final YaklasanOlaySatiri? olay;
+
   bool get bos =>
       birincil == null &&
       ikincil.isEmpty &&
       aylik == null &&
       reel == null &&
-      haftalik == null;
+      haftalik == null &&
+      olay == null;
 }
 
 abstract final class BugunService {
@@ -181,14 +189,17 @@ abstract final class BugunService {
     if (islemGunuMu(gun) && now.isBefore(bugunAcilis)) return bugunAcilis;
     for (var i = 0; i < 20; i++) {
       gun = DateTime(gun.year, gun.month, gun.day + 1);
-      if (islemGunuMu(gun)) return gun.add(const Duration(minutes: seansAcilisDk));
+      if (islemGunuMu(gun)) {
+        return gun.add(const Duration(minutes: seansAcilisDk));
+      }
     }
     // Takvim 20 gün boyunca kapalı olamaz; yine de güvenli bir değer dön.
     return bugunAcilis.add(const Duration(days: 1));
   }
 
   /// Ufuk içindeki ulusal olaylar, tarihe göre sıralı.
-  static List<YaklasanOlaySatiri> yaklasanOlaylar(DateTime now, {int ufuk = olayUfkuGun}) {
+  static List<YaklasanOlaySatiri> yaklasanOlaylar(DateTime now,
+      {int ufuk = olayUfkuGun}) {
     final bugun = dayKey(now);
     final out = <YaklasanOlaySatiri>[];
 
@@ -259,8 +270,8 @@ abstract final class BugunService {
       ));
     }
     adaylar.add(HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger));
+    // Olay havuza girmez — ayak notu (bkz. `BugunKartiVerisi.olay`).
     final olaylar = yaklasanOlaylar(now);
-    if (olaylar.isNotEmpty) adaylar.add(olaylar.first);
 
     // Haftalık: Pazartesi–Salı sabit satır (özet taze), sonra havuzda.
     HaftalikOzetSatiri? haftalik;
@@ -276,7 +287,9 @@ abstract final class BugunService {
     final ikincil = <BugunSatiri>[];
     if (adaylar.isNotEmpty) {
       final bas = now.difference(DateTime(now.year)).inDays % adaylar.length;
-      for (var i = 0; i < adaylar.length && ikincil.length < ikincilSayisi; i++) {
+      for (var i = 0;
+          i < adaylar.length && ikincil.length < ikincilSayisi;
+          i++) {
         ikincil.add(adaylar[(bas + i) % adaylar.length]);
       }
     }
@@ -291,6 +304,7 @@ abstract final class BugunService {
       aylik: aylik,
       reel: reel,
       haftalik: haftalik,
+      olay: olaylar.isEmpty ? null : olaylar.first,
     );
   }
 }

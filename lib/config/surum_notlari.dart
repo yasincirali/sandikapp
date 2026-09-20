@@ -105,6 +105,14 @@ const List<SurumNotu> surumNotlari = [
     yenilikler: [
       Yenilik(
         ikon: YenilikIkonu.genel,
+        baslik: 'Bugün kartı yenilendi',
+        aciklama: 'Tarih ve günün hareketi başta; enflasyona göre durumun, '
+            'geçen hafta, hedef ve artıdaki varlıkların defter gibi alt '
+            'alta, her birinin altında kısa açıklamayla. Yaklaşan tarih en '
+            'altta.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
         baslik: 'Ana ekran ve Performans sadeleşti',
         aciklama: 'Reel getiri ve haftalık özet artık Bugün kartının '
             'satırları; Ben/ortak/Birlikte seçimi toplam kartının başlığında. '

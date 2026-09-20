@@ -5264,6 +5264,156 @@ abstract class AppLocalizations {
   /// **'Mağazada puan ver'**
   String get rateAppSubtitle;
 
+  /// No description provided for @todayMarketOnly.
+  ///
+  /// In tr, this message translates to:
+  /// **'sadece piyasa etkisi'**
+  String get todayMarketOnly;
+
+  /// No description provided for @todaySessionOpen.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seans açık · {close} kapanış'**
+  String todaySessionOpen(String close);
+
+  /// No description provided for @todayOpensAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'{when} açılır'**
+  String todayOpensAt(String when);
+
+  /// No description provided for @todayClosedWord.
+  ///
+  /// In tr, this message translates to:
+  /// **'Piyasa kapalı'**
+  String get todayClosedWord;
+
+  /// No description provided for @todayLoading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün içi veri geliyor'**
+  String get todayLoading;
+
+  /// No description provided for @todayRealLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyona göre'**
+  String get todayRealLabel;
+
+  /// No description provided for @todayRealHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık getirin ile TÜFE farkı'**
+  String get todayRealHint;
+
+  /// No description provided for @todayPoints.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pts} puan'**
+  String todayPoints(String pts);
+
+  /// No description provided for @todayWeekLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen hafta'**
+  String get todayWeekLabel;
+
+  /// No description provided for @todayWeekHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Piyasanın portföyüne etkisi · özet hazır'**
+  String get todayWeekHint;
+
+  /// No description provided for @todayGoalLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef'**
+  String get todayGoalLabel;
+
+  /// No description provided for @todayGoalSetShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutar seç, kalanı her gün gör'**
+  String get todayGoalSetShort;
+
+  /// No description provided for @todayGoalAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Belirle'**
+  String get todayGoalAction;
+
+  /// No description provided for @todayGoalLeftHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'{goal} hedefe kalan'**
+  String todayGoalLeftHint(String goal);
+
+  /// No description provided for @todayGoalValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{pct} · {left}'**
+  String todayGoalValue(int pct, String left);
+
+  /// No description provided for @todayGoalDone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ulaşıldı'**
+  String get todayGoalDone;
+
+  /// No description provided for @todayGoalDoneHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefin {goal} · yenisini seç'**
+  String todayGoalDoneHint(String goal);
+
+  /// No description provided for @todayGreenLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Artıdaki varlık'**
+  String get todayGreenLabel;
+
+  /// No description provided for @todayGreenHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alış fiyatının üstündekiler'**
+  String get todayGreenHint;
+
+  /// No description provided for @todayGreenValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{green} / {total}'**
+  String todayGreenValue(int green, int total);
+
+  /// No description provided for @todayOpenAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aç'**
+  String get todayOpenAction;
+
+  /// No description provided for @todayEventCpiShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜİK enflasyonu · {date}'**
+  String todayEventCpiShort(String date);
+
+  /// No description provided for @todayEventHolidayShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borsa kapalı · {date}'**
+  String todayEventHolidayShort(String date);
+
+  /// No description provided for @todayEventMonthEndShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay sonu · aylık özet'**
+  String get todayEventMonthEndShort;
+
+  /// No description provided for @todayDaysShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gün'**
+  String todayDaysShort(int n);
+
   /// No description provided for @todayTitle.
   ///
   /// In tr, this message translates to:

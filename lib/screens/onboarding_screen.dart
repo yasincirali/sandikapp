@@ -333,10 +333,11 @@ List<_Adim> _adimlariKur() {
       id: 'bugun',
       hedef: TourTarget.bugunKarti,
       baslik: 'Bugün ne oldu?',
-      govde: 'Günün hareketi, enflasyonu geçip geçmediğin (yıllık reel '
-          'getiri), geçen haftanın özeti, hedefine kalan yol ve yaklaşan '
-          'tarihler tek kartta. Her gün değişir; hedefi buradan '
-          'belirlersin, satırlara dokununca ayrıntı açılır.',
+      govde: 'Solda tarih, yanında günün hareketi — sadece piyasa etkisi, '
+          'yatırdığın para sayılmaz. Altındaki satırlar: enflasyona göre '
+          'durumun, geçen hafta, hedefine kalan ve artıdaki varlıkların; en '
+          'altta yaklaşan tarih. Her satırın altında ne anlama geldiği '
+          'yazar; dokununca ayrıntı açılır.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
