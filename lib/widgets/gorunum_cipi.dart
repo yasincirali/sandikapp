@@ -99,7 +99,9 @@ class GorunumCipi extends StatelessWidget {
           if (ib < 0) return -1;
           return ia.compareTo(ib);
         }
-        return a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
+        return a.displayName
+            .toLowerCase()
+            .compareTo(b.displayName.toLowerCase());
       });
     return [null, '', for (final p in ortaklar) p.id];
   }
@@ -121,11 +123,13 @@ class GorunumCipi extends StatelessWidget {
     return null;
   }
 
-  String _etiket(BuildContext context) => etiketi(context, partners, selectedId);
+  String _etiket(BuildContext context) =>
+      etiketi(context, partners, selectedId);
 
   /// Görünümün kısa adı: Ben / ilk ad / Birlikte. Kaydırma ipucu da bunu
   /// kullanır ki çip ile kenar etiketi aynı kelimeyi söylesin.
-  static String etiketi(BuildContext context, List<AppUser> partners, String? id) {
+  static String etiketi(
+      BuildContext context, List<AppUser> partners, String? id) {
     final l = context.l10n;
     if (id == '') return l.scopeMe;
     if (id == null) return l.scopeTogether;
@@ -150,7 +154,8 @@ class GorunumCipi extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
       ),
       builder: (ctx) => _GorunumSayfasi(
         partners: partners,
@@ -186,13 +191,18 @@ class GorunumCipi extends StatelessWidget {
                 boy: 18,
               ),
             ),
-            _Avatar(harf: context.l10n.scopeMe.characters.first, renk: c.amberFill, boy: 18),
+            _Avatar(
+                harf: context.l10n.scopeMe.characters.first,
+                renk: c.amberFill,
+                boy: 18),
           ],
         ),
       );
     } else if (selectedId == '') {
       avatar = _Avatar(
-          harf: context.l10n.scopeMe.characters.first, renk: c.amberFill, boy: 18);
+          harf: context.l10n.scopeMe.characters.first,
+          renk: c.amberFill,
+          boy: 18);
     } else {
       final p = _ortak(selectedId);
       avatar = _Avatar(
@@ -204,10 +214,14 @@ class GorunumCipi extends StatelessWidget {
     final sayi = selectedId == null && partners.length > 1
         ? ' · ${partners.length + 1}'
         : '';
+    final gorunumler = sira(partners);
+    final konum =
+        gorunumler.indexOf(selectedId).clamp(0, gorunumler.length - 1);
     return Semantics(
       button: true,
       label: '${context.l10n.scopeWho}: $etiket',
       hint: context.l10n.scopeSwipeHint,
+      value: '${konum + 1} / ${gorunumler.length}',
       child: ExcludeSemantics(
         child: SandikTappable(
           semanticLabel: etiket,
@@ -216,38 +230,93 @@ class GorunumCipi extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: SandikTouch.min),
             padding: const EdgeInsets.symmetric(horizontal: SandikSpace.sm2),
             alignment: Alignment.centerRight,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(
-                  SandikSpace.xs, SandikSpace.xs, SandikSpace.sm, SandikSpace.xs),
-              decoration: BoxDecoration(
-                color: c.amberFill.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(SandikRadius.lg),
-                border: Border.all(color: c.amberFill.withValues(alpha: 0.45)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  avatar,
-                  const SizedBox(width: SandikSpace.xs2),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 88),
-                    child: Text(
-                      '$etiket$sayi',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.t.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: c.amberText,
-                      ),
-                    ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.fromLTRB(SandikSpace.xs,
+                      SandikSpace.xs, SandikSpace.sm, SandikSpace.xs),
+                  decoration: BoxDecoration(
+                    color: c.amberFill.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(SandikRadius.lg),
+                    border:
+                        Border.all(color: c.amberFill.withValues(alpha: 0.45)),
                   ),
-                  Icon(Icons.unfold_more_rounded, size: 16, color: c.amberText),
-                ],
-              ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      avatar,
+                      const SizedBox(width: SandikSpace.xs2),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 88),
+                        child: Text(
+                          '$etiket$sayi',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: c.amberText,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.unfold_more_rounded,
+                          size: 16, color: c.amberText),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: SandikSpace.xs),
+                _Konum(sayi: gorunumler.length, secili: konum),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Kaydırma dilinin kalıcı işareti: çipin altında sayfa noktaları — hangi
+/// görünümdesin, kaç görünüm var. Dörde kadar nokta; daha çok ortakta
+/// noktalar sayılamaz, "3 / 9" yazısına düşer. Süs değil bilgi: kaydırma
+/// yönünü ve kaç adım kaldığını söyler.
+class _Konum extends StatelessWidget {
+  const _Konum({required this.sayi, required this.secili});
+  final int sayi;
+  final int secili;
+
+  static const int noktaSiniri = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    if (sayi > noktaSiniri) {
+      return Text(
+        '${secili + 1} / $sayi',
+        style: context.t.labelSmall?.copyWith(
+          color: c.text36,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      );
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < sayi; i++)
+          Padding(
+            padding: EdgeInsets.only(left: i == 0 ? 0 : SandikSpace.xs),
+            child: AnimatedContainer(
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.move,
+              width: i == secili ? SandikSpace.smd : SandikSpace.xs,
+              height: SandikSpace.xs,
+              decoration: BoxDecoration(
+                color: i == secili ? c.amberText : c.text20,
+                borderRadius: BorderRadius.circular(SandikRadius.sm),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -322,15 +391,16 @@ class _GorunumSayfasiState extends State<_GorunumSayfasi> {
     return SafeArea(
       child: Padding(
         // Klavye açılınca liste üstte kalsın.
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: yukseklik),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    SandikSpace.lg, SandikSpace.lg, SandikSpace.lg, SandikSpace.xs),
+                padding: const EdgeInsets.fromLTRB(SandikSpace.lg,
+                    SandikSpace.lg, SandikSpace.lg, SandikSpace.xs),
                 child: Row(
                   children: [
                     Expanded(
@@ -351,8 +421,8 @@ class _GorunumSayfasiState extends State<_GorunumSayfasi> {
               ),
               if (aramaVar)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      SandikSpace.lg, SandikSpace.xs, SandikSpace.lg, SandikSpace.xs),
+                  padding: const EdgeInsets.fromLTRB(SandikSpace.lg,
+                      SandikSpace.xs, SandikSpace.lg, SandikSpace.xs),
                   child: TextField(
                     autofocus: false,
                     onChanged: (v) => setState(() => _arama = v),
@@ -430,8 +500,8 @@ class _GorunumSayfasiState extends State<_GorunumSayfasi> {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    SandikSpace.lg, SandikSpace.xs, SandikSpace.lg, SandikSpace.smd),
+                padding: const EdgeInsets.fromLTRB(SandikSpace.lg,
+                    SandikSpace.xs, SandikSpace.lg, SandikSpace.smd),
                 child: Row(
                   children: [
                     Icon(Icons.swipe_rounded, size: 14, color: c.text36),

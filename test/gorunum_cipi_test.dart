@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/widgets/gorunum_cipi.dart';
 
@@ -30,6 +32,27 @@ void main() {
     expect(GorunumCipi.listeSirasi(ortaklar, 'zey'), [null, '', 'p3']);
     expect(GorunumCipi.listeSirasi(ortaklar, 'AYŞE'), [null, '', 'p2']);
     expect(GorunumCipi.listeSirasi(ortaklar, 'q'), [null, '']);
+  });
+
+  Widget cip(List<AppUser> p, String? secili) => MaterialApp(
+        theme: ThemeData(extensions: const [SandikPalette.light]),
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topRight,
+            child: GorunumCipi(partners: p, selectedId: secili, onChanged: (_) {}),
+          ),
+        ),
+      );
+
+  testWidgets('konum: dörde kadar nokta, üstünde "i / n" yazısı', (t) async {
+    await t.pumpWidget(cip(ortaklar.take(2).toList(), 'p1'));
+    expect(find.text('2 / 4'), findsNothing);
+    expect(find.byType(AnimatedContainer), findsNWidgets(4));
+
+    await t.pumpWidget(cip(ortaklar, null)); // 5 görünüm
+    await t.pumpAndSettle();
+    expect(find.byType(AnimatedContainer), findsNothing);
+    expect(find.text('5 / 5'), findsOneWidget);
   });
 
   test('ad yardımcıları', () {

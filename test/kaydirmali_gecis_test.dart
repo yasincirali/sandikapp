@@ -11,6 +11,8 @@ void main() {
     required ValueChanged<bool> onGecis,
     bool reduce = false,
     Object? anahtar = 'a',
+    bool ipucu = false,
+    VoidCallback? onIpucu,
   }) =>
       MediaQuery(
         data: MediaQueryData(disableAnimations: reduce),
@@ -24,6 +26,8 @@ void main() {
                   anahtar: anahtar,
                   etkin: true,
                   onGecis: onGecis,
+                  ipucu: ipucu,
+                  onIpucuGosterildi: onIpucu,
                   hedefEtiketi: (ileri) => ileri ? 'Ayşe' : 'Birlikte',
                   child: const SizedBox(height: 120, child: Text('kart')),
                 ),
@@ -61,6 +65,40 @@ void main() {
     await t.drag(find.text('kart'), const Offset(160, 0));
     await t.pumpAndSettle();
     expect(yon, isFalse);
+  });
+
+  // Tek seferlik göz kırpma (2026-09-21): ilk açılışta kart sola kayıp
+  // geri gelir, o an hedef adı görünür; tercih bir kez işaretlenir.
+  testWidgets('ipucu: kart göz kırpar, hedef adı belirir, tercih işaretlenir',
+      (t) async {
+    var isaret = 0;
+    await t.pumpWidget(kur(onGecis: (_) {}, ipucu: true, onIpucu: () => isaret++));
+    expect(isaret, 1);
+    expect(find.text('Ayşe'), findsNothing);
+    // Bekleme (3× surface) + sola kayış: rozet görünür.
+    await t.pump(SandikMotion.surface * 3);
+    await t.pump(SandikMotion.surface);
+    expect(find.text('Ayşe'), findsOneWidget);
+    // Bekleme (2× surface) zamanlayıcıyla geçer; pumpAndSettle kare bekler,
+    // zamanlayıcı beklemez — önce süreyi ilerlet.
+    // Bekleme zamanlayıcı ile geçer, geri dönüş kare ile; ikisini de adım
+    // adım ilerlet (pumpAndSettle zamanlayıcı beklemez).
+    for (var i = 0; i < 12 && find.text('Ayşe').evaluate().isNotEmpty; i++) {
+      await t.pump(SandikMotion.surface);
+    }
+    await t.pumpAndSettle();
+    expect(find.text('Ayşe'), findsNothing, reason: 'geri gelince kaybolur');
+    expect(isaret, 1);
+  });
+
+  testWidgets('ipucu: hareketi azalt açıkken oynamaz, yine işaretlenir',
+      (t) async {
+    var isaret = 0;
+    await t.pumpWidget(kur(
+        onGecis: (_) {}, ipucu: true, reduce: true, onIpucu: () => isaret++));
+    await t.pumpAndSettle();
+    expect(isaret, 1);
+    expect(find.text('Ayşe'), findsNothing);
   });
 
   testWidgets('hareketi azalt açıkken geçiş yine çalışır', (t) async {

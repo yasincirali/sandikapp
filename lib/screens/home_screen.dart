@@ -618,6 +618,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: KaydirmaliGecis(
                   anahtar: _view,
                   etkin: allActivePartners.isNotEmpty,
+                  ipucu: !ref.watch(kaydirmaIpucuGosterildiProvider),
+                  onIpucuGosterildi: () => ref
+                      .read(kaydirmaIpucuGosterildiProvider.notifier)
+                      .set(true),
                   hedefEtiketi: (ileri) => GorunumCipi.etiketi(
                     context,
                     allActivePartners,

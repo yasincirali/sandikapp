@@ -9,6 +9,23 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — İki test cihaz saatine bağlı: gece yarısı–seans arası kırmızı
+
+**Ne:** `live_activity_session_test` ("ömürlük getiri günlük diye gösterilmez")
+ve `home_widget_privacy_test` ("gün içi seri VARKEN…") fikstürü `DateTime.now()`
+ile kuruyor; servis de seriyi `IntradaySeriesCache.get(state, now: DateTime.now())`
+ile üretiyor (`live_activity_service.dart:438`) — testin verdiği `now:` parametresi
+seriye ulaşmıyor. Hafta içi 00:00–10:00 arasında seri boş dönüyor, `%0,00`
+yerine `—` çıkıyor. 2026-09-21 00:03'te temiz `main`'de doğrulandı; CI'da
+21:00–07:00 UTC arası koşular da aynı pencereye düşer.
+
+**Neden ertelendi:** Kalıcı çözüm servise saat enjeksiyonu (`sync(now:)`'un
+seriye de geçmesi) + fikstürün seansa göre dünü seçmesi. Görünüm seçici
+turunun kapsamı değil; yalnızca gece koşularını etkiliyor.
+
+**Maliyet:** Gece push'larında yanlış kırmızı; `deploy_emulators.sh` kapısı
+gündüz temiz. **Ne zaman:** bir sonraki test-sağlığı turunda (saat enjeksiyonu).
+
 ## 🟡 AÇIK — GÜNLÜK değişim kartı HAM, kilit ekranı ARINDIRILMIŞ: alım yapılan günde iki rakam ayrışıyor
 
 **Nerede.** `lib/screens/portfolio_performance/kartlar.dart` →

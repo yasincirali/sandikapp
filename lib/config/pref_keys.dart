@@ -21,6 +21,8 @@ class PrefKeys {
   static const signalNotifications = 'pref_signal_notifications';
   static const partnerNotifications = 'pref_partner_notifications';
   static const balanceHidden = 'pref_balance_hidden';
+  /// Toplam kartı kaydırma ipucu (tek seferlik göz kırpma) gösterildi mi.
+  static const kaydirmaIpucu = 'pref_kaydirma_ipucu_gosterildi';
   static const lockScreenAmounts = 'pref_lockscreen_amounts';
   static const liveActivityStartMin = 'pref_live_activity_start_min';
   static const liveActivityEndMin = 'pref_live_activity_end_min';

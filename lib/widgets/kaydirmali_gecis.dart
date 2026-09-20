@@ -28,7 +28,16 @@ class KaydirmaliGecis extends StatefulWidget {
     required this.onGecis,
     required this.hedefEtiketi,
     required this.child,
+    this.ipucu = false,
+    this.onIpucuGosterildi,
   });
+
+  /// Tek seferlik "göz kırpma": ilk açılışta kart hafifçe sola kayıp geri
+  /// gelir, o an kenarda hedefin adı belirir. Jestin var olduğunu kart
+  /// kendisi söyler; tur metni ve alt sayfa notu okunup unutuluyordu.
+  /// Gösterildiğini [onIpucuGosterildi] ile işaretler (tercih).
+  final bool ipucu;
+  final VoidCallback? onIpucuGosterildi;
 
   /// İçeriğin kimliği; değişince giriş animasyonu oynar.
   final Object? anahtar;
@@ -51,6 +60,9 @@ class KaydirmaliGecis extends StatefulWidget {
   static const double esikKayma = 40;
   static const double esikHiz = 300;
 
+  /// Göz kırpma mesafesi (pt) — eşiğin altında, "kaydırılabilir" demeye yeter.
+  static const double ipucuKayma = 14;
+
   @override
   State<KaydirmaliGecis> createState() => _KaydirmaliGecisState();
 }
@@ -67,6 +79,45 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   void initState() {
     super.initState();
     _yay = AnimationController(vsync: this);
+    if (widget.ipucu && widget.etkin) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _gozKirp());
+    }
+  }
+
+  /// [bas] → [son] arası kaymayı [sure] boyunca oynatır; süre sıfırsa
+  /// (hareketi azalt) doğrudan [son]a atlar.
+  Future<void> _kaydir(
+      double bas, double son, Duration sure, Curve egriTuru) async {
+    if (sure == Duration.zero) {
+      if (mounted) setState(() => _dx = son);
+      return;
+    }
+    _yay
+      ..duration = sure
+      ..reset();
+    final egri = CurvedAnimation(parent: _yay, curve: egriTuru);
+    void tik() => setState(() => _dx = bas + (son - bas) * egri.value);
+    egri.addListener(tik);
+    await _yay.forward();
+    egri.removeListener(tik);
+    if (mounted) setState(() => _dx = son);
+  }
+
+  /// Tek seferlik ipucu: ekran otursun, sola kay, rozet okunsun, geri gel.
+  /// Kullanıcı bu sırada dokunursa `_surukle` denetleyiciyi durdurur ve
+  /// hareket parmağa geçer. Hareketi azalt açıkken hiç oynamaz; tercih
+  /// yine işaretlenir ki her açılışta denenmesin.
+  Future<void> _gozKirp() async {
+    if (!mounted) return;
+    widget.onIpucuGosterildi?.call();
+    final sure = SandikMotion.surfaceOf(context);
+    if (sure == Duration.zero) return;
+    await Future<void>.delayed(sure * 3);
+    if (!mounted || _dx != 0 || _yay.isAnimating) return;
+    await _kaydir(0, -KaydirmaliGecis.ipucuKayma, sure, SandikMotion.enter);
+    await Future<void>.delayed(sure * 2);
+    if (!mounted || _dx != -KaydirmaliGecis.ipucuKayma) return;
+    await _kaydir(-KaydirmaliGecis.ipucuKayma, 0, sure, SandikMotion.move);
   }
 
   /// Son geçişin yönü — AnimatedSwitcher'da giren/çıkan tarafı belirler.
@@ -104,16 +155,7 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
       return;
     }
     // İptal: yerine yaylan.
-    final bas = _dx;
-    _yay
-      ..duration = SandikMotion.stateOf(context)
-      ..reset();
-    final egri = CurvedAnimation(parent: _yay, curve: SandikMotion.enter);
-    void tik() => setState(() => _dx = bas * (1 - egri.value));
-    egri.addListener(tik);
-    await _yay.forward();
-    egri.removeListener(tik);
-    if (mounted) setState(() => _dx = 0);
+    await _kaydir(_dx, 0, SandikMotion.stateOf(context), SandikMotion.enter);
   }
 
   @override

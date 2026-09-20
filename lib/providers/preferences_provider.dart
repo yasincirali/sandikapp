@@ -300,6 +300,11 @@ final partnerNotificationsProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final balanceHiddenProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kBalanceHiddenKey, false));
 
+/// Toplam kartındaki kaydırma ipucu bir kez gösterildi mi (cihaz tercihi;
+/// jest cihaza ait, kişiye değil). 2026-09-21.
+final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.kaydirmaIpucu, false));
+
 /// Baz para birimi (Faz 3.2) — `BaseCurrency.index` olarak saklanır; model
 /// ve kur eşlemesi `base_currency_provider.dart`'ta. Kişiye özel: aynı
 /// cihazı paylaşan iki kullanıcının tercihi karışmasın.
