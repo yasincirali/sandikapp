@@ -33,8 +33,11 @@ void main() {
   group('tutundurma bayrakları AÇIK doğar', () {
     // Beşi de TestFlight'ta görünür olmalı. Biri kapanırsa ilgili yüzey
     // (şerit / rozet / kutlama / öneri) hiç render edilmez.
+    // `percentile_strip_enabled` 2026-09-21'de KAPALI'ya alındı (kullanıcı
+    // kararı: küresel sıralama havuz dolana kadar parametrik kapalı,
+    // `global_leaderboard_enabled` ile birlikte) — "kapalı kalması
+    // gerekenler" grubunda.
     const acikOlmali = [
-      'percentile_strip_enabled',
       'widget_prompt_enabled',
       'push_prompt_after_first_asset',
       'real_return_enabled',
@@ -60,6 +63,11 @@ void main() {
   group('kapalı kalması gerekenler', () {
     // Bunlar tutundurma paketine DAHİL DEĞİL; toplu "hepsini aç" turunda
     // yanlışlıkla sürüklenmediklerini doğrular.
+    test('küresel sıralama kapalı — havuz dolana kadar (2026-09-21)', () {
+      expect(varsayilan('global_leaderboard_enabled'), 'false');
+      expect(varsayilan('percentile_strip_enabled'), 'false');
+    });
+
     test('paywall_enabled hâlâ kapalı — IAP paketi yok', () {
       expect(varsayilan('paywall_enabled'), 'false');
     });
