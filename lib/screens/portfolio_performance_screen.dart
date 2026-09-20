@@ -105,6 +105,20 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
     this.initialPeriodIdx,
   });
 
+  /// Uygulama DIŞI yüzeyden (ana ekran widget'ı, Canlı Etkinlik) gelen
+  /// "GÜNLÜK görünümü aç" isteği.
+  ///
+  /// [initialPeriodIdx] bu işi GÖREMEZ: sekmeler `IndexedStack` içinde
+  /// yaşıyor, ekran bir kez kurulduktan sonra `widget.initialPeriodIdx`
+  /// bir daha okunmaz. Kullanıcı ekranı 1Y'de bırakıp kilit ekranındaki
+  /// GÜNLÜK rakamına dokunduğunda 1Y kartına düşüyordu.
+  ///
+  /// `null` = bekleyen istek yok. Tüketen taraf `null`'a çeker; aksi halde
+  /// ekran her yeniden kurulduğunda (tema/dil değişimi, hot restart) eski
+  /// dokunuş yeniden uygulanır ve kullanıcının seçtiği dönem geri alınır.
+  /// Aynı kanal deseni `MainNavigationScreen.sekmeIstegi` ile birebir.
+  static final gunlukIstegi = ValueNotifier<bool?>(null);
+
   /// Dönem başlangıcı — takvim ayına göre.
   ///
   /// Kullanıcı isteği (2026-09-12): "1 aylık grafik bir önceki ay aynı
@@ -189,10 +203,53 @@ class _PortfolioPerformanceScreenState
     // Dönem derin bağlantıyla GÜNLÜK dışına ayarlanmış olabilir; tick
     // kararı seçili dönemden sonra verilmeli.
     _startIntradayTickIfNeeded();
+
+    // Dış yüzey dokunuşu. Soğuk açılışta istek bu ekran KURULMADAN önce
+    // yazılmış olur (sekme isteği de öyle), o yüzden dinleyiciyi bağlamakla
+    // yetinmeyip mevcut değeri bir kez okuyoruz.
+    PortfolioPerformanceScreen.gunlukIstegi.addListener(_gunlukIstegiGeldi);
+    if (PortfolioPerformanceScreen.gunlukIstegi.value != null) {
+      Future.microtask(_gunlukIstegiGeldi);
+    }
+  }
+
+  /// Widget / Canlı Etkinlik dokunuşunu UYGULAR: ekranı o yüzeyin anlattığı
+  /// kapsama geri getirir.
+  ///
+  /// Dönemden fazlası sıfırlanıyor çünkü kilit ekranı TEK bir şeyi anlatır:
+  /// kullanıcının KENDİ portföyü, tüm türler, gerçek (simülasyon değil)
+  /// defter, bugün. Ortak sekmesinde ya da "yalnızca Fon" filtresinde
+  /// bırakılmış bir ekran, aynı dokunuştan sonra kilit ekranından FARKLI
+  /// bir toplam gösterirdi.
+  ///
+  /// Özet sekmesi de kapatılır: dokunuşun vaadi grafiktir (kilit ekranında
+  /// görülen eğrinin büyüğü), tablo değil.
+  void _gunlukIstegiGeldi() {
+    if (PortfolioPerformanceScreen.gunlukIstegi.value == null) return;
+    // `mounted` kontrolü TÜKETMEDEN önce: sökülmüş bir state isteği yutarsa
+    // dokunuş sessizce kaybolur.
+    if (!mounted) return;
+    PortfolioPerformanceScreen.gunlukIstegi.value = null;
+
+    _guncelle(() {
+      _selectedPeriodIdx = 0; // GÜNLÜK
+      _ozetSekmesi = false;
+      _simulate = false;
+      _view = ''; // yalnızca kendi portföyü — kilit ekranıyla aynı kapsam
+      _typeFilter = null;
+      // Gün içi future'ı bilerek düşür: dokunuş "şu anki hâlini göster"
+      // demek, önbellekteki kareyi değil.
+      _intradayKey = null;
+    });
+    _startIntradayTickIfNeeded();
   }
 
   @override
   void dispose() {
+    // Dinleyici STATİK bir `ValueNotifier`'a bağlı: kaldırılmazsa ekran
+    // yeniden kurulduğunda üst üste birikir ve tek dokunuş birden çok kez
+    // işlenir (aynı gerekçe `MainNavigationScreen.dispose`).
+    PortfolioPerformanceScreen.gunlukIstegi.removeListener(_gunlukIstegiGeldi);
     _intradayTick?.cancel();
     _zoomController?.dispose();
     _viewport?.dispose();

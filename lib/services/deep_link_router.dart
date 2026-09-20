@@ -15,10 +15,14 @@ import '../screens/main_navigation_screen.dart';
 /// grafik. Kullanıcı isteği (2026-09-12): "hem widget hem de canlı
 /// aktivitelerde tıklandığında performans ekranı günlük grafik açılmalı."
 ///
-/// Günlük grafik için ayrı bir parametre GEREKMEZ:
-/// `PortfolioPerformanceScreen` zaten `_selectedPeriodIdx = 0` (intraday)
-/// ile açılıyor. Buraya bir "dönem" bilgisi eklemek, iki yerde yaşayan
-/// ikinci bir varsayılan üretirdi.
+/// Bir ara "günlük grafik için ayrı bir parametre GEREKMEZ, ekran zaten
+/// `_selectedPeriodIdx = 0` ile açılıyor" deniyordu. Bu varsayım YALNIZCA
+/// ekran o dokunuşla İLK KEZ kurulduğunda doğru: sekmeler `IndexedStack`
+/// içinde yaşıyor ve state korunuyor (bkz. `_AnimatedIndexedStack`). Ekranı
+/// daha önce açıp 1Y'de ya da Özet sekmesinde bırakan kullanıcı, kilit
+/// ekranındaki GÜNLÜK rakamına dokunduğunda bambaşka bir dönemin kartına
+/// düşüyordu — dokunuşun tek vaadi olan "aynı sayıyı büyük gör" kırılıyordu.
+/// Bu yüzden istek artık AÇIKÇA taşınıyor ([gunlukGorunumIster]).
 class DeepLinkRouter {
   const DeepLinkRouter._();
 
@@ -35,6 +39,18 @@ class DeepLinkRouter {
   /// (`NotificationService.openAssetPerformance`); bu host aynı hedefi
   /// URI ile adreslenebilir yapar (widget, paylaşılan bağlantı, App Links).
   static const assetHost = 'asset';
+
+  /// Dokunuş, performans ekranının GÜNLÜK (gün içi) görünümünü mü istiyor?
+  ///
+  /// Widget ve Canlı Etkinlik'in ikisi de `DailySummary` gösteriyor: aynı
+  /// gün içi seri, aynı toplam, aynı günlük değişim. Dokunuştan sonra
+  /// kullanıcının gördüğü yüzey başka bir dönemi (ya da Özet sekmesini)
+  /// anlatıyorsa, iki rakam yan yana geldiğinde "uygulama bozuk" okunur.
+  ///
+  /// Varlık derin bağlantısı (`sandik://asset/<id>`) KAPSAM DIŞI: orası
+  /// tekil varlık ekranına gider, portföy toplamını anlatmaz.
+  static bool gunlukGorunumIster(Uri? uri) =>
+      hedefSekme(uri) == MainNavigationScreen.performansSekmesi;
 
   /// `sandik://asset/<id>` → `<id>`; değilse null.
   static String? hedefVarlikId(Uri? uri) {

@@ -5,7 +5,50 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-19 (sahipsiz future'lar: arka plan işleri + catch'siz buton handler'ları)
+**Son güncelleme:** 2026-09-20 (GÜNLÜK değişim kartı ile kilit ekranı arasındaki arındırma ayrışması)
+
+---
+
+## 🟡 AÇIK — GÜNLÜK değişim kartı HAM, kilit ekranı ARINDIRILMIŞ: alım yapılan günde iki rakam ayrışıyor
+
+**Nerede.** `lib/screens/portfolio_performance/kartlar.dart` →
+`_buildPeriodChangeCard` (ana rakam `grossChange`) ile
+`lib/services/daily_summary.dart` → `DailySummary.from` (bugünkü net akış
+düşülür).
+
+**Durum.** Canlı Etkinlik, ana ekran widget'ı, ana ekrandaki "Bugün" kartı ve
+Performans → **Özet** sekmesi aynı hesaptan (`DailySummary`) besleniyor:
+bugünkü alım/satım tutarı çıkarılır, geriye yalnızca piyasa hareketi kalır.
+Performans → **Grafik** sekmesinin üst kartı ise 2026-08-31 kullanıcı
+kararıyla HAM ("birikim") değişimi gösteriyor; akışı yalnızca alt not
+satırında ayırıyor.
+
+Bugün 170.000 TL'lik alım yapan ve piyasada +900 TL kazanan kullanıcı:
+
+| Yüzey | Gösterilen |
+|---|---|
+| Kilit ekranı / widget / "Bugün" kartı / Özet | **+₺900** |
+| Performans → Grafik üst kartı | **+₺170.900** (not satırı: 170.000'i alım) |
+
+**Neden ertelendi.** İki kullanıcı kararı çelişiyor: 2026-08-31 ("birikim
+büyümesini görmek istiyorum, alım dahil") ve `daily_summary.dart`
+"Değişmezler" ("üç yüzey aynı rakamı göstermek ZORUNDA"). Hangisinin GÜNLÜK
+dönemde kazanacağı bir üslup kararı, kod kararı değil — kendiliğinden
+çevrilmedi.
+
+**Maliyet.** Yalnızca **alım/satım yapılan günlerde** görünür; diğer
+günlerde `netInflow ≈ 0` olduğu için iki rakam zaten eşit. Ayrıştığı günde
+kullanıcı kilit ekranından gelip 190 kat büyük bir sayı görüyor ve hangisine
+güveneceğini bilemiyor.
+
+**Seçenekler.** (a) GÜNLÜK dönemde kartın ana rakamı arındırılmışa
+çevrilir, birikim rakamı alt satıra iner — diğer dönemler 2026-08-31
+kararında kalır; (b) kilit ekranı da hama çevrilir (önerilmez: "bugün
+kazandım" yanılgısı v2'de tam olarak bu yüzden düzeltilmişti); (c) kart
+GÜNLÜK'te iki rakamı da eşit ağırlıkta gösterir.
+
+**Ne zaman.** Kullanıcı hangi seçeneği istediğini söylediğinde; kod
+değişikliği tek metotla sınırlı.
 
 ---
 

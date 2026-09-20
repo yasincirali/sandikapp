@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/deep_link_router.dart';
 import 'package:portfoy_takip/services/home_widget_service.dart';
 
+import 'helpers/kaynak.dart';
+
 /// Native yüzeylerin ÜRETTİĞİ URI'ler ile Dart'ın BEKLEDİĞİ eşleme
 /// birbirini tutmalı.
 ///
@@ -22,6 +24,21 @@ import 'package:portfoy_takip/services/home_widget_service.dart';
 /// okunarak bulundu — bu yüzden testle kilitleniyor.
 String _oku(String yol) =>
     File(yol).readAsStringSync().replaceAll('\r\n', '\n');
+
+/// Bir metodun GÖVDESİ — imzadan bir sonraki üst düzey üye bildirimine
+/// kadar.
+///
+/// Kaynak tarayan iddialar dosya geneli `contains` ile yapılırsa, aranan
+/// metin başka bir metotta (ya da bir alan varsayılanında) geçtiği için
+/// sessizce yeşil kalır. Kapsamı daraltmak iddiayı gerçekten metoda bağlar.
+String _govde(String kaynak, String imza) {
+  final i = kaynak.indexOf(imza);
+  if (i == -1) return '';
+  final sonrasi = kaynak.substring(i + imza.length);
+  final son = RegExp(r'\n  (?:@override|void |Future|Widget |static |[A-Z])')
+      .firstMatch(sonrasi);
+  return sonrasi.substring(0, son?.start ?? sonrasi.length);
+}
 
 /// `URL(string: "...")` / `"..."` içinden URI'yi çeker.
 String? _uriAyikla(String kaynak, String isim) {
@@ -96,6 +113,93 @@ void main() {
       expect(plist.contains('<string>sandik</string>'), isTrue,
           reason: '`sandik` şeması kayıtlı değil — derin bağlantı '
               'iOS\'ta sessizce çalışmaz.');
+    });
+  });
+
+  // Dokunuştan SONRA görülen yüzey, dokunulan yüzeyle aynı şeyi anlatmalı.
+  //
+  // Kilit ekranı / widget `DailySummary` gösteriyor: kendi portföyü, tüm
+  // türler, gün içi seri. Uygulama başka bir dönemde (1Y), başka bir
+  // kapsamda (ortak sekmesi, tür filtresi) ya da Özet sekmesinde açılırsa
+  // kullanıcı iki rakamı yan yana görüp hangisine güveneceğini bilemez.
+  //
+  // Ekran state'i `IndexedStack` içinde KORUNUYOR (bkz. `_AnimatedIndexedStack`),
+  // yani `initialPeriodIdx` varsayılanına güvenmek yetmez — istek açıkça
+  // taşınmalı ve tüketilmeli.
+  group('dokunuş → GÜNLÜK görünüm', () {
+    test('widget ve Canlı Etkinlik GÜNLÜK ister', () {
+      expect(
+          DeepLinkRouter.gunlukGorunumIster(
+              Uri.parse('sandik://live-activity/summary?homeWidget=1')),
+          isTrue);
+      expect(
+          DeepLinkRouter.gunlukGorunumIster(
+              Uri.parse('sandik://widget/home?homeWidget=1')),
+          isTrue);
+    });
+
+    test('varlık bağlantısı ve tanınmayan URI İSTEMEZ', () {
+      // `sandik://asset/<id>` tekil varlık ekranına gider; portföy
+      // toplamını anlatmadığı için performans dönemine dokunmamalı.
+      expect(DeepLinkRouter.gunlukGorunumIster(Uri.parse('sandik://asset/42')),
+          isFalse);
+      expect(DeepLinkRouter.gunlukGorunumIster(Uri.parse('sandik://bilinmeyen')),
+          isFalse);
+      expect(DeepLinkRouter.gunlukGorunumIster(null), isFalse);
+    });
+
+    test('yönlendiren servis isteği YAZIYOR', () {
+      final kaynak = ekranKaynagiSync('lib/services/home_widget_service.dart');
+      expect(
+          kaynak.contains('DeepLinkRouter.gunlukGorunumIster(uri)') &&
+              kaynak.contains(
+                  'PortfolioPerformanceScreen.gunlukIstegi.value = true'),
+          isTrue,
+          reason: 'Dokunuş sekmeyi değiştiriyor ama dönemi değiştirmiyor — '
+              'kullanıcı 1Y kartına düşer.');
+    });
+
+    test('ekran isteği TÜKETİYOR ve kapsamı sıfırlıyor', () {
+      final kaynak =
+          ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart');
+      // Tüketilmezse ekran her yeniden kurulduğunda (tema/dil değişimi)
+      // eski dokunuş yeniden uygulanır ve kullanıcının seçtiği dönem
+      // elinden alınır.
+      expect(
+          kaynak.contains('PortfolioPerformanceScreen.gunlukIstegi.value = null'),
+          isTrue,
+          reason: 'İstek tüketilmiyor.');
+      // Dinleyici statik notifier'a bağlı: kaldırılmazsa tek dokunuş
+      // birden çok kez işlenir.
+      expect(kaynak.contains('gunlukIstegi.removeListener'), isTrue,
+          reason: 'Dinleyici bırakılmıyor — dokunuş çoğalır.');
+      // Sıfırlamalar İŞLEYİCİNİN İÇİNDE aranır: alan varsayılanları
+      // (`bool _simulate = false;`) aynı metni taşıyor ve dosya geneli
+      // arama, işleyici hiçbir şey yapmasa bile yeşil kalırdı.
+      final govde = _govde(kaynak, 'void _gunlukIstegiGeldi()');
+      for (final beklenen in [
+        '_selectedPeriodIdx = 0',
+        '_ozetSekmesi = false',
+        '_simulate = false',
+        "_view = ''",
+        '_typeFilter = null',
+      ]) {
+        expect(govde.contains(beklenen), isTrue,
+            reason: '$beklenen sıfırlanmıyor — kilit ekranından FARKLI '
+                'bir toplam görünür.');
+      }
+    });
+
+    test('dokunuş fiyatları TAZELİYOR', () {
+      // Sıcak dönüşte (uygulama arkada) hiçbir yol fiyat çekmiyordu:
+      // `didChangeAppLifecycleState` çekmez, derin bağlantı yalnızca
+      // sekmeyi değiştiriyordu. Kullanıcı kilit ekranındakinden ESKİ bir
+      // rakam görüyordu.
+      final kaynak =
+          ekranKaynagiSync('lib/screens/main_navigation_screen.dart');
+      final govde = _govde(kaynak, 'void _sekmeIstegiGeldi()');
+      expect(govde.contains('refreshPrices()'), isTrue,
+          reason: 'Dış yüzey dokunuşu fiyatları tazelemiyor.');
     });
   });
 }

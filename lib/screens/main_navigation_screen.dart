@@ -54,6 +54,15 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   int _currentIndex = 0;
 
+  /// Açılış fiyat turu kuyruğa alındı mı?
+  ///
+  /// Soğuk açılışta widget / Canlı Etkinlik dokunuşu ile `initState`'in
+  /// kendi turu ÜST ÜSTE binerdi: `refreshPrices` in-flight tekilleştirme
+  /// yapmıyor, yani aynı sembol listesi iki kez ağa çıkardı. Dokunuş turu
+  /// bu yüzden yalnızca SICAK dönüşte atılır — soğuk açılışta zaten
+  /// açılışın kendi turu var.
+  bool _acilisTazelemesiIstendi = false;
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +81,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // İlk açılışta fiyatları yükle
     Future.microtask(() {
       if (mounted) ref.read(portfolioProvider.notifier).refreshPrices();
+      _acilisTazelemesiIstendi = true;
     });
     // UE1: Bildirim iznini onboarding sonrasına ertele — uygulama açılır açılmaz değil
     //
@@ -128,6 +138,25 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       return;
     }
     _sekmeyeGec(hedef);
+
+    // Dış yüzey dokunuşu fiyatları TAZELER.
+    //
+    // Soğuk açılışta `initState` zaten bir tur atıyordu ama SICAK dönüşte
+    // (uygulama arkada, kullanıcı kilit ekranındaki banner'a dokunuyor)
+    // hiçbir yol tazelemiyordu: `didChangeAppLifecycleState` fiyat çekmez ve
+    // derin bağlantı yalnızca sekmeyi değiştiriyordu. Kullanıcı, kilit
+    // ekranındaki rakama dokunup uygulamada ondan ESKİ bir rakam görüyordu —
+    // gün içi tick'in (30 sn) sırası gelene kadar.
+    //
+    // `force: false` BİLEREK: kotasyon önbelleği 45 sn ve push döngüsü 5 dk.
+    // Önbelleği atlamak kilit ekranından daha taze bir şey getirmez, yalnızca
+    // soğuk açılıştaki turu ikiye katlardı.
+    if (_acilisTazelemesiIstendi) {
+      CrashReporter.arkaPlan(
+        ref.read(portfolioProvider.notifier).refreshPrices(),
+        reason: 'MainNavigation.sekmeIstegi.refreshPrices',
+      );
+    }
   }
 
   void _sekmeyeGec(int i) {

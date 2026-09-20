@@ -72,9 +72,14 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // noktalarda zaten lot dot'u + tooltip var ("Alım +₺X" / "Satış −₺Y"),
     // yani sıçramanın sebebi grafiğin üstünde okunabiliyor.
     //
-    // Yanıltıcı olan grafik değil, DEĞİŞİM KARTIYDI: o hâlâ net akıştan
-    // arındırılmış rakamı gösterir (bkz. `_buildPeriodChangeCard`), böylece
-    // "portföyüm ne kazandı?" sorusu doğru cevaplanır.
+    // ⚠️ Bu not BAYATTI, düzeltildi (2026-09-20): "değişim kartı net akıştan
+    // arındırılmış rakamı gösterir" artık DOĞRU DEĞİL. 2026-08-31 kullanıcı
+    // kararıyla kart HAM (birikim) değişimi gösteriyor ve akışı yalnızca alt
+    // not satırında ayırıyor (bkz. `_buildPeriodChangeCard`). Sonuç: GÜNLÜK
+    // dönemde bu kart, kilit ekranı / widget / Özet sekmesinin gösterdiği
+    // arındırılmış günlük rakamdan ALIM YAPILAN GÜNLERDE ayrışıyor
+    // (`daily_summary.dart` "Değişmezler" bölümü hâlâ eşitlik iddia ediyor).
+    // Karar kullanıcıya bırakıldı — `TECHNICAL_DEBT.md`.
     // Gün içi X ekseni ÇİZİLEN GÜNÜN 00:00'ından başlar — bugünün değil.
     //
     // Piyasa kapalıyken seri son seanstan (Cuma) bugüne uzanıyor

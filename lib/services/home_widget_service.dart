@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../providers/portfolio_provider.dart';
 import '../screens/main_navigation_screen.dart';
+import '../screens/portfolio_performance_screen.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'daily_summary.dart';
@@ -193,6 +194,15 @@ class HomeWidgetService {
     }
     final hedef = DeepLinkRouter.hedefSekme(uri);
     if (hedef == null) return;
+    // GÜNLÜK isteği sekme isteğinden ÖNCE yazılır.
+    //
+    // Sıra önemli: soğuk açılışta performans ekranı sekme isteği işlenirken
+    // kuruluyor ve `initState` bekleyen günlük isteğini o anda okuyor. Sonra
+    // yazsaydık ekran zaten kurulmuş, dinleyici de henüz bağlanmamış olurdu —
+    // istek sessizce düşerdi.
+    if (DeepLinkRouter.gunlukGorunumIster(uri)) {
+      PortfolioPerformanceScreen.gunlukIstegi.value = true;
+    }
     MainNavigationScreen.sekmeIstegi.value = hedef;
   }
 
