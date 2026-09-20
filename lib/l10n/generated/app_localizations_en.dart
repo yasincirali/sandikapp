@@ -3191,4 +3191,43 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get emptyPasteHint =>
       'Copy your broker statement and paste it; every line becomes an asset.';
+
+  @override
+  String get marketDollar => 'USD';
+
+  @override
+  String get marketEuro => 'EUR';
+
+  @override
+  String get marketGold => 'Gold (g)';
+
+  @override
+  String get marketBist => 'BIST 100';
+
+  @override
+  String get notifTypeWatchlist => 'WATCHLIST';
+
+  @override
+  String get notifTypeInflation => 'CPI';
+
+  @override
+  String alarmSuggest(String name) {
+    return '$name added. Set a price alert?';
+  }
+
+  @override
+  String get alarmSuggestAction => 'Set alert';
+
+  @override
+  String get briefSlotTitle => 'Brief time';
+
+  @override
+  String get briefSlotSubtitle =>
+      'When your daily portfolio move summary arrives';
+
+  @override
+  String get briefSlotMorning => 'Morning 09:45';
+
+  @override
+  String get briefSlotEvening => 'Evening 18:30 (close)';
 }

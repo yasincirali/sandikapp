@@ -13,6 +13,7 @@ import '../models/position.dart' show pozisyonGorunumu;
 import '../models/technical_signal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../screens/main_navigation_screen.dart' show MainNavigationScreen;
 import '../screens/partnership_requests_screen.dart';
 import '../screens/portfolio_performance_screen.dart';
 import '../screens/asset_detail_screen.dart';
@@ -54,6 +55,8 @@ class NotificationService {
   static const dailyBriefType = 'daily_brief';
   static const weeklySummaryType = 'weekly_summary';
   static const monthlySummaryType = 'monthly_summary';
+  static const watchlistMoveType = 'watchlist_move';
+  static const inflationDayType = 'inflation_day';
   static const priceAlertType = 'price_alert';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
@@ -481,6 +484,17 @@ class NotificationService {
     // push ana ekranda kalıyordu — kullanıcı özeti aramak zorundaydı.
     if (type == weeklySummaryType || type == monthlySummaryType) {
       _openOzet(periodIdx: type == monthlySummaryType ? 2 : null);
+      return;
+    }
+    // TÜFE günü → Özet (reel getiri kartı). Takip listesi hareketi →
+    // Portföy sekmesi (takip listesi gövdesinde); sekme isteği ana ekran
+    // kurulduğunda işlenir, soğuk açılışta da güvenli.
+    if (type == inflationDayType) {
+      _openOzet();
+      return;
+    }
+    if (type == watchlistMoveType) {
+      MainNavigationScreen.sekmeIstegi.value = 1;
       return;
     }
 

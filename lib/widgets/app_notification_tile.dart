@@ -46,6 +46,14 @@ class AppNotificationTile extends StatelessWidget {
           Icons.calendar_month_rounded,
           l10n.notifTypeMonthly
         ),
+      AppNotification.watchlistMove => (
+          Icons.visibility_rounded,
+          l10n.notifTypeWatchlist
+        ),
+      AppNotification.inflationDay => (
+          Icons.trending_up_rounded,
+          l10n.notifTypeInflation
+        ),
       _ => (Icons.event_note_rounded, l10n.notifTypeReminder),
     };
     // Bilgi bildirimi: yön/kazanç anlamı yok, marka vurgusu (amber).

@@ -2268,5 +2268,24 @@
       }
     }
   },
-  "emptyPasteHint": "Copy your broker statement and paste it; every line becomes an asset."
+  "emptyPasteHint": "Copy your broker statement and paste it; every line becomes an asset.",
+  "marketDollar": "USD",
+  "marketEuro": "EUR",
+  "marketGold": "Gold (g)",
+  "marketBist": "BIST 100",
+  "notifTypeWatchlist": "WATCHLIST",
+  "notifTypeInflation": "CPI",
+  "alarmSuggest": "{name} added. Set a price alert?",
+  "@alarmSuggest": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alarmSuggestAction": "Set alert",
+  "briefSlotTitle": "Brief time",
+  "briefSlotSubtitle": "When your daily portfolio move summary arrives",
+  "briefSlotMorning": "Morning 09:45",
+  "briefSlotEvening": "Evening 18:30 (close)"
 }

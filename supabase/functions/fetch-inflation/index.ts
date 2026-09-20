@@ -45,6 +45,7 @@
 // — yanlış bir reel getiri, hiç göstermemekten kötüdür.
 
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { enflasyonOranlari, tufeGunuPushu } from '../_shared/tufe_push.ts';
 
 const corsHeaders = {
   // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
@@ -251,6 +252,13 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const evdsApiKey = Deno.env.get('EVDS_API_KEY');
     const cronSecret = Deno.env.get('INFLATION_FETCH_CRON_SECRET');
+    // TÜFE günü push'u (0068). FCM secret'ları proje geneli; yoksa push
+    // ATLANIR, endeks yazımı yine tamamlanır — push ikincil.
+    const fcmProjectId = Deno.env.get('FCM_PROJECT_ID');
+    const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
+    const fcm = fcmProjectId && fcmServiceAccountJson
+      ? { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson }
+      : null;
 
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error(
@@ -541,6 +549,28 @@ Deno.serve(async (request) => {
       throw new Error(`inflation_index yazilamadi: ${upsertError.message}`);
     }
 
+    // ── TÜFE günü push'u (0068) ─────────────────────────────────────────────
+    // Yalnızca YENİ ay yazıldıysa; `inflation_push_log` aynı ay için ikinci
+    // koşuyu keser. Push hatası endeks yazımını geri almaz — ayrı raporlanır.
+    let push: Record<string, unknown> | null = null;
+    if (yeniVarMi) {
+      const oranlar = enflasyonOranlari(satirlar);
+      if (oranlar) {
+        try {
+          push = await tufeGunuPushu(admin, {
+            period: oranlar.period,
+            aylikPct: oranlar.aylikPct,
+            yillikPct: oranlar.yillikPct,
+            fcm,
+            dryRun: false,
+          });
+        } catch (e) {
+          console.error('[fetch-inflation] TÜFE push başarısız:', e);
+          push = { ok: false, reason: 'push hatasi' };
+        }
+      }
+    }
+
     return jsonResponse({
       ok: true,
       written: satirlar.length,
@@ -550,11 +580,12 @@ Deno.serve(async (request) => {
       // `calendar-nudge` 10 dakika sonra koşacak ve bu ayın satırını
       // arayacak; `has_new_month: false` ise o da sessiz kalır.
       reason: yeniVarMi ? 'updated' : 'no_new_data',
+      push,
     });
   } catch (error) {
-    return jsonResponse(
-      { error: error instanceof Error ? error.message : String(error) },
-      500,
-    );
+    // Ayrıntı günlüğe; yanıtta `error.message` dönmek tablo/secret adlarını
+    // sızdırır (CLAUDE.md sunucu kuralı).
+    console.error('[fetch-inflation] hata:', error);
+    return jsonResponse({ error: 'Enflasyon guncellemesi basarisiz.' }, 500);
   }
 });

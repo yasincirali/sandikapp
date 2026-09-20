@@ -204,6 +204,66 @@ async function fetchYahooLast(symbol: string): Promise<number | null> {
   }
 }
 
+/** Fiyat + günlük değişim yüzdesi (bilinmiyorsa null — uydurma yok). */
+export type CanliKotasyon = { price: number; changePct: number | null };
+
+/// Yahoo: fiyat + günlük değişim. Değişim `meta.chartPreviousClose` (dünkü
+/// kapanış) üzerinden; meta yoksa yalnızca fiyat.
+async function fetchYahooQuote(symbol: string): Promise<CanliKotasyon | null> {
+  try {
+    const url =
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
+      `?interval=5m&range=1d&includePrePost=false`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const result = json?.chart?.result?.[0];
+    let price: number | null = null;
+    const meta = result?.meta?.regularMarketPrice;
+    if (typeof meta === 'number' && Number.isFinite(meta) && meta > 0) {
+      price = meta;
+    } else {
+      const closes = result?.indicators?.quote?.[0]?.close;
+      if (Array.isArray(closes)) {
+        for (let i = closes.length - 1; i >= 0; i -= 1) {
+          const v = closes[i];
+          if (typeof v === 'number' && Number.isFinite(v) && v > 0) { price = v; break; }
+        }
+      }
+    }
+    if (price === null) return null;
+    const onceki = result?.meta?.chartPreviousClose;
+    const changePct = typeof onceki === 'number' && Number.isFinite(onceki) && onceki > 0
+      ? (price / onceki - 1) * 100
+      : null;
+    return { price, changePct };
+  } catch (_) {
+    return null;
+  }
+}
+
+/// truncgil günlük değişim (`Change: 0.08` = %0,08); alan yoksa null.
+export function truncgilChange(entry: unknown): number | null {
+  if (!entry || typeof entry !== 'object') return null;
+  const raw = (entry as Record<string, unknown>)['Change'];
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+  if (typeof raw === 'string') {
+    const n = Number(raw.replace('%', '').replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/// Sembol → truncgil kaydı (altın anahtarı ya da 'USDTRY=X' → 'USD').
+function truncgilKaydi(data: Record<string, unknown>, sym: string): unknown {
+  if (isGoldSymbol(sym)) return data[GOLD_KEYS[sym]];
+  if (isFxSymbol(sym)) return data[sym.slice(0, 3)];
+  return undefined;
+}
+
 /// Fon sembolü öneki — `assets.ticker` ve `price_alerts.symbol` aynı biçim.
 const TEFAS_PREFIX = 'TEFAS:';
 
@@ -267,6 +327,18 @@ export async function fetchLivePrices(
   symbols: Set<string>,
 ): Promise<Map<string, number>> {
   const out = new Map<string, number>();
+  for (const [k, v] of await fetchLiveQuotes(symbols)) out.set(k, v.price);
+  return out;
+}
+
+/// Fiyat + günlük değişim (2026-09-20, takip listesi hareketi için).
+///
+/// `fetchLivePrices` bunun fiyat izdüşümü; kaynak seçimi ve sıralama aynı.
+/// TEFAS'ta değişim yok (günlük NAV, tek nokta) → `changePct: null`.
+export async function fetchLiveQuotes(
+  symbols: Set<string>,
+): Promise<Map<string, CanliKotasyon>> {
+  const out = new Map<string, CanliKotasyon>();
   if (symbols.size === 0) return out;
 
   const { truncgil: truncgilList, tefas: tefasList, yahoo: yahooList } = kaynakAyir(symbols);
@@ -277,14 +349,16 @@ export async function fetchLivePrices(
     const sonuc = await Promise.all(dilim.map(fetchTefasLast));
     dilim.forEach((sym, j) => {
       const p = sonuc[j];
-      if (p !== null) out.set(sym, p);
+      if (p !== null) out.set(sym, { price: p, changePct: null });
     });
   }
 
   if (truncgilList.length > 0) {
     try {
       const data = await fetchTruncgil();
-      for (const [k, v] of extractTruncgil(data, truncgilList)) out.set(k, v);
+      for (const [k, v] of extractTruncgil(data, truncgilList)) {
+        out.set(k, { price: v, changePct: truncgilChange(truncgilKaydi(data, k)) });
+      }
     } catch (_) {
       // Altın/döviz kaynağı düştü — bu turda o alarmlar atlanır.
     }
@@ -295,10 +369,10 @@ export async function fetchLivePrices(
   const CONCURRENCY = 8;
   for (let i = 0; i < yahooList.length; i += CONCURRENCY) {
     const dilim = yahooList.slice(i, i + CONCURRENCY);
-    const sonuc = await Promise.all(dilim.map(fetchYahooLast));
+    const sonuc = await Promise.all(dilim.map(fetchYahooQuote));
     dilim.forEach((sym, j) => {
-      const p = sonuc[j];
-      if (p !== null) out.set(sym, p);
+      const q = sonuc[j];
+      if (q !== null) out.set(sym, q);
     });
   }
 

@@ -72,6 +72,26 @@ takvim) — ayrı ayrı üç anahtar Ayarlar'ı şişirir.
 **Ne zaman.** Aylık push'un ilk iki gönderiminden sonra (Ekim–Kasım 2026);
 `push_opened` oranı %3'ün altına düşen tipe kapatma anahtarı şart olur.
 
+**Ek (2026-09-20, günlük giriş turu).** Aynı sınıfa iki tür daha girdi:
+`watchlist_move` (kullanıcı seçimli, alarm kanalı) ve `inflation_day`
+(ayda bir). Brifing için "Brifing saati" seçici eklendi ama o da kapatma
+anahtarı DEĞİL. "Proaktif bildirimler" grubu artık beş türü kapsar: brifing
+(sabah/akşam), haftalık, aylık, TÜFE günü, takip hareketi. Grup tasarımı
+aynı tur.
+
+---
+
+## 🟡 AÇIK — Takip listesi hareketi fonları (TEFAS) kapsamıyor
+
+**Ne.** `watchlist_moves.ts` günlük değişimi canlı kotasyondan okuyor;
+TEFAS tek NAV döndürür, dünkü NAV ayrı istektir. Fon izleyen kullanıcı bu
+push'u hiç almaz.
+
+**Ne zaman.** `observe-tefas-nav` gözlem tablosu (0063) dünkü NAV'ı zaten
+biriktiriyor; iki günlük fark oradan hesaplanabilir. Fon hareketi hisseye
+göre küçük (%5 eşiğini nadiren geçer), eşik fon için ayrı (%2) olmalı.
+İlk dört haftanın `push_opened` verisiyle birlikte.
+
 ---
 
 ## 🟡 AÇIK — Universal Links / App Links yok; paylaşılan bağlantı web sayfasına iner

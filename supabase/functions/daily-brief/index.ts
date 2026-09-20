@@ -196,10 +196,15 @@ Deno.serve(async (request) => {
 
     let dryRun = false;
     let minMovePct = DEFAULT_MIN_MOVE_PCT;
+    // Slot (0068): sabah koşusu 'morning' kullanıcılarına, akşam koşusu
+    // (TR 18:30, `{"slot":"evening"}`) 'evening' kullanıcılarına. Her
+    // kullanıcı tek slotta → günde tek brifing.
+    let slot: 'morning' | 'evening' = 'morning';
     try {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
       if (typeof body?.min_move_pct === 'number') minMovePct = body.min_move_pct;
+      if (body?.slot === 'evening') slot = 'evening';
     } catch (_) { /* gövde opsiyonel */ }
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
@@ -230,6 +235,39 @@ Deno.serve(async (request) => {
     const zatenGonderildi = new Set(
       (gonderilmis ?? []).map((r: { user_id: string }) => r.user_id),
     );
+
+    // Slot filtresi (0068): kullanıcının seçmediği slotta gönderim yok.
+    // Sütun eski kayıtlarda null olabilir → 'morning'. Tercih okunamazsa
+    // herkes 'morning' sayılır: akşam koşusu o durumda hiç göndermez
+    // (çift brifing riskinden sessiz kalmak iyidir).
+    try {
+      const { data: slotRows } = await admin
+        .from('profiles')
+        .select('id, brief_slot')
+        .in('id', userIds);
+      const slotu = new Map<string, string>();
+      for (const r of (slotRows ?? []) as Array<Record<string, unknown>>) {
+        slotu.set(String(r.id), String(r.brief_slot ?? 'morning'));
+      }
+      for (const uid of userIds) {
+        if ((slotu.get(uid) ?? 'morning') !== slot) zatenGonderildi.add(uid);
+      }
+    } catch (_) {
+      if (slot === 'evening') {
+        return jsonResponse({ ok: true, reason: 'Slot tercihi okunamadi.', sent: 0 });
+      }
+    }
+    // Akşam slotu Pazartesi: haftalık özet sabah gitti → ikinci push yok.
+    if (slot === 'evening') {
+      const { data: haftalik } = await admin
+        .from('weekly_summary_log')
+        .select('user_id')
+        .eq('sent_on', bugun)
+        .in('user_id', userIds);
+      for (const r of (haftalik ?? []) as Array<{ user_id: string }>) {
+        zatenGonderildi.add(r.user_id);
+      }
+    }
 
     // ── 3) Varlıklar ────────────────────────────────────────────────────────
     // Yalnızca BIST hissesi (bkz. dosya başındaki kapsam notu), aktif alım

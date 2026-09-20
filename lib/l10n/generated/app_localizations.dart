@@ -5443,6 +5443,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur.'**
   String get emptyPasteHint;
+
+  /// No description provided for @marketDollar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dolar'**
+  String get marketDollar;
+
+  /// No description provided for @marketEuro.
+  ///
+  /// In tr, this message translates to:
+  /// **'Euro'**
+  String get marketEuro;
+
+  /// No description provided for @marketGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gram altın'**
+  String get marketGold;
+
+  /// No description provided for @marketBist.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST 100'**
+  String get marketBist;
+
+  /// No description provided for @notifTypeWatchlist.
+  ///
+  /// In tr, this message translates to:
+  /// **'TAKİP'**
+  String get notifTypeWatchlist;
+
+  /// No description provided for @notifTypeInflation.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜFE'**
+  String get notifTypeInflation;
+
+  /// No description provided for @alarmSuggest.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} eklendi. Fiyatı izlemek için alarm kur?'**
+  String alarmSuggest(String name);
+
+  /// No description provided for @alarmSuggestAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kur'**
+  String get alarmSuggestAction;
+
+  /// No description provided for @briefSlotTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Brifing saati'**
+  String get briefSlotTitle;
+
+  /// No description provided for @briefSlotSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyündeki günlük hareket özeti ne zaman gelsin'**
+  String get briefSlotSubtitle;
+
+  /// No description provided for @briefSlotMorning.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sabah 09:45'**
+  String get briefSlotMorning;
+
+  /// No description provided for @briefSlotEvening.
+  ///
+  /// In tr, this message translates to:
+  /// **'Akşam 18:30 (kapanış)'**
+  String get briefSlotEvening;
 }
 
 class _AppLocalizationsDelegate

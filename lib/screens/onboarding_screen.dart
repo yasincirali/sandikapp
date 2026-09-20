@@ -340,6 +340,16 @@ List<_Adim> _adimlariKur() {
       dokunulabilir: false,
     ),
     _Adim(
+      id: 'piyasa',
+      hedef: TourTarget.piyasaSeridi,
+      baslik: 'Piyasa bir bakışta',
+      govde: 'Dolar, euro, gram altın ve BIST 100 günlük değişimiyle en '
+          'üstte. Portföyüne bakmadan önce piyasanın nerede olduğunu gör.',
+      rozet: 'YENİ',
+      giris: (_) => _sekmeyeGec(0),
+      dokunulabilir: false,
+    ),
+    _Adim(
       id: 'bildirimler',
       hedef: TourTarget.bildirimCani,
       rozet: 'YENİ',

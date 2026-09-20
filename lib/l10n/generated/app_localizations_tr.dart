@@ -3182,4 +3182,43 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get emptyPasteHint =>
       'Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur.';
+
+  @override
+  String get marketDollar => 'Dolar';
+
+  @override
+  String get marketEuro => 'Euro';
+
+  @override
+  String get marketGold => 'Gram altın';
+
+  @override
+  String get marketBist => 'BIST 100';
+
+  @override
+  String get notifTypeWatchlist => 'TAKİP';
+
+  @override
+  String get notifTypeInflation => 'TÜFE';
+
+  @override
+  String alarmSuggest(String name) {
+    return '$name eklendi. Fiyatı izlemek için alarm kur?';
+  }
+
+  @override
+  String get alarmSuggestAction => 'Alarm kur';
+
+  @override
+  String get briefSlotTitle => 'Brifing saati';
+
+  @override
+  String get briefSlotSubtitle =>
+      'Portföyündeki günlük hareket özeti ne zaman gelsin';
+
+  @override
+  String get briefSlotMorning => 'Sabah 09:45';
+
+  @override
+  String get briefSlotEvening => 'Akşam 18:30 (kapanış)';
 }

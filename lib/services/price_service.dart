@@ -480,10 +480,27 @@ class PriceService {
     if (eurTry > 0) _sonKaynak['EURTRY=X'] = FiyatKaynagiEtiketi.yurtIci;
     if (gbpTry > 0) _sonKaynak['GBPTRY=X'] = FiyatKaynagiEtiketi.yurtIci;
     return {
-      'USDTRY=X': _fxQ('USDTRY=X', usdTry),
-      if (eurTry > 0) 'EURTRY=X': _fxQ('EURTRY=X', eurTry),
-      if (gbpTry > 0) 'GBPTRY=X': _fxQ('GBPTRY=X', gbpTry),
+      'USDTRY=X': _fxQ('USDTRY=X', usdTry, _truncgilChange(data['USD'])),
+      if (eurTry > 0)
+        'EURTRY=X': _fxQ('EURTRY=X', eurTry, _truncgilChange(data['EUR'])),
+      if (gbpTry > 0)
+        'GBPTRY=X': _fxQ('GBPTRY=X', gbpTry, _truncgilChange(data['GBP'])),
     };
+  }
+
+  /// truncgil günlük değişim yüzdesi (`Change: 0.08` = %0,08).
+  ///
+  /// Piyasa şeridi için (2026-09-20): kur/altının günlük yönü, fiyatla
+  /// AYNI kaynaktan gelmeli — Yahoo'nun dünkü kapanışından türetmek iki
+  /// ölçeği karıştırırdı (sözleşme kural 2). Alan yoksa null: uydurma yok.
+  static double? _truncgilChange(dynamic entry) {
+    if (entry is! Map) return null;
+    final raw = entry['Change'];
+    if (raw is num) return raw.isFinite ? raw.toDouble() : null;
+    if (raw is String) {
+      return double.tryParse(raw.replaceAll('%', '').replaceAll(',', '.'));
+    }
+    return null;
   }
 
   Map<String, YahooQuote> _extractGold(
@@ -500,6 +517,7 @@ class PriceService {
           regularMarketPrice: price,
           currency: 'TRY',
           shortName: _goldLabel(sym),
+          regularMarketChangePercent: _truncgilChange(data[key]),
         );
       }
     }
@@ -547,8 +565,12 @@ class PriceService {
     };
   }
 
-  YahooQuote _fxQ(String symbol, double price) =>
-      YahooQuote(symbol: symbol, regularMarketPrice: price, currency: 'TRY');
+  YahooQuote _fxQ(String symbol, double price, [double? change]) => YahooQuote(
+        symbol: symbol,
+        regularMarketPrice: price,
+        currency: 'TRY',
+        regularMarketChangePercent: change,
+      );
 
   // ── Gold fallback — XAU/TRY doğrudan, olmazsa GC=F × USD/TRY ─────────────
 

@@ -37,10 +37,12 @@ import '../widgets/transaction_row.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
 import 'csv_import_screen.dart';
+import 'main_navigation_screen.dart' show MainNavigationScreen;
 import 'all_transactions_screen.dart';
 import 'asset_detail_screen.dart';
 import 'portfolio_performance_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/piyasa_seridi.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
 
@@ -180,6 +182,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           NotificationService.instance.openPartnerInvite(inviteId);
         }
       case AppNotification.dailyBrief || AppNotification.weeklySummary:
+        Navigator.push(
+          context,
+          adaptiveRoute<void>(
+            builder: (_) => const PortfolioPerformanceScreen(
+              showBackButton: true,
+              initialOzet: true,
+            ),
+          ),
+        );
+      case AppNotification.watchlistMove:
+        // Takip listesi Portföy sekmesinin gövdesinde; sekmeye geç yeter.
+        MainNavigationScreen.sekmeIstegi.value = 1;
+      case AppNotification.inflationDay:
+        // TÜFE günü → Özet: reel getiri kartı orada.
         Navigator.push(
           context,
           adaptiveRoute<void>(
@@ -548,6 +564,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+          // Piyasa şeridi — dolar/euro/gram altın/BIST 100 (2026-09-20).
+          // Portföyden ÖNCE: günlük girişin ilk sorusu "dolar ne oldu".
+          if (ownView)
+            SliverToBoxAdapter(
+              child: TourAnchor(
+                target: TourTarget.piyasaSeridi,
+                child: PiyasaSeridi(
+                  padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.smd),
                 ),
               ),
             ),

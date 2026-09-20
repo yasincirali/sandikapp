@@ -55,6 +55,17 @@ lot'ları zaten karşı tarafta görünüyor.
 Dönen gövdedeki `partner_variant`, kaç kullanıcıya bu kolun gittiğini söyler.
 FCM `data.variant` alanı da `partner` / `mover` olarak işaretlenir.
 
+## Sabah / akşam slotu (0068, 2026-09-20)
+
+`profiles.brief_slot` = `morning` (varsayılan, TR 09:45) ya da `evening`
+(TR 18:30, `daily-brief-evening` cron'u `{"slot":"evening"}` gövdesiyle).
+Sabah koşusu yalnızca sabahçılara, akşam koşusu yalnızca akşamcılara
+gönderir; kullanıcı iki slotun birinde → günde tek brifing. Akşam koşusu
+Pazartesi `weekly_summary_log`'a bakar: haftalık özet sabah gittiyse o
+kullanıcıya akşam brifing yok. Tercih Ayarlar › Bildirimler › Brifing saati.
+
+Kuru koşu: `-d '{"slot":"evening","dry_run":true}'`.
+
 ## Bildirim bütçesi
 
 - Hareket eşiği **%1,5** (`min_move_pct` ile geçersiz kılınabilir). Altındaki

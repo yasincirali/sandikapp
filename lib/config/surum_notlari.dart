@@ -105,6 +105,36 @@ const List<SurumNotu> surumNotlari = [
     yenilikler: [
       Yenilik(
         ikon: YenilikIkonu.genel,
+        baslik: 'Ana ekranda piyasa şeridi',
+        aciklama: 'Dolar, euro, gram altın ve BIST 100 günlük değişimiyle '
+            'ana ekranın en üstünde. Portföyüne bakmadan önce piyasayı gör.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Takip listende büyük hareket',
+        aciklama: 'İzlediğin bir varlık gün içinde %5\'ten fazla oynadıysa '
+            'kapanışta tek bildirimle haber verir; alarm kurman gerekmez.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Enflasyon günü bildirimi',
+        aciklama: 'TÜİK aylık enflasyonu açıkladığında oran cebine gelir; '
+            'dokununca portföyünün enflasyonu geçip geçmediğini görürsün.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.bildirim,
+        baslik: 'Brifing saati: sabah ya da akşam',
+        aciklama: 'Günlük portföy özetini sabah 09:45 yerine kapanışta '
+            '18:30\'da alabilirsin. Ayarlar › Bildirimler › Brifing saati.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
+        baslik: 'Varlık eklerken alarm önerisi',
+        aciklama: 'Yeni varlık kaydettiğinde tek dokunuşla fiyat alarmı '
+            'kurabilirsin.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
         baslik: 'Aylık özet bildirimi',
         aciklama: 'Her ayın 1\'inde geçen ayın özeti cebine gelir; '
             'dokununca Özet\'te getirin, enflasyon farkı ve en iyi varlığın '
