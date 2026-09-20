@@ -505,6 +505,9 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              // Ortaklı kullanıcı da havuzu görsün: kendi sırası ortaklar
+              // arasında, ama genel yarışın neden "yakında" olduğu bu satır.
+              const _HavuzSatiri(),
             ],
           ),
         ),
