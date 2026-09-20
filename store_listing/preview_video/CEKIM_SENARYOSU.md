@@ -6,6 +6,27 @@ metin overlay'leri ve ses sonra Remotion'da üstüne konur.
 **Güncelleme 2026-09-16:** Senaryo kritiklik sırasına göre yeniden kuruldu.
 Neyin "en kritik" olduğu değişti — gerekçesi §1'de.
 
+**Güncelleme 2026-09-21 — ekranlar değişti, eski kayıt/kareler bayat:**
+
+| Ne değişti | Eski kayıtta | Yeni ekranda |
+|---|---|---|
+| Ana ekran üstü | doğrudan toplam kartı | **piyasa bandı** (Dolar · Euro · Altın · BIST, kayan) → toplam kartı |
+| Reel getiri rozeti | toplam kartının altında ayrı şerit | **Bugün kartında** "Enflasyona göre ····· +2,85 puan" satırı (altında "Yıllık getirin ile TÜFE farkı") |
+| Bugün kartı | ikonlu 4–5 satır liste | **almanak**: solda büyük gün rakamı, sağda günün hareketi; defter satırları; en altta yaklaşan tarih |
+| Haftalık özet çipi | ayrı çip | Bugün kartında "Geçen hafta ····· +%2,10" satırı |
+| Ortak seçimi | üstte sekme şeridi (Ben / Ayşe / Birlikte) | toplam kartının başlığında **"Ben ▾" çipi** → alt sayfa |
+| Performans › Özet | tek liste | üç başlık: **BU DÖNEM / VARLIKLAR / DERİNLİK** (Derinlik katlanır) |
+
+Bayat olanlar: video **1., 2. ve 5. sahne** (ana ekran ×2, Özet) ve
+`screenshots/raw_v3/` **01_ana, 02_reel, 03_nereden** kareleri. Diğer
+adımlar (Portföy listesi, grafik + crosshair, varlık detayı, Dağılım,
+Birlikte) aynı — yeniden çekmek şart değil ama aynı oturumda çekilirse
+toplam değer tüm karelerde tutarlı olur (bkz. SCREENSHOT_PLAN "Veri
+tutarlı olsun").
+
+Bu güncellemeyle **Adım 1, 2, 5 ve 8** aşağıda yeniden yazıldı; kalanlar
+olduğu gibi.
+
 ---
 
 ## 1. En kritik kare hangisi, neden
@@ -80,24 +101,28 @@ kullanılamaz.
 
 ---
 
-### Adım 1 — Açılış: enflasyon rozeti · **EN KRİTİK KARE** (≈6 sn)
+### Adım 1 — Açılış: Bugün kartı · **EN KRİTİK KARE** (≈6 sn)
 
 1. Kaydı **başlat**, 3 sn bekle (kırmızı kayıt çubuğu otursun — kurguda
    kesilecek)
-2. Uygulama **Ana** sekmesinde dursun
-3. **Reel getiri rozeti karede olacak şekilde** konumlan — gerekirse
-   çok az kaydır
-4. **4 sn hiç dokunmadan bekle**
+2. Uygulama **Ana** sekmesinde, **"Ben" görünümünde** dursun
+3. **Piyasa bandı + toplam kartı + Bugün kartının tamamı** karede olacak
+   şekilde konumlan — gerekirse çok az kaydır. Bugün kartında
+   "Enflasyona göre ····· +2,85 puan" satırı **yeşil** görünmeli
+4. **4 sn hiç dokunmadan bekle** (piyasa bandı bu sırada kendi akar —
+   dokunma, dokunursan durur)
 
 > Videonun ilk karesi bu. Aynı karede olması gerekenler:
-> **toplam net varlık + yeşil kâr + enflasyon rozeti.**
-> Rozet karede yoksa bu adımı tekrar çek — video buna dayanıyor.
+> **toplam net varlık + yeşil kâr + Bugün kartındaki enflasyon satırı.**
+> Satır kırmızıysa ya da yoksa (bayrak/veri) çekme — bana söyle.
 
 ---
 
 ### Adım 2 — Ana ekranda yavaş scroll (≈5 sn)
 
-5. **Yavaşça** aşağı kaydır: varlık dağılımı barları ve hareketler görünsün
+5. **Yavaşça** aşağı kaydır: Bugün kartının defter satırları (Geçen hafta,
+   Hedef, Artıdaki varlık) ve en alttaki "TÜİK enflasyonu · 3 Ekim ·····
+   N gün" ayak notu, sonra varlık dağılımı ve hareketler görünsün
 6. 1 sn bekle, **yavaşça** yukarı dön
 
 > Hızlı flick yapma — ani momentum bulanık kare üretir.
@@ -132,9 +157,10 @@ kullanılamaz.
 
 ### Adım 5 — Özet kartları: reel getiri detayı · **FARKLILAŞTIRICI** (≈6 sn)
 
-16. Performans ekranında **Özet** bölümüne kaydır
-17. 2 sn bekle
+16. Performans ekranında **Özet** sekmesine geç, dönem **1Y**
+17. 2 sn bekle — üstte **BU DÖNEM** başlığı görünsün
 18. Reel getiri / enflasyon karşılaştırma kartında dur, **3 sn bekle**
+    (DERİNLİK bölümü katlıysa açma — kare sade kalsın)
 
 > Adım 1'deki rozetin **açıklaması** burada: nominal getiri, TÜFE oranı
 > ve puan farkı ayrı ayrı. İddiayı burada kanıtlıyoruz.
@@ -170,7 +196,8 @@ kullanılamaz.
 
 ### Adım 8 — Ortak portföy (≈4 sn)
 
-26. Ortaklık/Birlikte görünümüne geç
+26. Ana ekranda toplam kartının başlığındaki **"Ben ▾" çipine** dokun →
+    alt sayfadan **Birlikte** seç (çip yalnızca ortağın varsa görünür)
 27. 2 sn bekle — her ortağın katkısı ayrı görünsün
 
 > ⚠️ Kurgusal isimler görünmeli. Gerçek isim/e-posta görünürse bu adımı

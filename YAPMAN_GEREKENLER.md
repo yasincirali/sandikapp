@@ -48,17 +48,27 @@ değişti. Plan ve yerleşim: https://claude.ai/artifact/7aCK2SKzeCF5Yrnn9DYoif
 6. **Ayarlar** — Görünüm'de hedef satırı yok (Bugün kartından); Bildirimler'de
    "Sinyal ayarları" tek satır, sağında anahtar.
 
-### Video ve mağaza görseli (senden kayıt, ~10 dk)
-Önizleme videosunun 1. ve 2. sahnesi ve `set_c` 1. ekran görüntüsü eski
-ana ekranı gösteriyor. Yeni build'de iPhone'da kaydet (Ayarlar › Kontrol
-Merkezi › Ekran Kaydı, ses kapalı, dikey):
-- **kayit_ana.mov** — ana ekran, 6 sn sabit: piyasa bandı akarken, Bugün
-  kartında reel getiri satırı görünür olsun (portföy "Ben" görünümünde).
-- **kayit_ozet.mov** — Performans › Özet › 1Y, 6 sn: BU DÖNEM başlığı ve
-  reel getiri kartı ekranda.
-- **ss_1.png** — ana ekranın ekran görüntüsü (aynı kare) → `set_c` 1. kare.
-Dosyaları `store_listing/preview_video/raw/` altına koy ve söyle; Remotion
-kurgusunu (altyazı/ses aynı) ben yeniden render ederim.
+### Video ve mağaza görseli (senden kayıt, ~15 dk) — 2026-09-21 güncellendi
+Tanıtım turu (uygulama içi) gerçek ekranların üstünde çalışır, kopya yüzey
+yok → **kendiliğinden güncel**, iş yok. Mağaza kareleri ve önizleme videosu
+ise gerçek cihaz kaydıdır (Apple 2.3.4) ve bu makinedeki emülatörler
+Flutter'ı render etmiyor → **kayıt sende**, üretim bende.
+
+Bayat olanlar: videonun 1., 2. ve 5. sahnesi + `set_c` 01_ana / 02_reel /
+03_nereden kareleri (eski Bugün kartı, ayrı reel getiri şeridi, piyasa
+bandı yok). Yeni build'de (70b9218 sonrası TestFlight) iPhone'da, demo
+portföyle (`store_listing/DEMO_PORTFOY.md`), bakiye gizleme kapalı:
+- **kayit.mov** — `store_listing/preview_video/CEKIM_SENARYOSU.md` §3'ü
+  baştan sona (40 sn). Adım 1, 2, 5, 8 yeni ekranlara göre yeniden
+  yazıldı; tümünü aynı oturumda çekersen toplam değer her karede aynı olur.
+- **Ekran görüntüleri** (`screenshots/raw_v3/` üstüne yaz): `01_ana.jpg`
+  ana ekran (piyasa bandı + toplam + Bugün kartı tam), `02_reel.jpg`
+  Performans › Özet › 1Y BU DÖNEM reel getiri kartı, `03_nereden.jpg`
+  aynı ekranda köprü kartı. 04–08 istersen aynen kalsın.
+Dosyaları koyup söyle: `build_screenshots.py --v3` ile set_c'yi, Hyperframes
+ile `brag-output-2026-09-18-store` kurgusunu (metinler/ses aynı, yalnızca
+kaynak kareler) yeniden render ederim; mağaza metinlerindeki "Bugün kartı"
+cümlesini de o turda güncellerim.
 
 ---
 
