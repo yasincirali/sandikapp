@@ -684,6 +684,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // yaramaz ve "bu ne?" sorusu doğurur.
             if (ref.watch(activePartnersProvider).isNotEmpty)
               const _PartnerActivitySwitch(),
+            const _BriefSlotTile(),
             const SizedBox(height: 28),
 
             // -- CANLI ETKİNLİKLER ---------------------------------
@@ -1606,6 +1607,76 @@ class _TimeBox extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Brifing saati — sabah 09:45 ya da kapanış 18:30 (0068).
+///
+/// Tercih SUNUCUDA (`profiles.brief_slot`): iki cron'dan hangisinin bu
+/// kullanıcıya göndereceğini edge function okuyor. Türk yatırımcısının
+/// alışkanlığı akşam kapanışa bakmak; sabah brifingi dünü anlatır. Seçim
+/// iki uçlu, üçüncü seçenek yok (ikisi birden = çift push, bütçe dışı).
+class _BriefSlotTile extends ConsumerStatefulWidget {
+  const _BriefSlotTile();
+
+  @override
+  ConsumerState<_BriefSlotTile> createState() => _BriefSlotTileState();
+}
+
+class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
+  String? _slot;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _oku());
+  }
+
+  Future<void> _oku() async {
+    final me = ref.read(authProvider).valueOrNull;
+    if (me == null) return;
+    final v = await SupabaseService.instance.getBriefSlot(me.id);
+    if (mounted) setState(() => _slot = v);
+  }
+
+  Future<void> _yaz(String v) async {
+    final me = ref.read(authProvider).valueOrNull;
+    if (me == null) return;
+    final onceki = _slot;
+    setState(() => _slot = v);
+    try {
+      await SupabaseService.instance.setBriefSlot(me.id, v);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _slot = onceki);
+      sandikSnack(context, 'Ayar kaydedilemedi, tekrar dene.',
+          kind: SandikSnackKind.error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final slot = _slot ?? 'morning';
+    return _SettingsTile(
+      icon: Icons.schedule_rounded,
+      title: l10n.briefSlotTitle,
+      subtitle: l10n.briefSlotSubtitle,
+      onTap: () => _yaz(slot == 'morning' ? 'evening' : 'morning'),
+      trailing: SegmentedButton<String>(
+        showSelectedIcon: false,
+        style: const ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        segments: [
+          ButtonSegment(value: 'morning', label: Text(l10n.briefSlotMorning)),
+          ButtonSegment(value: 'evening', label: Text(l10n.briefSlotEvening)),
+        ],
+        selected: {slot},
+        onSelectionChanged: (s) => _yaz(s.first),
       ),
     );
   }

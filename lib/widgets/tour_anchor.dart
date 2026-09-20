@@ -20,6 +20,9 @@ enum TourTarget {
   /// Ana ekran: toplam net varlık kartı.
   heroKart,
 
+  /// Ana ekran: piyasa şeridi (dolar/euro/altın/BIST 100).
+  piyasaSeridi,
+
   /// Ana ekran: tutarları gizle/göster (göz).
   gizleTusu,
 

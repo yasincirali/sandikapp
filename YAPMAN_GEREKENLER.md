@@ -12,6 +12,40 @@
 
 ---
 
+## 📲 2026-09-20 günlük giriş turu — TestFlight'ta test edeceklerin
+
+Kod: `feat/gunluk-giris-2026-09-20`. Beş özellik: piyasa şeridi, takip
+listesi hareketi push'u, TÜFE günü push'u, varlık eklerken alarm önerisi,
+brifing saati (sabah/akşam). Sunucu: migration `0068` + `check-price-alerts`,
+`daily-brief`, `fetch-inflation` fonksiyonları (deploy'u Claude koşar).
+
+### Cihazda (TestFlight, 10 dk)
+1. **Piyasa şeridi** — ana ekranda hero kartın ÜSTÜNDE dört kutu: Dolar,
+   Euro, Gram altın, BIST 100; fiyat + günlük yüzde (renkli). Kutu yoksa
+   fiyat kaynağı düşmüş demektir, söyle. Ayarlar › Tanıtım turunu yeniden
+   izle → "Piyasa bir bakışta" adımı gelmeli (YENİ rozeti).
+2. **Alarm önerisi** — + ile bir hisse/altın ekle ve kaydet. Portföy'e
+   dönerken altta "X eklendi. Fiyatı izlemek için alarm kur?" bildirimi ve
+   "Alarm kur" eylemi görünmeli; dokununca alarm sayfası o varlıkla açılmalı.
+   Manuel fiyatlı varlıkta öneri gelmez (doğru davranış).
+3. **Brifing saati** — Ayarlar › Bildirimler'de "Brifing saati" satırı,
+   Sabah 09:45 / Akşam 18:30 seçici. Akşamı seç, uygulamayı kapat-aç,
+   seçim kalmalı (sunucuya yazıyor).
+4. **Takip listesi hareketi** — Portföy › Takip listesine oynak bir hisse
+   ekle. İlk push hafta içi 18:25'te, yalnızca ±%5 üstü hareket varsa.
+   Dokununca Portföy sekmesi açılmalı; çanda "TAKİP" rozeti.
+5. **TÜFE günü** — ilk gerçek push 3 Ekim ~10:05 ("Eylül enflasyonu %x").
+   Dokununca Özet açılmalı; çanda "TÜFE" rozeti. Öncesinde test etmek
+   istersen söyle: `fetch-inflation`'ı kuru koşuyla değil, `inflation_push_log`
+   satırını silip tetiklemek gerekir — bunu Claude yapar.
+
+### Sunucu doğrulaması (Claude koşar, sen sonucu görürsün)
+`cron.job`'da `watchlist-moves` = `25 15 * * 1-5`, `daily-brief-evening` =
+`30 15 * * 1-5`; `profiles.brief_slot` sütunu; `app_notifications` CHECK
+kısıtında `watchlist_move` ve `inflation_day`.
+
+---
+
 ## 🚀 2026-09-20 büyüme turu — senin paralelde yapacakların
 
 Kod tarafı bitti (`feat/buyume-turu-2026-09-20`): paylaşım/davet metninde

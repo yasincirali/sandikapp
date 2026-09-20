@@ -2268,5 +2268,24 @@
       }
     }
   },
-  "emptyPasteHint": "Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur."
+  "emptyPasteHint": "Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur.",
+  "marketDollar": "Dolar",
+  "marketEuro": "Euro",
+  "marketGold": "Gram altın",
+  "marketBist": "BIST 100",
+  "notifTypeWatchlist": "TAKİP",
+  "notifTypeInflation": "TÜFE",
+  "alarmSuggest": "{name} eklendi. Fiyatı izlemek için alarm kur?",
+  "@alarmSuggest": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alarmSuggestAction": "Alarm kur",
+  "briefSlotTitle": "Brifing saati",
+  "briefSlotSubtitle": "Portföyündeki günlük hareket özeti ne zaman gelsin",
+  "briefSlotMorning": "Sabah 09:45",
+  "briefSlotEvening": "Akşam 18:30 (kapanış)"
 }

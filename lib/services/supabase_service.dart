@@ -156,6 +156,35 @@ class SupabaseService {
     );
   }
 
+  /// Brifing saati (0068): 'morning' (09:45) | 'evening' (18:30).
+  /// Okuma hatasında 'morning' — sunucu varsayılanı; anahtar yanlış
+  /// tarafta görünmesin.
+  Future<String> getBriefSlot(String userId) async {
+    try {
+      final row = await _db
+          .from('profiles')
+          .select('brief_slot')
+          .eq('id', userId)
+          .maybeSingle();
+      final v = row?['brief_slot']?.toString();
+      return v == 'evening' ? 'evening' : 'morning';
+    } catch (_) {
+      return 'morning';
+    }
+  }
+
+  Future<void> setBriefSlot(String userId, String slot) async {
+    assert(slot == 'morning' || slot == 'evening');
+    await _log.log<void>(
+      source: 'SupabaseService.setBriefSlot',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'brief_slot': slot},
+      call: () =>
+          _db.from('profiles').update({'brief_slot': slot}).eq('id', userId),
+    );
+  }
+
   /// Sessiz saatler (0057) — TR saati, null = kapalı.
   Future<({int? start, int? end})> getQuietHours(String userId) async {
     final row = await _log.log<Map<String, dynamic>?>(

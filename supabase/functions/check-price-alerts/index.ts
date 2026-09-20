@@ -22,6 +22,7 @@ import {
 } from '../_shared/kanarya.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
+import { takipListesiHareketleri } from '../_shared/watchlist_moves.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -121,12 +122,26 @@ Deno.serve(async (request) => {
     if (yetkisiz) return yetkisiz;
 
     let dryRun = false;
+    // `watchlist: true` → alarm turu DEĞİL, takip listesi hareketi turu
+    // (0068 cron'u, TR 18:25). Aynı secret, aynı fonksiyon: alarm kanalının
+    // doğal uzantısı; ayrı fonksiyon ayrı secret ve ayrı dağıtım demekti.
+    let watchlist = false;
     try {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
+      if (body?.watchlist === true) watchlist = true;
     } catch (_) { /* gövde opsiyonel */ }
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
+
+    if (watchlist) {
+      return jsonResponse(await takipListesiHareketleri(admin, {
+        dryRun,
+        fcm: dryRun
+          ? null
+          : { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson },
+      }));
+    }
 
     // ── 1) Aktif alarmlar ───────────────────────────────────────────────────
     const { data: alertRows, error: alertError } = await admin

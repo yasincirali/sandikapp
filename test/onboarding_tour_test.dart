@@ -110,6 +110,7 @@ class _EvSahibiState extends State<_EvSahibi> {
           ),
           // "Bugün" kartı — gerçek ekranda hero'nun altında (2026-09-20).
           _tus(TourTarget.bugunKarti, 'bugün'),
+          _tus(TourTarget.piyasaSeridi, 'piyasa'),
           Row(
             children: [
               Expanded(child: _tus(TourTarget.yenileTusu, 'yenile')),

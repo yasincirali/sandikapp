@@ -11,6 +11,10 @@ class AppNotification {
   static const weeklySummary = 'weekly_summary';
   /// Ayın 1'i, geçen ayın özeti (`weekly-summary` fonksiyonu, `period: month`).
   static const monthlySummary = 'monthly_summary';
+  /// Takip listesinde günlük büyük hareket (0068, `check-price-alerts` watchlist).
+  static const watchlistMove = 'watchlist_move';
+  /// TÜİK açıklama günü (0068, `fetch-inflation`).
+  static const inflationDay = 'inflation_day';
   static const calendarNudge = 'calendar_nudge';
 
   final String id;

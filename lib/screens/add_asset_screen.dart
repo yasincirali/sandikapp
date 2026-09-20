@@ -20,6 +20,7 @@ import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
+import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
@@ -1634,6 +1635,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // Bugün seçildiyse güncel spot; geçmiş bir tarih seçildiyse o tarihin
     // kapanış fiyatı. Historical fetch başarısızsa spot'a fallback yapar.
     bool priceFromHistorical = false;
+    // Kayıt sonrası alarm önerisi (2026-09-20): yeni varlık fiyat kaynağı
+    // olan bir sembolse çağıran ekran "Alarm kur" eylemi gösterir.
+    AlarmAdayi? alarmAdayi;
     bool priceFallbackToSpot = false;
     if (price == 0.0 && ticker.isNotEmpty) {
       final sonuc = await _n.fiyatCoz(ticker);
@@ -1711,6 +1715,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           await ref.read(portfolioProvider.notifier).updateAsset(a);
         }
       } else {
+        final alarmSembol = manual ? null : alarmSembolu(ticker, _subCategory);
+        if (alarmSembol != null && price > 0) {
+          alarmAdayi = AlarmAdayi(alarmSembol, assetName, price);
+        }
         await ref.read(portfolioProvider.notifier).addAsset(
               name: assetName,
               ticker: ticker,
@@ -1783,10 +1791,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           duration: const Duration(seconds: 4),
         );
       }
-      // `true`: çağıran (MainNavigationScreen) bunu "kayıt oldu" sinyali
-      // olarak kullanıp Portföy sekmesine geçer. Sonuçsuz `pop` edilirse
-      // kullanıcı hangi sekmedeyse orada kalır ve eklediği varlığı göremez.
-      Navigator.pop(context, true);
+      // `true` ya da `AlarmAdayi`: çağıran (MainNavigationScreen) bunu
+      // "kayıt oldu" sinyali olarak kullanıp Portföy sekmesine geçer; aday
+      // geldiyse ayrıca "Alarm kur" eylemli bir bildirim gösterir. Sonuçsuz
+      // `pop` edilirse kullanıcı hangi sekmedeyse orada kalır ve eklediği
+      // varlığı göremez.
+      Navigator.pop(context, alarmAdayi ?? true);
     }
   }
 }

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/sandik_snack.dart';
+import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmKurAkisi;
 import '../widgets/tour_anchor.dart';
 import 'home_screen.dart';
 import 'portfolio_screen.dart';
@@ -160,7 +162,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // fullscreenDialog: iOS'ta alttan-yukarı modal geçiş + "kapat" semantiği —
     // varlık ekleme bir görev akışı, hiyerarşik gezinme değil.
     // pushGuarded: FAB'a hızlı iki dokunuş iki AddAssetScreen açmasın.
-    final added = await pushGuarded<bool>(
+    // Sonuç `true` (kayıt oldu) ya da `AlarmAdayi` (kayıt oldu + alarm
+    // önerilebilir, 2026-09-20). Bool ötesi tip: ekleme ekranı alarm
+    // akışını kendisi açsaydı kapanmakta olan bir rotanın üstünde sheet
+    // açmak gerekirdi.
+    final added = await pushGuarded<Object>(
       context,
       adaptiveRoute(
         builder: (_) => const AddAssetScreen(),
@@ -168,6 +174,22 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ),
     );
     if (!mounted) return;
+    if (added is AlarmAdayi) {
+      sandikSnack(
+        context,
+        context.l10n.alarmSuggest(added.ad),
+        action: SnackBarAction(
+          label: context.l10n.alarmSuggestAction,
+          onPressed: () {
+            if (!mounted) return;
+            CrashReporter.arkaPlan(
+              alarmKurAkisi(context, ref, sabit: added),
+              reason: 'main_navigation.alarmKurAkisi',
+            );
+          },
+        ),
+      );
+    }
 
     // Kayıt başarılıysa Portföy sekmesine geç. Eskiden hiçbir akış sekme
     // değiştirmiyordu; kullanıcı hangi sekmedeyse oraya dönüyordu. Ana
