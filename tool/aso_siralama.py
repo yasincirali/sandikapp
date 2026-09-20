@@ -29,7 +29,8 @@ LIMIT = 200
 VARSAYILAN = [
     "sandık", "sandik", "sandık portföy",
     "portföy takibi", "portföy", "hisse takip", "fon takip",
-    "enflasyon", "reel getiri", "temettü", "altın takip", "kâr zarar",
+    "enflasyon", "reel getiri", "temettü", "temettü takip", "altın takip",
+    "kâr zarar", "varlık takip", "fon takip",
 ]
 
 

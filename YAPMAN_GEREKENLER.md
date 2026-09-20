@@ -1698,6 +1698,20 @@ Kalıcı iyileştirme (isteğe bağlı): kayıt hâlâ gerçek hesapla; "Test" o
 videoda "Ayşe" maskesiyle örtülü. Demo hesapla yeniden çekim
 (`CEKIM_SENARYOSU.md` §2) maskeyi gereksiz kılar.
 
+## 🔎 ASO — App Store Connect'e girilecekler (2026-09-20)
+
+Metinler, ölçüm ve gerekçe: `store_listing/ios/ASO_2026_09.md`. Sıra:
+
+- [ ] Localizations → **Turkish** ekle, Primary Language = Turkish
+- [ ] Ad: `Sandık: Portföy & Hisse Takibi` · Alt başlık: `Fon, Altın, Temettü, Enflasyon` (1.1.5 sürümüyle yayınlanır)
+- [ ] Keyword TR: `sandik,borsa,bist,yatırım,döviz,dolar,kur,tefas,kâr,zarar,tüfe,reel,getiri,birikim,varlık,gümüş`
+- [ ] Keyword EN (U.S.): `portfoy,hisse takip,fon takip,kar zarar,reel getiri,tufe,gram altin,ons,borsa,yatirim,net worth`
+- [ ] Tanıtım metni (aylık, TÜFE'den sonra) + açıklama ikinci satırına "enflasyonu geçip geçmediğini"
+- [ ] Önizleme videosu yükle (`brag-output-2026-09-18-store/brag.mp4`)
+- [ ] Apple Search Ads marka kampanyası: `sandık` `sandik` `sandık portföy` (namesake "Sandık" uygulaması 30 Ağustos'ta çıktı, 3 puanla)
+- [ ] In-App Event "Enflasyon günü" (her ayın 3'ü, 14 gün önce planla)
+- [ ] 2 hafta sonra `python tool/aso_siralama.py` → ölçüm defterine yaz
+
 ## 📈 Kurulum büyüme planı (2026-09-18)
 
 Plan ve haftalık ölçüm: `docs/KURULUM_BUYUME_PLANI_2026_09.md`, sıralama betiği
