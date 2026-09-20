@@ -312,11 +312,18 @@ Deno.serve(async (request) => {
     let dryRun = false;
     let minMovePct = DEFAULT_MIN_MOVE_PCT;
     let donem: Donem = 'week';
+    let sadece: Set<string> | null = null;
     try {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
       if (typeof body?.min_move_pct === 'number') minMovePct = body.min_move_pct;
       if (body?.period === 'month') donem = 'month';
+      // Test kancası: yalnızca verilen kullanıcılara gönder (admin'de
+      // deneme). Çağrı zaten cron secret'ı gerektiriyor; istemciden
+      // ulaşılamaz. Boş/eksikse herkese (normal cron).
+      if (Array.isArray(body?.user_ids) && body.user_ids.length > 0) {
+        sadece = new Set((body.user_ids as unknown[]).map(String));
+      }
     } catch (_) { /* gövde opsiyonel */ }
     const aylik = donem === 'month';
     const bildirimTipi = aylik ? 'monthly_summary' : 'weekly_summary';
@@ -330,7 +337,8 @@ Deno.serve(async (request) => {
     if (tokenError) {
       throw new Error(`Push tokenlari alinamadi: ${tokenError.message}`);
     }
-    const tokens = collapseTokens((tokenRows ?? []) as TokenRow[]);
+    const tokens = collapseTokens((tokenRows ?? []) as TokenRow[])
+      .filter((t) => sadece === null || sadece.has(t.user_id));
     if (tokens.length === 0) {
       return jsonResponse({
         ok: true,
