@@ -6,6 +6,7 @@ import '../providers/preferences_provider.dart';
 import '../screens/leaderboard_screen.dart';
 import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../utils/polling.dart';
@@ -29,6 +30,11 @@ class LeaderboardHeroCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final optIn = ref.watch(leaderboardOptInProvider);
     final partners = ref.watch(activePartnersProvider);
+    // Küresel sıralama parametrik kapalıyken (2026-09-21) yarış yalnızca
+    // ortaklar arası: ortağı olmayan kullanıcıya kart çizilmez — "Katıl"
+    // demek boş bir odaya davet olurdu.
+    final kuresel = RemoteConfigService.instance.globalLeaderboardEnabled;
+    if (partners.isEmpty && !kuresel) return const SizedBox.shrink();
 
     if (!optIn) return _OptInHero(ref: ref);
     // Ortağı olmayan kullanıcı da Yarış ekranına GİREBİLMELİ.
@@ -81,7 +87,6 @@ class _SoloHero extends StatelessWidget {
                     height: 1.35,
                   ),
                 ),
-                const _HavuzSatiri(),
               ],
             ),
           ),
@@ -103,50 +108,6 @@ class _SoloHero extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Havuz satırı — "3 kişi katıldı · sıralama 8 kişide açılır" (0067).
-///
-/// Eşik dolana kadar kart boş bir vaat gibi duruyordu; kullanıcı "Katıl"a
-/// basıyor ve karşılığında "Yakında" görüyordu. Sayı iki şey söyler: özellik
-/// canlı, ve katılan herkes eşiği yaklaştırıyor. Sayı gelmezse (ağ, eski
-/// sunucu) satır HİÇ çizilmez — uydurma sayı yok.
-class _HavuzSatiri extends StatefulWidget {
-  const _HavuzSatiri();
-
-  @override
-  State<_HavuzSatiri> createState() => _HavuzSatiriState();
-}
-
-class _HavuzSatiriState extends State<_HavuzSatiri> {
-  late final Future<int?> _havuz = LeaderboardService.instance.fetchPoolSize();
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<int?>(
-      future: _havuz,
-      builder: (context, snap) {
-        final n = snap.data;
-        if (n == null) return const SizedBox.shrink();
-        const k = LeaderboardService.kMinKatilimci;
-        final metin = n >= k
-            ? context.l10n.raceRunningCount(n)
-            : context.l10n.raceJoinedCount(n, k);
-        return Padding(
-          padding: const EdgeInsets.only(top: SandikSpace.xxs),
-          child: Text(
-            metin,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.labelSmall?.copyWith(
-              color: n >= k ? context.c.gain : context.c.text36,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -210,7 +171,6 @@ class _OptInHero extends StatelessWidget {
                     height: 1.35,
                   ),
                 ),
-                const _HavuzSatiri(),
               ],
             ),
           ),
@@ -250,7 +210,12 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
     onTick: () async {
       if (!mounted) return;
       final f = _compute();
-      setState(() => _future = f);
+      // Kapalı blok: `() => _future = f` atamanın DEĞERİNİ (bir Future)
+      // döndürüyordu ve setState "callback returned a Future" ile
+      // fırlatıyordu (debug assert; emülatör günlüğü 2026-09-21).
+      setState(() {
+        _future = f;
+      });
       await f;
     },
   );
@@ -505,9 +470,6 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              // Ortaklı kullanıcı da havuzu görsün: kendi sırası ortaklar
-              // arasında, ama genel yarışın neden "yakında" olduğu bu satır.
-              const _HavuzSatiri(),
             ],
           ),
         ),

@@ -83,7 +83,12 @@ class RemoteConfigService {
 
     // Ana ekranda anonim yüzdelik dilim şeridi. Yalnızca yarış opt-in'i
     // açık olan kullanıcıya görünür; k-anonimlik eşiği sunucuda.
-    'percentile_strip_enabled': true,
+    // 2026-09-21: küresel sıralama PARAMETRİK KAPALI (kullanıcı kararı):
+    // havuz 3 kişi, "N kişi katıldı" sayısı yanlış anlaşılıyor. Ortaklar
+    // arası yarış açık kalır. Açmak için Remote Config'de iki anahtar da
+    // true: `global_leaderboard_enabled`, `percentile_strip_enabled`.
+    'global_leaderboard_enabled': false,
+    'percentile_strip_enabled': false,
 
     // İlk varlık eklendikten sonra ana ekran widget'ı önerisi.
     'widget_prompt_enabled': true,
@@ -201,6 +206,12 @@ class RemoteConfigService {
   bool get percentileStripEnabled =>
       _rc?.getBool('percentile_strip_enabled') ??
       _defaults['percentile_strip_enabled'] as bool;
+
+  /// Küresel sıralama (yüzdelik dilim, en çok kazandıranlar, solo panel,
+  /// benchmark kartı). Ortaklar arası yarış bundan bağımsız.
+  bool get globalLeaderboardEnabled =>
+      _rc?.getBool('global_leaderboard_enabled') ??
+      _defaults['global_leaderboard_enabled'] as bool;
 
   bool get widgetPromptEnabled =>
       _rc?.getBool('widget_prompt_enabled') ??

@@ -135,6 +135,13 @@ doğrudan açması için AASA dosyası alan adının KÖKÜNDE olmalı; alt yold
 Kararı söyle; Apple Developer › Identifiers › `com.sandik.app` ›
 **Associated Domains** yeteneğini de sen açarsın (match profil yeniler).
 
+### C0. Küresel sıralama parametrik KAPALI (2026-09-21)
+Uygulama varsayılanı `global_leaderboard_enabled=false` ve
+`percentile_strip_enabled=false`: yüzdelik dilim, en çok kazandıranlar, solo
+panel, Özet'teki benchmark kartı görünmez; ortaklar arası yarış açık.
+Havuz 8'i geçince Remote Config'de iki anahtarı `true` yapıp Publish —
+sürüm gerekmez. "N kişi yarışta" satırı kalktı (sayı yanlış anlaşılıyordu).
+
 ### C. Firebase Remote Config — iki parametre (5 dk)
 
 Console › Remote Config › Add parameter (yoksa uygulama varsayılanı

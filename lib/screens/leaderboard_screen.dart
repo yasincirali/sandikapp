@@ -8,6 +8,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
@@ -35,6 +36,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   @override
   Widget build(BuildContext context) {
     final optIn = ref.watch(leaderboardOptInProvider);
+    final kuresel = RemoteConfigService.instance.globalLeaderboardEnabled;
     final me = ref.watch(authProvider).valueOrNull;
     final activePartners = ref.watch(activePartnersProvider);
     final myAssets = ref.watch(portfolioProvider).valueOrNull?.assets ?? [];
@@ -110,13 +112,28 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                   ),
                   Expanded(
                     child: activePartners.isEmpty
-                        ? _SoloPanel(
-                            me: me,
-                            myAssets: myAssets,
-                            periodDays: _periods[_periodIdx].days,
-                            pnlToTRY: (val, cur) =>
-                                pState?.toTRY(val, cur) ?? val,
-                          )
+                        // Küresel sıralama parametrik kapalıyken solo panel
+                        // (küresel dilim + en çok kazandıranlar) anlamsız:
+                        // ortak ekleme daveti gösterilir (2026-09-21).
+                        ? (kuresel
+                            ? _SoloPanel(
+                                me: me,
+                                myAssets: myAssets,
+                                periodDays: _periods[_periodIdx].days,
+                                pnlToTRY: (val, cur) =>
+                                    pState?.toTRY(val, cur) ?? val,
+                              )
+                            : Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(SandikSpace.lg),
+                                  child: Text(
+                                    context.l10n.racePitch,
+                                    textAlign: TextAlign.center,
+                                    style: context.t.bodyMedium
+                                        ?.copyWith(color: context.c.text58),
+                                  ),
+                                ),
+                              ))
                         : _LeaderboardList(
                             me: me,
                             myAssets: myAssets,
@@ -127,12 +144,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                 pState?.toTRY(val, cur) ?? val,
                           ),
                   ),
-                  _GlobalPercentileTeaser(
-                    periodDays: _periods[_periodIdx].days,
-                  ),
-                  _TopGainersAllocationCard(
-                    periodDays: _periods[_periodIdx].days,
-                  ),
+                  if (kuresel) ...[
+                    _GlobalPercentileTeaser(
+                      periodDays: _periods[_periodIdx].days,
+                    ),
+                    _TopGainersAllocationCard(
+                      periodDays: _periods[_periodIdx].days,
+                    ),
+                  ],
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 12),
@@ -731,7 +750,9 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     onTick: () async {
       if (!mounted) return;
       final f = _compute();
-      setState(() => _future = f);
+      setState(() {
+        _future = f;
+      });
       await f;
     },
   );
@@ -1246,7 +1267,9 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
     onTick: () async {
       if (!mounted) return;
       final f = _computeBest();
-      setState(() => _future = f);
+      setState(() {
+        _future = f;
+      });
       await f;
     },
   );
@@ -1466,7 +1489,9 @@ class _TopGainersAllocationCardState extends State<_TopGainersAllocationCard> {
     onTick: () async {
       if (!mounted) return;
       final f = _fetch();
-      setState(() => _future = f);
+      setState(() {
+        _future = f;
+      });
       await f;
     },
   );

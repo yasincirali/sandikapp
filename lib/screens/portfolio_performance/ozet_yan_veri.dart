@@ -469,8 +469,8 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       karakter: widget.karakter,
       enSabirli: widget.enSabirli,
       enSabirliGun: widget.enSabirliGun,
-      percentile: gorunur.percentile ? _dilim?.percentile : null,
-      percentileKatilimci: gorunur.percentile ? _dilim?.total : null,
+      percentile: gorunur.percentile && RemoteConfigService.instance.globalLeaderboardEnabled ? _dilim?.percentile : null,
+      percentileKatilimci: gorunur.percentile && RemoteConfigService.instance.globalLeaderboardEnabled ? _dilim?.total : null,
       onShare: paylasimMetni == null
           ? null
           : () => _paylas(
@@ -478,7 +478,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
                 gosterilen,
                 xirrPct: xirrPaylasim,
                 drawdownPct: gorunur.saglik ? _drawdown?.yuzde : null,
-                percentile: gorunur.percentile ? _dilim?.percentile : null,
+                percentile: gorunur.percentile && RemoteConfigService.instance.globalLeaderboardEnabled ? _dilim?.percentile : null,
               ),
       katkiKarti: katki == null
           ? null
