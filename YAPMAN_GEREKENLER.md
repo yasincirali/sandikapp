@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-09-14 (#24: 0000 işaretleme + 0063 + observe-tefas-nav)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-09-21 (App Store kopya uygulama + depo herkese açıktı)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -9,6 +9,59 @@
 > yeni rehber geçerlidir.
 
 **Kapsam:** Yayın öncesi senin elden yapman gereken işler. Kod tarafı (Faz 1) tamam; bu liste deploy + hukuki + ticari adımları içerir.
+
+---
+
+## ⚖️ 2026-09-21 — App Store'da kopya uygulama (`id6793574880`) + depo herkese açıktı
+
+**Neden burada:** hukuki ve mağaza adımları; kod tarafı yok.
+
+**Tespit.** App Store TR'de `id6793574880` ("sandık - Varlık Takibi")
+uygulamasının sandık'ı kopyaladığı bildirildi. Ayrıca `yasincirali/sandikapp`
+deposunun **herkese açık** olduğu görüldü (10 Nisan 2026'da oluşturulmuş);
+tüm kaynak kod, 63 migration'lık şema ve edge function'lar klonlanabilir
+durumdaydı. Gizli anahtarlar repoda değil (`supabase_config.dart` yalnızca
+`String.fromEnvironment`; keystore/`google-services.json`/`.env` gitignore'da),
+yani **senin** Supabase projene erişim sızmadı.
+
+**Sırayla yapılacaklar:**
+
+1. **Depoyu özelleştir — önce arşivle.**
+   `git clone --mirror https://github.com/yasincirali/sandikapp sandikapp-kanit.git`
+   → sonra GitHub → Settings → Danger Zone → Change visibility → Private.
+   Oluşturma tarihi özel depoda da saklanır; öncelik delili kaybolmaz.
+2. **Telif uyarısı ekle.** Depoda `LICENSE` **yok**. Lisans yokluğu "tüm
+   hakları saklı" demektir (bu iyi), ama açık bir telif notu bundan sonraki
+   ihlallerde "bilmiyordum" savunmasını kapatır.
+3. **Kanıtı dondur** (uygulama kaldırılsa bile kalsın):
+   - `https://web.archive.org/save/https://apps.apple.com/tr/app/id6793574880`
+   - `https://web.archive.org/save/https://apps.apple.com/tr/app/id6786837699`
+   - `https://itunes.apple.com/lookup?id=6793574880&country=tr` çıktısını kaydet
+     (geliştirici adı, `releaseDate`, `bundleId`, açıklama metni burada).
+4. **Şikayet dosyasını doldur ve gönder.** Hazır taslak elinde (Apple IP /
+   App Store Content Dispute formu için İngilizce metin + Türkçe özet +
+   karşılaştırma tablosu). Tablodaki köşeli parantezler dolmadan gönderme:
+   Apple "insufficient detail" ile kapatır.
+5. **Supabase loglarını tara.** Anon anahtar her IPA/APK içinde bulunur;
+   kopya uygulama **senin** projene bağlanıyor olabilir. Dashboard → Logs'ta
+   beklenmedik bundle/user-agent trafiği ara. Varsa bu Apple'a gidecek çok
+   daha ağır bir delil (yetkisiz sunucu erişimi) ve anon anahtar rotasyonu
+   gündeme gelir.
+6. **TÜRKPATENT tescili.** "Sandık" tek başına jenerik sözcük (oy sandığı,
+   sandık odası) → isim üzerinden hak iddiası zayıf. **"Sandık: Portföy &
+   Enflasyon"** ya da logolu biçim 9. ve 42. sınıfta tescillenirse bir
+   sonraki kopyada elin kat kat güçlü olur.
+7. **Üçüncü bir "Sandık" var mı, netleştir.** `store_listing/ios/ASO_2026_09.md`
+   §1'e göre 30 Ağustos 2026'da `com.firenitetr.sandikthewallet` kimlikli
+   başka bir "Sandık" uygulaması çıkmış. `id6793574880`'ın `bundleId`'si bu mu?
+   Aynıysa tek dosyada birleştir. **Değilse** üç ayrı "Sandık" demek olur ve
+   sözcüğün jenerikliği savunulur → şikayeti tamamen kopyalanan **içerik**
+   (metin, ekran, kod) üzerine kurman şart.
+
+**Dikkat — öncelik delilin:** kendi App Store kimliğin `6786837699`, kopyanın
+`6793574880`. Apple bu numaraları kayıt sırasına göre verir, yani senin
+kaydının önceliği Apple'ın kendi kayıtlarından doğrulanabilir. İkinci delil
+deponun 10 Nisan 2026 oluşturma tarihi ve tarihli commit geçmişi.
 
 ---
 
