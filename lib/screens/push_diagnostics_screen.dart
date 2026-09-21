@@ -10,6 +10,7 @@ import '../services/remote_push_service.dart';
 import '../services/surface_theme.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../utils/cron_zamani.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../utils/sandik_snack.dart';
@@ -419,10 +420,22 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     // `0054`'ün arızası tam buydu: job aktif, çalışma geçmişi başka
     // job'lardan dolu, ama O job hiç koşmamış. `_runs.isEmpty` bunu
     // yakalayamaz — liste `live-activity` koşularıyla zaten doludur.
-    final hicKosmamis = _jobs
+    //
+    // AYLIK işler ayrı (2026-09-21): ayın 1'i / 3'ü koşanlar ilk slotundan
+    // önce kurulduysa bir ay boyunca "hiç çalışmamış" görünür; bu arıza
+    // değil. Beş kırmızı satır gerçek 0054 tipi arızayı gölgeliyordu.
+    // `cron.job` kurulum zamanı tutmaz; ayırt edici ifadenin gün-ay alanı.
+    final hicKosmamisHepsi = _jobs
         .where((j) =>
             j is Map && j.containsKey('son_calisma') && j['son_calisma'] == null)
+        .toList();
+    final hicKosmamis = hicKosmamisHepsi
+        .where((j) => cronAyGunu('${j['schedule']}') == null)
         .map((j) => j['jobname'])
+        .toList();
+    final aylikBekleyen = hicKosmamisHepsi
+        .where((j) => cronAyGunu('${j['schedule']}') != null)
+        .map((j) => "${j['jobname']} (ayın ${cronAyGunu('${j['schedule']}')}'i)")
         .toList();
     if (hicKosmamis.isNotEmpty) {
       return (
@@ -431,6 +444,14 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
             'çalışma kaydı yok. Yeni kurulduysa ilk slotu bekleyin; '
             'değilse migration gövdesi koşmamış olabilir (bkz. 0054).',
         renk: context.c.loss,
+      );
+    }
+    if (aylikBekleyen.isNotEmpty) {
+      return (
+        baslik: '${aylikBekleyen.length} aylık job ilk slotunu bekliyor',
+        detay: '${aylikBekleyen.join(', ')} — aylık iş, henüz ilk koşu günü '
+            'gelmedi. O gün geçtiği hâlde kayıt yoksa 0054 tipi arıza.',
+        renk: context.c.amberText,
       );
     }
     if (_runs.isEmpty) {
@@ -858,7 +879,12 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
   String _sonCalismaEki(dynamic j) {
     if (j is! Map || !j.containsKey('son_calisma')) return '';
     final son = j['son_calisma'];
-    if (son == null) return '  •  ⚠ hiç çalışmamış';
+    if (son == null) {
+      // Aylık iş ilk slotundan önce kurulduysa uyarı değil, bekleme.
+      final gun = cronAyGunu('${j['schedule']}');
+      if (gun != null) return "  •  ⏳ ilk koşu ayın $gun'i";
+      return '  •  ⚠ hiç çalışmamış';
+    }
     final durum = j['son_durum'];
     return '\n   ↳ son: $son${durum == null ? '' : ' ($durum)'}';
   }
