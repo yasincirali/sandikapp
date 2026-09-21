@@ -162,6 +162,22 @@ List<Position> aggregatePositionsByOwner(Iterable<List<Asset>> ownerLots) => [
       for (final lots in ownerLots) ...aggregatePositions(lots),
     ];
 
+/// Karışık bir defteri (Birlikte: ben + ortaklar) sahibe göre böler —
+/// [aggregatePositionsByOwner] / [ownerScopedTotalValue] girdisi.
+///
+/// Çağıranın elinde çoğu zaman sahibi ayrılmış listeler zaten vardır ve
+/// onları doğrudan verir. Bu yardımcı, defterin TEK liste hâlinde dolaşan
+/// yüzeyleri içindir (`PortfolioState.assets` bir kapsam durumu taşıyorsa):
+/// `Asset.userId` her lot'ta vardır, sahiplik sınırı buradan geri kurulur.
+/// Tek sahipli defterde tek grup döner — davranış değişmez.
+List<List<Asset>> lotlarSahibeGore(Iterable<Asset> assets) {
+  final m = <String, List<Asset>>{};
+  for (final a in assets) {
+    m.putIfAbsent(a.userId, () => []).add(a);
+  }
+  return m.values.toList(growable: false);
+}
+
 /// TRY'ye çeviren dönüştürücü. Canlı kurlar `PortfolioState`'te tutulur;
 /// model katmanının state'e erişimi yok, bu yüzden çağıran enjekte eder
 /// (`state.toTRY`). Yalnızca TRY varlıklarla çalışan testler

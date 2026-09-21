@@ -34,6 +34,7 @@ import '../services/real_return_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart';
 import 'hedef_sheet.dart';
 import 'sandik_skeleton.dart';
 
@@ -251,10 +252,17 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final ozet = seri == null
         ? null
         : DailySummary.from(state: widget.state, series: seri, now: now);
-    final pozisyonlar = aggregatePositions(aktifLotlar(widget.state.assets));
+    // Sahiplik sınırı korunur: Birlikte görünümünde `state.assets` ben +
+    // ortakların BİRLEŞİK defteridir ve `positionKey` sahip taşımaz — tek
+    // havuzda toplanırsa iki kişinin aynı hissesi tek pozisyona düşer,
+    // birinin satışı diğerinin lotunu düşer (bkz. `aggregatePositionsByOwner`).
+    // Kendi görünümünde tek grup çıkar, hesap aynıdır.
+    final sahipler = lotlarSahibeGore(widget.state.assets);
+    final pozisyonlar = aggregatePositionsByOwner(
+        [for (final lots in sahipler) aktifLotlar(lots)]);
     final veri = BugunService.hesapla(
       karZararlar: [for (final p in pozisyonlar) p.gainLoss],
-      toplamDeger: widget.state.totalValue,
+      toplamDeger: ownerScopedTotalValue(sahipler, toTRY: widget.state.toTRY),
       ozet: ozet,
       hedefTRY: ref.watch(portfolioGoalProvider),
       now: now,
@@ -299,7 +307,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
               Padding(
                 padding: const EdgeInsets.only(bottom: SandikSpace.sm),
                 child: Text(
-                  widget.etiket!.toUpperCase(),
+                  // Türkçe büyük harf: düz `toUpperCase` "AYŞE'NIN" verir.
+                  trBuyukHarf(widget.etiket!),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.labelSmall?.copyWith(

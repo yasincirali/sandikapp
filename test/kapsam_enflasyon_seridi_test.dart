@@ -35,8 +35,24 @@ void main() {
     final blok = src.substring(i, src.indexOf('padding:', i));
     expect(blok.contains('gorunumDurumu(ledgerAssets)'), isTrue,
         reason: 'ortak/Birlikte görünümünde kart kapsamın defterini almalı');
-    expect(blok.contains('kisisel: ownView'), isTrue,
+    // `ownView` "ortak değil" demektir ve Birlikte'yi (`_view == null`)
+    // de kapsar: kart Birlikte'de yine kendi defterini anlatıyordu
+    // (kullanıcı bulgusu 2026-09-21). Kart YALNIZCA `_view == ''` iken
+    // kişiseldir; `ownView` bu blokta hiç geçmemeli.
+    // Yalnızca kod: karar yorumu ownView'ı adıyla anıyor.
+    final kod = blok
+        .split('\n')
+        .where((l) => !l.trimLeft().startsWith('//'))
+        .join('\n');
+    expect(kod.contains('ownView'), isFalse,
+        reason: "ownView Birlikte'yi de kapsar; kart Birlikte'de kendi "
+            "defterini değil birleşik defteri anlatmalı");
+    expect(blok.contains('state: benGorunumu ? myState'), isTrue,
+        reason: 'ham state yalnızca Ben görünümünde');
+    expect(blok.contains('kisisel: benGorunumu'), isTrue,
         reason: 'hedef ve aylık özet yalnızca kendi görünümünde');
+    expect(src.contains("final benGorunumu = _view == '';"), isTrue,
+        reason: 'Ben = boş dize; null Birlikte, id ortak');
     expect(blok.contains('etiket: _bugunEtiketi('), isTrue,
         reason: 'kartın kimin olduğu başlıkta yazar');
     expect(blok.contains("ValueKey('bugun-"), isTrue,

@@ -279,10 +279,13 @@ class DailySummary {
   ///
   /// `aggregatePositionsByOwner` ortak lot'ları tek havuzda toplamaz:
   /// `positionKey` sahip taşımaz ve havuzlanan iki ortağın aynı hissesi
-  /// tek pozisyona düşerdi. Uygulama dışı yüzeyler yalnızca kullanıcının
-  /// KENDİ portföyünü gösterir, bu yüzden kapsam tek sahiplidir.
+  /// tek pozisyona düşerdi. Kilit ekranı ve widget yalnızca kullanıcının
+  /// KENDİ portföyünü gösterir; ama Bugün kartı 2026-09-21'den beri
+  /// Birlikte görünümünde BİRLEŞİK defterle de çağırır. Defter sahibe göre
+  /// bölünür (`lotlarSahibeGore`): tek sahipli defterde tek grup, hesap
+  /// aynı; birleşik defterde sahiplik sınırı korunur.
   static double liveTotalTRY(PortfolioState state) =>
-      ownerScopedTotalValue([state.assets], toTRY: state.toTRY);
+      ownerScopedTotalValue(lotlarSahibeGore(state.assets), toTRY: state.toTRY);
 
   /// Gün içi seriyi uygulamanın GÜNLÜK grafiğiyle birebir aynı kurallarla
   /// ham (TRY) değer listesine indirger.

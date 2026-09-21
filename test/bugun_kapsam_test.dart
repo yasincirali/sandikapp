@@ -76,5 +76,11 @@ void main() {
       expect(trIyelik('XYZ'), "XYZ'in");
       expect(trIyelik('  '), '');
     });
+
+    test('kart etiketi Türkçe büyük harf: noktalı i korunur', () {
+      expect(trBuyukHarf("Ayşe'nin bugünü"), "AYŞE'NİN BUGÜNÜ");
+      expect(trBuyukHarf('Birlikte'), 'BİRLİKTE');
+      expect(trBuyukHarf('Işık'), 'IŞIK');
+    });
   });
 }

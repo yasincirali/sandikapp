@@ -449,6 +449,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // başlıktan SONRA, listenin en altında bir "İlk varlığını ekle" düğmesi
     // vardı — 27 adımlık turdan çıkan kullanıcı bir duvar sıfır görüyordu.
     final ownView = !(_view != null && _view!.isNotEmpty);
+    // Yalnızca "Ben" (`''`). `ownView` Birlikte'yi de içerir (ortak-değil);
+    // "kendi defteri mi" sorusu bu ikisini ayırmak zorunda — Bugün kartı
+    // Birlikte'de birleşik defteri anlatır.
+    final benGorunumu = _view == '';
     // **Boşluk ölçüsü AÇIK POZİSYON, ham satır sayısı DEĞİL** (kullanıcı
     // bildirimi, 2026-09-16).
     //
@@ -733,8 +737,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // Kendi görünümünde ham state (sahip damgalı, paylaşımlı
                   // gün içi önbelleği kullanır); kapsamda aynı kurla
                   // kurulmuş kapsam defteri.
-                  state: ownView ? myState : gorunumDurumu(ledgerAssets),
-                  kisisel: ownView,
+                  //
+                  // `ownView` DEĞİL, `benGorunumu`: `ownView` "ortak değil"
+                  // demektir ve Birlikte'yi (`_view == null`) de kapsar —
+                  // kart Birlikte'de yine yalnızca kendi defterini
+                  // anlatıyordu (kullanıcı bulgusu 2026-09-21, aynı gün).
+                  // Birlikte de bir kapsamdır: birleşik defter, kişisel
+                  // satırlar yok, etiket "Birlikte".
+                  state: benGorunumu ? myState : gorunumDurumu(ledgerAssets),
+                  kisisel: benGorunumu,
                   etiket: _bugunEtiketi(allActivePartners),
                   padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
                 ),

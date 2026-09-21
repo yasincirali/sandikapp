@@ -9,6 +9,10 @@
 /// Kapsam bilinçli olarak dar: yalnızca ilgi eki, yalnızca özel ad. Yumuşama
 /// (k→ğ) özel adda kesmeyle olmadığı için yok. Son ünlüsü bulunamayan ad
 /// (ünsüz kısaltma, boş) ince-düz ek alır ("XYZ'in").
+/// Türkçe büyük harf: `toUpperCase` i→I ve ı→I yapar ("Ayşe'nin" →
+/// "AYŞE'NIN"). Noktalı i önce İ'ye çevrilir; ı zaten I'ya gider.
+String trBuyukHarf(String s) => s.replaceAll('i', 'İ').toUpperCase();
+
 String trIyelik(String ad) {
   final t = ad.trim();
   if (t.isEmpty) return t;
