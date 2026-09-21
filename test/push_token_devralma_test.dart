@@ -28,10 +28,19 @@ void main() {
     final i = servis.indexOf('Future<void> upsertPushToken(');
     expect(i, greaterThan(0));
     final govde = servis.substring(i, servis.indexOf('Future<void> deletePushToken', i));
-    expect(govde.contains("rpc<dynamic>(\n        'claim_push_token'"), isTrue,
+    expect(govde.contains('rpc<dynamic>(') && govde.contains("'claim_push_token'"),
+        isTrue,
         reason: 'token yazımı sunucuda devralma yapan RPC ile');
-    expect(govde.contains(".from('user_push_tokens').upsert("), isFalse,
-        reason: 'doğrudan upsert başka hesabın satırında 42501 verir');
+    // Doğrudan upsert yalnızca sürüm kayması geri dönüşünde (RPC yok →
+    // PGRST202); ana yol RPC. Build 0069'dan önce indiğinde token hiç
+    // yazılamamıştı (canlı, 2026-09-21 akşamı).
+    final rpc = govde.indexOf("'claim_push_token'");
+    final geri = govde.indexOf("e.code != 'PGRST202'");
+    final upsert = govde.indexOf(".from('user_push_tokens').upsert(");
+    expect(rpc, greaterThan(0));
+    expect(geri, greaterThan(rpc), reason: 'geri dönüş yalnızca PGRST202');
+    expect(upsert, greaterThan(geri),
+        reason: 'doğrudan upsert yalnızca geri dönüşte, ana yolda değil');
     expect(govde.contains('.delete()'), isFalse,
         reason: 'bayat token temizliği sunucuda; istemci başka hesabın '
             'satırını zaten silemiyordu');

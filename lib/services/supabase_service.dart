@@ -8,6 +8,7 @@ import '../models/signal_preference.dart';
 import '../models/tefas_nav_gozlem.dart';
 import '../models/user_model.dart';
 import '../models/watchlist_item.dart';
+import 'crash_reporter.dart';
 import 'db_logger.dart';
 
 /// Tüm Supabase veri erişimi bu sınıf üzerinden geçer.
@@ -644,25 +645,56 @@ class SupabaseService {
   /// satırını RLS yüzünden zaten silemiyordu).
   ///
   /// [deviceId] boşsa sunucu eski cihaz kimliğini korur.
+  ///
+  /// **Sürüm kayması (2026-09-21 akşamı, canlıda ölçüldü).** Build 0069'dan
+  /// ÖNCE cihazlara indi: RPC yok, `PGRST202`, token hiç yazılmadı — eski
+  /// hatadan daha kötü. Fonksiyon bulunamazsa eski doğrudan upsert yoluna
+  /// düşülür: aynı hesabın satırıysa yazılır, başka hesabınsa 42501 sürer
+  /// (0069 gelene kadar bilinen sınır). Yalnızca PGRST202'de; başka hata
+  /// (RLS, ağ) olduğu gibi fırlar. Non-fatal rapor: migration eksikliği
+  /// Crashlytics'te görünür olsun.
   Future<void> upsertPushToken({
     required String userId,
     required String token,
     required String platform,
     String? deviceId,
   }) async {
+    try {
+      await _log.log<void>(
+        source: 'SupabaseService.upsertPushToken',
+        table: 'user_push_tokens',
+        op: 'RPC',
+        request: {'user_id': userId, 'platform': platform},
+        call: () => _db.rpc<dynamic>(
+          'claim_push_token',
+          params: {
+            'p_token': token,
+            'p_platform': platform,
+            'p_device_id':
+                (deviceId != null && deviceId.isNotEmpty) ? deviceId : null,
+          },
+        ),
+      );
+      return;
+    } on PostgrestException catch (e, st) {
+      if (e.code != 'PGRST202') rethrow;
+      CrashReporter.report(e, st,
+          reason: 'upsertPushToken: claim_push_token RPC yok (0069 eksik)');
+    }
     await _log.log<void>(
       source: 'SupabaseService.upsertPushToken',
       table: 'user_push_tokens',
-      op: 'RPC',
-      request: {'user_id': userId, 'platform': platform},
-      call: () => _db.rpc<dynamic>(
-        'claim_push_token',
-        params: {
-          'p_token': token,
-          'p_platform': platform,
-          'p_device_id':
-              (deviceId != null && deviceId.isNotEmpty) ? deviceId : null,
+      op: 'UPSERT',
+      request: {'user_id': userId, 'platform': platform, 'fallback': true},
+      call: () => _db.from('user_push_tokens').upsert(
+        {
+          'user_id': userId,
+          'token': token,
+          'platform': platform,
+          if (deviceId != null && deviceId.isNotEmpty) 'device_id': deviceId,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
         },
+        onConflict: 'token',
       ),
     );
   }
