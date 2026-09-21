@@ -147,3 +147,5 @@ lib/l10n/untranslated.json
 store_listing/preview_video/node_modules/
 store_listing/preview_video/out/
 store_listing/preview_video/public/shots/
+# Ham telefon kaydı (kaynak): 155 MB, public/shots'a kopyalanıp kullanılır.
+store_listing/preview_video/video_source/

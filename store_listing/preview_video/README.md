@@ -57,6 +57,30 @@ yeniden çizildi (brag "recreate a working-app moment"), 1920×1080, 21,6 sn,
 müzik + SFX, anlatım yok. Paylaşım için (X / LinkedIn / README). Sayılar
 `DEMO_PORTFOY.md`'den. Kararlar: o klasördeki README.
 
+## Tanıtım videosu — `Tanitim` (2026-09-21) ← GÜNCEL ARAYÜZ
+
+"Son haliyle, ilgi çekici, işlevleri basitçe anlatan" tanıtım. 1920×1080 · 30 fps ·
+27,4 sn · müzik (vol-11, 114 BPM ızgarası) + SFX, anlatım yok. Teslim
+`out/sandik_tanitim_16x9.mp4`; kontrol kareleri `out/check_tanitim/`.
+Kod `src/reklam/Tanitim.tsx` + `src/reklam/ui_home.tsx`; render
+`node scripts/render_tanitim.mjs` (ya da `npx remotion render src/index.ts Tanitim …`).
+
+Sekiz sahne, her biri özellik başlığı + tek düz cümle (2026-09-18 üslubu):
+kanca → ana ekran → Bugün kartı → gerçek kazanç (KCHOL) → enflasyon → ortak
+kaydırma (Ayşe'nin bugünü) → bildirimler → CTA.
+
+Kararlar:
+- **Arayüz `ui_home.tsx` ile yeniden çizildi**, ekran kaydı yok: güncel ana ekran
+  (piyasa şeridi, görünüm çipi + sayfa noktaları, Bugün kartı, kaydırmalı geçiş)
+  için cihaz kaydı bu turda yoktu; emülatör render edemiyor. `ui.tsx` PhoneHome
+  eski (09-19) arayüzü çizer, reklam paketi onu kullanmaya devam eder.
+- **Sayılar** DEMO_PORTFOY.md'den; DEMO'da olmayanlar `theme.ts` `TANITIM` altında
+  ve TEMSİLİ (gün içi hareket, piyasa bandı, hedef, Ayşe'nin günü, bildirimler).
+- **Türkçe büyük harf:** CSS `text-transform: uppercase` yalnızca `lang="tr"` ile
+  i→İ yapar ("AYŞE'NİN"). Aynı hata uygulamada da vardı; `trBuyukHarf` ile düzeltildi.
+- Bu video mağaza ÖNİZLEMESİ için geçersiz (Apple 2.3.4 yalnızca ekran kaydı);
+  sosyal medya / README / reklam içindir.
+
 ## Reklam paketi — `../reklam/` (2026-09-19)
 
 Aynı Remotion projesinde ayrı kompozisyonlar (`src/reklam/`): Reels 9:16 15 sn,
@@ -128,3 +152,39 @@ farklılaştırıcısı — görüntü iddiayı desteklemezse etkisi kaybolur.
 - Bu proje Flutter'dan bağımsızdır; `lib/` altına hiçbir şey girmez,
   Remotion bağımlılığı uygulamaya eklenmez.
 - `node_modules/` ve `out/` commit edilmez (bkz. `.gitignore`).
+
+## App Store önizlemesi — 30 sn (2026-09-21 kaydı)
+
+`Onizleme30` · 886×1920 · 30 fps · `out/sandik_onizleme_30sn.mp4`
+
+```bash
+node scripts/render_onizleme30.mjs check   # yalnızca kontrol kareleri
+node scripts/render_onizleme30.mjs         # kareler + video
+```
+
+**Mesaj: "gerçeği söyler".** Kayıttaki portföy enflasyonun GERİSİNDE
+(−0,5 / −20,6 / −9,2 puan, kırmızı). Eski kurgular yeşil demo portföye
+dayanıyordu; bu kayıtla o iddia kurulamazdı. Kullanıcı kararı: kırmızıyı
+gizleme, mesajı ona çevir. Videoda tek bir rakam rötuşlanmadı —
+`fiyat_kaynagi.dart`'ın "uydurma sayı yasak" kuralının pazarlama tarafı.
+
+Sahneler (ham kayıt saniyesi → altyazı):
+
+| Sn | Kayıt | Üst etiket | Cümle |
+|---|---|---|---|
+| 0–4,7 | 04 | BUGÜN NE OLDU | Tüm paran **tek ekranda** |
+| 4,7–9,5 | 10 | REEL GETİRİ | Kârın var ama **enflasyonu geçti mi?** |
+| 9,5–14,2 | 56 | GÜNLÜK | Gün içinde **ne oldu** |
+| 14,2–18,9 | 69 | NEREDEN GELDİ | Kendi paran mı, **piyasa mı?** |
+| 18,9–23,7 | 84 | HER VARLIK | Aldığın günden **bugüne** |
+| 23,7–26,9 | 31 | BİRLİKTE | İkinizin portföyü **tek toplamda** |
+| 26,9–30 | — | — | sandık · Paran ne kadar, **gerçekte** ne kadar. |
+
+Kesimler 114 BPM vuruş ızgarasında (`beat()`), müzik ve SFX reklam
+hattıyla ortak. Ham kayıt `public/shots/kayit2.MP4` (1126×2436, 60 fps,
+133 sn); kaynağı `video_source/kayit.MP4`.
+
+**Altyazı konumu kritik:** `bottom: 300` — uygulamanın alt sekme çubuğu
+kayıtta ~150 px yer kaplıyor ve ilk denemede metin "Ana / Portföy /
+Performans" etiketlerinin üstüne biniyordu. Altyazının kendi gradyan
+bandı var; açık renkli karta denk geldiğinde de okunur.

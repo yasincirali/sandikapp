@@ -73,5 +73,41 @@ export const DEMO = {
 /** Türkçe ondalık: 34.35 → "34,35" */
 export const tr = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
 
+/** Tam sayı binlik: 766876 → "766.876" (toLocaleString'e güvenmeden). */
+export const trInt = (n: number) =>
+  Math.round(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+/**
+ * Tanıtım videosu (2026-09-21) — güncel ana ekranın çizimi için ek sayılar.
+ *
+ * DEMO_PORTFOY.md'de olmayan üç şey burada ve TEMSİLİDİR (gün içi hareket,
+ * piyasa bandı, hedef). Portföy toplamı/getiri/dağılım DEMO'dan; hedef
+ * ₺1.000.000 → oran DEMO.toplam'dan hesaplanır (766.876 / 1.000.000).
+ * Bugün kartındaki "artıdaki varlık" DEMO'dan: 6 varlığın 5'i artıda (SAHOL eksi).
+ */
+export const TANITIM = {
+  gun: { tutar: "+₺4.317", pct: 0.57 },
+  haftalik: 1.3,
+  hedefTRY: 1_000_000,
+  hedefOran: 77, // 766.876 / 1.000.000 → %76,7
+  hedefKalan: "₺233.124",
+  yesil: "5 / 6",
+  piyasa: [
+    { ad: "Dolar", deger: "48,79", pct: 0.08 },
+    { ad: "Euro", deger: "56,11", pct: -0.08 },
+    { ad: "Altın", deger: "6.204", pct: 0.41 },
+    { ad: "BIST 100", deger: "11.482", pct: 1.12 },
+  ],
+  // Ortak görünümü: Ayşe'nin günü — DEMO.ortak.ayse toplamı.
+  ayse: { tutar: "+₺1.906", pct: 0.24 },
+  bildirimler: [
+    { baslik: "KCHOL hedef fiyata geldi", govde: "₺206,10 · alarmın tetiklendi", saat: "14:32" },
+    { baslik: "Günlük brifing", govde: "Bugün +₺4.317 · %0,57 artıda", saat: "18:30" },
+    { baslik: "Enflasyon açıklandı", govde: "TÜFE %31,51 · sen 2,85 puan öndesin", saat: "10:00" },
+  ],
+} as const;
+
 /** 9:16 güvenli alan — platform arayüzü üstü/altı kapatır. */
 export const SAFE_9x16 = { top: 230, bottom: 260, side: 72 } as const;

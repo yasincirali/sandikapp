@@ -16,6 +16,9 @@ Neyin "en kritik" olduğu değişti — gerekçesi §1'de.
 | Haftalık özet çipi | ayrı çip | Bugün kartında "Geçen hafta ····· +%2,10" satırı |
 | Ortak seçimi | üstte sekme şeridi (Ben / Ayşe / Birlikte) | toplam kartının başlığında **"Ben ▾" çipi** → alt sayfa |
 | Performans › Özet | tek liste | üç başlık: **BU DÖNEM / VARLIKLAR / DERİNLİK** (Derinlik katlanır) |
+| Görünüm değiştirme (2. tur, 21 Eylül akşamı) | çip → alt sayfa | **kartı sağa/sola kaydır**: mevcut kart parmağı izler, komşunun kartı yandan gelir, altındaki **sayfa noktaları** akar (çip hâlâ var) |
+| Bugün kartı ortak/Birlikte'de | yok (yalnızca Ben) | **var**: başında "AYŞE'NİN BUGÜNÜ" / "BİRLİKTE" etiketi, o defterin günü; hedef satırı yalnızca Ben'de |
+| Bugün kartı yüklenmesi | satırlar tek tek beliriyordu | **iskelet → tek seferde dolu kart** (kayıtta iskelet görünmesin: uygulamayı önceden aç, kartın dolmasını bekle) |
 
 Bayat olanlar: video **1., 2. ve 5. sahne** (ana ekran ×2, Özet) ve
 `screenshots/raw_v3/` **01_ana, 02_reel, 03_nereden** kareleri. Diğer
@@ -194,13 +197,20 @@ kullanılamaz.
 
 ---
 
-### Adım 8 — Ortak portföy (≈4 sn)
+### Adım 8 — Ortak portföy: kartı kaydır · **ÜÇÜNCÜ KRİTİK** (≈7 sn)
 
-26. Ana ekranda toplam kartının başlığındaki **"Ben ▾" çipine** dokun →
-    alt sayfadan **Birlikte** seç (çip yalnızca ortağın varsa görünür)
-27. 2 sn bekle — her ortağın katkısı ayrı görünsün
+26. **Ana** sekmesinde, "Ben" görünümünde, toplam kartı ve Bugün kartı karede
+27. Toplam kartını **parmağınla sola sürükle — yavaş, ~1 sn**: kart parmağı
+    izler, **Ayşe'nin kartı sağdan gelir**, altındaki noktalar akar. Bırak;
+    kart yerine oturur, Bugün kartı **"AYŞE'NİN BUGÜNÜ"** etiketiyle onun
+    gününe döner (hedef satırı kalkar)
+28. **3 sn hiç dokunmadan bekle**
+29. Bir kez daha sola kaydır → **Birlikte**: toplam iki kişinin toplamı,
+    Bugün kartı "BİRLİKTE" etiketli. 2 sn bekle
 
-> ⚠️ Kurgusal isimler görünmeli. Gerçek isim/e-posta görünürse bu adımı
+> Bu adım videonun **jest** sahnesi: statik görüntünün yapamadığı ikinci
+> şey (ilki crosshair). Sürüklemeyi yarıda bırakma; ya tamamla ya iptal.
+> ⚠️ Kurgusal isim görünmeli ("Ayşe"). Gerçek isim/e-posta görünürse
 > **çekme**, atla.
 
 ---
@@ -234,24 +244,33 @@ Hepsini çekemezsen **sırayla** feda et:
 - [ ] Kaydı izle. Şunlardan biri varsa **tekrar çek**: bildirim banner'ı,
       yükleniyor spinner'ı, gerçek kişi adı, boş ekran, yanlış dokunuş,
       düşük pil ikonu, **kırmızı enflasyon rozeti**
-- [ ] Dosyayı `store_listing/preview_video/public/shots/kayit.mov` içine koy
+- [ ] Dosyayı `store_listing/preview_video/public/shots/kayit3.mov` olarak koy
+      (`kayit.mov` / `kayit2.MP4` 16–17 Eylül kayıtları; eski arayüz, silme —
+      alarm/karşılaştırma sahneleri gerekirse oradan alınır)
 - [ ] Bana "kayıt hazır" de — kurguyu, metinleri, grade'i ve sesi kurup
-      886×1920 H.264 master'ı render ederim
+      886×1920 H.264 master'ı render ederim (kurgu planı §6)
 
 ---
 
-## 6. Kurgu planı (bende, bilgi olsun diye)
+## 6. Kurgu planı (bende, bilgi olsun diye) — 3. sürüm, 2026-09-21 arayüzü
 
-Metin overlay sırası — her biri 2–3 sn:
+Üslup 18 Eylül sürümüyle aynı: seslendirme yok, alt panelde **başlık + tek
+düz cümle**, jargon yok. Sahne başları vol-11 vuruş ızgarasında
+(4,75 · 8,96 · 13,70 · 17,39 · 21,07 · 24,23), toplam ≤ 30 sn.
 
-| Sn | Görüntü | Metin |
-|---|---|---|
-| 0–4 | Ana ekran, rozet | **Enflasyonu geçtin mi?** |
-| 4–8 | Rozet yakın plan | **sandık söyler.** |
-| 8–14 | Performans + crosshair | Zaman içinde ne kazandın |
-| 14–19 | Özet kartları | Nominal değil, **reel** getiri |
-| 19–24 | Varlık detayı | Komisyon ve temettü dahil |
-| 24–28 | Ana ekran | **sandık** |
+| # | Kayıt adımı | Pencere | Başlık | Açıklama |
+|---|---|---|---|---|
+| 1 | Adım 1 — piyasa bandı + toplam + Bugün kartı | 0,0–4,75 | Bugün ne oldu? | Günün hareketi ve enflasyona göre durumun, tek kartta. |
+| 2 | Adım 5 — Özet › BU DÖNEM reel getiri kartı (dondurmalı) | 4,75–8,96 | Enflasyonu geçtin mi? | Getirin, enflasyon ve fark — ayrı ayrı. |
+| 3 | Adım 8 — kartı kaydır → Ayşe'nin bugünü | 8,96–13,70 | Birlikte takip et | Kartı kaydır, ortağının gününü gör. |
+| 4 | Adım 4 — Performans + crosshair | 13,70–17,39 | Zaman içinde | Portföyün günden güne; parmağınla gez. |
+| 5 | eski kayıt — alarm onay şeridi (kayit2 34,3 s) | 17,39–21,07 | Fiyat alarmı | Hedef fiyata gelince bildirim alırsın. |
+| 6 | Adım 6 — varlık detayı, komisyon + temettü | 21,07–24,23 | Gerçek kazancın | Komisyon maliyette, temettü kazançta. |
+| 7 | Adım 9 — ana ekran, kapanış | 24,23–28,0 | sandık | Portföyün, tek sandıkta. |
+
+Dağılım sahnesi çıktı (süre); ortak kaydırma girdi. Alarm sahnesi eski
+kayıttan alınabilir (o ekran değişmedi) ama aynı oturumda çekilirse toplam
+tutarlı olur.
 
 ---
 

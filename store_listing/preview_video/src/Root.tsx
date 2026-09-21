@@ -8,6 +8,10 @@ import { Reel, REEL } from "./reklam/Reel";
 import { Square, SQUARE } from "./reklam/Square";
 import { Bumper, BUMPER } from "./reklam/Bumper";
 import { StillBanner, StillSquare, StillStory } from "./reklam/Stills";
+// Tanıtım videosu (2026-09-21) — güncel ana ekran, 16:9, ~27 sn.
+import { Tanitim, TANITIM_SPEC } from "./reklam/Tanitim";
+// App Store önizlemesi (2026-09-21 kaydı) — 886×1920, 30 sn, ham kayıt üstü kurgu.
+import { Onizleme30, ONIZLEME30 } from "./reklam/Onizleme30";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -35,6 +39,8 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="AdReel" component={Reel} {...REEL} />
       <Composition id="AdSquare" component={Square} {...SQUARE} />
       <Composition id="AdBumper" component={Bumper} {...BUMPER} />
+      <Composition id="Tanitim" component={Tanitim} {...TANITIM_SPEC} />
+      <Composition id="Onizleme30" component={Onizleme30} {...ONIZLEME30} />
 
       {/* ---- Reklam görselleri ---- */}
       <Still
