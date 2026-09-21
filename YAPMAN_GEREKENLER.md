@@ -26,10 +26,34 @@ yani **senin** Supabase projene erişim sızmadı.
 
 **Sırayla yapılacaklar:**
 
-1. **Depoyu özelleştir — önce arşivle.**
+1. **Depoyu özelleştir — ama DİKKAT, olduğu gibi yapılamaz.**
+   Depo GitHub Pages'i `docs/` üzerinden yayınlıyor ve buna üç şey bağlı:
+   `Magaza.indirKapisi` (paylaşım kartı — `recap_service.dart:474`), ortak
+   daveti (`profile_screen.dart:147`) ve **gizlilik politikası + kullanım
+   koşulları** (`legal_doc_screen.dart:56`, `yasincirali.github.io/sandikapp`).
+   Ücretsiz kişisel hesapta depo private olunca **Pages kapanır** → dağıtılmış
+   her paylaşım linki kırılır ve **Apple'ın zorunlu tuttuğu gizlilik politikası
+   URL'si ölür**. Kopyayı şikayet ederken kendi uygulamanı riske atma.
+
+   Önce her hâlde arşivle:
    `git clone --mirror https://github.com/yasincirali/sandikapp sandikapp-kanit.git`
-   → sonra GitHub → Settings → Danger Zone → Change visibility → Private.
-   Oluşturma tarihi özel depoda da saklanır; öncelik delili kaybolmaz.
+
+   Sonra üç seçenekten biri:
+   - **(a) Önerilen — GitHub Pro.** Pro/Team planında private depo da Pages
+     yayınlayabilir ve site herkese açık kalır. Depo adı `sandikapp` olarak
+     kaldığı için `yasincirali.github.io/sandikapp/indir/` **aynen çalışır**,
+     hiçbir link kırılmaz, kod kapanır. Aylık ~4 USD.
+   - **(b) Ayır.** Kaynak kodu yeni bir **private** depoya taşı; `sandikapp`
+     deposunu public bırak ama içinde yalnızca `docs/` kalsın. URL korunur
+     (depo adı değişmiyor), kod kapanır. Bedava, ama CI/fastlane yollarını
+     yeni depoya taşımak gerekir.
+   - **(c) Şimdilik açık bırak.** Kopyalayan tarafın kodu zaten aldığı
+     varsayılırsa, depoyu kapatmanın geriye dönük faydası yok; öncelik
+     delilin (oluşturma tarihi + commit geçmişi) açık depoda daha da
+     görünürdür. Bu durumda (2) numaralı telif notu daha önemli hâle gelir.
+
+   ⚠️ Depo adını **değiştirme** ve Pages'i kapatma — `Magaza.indirKapisi`
+   koda gömülü, yayında olan sürümler o URL'yi kullanıyor.
 2. **Telif uyarısı ekle.** Depoda `LICENSE` **yok**. Lisans yokluğu "tüm
    hakları saklı" demektir (bu iyi), ama açık bir telif notu bundan sonraki
    ihlallerde "bilmiyordum" savunmasını kapatır.
