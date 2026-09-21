@@ -758,12 +758,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// `setPreferencesUser` yalnızca ANAHTAR ön ekini değiştirir; hâlihazırda
   /// okunmuş state'i güncellemez. Invalidate edilmezse ayar ekranı önceki
   /// kullanıcının değerlerini göstermeye devam eder.
+  ///
+  /// Liste `preferences_provider.dart`'ta tanımların yanında yaşar
+  /// (`kullaniciyaOzelTercihler`); burada elle sayılmaz. Elle sayıldığı
+  /// dönemde portföy hedefi atlanmıştı ve B kullanıcısı A'nın hedefini
+  /// görüyordu (2026-09-21).
   void _invalidateUserPrefs() {
-    ref.invalidate(signalThresholdProvider);
-    ref.invalidate(indicatorPrefsProvider);
-    ref.invalidate(signalScheduleProvider);
-    ref.invalidate(signalNeutralPushProvider);
-    ref.invalidate(signalNotificationsProvider);
+    for (final p in kullaniciyaOzelTercihler) {
+      ref.invalidate(p);
+    }
   }
 
   void _warmUpData() {
@@ -1271,12 +1274,28 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         });
       }
 
+      // **Yalnızca YERLEŞİK veri işlenir** (2026-09-21).
+      //
+      // `PortfolioNotifier.build` `authProvider`'ı izler; kullanıcı
+      // değişince Riverpod yeniden kurulumu `AsyncLoading` olarak yayınlar
+      // ama ÖNCEKİ değeri korur: `next.valueOrNull` o karede ÇIKAN
+      // kullanıcının portföyüdür, oturumdaki ise YENİ kullanıcı. Aşağıdaki
+      // yüzeyler bunu alıp yeni kullanıcı adına işliyordu: Live Activity
+      // özeti yeni kullanıcının `live_activity_sessions` satırına
+      // yazılıyor, gün içi seri önbelleği eski defterle dolduruluyor ve
+      // kilit ekranı bir sonraki tazelemeye kadar öncekinin kâr/zararını
+      // gösteriyordu. Kilometre taşı da aynı yanlış veriyle ölçülürdü.
+      //
+      // Yükleme bitip `AsyncData` gelince aynı dinleyici yeniden çalışır;
+      // hiçbir yayın kaçmaz, yalnızca ara kare atlanır.
+      final yerlesik = next.isLoading ? null : next.valueOrNull;
+
       // Kilometre taşları — portföy her değiştiğinde değerlendirilir.
       //
       // Burada dinlemenin sebebi widget güncellemesiyle aynı: portföy
       // 10'dan fazla yerden yazılıyor ve her birine tek tek çağrı koymak
       // kaçınılmaz olarak birini atlar.
-      final snapshotMs = next.valueOrNull;
+      final snapshotMs = yerlesik;
       if (snapshotMs != null && snapshotMs.assets.isNotEmpty) {
         CrashReporter.arkaPlan(_kilometreTasiKontrol(snapshotMs), reason: 'main._kilometreTasiKontrol');
       }
@@ -1293,7 +1312,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // ana ekranda bakiyesini bir anlığına SIFIR görüyordu. Gerçekten boş
       // portföy ile "henüz yüklenmedi" bu katmandan ayırt edilemediği için
       // güvenli taraf: yazma, son bilinen değer ekranda kalsın.
-      final snapshot = next.valueOrNull;
+      final snapshot = yerlesik;
       if (snapshot != null && snapshot.assets.isNotEmpty) {
         final hideBalance = ref.read(balanceHiddenProvider);
         // **Tema BURADA ne çözülür ne de itilir.**

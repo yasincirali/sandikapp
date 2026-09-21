@@ -542,6 +542,16 @@ class IntradaySeriesCache {
   DateTime? _fetchedAt;
   DateTime? _seansGunu;
 
+  /// Serinin ait olduğu defterin sahibi (`PortfolioState.ownerId`).
+  ///
+  /// Önbellek süreç ömrüne bağlı, kullanıcıya değil (2026-09-21). Çıkışta
+  /// `clear()` çağrılıyor ama kullanıcı değişiminde önceki defter bir kare
+  /// daha yayınlanabiliyor ve önbelleği yeniden dolduruyordu: yeni
+  /// kullanıcı 5 dakika boyunca ÖNCEKİ kullanıcının gün içi serisiyle
+  /// kendi toplamını kıyaslıyor, kilit ekranı ve widget öncekinin
+  /// kâr/zararını gösteriyordu. Sahip damgası uyuşmazsa seri koşulsuz düşer.
+  String _ownerId = '';
+
   /// Son başarıyla çekilen seri — hiç çekilmediyse boş.
   Map<int, double> get series => _series ?? const {};
 
@@ -572,11 +582,17 @@ class IntradaySeriesCache {
         _fetchedAt!.month == ts.month &&
         _fetchedAt!.day == ts.day;
 
-    if (!sameDay) {
-      // Dünün serisi DERHAL düşer — fetch başarısız olsa bile bayat
-      // baseline'la rakam üretilmemeli.
+    // Sahip değiştiyse de düşer: başka bir kullanıcının serisi bu deftere
+    // ait değildir (bkz. `_ownerId`). Sahibi bilinmeyen state (`''`) eski
+    // yolları ve testleri kırmasın diye damgayı olduğu gibi bırakır.
+    final sameOwner = state.ownerId.isEmpty || state.ownerId == _ownerId;
+
+    if (!sameDay || !sameOwner) {
+      // Dünün (ya da başkasının) serisi DERHAL düşer — fetch başarısız olsa
+      // bile bayat baseline'la rakam üretilmemeli.
       _series = null;
       _seansGunu = null;
+      _fetchedAt = null;
     } else if (ts.difference(_fetchedAt!) < minInterval) {
       return _series ?? const {};
     }
@@ -594,6 +610,7 @@ class IntradaySeriesCache {
       // hata sürekliyse seri saatlerce tazelenmez ve yüzeyler sabahki
       // değerde donar — üstelik "Canlı" etiketiyle.
       _fetchedAt = ts;
+      _ownerId = state.ownerId;
     } catch (e) {
       if (kDebugMode) debugPrint('Gün içi seri çekilemedi: $e');
     }
@@ -607,5 +624,24 @@ class IntradaySeriesCache {
     _series = null;
     _fetchedAt = null;
     _seansGunu = null;
+    _ownerId = '';
   }
+
+  /// Önbelleği elle doldurur — sahip/gün kurallarının testi için.
+  @visibleForTesting
+  void seedForTest({
+    required Map<int, double> series,
+    required DateTime fetchedAt,
+    String ownerId = '',
+    DateTime? seansGunu,
+  }) {
+    _series = series;
+    _fetchedAt = fetchedAt;
+    _seansGunu = seansGunu;
+    _ownerId = ownerId;
+  }
+
+  /// Önbellekteki serinin sahibi — test için.
+  @visibleForTesting
+  String get ownerIdForTest => _ownerId;
 }

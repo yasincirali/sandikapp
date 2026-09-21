@@ -570,6 +570,14 @@ class LiveActivityService {
   }) async {
     try {
       if (!await _isSupported()) return;
+      // Defter oturumdaki kullanıcıya ait değilse HİÇ işlenmez (2026-09-21).
+      //
+      // Kullanıcı değişiminde önceki defter bir kare daha yayınlanabilir
+      // (bkz. `main.dart` "yalnızca yerleşik veri"); burası ikinci kapı:
+      // aksi halde çıkan kullanıcının özeti yeni kullanıcının
+      // `live_activity_sessions` satırına yazılır ve sunucu onu 5 dakikada
+      // bir kilit ekranına push'lar.
+      if (!_defterOturumaAit(state)) return;
       _ensureTokenListener();
 
       final ts = now ?? DateTime.now();
@@ -821,6 +829,13 @@ class LiveActivityService {
     try {
       _sessionActive = false;
       _lastPayloadKey = null;
+      // Özet ve tekrar-eleme anahtarı da düşer (2026-09-21). İkisi servis
+      // ömrüne bağlı; çıkışta kalırsa bir sonraki kullanıcının ilk
+      // senkronunda `_todayChange` ÖNCEKİ kullanıcının gününü okur ve
+      // aynı metin üretilirse DB yazımı "değişmedi" diye atlanır.
+      _summary = null;
+      _lastSummaryKey = null;
+      IntradaySeriesCache.instance.clear();
       if (!await _isSupported()) return;
       await _invoke('endAll', const {});
     } catch (e) {
@@ -834,5 +849,21 @@ class LiveActivityService {
     } on MissingPluginException {
       return false;
     }
+  }
+
+  /// [state] oturumdaki kullanıcının defteri mi?
+  ///
+  /// Sahibi bilinmeyen state (`ownerId` boş — test ya da eski yol) ve
+  /// Supabase'in hiç kurulmadığı ortam (birim testleri) GEÇER: bu kapı
+  /// yalnızca iki kimliğin de bilinip UYUŞMADIĞI durumda kapanır.
+  bool _defterOturumaAit(PortfolioState state) {
+    if (state.ownerId.isEmpty) return true;
+    final String? uid;
+    try {
+      uid = _db.auth.currentUser?.id;
+    } catch (_) {
+      return true;
+    }
+    return uid == null || uid == state.ownerId;
   }
 }

@@ -12,6 +12,16 @@
 // yok: ekran okuyucu bandı TEK cümle olarak okur, "hareketi azalt" açıkken
 // bant durur ve elle kaydırılır, dokunuş durdurur/sürdürür.
 //
+// ## Akış: yalnızca boyama, her karede yerleşim YOK (2026-09-21)
+// İlk sürüm `ListView.builder` + her karede `jumpTo` idi. Bu, kare başına
+// scroll makinesinin tamamını çalıştırıyordu: sliver yerleşimi, üç scroll
+// bildirimi, viewport'a giren her öğe için yeni metin yerleşimi. Kullanıcı
+// bunu "pürüzsüz kaymıyor" diye bildirdi — kalite algısı için kritik.
+// Şimdi bant tek bir Row'u BİR KEZ yerleştirir ve her karede yalnızca
+// kaydırma fazına göre yeniden BOYAR (`_RenderBant`); kompozitör düzeyinde
+// bir öteleme kadar ucuz. Fiyat güncellenince Row yeniden yerleşir, faz
+// korunur, akış kesilmez.
+//
 // ## Veri
 // Fiyat kaynağı sözleşmesi (`services/fiyat_kaynagi.dart`): semboller
 // `PriceService.fetchQuotes` üzerinden gelir — kur/altın truncgil'den
@@ -20,7 +30,9 @@
 // Yenileme 30 sn (ön planda; hero kartla aynı ritim). Fiyat servisinin
 // 45 sn'lik önbelleği ağa fiilen ~45 sn'de bir çıkarır. Fiyat gelmezse bant
 // HİÇ çizilmez (boş kabuk yer işgal etmez).
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../l10n/l10n.dart';
@@ -133,24 +145,40 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
 
 /// Sonsuz kayan bant. Öğeler döngüsel tekrarlanır; dokunuş durdurur.
 ///
-/// Ölçüm gerektirmez: `ListView.builder` sınırsız öğeyle döner, ticker her
-/// karede kaydırma konumunu ilerletir. Fiyat güncellenince öğeler yerinde
-/// değişir, akış kesilmez.
+/// Öğeler tek bir Row olarak BİR KEZ yerleşir; her karede yalnızca kaydırma
+/// fazı değişir ve bant yeniden boyanır (bkz. dosya başı "Akış"). Kayma
+/// değeri bir [ValueNotifier]'da yaşar: kare başına `setState` yok, widget
+/// ağacı hiç yeniden kurulmaz.
 class KayanBant extends StatefulWidget {
   const KayanBant({super.key, required this.ogeler});
 
   final List<PiyasaOgesi> ogeler;
 
   @override
-  State<KayanBant> createState() => _KayanBantState();
+  State<KayanBant> createState() => KayanBantState();
 }
 
-class _KayanBantState extends State<KayanBant>
+/// Bant durumu — testler kayma ve akış durumunu buradan okur.
+class KayanBantState extends State<KayanBant>
     with SingleTickerProviderStateMixin {
-  final _scroll = ScrollController();
   late final Ticker _ticker = createTicker(_kare);
-  Duration _onceki = Duration.zero;
+
+  /// Toplam kayma (pt). Bant fazı bunun içerik genişliğine bölümünden
+  /// kalanıdır; sınırsız büyür, saatlerce açık kalsa da taşmaz (double).
+  final _kaydirma = ValueNotifier<double>(0);
+
+  /// Ticker'ın son başladığı andaki kayma — durdur/sürdür ve elle
+  /// kaydırma sonrası akış kaldığı yerden devam eder, sıçramaz.
+  double _taban = 0;
   bool _duraklatildi = false;
+
+  /// Bant şu an kendiliğinden akıyor mu?
+  @visibleForTesting
+  bool get akiyor => _ticker.isActive;
+
+  /// Toplam kayma (pt) — test için.
+  @visibleForTesting
+  double get kaydirma => _kaydirma.value;
 
   @override
   void didChangeDependencies() {
@@ -162,17 +190,16 @@ class _KayanBantState extends State<KayanBant>
   }
 
   void _baslat() {
-    _onceki = Duration.zero;
+    _taban = _kaydirma.value;
     _ticker.start();
   }
 
+  /// Kare: kayma = taban + hız × geçen süre. Zamana bağlı (kare farkına
+  /// değil): düşen bir kare bandı yavaşlatmaz, sonraki kare doğru konuma
+  /// oturur. Arka plandan dönüşte faz sıçrar ama bant döngüsel — hangi
+  /// öğede olduğunun önemi yok.
   void _kare(Duration gecen) {
-    if (!_scroll.hasClients) return;
-    final dt = (gecen - _onceki).inMicroseconds / 1e6;
-    _onceki = gecen;
-    // Kare süresi sıçrarsa (arka plandan dönüş) tek adımda uzağa atlama.
-    if (dt <= 0 || dt > 0.25) return;
-    _scroll.jumpTo(_scroll.offset + PiyasaSeridi.hiz * dt);
+    _kaydirma.value = _taban + PiyasaSeridi.hiz * gecen.inMicroseconds / 1e6;
   }
 
   void _dokunus() {
@@ -184,10 +211,16 @@ class _KayanBantState extends State<KayanBant>
     }
   }
 
+  /// Elle kaydırma — yalnızca bant dururken (akarken ticker'la çatışır).
+  /// Parmak sola giderse içerik ileri akar; sınır yok, döngüsel.
+  void _surukle(DragUpdateDetails d) {
+    _kaydirma.value -= d.delta.dx;
+  }
+
   @override
   void dispose() {
     _ticker.dispose();
-    _scroll.dispose();
+    _kaydirma.dispose();
     super.dispose();
   }
 
@@ -200,6 +233,7 @@ class _KayanBantState extends State<KayanBant>
       button: true,
       child: GestureDetector(
         onTap: _dokunus,
+        onHorizontalDragUpdate: akiyor ? null : _surukle,
         behavior: HitTestBehavior.opaque,
         // Dokunma alanı 44pt (HIG); görünen bant 30pt, dikey 7pt'lik
         // tampon ana ekranın satır boşluğunu doldurur — ek yer yok.
@@ -213,20 +247,16 @@ class _KayanBantState extends State<KayanBant>
                 horizontal: BorderSide(color: context.c.hairline),
               ),
             ),
-            // RepaintBoundary: bant her karede kayar; sınır olmadan hero
+            // RepaintBoundary: bant her karede boyanır; sınır olmadan hero
             // kart ve üst çubuk da her karede yeniden boyanırdı (GPU).
             child: RepaintBoundary(
               child: ExcludeSemantics(
-                child: ListView.builder(
-                  controller: _scroll,
-                  scrollDirection: Axis.horizontal,
-                  // Akarken parmakla kaydırma yok (ticker ile çatışır); durunca
-                  // ve hareketi azaltta serbest.
-                  physics: akiyor
-                      ? const NeverScrollableScrollPhysics()
-                      : const BouncingScrollPhysics(),
-                  itemBuilder: (context, i) =>
-                      _Oge(oge: ogeler[i % ogeler.length]),
+                child: _Bant(
+                  kaydirma: _kaydirma,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [for (final o in ogeler) _Oge(oge: o)],
+                  ),
                 ),
               ),
             ),
@@ -235,6 +265,117 @@ class _KayanBantState extends State<KayanBant>
       ),
     );
   }
+}
+
+/// Çocuğunu (öğe satırı) sınırsız genişlikte BİR KEZ yerleştirir, her
+/// karede kaydırma fazına göre yan yana tekrar boyar.
+class _Bant extends SingleChildRenderObjectWidget {
+  const _Bant({required this.kaydirma, required Widget child})
+      : super(child: child);
+
+  final ValueListenable<double> kaydirma;
+
+  @override
+  _RenderBant createRenderObject(BuildContext context) => _RenderBant(kaydirma);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderBant renderObject) {
+    renderObject.kaydirma = kaydirma;
+  }
+}
+
+/// Bant çizicisi.
+///
+/// Kayma değiştiğinde yalnızca `markNeedsPaint` — yerleşim yok, widget
+/// yeniden kurulumu yok. Çocuk viewport'u dolduracak kadar yan yana
+/// boyanır (`periyot` = çocuğun genişliği).
+///
+/// **Değişmez:** çocuk ağacı kendi katmanını açan bir düğüm içermemeli
+/// (`RepaintBoundary`, `Opacity`, `ClipPath` gibi). Aynı çocuğu birden çok
+/// konumda boyamak ancak katmansız çizimde geçerlidir; katmanlı bir çocuk
+/// ikinci konumda bağlı katmanı yeniden eklemeye çalışır. Öğeler düz
+/// metindir, bu koşul bugün sağlanıyor — öğe yapısını değiştirirken korun.
+class _RenderBant extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
+  _RenderBant(this._kaydirma);
+
+  ValueListenable<double> _kaydirma;
+  set kaydirma(ValueListenable<double> v) {
+    if (identical(v, _kaydirma)) return;
+    if (attached) _kaydirma.removeListener(markNeedsPaint);
+    _kaydirma = v;
+    if (attached) _kaydirma.addListener(markNeedsPaint);
+    markNeedsPaint();
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _kaydirma.addListener(markNeedsPaint);
+  }
+
+  @override
+  void detach() {
+    _kaydirma.removeListener(markNeedsPaint);
+    super.detach();
+  }
+
+  @override
+  void performLayout() {
+    final c = child;
+    if (c == null) {
+      size = constraints.smallest;
+      return;
+    }
+    // Genişlik sınırsız: satır kendi doğal genişliğine yerleşir; bant
+    // viewport'u ondan bağımsız doldurur.
+    c.layout(
+      BoxConstraints(
+        minHeight: constraints.minHeight,
+        maxHeight: constraints.maxHeight,
+      ),
+      parentUsesSize: true,
+    );
+    final w = constraints.hasBoundedWidth ? constraints.maxWidth : c.size.width;
+    size = constraints.constrain(Size(w, c.size.height));
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) => 0;
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      child?.getMaxIntrinsicWidth(height) ?? 0;
+
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      child?.getMinIntrinsicHeight(width) ?? 0;
+
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      child?.getMaxIntrinsicHeight(width) ?? 0;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final c = child;
+    if (c == null) return;
+    final periyot = c.size.width;
+    if (periyot <= 0 || size.width <= 0) return;
+    // Faz 0 ≤ x0 < periyot; ilk kopya −x0'dan başlar, viewport dolana
+    // kadar periyot adımıyla tekrar eder. Dart'ta `%` negatif kaymada da
+    // pozitif kalan verir (elle sağa kaydırma).
+    final x0 = -(_kaydirma.value % periyot);
+    context.pushClipRect(needsCompositing, offset, Offset.zero & size,
+        (ctx, off) {
+      for (var x = x0; x < size.width; x += periyot) {
+        ctx.paintChild(c, off + Offset(x, 0));
+      }
+    });
+  }
+
+  // Öğeler etkileşimsiz; dokunuşu üstteki GestureDetector alır.
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      false;
 }
 
 class _Oge extends StatelessWidget {

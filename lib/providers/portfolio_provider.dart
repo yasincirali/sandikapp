@@ -47,6 +47,19 @@ class PortfolioState {
   /// seçiliyken çekilir (Faz 3.2); 0 = bilinmiyor, gösterim ₺'ye düşer.
   final double goldGramTry;
 
+  /// Defterin SAHİBİ (auth kullanıcı id'si); `''` = henüz bilinmiyor.
+  ///
+  /// Neden var (2026-09-21): uygulama dışı yüzeyler (kilit ekranı, ana
+  /// ekran widget'ı) süreç ömrü boyunca yaşayan singleton'lar ve ortak bir
+  /// gün içi seri önbelleğiyle beslenir. Kullanıcı değişince o önbellek
+  /// "kime ait" bilmiyordu; çıkan kullanıcının serisi 5 dakika boyunca
+  /// yeni kullanıcının toplamıyla birleştirilip kâr/zarar diye
+  /// gösteriliyordu. Sahip damgası state'in kendisinde taşınır ki veri
+  /// katmanı "bu seri bu deftere mi ait" sorusunu kendisi sorabilsin;
+  /// `copyWith` korur, görünüm türevleri (ortak/Birlikte) de aynı sahibi
+  /// taşır — onlar hiçbir yüzeye itilmez.
+  final String ownerId;
+
   const PortfolioState({
     this.assets = const [],
     this.isLoading = false,
@@ -56,6 +69,7 @@ class PortfolioState {
     this.eurTry = 1.0,
     this.gbpTry = 1.0,
     this.goldGramTry = 0,
+    this.ownerId = '',
   });
 
   PortfolioState copyWith({
@@ -68,6 +82,7 @@ class PortfolioState {
     double? eurTry,
     double? gbpTry,
     double? goldGramTry,
+    String? ownerId,
   }) =>
       PortfolioState(
         assets: assets ?? this.assets,
@@ -78,6 +93,7 @@ class PortfolioState {
         eurTry: eurTry ?? this.eurTry,
         gbpTry: gbpTry ?? this.gbpTry,
         goldGramTry: goldGramTry ?? this.goldGramTry,
+        ownerId: ownerId ?? this.ownerId,
       );
 
   double toTRY(double amount, String currency) {
@@ -204,10 +220,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       return PortfolioState(
         assets: cached,
         errorMessage: 'Çevrimdışı — son bilinen veriler gösteriliyor.',
+        ownerId: user.id,
       );
     }
     return PortfolioState(
       assets: assets,
+      ownerId: user.id,
     );
   }
 
@@ -321,6 +339,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       final assets = await SupabaseService.instance.fetchByUser(user.id);
       state = AsyncData(PortfolioState(
         assets: assets,
+        ownerId: user.id,
       ));
     }
   }

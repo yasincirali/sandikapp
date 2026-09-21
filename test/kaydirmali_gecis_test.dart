@@ -110,4 +110,43 @@ void main() {
     await t.pumpAndSettle();
     expect(yon, isTrue);
   });
+
+  // Pürüzsüzlük (2026-09-21): sürükleme karesi ne komşu kartı yeniden
+  // kurmalı ne de kartın kendisini. Komşu yön başına BİR KEZ istenir; kart
+  // widget'ı sürükleme boyunca aynı örnek kalır (yalnızca ötelenir).
+  testWidgets('sürüklerken komşu kart bir kez kurulur, kart yeniden kurulmaz',
+      (t) async {
+    var komsuSayisi = 0;
+    await t.pumpWidget(MaterialApp(
+      theme: ThemeData(extensions: const [SandikPalette.light]),
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 320,
+            child: KaydirmaliGecis(
+              etkin: true,
+              onGecis: (_) {},
+              komsu: (ileri) {
+                komsuSayisi++;
+                return const SizedBox(height: 120, child: Text('Ayşe'));
+              },
+              child: const SizedBox(height: 120, child: Text('kart')),
+            ),
+          ),
+        ),
+      ),
+    ));
+    final kartOnce = t.widget(find.text('kart'));
+    final g = await t.startGesture(t.getCenter(find.text('kart')));
+    for (var i = 0; i < 8; i++) {
+      await g.moveBy(const Offset(-10, 0));
+      await t.pump();
+    }
+    expect(find.text('Ayşe'), findsOneWidget);
+    expect(komsuSayisi, 1, reason: 'Komşu her karede yeniden kurulmamalı.');
+    expect(identical(t.widget(find.text('kart')), kartOnce), isTrue,
+        reason: 'Kart widget\'ı sürüklerken aynı örnek kalmalı.');
+    await g.up();
+    await t.pumpAndSettle();
+  });
 }

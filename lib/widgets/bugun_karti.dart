@@ -35,6 +35,7 @@ import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'hedef_sheet.dart';
+import 'sandik_skeleton.dart';
 
 class BugunKarti extends ConsumerStatefulWidget {
   const BugunKarti({
@@ -56,81 +57,163 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   double? _haftalik;
   bool _istendi = false;
 
+  /// Üç yükleme de sonuçlandı mı (başarı ya da hata fark etmez)?
+  /// `false` iken kart iskelet çizer — bkz. [_yukle].
+  bool _yuklendi = false;
+
+  /// Tek bir yüklemenin üst sınırı. Biri asılı kalırsa kart bu süreden
+  /// sonra elindekiyle çizilir; iskelet sonsuza kadar kalmaz.
+  static const _yuklemeSuresi = Duration(seconds: 10);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
   }
 
-  /// Üç yükleme birbirinden bağımsız ve tek seferlik (`_istendi`): kart her
-  /// fiyat yenilemesinde yeniden kurulur, ama bu seriler oturumda bir kez
-  /// çekilir — eski `RealReturnStrip` / `WeeklySummaryChip` ile aynı
-  /// disiplin. Her biri kendi try/catch'inde: biri düşerse diğerleri çizilir.
-  Future<void> _yukle() async {
-    if (_istendi || !mounted) return;
-    _istendi = true;
-    if (widget.state.assets.isEmpty) return;
-    await Future.wait<void>([_seriYukle(), _reelYukle(), _haftalikYukle()]);
+  @override
+  void didUpdateWidget(BugunKarti oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Defter mount'ta boşken sonradan dolduysa (ilk varlık eklendi) yükleme
+    // hiç istenmemiştir; şimdi iste. Aksi halde `_yuklendi` false kalır.
+    if (!_istendi) _yukle();
   }
 
-  Future<void> _seriYukle() async {
+  /// Üç yükleme birbirinden bağımsız, PARALEL ve tek seferlik (`_istendi`):
+  /// kart her fiyat yenilemesinde yeniden kurulur, ama bu seriler oturumda
+  /// bir kez çekilir — eski `RealReturnStrip` / `WeeklySummaryChip` ile aynı
+  /// disiplin. Her biri kendi try/catch'inde: biri düşerse diğerleri çizilir.
+  ///
+  /// **Tek yayın (2026-09-21).** Eskiden her yükleme kendi `setState`'ini
+  /// çağırıyordu; satırlar birer birer beliriyor, kart üç kez büyüyordu
+  /// ("tek tek load oluyor" — kullanıcı). Şimdi sonuçlar yerelde toplanır
+  /// ve kart TEK `setState` ile, tüm veriyle bir kez çizilir; o ana kadar
+  /// iskelet durur. Zaman sınırı (`_yuklemeSuresi`) asılı bir çağrının
+  /// diğer ikisini rehin almasını önler.
+  Future<void> _yukle() async {
+    if (_istendi || !mounted || widget.state.assets.isEmpty) return;
+    _istendi = true;
+    final sonuc = await Future.wait([
+      _seriYukle(),
+      _reelYukle(),
+      _haftalikYukle(),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _seri = sonuc[0] as Map<int, double>?;
+      _reel = sonuc[1] as ReelGetiriSatiri?;
+      _haftalik = sonuc[2] as double?;
+      _yuklendi = true;
+    });
+  }
+
+  Future<Map<int, double>?> _seriYukle() async {
     try {
-      final s = await IntradaySeriesCache.instance.get(widget.state);
-      if (!mounted) return;
-      setState(() => _seri = s);
+      return await IntradaySeriesCache.instance
+          .get(widget.state)
+          .timeout(_yuklemeSuresi);
     } catch (e, st) {
       // Seri gelmezse kart yine çizilir (hareket satırı düşer); ağ hatası
       // kullanıcıya gösterilmez, sessiz kalmasın diye raporlanır.
       CrashReporter.report(e, st, reason: 'BugunKarti.intraday');
+      return null;
     }
   }
 
   /// Yıllık reel getiri — eski `RealReturnStrip` ile AYNI kaynak
   /// (`RealReturnService.yillik`), aynı bayrak. Kapı: bayrak kapalıysa ya da
   /// pencere/seri kurulamıyorsa satır hiç çizilmez (uydurma yok).
-  Future<void> _reelYukle() async {
-    if (!RemoteConfigService.instance.realReturnEnabled) return;
+  Future<ReelGetiriSatiri?> _reelYukle() async {
+    if (!RemoteConfigService.instance.realReturnEnabled) return null;
     try {
-      final r = await RealReturnService.yillik(widget.state.assets);
-      if (!mounted || r == null) return;
-      setState(() =>
-          _reel = ReelGetiriSatiri(nominal: r.nominal, inflation: r.inflation));
+      final r = await RealReturnService.yillik(widget.state.assets)
+          .timeout(_yuklemeSuresi);
+      if (r == null) return null;
+      return ReelGetiriSatiri(nominal: r.nominal, inflation: r.inflation);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'BugunKarti.reelGetiri');
+      return null;
     }
   }
 
   /// Geçen haftanın piyasa getirisi — eski `WeeklySummaryChip` ile aynı
   /// hesap (`PeriodSummaryService.compute`, 1H penceresi), aynı bayrak.
-  Future<void> _haftalikYukle() async {
-    if (!RemoteConfigService.instance.periodSummaryEnabled) return;
+  Future<double?> _haftalikYukle() async {
+    if (!RemoteConfigService.instance.periodSummaryEnabled) return null;
     try {
       final now = DateTime.now();
       final p = PeriodSummaryService.pencere(SummaryPeriod.birHafta, now);
       final bd = await HistoryService.instance
           .getPortfolioHistoryBreakdownAtResolution(
-        assets: widget.state.assets,
-        from: p.start,
-        to: p.end,
-        tier: ResolutionTierMeta.pickForSpan(
-            SummaryPeriod.birHafta.days.toDouble()),
-      );
-      if (!mounted) return;
+            assets: widget.state.assets,
+            from: p.start,
+            to: p.end,
+            tier: ResolutionTierMeta.pickForSpan(
+                SummaryPeriod.birHafta.days.toDouble()),
+          )
+          .timeout(_yuklemeSuresi);
       final s = PeriodSummaryService.compute(
         period: SummaryPeriod.birHafta,
         assets: widget.state.assets,
         breakdown: bd,
         now: now,
       );
-      if (s.getiriPct == null) return;
-      setState(() => _haftalik = s.getiriPct);
+      return s.getiriPct;
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'BugunKarti.haftalik');
+      return null;
     }
   }
 
+  /// Yükleme bitene kadar kartın yerini tutan iskelet — başlık, üç defter
+  /// satırı. Kart tek seferde, tüm veriyle gelir; parça parça büyümez.
+  Widget _iskelet(BuildContext context) => Padding(
+        padding: widget.padding,
+        child: SandikCard(
+          padding: const EdgeInsets.fromLTRB(SandikSpace.md, SandikSpace.md2,
+              SandikSpace.md, SandikSpace.xs),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const SandikSkeleton(width: 56, height: 40),
+                  const SizedBox(width: SandikSpace.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        SandikSkeleton(width: 120, height: 12),
+                        SizedBox(height: SandikSpace.xs),
+                        SandikSkeleton(width: 180, height: 18),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: SandikSpace.smd),
+              Divider(height: 1, color: context.c.hairline),
+              const SizedBox(height: SandikSpace.xs),
+              for (var i = 0; i < 3; i++)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: SandikSpace.sm),
+                  child: Row(
+                    children: [
+                      SandikSkeleton(width: 96, height: 12),
+                      Spacer(),
+                      SandikSkeleton(width: 64, height: 12),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: SandikSpace.xs),
+            ],
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
+    if (!_yuklendi && widget.state.assets.isNotEmpty) return _iskelet(context);
     final now = DateTime.now();
     final seri = _seri;
     final ozet = seri == null

@@ -6,6 +6,10 @@ import 'package:portfoy_takip/widgets/piyasa_seridi.dart';
 ///
 /// Bant dört sabit değer taşır; ekran okuyucu bunu TEK cümle okumalı,
 /// "hareketi azalt" açıkken akış olmamalı, dokunuş durdurmalı.
+///
+/// 2026-09-21: bant `ListView` + `jumpTo`'dan boyama-tabanlı çizime geçti
+/// (`_RenderBant`); testler artık scroll konumunu değil `KayanBantState`'in
+/// kayma değerini okur.
 void main() {
   const ogeler = [
     PiyasaOgesi(etiket: 'Dolar', deger: '48,79', degisimPct: 0.08),
@@ -30,6 +34,9 @@ void main() {
     await tester.pump();
   }
 
+  KayanBantState bant(WidgetTester tester) =>
+      tester.state<KayanBantState>(find.byType(KayanBant));
+
   testWidgets('öğe metni: ad, değer, yön; değişimsiz öğe yüzde yazmaz',
       (tester) async {
     await pump(tester, hareketiAzalt: true);
@@ -51,36 +58,67 @@ void main() {
 
   testWidgets('hareketi azalt: bant durur ve elle kaydırılır', (tester) async {
     await pump(tester, hareketiAzalt: true);
-    final lv = tester.widget<ListView>(find.byType(ListView));
-    expect(lv.physics, isA<BouncingScrollPhysics>());
-    final once = tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels;
+    final b = bant(tester);
+    expect(b.akiyor, isFalse);
+    final once = b.kaydirma;
     await tester.pump(const Duration(seconds: 1));
-    final sonra = tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels;
-    expect(sonra, once, reason: 'Hareketi azalt açıkken kendiliğinden akmamalı.');
+    expect(b.kaydirma, once,
+        reason: 'Hareketi azalt açıkken kendiliğinden akmamalı.');
+
+    // Parmak sola → içerik ileri (kayma artar).
+    await tester.drag(find.byType(KayanBant), const Offset(-60, 0));
+    await tester.pump();
+    expect(b.kaydirma, greaterThan(once), reason: 'Dururken elle kaydırılır.');
   });
 
-  testWidgets('akarken ilerler; dokunuş durdurur', (tester) async {
+  testWidgets('akarken ilerler; dokunuş durdurur, ikinci dokunuş sürdürür',
+      (tester) async {
     await pump(tester);
-    final once = tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels;
+    final b = bant(tester);
+    expect(b.akiyor, isTrue);
+    final once = b.kaydirma;
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
-    final sonra = tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels;
+    final sonra = b.kaydirma;
     expect(sonra, greaterThan(once));
 
     await tester.tap(find.byType(KayanBant));
     await tester.pump();
-    final durdu = tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels;
+    expect(b.akiyor, isFalse);
+    final durdu = b.kaydirma;
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
-    expect(
-      tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels,
-      durdu,
-    );
+    expect(b.kaydirma, durdu);
+
+    // Sürdürünce kaldığı yerden devam eder — sıçrama yok.
+    await tester.tap(find.byType(KayanBant));
+    await tester.pump();
+    expect(b.akiyor, isTrue);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(b.kaydirma, greaterThan(durdu));
+    expect(b.kaydirma - durdu, lessThan(PiyasaSeridi.hiz * 0.5),
+        reason: '200 ms\'de en fazla hız × 0,2 sn kadar ilerler; sıçramaz.');
   });
 
-  testWidgets('öğeler döngüsel: dördüncü öğe ilkini tekrar eder', (tester) async {
+  testWidgets('akarken elle kaydırma yok (ticker ile çatışır)', (tester) async {
+    await pump(tester);
+    final b = bant(tester);
+    final once = b.kaydirma;
+    await tester.drag(find.byType(KayanBant), const Offset(-200, 0));
+    await tester.pump();
+    // Sürükleme alınmadı: kayma yalnızca geçen süre kadar ilerledi.
+    expect(b.kaydirma - once, lessThan(60),
+        reason: 'Akarken parmak bandı 200 pt ötelememeli.');
+  });
+
+  testWidgets('kayma yalnızca boyar: sürüklerken widget ağacı yeniden kurulmaz',
+      (tester) async {
     await pump(tester, hareketiAzalt: true);
-    // 320pt genişlikte üç öğe + tekrar sığar; "Dolar" birden çok kez.
-    expect(find.text('Dolar').evaluate().length, greaterThanOrEqualTo(1));
+    final onceki = tester.widget(find.text('Dolar'));
+    await tester.drag(find.byType(KayanBant), const Offset(-60, 0));
+    await tester.pump();
+    expect(identical(tester.widget(find.text('Dolar')), onceki), isTrue,
+        reason: 'Kayma değişince metin widget\'ı yeniden kurulmamalı.');
   });
 }

@@ -923,3 +923,35 @@ const _kLeaderboardOptInKey = PrefKeys.leaderboardOptIn;
 
 final leaderboardOptInProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kLeaderboardOptInKey, false));
+
+// ─── Kullanıcıya özel tercihlerin TAM listesi ─────────────────────────────────
+//
+// `setPreferencesUser` yalnızca anahtar ÖN EKİNİ değiştirir; provider'ın
+// bellekteki state'i önceki kullanıcıdan kalır. `_AuthGate` kullanıcı
+// değişiminde bu listeyi invalidate eder ki her tercih yeni kullanıcının
+// anahtarından yeniden okunsun.
+//
+// Neden liste (2026-09-21): invalidate çağrıları `main.dart`'ta elle
+// sıralanıyordu ve yalnızca sinyal tercihlerini kapsıyordu. Portföy hedefi
+// `perUser: true` ile TANIMLANMIŞTI ama listede yoktu: A çıkıp B girince B,
+// A'nın hedefini görüyordu ("hedef cihaz bazlı" bulgusu). Aynı boşluk baz
+// para birimi, yatırımcı seviyesi, biyometrik kilit ve Live Activity
+// tercihlerinde de vardı. Liste tanımların YANINDA durur;
+// `test/kullaniciya_ozel_tercihler_test.dart` kaynağı tarayıp `perUser:
+// true` / `_userKey(` kullanan her provider'ın burada olduğunu doğrular —
+// yeni bir kişisel tercih eklenip listeye yazılmazsa test kırılır.
+final kullaniciyaOzelTercihler = <ProviderOrFamily>[
+  signalThresholdProvider,
+  indicatorPrefsProvider,
+  signalScheduleProvider,
+  signalNeutralPushProvider,
+  signalNotificationsProvider,
+  baseCurrencyIndexProvider,
+  investorLevelIndexProvider,
+  biometricLockProvider,
+  portfolioGoalProvider,
+  lockScreenAmountsProvider,
+  liveActivityStartProvider,
+  liveActivityEndProvider,
+  liveActivityWeekendProvider,
+];

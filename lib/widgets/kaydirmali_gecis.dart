@@ -15,6 +15,19 @@
 // "Hareketi azalt" açıkken bırakma animasyonları sıfır sürelidir; parmak
 // sürüklemesi kullanıcı hareketidir, olduğu gibi kalır (HIG).
 //
+// ## Pürüzsüzlük (üçüncü tur, 2026-09-21)
+// Kullanıcı: "kartın slide'ı pürüzsüz kaymalı, kalite algısı için kritik."
+// İlk sürümde her sürükleme karesi `setState` ile bu State'in tamamını
+// yeniden kuruyordu: [komsu] her karede yeniden ÇAĞRILIYOR (ana ekran orada
+// komşu görünümün toplamını baştan hesaplıyor), kart ve komşu her karede
+// yeniden BOYANIYORDU. Şimdi:
+//   · kayma bir `ValueNotifier`'da; yalnızca kart penceresi ve sayfa
+//     noktaları yeniden kurulur, State'in `build`'i çalışmaz;
+//   · komşu kart yön başına BİR KEZ kurulup önbelleğe alınır (üst widget
+//     güncellenince düşer);
+//   · kart ve komşu `RepaintBoundary` içindedir — `Transform.translate`
+//     kompozitörde yalnızca katmanı öteler, piksel yeniden çizilmez.
+//
 // Bu widget görünümün NE olduğunu bilmez: [onGecis] ile yön bildirir,
 // [komsu] ile "o yöndeki kart"ı ister. Böylece ana ekranın kimlik
 // sözleşmesine ('' / id / null) bağlanmaz ve tek başına test edilir.
@@ -47,6 +60,7 @@ class KaydirmaliGecis extends StatefulWidget {
 
   /// O yöndeki görünümün kartı — sürüklerken yanda görünür. Etkileşimsiz
   /// çizilir (`IgnorePointer`); geçiş tamamlanınca gerçek kart gelir.
+  /// Sürükleme boyunca yön başına BİR KEZ çağrılır (önbellek).
   final Widget Function(bool ileri) komsu;
 
   final Widget child;
@@ -79,10 +93,21 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   // ilk erişim dispose içinde olur ve Ticker, ayrılmış ağaçta ata arar
   // ("Looking up a deactivated widget's ancestor") — taşma testinde yaşandı.
   late final AnimationController _yay;
-  double _dx = 0;
+
+  /// Kayma (pt). Notifier olması pürüzsüzlüğün özü: her sürükleme karesinde
+  /// yalnızca dinleyen iki sarmalayıcı (kart penceresi, sayfa noktaları)
+  /// yeniden kurulur; bu State'in `build`'i ve [KaydirmaliGecis.komsu]
+  /// çalışmaz.
+  final _dx = ValueNotifier<double>(0);
 
   /// Son ölçülen kart genişliği — bırakma anında eşik ve tam kayma için.
   double _genislik = 0;
+
+  /// Komşu kart önbelleği — yön başına bir kez kurulur. Üst widget
+  /// güncellenince (fiyat tazeleme, görünüm değişimi) düşer; sürükleme
+  /// sırasında yön değişirse yeniden kurulur.
+  Widget? _komsuWidget;
+  bool? _komsuYon;
 
   @override
   void initState() {
@@ -94,8 +119,17 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   }
 
   @override
+  void didUpdateWidget(KaydirmaliGecis oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Üst widget yeniden kuruldu: komşu kartın verisi değişmiş olabilir.
+    _komsuWidget = null;
+    _komsuYon = null;
+  }
+
+  @override
   void dispose() {
     _yay.dispose();
+    _dx.dispose();
     super.dispose();
   }
 
@@ -104,18 +138,19 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   Future<void> _kaydir(
       double bas, double son, Duration sure, Curve egriTuru) async {
     if (sure == Duration.zero) {
-      if (mounted) setState(() => _dx = son);
+      if (mounted) _dx.value = son;
       return;
     }
     _yay
       ..duration = sure
       ..reset();
     final egri = CurvedAnimation(parent: _yay, curve: egriTuru);
-    void tik() => setState(() => _dx = bas + (son - bas) * egri.value);
+    void tik() => _dx.value = bas + (son - bas) * egri.value;
     egri.addListener(tik);
     await _yay.forward();
     egri.removeListener(tik);
-    if (mounted) setState(() => _dx = son);
+    egri.dispose();
+    if (mounted) _dx.value = son;
   }
 
   /// Tek seferlik ipucu: ekran otursun, sola kay, komşu okunsun, geri gel.
@@ -128,92 +163,121 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
     final sure = SandikMotion.surfaceOf(context);
     if (sure == Duration.zero) return;
     await Future<void>.delayed(sure * 3);
-    if (!mounted || _dx != 0 || _yay.isAnimating) return;
+    if (!mounted || _dx.value != 0 || _yay.isAnimating) return;
     await _kaydir(0, -KaydirmaliGecis.ipucuKayma, sure, SandikMotion.enter);
     await Future<void>.delayed(sure * 2);
-    if (!mounted || _dx != -KaydirmaliGecis.ipucuKayma) return;
+    if (!mounted || _dx.value != -KaydirmaliGecis.ipucuKayma) return;
     await _kaydir(-KaydirmaliGecis.ipucuKayma, 0, sure, SandikMotion.move);
   }
 
   void _surukle(DragUpdateDetails d) {
     if (_yay.isAnimating) _yay.stop();
     final sinir = _genislik + KaydirmaliGecis.aralik;
-    setState(() => _dx = (_dx + d.delta.dx).clamp(-sinir, sinir));
+    _dx.value = (_dx.value + d.delta.dx).clamp(-sinir, sinir);
   }
 
   Future<void> _birak(DragEndDetails d) async {
     final hiz = d.primaryVelocity ?? 0;
-    final ileri = _dx < 0 || (_dx == 0 && hiz < 0);
+    final dx = _dx.value;
+    final ileri = dx < 0 || (dx == 0 && hiz < 0);
     final tam = _genislik + KaydirmaliGecis.aralik;
-    final gecis = _dx != 0 &&
-        (_dx.abs() >= _genislik * KaydirmaliGecis.esikOran ||
+    final gecis = dx != 0 &&
+        (dx.abs() >= _genislik * KaydirmaliGecis.esikOran ||
             hiz.abs() >= KaydirmaliGecis.esikHiz);
     if (gecis) {
       // Kaymayı tamamla: komşu kart pencereye tam oturur. Sonra görünüm
       // değişir ve kayma sıfırlanır — yeni gerçek kart, komşunun durduğu
       // yerde belirir; göz fark etmez.
       SandikHaptic.selection.perform();
-      await _kaydir(_dx, ileri ? -tam : tam, SandikMotion.surfaceOf(context),
+      await _kaydir(dx, ileri ? -tam : tam, SandikMotion.surfaceOf(context),
           SandikMotion.enter);
       if (!mounted) return;
-      setState(() => _dx = 0);
+      _dx.value = 0;
       widget.onGecis(ileri);
       return;
     }
     // İptal: yerine yaylan.
-    await _kaydir(_dx, 0, SandikMotion.stateOf(context), SandikMotion.enter);
+    await _kaydir(dx, 0, SandikMotion.stateOf(context), SandikMotion.enter);
+  }
+
+  /// O yöndeki komşu kart — önbellekten; yoksa bir kez kurulur.
+  Widget _komsu(bool ileri) {
+    if (_komsuWidget == null || _komsuYon != ileri) {
+      _komsuYon = ileri;
+      _komsuWidget = RepaintBoundary(
+        child: IgnorePointer(
+          child: ExcludeSemantics(child: widget.komsu(ileri)),
+        ),
+      );
+    }
+    return _komsuWidget!;
   }
 
   @override
   Widget build(BuildContext context) {
     if (!widget.etkin) return widget.child;
 
-    final tam = _genislik + KaydirmaliGecis.aralik;
-    final ilerleme = _genislik <= 0 ? 0.0 : (_dx / tam).clamp(-1.0, 1.0);
+    // Kart bir kez kurulur ve kendi katmanında yaşar; sürüklerken
+    // yalnızca ötelenir.
+    final kart = RepaintBoundary(child: widget.child);
+
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragUpdate: _surukle,
       onHorizontalDragEnd: _birak,
-      onHorizontalDragCancel: () => setState(() => _dx = 0),
+      onHorizontalDragCancel: () => _dx.value = 0,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _kartPenceresi(),
+          _kartPenceresi(kart),
           if (widget.altBilgi != null)
             Padding(
               padding: const EdgeInsets.only(top: SandikSpace.sm),
-              child: Center(child: widget.altBilgi!(context, ilerleme)),
+              child: Center(
+                child: ValueListenableBuilder<double>(
+                  valueListenable: _dx,
+                  builder: (ctx, dx, _) {
+                    final tam = _genislik + KaydirmaliGecis.aralik;
+                    final ilerleme =
+                        _genislik <= 0 ? 0.0 : (dx / tam).clamp(-1.0, 1.0);
+                    return widget.altBilgi!(ctx, ilerleme);
+                  },
+                ),
+              ),
             ),
         ],
       ),
     );
   }
 
-  Widget _kartPenceresi() => LayoutBuilder(
+  Widget _kartPenceresi(Widget kart) => LayoutBuilder(
         builder: (context, k) {
           _genislik = k.maxWidth;
-          final ileri = _dx < 0;
-          final komsuX = ileri
-              ? _dx + _genislik + KaydirmaliGecis.aralik
-              : _dx - _genislik - KaydirmaliGecis.aralik;
-          // Stack varsayılan olarak kırpar (Clip.hardEdge): pencere kartın
-          // kutusudur, komşu yalnızca o kutunun içinde görünür.
-          return Stack(
-            children: [
-              Transform.translate(
-                offset: Offset(_dx, 0),
-                child: widget.child,
-              ),
-              if (_dx != 0)
-                Positioned(
-                  left: komsuX,
-                  top: 0,
-                  width: _genislik,
-                  child: IgnorePointer(
-                    child: ExcludeSemantics(child: widget.komsu(ileri)),
+          return ValueListenableBuilder<double>(
+            valueListenable: _dx,
+            builder: (context, dx, _) {
+              final ileri = dx < 0;
+              final komsuX = ileri
+                  ? dx + _genislik + KaydirmaliGecis.aralik
+                  : dx - _genislik - KaydirmaliGecis.aralik;
+              // Stack varsayılan olarak kırpar (Clip.hardEdge): pencere
+              // kartın kutusudur, komşu yalnızca o kutunun içinde görünür.
+              return Stack(
+                children: [
+                  Transform.translate(
+                    offset: Offset(dx, 0),
+                    child: kart,
                   ),
-                ),
-            ],
+                  if (dx != 0)
+                    Positioned(
+                      left: komsuX,
+                      top: 0,
+                      width: _genislik,
+                      child: _komsu(ileri),
+                    ),
+                ],
+              );
+            },
           );
         },
       );
