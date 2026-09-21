@@ -61,7 +61,22 @@ HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/as
   -d "{\"user_id\":\"22222222-2222-4222-8222-222222222222\",\"name\":\"Yabanci\",\"type\":\"diger\",\"quantity\":1,\"purchase_price\":1,\"current_price\":1}")
 [[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "RLS kaçağı: yabancı insert HTTP $HTTP"; exit 1; }
 
-echo "== 6) Temizlik"
+echo "== 6) Push token devralma RPC'si (0069) — yaz, ayni cihazda yenile, geri oku"
+# Token cihaza baglidir; RPC onu cagirana yazar, ayni cihazin bayat token'ini
+# siler. Baska hesaptan devralma tek tohum kullanicisiyla denenemez; o yol
+# migration'in kendi dogrulamasi + canli db_logs ile izlenir.
+TOK="duman-token-$$-$(python3 -c 'import secrets;print(secrets.token_hex(24))')"
+DEVRALINAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/claim_push_token" "${AUTH[@]}"   -d "{\"p_token\":\"$TOK\",\"p_platform\":\"android\",\"p_device_id\":\"duman-cihaz-$$\"}")
+[[ "$DEVRALINAN" == "0" ]] || { echo "ilk yazim devralma saymamali, gelen: $DEVRALINAN"; exit 1; }
+curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/claim_push_token" "${AUTH[@]}"   -d "{\"p_token\":\"$TOK-yeni\",\"p_platform\":\"android\",\"p_device_id\":\"duman-cihaz-$$\"}" >/dev/null
+SATIR=$(curl -sS -f "$SUPABASE_URL/rest/v1/user_push_tokens?select=token&device_id=eq.duman-cihaz-$$"   "${AUTH[@]}" | json 'len(d)')
+[[ "$SATIR" == "1" ]] || { echo "ayni cihazin bayat token'i silinmedi (adet=$SATIR)"; exit 1; }
+echo "== 6b) anon RPC'yi cagiramamali"
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/claim_push_token"   -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json"   -d "{\"p_token\":\"$TOK-anon-0123456789\",\"p_platform\":\"android\"}")
+[[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "anon claim_push_token HTTP $HTTP"; exit 1; }
+
+echo "== 7) Temizlik"
 curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/assets?id=eq.$ASSET_ID" "${AUTH[@]}" >/dev/null
+curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/user_push_tokens?device_id=eq.duman-cihaz-$$" "${AUTH[@]}" >/dev/null
 
 echo "OK — başsız duman testi geçti"

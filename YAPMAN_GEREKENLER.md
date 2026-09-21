@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-09-14 (#24: 0000 işaretleme + 0063 + observe-tefas-nav)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-09-21 (push token devralma — 0069 db push)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -9,6 +9,105 @@
 > yeni rehber geçerlidir.
 
 **Kapsam:** Yayın öncesi senin elden yapman gereken işler. Kod tarafı (Faz 1) tamam; bu liste deploy + hukuki + ticari adımları içerir.
+
+---
+
+## 📲 2026-09-21 "pushlar çalışmıyor" — 0069 `db push` + cihazda doğrulama
+
+**Teşhis (canlı, 2026-09-21 17:00 UTC).** Cron altyapısı sağlam: 23 iş aktif, son
+100 yanıt `200`, pg_net kuyruğu boş; akşam brifingi 15:30 UTC'de bir kullanıcıya
+gitti, sinyal push'u sana 12:00 TR'de gitti (`signal_preferences.fon.last_notified_at`).
+**Kırık olan senin cihazının token kaydı:** `db_logs` 664946 — iOS,
+`SupabaseService.upsertPushToken` → `42501 new row violates row-level security
+policy (USING expression)`. Token satırı aynı telefonda daha önce giren başka
+hesaba ait; upsert `on conflict do update` yoluna düşüp o satıra takılıyor.
+Sonuç: sana push yazılmıyor, öteki hesabın brifingi senin telefonuna düşüyor.
+
+**Çözüm koda girdi, canlıya SEN alacaksın** (auto mode canlıda geri alınan
+denemeyi bile reddetti):
+
+1. **Migration `0069_push_token_devralma.sql`** → Actions → Supabase deploy →
+   `db push` (dry_run=true ile "0069 pending" gör, sonra gerçek). Migration
+   kendi GRANT/SECURITY DEFINER denetimini yapar; kırılırsa oraya bak.
+2. **Uygulama** — `upsertPushToken` artık `claim_push_token` RPC'sini çağırıyor.
+   Eski sürüm (TestFlight'taki) hâlâ doğrudan upsert yapar → 0069 sonrası da
+   aynı 42501'i alır. Yeni build TestFlight'a çıkana kadar geçici: SQL Editor'da
+   `delete from user_push_tokens where user_id <> '<senin id>' and device_id in
+   (select device_id from user_push_tokens where user_id = '<senin id>');` — ya
+   da telefondan çıkıp yeniden gir (çıkış `stop()` kendi satırını siler; ama
+   öteki hesabın satırını silmez, o yüzden RPC şart).
+3. **Doğrula:** uygulamayı aç, Ayarlar → Push Teşhisi'nde token görünüyor;
+   SQL: `select platform, device_id, updated_at from user_push_tokens where
+   user_id = '<senin id>'` → bugünün damgası. `db_logs`'ta
+   `SupabaseService.upsertPushToken` için `is_error=false`, `op='RPC'`.
+4. Test push: Ayarlar → Push Teşhisi → sinyal analizi tetikle, ya da SQL
+   `select public.trigger_daily_brief();` (bugün brifing aldıysan de-dup'a
+   takılır — `daily_brief_log`'dan bugünkü satırı sil).
+
+### Push matrisi — 2026-09-21 17:00 UTC canlı ölçüm
+
+| Push | Cron | Durum | Not |
+|---|---|---|---|
+| Sinyal (`analyze-signals`) | her saat 10–18 TR | ✅ sana bugün 12:00'de gitti | `passed_threshold:1, sent:0, skipped_by_dedup:1` = sinyal değişmedi, tasarım gereği |
+| Günlük brifing sabah | Sa–Cu 09:45 TR | ✅ 17/18 Eylül iki kullanıcıya gitti | **Sana hiç gitmez:** brifing yalnızca BIST hissesi olanlara (sende 0 hisse) ya da ortağın o gün alım yaptıysa |
+| Günlük brifing akşam | Pzt–Cu 18:30 TR | ✅ bugün 1 gönderim, 1 eşik altı | `brief_slot='evening'` olanlara; sen `morning` |
+| Haftalık özet | Pzt 09:45 TR | ⚠️ bugün `weekly_summary_log`'a satır düşmedi | Yanıt pg_net'te silinmiş (≈6 saat saklıyor). Atlama sebepleri: hafta içinde varlık eklediysen `skipped_flow`, hareket <%2 `skipped_quiet`, uçlarda 48 saat snapshot yoksa `skipped_coverage`. Aşağıdaki kuru koşuyla gör |
+| Aylık özet | ayın 1'i 09:30 TR | ✅ 20 Eylül elle test sana geldi | sıradaki 1 Ekim |
+| Fiyat alarmı | */30 08–21 TR | ✅ `checked:11, priced:7` = 7 sembolün 7'si fiyatlı | `priced` alarm değil SEMBOL sayısıdır; hedefe ulaşan yok. Kanarya 20 Eylül 16:30'da bir kez kısmi öttü (altın 2/3), geçici |
+| Takip listesi hareketi | Pzt–Cu 18:25 TR | ✅ "eşiği aşan hareket yok" | |
+| TÜFE günü + takvim | ayın 3'ü | ⏳ sıradaki 3 Ekim | 20 Eylül'de deploy edildi, canlıda hiç koşmadı |
+| Live Activity | 5 dk | ✅ 8/8 | APNs doğrudan |
+| Ortak daveti | anlık | — | on-demand |
+
+**Haftalık özet kuru koşusu (SQL Editor, gönderim yapmaz; Claude'un auto
+mode'u `net.http_post`'u reddediyor):**
+```sql
+select net.http_post(
+  url := 'https://ybdbzouzhzwthjgwlbmk.supabase.co/functions/v1/weekly-summary',
+  headers := public.cron_headers('weekly_summary_cron_secret'),
+  body := '{"source":"manual","dry_run":true}'::jsonb,
+  timeout_milliseconds := 60000);
+-- 10 sn sonra:
+select content from net._http_response order by id desc limit 1;
+```
+`skipped_flow`/`skipped_quiet`/`skipped_coverage` sayıları kimin neden
+atlandığını söyler; `failures` doluysa o gerçek arıza.
+
+**Cihazda "gerçekten gelsin" testi (yeni build + 0069 sonrası):** Ayarlar →
+Push Teşhisi → sinyal analizini `dry_run` olmadan tetikle; sinyal değişmemişse
+`delete from signal_state where user_id = '<senin id>';` sonra tekrar tetikle.
+
+## ⚖️ 2026-09-21 App Store uyuşmazlığı — "Sandık: Varlık Takibi" (ID 6793574880) taklit bildirimi
+
+**Durum:** Apple Legal "App Store Content Dispute" formu 21 Eylül 2026'da gönderildi
+(kısa metin, 983 karakter). Apple e-postayla **referans numarası** döner; bundan
+sonraki her yazışma o e-postaya yanıt olarak, konu satırında referans numarasıyla.
+Formu ikinci kez doldurma. Apple hakem değildir: şikâyeti karşı geliştiriciye
+iletir ("kendi aranızda çözün"); yanıt gelmezse ya da çözüm yoksa kaldırma kararı
+Apple'da.
+
+**Kanıt paketi hazır:** `tmp/dispute_2026-09-21/` (gitignore'da, repoya girmez)
+- `sandik_dispute_notice.html` — tam metin (referans numarası gelince e-postaya ek)
+- `sandik_dispute_form_description.txt` / `_1000.txt` — düz metin sürümleri
+- `biz_ss1.jpg` + `rakip_ss1.jpg` — ana ekran yan yana (tasarım iddiasının dayanağı)
+- `biz_icon.jpg` + `rakip_icon.jpg` — ikonlar FARKLI; ikon iddiası yapılmadı, yapma
+- `rdap_sandik_app.json` — alan adı kaydı 14 Mart 2026 (en eski öncelik kanıtı)
+- `git_history.txt` — ilk commit 11 Nis, ikon/tasarım 7 May, marka+bundle 3 Tem 2026
+- `itunes_lookup.json` — iki uygulamanın mağaza yayın tarihleri (10 Tem / 30 Ağu UTC)
+
+**Senin sıradaki adımların**
+1. **Apple referans numarası gelince** tam metni ve yukarıdaki dosyaları o e-postaya
+   yanıt olarak gönder. Konu satırı: `[referans no] Sandık — evidence attachments`.
+2. **TÜRKPATENT marka başvurusu — bugün.** "SANDIK", sınıf 9 (yazılım) + 36 (finans).
+   Online başvuru turkpatent.gov.tr, ücret ~₺1.500–2.000/sınıf. Başvuru numarası
+   alınca Apple yazışmasına ekle; "unregistered mark" ifadesi "application no. …"
+   olur. Adın günlük Türkçe sözcük olması tescili zorlaştırabilir; ret gelirse
+   itiraz süresi 2 ay.
+3. **Karşı geliştirici seninle iletişime geçerse** yazılı kal, e-posta dışına çıkma;
+   talep aynı: ad değişikliği + kopyalanan metin/ekran öğelerinin kaldırılması.
+4. **14 gün sessizlik** olursa Apple'a referans numarasıyla durum sorusu.
+5. Mağaza sayfası "sandık" araması ekran görüntüsünü haftada bir al (sıralama
+   değişimi ve karışıklık kanıtı için) — `tmp/dispute_2026-09-21/arama_YYYY-MM-DD.png`.
 
 ---
 

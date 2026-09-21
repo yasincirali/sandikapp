@@ -311,6 +311,12 @@ class RemotePushService {
     // almamaktansa fazladan bildirim almak yeğdir. Sunucudaki tekillik
     // kısıtı `device_id is not null` koşullu olduğu için bu satır kısıtı
     // tetiklemez.
+    //
+    // Yazım sunucuda `claim_push_token` ile (0069): token başka hesaba
+    // kayıtlıysa devralınır. Aynı telefonda hesap değiştiren kullanıcı
+    // eskiden RLS'e takılıp token'sız kalıyordu; çıkıştaki `stop()`
+    // temizliği tek başına yetmez (bellekteki token boşsa ya da oturum
+    // istemci dışında düştüyse satır kalır).
     String? deviceId;
     try {
       deviceId = await _deviceId();

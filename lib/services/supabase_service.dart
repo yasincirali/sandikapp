@@ -631,39 +631,38 @@ class SupabaseService {
   ///
   /// Silme işlemi upsert'ten ÖNCE ve yeni token hariç tutularak yapılır:
   /// sonra yapılsaydı az önce yazdığımız satırı silerdi.
+  /// Push token'ını bu hesaba yazar — sunucudaki `claim_push_token` RPC'si.
+  ///
+  /// **Neden doğrudan `upsert` değil (0069, 2026-09-21).** Tablonun
+  /// birincil anahtarı `token` ve token CİHAZA bağlı. Aynı telefonda A
+  /// çıkıp B girince B'nin upsert'i `on conflict do update` yoluna düşer ve
+  /// UPDATE politikasının USING ifadesi A'nın satırına bakar → 42501. B'nin
+  /// token'ı hiç yazılmaz (B'ye push gitmez), A'nın satırı kalır (A'nın
+  /// brifingi B'nin telefonuna düşer). Canlıda ölçüldü (db_logs 664946).
+  /// RPC token'ı sunana devreder; aynı cihazın bayat token temizliği de
+  /// orada (eskiden burada `delete().eq('device_id')` idi — başka hesabın
+  /// satırını RLS yüzünden zaten silemiyordu).
+  ///
+  /// [deviceId] boşsa sunucu eski cihaz kimliğini korur.
   Future<void> upsertPushToken({
     required String userId,
     required String token,
     required String platform,
     String? deviceId,
   }) async {
-    if (deviceId != null && deviceId.isNotEmpty) {
-      // Aynı cihazın bayat token'ları. Hata yutulur: temizlik yapılamasa bile
-      // yeni token yazılmalı — bildirim almamak, fazladan bildirimden kötüdür.
-      try {
-        await _db
-            .from('user_push_tokens')
-            .delete()
-            .eq('user_id', userId)
-            .eq('device_id', deviceId)
-            .neq('token', token);
-      } catch (_) {}
-    }
-
     await _log.log<void>(
       source: 'SupabaseService.upsertPushToken',
       table: 'user_push_tokens',
-      op: 'UPSERT',
+      op: 'RPC',
       request: {'user_id': userId, 'platform': platform},
-      call: () => _db.from('user_push_tokens').upsert(
-        {
-          'user_id': userId,
-          'token': token,
-          'platform': platform,
-          if (deviceId != null && deviceId.isNotEmpty) 'device_id': deviceId,
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
+      call: () => _db.rpc<dynamic>(
+        'claim_push_token',
+        params: {
+          'p_token': token,
+          'p_platform': platform,
+          'p_device_id':
+              (deviceId != null && deviceId.isNotEmpty) ? deviceId : null,
         },
-        onConflict: 'token',
       ),
     );
   }
