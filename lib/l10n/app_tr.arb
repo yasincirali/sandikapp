@@ -2229,6 +2229,15 @@
     }
   },
   "todayTitle": "Bugün",
+  "todayScopeOf": "{name} bugünü",
+  "@todayScopeOf": {
+    "description": "Bugün kartının başındaki kapsam etiketi; Türkçede name ilgi ekiyle gelir (Ayşe'nin).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "todayUp": "{amount} · %{pct} artıda",
   "@todayUp": {
     "placeholders": {

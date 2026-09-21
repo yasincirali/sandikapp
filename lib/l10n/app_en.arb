@@ -2229,6 +2229,14 @@
     }
   },
   "todayTitle": "Today",
+  "todayScopeOf": "{name}'s today",
+  "@todayScopeOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "todayUp": "{amount} · up {pct}%",
   "@todayUp": {
     "placeholders": {

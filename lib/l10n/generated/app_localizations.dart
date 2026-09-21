@@ -5444,6 +5444,12 @@ abstract class AppLocalizations {
   /// **'Bugün'**
   String get todayTitle;
 
+  /// Bugün kartının başındaki kapsam etiketi; Türkçede name ilgi ekiyle gelir (Ayşe'nin).
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} bugünü'**
+  String todayScopeOf(String name);
+
   /// No description provided for @todayUp.
   ///
   /// In tr, this message translates to:

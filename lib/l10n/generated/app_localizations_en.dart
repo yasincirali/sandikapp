@@ -3181,6 +3181,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayTitle => 'Today';
 
   @override
+  String todayScopeOf(String name) {
+    return '$name\'s today';
+  }
+
+  @override
   String todayUp(String amount, String pct) {
     return '$amount · up $pct%';
   }

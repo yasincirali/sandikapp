@@ -245,6 +245,13 @@ abstract final class BugunService {
   /// günde aynı satır aynı sırada çıkmasın. Tarihe bağlı olması bilinçli —
   /// rastgele olsaydı aynı gün içinde her açılışta değişir, "az önce
   /// gördüğüm neredeydi" sorusu doğardı.
+  ///
+  /// [kisisel] (2026-09-21, kart kapsamı izler): kart Ortak / Birlikte
+  /// görünümünde o kapsamın defteriyle kurulur; orada KİŞİSEL satırlar
+  /// üretilmez — hedef cihazdaki kişiye özel tercihtir (ortağınki sunucuda
+  /// yok, uydurulmaz), aylık özet girişi kendi recap ekranına gider.
+  /// Piyasa hareketi, artıdaki varlık, reel getiri, haftalık ve ulusal
+  /// takvim kapsamdan bağımsız hesaplanır, hepsi kalır.
   static BugunKartiVerisi hesapla({
     required List<double> karZararlar,
     required double toplamDeger,
@@ -253,6 +260,7 @@ abstract final class BugunService {
     required DateTime now,
     ReelGetiriSatiri? reel,
     double? haftalikGetiriPct,
+    bool kisisel = true,
   }) {
     BugunSatiri? birincil;
     if (ozet != null && ozet.hasChange) {
@@ -269,7 +277,9 @@ abstract final class BugunService {
         toplam: karZararlar.length,
       ));
     }
-    adaylar.add(HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger));
+    if (kisisel) {
+      adaylar.add(HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger));
+    }
     // Olay havuza girmez — ayak notu (bkz. `BugunKartiVerisi.olay`).
     final olaylar = yaklasanOlaylar(now);
 
@@ -294,7 +304,7 @@ abstract final class BugunService {
       }
     }
 
-    final aylik = now.day <= aylikOzetGunSayisi
+    final aylik = kisisel && now.day <= aylikOzetGunSayisi
         ? AylikOzetSatiri(ay: DateTime(now.year, now.month - 1, 1))
         : null;
 

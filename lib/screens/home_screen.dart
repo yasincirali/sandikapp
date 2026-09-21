@@ -27,9 +27,8 @@ import '../utils/tr_format.dart';
 import '../widgets/price_alert_tile.dart';
 import '../widgets/app_notification_tile.dart';
 import '../widgets/portfolio_summary_widget.dart';
-import '../widgets/real_return_strip.dart';
-import '../widgets/weekly_summary_chip.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../utils/tr_iyelik.dart';
 import '../widgets/kaydirmali_gecis.dart';
 import 'price_alerts_screen.dart';
 import '../widgets/disclaimer_widget.dart';
@@ -77,6 +76,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  /// Bugün kartının kapsam etiketi: kendi görünümünde yok; ortakta
+  /// "Ayşe'nin bugünü" (Türkçede ilgi eki ünlü uyumuyla, `trIyelik`),
+  /// Birlikte'de "Birlikte".
+  String? _bugunEtiketi(List<AppUser> partners) {
+    final l10n = context.l10n;
+    if (_view == '') return null;
+    if (_view == null) return l10n.scopeTogether;
+    final p = partners.where((p) => p.id == _view).firstOrNull;
+    final ad = GorunumCipi.ilkAd(p?.displayName ?? '');
+    if (ad.isEmpty) return l10n.scopeTogether;
+    final tr = Localizations.localeOf(context).languageCode != 'en';
+    return l10n.todayScopeOf(tr ? trIyelik(ad) : ad);
   }
 
   void _scrollToSignals() {
@@ -696,50 +709,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // aynı çıkar; ikinci bir hesap yolu YOK. Eskiden yalnızca kendi
           // görünümünde çiziliyordu. `key` kapsamı taşır: şeritler seriyi
           // bir kez (initState) kurar, sekme değişince yeniden kurulmalı.
-          if (aktifLotlar(ledgerAssets).isNotEmpty) ...[
+          if (aktifLotlar(ledgerAssets).isNotEmpty)
             // "Bugün" kartı EN ÜSTTE: her gün değişen tek yüzey, sabit
-            // bağlamlardan (enflasyon, yüzdelik) önce gelir. Yalnızca kendi
-            // görünümünde — ortağın "bugünü"nü onun ekranı anlatır.
-            if (ownView)
-              SliverToBoxAdapter(
-                child: TourAnchor(
-                  target: TourTarget.bugunKarti,
-                  child: BugunKarti(
-                    key: ValueKey('bugun-${_view ?? '*'}'),
-                    state: myState,
-                    padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
-                  ),
-                ),
-              ),
-            // Reel getiri percentile'den ÖNCE gelir: "eridim mi?" sorusu
-            // "başkalarına göre nerdeyim?" sorusundan önce gelir — biri
-            // alım gücü, diğeri sosyal karşılaştırma.
-            // 2026-09-21: KENDİ görünümünde bu iki şerit Bugün kartının
-            // satırlarıdır (`BugunKarti` reel + haftalık). Ortak/Birlikte
-            // görünümünde kart yok (kart kişisel: hedef, takvim), o yüzden
-            // şeritler orada olduğu gibi kalır — kapsamın defterini alır.
-            if (!ownView)
-              SliverToBoxAdapter(
-                child: RealReturnStrip(
-                  key: ValueKey('reel-${_view ?? '*'}'),
-                  myAssets: ledgerAssets,
-                  toTRY: myState.toTRY,
+            // bağlamlardan önce gelir.
+            //
+            // HER görünümde ve SEÇİLİ KAPSAMIN defteriyle (2026-09-21,
+            // kullanıcı seçimi "kapsamı izler, başlıkta kimin olduğu yazar").
+            // Eskiden yalnızca kendi görünümündeydi ve Birlikte'de de kendi
+            // defterini anlatıyordu: toplam kartı birleşik defteri gösterirken
+            // Bugün kartı yalnızca senin gününü söylüyordu. Ortak görünümünde
+            // kart yerine duran reel getiri ve haftalık şeritleri artık kartın
+            // satırları — 2026-09-17 kararı (şeritler kapsamın defterini alır)
+            // kartın tamamına uygulandı, ikinci bir hesap yolu yok.
+            // Kişisel satırlar (hedef, aylık özet) yalnızca kendi görünümünde
+            // (`kisisel`); kartın kimin olduğu başlıkta yazar (`etiket`).
+            // Yüzdelik dilim şeridi Profil'de (sosyal karşılaştırma ana
+            // ekranın sorusu değil).
+            SliverToBoxAdapter(
+              child: TourAnchor(
+                target: TourTarget.bugunKarti,
+                child: BugunKarti(
+                  key: ValueKey('bugun-${_view ?? '*'}'),
+                  // Kendi görünümünde ham state (sahip damgalı, paylaşımlı
+                  // gün içi önbelleği kullanır); kapsamda aynı kurla
+                  // kurulmuş kapsam defteri.
+                  state: ownView ? myState : gorunumDurumu(ledgerAssets),
+                  kisisel: ownView,
+                  etiket: _bugunEtiketi(allActivePartners),
                   padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
                 ),
               ),
-            // Yüzdelik dilim şeridi 2026-09-21'de Profil'e (Yarış kartının
-            // altına) taşındı: ana ekranın sorusu "nasıl gidiyorum", sosyal
-            // karşılaştırma değil. Kapıları (bayrak, opt-in, k-anonimlik,
-            // yatırımcı seviyesi) aynen orada.
-            if (!ownView)
-              SliverToBoxAdapter(
-                child: WeeklySummaryChip(
-                  key: ValueKey('hafta-${_view ?? '*'}'),
-                  myAssets: ledgerAssets,
-                  padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
-                ),
-              ),
-          ],
+            ),
           // Mini cards
           if (!isEmptyOwn)
             SliverToBoxAdapter(

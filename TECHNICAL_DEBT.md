@@ -154,6 +154,25 @@ göre küçük (%5 eşiğini nadiren geçer), eşik fon için ayrı (%2) olmalı
 
 ---
 
+## 🟡 AÇIK — `RealReturnStrip` ve `WeeklySummaryChip` ana ekrandan kalktı; widget'lar dosyada duruyor
+
+**Ne.** 2026-09-21 "Bugün kartı kapsamı izler" kararıyla iki şerit ana
+ekrandan tümden çıktı (reel ve haftalık her görünümde kartın satırı). İki
+widget'ın `lib/` içinde artık çağıranı yok; yalnızca kendi testleri
+(`real_return_badge_test`, `weekly_chip_percent_test`, `inflation_display_precision_test`)
+onları kuruyor. Hesap mantığı serviste (`RealReturnService`,
+`PeriodSummaryService`); widget'lar yalnızca sunum.
+
+**Neden ertelendi.** Testler yüzde biçimi ve rozet kuralları gibi
+sunum-bağımsız değişmezleri bu widget'lar üzerinden sınıyor; silmeden önce
+o değişmezlerin karta ya da servise taşınması gerekir. Bu tur kapsam
+değişikliğine sunum temizliği karıştırılmadı.
+
+**Ne zaman.** Bir sonraki sadeleştirme turunda: değişmez testleri
+`bugun_karti` / servis seviyesine taşı, iki widget'ı ve testlerini sil.
+
+---
+
 ## 🟡 AÇIK — Universal Links / App Links yok; paylaşılan bağlantı web sayfasına iner
 
 **Ne.** Paylaşım kartı ve ortak daveti artık `…/sandikapp/indir/` bağlantısı

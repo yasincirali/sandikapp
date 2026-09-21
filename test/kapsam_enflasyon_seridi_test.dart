@@ -9,13 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 /// ortağımın hesabında görülenle aynı olmalı, iki ayrı hesap yapmak yerine
 /// aynı datadan beslenmeliler."
 ///
-/// 2026-09-21 sadeleştirmesinden sonra iki yol var, ikisi de aynı hesap:
-///   · KENDİ görünümü → Bugün kartının satırları (`BugunKarti` kendi
-///     `state.assets`'ini `RealReturnService.yillik` /
-///     `PeriodSummaryService.compute`'a verir).
-///   · ORTAK / BİRLİKTE görünümü → eski şeritler, kapsamın defteriyle
-///     (`ledgerAssets`) ve kapsama bağlı `key` ile.
-/// Yüzdelik dilim şeridi Profil'e taşındı (kullanıcının kendi dilimi,
+/// 2026-09-21 (ikinci tur, "kart kapsamı izler, başlıkta kimin olduğu
+/// yazar"): tek yol kaldı — Bugün kartı HER görünümde çizilir ve o
+/// görünümün defterini alır. Eski şeritler ana ekrandan kalktı; reel ve
+/// haftalık kartın satırları. Kişisel satırlar (hedef, aylık) yalnızca kendi
+/// görünümünde. Yüzdelik dilim şeridi Profil'de (kullanıcının kendi dilimi,
 /// ortağın portföyüne bakarken anlamsız).
 void main() {
   final src = File('lib/screens/home_screen.dart')
@@ -28,27 +26,30 @@ void main() {
       .readAsStringSync()
       .replaceAll('\r\n', '\n');
 
-  test('ortak görünümünde reel getiri şeridi kapsamın defterini alır', () {
-    final blok = src.substring(src.indexOf('child: RealReturnStrip('));
-    final parca = blok.substring(0, blok.indexOf('padding:'));
-    expect(parca.contains('myAssets: ledgerAssets'), isTrue,
-        reason: 'ortak sekmesinde hâlâ kendi portföyün enflasyonu yazılır');
-    expect(parca.contains("ValueKey('reel-"), isTrue,
-        reason: 'key olmadan sekme değişince seri yeniden kurulmaz');
-    final oncesi = src.substring(src.indexOf('child: RealReturnStrip(') - 200,
-        src.indexOf('child: RealReturnStrip('));
-    expect(oncesi.contains('if (!ownView)'), isTrue,
-        reason: 'kendi görünümünde şerit yok — satır Bugün kartında');
+  test('Bugün kartı her görünümde ve kapsamın defteriyle', () {
+    final i = src.indexOf('child: BugunKarti(');
+    expect(i, greaterThan(0));
+    final oncesi = src.substring(i - 400, i);
+    expect(oncesi.contains('if (ownView)'), isFalse,
+        reason: 'kart artık yalnızca kendi görünümünde değil');
+    final blok = src.substring(i, src.indexOf('padding:', i));
+    expect(blok.contains('gorunumDurumu(ledgerAssets)'), isTrue,
+        reason: 'ortak/Birlikte görünümünde kart kapsamın defterini almalı');
+    expect(blok.contains('kisisel: ownView'), isTrue,
+        reason: 'hedef ve aylık özet yalnızca kendi görünümünde');
+    expect(blok.contains('etiket: _bugunEtiketi('), isTrue,
+        reason: 'kartın kimin olduğu başlıkta yazar');
+    expect(blok.contains("ValueKey('bugun-"), isTrue,
+        reason: 'key olmadan görünüm değişince seri yeniden kurulmaz');
   });
 
-  test('ortak görünümünde haftalık özet çipi kapsamın defterini alır', () {
-    final blok = src.substring(src.indexOf('child: WeeklySummaryChip('));
-    final parca = blok.substring(0, blok.indexOf('padding:'));
-    expect(parca.contains('myAssets: ledgerAssets'), isTrue);
-    expect(parca.contains("ValueKey('hafta-"), isTrue);
+  test('ana ekranda ayrı reel/haftalık şerit kalmadı', () {
+    expect(src.contains('RealReturnStrip('), isFalse,
+        reason: 'reel getiri kartın satırı, ikinci bir yüzey yok');
+    expect(src.contains('WeeklySummaryChip('), isFalse);
   });
 
-  test('kendi görünümünde reel getiri ve haftalık Bugün kartının satırı', () {
+  test('reel getiri ve haftalık Bugün kartının satırı, aynı hesap yolu', () {
     expect(kart.contains('RealReturnService.yillik(widget.state.assets)'), isTrue,
         reason: 'aynı hesap yolu — ikinci bir reel getiri hesabı yok');
     expect(kart.contains('PeriodSummaryService.compute('), isTrue);
@@ -59,15 +60,20 @@ void main() {
         isTrue);
   });
 
-  test('Bugün kartı yalnızca kendi görünümünde', () {
-    final i = src.indexOf('child: BugunKarti(');
-    final oncesi = src.substring(i - 400, i);
-    expect(oncesi.contains('if (ownView)'), isTrue);
+  test('kapsam görünümünde paylaşımlı gün içi önbellek kullanılmaz', () {
+    // Önbellek kilit ekranıyla ortak ve oturumdaki kullanıcıya damgalı;
+    // ortağın defteriyle doldurulursa kilit ekranı yanlış seriyi gösterir.
+    final i = kart.indexOf('Future<Map<int, double>?> _seriYukle()');
+    final govde = kart.substring(i, kart.indexOf('catch', i));
+    expect(govde.contains('if (!widget.kisisel)'), isTrue);
+    expect(govde.contains('getPortfolioHistoryHourlyBreakdown('), isTrue);
+    expect(govde.indexOf('getPortfolioHistoryHourlyBreakdown('),
+        lessThan(govde.indexOf('IntradaySeriesCache.instance')),
+        reason: 'kapsam dalı önbellekten ÖNCE ayrılmalı');
   });
 
-  test('şeritler boş kapsamda çizilmez', () {
-    expect(src.contains('if (aktifLotlar(ledgerAssets).isNotEmpty) ...['),
-        isTrue,
+  test('kart boş kapsamda çizilmez', () {
+    expect(src.contains('if (aktifLotlar(ledgerAssets).isNotEmpty)'), isTrue,
         reason: 'boş kapsamda (sıfır lira) enflasyonu yenmek diye bir şey yok');
   });
 

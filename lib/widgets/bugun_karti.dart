@@ -42,10 +42,29 @@ class BugunKarti extends ConsumerStatefulWidget {
     super.key,
     required this.state,
     this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 0),
+    this.kisisel = true,
+    this.etiket,
   });
 
+  /// Kartın anlattığı defter — seçili kapsamın (2026-09-21).
+  ///
+  /// Eskiden yalnızca giriş yapan kullanıcının defteri veriliyordu ve kart
+  /// Birlikte görünümünde de onu anlatıyordu: toplam kartı birleşik defteri
+  /// gösterirken Bugün kartı yalnızca senin gününü söylüyordu (kullanıcı
+  /// bulgusu). Şimdi kart hangi görünümdeyse o görünümün defterini alır —
+  /// şeritlerin 2026-09-17'den beri yaptığı gibi, tek hesap yolu.
   final PortfolioState state;
   final EdgeInsets padding;
+
+  /// Kendi görünümü mü? Kişisel satırlar (hedef, aylık özet) yalnızca
+  /// burada; gün içi seri de yalnızca burada kilit ekranıyla paylaşılan
+  /// önbellekten okunur (bkz. `_seriYukle`).
+  final bool kisisel;
+
+  /// Kartın başına yazılan kapsam etiketi ("Ayşe'nin bugünü", "Birlikte").
+  /// Kendi görünümünde `null`: kartın kimin olduğu sorusu yalnızca başka
+  /// bir defter gösterilirken doğar.
+  final String? etiket;
 
   @override
   ConsumerState<BugunKarti> createState() => _BugunKartiState();
@@ -107,8 +126,21 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     });
   }
 
+  /// Gün içi seri.
+  ///
+  /// Kendi görünümünde kilit ekranı ve widget'la ORTAK önbellekten gelir
+  /// (üç yüzey aynı rakamı göstermeli). Ortak / Birlikte görünümünde o
+  /// önbellek KULLANILMAZ: tek yuvalı ve oturumdaki kullanıcıya damgalı;
+  /// başka bir defterle doldurmak kilit ekranını yanlış seriyle beslerdi.
+  /// Kapsam serisi doğrudan çekilir — aynı servis, aynı hesap, ayrı yuva.
   Future<Map<int, double>?> _seriYukle() async {
     try {
+      if (!widget.kisisel) {
+        final bd = await HistoryService.instance
+            .getPortfolioHistoryHourlyBreakdown(widget.state.activeAssets, 24)
+            .timeout(_yuklemeSuresi);
+        return bd.total;
+      }
       return await IntradaySeriesCache.instance
           .get(widget.state)
           .timeout(_yuklemeSuresi);
@@ -228,6 +260,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       now: now,
       reel: _reel,
       haftalikGetiriPct: _haftalik,
+      kisisel: widget.kisisel,
     );
     if (veri.bos) return const SizedBox.shrink();
     _gosterimiOlc(veri, now);
@@ -259,6 +292,23 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Kapsam etiketi (seçenek 3, 2026-09-21): görünüm çipi toplam
+            // kartında kimde olduğunu söyler ama bu kart ondan aşağıda,
+            // kendi başına okunur — "kimin bugünü" sorusu kartta cevaplanır.
+            if (widget.etiket != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+                child: Text(
+                  widget.etiket!.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.labelSmall?.copyWith(
+                    color: context.c.text58,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
             _Baslik(
               now: now,
               dil: dil,

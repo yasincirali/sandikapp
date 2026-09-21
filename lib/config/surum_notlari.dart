@@ -113,6 +113,13 @@ const List<SurumNotu> surumNotlari = [
       ),
       Yenilik(
         ikon: YenilikIkonu.genel,
+        baslik: 'Bugün kartı ortaklarda da',
+        aciklama: 'Ortağına ya da Birlikte\'ye geçince kart o defterin '
+            'gününü anlatır; başında kimin olduğu yazar. Hedef yalnızca '
+            'senin görünümünde.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
         baslik: 'Ana ekran ve Performans sadeleşti',
         aciklama: 'Reel getiri ve haftalık özet artık Bugün kartının '
             'satırları; Ben/ortak/Birlikte seçimi toplam kartının başlığında. '
