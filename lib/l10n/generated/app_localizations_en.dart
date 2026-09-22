@@ -1959,6 +1959,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get realisedFromSales => 'Realised from sales: ';
 
   @override
+  String get includedDividend => 'Of which dividends: ';
+
+  @override
   String deletedNRecords(int n) {
     return 'Deleted · $n records';
   }

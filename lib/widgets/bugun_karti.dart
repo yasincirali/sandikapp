@@ -13,6 +13,7 @@
 // yalnızca sayıda, ikon yok — dört eşit ikonlu satır bir menü gibi
 // okunuyordu, hiyerarşi yoktu (kullanıcı ekran görüntüsü).
 import 'dart:async';
+import '../services/price_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -286,7 +287,13 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         [for (final lots in sahipler) aktifLotlar(lots)]);
     final veri = BugunService.hesapla(
       karZararlar: [for (final p in pozisyonlar) p.gainLoss],
-      toplamDeger: ownerScopedTotalValue(sahipler, toTRY: widget.state.toTRY),
+      // `sonFiyat` ŞART — aynı kartın içindeki `ozet` (DailySummary.from)
+      // bu düşüşü yapıyor, bu toplam yapmıyordu. Ortak lot'unun fiyatı
+      // bayatsa toplam onu saymıyor, kâr/zarar sayıyordu: aynı kartta iki
+      // sayı ayrışıyordu (kullanıcı bildirimi 2026-09-22).
+      toplamDeger: ownerScopedTotalValue(sahipler,
+          toTRY: widget.state.toTRY,
+          sonFiyat: PriceService.instance.sonBilinenFiyat),
       ozet: ozet,
       hedefTRY: ref.watch(portfolioGoalProvider),
       now: now,

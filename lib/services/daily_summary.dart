@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -573,6 +574,16 @@ class IntradaySeriesCache {
   DateTime? _fetchedAt;
   DateTime? _seansGunu;
 
+  /// Süren fetch — aynı anda iki yüzey isterse İKİNCİSİ aynı future'ı
+  /// bekler, ikinci bir ağ turu atılmaz.
+  ///
+  /// Üç yüzey bu önbelleği paylaşıyor (Bugün kartı, ana ekran widget'ı,
+  /// Live Activity) ve açılışta hepsi birden isteyebiliyor. Tekilleştirme
+  /// olmadan iki istek yarışıyor ve GEÇ dönen erken döneni eziyordu —
+  /// rakamın "saçmalayıp düzelmesi"nin ikinci kaynağı buydu
+  /// (kullanıcı bildirimi 2026-09-22).
+  Future<Map<int, double>>? _surenFetch;
+
   /// Serinin ait olduğu defterin sahibi (`PortfolioState.ownerId`).
   ///
   /// Önbellek süreç ömrüne bağlı, kullanıcıya değil (2026-09-21). Çıkışta
@@ -625,14 +636,28 @@ class IntradaySeriesCache {
   }) async {
     final ts = now ?? DateTime.now();
 
-    // Ekranda duran yüzey daha taze isteyebilir — bayat önbelleği düşür.
-    if (azamiYas != null &&
+    // Ekranda duran yüzey daha taze isteyebilir.
+    //
+    // **Veri SİLİNMEZ, yalnızca "tazele" denir (2026-09-22, ikinci tur).**
+    // İlk sürümde burada `_series = null` yapılıyordu ve bu, kullanıcının
+    // gördüğü "datalar biraz saçmalayıp düzeliyor" arızasını DOĞURDU:
+    //
+    //   * Önbellek boşaltılıyor, fetch başlıyor.
+    //   * O arada aynı önbelleği çağıran başka bir yüzey (ana ekran
+    //     widget'ı, Live Activity) BOŞ seri alıyor.
+    //   * Fetch başarısız olursa `_series` null kalıyor ve kart gün başı
+    //     olmadan hesap yapıyor.
+    //
+    // Belirti "Ben" kapsamında görülüyordu çünkü `azamiYas`'ı yalnızca o
+    // yol kullanıyor; ortak/Birlikte önbelleğe hiç uğramaz.
+    //
+    // Doğrusu: eski seri fetch BİTENE KADAR elde kalsın. Aşağıdaki
+    // `minInterval` kısa devresi atlanır, yani yeni veri çekilir; ama
+    // çekilene kadar gösterilecek bir şey vardır ve hata hâlinde de
+    // kaybolmaz.
+    final tazeleZorla = azamiYas != null &&
         _fetchedAt != null &&
-        ts.difference(_fetchedAt!) > azamiYas) {
-      _series = null;
-      _seansGunu = null;
-      _fetchedAt = null;
-    }
+        ts.difference(_fetchedAt!) > azamiYas;
 
     // Gün DEĞİŞTİYSE önbellek koşulsuz düşer.
     //
@@ -656,10 +681,16 @@ class IntradaySeriesCache {
       _series = null;
       _seansGunu = null;
       _fetchedAt = null;
-    } else if (ts.difference(_fetchedAt!) < minInterval) {
+    } else if (!tazeleZorla && ts.difference(_fetchedAt!) < minInterval) {
       return _series ?? const {};
     }
 
+    // Süren bir fetch varsa ona katıl — ikinci ağ turu atma.
+    final suren = _surenFetch;
+    if (suren != null) return suren;
+
+    final tamamlayici = Completer<Map<int, double>>();
+    _surenFetch = tamamlayici.future;
     try {
       // Breakdown çağrılır, `getPortfolioHistoryHourly` DEĞİL: ikincisi
       // yalnızca `.total` döndürür ve `seansGunu`'nu düşürür. O alan
@@ -681,9 +712,13 @@ class IntradaySeriesCache {
       _ownerId = state.ownerId;
     } catch (e) {
       if (kDebugMode) debugPrint('Gün içi seri çekilemedi: $e');
+    } finally {
+      _surenFetch = null;
     }
 
-    return _series ?? const {};
+    final sonuc = _series ?? const <int, double>{};
+    tamamlayici.complete(sonuc);
+    return sonuc;
   }
 
   /// Oturum kapanışında çağrılır — bir sonraki kullanıcı öncekinin

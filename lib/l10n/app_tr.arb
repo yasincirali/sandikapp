@@ -1113,6 +1113,10 @@
     }
   },
   "realisedFromSales": "Satışlardan gerçekleşen: ",
+  "includedDividend": "Bunun temettüsü: ",
+  "@includedDividend": {
+    "description": "Ust kartin kar/zarar satirinin altinda: toplam getiriye dahil edilen nakit temettu."
+  },
   "deletedNRecords": "Silindi · {n} kayıt",
   "@deletedNRecords": {
     "placeholders": {

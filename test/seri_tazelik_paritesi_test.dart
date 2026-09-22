@@ -42,13 +42,19 @@ void main() {
         .replaceAll(RegExp(r'\s+'), ' ');
     expect(src.contains('Duration? azamiYas,'), isTrue,
         reason: 'ekrandaki yüzey daha taze seri isteyebilmeli');
-    // Bayat önbellek gerçekten düşmeli — parametreyi alıp yok saymak
+    // Bayat önbellek gerçekten TAZELENMELİ — parametreyi alıp yok saymak
     // sessizce eski davranışa dönmek olurdu.
+    //
+    // Ama veri SİLİNMEZ: ilk sürüm `_series = null` yapıyordu ve bu,
+    // fetch sürerken diğer yüzeylere boş seri veriyordu
+    // (bkz. `intraday_cache_dayaniklilik_test`).
+    expect(src.contains('final tazeleZorla = azamiYas != null'), isTrue,
+        reason: 'azamiYas aşıldığında tazeleme istenmeli');
     expect(
         src.contains(
-            'if (azamiYas != null && _fetchedAt != null && ts.difference(_fetchedAt!) > azamiYas)'),
+            '} else if (!tazeleZorla && ts.difference(_fetchedAt!) < minInterval) {'),
         isTrue,
-        reason: 'azamiYas aşıldığında önbellek düşürülmeli');
+        reason: 'bayrak kısa devreyi atlatmalı, yoksa tazelik hiç gelmez');
   });
 
   test('Bugün kartı Performans ile AYNI tazelik penceresini kullanır', () {

@@ -998,8 +998,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildDistributionList(PortfolioState state) {
+    // Dağılım, TOPLAMLA aynı kümeden beslenmeli.
+    //
+    // **Denetim bulgusu (2026-09-22):** burası ham `state.assets` üzerinden
+    // topluyordu, payda (`state.totalValue`) ise net pozisyonlardan
+    // geliyordu. Satış lot'u hem kendi türüne ekleniyor hem de paydadan
+    // düşük olduğu için oran 1.0'ı AŞIYORDU — ölçüldü: kısmi satışta 2,33;
+    // iki sahipli defterde 1,5. Yani yüzdeler %100'ü aşıyor ve çubuklar
+    // taşıyordu.
+    //
+    // `aggregatePositionsByOwner` + `aktifLotlar`: satışı düşer, sahip
+    // sınırını korur — `totalValue` ile AYNI kural
+    // (bkz. `ownerScopedTotalValue`).
     final totals = <AssetType, double>{};
-    for (final a in state.assets) {
+    for (final p in aggregatePositionsByOwner(
+        [for (final lots in lotlarSahibeGore(state.assets)) aktifLotlar(lots)])) {
+      final a = p.asDisplayAsset();
       totals[a.type] =
           (totals[a.type] ?? 0) + state.toTRY(a.totalValue, a.currency);
     }

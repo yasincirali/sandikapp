@@ -36,7 +36,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // asDisplayAsset.totalValue'yu topla.
     // Sahipler ayrı aggregate edilir — havuzlanırsa aynı hisseye sahip iki
     // ortak tek pozisyona düşer ve toplam, tekil sekmelerin toplamını tutmaz.
-    final currentTotal = ownerScopedTotalValue(ownerLots, toTRY: pState.toTRY);
+    // `sonFiyat` ŞART — `DailySummary` ile AYNI yol (2026-09-22). Ayrışırsa
+    // grafiğin ucu ile özetin toplamı farklı kümeleri ölçer.
+    final currentTotal = ownerScopedTotalValue(ownerLots,
+        toTRY: pState.toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
 
     // TradingView "auto range" davranışı: kullanıcı seçilen periyot içinde
     // hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün önce başladı), chart

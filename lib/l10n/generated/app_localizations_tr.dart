@@ -1958,6 +1958,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get realisedFromSales => 'Satışlardan gerçekleşen: ';
 
   @override
+  String get includedDividend => 'Bunun temettüsü: ';
+
+  @override
   String deletedNRecords(int n) {
     return 'Silindi · $n kayıt';
   }

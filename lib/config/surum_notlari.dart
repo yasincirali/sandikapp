@@ -104,6 +104,20 @@ const List<SurumNotu> surumNotlari = [
     baslik: 'Fiyat alarmları ve bildirim merkezi',
     yenilikler: [
       Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Kâr/zarar hesabı düzeltildi',
+        aciklama: 'Sattığın lotlar artık maliyete sayılmıyor: kısmi satış '
+            'yaptığın varlıklarda toplam kâr ve yüzde doğru çıkıyor. '
+            'Ortak görünümünde de herkesin hesabı kendi defterinden.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Temettü artık kartta yazıyor',
+        aciklama: 'Üstteki kâr/zarar temettüyü de içeriyordu ama bunu '
+            'söylemiyordu; varlık satırlarını toplayınca tutmuyordu. '
+            'Artık "bunun temettüsü" ayrı satırda.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Ortak görünümünde Özet düzeldi',
         aciklama: 'Performans › Özet\'te ortağına ya da Birlikte\'ye '

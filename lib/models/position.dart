@@ -211,6 +211,49 @@ double ownerScopedGainLoss(
   return total;
 }
 
+/// Sahiplik sınırını koruyan MALİYET tabanı (TRY) — yüzdenin paydası.
+///
+/// [ownerScopedGainLoss] ile AYNI pozisyon kümesini ve AYNI fiyat filtresini
+/// kullanır. İkisi ayrı kurallardan beslenirse yüzde, payı olmayan bir
+/// paydaya bölünür.
+///
+/// ## Neden gerekli (denetim, 2026-09-22)
+/// `PortfolioState.totalCost` ham `activeAssets` üzerinden topluyordu, yani
+/// SATIŞ lot'larının maliyetini de sayıyordu. Ölçüldü: 10 al @100 + 4 sat
+/// @130 defterinde taban ₺1.400 çıkıyordu — oysa elde 6 lot var, gerçek
+/// taban ₺600. Yalnızca satış lot'u olan defterde taban ₺400 ve kâr +₺80
+/// görünüyordu: elde hiçbir şey yokken %20 kâr.
+double ownerScopedCostBasis(
+  Iterable<List<Asset>> ownerLots, {
+  ToTRY toTRY = identityToTRY,
+}) {
+  double total = 0;
+  for (final position in aggregatePositionsByOwner(ownerLots)) {
+    final a = position.asDisplayAsset();
+    if (a.purchasePrice <= 0 || a.currentPrice <= 0) continue;
+    total += a.totalCostTRY;
+  }
+  return total;
+}
+
+/// Sahiplik sınırını koruyan SERMAYE kazancı (TRY) — temettü HARİÇ.
+///
+/// [ownerScopedGainLoss]'un temettüsüz hâli. Üst kart toplam getiriyi
+/// gösterir (temettü dahil), köprü/ayrıntı satırları ise fiyat hareketini
+/// ayırabilsin diye ikisi ayrı taşınır.
+double ownerScopedCapitalGainLoss(
+  Iterable<List<Asset>> ownerLots, {
+  ToTRY toTRY = identityToTRY,
+}) {
+  double total = 0;
+  for (final position in aggregatePositionsByOwner(ownerLots)) {
+    final a = position.asDisplayAsset();
+    if (a.purchasePrice <= 0 || a.currentPrice <= 0) continue;
+    total += toTRY(a.totalValue, a.currency) - a.totalCostTRY;
+  }
+  return total;
+}
+
 /// Ham lot listesinden toplam nakit temettü (TRY).
 ///
 /// [aggregatePositions] üzerinden DEĞİL, doğrudan lot'lardan hesaplar:

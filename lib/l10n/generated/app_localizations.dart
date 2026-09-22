@@ -3542,6 +3542,12 @@ abstract class AppLocalizations {
   /// **'Satışlardan gerçekleşen: '**
   String get realisedFromSales;
 
+  /// Ust kartin kar/zarar satirinin altinda: toplam getiriye dahil edilen nakit temettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bunun temettüsü: '**
+  String get includedDividend;
+
   /// No description provided for @deletedNRecords.
   ///
   /// In tr, this message translates to:

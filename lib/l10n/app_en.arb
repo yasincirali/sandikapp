@@ -1113,6 +1113,10 @@
     }
   },
   "realisedFromSales": "Realised from sales: ",
+  "includedDividend": "Of which dividends: ",
+  "@includedDividend": {
+    "description": "Ust kartin kar/zarar satirinin altinda: toplam getiriye dahil edilen nakit temettu."
+  },
   "deletedNRecords": "Deleted · {n} records",
   "@deletedNRecords": {
     "placeholders": {

@@ -52,6 +52,9 @@ class PortfolioSummaryWidget extends StatelessWidget {
               '${isPos ? context.l10n.gainWord : context.l10n.lossWord} '
                   '${tryFmt.format(state.gainLoss.abs())}, '
                   '${fmtPct(state.gainLossPercentage.abs(), digits: 2)}',
+            if (state.totalDividend.abs() >= 0.005)
+              '${context.l10n.includedDividend}'
+                  '${tryFmt.format(state.totalDividend)}',
             if (state.hasRealized)
               '${context.l10n.realisedFromSalesSemantics}'
                   '${state.realizedGainLoss >= 0 ? context.l10n.gainWord : context.l10n.lossWord} '
@@ -184,6 +187,29 @@ class PortfolioSummaryWidget extends StatelessWidget {
                   // Üstteki rakam "bugün satsan" (gerçekleşmemiş); bu satır
                   // "zaten sattın". İkisini karıştırmak en sık sorulan
                   // "neden toplam kârım tutmuyor" sorusunun kaynağıydı.
+                  // Temettü AÇIKÇA yazılır — üstteki kâr/zarar onu İÇERİR.
+                  //
+                  // Denetim bulgusu (2026-09-22): `state.gainLoss` temettüyü
+                  // dahil ediyor, `Position.gainLoss` etmiyor. Hesap doğru
+                  // (biri "toplam getirim", diğeri "bu pozisyonun fiyat
+                  // hareketi") ama ekran bunu SÖYLEMİYORDU: kullanıcı
+                  // pozisyon satırlarını toplayınca üst rakamı tutturamıyordu.
+                  //
+                  // "Satışlardan gerçekleşen" satırı zaten aynı sorunu
+                  // (`neden toplam kârım tutmuyor`) çözmek için eklenmişti;
+                  // temettü o listede eksikti.
+                  if (state.totalDividend.abs() >= 0.005 && !hideBalance)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '${context.l10n.includedDividend}'
+                        '+${tryFmt.format(state.totalDividend)}',
+                        style: context.t.bodySmall?.copyWith(
+                          color: context.c.gain,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   if (state.hasRealized && !hideBalance)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),

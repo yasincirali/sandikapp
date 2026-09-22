@@ -132,25 +132,38 @@ class PortfolioState {
   ///
   /// `aggregatePositions` ayrıca temettü (`quantity: 0`) ve mezar taşı
   /// satırlarını da eler — tek kaynak, tek kural.
-  double get totalValue {
-    double t = 0;
-    for (final p in aggregatePositions(assets)) {
-      final a = p.asDisplayAsset();
-      t += toTRY(a.totalValue, a.currency);
-    }
-    return t;
-  }
+  ///
+  /// **Sahip sınırı (denetim 2026-09-22):** `aggregatePositions` düz liste
+  /// üzerinde çalışıyordu ve `positionKey` sahip taşımaz — Birlikte
+  /// defterinde iki kişinin aynı hissesi tek pozisyona düşüyor, birinin
+  /// satışı diğerinin lot'unu düşürüyordu. `totalCost`/`capitalGainLoss`
+  /// ile AYNI kaynağa bağlandı; üç sayı tek kümeden beslenmezse
+  /// "Σ parça == bütün" değişmezi kırılır.
+  double get totalValue =>
+      ownerScopedTotalValue(lotlarSahibeGore(assets), toTRY: toTRY);
 
-  /// Hem alım fiyatı hem güncel fiyatı bilinen varlıkların TRY maliyeti.
-  /// currentPrice=0 olan varlıklar henüz fiyat çekilememiş demektir — dahil etme.
-  double get totalCost => activeAssets
-      .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
-      .fold(0, (s, a) => s + a.totalCostTRY);
-
-  /// Aynı filtre: güncel değer hesabı da sadece fiyatı bilinen varlıkları kapsar.
-  double get _trackedValue => activeAssets
-      .where((a) => a.purchasePrice > 0 && a.currentPrice > 0)
-      .fold(0, (s, a) => s + toTRY(a.totalValue, a.currency));
+  /// Maliyet tabanı (TRY) — AÇIK pozisyonların maliyeti, temettü hariç.
+  ///
+  /// ## İki hata birden düzeltildi (denetim, 2026-09-22)
+  ///
+  /// **1. Satış lot'ları maliyete sayılıyordu.** Eski hâli ham
+  /// `activeAssets` üzerinden topluyordu; satış lot'unun `currentPrice`'ı
+  /// dolu olduğu için filtreyi geçiyor ve maliyete giriyordu. Ölçüldü:
+  /// 10 al @100 + 4 sat @130 defterinde taban ₺1.400 çıkıyordu (gerçek:
+  /// ₺600, çünkü elde 6 lot var). Yalnızca satış lot'u olan defterde ise
+  /// taban ₺400, kâr +₺80, yüzde %20 görünüyordu — elde HİÇBİR ŞEY yokken.
+  ///
+  /// **2. Sahip sınırı yoktu.** `positionKey` sahip taşımaz; Birlikte
+  /// görünümünde iki kişinin aynı hissesi tek pozisyona düşüyor ve birinin
+  /// satışı diğerinin lot'unu düşürüyordu (bkz. `aggregatePositionsByOwner`
+  /// — aynı hata sınıfı toplam değerde daha önce kapatılmıştı, kâr/zararda
+  /// açık kalmıştı).
+  ///
+  /// `totalValue` zaten `aggregatePositions` kullanıyordu; bu alan da aynı
+  /// kaynağa bağlandı. Üç sayı (değer, maliyet, kâr) artık TEK kümeden
+  /// besleniyor — Σ parça == bütün yapısal olarak korunuyor.
+  double get totalCost =>
+      ownerScopedCostBasis(lotlarSahibeGore(assets), toTRY: toTRY);
 
   /// Tahsil edilen nakit temettü toplamı (TRY).
   ///
@@ -159,7 +172,11 @@ class PortfolioState {
   double get totalDividend => totalDividendTRY(assets);
 
   /// Sermaye kazancı — temettü HARİÇ (yalnızca fiyat hareketi).
-  double get capitalGainLoss => _trackedValue - totalCost;
+  ///
+  /// [totalCost] ile AYNI pozisyon kümesinden gelir; ayrışırlarsa yüzde,
+  /// payı olmayan bir paydaya bölünür.
+  double get capitalGainLoss =>
+      ownerScopedCapitalGainLoss(lotlarSahibeGore(assets), toTRY: toTRY);
 
   /// Toplam getiri — sermaye kazancı + tahsil edilen temettü.
   ///
