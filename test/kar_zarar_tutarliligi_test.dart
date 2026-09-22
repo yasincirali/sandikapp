@@ -3,6 +3,7 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/services/leaderboard_service.dart';
 
 /// Kâr/zarar denetimi (2026-09-22) — kullanıcı talebi: "varlık para
 /// tutarlılık ister".
@@ -230,6 +231,60 @@ void main() {
       expect(st.capitalGainLoss, 200.0, reason: 'yalnızca fiyat hareketi');
       expect(st.totalDividend, 50.0);
       expect(st.gainLoss, 250.0, reason: 'toplam getiri = kazanç + temettü');
+    });
+  });
+
+  group('YARIŞ (leaderboard) — aynı kurallar', () {
+    test('totalValueTRY kısmi satışı düşer', () {
+      final defter = [
+        _lot(id: 'b1', qty: 10, buy: 100, cur: 120),
+        _lot(id: 's1', qty: 4, buy: 100, cur: 120, kind: AssetKind.sell,
+            sellPrice: 130),
+      ];
+      expect(
+          LeaderboardService.instance.totalValueTRY(defter, (a, c) => a),
+          720.0,
+          reason: 'satılan 4 lot yarış tabanına girmemeli');
+    });
+
+    test('totalValueTRY tam satışta sıfır', () {
+      final defter = [
+        _lot(id: 'b1', qty: 10, buy: 100, cur: 120),
+        _lot(id: 's1', qty: 10, buy: 100, cur: 120, kind: AssetKind.sell,
+            sellPrice: 130),
+      ];
+      expect(
+          LeaderboardService.instance.totalValueTRY(defter, (a, c) => a), 0.0);
+    });
+
+    test('REGRESYON: karışık defterde sahip sınırı korunur', () {
+      // Ben 10 lot; ortak 4 al + 6 sat (pozisyonu KAPALI).
+      // Havuzlanırsa ortağın fazla satışı benim lotumu düşürürdü.
+      //
+      // Yarış EKRANLARI bu hatadan etkilenmiyordu (her kişi kendi
+      // listesiyle çağrılır), ama `ozet_yan_veri` KARIŞIK defter geçiriyor
+      // ve sunucuya giden percentile/XIRR tabanı oradan besleniyor.
+      final defter = [
+        _lot(id: 'b1', userId: 'ben', qty: 10, buy: 100, cur: 120),
+        _lot(id: 'o1', userId: 'ortak', qty: 4, buy: 100, cur: 120),
+        _lot(id: 'o2', userId: 'ortak', qty: 6, buy: 100, cur: 120,
+            kind: AssetKind.sell, sellPrice: 130),
+      ];
+      expect(
+          LeaderboardService.instance.totalValueTRY(defter, (a, c) => a),
+          1200.0,
+          reason: 'eskiden ₺960 idi — ortağın satışı benim lotumu düşürdü');
+      // Ana ekranla AYNI sayı.
+      expect(LeaderboardService.instance.totalValueTRY(defter, (a, c) => a),
+          closeTo(PortfolioState(assets: defter).totalValue, 0.01),
+          reason: 'yarış tabanı ile ana ekran toplamı ayrışmamalı');
+    });
+
+    test('tek sahipli listede davranış DEĞİŞMEDİ', () {
+      final defter = [_lot(id: 'b1', qty: 10, buy: 100, cur: 120)];
+      expect(
+          LeaderboardService.instance.totalValueTRY(defter, (a, c) => a),
+          1200.0);
     });
   });
 }

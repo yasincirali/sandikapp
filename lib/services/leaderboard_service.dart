@@ -219,12 +219,25 @@ class LeaderboardService {
   }
 
   /// Bir varlık listesinin canlı toplam TRY değeri (net pozisyondan hesaplı).
-  /// portfolio_provider'daki aggregatePositions ile aynı mantık.
+  ///
+  /// **Sahip sınırı korunur (denetim, 2026-09-22).** Eskiden düz
+  /// `aggregatePositions` kullanıyordu; `positionKey` sahip TAŞIMAZ, yani
+  /// karışık bir defterde (Performans › Özet "Birlikte" kapsamı) iki
+  /// kişinin aynı hissesi tek pozisyona düşüyor ve birinin satışı
+  /// diğerinin lot'unu düşürüyordu.
+  ///
+  /// Ölçüldü: ben 10 lot, ortak 4 al + 6 sat → havuz ₺960, doğrusu ₺1.200
+  /// (ortağın pozisyonu kapalı, benimki tam). İkinci senaryoda fark ₺360.
+  ///
+  /// Yarış EKRANLARI bu hatadan etkilenmiyordu: orada her kişi kendi
+  /// listesiyle ayrı çağrılıyor (`partnerAssets[p.id]`, `myAssets`).
+  /// Ama `ozet_yan_veri` KARIŞIK defter geçiriyor — sunucuya gönderilen
+  /// percentile ve XIRR'in tabanı oradan besleniyor.
+  ///
+  /// Tek sahipli listede davranış AYNI: `lotlarSahibeGore` tek grup döner.
   double totalValueTRY(
       List<Asset> assets, double Function(double, String) toTRY) {
-    return aggregatePositions(assets)
-        .map((p) => p.asDisplayAsset())
-        .fold<double>(0, (s, a) => s + toTRY(a.totalValue, a.currency));
+    return ownerScopedTotalValue(lotlarSahibeGore(assets), toTRY: toTRY);
   }
 
   // ─── Global percentile ─────────────────────────────────────────────────
