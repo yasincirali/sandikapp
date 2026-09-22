@@ -1,6 +1,7 @@
 import '../config/magaza.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart';
 
 /// Portföyün karakteri — paylaşılabilirliğin çekirdeği.
 ///
@@ -211,7 +212,20 @@ class RecapService {
     DateTime? inflationStart,
     DateTime? inflationEnd,
   }) {
-    final aktif = assets.where((a) => a.isBuy && a.isActive).toList();
+    // `aktifLotlar` + sahip sınırlı aggregate: ham `isBuy` filtresi SATIŞ
+    // lot'larını düşmez, yani elde OLMAYAN varlık yıllık özete girerdi.
+    // Ölçüldü (denetim 2026-09-22): 10 alıp 8 satan defterde gerçek net
+    // ₺240 iken tür dağılımı ₺1.200 diyordu — BEŞ KAT. Aynı hata sınıfı
+    // `totalValue`/`totalCost`/dağılım listesinde kapatılmıştı; özet
+    // yüzeyleri açıkta kalmıştı.
+    //
+    // Sahip sınırı da korunur: `positionKey` sahip taşımaz, karışık
+    // defterde bir kişinin satışı diğerinin lot'unu düşürürdü.
+    final aktif = [
+      for (final p in aggregatePositionsByOwner(
+          [for (final l in lotlarSahibeGore(assets)) aktifLotlar(l)]))
+        p.asDisplayAsset()
+    ];
 
     // ── Tür dağılımı ────────────────────────────────────────────────────
     final valueByType = <AssetType, double>{};

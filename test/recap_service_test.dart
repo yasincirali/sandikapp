@@ -8,6 +8,20 @@ import 'package:portfoy_takip/services/recap_service.dart';
 /// Özetin tek amacı PAYLAŞILABİLİRLİK: insanlar veriyi değil kimliği
 /// paylaşır. Bu yüzden testlerin çapası iki şey — karakter etiketinin
 /// ayırt edici kalması ve paylaşım metninde TUTAR bulunmaması.
+/// **`ticker` artık lot başına ayrışır (denetim, 2026-09-22).**
+///
+/// Eskiden hepsi `'TST'` idi. İki AYRI varlığı anlatan fixture'lar
+/// gerçekte tek bir pozisyondu — `positionKey` ticker'a bakar ve aynı
+/// ticker'ı taşıyan lot'lar aynı pozisyona düşer. Gerçek hayatta iki
+/// farklı hisse aynı sembolü taşıyamaz, yani fixture imkansız bir
+/// durumu modelliyordu.
+///
+/// `RecapService` ham `isBuy` listesi yerine AÇIK POZİSYONLARdan
+/// beslenmeye geçince (satılmış varlık yıllık özete giriyordu, ölçüldü:
+/// ₺240 yerine ₺1.200) bu gizli birleşme görünür oldu: "en iyi" ve
+/// "en kötü" varlık tek pozisyonda ortalanıyordu. Testin ölçmek
+/// İSTEDİĞİ şey (iki ayrı varlığı kıyaslamak) ancak ayrı ticker'la
+/// modellenebilir.
 Asset _lot({
   required String id,
   String name = 'Varlık',
@@ -18,12 +32,13 @@ Asset _lot({
   DateTime? addedDate,
   AssetKind kind = AssetKind.buy,
   DateTime? deletedAt,
+  String? ticker,
 }) =>
     Asset(
       id: id,
       userId: 'u1',
       name: name,
-      ticker: 'TST',
+      ticker: ticker ?? 'TST_${id.toUpperCase()}',
       notes: '',
       type: type,
       quantity: quantity,

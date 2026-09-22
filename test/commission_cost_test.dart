@@ -96,7 +96,22 @@ void main() {
       expect(display.totalCost, closeTo(p.totalCost, 0.01));
     });
 
-    test('satış komisyonu da maliyete yansır', () {
+    test('satış komisyonu AÇIK pozisyonun maliyetine YANSIMAZ', () {
+      // **Değişti (denetim, 2026-09-22).** Eskiden bu test satış
+      // komisyonunun da `totalCommission`'a girmesini bekliyordu
+      // ("ikisi de cepten çıktı" — doğru gözlem, YANLIŞ yer).
+      //
+      // Satış komisyonu SATILAN lot'un masrafıdır; elde KALAN lot'un
+      // alım maliyetiyle ilgisi yoktur. Eski davranışın iki ölçülmüş
+      // bozucu etkisi vardı:
+      //   1. 10 al @100 + 4 sat @130 (satış kom. ₺50) defterinde açık
+      //      pozisyonun tabanı ₺650 çıkıyordu (doğrusu ₺600) → yüzde
+      //      %20 yerine %10,77.
+      //   2. Aynı komisyon `realizedGainLoss`'tan DÜŞÜLMÜYORDU — masraf
+      //      yanlış yere yazılıp doğru yerde eksik kalıyordu.
+      //
+      // Komisyon KAYBOLMADI: artık gerçekleşen kâr/zarara yazılır
+      // (`PortfolioState.realizedGainLoss`, bkz. `denetim_2026_09_22_test`).
       final positions = aggregatePositions([
         _lot(qty: 10, buyPrice: 100, currentPrice: 120, commission: 15),
         _lot(
@@ -108,8 +123,10 @@ void main() {
       ]);
       final p = positions.single;
       expect(p.totalQuantity, closeTo(6, 0.0001), reason: '10 alım - 4 satım');
-      expect(p.totalCommission, closeTo(23, 0.01),
-          reason: 'alış 15 + satış 8, ikisi de cepten çıktı');
+      expect(p.totalCommission, closeTo(15, 0.01),
+          reason: 'yalnızca ALIŞ komisyonu — satışınki realize tarafa gider');
+      // 6 × 100 + 15 = 615 (eskiden 623: satış komisyonu da içindeydi)
+      expect(p.totalCost, closeTo(615, 0.01));
     });
 
     test('sahip-bazlı toplamda komisyon korunur', () {

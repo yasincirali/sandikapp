@@ -563,6 +563,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currentValue => 'Current Value';
 
   @override
+  String get dividendReceived => 'Dividends Received';
+
+  @override
   String lotSummary(int buys, int sells) {
     return '$buys buys · $sells removals';
   }

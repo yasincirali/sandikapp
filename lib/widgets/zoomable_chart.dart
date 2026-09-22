@@ -29,13 +29,28 @@ class ChartViewport extends ChangeNotifier {
   }
 
   void updateFullRange(double newMin, double newMax) {
-    if (fullMinX == newMin && fullMaxX == newMax) return;
+    if (!updateFullRangeSessiz(newMin, newMax)) return;
+    notifyListeners();
+  }
+
+  /// [updateFullRange]'in bildirim ATMAYAN hali — değişiklik olduysa `true`.
+  ///
+  /// BUILD İÇİNDEN çağıran yol içindir: `notifyListeners()` dinleyicide
+  /// `setState` tetikliyor ve Flutter build sırasında bunu yasaklıyor
+  /// ("setState() called during build" — emülatör logu 2026-09-23, lot
+  /// silerken). Çağıran aralığı senkron yazar, [bildir]'i build sonrasına
+  /// erteler (bkz. `_PerformansSeriler._ensureViewport`).
+  bool updateFullRangeSessiz(double newMin, double newMax) {
+    if (fullMinX == newMin && fullMaxX == newMax) return false;
     fullMinX = newMin;
     fullMaxX = newMax;
     _minX = newMin;
     _maxX = newMax;
-    notifyListeners();
+    return true;
   }
+
+  /// Ertelenmiş bildirimi at — [updateFullRangeSessiz] ile birlikte kullanılır.
+  void bildir() => notifyListeners();
 
   void reset() {
     set(fullMinX, fullMaxX);

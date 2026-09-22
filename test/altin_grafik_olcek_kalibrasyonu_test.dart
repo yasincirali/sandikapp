@@ -121,26 +121,41 @@ void main() {
         gramSerisi: seri,
       );
 
-      expect(harita['ALTIN_GRAM'], closeTo(6142.0 / 6250.0, 1e-12));
+      // Çapa İLK nokta (6.100) — bkz. aşağıdaki "çapa" testi.
+      expect(harita['ALTIN_GRAM'], closeTo(6142.0 / 6100.0, 1e-12));
       expect(
           harita['ALTIN_CEYREK'],
           closeTo(
               11250.0 /
-                  (6250.0 * PriceService.goldWeightFactor('ALTIN_CEYREK')),
+                  (6100.0 * PriceService.goldWeightFactor('ALTIN_CEYREK')),
               1e-12));
       expect(harita['ALTIN_GRAM'], isNot(closeTo(harita['ALTIN_CEYREK']!, 1e-6)),
           reason: 'İki ürün tek çarpana indirgenmiş — birinin primi '
               'diğerine yayılır.');
     });
 
-    test('çarpan serinin SON noktasından türetilir', () {
+    test('çarpan serinin ÇAPASINDAN (ilk nokta) türetilir', () {
+      // **Değişti (kullanıcı bildirimi, 2026-09-23).** Eskiden çarpan SON
+      // noktadan türetiliyordu ve bu test onu kilitliyordu.
+      //
+      // Son nokta her fetch'te oynar (vadeli sözleşme sürekli kote edilir).
+      // Çarpan TÜM seriyi ölçeklediği için GÜN BAŞI da her tazelemede
+      // yerinden oynuyor, canlı fiyat hiç değişmeden "bugünkü değişim"
+      // salınıyordu: ölçüldü ₺9.436 ↔ ₺9.887, yani ₺451 hayalet hareket
+      // (bkz. `altin_kalibrasyon_kararliligi_test`).
+      //
+      // ## Sağ uçtaki hizalama KAYBOLMADI
+      // Bu testin koruduğu şey ("ŞİMDİ imlecinde basamak olmasın") başka
+      // bir mekanizmayla zaten sağlanıyor: `HistoryService` son noktayı
+      // KOŞULSUZ canlı toplamla eziyor
+      // (`groupedPoints[todayTs] = liveTotal`). Yani uç canlıya, taban
+      // sabit çapaya bağlanır; ikisi bir arada hem basamağı kapatır hem
+      // de tabanı sabit tutar.
       final harita = altinKalibrasyonHaritasi(
         assets: [altin('ALTIN_GRAM', 6142.0)],
         gramSerisi: seri,
       );
-      // 6.100 (ilk) ya da ortalama değil, 6.250 (son) referans alınır:
-      // hizalanması gereken uç serinin sağ ucudur.
-      expect(harita['ALTIN_GRAM'], closeTo(6142.0 / 6250.0, 1e-12));
+      expect(harita['ALTIN_GRAM'], closeTo(6142.0 / 6100.0, 1e-12));
     });
 
     test('seri boşsa / fiyat yoksa harita boş — çağıran 1.0 kullanır', () {
@@ -196,15 +211,31 @@ void main() {
               'ölçtüğü hatayı kaybetmiş.');
     });
 
-    test('kalibrasyonla son nokta CANLI değere oturur', () {
+    test('son nokta CANLI değere oturur — `liveTotal` ezmesiyle', () {
+      // **Değişti (2026-09-23).** Eskiden bu testi kalibrasyon çarpanı
+      // tek başına sağlıyordu (çapa = son nokta). Çapa seans başına
+      // taşınınca çarpan artık ucu tam oturtmuyor — ama oturtması da
+      // GEREKMİYOR: `HistoryService` son noktayı zaten koşulsuz canlı
+      // toplamla eziyor.
+      //
+      // Testin koruduğu değer aynı: kullanıcı "ŞİMDİ" imlecinde basamak
+      // görmemeli. Artık çarpanı değil, ÇİZİLENİ ölçüyor.
       final k = altinKalibrasyonHaritasi(
         assets: [altin('ALTIN_GRAM', canli)],
         gramSerisi: gram,
       )['ALTIN_GRAM']!;
       final seri = birimSeri(k);
-      expect(seri.last, closeTo(canli, 1e-9),
-          reason: 'Seri ucu ile canlı fiyat hâlâ ayrışıyor — "ŞİMDİ" '
-              'imlecinde basamak kalır.');
+      // `HistoryService`'in yaptığı: son nokta = canlı toplam.
+      final cizilen = [...seri.take(seri.length - 1), canli];
+      expect(cizilen.last, closeTo(canli, 1e-9),
+          reason: 'Çizilen serinin ucu canlı fiyatta olmalı');
+      // Basamak da makul kalmalı: çarpan tabanı doğru ölçeğe taşıdığı
+      // için son iki nokta arası sıçrama küçüktür (kalibrasyonsuz %1'i
+      // aşıyordu — bir üstteki test).
+      final sicrama = ((canli - seri.last) / seri.last).abs();
+      expect(sicrama, lessThan(0.01),
+          reason: 'kalibrasyon tabanı doğru ölçeğe taşımazsa uçta '
+              'görünür bir basamak kalırdı');
     });
 
     test('gün içi hareketin YÜZDESİ değişmez', () {

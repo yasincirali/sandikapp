@@ -1118,6 +1118,12 @@ abstract class AppLocalizations {
   /// **'Güncel Tutar'**
   String get currentValue;
 
+  /// No description provided for @dividendReceived.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahsil Edilen Temettü'**
+  String get dividendReceived;
+
   /// No description provided for @lotSummary.
   ///
   /// In tr, this message translates to:

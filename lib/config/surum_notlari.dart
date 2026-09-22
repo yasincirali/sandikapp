@@ -112,6 +112,13 @@ const List<SurumNotu> surumNotlari = [
       ),
       Yenilik(
         ikon: YenilikIkonu.para,
+        baslik: 'Hangi varlıktan ne temettü aldın',
+        aciklama: 'Portföy sayfasında bir varlığa dokunup açtığında '
+            '"Tahsil Edilen Temettü" satırını görüyorsun. Daha önce bu '
+            'bilgi yalnızca portföy genelindeydi.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
         baslik: 'Temettü artık kartta yazıyor',
         aciklama: 'Üstteki kâr/zarar temettüyü de içeriyordu ama bunu '
             'söylemiyordu; varlık satırlarını toplayınca tutmuyordu. '

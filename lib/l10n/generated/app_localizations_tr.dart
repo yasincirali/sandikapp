@@ -564,6 +564,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get currentValue => 'Güncel Tutar';
 
   @override
+  String get dividendReceived => 'Tahsil Edilen Temettü';
+
+  @override
   String lotSummary(int buys, int sells) {
     return '$buys alım · $sells çıkarma';
   }

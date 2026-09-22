@@ -1445,9 +1445,12 @@ class _AssetDetailsPanel extends StatelessWidget {
 
     // Grafiğin rengi satırdaki yüzdeyle aynı kaynaktan gelmeli (temettü dahil),
     // yoksa eğri yeşilken yazı kırmızı olabilir.
-    final gainLossTRY = currentValueTRY -
-        position.totalCostTRY +
-        totalDividendTRY(position.lots);
+    // Tek kaynak: hem kâr/zarar hem de aşağıdaki temettü satırı bunu kullanır.
+    // İki ayrı çağrı yapılsaydı biri değişip diğeri kalınca panel kendi
+    // içinde çelişirdi (Şu ana kadar bu projede beş kez yaşanmış sınıf).
+    final dividendTRY = totalDividendTRY(position.lots);
+    final gainLossTRY =
+        currentValueTRY - position.totalCostTRY + dividendTRY;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -1535,6 +1538,31 @@ class _AssetDetailsPanel extends StatelessWidget {
                   emphasize: true,
                 ),
               ),
+              // Temettü VARSA ikinci kolona girer — yoksa satır tek kolon
+              // kalır (boş bir "₺0" yazmak "temettü almadım" bilgisini
+              // gürültüye çevirirdi).
+              //
+              // ## Neden burada (kullanıcı isteği, 2026-09-23)
+              // Üst kart portföy GENELİ temettüyü "Bunun temettüsü" satırıyla
+              // açıklıyor ama POZİSYON bazında bu bilgi hiçbir yerde yoktu:
+              // "bu hisseden ne temettü aldım" sorusunun cevabı yalnizca
+              // hareket geçmişini elle toplayarak bulunabiliyordu.
+              //
+              // `totalDividendTRY` HAM lot'lardan okur (`position.totalDividend`
+              // DEĞİL): ikincisi alım para biriminde ve `aggregatePositions`
+              // yoluyla gelir. Buradaki diğer tutarlar TRY olduğu için aynı
+              // ölçekte olmalı — yoksa USD bir hissede temettü satırı
+              // diğerleriyle kıyaslanamaz.
+              //
+              // Bu satırın toplamı üst karttaki `state.totalDividend` ile
+              // TİKEL olarak tutar: ikisi de aynı fonksiyondan beslenir.
+              if (dividendTRY.abs() >= 0.005)
+                Expanded(
+                  child: _DetailItem(
+                    label: context.l10n.dividendReceived,
+                    value: tryFmt3.format(dividendTRY),
+                  ),
+                ),
             ],
           ),
           if (position.lots.length > 1) ...[

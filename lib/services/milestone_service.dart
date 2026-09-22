@@ -1,4 +1,5 @@
 import '../models/asset.dart';
+import '../models/position.dart';
 
 /// Geçilen bir kilometre taşı.
 class Milestone {
@@ -93,7 +94,15 @@ class MilestoneService {
     required double totalTRY,
     required DateTime now,
   }) {
-    final aktif = assets.where((a) => a.isBuy && a.isActive).toList();
+    // `aktifLotlar` + aggregate: ham `isBuy` tamamen SATILMIŞ pozisyonu da
+    // "elimde" sayardı — kullanıcı sattığı altından "altın biriktirici",
+    // sattığı hisselerden "çeşitlilik" rozeti kazanıyordu (denetim
+    // 2026-09-22). Rozet gerçek mülkiyeti ödüllendirmeli.
+    final aktif = [
+      for (final p in aggregatePositionsByOwner(
+          [for (final l in lotlarSahibeGore(assets)) aktifLotlar(l)]))
+        p.asDisplayAsset()
+    ];
     if (aktif.isEmpty) return const [];
 
     return [

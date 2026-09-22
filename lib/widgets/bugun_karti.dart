@@ -102,7 +102,47 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     super.didUpdateWidget(oldWidget);
     // Defter mount'ta boşken sonradan dolduysa (ilk varlık eklendi) yükleme
     // hiç istenmemiştir; şimdi iste. Aksi halde `_yuklendi` false kalır.
-    if (!_istendi) _yukle();
+    if (!_istendi) {
+      _yukle();
+      return;
+    }
+    // DEFTER DEĞİŞTİYSE seri yeniden çekilir.
+    //
+    // ## Neden (kullanıcı bildirimi, 2026-09-22)
+    // "10 çeyrek altın ekledim; ana sayfa günlük kartı +311, günlük özet
+    // +378 dedi."
+    //
+    // Seri OTURUMDA BİR KEZ çekiliyordu (`_istendi`) — fiyat satırları
+    // (reel getiri, haftalık) için doğru bir disiplin, ama gün içi seri
+    // için DEĞİL: o seri DEFTERE bağlıdır. Alımdan sonra kart, YENİ
+    // toplamı ESKİ gün başıyla kıyaslıyor ve aradaki farkı "bugünün
+    // hareketi" diye yazıyordu.
+    //
+    // `PortfolioNotifier` mutasyonda `IntradaySeriesCache`'i düşürüyor
+    // ama bu kart önbelleğe BİR DAHA SORMUYORDU; elindeki `_seri`
+    // alanıyla çizmeye devam ediyordu. Performans ekranı 30 sn'lik
+    // tick'iyle kendini toparladığı için iki yüzey ayrışıyordu.
+    //
+    // Yalnızca MİKTARI değiştiren fark tetikler: fiyat yenilemesi
+    // (`refreshPrices`) defteri her 30 sn'de yeniden yayınlıyor ve her
+    // yayında ağ isteği atmak boşuna trafik olurdu.
+    if (_defterImzasi(oldWidget.state) != _defterImzasi(widget.state)) {
+      _istendi = false;
+      _yukle();
+    }
+  }
+
+  /// Defterin MİKTAR imzası — fiyat değişimi bunu değiştirmez.
+  ///
+  /// Gün içi serinin neye göre çekildiğini özetler: hangi lot, ne kadar.
+  /// `currentPrice` BİLEREK dışarı bırakılır — fiyat her tick'te oynar,
+  /// seri ise yalnızca defter değişince bayatlar.
+  static String _defterImzasi(PortfolioState s) {
+    final parcalar = [
+      for (final a in s.assets)
+        if (a.isActive) '${a.id}:${a.quantity}:${a.kind.name}',
+    ]..sort();
+    return parcalar.join('|');
   }
 
   /// Üç yükleme birbirinden bağımsız, PARALEL ve tek seferlik (`_istendi`):

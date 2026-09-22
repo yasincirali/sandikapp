@@ -270,6 +270,7 @@
   "avgCost": "Ort. Maliyet",
   "totalCost": "Toplam Maliyet",
   "currentValue": "Güncel Tutar",
+  "dividendReceived": "Tahsil Edilen Temettü",
   "lotSummary": "{buys} alım · {sells} çıkarma",
   "@lotSummary": {
     "placeholders": {

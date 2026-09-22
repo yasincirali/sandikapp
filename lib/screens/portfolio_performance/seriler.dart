@@ -314,7 +314,34 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       _viewportKey = key;
     } else if (_viewport!.fullMinX != fullMinX ||
         _viewport!.fullMaxX != fullMaxX) {
-      _viewport!.updateFullRange(fullMinX, fullMaxX);
+      // Bildirim BUILD SONRASINA ertelenir.
+      //
+      // ## Neden (emülatör logu, 2026-09-23 — "20 çeyrek sildim")
+      // Bu metot build içinden çağrılıyor
+      // (`grafik_kabi._buildChartContainer`). `updateFullRange` senkron
+      // `notifyListeners()` atıyor, `_ZoomableChartState` da dinleyicisinde
+      // `setState` çağırıyor — yani build sırasında setState:
+      //
+      //   setState() or markNeedsBuild() called during build.
+      //   #3 _ZoomableChartState._onControllerChanged (zoomable_chart.dart:206)
+      //   #5 ChartViewport.updateFullRange (zoomable_chart.dart:37)
+      //   #6 _PerformansSeriler._ensureViewport (seriler.dart:317)
+      //
+      // Lot silmek/eklemek X aralığını değiştirdiği için tam o anda
+      // tetikleniyordu. Flutter bu kareyi atıyor ve Crashlytics'e non-fatal
+      // düşüyor; grafik bir kare ESKİ aralıkla çiziliyordu.
+      //
+      // Aralık yine AYNI karede yazılır (alanlar doğrudan set edilir), yalnızca
+      // DİNLEYİCİ uyarısı bir sonraki kareye kayar — çizim doğru aralıkla
+      // yapılır, dinleyici de geç kalmaz.
+      _viewport!.updateFullRangeSessiz(fullMinX, fullMaxX);
+      final v = _viewport!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Ara karede viewport değişmiş olabilir (kapsam/periyot geçişi);
+        // eski nesneye bildirim atmak yanlış grafiği tazelerdi.
+        if (!mounted || !identical(_viewport, v)) return;
+        v.bildir();
+      });
     }
     return _viewport!;
   }

@@ -15,6 +15,7 @@ import 'preferences_provider.dart';
 import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
 import '../services/crash_reporter.dart';
+import '../services/daily_summary.dart';
 import '../services/portfolio_cache.dart';
 
 const _uuid = Uuid();
@@ -184,8 +185,51 @@ class PortfolioState {
   /// temettü getirinin büyük parçasıdır.
   double get gainLoss => capitalGainLoss + totalDividend;
 
-  double get gainLossPercentage =>
-      totalCost > 0 ? gainLoss / totalCost * 100 : 0;
+  /// Getiri yüzdesi — [gainLoss] (temettü dahil) / yatırılan sermaye.
+  ///
+  /// ## Payda neden yalnızca [totalCost] değil (denetim, 2026-09-22)
+  /// Pay temettüyü İÇERİR ([gainLoss]) ve temettü ham defterden gelir,
+  /// yani KAPANMIŞ pozisyonlarınkini de sayar. Payda ise yalnızca AÇIK
+  /// pozisyonların maliyetiydi. İki taraf aynı kümeyi ölçmediği için
+  /// yüzde, payı olmayan bir paydaya bölünüyordu.
+  ///
+  /// En net belirti: her şeyini satmış ama temettü almış kullanıcıda
+  /// `totalCost == 0` → yüzde **%0** yazıyor, hemen yanındaki tutar ise
+  /// **₺50 kâr** diyordu. İki rakam yan yana duruyor ve birbiriyle
+  /// çelişiyordu.
+  ///
+  /// Çözüm payı daraltmak DEĞİL paydaya kapanmış pozisyonların
+  /// maliyetini eklemek: üst kartta ₺ ile % YAN YANA çizilir
+  /// (`portfolio_summary_widget`), ikisi aynı şeyi ölçmek zorunda.
+  /// Payı `capitalGainLoss` yapmak yüzdeyi tutardı ama tutarı bozardı.
+  ///
+  /// Payda = açık pozisyonların maliyeti + kapanmış pozisyonlara bağlanan
+  /// sermaye. İkincisi ancak temettü/realize varken devreye girer, yani
+  /// olağan portföyde davranış DEĞİŞMEZ.
+  double get gainLossPercentage {
+    final payda = totalCost > 0 ? totalCost : kapanmisSermaye;
+    return payda > 0 ? gainLoss / payda * 100 : 0;
+  }
+
+  /// Tamamen satılmış pozisyonlara bağlanmış olan alım sermayesi (TRY).
+  ///
+  /// [gainLossPercentage] paydasının ikinci parçası: elde bir şey
+  /// kalmamış olsa bile o para bir zaman yatırılmıştı ve temettü/realize
+  /// getirisi ona göre ölçülür. Açık pozisyonların maliyeti burada
+  /// SAYILMAZ — çift sayma olurdu.
+  double get kapanmisSermaye {
+    final acik = <String>{
+      for (final p in aggregatePositionsByOwner(lotlarSahibeGore(activeAssets)))
+        '${p.lots.first.userId}|${p.key}',
+    };
+    double t = 0;
+    for (final a in activeAssets) {
+      if (!a.isBuy) continue;
+      if (acik.contains('${a.userId}|${positionKey(a)}')) continue;
+      t += a.totalCostTRY;
+    }
+    return t;
+  }
 
   /// Satışlardan GERÇEKLEŞEN kâr/zarar (TRY), temettü HARİÇ.
   ///
@@ -195,11 +239,19 @@ class PortfolioState {
   /// demiyordu. Hesap: Σ (satış fiyatı − maliyet) × miktar × alım kuru.
   /// `sell_price` olmayan eski satış satırları atlanır — uydurmak yerine
   /// eksik bırakılır.
+  /// **Komisyon (denetim, 2026-09-22):** satış komisyonu buradan DÜŞER.
+  /// Eskiden `aggregatePositions` onu AÇIK pozisyonun maliyetine ekliyordu
+  /// (yanlış yer: satılan lot'un masrafı elde kalan lot'un alım maliyeti
+  /// değildir) ve burada hiç düşülmüyordu. Tamamen satılmış pozisyonda
+  /// ise komisyon tamamen kayboluyordu — pozisyon aggregate sonucundan
+  /// düştüğü için. Ham defterden okunuyor: kapanmış pozisyonun
+  /// masrafı da cepten çıkmıştır.
   double get realizedGainLoss {
     double t = 0;
     for (final a in activeAssets) {
       if (!a.isSell || a.sellPrice == null) continue;
       t += (a.sellPrice! - a.purchasePrice) * a.quantity * a.purchaseFxRate;
+      t -= a.commission * a.purchaseFxRate;
     }
     return t;
   }
@@ -260,6 +312,30 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         return 1.0;
     }
   }
+
+  /// Defter DEĞİŞTİ: gün içi seri önbelleğini düşür.
+  ///
+  /// ## Neden (denetim, 2026-09-22) — sahte günlük kâr
+  /// Günlük kâr/zarar `(son − gün başı) − nakit akışı` formülüyle
+  /// hesaplanır. `son` CANLI toplamdır (yeni lot dahil), `gün başı` ise
+  /// önbellekteki seriden gelir ve yeni lot'tan HABERSİZDİR. Seri
+  /// tazelenmediği sürece işlem, serinin içine yayılmak yerine yalnızca
+  /// ucuna yapışıyor — yani `inflowOnDay` çıkarılacak bir şey bulamadan
+  /// fark önce "hareket" olarak sayılıyor.
+  ///
+  /// Ölçüldü: sabah 10 lot (₺1.000) olan kullanıcı fiyat HIÇ oynamadan
+  /// ₺120'den 5 lot daha aldığında **+₺200 / +%12,5** sahte kâr
+  /// görüyordu. Satışta ters yönde aynısı: 4 lot satınca **+₺240 / +%24**.
+  ///
+  /// Dört yüzey bu önbelleği paylaşıyor (Bugün kartı, Performans › Özet
+  /// günlük, ana ekran widget'ı, Live Activity) ve hiçbir mutasyon yolu
+  /// onu düşürmüyordu — önbellek yalnızca çıkışta temizleniyordu.
+  ///
+  /// `clear()` veriyi SİLER ve bir sonraki çağrı yeniden çeker; bu doğru
+  /// davranışın kendisidir çünkü eldeki seri artık YANLIŞ bir deftere
+  /// ait. (Tazelik bayrağı yetmezdi: eski seri fetch bitene kadar
+  /// gösterilmeye devam eder ve sahte kâr o pencerede sürerdi.)
+  void _gunIciSeriyiDusur() => IntradaySeriesCache.instance.clear();
 
   Future<void> addAsset({
     required String name,
@@ -352,6 +428,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final current = state.valueOrNull;
     if (current != null) {
       state = AsyncData(current.copyWith(assets: [asset, ...current.assets]));
+      _gunIciSeriyiDusur();
     } else {
       final assets = await SupabaseService.instance.fetchByUser(user.id);
       state = AsyncData(PortfolioState(
@@ -395,6 +472,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final current = state.valueOrNull;
     if (current != null) {
       state = AsyncData(current.copyWith(assets: [transaction, ...current.assets]));
+      _gunIciSeriyiDusur();
     }
   }
 
@@ -447,6 +525,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     if (current != null) {
       state = AsyncData(
           current.copyWith(assets: [transaction, ...current.assets]));
+      _gunIciSeriyiDusur();
     }
   }
 
@@ -459,6 +538,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         assets:
             current.assets.map((a) => a.id == asset.id ? asset : a).toList(),
       ));
+      _gunIciSeriyiDusur();
     }
   }
 
@@ -505,6 +585,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           ...current.assets.where((a) => a.id != id),
         ],
       ));
+      _gunIciSeriyiDusur();
     }
   }
 
@@ -602,6 +683,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
             if (ids.contains(a.id)) a.copyWithDeletedAt(stampedAt) else a,
         ],
       ));
+      _gunIciSeriyiDusur();
     }
     return SilinenPozisyon(lotIds: ids.toList(), logId: log?.id);
   }
@@ -632,6 +714,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
             a,
       ],
     ));
+    _gunIciSeriyiDusur();
   }
 
   Future<void> updateManualPrice(Asset asset, double price) async {

@@ -320,15 +320,64 @@ Map<String, double> altinKalibrasyonHaritasi({
   final sonTs = gramSerisi.keys.reduce((a, b) => a > b ? a : b);
   final sonGram = gramSerisi[sonTs] ?? 0;
   if (sonGram <= 0) return out;
+
+  // Çarpanın çapası SEANS BOYUNCA SABİTLENİR (kullanıcı bildirimi,
+  // 2026-09-23).
+  //
+  // ## Belirti
+  // "Ben seçiliyken Bugün kartında −76 ile 366 arasında oynuyor."
+  //
+  // ## Neden
+  // Çarpan serinin SON noktasından türetiliyordu ve o nokta her fetch'te
+  // oynar (vadeli sözleşme sürekli kote edilir). Çarpan TÜM seriyi
+  // ölçeklediği için GÜN BAŞI da her tazelemede yerinden oynuyordu:
+  // canlı fiyat hiç değişmeden "bugünkü değişim" salınıyordu.
+  //
+  // Ölçüldü: canlı çeyrek ₺8.000'de sabitken, gram serisinin son
+  // noktası 4990→5005 arasında oynayınca günlük değişim ₺9.436→₺9.887
+  // arasında geziniyordu — ₺451'lik hayalet hareket.
+  //
+  // ## Çözüm
+  // Çapa olarak serinin son noktası yerine GÜN BAŞI (ilk nokta) alınır.
+  // Gün başı seans içinde DEĞİŞMEZ: tazeleme yeni uç nokta ekler ama
+  // ilk noktayı oynatmaz. Böylece taban sabit kalır ve günlük değişim
+  // yalnızca GERÇEK fiyat hareketini yansıtır.
+  //
+  // Sağ uçtaki hizalama bozulmaz: çarpan hâlâ oransaldır ve serinin
+  // ŞEKLİNİ korur; son nokta zaten ayrıca canlı toplamla eziliyor
+  // (`currentTotalOverride` / `liveTotal`). Yani uç canlıya, taban
+  // sabit çapaya bağlanır — ikisi bir arada "bugün ne oldu"yu doğru
+  // ölçer.
+  final ilkTs = gramSerisi.keys.reduce((a, b) => a < b ? a : b);
+  final ilkGram = gramSerisi[ilkTs] ?? 0;
+  // Tek noktalı seride ilk == son; çapa yine de tanımlıdır.
+  final capaGram = ilkGram > 0 ? ilkGram : sonGram;
+
   for (final a in assets) {
     if (a.type != AssetType.altin) continue;
     if (a.currentPrice <= 0) continue;
     if (out.containsKey(a.ticker)) continue;
-    final seriBirim = sonGram * PriceService.goldWeightFactor(a.ticker);
+    final agirlik = PriceService.goldWeightFactor(a.ticker);
+    // Çarpan ÇAPADAN türetilir (serinin son noktasından DEĞİL).
+    //
+    // Çapa, canlı kotasyonun serinin o ANDAKİ değerine oranıdır; ama
+    // "o an" olarak seans BAŞI alınır. Böylece makas (yurt içi ÷
+    // uluslararası) yine kapatılır — makas gün içinde kayda değer
+    // şekilde değişmez, ikisi aynı metali fiyatlar — ama çarpan
+    // tazelemeden tazelemeye SABIT kalır.
+    //
+    // Canlı fiyatın gün içinde oynaması çarpanı yine oynatır; bu
+    // KAÇINILMAZ ve doğrudur: `a.currentPrice` gerçek bir ölçümdür.
+    // Önemli olan, artık SERİNİN gürültüsünün tabanı oynatmaması.
+    final capaBirim = capaGram * agirlik;
     out[a.ticker] = altinKalibrasyonu(
-      seriSonBirimTRY: seriBirim,
+      seriSonBirimTRY: capaBirim,
       canliBirimTRY: a.currentPrice,
     );
+    // Ölçek hafızası SON noktayla öğrenir: yedek kaynağın canlıya
+    // göre makasını sorar ve o soru "şu an" hakkındır, seans başı
+    // hakkında değil.
+    final seriBirim = sonGram * agirlik;
     // Canlı kaynak düştüğünde yedeğin aynı ölçeğe taşınabilmesi için oran
     // hatırlanır. `a.currentPrice` yurt içi kotasyondur (truncgil).
     final etiket = switch (kaynak) {

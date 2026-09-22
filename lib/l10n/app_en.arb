@@ -270,6 +270,7 @@
   "avgCost": "Avg. Cost",
   "totalCost": "Total Cost",
   "currentValue": "Current Value",
+  "dividendReceived": "Dividends Received",
   "lotSummary": "{buys} buys · {sells} removals",
   "@lotSummary": {
     "placeholders": {

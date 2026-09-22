@@ -431,8 +431,24 @@ List<Position> aggregatePositions(List<Asset> assets) {
       }
       if (l.isSell) {
         soldQty += l.quantity;
-        // Satış komisyonu da cepten çıkar → net maliyeti artırır.
-        commissionSum += l.commission;
+        // Satış komisyonu AÇIK pozisyonun maliyetine GİRMEZ.
+        //
+        // ## Neden değişti (denetim, 2026-09-22)
+        // Eskiden buraya ekleniyordu ("cepten çıkar → maliyeti artırır").
+        // Ama satış komisyonu SATILAN lot'un masrafıdır; elde kalan lot'un
+        // alım maliyetiyle ilgisi yoktur. İki bozucu etkisi ölçüldü:
+        //
+        //   1. 10 al @100 + 4 sat @130 (satış kom. ₺50) defterinde açık
+        //      pozisyonun tabanı ₺650 çıkıyordu — elde 6 lot var, taban
+        //      ₺600 olmalı. Yüzde %20 yerine %10,77 görünüyordu.
+        //   2. Aynı ₺50 `realizedGainLoss`'tan DÜŞÜLMÜYORDU — yani masraf
+        //      bir kez sayılıp yanlış yere yazılıyordu.
+        //
+        // Artık komisyon gerçekleşen kâr/zarara yazılır
+        // (`Asset.sellProceedsTRY` onu zaten düşüyor) ve açık pozisyonun
+        // tabanı saf alım maliyeti kalır. Tamamen satılan pozisyonda
+        // komisyon artık KAYBOLMUYOR: pozisyon listeden düşse bile
+        // realize hesabı ham defterden okur.
         continue;
       }
       buyQty += l.quantity;

@@ -668,19 +668,40 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               context.l10n),
     );
 
-    // Tür dağılımı canlı portföyden — karakter etiketi için.
+    // Tür dağılımı ve "en sabırlı" AÇIK pozisyonlardan okunur.
+    //
+    // Ham `isBuy` filtresi SATIŞ lot'larını düşmez: kısmi sattığında
+    // dağılım ₺720 yerine ₺1.200 (ölçüldü, denetim 2026-09-22) — karakter
+    // etiketi elde olmayan varlığa göre seçiliyordu. "En sabırlı" ise
+    // 2020'de alınıp 2020'de SATILMIŞ bir varlığı, bugün hâlâ elde olanın
+    // önüne geçiriyordu: soru "ne kadar süredır TUTUYORUM", geçmişte ne
+    // aldığım değil.
+    //
+    // `aktifLotlar` + `aggregatePositionsByOwner`: net miktarı 0'a düşen
+    // pozisyon elenir, sahip sınırı korunur (`positionKey` sahip taşımaz).
+    final acikPozisyonlar = aggregatePositionsByOwner(
+        [for (final l in lotlarSahibeGore(targetAssets)) aktifLotlar(l)]);
+
     final valueByType = <AssetType, double>{};
     if (pState != null) {
-      for (final a in targetAssets.where((a) => a.isBuy && a.isActive)) {
+      for (final p in acikPozisyonlar) {
+        final a = p.asDisplayAsset();
         valueByType[a.type] =
             (valueByType[a.type] ?? 0) + pState.toTRY(a.totalValue, a.currency);
       }
     }
 
-    // En sabırlı varlık — 1Y bloğu.
+    // En sabırlı varlık — 1Y bloğu. `firstBuyDate` pozisyonun İLK alımıdır
+    // (temsilci en YENİ alımdır; onun tarihi "ne zamandır tutuyorum"u
+    // kısaltırdı — üstüne alım yapan kullanıcı sabırsız görünürdü).
     Asset? enEski;
-    for (final a in targetAssets.where((a) => a.isBuy && a.isActive)) {
-      if (enEski == null || a.addedDate.isBefore(enEski.addedDate)) enEski = a;
+    DateTime? enEskiTarih;
+    for (final p in acikPozisyonlar) {
+      final t = p.firstBuyDate;
+      if (enEskiTarih == null || t.isBefore(enEskiTarih)) {
+        enEskiTarih = t;
+        enEski = p.asDisplayAsset();
+      }
     }
 
     return _OzetYanVeri(
@@ -696,7 +717,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ? RecapAsset(enEski.name, 0)
           : null,
       enSabirliGun: period == SummaryPeriod.birYil && enEski != null
-          ? now.difference(enEski.addedDate).inDays
+          // `enEskiTarih` = pozisyonun ilk alımı. `enEski.addedDate` aynı
+          // değeri taşır (`asDisplayAsset` onu `firstBuyDate`'ten kurar) ama
+          // o bağ uzak bir değişmez; burada ölçtüğümüz tarihi doğrudan
+          // kullanıyoruz ki ileride kopmasın.
+          ? now.difference(enEskiTarih!).inDays
           : null,
     );
   }
