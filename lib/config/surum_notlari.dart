@@ -98,7 +98,7 @@ class SurumNotu {
 /// bu yana çıkanlar"ı bu listeden baştan itibaren toplar.
 const List<SurumNotu> surumNotlari = [
   SurumNotu(
-    surum: '1.1.5',
+    surum: '1.1.6',
     tarih: 'Eylül 2026',
     onemli: true,
     baslik: 'Fiyat alarmları ve bildirim merkezi',
