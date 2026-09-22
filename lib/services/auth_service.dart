@@ -228,6 +228,15 @@ class AuthService {
       }
       throw AuthException(friendlyError(e));
     } catch (e, st) {
+      // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
+      // arızamız değil: Crashlytics'e taşımak gerçek hataları
+      // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
+      // 'Kayıt hatası: ...' öneki kullanıcıya hiçbir şey
+      // söylemez. Mesaj olduğu gibi geçer — VPN ihtimalini de
+      // o cümle taşıyor (2026-09-22).
+      if (baglantiHatasiMi(e)) {
+        throw AuthException(friendlyError(e));
+      }
       CrashReporter.report(e, st, reason: 'AuthService.register');
       throw AuthException('Kayıt hatası: ${friendlyError(e)}');
     }
@@ -297,6 +306,15 @@ class AuthService {
       }
       throw AuthException(e.message);
     } catch (e, st) {
+      // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
+      // arızamız değil: Crashlytics'e taşımak gerçek hataları
+      // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
+      // 'Doğrulama hatası: ...' öneki kullanıcıya hiçbir şey
+      // söylemez. Mesaj olduğu gibi geçer — VPN ihtimalini de
+      // o cümle taşıyor (2026-09-22).
+      if (baglantiHatasiMi(e)) {
+        throw AuthException(friendlyError(e));
+      }
       CrashReporter.report(e, st, reason: 'AuthService.verifyRegistrationOtp');
       throw AuthException('Doğrulama hatası: ${friendlyError(e)}');
     }
@@ -326,6 +344,15 @@ class AuthService {
       }
       throw AuthException(e.message);
     } catch (e, st) {
+      // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
+      // arızamız değil: Crashlytics'e taşımak gerçek hataları
+      // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
+      // 'Kod gönderilemedi: ...' öneki kullanıcıya hiçbir şey
+      // söylemez. Mesaj olduğu gibi geçer — VPN ihtimalini de
+      // o cümle taşıyor (2026-09-22).
+      if (baglantiHatasiMi(e)) {
+        throw AuthException(friendlyError(e));
+      }
       CrashReporter.report(e, st, reason: 'AuthService.resendRegistrationOtp');
       throw AuthException('Kod gönderilemedi: ${friendlyError(e)}');
     }
@@ -399,6 +426,15 @@ class AuthService {
       }
       throw AuthException(e.message);
     } catch (e, st) {
+      // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
+      // arızamız değil: Crashlytics'e taşımak gerçek hataları
+      // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
+      // 'Giriş hatası: ...' öneki kullanıcıya hiçbir şey
+      // söylemez. Mesaj olduğu gibi geçer — VPN ihtimalini de
+      // o cümle taşıyor (2026-09-22).
+      if (baglantiHatasiMi(e)) {
+        throw AuthException(friendlyError(e));
+      }
       CrashReporter.report(e, st, reason: 'AuthService.login');
       throw AuthException('Giriş hatası: ${friendlyError(e)}');
     }
@@ -463,6 +499,15 @@ class AuthService {
           '${provider == SocialProvider.apple ? 'Apple' : 'Google'} ile giriş '
           'yapılamadı. Biraz sonra tekrar dene.');
     } catch (e, st) {
+      // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
+      // arızamız değil: Crashlytics'e taşımak gerçek hataları
+      // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
+      // 'Giriş hatası: ...' öneki kullanıcıya hiçbir şey
+      // söylemez. Mesaj olduğu gibi geçer — VPN ihtimalini de
+      // o cümle taşıyor (2026-09-22).
+      if (baglantiHatasiMi(e)) {
+        throw AuthException(friendlyError(e));
+      }
       CrashReporter.report(e, st, reason: 'AuthService.loginWithSocial');
       throw AuthException('Giriş hatası: ${friendlyError(e)}');
     }
@@ -498,6 +543,15 @@ class AuthService {
         'İstek alındı. E-posta adresine kod gönderdik.',
       );
     } catch (e, st) {
+      // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
+      // arızamız değil: Crashlytics'e taşımak gerçek hataları
+      // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
+      // 'Şifre sıfırlama isteği başarısız: ...' öneki kullanıcıya hiçbir şey
+      // söylemez. Mesaj olduğu gibi geçer — VPN ihtimalini de
+      // o cümle taşıyor (2026-09-22).
+      if (baglantiHatasiMi(e)) {
+        throw AuthException(friendlyError(e));
+      }
       CrashReporter.report(e, st, reason: 'AuthService.sendPasswordResetOtp');
       throw AuthException('Şifre sıfırlama isteği başarısız: ${friendlyError(e)}');
     }
@@ -555,6 +609,15 @@ class AuthService {
       }
       throw AuthException(e.message);
     } catch (e, st) {
+      // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
+      // arızamız değil: Crashlytics'e taşımak gerçek hataları
+      // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
+      // 'Şifre güncelleme hatası: ...' öneki kullanıcıya hiçbir şey
+      // söylemez. Mesaj olduğu gibi geçer — VPN ihtimalini de
+      // o cümle taşıyor (2026-09-22).
+      if (baglantiHatasiMi(e)) {
+        throw AuthException(friendlyError(e));
+      }
       CrashReporter.report(e, st, reason: 'AuthService.verifyPasswordResetOtp');
       throw AuthException('Şifre güncelleme hatası: ${friendlyError(e)}');
     }
@@ -673,6 +736,15 @@ class AuthService {
     } on AuthException {
       rethrow;
     } catch (e, st) {
+      // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
+      // arızamız değil: Crashlytics'e taşımak gerçek hataları
+      // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
+      // 'Hesap silme hatası: ...' öneki kullanıcıya hiçbir şey
+      // söylemez. Mesaj olduğu gibi geçer — VPN ihtimalini de
+      // o cümle taşıyor (2026-09-22).
+      if (baglantiHatasiMi(e)) {
+        throw AuthException(friendlyError(e));
+      }
       CrashReporter.report(e, st, reason: 'AuthService.deleteAccount');
       throw AuthException('Hesap silme hatası: ${friendlyError(e)}');
     }

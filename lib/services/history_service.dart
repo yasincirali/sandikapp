@@ -774,6 +774,14 @@ class HistoryService {
     if (groupedPoints.containsKey(todayTs)) {
       double liveTotal = 0.0;
       bool skipOverwrite = false;
+      // Sahip + pozisyon kovaları — gerekçe gün içi yoldaki ikiziyle AYNI
+      // (2026-09-22): kapanmış pozisyonun negatif kalıntısı toplama
+      // girmemeli, yoksa canlı toplam `ownerScopedTotalValue`'dan ayrışır
+      // ve serinin ucu sahte bir hareket gösterir. İki kopyanın ayrışması
+      // bu projede yaşanmış bir hata sınıfıdır, bu yüzden kural burada da
+      // birebir uygulanır.
+      final kovaDeger = <String, double>{};
+      final kovaMiktar = <String, double>{};
       for (final a in assets) {
         if (a.isDeleteLog) continue;
         final qty = signedQtyOnDay(a, todayTs);
@@ -796,8 +804,14 @@ class HistoryService {
           break;
         }
         final tryPrice = a.currency == 'USD' ? price * liveUsd! : price;
-        liveTotal += tryPrice * qty;
+        final kova = '${a.userId}|${positionKey(a)}';
+        kovaDeger[kova] = (kovaDeger[kova] ?? 0) + tryPrice * qty;
+        kovaMiktar[kova] = (kovaMiktar[kova] ?? 0) + qty;
       }
+      kovaDeger.forEach((kova, deger) {
+        if ((kovaMiktar[kova] ?? 0) <= 0.0000001) return;
+        liveTotal += deger;
+      });
       if (liveTotal < 0) liveTotal = 0;
       // TradingView tarzı: son bar canlı fiyattır — tarihsel bar'lara asla
       // dokunma, sapma eşiği kullanma. %30 kural, gerçek büyük hareketlerde
@@ -1784,6 +1798,33 @@ class HistoryService {
       double liveTotal = 0.0;
       final liveByType = <AssetType, double>{};
       final liveByPosition = <String, double>{};
+
+      // Canlı toplam SAHİP + POZİSYON bazında birikir, sonra toplanır.
+      //
+      // **Neden ara kova (kullanıcı bildirimi, 2026-09-22):** "ortakların
+      // günlük kâr/zarar toplamı Birlikte'deki tutarı vermeli ancak orası
+      // doğru çalışmıyor."
+      //
+      // Eskiden her lot doğrudan `liveTotal`'a ekleniyordu. Bu, kapanmış
+      // bir pozisyonun NEGATİF kalıntısını toplama taşıyordu: bir sahip
+      // aldığından çok satmış görünüyorsa (kısmi görünürlük, düzeltme
+      // kaydı) o pozisyon −₺240 gibi bir değerle toplama giriyordu.
+      // `ownerScopedTotalValue` ise aynı pozisyonu 0'a kırpar
+      // (`aggregatePositions`: `totalQty <= 0 → return`).
+      //
+      // İki taraf ayrışınca `DailySummary` serinin ucunu canlı toplama
+      // sabitlerken aradaki farkı SAHTE HAREKET olarak kâr/zarara yazıyordu.
+      // Ölçüldü: ben +₺50, ortak −₺20 iken Birlikte −₺450 gösteriyordu
+      // (parçaların toplamı +₺30 olmalıydı). Fark ne kadar büyükse Birlikte
+      // o kadar saçmalıyordu — tekil sekmeler doğru görünürken.
+      //
+      // Sahip anahtarı `positionKey`'e EKLENİR çünkü `positionKey` sahip
+      // taşımaz: iki sahibin aynı hissesi tek kovaya düşse, birinin satışı
+      // diğerinin lotunu düşerdi (bkz. `aggregatePositionsByOwner`).
+      final kovaDeger = <String, double>{};
+      final kovaMiktar = <String, double>{};
+      final kovaTur = <String, AssetType>{};
+      final kovaPozisyon = <String, String>{};
       for (final a in assets) {
         if (a.isDeleteLog) continue;
         final qty = signedQtyOnSlot(a, nowTs);
@@ -1795,13 +1836,26 @@ class HistoryService {
         if (a.currency == 'USD' && (liveUsd == null || liveUsd <= 0)) continue;
         final tryPrice =
             a.currency == 'USD' ? a.currentPrice * liveUsd! : a.currentPrice;
-        final v = tryPrice * qty;
-        liveTotal += v;
-        liveByType[a.type] = (liveByType[a.type] ?? 0) + v;
         final pk = positionKey(a);
-        liveByPosition[pk] = (liveByPosition[pk] ?? 0) + v;
-        positionType[pk] = a.type;
+        final kova = '${a.userId}|$pk';
+        kovaDeger[kova] = (kovaDeger[kova] ?? 0) + tryPrice * qty;
+        kovaMiktar[kova] = (kovaMiktar[kova] ?? 0) + qty;
+        kovaTur[kova] = a.type;
+        kovaPozisyon[kova] = pk;
       }
+
+      // Kapanmış pozisyon toplama GİRMEZ — `aggregatePositions` ile aynı
+      // kural. Negatif kalıntıyı taşımak, o sahibin portföyünü olduğundan
+      // küçük, Birlikte toplamını da parçaların toplamından farklı yapardı.
+      kovaDeger.forEach((kova, deger) {
+        if ((kovaMiktar[kova] ?? 0) <= 0.0000001) return;
+        final tur = kovaTur[kova]!;
+        final pk = kovaPozisyon[kova]!;
+        liveTotal += deger;
+        liveByType[tur] = (liveByType[tur] ?? 0) + deger;
+        liveByPosition[pk] = (liveByPosition[pk] ?? 0) + deger;
+        positionType[pk] = tur;
+      });
       if (liveTotal > 0) {
         final lastKey = groupedPoints.keys.reduce((a, b) => a > b ? a : b);
         groupedPoints[lastKey] = liveTotal;

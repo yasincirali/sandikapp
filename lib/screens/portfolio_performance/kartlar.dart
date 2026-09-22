@@ -130,7 +130,28 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           KapsamKisiSecici(
             partners: activePartners,
             selectedId: _view,
-            onChanged: (v) => _guncelle(() => _view = v),
+            // Kapsam değişiminde gün içi TOHUMU da at.
+            //
+            // **Neden (kullanıcı bildirimi 2026-09-22):** "diğer zaman
+            // aralıklarındaki gibi çalışmalı, sadece günlükte hatalı
+            // gösteriliyor — yanlış dolup sonradan düzeltiliyor."
+            //
+            // Bu ipucu belirleyiciydi: 1H/1A/6A/1Y doğru çalışıyor çünkü o
+            // yol kapsam değişince YENİ BİR CONTROLLER kuruyor
+            // (`_ensureController` anahtarı `_view` taşır). Yeni controller
+            // `_stale = true` ile başlar ve `breakdown`'ı BOŞ döndürür —
+            // tohumda dağılım yoktur. Özet böylece `hasData` kapısına
+            // takılıp iskelete düşer.
+            //
+            // Gün içi yolunda tohum (`_lastIntradayData`) bir STATE ALANI:
+            // controller gibi atılmıyor, ekranın ömrü boyunca yaşıyordu.
+            // Kapsam değişince önceki defterin verisi bir kare boyunca
+            // kullanılabiliyordu. Burada atmak, iki yolu aynı davranışa
+            // getirir.
+            onChanged: (v) => _guncelle(() {
+              _view = v;
+              _gunIciTohumuAt();
+            }),
           ),
           const SizedBox(height: SandikSpace.sm),
         ],
@@ -146,12 +167,29 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // geçtiğinde dönemini değiştiremez hale gelir. Aynı gerekçe
         // `_buildChartWithData`'nın koşulsuz çağrılmasının da sebebi.
         if (_ozetSekmesi) ...[
-          _buildOzetSekmesi(
-            breakdown: breakdown,
-            targetAssets: targetAssets,
-            intraday: isIntraday,
-            seansBaslangici: cizimBaslangici,
-          ),
+          // Seri HAZIR DEĞİLKEN sayı çizilmez — iskelet durur
+          // (kullanıcı bildirimi 2026-09-22: "ekran render olup sonradan
+          // başka değere güncelleniyor, direkt açılırken doğru şekilde
+          // açılmalı").
+          //
+          // Grafik dalı `waiting`/`stale`/`hasData` kapılarını baştan beri
+          // kullanıyordu; Özet dalı HİÇBİRİNİ kullanmıyordu. Sonuç: ilk
+          // karede boş ya da BAŞKA FİLTREYE ait (`stale`) bir `breakdown`
+          // gerçek veri sanılıp tam bir özet olarak çiziliyor, seri gelince
+          // rakamlar yerinden zıplıyordu. Kullanıcı yanlış sayıyı okumuş
+          // oluyordu — iskelet, yanlış sayıdan iyidir.
+          //
+          // `hasData` tek başına yetmez: tohum veri de "veri" sayılır ama
+          // `stale` iken BAŞKA bir kapsamın/periyodun serisidir.
+          if (!hasData || stale)
+            _ozetIskeleti(context)
+          else
+            _buildOzetSekmesi(
+              breakdown: breakdown,
+              targetAssets: targetAssets,
+              intraday: isIntraday,
+              seansBaslangici: cizimBaslangici,
+            ),
           const SizedBox(height: 12),
           const DisclaimerWidget(),
           const SizedBox(height: 16),
@@ -536,6 +574,45 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     );
   }
 
+  /// Özet sekmesinin YÜKLEME hâli — gerçek kartların yerini tutar.
+  ///
+  /// Yükseklikler gerçek kartlara yakın seçildi ki seri gelince liste
+  /// zıplamasın: üstte dönem kartı (büyük rakam + alt satır), altında
+  /// "Nereden geldi" köprüsünün dört çubuğu.
+  Widget _ozetIskeleti(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SandikCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                SandikSkeleton(width: 140, height: 12),
+                SizedBox(height: SandikSpace.xs2),
+                SandikSkeleton(width: 80, height: 10),
+                SizedBox(height: SandikSpace.smd),
+                SandikSkeleton(width: 200, height: 30),
+                SizedBox(height: SandikSpace.sm),
+                SandikSkeleton(width: 240, height: 12),
+              ],
+            ),
+          ),
+          const SizedBox(height: SandikSpace.sm),
+          SandikCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SandikSkeleton(width: 110, height: 12),
+                const SizedBox(height: SandikSpace.smd),
+                for (var i = 0; i < 4; i++) ...[
+                  if (i > 0) const SizedBox(height: SandikSpace.sm),
+                  const SandikSkeleton(width: double.infinity, height: 14),
+                ],
+              ],
+            ),
+          ),
+        ],
+      );
+
   /// Özet sekmesinin gövdesi.
   ///
   /// Hesap `PeriodSummaryService.compute`'ta — burada yalnızca girdiler
@@ -566,6 +643,12 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         series: breakdown.total,
         now: now,
         seansGunu: breakdown.seansGunu ?? seansBaslangici,
+        // KAPSAM: seri hangi sahiplere göre çekildiyse canlı uç ve nakit
+        // akışı da onlardan okunmalı. `pState.assets` verilseydi (eski
+        // davranış) ortak sekmesinde ortağın eğrisinin ucuna HERKESİN
+        // toplamı yazılır, gün başı ile uç farklı kümeleri ölçtüğü için
+        // kâr/zarar ve birikim saçmalardı (kullanıcı bildirimi 2026-09-22).
+        kapsamLotlari: targetAssets,
       );
     }
 

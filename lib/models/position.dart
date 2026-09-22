@@ -231,15 +231,55 @@ double totalDividendTRY(Iterable<Asset> lots) {
   return total;
 }
 
+/// Bir sembolün oturumda görülmüş son canlı fiyatı — yoksa `null`.
+///
+/// [ownerScopedTotalValue] bunu ENJEKTE alır; model katmanının servise
+/// erişimi yok (bkz. [ToTRY] ile aynı gerekçe).
+typedef SonFiyat = double? Function(String ticker);
+
 /// Sahiplik sınırını koruyan toplam güncel değer (TRY).
+///
+/// [sonFiyat] verilirse, `currentPrice`'ı OLMAYAN pozisyon oturumdaki son
+/// bilinen kotasyondan fiyatlanır.
+///
+/// ## Neden gerekli (kullanıcı bildirimi, 2026-09-22)
+/// Ortak lot'larının `currentPrice`'ı RLS yüzünden sunucuya yazılamaz;
+/// `refreshPrices` onları yalnızca BELLEKTE günceller
+/// (`PartnerAssetsNotifier.setAssets`). Ama `PartnerAssetsNotifier.build()`
+/// `activePartnersProvider`'ı izliyor ve her tetiklendiğinde `fetchByUser`
+/// ile DB'den HAM lot'ları döndürüyor — yani fiyatlı listeyi bayat
+/// `current_price` ile eziyor (dosyanın kendi notu bu tuzağı zaten
+/// uyarıyordu, ama yalnızca `reload()` için).
+///
+/// Sonuç ekranda: fiyatı düşen ortak pozisyonu toplama HİÇ girmiyor ve
+/// Performans › Özet'te **Birlikte "Bugün" = Ben "Bugün"** çıkıyordu;
+/// ortağın ₺572.980'i kayboluyordu. Dönem BAŞI doğruydu (seri geçmiş
+/// fiyatlardan hesaplanır, `currentPrice`'a ihtiyaç duymaz), yalnızca uç
+/// yanlıştı — bu yüzden kâr/zarar aradaki farkı sahte hareket olarak
+/// gösteriyordu.
+///
+/// Son bilinen fiyat UYDURMA DEĞİLDİR: `PriceService._sonBilinenFiyat`
+/// yalnızca gerçekten ÖLÇÜLMÜŞ kotasyonları taşır ve TTL ile düşmez
+/// (bkz. `fiyat_kaynagi.dart` "uydurma sayı yasak" sözleşmesi). Kotasyon
+/// hiç görülmemişse pozisyon yine toplama girmez — sıfır uydurulmaz.
 double ownerScopedTotalValue(
   Iterable<List<Asset>> ownerLots, {
   ToTRY toTRY = identityToTRY,
+  SonFiyat? sonFiyat,
 }) {
   double total = 0;
   for (final position in aggregatePositionsByOwner(ownerLots)) {
     final a = position.asDisplayAsset();
-    total += toTRY(a.totalValue, a.currency);
+    if (a.currentPrice > 0 || sonFiyat == null) {
+      total += toTRY(a.totalValue, a.currency);
+      continue;
+    }
+    // Fiyatı düşmüş pozisyon: oturumda görülmüş son kotasyona düş.
+    final ticker = a.ticker.trim();
+    if (ticker.isEmpty) continue;
+    final p = sonFiyat(ticker);
+    if (p == null || p <= 0) continue;
+    total += toTRY(a.quantity * p, a.currency);
   }
   return total;
 }

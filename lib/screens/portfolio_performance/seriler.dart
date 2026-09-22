@@ -248,6 +248,23 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
     return segments;
   }
 
+  /// Gün içi TOHUMUNU at — kapsam ya da tür filtresi değiştiğinde.
+  ///
+  /// Zoom yolunun (1H/1A/6A/1Y) karşılığı `_ensureController`: anahtarı
+  /// `_view` ve `_typeFilter` taşır, filtre değişince YENİ controller
+  /// kurulur ve o `_stale = true` ile başlayıp `breakdown`'ı boş döndürür.
+  /// Özet böylece iskelete düşer, yanlış rakam basmaz.
+  ///
+  /// Gün içi yolunda tohum bir STATE ALANI olduğu için o atılma
+  /// gerçekleşmiyordu: önceki defterin verisi bir kare boyunca
+  /// kullanılabiliyordu ("sadece günlükte hatalı gösteriliyor, yanlış
+  /// dolup sonradan düzeltiliyor", 2026-09-22). Bu metot iki yolu aynı
+  /// davranışa getirir — filtreyi değiştiren HER yer çağırmalı.
+  void _gunIciTohumuAt() {
+    _lastIntradayData = null;
+    _lastIntradayKey = null;
+  }
+
   Future<PortfolioHistoryBreakdown> _intradayHistory(List<Asset> chartAssets) {
     final key = chartAssets.map((a) => a.id).join(',');
     if (_intradayKey == key && _intradayFuture != null) return _intradayFuture!;
@@ -255,7 +272,11 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
     _intradayFuture = HistoryService.instance
         .getPortfolioHistoryHourlyBreakdown(chartAssets, 24)
       ..then((v) {
-        if (mounted && v.total.isNotEmpty) _lastIntradayData = v;
+        if (mounted && v.total.isNotEmpty) {
+          _lastIntradayData = v;
+          // Hangi kümeye ait olduğunu da yaz — bkz. `_lastIntradayKey`.
+          _lastIntradayKey = key;
+        }
       });
     return _intradayFuture!;
   }

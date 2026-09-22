@@ -891,12 +891,55 @@ final allPartnerAssetsProvider =
 /// Ortakların varlıkları. Public: widget testleri `overrideWith` ile sahte
 /// veri besleyebilsin (private sınıf test tarafından extend edilemiyor).
 class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
+  /// Bellekte fiyatlanmış lot'lar — `build()` yeniden koştuğunda DB'den
+  /// gelen BAYAT `current_price` bunların üzerine yazılmasın diye.
+  ///
+  /// ## Neden gerekli (kullanıcı bildirimi, 2026-09-22)
+  /// Ortak lot'larının fiyatı RLS yüzünden sunucuya yazılamaz; `refreshPrices`
+  /// onları yalnızca bellekte günceller ve [setAssets] ile buraya koyar.
+  /// Ama [build] `activePartnersProvider`'ı İZLİYOR: o provider
+  /// `partnersProvider` her tazelendiğinde yeni bir liste nesnesi üretiyor,
+  /// dolayısıyla `build()` yeniden koşuyor ve `fetchByUser` fiyatlı listeyi
+  /// DB'deki bayat (çoğu zaman 0) değerle eziyordu.
+  ///
+  /// Ekrandaki sonucu: Performans › Özet'te **Birlikte "Bugün" = Ben
+  /// "Bugün"** — ortağın tutarı canlı toplamdan tamamen düşüyordu. Dönem
+  /// BAŞI doğru kalıyordu (seri geçmiş fiyatlardan hesaplanır), yalnızca uç
+  /// yanlıştı ve aradaki fark sahte kâr/zarar olarak yazılıyordu.
+  ///
+  /// `fetchByUser` yine çağrılır — lot'ların KENDİSİ (yeni alım, satış,
+  /// silme) sunucudan gelmeli. Yalnızca `currentPrice` korunur, ve yalnızca
+  /// bellekteki değer gerçekten ölçülmüşse (`> 0`).
+  final Map<String, double> _fiyatHafizasi = {};
+
   @override
   Future<Map<String, List<Asset>>> build() async {
     final activePartners = ref.watch(activePartnersProvider);
     final map = <String, List<Asset>>{};
     for (final p in activePartners) {
-      map[p.id] = await SupabaseService.instance.fetchByUser(p.id);
+      final lots = await SupabaseService.instance.fetchByUser(p.id);
+      for (final a in lots) {
+        if (a.currentPrice > 0) continue;
+        // 1) Bu oturumda bu LOT için ölçülmüş fiyat.
+        final hatirlanan = _fiyatHafizasi[a.id];
+        if (hatirlanan != null && hatirlanan > 0) {
+          a.currentPrice = hatirlanan;
+          continue;
+        }
+        // 2) Yoksa SEMBOL için görülmüş son kotasyon. Kendi portföyümde
+        //    aynı sembol varsa fiyatı zaten ölçülmüştür; ortağın lot'u da
+        //    aynı piyasadan fiyatlanır. `_fiyatHafizasi` boşken (uygulama
+        //    yeni açıldı, `refreshPrices` henüz koşmadı) tek çare budur.
+        //
+        //    UYDURMA DEĞİL: `sonBilinenFiyat` yalnızca gerçekten ölçülmüş
+        //    kotasyonları taşır ve hiç görülmemişse `null` döner — lot o
+        //    zaman fiyatsız kalır ve toplamlara girmez.
+        final t = a.ticker.trim();
+        if (t.isEmpty || a.isManualPrice) continue;
+        final son = PriceService.instance.sonBilinenFiyat(t);
+        if (son != null && son > 0) a.currentPrice = son;
+      }
+      map[p.id] = lots;
     }
     return map;
   }
@@ -909,6 +952,13 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
   /// değerini geri getirir ve ortağın varlıkları eski fiyatla görünür.
   /// Bu metot, hesaplanmış listeyi olduğu gibi state'e koyar.
   void setAssets(Map<String, List<Asset>> assets) {
+    // Fiyatları hatırla — `build()` yeniden koşarsa bayat DB değeri
+    // bunların üzerine yazmasın (gerekçe: [_fiyatHafizasi]).
+    for (final lots in assets.values) {
+      for (final a in lots) {
+        if (a.currentPrice > 0) _fiyatHafizasi[a.id] = a.currentPrice;
+      }
+    }
     state = AsyncData(assets);
   }
 

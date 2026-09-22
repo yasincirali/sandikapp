@@ -11,7 +11,13 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       child: CupertinoButton(
         minimumSize: SandikTouch.minSize,
         padding: EdgeInsets.zero,
-        onPressed: () => _guncelle(() => _typeFilter = type),
+        // Tür filtresi de tohumu atar — kapsamla aynı gerekçe
+        // (`_gunIciTohumuAt`): başka bir türün serisi bu türün özeti
+        // sanılmamalı.
+        onPressed: () => _guncelle(() {
+          _typeFilter = type;
+          _gunIciTohumuAt();
+        }),
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,

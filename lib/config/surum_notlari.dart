@@ -104,6 +104,21 @@ const List<SurumNotu> surumNotlari = [
     baslik: 'Fiyat alarmları ve bildirim merkezi',
     yenilikler: [
       Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Ortak görünümünde Özet düzeldi',
+        aciklama: 'Performans › Özet\'te ortağına ya da Birlikte\'ye '
+            'geçtiğinde günlük kâr/zarar ve toplam artık yalnızca o '
+            'defteri anlatıyor. Birlikte\'deki tutar da kişilerin '
+            'toplamını veriyor; eskiden ikisi tutmuyordu.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.ayar,
+        baslik: 'VPN açıkken ne olduğu anlaşılıyor',
+        aciklama: 'Bağlantı kurulamadığında uygulama artık VPN\'i de '
+            'hatırlatıyor. VPN çoğu zaman fiyat ve hesap sunucularına '
+            'erişimi kesiyor; mesaj kapatıp denemeni söylüyor.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.genel,
         baslik: 'Bugün kartı yenilendi',
         aciklama: 'Tarih ve günün hareketi başta; enflasyona göre durumun, '

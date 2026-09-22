@@ -7,6 +7,7 @@ import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/chart_axis.dart' show gunIciAsgariBantOrani;
 import 'history_service.dart';
+import 'price_service.dart';
 import '../utils/tr_format.dart';
 import 'bist_calendar.dart';
 
@@ -285,7 +286,8 @@ class DailySummary {
   /// bölünür (`lotlarSahibeGore`): tek sahipli defterde tek grup, hesap
   /// aynı; birleşik defterde sahiplik sınırı korunur.
   static double liveTotalTRY(PortfolioState state) =>
-      ownerScopedTotalValue(lotlarSahibeGore(state.assets), toTRY: state.toTRY);
+      ownerScopedTotalValue(lotlarSahibeGore(state.assets),
+          toTRY: state.toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
 
   /// Gün içi seriyi uygulamanın GÜNLÜK grafiğiyle birebir aynı kurallarla
   /// ham (TRY) değer listesine indirger.
@@ -457,13 +459,39 @@ class DailySummary {
   /// [seansGunu] ÇİZİLEN seansın 00:00'ı — bugün olmak zorunda değil
   /// (hafta sonu/tatilde son seans). Hem canlı uç kuralı hem de nakit
   /// akışı penceresi buna göre kurulur; `null` verilirse bugün varsayılır.
+  ///
+  /// [kapsamLotlari] verildiğinde canlı toplam ve nakit akışı YALNIZCA o
+  /// lot'lardan okunur — [state] geriye yalnızca kur çevirici olarak kalır.
+  ///
+  /// **Neden gerekli (kullanıcı bildirimi, 2026-09-22).** Performans →
+  /// Özet sekmesi bir KAPSAM taşır (Ben / bir ortak / Birlikte) ve
+  /// `series` o kapsama göre çekilir. Buradaki canlı uç ise `state.assets`
+  /// üzerinden tüm defteri topluyordu: ortak sekmesinde ortağın gün içi
+  /// eğrisinin ucuna HERKESİN toplamı yazılıyor, gün başı ile uç farklı
+  /// kümeleri ölçtüğü için kâr/zarar ve birikim saçmalıyordu. Aynı kayma
+  /// nakit akışında da vardı — başka bir sahibin o gün yaptığı alım,
+  /// görüntülenen kapsamın hareketinden düşülüyordu.
+  ///
+  /// Kapsam listesi ham lot defteridir (alım + satış + temettü); sahiplik
+  /// sınırı `lotlarSahibeGore` ile yeniden kurulur, yani Birlikte
+  /// kapsamında ortakların lot'ları tek havuzda toplanmaz
+  /// (bkz. `aggregatePositionsByOwner`).
   static DailySummary from({
     required PortfolioState state,
     required Map<int, double> series,
     required DateTime now,
     DateTime? seansGunu,
+    List<Asset>? kapsamLotlari,
   }) {
-    final total = liveTotalTRY(state);
+    final kapsam = kapsamLotlari ?? state.assets;
+    // `sonFiyat` ŞART — [liveTotalTRY] ile aynı yol olmalı (2026-09-22).
+    // Ayrıştığında ana ekranın toplamı (oradan) ile Bugün kartının günlük
+    // kâr/zararı (buradan) farklı kümeleri ölçüyordu: toplam ortağı
+    // sayıyor, kâr/zarar saymıyordu. Kullanıcı bildirimi: "anasayfa
+    // toplamlar veriyor ancak günlük kartında kâr zarar toplamları
+    // tutmuyor."
+    final total = ownerScopedTotalValue(lotlarSahibeGore(kapsam),
+        toTRY: state.toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
     final values = dayValues(series, now, total, seansGunu: seansGunu);
 
     if (values.length < 2) {
@@ -495,7 +523,7 @@ class DailySummary {
         cizilenGunFromSeries(series) ??
         dayKey(now);
     final inflow = inflowOnDay(
-      state.assets,
+      kapsam,
       dayKey(cizilenGun),
       DateTime(cizilenGun.year, cizilenGun.month, cizilenGun.day, 23, 59, 59),
     );
@@ -571,8 +599,40 @@ class IntradaySeriesCache {
   ///
   /// Sessizce başarısız olur: ağ hatasında son bilinen seri korunur ve
   /// çağıran taraf yine bir şey gösterebilir.
-  Future<Map<int, double>> get(PortfolioState state, {DateTime? now}) async {
+  /// [azamiYas] verilirse önbellek bundan eskiyse TAZELENİR.
+  ///
+  /// ## Neden (kullanıcı bildirimi, 2026-09-22)
+  /// "ana sayfa günlük ben tabıyla performans tabındaki günlük ben kâr
+  /// zarar tutarsız."
+  ///
+  /// İki yüzey aynı hesabı yapıyor ama FARKLI YAŞTA serilere bakıyordu:
+  ///   * Bugün kartı → bu önbellek, [minInterval] = 5 dk
+  ///   * Performans  → kendi tick'i, 30 sn (`_startIntradayTickIfNeeded`)
+  ///
+  /// Gün başı (`open`) serinin ilk noktasından gelir; iki seri farklı
+  /// anlarda çekildiğinde o nokta da farklı olabiliyor ve aynı kapsamda
+  /// iki farklı kâr/zarar çıkıyordu.
+  ///
+  /// TTL'yi topluca düşürmek YANLIŞ olurdu: bu önbelleği ana ekran
+  /// widget'ı ve Live Activity de kullanıyor ve onlar 5 dk'lık push
+  /// döngüsüyle hizalı — daha sık çekmek boşuna ağ trafiği olurdu
+  /// ([minInterval] gerekçesi). Bu yüzden tazelik KULLANICININ BAKTIĞI
+  /// yüzeyde istenir, varsayılan korunur.
+  Future<Map<int, double>> get(
+    PortfolioState state, {
+    DateTime? now,
+    Duration? azamiYas,
+  }) async {
     final ts = now ?? DateTime.now();
+
+    // Ekranda duran yüzey daha taze isteyebilir — bayat önbelleği düşür.
+    if (azamiYas != null &&
+        _fetchedAt != null &&
+        ts.difference(_fetchedAt!) > azamiYas) {
+      _series = null;
+      _seansGunu = null;
+      _fetchedAt = null;
+    }
 
     // Gün DEĞİŞTİYSE önbellek koşulsuz düşer.
     //
@@ -604,8 +664,13 @@ class IntradaySeriesCache {
       // Breakdown çağrılır, `getPortfolioHistoryHourly` DEĞİL: ikincisi
       // yalnızca `.total` döndürür ve `seansGunu`'nu düşürür. O alan
       // düştüğünde yüzeyler çizilen günü bugün sanıyordu.
+      // Eleme Performans ekranıyla AYNI kuraldan (`FiyatKaynagi.seriyeGirer`).
+      // Bu önbellek "Ben" kapsamını besliyor ve eleme YOKTU: aynı defterden
+      // Performans'tan farklı bir seri üretiyor, iki yüzey farklı kâr/zarar
+      // gösteriyordu (kullanıcı bildirimi 2026-09-22).
       final fresh = await HistoryService.instance
-          .getPortfolioHistoryHourlyBreakdown(state.activeAssets, 24);
+          .getPortfolioHistoryHourlyBreakdown(
+              state.activeAssets.where(FiyatKaynagi.seriyeGirer).toList(), 24);
       _series = fresh.total;
       _seansGunu = fresh.seansGunu;
       // Damga yalnızca fetch BAŞARILI olduğunda atılır. Await'ten önce

@@ -4,6 +4,71 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/sandik.dart';
 
+/// Bağlantı hatalarında kullanıcıya gösterilen ortak mesaj.
+///
+/// **Neden VPN'i ayrıca anıyor (kullanıcı bildirimi, 2026-09-22):** VPN
+/// açıkken uygulama çalışmıyor. Sebep tek değil ve hiçbiri istemciden
+/// kesin olarak ayırt edilemiyor — VPN sağlayıcısının DNS'i Supabase /
+/// Yahoo / TEFAS alan adlarını çözemiyor, çıkış düğümü engelli, ya da
+/// TLS araya giren bir sertifikayla kesiliyor. İstemcinin gördüğü şey her
+/// üçünde de sıradan bir ağ hatası (`SocketException`, `HandshakeException`,
+/// `ClientException`, timeout).
+///
+/// Bu yüzden VPN TESPİT EDİLMEZ, yalnızca İHTİMAL olarak söylenir. Mesaj
+/// iki olasılığı birden taşır: kullanıcı VPN kullanmıyorsa cümlenin ilk
+/// yarısı ("internet bağlantını kontrol et") zaten doğru cevaptır, VPN
+/// kullanıyorsa ikinci yarısı ona denemesi gereken şeyi söyler. Kesin
+/// olmayan bir teşhisi kesinmiş gibi yazmak ("VPN'inizi kapatın"), VPN'i
+/// olmayan kullanıcıyı yanlış yere bakmaya gönderirdi.
+const String kBaglantiHatasiMesaji =
+    'Bağlantı kurulamadı. İnternetini kontrol et; '
+    'VPN kullanıyorsan kapatıp tekrar dene.';
+
+/// Hata kullanıcının BAĞLANTISINDAN mı kaynaklanıyor?
+///
+/// Sınıflandırma `CrashReporter.agHatasiMi` ile AYNI aileyi tanır — orası
+/// "bunu çökme sayma" kararını, burası "kullanıcıya ne yazalım" kararını
+/// verir. İkisi ayrışırsa Crashlytics'in sessizce geçtiği bir hata
+/// ekranda ham `Exception` olarak görünürdü.
+///
+/// `friendly_error` model/servis katmanına bağımlı olmadığı için liste
+/// burada tekrar edilir; `baglanti_hatasi_mesaji_test` iki tarafın da
+/// aynı imzaları tanıdığını doğrular.
+bool baglantiHatasiMi(Object? error) {
+  if (error == null) return false;
+  if (error is SocketException ||
+      error is TimeoutException ||
+      error is HttpException ||
+      error is HandshakeException) {
+    return true;
+  }
+  final metin = error.toString();
+  for (final iz in const [
+    'SocketException',
+    'TimeoutException',
+    'HttpException',
+    'HandshakeException',
+    'Failed host lookup',
+    'ClientException',
+    'Connection closed',
+    'Connection reset',
+    'Connection refused',
+    'Connection timed out',
+    'Software caused connection abort',
+    'Network is unreachable',
+    'No route to host',
+    // TLS araya girdiğinde (kurumsal/filtreleyen VPN) görünen imzalar.
+    'CERTIFICATE_VERIFY_FAILED',
+    'certificate verify failed',
+    'Connection closed before full header was received',
+    'Connection attempt cancelled',
+    'Request has been aborted',
+  ]) {
+    if (metin.contains(iz)) return true;
+  }
+  return false;
+}
+
 /// Teknik hatayı kullanıcı dostu Türkçe mesaja çevirir.
 ///
 /// UI'da `Text('Hata: $e')` yerine `Text(friendlyError(e))` kullan —
@@ -16,16 +81,13 @@ String friendlyError(Object? error, {bool verbose = false}) {
 
   String message;
 
-  if (error is SocketException ||
-      error.toString().contains('SocketException') ||
-      error.toString().contains('Failed host lookup')) {
-    message = 'İnternet bağlantını kontrol et.';
-  } else if (error is TimeoutException ||
-      error.toString().contains('TimeoutException')) {
-    message = 'Sunucu yanıt vermedi. Bağlantını kontrol edip tekrar dene.';
-  } else if (error is HttpException ||
-      error.toString().contains('HttpException')) {
-    message = 'Sunucuya ulaşılamadı. Lütfen sonra tekrar dene.';
+  // Bağlantı ailesi TEK mesajda birleşti (2026-09-22). Eskiden üç ayrı
+  // cümle vardı (host lookup / timeout / http) ve hiçbiri VPN'den söz
+  // etmiyordu; VPN açık kullanıcı "İnternet bağlantını kontrol et" okuyup
+  // internetinin çalıştığını görünce uygulamanın bozuk olduğunu sanıyordu.
+  // Ayrım kullanıcı için anlamlı değildi: üçünde de yapılacak şey aynı.
+  if (baglantiHatasiMi(error)) {
+    message = kBaglantiHatasiMesaji;
   } else if (error is FormatException) {
     message = 'Sunucudan gelen veri okunamadı.';
   } else if (error is AuthApiException) {

@@ -85,6 +85,11 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// sonra elindekiyle çizilir; iskelet sonsuza kadar kalmaz.
   static const _yuklemeSuresi = Duration(seconds: 10);
 
+  /// Gün içi seri bundan eskiyse tazelenir — Performans ekranının tick
+  /// periyoduyla AYNI (30 sn). İkisi ayrışırsa aynı kapsamda iki farklı
+  /// kâr/zarar görünür (bkz. `_seriYukle`).
+  static const _seriTazelikPenceresi = Duration(seconds: 30);
+
   @override
   void initState() {
     super.initState();
@@ -137,13 +142,32 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   Future<Map<int, double>?> _seriYukle() async {
     try {
       if (!widget.kisisel) {
+        // Seriye YALNIZCA fiyatlanabilir lot'lar girer — Performans
+        // ekranıyla AYNI kural (`FiyatKaynagi.seriyeGirer`).
+        //
+        // Eleme eskiden yalnızca Performans'ta vardı ve orada yerel bir
+        // kopyaydı; bu kart ham `activeAssets` gönderiyordu. Aynı defterden
+        // iki farklı seri çıkıyor, "Ben" kapsamında bile iki yüzey farklı
+        // kâr/zarar gösteriyordu (kullanıcı bildirimi 2026-09-22; ölçüldü:
+        // beş lotluk defterde 5'e karşı 2 lot).
         final bd = await HistoryService.instance
-            .getPortfolioHistoryHourlyBreakdown(widget.state.activeAssets, 24)
+            .getPortfolioHistoryHourlyBreakdown(
+                widget.state.activeAssets
+                    .where(FiyatKaynagi.seriyeGirer)
+                    .toList(),
+                24)
             .timeout(_yuklemeSuresi);
         return bd.total;
       }
+      // Performans ekranı gün içi seriyi 30 sn'de bir tazeliyor
+      // (`_startIntradayTickIfNeeded`). Bu kart 5 dk'lık önbellekten
+      // okusaydı iki yüzey farklı yaşta serilere bakar ve aynı kapsamda
+      // farklı kâr/zarar gösterirdi (kullanıcı bildirimi 2026-09-22).
+      //
+      // Önbelleğin varsayılanı DEĞİŞMEZ: widget ve Live Activity 5 dk'lık
+      // döngüyle hizalı kalır (bkz. `IntradaySeriesCache.minInterval`).
       return await IntradaySeriesCache.instance
-          .get(widget.state)
+          .get(widget.state, azamiYas: _seriTazelikPenceresi)
           .timeout(_yuklemeSuresi);
     } catch (e, st) {
       // Seri gelmezse kart yine çizilir (hareket satırı düşer); ağ hatası

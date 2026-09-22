@@ -56,6 +56,50 @@ class FiyatKaynagi {
   static bool altinMi(String ticker) =>
       ticker.trim().toUpperCase().startsWith('ALTIN_');
 
+  /// Varlık gün içi seriye GİREBİLİR mi?
+  ///
+  /// ## Neden burada (kullanıcı bildirimi, 2026-09-22)
+  /// "ana sayfa günlük ben tabıyla performans tabındaki günlük ben kâr
+  /// zarar tutarsız."
+  ///
+  /// İki yüzey aynı defterden AYRI listelerle seri çekiyordu:
+  ///   * Bugün kartı → `state.activeAssets` (hepsi)
+  ///   * Performans  → ekranın kendi `isRenderable` kopyası (alt küme)
+  ///
+  /// Ölçüldü: beş lotluk bir defterde Bugün kartı 5, Performans 2 lot ile
+  /// seri çekiyordu — fiyatsız/tickersız lotlar (elle fiyatlı fon,
+  /// `diger`, sembolsüz hisse) yalnızca birinde vardı. İki seri farklı
+  /// olunca kâr/zarar da farklı çıkıyordu.
+  ///
+  /// Bu, dosyanın başındaki sözleşmenin (1) maddesinin ihlaliydi: bir
+  /// varlığın seriye girip girmeyeceğine YALNIZCA burası karar verir.
+  /// Ekranın kendi kopyasını tutması, "kod çalışıyor, sayı yanlış ve
+  /// sessiz" sınıfının bir örneğiydi.
+  ///
+  /// Kuralın kendisi değişmedi — yalnızca tek eve taşındı. Fiyatı
+  /// bilinmeyen ve serisi de çekilemeyen lot seriye girmemeli, yoksa
+  /// `HistoryService` o günü tamamen boşaltabiliyor (tek price-less
+  /// varlık tüm günü götürüyordu).
+  static bool seriyeGirer(Asset a) {
+    if (a.quantity == 0) return false;
+    if (a.currentPrice > 0) return true;
+    switch (a.type) {
+      case AssetType.altin:
+        // Altın serisi gram22k'dan TÜRETİLİR; canlı fiyatı olmasa da
+        // çizilebilir (bkz. `altinGramSerisi`).
+        return true;
+      case AssetType.hisse:
+      case AssetType.emtia:
+      case AssetType.doviz:
+        return a.ticker.trim().isNotEmpty;
+      case AssetType.fon:
+        // Elle fiyatlanan fonun yayımlanmış NAV serisi yoktur.
+        return a.ticker.trim().isNotEmpty && !a.isManualPrice;
+      default:
+        return false;
+    }
+  }
+
   /// [a] için ÇEKİLECEK seriler — çağıran bu listeyi paralel başlatır.
   ///
   /// Altında üç sembol döner (spot, vadeli, kur): merdiven hangisinin

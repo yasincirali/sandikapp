@@ -29,6 +29,7 @@ import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
 import '../widgets/share_card.dart';
 import '../widgets/sandik_error_view.dart';
+import '../widgets/sandik_skeleton.dart';
 import '../services/analytics_service.dart';
 import '../services/daily_summary.dart';
 import '../services/history_service.dart';
@@ -238,8 +239,11 @@ class _PortfolioPerformanceScreenState
       _view = ''; // yalnızca kendi portföyü — kilit ekranıyla aynı kapsam
       _typeFilter = null;
       // Gün içi future'ı bilerek düşür: dokunuş "şu anki hâlini göster"
-      // demek, önbellekteki kareyi değil.
+      // demek, önbellekteki kareyi değil. Tohum da atılır — kapsam ve tür
+      // burada DEĞİŞİYOR, başka bir defterin karesi gösterilmemeli
+      // (bkz. `_gunIciTohumuAt`).
       _intradayKey = null;
+      _gunIciTohumuAt();
     });
     _startIntradayTickIfNeeded();
   }
@@ -271,6 +275,26 @@ class _PortfolioPerformanceScreenState
   // varlık kümesi değişimi) snapshot bir kare boyunca null olur; bu alan
   // sayesinde grafik o karede boşalmaz.
   PortfolioHistoryBreakdown? _lastIntradayData;
+
+  /// [_lastIntradayData]'nın AİT OLDUĞU varlık kümesi (`_intradayHistory`
+  /// anahtarıyla aynı).
+  ///
+  /// **Neden damga (kullanıcı bildirimi, 2026-09-22):** "performans özet
+  /// ekranı açıldığı an başka değerlerle doluyor, 1 sn sonrasında doğru
+  /// değerler setleniyor."
+  ///
+  /// `_lastIntradayData` hangi kapsama ait olduğunu TAŞIMIYORDU. Kullanıcı
+  /// Ben → Birlikte'ye geçtiğinde yeni future bir kare boyunca `waiting`
+  /// oluyor, `snapshot.data` null geliyor ve dal ÖNCEKİ kapsamın verisine
+  /// düşüyordu. `hasData: data != null` o veriyi TAZE sayıyor, iskelet
+  /// kapısı açılmıyor ve Özet bir saniye boyunca BAŞKA bir defterin
+  /// rakamlarını gösteriyordu.
+  ///
+  /// Damga ile fark edilir: anahtar tutmuyorsa veri `stale`'dir — grafik
+  /// onu soluk bir ara kare olarak çizmeye devam eder (spinner'dan iyi),
+  /// Özet ise sayı basmaz, iskelet gösterir. İki yüzeyin ihtiyacı farklı:
+  /// bir çizginin eski hâli bilgi taşır, yanlış bir RAKAM taşımaz.
+  String? _lastIntradayKey;
 
   // days=0 && intraday=true → günlük (24 saat, 5 dk çözünürlük).
   /// [ayGeri] dolu ise dönem başı TAKVİMDEN hesaplanır: "1 ay" 30 gün
@@ -521,28 +545,17 @@ class _PortfolioPerformanceScreenState
                               .toList()
                           : targetAssets;
 
-                      // Filtre: grafik çizimi için yalnızca fiyat serisi
-                      // alınabilir/ya da canlı fiyatı olan varlıkları geçir.
-                      // Aksi halde HistoryService tüm seriyi boşaltabiliyor
-                      // (tek price-less varlık tüm günü götürebiliyordu).
-                      bool isRenderable(Asset a) {
-                        if (a.quantity == 0) return false;
-                        if (a.currentPrice > 0) return true;
-                        switch (a.type) {
-                          case AssetType.altin:
-                            return true;
-                          case AssetType.hisse:
-                          case AssetType.emtia:
-                            return a.ticker.trim().isNotEmpty;
-                          case AssetType.doviz:
-                            return a.ticker.trim().isNotEmpty;
-                          case AssetType.fon:
-                            return a.ticker.trim().isNotEmpty &&
-                                !a.isManualPrice;
-                          default:
-                            return false;
-                        }
-                      }
+                      // Filtre: yalnızca fiyat serisi alınabilen varlıklar
+                      // geçer. Aksi halde HistoryService tüm seriyi
+                      // boşaltabiliyor (tek price-less varlık tüm günü
+                      // götürebiliyordu).
+                      //
+                      // Kural `FiyatKaynagi.seriyeGirer`'de — burada bir
+                      // KOPYASI vardı ve Bugün kartı o elemeyi hiç
+                      // yapmıyordu: aynı defterden iki farklı seri çıkıyor,
+                      // "Ben" kapsamında bile iki yüzey farklı kâr/zarar
+                      // gösteriyordu (kullanıcı bildirimi 2026-09-22).
+                      const isRenderable = FiyatKaynagi.seriyeGirer;
 
                       final chartAssetsRenderable = [
                         for (final a in chartAssets)
@@ -608,7 +621,40 @@ class _PortfolioPerformanceScreenState
                         // içinde memoize edilir; aksi halde her setState
                         // (tip/ortak filtresi, 30sn tick) yeni bir fetch
                         // başlatıp grafiği baştan yüklemeye sokuyordu.
+                        // Bu karede beklenen veri kümesi — tohumun AİT
+                        // OLDUĞU küme ile karşılaştırılır (`_lastIntradayKey`).
+                        final intradayKey =
+                            chartAssetsRenderable.map((a) => a.id).join(',');
                         return FutureBuilder<PortfolioHistoryBreakdown>(
+                          // `key` ŞART — kök neden buydu (2026-09-22,
+                          // emülatör logu ile ölçüldü).
+                          //
+                          // `FutureBuilder` future'ı değiştiğinde
+                          // `connectionState`'i `waiting`e çeker ama
+                          // **`snapshot.data`'yı KORUR** (Flutter'ın
+                          // belgelenmiş davranışı: yeni future çözülene
+                          // kadar eski sonuç elde tutulur). Ölçülen log:
+                          //
+                          //   view=<ortak> waiting=true  nokta=195 tohumKey=yok
+                          //   view=<ortak> waiting=false nokta=195 tohumKey=var
+                          //
+                          // Yani `waiting` karesinde bile 195 noktalı bir
+                          // seri vardı ve o ÖNCEKİ kapsamın sonucuydu —
+                          // `hasData` true çıkıyor, iskelet kapısı
+                          // açılmıyor, Özet bir an başka birinin
+                          // rakamlarını gösteriyordu.
+                          //
+                          // Tohumu atmak (`_gunIciTohumuAt`) bunu
+                          // çözmedi çünkü veri tohumdan DEĞİL, builder'ın
+                          // kendi eski snapshot'ından geliyordu.
+                          //
+                          // `ValueKey` kümeyi değiştirdiğimizde builder'ı
+                          // YENİDEN KURAR: state sıfırlanır, `snapshot.data`
+                          // null başlar, `hasData` false olur ve Özet
+                          // iskelete düşer. Zoom yolunun filtre değişince
+                          // yeni controller kurmasının birebir karşılığı —
+                          // "sadece günlükte hatalı" bu yüzdendi.
+                          key: ValueKey(intradayKey),
                           future: _intradayHistory(chartAssetsRenderable),
                           builder: (context, snapshot) {
                             final loading = snapshot.connectionState ==
@@ -616,7 +662,26 @@ class _PortfolioPerformanceScreenState
                             // Tazeleme sırasında son başarılı seriye düş —
                             // 30 sn'lik tick her seferinde grafiği spinner'a
                             // çevirmesin.
-                            final data = snapshot.data ?? _lastIntradayData;
+                            // Tohum YALNIZCA aynı kümeye aitse kullanılır.
+                            //
+                            // **Neden (kullanıcı bildirimi 2026-09-22, üç
+                            // turdur kapanmayan bulgu):** kapsam değişince
+                            // (Ben → ortak → Birlikte) yeni future bir kare
+                            // `waiting` oluyor ve `snapshot.data` null
+                            // geliyordu. Dal o karede ÖNCEKİ defterin
+                            // verisine düşüyor, `hasData` true çıkıyor ve
+                            // Özet bir an BAŞKA birinin rakamlarını
+                            // gösteriyordu.
+                            //
+                            // Damgayı "stale işaretle ama yine de kullan"
+                            // diye kurmak yetmedi: Özet için tek doğru
+                            // davranış o veriyi HİÇ kullanmamak. Grafik
+                            // zaten `waiting` ile kendi ara karesini
+                            // yönetiyor.
+                            final tohum = _lastIntradayKey == intradayKey
+                                ? _lastIntradayData
+                                : null;
+                            final data = snapshot.data ?? tohum;
                             // X ekseni ÇİZİLEN günün 00:00'ına kurulur —
                             // bugün olmak zorunda değil. Hafta sonu ve
                             // tatilde son seans (ör. Cuma) çizilir; eksen
@@ -633,7 +698,16 @@ class _PortfolioPerformanceScreenState
                               pState,
                               activePartners,
                               waiting: loading,
-                              hasData: data != null,
+                              // NOKTA SAYISINA bak, nesnenin varlığına
+                              // değil (2026-09-22). `getPortfolioHistory…`
+                              // ağ boşa çıktığında BOŞ ama null OLMAYAN bir
+                              // breakdown döndürüyor; `data != null` onu
+                              // "veri var" sayıyor, iskelet kapısı hiç
+                              // açılmıyor ve Özet boş/eski rakamla
+                              // çiziliyordu. Zoom dalı bunu baştan beri
+                              // `historyMap.isNotEmpty` ile doğru yapıyor —
+                              // iki dal ayrışmıştı.
+                              hasData: (data?.total.isNotEmpty ?? false),
                               holdsSelectedType: holdsSelectedType,
                               // Future sonuçlandıysa beklenecek bir şey
                               // kalmadı: veri hâlâ yoksa spinner değil,
