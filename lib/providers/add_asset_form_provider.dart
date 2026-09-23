@@ -7,6 +7,7 @@ import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
+import '../utils/tr_format.dart';
 import 'bulk_cart_provider.dart';
 
 /// Varlık ekleme formunun durum makinesi (Faz 3.10).
@@ -78,21 +79,24 @@ ParsedEntry? parseQuickEntry(String raw) {
     detectedType = AssetType.hisse;
   }
 
-  // "1.000" binlik ayracı: noktayı yalnızca üç haneli grup önündeyse at.
-  final normalized = text.replaceAll(RegExp(r'(?<=\d)\.(?=\d{3})'), '');
-  final numMatches = RegExp(r'(\d+([.,]\d+)?)').allMatches(normalized).toList();
+  // Sayı belirteci tamamen yakalanır ("1.234,56", "41.2345", "0.125") ve
+  // formdaki alanlarla AYNI kuralla (`parseTrNumber`) çözülür. Eskiden
+  // noktadan sonra 3 hane GELİYORSA nokta atılıyordu: "41.2345" → 412345,
+  // "0.125 gram" → 125 (2026-09-23 denetimi F15).
+  const sayi = r'(\d+(?:[.,]\d+)*)';
+  double oku(String s) => parseTrNumber(s) ?? 0;
+  final numMatches = RegExp(sayi).allMatches(text).toList();
   double qty = 0;
   double price = 0;
 
   if (numMatches.isNotEmpty) {
-    qty = double.tryParse(numMatches.first.group(1)!.replaceAll(',', '.')) ?? 0;
+    qty = oku(numMatches.first.group(1)!);
   }
-  final priceHint =
-      RegExp(r'(\d+([.,]\d+)?)\s*(lira|tl|₺)').firstMatch(normalized);
+  final priceHint = RegExp('$sayi\\s*(lira|tl|₺)').firstMatch(text);
   if (priceHint != null) {
-    price = double.tryParse(priceHint.group(1)!.replaceAll(',', '.')) ?? 0;
+    price = oku(priceHint.group(1)!);
   } else if (numMatches.length >= 2) {
-    price = double.tryParse(numMatches[1].group(1)!.replaceAll(',', '.')) ?? 0;
+    price = oku(numMatches[1].group(1)!);
   }
 
   if (qty <= 0) return null;
@@ -535,9 +539,9 @@ class AddAssetFormNotifier
     );
   }
 
-  /// Sayıyı giriş alanına yazılacak biçimde verir: tam sayı ise ondalıksız.
-  static String fmtInput(double v) =>
-      v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
+  /// Sayıyı giriş alanına yazılacak biçimde verir: tam sayı ise ondalıksız,
+  /// ondalık `,` ile (`fmtInputTr` — `parseTrNumber` ile gidiş-dönüş).
+  static String fmtInput(double v) => fmtInputTr(v);
 
   // ── Önizleme ───────────────────────────────────────────────────────────
   //

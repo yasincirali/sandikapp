@@ -75,8 +75,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     super.dispose();
   }
 
-  String _fmt(double v) =>
-      v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
+  /// Alan metni `parseTrNumber` ile okunur; `toString()` (`41.235`) binlik
+  /// sanılıp 1000 kat büyüyordu (2026-09-23 denetimi F1).
+  String _fmt(double v) => fmtInputTr(v);
 
   /// Türkçe biçimi doğru çözer. Eski hâli `replaceAll(',', '.')` idi ve
   /// "1.000" girdisini 1.0 olarak okuyordu — kullanıcı 1000 lot yazıp
