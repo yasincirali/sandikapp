@@ -16,6 +16,7 @@ import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
 import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
+import '../services/fx_rate_migration_service.dart';
 import '../services/portfolio_cache.dart';
 
 const _uuid = Uuid();
@@ -300,6 +301,35 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   // ---- CRUD ----------------------------------------------------------------
 
+  /// Yeni lot'un `purchaseFxRate`'i — ALIM GÜNÜNÜN kuru.
+  ///
+  /// Eskiden her zaman BUGÜNÜN canlı kuru yazılıyordu: geriye tarihli
+  /// dövizli alımın maliyeti kalıcı olarak yanlış kalıyordu. Kurlar henüz
+  /// yüklenmemişken (yeni kullanıcının ilk açılışı, çevrimdışı) de 1.0
+  /// yazılıyor ve varlık saatlerce ~%4000 kâr gösteriyordu (2026-09-23
+  /// denetimi F4). Sıra: bugünkü alımda canlı kur; değilse alım gününün
+  /// kapanış kuru. İkisi de bilinmiyorsa 1.0 YER TUTUCU kalır — uydurma bir
+  /// kur değil, `FxRateMigrationService`'in tanıdığı "henüz bilinmiyor"
+  /// işaretidir ve ilk fırsatta alım günü kuruyla onarılır.
+  Future<double> _alisKuru(
+      String currency, DateTime? addedDate, PortfolioState s) async {
+    final canli = _fxRateForCurrency(currency, s);
+    final sembol = FxRateMigrationService.fxSembolu(currency);
+    if (sembol == null) return canli;
+    final simdi = DateTime.now();
+    final gun = addedDate ?? simdi;
+    final geriTarihli = DateTime(gun.year, gun.month, gun.day)
+        .isBefore(DateTime(simdi.year, simdi.month, simdi.day));
+    if (!geriTarihli && canli > 1.0) return canli;
+    try {
+      final r = await PriceService.instance.fetchHistoricalFxRate(sembol, gun);
+      if (r != null && r > 1.0) return r;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'PortfolioNotifier._alisKuru');
+    }
+    return 1.0;
+  }
+
   double _fxRateForCurrency(String currency, PortfolioState s) {
     switch (currency.toUpperCase()) {
       case 'USD':
@@ -378,7 +408,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       }
     }
 
-    final fxRate = _fxRateForCurrency(currency, currentState);
+    final fxRate = await _alisKuru(currency, addedDate, currentState);
 
     final asset = Asset(
       id: _uuid.v4(),

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/pref_keys.dart';
+import 'crash_reporter.dart';
 import 'price_service.dart';
 import 'fiyat_kaynagi.dart';
 
@@ -25,6 +26,12 @@ class FxRateMigrationService {
     'GBP': 'GBPTRY=X',
   };
 
+  /// Para biriminin TRY kur sembolü; TRY ve desteklenmeyenlerde `null`.
+  /// Alım anında kur çözen `PortfolioNotifier` da aynı haritayı kullanır —
+  /// onarım ile ilk yazım aynı seriden beslensin.
+  static String? fxSembolu(String currency) =>
+      _fxSymbolFor[currency.toUpperCase()];
+
   /// [userId] için migration'ı çalıştırır.
   /// Hata olursa sessizce geçer — varlıklar purchase_fx_rate=1.0 ile
   /// düzgün çalışmaya devam eder, bir sonraki girişte tekrar denenilir.
@@ -37,7 +44,6 @@ class FxRateMigrationService {
       final last = prefs.getInt(key) ?? 0;
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - last < _throttle.inMilliseconds) return;
-      await prefs.setInt(key, now);
 
       final db = Supabase.instance.client;
 
@@ -49,7 +55,10 @@ class FxRateMigrationService {
           .neq('currency', 'TRY')
           .eq('purchase_fx_rate', 1.0);
 
-      if (rows.isEmpty) return;
+      if (rows.isEmpty) {
+        await prefs.setInt(key, now);
+        return;
+      }
 
       if (kDebugMode) {
         debugPrint('[FxMigration] ${rows.length} varlık güncelleniyor...');
@@ -95,8 +104,15 @@ class FxRateMigrationService {
       }
 
       if (kDebugMode) debugPrint('[FxMigration] Tamamlandı.');
-    } catch (e) {
-      if (kDebugMode) debugPrint('[FxMigration] Hata (sessizce geçildi): $e');
+      // Damga iş BİTTİKTEN sonra: önceden işten önce yazılıyordu, ağ
+      // hatasıyla yarıda kalan onarım 24 saat hiç denenmiyordu
+      // (2026-09-23 denetimi F20).
+      await prefs.setInt(key, now);
+    } catch (e, st) {
+      // Sessiz kalmasın: onarılamayan kur, kullanıcının dövizli
+      // maliyetinin yanlış kalması demek (CLAUDE.md: servis catch'leri
+      // Crashlytics'e bildirir).
+      CrashReporter.report(e, st, reason: 'FxRateMigrationService.runFor');
     }
   }
 }
