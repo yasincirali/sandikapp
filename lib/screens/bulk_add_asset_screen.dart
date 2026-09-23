@@ -11,6 +11,7 @@ import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
+import '../utils/tr_format.dart';
 import 'add_asset_screen.dart';
 import 'csv_import_screen.dart';
 import 'paywall_screen.dart';
@@ -446,8 +447,10 @@ class _BulkItemTile extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
-  String _fmt(double v) =>
-      v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
+  // Türkçe biçim (`1.234,75`, `0,125`) — 2026-09-23 yeniden testi: eskiden
+  // `double.toString()` sepette "1234.75 TRY" yazıyordu; aynı sayı Ekle
+  // formunda "1.234,75" görünüyordu. 6 hane: fon/kripto adedi kırpılmasın.
+  String _fmt(double v) => fmtNumFlex(v, maxDigits: 6);
 
   /// ⚠️ `Asset.unitLabel`'ın KOPYASI ve ondan AYRIŞMIŞ durumda: burada
   /// hisse/fon "adet" derken model "lot" diyor. Bu ekran `Asset` değil
