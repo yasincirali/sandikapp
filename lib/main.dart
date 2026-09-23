@@ -791,6 +791,40 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// Biyometrik kilit açıkken: soğuk açılışta ve arkada
   /// [_lockAfter]'dan uzun kalınca ana ekran kilit arkasında kalır.
   bool _locked = false;
+
+  /// Son build'de kilit ekranı mı gösterildi, oturum var mıydı — geçişleri
+  /// (kilitlendi / çıkış yapıldı) yakalamak için. Bkz. [_kokeDon].
+  bool _kilitGosteriliyor = false;
+  bool _oturumVardi = false;
+
+  /// Kilit ve çıkış yalnızca KÖK rotayı (`home:`) değiştirir. Üstte açık
+  /// kalan varlık detayı / Ayarlar ekranı kilidin ya da giriş ekranının
+  /// ÖNÜNDE görünmeye ve çalışmaya devam ediyordu: arkaya alıp dönen
+  /// kullanıcı Face ID sorulmadan portföyünü görüyordu, zaman aşımı çıkışı
+  /// önceki kullanıcının ekranını giriş ekranının üstünde bırakıyordu
+  /// (2026-09-23 denetimi F2). Geçiş anında kök rotaya dönülür; build
+  /// sırasında navigatöre dokunulamayacağı için kare sonunda.
+  void _kokeDon() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      appNavigatorKey.currentState?.popUntil((r) => r.isFirst);
+    });
+  }
+
+  /// Bildirim dokunuşlarının kilit altında ekran açmaması için kilit
+  /// durumunu `NotificationService`'e bildirir. Kilitlenme hemen yazılır
+  /// (o anda gelen dokunuş ertelensin); açılma kare sonunda, çünkü
+  /// ertelenmiş dokunuş o anda `push` eder ve build içinde push edilemez.
+  void _kilitDurumu(bool kilitli) {
+    if (_kilitGosteriliyor == kilitli) return;
+    _kilitGosteriliyor = kilitli;
+    if (kilitli) {
+      NotificationService.instance.kilitKapisi.kilitli.value = true;
+      _kokeDon();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => NotificationService.instance.kilitKapisi.kilitli.value = false);
+    }
+  }
   static const _lockAfter = Duration(seconds: 30);
 
   String? _checkedUserId;
@@ -1618,8 +1652,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // göre değerlendirilir, öncekinin kilidini devralmaz.
       _locked = false;
       _lockAtLaunchFor = null;
+      _kilitDurumu(false);
+      // Oturum az önce kapandıysa önceki kullanıcının açık ekranları
+      // giriş ekranının üstünde kalmasın. YALNIZCA geçişte: girişten
+      // açılan Kayıt / Şifremi unuttum ekranları her build'de kapanmasın.
+      if (_oturumVardi) {
+        _oturumVardi = false;
+        _kokeDon();
+      }
       return const LoginScreen(key: ValueKey('login'));
     }
+    _oturumVardi = true;
 
     if (_disclaimerAccepted == false) {
       return DisclaimerAcceptanceScreen(
@@ -1642,6 +1685,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     if (_locked || (_lockAtLaunchFor != user.id && _lockAtLaunchNeeded())) {
       _lockAtLaunchFor = user.id;
       _locked = true;
+      _kilitDurumu(true);
       return LockScreen(
         key: const ValueKey('lock'),
         onUnlocked: () => setState(() => _locked = false),
@@ -1667,6 +1711,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         },
       );
     }
+
+    _kilitDurumu(false);
 
     // Kilit TEKLİFİ — kilit kapısından SONRA, ana ekrandan ÖNCE.
     //

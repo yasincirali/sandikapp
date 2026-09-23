@@ -25,6 +25,7 @@ import '../config/pref_keys.dart';
 import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
 import 'analytics_service.dart';
 import 'crash_reporter.dart';
+import 'kilit_kapisi.dart';
 import 'retention_tracker.dart';
 
 // Anahtarlar preferences_provider ile AYNI kaynaktan (PrefKeys) — ikisi
@@ -76,6 +77,10 @@ class NotificationService {
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   GlobalKey<NavigatorState>? _navigatorKey;
+
+  /// Biyometrik kilit altında bildirim dokunuşunu bekleten kapı —
+  /// `_AuthGate` durumunu yazar. Gerekçe [KilitKapisi]'nda.
+  final kilitKapisi = KilitKapisi();
 
   Future<void> init({GlobalKey<NavigatorState>? navigatorKey}) async {
     if (navigatorKey != null) {
@@ -570,6 +575,7 @@ class NotificationService {
   /// zorlamıyoruz; Özet sekmesi en son bakılan dönemi hatırlar), 2 → 1A.
   /// Navigator hazır değilse [_openPartnerInvite] ile aynı yeniden deneme.
   void _openOzet({int? periodIdx, int deneme = 0}) {
+    if (kilitKapisi.ertele(() => _openOzet(periodIdx: periodIdx))) return;
     final navigator = _navigatorKey?.currentState;
     if (navigator == null) {
       if (deneme >= _yenidenDenemeSiniri) return;
@@ -591,6 +597,7 @@ class NotificationService {
   }
 
   void _openPartnerInvite(String inviteId) {
+    if (kilitKapisi.ertele(() => _openPartnerInvite(inviteId))) return;
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;
     if (navigator == null || context == null) {
@@ -636,6 +643,7 @@ class NotificationService {
     VoidCallback? onNotFound,
     int? initialPeriodDays,
   }) {
+    if (kilitKapisi.ertele(() => openAssetPerformance(assetId, onNotFound: onNotFound, initialPeriodDays: initialPeriodDays))) return;
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;
 
@@ -738,6 +746,7 @@ class NotificationService {
     int deneme = 0,
     VoidCallback? onNotFound,
   }) {
+    if (kilitKapisi.ertele(() => openPriceAlertAsset(symbol, onNotFound: onNotFound))) return;
     final navigator = _navigatorKey?.currentState;
     final context = navigator?.overlay?.context;
 
