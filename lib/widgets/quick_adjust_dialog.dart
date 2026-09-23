@@ -172,7 +172,13 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     final accent = _isAdd ? context.c.gain : context.c.loss;
     final qty = _parse(_qtyCtrl.text) ?? 0;
     final price = _parse(_priceCtrl.text) ?? 0;
-    final total = qty * (_isAdd ? price : asset.purchasePrice);
+    // Satışta önizleme, KAYDEDİLECEK satış fiyatını kullanır (bkz.
+    // `addSellTransaction` çağrısı). Eskiden "Satış değeri" etiketiyle alış
+    // maliyeti gösteriliyordu; kaydedilen tutar başkaydı (2026-09-23
+    // denetimi F10).
+    final satisFiyati =
+        asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice;
+    final total = qty * (_isAdd ? price : satisFiyati);
 
     return Dialog(
       backgroundColor: context.c.surface1,
