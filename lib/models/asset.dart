@@ -399,10 +399,17 @@ class Asset {
         subCategory: m['sub_category'] as String?,
         unitType: (m['unit_type'] as String?) ?? 'piece',
         lastUpdated: m['last_updated'] != null
-            ? DateTime.parse(m['last_updated'] as String)
+            ? DateTime.parse(m['last_updated'] as String).toLocal()
             : null,
+        // `.toLocal()` ŞART (2026-09-24). Sütun `timestamptz`; PostgREST
+        // `+00:00` döndürür ve `DateTime.parse` UTC nesne üretir. UTC
+        // nesnede `hour`/`day` UTC alanlarıdır: tarih seçiciyle "20 Eyl"
+        // girilen işlem (yerel 00:00 = 19 Eyl 21:00Z) listede "19 Eyl"
+        // görünüyor, `dayKey` onu önceki güne koyuyordu. Saat gösterimi
+        // eklenince 14:32'lik alım 11:32 yazılacaktı. Yazma tarafı zaten
+        // `.toUtc()`; an (`millisecondsSinceEpoch`) değişmez.
         addedDate: m['added_date'] != null
-            ? DateTime.parse(m['added_date'] as String)
+            ? DateTime.parse(m['added_date'] as String).toLocal()
             : DateTime.now(),
         notes: (m['notes'] as String?) ?? '',
         isManualPrice: m['is_manual_price'] as bool? ?? false,
@@ -419,7 +426,7 @@ class Asset {
         deletedCount: (m['deleted_count'] as num?)?.toInt() ?? 0,
         // Migration 0027 öncesi kayıtlarda sütun yok → null = aktif.
         deletedAt: m['deleted_at'] != null
-            ? DateTime.parse(m['deleted_at'] as String)
+            ? DateTime.parse(m['deleted_at'] as String).toLocal()
             : null,
       );
 }

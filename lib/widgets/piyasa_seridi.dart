@@ -40,7 +40,6 @@ import '../l10n/l10n.dart';
 import '../services/crash_reporter.dart';
 import '../services/price_service.dart';
 import '../theme/sandik.dart';
-import '../utils/polling.dart';
 import '../utils/tr_format.dart';
 
 class PiyasaSeridi extends StatefulWidget {
@@ -87,20 +86,31 @@ class PiyasaOgesi {
 
 class _PiyasaSeridiState extends State<PiyasaSeridi> {
   Map<String, YahooQuote> _kotasyon = const {};
-  late final ForegroundPoller _poller = ForegroundPoller(
-    interval: PiyasaSeridi.yenilemeAraligi,
-    onTick: _yukle,
-  );
+
+  /// ORTAK NABIZ dinleyicisi — kendi sayacını KURMAZ (2026-09-23).
+  ///
+  /// Eskiden `ForegroundPoller` ile kendi 30 sn'lik turunu atıyordu. Aynı
+  /// ritim yetmiyordu: sayac mount anında kurulduğu için bant, Bugün kartı
+  /// ve Performans FARKLI FAZDA tazeleniyordu — bant "USD 48,79" derken
+  /// portföy toplamı henüz bir önceki kotasyondan hesaplanmış olabiliyordu
+  /// (bkz. `TazelikRitmi.nabiz`).
+  ///
+  /// Yaşam döngüsü korunur: nabız arka planda durur, öne gelince hemen
+  /// bir tur atar — `ForegroundPoller`'ın yaptığının aynısı.
+  VoidCallback? _nabziBirak;
 
   @override
   void initState() {
     super.initState();
-    _poller.start();
+    // İlk turu HEMEN at: nabız ilk tick'ini bir aralık sonra atar ve
+    // bant o süre boyunca boş kalırdı.
+    _yukle();
+    _nabziBirak = TazelikRitmi.nabiz.dinle(_yukle);
   }
 
   @override
   void dispose() {
-    _poller.dispose();
+    _nabziBirak?.call();
     super.dispose();
   }
 

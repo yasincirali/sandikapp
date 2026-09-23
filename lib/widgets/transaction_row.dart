@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
@@ -170,9 +169,11 @@ class TransactionRow extends StatelessWidget {
                                   color: asset.type.onSurface(context),
                                   fontWeight: FontWeight.w600)),
                         ),
+                        // Saat de yazılır (kullanıcı isteği 2026-09-24);
+                        // tarih seçiciyle girilen işlemde saat bilinmediği
+                        // için yalnızca tarih kalır (`fmtTarihSaat`).
                         Text(
-                          DateFormat('d MMM yyyy', 'tr_TR')
-                              .format(asset.addedDate),
+                          fmtTarihSaat(asset.addedDate),
                           style: context.t.bodySmall
                               ?.copyWith(color: context.c.text36),
                         ),

@@ -18,9 +18,11 @@ import '../utils/chart_line_width.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
+import '../utils/islem_isaretleri.dart';
 import '../utils/spot_lookup.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
+import '../services/period_summary_service.dart';
 import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
 import '../widgets/disclaimer_widget.dart';
@@ -186,28 +188,92 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
   }
 
-  /// History fetch + son başarılı sonucu sakla.
+  /// Seçili dönemin BAŞLANGICI — Performans ekranıyla AYNI pencere.
   ///
-  /// [days] 0 ise GÜN İÇİ seri istenir: 24 saat, 5 dakikalık slotlar.
-  /// Gün içi yolu ayrı bir servistir (`...HourlyBreakdown`) ve çizilen
-  /// günü de bildirir — X ekseni ona göre kurulur.
-  Future<Map<int, double>> _loadHistory(int days) {
+  /// Eskiden `now − gün` idi (gün ortasından başlayan, "1A" = 30 gün).
+  /// Performans ise takvimden ve gün başından sayıyor (`PeriodSummaryService
+  /// .pencere`: "1A" = bir önceki ayın aynı günü, 00:00). İki ekran farklı
+  /// dönem başı kullanınca aynı "1A" farklı iki fiyattan ölçülüyordu ve
+  /// kullanıcının istediği eşitlik (varlık ekranı ↔ Performans › tür filtresi,
+  /// 2026-09-23) tanım gereği sağlanamıyordu.
+  static DateTime _donemBaslangici(int days, DateTime now) {
+    for (final p in SummaryPeriod.values) {
+      if (!p.intraday && p.days == days) {
+        return PeriodSummaryService.pencere(p, now).start;
+      }
+    }
+    return dayKey(now.subtract(Duration(days: days)));
+  }
+
+  /// [a]'nın BİRİM fiyat serisi (1 gram / 1 adet / 1 pay, TL) — seçili
+  /// dönem için, Performans ekranıyla AYNI motor ve çözünürlükten.
+  ///
+  /// Motor: gün içi → `...HourlyBreakdown` (Performans GÜNLÜK), diğerleri →
+  /// `...BreakdownAtResolution` + `pickForSpan` (Performans'ın
+  /// `ZoomDataController`'ı). Eskiden bu ekran `getPortfolioHistory(days)`
+  /// kullanıyordu: farklı tarih kapısı (gün/saate YUVARLANMIŞ `addedDate`)
+  /// ve farklı son-nokta kuralı. Aynı ürün iki ekranda iki motordan
+  /// geçince uçlar da ayrışıyordu.
+  Future<PortfolioHistoryBreakdown> _donemSerisi(List<Asset> defter, int days) {
     if (days == 0) {
       return HistoryService.instance
-          .getPortfolioHistoryHourlyBreakdown([widget.asset], 24)
-          .then((b) {
-        if (mounted) {
-          _gunIciBaslangic = b.seansGunu;
-          if (b.total.isNotEmpty) _lastHistory = b.total;
-        }
-        return b.total;
-      });
+          .getPortfolioHistoryHourlyBreakdown(defter, 24);
     }
-    return HistoryService.instance
-        .getPortfolioHistory([widget.asset], days)
-      ..then((v) {
-        if (mounted && v.isNotEmpty) _lastHistory = v;
-      });
+    final now = DateTime.now();
+    final from = _donemBaslangici(days, now);
+    return HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
+      assets: defter,
+      from: from,
+      to: now,
+      tier: ResolutionTierMeta.pickForSpan(
+          now.difference(from).inMinutes / (60.0 * 24.0)),
+    );
+  }
+
+  /// Son başlatılan yüklemenin sırası — geç dönen ESKİ bir dönemin sonucu
+  /// yenisinin alanlarını ezmesin (hızlı sekme değişimi).
+  int _yuklemeSirasi = 0;
+
+  /// Dönemin BİRİM fiyat serisini yükler (grafik, yüzde VE kazanç tutarı).
+  ///
+  /// ## Neden birim seri (kullanıcı kararı, 2026-09-23)
+  /// *"Portföyden varlığa girildiğinde zaman aralığına göre 1 gram ya da bir
+  /// lot varlığın grafiğini göstermeli; diğer alanlarda da kazanç
+  /// hesaplanarak yazılmalı."*
+  ///
+  /// Grafik ve yüzde ÜRÜNÜ anlatır (alım/satım onları oynatamaz), tutar
+  /// SAHİBİ anlatır: `PeriodSummaryService.birimPiyasaEtkisi` bu seriyle
+  /// lot miktarlarından hesaplar.
+  ///
+  /// **Pozisyon serisi artık çekilmiyor** (emülatörde ölçüldü, aynı gün).
+  /// İlk sürüm tutarı motorun pozisyon serisinden alıyordu; bugün açılan
+  /// 100 gr gramda **−₺619.300** yazdı — motor alım saatini 5 dk'lık kovaya
+  /// yuvarlıyor, katkı sınırı ham damgayı kullanıyordu; alım hem tabanda hem
+  /// katkıda sayıldı.
+  Future<Map<int, double>> _loadHistory(int days) async {
+    final sira = ++_yuklemeSirasi;
+    final birim =
+        await _donemSerisi([FiyatKaynagi.birimVarlik(widget.asset)], days);
+    if (mounted && sira == _yuklemeSirasi) {
+      if (days == 0) _gunIciBaslangic = birim.seansGunu;
+      if (birim.total.isNotEmpty) _lastHistory = birim.total;
+    }
+    return birim.total;
+  }
+
+  /// Kazanç tutarının lot defteri — birleşik varlık DEĞİL, gerçek lot'lar.
+  ///
+  /// `widget.asset` bir POZİSYON görünümüdür (`Position.asDisplayAsset`):
+  /// `quantity` bugünkü TOPLAM, `addedDate` İLK alım. Onunla hesaplanan
+  /// kazanç, bugün alınan lot'u dönemin tamamında varmış gibi sayar ve
+  /// alımı piyasa hareketi sanır (ölçüldü 2026-09-23: 10 gram varken 10
+  /// gram daha alınınca −%0,78'lik gün −%50 görünüyordu). Lot listesi yoksa
+  /// birleşik varlığa düşülür — uydurma yok.
+  List<Asset> get _seriDefteri {
+    final lots = widget.lots;
+    if (lots == null || lots.isEmpty) return [widget.asset];
+    final gecerli = [for (final l in lots) if (!l.isDeleted) l];
+    return gecerli.isEmpty ? [widget.asset] : gecerli;
   }
 
   @override
@@ -232,15 +298,22 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// gününe kurulu; başka güne ait noktalar ya `x < 0` ile atlanır ya da
   /// sağa taşardı. O durumda seri BOŞ döner ve kullanıcıya söylenir —
   /// yanlış güne ait bir çizgi çizmekten iyidir.
+  ///
+  /// **Karşılaştırma da BİRİM seridir** (2026-09-23). Portföyden seçilen
+  /// varlık eskiden olduğu gibi (birleşik pozisyon) çekiliyordu: dönem
+  /// içinde alınmışsa çizgisi alım anında başlıyor ya da sıçrıyordu —
+  /// yüzde normalizasyonu miktar değişimini fiyat hareketi gibi okuyordu.
+  /// Ana seriyle aynı motor ve pencereden gelir ki iki çizgi aynı soruyu
+  /// ("ürün ne yaptı") yanıtlasın.
   Future<Map<int, double>> _karsilastirmaSerisi(Asset asset, int days) async {
+    final birim = FiyatKaynagi.birimVarlik(asset);
     if (days != 0) {
-      return HistoryService.instance.getPortfolioHistory([asset], days);
+      return (await _donemSerisi([birim], days)).total;
     }
     // Ana serinin future'ı ŞİMDİ yakalanır: `_selectPeriod` ikisini aynı
     // `setState` içinde başlatıyor ve alan sonra değişebilir.
     final anaSeri = _historyFuture;
-    final b = await HistoryService.instance
-        .getPortfolioHistoryHourlyBreakdown([asset], 24);
+    final b = await _donemSerisi([birim], 0);
     // `_gunIciBaslangic` ANA seri çözülünce yazılıyor. Karşılaştırma önce
     // dönerse alan ya boş (ilk seçim) ya da önceki seansın günü olur —
     // ikisinde de kapı yanlış karar verir ve başka güne ait noktalar
@@ -340,10 +413,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     //   · Çizilen gün bugün OLMAYABİLİR: piyasa kapalıyken servis son
     //     seansı döndürür (`seansGunu`). Ekseni `now`'a kurmak hafta sonu
     //     Cuma seansını grafiğin dışına atardı.
+    //   · Diğer dönemler Performans ekranıyla AYNI pencerede başlar
+    //     (takvim + gün başı, bkz. `_donemBaslangici`).
     final startDate = isIntraday
         ? (_gunIciBaslangic ??
             dayKey(endDate))
-        : endDate.subtract(Duration(days: period.days));
+        : _donemBaslangici(period.days, endDate);
     // Kesirli gün — saatlik veride son X gün sınırında değil, gerçek
     // anlarında olmalı. Yoksa nokta grafiğin ortasında yalnız kalır.
     final maxX = isIntraday
@@ -568,8 +643,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
                     final rawSegments = _convertHistoryToSegments(
                         historyMap, startDate, endDate,
-                        currentUnitPriceOverride: currentUnitTRY,
-                        intraday: isIntraday);
+                        currentUnitPriceOverride: currentUnitTRY);
 
                     // Normalize base: aktif segmentin ilk noktası. Bunun
                     // altında ana varlığın Y'leri (y / base) * 100 → % olur.
@@ -667,43 +741,54 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
                       }
                     }
-                    // Seçili periyodun değişimi — HAM fiyat serisinden.
+                    // Seçili periyodun değişimi.
+                    //
+                    // ## İki sayı, iki soru (kullanıcı kararı, 2026-09-23)
+                    // *"Zaman aralığına göre 1 gram ya da bir lot varlığın
+                    // grafiğini göstermeli, diğer alanlarda da kazanç
+                    // hesaplanarak yazılmalı."*
+                    //
+                    //   · YÜZDE → ÜRÜNÜN hareketi: birim serinin (grafiğin)
+                    //     başı ile sonu. Sahibin alımı, satımı, maliyeti onu
+                    //     oynatamaz; iki ortak aynı ürüne aynı dönemde bakınca
+                    //     aynı yüzdeyi görür.
+                    //   · TUTAR → SAHİBİN kazancı: pozisyonun PİYASA ETKİSİ,
+                    //     `son miktar × son birim − baş miktar × baş birim −
+                    //     dönem içi net alım` (`birimPiyasaEtkisi`). Dönem
+                    //     başında elde olan lot'lar için Performans'ın tür
+                    //     filtresindeki payıyla aynıdır (Σ parça == bütün);
+                    //     dönem içinde açılan lot ALIŞ fiyatından ölçülür.
+                    //     Dönem içinde alım yoksa tutar = miktar × birim
+                    //     fark, yani yüzdeyle de tutarlı.
+                    //
+                    // Eskiden tutar `(son − baş) × SON miktar` idi: bugün
+                    // alınan lot dönemin tamamını yaşamış sayılıyordu, alım
+                    // fiyatıyla dönem başı fiyatı arasındaki fark "kazanç"
+                    // yazılıyordu.
+                    //
+                    // `v <= 0` slotlar `uclar` içinde ELENİR (ölçüldü
+                    // 2026-09-23: boş ilk slot 22 ayar gramda +₺612.621,
+                    // gram fiyatının tam 100 katı yazdırıyordu).
                     double? periodChangeTRY;
                     double? periodChangePct;
                     {
-                      // DÖNEM DEĞİŞİMİ SAHİPTEN BAĞIMSIZ OLMALI.
-                      //
-                      // Bu yüzde "bu üründe bu dönemde ne oldu" sorusunu
-                      // yanıtlar; "ben ne kadar kazandım" sorusunu DEĞİL.
-                      // Dolayısıyla iki ortak aynı ürüne aynı dönemde
-                      // baktığında AYNI yüzdeyi görmelidir — alım tarihleri
-                      // farklı olsa bile.
-                      //
-                      // `rawActiveSeg` bu iş için KULLANILAMAZ, çünkü
-                      // `_convertHistoryToSegments` onu sahibe göre bozar:
-                      //   · seri sahibin alım gününde kesilir (`isBefore`
-                      //     kontrolü) → 6 ay önce alan ile 3 ay önce alan
-                      //     farklı noktadan başlar,
-                      //   · ilk nokta piyasa fiyatı yerine sahibin ORTALAMA
-                      //     MALİYETİ ile değiştirilir (anchor).
-                      // İkisi birleşince bölen (`f`) sahibin maliyeti olur ve
-                      // yüzde kişiye göre değişir; hatta biri kârda diğeri
-                      // zararda görünür. Kullanıcı bunu altında yakaladı.
-                      //
-                      // Ham `historyMap` ise saf piyasa serisidir: sahibin
-                      // alım tarihinden ve maliyetinden etkilenmez.
-                      final sortedTs = historyMap.keys.toList()..sort();
-                      if (sortedTs.length >= 2) {
-                        // `historyMap` toplam pozisyon değeri taşır; birim
-                        // fiyata inmek için miktara bölünür. Oran alındığı
-                        // için bölen sadeleşir — yüzde miktardan bağımsızdır.
-                        final divisor = qty > 0 ? qty : 1.0;
-                        final f = historyMap[sortedTs.first]! / divisor;
-                        final l = historyMap[sortedTs.last]! / divisor;
-                        // Tutar ise sahibe özgüdür: aynı yüzde hareketi,
-                        // elde tutulan miktara göre farklı TL eder.
-                        periodChangeTRY = (l - f) * qty;
-                        if (f > 0) periodChangePct = ((l - f) / f) * 100;
+                      final u = PeriodSummaryService.uclar(historyMap,
+                          fromMs: startDate.millisecondsSinceEpoch,
+                          toMs: endDate.millisecondsSinceEpoch);
+                      if (u != null && u.firstTs != u.lastTs) {
+                        // Son = grafiğin sağ ucu (canlı birim fiyat) —
+                        // "grafik başı ile sonu arasındaki fark".
+                        final son =
+                            currentUnitTRY > 0 ? currentUnitTRY : u.last;
+                        periodChangePct = (son / u.first - 1) * 100;
+                        periodChangeTRY =
+                            PeriodSummaryService.birimPiyasaEtkisi(
+                          birimSeri: historyMap,
+                          lotlar: _seriDefteri,
+                          start: startDate,
+                          end: endDate,
+                          canliBirim: son,
+                        )?.piyasa;
                       }
                     }
 
@@ -717,27 +802,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     final endpointColor =
                         gainPositive ? context.c.gain : context.c.loss;
 
-                    // Lot marker'ları için: gün-hassasiyetli tarih → (isSell) map.
-                    // Aynı güne birden fazla işlem düşerse buy önceliklidir
-                    // (ek alım genelde daha anlamlı sinyal).
-                    // `isDeleteLog` tek başına yetmiyordu: yumuşak silinmiş
-                    // lot'lar (deletedAt != null) ve TEMETTÜ satırları da
-                    // nokta üretiyordu. Temettü bir alım/satım değil ve
-                    // miktara hiç dokunmaz — noktası olmamalı. `isActive`
-                    // mezar taşı + yumuşak silmeyi birlikte eler.
-                    //
-                    // Anahtar GERÇEK spot X'i (kesirli gün), tam sayı gün
-                    // DEĞİL. Eskiden `spot.x.toInt()` ile tam gün eşleşmesi
-                    // aranıyordu ve 6A/1Y'de noktalar kayboluyordu: o
-                    // periyotlarda veri `ResolutionTier.weekly` gelir ve her
-                    // nokta haftanın PAZARTESİSİNE snap edilir, dolayısıyla
-                    // çarşamba yapılan bir işlemin gün anahtarı hiçbir spot'a
-                    // denk gelmiyordu. Artık her işlem, içine düştüğü bar'a
-                    // (`coveringSpotIndex`) bağlanıyor.
-                    final Map<double, bool> lotDayIsSell = {};
+                    // İşlem işaretleri — GERÇEK işlem anında, GERÇEK işlem
+                    // birim fiyatında; çizgiye yapıştırılmaz (kullanıcı
+                    // bildirimi 2026-09-24, gerekçe `islemIsaretleri`).
                     final activeLots = widget.lots ?? [widget.asset];
-                    final startMidnight = DateTime(
-                        startDate.year, startDate.month, startDate.day);
                     final primarySpots = segments
                         .firstWhere((s) => !s.piyasaKapali && s.spots.isNotEmpty,
                             orElse: () => TransactionSegment(
@@ -748,32 +816,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   thickness: 3.5,
                                 ))
                         .spots;
-                    for (final lot in activeLots) {
-                      if (!lot.isActive) continue;
-                      if (!lot.isBuy && !lot.isSell) continue;
-                      // GÜN İÇİNDE saat KIRPILMAZ. Diğer periyotlarda bir
-                      // günün çözünürlüğü zaten bir noktadır ve işlemi gece
-                      // yarısına çekmek doğrudur; gün içi seride ise 14:00'te
-                      // yapılan bir alımın noktası 00:00'a düşer ve grafikteki
-                      // sıçramayla hiç örtüşmezdi.
-                      final d = isIntraday
-                          ? lot.addedDate
-                          : DateTime(lot.addedDate.year, lot.addedDate.month,
-                              lot.addedDate.day);
-                      if (d.isBefore(startMidnight)) continue;
-                      final txX =
-                          d.difference(startMidnight).inMinutes / (60.0 * 24.0);
-                      final i = coveringSpotIndex(primarySpots, txX);
-                      if (i < 0) continue;
-                      final key = primarySpots[i].x;
-                      final isSell = lot.isSell;
-                      // Buy varsa buy kalsın (override etme)
-                      if (lotDayIsSell.containsKey(key) &&
-                          !lotDayIsSell[key]!) {
-                        continue;
-                      }
-                      lotDayIsSell[key] = isSell;
-                    }
+                    final islemler = primarySpots.isEmpty
+                        ? const <IslemIsareti>[]
+                        : islemIsaretleri(
+                            lotlar: activeLots,
+                            eksenBasi: startDate,
+                            ilkX: primarySpots.first.x,
+                            sonX: primarySpots.last.x,
+                          );
+                    final islemSpots = [
+                      for (final t in islemler) FlSpot(t.x, toY(t.birim)),
+                    ];
 
                     // Y sınırlarını görünür X aralığındaki spot'lara göre
                     // hesaplayan closure — zoom sırasında yeniden çağrılır.
@@ -1062,10 +1115,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // Builder içinde bırakılırsa her pinch/pan
                             // karesinde expand+map+where zinciri baştan
                             // kurulurdu. Bir kez hesapla.
-                            // Anahtarlar zaten gerçek spot X'leri — doğrudan
-                            // aday listesi olarak kullanılabilir.
-                            final dotCandidates =
-                                lotDayIsSell.keys.toList(growable: false);
+                            // Adaylar işlem işaretlerinin X'leri (işlem anı).
+                            final dotCandidates = [
+                              for (final t in islemler) t.x,
+                            ];
                             return ZoomableChart(
                             fullMinX: focusMin,
                             fullMaxX: focusMax,
@@ -1075,7 +1128,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               final yBounds = computeY(
                                 viewMinX,
                                 viewMaxX,
-                                extraSpots: compareBar?.spots,
+                                // İşaretler de Y aralığına girer: alış
+                                // fiyatı çizginin dışında kalabilir ve
+                                // grafiğin dışına taşmamalı.
+                                extraSpots: [
+                                  ...?compareBar?.spots,
+                                  ...islemSpots,
+                                ],
                               );
                               final viewMinY = yBounds.minY;
                               final viewMaxY = yBounds.maxY;
@@ -1278,19 +1337,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                           color: context.c.text90
                                               .withValues(alpha: 0.75),
                                         ),
-                                        // Gün içinde çapa ALIŞ FİYATI DEĞİL,
-                                        // günün ilk noktasıdır (bkz.
-                                        // `_convertHistoryToSegments`
-                                        // `intraday`). Etiketi "ALIŞ"
-                                        // bırakmak doğrudan yanlış bilgi
-                                        // olurdu.
+                                        // Çapa ALIŞ FİYATI DEĞİL, dönemin
+                                        // ilk birim fiyatıdır (2026-09-23:
+                                        // grafik artık maliyetle
+                                        // başlamıyor). Dönem satırının
+                                        // yüzdesi bu çizgiye göredir.
+                                        // Alış→bugün şeritte ayrıca durur.
                                         labelResolver: (_) =>
-                                            '${isIntraday ? 'AÇILIŞ' : 'ALIŞ'}  ${fixedFormatter(2).format(anchorY)} ₺',
+                                            '${isIntraday ? 'AÇILIŞ' : 'BAŞLANGIÇ'}  ${fixedFormatter(2).format(anchorY)} ₺',
                                       ),
                                     ),
                                   ],
                                   verticalLines: [
-                                    // Başlangıç (alış) X'i — tarih etiketli
+                                    // Dönem başı X'i — tarih etiketli
                                     // dashed vertical marker.
                                     VerticalLine(
                                       x: anchorSpot.x,
@@ -1309,15 +1368,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                           color: context.c.amberText,
                                         ),
                                         labelResolver: (_) {
-                                          final buyDate = startDate.add(
+                                          final baslangic = startDate.add(
                                               Duration(
                                                   minutes:
                                                       (anchorSpot.x * 1440)
                                                           .round()));
                                           if (isIntraday) {
-                                            return 'AÇILIŞ ${DateFormat('HH:mm', 'tr_TR').format(buyDate)}';
+                                            return 'AÇILIŞ ${DateFormat('HH:mm', 'tr_TR').format(baslangic)}';
                                           }
-                                          return 'ALIŞ ${DateFormat('d MMM', 'tr_TR').format(buyDate)}';
+                                          return DateFormat('d MMM', 'tr_TR')
+                                              .format(baslangic);
                                         },
                                       ),
                                     ),
@@ -1391,14 +1451,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                             spot.y == lastSpot.y) {
                                           return true;
                                         }
-                                        if (!lotDayIsSell.containsKey(spot.x)) {
-                                          return false;
-                                        }
-                                        return dotThinner.shows(spot.x);
+                                        // İşlem noktaları ÇİZGİDE değil,
+                                        // aşağıdaki işaret katmanında.
+                                        return false;
                                       },
                                       getDotPainter:
                                           (spot, percent, barData, index) {
-                                        // Alış: beyaz halkalı amber (ince).
+                                        // Dönem başı: beyaz halkalı amber.
                                         if (anchorSpot != null &&
                                             spot.x == anchorSpot.x &&
                                             spot.y == anchorSpot.y) {
@@ -1419,24 +1478,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                             strokeColor: context.c.text90
                                                 .withValues(alpha: 0.85),
                                             strokeWidth: 1.5,
-                                          );
-                                        }
-                                        // Ek alım / satış marker'ları
-                                        final isSell = lotDayIsSell[spot.x];
-                                        if (isSell != null) {
-                                          // Ortadaki işlem noktaları uçlardan
-                                          // (5.5px) belirgin biçimde küçük —
-                                          // yoğun işlem yapılan dönemde çizgi
-                                          // boncuk dizisine dönüşmesin. Halka
-                                          // da inceltildi: küçük yarıçapta 2px
-                                          // kenar içi boş gösteriyordu.
-                                          return FlDotCirclePainter(
-                                            radius: 3.0,
-                                            color: isSell
-                                                ? context.c.loss
-                                                : context.c.gain,
-                                            strokeColor: context.c.text90,
-                                            strokeWidth: 1.2,
                                           );
                                         }
                                         return FlDotCirclePainter(
@@ -1471,6 +1512,38 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     ),
                                   );
                               }),
+                            // İşlem işaretleri — gerçek an × gerçek fiyat
+                            // (bkz. `islemler`). Çizgisi yok: kalınlık 0 +
+                            // tam saydam renk (0 kalınlık tek başına kıl
+                            // çizgi çizer).
+                            if (islemSpots.isNotEmpty)
+                              LineChartBarData(
+                                spots: islemSpots,
+                                isCurved: false,
+                                barWidth: 0,
+                                color: context.c.gain.withValues(alpha: 0),
+                                belowBarData: BarAreaData(show: false),
+                                dotData: FlDotData(
+                                  show: true,
+                                  checkToShowDot: (spot, _) =>
+                                      dotThinner.shows(spot.x),
+                                  getDotPainter: (spot, _, __, i) {
+                                    // Ortadaki işlem noktaları uçlardan
+                                    // (5.5px) belirgin biçimde küçük — yoğun
+                                    // işlem yapılan dönemde grafik boncuk
+                                    // dizisine dönüşmesin.
+                                    final satis = islemler[i].satis;
+                                    return FlDotCirclePainter(
+                                      radius: 3.5,
+                                      color: satis
+                                          ? context.c.loss
+                                          : context.c.gain,
+                                      strokeColor: context.c.text90,
+                                      strokeWidth: 1.2,
+                                    );
+                                  },
+                                ),
+                              ),
                           ],
                           // Built-in tooltip kapalı — crosshair TEK KAYNAK.
                           // fl_chart tooltip'i ile ZoomableChart crosshair'ı
@@ -1497,10 +1570,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   final key =
                                       '${spot.x.toStringAsFixed(2)}|${spot.y.toStringAsFixed(2)}';
                                   if (!seen.add(key)) return null;
-                                  final date = startDate
-                                      .add(Duration(days: spot.x.toInt()));
-                                  final dateLabel = DateFormat('d MMM', 'tr_TR')
-                                      .format(date);
+                                  // Dakika hassasiyeti — `days: x.toInt()`
+                                  // saati atıyordu (crosshair ile aynı kural).
+                                  final date = startDate.add(Duration(
+                                      minutes: (spot.x * 1440).round()));
+                                  final dateLabel = fmtTarihSaat(date);
                                   final tipText = compareOn
                                       ? '${(spot.y - 100).toStringAsFixed(2)}%'
                                       : '${valueFmt.format(fromY(spot.y))} ₺';
@@ -1551,14 +1625,51 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                       .format(fromY(snapped.y));
                               // Gün içinde okunacak bilgi SAATTİR; tarih
                               // zaten sekmenin kendisinden belli.
-                              final subtitle = DateFormat(
-                                      isIntraday
-                                          ? 'd MMM · HH:mm'
-                                          : 'd MMM yyyy',
-                                      'tr_TR')
-                                  .format(date);
+                              //
+                              // Diğer dönemlerde de SAAT yazılır — saatlik
+                              // çubukta (1H) ve "şimdi" noktasında. Kullanıcı
+                              // isteği (2026-09-24): "grafik üzerinde
+                              // gezinirken hangi saatteyim görmeliyim."
+                              // Günlük/haftalık çubuk 00:00'a oturur; orada
+                              // `fmtTarihSaat` yalnızca tarih yazar.
+                              final subtitle = isIntraday
+                                  ? DateFormat('d MMM · HH:mm', 'tr_TR')
+                                      .format(date)
+                                  : fmtTarihSaat(date);
                               return (title, subtitle);
                             },
+                            // Crosshair bir işlemin çubuğuna gelince işlemin
+                            // KENDİ zamanı ve fiyatı yazılır — çizginin o
+                            // andaki değeri alış fiyatı değildir (bkz.
+                            // `islemler`). Eşleşme "en yakın nokta" ile:
+                            // işaretin yanına gelen nokta onu gösterir.
+                            crosshairDetailsBuilder: islemler.isEmpty
+                                ? null
+                                : (x) {
+                                    final spots = activeSeg.spots;
+                                    if (spots.isEmpty) return const [];
+                                    final i = nearestSpotIndex(spots, x);
+                                    final fiyatFmt = tryFormatter(digits: 2);
+                                    return [
+                                      for (final t in islemler)
+                                        if (nearestSpotIndex(spots, t.x) == i)
+                                          (
+                                            (t.satis
+                                                ? context.l10n.chartTxSell
+                                                : context.l10n.chartTxBuy)(
+                                              isIntraday
+                                                  ? DateFormat('HH:mm', 'tr_TR')
+                                                      .format(t.lot.addedDate)
+                                                  : fmtTarihSaat(
+                                                      t.lot.addedDate),
+                                              fiyatFmt.format(t.birim),
+                                            ),
+                                            t.satis
+                                                ? context.c.loss
+                                                : context.c.gain,
+                                          ),
+                                    ];
+                                  },
                           );
                           }),
                         ),

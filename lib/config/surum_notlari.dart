@@ -104,6 +104,23 @@ const List<SurumNotu> surumNotlari = [
     baslik: 'Fiyat alarmları ve bildirim merkezi',
     yenilikler: [
       Yenilik(
+        ikon: YenilikIkonu.ayar,
+        baslik: 'Giriş: artık şifre sormuyor',
+        aciklama: 'Biyometrik kilidin açıksa uzun aradan sonra da çıkış '
+            'yapılmıyor, yalnızca kilitleniyor: Face ID ile giriyorsun. '
+            'Güncelleme sonrası da öyle. Oturumun kapanmadığı için fiyat '
+            'alarmların ve günlük özetin kesintisiz geliyor. Kilit ekranına '
+            '"Farklı hesapla giriş yap" eklendi; giriş sayfasında boş alana '
+            'dokununca klavye kapanıyor.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.ayar,
+        baslik: 'Face ID önerisi',
+        aciklama: 'Kilidi kapalıysan uygulama bir kez Face ID açmayı '
+            'öneriyor: neden işine yaradığını da anlatıyor. İstemezsen '
+            '"Şimdi değil" diyebilirsin, sonra Ayarlar\'dan açılır.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.para,
         baslik: 'Kâr/zarar hesabı düzeltildi',
         aciklama: 'Sattığın lotlar artık maliyete sayılmıyor: kısmi satış '

@@ -296,7 +296,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           // Üst kartla AYNI iki sayıdan (`_periodEndpoints`) ve AYNI istekten
           // gelen dağılımdan beslenir; satırların toplamı bu yüzden üst rakamı
           // tutar. Endpoint yoksa üst kart da çizilmiyordur — döküm de çıkmaz.
-          if (_periodEndpoints(segments) case final ep?)
+          // Pencere GEÇİLİR: üst kartla aynı tabanı kullanmalı, yoksa
+          // dökümün toplamı üst rakamı tutmaz (2026-09-23).
+          if (_periodEndpoints(segments, start: cizimBaslangici)
+              case final ep?)
             _TypeBreakdownCard(
               baz: ref.watch(bazParaProvider),
               breakdown: breakdown,
@@ -329,7 +332,13 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     List<Asset> targetAssets, {
     required bool intraday,
   }) {
-    final ep = _periodEndpoints(segments);
+    // Pencere GEÇİLİR — Özet sekmesiyle AYNI dönem başı.
+    //
+    // Eskiden `spots.first` olduğu gibi alınıyordu ve seri çekme penceresi
+    // dönem penceresinden geniş olabildiği için taban geriye kayıyordu:
+    // ölçüldü ₺2.258.332 yerine ₺2.354.650 olmalıydı (₺96.318 fark,
+    // kullanıcı bildirimi 2026-09-23).
+    final ep = _periodEndpoints(segments, start: start);
     if (ep == null) return const SizedBox.shrink();
 
     final firstY = ep.first;
@@ -344,17 +353,30 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     //
     // Silinen varlıklar HİÇ VAR OLMAMIŞ sayılır: `deleteLog` atlanır ve
     // orijinal lot zaten DB'den silinmiştir (bkz. `deleteAsset`).
+    //
+    // **Katkı, tabanın ölçüldüğü ANDAN sonrası için sayılır** (2026-09-23,
+    // 1H/1A/6A/1Y). Eskiden pencere GÜN BAŞINDAN sayılıyordu; taban ise
+    // serinin ilk DOLU noktası. Filtrelenen tür dönem başında boşsa (ör.
+    // altını bu hafta ilk kez aldın) ilk dolu nokta alımı zaten İÇERİR ve
+    // aynı alım katkıya da giriyordu: "Yalnızca piyasa hareketi" satırı
+    // alım tutarı kadar eksiye düşüyordu. Özet sekmesi bu çifte sayımı
+    // 2026-09-16'da kapatmıştı (`startExclusiveMs`), bu kart almamıştı.
+    // Kural `PeriodSummaryService.piyasaEtkisi` ile aynı; varlık ekranı da
+    // onu kullanıyor — "piyasa etkisi" üç yüzeyde tek tanım.
+    //
+    // GÜNLÜK dokunulmadı: ana sayfa (`DailySummary`) ile hizası ayrı bir
+    // sözleşme (bkz. aşağıdaki GÜNLÜK notu).
     double netInflow = 0;
     if (!_simulate) {
-      final startMs =
-          dayKey(start).millisecondsSinceEpoch;
-      final endMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
-          .millisecondsSinceEpoch;
-      for (final a in targetAssets) {
-        final ms = a.addedDate.millisecondsSinceEpoch;
-        if (ms < startMs || ms > endMs) continue;
-        netInflow += _PortfolioPerformanceScreenState._flowOf(a);
-      }
+      netInflow = intraday
+          ? PeriodSummaryService.netInflow(targetAssets, start, end)
+          : PeriodSummaryService.netInflow(
+              targetAssets,
+              start,
+              end,
+              startExclusiveMs: start.millisecondsSinceEpoch +
+                  (ep.firstX * Duration.millisecondsPerDay).round(),
+            );
     }
 
     // ── Ana rakam: BİRİKİM değişimi — (son − ilk) / ilk ──────────────────
@@ -373,12 +395,32 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // yatırıldığında kart +%100 yazar. Bu yüzden başlık "birikim" der ve
     // aşağıdaki not satırı, ne kadarının alımdan geldiğini AÇIKÇA söyler.
     // Etiket olmadan bu rakam "kazandım" diye okunurdu.
-    final change = grossChange;
+    // **GÜNLÜK'te ARINDIRILMIŞ (kullanıcı kararı, 2026-09-23).**
+    //
+    // Kullanıcı kuralı açık koydu: *"aynı zamanda ana sayfa günlük
+    // kısmıyla da aynı olmalı."* Ana sayfa (`DailySummary`) nakit
+    // akışından ARINDIRILMIŞ rakam gösteriyor; bu kart HAM birikim
+    // gösteriyordu ve alım yapılan günde ikisi ayrışıyordu.
+    //
+    // Bu, `TECHNICAL_DEBT.md`'de AÇIK duran maddenin (Şu ana kadar iki
+    // kullanıcı kararı çelişiyordu: 2026-08-31 "birikim göster" ve
+    // kilit ekranının arındırılmış rakamı) çözümüdür: seçenek (a)
+    // uygulandı — GÜNLÜK'te ana rakam arındırılmış, birikim alt
+    // satırda kalır. DİĞER dönemler 2026-08-31 kararında kalır
+    // ("birikimim ne kadar büyüdü" sorusu orada anlamlı).
+    //
+    // Neden yalnızca GÜNLÜK: ana sayfa Bugün kartı yalnızca o dönemi
+    // anlatıyor. 1H/1A/6A/1Y'nin ana sayfada bir karşılığı yok, yani
+    // orada ayrışma da yok.
+    final change = intraday ? grossChange - netInflow : grossChange;
 
-    // Yüzde tabanı dönem başı değerdir — (son − ilk) / ilk.
-    // `netInflow` tabana EKLENMEZ: eklenirse alımın etkisi payda üzerinden
-    // geri sönümlenir ve "birikim büyüdü" bilgisi kaybolurdu.
-    final pctBase = firstY;
+    // Yüzde tabanı:
+    //   • GÜNLÜK   → dönem başı + POZİTİF akış (ana sayfayla AYNI taban,
+    //     bkz. `DailySummary.from`: "gün içinde portföyünü büyüten
+    //     kullanıcıda yüzdeyi şişirmemek için").
+    //   • diğer     → yalnızca dönem başı (birikim sorusu).
+    final pctBase =
+        intraday ? firstY + (netInflow > 0 ? netInflow : 0) : firstY;
     final pct = pctBase > 0 ? (change / pctBase) * 100 : null;
     final positive = change >= 0;
 
@@ -544,10 +586,17 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 : '${dateFmt.format(start)} → ${dateFmt.format(end)}',
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
-          // Ana rakam artık alımları İÇERİYOR. Not satırı bu yüzden ters
-          // yöne çalışır: kullanıcı "+%100 kazandım" sanmasın diye ne
-          // kadarının yatırılan paradan, ne kadarının piyasadan geldiğini
-          // ayırır. Etiket tek başına yetmez — sayının kaynağı yazılmalı.
+          // Not satırı ana rakamın NE OLDUĞUNU söyler ve iki dönem
+          // türünde TERS çalışır (2026-09-23):
+          //
+          //   • GÜNLÜK  → ana rakam ARINDIRILMIŞ, akışı İÇERMEZ.
+          //     Not "şu kadar alım yaptın ama bu rakama girmedi" der,
+          //     yoksa kullanıcı eksik bir şey olduğunu sanar.
+          //   • diğer   → ana rakam HAM birikim, akışı İÇERİR.
+          //     Not "+%100 kazandım" yanılgısını önler: ne kadarı
+          //     yatırılan para, ne kadarı piyasa.
+          //
+          // Etiket tek başına yetmez — sayının kaynağı yazılmalı.
           if (netInflow.abs() > 0.5) ...[
             const SizedBox(height: SandikSpace.sm),
             Row(
@@ -558,13 +607,19 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    netInflow > 0
-                        ? context.l10n.inflowIncludedNote(
-                            tryFmt.format(netInflow),
-                            tryFmt.format(grossChange - netInflow))
-                        : context.l10n.outflowIncludedNote(
-                            tryFmt.format(netInflow.abs()),
-                            tryFmt.format(grossChange - netInflow)),
+                    intraday
+                        ? (netInflow > 0
+                            ? context.l10n.inflowExcludedNote(
+                                tryFmt.format(netInflow))
+                            : context.l10n.outflowExcludedNote(
+                                tryFmt.format(netInflow.abs())))
+                        : (netInflow > 0
+                            ? context.l10n.inflowIncludedNote(
+                                tryFmt.format(netInflow),
+                                tryFmt.format(grossChange - netInflow))
+                            : context.l10n.outflowIncludedNote(
+                                tryFmt.format(netInflow.abs()),
+                                tryFmt.format(grossChange - netInflow))),
                     style:
                         context.t.bodySmall?.copyWith(color: context.c.text36),
                   ),

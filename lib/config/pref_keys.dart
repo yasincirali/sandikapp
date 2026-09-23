@@ -33,6 +33,13 @@ class PrefKeys {
   static const chartLogScale = 'pref_chart_log_scale';
   static const leaderboardOptIn = 'pref_leaderboard_opt_in';
   static const biometricLock = 'pref_biometric_lock';
+
+  /// Kilit teklifi bu kullanıcıya SORULDU mu (kabul edilsin ya da edilmesin).
+  ///
+  /// Teklif bir kez sorulur; reddeden kullanıcıya her açılışta tekrar
+  /// sorulmaz — dayatma olmasın. Kişiye özel (`perUser`): aynı telefonda
+  /// ikinci hesap kendi kararını verir.
+  static const biometricLockOffered = 'pref_biometric_lock_offered';
   /// Baz para birimi — `BaseCurrency.index` (0 TRY, 1 USD, 2 EUR, 3 gram altın).
   static const baseCurrency = 'pref_base_currency';
   /// Yatırımcı seviyesi — `YatirimciSeviyesi.index` (0 başlangıç, 1 orta, 2 ileri).
@@ -58,6 +65,13 @@ class PrefKeys {
   /// `_backgroundedAt` kaybolurdu ve 10 dk'lık oturum zaman aşımı hiç
   /// işlemezdi (2026-09 L2); açılışta buradan okunur.
   static const backgroundedAtMs = 'session_backgrounded_at_ms';
+
+  /// Uygulama arkaya alınırken çalışan SÜRÜM (`1.1.6+7`).
+  ///
+  /// Zaman aşımı kontrolü bunu karşılaştırır: sürüm DEĞİŞTİYSE aradaki
+  /// boşluk bir güncellemedir, gerçek bir terk ediş değil — oturum
+  /// düşürülmez (bkz. `_AuthGateState._readStaleSessionAtLaunch`).
+  static const backgroundedAtVersion = 'session_backgrounded_at_version';
 
   /// `RemotePushService` cihaz kimliği; çıkışta silinir (L14).
   static const pushDeviceId = 'push_device_id';

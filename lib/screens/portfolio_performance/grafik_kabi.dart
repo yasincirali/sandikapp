@@ -817,9 +817,11 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   ));
                 }
 
+                // Saatlik çubukta ve "şimdi" noktasında saat de yazılır
+                // (kullanıcı isteği 2026-09-24, `fmtTarihSaat`).
                 final headerLabel = intraday
                     ? DateFormat('HH:mm', 'tr_TR').format(date)
-                    : DateFormat('d MMM yyyy', 'tr_TR').format(date);
+                    : fmtTarihSaat(date);
                 return LineTooltipItem(
                   '$headerLabel\n',
                   context.t.bodySmall!.copyWith(
@@ -923,7 +925,11 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   ? (cokGunlu
                       ? DateFormat('d MMM · HH:mm', 'tr_TR').format(date)
                       : DateFormat('HH:mm', 'tr_TR').format(date))
-                  : DateFormat('d MMM yyyy', 'tr_TR').format(date);
+                  // Kullanıcı isteği (2026-09-24): "grafik üzerinde gezinirken
+                  // hangi saatteyim görmeliyim." 1H saatlik çubuk ve "şimdi"
+                  // noktası saat taşır; günlük/haftalık çubuk 00:00'dır ve
+                  // `fmtTarihSaat` orada yalnızca tarih yazar.
+                  : fmtTarihSaat(date);
               return (title, subtitle);
             },
             crosshairDetailsBuilder: (x) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/services/history_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:portfoy_takip/models/asset.dart';
@@ -131,10 +132,15 @@ bool _iskeletVar() =>
 
 void main() {
   setUpAll(() async {
+    // Gün içi motorunun saati SABİT (2026-09-24): duvar saatiyle 00:00'dan
+    // hemen sonra gün içi pencerede çizilecek slot olmuyor ve "veri gelmiş
+    // olmalı" ön koşulu yanlış kırmızı veriyordu (00:04'te ölçüldü).
+    HistoryService.gunIciSaat = () => DateTime(2026, 9, 23, 16, 40);
     await initializeDateFormatting('tr_TR');
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();
   });
+  tearDownAll(() => HistoryService.gunIciSaat = DateTime.now);
 
   testWidgets('ilk karede sayı YOK — iskelet durur', (tester) async {
     tester.view.physicalSize = const Size(375 * 3, 900 * 3);

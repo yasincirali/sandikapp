@@ -10,6 +10,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
@@ -23,7 +24,9 @@ import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/lock_offer_screen.dart';
 import 'screens/lock_screen.dart';
+import 'utils/sandik_snack.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'widgets/yenilikler_sheet.dart';
@@ -653,6 +656,33 @@ class _AuthGate extends ConsumerStatefulWidget {
   ConsumerState<_AuthGate> createState() => _AuthGateState();
 }
 
+/// Açılışta bayat oturuma ne yapılacağı — ÜÇ ayrı sonuç (2026-09-23).
+///
+/// Eskiden bu bir `bool`'du ("bayat mı") ve güncelleme `false` dönüyordu,
+/// yani güncelleme sonrası HİÇBİR ŞEY sorulmuyordu. O karar, kullanıcı
+/// *"güncelleme sonrasında da şifre beklememeli"* dediğinde verildi —
+/// ama o sırada KİLİT yoktu, tek alternatif `logout()` idi, dolayısıyla
+/// "şifre sorma" ile "hiçbir şey sorma" aynı şeye çıkıyordu.
+///
+/// Kilit eklendikten sonra ikisi ayrıştı: güncelleme şifre istemeden
+/// **Face ID isteyebilir**. Kullanıcı isteği (2026-09-23): *"güncelleme
+/// falan geldiğinde de yeniden şifre sormak yerine yine Face ID ile login
+/// yaptırılabilir."*
+enum BayatlikKarari {
+  /// Kısa boşluk — doğrudan içeri. Hiçbir doğrulama istenmez.
+  serbest,
+
+  /// Uzun boşluk AMA sürüm değişmiş: kullanıcı cihazın başında,
+  /// aradaki süre kurulum süresidir. Oturum korunur, yalnızca
+  /// biyometrik kilit istenir. Kilit KAPALIYSA serbesttir — şifre
+  /// sormamak asıl istekti.
+  kilit,
+
+  /// Uzun boşluk, aynı sürüm — gerçek terk ediş. Kilit açıksa kilitlenir,
+  /// değilse oturum kapanır (eski davranış).
+  bayat,
+}
+
 class _AuthGateState extends ConsumerState<_AuthGate>
     with WidgetsBindingObserver {
   late final ProviderSubscription<AsyncValue<AppUser?>> _authSubscription;
@@ -662,20 +692,79 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// Süreç arkadayken öldürüldüyse `_backgroundedAt` kaybolur; arkaya
   /// alınma anı diske de yazılır ve açılışta okunur (2026-09 L2). Zaman
   /// aşımı geçmişse ilk kullanıcı yayınında oturum kapatılır.
-  late final Future<bool> _staleSessionAtLaunch = _readStaleSessionAtLaunch();
+  late final Future<BayatlikKarari> _staleSessionAtLaunch =
+      _readStaleSessionAtLaunch();
   bool _staleSessionHandled = false;
 
-  static Future<bool> _readStaleSessionAtLaunch() async {
+  static Future<BayatlikKarari> _readStaleSessionAtLaunch() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ms = prefs.getInt(PrefKeys.backgroundedAtMs);
-      if (ms == null) return false;
+      final eskiSurum = prefs.getString(PrefKeys.backgroundedAtVersion);
+      if (ms == null) return BayatlikKarari.serbest;
       await prefs.remove(PrefKeys.backgroundedAtMs);
+      await prefs.remove(PrefKeys.backgroundedAtVersion);
+
+      // **GÜNCELLEME oturumu DÜŞÜRMEZ (kullanıcı isteği, 2026-09-23).**
+      //
+      // Zaman aşımı bir GÜVENLİK özelliğidir: cihaz başkasının eline
+      // geçerse 10 dakika sonra oturum düşer. Ama güncelleme de aynı
+      // belirtiyi üretiyordu ve KULLANICI CİHAZIN BAŞINDA:
+      //
+      //   1. Uygulama arkaya alınır → `backgroundedAtMs` yazılır
+      //   2. Mağaza güncellemeyi kurar → süreç öldürülür
+      //   3. Kullanıcı uygulamayı açar → 10 dk geçmişse ŞİFRE İSTENİR
+      //
+      // Gece kurulan otomatik güncellemelerde aradaki süre SAATLERDİR,
+      // yani her güncelleme sonrası giriş ekranı geliyordu.
+      //
+      // Ayırt edici: SÜRÜM. Aynı sürümde uzun boşluk gerçek bir terk
+      // ediştir; sürüm değiştiyse aradaki süre kurulum süresidir.
+      //
+      // Güvenlik zayıflamıyor: saldırganın oturumu ele geçirmek için
+      // mağazadan yeni bir sürüm kurdurması gerekirdi — ki bu zaten
+      // cihaza fiziksel erişim ve mağaza hesabı ister.
       final since = DateTime.now()
           .difference(DateTime.fromMillisecondsSinceEpoch(ms));
-      return since >= _sessionTimeout;
+      if (since < _sessionTimeout) return BayatlikKarari.serbest;
+
+      // **GÜNCELLEME: ŞİFRE değil, FACE ID.**
+      //
+      // Önceden burada `return false` vardı — güncelleme sonrası hiçbir
+      // doğrulama istenmiyordu. Oysa istenen şey "şifre sorulmasın"dı,
+      // "kilit de atlansın" değil: kilidini açık bırakmış kullanıcı
+      // güncellemeden sonra kilitsiz açılmayı BEKLEMEZ, çünkü kilit
+      // uygulamayı her açışta çalışan bir şey olarak tanınır.
+      //
+      // `kilit` şifre İSTEMEZ: oturum korunur, yalnızca Face ID sorulur.
+      // Kilit kapalıysa çağıran tarafta `serbest` gibi davranır.
+      if (eskiSurum != null) {
+        final simdikiSurum = await _surumEtiketi();
+        if (simdikiSurum != null && simdikiSurum != eskiSurum) {
+          return BayatlikKarari.kilit;
+        }
+      }
+
+      return BayatlikKarari.bayat;
     } catch (_) {
-      return false;
+      return BayatlikKarari.serbest;
+    }
+  }
+
+  /// `1.1.6+7` — sürüm + derleme numarası.
+  ///
+  /// Derleme numarası DAHİL: fastlane her TestFlight yüklemesinde yalnızca
+  /// onu artırıyor, `version` aynı kalabiliyor. Sadece `version`
+  /// karşılaştırılsaydı TestFlight güncellemeleri "aynı sürüm" sanılıp
+  /// oturum yine düşerdi.
+  static Future<String?> _surumEtiketi() async {
+    try {
+      final bilgi = await PackageInfo.fromPlatform();
+      return '${bilgi.version}+${bilgi.buildNumber}';
+    } catch (_) {
+      // Sürüm okunamazsa karar VERİLEMEZ — çağıran eski davranışa düşer
+      // (zaman aşımı uygulanır). Güvenli taraf budur.
+      return null;
     }
   }
 
@@ -684,8 +773,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       final prefs = await SharedPreferences.getInstance();
       if (at == null) {
         await prefs.remove(PrefKeys.backgroundedAtMs);
+        await prefs.remove(PrefKeys.backgroundedAtVersion);
       } else {
         await prefs.setInt(PrefKeys.backgroundedAtMs, at.millisecondsSinceEpoch);
+        // Sürüm de yazılır: açılışta "güncelleme mi, terk ediş mi"
+        // sorusunu ancak bu aynı damga yanıtlayabilir.
+        final surum = await _surumEtiketi();
+        if (surum != null) {
+          await prefs.setString(PrefKeys.backgroundedAtVersion, surum);
+        }
       }
     } catch (_) {
       // Disk yazılamazsa bellekteki değer yine çalışır.
@@ -849,17 +945,50 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         AnalyticsService.instance.setUserId(null);
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
-        if (!_staleSessionHandled) {
-          _staleSessionHandled = true;
-          _staleSessionAtLaunch.then((stale) {
-            if (stale && mounted) ref.read(authProvider.notifier).logout();
-          });
-        }
         // Tercih anahtarlarını BU kullanıcıya bağla — `syncSignalPreferences
         // OnLogin`den ÖNCE olmalı, yoksa senkron önceki kullanıcının
         // anahtarlarını okur ve yeni kullanıcının satırına yazar.
+        //
+        // **Bayat oturum kontrolünden ÖNCE'ye alındı (2026-09-23):**
+        // `biometricLockProvider` KİŞİYE ÖZEL (`perUser: true`) ve
+        // anahtarı `..._<userId>` biçiminde. Bağlama yapılmadan okunursa
+        // önceki kullanıcının (ya da varsayılanın) değeri gelir ve
+        // "biyometrik açık mı" sorusu YANLIŞ yanıtlanır.
         setPreferencesUser(user.id);
         _invalidateUserPrefs();
+
+        if (!_staleSessionHandled) {
+          _staleSessionHandled = true;
+          _staleSessionAtLaunch.then((karar) {
+            if (karar == BayatlikKarari.serbest || !mounted) return;
+            // **GÜNCELLEME dalı: yalnızca kilit, asla çıkış.**
+            //
+            // Sürüm değiştiyse kullanıcı cihazın başındadır. Kilidi
+            // açıksa Face ID sorulur; kapalıysa hiçbir şey sorulmaz —
+            // `logout()` bu dalda ASLA çağrılmaz, yoksa "güncelleme
+            // sonrası şifre sorma" isteği geri gelirdi.
+            if (karar == BayatlikKarari.kilit) {
+              if (ref.read(biometricLockProvider)) {
+                setState(() => _locked = true);
+              }
+              return;
+            }
+            // **BİYOMETRİK AÇIKSA ÇIKIŞ YERİNE KİLİTLE.**
+            //
+            // Soğuk açılış dalı — süreç arkada öldürülmüşse buraya
+            // düşülür. `resumed` dalıyla AYNI kural: `logout()` token'ı
+            // kasadan siler ve Face ID onu geri getiremez; kilit ise
+            // token'ı yerinde bırakır.
+            //
+            // Kullanıcı isteği: *"son login olan hesap biyolojik login
+            // işaretlediyse Face ID ile login olunmalı."*
+            if (ref.read(biometricLockProvider)) {
+              setState(() => _locked = true);
+            } else {
+              ref.read(authProvider.notifier).logout();
+            }
+          });
+        }
         _checkedUserId = user.id;
         // Portföy ve ortak varlıklarını SPLASH sırasında ısıt. Bu provider'lar
         // lazy — eskiden ilk `watch` HomeScreen mount olunca gerçekleşiyordu,
@@ -1159,8 +1288,43 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       final bg = _backgroundedAt;
       if (bg != null && DateTime.now().difference(bg) >= _sessionTimeout) {
         _backgroundedAt = null;
-        // Oturumu kapat — auth state değişince LoginScreen'e döner
-        ref.read(authProvider.notifier).logout();
+        // **BİYOMETRİK AÇIKSA ÇIKIŞ YERİNE KİLİTLE** (kullanıcı isteği,
+        // 2026-09-23): *"Cihaz/müşteri eşleşmesi varsa ve son login olan
+        // hesap biyolojik login işaretlediyse Face ID ile login olunmalı."*
+        //
+        // `logout()` Supabase oturumunu SİLER — token kasadan kalkar ve
+        // Face ID ile geri getirilemez; kullanıcı şifre girmek zorunda
+        // kalır. Oysa kilit zaten bu iş için var: token kasada durur,
+        // ekran kilitlenir, Face ID onu açar.
+        //
+        // Güvenlik zayıflamaz — aynı kapı korunur:
+        //   • Biyometrik AÇIK  → kilit ekranı; Face ID/PIN olmadan
+        //     içeri girilemez. Cihaz başkasının elindeyse yine giremez.
+        //   • Biyometrik KAPALI → eski davranış (çıkış), çünkü kilit
+        //     olmadan uygulama korumasız kalırdı.
+        //
+        // Ayrıca `LockScreen`, cihaz artık kimseyi doğrulayamıyorsa
+        // (ekran kilidi kaldırılmış) tercihi kapatıp içeri alıyor — yani
+        // kullanıcı dışarıda kilitli kalmaz.
+        final biyometrikAcik = ref.read(biometricLockProvider);
+        if (biyometrikAcik && ref.read(authProvider).valueOrNull != null) {
+          setState(() => _locked = true);
+        } else {
+          // **Kilitsiz kullanıcı: çıkış SESSİZ olmasın** (kullanıcı
+          // kararı, 2026-09-23). Kullanıcı şifre ekranıyla karşılaşınca
+          // bunun bir arıza mı yoksa güvenlik mi olduğunu bilmiyordu.
+          //
+          // Teklif damgası da SİLİNİR: kaybı bizzat yaşamış kullanıcıya
+          // kararını yeniden sormak dayatma değil. Bir kez "şimdi değil"
+          // demek, sonucunu görmeden verilmiş bir karardı.
+          _zamanAsimiBildir();
+          CrashReporter.arkaPlan(
+            ref.read(biometricLockOfferedProvider.notifier).set(false),
+            reason: 'main.teklifiYenidenAc',
+          );
+          // Oturumu kapat — auth state değişince LoginScreen'e döner
+          ref.read(authProvider.notifier).logout();
+        }
       } else {
         // Kısa arka plan dönüşleri (bildirim çekmecesi, gelen arama)
         // kilit istemez; 30 sn üstü ister.
@@ -1488,10 +1652,70 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           await ref.read(biometricLockProvider.notifier).set(false);
           if (mounted) setState(() => _locked = false);
         },
+        // Başka hesaba geçiş. Zaman aşımı artık çıkış değil KİLİT
+        // uyguladığından (yukarıdaki iki dal) kullanıcı hep kendi
+        // oturumuna dönüyor; bu düğme olmadan başka hesaba geçmek için
+        // önce Face ID'den geçmek gerekiyordu. Kilidi açmaz — oturumu
+        // siler ve giriş ekranına döner.
+        onCikisYap: () async {
+          await ref.read(authProvider.notifier).logout();
+          if (!mounted) return;
+          setState(() {
+            _locked = false;
+            _lockAtLaunchFor = null; // sıradaki kullanıcı için yeniden sorulsun
+          });
+        },
+      );
+    }
+
+    // Kilit TEKLİFİ — kilit kapısından SONRA, ana ekrandan ÖNCE.
+    //
+    // Sıra önemli: kilidi zaten açık olan kullanıcı yukarıdaki daldan
+    // geçer ve buraya hiç uğramaz (`biometricLockProvider` true ise
+    // teklif de gösterilmez). Teklif yalnızca kilidi KAPALI olana,
+    // yalnızca BİR kez çıkar.
+    //
+    // Neden ana ekrandan önce: teklifin anlattığı kayıp (çıkış + push
+    // kesintisi) kullanıcı uygulamayı ilk kez arkaya aldığında gerçekleşir.
+    // Ana ekranın içine gömülen bir kart o ana kadar görülmeyebilir.
+    if (!ref.watch(biometricLockProvider) &&
+        !ref.watch(biometricLockOfferedProvider)) {
+      return LockOfferScreen(
+        key: const ValueKey('lock-offer'),
+        onKabul: () async {
+          // Sıra: önce tercihi aç, sonra "soruldu" damgası. Ters sırada
+          // ve arada çökme olursa kullanıcı hem kilitsiz kalır hem de
+          // teklifi bir daha görmez.
+          await ref.read(biometricLockProvider.notifier).set(true);
+          await ref.read(biometricLockOfferedProvider.notifier).set(true);
+          if (!mounted) return;
+          // Teklifi az önce Face ID ile geçti; hemen kilit ekranı
+          // göstermek aynı doğrulamayı iki kez sormak olurdu.
+          _lockAtLaunchFor = user.id;
+          setState(() {});
+        },
+        onRet: () async {
+          await ref.read(biometricLockOfferedProvider.notifier).set(true);
+          if (mounted) setState(() {});
+        },
       );
     }
 
     return const MainNavigationScreen(key: ValueKey('main'));
+  }
+
+  /// Zaman aşımı çıkışını kullanıcıya AÇIKLA.
+  ///
+  /// Sessiz çıkış kullanıcıya arıza gibi görünüyordu: uygulama açılıyor,
+  /// şifre isteniyor, neden belli değil. Mesaj hem nedeni söyler hem de
+  /// çözümü gösterir (Face ID).
+  ///
+  /// `logout()` ÖNCESİ çağrılır: sonrasında bu ağaç LoginScreen'e
+  /// döneceği için `context` artık bu Scaffold'a ait olmaz.
+  void _zamanAsimiBildir() {
+    if (!mounted) return;
+    sandikSnack(context, context.l10n.sessionTimedOut,
+        kind: SandikSnackKind.warning);
   }
 
   /// Soğuk açılışta kilit gerekiyor mu — kullanıcı başına BİR kez sorulur.

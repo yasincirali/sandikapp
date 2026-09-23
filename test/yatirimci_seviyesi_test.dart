@@ -155,10 +155,16 @@ void main() {
     test('tekil varlık: sinyal kartı ve gösterge paneli seviyeye bakar', () {
       final src = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
       expect(src.contains('_sinyalYuzeyleri'), isTrue);
-      expect(src.contains('if (_sinyalYuzeyleri)\n                  AssetSignalCard'),
-          isTrue,
+      // **Boşluklara duyarsız** (2026-09-23): birebir girinti eşleşmesi
+      // `dart format` her satır kaydırdığında SAHTE kırılıyordu — bu
+      // projede dört test tam olarak böyle kırılmıştı. Testin koruduğu
+      // İDDİA aynı: iki yüzey de `_sinyalYuzeyleri` kapısının ARDINDA.
+      final tek = src.replaceAll(RegExp(r'\s+'), ' ');
+      expect(tek.contains('if (_sinyalYuzeyleri) AssetSignalCard'), isTrue,
           reason: 'sinyal kartı seviyeye bağlı değil');
-      expect(src.contains('if (_sinyalYuzeyleri) ...[\n                  const SizedBox(height: 24),\n                  TechnicalSignalPanel'),
+      expect(
+          tek.contains('if (_sinyalYuzeyleri) ...[ '
+              'const SizedBox(height: 24), TechnicalSignalPanel'),
           isTrue,
           reason: 'gösterge paneli seviyeye bağlı değil');
     });

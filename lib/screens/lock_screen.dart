@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
 import '../l10n/l10n.dart';
 
 /// Kilit ekranı — biyometrik kilit açıkken öne dönüşte ve soğuk açılışta.
@@ -13,8 +14,17 @@ import '../l10n/l10n.dart';
 /// görünen tutar kilidi anlamsız kılardı.
 ///
 /// Açılışta doğrulama KENDİLİĞİNDEN istenir; kullanıcı iptal ederse
-/// düğmeyle tekrar dener. Normalde çıkış yolu yok — kilidi kapatmanın yeri
-/// Ayarlar ve oraya kilit açılmadan gidilemez; bu bilinçli.
+/// düğmeyle tekrar dener. Kilidi KAPATMANIN yeri Ayarlar ve oraya kilit
+/// açılmadan gidilemez; bu bilinçli.
+///
+/// **Çıkış yapmak ayrı bir şeydir ve serbesttir** (2026-09-23). Zaman aşımı
+/// artık `logout()` değil kilit uyguladığından (bkz. `main.dart`), kullanıcı
+/// kendi oturumuna geri dönüyor — başka bir hesaba geçmenin ekrandan bir
+/// yolu kalmamıştı. Tek çare Face ID ile girip Profil'den çıkmaktı; Face ID
+/// başka birinin telefonunda ya da çalışmıyorken bu hiç mümkün değildi.
+/// Çıkış kilidi AÇMAZ: oturumu siler ve giriş ekranına döner — yani
+/// korumayı zayıflatmaz, yalnızca kullanıcıyı kendi cihazında mahsur
+/// bırakmaz.
 ///
 /// **Tek istisna: cihazda doğrulanacak bir şey kalmadıysa**
 /// ([BiyometrikSonuc.kullanilamaz]). Kullanıcı kilidi açtıktan SONRA
@@ -29,6 +39,7 @@ class LockScreen extends StatefulWidget {
     super.key,
     required this.onUnlocked,
     required this.onKilidiKapat,
+    required this.onCikisYap,
   });
 
   final VoidCallback onUnlocked;
@@ -36,6 +47,10 @@ class LockScreen extends StatefulWidget {
   /// Cihaz doğrulama yapamaz hâldeyken kullanıcının seçtiği çıkış:
   /// biyometrik kilit tercihini kapatıp içeri al.
   final VoidCallback onKilidiKapat;
+
+  /// Oturumu kapat ve giriş ekranına dön — başka hesaba geçmenin yolu.
+  /// Kilidi AÇMAZ; sınır aynı yerde durur.
+  final VoidCallback onCikisYap;
 
   @override
   State<LockScreen> createState() => _LockScreenState();
@@ -75,6 +90,21 @@ class _LockScreenState extends State<LockScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Çıkış ONAY ister: kilit ekranında kullanıcı doğrulamayı beklerken
+  /// yanlışlıkla dokunabilir ve oturumu kaybetmek (özellikle sosyal girişte)
+  /// geri alınması zahmetli bir adımdır.
+  Future<void> _cikisiOnayla() async {
+    final l = context.l10n;
+    final onay = await showSandikConfirm(
+      context: context,
+      title: l.lockSwitchAccountTitle,
+      message: l.lockSwitchAccountBody,
+      confirmLabel: l.lockSwitchAccountTitle,
+      cancelLabel: l.cancel,
+    );
+    if (onay && mounted) widget.onCikisYap();
   }
 
   /// Duruma göre alt başlık. İptal ile "cihazda kilit yok" aynı cümleyi
@@ -152,6 +182,18 @@ class _LockScreenState extends State<LockScreen> {
                     ),
                   ),
                 ],
+                // HER ZAMAN görünür: bu kilidi açmaz, oturumu kapatır.
+                // Kilit ekranı kullanıcıyı KENDİ hesabına döndürdüğü için
+                // başka hesaba geçmenin tek yolu buydu; Face ID çalışmayan
+                // ya da başkasına ait bir cihazda hiç yolu yoktu.
+                const SizedBox(height: SandikSpace.sm),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: _busy ? null : _cikisiOnayla,
+                    child: Text(context.l10n.lockSwitchAccount),
+                  ),
+                ),
               ],
             ),
           ),

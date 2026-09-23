@@ -30,6 +30,7 @@ void main() {
     WidgetTester tester, {
     VoidCallback? acildi,
     VoidCallback? kilidiKapat,
+    VoidCallback? cikisYapildi,
   }) async {
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('tr', 'TR'),
@@ -38,6 +39,7 @@ void main() {
       home: LockScreen(
         onUnlocked: acildi ?? () {},
         onKilidiKapat: kilidiKapat ?? () {},
+        onCikisYap: cikisYapildi ?? () {},
       ),
     ));
     // initState'teki postFrameCallback + doğrulama turu.
@@ -92,6 +94,81 @@ void main() {
     await ekraniAc(tester);
     expect(find.text(l.lockDisableAndContinue), findsNothing,
         reason: 'Vazgeçmek kilidi kapatmanın yolu olamaz.');
+  });
+
+  // ── Başka hesaba geçiş (kullanıcı sorusu 2026-09-23) ────────────────────
+  //
+  // Zaman aşımı artık `logout()` değil KİLİT uyguluyor: kullanıcı hep KENDİ
+  // oturumuna dönüyor. Bu iyileştirmenin yan etkisi, başka bir hesaba
+  // geçmenin ekrandan yolunun kalmamasıydı — tek çare Face ID'den geçip
+  // Profil'den çıkmaktı, ki Face ID çalışmıyorsa o da yoktu.
+  group('başka hesapla giriş', () {
+    testWidgets('çıkış yolu DOĞRULAMA BEKLERKEN de görünür', (tester) async {
+      // `lockDisableAndContinue`ten farkı bu: o yalnızca cihaz kimseyi
+      // doğrulayamaz hâldeyken çıkar. Çıkış her durumda erişilebilir
+      // olmalı, çünkü kullanılamaz hâlin dışında da (başkasının telefonu,
+      // yanlış hesap) sıkışma yaşanır.
+      _SahteKilit.sonuc = BiyometrikSonuc.iptal;
+      await ekraniAc(tester);
+      expect(find.text(l.lockSwitchAccount), findsOneWidget);
+      expect(find.text(l.lockDisableAndContinue), findsNothing,
+          reason: 'iki yol karıştırılmamalı — biri kilidi kapatır, '
+              'diğeri oturumu');
+    });
+
+    testWidgets('ONAY istenir — tek dokunuşla oturum kaybedilmez',
+        (tester) async {
+      _SahteKilit.sonuc = BiyometrikSonuc.iptal;
+      var cikildi = false;
+      await ekraniAc(tester, cikisYapildi: () => cikildi = true);
+
+      await tester.tap(find.text(l.lockSwitchAccount));
+      await tester.pumpAndSettle();
+      expect(find.text(l.lockSwitchAccountBody), findsOneWidget);
+      expect(cikildi, isFalse, reason: 'onaydan ÖNCE çıkış olmamalı');
+    });
+
+    testWidgets('VAZGEÇ oturumu korur', (tester) async {
+      _SahteKilit.sonuc = BiyometrikSonuc.iptal;
+      var cikildi = false;
+      await ekraniAc(tester, cikisYapildi: () => cikildi = true);
+
+      await tester.tap(find.text(l.lockSwitchAccount));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l.cancel));
+      await tester.pumpAndSettle();
+
+      expect(cikildi, isFalse);
+      expect(find.text(l.lockTitle), findsOneWidget,
+          reason: 'kilit ekranında kalınmalı');
+    });
+
+    testWidgets('onaylanınca çıkış ÇAĞRILIR', (tester) async {
+      _SahteKilit.sonuc = BiyometrikSonuc.iptal;
+      var cikildi = false;
+      await ekraniAc(tester, cikisYapildi: () => cikildi = true);
+
+      await tester.tap(find.text(l.lockSwitchAccount));
+      await tester.pumpAndSettle();
+      // Onay düğmesi diyalog BAŞLIĞIYLA aynı metni taşır; ikincisi düğme.
+      await tester.tap(find.text(l.lockSwitchAccountTitle).last);
+      await tester.pumpAndSettle();
+      expect(cikildi, isTrue);
+    });
+
+    testWidgets('çıkış kilidi AÇMAZ — onUnlocked tetiklenmez', (tester) async {
+      // Güvenlik sınırı: çıkış içeri almanın bir yolu olamaz.
+      _SahteKilit.sonuc = BiyometrikSonuc.iptal;
+      var acildi = false;
+      await ekraniAc(tester, acildi: () => acildi = true);
+
+      await tester.tap(find.text(l.lockSwitchAccount));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l.lockSwitchAccountTitle).last);
+      await tester.pumpAndSettle();
+      expect(acildi, isFalse,
+          reason: 'oturumu kapatmak portföyü göstermenin yolu değildir');
+    });
   });
 
   group('LocalAuthException eşlemesi', () {

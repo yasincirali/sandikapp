@@ -115,6 +115,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lockDisableAndContinue => 'Turn off the lock and continue';
 
   @override
+  String get lockSwitchAccount => 'Sign in with a different account';
+
+  @override
+  String get lockSwitchAccountTitle => 'Sign out';
+
+  @override
+  String get lockSwitchAccountBody =>
+      'You will be signed out of this account and returned to the login screen. Your data is not deleted; it will be there when you sign back in.';
+
+  @override
   String get unlock => 'Unlock';
 
   @override
@@ -1301,6 +1311,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tooltipInvested => '\nTotal invested ';
+
+  @override
+  String chartTxBuy(String when, String price) {
+    return 'Buy $when · $price';
+  }
+
+  @override
+  String chartTxSell(String when, String price) {
+    return 'Sell $when · $price';
+  }
 
   @override
   String get tradeVolumeUpper => 'TRADE VOLUME';
@@ -2591,6 +2611,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alertSetFromAssetScreen => 'Set from the bell on an asset screen';
 
   @override
+  String get sessionTimedOut =>
+      'You were signed out for safety. Turn on Face ID and this will not happen again.';
+
+  @override
+  String get lockOfferTitle => 'Protect with Face ID';
+
+  @override
+  String get lockOfferBody =>
+      'Your portfolio lives in your pocket. With Face ID on, the app recognises you without getting in your way.';
+
+  @override
+  String get lockOfferBenefitStay => 'You stay signed in';
+
+  @override
+  String get lockOfferBenefitStayBody =>
+      'With the lock off, leaving the app for 10 minutes signs you out for safety and you have to enter your password again. With Face ID on, your session stays put.';
+
+  @override
+  String get lockOfferBenefitPush => 'Your alerts keep coming';
+
+  @override
+  String get lockOfferBenefitPushBody =>
+      'Signing out also silences your price alerts and daily summary. With the lock on, they keep arriving.';
+
+  @override
+  String get lockOfferBenefitPrivacy => 'Your portfolio stays hidden';
+
+  @override
+  String get lockOfferBenefitPrivacyBody =>
+      'If someone else picks up your phone, your balances will not open without Face ID.';
+
+  @override
+  String get lockOfferAccept => 'Turn on Face ID';
+
+  @override
+  String get lockOfferDecline => 'Not now';
+
+  @override
+  String get lockOfferLater =>
+      'You can turn this on later in Settings › Privacy.';
+
+  @override
   String get noBiometricOnDevice =>
       'No biometrics or PIN is set up on this device.';
 
@@ -2810,6 +2872,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String inflowIncludedNote(String amount, String market) {
     return 'You bought $amount in this period and the figure above INCLUDES it. Market move only: $market.';
+  }
+
+  @override
+  String inflowExcludedNote(String amount) {
+    return 'You bought $amount today; the figure above EXCLUDES it — it shows market movement only.';
+  }
+
+  @override
+  String outflowExcludedNote(String amount) {
+    return 'You sold $amount today; the figure above EXCLUDES it — it shows market movement only.';
   }
 
   @override

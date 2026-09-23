@@ -170,13 +170,14 @@ class PercentComparisonChart extends StatelessWidget {
         final tarih = DateTime.fromMillisecondsSinceEpoch(s.x.round());
         // Gün içi seride tarih tek başına yetmez — saat de gösterilmeli,
         // yoksa "4 Eyl 2026" etiketi 288 noktanın hepsi için aynı görünür.
+        // Uzun pencerede de saatlik nokta SAAT taşır (2026-09-24,
+        // `fmtTarihSaat`); günlük nokta 00:00'dır, yalnızca tarih yazılır.
         final span = ciz.maxX - ciz.minX;
-        final bicim = span < const Duration(days: 2).inMilliseconds
-            ? DateFormat('d MMM HH:mm', 'tr_TR')
-            : DateFormat('d MMM yyyy', 'tr_TR');
         return (
           fmtPct(s.y, digits: 1, showSign: true),
-          bicim.format(tarih),
+          span < const Duration(days: 2).inMilliseconds
+              ? DateFormat('d MMM HH:mm', 'tr_TR').format(tarih)
+              : fmtTarihSaat(tarih),
         );
       },
       // Crosshair açıkken her serinin o andaki değeri listelenir — kıyasın

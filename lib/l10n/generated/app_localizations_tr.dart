@@ -115,6 +115,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get lockDisableAndContinue => 'Kilidi kapat ve devam et';
 
   @override
+  String get lockSwitchAccount => 'Farklı hesapla giriş yap';
+
+  @override
+  String get lockSwitchAccountTitle => 'Oturumu kapat';
+
+  @override
+  String get lockSwitchAccountBody =>
+      'Bu hesaptan çıkılacak ve giriş ekranına döneceksin. Verilerin silinmez; tekrar giriş yaptığında yerinde olur.';
+
+  @override
   String get unlock => 'Kilidi aç';
 
   @override
@@ -1302,6 +1312,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tooltipInvested => '\nToplam yatırım ';
+
+  @override
+  String chartTxBuy(String when, String price) {
+    return 'Alım $when · $price';
+  }
+
+  @override
+  String chartTxSell(String when, String price) {
+    return 'Satış $when · $price';
+  }
 
   @override
   String get tradeVolumeUpper => 'İŞLEM HACMİ';
@@ -2586,6 +2606,48 @@ class AppLocalizationsTr extends AppLocalizations {
   String get alertSetFromAssetScreen => 'Varlık ekranındaki zil ile kurulur';
 
   @override
+  String get sessionTimedOut =>
+      'Güvenlik için oturumun kapatıldı. Face ID açarsan bir daha kapanmaz.';
+
+  @override
+  String get lockOfferTitle => 'Face ID ile koru';
+
+  @override
+  String get lockOfferBody =>
+      'Portföyün cebinde. Face ID açarsan uygulama araya girmeden seni tanır.';
+
+  @override
+  String get lockOfferBenefitStay => 'Oturumun kapanmaz';
+
+  @override
+  String get lockOfferBenefitStayBody =>
+      'Kilit kapalıyken uygulamayı 10 dakika bırakınca güvenlik için çıkış yapılıyor ve şifreni yeniden girmen gerekiyor. Face ID açıkken oturumun yerinde kalır.';
+
+  @override
+  String get lockOfferBenefitPush => 'Bildirimlerin kesilmez';
+
+  @override
+  String get lockOfferBenefitPushBody =>
+      'Çıkış yapılınca fiyat alarmların ve günlük özetin de susar. Kilit açıkken gelmeye devam eder.';
+
+  @override
+  String get lockOfferBenefitPrivacy => 'Portföyün görünmez';
+
+  @override
+  String get lockOfferBenefitPrivacyBody =>
+      'Telefonun başkasının eline geçerse tutarların Face ID olmadan açılmaz.';
+
+  @override
+  String get lockOfferAccept => 'Face ID\'yi aç';
+
+  @override
+  String get lockOfferDecline => 'Şimdi değil';
+
+  @override
+  String get lockOfferLater =>
+      'Bunu sonra Ayarlar › Gizlilik\'ten açabilirsin.';
+
+  @override
   String get noBiometricOnDevice =>
       'Bu cihazda biyometrik doğrulama ya da PIN tanımlı değil.';
 
@@ -2803,6 +2865,16 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String inflowIncludedNote(String amount, String market) {
     return 'Bu dönemde $amount tutarında alım yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: $market.';
+  }
+
+  @override
+  String inflowExcludedNote(String amount) {
+    return 'Bu gün $amount tutarında alım yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.';
+  }
+
+  @override
+  String outflowExcludedNote(String amount) {
+    return 'Bu gün $amount tutarında satış yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.';
   }
 
   @override

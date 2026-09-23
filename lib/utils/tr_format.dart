@@ -172,3 +172,32 @@ NumberFormat fixedFormatter(int digits) =>
 /// `DateTime(t.year, t.month, t.day)` 38 yerde elle yazılıyordu. Tek isim,
 /// tek anlam: "aynı gün mü" ve "gün sayısı farkı" karşılaştırmaları buradan.
 DateTime dayKey(DateTime t) => DateTime(t.year, t.month, t.day);
+
+/// İşlem damgası gerçek bir SAAT taşıyor mu?
+///
+/// Tarih seçiciyle girilen işlem (`pickSandikDate`) yerel 00:00:00 olarak
+/// kaydedilir — saati BİLİNMİYORDUR. "00:00" yazmak uydurma bir saat
+/// göstermek olur; o yüzden tam gece yarısı "saat yok" sayılır. Tam 00:00'da
+/// gerçekten işlem yapılma olasılığı, yanlış saat göstermenin maliyetinden
+/// küçüktür. UTC nesnede yanlış karar verir — `Asset.fromSupabase` yerel
+/// saate çevirir (2026-09-24).
+bool saatBiliniyor(DateTime t) {
+  final y = t.toLocal();
+  return y.hour != 0 || y.minute != 0 || y.second != 0 || y.millisecond != 0;
+}
+
+/// Zaman damgası: `23 Eyl 2026 · 14:32`, saat yoksa `23 Eyl 2026`.
+///
+/// İki kullanıcı isteğinin (2026-09-24) ortak cevabı:
+///   · portföy hareketleri — "saat bilgisi de ekle"
+///   · grafikte gezinirken — "hangi saatteyim görmeliyim"
+///
+/// Grafikte günlük/haftalık kova 00:00'a oturur; orada saat yazmak "00:00"
+/// gürültüsü olurdu. Saatlik kovalar ve "şimdi" noktası ise gerçek saat
+/// taşır. Kural tek: [saatBiliniyor].
+String fmtTarihSaat(DateTime t) {
+  final y = t.toLocal();
+  return saatBiliniyor(y)
+      ? DateFormat('d MMM yyyy · HH:mm', 'tr_TR').format(y)
+      : DateFormat('d MMM yyyy', 'tr_TR').format(y);
+}

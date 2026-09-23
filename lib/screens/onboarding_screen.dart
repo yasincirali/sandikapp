@@ -445,7 +445,7 @@ List<_Adim> _adimlariKur() {
       baslik: 'Dönem seç',
       govde: 'GÜNLÜK gün içini saat saat çizer; 1H / 1A / 6A / 1Y daha geniş '
           'pencereler. Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
-          'basılı tutarak o anın değerini okuyabilirsin.',
+          'basılı tutarak o anın tarihini, saatini ve değerini okuyabilirsin.',
       // 2026-09-15: bu adımın görevi kaldırıldı. Eski ölçüt "Gerçek /
       // Simülasyon anahtarı belirdi mi" idi; o anahtar artık kapsam
       // panelinin içinde ve panel kapalıyken de ağaçta duruyor, yani

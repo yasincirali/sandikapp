@@ -92,10 +92,74 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// kâr/zarar görünür (bkz. `_seriYukle`).
   static const _seriTazelikPenceresi = TazelikRitmi.yuzey;
 
+  /// Gün içi seriyi Performans ekranıyla AYNI ritimde tazeleyen sayacı.
+  ///
+  /// ## Neden gerekli (kullanıcı bildirimi, 2026-09-23)
+  /// *"Hâlâ zaman zaman fark oluyor, özellikle ana sayfa Bugün ile
+  /// Performans günlük arasında, ama ortaklarda fark olmuyor — logged-in
+  /// user'ın portföyünde sorun oluyor."*
+  ///
+  /// İki yüzey aynı hesabı yapıyordu ama serileri FARKLI YAŞTAYDI:
+  ///
+  ///   * Performans → `Timer.periodic(30 sn)` ile `_intradayKey`'i düşürür,
+  ///     `FutureBuilder` seriyi YENİDEN çeker. Yaş her zaman ≤ 30 sn.
+  ///   * Bu kart  → `_seri` alanına BİR KEZ yazılıyordu (`_istendi`) ve
+  ///     yalnızca defter imzası değişinceyeniden yükleniyordu. Fiyat
+  ///     tazelemesi karti yeniden BUILD ediyor ama `_seri` aynı kalıyordu.
+  ///
+  /// Gün başı (`open`) serinin ilk noktasından gelir. Seri dakikalarca
+  /// eskidikçe o nokta Performans'ınkinden ayrışıyor; canlı uç (`last`)
+  /// ikisinde de güncel olduğu için **değişim** farklı çıkıyor.
+  ///
+  /// ### Neden yalnızca "Ben" kapsamında görülüyor
+  /// Ortak lot'larının `currentPrice`'ı RLS yüzünden sunucuya yazılamaz;
+  /// `refreshPrices` onları ancak bellekte günceller. Ortak görünümünde
+  /// canlı uç pek oynamadığı için bayat taban fark yaratmıyor. Kendi
+  /// portföyünde ise fiyat her 30 sn'de günelleniyor: uç oynuyor, taban
+  /// sabit kalıyor ve makas açılıyor.
+  VoidCallback? _nabziBirak;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
+    // ORTAK NABIZ — kendi `Timer`'ını KURMAZ.
+    //
+    // Aynı ritmi kullanmak yetmiyordu: her yüzey sayacını mount anında
+    // kuruyor, yani hepsi 30 sn'de bir ama FARKLI FAZDA çalışıyordu.
+    // Ana sayfa t=0'da, Performans t=12'de açıldıysa iki yüzey 12 saniye
+    // farklı anın verisini gösteriyordu (bkz. `TazelikRitmi.nabiz`).
+    _nabziBirak = TazelikRitmi.nabiz.dinle(() {
+      if (!mounted) return;
+      _seriyiTazele();
+    });
+  }
+
+  @override
+  void dispose() {
+    _nabziBirak?.call();
+    super.dispose();
+  }
+
+  /// Yalnızca GÜN İÇİ seriyi tazeler — diğer iki satıra dokunmaz.
+  ///
+  /// Reel getiri ve haftalık özet defterden bağımsızdır ve günde bir kez
+  /// değişir; onları 30 saniyede bir çekmek boşuna ağ trafiği olurdu
+  /// (`_yukle`'nin tek seferlik disiplini onlar için DOĞRU).
+  ///
+  /// `setState` yalnızca değer GERÇEKTEN değiştiyse çağrılır: her tick'te
+  /// kartı yeniden çizmek gereksiz kare üretirdi.
+  Future<void> _seriyiTazele() async {
+    if (!_yuklendi) return; // ilk yükleme sürüyor, üstüne binme
+    final yeni = await _seriYukle();
+    if (!mounted || yeni == null) return;
+    final eski = _seri;
+    if (eski != null &&
+        eski.length == yeni.length &&
+        eski.entries.every((e) => yeni[e.key] == e.value)) {
+      return; // değişmedi
+    }
+    setState(() => _seri = yeni);
   }
 
   @override

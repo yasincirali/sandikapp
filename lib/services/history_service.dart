@@ -411,6 +411,15 @@ class HistoryService {
   static Future<List<(int, double)>> Function(String, String, String?)
       get varsayilanSeriCekici => _agdanCek;
 
+  /// Gün içi motorunun "şimdi"si — testler için enjekte edilebilir.
+  ///
+  /// Tohum slotlarını (veri gelmeden önceki gece saatleri) sınayan test
+  /// gün başından birkaç saat sonrasına ihtiyaç duyuyor; duvar saatine
+  /// bağlı kalsaydı gece yarısına yakın koşularda atlanır ya da kırmızı
+  /// olurdu (`TECHNICAL_DEBT.md`: "İki test cihaz saatine bağlı").
+  @visibleForTesting
+  static DateTime Function() gunIciSaat = DateTime.now;
+
   static Future<List<(int, double)>> _agdanCek(
           String sym, String range, String? interval) =>
       interval == null
@@ -1149,7 +1158,7 @@ class HistoryService {
       return map[_sortedKeys(map).first];
     }
 
-    final now = DateTime.now();
+    final now = gunIciSaat();
     final Map<String, Map<int, double>> tickerSlots = {};
     final Map<int, double> usdTrySlots = {};
     final Map<int, double> goldSlots = {}; // TRY / gram22k
@@ -1385,6 +1394,54 @@ class HistoryService {
             assets: assets, gramSerisi: goldSlots, kaynak: debugSonAltinKaynagi);
     double goldKal(String ticker) => altinKalibre[ticker] ?? 1.0;
 
+    // Ürün bazlı uç hizalamasının ihtiyacı olan ham seri uçları.
+    // Boş seride `null` kalır ve eski çarpan yolu kullanılır.
+    final goldSiraliTs = goldSlots.keys.toList()..sort();
+    final double? goldIlkSlot =
+        goldSiraliTs.isEmpty ? null : goldSlots[goldSiraliTs.first];
+    final double? goldSonSlot =
+        goldSiraliTs.isEmpty ? null : goldSlots[goldSiraliTs.last];
+
+    // **YA HEP YA HİÇ** — tüm altın ayarları AYNI yoldan geçer.
+    //
+    // ## Neden (kullanıcı bildirimi, 2026-09-23)
+    // Ekranda çeyrek −%1,43, 22 ayar gram −%0,48 görünüyordu. Oysa
+    // truncgil İKİSİNE DE −%0,72 diyor (ölçüldü, canlı API):
+    // tüm ayarlar aynı altından üretildiği için AYNI oranda değişirler.
+    // Kullanıcının sorusu haklıydı.
+    //
+    // Sebep: bir önceki türde eklenen ürün bazlı hizalama sembol başına
+    // karar veriyordu. Bir ayarın `gunlukDegisimPct`'i varsa o yeni yoldan,
+    // olmayanı eski sabit çarpan yolundan geçiyordu — biri truncgil
+    // yüzdesini, diğeri `GC=F` yüzdesini gösteriyor ve ikisi ayrışıyordu.
+    //
+    // KARIŞIK yol, ayrışmanın TA KENDİSİDİR. Portföydeki altın
+    // sembollerinin HEPSİ günlük yüzdeye sahip değilse hiçbiri ürün
+    // bazlı yola girmez; böylece tüm ayarlar en azından BİRBİRİYLE
+    // tutarlı kalır (hepsi aynı seriden, aynı yüzdeyle).
+    // **Karar GLOBAL, çağrıya özgü DEĞİL.**
+    //
+    // İlk sürümde `assets` üzerinden karar veriliyordu ve bu, ayrışmanın
+    // İKİNCİ kaynağıydı: Performans ekranı TÜM altın lot'larını gönderir
+    // (gram + çeyrek), varlık ekranı ise TEK varlık. Yani her varlık
+    // ekranı KENDİ BAŞINA karar veriyordu — gram ekranı ürün bazlı
+    // yoldan, çeyrek ekranı eski çarpan yolundan geçebiliyordu.
+    //
+    // Ölçüldü (kullanıcı bildirimi 2026-09-23): varlık ekranında
+    // çeyrek −%1,43, 22 ayar gram −%0,48 — truncgil İKİSİNE DE −%0,72
+    // derken. İki ekran iki farklı formülden geçiyordu.
+    //
+    // Karar artık `PriceService`'in GÜNLÜK YÜZDE BİLGİSİNİN BÜTÜNLÜĞÜNE
+    // bakıyor: uygulama hangi ayarları fiyatladıysa onların HEPSİ yüzde
+    // taşıyorsa ürün bazlı yol açılır. Böylece hangi ekrandan
+    // bakılırsa bakılsın AYNI yol kullanılır.
+    final urunBazliKullan = PriceService.instance.altinGunlukYuzdeTam;
+    // TEŞHİS (2026-09-23): kullanıcı ayrışmanın sürdüğünü bildirdi.
+    // Hangi sembolün yüzde taşımadığı görünmeden kök neden bulunamıyor.
+    if (assets.any((a) => FiyatKaynagi.altinMi(a.ticker))) {
+      debugPrint('altın-yüzde ${PriceService.instance.altinYuzdeTeshisi()}');
+    }
+
     final groupedPoints = <int, double>{};
     // Tür/pozisyon dağılımı — `groupedPoints` ile AYNI döngüde birikir.
     final byType = <AssetType, Map<int, double>>{};
@@ -1489,11 +1546,43 @@ class HistoryService {
             ? null
             : goldSlots.keys.reduce((x, y) => x < y ? x : y);
         if (firstTs != null) {
-          // Seed de KALİBRE edilir: else dalındaki `currentPrice` canlı
-          // ölçektedir, ikisi ayrışırsa seans öncesi plato ile ilk gerçek
-          // slot arasında yapay bir basamak kalırdı.
-          unitTRY =
-              goldSlots[firstTs]! * goldFactor(a.ticker) * goldKal(a.ticker);
+          // Seed, gerçek slotlarla AYNI YOLDAN hesaplanır.
+          //
+          // ## Neden (emülatörde ölçüldü, 2026-09-23 23:55)
+          // Gerçek slotlar ürün bazlı yoldan (`altinUrunUclari`, truncgil
+          // günlük yüzdesi) geçerken seed hâlâ spot kalibrasyonundan
+          // (`goldKal`) geliyordu. Yahoo'nun gün içi altın verisi 00:00'da
+          // değil gece 03:00 civarında başladığı için gecenin ilk slotları
+          // seed'di ve GÜN BAŞI spot yüzdesiyle kuruluyordu:
+          //
+          //   truncgil gram: −%0,72   ·   ekranlar: −%1,39 (spot)
+          //
+          // Varlık ekranı gramda −%1,39, Performans › Altın −₺5.995
+          // gösteriyordu; tutarlı gün başıyla −₺4.515 olmalıydı (20 çeyrek
+          // × 10.899,7 yerine 10.825,7). "Ya hep ya hiç" kuralı (bkz.
+          // `urunBazliKullan`) seed'e uygulanmamıştı — karışık yolun ta
+          // kendisi. Ürün uçları yoksa eski kalibre yol kalır.
+          final uc = urunBazliKullan
+              ? altinUrunUclari(
+                  canliBirimTRY: a.currentPrice,
+                  gunlukPct: PriceService.instance.gunlukDegisimPct(a.ticker),
+                )
+              : null;
+          if (uc != null && goldIlkSlot != null && goldSonSlot != null) {
+            unitTRY = altinUrunNoktasi(
+              seriDeger: goldSlots[firstTs]! * goldFactor(a.ticker),
+              seriIlk: goldIlkSlot * goldFactor(a.ticker),
+              seriSon: goldSonSlot * goldFactor(a.ticker),
+              urunIlk: uc.ilk,
+              urunSon: uc.son,
+            );
+          } else {
+            // Seed de KALİBRE edilir: else dalındaki `currentPrice` canlı
+            // ölçektedir, ikisi ayrışırsa seans öncesi plato ile ilk gerçek
+            // slot arasında yapay bir basamak kalırdı.
+            unitTRY =
+                goldSlots[firstTs]! * goldFactor(a.ticker) * goldKal(a.ticker);
+          }
         } else if (a.currentPrice > 0) {
           unitTRY = a.currentPrice;
         }
@@ -1606,7 +1695,43 @@ class HistoryService {
             gunIciBeklenenTurler.add(a.type);
             final gram = pastOrNull(goldSlots, hourTs);
             if (gram != null) {
-              v = gram * goldFactor(a.ticker) * goldKal(a.ticker) * qty;
+              // ÜRÜN BAZLI UÇ HİZALAMASI (kullanıcı kararı, 2026-09-23)
+              //
+              // *"Veriler grafik performans ekranından da performans
+              // sayfasında da tutarlı olmalıdır."*
+              //
+              // Ölçüldü: aynı gün, varlık ekranı gram için −%0,78,
+              // çeyrek için −%1,25 diyordu; Performans ise ikisine de
+              // −%1,11 (portföy karışımının ağırlıklı ortalaması).
+              //
+              // Sebep: canlı fiyat her ayar için AYRI kotasyondan gelir
+              // (truncgil `YIA`, `CEYREKALTIN`…) ve işçilik primi gün
+              // içinde oynar. Seri ise tek kaynaktan türer; SABİT çarpan
+              // yüzdeyi değiştiremez, dolayısıyla tüm ayarlar zorunlu
+              // olarak aynı yüzdeyi gösteriyordu.
+              //
+              // Çözüm: serinin ŞEKLİ korunur, İKİ UCU ürünün kendi
+              // rakamlarına oturtulur (bkz. `altinUrunUclari`). Günlük
+              // yüzde yoksa eski çarpan yoluna düşülür — uydurma yok.
+              final uclar = urunBazliKullan
+                  ? altinUrunUclari(
+                      canliBirimTRY: a.currentPrice,
+                      gunlukPct:
+                          PriceService.instance.gunlukDegisimPct(a.ticker),
+                    )
+                  : null;
+              if (uclar != null && goldIlkSlot != null && goldSonSlot != null) {
+                final birim = altinUrunNoktasi(
+                  seriDeger: gram * goldFactor(a.ticker),
+                  seriIlk: goldIlkSlot * goldFactor(a.ticker),
+                  seriSon: goldSonSlot * goldFactor(a.ticker),
+                  urunIlk: uclar.ilk,
+                  urunSon: uclar.son,
+                );
+                v = birim * qty;
+              } else {
+                v = gram * goldFactor(a.ticker) * goldKal(a.ticker) * qty;
+              }
               slotGercekVeri = true;
               gunIciGercekTurler.add(a.type);
             }

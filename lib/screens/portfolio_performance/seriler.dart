@@ -282,12 +282,23 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
   }
 
   void _startIntradayTickIfNeeded() {
-    _intradayTick?.cancel();
+    _nabziBirak?.call();
+    _nabziBirak = null;
     if (_PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].intraday) {
       // 30 sn'de bir canlı fiyat çek — son noktanın Y değeri anlık portföy
       // toplamına oturur. refreshPrices bir sonraki portfolio state'ini
       // provider üzerinden yayar, ekran otomatik yeniden build olur.
-      _intradayTick = Timer.periodic(TazelikRitmi.yuzey, (_) {
+      // ORTAK NABIZ — kendi `Timer`'ını KURMAZ (2026-09-23).
+      //
+      // Aynı ritmi kullanmak yetmiyordu: her yüzey sayacını mount anında
+      // kuruyor, yani hepsi 30 sn'de bir ama FARKLI FAZDA çalışıyordu.
+      // Ana sayfa t=0'da, bu ekran t=12'de açıldıysa iki yüzey 12 saniye
+      // farklı anın verisini gösteriyordu (bkz. `TazelikRitmi.nabiz`).
+      //
+      // `refreshPrices` burada KALIR: fiyat turunu birinin başlatması
+      // gerekiyor ve `PortfolioNotifier` in-flight tekilleştirme yapıyor,
+      // yani iki yüzey aynı nabızda çağırsa bile tek ağ turu olur.
+      _nabziBirak = TazelikRitmi.nabiz.dinle(() {
         if (!mounted) return;
         ref.read(portfolioProvider.notifier).refreshPrices();
         _guncelle(() {

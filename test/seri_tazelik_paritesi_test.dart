@@ -79,14 +79,18 @@ void main() {
         reason: 'pencere tanımlanıp kullanılmazsa ölü koddur');
   });
 
-  test('Performans tick periyodu TEK KAYNAKTAN (parite dayanağı)', () {
+  test('Performans ORTAK NABZI dinler (parite dayanağı)', () {
+    // **Değişti (2026-09-23):** aynı ritmi kullanmak YETMEDİ. Her yüzey
+    // sayacını mount anında kurduğu için hepsi 30 sn'de bir ama FARKLI
+    // FAZDA çalışıyordu — ana sayfa t=0, Performans t=12 ise iki yüzey
+    // 12 saniye farklı anın verisini gösteriyordu.
     final src = File('lib/screens/portfolio_performance/seriler.dart')
         .readAsStringSync()
         .replaceAll('\r\n', '\n')
         .replaceAll(RegExp(r'\s+'), ' ');
-    expect(src.contains('Timer.periodic(TazelikRitmi.yuzey'), isTrue,
-        reason: 'tick ile `_seriTazelikPenceresi` AYNI sabitten gelmeli; '
-            'ikisi ayrı literal olursa sessizce ayrışabilirler');
+    expect(src.contains('TazelikRitmi.nabiz.dinle('), isTrue,
+        reason: 'Bugün kartı ile AYNI nabzı dinlemeli; ayrı sayaçlar '
+            'aynı ritimde bile faz kaydırır (bkz. tazelik_nabzi_test)');
   });
 
   test('iki yüzeyin penceresi FİİLEN eşit (kaynak metni değil, DEĞER)', () {

@@ -172,7 +172,8 @@ class _PortfolioPerformanceScreenState
   bool _ozetSekmesi = false;
   // Intraday sekmesi seçiliyken şimdiki zaman marker'ının X ekseni üstünde
   // ilerlemesi için periyodik tick. Her 60 sn'de bir setState çağırıyor.
-  Timer? _intradayTick;
+  /// Ortak nabız dinleyicisini kaldırma işlevi (bkz. `TazelikRitmi.nabiz`).
+  VoidCallback? _nabziBirak;
 
   // Zoom-aware veri controller'ı. Chart viewport değiştikçe uygun
   // ResolutionTier'da veri yükler, debounce ile spam engeller.
@@ -256,7 +257,7 @@ class _PortfolioPerformanceScreenState
     // yeniden kurulduğunda üst üste birikir ve tek dokunuş birden çok kez
     // işlenir (aynı gerekçe `MainNavigationScreen.dispose`).
     PortfolioPerformanceScreen.gunlukIstegi.removeListener(_gunlukIstegiGeldi);
-    _intradayTick?.cancel();
+    _nabziBirak?.call();
     _zoomController?.dispose();
     _viewport?.dispose();
     _scrollController.dispose();
@@ -318,35 +319,11 @@ class _PortfolioPerformanceScreenState
 
   // ── Logic ──────────────────────────────────────────────────────────────────
 
-  /// Seriyi para giriş/çıkışından arındırır.
-  ///
-  /// Ham seri PORTFÖY DEĞERİNİ çizer: kullanıcı 170.000 TL'lik alım yaptığında
-  /// çizgi o anda dikey bir duvar gibi zıplar. Bu zıplama bir kazanç değil,
-  /// sadece hesaba giren paradır — ama grafikte kazançtan ayırt edilemez.
-  /// Değişim kartı zaten net akıştan arındırılmış rakamı gösterdiği için
-  /// (bkz. `_buildPeriodChangeCard`) grafik arındırılmazsa ikisi çelişir:
-  /// kart "+907 TL" derken çizgi 170.000'lik sıçrama gösterir.
-  ///
-  /// Yöntem: her noktadan, O ANA KADAR biriken net akış çıkarılır. Böylece
-  /// alım anındaki basamak düzleşir, geriye yalnızca fiyat hareketi kalır.
-  /// Serinin başlangıç seviyesi korunur — kullanıcı "portföyüm neydi"
-  /// bağlamını kaybetmesin.
-  ///
-  /// Silinen varlıklar hiç var olmamış sayılır: `deleteLog` atlanır (orijinal
-  /// lot zaten DB'den silinmiştir).
-  /// Bir varlık satırının nakit akışına katkısı (TRY).
-  ///
-  /// Alım para GİRİŞİ (+), satış ÇIKIŞI (−). Satışta maliyet değil ele geçen
-  /// tutar kullanılır — kârla satılan pozisyonda ikisi farklıdır ve fark
-  /// yanlışlıkla "piyasa etkisi" sayılırdı. Temettü ve `deleteLog` akışa
-  /// girmez (silinen varlık hiç var olmamış sayılır).
-  static double _flowOf(Asset a) {
-    // `isActive` hem mezar taşını hem yumuşak silinmiş lot'u eler.
-    if (!a.isActive) return 0;
-    if (a.isBuy) return a.totalCostTRY;
-    if (a.isSell) return -a.sellProceedsTRY;
-    return 0;
-  }
+  // Nakit akışı kuralı (`_flowOf`) buradaydı; 2026-09-23'te kaldırıldı.
+  // Tek kaynak `PeriodSummaryService.flowOf` / `netInflow` — dönem kartı,
+  // Özet ve varlık ekranı "piyasa etkisi"ni aynı fonksiyondan okur
+  // (`PeriodSummaryService.piyasaEtkisi`). Üstteki "seriyi arındır" notu da
+  // ölüydü: arındırma 2026-08-31 kararıyla kaldırılmıştı.
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
@@ -796,15 +773,85 @@ class _PortfolioPerformanceScreenState
   ///
   /// Tür dökümü kartı da BUNU kullanır: iki kart aynı iki sayıdan beslenmezse
   /// satırların toplamı üst rakamı tutmaz (bkz. `_TypeBreakdownCard`).
-  ({double first, double last})? _periodEndpoints(
-      List<TransactionSegment> segments) {
+  /// Grafiğin çizdiği serinin DÖNEM İÇİNDEKİ ilk ve son değeri.
+  ///
+  /// ## Neden pencere filtresi ŞART (kullanıcı bildirimi, 2026-09-23)
+  /// Ekran görüntüsü: aynı dönem (16→23 Eyl), aynı kapsam, İKİ FARKLI
+  /// rakam — Özet "piyasa +₺46.143", Grafik "piyasa ₺142.461".
+  ///
+  /// İkisi de kendi içinde tutarlıydı (bileşenler toplandığında "Şimdi"yi
+  /// veriyordu) ama FARKLI bir "dönem başı" kullanıyorlardı. Ters
+  /// mühendislikle ölçüldü:
+  ///
+  ///   Özet  tabanı = ₺2.354.650
+  ///   Grafik tabanı = ₺2.258.332   (₺96.318 daha DÜŞÜK)
+  ///
+  /// Sebep: `PeriodSummaryService.uclar` seriyi `fromMs` ile KİRPAR
+  /// (dönem penceresi), bu metot ise `spots.first`'ı olduğu gibi alıyordu.
+  /// Seri çekme penceresi dönem penceresinden GENİŞ olabiliyor (günlük
+  /// çözünürlükte kenar noktalar, `clipToPeriod` son VERİ noktasına
+  /// çapalanır) ve o fazladan noktalar tabanı geriye çekiyordu.
+  ///
+  /// Artık iki yüzey AYNI pencereyi uyguluyor. `v <= 0` elemesi de
+  /// eklendi — `uclar` ile birebir aynı kural (borsa açılmadan önceki boş
+  /// slot dönem başı sanılırsa getiri sonsuza giderdi).
+  ///
+  /// [start]/[end] verilmezse eski davranış (tüm seri) korunur — çağıran
+  /// pencereyi bilmiyorsa kırpma uydurmaktansa kırpmamak doğrudur.
+  ///
+  /// `firstX` tabanın ÖLÇÜLDÜĞÜ noktadır (eksen birimi: gün içinde dakika,
+  /// diğer dönemlerde gün). Dönem kartı katkıyı o andan SONRASI için sayar
+  /// — `PeriodSummaryService.piyasaEtkisi` ile aynı kural (2026-09-23).
+  ({double first, double last, double firstX})? _periodEndpoints(
+    List<TransactionSegment> segments, {
+    DateTime? start,
+  }) {
     if (segments.isEmpty) return null;
     // Y değerleri en kalın (aktif) segmentten okunur — passive segment
     // alım öncesi 0 çizgisidir, değişime karışmamalı.
     final primary =
         segments.reduce((a, b) => (a.thickness >= b.thickness) ? a : b);
     if (primary.spots.length < 2) return null;
-    return (first: primary.spots.first.y, last: primary.spots.last.y);
+
+    // **YALNIZCA ALT sınır uygulanır — üst sınır YOK.**
+    //
+    // İlk sürümde üst sınır da vardı (`end`) ve CANLI UÇ NOKTASINI
+    // eliyordu: `end` build anında `DateTime.now()` ile alınıyor, canlı
+    // uç ise segment kurulurken yine `DateTime.now()` ile — yani birkaç
+    // milisaniye SONRA. `s.x > ustX` o tek nokta için doğru çıkıyor ve
+    // yeşil nokta düşüyordu.
+    //
+    // Sonuç ekranda (kullanıcı bildirimi 2026-09-23, ekran görüntüsüyle):
+    // grafik YÜKSELİŞLE bitiyor (₺2,57M → ₺2,58M) ama kart **−₺5.875**
+    // diyordu — çünkü `last` yeşil nokta değil, ondan önceki DİP
+    // noktasıydı.
+    //
+    // Üst sınıra zaten GEREK YOK: `_convertHistoryToSegments` gelecek
+    // slotları hiç çizmiyor (`if (ts > nowMs) break`). Spot listesi
+    // doğası gereği "şimdi"de biter. Alt sınır ise GEREKLİ: seri çekme
+    // penceresi dönem penceresinden geniş olabiliyor ve fazladan noktalar
+    // tabanı geriye çekiyordu (ölçüldü: ₺96.318 fark).
+    //
+    // Kullanıcının kuralı (2026-09-23): *"grafik başı ve sonundaki fark
+    // neyse o olmalı."* Çizilen ilk ve son nokta — başka bir şey değil.
+    final double? altX = (start != null)
+        ? 0.0 // `start` X ekseninin sıfırıdır
+        : null;
+
+    double? first;
+    double? last;
+    double firstX = 0;
+    for (final s in primary.spots) {
+      if (altX != null && s.x < altX) continue;
+      if (s.y <= 0) continue; // `uclar` ile AYNI kural
+      if (first == null) {
+        first = s.y;
+        firstX = s.x;
+      }
+      last = s.y;
+    }
+    if (first == null || last == null) return null;
+    return (first: first, last: last, firstX: firstX);
   }
 
   // ── Alım günü dot'ları: viewport'tan bağımsız, cache'lenir ──────────────

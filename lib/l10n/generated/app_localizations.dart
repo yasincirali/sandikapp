@@ -308,6 +308,24 @@ abstract class AppLocalizations {
   /// **'Kilidi kapat ve devam et'**
   String get lockDisableAndContinue;
 
+  /// No description provided for @lockSwitchAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Farklı hesapla giriş yap'**
+  String get lockSwitchAccount;
+
+  /// No description provided for @lockSwitchAccountTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oturumu kapat'**
+  String get lockSwitchAccountTitle;
+
+  /// No description provided for @lockSwitchAccountBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hesaptan çıkılacak ve giriş ekranına döneceksin. Verilerin silinmez; tekrar giriş yaptığında yerinde olur.'**
+  String get lockSwitchAccountBody;
+
   /// No description provided for @unlock.
   ///
   /// In tr, this message translates to:
@@ -2438,6 +2456,18 @@ abstract class AppLocalizations {
   /// **'\nToplam yatırım '**
   String get tooltipInvested;
 
+  /// Grafik crosshair: çubuğa düşen alım işlemi — zaman ve birim fiyat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alım {when} · {price}'**
+  String chartTxBuy(String when, String price);
+
+  /// No description provided for @chartTxSell.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satış {when} · {price}'**
+  String chartTxSell(String when, String price);
+
   /// No description provided for @tradeVolumeUpper.
   ///
   /// In tr, this message translates to:
@@ -4508,6 +4538,78 @@ abstract class AppLocalizations {
   /// **'Varlık ekranındaki zil ile kurulur'**
   String get alertSetFromAssetScreen;
 
+  /// No description provided for @sessionTimedOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güvenlik için oturumun kapatıldı. Face ID açarsan bir daha kapanmaz.'**
+  String get sessionTimedOut;
+
+  /// No description provided for @lockOfferTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Face ID ile koru'**
+  String get lockOfferTitle;
+
+  /// No description provided for @lockOfferBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün cebinde. Face ID açarsan uygulama araya girmeden seni tanır.'**
+  String get lockOfferBody;
+
+  /// No description provided for @lockOfferBenefitStay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oturumun kapanmaz'**
+  String get lockOfferBenefitStay;
+
+  /// No description provided for @lockOfferBenefitStayBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilit kapalıyken uygulamayı 10 dakika bırakınca güvenlik için çıkış yapılıyor ve şifreni yeniden girmen gerekiyor. Face ID açıkken oturumun yerinde kalır.'**
+  String get lockOfferBenefitStayBody;
+
+  /// No description provided for @lockOfferBenefitPush.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimlerin kesilmez'**
+  String get lockOfferBenefitPush;
+
+  /// No description provided for @lockOfferBenefitPushBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkış yapılınca fiyat alarmların ve günlük özetin de susar. Kilit açıkken gelmeye devam eder.'**
+  String get lockOfferBenefitPushBody;
+
+  /// No description provided for @lockOfferBenefitPrivacy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün görünmez'**
+  String get lockOfferBenefitPrivacy;
+
+  /// No description provided for @lockOfferBenefitPrivacyBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefonun başkasının eline geçerse tutarların Face ID olmadan açılmaz.'**
+  String get lockOfferBenefitPrivacyBody;
+
+  /// No description provided for @lockOfferAccept.
+  ///
+  /// In tr, this message translates to:
+  /// **'Face ID\'yi aç'**
+  String get lockOfferAccept;
+
+  /// No description provided for @lockOfferDecline.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şimdi değil'**
+  String get lockOfferDecline;
+
+  /// No description provided for @lockOfferLater.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bunu sonra Ayarlar › Gizlilik\'ten açabilirsin.'**
+  String get lockOfferLater;
+
   /// No description provided for @noBiometricOnDevice.
   ///
   /// In tr, this message translates to:
@@ -4849,6 +4951,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu dönemde {amount} tutarında alım yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.'**
   String inflowIncludedNote(String amount, String market);
+
+  /// No description provided for @inflowExcludedNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu gün {amount} tutarında alım yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.'**
+  String inflowExcludedNote(String amount);
+
+  /// No description provided for @outflowExcludedNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu gün {amount} tutarında satış yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.'**
+  String outflowExcludedNote(String amount);
 
   /// No description provided for @outflowIncludedNote.
   ///

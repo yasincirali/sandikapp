@@ -121,66 +121,54 @@ extension _DetayEylemler on _AssetDetailScreenState {
     DateTime startDate,
     DateTime endDate, {
     double? currentUnitPriceOverride,
-
-    /// GÜN İÇİ seri mi? Gün içinde İLK NOKTA ORTALAMA MALİYETLE EZİLMEZ.
-    ///
-    /// Uzun periyotlarda ilk noktayı maliyete çekmek bilinçli bir tercih:
-    /// grafik "aldığım fiyattan bugüne" hikâyesini anlatıyor. Gün içi seri
-    /// bambaşka bir soruyu yanıtlar — "bugün ne oldu". Orada ilk noktayı
-    /// maliyete çekmek, günlük değişimi maliyetle bugün arasındaki farka
-    /// çevirir ve sekmeyi anlamsız kılardı.
-    bool intraday = false,
   }) {
+    // `intraday` parametresi 2026-09-23'te kalktı: tek işi gün içinde ilk
+    // noktayı maliyetle EZMEMEKTİ; artık hiçbir dönemde ezilmiyor.
     if (history.isEmpty) return [];
 
     final segments = <TransactionSegment>[];
-    final firstAssetDate = widget.asset.addedDate;
-    final firstAssetMidnight =
-        dayKey(firstAssetDate);
 
-    // Grafik "birim fiyat" (TL) gösterir — HistoryService'in döndürdüğü
-    // toplam pozisyon değerini quantity'ye bölerek per-unit fiyata çeviririz.
-    // Böylece ek alım/sell miktarı değiştirdiğinde grafik çizgisinde suni
-    // sıçrama olmaz; sadece cost basis (yatay çizgi) rebase olur.
-    final qty = widget.asset.quantity;
-    final divisor = qty > 0 ? qty : 1.0;
-
-    // Anchor = alım anındaki birim fiyat (TL cinsinden).
-    final anchorUnitPrice =
-        widget.asset.purchasePrice * widget.asset.purchaseFxRate;
-
+    // [history] BİRİM fiyat serisidir (1 gram / 1 adet / 1 pay, TL) —
+    // `FiyatKaynagi.birimVarlik` ile çekilir. Bölme YOK, miktar YOK.
+    //
+    // ## Kaldırılanlar (kullanıcı kararı, 2026-09-23)
+    // *"Zaman aralığına göre 1 gram ya da bir lot varlığın grafiğini
+    // göstermeli."*
+    //
+    //   · **Alım tarihinde kırpma.** Grafik eskiden ilk alımdan başlıyordu;
+    //     1A seçip 3 gün önce alan kullanıcı 3 günlük bir çizgi görüyordu.
+    //     Ürünün dönemi, sahibin alım tarihine bağlı değildir.
+    //   · **İlk noktayı ortalama maliyetle ezmek.** Uzun dönemlerde ilk
+    //     nokta ALIŞ fiyatına çekiliyordu: bir yıl önce alınmış altının 1H
+    //     grafiği ₺4.000'den başlayıp ₺6.100'e "sıçrıyordu" — o sıçrama bu
+    //     haftaya ait değildi. Alış→bugün kâr/zararı üstteki şeritte
+    //     (`_PnlSummaryStrip`) ayrıca duruyor.
+    //   · **Miktara bölmek** (`miktarDamgada`/`bolenDamgada`). Pozisyon
+    //     serisini birime indirmeye çalışıyordu; motorun tarih kapısıyla
+    //     uyuşmadığı için alım slotunda fiyat iki katına çıkıyordu (ölçüldü:
+    //     Çeyrek ₺21.807 → ₺10.747).
+    //
+    // `v <= 0` slotlar ÇİZİLMEZ: birim fiyat için sıfır bir ölçüm değil,
+    // verisiz kovadır (borsa açılmadan önce, kur yokken).
     final sortedTs = history.keys.toList()..sort();
     final activeSpots = <FlSpot>[];
-    bool firstActiveReplaced = false;
-
-    // Passive segment (alış öncesi dashed çizgi) kaldırıldı — portfolio
-    // performance ekranıyla görsel bütünlük için. Grafik sadece alış → şimdi
-    // aralığını gösterir; kullanıcı "elimde olmadığı dönemin" fiyatını
-    // aramaz, bu aralık zaten periyot seçimi ile ayarlanır.
     for (final ts in sortedTs) {
+      final y = history[ts]!;
+      if (y <= 0) continue;
       final date = DateTime.fromMillisecondsSinceEpoch(ts);
-      if (date.isBefore(firstAssetMidnight)) continue;
       // Saatlik veride (haftalık) her saat farklı X'e düşmeli — inDays saati
       // keser ve tüm saatler aynı X'e sıkışırdı, grafik dikey zigzag olurdu.
       final x = date.difference(startDate).inMinutes / (60.0 * 24.0);
-      final y = history[ts]! / divisor;
-
-      if (!intraday && !firstActiveReplaced && anchorUnitPrice > 0) {
-        // Aktif segmentin İLK noktası her zaman anchor (ort. maliyet).
-        activeSpots.add(FlSpot(x, anchorUnitPrice));
-        firstActiveReplaced = true;
-      } else {
-        activeSpots.add(FlSpot(x, y));
-      }
+      // Pencereden önceki nokta eksenin soluna düşer ve ekseni kaydırır.
+      if (x < 0) continue;
+      activeSpots.add(FlSpot(x, y));
     }
 
     // Son aktif spot'u canlı fiyat ile değiştir — böylece grafik bitiş
     // noktası ve üstteki PnL chip aynı değeri gösterir (Yahoo history son
     // bar'ı ile canlı `currentPrice` arasındaki gecikme/ölçek farkını kapat).
-    // ANCAK aktif segmentte tek spot varsa (yani ilk alım = bugün), o spot
-    // anchor'dır — override edersen anchor "bugünkü fiyat" olur ve ALIŞ
-    // çizgisi yanlış yerde çizilir. Bu durumda anchor'ı olduğu gibi bırakıp
-    // canlı fiyat için ayrı bir "son" spot ekleriz (biraz farklı X ile).
+    // Tek spot varsa o dönem BAŞIdır — ezilirse başlangıç çizgisi yanlış
+    // yere çizilir. O durumda canlı fiyat için ayrı bir "son" spot eklenir.
     if (currentUnitPriceOverride != null &&
         currentUnitPriceOverride > 0 &&
         activeSpots.isNotEmpty) {

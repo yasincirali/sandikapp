@@ -123,6 +123,50 @@ class FiyatKaynagi {
   /// (`HistoryService.getSymbolHistory` sembol bazlı çalıştığı için orada
   /// ayrı bir kural var: TRY kote olmayan her şey USD kabul edilir.)
   static bool usdKote(Asset a) => a.currency.trim().toUpperCase() == 'USD';
+
+  /// [a]'nın BİRİM fiyat serisini (1 gram / 1 adet / 1 pay) çekmek için
+  /// sentetik lot: miktar 1, seçilebilecek her pencereden ÖNCE alınmış.
+  ///
+  /// ## Neden (kullanıcı kararı, 2026-09-23)
+  /// *"Portföyden varlığa girildiğinde zaman aralığına göre 1 gram ya da
+  /// bir lot varlığın grafiğini göstermeli."*
+  ///
+  /// Varlık ekranı eskiden POZİSYON serisini (`miktar × fiyat`) çekip
+  /// miktara bölerek birim fiyata inmeye çalışıyordu. Bu iki kez kırıldı:
+  /// önce sabit bölen alımı fiyat hareketi gibi çizdi, sonra zamana bağlı
+  /// bölen de motorun kapısıyla (gün/saat/5 dk'ya yuvarlanmış `addedDate`)
+  /// uyuşmadı ve alım slotunda miktar yine sadeleşmedi. Bölmek, payın
+  /// miktarını BİLDİĞİNİ varsaymaktır; bilmiyordu.
+  ///
+  /// Birimi doğrudan çekmek bölmeyi ortadan kaldırır: serinin her noktası
+  /// motorun kendi hesabıyla `birim fiyat × 1`dir. Alım/satım, tarih kapısı,
+  /// yuvarlama — hiçbiri birim seriye DOKUNAMAZ.
+  ///
+  /// Kaynak seçimi değişmez: ticker, tür, alt kategori, para birimi ve
+  /// canlı fiyat aynen taşınır, dolayısıyla altın ağırlık çarpanı ve
+  /// kalibrasyon (`altinKalibrasyonHaritasi`) gerçek lot'larla AYNI çıkar.
+  /// Sözleşmenin (1) maddesi: serinin nereden geleceğine yine burası karar
+  /// verir, ekran kendi merdivenini kurmaz.
+  static Asset birimVarlik(Asset a) => Asset(
+        id: 'birim:${a.id}',
+        userId: a.userId,
+        name: a.name,
+        ticker: a.ticker,
+        type: a.type,
+        quantity: 1,
+        purchasePrice: a.purchasePrice,
+        currency: a.currency,
+        notes: '',
+        subCategory: a.subCategory,
+        unitType: a.unitType,
+        purchaseFxRate: a.purchaseFxRate,
+        currentPrice: a.currentPrice,
+        lastUpdated: a.lastUpdated,
+        // Her pencerenin ÖNCESİ: tarih kapısı hiçbir slotta miktarı
+        // sıfırlamasın. Sabit tarih, önbellek anahtarlarını da oynatmaz.
+        addedDate: DateTime(2000),
+        isManualPrice: a.isManualPrice,
+      );
 }
 
 /// Altın gram22k serisinin hangi kaynaktan kurulduğu.
@@ -296,6 +340,79 @@ double altinKalibrasyonu({
       ust: altinKalibreUstSinir,
     );
 
+/// Bir altın ürününün GÜN İÇİ seri dönüşümü — iki ucu da ürünün
+/// KENDİ kotasyonuna sabitler.
+///
+/// ## Neden gerekli (kullanıcı kararı, 2026-09-23)
+/// *"Veriler grafik performans ekranından da performans sayfasında da
+/// tutarlı olmalıdır."*
+///
+/// Ölçüldü: aynı gün, aynı portföy —
+///   * Varlık ekranı (22 Ayar Gram)  → **−%0,78**
+///   * Varlık ekranı (Çeyrek)        → **−%1,25**
+///   * Performans › Altın (hepsi)    → **−%1,11**
+///
+/// Sebep: canlı fiyat her ayar için AYRI kotasyondan gelir (truncgil
+/// `YIA`, `CEYREKALTIN`…) ve işçilik primi gün içinde oynar. Grafik
+/// serisi ise TEK kaynaktan türer (`gram22k × sabit ağırlık`), ve
+/// [altinKalibrasyonHaritasi] SABİT bir çarpan uygular. Sabit çarpan
+/// yüzdeyi değiştiremez — matematiksel olarak imkansız — dolayısıyla
+/// Performans'ta tüm ayarlar ZORUNLU olarak aynı yüzdeyi gösteriyordu.
+///
+/// ## Yöntem
+/// Serinin ŞEKLİ korunur (uluslararası altının gün içi hareketi), ama
+/// İKİ UCU ürünün kendi rakamlarına oturtulur:
+///
+/// ```
+///   son  = canlı kotasyon                      (zaten `liveTotal` ile eziliyor)
+///   ilk  = canlı ÷ (1 + günlükPct/100)         (ürünün gün başı fiyatı)
+///   ara  = ilk + (son − ilk) × serininIlerlemesi
+/// ```
+///
+/// Böylece grafiğin dalgaları gerçek kalır ama başı ve sonu — yani
+/// kullanıcının okuduğu YÜZDE — varlık ekranıyla BİREBİR eşleşir.
+///
+/// ## Sınır: ara noktalar TAHMİNDİR
+/// İşçilik priminin gün içinde ne zaman değiştiğini bilmiyoruz — truncgil
+/// yalnızca ANLIK fiyat ve günlük yüzde veriyor, geçmiş seri vermiyor.
+/// Ara noktalar serinin ilerlemesine ORANTILI dağıtılır. Bu bir
+/// interpolasyondur, ölçüm değil; ama iki ucu doğru olan bir eğri,
+/// iki ucu da yanlış olandan iyidir ve ŞEKİL gerçek veriden gelir.
+///
+/// [gunlukPct] yoksa `null` döner — çağıran eski çarpan yoluna düşer
+/// (uydurma yok, bkz. bu dosyanın (3) numaralı sözleşmesi).
+({double ilk, double son})? altinUrunUclari({
+  required double canliBirimTRY,
+  required double? gunlukPct,
+}) {
+  if (canliBirimTRY <= 0 || !canliBirimTRY.isFinite) return null;
+  if (gunlukPct == null || !gunlukPct.isFinite) return null;
+  final taban = 1 + gunlukPct / 100.0;
+  // −%100 ya da daha beter: bölme tanımsız/anlamsız olur.
+  if (taban <= 0.01) return null;
+  final ilk = canliBirimTRY / taban;
+  if (ilk <= 0 || !ilk.isFinite) return null;
+  return (ilk: ilk, son: canliBirimTRY);
+}
+
+/// Ham seri noktasını [altinUrunUclari] aralığına taşır.
+///
+/// [seriIlk]/[seriSon] ham serinin uçları, [seriDeger] taşınacak nokta.
+/// Ham seri DÜZ ise (iki uç eşit) ilerleme tanımsızdır; o durumda ürünün
+/// kendi uçları arasında DÜZ çizilir — uydurma dalga üretilmez.
+double altinUrunNoktasi({
+  required double seriDeger,
+  required double seriIlk,
+  required double seriSon,
+  required double urunIlk,
+  required double urunSon,
+}) {
+  final aralik = seriSon - seriIlk;
+  if (aralik.abs() < 1e-9) return urunSon;
+  final ilerleme = (seriDeger - seriIlk) / aralik;
+  return urunIlk + (urunSon - urunIlk) * ilerleme;
+}
+
 /// Portföydeki her altın sembolü için [altinKalibrasyonu] çarpanı.
 ///
 /// **Sembol BAŞINA hesaplanır, tek bir genel çarpan YETMEZ:** gram altının
@@ -321,63 +438,75 @@ Map<String, double> altinKalibrasyonHaritasi({
   final sonGram = gramSerisi[sonTs] ?? 0;
   if (sonGram <= 0) return out;
 
-  // Çarpanın çapası SEANS BOYUNCA SABİTLENİR (kullanıcı bildirimi,
-  // 2026-09-23).
+  // Sembol başına EN TAZE fiyatlı lot seçilir.
   //
-  // ## Belirti
-  // "Ben seçiliyken Bugün kartında −76 ile 366 arasında oynuyor."
+  // ## Neden (kullanıcı bildirimi, 2026-09-23)
+  // *"Loggedin user'ın altın grafiğinde bir sorun var, ortaklarınıki
+  // doğruyken."*
   //
-  // ## Neden
-  // Çarpan serinin SON noktasından türetiliyordu ve o nokta her fetch'te
-  // oynar (vadeli sözleşme sürekli kote edilir). Çarpan TÜM seriyi
-  // ölçeklediği için GÜN BAŞI da her tazelemede yerinden oynuyordu:
-  // canlı fiyat hiç değişmeden "bugünkü değişim" salınıyordu.
+  // Eskiden `if (out.containsKey(a.ticker)) continue;` vardı: aynı ayardan
+  // birden çok lot varsa LİSTEDEKİ İLKİ kazanıyordu. `fetchByUser`
+  // `added_date DESC` döndürüyor ve yerel mutasyonlar yeni lotu BAŞA
+  // ekliyor — yani "ilk lot" çoğu zaman EN YENİ eklenen, henüz
+  // fiyatlanmamış olanıydı.
   //
-  // Ölçüldü: canlı çeyrek ₺8.000'de sabitken, gram serisinin son
-  // noktası 4990→5005 arasında oynayınca günlük değişim ₺9.436→₺9.887
-  // arasında geziniyordu — ₺451'lik hayalet hareket.
+  // Ölçüldü: ilk lot %3 bayat bir `currentPrice` taşıdığında çarpan
+  // 1,03 yerine 0,9991 çıkıyor ve TÜM SERİ **%3 aşağı** kayıyordu.
+  // Grafiğin şekli değil SEVİYESİ yanlış oluyordu.
   //
-  // ## Çözüm
-  // Çapa olarak serinin son noktası yerine GÜN BAŞI (ilk nokta) alınır.
-  // Gün başı seans içinde DEĞİŞMEZ: tazeleme yeni uç nokta ekler ama
-  // ilk noktayı oynatmaz. Böylece taban sabit kalır ve günlük değişim
-  // yalnızca GERÇEK fiyat hareketini yansıtır.
+  // ### Neden yalnızca kendi portföyünde
+  // Ortak defterlerinde genelde ayar başına 1-2 lot var; kendi defterinde
+  // aynı çeyrekten altı lot bulunuyor. İki lot varken "ilk" ile "en taze"
+  // çoğu zaman aynı çıkıyor, altı lotta ayrışıyor. Ayrıca ortak
+  // lot'larının fiyatı RLS yüzünden bellekte güncelleniyor ve hepsi
+  // AYNI turda yazılıyor — aralarında bayatlık farkı oluşmuyor.
   //
-  // Sağ uçtaki hizalama bozulmaz: çarpan hâlâ oransaldır ve serinin
-  // ŞEKLİNİ korur; son nokta zaten ayrıca canlı toplamla eziliyor
-  // (`currentTotalOverride` / `liveTotal`). Yani uç canlıya, taban
-  // sabit çapaya bağlanır — ikisi bir arada "bugün ne oldu"yu doğru
-  // ölçer.
-  final ilkTs = gramSerisi.keys.reduce((a, b) => a < b ? a : b);
-  final ilkGram = gramSerisi[ilkTs] ?? 0;
-  // Tek noktalı seride ilk == son; çapa yine de tanımlıdır.
-  final capaGram = ilkGram > 0 ? ilkGram : sonGram;
-
+  // `lastUpdated` en taze olan seçilir; eşitlik ya da bilinmeyen tarihte
+  // liste sırası korunur (davranış değişmez).
+  final enTaze = <String, Asset>{};
   for (final a in assets) {
     if (a.type != AssetType.altin) continue;
     if (a.currentPrice <= 0) continue;
-    if (out.containsKey(a.ticker)) continue;
+    final mevcut = enTaze[a.ticker];
+    if (mevcut == null) {
+      enTaze[a.ticker] = a;
+      continue;
+    }
+    final yeniTs = a.lastUpdated;
+    final eskiTs = mevcut.lastUpdated;
+    if (yeniTs == null) continue; // tarihsiz aday mevcudu devirmez
+    if (eskiTs == null || yeniTs.isAfter(eskiTs)) enTaze[a.ticker] = a;
+  }
+
+  for (final a in enTaze.values) {
     final agirlik = PriceService.goldWeightFactor(a.ticker);
-    // Çarpan ÇAPADAN türetilir (serinin son noktasından DEĞİL).
+    // Çarpan serinin SON noktasından türetilir.
     //
-    // Çapa, canlı kotasyonun serinin o ANDAKİ değerine oranıdır; ama
-    // "o an" olarak seans BAŞI alınır. Böylece makas (yurt içi ÷
-    // uluslararası) yine kapatılır — makas gün içinde kayda değer
-    // şekilde değişmez, ikisi aynı metali fiyatlar — ama çarpan
-    // tazelemeden tazelemeye SABIT kalır.
+    // ## Bir ara ÇAPA (gün başı) denendi ve GERİ ALINDI (2026-09-23)
+    // Amaç salınımı durdurmaktı: çarpan son noktadan geldiği için her
+    // fetch'te oynuyor ve gün başını da yerinden kaydırıyordu.
     //
-    // Canlı fiyatın gün içinde oynaması çarpanı yine oynatır; bu
-    // KAÇINILMAZ ve doğrudur: `a.currentPrice` gerçek bir ölçümdür.
-    // Önemli olan, artık SERİNİN gürültüsünün tabanı oynatmaması.
-    final capaBirim = capaGram * agirlik;
+    // Ama çapayı seans başına almak grafiğin ŞEKLİNİ BOZDU — ölçüldü:
+    // seans içinde %2 yükselen bir seride SAĞ UÇTA −%1,96'lık yapay bir
+    // basamak oluşuyordu. Sebep: seri seans başına hizalanıyor, son nokta
+    // ise `liveTotal` ile canlı kotasyona eziliyor; aradaki gün içi
+    // hareket kadar makas açılıyor. Kullanıcı bildirimi: "altın
+    // kategorisini seçip diğerleriyle karşılaştırdım, çok alakasız."
+    //
+    // Son nokta çapası bu basamağı SIFIRLAR (ölçüldü: %0,0000) çünkü
+    // hizalanan uç ile ezilen uç AYNI noktadır. Serinin ŞEKLİ zaten
+    // çarpandan bağımsızdır (oransal dönüşüm): gün içi yüzde, MA20, RSI
+    // değişmez — yalnızca SEVİYE kayar.
+    //
+    // Salınım sorunu başka türlü çözülmeli (açık madde): çarpanın
+    // kendisini değil, onu besleyen SERİNİN tazelik ritmini hizalamak
+    // gerekiyordu — o da `TazelikRitmi` ile yapıldı.
+    final seriBirim = sonGram * agirlik;
+
     out[a.ticker] = altinKalibrasyonu(
-      seriSonBirimTRY: capaBirim,
+      seriSonBirimTRY: seriBirim,
       canliBirimTRY: a.currentPrice,
     );
-    // Ölçek hafızası SON noktayla öğrenir: yedek kaynağın canlıya
-    // göre makasını sorar ve o soru "şu an" hakkındır, seans başı
-    // hakkında değil.
-    final seriBirim = sonGram * agirlik;
     // Canlı kaynak düştüğünde yedeğin aynı ölçeğe taşınabilmesi için oran
     // hatırlanır. `a.currentPrice` yurt içi kotasyondur (truncgil).
     final etiket = switch (kaynak) {

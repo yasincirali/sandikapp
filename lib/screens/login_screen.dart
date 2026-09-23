@@ -118,7 +118,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return CupertinoPageScaffold(
       backgroundColor: context.c.background,
-      child: SafeArea(
+      // Boş alana dokununca klavye KAPANIR (kullanıcı isteği, 2026-09-23).
+      //
+      // iOS'ta form dışına dokunmak klavyeyi kapatır ve kullanıcı bunu
+      // bekler; burada kapanmıyordu. Klavye açıkken "Giriş yap" düğmesi
+      // ekranın altında kalıyor, kullanıcı önce kaydırmak zorunda kalıyordu.
+      //
+      // `HitTestBehavior.opaque`: ŞART. Varsayılan (`deferToChild`) yalnızca
+      // ÇOCUĞUN kapladığı piksellerde dokunuş alır; boş alan tam da
+      // çocuğun OLMADIĞI yerdir ve dokunuş düşerdi.
+      //
+      // `TextFormField`'lar ve düğmeler kendi jestlerini ÖNCE alır (jest
+      // arenası en içteki kazananı seçer), yani alana dokunmak klavyeyi
+      // kapatmaz — yalnızca BOŞ alan kapatır.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
         child: Center(
           child: Material(
             color: Colors.transparent,
@@ -389,6 +405,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -177,11 +177,93 @@ class PriceService {
   double? sonBilinenFiyat(String symbol) =>
       _sonBilinenFiyat[symbol.trim().toUpperCase()];
 
+  /// Sembolün kaynağından gelen GÜNLÜK değişim yüzdesi — yoksa `null`.
+  ///
+  /// ## Neden saklanıyor (kullanıcı kararı, 2026-09-23)
+  /// *"Veriler grafik performans ekranından da performans sayfasında da
+  /// tutarlı olmalıdır."*
+  ///
+  /// Altının her ayarı truncgil'den AYRI kotasyon alır ve işçilik primi
+  /// gün içinde oynar: ölçüldü, gram −%0,78 düşerken çeyrek −%1,25
+  /// düşüyordu. Grafik serisi ise tek kaynaktan türediği için tüm
+  /// ayarlara AYNI yüzdeyi veriyordu (−%1,11 — portföy karışımının
+  /// ağırlıklı ortalaması).
+  ///
+  /// `HistoryService` bu yüzdeyi kullanarak serinin İKİ UCUNU ürünün
+  /// kendi rakamlarına oturtur (bkz. `altinUrunUclari`). ŞEKİL
+  /// uluslararası seriden gelmeye devam eder.
+  double? gunlukDegisimPct(String symbol) =>
+      _gunlukDegisimPct[symbol.trim().toUpperCase()];
+
+  /// Bu oturumda fiyatlanan TÜM altın ayarları günlük yüzde taşıyor mu?
+  ///
+  /// ## Neden GLOBAL bir bayrak (kullanıcı bildirimi, 2026-09-23)
+  /// Altın serisi iki yoldan hizalanabiliyor: ürün bazlı uçlar
+  /// (`altinUrunUclari`) ya da eski sabit çarpan. Karar ÇAĞRIYA ÖZGÜ
+  /// olursa aynı altın iki ekranda iki farklı yüzde gösterir:
+  /// Performans TÜM lot'ları gönderir, varlık ekranı TEK varlık — yani
+  /// her ekran kendi başına karar verirdi.
+  ///
+  /// Ölçüldü: çeyrek −%1,43, gram −%0,48 görünüyordu; truncgil
+  /// İKİSİNE DE −%0,72 diyor (tüm ayarlar aynı altından üretilir,
+  /// aynı oranda değişirler).
+  ///
+  /// Bayrak "ya hep ya hiç" kuralını taşır: bir ayar bile yüzde
+  /// taşımıyorsa hiçbiri ürün bazlı yola girmez. Böylece ayarlar en
+  /// azından BİRBİRİYLE tutarlı kalır.
+  ///
+  /// Hiç altın fiyatlanmadıysa `false` — karar verecek veri yok.
+  bool get altinGunlukYuzdeTam {
+    final altinlar = _sonBilinenFiyat.keys.where(FiyatKaynagi.altinMi);
+    if (altinlar.isEmpty) return false;
+    return altinlar.every(_gunlukDegisimPct.containsKey);
+  }
+
+  /// Altın yüzdelerinin oturum içi durumu — TEŞHİS.
+  ///
+  /// Kullanıcı bildirimi (2026-09-23): varlık performans ekranlarında
+  /// altın yüzdeleri hâlâ ayrışıyor. "Ya hep ya hiç" kuralı yerinde
+  /// ama hangi sembolün yüzde TAŞIMADIĞI görünmüyordu; eksik sembol
+  /// bilinmeden kök neden bulunamaz.
+  ///
+  /// Sırf okunabilir çıktı — hiçbir karar buna bakmaz.
+  String altinYuzdeTeshisi() {
+    final altinlar = _sonBilinenFiyat.keys.where(FiyatKaynagi.altinMi).toList()
+      ..sort();
+    if (altinlar.isEmpty) return 'altın yok';
+    final satirlar = [
+      for (final s in altinlar)
+        '$s=${_sonBilinenFiyat[s]?.toStringAsFixed(2)}'
+            '/${_gunlukDegisimPct.containsKey(s) ? '%${_gunlukDegisimPct[s]}' : 'YÜZDE YOK'}'
+    ];
+    return 'tam=$altinGunlukYuzdeTam ${satirlar.join(' ')}';
+  }
+
+  /// Sembol → kaynağın bildirdiği günlük değişim yüzdesi.
+  ///
+  /// [_sonBilinenFiyat] ile aynı disiplin: TTL ile düşmez, yalnızca
+  /// gerçekten ÖLÇÜLMÜŞ değerleri taşır.
+  final Map<String, double> _gunlukDegisimPct = {};
+
+  /// Testler için: bir kotasyonu ağa çıkmadan oturum belleğine yazar.
+  ///
+  /// Gün içi altın motoru ürün bazlı yolu bu bellekten karar veriyor
+  /// ([altinGunlukYuzdeTam], [gunlukDegisimPct]); tohum slotlarının aynı
+  /// yoldan geçtiği (2026-09-23 düzeltmesi) ancak bu durum kurulabilirse
+  /// sınanabilir.
+  @visibleForTesting
+  void testIcinKotasyonYaz(String symbol, double fiyat, {double? gunlukPct}) {
+    final s = symbol.trim().toUpperCase();
+    _sonBilinenFiyat[s] = fiyat;
+    if (gunlukPct != null) _gunlukDegisimPct[s] = gunlukPct;
+  }
+
   /// Testler için: oturum belleğini sıfırlar (disk değil).
   @visibleForTesting
   void sonBilinenFiyatlariTemizle() {
     _sonBilinenFiyat.clear();
     _sonKaynak.clear();
+    _gunlukDegisimPct.clear();
     _birincilYukleme = null;
   }
 
@@ -301,8 +383,23 @@ class PriceService {
     // ── Tüm kaynakları paralel başlat ─────────────────────────────────────
     final needTruncgil = fxList.isNotEmpty || goldList.isNotEmpty;
 
+    // Hata SESSİZCE yutulmaz — teşhis için raporlanır (2026-09-23).
+    //
+    // truncgil düştüğünde altın yedek yola (`GC=F × USDTRY`) iner ve
+    // `Change` alanı kaybolur: tüm ayarlar uluslararası serinin yüzdesini
+    // gösterir, yurt içi kotasyonunkini DEĞİL. Kullanıcı bunu "çeyrek
+    // −%1,43, gram −%0,48" olarak gördü.
+    //
+    // Belirti sessizdi çünkü `catchError` sebebi yutuyordu: düşüşün
+    // zaman aşımı mı, TLS mi, HTTP hatası mı olduğu görülemiyordu.
+    // Yedek yol yine çalışır (davranış değişmez), ama artık SEBEP
+    // Crashlytics'e düşer — "kod çalışıyor, sayı yanlış ve sessiz"
+    // sınıfının önüne geçmek için.
     final truncgilFuture = needTruncgil
-        ? _fetchTruncgilData().catchError((_) => <String, dynamic>{})
+        ? _fetchTruncgilData().catchError((Object e, StackTrace st) {
+            CrashReporter.report(e, st, reason: 'truncgil_dustu');
+            return <String, dynamic>{};
+          })
         : Future<Map<String, dynamic>>.value({});
 
     final tefasFuture = tefasList.isNotEmpty
@@ -377,6 +474,10 @@ class PriceService {
         // TTL'siz oturum belleği: grafik yolları kur/fiyat bulamadığında
         // sabit uydurmak yerine buraya bakar (bkz. `sonBilinenFiyat`).
         _sonBilinenFiyat[e.key] = p;
+        // Günlük yüzde de saklanır — grafik serisinin uçlarını ÜRÜNÜN
+        // kendi hareketine oturtmak için (bkz. `gunlukDegisimPct`).
+        final d = e.value.regularMarketChangePercent;
+        if (d != null && d.isFinite) _gunlukDegisimPct[e.key] = d;
       }
     }
     // Birincil kaynaktan bir şey geldiyse kalıcı belleği tazele.
@@ -614,14 +715,33 @@ class PriceService {
     //    Eşik ons başına TRY için düşük ama anlamlı bir taban: gerçek değer
     //    yüz binler mertebesinde, 1000 yalnızca çöp/placeholder'ı eler.
     double? xauTry;
+    // Yedek kaynağın GÜNLÜK YÜZDESİ.
+    //
+    // ## Neden taşınıyor (kullanıcı bildirimi, 2026-09-23)
+    // truncgil düştüğünde `Change` alanı kayboluyor ve
+    // `altinGunlukYuzdeTam` false oluyor — tüm ayarlar eski çarpan
+    // yoluna düşüyor. Davranış tutarlı ama yüzde uluslararası
+    // seriden geliyor, yurt içi kotasyondan değil.
+    //
+    // Yahoo `GC=F`/`XAUTRY=X` kendi günlük yüzdesini veriyor. Tüm altın
+    // ayarları AYNI metalden türediği için bu yüzde hepsine uygulanır
+    // — truncgil'in de yaptığı bu (ölçüldü: YIA, CEYREKALTIN,
+    // YARIMALTIN, ATAALTIN hepsi −%0,72).
+    //
+    // Böylece yedek yolda da ayarlar BİRBİRİYLE tutarlı kalır ve
+    // `altinGunlukYuzdeTam` doğru çalışır.
+    double? yedekGunlukPct;
     // Hangi yedek yol kullanıldı — ölçek hafızasının anahtarı buna bağlı:
     // spot ile vadeli AYNI ölçekte değil, tek bir "yedek" etiketi ikisini
     // karıştırır ve yanlış oranla düzeltme yapardı.
     var xauTrySpotMuydu = true;
     try {
-      final direct =
-          (await _fetchOneChart(FiyatKaynagi.xauTry))?.regularMarketPrice;
-      if (direct != null && direct > 1000) xauTry = direct;
+      final q = await _fetchOneChart(FiyatKaynagi.xauTry);
+      final direct = q?.regularMarketPrice;
+      if (direct != null && direct > 1000) {
+        xauTry = direct;
+        yedekGunlukPct = q?.regularMarketChangePercent;
+      }
     } catch (_) {}
 
     // 2) Eski yol: GC=F (ons/USD) × USD/TRY.
@@ -629,6 +749,10 @@ class PriceService {
       xauTrySpotMuydu = false;
       final q = await _fetchOneChart(FiyatKaynagi.xauUsd);
       final xauUsd = q?.regularMarketPrice;
+      // Vadeli yolda yüzde ONS cinsinden gelir; TL çevrimi oranı
+      // değiştirmez (kur gün içinde oynasa da altının kendi hareketi
+      // bu yüzdedir). Kur etkisi zaten fiyatın içinde.
+      yedekGunlukPct = q?.regularMarketChangePercent;
       if (xauUsd == null || xauUsd <= 500) {
         throw Exception('GC=F unavailable');
       }
@@ -678,6 +802,8 @@ class PriceService {
         regularMarketPrice: hizali,
         currency: 'TRY',
         shortName: _goldLabel(sym),
+        // Tüm ayarlara AYNI yüzde — hepsi aynı metalden türer.
+        regularMarketChangePercent: yedekGunlukPct,
       );
     }
     CrashReporter.report(

@@ -113,7 +113,7 @@ void main() {
     'lib/widgets/leaderboard_hero_card.dart': 5,
     'lib/models/signal_frequency.dart': 7,
     'lib/screens/paywall_screen.dart': 7,
-    'lib/screens/asset_detail_screen.dart': 8,
+    'lib/screens/asset_detail_screen.dart': 7,
     'lib/screens/watchlist_screen.dart': 8,
     'lib/models/asset_type.dart': 9,
     'lib/screens/settings_screen.dart': 12,

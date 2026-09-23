@@ -494,6 +494,128 @@ class PeriodSummaryService {
     return (artida: artida, toplam: gunler.length - 1);
   }
 
+  /// Bir değer serisinin dönem içi **piyasa etkisi** — "fiyat hareketi bu
+  /// dönemde bana ne kazandırdı".
+  ///
+  /// ## Neden tek fonksiyon (kullanıcı kararı, 2026-09-23)
+  /// *"Varlık performans ekranındaki altın grafiği ve değişimi ile
+  /// performans ekranında altın seçtiğimde, dönem içi eklemeler dışında
+  /// aynı farkı görmem lazım — piyasa etkisi olarak."*
+  ///
+  /// Aynı soru üç yüzeyde soruluyor: Özet sekmesi ([compute]), Grafik
+  /// sekmesinin dönem kartı ("Yalnızca piyasa hareketi") ve tekil varlık
+  /// ekranının dönem satırı. Üçü ayrı formül taşıyordu; varlık ekranı hiç
+  /// akış düşmüyor, Grafik kartı ise çifte sayım düzeltmesini
+  /// (`startExclusiveMs`, 2026-09-16) hiç almamıştı. Bu projede "aynı hesabın
+  /// iki kopyası" defalarca ayrıştı — kural artık burada.
+  ///
+  /// ## Formül
+  /// `piyasa = (son − ilk) − katkı`; katkı, tabanın ÖLÇÜLDÜĞÜ slottan
+  /// ([uclar] `firstTs`) SONRA giren net nakittir. O slotta zaten elde olan
+  /// lot tabanın içindedir, bir daha düşülmez.
+  ///
+  /// Doğrusaldır: seriler ve lot kümeleri toplanabilir olduğu için
+  /// pozisyon bazında hesaplanan etkilerin toplamı, tür filtresinin
+  /// etkisine eşittir (Σ parça == bütün).
+  ///
+  /// [canliSon] verilirse son değer olarak O kullanılır — grafiğin sağ ucu
+  /// canlı kotasyona sabitlendiği için "grafik başı ile sonu arasındaki
+  /// fark" budur. Sıfır/negatifse (ölçüm yok) serinin son değerine düşülür.
+  ///
+  /// Seri iki uç taşımıyorsa `null` — sayı uydurulmaz.
+  static ({
+    double ilk,
+    double son,
+    int ilkTs,
+    int sonTs,
+    double brut,
+    double katki,
+    double piyasa,
+    double taban,
+  })? piyasaEtkisi({
+    required Map<int, double> seri,
+    required List<Asset> lotlar,
+    required DateTime start,
+    required DateTime end,
+    double? canliSon,
+  }) {
+    final u = uclar(seri,
+        fromMs: start.millisecondsSinceEpoch,
+        toMs: end.millisecondsSinceEpoch);
+    if (u == null) return null;
+    final son = (canliSon != null && canliSon > 0) ? canliSon : u.last;
+    final katki = netInflow(lotlar, start, end, startExclusiveMs: u.firstTs);
+    final brut = son - u.first;
+    return (
+      ilk: u.first,
+      son: son,
+      ilkTs: u.firstTs,
+      sonTs: u.lastTs,
+      brut: brut,
+      katki: katki,
+      piyasa: brut - katki,
+      // Payda: dönem başı + POZİTİF katkı (bkz. `PeriodSummary.getiriPct`).
+      taban: u.first + (katki > 0 ? katki : 0),
+    );
+  }
+
+  /// TEK pozisyonun piyasa etkisi — BİRİM seriden ve lot miktarlarından.
+  ///
+  /// `piyasa = son miktar × son birim − baş miktar × baş birim − katkı`
+  ///
+  /// ## Neden [piyasaEtkisi] değil (emülatörde ölçüldü, 2026-09-23)
+  /// Varlık ekranı önce pozisyon serisini [piyasaEtkisi]'ne veriyordu. Bugün
+  /// AÇILAN pozisyonda (100 gr gram, bugün alındı) ekran **−₺619.300**
+  /// yazdı: pozisyon serisinin ilk dolu slotu alımı zaten içeriyordu
+  /// (gün içi motor alım saatini 5 dk'lık kovaya YUVARLAYARAK kapılıyor:
+  /// 14:32'lik alım 14:30 slotunda var), `startExclusiveMs` ise ham damgayı
+  /// kullanıp aynı alımı katkıya da yazıyordu. Motorun kapısını burada
+  /// kopyalamak — bir önceki `miktarDamgada` düzeltmesinin düştüğü tuzak.
+  ///
+  /// Bu fonksiyon motorun POZİSYON değerine hiç dokunmaz: baş/son miktar
+  /// lot listesinden, baş/son fiyat birim seriden gelir. Baş miktar ile
+  /// katkı AYNI damgayla (`u.firstTs`) ayrılır, yani her lot ya tabandadır
+  /// ya katkıdadır — ikisinde birden olamaz.
+  ///
+  /// Dönem içinde açılan pozisyonda taban 0, katkı alış tutarıdır: kazanç
+  /// ALIŞ FİYATINDAN ölçülür ("kazanç hesaplanarak yazılmalı"). Dönem
+  /// başında elde olan lot'lar için sonuç, Performans'ın tür filtresindeki
+  /// payıyla aynıdır (Σ parça == bütün).
+  ///
+  /// [canliBirim] grafiğin sağ ucudur; yoksa serinin son değeri.
+  static ({double piyasa, double katki, double basMiktar, double sonMiktar})?
+      birimPiyasaEtkisi({
+    required Map<int, double> birimSeri,
+    required List<Asset> lotlar,
+    required DateTime start,
+    required DateTime end,
+    double? canliBirim,
+  }) {
+    final u = uclar(birimSeri,
+        fromMs: start.millisecondsSinceEpoch,
+        toMs: end.millisecondsSinceEpoch);
+    if (u == null) return null;
+    final sonBirim = (canliBirim != null && canliBirim > 0) ? canliBirim : u.last;
+    final endMs = end.millisecondsSinceEpoch;
+    var bas = 0.0;
+    var son = 0.0;
+    for (final l in lotlar) {
+      // Temettü/mezar taşı miktar taşımaz; silinen lot hiç olmamış sayılır.
+      if (l.isQuantityNeutral || !l.isActive) continue;
+      final q = l.isSell ? -l.quantity : l.quantity;
+      final ms = l.addedDate.millisecondsSinceEpoch;
+      if (ms <= u.firstTs) bas += q;
+      if (ms <= endMs) son += q;
+    }
+    final katki = netInflow(lotlar, start, end, startExclusiveMs: u.firstTs);
+    return (
+      piyasa: son * sonBirim - bas * u.first - katki,
+      katki: katki,
+      basMiktar: bas,
+      sonMiktar: son,
+    );
+  }
+
   /// Tam özeti kurar.
   ///
   /// Saf: ağ yok, `DateTime.now()` yok — [now] parametreyle gelir.
@@ -552,9 +674,14 @@ class PeriodSummaryService {
       );
     }
 
-    // ── Dönem uçları ────────────────────────────────────────────────────
-    final u = uclar(breakdown.total, fromMs: fromMs, toMs: toMs);
-    if (u == null) {
+    // ── Dönem uçları + piyasa etkisi — ORTAK fonksiyon ──────────────────
+    final pe = piyasaEtkisi(
+      seri: breakdown.total,
+      lotlar: assets,
+      start: p.start,
+      end: p.end,
+    );
+    if (pe == null) {
       // Seri yok: HİÇBİR sayı uydurulmaz. Ekran "henüz veri yok" der.
       return PeriodSummary(
         period: period,
@@ -582,14 +709,11 @@ class PeriodSummaryService {
     // Sınır DAMGA bazlı: `u.firstTs` slotunda zaten portföyde olan varlık
     // (`addedDate <= slotTs`) tabanın içinde ve katkıya girmemeli; o
     // damgadan sonraki alım ise gerçek bir katkıdır.
-    final katki = netInflow(
-      assets,
-      p.start,
-      p.end,
-      startExclusiveMs: u.firstTs,
-    );
-    final brut = u.last - u.first;
-    final piyasa = brut - katki;
+    //
+    // Kural artık `piyasaEtkisi` içinde — Grafik kartı ve varlık ekranı da
+    // AYNI fonksiyonu çağırıyor (2026-09-23).
+    final katki = pe.katki;
+    final piyasa = pe.piyasa;
 
     // Temettü ve komisyon: köprünün ALT SATIRLARI, ayrı bileşen değil.
     // İkisi de zaten mevcut sayıların içinde (alan notlarına bakın); burada
@@ -602,7 +726,7 @@ class PeriodSummaryService {
 
     // Payda: dönem başı + POZİTİF katkı. Negatif katkı (net satış)
     // eklenmez — satılan para artık piyasada değil.
-    final taban = u.first + (katki > 0 ? katki : 0);
+    final taban = pe.taban;
     final pct = taban > 0 ? piyasa / taban * 100 : null;
 
     // Dönem içinde AKIŞ görmüş pozisyonlar en iyi/en zayıf yarışından
@@ -627,8 +751,8 @@ class PeriodSummaryService {
       period: period,
       start: p.start,
       end: p.end,
-      baslangicTRY: u.first,
-      sonTRY: u.last,
+      baslangicTRY: pe.ilk,
+      sonTRY: pe.son,
       katkiTRY: katki,
       piyasaTRY: piyasa,
       getiriPct: pct,
@@ -647,8 +771,8 @@ class PeriodSummaryService {
           : null,
       temettuTRY: temettu,
       komisyonTRY: komisyon,
-      dagilimBasi: _dagilim(breakdown.byType, u.firstTs),
-      dagilimSonu: _dagilim(breakdown.byType, u.lastTs),
+      dagilimBasi: _dagilim(breakdown.byType, pe.ilkTs),
+      dagilimSonu: _dagilim(breakdown.byType, pe.sonTs),
       gunSayimi: gunSayimi(breakdown.total, fromMs: fromMs, toMs: toMs),
       sparkline: donemSerisi(breakdown.total, fromMs: fromMs, toMs: toMs),
     );

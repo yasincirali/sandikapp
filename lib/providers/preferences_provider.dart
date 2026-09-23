@@ -328,6 +328,19 @@ final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>(
 final biometricLockProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.biometricLock, false, perUser: true));
 
+/// Kilit teklifi bu kullanıcıya sorulduysa `true` — kabul/ret fark etmez.
+///
+/// **Neden ayrı bir anahtar, neden `biometricLock == false` yetmiyor:**
+/// ikisi farklı soruları yanıtlar. `biometricLock` "kilit açık mı",
+/// bu ise "sorduk mu". Kilidi sonradan KAPATAN kullanıcıya teklifi
+/// yeniden göstermek, verdiği kararı geri almaya çalışmak olurdu.
+///
+/// Varsayılan KAPALI: mevcut kullanıcılar da teklifi bir kez görür.
+/// Kişiye özel.
+final biometricLockOfferedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.biometricLockOffered, false,
+        perUser: true));
+
 /// Portföy hedefi (TRY). 0 = hedef belirlenmedi. Yalnızca gösterim:
 /// hedef hiçbir hesabı değiştirmez, "Bugün" kartında ilerleme çubuğu olur.
 final portfolioGoalProvider = NotifierProvider<_IntPrefNotifier, int>(
@@ -949,6 +962,7 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   baseCurrencyIndexProvider,
   investorLevelIndexProvider,
   biometricLockProvider,
+  biometricLockOfferedProvider,
   portfolioGoalProvider,
   lockScreenAmountsProvider,
   liveActivityStartProvider,

@@ -5,7 +5,183 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-20 (GÜNLÜK değişim kartı ile kilit ekranı arasındaki arındırma ayrışması)
+**Son güncelleme:** 2026-09-23 (GÜNLÜK piyasa etkisinde çifte sayım — ortak kurala bağlanmadı)
+
+---
+
+## 🟡 AÇIK — GÜNLÜK piyasa etkisi, gün başında elde OLMAYAN alımı iki kez düşüyor
+
+**Ne:** "Piyasa etkisi" 2026-09-23'te tek fonksiyona indi
+(`PeriodSummaryService.piyasaEtkisi`): katkı, tabanın ÖLÇÜLDÜĞÜ slottan
+SONRA giren para olarak sayılır. Varlık ekranı, Özet (1H+) ve Grafik dönem
+kartı (1H+) artık bunu kullanıyor. **GÜNLÜK iki yol hâlâ eski kuralda:**
+`DailySummary.from` (`inflowOnDay`, tüm gün) ve Grafik kartının gün içi dalı
+(`kartlar.dart`, `intraday ? netInflow(start, end)`).
+
+**Neden sorun:** Taban serinin ilk DOLU slotudur. Alım o slottan önce
+yapıldıysa lot tabanın içindedir ama tüm-gün penceresi onu katkıya da
+sayar. İki senaryo:
+- Kapsam gün başında boşken (ör. bugün ilk kez altın aldın, Performans ›
+  Altın › GÜNLÜK) — piyasa etkisi alım tutarı kadar eksi görünür.
+- BIST'te seans açılmadan (ör. 09:45) yapılan alım: ilk dolu slot 10:00,
+  lot orada zaten var, katkıda da var.
+
+Varlık ekranı GÜNLÜK'te doğru rakamı gösterir (`birimPiyasaEtkisi`, alıştan
+ölçer); bu iki senaryoda Performans › tür filtresi ile ayrışır (kullanıcının "dönem içi eklemeler dışında aynı"
+istisnasına düşer ama o istisna doğru hesabın yerine geçmemeli).
+
+**Neden ertelendi:** `DailySummary` ana ekran, widget, Live Activity ve
+Swift tarafıyla birebir sözleşmeli (`daily_summary.dart` "Değişmezler",
+parite testleri). Kuralı orada değiştirmek dört yüzeyi birden oynatır; bu
+turun konusu (varlık ekranı ↔ Performans) değildi.
+
+**Maliyet:** Nadir ama görünür: yeni açılan pozisyonda "−₺(alım tutarı)"
+gibi saçma bir günlük rakam.
+
+**Ne zaman:** Bir sonraki `DailySummary` turunda. Yapılacak: `inflowOnDay`
+yerine `netInflow(..., startExclusiveMs: ilkDoluSlot)`; Grafik kartının gün
+içi dalı da `piyasaEtkisi`'ne geçer; Swift/widget parite testleri güncellenir.
+
+---
+
+## 🟡 AÇIK — `db_logs` seans/cihaz kolonları AÇIK ama istemci doldurmuyor
+
+**Ne:** Migration 0071 dokuz, 0072 dört kolon ekledi:
+
+- **0071 (seans/cihaz/zaman):** `session_id`, `device_id`, `platform`,
+  `os_version`, `app_version`, `device_model`, `requested_at`,
+  `responded_at`, `event_kind`
+- **0072 (hata detayı):** `error_type`, `error_code`, `error_message`,
+  `stack_trace`
+
+Panel tarafı hazır (Seanslar, Cihazlar ekranları; hata künyesi ve stack
+trace blokları). **Uygulama tarafı (`DbLogger`) bu alanların hiçbirini
+henüz yazmıyor.**
+
+**Neden bölündü:** kullanıcı kararı (2026-09-22): önce sunucu + panel, istemci
+ayrı turda. Sunucu tarafı istemciyi beklemeden doğrulanabilir ve panel hazır
+olduğunda yeni sürüm tek hamlede anlamlı veri üretmeye başlar.
+
+**Sonucu — panel bu ara dönemde kısmen boş:**
+
+1. **Seanslar ekranı** yalnızca `(seanssız — eski sürüm)` toplu satırını görür.
+2. **Cihazlar ekranı** boştur; sürüm sağlığı tablosu her şeyi `(bilinmiyor)`
+   altında toplar.
+3. **Kullanıcılar** ekranındaki seans listesi, cihaz kutusu ve istek→yanıt
+   sütunları `—` gösterir.
+4. **Hata tipi/kodu sütunları** boş; hata kümeleri `(tipsiz)` altında
+   toplanır ve gruplama eski davranışa (serbest metin) düşer.
+5. **Stack trace** blokları "bu alan yeni sürümle dolar" der.
+
+Push token künyesi bunun DIŞINDA: `user_push_tokens` zaten dolu olduğu için
+o ekran bugün çalışıyor.
+
+Panel bunu üç ekranda da sarı uyarı bandıyla söylüyor, yani sessiz bir arıza
+değil; ama "veri yok" ile "özellik hazır değil" ayrımı ekranda okunmak
+zorunda kalıyor.
+
+**Yapılacak iş (istemci turu):**
+
+- `SessionService`: uygulama açılışında rastgele `session_id` üret, bellekte
+  tut. Auth oturumundan BAĞIMSIZ — giriş yapılmadan da vardır ve tek seansta
+  hesap değişebilir.
+- Log cihaz kimliği: `remote_push_service`'teki `push_device_id`'den **ayrı**
+  bir anahtar. O kimlik çıkışta siliniyor (`auth_service.dart:656`); log
+  kimliği silinMEMELİ, yoksa "aynı cihazda hesap değiştirince kırılıyor"
+  senaryosu — tam da izlemek istediğimiz şey — görünmez olur.
+- `package_info_plus` zaten bağımlılıkta (`app_version`); `platform` ve
+  `os_version` `dart:io`'dan gelir. `device_model` için ek paket gerekir,
+  gerekmiyorsa null bırakılabilir.
+- `DbLogger.log()` imzasına `event_kind` eklenip `requested_at`/`responded_at`
+  zaten hesaplanan değerlerden yazılmalı (bugün yalnızca `duration_ms`'e
+  dönüştürülüp atılıyorlar).
+- **Hata alanları (0072):** `catch` bloğunda `error.runtimeType.toString()` →
+  `error_type`. Kod için tip bazlı çıkarım gerekir: `PostgrestException.code`,
+  `AuthApiException.statusCode`, `ClientException` → yok. `stack_trace`
+  `DbLogger.sanitize()`'dan geçmeli ve ilk ~40 kareye kırpılmalı —
+  `StackTrace.toString()` tamamı yüzlerce satır olabilir.
+- **PII sınırı korunmalı:** e-posta ve oturum JWT'si log satırına
+  YAZILMAZ (kullanıcı kararı 2026-09-22; gizlilik politikası taahhüdü).
+  0072'deki doğrulama bloğu `db_logs`'a `email`/`jwt`/`access_token`
+  kolonu eklenirse migration'ı patlatır, ama `request_json` içine
+  sızmasını engellemez — `_maskSensitive` sözleşmesi oradaki tek koruma.
+- **Üretimde yazma kuralı genişleyecek** (kullanıcı kararı): gezinme olayları
+  (ekran açılışı, auth, oturum başlangıcı) üretimde de yazılacak; rutin
+  fiyat/portföy çekmeleri yazılmayacak. Bu, yukarıdaki "db_logs üretimde
+  yalnızca hata yazıyor" maddesini kısmen kapatır.
+- `db_logger_test` ve `test/l10n_coverage_test.dart` etkilenmez; yeni alanlar
+  için maskeleme testi yazılmalı (cihaz kimliği PII değil ama loglanan her
+  yeni alan maske sözleşmesinden geçmeli).
+
+**Maliyet:** panelin üç ekranı yeni sürüm yayınlanana kadar gösterimlik.
+Teşhis gücü bugünkü seviyede kalır (0070 ile gelen hata/servis/güvenlik
+ekranları tam çalışıyor).
+
+**Ne zaman:** bir sonraki uygulama turunda. Migration zaten canlıda, yani
+istemci güncellemesi tek başına yeterli — ikinci bir şema adımı gerekmez.
+
+---
+
+## 🟡 AÇIK — Destek paneli üretim trafiğini göremiyor: `db_logs` release'te yalnızca HATA yazıyor
+
+**Ne:** `tool/admin_dashboard` (migration 0070) müşteri şikayetini teşhis etmek
+için `db_logs`'u okur. Ama `DbLogger._persistAsync` üretim yapılarında
+**başarılı çağrıları hiç yazmaz**:
+
+```dart
+if (kReleaseMode && !isError) return;   // KVKK/PII kararı
+```
+
+**Sonucu:** panelde üç ölçü yanıltıcı:
+
+1. **Hata oranı** (`admin_service_health.error_rate`) üretimde ~%100'e yakın
+   çıkar — payda yok. Panel bunu ekranda uyarı olarak söylüyor ama sayı yine
+   de yanlış yerde duruyor.
+2. **"Nerelere girmiş"** sorusu üretimde eksik cevaplanır: kullanıcının
+   başarılı gezinme izi yok, yalnızca takıldığı yerler var. Şikayetin
+   *öncesindeki* adımlar görünmüyor.
+3. **p50/p95 gecikme** yalnızca hatalı (çoğu timeout'a giden) çağrılardan
+   hesaplanır; gerçek performans değil.
+
+**Neden şimdi düzeltilmedi:** düzeltme "başarılı çağrıları da yaz" demek ve bu
+doğrudan 2026-09 denetiminde bilerek verilmiş KVKK kararını geri alır. Hacim
+de ciddi: her kullanıcı her açılışta onlarca çağrı yapıyor, 30 günlük saklama
+(0056) ile tablo hızla büyür. Bu bir *ürün/gizlilik* kararıdır, panelin yan
+etkisi olarak sessizce değiştirilmemeli.
+
+**Maliyet:** teşhis "kullanıcı neyi denedi" değil "kullanıcı nerede kırıldı"
+ile sınırlı. Çoğu şikayet için yeterli; akış hatalarında (ör. "ekleme ekranı
+açılmıyor ama hata da vermiyor") panel sessiz kalır.
+
+**Ne zaman:** gerçek bir "sessiz arıza" şikayeti geldiğinde. O noktada en dar
+çözüm: örnekleme (başarılı çağrıların %1'i) ya da yalnızca **gezinme
+olaylarını** ayrı ve PII'siz bir tabloya yazmak (`user_id` + ekran adı +
+zaman), tam istek gövdesini değil.
+
+---
+
+## 🟡 AÇIK — Başarısız şifre denemeleri yalnızca uygulamadan geçenler için görünüyor
+
+**Ne:** Destek panelinin Güvenlik ekranı "10 kere yanlış şifre" sorusunu
+`db_logs`'taki `auth/*` hatalarından üretir (`admin_auth_abuse`, 0070).
+`auth.audit_log_entries` tercih edilmedi çünkü GoTrue **başarısız** giriş
+denemesini o deftere güvenilir biçimde yazmıyor — başarılı olaylar var,
+başarısızlar yok.
+
+**Sonucu:** panel yalnızca **sandık uygulamasından geçen** denemeleri görür.
+Doğrudan GoTrue REST API'sine atılan istekler (curl, script) panelde
+**görünmez** — ki gerçek bir brute force tam olarak böyle yapılır.
+
+**Hafifletici:** Supabase'in kendi giriş rate limit'i bu katmanda ve panelden
+bağımsız çalışıyor; yani görünmezlik "korumasız" demek değil, "gözlemsiz"
+demek. Panel bu sınırı ekranda açıkça yazıyor.
+
+**Maliyet:** panel meşru kullanıcının takıldığını iyi gösterir, hedefli bir
+saldırıyı göstermez. Saldırı teşhisi için Supabase Dashboard → Auth → Logs
+hâlâ tek kaynak.
+
+**Ne zaman:** kendi kimlik doğrulama Edge Function'ımız olursa ya da Supabase
+log drain'i bir tabloya akıtılırsa. İkisi de bugünkü ihtiyacın çok üstünde.
 
 ---
 
@@ -25,6 +201,12 @@ turunun kapsamı değil; yalnızca gece koşularını etkiliyor.
 
 **Maliyet:** Gece push'larında yanlış kırmızı; `deploy_emulators.sh` kapısı
 gündüz temiz. **Ne zaman:** bir sonraki test-sağlığı turunda (saat enjeksiyonu).
+
+**İlerleme (2026-09-24):** gün içi motoruna saat kancası eklendi
+(`HistoryService.gunIciSaat`). Üçüncü bir gece-kırmızısı olan
+`ozet_kapsam_gecisi_iskelet_test` onunla sabitlendi (00:04'te kırmızıydı).
+Yukarıdaki iki test `IntradaySeriesCache` üzerinden geçtiği için kancayı
+oraya da taşımak gerekiyor.
 
 ## 🟡 AÇIK — GÜNLÜK değişim kartı HAM, kilit ekranı ARINDIRILMIŞ: alım yapılan günde iki rakam ayrışıyor
 
