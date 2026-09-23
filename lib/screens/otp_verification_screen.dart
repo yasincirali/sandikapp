@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -124,6 +123,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       showAppError(context, context.l10n.otpEnterFull);
       return;
     }
+    // Onay kaydının dili — `await`'ten ÖNCE okunur (context sonra geçersiz
+    // olabilir). U18.
+    final etkinDil = Localizations.localeOf(context).toString();
     setState(() => _submitting = true);
     try {
       final user = await AuthService.instance.verifyRegistrationOtp(
@@ -135,14 +137,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       // DisclaimerAcceptanceScreen ikinci kez soruyordu — aynı oturumda
       // iki kez aynı onay. Kaydı burada düşüyoruz ki _AuthGate kapısı
       // geçsin; hata olursa eski davranış (ekran sorar) yedek olarak kalır.
-      try {
-        await DisclaimerService.instance.recordAcceptance(
-          userId: user.id,
-          appVersion: '1.0.0+1',
-          platform: Platform.isIOS ? 'ios' : 'android',
-          locale: 'tr_TR',
-        );
-      } catch (_) {}
+      //
+      // Gerçek sürüm/dil/platform ve hata raporu serviste (2026-09-23
+      // denetimi U18); başarısızlık akışı durdurmaz.
+      await DisclaimerService.instance.kabulKaydet(
+        userId: user.id,
+        locale: etkinDil,
+      );
       ref.invalidate(authProvider);
       if (!mounted) return;
       Navigator.of(context).popUntil((r) => r.isFirst);

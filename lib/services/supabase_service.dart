@@ -1050,9 +1050,12 @@ class SupabaseService {
         displayName: name,
         createdAt: DateTime.now(),
       );
-      try {
-        await upsertProfile(user);
-      } catch (_) {}
+      // Profil YAZILMAZ (2026-09-23 denetimi U17): burada ortağın satırına
+      // `upsertProfile` çağrılıyordu — başkasının `profiles` kaydını boş
+      // e-posta ve `onboarding=false` ile ezmeye çalışan bir yazma. RLS
+      // (`auth.uid() = id`) onu her yüklemede 403 ile reddediyor, db_logger
+      // her seferinde hata kaydediyordu. İsim yalnızca bellekte, ortak
+      // listesini göstermek için gerekiyor; kalıcı kaynak `partner_invites`.
       result.add(user);
     }
 

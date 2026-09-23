@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
@@ -35,16 +34,13 @@ class _DisclaimerAcceptanceScreenState
   Future<void> _confirm() async {
     if (!_accepted || _loading) return;
     setState(() => _loading = true);
-    try {
-      await DisclaimerService.instance.recordAcceptance(
-        userId: widget.userId,
-        appVersion: '1.0.0+1',
-        platform: Platform.isIOS ? 'ios' : 'android',
-        locale: 'tr_TR',
-      );
-    } catch (_) {
-      // Kayıt hatası olsa bile onayı kabul et — kayıt kritik değil
-    }
+    // Kayıt hatası olsa bile onayı kabul et — akış kilitlenmez. Hata artık
+    // yutulmaz; servis raporlar ve gerçek sürüm/dil/platformu yazar
+    // (2026-09-23 denetimi U18).
+    await DisclaimerService.instance.kabulKaydet(
+      userId: widget.userId,
+      locale: Localizations.localeOf(context).toString(),
+    );
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) => widget.onAccepted());
     }

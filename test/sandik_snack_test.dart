@@ -84,6 +84,35 @@ void main() {
     expect(undone, isTrue);
   });
 
+  // ── U11 (2026-09-23 denetimi) ─────────────────────────────────────────
+  //
+  // Flutter 3.47'de eylemli SnackBar varsayılan olarak `persist: true`;
+  // "X eklendi · Alarm kur" dakikalarca kalıp Ekle düğmesini örttü.
+  testWidgets('eylemli snackbar süresi dolunca KENDİLİĞİNDEN kapanır',
+      (t) async {
+    await pump(
+      t,
+      (ctx) => sandikSnack(
+        ctx,
+        'X eklendi',
+        action: SnackBarAction(label: 'Alarm kur', onPressed: () {}),
+      ),
+    );
+    expect(t.widget<SnackBar>(find.byType(SnackBar)).persist, isFalse);
+    expect(find.text('X eklendi'), findsOneWidget);
+    // 4 sn süre + çıkış animasyonu.
+    await t.pump(const Duration(seconds: 5));
+    await t.pumpAndSettle();
+    expect(find.text('X eklendi'), findsNothing);
+  });
+
+  testWidgets('onUndo snackbar da süresi dolunca kapanır', (t) async {
+    await pump(t, (ctx) => sandikSnack(ctx, 'silindi', onUndo: () {}));
+    await t.pump(const Duration(seconds: 5));
+    await t.pumpAndSettle();
+    expect(find.text('silindi'), findsNothing);
+  });
+
   testWidgets('yeni snackbar öncekini kapatır — kuyruk birikmez', (t) async {
     await t.pumpWidget(MaterialApp(
       home: Scaffold(

@@ -79,6 +79,9 @@ class BazPara {
       if (abs >= 1000) return '$sign${fmtNum(abs / 1000, digits: 1)}K $s';
       return '$sign${fmtNum(abs, digits: abs < 100 ? 1 : 0)} $s';
     }
+    // Mr/Tn basamakları `fmtTRYCompact` ile aynı (U14, 2026-09-23 denetimi).
+    if (abs >= 1e12) return '$sign$s${fmtNum(abs / 1e12, digits: 2)}Tn';
+    if (abs >= 1e9) return '$sign$s${fmtNum(abs / 1e9, digits: 2)}Mr';
     if (abs >= 1000000) return '$sign$s${fmtNum(abs / 1000000, digits: 2)}M';
     if (abs >= 1000) return '$sign$s${fmtNum(abs / 1000, digits: 1)}K';
     return '$sign$s${fmtNum(abs, digits: 0)}';
@@ -95,6 +98,17 @@ class BazPara {
     final s = etkinBirim.sembol;
     final gold = etkinBirim == BaseCurrency.gold;
     String yaz(String govde) => gold ? '$sign$govde $s' : '$sign$s$govde';
+    // Mr/Tn basamakları `fmtTRYAxis` ile aynı (U14, 2026-09-23 denetimi).
+    if (abs >= 1e12) {
+      final spanTn = span / 1e12;
+      final digits = spanTn >= 0.02 ? 2 : (spanTn >= 0.002 ? 3 : 4);
+      return yaz('${fmtNum(abs / 1e12, digits: digits)}Tn');
+    }
+    if (abs >= 1e9) {
+      final spanMr = span / 1e9;
+      final digits = spanMr >= 0.02 ? 2 : (spanMr >= 0.002 ? 3 : 4);
+      return yaz('${fmtNum(abs / 1e9, digits: digits)}Mr');
+    }
     if (abs >= 1000000) {
       final spanM = span / 1000000;
       final digits = spanM >= 0.02 ? 2 : (spanM >= 0.002 ? 3 : 4);

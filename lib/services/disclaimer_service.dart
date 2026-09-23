@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'crash_reporter.dart';
 
 /// Yasal uyarı metni ve versiyonu — değiştirilirse versiyon artırılmalı.
 const disclaimerVersion = '1.0';
@@ -34,6 +37,76 @@ class DisclaimerService {
   void clearCache() => _cache.clear();
 
   static const _timeout = Duration(seconds: 15);
+
+  /// Onay kaydının `platform` sütunu — saf, test edilebilir.
+  ///
+  /// 2026-09-23 denetimi U18: ekranlar `Platform.isIOS ? 'ios' : 'android'`
+  /// yazıyordu; web/masaüstü de "android" diye kaydediliyordu ve
+  /// `dart:io` web'de derlenmez bile. Hukuki kayıt yanlış bilgi taşımamalı.
+  static String platformEtiketi(TargetPlatform p, {bool web = kIsWeb}) {
+    if (web) return 'web';
+    switch (p) {
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.android:
+        return 'android';
+      case TargetPlatform.macOS:
+        return 'macos';
+      case TargetPlatform.windows:
+        return 'windows';
+      case TargetPlatform.linux:
+        return 'linux';
+      case TargetPlatform.fuchsia:
+        return 'other';
+    }
+  }
+
+  /// Onayı CİHAZIN gerçek bilgileriyle kaydeder; hata fırlatmaz.
+  ///
+  /// 2026-09-23 denetimi U18: iki ekran (`DisclaimerAcceptanceScreen`,
+  /// `OtpVerificationScreen`) `app_version: '1.0.0+1'` ve `locale: 'tr_TR'`
+  /// sabitleri yazıyordu — gerçek sürüm 1.1.x iken ve İngilizce arayüzde
+  /// bile. KVKK/hukuki iz "hangi sürümde, hangi dilde gördü" sorusuna
+  /// yanlış cevap veriyordu. Sürüm `PackageInfo`'dan (Ayarlar ve
+  /// `SurumNotuService` ile aynı kaynak; `version+buildNumber`, çünkü
+  /// TestFlight yalnızca build'i artırır), dil ekranın ETKİN
+  /// `Localizations` yerelinden gelir.
+  ///
+  /// Hata eskiden iki ekranda da `catch (_) {}` ile yutuluyordu. Akış
+  /// yine durmaz (kayıt düşerse `_AuthGate` onay ekranını tekrar gösterir —
+  /// yedek yol budur) ama arıza artık görünür: bağlantı hatası dışındakiler
+  /// Crashlytics'e non-fatal gider. Dönüş: kayıt yazıldı mı.
+  Future<bool> kabulKaydet({
+    required String userId,
+    required String locale,
+  }) async {
+    try {
+      await recordAcceptance(
+        userId: userId,
+        appVersion: await _surumEtiketi(),
+        platform: platformEtiketi(defaultTargetPlatform),
+        locale: locale,
+      );
+      return true;
+    } catch (e, st) {
+      if (!CrashReporter.agHatasiMi(e)) {
+        CrashReporter.report(e, st, reason: 'DisclaimerService.kabulKaydet');
+      }
+      return false;
+    }
+  }
+
+  /// `1.1.6+7` — okunamazsa 'unknown' (sütun NOT NULL; uydurma sürüm
+  /// yazmaktansa bilinmediğini söylemek doğru).
+  static Future<String> _surumEtiketi() async {
+    try {
+      final bilgi = await PackageInfo.fromPlatform();
+      return '${bilgi.version}+${bilgi.buildNumber}';
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'DisclaimerService._surumEtiketi');
+      return 'unknown';
+    }
+  }
 
   /// Kullanıcı kayıt sonrası onayını Supabase'e kaydeder.
   /// Hata olursa sessizce yutmaz — caller log'a yazabilir.

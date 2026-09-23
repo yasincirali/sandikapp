@@ -1425,9 +1425,13 @@ class _AssetDetailsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rep = position.representative;
-    final tryFmt3 = baz.formatter(digits: 3);
+    // Tutarlar (toplam maliyet, güncel değer, temettü) 2 ondalık — 2026-09-23
+    // denetimi U14: 3 ondalık "₺10.000,000" on milyon gibi okunuyordu.
+    // Birim fiyat (ortalama maliyet) `numFmt` ile değişken hassasiyette
+    // kalır; fon fiyatında 4-6 hane anlamlıdır.
+    final tryFmt2 = baz.formatter(digits: 2);
     final numFmt = qtyFormatter();
-    final costFmt3 = fixedFormatter(3);
+    final costFmt2 = fixedFormatter(2);
 
     // İlk alış tarihi = en eski buy lot
     final buyLots = position.lots.where((l) => l.isBuy).toList()
@@ -1527,7 +1531,7 @@ class _AssetDetailsPanel extends StatelessWidget {
                 child: _DetailItem(
                   label: context.l10n.totalCost,
                   value: position.weightedPurchasePrice > 0
-                      ? '${costFmt3.format(position.totalCost)} ${rep.currency}'
+                      ? '${costFmt2.format(position.totalCost)} ${rep.currency}'
                       : '—',
                 ),
               ),
@@ -1539,7 +1543,7 @@ class _AssetDetailsPanel extends StatelessWidget {
               Expanded(
                 child: _DetailItem(
                   label: context.l10n.currentValue,
-                  value: tryFmt3.format(currentValueTRY),
+                  value: tryFmt2.format(currentValueTRY),
                   emphasize: true,
                 ),
               ),
@@ -1565,7 +1569,7 @@ class _AssetDetailsPanel extends StatelessWidget {
                 Expanded(
                   child: _DetailItem(
                     label: context.l10n.dividendReceived,
-                    value: tryFmt3.format(dividendTRY),
+                    value: tryFmt2.format(dividendTRY),
                   ),
                 ),
             ],

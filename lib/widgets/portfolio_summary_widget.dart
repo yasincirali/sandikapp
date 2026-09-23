@@ -165,7 +165,9 @@ class PortfolioSummaryWidget extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            fmtPct(state.gainLossPercentage, digits: 3),
+                            // U14 (2026-09-23 denetimi): 3 hane "%0,000"
+                            // gürültüsüydü; uygulamanın yüzde standardı 2.
+                            fmtPct(state.gainLossPercentage),
                             style: context.t.numSmall.copyWith(
                               fontSize: subFontSize,
                               fontWeight: FontWeight.w500,

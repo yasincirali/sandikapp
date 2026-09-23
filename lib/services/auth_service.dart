@@ -18,7 +18,13 @@ const _uuid = Uuid();
 const _savedEmailKey = 'saved_email';
 const _pendingDisplayNameKey = 'pending_display_name';
 
-class AuthException implements Exception {
+/// Uygulamanın kimlik doğrulama istisnası. Mesajı kullanıcıya yazılmış
+/// Türkçe (ya da l10n) cümledir — [KullaniciMesajli] sayesinde
+/// `friendlyError` onu olduğu gibi gösterir (2026-09-23 denetimi U13).
+/// Sözleşme: ham sunucu metni (`AuthApiException.message`) buraya
+/// KONMAZ; `friendlyError(e)` ile çevrilerek konur.
+class AuthException implements KullaniciMesajli {
+  @override
   final String message;
   const AuthException(this.message);
   @override
@@ -304,7 +310,8 @@ class AuthService {
         throw const AuthException(
             'Kod geçersiz veya süresi doldu. Yeni kod isteyin.');
       }
-      throw AuthException(e.message);
+      // Ham GoTrue metni (İngilizce) kullanıcıya gitmesin — U13 sözleşmesi.
+      throw AuthException(friendlyError(e));
     } catch (e, st) {
       // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
       // arızamız değil: Crashlytics'e taşımak gerçek hataları
@@ -342,7 +349,8 @@ class AuthService {
         throw const AuthException(
             'Çok sık kod istedin. 60 saniye bekleyip tekrar dene.');
       }
-      throw AuthException(e.message);
+      // Ham GoTrue metni (İngilizce) kullanıcıya gitmesin — U13 sözleşmesi.
+      throw AuthException(friendlyError(e));
     } catch (e, st) {
       // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
       // arızamız değil: Crashlytics'e taşımak gerçek hataları
@@ -424,7 +432,8 @@ class AuthService {
         throw const AuthException(
             'E-posta adresinizi doğrulayın. Gelen kutunuzu kontrol edin.');
       }
-      throw AuthException(e.message);
+      // Ham GoTrue metni (İngilizce) kullanıcıya gitmesin — U13 sözleşmesi.
+      throw AuthException(friendlyError(e));
     } catch (e, st) {
       // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
       // arızamız değil: Crashlytics'e taşımak gerçek hataları
@@ -607,7 +616,8 @@ class AuthService {
           msg.contains('token')) {
         throw const AuthException('Kod hatalı veya süresi doldu.');
       }
-      throw AuthException(e.message);
+      // Ham GoTrue metni (İngilizce) kullanıcıya gitmesin — U13 sözleşmesi.
+      throw AuthException(friendlyError(e));
     } catch (e, st) {
       // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
       // arızamız değil: Crashlytics'e taşımak gerçek hataları
@@ -677,6 +687,29 @@ class AuthService {
     // Email'i cihazda bırak — sonraki girişte dolu gelsin
   }
 
+  static String _deleteAccountKodu(dynamic data) =>
+      (data is Map && data['error'] is String) ? data['error'] as String : '';
+
+  /// `delete-account` edge function'ının 2xx dışı yanıtını kullanıcıya
+  /// gösterilecek [AuthException]'a çevirir. Saf fonksiyon — hem
+  /// `response.status != 200` hem `FunctionException` yolu buradan geçer
+  /// (2026-09-23 denetimi U12; `test/delete_account_error_test.dart`).
+  static AuthException deleteAccountHatasi(int status, dynamic data) {
+    switch (_deleteAccountKodu(data)) {
+      case 'invalid_password':
+        return const AuthException('Şifre hatalı.');
+      case 'password_required':
+        return const AuthException('Şifre gerekli.');
+      case 'invalid_identity':
+        return const AuthException(
+            'Kimlik doğrulanamadı. Aynı hesapla tekrar dene.');
+    }
+    return AuthException(
+      'Hesap silinemedi (kod $status). '
+      'Sorun devam ederse destekle iletişime geçin.',
+    );
+  }
+
   // ── Hesap silme (KVKK Madde 11 / Play 2024 / App Store 5.1.1(v)) ─────────
 
   /// Kullanıcının hesabını ve tüm verisini kalıcı olarak siler.
@@ -729,27 +762,29 @@ class AuthService {
       final response = await _client.functions
           .invoke('delete-account', body: body)
           .timeout(const Duration(seconds: 30));
-      if (response.status == 200) {
-        // başarılı
-      } else {
-        final data = response.data;
-        final errCode =
-            (data is Map && data['error'] is String) ? data['error'] as String : '';
-        if (errCode == 'invalid_password') {
-          throw const AuthException('Şifre hatalı.');
-        }
-        if (errCode == 'password_required') {
-          throw const AuthException('Şifre gerekli.');
-        }
-        if (errCode == 'invalid_identity') {
-          throw const AuthException(
-              'Kimlik doğrulanamadı. Aynı hesapla tekrar dene.');
-        }
-        throw AuthException(
-          'Hesap silinemedi (kod ${response.status}). '
-          'Sorun devam ederse destekle iletişime geçin.',
-        );
+      if (response.status != 200) {
+        throw deleteAccountHatasi(response.status, response.data);
       }
+    } on FunctionException catch (e) {
+      // 2026-09-23 denetimi U12: `functions.invoke` 2xx DIŞI her yanıtta
+      // `FunctionException` fırlatır — yukarıdaki `status != 200` dalına
+      // yanlış şifrede (401) hiç gelinmiyordu. Hata aşağıdaki genel
+      // `catch`'e düşüyor, kullanıcı "Bir şeyler ters gitti" görüyor ve
+      // yanlış şifre Crashlytics'e çökme diye gidiyordu. Sunucunun bilinen
+      // hata kodları kullanıcı hatasıdır; raporlanmaz.
+      //
+      // status 0 = istek hiç ulaşmadı (yeni functions_client'ta
+      // `FunctionsFetchException`): bağlantı yolu gibi davran.
+      if (e.status == 0) {
+        throw AuthException(friendlyError(e.details ?? e));
+      }
+      final hata = deleteAccountHatasi(e.status, e.details);
+      if (_deleteAccountKodu(e.details).isEmpty && e.status >= 500) {
+        // Kodsuz 5xx bizim arızamız — görünür kalsın.
+        CrashReporter.report(e, StackTrace.current,
+            reason: 'AuthService.deleteAccount');
+      }
+      throw hata;
     } on AuthException {
       rethrow;
     } catch (e, st) {

@@ -18,7 +18,11 @@ void main() {
       expect(baz.formatter(digits: 3).format(12.5), fmtTRY(12.5, digits: 3));
     });
     test('compact / axis', () {
-      for (final v in [0.0, 900.0, 1500.0, 2300000.0, -45000.0]) {
+      for (final v in [
+        0.0, 900.0, 1500.0, 2300000.0, -45000.0,
+        // U14 (2026-09-23 denetimi): milyar / trilyon basamakları.
+        1.25e9, 8.0000032e13,
+      ]) {
         expect(baz.compact(v), fmtTRYCompact(v));
         expect(baz.axis(v, 100000), fmtTRYAxis(v, 100000));
       }
@@ -70,6 +74,34 @@ void main() {
     expect(const BazPara.lira().gizliTutar, '₺••••');
     expect(const BazPara(BaseCurrency.usd, 40).gizliTutar, '\$••••');
     expect(const BazPara(BaseCurrency.gold, 5000).gizliTutar, '•••• gr');
+  });
+
+  // ── U14 (2026-09-23 denetimi) ─────────────────────────────────────────
+  //
+  // Tutarlar 3 ondalıkla yazılıyordu: "+₺10.000,000" on milyon gibi
+  // okunuyor, "%0,000" gürültü; 80 trilyon "₺80.000.000,32M" çıkıyordu.
+  group('tutar ondalığı ve kısaltma basamakları', () {
+    test('kısaltma milyar/trilyon basamağına geçer', () {
+      expect(fmtTRYCompact(8.0000032e13), '₺80,00Tn');
+      expect(fmtTRYCompact(1.25e9), '₺1,25Mr');
+      expect(fmtTRYCompact(-2.5e9), '-₺2,50Mr');
+      expect(fmtTRYCompact(2300000), '₺2,30M');
+      expect(fmtTRYAxis(8e13, 1e13), '₺80,00Tn');
+      const usd = BazPara(BaseCurrency.usd, 40);
+      expect(usd.compact(4e12), '\$100,00Mr');
+    });
+
+    test('hareket satırı, pozisyon detayı ve özet 3 ondalık KULLANMAZ', () {
+      for (final yol in const [
+        'lib/widgets/transaction_row.dart',
+        'lib/widgets/portfolio_summary_widget.dart',
+        'lib/screens/portfolio_screen.dart',
+      ]) {
+        final src = ekranKaynagiSync(yol);
+        expect(src.contains('digits: 3'), isFalse, reason: yol);
+        expect(src.contains('fixedFormatter(3)'), isFalse, reason: yol);
+      }
+    });
   });
 
   test('fromIndex bilinmeyen değerde ₺', () {

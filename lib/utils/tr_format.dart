@@ -54,9 +54,20 @@ String fmtTRY(double value, {int digits = 0}) {
 
 /// Kısa TRY: `₺1.5K` yerine `₺1,5K`, `₺2.3M` yerine `₺2,3M`. Sadece grafik
 /// eksen etiketleri gibi dar alanlarda kullanılmalı; genel değerler `fmtTRY`.
+///
+/// Milyar (`Mr`) ve trilyon (`Tn`) basamakları 2026-09-23 denetimi U14'te
+/// eklendi: yalnızca `M` vardı ve 80 trilyonluk bir tutar
+/// `₺80.000.000,32M` yazılıyordu — kısaltmanın amacı olan "dar alanda
+/// okunur" tamamen kayboluyordu. `Mr` [fmtTRYAxis] ile aynı kısaltma.
 String fmtTRYCompact(double value) {
   final abs = value.abs();
   final sign = value < 0 ? '-' : '';
+  if (abs >= 1e12) {
+    return '$sign₺${fmtNum(abs / 1e12, digits: 2)}Tn';
+  }
+  if (abs >= 1e9) {
+    return '$sign₺${fmtNum(abs / 1e9, digits: 2)}Mr';
+  }
   if (abs >= 1000000) {
     return '$sign₺${fmtNum(abs / 1000000, digits: 2)}M';
   }
@@ -79,6 +90,12 @@ String fmtTRYAxis(double value, double span) {
   final abs = value.abs();
   final sign = value < 0 ? '-' : '';
 
+  // Trilyon — `Tn` (U14, 2026-09-23 denetimi; bkz. [fmtTRYCompact]).
+  if (abs >= 1e12) {
+    final spanTn = span / 1e12;
+    final digits = spanTn >= 0.02 ? 2 : (spanTn >= 0.002 ? 3 : 4);
+    return '$sign₺${fmtNum(abs / 1e12, digits: digits)}Tn';
+  }
   // Milyar — `Mr` kısaltmasıyla. Bu basamak eksikti ve 1,25 milyarlık bir
   // portföy `₺1.250,00M` olarak yazılıyordu: hem uzun hem okunmuyor.
   if (abs >= 1000000000) {

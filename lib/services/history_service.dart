@@ -1438,7 +1438,10 @@ class HistoryService {
     final urunBazliKullan = PriceService.instance.altinGunlukYuzdeTam;
     // TEŞHİS (2026-09-23): kullanıcı ayrışmanın sürdüğünü bildirdi.
     // Hangi sembolün yüzde taşımadığı görünmeden kök neden bulunamıyor.
-    if (assets.any((a) => FiyatKaynagi.altinMi(a.ticker))) {
+    // Yalnızca debug: `debugPrint` release'de de konsola yazar ve bu satır
+    // her seri hesabında koşuyordu (2026-09-23 denetimi). Teşhis
+    // metni `altinYuzdeTeshisi()` de boşuna kuruluyordu.
+    if (kDebugMode && assets.any((a) => FiyatKaynagi.altinMi(a.ticker))) {
       debugPrint('altın-yüzde ${PriceService.instance.altinYuzdeTeshisi()}');
     }
 
