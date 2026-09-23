@@ -292,6 +292,14 @@ Deno.serve(async (request) => {
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
     const cronSecret = Deno.env.get('WEEKLY_SUMMARY_CRON_SECRET');
 
+    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
+    const eksik = cronSecretZorunlu(cronSecret, 'WEEKLY_SUMMARY_CRON_SECRET');
+    if (eksik) return eksik;
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
+
+    // Env denetimi kapıdan SONRA (2026-09-23 denetimi L2): yetkisiz çağıran
+    // eksik yapılandırmayı ya da secret adlarını öğrenemesin.
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error(
         'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY runtime tarafından '
@@ -303,11 +311,6 @@ Deno.serve(async (request) => {
         'FCM secret\'ları eksik: FCM_PROJECT_ID, FCM_SERVICE_ACCOUNT_JSON.',
       );
     }
-    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
-    const eksik = cronSecretZorunlu(cronSecret, 'WEEKLY_SUMMARY_CRON_SECRET');
-    if (eksik) return eksik;
-    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
-    if (yetkisiz) return yetkisiz;
 
     let dryRun = false;
     let minMovePct = DEFAULT_MIN_MOVE_PCT;
@@ -555,7 +558,9 @@ Deno.serve(async (request) => {
             );
         }
       } else {
-        failures.push(r.rawText.slice(0, 200));
+        // Ham FCM gövdesi yalnızca günlüğe; yanıta kısa kod (2026-09-23 denetimi L2).
+        console.error('[weekly-summary] FCM gonderimi basarisiz:', r.rawText.slice(0, 500));
+        failures.push(`fcm: ${r.hataKodu}`);
         if (r.shouldDeleteToken) {
           await admin
             .from('user_push_tokens')

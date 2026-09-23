@@ -404,6 +404,15 @@ Deno.serve(async (request) => {
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
     const cronSecret = Deno.env.get('ANALYZE_SIGNALS_CRON_SECRET');
 
+    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
+    const eksik = cronSecretZorunlu(cronSecret, 'ANALYZE_SIGNALS_CRON_SECRET');
+    if (eksik) return eksik;
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
+
+    // Env denetimi kapıdan SONRA (2026-09-23 denetimi L2): önceden kapıdan
+    // önce atılıyordu ve yetkisiz çağıran hata metnini/eksik secret adlarını
+    // görebiliyordu.
     // SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY platform tarafından otomatik
     // enjekte edilir (elle girilemez — `SUPABASE_` öneki rezerve). Yoksa
     // runtime bozuk demektir, secret eksikliği değil.
@@ -420,12 +429,6 @@ Deno.serve(async (request) => {
         + 'FCM_SERVICE_ACCOUNT_JSON. Bkz. README → "Secret\'lar".',
       );
     }
-
-    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
-    const eksik = cronSecretZorunlu(cronSecret, 'ANALYZE_SIGNALS_CRON_SECRET');
-    if (eksik) return eksik;
-    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
-    if (yetkisiz) return yetkisiz;
 
     let slot = 'unknown';
     let dryRun = false;
@@ -781,9 +784,11 @@ Deno.serve(async (request) => {
           });
         } else {
           failed++;
-          // Sebebi kısaltarak sakla — tam FCM yanıtı uzun olabiliyor.
+          // Ham FCM gövdesi yalnızca günlüğe; yanıta kısa kod (2026-09-23
+          // denetimi L2). Tam yanıt uzun olabildiği için günlükte de kırpılır.
+          console.error('[analyze-signals] FCM gonderimi basarisiz:', r.rawText.slice(0, 500));
           if (errors.length < 5) {
-            errors.push(r.rawText.slice(0, 300));
+            errors.push(`fcm: ${r.hataKodu}`);
           }
           if (r.shouldDeleteToken) {
             try {
@@ -863,7 +868,9 @@ Deno.serve(async (request) => {
       ...(dryRun ? { preview } : {}),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return jsonResponse({ error: message }, 500);
+    // Ayrıntı yalnızca günlüğe: yanıtta `error.message` dönmek tablo/sütun
+    // ve secret adlarını sızdırır (CLAUDE.md sunucu kuralı, 2026-09-23 denetimi L2).
+    console.error('[analyze-signals] hata:', error);
+    return jsonResponse({ error: 'Sinyal analizi basarisiz.' }, 500);
   }
 });

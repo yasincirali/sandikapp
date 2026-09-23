@@ -83,7 +83,41 @@ export async function createAccessToken(serviceAccount: ServiceAccount) {
 
 export type SendResult =
   | { ok: true }
-  | { ok: false; rawText: string; shouldDeleteToken: boolean };
+  | {
+    ok: false;
+    /// Ham FCM yanıtı — YALNIZCA sunucu günlüğü (`console.error`) için.
+    /// HTTP yanıtına konmaz; oraya `hataKodu` gider (2026-09-23 denetimi L2).
+    rawText: string;
+    /// Yanıta konabilecek kısa, sabit sözlüklü kod (`UNREGISTERED`,
+    /// `http_429`…). Bkz. `fcmHataKodu`.
+    hataKodu: string;
+    shouldDeleteToken: boolean;
+  };
+
+/// FCM hata yanıtından yanıta konabilecek kısa kodu çıkarır — saf, test edilir.
+///
+/// Neden: cron yanıtındaki `failures`'a ham FCM gövdesi (`rawText`) konuyordu;
+/// bu, Google'ın ayrıntı mesajlarını ve proje/servis hesabı ipuçlarını dışarı
+/// taşır (CLAUDE.md sunucu kuralı, 2026-09-23 denetimi L2). Teşhis için gereken
+/// tek şey FCM'in makine okunur kodu: önce `details[].errorCode`
+/// (`UNREGISTERED`, `QUOTA_EXCEEDED`…), yoksa `error.status`
+/// (`INVALID_ARGUMENT`…), o da yoksa `http_<durum>`. Yalnızca `[A-Z_]`
+/// kabul edilir — serbest metin hiçbir yoldan sızmasın.
+export function fcmHataKodu(rawText: string, httpStatus: number): string {
+  const kodMu = (v: unknown): v is string =>
+    typeof v === 'string' && /^[A-Z][A-Z_]{1,63}$/.test(v);
+  try {
+    const j = JSON.parse(rawText);
+    const err = j?.error;
+    if (Array.isArray(err?.details)) {
+      for (const d of err.details) {
+        if (kodMu(d?.errorCode)) return d.errorCode;
+      }
+    }
+    if (kodMu(err?.status)) return err.status;
+  } catch (_) { /* JSON değil — HTTP durumuna düş */ }
+  return `http_${httpStatus}`;
+}
 
 /// Tek bir cihaza görünür bildirim gönderir.
 ///
@@ -168,6 +202,7 @@ export async function sendFcmNotification({
   return {
     ok: false,
     rawText,
+    hataKodu: fcmHataKodu(rawText, response.status),
     // Silme kuralı iki kopyanın BİRLEŞİMİ: analyze-signals
     // `registration-token-not-registered`'a, brifing `INVALID_ARGUMENT`'a
     // bakıyordu; ikisi de FCM'in "bu token artık yok" deme biçimi.
