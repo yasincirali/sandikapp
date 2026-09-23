@@ -4256,6 +4256,18 @@ abstract class AppLocalizations {
   /// **'Bazı Varlıklar Eklenemedi'**
   String get someAssetsNotAdded;
 
+  /// No description provided for @bulkAddSavingProgress.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydediliyor {saved} / {total}'**
+  String bulkAddSavingProgress(int saved, int total);
+
+  /// No description provided for @bulkAddPartialResult.
+  ///
+  /// In tr, this message translates to:
+  /// **'{saved} varlık eklendi, {failed} varlık eklenemedi. Eklenemeyenler sepette duruyor; tekrar denersen yalnızca onlar eklenir.'**
+  String bulkAddPartialResult(int saved, int failed);
+
   /// No description provided for @clearCartConfirm.
   ///
   /// In tr, this message translates to:

@@ -500,7 +500,7 @@ class _Row extends ConsumerWidget {
                   // portföyde değildir (iki küme yapısal olarak ayrık).
                   SandikTappable(
                     semanticLabel: context.l10n.addToPortfolioSemantics(item.displayLabel),
-                    onTap: () => Navigator.push(
+                    onTap: () => pushGuarded(
                       context,
                       adaptiveRoute<void>(
                         builder: (_) => AddAssetScreen(

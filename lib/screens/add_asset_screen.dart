@@ -261,7 +261,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               // ekran da kapanır ve kullanıcı portföye ulaşır. Aksi halde
               // arkada boş kalan bu formda mahsur kalıyordu.
               onPressed: () async {
-                final added = await Navigator.of(context).push<bool>(
+                final added = await pushGuarded<bool>(
+                  context,
                   adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
                 );
                 if (added == true && context.mounted) {
@@ -1588,9 +1589,40 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── Save ───────────────────────────────────────────────────────────────────
 
+  // ## Neden tek bir bayrak kaydın TAMAMINI kapsıyor (2026-09-23 denetimi F14)
+  // Eskiden `saving` üç ayrı parçada açılıp kapanıyordu: fiyat çözümü
+  // (`fiyatCoz` kendi `finally`'sinde bayrağı İNDİRİYORDU), ardından
+  // korumasız şirket adı sorgusu, en son da insert. Ad sorgusu sürerken
+  // "Ekle" yeniden etkinleşiyor, ikinci dokunuş ikinci bir `_save` başlatıyor
+  // ve aynı varlık iki kez ekleniyordu. Artık bayrak doğrulamadan hemen
+  // sonra, ilk `await`'ten ÖNCE eşzamanlı açılır ve kayıt bitene kadar
+  // (başarıda ekran kapanana kadar) inmez; butonun `onPressed`'i de aynı
+  // bayrağa bağlı. Fiyat bu yüzden `fiyatCoz` yerine doğrudan `fiyatBul` ile
+  // çözülür — `fiyatCoz`'un bayrağı kendi indirmesi tam da açığın kaynağıydı.
   Future<void> _save() async {
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
+    _n.setSaving(true);
+    var sonu = _KayitSonu.kaldi;
+    try {
+      sonu = await _kaydet();
+    } finally {
+      // Ekran kapandıysa bayrak açık kalır: kapanış animasyonu boyunca buton
+      // yeniden basılabilir görünmesin. Dispose sonrası `ref` okunamaz.
+      if (mounted && sonu != _KayitSonu.kapandi) _n.setSaving(false);
+    }
+    // Premium'a geçildiyse aynı form üzerinde yeniden dene. Eskiden önce
+    // `Navigator.pop` ile form kapatılıp kayıt arka planda yeniden
+    // başlatılıyordu; başarılı kayıt sonundaki ikinci `pop` bu kez ALTTAKİ
+    // ekranı kapatabiliyordu. Yerinde denemek sonucu (`true`) da çağırana
+    // ulaştırır, Portföy sekmesine geçiş çalışır.
+    if (sonu == _KayitSonu.yenidenDene && mounted) {
+      CrashReporter.arkaPlan(_save(), reason: 'add_asset_screen._save');
+    }
+  }
 
+  /// `_save`'in gövdesi; `saving` bayrağı çağıran tarafından tutulur.
+  Future<_KayitSonu> _kaydet() async {
     final qty = _parse(_quantity.text)!;
     var price = _parse(_price.text) ?? 0.0;
 
@@ -1627,8 +1659,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       } else {
         notifier.add(item);
       }
-      if (mounted) Navigator.of(context).pop();
-      return;
+      if (!mounted) return _KayitSonu.kaldi;
+      Navigator.of(context).pop();
+      return _KayitSonu.kapandi;
     }
 
     // ── Fiyat çek (alış fiyatı boşsa) ──────────────────────────────────────
@@ -1640,8 +1673,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     AlarmAdayi? alarmAdayi;
     bool priceFallbackToSpot = false;
     if (price == 0.0 && ticker.isNotEmpty) {
-      final sonuc = await _n.fiyatCoz(ticker);
-      if (!mounted) return;
+      final sonuc = await fiyatBul(
+        lookup: ref.read(addAssetPriceLookupProvider),
+        ticker: ticker,
+        date: _addedDate,
+      );
+      if (!mounted) return _KayitSonu.kaldi;
       price = sonuc.price ?? 0.0;
       priceFromHistorical = sonuc.historical;
       priceFallbackToSpot = sonuc.fallbackToSpot;
@@ -1653,7 +1690,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         !ticker.startsWith('TEFAS:')) {
       try {
         final ad = await ref.read(addAssetPriceLookupProvider).companyName(ticker);
-        if (!mounted) return;
+        if (!mounted) return _KayitSonu.kaldi;
         if (ad != null) assetName = ad;
       } catch (_) {
         // Ad kozmetik; bulunamazsa aşağıda sembol ad olur.
@@ -1664,7 +1701,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       assetName = ticker.isNotEmpty ? ticker : context.l10n.assetFallbackName;
     }
 
-    _n.setSaving(true);
     try {
       if (_isEditing) {
         final a = widget.editingAsset!;
@@ -1735,19 +1771,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             );
       }
     } on AssetLimitExceededException catch (e) {
-      _n.setSaving(false);
-      if (!mounted) return;
-      // Analytics ve paywall provider tarafından zaten log'landı.
+      if (!mounted) return _KayitSonu.kaldi;
+      // Analytics ve paywall provider tarafından zaten log'landı. Paywall
+      // açıkken bayrak açık kalır; form arkada kilitli durur.
       final upgraded = await PaywallScreen.show(
         context,
         source: 'asset_limit_${e.limit}',
       );
-      if (upgraded == true && mounted) {
-        // Kullanıcı premium'a geçti — save'i yeniden dene.
-        Navigator.pop(context);
-        CrashReporter.arkaPlan(_save(), reason: 'add_asset_screen._save');
-      }
-      return;
+      // Kullanıcı premium'a geçti — `_save` bayrağı indirip yeniden dener.
+      return upgraded == true ? _KayitSonu.yenidenDene : _KayitSonu.kaldi;
     } catch (e, st) {
       // ## Neden genel bir catch
       // YOKTU. `onPressed: _save` bir `Future` döndürüyor ve kimse onu
@@ -1765,41 +1797,43 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       // ekrana "kayıt oldu" sinyali gönderiyor. Yutup devam etmek
       // başarısız kaydı başarı gibi gösterirdi.
       CrashReporter.report(e, st, reason: 'AddAssetScreen.save');
-      if (!mounted) return;
+      if (!mounted) return _KayitSonu.kaldi;
       sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
-      return;
-    } finally {
-      _n.setSaving(false);
+      return _KayitSonu.kaldi;
     }
-    if (mounted) {
-      // Tarihli fiyat çekimi yapıldıysa kullanıcıya bildir — atanan değer
-      // net görünsün, "güncel geldi sandım" hissi olmasın.
-      if (priceFromHistorical || priceFallbackToSpot) {
-        final fmt = qtyFormatter(maxDigits: 2);
-        final dateStr = DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
-        final msg = priceFromHistorical
-            ? '$dateStr kapanışı ${fmt.format(price)} $_currency olarak atandı'
-            : '$dateStr için geçmiş fiyat bulunamadı — güncel fiyat '
-                '${fmt.format(price)} $_currency atandı';
-        // Tarihli kapanış bulundu → başarı; bulunamadı → uyarı zemini.
-        sandikSnack(
-          context,
-          msg,
-          kind: priceFromHistorical
-              ? SandikSnackKind.success
-              : SandikSnackKind.warning,
-          duration: const Duration(seconds: 4),
-        );
-      }
-      // `true` ya da `AlarmAdayi`: çağıran (MainNavigationScreen) bunu
-      // "kayıt oldu" sinyali olarak kullanıp Portföy sekmesine geçer; aday
-      // geldiyse ayrıca "Alarm kur" eylemli bir bildirim gösterir. Sonuçsuz
-      // `pop` edilirse kullanıcı hangi sekmedeyse orada kalır ve eklediği
-      // varlığı göremez.
-      Navigator.pop(context, alarmAdayi ?? true);
+    if (!mounted) return _KayitSonu.kaldi;
+    // Tarihli fiyat çekimi yapıldıysa kullanıcıya bildir — atanan değer
+    // net görünsün, "güncel geldi sandım" hissi olmasın.
+    if (priceFromHistorical || priceFallbackToSpot) {
+      final fmt = qtyFormatter(maxDigits: 2);
+      final dateStr = DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
+      final msg = priceFromHistorical
+          ? '$dateStr kapanışı ${fmt.format(price)} $_currency olarak atandı'
+          : '$dateStr için geçmiş fiyat bulunamadı — güncel fiyat '
+              '${fmt.format(price)} $_currency atandı';
+      // Tarihli kapanış bulundu → başarı; bulunamadı → uyarı zemini.
+      sandikSnack(
+        context,
+        msg,
+        kind: priceFromHistorical
+            ? SandikSnackKind.success
+            : SandikSnackKind.warning,
+        duration: const Duration(seconds: 4),
+      );
     }
+    // `true` ya da `AlarmAdayi`: çağıran (MainNavigationScreen) bunu
+    // "kayıt oldu" sinyali olarak kullanıp Portföy sekmesine geçer; aday
+    // geldiyse ayrıca "Alarm kur" eylemli bir bildirim gösterir. Sonuçsuz
+    // `pop` edilirse kullanıcı hangi sekmedeyse orada kalır ve eklediği
+    // varlığı göremez.
+    Navigator.pop(context, alarmAdayi ?? true);
+    return _KayitSonu.kapandi;
   }
 }
+
+/// `_kaydet`'in sonucu: bayrağın inip inmeyeceğine ve yeniden denemeye
+/// `_save` karar verir (2026-09-23 denetimi F14).
+enum _KayitSonu { kapandi, kaldi, yenidenDene }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Hızlı / Toplu Giriş Sheet

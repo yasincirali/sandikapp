@@ -2430,6 +2430,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get someAssetsNotAdded => 'Bazı Varlıklar Eklenemedi';
 
   @override
+  String bulkAddSavingProgress(int saved, int total) {
+    return 'Kaydediliyor $saved / $total';
+  }
+
+  @override
+  String bulkAddPartialResult(int saved, int failed) {
+    return '$saved varlık eklendi, $failed varlık eklenemedi. Eklenemeyenler sepette duruyor; tekrar denersen yalnızca onlar eklenir.';
+  }
+
+  @override
   String get clearCartConfirm =>
       'Sepetteki tüm varlıklar silinecek. Emin misin?';
 

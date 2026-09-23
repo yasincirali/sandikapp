@@ -1552,6 +1552,28 @@
     }
   },
   "someAssetsNotAdded": "Bazı Varlıklar Eklenemedi",
+  "bulkAddSavingProgress": "Kaydediliyor {saved} / {total}",
+  "@bulkAddSavingProgress": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bulkAddPartialResult": "{saved} varlık eklendi, {failed} varlık eklenemedi. Eklenemeyenler sepette duruyor; tekrar denersen yalnızca onlar eklenir.",
+  "@bulkAddPartialResult": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
   "clearCartConfirm": "Sepetteki tüm varlıklar silinecek. Emin misin?",
   "pasteCsv": "CSV yapıştır",
   "cartEmpty": "Sepet boş",

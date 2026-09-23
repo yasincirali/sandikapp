@@ -283,7 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showLegalDoc(String title, List<LegalBlock> blocks, IconData icon) {
-    Navigator.push(
+    pushGuarded(
       context,
       adaptiveRoute<void>(
         builder: (_) =>
@@ -497,7 +497,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _bolumAc(SettingsBolum b) => Navigator.of(context).push(
+  void _bolumAc(SettingsBolum b) => pushGuarded(
+        context,
         adaptiveRoute<void>(builder: (_) => SettingsScreen(bolum: b)),
       );
 
@@ -555,7 +556,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 icon: Icons.notifications_active_outlined,
                 title: context.l10n.pushDiagnostics,
                 subtitle: context.l10n.pushDiagnosticsSubtitle,
-                onTap: () => Navigator.of(context).push(
+                onTap: () => pushGuarded(
+                  context,
                   adaptiveRoute<void>(
                     builder: (_) => const PushDiagnosticsScreen(),
                   ),
@@ -626,7 +628,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.tune_rounded,
               title: context.l10n.signalSettings,
               subtitle: context.l10n.signalNotificationsSubtitle,
-              onTap: () => Navigator.push(
+              onTap: () => pushGuarded(
                 context,
                 adaptiveRoute<void>(builder: (_) => const SignalSettingsScreen()),
               ),
@@ -661,7 +663,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ? context.l10n.alertSetFromAssetScreen
                     : '$aktif aktif alarm';
               }(),
-              onTap: () => Navigator.push(
+              onTap: () => pushGuarded(
                 context,
                 adaptiveRoute<void>(builder: (_) => const PriceAlertsScreen()),
               ),

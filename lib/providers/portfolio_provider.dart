@@ -14,6 +14,7 @@ import 'auth_provider.dart';
 import 'preferences_provider.dart';
 import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
+import '../utils/tr_format.dart';
 import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
 import '../services/fx_rate_migration_service.dart';
@@ -318,8 +319,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     if (sembol == null) return canli;
     final simdi = DateTime.now();
     final gun = addedDate ?? simdi;
-    final geriTarihli = DateTime(gun.year, gun.month, gun.day)
-        .isBefore(DateTime(simdi.year, simdi.month, simdi.day));
+    final geriTarihli = dayKey(gun).isBefore(dayKey(simdi));
     if (!geriTarihli && canli > 1.0) return canli;
     try {
       final r = await PriceService.instance.fetchHistoricalFxRate(sembol, gun);

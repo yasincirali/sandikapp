@@ -203,9 +203,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     CupertinoButton(
                       minimumSize: SandikTouch.minSize,
                       padding: EdgeInsets.zero,
-                      onPressed: () => Navigator.push(
+                      onPressed: () => pushGuarded(
                         context,
-                        CupertinoPageRoute<void>(
+                        adaptiveRoute<void>(
                             builder: (_) => const ComparisonScreen()),
                       ),
                       child: Container(
@@ -366,9 +366,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       pState: pState,
                                       baz: ref.watch(bazParaProvider),
                                       currentUserId: currentUserId,
-                                      onTap: (p) => Navigator.push(
+                                      // Ham `CupertinoPageRoute` + korumasız
+                                      // push: satıra hızlı iki dokunuş aynı
+                                      // detay ekranını iki kez açıyor, Android'de
+                                      // de iOS geçişi veriyordu (2026-09-23
+                                      // denetimi F21).
+                                      onTap: (p) => pushGuarded(
                                         context,
-                                        CupertinoPageRoute<void>(
+                                        adaptiveRoute<void>(
                                             builder: (_) => AssetDetailScreen(
                                                   asset: p.asDisplayAsset(),
                                                   showBackButton: true,

@@ -57,7 +57,7 @@ class _SoloHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _HeroShell(
-      onTap: () => Navigator.push(
+      onTap: () => pushGuarded(
         context,
         adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
       ),
@@ -345,7 +345,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   }
 
   void _openLeaderboard() {
-    Navigator.push(
+    pushGuarded(
       context,
       adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
     );

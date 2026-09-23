@@ -29,9 +29,14 @@ class BulkAddAssetScreen extends ConsumerStatefulWidget {
 class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
   bool _saving = false;
   int _saved = 0;
+  // İlerleme paydası kayıt başında sabitlenir: başarılı kalemler sepetten
+  // anında düştüğü için `items.length` kayıt sürerken küçülür ve
+  // "3 / 2" gibi saçma bir oran gösterirdi (2026-09-23 denetimi F13).
+  int _toplam = 0;
 
   Future<void> _openAddForm({BulkCartItem? existing}) async {
-    await Navigator.of(context).push(
+    await pushGuarded(
+      context,
       adaptiveRoute<void>(
         builder: (_) => AddAssetScreen(
           cartMode: true,
@@ -42,16 +47,29 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
   }
 
   Future<void> _saveAll() async {
+    // Buton `_saving`'e bağlı ama devre dışı hâli bir sonraki karede
+    // çizilir; aynı karedeki ikinci dokunuş ikinci bir toplu kayıt
+    // başlatmasın.
+    if (_saving) return;
     final items = ref.read(bulkCartProvider);
     if (items.isEmpty) return;
 
     setState(() {
       _saving = true;
       _saved = 0;
+      _toplam = items.length;
     });
 
     final failures = <String>[];
     final portfolio = ref.read(portfolioProvider.notifier);
+    // ## Neden kaydedilen kalem sepetten ANINDA düşüyor (2026-09-23 denetimi F13)
+    // Kısmi hatada sepet olduğu gibi kalıyordu; kullanıcı "tekrar dene"
+    // dediğinde (ya da premium'a geçip otomatik yeniden deneme çalıştığında)
+    // zaten kaydedilmiş kalemler İKİNCİ kez ekleniyordu. Artık her başarılı
+    // insert kendi kalemini sepetten siler; sepette yalnızca eklenemeyenler
+    // kalır ve yeniden deneme yalnızca onları dener. Notifier baştan alınır:
+    // sağlayıcı global (autoDispose değil), ekran kapansa bile yazılabilir.
+    final sepet = ref.read(bulkCartProvider.notifier);
     // Sözlük fiyat çekiminden ÖNCE çözülür: `context` async boşluğun ardında
     // kullanılamaz (`use_build_context_synchronously`).
     final l = context.l10n;
@@ -144,6 +162,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           unitType: item.unitType,
           addedDate: item.addedDate,
         );
+        sepet.remove(item.id);
         if (mounted) setState(() => _saved++);
       } on AssetLimitExceededException {
         limitHit = true;
@@ -153,21 +172,24 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       }
     }));
 
-    if (limitHit && mounted) {
-      setState(() => _saving = false);
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (limitHit) {
       final upgraded = await PaywallScreen.show(
         context,
         source: 'bulk_add_asset_limit',
       );
       if (upgraded == true && mounted) {
-        // Kullanıcı premium'a geçti — kalan item'ları tekrar dene.
+        // Kullanıcı premium'a geçti — sepette yalnızca eklenemeyenler
+        // kaldığı için yeniden deneme kaydedilenleri tekrar eklemez.
         CrashReporter.arkaPlan(_saveAll(), reason: 'bulk_add_asset_screen._saveAll');
+        return;
       }
-      return;
+      // Premium'a geçmediyse sessizce dönme: kaçının eklendiğini ve
+      // kalanların sepette beklediğini aşağıdaki özet söyler.
+      if (!mounted) return;
     }
-
-    if (!mounted) return;
-    setState(() => _saving = false);
 
     if (failures.isEmpty) {
       ref.read(bulkCartProvider.notifier).clear();
@@ -202,12 +224,15 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         }
       }
     } else {
+      // Kaç kalemin kaydedildiği ve eklenemeyenlerin sepette beklediği açıkça
+      // söylenir: kullanıcı yeniden denemenin kopya üretmeyeceğini bilmeli.
+      final ilkUc = failures.take(3).join('\n');
       await showSandikDialog(
         context: context,
         kind: SandikDialogKind.error,
-        title: context.l10n.someAssetsNotAdded,
-        message:
-            '${items.length - failures.length}/${items.length} eklendi.\n\nBaşarısız:\n${failures.take(3).join('\n')}',
+        title: l.someAssetsNotAdded,
+        message: '${l.bulkAddPartialResult(items.length - failures.length, failures.length)}'
+            '\n\n$ilkUc${failures.length > 3 ? '\n…' : ''}',
       );
     }
   }
@@ -238,7 +263,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
               IconButton(
                 tooltip: context.l10n.pasteCsv,
                 icon: const Icon(Icons.content_paste_go_rounded),
-                onPressed: () => Navigator.of(context).push(
+                onPressed: () => pushGuarded(
+                  context,
                   adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
                 ),
               ),
@@ -295,7 +321,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
+              onPressed: () => pushGuarded(
+                context,
                 adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
               ),
               icon: const Icon(Icons.content_paste_go_rounded, size: 18),
@@ -382,7 +409,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                           const CustomLoadingIndicator(size: 18),
                           const SizedBox(width: 12),
                           Text(
-                            'Kaydediliyor $_saved / ${items.length}',
+                            context.l10n.bulkAddSavingProgress(_saved, _toplam),
                             style: context.t.bodyLarge
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),

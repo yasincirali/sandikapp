@@ -105,7 +105,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// Kullanıcı belgeyi sonuna kadar kaydırıp "Okudum ve onaylıyorum" butonuna
   /// basınca dönüş `true` olur; checkbox otomatik işaretlenir.
   Future<void> _openTermsDoc() async {
-    final confirmed = await Navigator.push<bool>(
+    final confirmed = await pushGuarded<bool>(
       context,
       adaptiveRoute(
         builder: (_) => const LegalDocScreen(
@@ -128,7 +128,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   /// Açık Rıza (yurt dışı veri aktarımı) belgesini onay akışıyla aç.
   Future<void> _openConsentDoc() async {
-    final confirmed = await Navigator.push<bool>(
+    final confirmed = await pushGuarded<bool>(
       context,
       adaptiveRoute(
         builder: (_) => const LegalDocScreen(
@@ -181,8 +181,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       // Register success dialog → OTP ekranına push.
       // OTP ekranı verify sonrası authProvider'ı invalidate edip
       // popUntil first yapıyor; _AuthGate devralır.
-      await Navigator.of(context).push(
-        CupertinoPageRoute<void>(
+      await pushGuarded(
+        context,
+        adaptiveRoute<void>(
           builder: (_) => OtpVerificationScreen(email: emailForOtp),
         ),
       );

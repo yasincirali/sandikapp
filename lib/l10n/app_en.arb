@@ -1552,6 +1552,28 @@
     }
   },
   "someAssetsNotAdded": "Some Assets Could Not Be Added",
+  "bulkAddSavingProgress": "Saving {saved} / {total}",
+  "@bulkAddSavingProgress": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bulkAddPartialResult": "{saved} added, {failed} could not be added. The failed ones are still in the cart; trying again adds only those.",
+  "@bulkAddPartialResult": {
+    "placeholders": {
+      "saved": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
   "clearCartConfirm": "All assets in the cart will be removed. Are you sure?",
   "pasteCsv": "Paste CSV",
   "cartEmpty": "The cart is empty",
