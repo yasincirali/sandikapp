@@ -64,7 +64,7 @@ Deno.serve(async (req: Request) => {
     // Daveti çek
     const { data: invite, error: inviteErr } = await admin
       .from('partner_invites')
-      .select('id, from_user_id, to_user_id, used, expires_at, status')
+      .select('id, from_user_id, to_user_id, requester_name, used, expires_at, status')
       .eq('id', inviteId)
       .maybeSingle()
 
@@ -96,6 +96,18 @@ Deno.serve(async (req: Request) => {
 
     if (!invite.to_user_id) {
       return json({ error: 'no_target' }, 400)
+    }
+
+    // Hedefin kodu GERÇEKTEN girdiğinin tek kanıtı `redeem-invite-code`'un
+    // yazdığı `requester_name` + `status = 'pending'`. 0073'e kadar istemci
+    // `to_user_id`'yi kendisi yazabiliyordu; eski ya da elle yazılmış bir
+    // satırla onaysız ortaklık kurulmasın (2026-09-23 denetimi C1).
+    if (
+      invite.status !== 'pending' ||
+      typeof invite.requester_name !== 'string' ||
+      invite.requester_name.trim() === ''
+    ) {
+      return json({ error: 'not_redeemed' }, 409)
     }
 
     if (action === 'reject') {

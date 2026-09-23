@@ -995,6 +995,10 @@ class AuthService {
         return 'Davetin süresi dolmuş. Yeni bir kod üretmen gerekiyor.';
       case 'no_target':
         return 'Davet henüz kimseye gönderilmemiş.';
+      // Sunucu, kodu gerçekten girilmemiş (redeem edilmemiş) daveti onaylamaz
+      // (0073 / accept-invite C1 kapısı).
+      case 'not_redeemed':
+        return 'Bu davet henüz kod girilerek talep edilmemiş.';
       default:
         return isReject
             ? 'İptal işlemi tamamlanamadı. Tekrar dene.'
