@@ -2612,21 +2612,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionTimedOut =>
-      'You were signed out for safety. Turn on Face ID and this will not happen again.';
+      'You were signed out for safety. Turn on the lock in Settings › Privacy and this will not happen again.';
 
   @override
-  String get lockOfferTitle => 'Protect with Face ID';
+  String lockOfferTitle(String yontem) {
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Protect with Face ID',
+        'touchId': 'Protect with Touch ID',
+        'biyometrik': 'Protect with biometrics',
+        'other': 'Protect with your screen lock',
+      },
+    );
+    return '$_temp0';
+  }
 
   @override
   String get lockOfferBody =>
-      'Your portfolio lives in your pocket. With Face ID on, the app recognises you without getting in your way.';
+      'Your portfolio lives in your pocket. With the lock on, the app recognises you without getting in your way.';
 
   @override
   String get lockOfferBenefitStay => 'You stay signed in';
 
   @override
   String get lockOfferBenefitStayBody =>
-      'With the lock off, leaving the app for 10 minutes signs you out for safety and you have to enter your password again. With Face ID on, your session stays put.';
+      'With the lock off, leaving the app for 10 minutes signs you out for safety and you have to enter your password again. With the lock on, your session stays put.';
 
   @override
   String get lockOfferBenefitPush => 'Your alerts keep coming';
@@ -2640,10 +2651,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lockOfferBenefitPrivacyBody =>
-      'If someone else picks up your phone, your balances will not open without Face ID.';
+      'If someone else picks up your phone, your balances will not open until you verify it is you.';
 
   @override
-  String get lockOfferAccept => 'Turn on Face ID';
+  String lockOfferAccept(String yontem) {
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Turn on Face ID',
+        'touchId': 'Turn on Touch ID',
+        'biyometrik': 'Turn on biometric lock',
+        'other': 'Turn on app lock',
+      },
+    );
+    return '$_temp0';
+  }
 
   @override
   String get lockOfferDecline => 'Not now';

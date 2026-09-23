@@ -2607,21 +2607,32 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sessionTimedOut =>
-      'Güvenlik için oturumun kapatıldı. Face ID açarsan bir daha kapanmaz.';
+      'Güvenlik için oturumun kapatıldı. Ayarlar › Gizlilik\'ten kilidi açarsan bir daha kapanmaz.';
 
   @override
-  String get lockOfferTitle => 'Face ID ile koru';
+  String lockOfferTitle(String yontem) {
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Face ID ile koru',
+        'touchId': 'Touch ID ile koru',
+        'biyometrik': 'Biyometrik kilitle koru',
+        'other': 'Ekran kilidiyle koru',
+      },
+    );
+    return '$_temp0';
+  }
 
   @override
   String get lockOfferBody =>
-      'Portföyün cebinde. Face ID açarsan uygulama araya girmeden seni tanır.';
+      'Portföyün cebinde. Kilit açıkken uygulama araya girmeden seni tanır.';
 
   @override
   String get lockOfferBenefitStay => 'Oturumun kapanmaz';
 
   @override
   String get lockOfferBenefitStayBody =>
-      'Kilit kapalıyken uygulamayı 10 dakika bırakınca güvenlik için çıkış yapılıyor ve şifreni yeniden girmen gerekiyor. Face ID açıkken oturumun yerinde kalır.';
+      'Kilit kapalıyken uygulamayı 10 dakika bırakınca güvenlik için çıkış yapılıyor ve şifreni yeniden girmen gerekiyor. Kilit açıkken oturumun yerinde kalır.';
 
   @override
   String get lockOfferBenefitPush => 'Bildirimlerin kesilmez';
@@ -2635,10 +2646,21 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get lockOfferBenefitPrivacyBody =>
-      'Telefonun başkasının eline geçerse tutarların Face ID olmadan açılmaz.';
+      'Telefonun başkasının eline geçerse tutarların senin doğrulaman olmadan açılmaz.';
 
   @override
-  String get lockOfferAccept => 'Face ID\'yi aç';
+  String lockOfferAccept(String yontem) {
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Face ID\'yi aç',
+        'touchId': 'Touch ID\'yi aç',
+        'biyometrik': 'Biyometrik kilidi aç',
+        'other': 'Uygulama kilidini aç',
+      },
+    );
+    return '$_temp0';
+  }
 
   @override
   String get lockOfferDecline => 'Şimdi değil';

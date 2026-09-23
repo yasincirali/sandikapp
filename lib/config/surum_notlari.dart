@@ -107,7 +107,8 @@ const List<SurumNotu> surumNotlari = [
         ikon: YenilikIkonu.ayar,
         baslik: 'Giriş: artık şifre sormuyor',
         aciklama: 'Biyometrik kilidin açıksa uzun aradan sonra da çıkış '
-            'yapılmıyor, yalnızca kilitleniyor: Face ID ile giriyorsun. '
+            'yapılmıyor, yalnızca kilitleniyor: Face ID ya da parmak izinle '
+            'giriyorsun. '
             'Güncelleme sonrası da öyle. Oturumun kapanmadığı için fiyat '
             'alarmların ve günlük özetin kesintisiz geliyor. Kilit ekranına '
             '"Farklı hesapla giriş yap" eklendi; giriş sayfasında boş alana '
@@ -115,8 +116,9 @@ const List<SurumNotu> surumNotlari = [
       ),
       Yenilik(
         ikon: YenilikIkonu.ayar,
-        baslik: 'Face ID önerisi',
-        aciklama: 'Kilidi kapalıysan uygulama bir kez Face ID açmayı '
+        baslik: 'Kilit önerisi',
+        aciklama: 'Kilidi kapalıysan uygulama bir kez Face ID / parmak izi '
+            'kilidini açmayı '
             'öneriyor: neden işine yaradığını da anlatıyor. İstemezsen '
             '"Şimdi değil" diyebilirsin, sonra Ayarlar\'dan açılır.',
       ),

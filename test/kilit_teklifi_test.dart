@@ -35,12 +35,14 @@ void main() {
     WidgetTester tester, {
     VoidCallback? kabul,
     VoidCallback? ret,
+    KilitYontemi yontem = KilitYontemi.faceId,
   }) async {
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('tr', 'TR'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: LockOfferScreen(
+        yontem: yontem,
         onKabul: kabul ?? () {},
         onRet: ret ?? () {},
       ),
@@ -80,7 +82,7 @@ void main() {
       var kabul = false;
       await ekraniAc(tester, kabul: () => kabul = true);
 
-      await tester.tap(find.text(l.lockOfferAccept));
+      await tester.tap(find.text(l.lockOfferAccept('faceId')));
       await tester.pumpAndSettle();
       expect(kabul, isTrue);
     });
@@ -93,12 +95,12 @@ void main() {
       var ret = false;
       await ekraniAc(tester, kabul: () => kabul = true, ret: () => ret = true);
 
-      await tester.tap(find.text(l.lockOfferAccept));
+      await tester.tap(find.text(l.lockOfferAccept('faceId')));
       await tester.pumpAndSettle();
       expect(kabul, isFalse, reason: 'doğrulanmadan kilit açılmamalı');
       expect(ret, isFalse,
           reason: 'iptal "hayır" değil — kullanıcı fikrini değiştirebilir');
-      expect(find.text(l.lockOfferAccept), findsOneWidget,
+      expect(find.text(l.lockOfferAccept('faceId')), findsOneWidget,
           reason: 'ekranda kalmalı');
     });
 
@@ -108,7 +110,7 @@ void main() {
       var ret = false;
       await ekraniAc(tester, ret: () => ret = true);
 
-      await tester.tap(find.text(l.lockOfferAccept));
+      await tester.tap(find.text(l.lockOfferAccept('faceId')));
       await tester.pumpAndSettle();
       expect(ret, isTrue,
           reason: 'Face ID olmayan cihazda teklif ekranında kilitlenmemeli');
@@ -119,12 +121,51 @@ void main() {
       // (üretim çökmesi 2026-09-19): `try/finally` YAPISAL koruma.
       _SahteKilit.firlat = true;
       await ekraniAc(tester);
-      await tester.tap(find.text(l.lockOfferAccept));
+      await tester.tap(find.text(l.lockOfferAccept('faceId')));
       await tester.pumpAndSettle();
       final dugme =
           tester.widget<FilledButton>(find.byType(FilledButton));
       expect(dugme.onPressed, isNotNull,
           reason: 'hata sonrası tekrar denenebilmeli');
+    });
+  });
+
+  group('metin PLATFORMA göre (2026-09-24)', () {
+    // Android'de "Face ID ile koru" yazıyordu; iPhone SE'de de Face ID
+    // yok. Başlık ve düğme cihazın gerçek yöntemini söylemeli.
+    for (final (yontem, baslik, dugme) in [
+      (KilitYontemi.faceId, 'Face ID ile koru', "Face ID'yi aç"),
+      (KilitYontemi.touchId, 'Touch ID ile koru', "Touch ID'yi aç"),
+      (KilitYontemi.biyometrik, 'Biyometrik kilitle koru',
+          'Biyometrik kilidi aç'),
+      (KilitYontemi.ekranKilidi, 'Ekran kilidiyle koru',
+          'Uygulama kilidini aç'),
+    ]) {
+      testWidgets('${yontem.name}: "$baslik" / "$dugme"', (tester) async {
+        await ekraniAc(tester, yontem: yontem);
+        expect(find.text(baslik), findsOneWidget);
+        expect(find.text(dugme), findsOneWidget);
+      });
+    }
+
+    testWidgets('Android (biyometrik) ekranında "Face ID" GEÇMEZ',
+        (tester) async {
+      await ekraniAc(tester, yontem: KilitYontemi.biyometrik);
+      expect(find.textContaining('Face ID'), findsNothing);
+    });
+
+    test('yönteme bağlı olmayan metinler yöntem ADI taşımaz', () {
+      // Bu metinler her platformda aynı gösterilir; ad yalnızca
+      // `select`li başlık ve düğmede olabilir.
+      for (final m in [
+        l.lockOfferBody,
+        l.lockOfferBenefitStayBody,
+        l.lockOfferBenefitPrivacyBody,
+        l.sessionTimedOut,
+      ]) {
+        expect(m.contains('Face ID'), isFalse, reason: m);
+        expect(m.contains('Touch ID'), isFalse, reason: m);
+      }
     });
   });
 
@@ -138,6 +179,39 @@ void main() {
       expect(ret, isTrue);
       expect(_SahteKilit.cagrildi, isFalse,
           reason: 'reddeden kullanıcıya Face ID sorulmamalı');
+    });
+  });
+
+  group('kilitsiz cihazda teklif YOK (2026-09-24)', () {
+    test('kaynak: "available" biyometri DONANIMINA bakmaz', () {
+      // `canCheckBiometrics` = donanım var mı. Parmak izi okuyuculu ama
+      // ekran kilidi olmayan telefonda `true` dönüyor, teklif "aç"
+      // dedirtip "desteklemiyor" uyarısına düşürüyordu.
+      final kod = ekranKaynagiSync('lib/services/biometric_lock_service.dart')
+          .split('\n')
+          .where((s) => !s.trimLeft().startsWith('//'))
+          .join('\n');
+      expect(kod.contains('canCheckBiometrics'), isFalse);
+      expect(kod.contains('return await _auth.isDeviceSupported();'), isTrue);
+    });
+
+    test('kaynak: teklif kilit yöntemi BİLİNİNCE ve varsa gösterilir', () {
+      final tek =
+          ekranKaynagiSync('lib/main.dart').replaceAll(RegExp(r'\s+'), ' ');
+      expect(tek.contains('ref.watch(kilitYontemiProvider)'), isTrue);
+      expect(tek.contains('if (y != null) return _kilitTeklifi(user.id, y);'),
+          isTrue,
+          reason: 'yöntem null (cihazda kilit yok) ise ana ekrana geçilir');
+    });
+
+    test('kaynak: kilitsiz cihazda teklif DAMGALANMAZ', () {
+      // Kullanıcı sonradan ekran kilidi kurarsa teklifi görebilmeli;
+      // damga yalnızca ekrandaki kabul/ret ile yazılır.
+      final tek =
+          ekranKaynagiSync('lib/main.dart').replaceAll(RegExp(r'\s+'), ' ');
+      final kapi = tek.indexOf('ref.watch(kilitYontemiProvider)');
+      final dal = tek.substring(kapi, tek.indexOf('_kilitTeklifi(user.id, y)'));
+      expect(dal.contains('biometricLockOfferedProvider'), isFalse);
     });
   });
 
@@ -218,6 +292,10 @@ class _SahteKilit extends BiometricLockService {
 
   @override
   Future<bool> get available async => destekli;
+
+  @override
+  Future<KilitYontemi?> get yontem async =>
+      destekli ? KilitYontemi.faceId : null;
 
   @override
   Future<BiyometrikSonuc> authenticate({String reason = ''}) async {
