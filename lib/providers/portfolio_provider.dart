@@ -955,13 +955,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   Future<void> _saveSnapshot(PortfolioState s, {String userId = ''}) async {
     if (s.assets.isEmpty) return;
-    final categoryValues = <String, double>{};
-    for (final type in AssetType.values) {
-      final val = s.assets
-          .where((a) => a.type == type)
-          .fold<double>(0, (sum, a) => sum + s.toTRY(a.totalValue, a.currency));
-      if (val > 0) categoryValues[type.name] = val;
-    }
+    final categoryValues = snapshotKategoriDegerleri(s);
     await SupabaseService.instance
         .insertSnapshot(categoryValues, userId: userId);
   }
@@ -972,6 +966,25 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         sinceMs,
         userId: ref.read(authProvider).valueOrNull?.id,
       );
+}
+
+/// Günlük anlık görüntünün tür → TRY değeri haritası — saf, test edilir.
+///
+/// Ham lot defteri değil NET pozisyonlar: satış satırları, silinmiş
+/// lot'lar ve kapanmış pozisyonlar da `totalValue` taşıdığı için eski
+/// toplam bunları ekliyordu; yıllık özet ve "piyasadan %X" push'u bu
+/// anlık görüntülerden hesaplanıyor (2026-09-23 denetimi F12). Kural
+/// `PortfolioState.totalValue` ile aynı kaynaktan gelir.
+Map<String, double> snapshotKategoriDegerleri(PortfolioState s) {
+  final categoryValues = <String, double>{};
+  for (final position in aggregatePositionsByOwner(lotlarSahibeGore(s.assets))) {
+    final a = position.asDisplayAsset();
+    final val = s.toTRY(a.totalValue, a.currency);
+    if (val > 0) {
+      categoryValues[a.type.name] = (categoryValues[a.type.name] ?? 0) + val;
+    }
+  }
+  return categoryValues;
 }
 
 // ---------------------------------------------------------------------------
