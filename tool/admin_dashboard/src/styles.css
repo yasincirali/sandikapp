@@ -1,0 +1,284 @@
+/* sandık destek paneli — tema.
+ *
+ * Renkler lib/theme/sandik.dart'taki DARK paletten birebir alındı: panel
+ * uygulamayla aynı dili konuşsun ki ekran görüntüsü paylaşırken kafa
+ * karışmasın. Dark-only: destek paneline gece bakılır, ışık modu için
+ * ayrı kontrast denetimi yapmaya değmez. */
+
+:root {
+  --bg: #0a1e15;
+  --s1: #112e28;
+  --s2: #1a3d2e;
+  --t90: rgba(255, 255, 255, 0.882);
+  --t58: rgba(255, 255, 255, 0.549);
+  --t36: rgba(255, 255, 255, 0.58);
+  --t20: rgba(255, 255, 255, 0.42);
+  --gain: #3db77f;
+  --loss: #ff6b52;
+  --danger: #ff6b52;
+  --info: #4ea8de;
+  --amber: #f5a623;
+  --gold: #f5c842;
+  --on-amber: #112e28;
+  --hairline: rgba(255, 255, 255, 0.07);
+  --overlay: rgba(255, 255, 255, 0.045);
+
+  /* SandikSpace karşılığı — 4'ün katları. */
+  --sp1: 4px;
+  --sp2: 8px;
+  --sp3: 12px;
+  --sp4: 16px;
+  --sp5: 20px;
+  --sp6: 24px;
+  --sp8: 32px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+
+  --mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--t90);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* ── Yerleşim ────────────────────────────────────────────────────────── */
+
+.app {
+  display: grid;
+  grid-template-columns: 208px 1fr;
+  height: 100%;
+}
+
+.sidebar {
+  background: var(--s1);
+  border-right: 1px solid var(--hairline);
+  padding: var(--sp5) var(--sp3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp1);
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp2);
+  padding: 0 var(--sp2) var(--sp5);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.brand .dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--amber));
+}
+.brand small {
+  display: block; font-weight: 400; font-size: 11px; color: var(--t58);
+  letter-spacing: 0;
+}
+
+.nav-item {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp2);
+  padding: var(--sp2) var(--sp3);
+  border: 0; background: transparent;
+  border-radius: var(--r-sm);
+  text-align: left; cursor: pointer;
+  color: var(--t58);
+  transition: background 120ms ease, color 120ms ease;
+}
+.nav-item:hover { background: var(--overlay); color: var(--t90); }
+.nav-item.active { background: var(--s2); color: var(--t90); font-weight: 500; }
+.nav-item .badge {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--danger); color: #fff;
+  border-radius: 999px; padding: 1px 6px; min-width: 20px; text-align: center;
+}
+.nav-item.active .badge, .nav-item .badge.quiet {
+  background: var(--overlay); color: var(--t58);
+}
+
+.main { overflow-y: auto; padding: var(--sp6) var(--sp8) var(--sp8); }
+
+.topbar {
+  display: flex; align-items: center; gap: var(--sp3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp5);
+}
+.topbar h1 { margin: 0; font-size: 20px; letter-spacing: -0.02em; font-weight: 700; }
+.topbar .spacer { flex: 1; }
+
+/* ── Kontroller ──────────────────────────────────────────────────────── */
+
+.input, .select {
+  background: var(--s1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  padding: var(--sp2) var(--sp3);
+  outline: none;
+  min-width: 0;
+}
+.input:focus, .select:focus { border-color: var(--amber); }
+.input::placeholder { color: var(--t36); }
+
+.btn {
+  background: var(--s2); border: 1px solid var(--hairline);
+  border-radius: var(--r-sm); padding: var(--sp2) var(--sp4);
+  cursor: pointer; white-space: nowrap;
+  transition: background 120ms ease, opacity 120ms ease;
+}
+.btn:hover:not(:disabled) { background: var(--overlay); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn.primary {
+  background: var(--amber); color: var(--on-amber);
+  border-color: transparent; font-weight: 500;
+}
+.btn.ghost { background: transparent; }
+.btn.sm { padding: 2px var(--sp2); font-size: 12px; border-radius: 6px; }
+
+.seg { display: inline-flex; background: var(--s1); border-radius: var(--r-sm); padding: 2px; gap: 2px; }
+.seg button {
+  border: 0; background: transparent; color: var(--t58);
+  padding: var(--sp1) var(--sp3); border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+.seg button.on { background: var(--s2); color: var(--t90); font-weight: 500; }
+
+.check { display: inline-flex; align-items: center; gap: 6px; color: var(--t58); cursor: pointer; }
+
+/* ── Kart / tablo ────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--s1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  padding: var(--sp4);
+}
+.card > h2 {
+  margin: 0 0 var(--sp3);
+  font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--t58);
+}
+
+.grid { display: grid; gap: var(--sp3); }
+.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+@media (max-width: 1100px) {
+  .cols-4, .cols-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.stat .label { font-size: 12px; color: var(--t58); }
+.stat .value { font-family: var(--mono); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+.stat .sub { font-size: 11px; color: var(--t36); font-family: var(--mono); }
+.stat.warn .value { color: var(--amber); }
+.stat.bad .value { color: var(--loss); }
+.stat.good .value { color: var(--gain); }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; font-weight: 500; font-size: 11px;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--t36);
+  padding: var(--sp2) var(--sp3); border-bottom: 1px solid var(--hairline);
+  position: sticky; top: 0; background: var(--s1); z-index: 1;
+}
+td {
+  padding: var(--sp2) var(--sp3);
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: top;
+}
+tbody tr:hover { background: var(--overlay); }
+tbody tr.clickable { cursor: pointer; }
+tbody tr.sel { background: var(--s2); }
+.num { font-family: var(--mono); text-align: right; white-space: nowrap; }
+.mono { font-family: var(--mono); font-size: 12px; }
+.wrapcell { max-width: 460px; overflow-wrap: anywhere; }
+.nowrap { white-space: nowrap; }
+
+.scroll { max-height: 62vh; overflow: auto; }
+.scroll.tall { max-height: 74vh; }
+
+/* ── Rozetler ────────────────────────────────────────────────────────── */
+
+.pill {
+  display: inline-block; font-size: 11px; font-family: var(--mono);
+  padding: 1px 7px; border-radius: 999px;
+  background: var(--overlay); color: var(--t58); white-space: nowrap;
+}
+.pill.err { background: rgba(255, 107, 82, 0.16); color: var(--loss); }
+.pill.ok { background: rgba(61, 183, 127, 0.16); color: var(--gain); }
+.pill.warn { background: rgba(245, 166, 35, 0.16); color: var(--amber); }
+.pill.info { background: rgba(78, 168, 222, 0.16); color: var(--info); }
+
+.dim { color: var(--t36); }
+.muted { color: var(--t58); }
+.err-text { color: var(--loss); }
+.gain-text { color: var(--gain); }
+
+/* ── Durumlar ────────────────────────────────────────────────────────── */
+
+.empty { padding: var(--sp8); text-align: center; color: var(--t36); }
+.banner {
+  border-radius: var(--r-md); padding: var(--sp3) var(--sp4);
+  margin-bottom: var(--sp4); font-size: 13px;
+}
+.banner.err { background: rgba(255, 107, 82, 0.12); color: var(--loss); }
+.banner.warn { background: rgba(245, 166, 35, 0.12); color: var(--amber); }
+
+.spin {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--overlay); border-top-color: var(--amber);
+  animation: spin 700ms linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Giriş ekranı ────────────────────────────────────────────────────── */
+
+.login-wrap { display: grid; place-items: center; height: 100%; padding: var(--sp4); }
+.login {
+  width: 100%; max-width: 380px;
+  background: var(--s1); border: 1px solid var(--hairline);
+  border-radius: var(--r-lg); padding: var(--sp6);
+  display: flex; flex-direction: column; gap: var(--sp3);
+}
+.login h1 { margin: 0; font-size: 18px; }
+.login p { margin: 0; color: var(--t58); font-size: 13px; }
+
+/* ── Detay çekmecesi ─────────────────────────────────────────────────── */
+
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(620px, 92vw);
+  background: var(--s1); border-left: 1px solid var(--hairline);
+  padding: var(--sp5); overflow-y: auto; z-index: 20;
+  box-shadow: -24px 0 48px rgba(0, 0, 0, 0.4);
+}
+.drawer-head { display: flex; align-items: flex-start; gap: var(--sp3); margin-bottom: var(--sp4); }
+.drawer-head h2 { margin: 0; font-size: 16px; }
+.scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 19; }
+
+pre.json {
+  background: var(--bg); border: 1px solid var(--hairline);
+  border-radius: var(--r-sm); padding: var(--sp3);
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.5;
+  overflow-x: auto; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere;
+  max-height: 320px;
+}
+
+.kv { display: grid; grid-template-columns: 148px 1fr; gap: var(--sp2) var(--sp3); font-size: 13px; }
+.kv dt { color: var(--t58); }
+.kv dd { margin: 0; font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+
+.section-gap { margin-top: var(--sp5); }
