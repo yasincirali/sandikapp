@@ -525,7 +525,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     if (!asset.supportsDividend) return;
 
     final currentState = state.valueOrNull ?? const PortfolioState();
-    final fxRate = _fxRateForCurrency(asset.currency, currentState);
+    // Ödeme günü kuru — alımdaki kuralın aynısı (bkz. [_alisKuru]).
+    final fxRate = await _alisKuru(asset.currency, paidAt, currentState);
 
     final transaction = Asset(
       id: _uuid.v4(),
