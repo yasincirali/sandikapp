@@ -627,13 +627,30 @@ class AuthService {
 
   Future<void> logout() async {
     final uid = _client.auth.currentUser?.id;
-    await _log.log<void>(
-      source: 'AuthService.logout',
-      table: 'auth/sign-out',
-      op: 'RPC',
-      request: {},
-      call: () => _client.auth.signOut(),
-    );
+    try {
+      await _log.log<void>(
+        source: 'AuthService.logout',
+        table: 'auth/sign-out',
+        op: 'RPC',
+        request: {},
+        call: () => _client.auth.signOut(),
+      );
+    } catch (e, st) {
+      // Çevrimdışı çıkış yarıda kalıyordu (2026-09-23 denetimi F8): gotrue
+      // yerel oturumu siler, sonra ağ hatasını yeniden fırlatır. Hata
+      // yukarı çıkınca aşağıdaki temizlik (widget bakiyesi, Live Activity,
+      // çevrimdışı defter) HİÇ çalışmıyor, uygulama da "oturumlu ama
+      // oturumsuz" kalıyordu. Sunucudaki refresh token'ın iptali ağ
+      // gelince önemsizdir (süresi dolar); cihazdaki iz ise hemen silinmeli.
+      // Yerel kapsamlı çıkış ağa gitmez, oturumun cihazdan kalktığını
+      // garanti eder.
+      CrashReporter.report(e, st, reason: 'AuthService.logout (yerel çıkışa düşüldü)');
+      try {
+        await _client.auth.signOut(scope: SignOutScope.local);
+      } catch (_) {
+        // Yerel oturum zaten silinmiş olabilir — temizlik yine sürer.
+      }
+    }
     // Ana ekran widget'ındaki bakiye temizlenmeli: widget verisi cihaz
     // genelinde okunabilir bir depoda durur ve çıkış yapan kullanıcının
     // toplam varlığı ana ekranda asılı kalırdı.
