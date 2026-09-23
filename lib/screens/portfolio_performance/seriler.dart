@@ -287,7 +287,7 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       // 30 sn'de bir canlı fiyat çek — son noktanın Y değeri anlık portföy
       // toplamına oturur. refreshPrices bir sonraki portfolio state'ini
       // provider üzerinden yayar, ekran otomatik yeniden build olur.
-      _intradayTick = Timer.periodic(const Duration(seconds: 30), (_) {
+      _intradayTick = Timer.periodic(TazelikRitmi.yuzey, (_) {
         if (!mounted) return;
         ref.read(portfolioProvider.notifier).refreshPrices();
         _guncelle(() {

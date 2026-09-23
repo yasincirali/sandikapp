@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'tazelik_ritmi.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -127,7 +128,18 @@ class PriceService {
   /// görmemeli, ama ekranlar arası gidip gelme yeni istek doğurmamalı.
   /// (Sunucu tarafında `price_history_cache` zaten var; bu onun istemci
   /// karşılığı.)
-  static const _quoteTtl = Duration(seconds: 45);
+  /// **Ritim [TazelikRitmi.kotasyonOmru]'nden gelir (2026-09-23).**
+  ///
+  /// Eskiden 45 sn sabitti; yüzeyler 30 sn'de bir soruyordu ve oran tam
+  /// sayı olmadığı için üç tick'te bir tekrarlayan bir vuruş deseni
+  /// oluşuyordu (t=0 ağ, t=30 önbellek, t=60 önbellek, t=90 ağ...).
+  /// TTL sınırının iki yanına düşen iki soru farklı fiyat alıyordu:
+  /// bir ekranda altın ₺8.000, diğerinde ₺8.012.
+  ///
+  /// Aynı değere çekilince her tick önbelleği bayat bulur ve tazeler;
+  /// önbellek paylaşımlı olduğu için ağ trafiği ARTMAZ (ilk soran çeker,
+  /// diğerleri aynı turdan okur).
+  static const _quoteTtl = TazelikRitmi.kotasyonOmru;
   final Map<String, ({YahooQuote quote, DateTime at})> _quoteCache = {};
 
   /// Kullanıcı açıkça yenileme istediğinde (pull-to-refresh) çağrılır —

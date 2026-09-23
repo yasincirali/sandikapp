@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/daily_summary.dart';
+import 'package:portfoy_takip/services/tazelik_ritmi.dart';
 
 /// **Değişmez:** ana sayfa Bugün kartı ile Performans › Özet aynı kapsamda
 /// AYNI kâr/zararı göstermeli (kullanıcı bildirimi 2026-09-22: "ana sayfa
@@ -63,23 +64,38 @@ void main() {
         .replaceAll('\r\n', '\n')
         .replaceAll(RegExp(r'\s+'), ' ');
 
+    // **Değişti (2026-09-23):** ritim artık ham literal değil, tek
+    // kaynaktan (`TazelikRitmi.yuzey`) geliyor. Testin koruduğu DEĞER aynı
+    // — iki yüzey aynı pencereyi kullanmalı — ama artık YAZIMI değil
+    // KAYNAĞI doğruluyor: literal aramak, merkezi sabite geçişi sahte bir
+    // kırılma olarak gösterirdi.
     expect(
         src.contains(
-            'static const _seriTazelikPenceresi = Duration(seconds: 30);'),
+            'static const _seriTazelikPenceresi = TazelikRitmi.yuzey;'),
         isTrue,
-        reason: 'Performans tick\'i 30 sn — ayrışırsa iki yüzey farklı '
-            'yaşta seriye bakar');
+        reason: 'pencere TazelikRitmi\'nden okunmalı — kendi literalini '
+            'tanımlayan yüzey bir sonraki değişiklikte ayrışır');
     expect(src.contains('azamiYas: _seriTazelikPenceresi'), isTrue,
         reason: 'pencere tanımlanıp kullanılmazsa ölü koddur');
   });
 
-  test('Performans tick periyodu hâlâ 30 sn (parite dayanağı)', () {
+  test('Performans tick periyodu TEK KAYNAKTAN (parite dayanağı)', () {
     final src = File('lib/screens/portfolio_performance/seriler.dart')
         .readAsStringSync()
         .replaceAll('\r\n', '\n')
         .replaceAll(RegExp(r'\s+'), ' ');
-    expect(src.contains('Timer.periodic(const Duration(seconds: 30)'), isTrue,
-        reason: 'bu değer değişirse `_seriTazelikPenceresi` de değişmeli — '
-            'ikisi birlikte anlamlı');
+    expect(src.contains('Timer.periodic(TazelikRitmi.yuzey'), isTrue,
+        reason: 'tick ile `_seriTazelikPenceresi` AYNI sabitten gelmeli; '
+            'ikisi ayrı literal olursa sessizce ayrışabilirler');
+  });
+
+  test('iki yüzeyin penceresi FİİLEN eşit (kaynak metni değil, DEĞER)', () {
+    // Yukarıdaki ikisi kaynak metni tarıyor — yazım değişirse sahte
+    // kırılırlar. Bu test değerin kendisini ölçer: bu projede "kaynak
+    // doğru görünüyor ama davranış yanlış" sınıfı hatalar yaşandı.
+    expect(TazelikRitmi.yuzey, TazelikRitmi.temel,
+        reason: 'yüzey ritmi taban ritim olmalı');
+    expect(TazelikRitmi.hizali(TazelikRitmi.gunIciSeriOmru), isTrue,
+        reason: 'seri ömrü tabana hizalı değilse tickler faz kayar');
   });
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'tazelik_ritmi.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -392,7 +393,7 @@ class DailySummary {
   ///
   /// 5 dakika, hem veri çözünürlüğüyle (5 dk slot) hem de uygulamanın
   /// kendi grafiğindeki eşikle aynıdır.
-  static const _liveTailMaxLag = Duration(minutes: 5);
+  static const _liveTailMaxLag = TazelikRitmi.canliUcAzamiGecikme;
 
   /// Çizilen SEANS GÜNÜNDE portföye giren net nakit (TRY) — alım (+),
   /// satış (−).
@@ -568,7 +569,7 @@ class IntradaySeriesCache {
   /// 5 dakika, hem veri çözünürlüğüyle (5 dk slot) hem de Live Activity
   /// push döngüsünün periyoduyla (`0033_live_activity_cron.sql`) hizalı:
   /// daha sık çekmek push'a yansımayacağı için boşuna olur.
-  static const minInterval = Duration(minutes: 5);
+  static const minInterval = TazelikRitmi.gunIciSeriOmru;
 
   Map<int, double>? _series;
   DateTime? _fetchedAt;

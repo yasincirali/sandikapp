@@ -13,6 +13,7 @@
 // yalnızca sayıda, ikon yok — dört eşit ikonlu satır bir menü gibi
 // okunuyordu, hiyerarşi yoktu (kullanıcı ekran görüntüsü).
 import 'dart:async';
+import '../services/tazelik_ritmi.dart';
 import '../services/price_service.dart';
 
 import 'package:flutter/material.dart';
@@ -89,7 +90,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// Gün içi seri bundan eskiyse tazelenir — Performans ekranının tick
   /// periyoduyla AYNI (30 sn). İkisi ayrışırsa aynı kapsamda iki farklı
   /// kâr/zarar görünür (bkz. `_seriYukle`).
-  static const _seriTazelikPenceresi = Duration(seconds: 30);
+  static const _seriTazelikPenceresi = TazelikRitmi.yuzey;
 
   @override
   void initState() {

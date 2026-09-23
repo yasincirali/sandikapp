@@ -31,6 +31,7 @@
 // 45 sn'lik önbelleği ağa fiilen ~45 sn'de bir çıkarır. Fiyat gelmezse bant
 // HİÇ çizilmez (boş kabuk yer işgal etmez).
 import 'package:flutter/foundation.dart';
+import '../services/tazelik_ritmi.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -57,7 +58,7 @@ class PiyasaSeridi extends StatefulWidget {
 
   /// Yenileme aralığı — hero kartla aynı ritim (30 sn), seans dışında da
   /// zararsız (ön planda değilken poller durur).
-  static const yenilemeAraligi = Duration(seconds: 30);
+  static const yenilemeAraligi = TazelikRitmi.yuzey;
 
   /// Akış hızı (pt/sn). Bir tur (dört öğe ≈ 600pt) ~17 sn sürer: okumaya
   /// yetecek kadar yavaş, "canlı" hissettirecek kadar hızlı.
