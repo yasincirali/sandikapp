@@ -271,6 +271,24 @@ class PeriodSummaryService {
     return total;
   }
 
+  /// Grafik kartı ve tür dökümünün dönem içi akışı — TEK kural.
+  ///
+  /// [tabanMs] tabanın ölçüldüğü an (grafiğin pencere içindeki ilk dolu
+  /// noktası). Gün içinde kural [DailySummary.gunIciKatki] (ana sayfayla
+  /// aynı sayı), diğer dönemlerde [piyasaEtkisi] ile aynı damga sınırı.
+  /// İki kart bu kuralı ayrı ayrı yazıyordu (2026-09-24 kod incelemesi).
+  static double grafikKatkisi(
+    List<Asset> lotlar, {
+    required DateTime start,
+    required DateTime end,
+    required int tabanMs,
+    required bool intraday,
+  }) =>
+      intraday
+          ? DailySummary.gunIciKatki(lotlar,
+              acilisMs: tabanMs, seansGunu: start, now: end)
+          : netInflow(lotlar, start, end, startExclusiveMs: tabanMs);
+
   /// [start]…[end] penceresinde ödenen komisyon (TRY).
   ///
   /// Pencere kuralı [netInflow] ile AYNI olmak zorunda: iki sayı aynı
@@ -520,7 +538,13 @@ class PeriodSummaryService {
   ///
   /// [canliSon] verilirse son değer olarak O kullanılır — grafiğin sağ ucu
   /// canlı kotasyona sabitlendiği için "grafik başı ile sonu arasındaki
-  /// fark" budur. Sıfır/negatifse (ölçüm yok) serinin son değerine düşülür.
+  /// fark" budur. Sıfırsa iki anlamı var: elde açık pozisyon kalmadıysa
+  /// (hepsi satıldı) 0 bir ÖLÇÜMDÜR ve kullanılır; pozisyon varsa fiyat
+  /// bilinmiyordur, serinin son değerine düşülür. Eskiden her sıfır "ölçüm
+  /// yok" sayılıyordu: bugün her şeyini satan kullanıcıda uç satış öncesi
+  /// değerde kalıyor, satış geliri katkıdan düşülünce piyasa etkisi satış
+  /// tutarı kadar şişiyordu (ölçüldü: ≈+₺500 yerine +₺41.400 / %102,
+  /// 2026-09-24 kod incelemesi).
   ///
   /// Seri iki uç taşımıyorsa `null` — sayı uydurulmaz.
   static ({
@@ -543,7 +567,13 @@ class PeriodSummaryService {
         fromMs: start.millisecondsSinceEpoch,
         toMs: end.millisecondsSinceEpoch);
     if (u == null) return null;
-    final son = (canliSon != null && canliSon > 0) ? canliSon : u.last;
+    final son = (canliSon != null &&
+            (canliSon > 0 ||
+                (canliSon == 0 &&
+                    lotlar.isNotEmpty &&
+                    DailySummary.acikPozisyonYok(lotlar))))
+        ? canliSon
+        : u.last;
     final katki = netInflow(lotlar, start, end, startExclusiveMs: u.firstTs);
     final brut = son - u.first;
     return (
@@ -635,6 +665,7 @@ class PeriodSummaryService {
     String Function(String positionKey)? etiket,
     DateTime? pencereBaslangici,
     double? canliSon,
+    Map<AssetType, double>? canliDagilim,
   }) {
     // [canliSon]: dönemin sağ ucu olarak CANLI kapsam toplamı
     // (`DailySummary.kapsamToplami`). Pencere bugünde bitiyorsa verilmeli —
@@ -642,6 +673,9 @@ class PeriodSummaryService {
     // uç canlıya bağlanmazsa piyasa etkisi o alımların değeri kadar eksik
     // çıkar (2026-09-24; Grafik kartı ucunu zaten canlıya bağlıyor).
     // Geçmişte biten pencerede (TÜFE hizalaması) verilmez.
+    // [canliDagilim]: aynı canlı ucun türe göre dağılımı
+    // (`DailySummary.kapsamDagilimi`). Verilirse "dönem sonu" dağılımı ondan
+    // okunur; verilmezse son ölçülen slottan (bugünkü alımlar eksik).
     // [pencereBaslangici] verildiğinde takvimden TÜRETİLEN başlangıç
     // yerine o kullanılır. Tek çağıranı `RealReturnService`: TÜFE
     // karşılaştırmasında pencere endeksin son açıklanmış ayından gelir,
@@ -657,7 +691,9 @@ class PeriodSummaryService {
     // ── GÜNLÜK: ortak katmana DELEGE ────────────────────────────────────
     if (period.intraday && gunlukOzet != null) {
       final u = uclar(breakdown.total, fromMs: fromMs, toMs: toMs);
-      final katki = netInflow(assets, p.start, p.end);
+      // Katkı ortak katmanın DÜŞTÜĞÜ akıştır — ayrı hesaplanırsa köprü
+      // (başlangıç + katkı + piyasa = son) tutmaz (2026-09-24).
+      final katki = gunlukOzet.inflowTRY;
       return PeriodSummary(
         period: period,
         start: p.start,
@@ -755,6 +791,8 @@ class PeriodSummaryService {
       etiket: etiket ?? (k) => k,
     );
 
+    final donemEgrisi =
+        donemSerisi(breakdown.total, fromMs: fromMs, toMs: toMs);
     return PeriodSummary(
       period: period,
       start: p.start,
@@ -780,9 +818,16 @@ class PeriodSummaryService {
       temettuTRY: temettu,
       komisyonTRY: komisyon,
       dagilimBasi: _dagilim(breakdown.byType, pe.ilkTs),
-      dagilimSonu: _dagilim(breakdown.byType, pe.sonTs),
+      // Sonu ve eğri de rakamla AYNI uca bakar (2026-09-24 kod incelemesi):
+      // `sonTRY` canlıyken dağılım ve eğri son slotta kalıyordu.
+      dagilimSonu: canliDagilim == null
+          ? _dagilim(breakdown.byType, pe.sonTs)
+          : (canliDagilim.isEmpty ? null : canliDagilim),
       gunSayimi: gunSayimi(breakdown.total, fromMs: fromMs, toMs: toMs),
-      sparkline: donemSerisi(breakdown.total, fromMs: fromMs, toMs: toMs),
+      sparkline: [
+        ...donemEgrisi,
+        if (donemEgrisi.isNotEmpty && donemEgrisi.last != pe.son) pe.son,
+      ],
     );
   }
 

@@ -87,9 +87,12 @@ void main() {
       expect(
           // `firstX` 2026-09-23'te eklendi: dönem kartı katkıyı tabanın
           // ölçüldüğü andan sonra sayıyor (`piyasaEtkisi` kuralı).
-          tek.contains('({double first, double last, double firstX})? '
+          // `firstTs`/`intraday` 2026-09-24'te eklendi: taban anını eksen
+          // birimini bilen tek yer hesaplar. Üst sınır parametresi YOK.
+          tek.contains('({double first, double last, double firstX, int? firstTs})? '
               '_periodEndpoints( '
-              'List<TransactionSegment> segments, { DateTime? start, })'),
+              'List<TransactionSegment> segments, { DateTime? start, '
+              'bool intraday = false, })'),
           isTrue,
           reason: 'üst sınır geri gelirse canlı uç yeniden elenir');
       expect(tek.contains('if (s.x > ustX) break;'), isFalse,
@@ -117,10 +120,14 @@ void main() {
       final src =
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('_periodEndpoints(segments, start: start)'), isTrue,
+      expect(
+          tek.contains(
+              '_periodEndpoints(segments, start: start, intraday: intraday)'),
+          isTrue,
           reason: 'dönem değişim kartı');
       expect(
-          tek.contains('_periodEndpoints(segments, start: cizimBaslangici)'),
+          tek.contains('_periodEndpoints(segments, '
+              'start: cizimBaslangici, intraday: isIntraday)'),
           isTrue,
           reason: 'tür dökümü üst kartla AYNI tabandan beslenmeli');
     });
@@ -133,7 +140,9 @@ void main() {
       double? last;
       for (final s in spots) {
         if (s.x < 0) continue;
-        if (s.y <= 0) continue;
+        // Baştaki sıfırlar atlanır; ilk dolu noktadan sonraki sıfır bir
+        // ölçümdür (her şey satıldı, 2026-09-24).
+        if (first == null && s.y <= 0) continue;
         first ??= s.y;
         last = s.y;
       }
@@ -177,6 +186,19 @@ void main() {
       expect(last! - first!, -8000,
           reason: 'grafik artıda biterken kart EKSİ yazıyordu '
               '(ölçülen belirti: −₺5.875)');
+    });
+
+    test('her şey satıldıysa son nokta 0 — satış öncesi değer DEĞİL', () {
+      final spots = <({double x, double y})>[
+        (x: 0, y: 0), // veri yok
+        (x: 1, y: 30000),
+        (x: 7, y: 0), // bugün hepsi satıldı
+      ];
+      final u = uclar(spots)!;
+      expect(u.first, 30000);
+      expect(u.last, 0,
+          reason: 'satış geliri katkıdan düşülürken uç satış öncesinde '
+              'kalırsa piyasa etkisi satış tutarı kadar şişer');
     });
 
     test('dönem öncesi noktalar tabanı ÇEKMEZ', () {

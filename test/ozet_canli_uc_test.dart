@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
@@ -89,15 +91,19 @@ void main() {
     final kart = kod('lib/screens/portfolio_performance/tur_dokumu_karti.dart');
     expect(kart.contains('if (k > widget.tabanMs) break;'), isTrue,
         reason: 'dönem başı üst kartın taban anından okunmalı');
-    expect(kart.contains('widget.canliDeger?.call(suzgec)'), isTrue,
+    expect(kart.contains('widget.canliDeger?.call(lotlar)'), isTrue,
         reason: 'uç canlı olmalı — serinin son slotu bugünkü alımı içermez');
-    expect(kart.contains('startExclusiveMs: widget.tabanMs'), isTrue,
-        reason: 'katkı taban anından SONRASI için sayılmalı (çifte sayım)');
+    expect(kart.contains('PeriodSummaryService.grafikKatkisi('), isTrue,
+        reason: 'akış kuralı üst kartla TEK fonksiyon');
     final kartlar = kod('lib/screens/portfolio_performance/kartlar.dart');
-    expect(kartlar.contains('tabanMs: cizimBaslangici.millisecondsSinceEpoch'),
+    expect(kartlar.contains('tabanMs: ep.firstTs!'), isTrue);
+    expect(
+        kartlar.contains(
+            'canliDeger: (lotlar) => DailySummary.kapsamToplami(pState, lotlar)'),
         isTrue);
-    expect(kartlar.contains('canliDeger: (suzgec) => ownerScopedTotalValue('),
-        isTrue);
+    // Üst kart da aynı akış fonksiyonunu çağırır.
+    expect(
+        kartlar.split('PeriodSummaryService.grafikKatkisi(').length - 1, 1);
   });
 
   test('bugüne kadar süren her çağıran canlı ucu geçer', () {
@@ -106,20 +112,31 @@ void main() {
         .where((l) => !l.trimLeft().startsWith('//'))
         .join(' ')
         .replaceAll(RegExp(r'\s+'), ' ');
-    for (final yol in [
-      'lib/screens/portfolio_performance/kartlar.dart',
-      'lib/screens/portfolio_performance/ozet_yan_veri.dart',
-      'lib/widgets/bugun_karti.dart',
+    // Tüm `lib/` taranır — yeni bir çağıran eklendiğinde de unutulmasın
+    // (kod incelemesi 2026-09-24: isteğe bağlı parametre kolay atlanır).
+    // İstisnalar gerekçeli:
+    const istisna = {
+      // Pencere GEÇMİŞTE biter (TÜFE'nin son açıklanan ayı).
+      'lib/services/real_return_service.dart',
+      // Hiçbir yerde çağrılmayan eski bileşen (`kapsam_enflasyon_seridi_test`).
       'lib/widgets/weekly_summary_chip.dart',
-    ]) {
+    };
+    final dosyalar = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .map((f) => f.path.replaceAll(r'\\', '/'))
+        .where((y) => y.endsWith('.dart') && !istisna.contains(y));
+    var bulunan = 0;
+    for (final yol in dosyalar) {
       final s = kod(yol);
       final cagri = s.split('PeriodSummaryService.compute(').skip(1);
-      expect(cagri, isNotEmpty, reason: yol);
       for (final c in cagri) {
+        bulunan++;
         final govde = c.substring(0, c.indexOf(');'));
         expect(govde.contains('canliSon:'), isTrue,
             reason: '$yol: compute canlı uç almadan çağrılıyor');
       }
     }
+    expect(bulunan, greaterThanOrEqualTo(3));
   });
 }

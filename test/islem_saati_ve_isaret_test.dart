@@ -181,7 +181,7 @@ void main() {
       expect(s.contains('islemIsaretleri('), isTrue);
       expect(s.contains('lotDayIsSell'), isFalse,
           reason: 'çubuğa yapıştırma işlemi gece yarısına çekiyordu');
-      expect(s.contains('cizgiDegeri(cizgiSpots, t.x)'), isTrue,
+      expect(s.contains('cizgiDegeri(primarySpots, t.x)'), isTrue,
           reason: 'nokta çizgiden kopuk durunca "dışarıda" görünüyordu '
               '(kullanıcı bildirimi 2026-09-24 sabah)');
       expect(s.contains('crosshairDetailsBuilder: islemler.isEmpty'), isTrue,

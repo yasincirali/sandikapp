@@ -824,16 +824,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             ilkX: primarySpots.first.x,
                             sonX: primarySpots.last.x,
                           );
-                    // Çizgi tüm segmentlerden (kapalı piyasa kesikli
-                    // parçaları dahil) oluşur; işaret hangisine düşerse
-                    // onun üstünde durur. Spot'lar zaten `toY` uzayında.
-                    final cizgiSpots = [
-                      for (final seg in segments) ...seg.spots,
-                    ]..sort((a, b) => a.x.compareTo(b.x));
+                    // Varlık ekranının çizgisi TEK segmenttir
+                    // (`_convertHistoryToSegments`, eylemler.dart) ve
+                    // işaretler onun X aralığına kırpılır (`ilkX`/`sonX`),
+                    // yani değer her zaman vardır. Spot'lar `toY` uzayında.
                     final islemSpots = [
                       for (final t in islemler)
-                        FlSpot(t.x,
-                            cizgiDegeri(cizgiSpots, t.x) ?? toY(t.birim)),
+                        FlSpot(t.x, cizgiDegeri(primarySpots, t.x)!),
                     ];
 
                     // Y sınırlarını görünür X aralığındaki spot'lara göre
