@@ -25,7 +25,9 @@ import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
+import '../utils/islem_noktalari.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/spot_lookup.dart';
 import '../widgets/share_card.dart';
@@ -274,6 +276,9 @@ class _PortfolioPerformanceScreenState
   // kart bu sekmede HİÇ görünmüyordu.
   Future<PortfolioHistoryBreakdown>? _intradayFuture;
   String? _intradayKey;
+  // Son build'in gün içi listesi — memoize edilen future, fiyat turu ve
+  // kare beklendikten sonra taze defteri buradan okur (`_intradayHistory`).
+  List<Asset> _intradayAssets = const [];
   // Son başarılı intraday sonucu. Future yenilendiğinde (30 sn'lik tick veya
   // varlık kümesi değişimi) snapshot bir kare boyunca null olur; bu alan
   // sayesinde grafik o karede boşalmaz.
@@ -882,8 +887,10 @@ class _PortfolioPerformanceScreenState
   // karesinde) yeniden hesaplanıyordu: spot × varlık iç içe döngüsü, her
   // çift için `start.add(Duration(...))` ile DateTime üretimi. 365 nokta ve
   // 20 varlıkta kare başına 7.300 DateTime allocation demekti.
-  Set<double>? _buyDayKeysCache;
-  String? _buyDayKeysCacheKey;
+  // İşlem noktaları haritası (işaret + crosshair + hacim tek kaynak);
+  // bkz. `_islemNoktalari`.
+  Map<double, IslemNoktasi>? _islemNoktalariCache;
+  String? _islemNoktalariCacheKey;
 
 }
 

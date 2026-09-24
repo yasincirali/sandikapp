@@ -1327,6 +1327,29 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tradeVolumeUpper => 'İŞLEM HACMİ';
 
   @override
+  String crosshairNetBuy(String amount) {
+    return 'Net alım +$amount';
+  }
+
+  @override
+  String crosshairNetSell(String amount) {
+    return 'Net satış −$amount';
+  }
+
+  @override
+  String get crosshairNetFlat => 'Net değişim yok';
+
+  @override
+  String crosshairTxCount(int count) {
+    return '$count işlem';
+  }
+
+  @override
+  String crosshairBuySellDetail(String buy, String sell) {
+    return 'Alım $buy · Satış $sell';
+  }
+
+  @override
   String get performanceTitle => 'Performans';
 
   @override
@@ -2873,24 +2896,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String inflowIncludedNote(String amount, String market) {
-    return 'Bu dönemde $amount tutarında alım yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: $market.';
-  }
-
-  @override
-  String inflowExcludedNote(String amount) {
-    return 'Bu gün $amount tutarında alım yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.';
-  }
-
-  @override
-  String outflowExcludedNote(String amount) {
-    return 'Bu gün $amount tutarında satış yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.';
-  }
-
-  @override
-  String outflowIncludedNote(String amount, String market) {
-    return 'Bu dönemde $amount tutarında satış yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: $market.';
-  }
+  String get marketOnlyRow => 'Sadece piyasa etkisi';
 
   @override
   String rowExpandedSemantics(String label) {

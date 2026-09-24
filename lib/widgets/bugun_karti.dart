@@ -164,6 +164,30 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     setState(() => _seri = yeni);
   }
 
+  /// Bütçeyi aşan tur için tek bekleyici var mı? (bkz. [_turBitinceYukle])
+  bool _turBekleniyor = false;
+
+  /// Süren fiyat turu bitince (sınırsız değil: seri önbelleği ömrü kadar)
+  /// gün içi seriyi kurar — [_seriYukle] bütçesini aşan tur için.
+  ///
+  /// Nabız her 30 sn'de bunu yeniden isteyebilir; tek bekleyici yeter.
+  void _turBitinceYukle(PortfolioNotifier notifier) {
+    if (_turBekleniyor) return;
+    _turBekleniyor = true;
+    CrashReporter.arkaPlan(() async {
+      try {
+        await notifier.fiyatTurunuVeKareyiBekle(
+            enFazla: TazelikRitmi.gunIciSeriOmru);
+      } finally {
+        _turBekleniyor = false;
+      }
+      if (!mounted) return;
+      final yeni = await _seriYukle(nabiz: true);
+      if (!mounted || yeni == null) return;
+      setState(() => _seri = yeni);
+    }(), reason: 'BugunKarti.turBitinceYukle');
+  }
+
   @override
   void didUpdateWidget(BugunKarti oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -233,7 +257,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     ]);
     if (!mounted) return;
     setState(() {
-      _seri = sonuc[0] as Map<int, double>?;
+      // `?? _seri`: tur bütçeyi aşmışsa seri buradan null gelir ve
+      // `_turBitinceYukle` bu arada yazmış olabilir — ezilmesin.
+      _seri = sonuc[0] as Map<int, double>? ?? _seri;
       _reel = sonuc[1] as ReelGetiriSatiri?;
       _haftalik = sonuc[2] as double?;
       _yuklendi = true;
@@ -249,6 +275,32 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// Kapsam serisi doğrudan çekilir — aynı servis, aynı hesap, ayrı yuva.
   Future<Map<int, double>?> _seriYukle({bool nabiz = false}) async {
     try {
+      // Süren fiyat turu bitmeden ve turun defteri BU WIDGET'A inmeden
+      // seri KURULMAZ (2026-09-24).
+      //
+      // İki ayak: (1) soğuk açılışta `MainNavigationScreen`'in açılış turu
+      // ağdayken seri kurulursa altın/döviz gün başı referansı henüz
+      // yoktur, motor eski yola düşer; (2) tur bitse bile `widget.state`
+      // yeni defteri ancak bir sonraki karede taşır — hem açılışta hem
+      // nabızda seri bir tur önceki fiyatla kalibre ediliyordu. Gerekçe
+      // ve ölçümler `TazelikRitmi.turuBekle` / `turuVeKareyiBekle`. Süre
+      // kartın kendi yükleme bütçesi: asılı tur iskeleti 30 sn tutmamalı.
+      final notifier = ref.read(portfolioProvider.notifier);
+      await notifier.fiyatTurunuVeKareyiBekle(enFazla: _yuklemeSuresi);
+      if (!mounted) return null;
+      // Bütçe doldu ama tur HÂLÂ ağda: eski defterle seri KURULMAZ.
+      //
+      // Emülatörde ölçüldü (2026-09-24): açılış turu 27 sn sürdü, kart
+      // 10 sn'de eldeki (DB'den gelen, saatler önceki) fiyatla seriyi
+      // kurdu ve −₺6.317 yazdı; Performans turdan sonra −₺9.711. Bir
+      // sonraki nabızda eşitlendi — kullanıcının "kill sonrası farklı,
+      // 20-30 sn sonra eşit" bildirimi birebir bu. Eski fiyattan üretilen
+      // rakam bir ölçüm değil, uydurma sayıdır: hareket satırı tur bitene
+      // kadar BOŞ kalır, kartın kalanı çizilir, tur bitince satır gelir.
+      if (notifier.fiyatTuruSuruyor) {
+        _turBitinceYukle(notifier);
+        return null;
+      }
       if (!widget.kisisel) {
         // Seriye YALNIZCA fiyatlanabilir lot'lar girer — Performans
         // ekranıyla AYNI kural (`FiyatKaynagi.seriyeGirer`).

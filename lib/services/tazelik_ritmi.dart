@@ -124,6 +124,78 @@ abstract final class TazelikRitmi {
   /// varlık sebebi tam olarak o hizanın korunmasıdır.
   static bool hizali(Duration d) =>
       d.inMilliseconds % temel.inMilliseconds == 0;
+
+  /// Süren bir fiyat turu varsa bitmesini bekler — en fazla [enFazla].
+  ///
+  /// ## Neden (kullanıcı bildirimi, 2026-09-24, soğuk açılış)
+  /// *"Ana sayfa günlük ile Performans › grafik ve özet arasında, uygulama
+  /// kill edildikten sonraki ilk açılışta fark var."* Ölçüldü: Bugün kartı
+  /// −₺5.640 / %0,50, Performans −₺7.424 / %0,66 — aynı canlı uç, aynı
+  /// katkı, FARKLI gün başı (₺1.073.410'a karşı ₺1.075.195).
+  ///
+  /// Nabız yolu 2026-09-24'te "önce tek fiyat turu, SONRA dinleyiciler"
+  /// sırasına bağlandı ([TazelikNabzi.fiyatTuruBagla]); açılış yolu bu
+  /// sıranın dışında kalmıştı. Bugün kartı mount olur olmaz seriyi
+  /// çekiyor, `MainNavigationScreen`'in açılış turu ise aynı anda ağda.
+  /// Altın/döviz gün başı `PriceService.gunlukReferansFiyat`'tan gelir ve o
+  /// bellek YALNIZCA kotasyon çekilince dolar (diskten geri yüklenmez —
+  /// `_birincilYukle` yalnızca fiyatı taşır, yüzdeyi değil). Turdan önce
+  /// kurulan seri referansı bulamaz, eski çarpan yoluna düşer ve gün başı
+  /// Yahoo'nun ilk noktasından çıkar; Performans ise kullanıcı oraya
+  /// geçene kadar tur bitmiş olduğundan yurt içi referansı alır. Kart bir
+  /// sonraki nabızda (`zorla`) toparlanıyordu — yani fark ilk 30 sn'de
+  /// görünüp kayboluyordu; kullanıcı tam o pencereye bakıyordu.
+  ///
+  /// Kural: gün içi seriyi çeken HER yüzey (Bugün kartı, Performans GÜNLÜK,
+  /// varlık ekranı GÜNLÜK) önce süren turu bekler. Tur yoksa anında döner.
+  /// Asılı turda [enFazla] sonra eldeki fiyatla devam edilir — nabızdaki
+  /// "asılı tur yüzeyleri en fazla bir aralık bekletir" kuralının aynısı;
+  /// turun hatası da burada yutulur, sahibi (`refreshPrices`) raporlar.
+  /// Saf: bekleyecek future'ı çağıran verir (`PortfolioNotifier
+  /// .fiyatTurunuBekle`), böylece provider kurmadan sınanır.
+  static Future<void> turuBekle(Future<void>? suren,
+      {Duration enFazla = yuzey}) async {
+    if (suren == null) return;
+    try {
+      await suren.timeout(enFazla);
+    } catch (_) {
+      // Hata ve zaman aşımı aynı kapıya çıkar: eldeki fiyatla devam.
+    }
+  }
+
+  /// [turuBekle] + BİR KARE — `widget.state` üzerinden defter okuyan
+  /// yüzeyler için.
+  ///
+  /// ## Neden bir kare (emülatörde ölçüldü, 2026-09-24, ikinci tur)
+  /// Yalnızca turu beklemek yetmedi: kill sonrası açılışta kart yine
+  /// −₺6.129, Performans −₺7.424 gösterdi ve ~30 sn sonra eşitlendi.
+  ///
+  /// Tur bitince defteri yayınlar (`state = AsyncData(...)`); ama bu
+  /// yayın widget ağacına ancak BİR SONRAKİ KAREDE iner
+  /// (`didUpdateWidget`). `await`in devamı ise turun future'ı çözülür
+  /// çözülmez, o kareden ÖNCE koşar: `widget.state` hâlâ turdan önceki
+  /// kopyadır — soğuk açılışta DB'den gelen, saatler önceki fiyatlar.
+  /// Motor gün başını o fiyatlardan kalibre eder (`altinKalibrasyonu`,
+  /// `dovizUrunBirimi` → `a.currentPrice`), yani seri bir tur geride
+  /// kurulur. Nabız yolunda da aynı: dinleyiciler turun hemen ardından,
+  /// kare gelmeden çağrılır; piyasa açıkken kart her nabızda bir tur
+  /// önceki fiyatın gün başına bakıyordu — "bir süre farklı, sonra aynı,
+  /// sonra yine farklı" bildirimlerinin kalan ayağı. Piyasa kapalıyken
+  /// ikinci turdan itibaren fiyat değişmediği için fark 30 sn'de kayboldu.
+  ///
+  /// `endOfFrame` boşta bir kare PLANLAR (SDK), yani yayın olmasa da en
+  /// fazla bir kare beklenir. Provider'ı doğrudan okuyan yüzey (varlık
+  /// ekranı `_canli`) buna muhtaç değildir, [turuBekle] yeter.
+  static Future<void> turuVeKareyiBekle(Future<void>? suren,
+      {Duration enFazla = yuzey}) async {
+    await turuBekle(suren, enFazla: enFazla);
+    try {
+      // Arka planda kare gelmez; nabız zaten durur ama asılı kalınmasın.
+      await WidgetsBinding.instance.endOfFrame.timeout(yuzey);
+    } catch (_) {
+      // Kare gelmediyse eldeki defterle devam.
+    }
+  }
 }
 
 /// [TazelikRitmi.nabiz] — uygulama ömrünce tek sayac.

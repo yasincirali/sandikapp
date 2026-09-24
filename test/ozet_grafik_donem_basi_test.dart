@@ -213,46 +213,50 @@ void main() {
     });
   });
 
-  group('GÜNLÜK: ana sayfayla PARİTE (kullanıcı kararı 2026-09-23)', () {
-    // *"Aynı zamanda ana sayfa günlük kısmıyla da aynı olmalı."*
-    //
-    // Ana sayfa (`DailySummary`) nakit akışından ARINDIRILMIŞ rakam
-    // gösteriyor. Grafik kartı HAM birikim gösteriyordu ve alım yapılan
-    // günde ikisi ayrışıyordu — `TECHNICAL_DEBT.md`'de AÇIK duran madde.
-    // Karar: GÜNLÜK'te arındırılmış, diğer dönemlerde birikim.
-    test('GÜNLÜK arındırılmış, diğer dönemler HAM', () {
+  group('GÜNLÜK: ana sayfayla PARİTE (kullanıcı kararı 2026-09-24)', () {
+    // 2026-09-23: GÜNLÜK'te ana rakam arındırılmışa çevrilmişti ("ana
+    // sayfa günlük kısmıyla aynı olmalı"). 2026-09-24: kullanıcı kartı
+    // görüp geri aldı — *"total birikim değişimine alımlar bu ekranda
+    // eklenmeli; altına da bugün sadece piyasanın toplam portföye etkisi
+    // yazılmalı."* Parite artık ayrı satırda: "Sadece piyasa etkisi"
+    // ana sayfa Bugün kartı ve Özet ile aynı formül ve tabandır.
+    test('ana rakam her dönemde HAM birikim', () {
       final src =
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
+      expect(tek.contains('final change = grossChange;'), isTrue,
+          reason: 'başlık "birikim" diyorsa alımlar rakamın içinde olmalı');
+      expect(tek.contains('final pctBase = firstY;'), isTrue);
+    });
+
+    test('piyasa satırı ana sayfayla AYNI formül ve taban', () {
+      // `DailySummary.from`: piyasa = (son − ilk) − akış;
+      // taban = gün başı + POZİTİF akış.
+      final src =
+          ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
+      final tek = src.replaceAll(RegExp(r'\s+'), ' ');
+      expect(tek.contains('final piyasa = grossChange - netInflow;'), isTrue);
       expect(
           tek.contains(
-              'final change = intraday ? grossChange - netInflow : grossChange;'),
-          isTrue,
-          reason: 'GÜNLÜK ana sayfayla aynı rakamı vermeli');
-    });
-
-    test('yüzde tabanı da ana sayfayla AYNI', () {
-      // `DailySummary.from`: taban = gün başı + POZİTİF akış.
-      final src =
-          ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
-      final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(
-          tek.contains('intraday ? firstY + (netInflow > 0 ? netInflow : 0) '
-              ': firstY'),
+              'final piyasaPctBase = firstY + (netInflow > 0 ? netInflow : 0);'),
           isTrue,
           reason: 'tutar eşitlenip yüzde ayrışırsa çelişki sürer');
+      expect(tek.contains('context.l10n.marketOnlyRow'), isTrue,
+          reason: 'piyasa etkisi ayrı satır olarak yazılmalı');
     });
 
-    test('not satırı GÜNLÜKte İÇERMEZ der', () {
-      // Arındırılmış rakamın yanında "bu rakam alimi İÇERİR" yazmak
-      // doğrudan yanlış olurdu.
+    test('alt kat: Katkın + Sadece piyasa etkisi kalemleri, not yok', () {
+      // "Birikim = katkın + piyasa" yerleşimle anlatılır (2026-09-24,
+      // tasarım turu): iki eşit kalem, uzun not satırı kalktı.
       final src =
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('context.l10n.inflowExcludedNote('), isTrue);
-      expect(tek.contains('context.l10n.outflowExcludedNote('), isTrue);
-      // Diğer dönemlerde eski metin KALIR.
-      expect(tek.contains('context.l10n.inflowIncludedNote('), isTrue);
+      expect(tek.contains('etiket: context.l10n.yourContribution,'), isTrue);
+      expect(tek.contains('etiket: context.l10n.marketOnlyRow,'), isTrue);
+      expect(tek.contains('IncludedNote('), isFalse,
+          reason: 'not satırı kalktı, kalemler anlatıyor');
+      expect(tek.contains('ExcludedNote('), isFalse,
+          reason: 'ham rakamın yanında "içermez" yazmak yanlış olurdu');
     });
 
     test('formül: alım yapılan günde iki yüzey AYNI', () {
@@ -262,14 +266,15 @@ void main() {
       const son = 2680000.0;
       const akis = 100000.0;
 
-      final grafik = (son - ilk) - akis; // yeni formül
+      final grafik = (son - ilk) - akis; // "Sadece piyasa etkisi" satırı
       final anaSayfa = (son - ilk) - akis; // DailySummary
       expect(grafik, closeTo(anaSayfa, 0.01));
       expect(grafik, closeTo(10000, 0.01), reason: 'saf piyasa hareketi');
 
-      // ESKİ davranış: ₺110.000 (alım dahil) — ana sayfa ₺10.000 diyordu.
+      // Ana rakam (birikim): ₺110.000, alım dahil — 2026-09-24 kararıyla
+      // kartın başlığındaki rakam bu; piyasa satırı ₺10.000 der.
       expect(son - ilk, closeTo(110000, 0.01),
-          reason: 'ölçülen ayrışma: ₺100.000');
+          reason: 'birikim = piyasa + alım');
     });
 
     test('alım YAPILMAYAN günde davranış DEĞİŞMEDİ', () {

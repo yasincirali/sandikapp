@@ -219,6 +219,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// geçince uçlar da ayrışıyordu.
   Future<PortfolioHistoryBreakdown> _donemSerisi(List<Asset> defter, int days) {
     if (days == 0) {
+      // Tur beklemesi çağıranda (`_loadHistory`), defter kurulmadan önce.
       return HistoryService.instance
           .getPortfolioHistoryHourlyBreakdown(defter, 24);
     }
@@ -258,6 +259,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // CANLI görünüm: motor gün içi serinin ucunu (ve altında gün başını)
     // lot'un `currentPrice`'ından kurar; ekran açıldığı andaki kopya
     // (`widget.asset`) her nabızda bir tur daha bayatlardı.
+    //
+    // Süren fiyat turu `_canli` OKUNMADAN önce beklenir (2026-09-24):
+    // bildirimden soğuk açılan ekran açılış turunun ortasına düşer ve
+    // `_canli` o anki (DB'den gelen) fiyatı taşır. `_canli` provider'ı
+    // doğrudan okuduğu için kare beklemeye gerek yok — gerekçe
+    // `TazelikRitmi.turuBekle`.
+    await ref
+        .read(portfolioProvider.notifier)
+        .fiyatTurunuBekle(enFazla: TazelikRitmi.gunIciSeriOmru);
+    if (!mounted) return const {};
     final birim =
         await _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], days);
     if (mounted && sira == _yuklemeSirasi) {

@@ -2474,6 +2474,36 @@ abstract class AppLocalizations {
   /// **'İŞLEM HACMİ'**
   String get tradeVolumeUpper;
 
+  /// No description provided for @crosshairNetBuy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net alım +{amount}'**
+  String crosshairNetBuy(String amount);
+
+  /// No description provided for @crosshairNetSell.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net satış −{amount}'**
+  String crosshairNetSell(String amount);
+
+  /// No description provided for @crosshairNetFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net değişim yok'**
+  String get crosshairNetFlat;
+
+  /// No description provided for @crosshairTxCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} işlem'**
+  String crosshairTxCount(int count);
+
+  /// No description provided for @crosshairBuySellDetail.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alım {buy} · Satış {sell}'**
+  String crosshairBuySellDetail(String buy, String sell);
+
   /// No description provided for @performanceTitle.
   ///
   /// In tr, this message translates to:
@@ -4958,29 +4988,11 @@ abstract class AppLocalizations {
   /// **'{period} birikim değişimi'**
   String periodBalanceChange(String period);
 
-  /// No description provided for @inflowIncludedNote.
+  /// No description provided for @marketOnlyRow.
   ///
   /// In tr, this message translates to:
-  /// **'Bu dönemde {amount} tutarında alım yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.'**
-  String inflowIncludedNote(String amount, String market);
-
-  /// No description provided for @inflowExcludedNote.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu gün {amount} tutarında alım yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.'**
-  String inflowExcludedNote(String amount);
-
-  /// No description provided for @outflowExcludedNote.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu gün {amount} tutarında satış yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.'**
-  String outflowExcludedNote(String amount);
-
-  /// No description provided for @outflowIncludedNote.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu dönemde {amount} tutarında satış yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.'**
-  String outflowIncludedNote(String amount, String market);
+  /// **'Sadece piyasa etkisi'**
+  String get marketOnlyRow;
 
   /// No description provided for @rowExpandedSemantics.
   ///

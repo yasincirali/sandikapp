@@ -1326,6 +1326,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tradeVolumeUpper => 'TRADE VOLUME';
 
   @override
+  String crosshairNetBuy(String amount) {
+    return 'Net buy +$amount';
+  }
+
+  @override
+  String crosshairNetSell(String amount) {
+    return 'Net sell −$amount';
+  }
+
+  @override
+  String get crosshairNetFlat => 'No net change';
+
+  @override
+  String crosshairTxCount(int count) {
+    return '$count trades';
+  }
+
+  @override
+  String crosshairBuySellDetail(String buy, String sell) {
+    return 'Buy $buy · Sell $sell';
+  }
+
+  @override
   String get performanceTitle => 'Performance';
 
   @override
@@ -2880,24 +2903,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String inflowIncludedNote(String amount, String market) {
-    return 'You bought $amount in this period and the figure above INCLUDES it. Market move only: $market.';
-  }
-
-  @override
-  String inflowExcludedNote(String amount) {
-    return 'You bought $amount today; the figure above EXCLUDES it — it shows market movement only.';
-  }
-
-  @override
-  String outflowExcludedNote(String amount) {
-    return 'You sold $amount today; the figure above EXCLUDES it — it shows market movement only.';
-  }
-
-  @override
-  String outflowIncludedNote(String amount, String market) {
-    return 'You sold $amount in this period and the figure above INCLUDES it. Market move only: $market.';
-  }
+  String get marketOnlyRow => 'Market effect only';
 
   @override
   String rowExpandedSemantics(String label) {
