@@ -44,6 +44,8 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
+import 'crash_reporter.dart';
+
 /// Uygulamanın yenileme ritimleri — hepsi [temel]'in katı.
 abstract final class TazelikRitmi {
   const TazelikRitmi._();
@@ -142,6 +144,38 @@ class TazelikNabzi with WidgetsBindingObserver {
   Timer? _sayac;
   bool _gozlemciEkli = false;
 
+  /// Her nabızda dinleyicilerden ÖNCE koşan tek fiyat turu.
+  Future<void> Function()? _fiyatTuru;
+
+  /// Nabzın fiyat turunu bağlar — uygulamada TEK sahibi vardır
+  /// (`MainNavigationScreen`). Dönüş değeri bağı çözer.
+  ///
+  /// ## Neden (kullanıcı isteği, 2026-09-24)
+  /// *"Anasayfa günlük, varlık günlük performans, Performans günlük'te
+  /// grafik ve özet ... senkron şekilde yenilenmeliler."*
+  ///
+  /// Nabız yüzeyleri aynı ANDA uyandırıyordu ama fiyatı kimin tazelediği
+  /// belli değildi: turu yalnızca Performans ekranı, o da yalnızca GÜNLÜK
+  /// seçiliyken atıyordu. Performans başka dönemdeyken defterdeki fiyat
+  /// hiç tazelenmiyor; piyasa bandı ise kendi kotasyonunu her nabızda
+  /// çekiyordu — bantta bir altın fiyatı, Bugün kartında daha eskisi.
+  /// Varlık ekranı nabzı hiç dinlemiyordu.
+  ///
+  /// Şimdi sıra yapısal: önce fiyat turu (bitene kadar, en fazla bir
+  /// [aralik]), SONRA dinleyiciler. Her yüzey aynı turun fiyatını okur;
+  /// seriyi çeken yüzey de o turdan sonra çeker. Tur kotasyon önbelleğini
+  /// atlar: önbellek damgası ağ yanıtıyla atıldığı için ömrü nabızla eşit
+  /// olan önbellek her İKİNCİ nabızda hâlâ taze sayılıyor ve fiyat fiilen
+  /// 60 sn'de bir tazeleniyordu.
+  ///
+  /// Bağ sayacı BAŞLATMAZ — nabız, ona bakan bir yüzey varken atar.
+  VoidCallback fiyatTuruBagla(Future<void> Function() tur) {
+    _fiyatTuru = tur;
+    return () {
+      if (identical(_fiyatTuru, tur)) _fiyatTuru = null;
+    };
+  }
+
   /// Bu yüzey her nabızda [geriCagri]'yı çağırsın.
   ///
   /// İlk dinleyici geldiğinde sayac başlar. Dönüş değeri, çağıranın
@@ -178,7 +212,18 @@ class TazelikNabzi with WidgetsBindingObserver {
     }
   }
 
-  void _at() {
+  Future<void> _at() async {
+    final tur = _fiyatTuru;
+    if (tur != null) {
+      try {
+        // Asılı kalan tur yüzeyleri durdurmasın: en fazla bir aralık
+        // beklenir, sonra dinleyiciler eldeki fiyatla tazelenir.
+        await tur().timeout(aralik);
+      } catch (_) {
+        // Turun hatası sahibinde raporlanır (`refreshPrices`); burada
+        // yalnızca sıranın devam etmesi önemli.
+      }
+    }
     // Kopya üzerinde gezilir: bir dinleyici tepki olarak kendini
     // kaldırırsa (örn. `dispose`) koleksiyon döngü sırasında değişmesin.
     for (final d in _dinleyiciler.toList()) {
@@ -191,7 +236,8 @@ class TazelikNabzi with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       // Öne gelince HEMEN bir tur: arka planda geçen süre kadar bayat
       // rakam gösterilmemeli.
-      _at();
+      // `_at` hatayı kendi içinde yutar; yine de başıboş bırakılmaz.
+      CrashReporter.arkaPlan(_at(), reason: 'TazelikNabzi.resumed');
       _kur();
     } else {
       _sayac?.cancel();
@@ -199,9 +245,10 @@ class TazelikNabzi with WidgetsBindingObserver {
     }
   }
 
-  /// Testler için: nabzı elle at.
+  /// Testler için: nabzı elle at. Fiyat turu bağlı değilse dinleyiciler
+  /// eşzamanlı koşar; bağlıysa dönen future tur + dinleyicilerle biter.
   @visibleForTesting
-  void atForTest() => _at();
+  Future<void> atForTest() => _at();
 
   /// Testler için: kaylı dinleyici sayısı.
   @visibleForTesting

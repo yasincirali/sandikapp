@@ -297,12 +297,16 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       // Ana sayfa t=0'da, bu ekran t=12'de açıldıysa iki yüzey 12 saniye
       // farklı anın verisini gösteriyordu (bkz. `TazelikRitmi.nabiz`).
       //
-      // `refreshPrices` burada KALIR: fiyat turunu birinin başlatması
-      // gerekiyor ve `PortfolioNotifier` in-flight tekilleştirme yapıyor,
-      // yani iki yüzey aynı nabızda çağırsa bile tek ağ turu olur.
+      // `refreshPrices` artık burada ÇAĞRILMAZ (2026-09-24). Fiyat turu
+      // nabzın kendisine bağlı (`TazelikNabzi.fiyatTuruBagla`,
+      // `MainNavigationScreen`) ve dinleyicilerden ÖNCE biter: bu tick
+      // koştuğunda defter o turun fiyatını taşır, seri de onunla çekilir.
+      // Eskiden tur yalnızca bu ekran GÜNLÜK'teyken atılıyordu; ana sayfa
+      // ve varlık ekranı fiyatın tazelenmesini buranın dönem seçimine
+      // borçluydu. (Buradaki eski yorum "in-flight tekilleştirme var"
+      // diyordu; yoktu — `PortfolioNotifier._surenTur` ile eklendi.)
       _nabziBirak = TazelikRitmi.nabiz.dinle(() {
         if (!mounted) return;
-        ref.read(portfolioProvider.notifier).refreshPrices();
         _guncelle(() {
           // Memoize edilen intraday future'ı bilerek düşür — tick'in amacı
           // zaten seriyi tazelemek. Yeni future yüklenirken eski veri

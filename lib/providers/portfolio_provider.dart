@@ -19,6 +19,7 @@ import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
 import '../services/fx_rate_migration_service.dart';
 import '../services/portfolio_cache.dart';
+import '../services/tazelik_ritmi.dart';
 
 const _uuid = Uuid();
 
@@ -761,10 +762,55 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
   // ---- Price refresh -------------------------------------------------------
 
+  /// Süren fiyat turu — aynı anda gelen ikinci istek buna KATILIR.
+  ///
+  /// ## Neden (2026-09-24)
+  /// `seriler.dart`'taki yorum "PortfolioNotifier in-flight tekilleştirme
+  /// yapıyor" diyordu; yapmıyordu. Aynı nabızda iki yüzey çağırınca iki
+  /// ağ turu atılıyor ve GEÇ dönen tur, erken dönenin yazdığı daha taze
+  /// fiyatın üstüne kendi (daha eski) kotasyonunu yazabiliyordu —
+  /// `IntradaySeriesCache._surenFetch`'in kapattığı yarışın aynısı.
+  Future<void>? _surenTur;
+
+  /// Süren tur kotasyon önbelleğini atlıyor mu? Zorlamalı istek (pull-to-
+  /// refresh) önbellekten beslenen bir tura katılırsa bayat fiyat görür.
+  bool _surenTurZorla = false;
+
+  /// Nabız turlarında sunucuya en son ne zaman yazıldı (bkz. [_fiyatTuru]).
+  DateTime? _sonSunucuYazimi;
+
   /// [force] true iken fiyat önbelleği atlanır. Kullanıcı pull-to-refresh
-  /// yaptığında bayat fiyat görmemeli; ekran açılışlarında ise 45 sn'lik
-  /// önbellek gereksiz ağ trafiğini keser.
-  Future<void> refreshPrices({bool force = false}) async {
+  /// yaptığında bayat fiyat görmemeli; ekran açılışlarında ise kotasyon
+  /// önbelleği gereksiz ağ trafiğini keser.
+  ///
+  /// [nabiz] true ise tur ortak nabızdan (`TazelikRitmi.nabiz`) gelir:
+  /// önbellek atlanır (bkz. `TazelikNabzi.fiyatTuruBagla`), sunucu yazımı
+  /// seyreltilir ve sparkline önbelleği korunur.
+  Future<void> refreshPrices({bool force = false, bool nabiz = false}) async {
+    final zorla = force || nabiz;
+    final suren = _surenTur;
+    if (suren != null) {
+      if (!zorla || _surenTurZorla) return suren;
+      // Önbellekten beslenen tura katılmak zorlamalı isteği boşa
+      // çıkarırdı: bitmesini bekle, sonra kendi turunu at.
+      try {
+        await suren;
+      } catch (_) {
+        // Süren turun hatası onu çağıranındır; bu istek kendi turunu atar.
+      }
+      return refreshPrices(force: force, nabiz: nabiz);
+    }
+    final tur = _fiyatTuru(force: zorla, nabiz: nabiz);
+    _surenTur = tur;
+    _surenTurZorla = zorla;
+    try {
+      await tur;
+    } finally {
+      if (identical(_surenTur, tur)) _surenTur = null;
+    }
+  }
+
+  Future<void> _fiyatTuru({required bool force, required bool nabiz}) async {
     // Build henüz bitmediyse (ya da user null → boş state) — bekle. Aksi
     // halde eski/boş `s.assets`'i alıp await'ten sonra güncel state'in
     // üzerine sıfır yazma race'i oluşur (bkz. varlıkların bir görünüp
@@ -778,8 +824,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
     // Sparkline serileri gün-içinde değişmediği için süresiz cache'lenir;
     // kullanıcı bilerek yenilediğinde (pull-to-refresh) tazelenmeli — aksi
-    // halde gün dönse bile dünkü eğri kalırdı.
-    SparklineService.instance.clear();
+    // halde gün dönse bile dünkü eğri kalırdı. Nabız turu kullanıcının
+    // isteği değildir: 30 sn'de bir düşürmek her kartı yeniden çektirirdi.
+    if (!nabiz) SparklineService.instance.clear();
 
     final symbols = <String>{'USDTRY=X', 'EURTRY=X', 'GBPTRY=X'};
     // Gram altın kuru yalnızca baz birim altınsa istenir: altın tutmayan
@@ -865,7 +912,22 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       // Sunucuya yazma ekranı BEKLETMEZ ama BAŞIBOŞ da bırakılmaz —
       // bkz. [_fiyatlariYaz].
-      _fiyatlariYaz(fiyatiDegisenler);
+      //
+      // Nabız turunda SEYRELTİLİR (2026-09-24). Fiyat turu artık her ön
+      // yüz nabzında atılıyor (eskiden yalnızca Performans GÜNLÜK açıkken);
+      // her 30 sn'de varlık başına UPDATE ve yeni bir anlık görüntü satırı
+      // sunucuya boşuna yük olurdu. Sunucudaki fiyatı okuyan yüzeyler (ana
+      // ekran widget'ı, ortak, Live Activity) zaten 5 dk'lık push
+      // döngüsüyle çalışıyor (`TazelikRitmi.gunIciSeriOmru`); yazım o
+      // ritme iner. Ekrandaki değer bellekte her turda günceldir.
+      final sunucuyaYaz = !nabiz ||
+          _sonSunucuYazimi == null ||
+          DateTime.now().difference(_sonSunucuYazimi!) >=
+              TazelikRitmi.gunIciSeriOmru;
+      if (sunucuyaYaz) {
+        _sonSunucuYazimi = DateTime.now();
+        _fiyatlariYaz(fiyatiDegisenler);
+      }
 
       // Ortak varlıkları sadece okunur (RLS) — fiyatları bellekte güncelliyoruz
       for (final assets in partnerAssetsMap.values) {
@@ -911,9 +973,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // DB'den yeniden çeker ve yukarıda uygulanan canlı fiyatları geri alır.
       // Fiyatlanmış liste zaten `setAssets` ile yazıldı.
 
-      // Snapshot kaydet
-      final userId = ref.read(authProvider).valueOrNull?.id ?? '';
-      await _saveSnapshot(finalState, userId: userId);
+      // Snapshot kaydet — nabız turunda fiyat yazımıyla aynı seyreltme.
+      if (sunucuyaYaz) {
+        final userId = ref.read(authProvider).valueOrNull?.id ?? '';
+        await _saveSnapshot(finalState, userId: userId);
+      }
 
       // NOT: Teknik sinyal analizi burada tetiklenmez. `refreshPrices` her
       // ekran açılışında/pull-to-refresh'te çağrıldığı için burada

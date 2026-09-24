@@ -562,7 +562,8 @@ void main() {
 
     test('varlık ekranı BİRİM seriyi çizer, bölmez', () {
       final s = tek('lib/screens/asset_detail_screen.dart');
-      expect(s.contains('FiyatKaynagi.birimVarlik(widget.asset)'), isTrue);
+      // Canlı görünümden (2026-09-24, `_canli`): açılış kopyası donuyordu.
+      expect(s.contains('FiyatKaynagi.birimVarlik(_canli.asset)'), isTrue);
       expect(s.contains('miktarDamgada'), isFalse,
           reason: 'bölen kaldırıldı — motorun kapısını ekranda yeniden '
               'kurmak ayrışma üretiyordu');

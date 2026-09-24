@@ -382,12 +382,36 @@ double altinKalibrasyonu({
 ///
 /// [gunlukPct] yoksa `null` döner — çağıran eski çarpan yoluna düşer
 /// (uydurma yok, bkz. bu dosyanın (3) numaralı sözleşmesi).
+///
+/// ## [referansTRY]: gün başı AYNI kotasyondan (2026-09-24)
+/// *"Anasayfa günlük, varlık günlük performans, Performans günlük'te
+/// grafik ve özet kısmı her varlık tipi için birbirleriyle aynı kaynaktan
+/// tutarlı değerleri göstermeli."*
+///
+/// `ilk = canlı ÷ (1 + yüzde)` ancak ikisi AYNI kotasyondan geldiğinde
+/// doğrudur. Motor ise canlıyı lot'un `currentPrice`'ından (defter —
+/// yalnızca `refreshPrices` yazar), yüzdeyi `PriceService`'in oturum
+/// belleğinden okuyordu (her `fetchQuotes` yazar; piyasa bandı gram altını
+/// 30 sn'de bir çeker). Bant yüzdeyi tazeleyip defter tazelenmediğinde
+/// gün başı `eskiFiyat ÷ (1 + yeniYüzde)` oluyordu: günün tüm hareketi
+/// kadar yanlış ve seriyi HANGİ ANDA çeken yüzeye göre farklı. Aynı
+/// altın ana sayfada, Performans'ta ve varlık ekranında üç ayrı gün başı
+/// alıyordu.
+///
+/// Verilirse gün başı doğrudan budur (`PriceService.gunlukReferansFiyat`,
+/// kotasyon yazılırken fiyat ve yüzdesinden BİRLİKTE hesaplanır); uç
+/// `canliBirimTRY` kalır. Seriyi hangi yüzey hangi anda çekerse çeksin
+/// gün başı aynıdır.
 ({double ilk, double son})? altinUrunUclari({
   required double canliBirimTRY,
   required double? gunlukPct,
+  double? referansTRY,
 }) {
   if (canliBirimTRY <= 0 || !canliBirimTRY.isFinite) return null;
   if (gunlukPct == null || !gunlukPct.isFinite) return null;
+  if (referansTRY != null && referansTRY > 0 && referansTRY.isFinite) {
+    return (ilk: referansTRY, son: canliBirimTRY);
+  }
   final taban = 1 + gunlukPct / 100.0;
   // −%100 ya da daha beter: bölme tanımsız/anlamsız olur.
   if (taban <= 0.01) return null;

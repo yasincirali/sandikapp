@@ -1571,6 +1571,8 @@ class HistoryService {
               ? altinUrunUclari(
                   canliBirimTRY: a.currentPrice,
                   gunlukPct: PriceService.instance.gunlukDegisimPct(a.ticker),
+                  referansTRY:
+                      PriceService.instance.gunlukReferansFiyat(a.ticker),
                 )
               : null;
           if (uc != null && goldIlkSlot != null && goldSonSlot != null) {
@@ -1726,6 +1728,10 @@ class HistoryService {
                       canliBirimTRY: a.currentPrice,
                       gunlukPct:
                           PriceService.instance.gunlukDegisimPct(a.ticker),
+                      // Gün başı yüzdeyle AYNI kotasyondan — defterdeki
+                      // fiyat bir tur geride kalsa bile (bkz. `referansTRY`).
+                      referansTRY:
+                          PriceService.instance.gunlukReferansFiyat(a.ticker),
                     )
                   : null;
               if (uclar != null && goldIlkSlot != null && goldSonSlot != null) {

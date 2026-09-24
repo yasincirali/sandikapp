@@ -330,8 +330,14 @@ void main() {
     test('günlük yüzde kaynaktan SAKLANIYOR', () {
       final src = ekranKaynagiSync('lib/services/price_service.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('_gunlukDegisimPct[e.key] = d;'), isTrue,
+      expect(
+          tek.contains(
+              '_gunlukYaz(e.key, p, e.value.regularMarketChangePercent);'),
+          isTrue,
           reason: 'saklanmazsa hizalama yapılamaz');
+      // Yüzde ve gün başı AYNI kotasyondan birlikte yazılır (2026-09-24).
+      expect(tek.contains('_gunlukDegisimPct[s] = pct;'), isTrue);
+      expect(tek.contains('_gunlukReferans[s] = fiyat / taban;'), isTrue);
       expect(tek.contains('double? gunlukDegisimPct(String symbol)'), isTrue);
     });
   });
