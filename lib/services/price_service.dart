@@ -245,6 +245,26 @@ class PriceService {
   /// gerçekten ÖLÇÜLMÜŞ değerleri taşır.
   final Map<String, double> _gunlukDegisimPct = {};
 
+  /// Sembol → günlük yüzdenin ölçüldüğü GÜN BAŞI fiyatı.
+  ///
+  /// Kotasyon yazılırken `fiyat ÷ (1 + yüzde)` olarak, aynı kotasyonun İKİ
+  /// alanından birlikte hesaplanır. Sonradan birleştirmek (defterdeki
+  /// fiyat + bellekteki yüzde) iki farklı anın verisini karıştırır —
+  /// gerekçe `altinUrunUclari` › `referansTRY`.
+  final Map<String, double> _gunlukReferans = {};
+
+  /// [symbol]'ün günlük yüzdesinin ölçüldüğü gün başı fiyatı — yoksa `null`.
+  double? gunlukReferansFiyat(String symbol) =>
+      _gunlukReferans[symbol.trim().toUpperCase()];
+
+  /// Aynı kotasyonun fiyatı ve yüzdesinden gün başını yazar.
+  void _gunlukYaz(String s, double fiyat, double? pct) {
+    if (pct == null || !pct.isFinite) return;
+    _gunlukDegisimPct[s] = pct;
+    final taban = 1 + pct / 100.0;
+    if (taban > 0.01 && fiyat > 0) _gunlukReferans[s] = fiyat / taban;
+  }
+
   /// Testler için: bir kotasyonu ağa çıkmadan oturum belleğine yazar.
   ///
   /// Gün içi altın motoru ürün bazlı yolu bu bellekten karar veriyor
@@ -255,7 +275,7 @@ class PriceService {
   void testIcinKotasyonYaz(String symbol, double fiyat, {double? gunlukPct}) {
     final s = symbol.trim().toUpperCase();
     _sonBilinenFiyat[s] = fiyat;
-    if (gunlukPct != null) _gunlukDegisimPct[s] = gunlukPct;
+    _gunlukYaz(s, fiyat, gunlukPct);
   }
 
   /// Testler için: oturum belleğini sıfırlar (disk değil).
@@ -264,6 +284,7 @@ class PriceService {
     _sonBilinenFiyat.clear();
     _sonKaynak.clear();
     _gunlukDegisimPct.clear();
+    _gunlukReferans.clear();
     _birincilYukleme = null;
   }
 
@@ -476,8 +497,7 @@ class PriceService {
         _sonBilinenFiyat[e.key] = p;
         // Günlük yüzde de saklanır — grafik serisinin uçlarını ÜRÜNÜN
         // kendi hareketine oturtmak için (bkz. `gunlukDegisimPct`).
-        final d = e.value.regularMarketChangePercent;
-        if (d != null && d.isFinite) _gunlukDegisimPct[e.key] = d;
+        _gunlukYaz(e.key, p, e.value.regularMarketChangePercent);
       }
     }
     // Birincil kaynaktan bir şey geldiyse kalıcı belleği tazele.

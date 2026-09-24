@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -35,6 +36,7 @@ import '../models/signal_alert.dart';
 import '../providers/signal_provider.dart';
 import '../models/asset_categories.dart';
 import '../services/tefas_service.dart';
+import '../services/tazelik_ritmi.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../providers/price_alert_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
@@ -186,6 +188,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
+    _nabziBirak = TazelikRitmi.nabiz.dinle(_nabizGeldi);
   }
 
   /// Seçili dönemin BAŞLANGICI — Performans ekranıyla AYNI pencere.
@@ -252,8 +255,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// katkıda sayıldı.
   Future<Map<int, double>> _loadHistory(int days) async {
     final sira = ++_yuklemeSirasi;
+    // CANLI görünüm: motor gün içi serinin ucunu (ve altında gün başını)
+    // lot'un `currentPrice`'ından kurar; ekran açıldığı andaki kopya
+    // (`widget.asset`) her nabızda bir tur daha bayatlardı.
     final birim =
-        await _donemSerisi([FiyatKaynagi.birimVarlik(widget.asset)], days);
+        await _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], days);
     if (mounted && sira == _yuklemeSirasi) {
       if (days == 0) _gunIciBaslangic = birim.seansGunu;
       if (birim.total.isNotEmpty) _lastHistory = birim.total;
@@ -270,14 +276,93 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// gram daha alınınca −%0,78'lik gün −%50 görünüyordu). Lot listesi yoksa
   /// birleşik varlığa düşülür — uydurma yok.
   List<Asset> get _seriDefteri {
-    final lots = widget.lots;
-    if (lots == null || lots.isEmpty) return [widget.asset];
+    final canli = _canli;
+    final lots = canli.lots;
+    if (lots.isEmpty) return [canli.asset];
     final gecerli = [for (final l in lots) if (!l.isDeleted) l];
-    return gecerli.isEmpty ? [widget.asset] : gecerli;
+    return gecerli.isEmpty ? [canli.asset] : gecerli;
+  }
+
+  /// Varlığın CANLI pozisyon görünümü: güncel defterden, güncel fiyatla.
+  ///
+  /// ## Neden (kullanıcı isteği, 2026-09-24)
+  /// *"Anasayfa günlük, varlık günlük performans, Performans günlük'te
+  /// grafik ve özet kısmı her varlık tipi için birbirleriyle aynı kaynaktan
+  /// tutarlı değerleri göstermeli. Ve senkron şekilde yenilenmeliler."*
+  ///
+  /// `widget.asset` açılış anında kurulmuş bir KOPYADIR
+  /// (`Position.asDisplayAsset` yeni bir `Asset` döner). `refreshPrices`
+  /// fiyatı defterdeki lot'lara yazar, bu kopyaya değil: ekran açık
+  /// kaldıkça ana sayfa ve Performans yeni fiyatla ilerlerken burada
+  /// değer, yüzde ve grafiğin ucu açılış anının fiyatında DONUYORDU.
+  ///
+  /// Sahibin lot'ları defterden (kendi) ya da ortak listesinden süzülür —
+  /// `userId` ile, çünkü iki sahibin aynı ürünü aynı pozisyon anahtarını
+  /// taşır. Pozisyon artık yoksa (hepsi satıldı/silindi) açılış görünümü
+  /// kalır; uydurma yok. Kaynak listeler değişmedikçe yeniden kurulmaz.
+  ({Asset asset, List<Asset> lots}) get _canli {
+    final pState = ref.read(portfolioProvider).valueOrNull;
+    final ortaklar = ref.read(allPartnerAssetsProvider).valueOrNull;
+    final kendi = pState?.assets;
+    if (_canliOnbellek != null &&
+        identical(kendi, _canliKendi) &&
+        identical(ortaklar, _canliOrtaklar)) {
+      return _canliOnbellek!;
+    }
+    final sahip = widget.asset.userId;
+    final sahipLotlari = <Asset>[
+      for (final a in kendi ?? const <Asset>[])
+        if (a.userId == sahip) a,
+      for (final lots in (ortaklar ?? const <String, List<Asset>>{}).values)
+        for (final a in lots)
+          if (a.userId == sahip) a,
+    ];
+    final p = _positionOf(sahipLotlari);
+    final sonuc = p == null
+        ? (asset: widget.asset, lots: widget.lots ?? [widget.asset])
+        : (asset: p.asDisplayAsset(), lots: p.lots);
+    _canliKendi = kendi;
+    _canliOrtaklar = ortaklar;
+    _canliOnbellek = sonuc;
+    return sonuc;
+  }
+
+  ({Asset asset, List<Asset> lots})? _canliOnbellek;
+  List<Asset>? _canliKendi;
+  Map<String, List<Asset>>? _canliOrtaklar;
+
+  /// Ortak nabzın dinleyicisini kaldıran işlev (bkz. [_nabizGeldi]).
+  VoidCallback? _nabziBirak;
+
+  /// Ortak nabız — ana sayfa Bugün kartı ve Performans ile AYNI tick.
+  ///
+  /// Bu ekran nabzı hiç dinlemiyordu: GÜNLÜK seri açılışta bir kez
+  /// çekiliyor ve öyle kalıyordu. Nabız fiyat turunu dinleyicilerden ÖNCE
+  /// bitirir (`TazelikNabzi.fiyatTuruBagla`), yani seri burada o turun
+  /// fiyatıyla çekilir — diğer yüzeylerle aynı anın verisi.
+  ///
+  /// Sessiz tazeleme: yeni seri gelene kadar eskisi çizili kalır ve
+  /// future ancak sonuç ELDEYKEN değiştirilir (`SynchronousFuture`);
+  /// aksi halde her 30 sn'de yükleme çubuğu yanıp sönerdi. Başarısız ya
+  /// da boş çekim eldekini EZMEZ.
+  Future<void> _nabizGeldi() async {
+    if (!mounted || !_gunIciMi) return;
+    final Map<int, double> seri;
+    final yukleme = _loadHistory(0);
+    final sira = _yuklemeSirasi;
+    try {
+      seri = await yukleme;
+    } catch (_) {
+      return; // eldeki seri kalır; ağ hatası bir sonraki nabızda denenir
+    }
+    if (!mounted || sira != _yuklemeSirasi || !_gunIciMi) return;
+    if (seri.length < 2) return;
+    _guncelle(() => _historyFuture = SynchronousFuture(seri));
   }
 
   @override
   void dispose() {
+    _nabziBirak?.call();
     _scrollController.dispose();
     super.dispose();
   }
@@ -368,7 +453,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   }
 
   double get _currentQuantity {
-    if (_view == '') return widget.asset.quantity;
+    if (_view == '') return _canli.asset.quantity;
 
     final allAssetsMap = ref.read(allPartnerAssetsProvider).valueOrNull ?? {};
 
@@ -377,7 +462,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     }
 
     // Tümü
-    double total = widget.asset.quantity;
+    double total = _canli.asset.quantity;
     final activePartners = ref.read(activePartnersProvider);
     for (final p in activePartners) {
       total += _positionOf(allAssetsMap[p.id] ?? [])?.totalQuantity ?? 0;
@@ -462,7 +547,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 context,
                 ref,
                 sabit: AlarmAdayi(
-                    _alarmSembolu!, widget.asset.name, widget.asset.currentPrice),
+                    _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice),
               ),
             ),
           if (isOwnAsset && !widget.showBackButton)
@@ -558,7 +643,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   AlarmSeridi(
                     sembol: _alarmSembolu!,
                     ad: widget.asset.name,
-                    guncelFiyat: widget.asset.currentPrice,
+                    guncelFiyat: _canli.asset.currentPrice,
                   ),
                 _buildPeriodToggle(),
                 const SizedBox(height: 24),
@@ -625,7 +710,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // Grafiğin son noktasını da bu canlı değerle sabitliyoruz
                     // (aşağıdaki `currentUnitPriceOverride`) — böylece grafik
                     // bitiş noktası ve chip her zaman aynı sayıyı gösterir.
-                    final asset = widget.asset;
+                    // Canlı görünüm — açılış anının kopyası değil (bkz. `_canli`).
+                    final asset = _canli.asset;
                     final qty = asset.quantity;
                     final anchorUnitTRY =
                         asset.purchasePrice * asset.purchaseFxRate;
@@ -805,7 +891,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
                     // ÜZERİNDE; gerçek işlem fiyatı crosshair'da yazılır
                     // (gerekçe ve karar geçmişi `islemIsaretleri`).
-                    final activeLots = widget.lots ?? [widget.asset];
+                    final activeLots = _canli.lots;
                     final primarySpots = segments
                         .firstWhere((s) => !s.piyasaKapali && s.spots.isNotEmpty,
                             orElse: () => TransactionSegment(

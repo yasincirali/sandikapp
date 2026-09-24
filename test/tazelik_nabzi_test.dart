@@ -156,15 +156,20 @@ void main() {
           reason: 'açılışta 30 sn boş bant gösterilmemeli');
     });
 
-    test('fiyat turunu Performans başlatır (tekilleştirme var)', () {
-      // İki yüzey aynı nabızda `refreshPrices` çağırsa bile
-      // `PortfolioNotifier` in-flight tekilleştirme yapıyor → tek ağ turu.
-      final src =
-          ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart');
-      final tek = src.replaceAll(RegExp(r'\s+'), ' ');
+    test('fiyat turunu nabzın kendisi atar, yüzey değil', () {
+      // **Değişti (2026-09-24):** tur eskiden Performans ekranındaydı ve
+      // yalnızca GÜNLÜK seçiliyken atılıyordu; "tekilleştirme var" notu da
+      // doğru değildi. Tur artık nabza bağlı (`fiyatTuruBagla`) ve
+      // dinleyicilerden ÖNCE biter — bkz. `gunluk_tek_kaynak_test`.
+      final perf =
+          ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
+              .replaceAll(RegExp(r'\s+'), ' ');
       expect(
-          tek.contains('ref.read(portfolioProvider.notifier).refreshPrices();'),
-          isTrue);
+          perf.contains('ref.read(portfolioProvider.notifier).refreshPrices();'),
+          isFalse);
+      final kabuk = ekranKaynagiSync('lib/screens/main_navigation_screen.dart')
+          .replaceAll(RegExp(r'\s+'), ' ');
+      expect(kabuk.contains('TazelikRitmi.nabiz.fiyatTuruBagla('), isTrue);
     });
   });
 }

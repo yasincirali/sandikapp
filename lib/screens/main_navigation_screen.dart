@@ -14,6 +14,7 @@ import 'portfolio_performance_screen.dart';
 import 'profile_screen.dart';
 import 'add_asset_screen.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/tazelik_ritmi.dart';
 import '../services/crash_reporter.dart';
 import '../services/notification_service.dart';
 import '../services/remote_config_service.dart';
@@ -65,6 +66,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   /// açılışın kendi turu var.
   bool _acilisTazelemesiIstendi = false;
 
+  /// Nabzın fiyat turu bağını çözen işlev (bkz. `initState`).
+  VoidCallback? _fiyatTuruBagi;
+
   @override
   void initState() {
     super.initState();
@@ -79,6 +83,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (MainNavigationScreen.sekmeIstegi.value != null) {
       Future.microtask(_sekmeIstegiGeldi);
     }
+
+    // Ortak nabzın fiyat turu BURADAN bağlanır — tek sahip.
+    //
+    // Eskiden turu Performans ekranı atıyordu, o da yalnızca GÜNLÜK
+    // seçiliyken; ana sayfadaki Bugün kartı ve varlık ekranı fiyatın
+    // tazelenmesini o ekranın dönem seçimine borçluydu. Bu ekran oturum
+    // boyunca ağaçta kalır; nabız her attığında önce bu tur koşar, sonra
+    // yüzeyler aynı fiyatla tazelenir (bkz. `TazelikNabzi.fiyatTuruBagla`).
+    _fiyatTuruBagi = TazelikRitmi.nabiz.fiyatTuruBagla(() async {
+      if (!mounted) return;
+      await ref.read(portfolioProvider.notifier).refreshPrices(nabiz: true);
+    });
 
     // İlk açılışta fiyatları yükle
     Future.microtask(() {
@@ -116,6 +132,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // yeniden kurulduğunda (tema/dil değişimi, hot restart) üst üste
     // birikir ve tek dokunuş birden çok kez işlenir.
     MainNavigationScreen.sekmeIstegi.removeListener(_sekmeIstegiGeldi);
+    _fiyatTuruBagi?.call();
     super.dispose();
   }
 
