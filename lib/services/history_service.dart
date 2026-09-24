@@ -1404,6 +1404,48 @@ class HistoryService {
     final int goldIlkTs = goldSiraliTs.isEmpty ? 0 : goldSiraliTs.first;
     final int goldSonTs = goldSiraliTs.isEmpty ? 0 : goldSiraliTs.last;
 
+    // DÖVİZ ÜRÜN UÇLARI — altınla AYNI kural (kullanıcı kararı, 2026-09-24).
+    //
+    // Dövizin gün başı Yahoo gün içi serisinin İLK noktasıydı, ucu ise yurt
+    // içi kotasyon (`liveTotal` hizalaması). Aynı rakamda iki kaynak:
+    // ölçüldü, piyasa bandı "Dolar −%0,40" derken Performans › Döviz
+    // −%0,05 gösterdi. Karar: gün başı kotasyonun KENDİ referansı
+    // (`PriceService.gunlukReferansFiyat` — bantla aynı yüzdenin tabanı),
+    // uç canlı kotasyon, ŞEKİL Yahoo'dan (`altinUrunNoktasi`, zamana
+    // yayılan çarpan).
+    //
+    // Yalnızca BUGÜNÜN seansı: kotasyonun yüzdesi bugünü ölçer; geçmiş seans
+    // (hafta sonu → Cuma) çizilirken ona bugünün tabanını uygulamak iki
+    // günü karıştırırdı. USD kote dövizde (nadir) çevrim kura bağlı, eski
+    // yol kalır. Referans yoksa (kaynak yüzde vermedi) eski yol — uydurma yok.
+    final dovizSiraliTs = <String, List<int>>{};
+    double? dovizUrunBirimi(Asset a, double seriDeger, int ts) {
+      if (a.type != AssetType.doviz || a.currency == 'USD' || gecmisSeans) {
+        return null;
+      }
+      final referans = PriceService.instance.gunlukReferansFiyat(a.ticker);
+      if (referans == null) return null;
+      final uc = altinUrunUclari(
+        canliBirimTRY: a.currentPrice,
+        gunlukPct: PriceService.instance.gunlukDegisimPct(a.ticker),
+        referansTRY: referans,
+      );
+      final map = tickerSlots[a.ticker];
+      if (uc == null || map == null || map.isEmpty) return null;
+      final sirali =
+          dovizSiraliTs.putIfAbsent(a.ticker, () => map.keys.toList()..sort());
+      return altinUrunNoktasi(
+        seriDeger: seriDeger,
+        ts: ts,
+        seriIlk: map[sirali.first]!,
+        seriIlkTs: sirali.first,
+        seriSon: map[sirali.last]!,
+        seriSonTs: sirali.last,
+        urunIlk: uc.ilk,
+        urunSon: uc.son,
+      );
+    }
+
     // **YA HEP YA HİÇ** — tüm altın ayarları AYNI yoldan geçer.
     //
     // ## Neden (kullanıcı bildirimi, 2026-09-23)
@@ -1603,7 +1645,10 @@ class HistoryService {
         double? unitLocal;
         if (map.isNotEmpty) {
           final firstTs = map.keys.reduce((x, y) => x < y ? x : y);
-          unitLocal = map[firstTs];
+          // Döviz tohumu da gerçek slotlarla AYNI yoldan (altın tohumunun
+          // gerekçesiyle aynı: karışık yol basamak bırakır).
+          unitLocal =
+              dovizUrunBirimi(a, map[firstTs]!, firstTs) ?? map[firstTs];
         } else if (a.currentPrice > 0) {
           unitLocal = a.currentPrice;
         }
@@ -1759,7 +1804,8 @@ class HistoryService {
             final map = tickerSlots[a.ticker] ?? {};
             final price = pastOrNull(map, hourTs);
             if (price != null) {
-              double p = price;
+              // Döviz: gün başı yurt içi referanstan (bkz. `dovizUrunBirimi`).
+              double p = dovizUrunBirimi(a, price, hourTs) ?? price;
               var kurVar = true;
               if (a.currency == 'USD') {
                 final usdRate = closestOrNull(usdTrySlots, hourTs) ?? canliKur();

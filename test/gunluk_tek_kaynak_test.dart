@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/services/fiyat_kaynagi.dart';
+import 'package:portfoy_takip/services/history_service.dart';
+import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/services/price_service.dart';
 import 'package:portfoy_takip/services/tazelik_ritmi.dart';
 
@@ -191,6 +195,98 @@ void main() {
     test('sessiz tazeleme: future ancak sonuç eldeyken değişir', () {
       expect(src.contains('_historyFuture = SynchronousFuture(seri)'), isTrue,
           reason: 'her nabızda yükleme çubuğu yanıp sönmemeli');
+    });
+  });
+
+  group('4 · döviz gün başı yurt içi referanstan (karar 2026-09-24)', () {
+    // Ölçüldü (tarayıcı, sahte yurt içi fiyat): bant "Dolar −%0,40",
+    // Performans › Döviz −%0,05. Gün başı Yahoo'nun ilk gün içi noktası,
+    // uç yurt içi kotasyondu. Kullanıcı kararı: altınla aynı kural.
+    tearDown(() {
+      HistoryService.gunIciSaat = DateTime.now;
+      HistoryService.seriCekici = HistoryService.varsayilanSeriCekici;
+      HistoryService.clearCache();
+      PriceService.instance.sonBilinenFiyatlariTemizle();
+    });
+
+    Asset dolar(double canli) => Asset(
+          id: 'usd',
+          userId: 'u1',
+          name: 'ABD Doları',
+          ticker: 'USDTRY=X',
+          type: AssetType.doviz,
+          quantity: 1000,
+          purchasePrice: 40,
+          currency: 'TRY',
+          notes: '',
+          currentPrice: canli,
+          addedDate: DateTime(2000),
+        );
+
+    /// [gun] 00:00 → [bitis] arası 5 dk'lık Yahoo serisi: 41,00 → 41,30.
+    List<(int, double)> yahoo(DateTime gun, DateTime bitis) {
+      final n = bitis.difference(gun).inMinutes ~/ 5;
+      return [
+        for (var i = 0; i <= n; i++)
+          (
+            gun.add(Duration(minutes: 5 * i)).millisecondsSinceEpoch,
+            41.0 + 0.3 * i / n,
+          ),
+      ];
+    }
+
+    test('bugünün seansı: gün başı referans, uç canlı, yüzde bantla aynı',
+        () async {
+      final simdi = DateTime(2026, 9, 24, 16, 40);
+      final gun = DateTime(2026, 9, 24);
+      HistoryService.clearCache();
+      HistoryService.gunIciSaat = () => simdi;
+      final seri = yahoo(gun, simdi);
+      HistoryService.seriCekici = (sym, range, interval) async =>
+          sym == 'USDTRY=X' ? seri : const [];
+      const canli = 41.25;
+      PriceService.instance
+          .testIcinKotasyonYaz('USDTRY=X', canli, gunlukPct: -0.40);
+
+      final b = await HistoryService.instance
+          .getPortfolioHistoryHourlyBreakdown([dolar(canli)], 24);
+      final u = PeriodSummaryService.uclar(b.total,
+          fromMs: gun.millisecondsSinceEpoch,
+          toMs: simdi.millisecondsSinceEpoch)!;
+      expect(u.first, closeTo(1000 * canli / 0.996, 0.01),
+          reason: 'gün başı Yahoo\'nun ilk noktası (41.000) değil');
+      expect(u.last, closeTo(1000 * canli, 0.01));
+      expect((u.last / u.first - 1) * 100, closeTo(-0.40, 1e-9));
+    });
+
+    test('hafta sonu: seri Cuma\'da bitti, bugün düz ve canlı çizilir',
+        () async {
+      // Döviz tek başınayken motor BUGÜNÜ çizer (7/24 sayılır); Yahoo'nun
+      // son noktası Cuma. Eski yolda gün başı Cuma 00:00'ın kuru (41.000)
+      // oluyordu ve iki günlük hareket "bugün" yazılıyordu. Zamana yayılan
+      // çarpan serinin son noktasından sonra uca sabitlenir: bugün hareket
+      // uydurulmaz.
+      final cuma = DateTime(2026, 9, 18);
+      final simdi = DateTime(2026, 9, 20, 12);
+      HistoryService.clearCache();
+      HistoryService.gunIciSaat = () => simdi;
+      final seri = yahoo(cuma, DateTime(2026, 9, 18, 23, 55));
+      HistoryService.seriCekici = (sym, range, interval) async =>
+          sym == 'USDTRY=X' ? seri : const [];
+      const canli = 41.25;
+      PriceService.instance
+          .testIcinKotasyonYaz('USDTRY=X', canli, gunlukPct: -0.40);
+
+      final b = await HistoryService.instance
+          .getPortfolioHistoryHourlyBreakdown([dolar(canli)], 24);
+      expect(b.seansGunu, DateTime(2026, 9, 20));
+      expect(b.total.values.toSet(), {closeTo(1000 * canli, 1e-6)},
+          reason: 'kapalı piyasada gün içi hareket yok');
+    });
+
+    test('kaynak: tohum ve slot dalı aynı yoldan', () {
+      final src = kod('lib/services/history_service.dart');
+      expect('dovizUrunBirimi(a, '.allMatches(src).length, 2);
     });
   });
 }
