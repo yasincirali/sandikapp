@@ -741,6 +741,7 @@ class IntradaySeriesCache {
     PortfolioState state, {
     DateTime? now,
     Duration? azamiYas,
+    bool zorla = false,
   }) async {
     final ts = now ?? DateTime.now();
 
@@ -763,9 +764,25 @@ class IntradaySeriesCache {
     // `minInterval` kısa devresi atlanır, yani yeni veri çekilir; ama
     // çekilene kadar gösterilecek bir şey vardır ve hata hâlinde de
     // kaybolmaz.
-    final tazeleZorla = azamiYas != null &&
-        _fetchedAt != null &&
-        ts.difference(_fetchedAt!) > azamiYas;
+    //
+    // **[zorla]: nabız tetiklediyse yaş SORULMAZ (2026-09-24).**
+    // Kullanıcı bildirimi: *"Ana sayfa günlük ile Performans günlük ve özet
+    // bir süre farklı değer gösteriyor, sonra aynı değere geliyor, sonra
+    // bir daha farklılaşıyor."*
+    //
+    // Bugün kartı bu önbelleği nabızda `azamiYas: 30 sn` ile istiyordu;
+    // nabız da 30 sn. Ama dinleyiciler fiyat turu BİTİNCE çağrılır
+    // (`TazelikNabzi._at`) ve turun süresi ağa göre oynar: bir tur
+    // öncekinden hızlı bittiyse iki çağrı arası 29,x sn olur, `>` kapısı
+    // geçilmez ve kart ESKİ seriyle kalır. Performans ise her nabızda
+    // koşulsuz yeniden çeker. İki yüzey bir nabız boyunca farklı anın
+    // serisine (farklı gün başına) bakıyor, sonraki nabızda buluşuyordu —
+    // kabaca iki nabızda bir tekrarlayan kayma. Yaş eşiğini esnetmek
+    // (`>=`, pay) aynı yarışı yalnızca kaydırırdı; nabız zaten "şimdi
+    // tazele" demektir, o yol yaşa bakmadan çeker.
+    final tazeleZorla = _fetchedAt != null &&
+        (zorla ||
+            (azamiYas != null && ts.difference(_fetchedAt!) > azamiYas));
 
     // Gün DEĞİŞTİYSE önbellek koşulsuz düşer.
     //

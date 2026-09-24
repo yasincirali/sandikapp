@@ -79,7 +79,7 @@ void main() {
   test('kapsam görünümünde paylaşımlı gün içi önbellek kullanılmaz', () {
     // Önbellek kilit ekranıyla ortak ve oturumdaki kullanıcıya damgalı;
     // ortağın defteriyle doldurulursa kilit ekranı yanlış seriyi gösterir.
-    final i = kart.indexOf('Future<Map<int, double>?> _seriYukle()');
+    final i = kart.indexOf('Future<Map<int, double>?> _seriYukle(');
     final govde = kart.substring(i, kart.indexOf('catch', i));
     expect(govde.contains('if (!widget.kisisel)'), isTrue);
     expect(govde.contains('getPortfolioHistoryHourlyBreakdown('), isTrue);
