@@ -134,7 +134,10 @@ void main() {
       // Gerçek kullanıcı hatası: uygulama %0,03 derken yüzey %6,19 "kâr"
       // gösteriyordu. Ham uçtan uca fark bugün yatırılan parayı da içerir.
       final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day, 9);
+      // Alım iki ölçümün ARASINDA: seri (motor gibi) açılışta onu
+      // içermiyor, sonraki noktada içeriyor. Açılıştan önceki alım ise
+      // açılış değerinin içindedir ve akışa girmez (`gunIciKatki`).
+      final alimAni = now.subtract(const Duration(minutes: 10));
       final state = _state([
         _lot(id: 'b1', quantity: 100, kind: AssetKind.buy),
         // Bugün ₺6.000'lik alım: 20 × ₺300.
@@ -143,7 +146,7 @@ void main() {
           quantity: 20,
           kind: AssetKind.buy,
           purchasePrice: 300,
-          addedDate: today,
+          addedDate: alimAni,
         ),
       ]);
 

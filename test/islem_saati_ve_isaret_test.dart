@@ -1,8 +1,10 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/utils/islem_isaretleri.dart';
+import 'package:portfoy_takip/utils/spot_lookup.dart';
 import 'package:portfoy_takip/utils/tr_format.dart';
 
 import 'helpers/kaynak.dart';
@@ -173,13 +175,50 @@ void main() {
           .contains(': fmtTarihSaat(tarih)'), isTrue);
     });
 
-    test('işlem noktası ÇİZGİYE yapıştırılmaz', () {
+    test("işlem noktası işlem ANINDA, ÇİZGİNİN ÜSTÜNDE; fiyat crosshair'da",
+        () {
       final s = kod('lib/screens/asset_detail_screen.dart');
       expect(s.contains('islemIsaretleri('), isTrue);
       expect(s.contains('lotDayIsSell'), isFalse,
-          reason: 'çubuğa yapıştırma işareti çizginin değerinde çiziyordu');
+          reason: 'çubuğa yapıştırma işlemi gece yarısına çekiyordu');
+      expect(s.contains('cizgiDegeri(primarySpots, t.x)'), isTrue,
+          reason: 'nokta çizgiden kopuk durunca "dışarıda" görünüyordu '
+              '(kullanıcı bildirimi 2026-09-24 sabah)');
       expect(s.contains('crosshairDetailsBuilder: islemler.isEmpty'), isTrue,
           reason: 'crosshair işlemin kendi zamanını ve fiyatını yazmalı');
+    });
+  });
+
+  group("cizgiDegeri — düz çizginin x'teki yüksekliği", () {
+    const spots = [FlSpot(0, 100), FlSpot(1, 110), FlSpot(2, 90)];
+
+    test('iki nokta arasında doğrusal', () {
+      expect(cizgiDegeri(spots, 0.5), closeTo(105, 1e-9));
+      expect(cizgiDegeri(spots, 1.25), closeTo(105, 1e-9));
+    });
+
+    test('noktanın tam üstünde o noktanın değeri', () {
+      expect(cizgiDegeri(spots, 1), 110);
+    });
+
+    test('aralık dışı uca yaslanır, boş liste null', () {
+      expect(cizgiDegeri(spots, -1), 100);
+      expect(cizgiDegeri(spots, 5), 90);
+      expect(cizgiDegeri(const [], 1), isNull);
+    });
+
+    test('EKRAN VAKASI: 14:32 alımı çizginin o andaki değerinde; alış '
+        'fiyatı crosshair için ayrı kalır', () {
+      final m = islemIsaretleri(
+        lotlar: [lot(tarih: DateTime(2026, 9, 23, 14, 32))],
+        eksenBasi: DateTime(2026, 9, 17),
+        ilkX: 0,
+        sonX: 7.1,
+      ).single;
+      const cizgi = [FlSpot(6, 6300), FlSpot(7, 6400)];
+      expect(cizgiDegeri(cizgi, m.x),
+          closeTo(6300 + 100 * (14 * 60 + 32) / 1440, 1e-6));
+      expect(m.birim, closeTo(6163.5727, 1e-9));
     });
   });
 }

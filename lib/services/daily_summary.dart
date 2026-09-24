@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import '../models/asset.dart';
+import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/chart_axis.dart' show gunIciAsgariBantOrani;
@@ -40,6 +41,7 @@ class DailySummary {
     required this.changeTRY,
     required this.changePct,
     required this.sparkline,
+    this.inflowTRY = 0,
   });
 
   /// Portföyün ŞU ANKİ toplam değeri (TRY) — sahip kapsamlı aggregate'ten.
@@ -61,6 +63,13 @@ class DailySummary {
   /// normalize etmeyi kendi üstlenir. Ana ekran widget'ı PNG'yi ham
   /// değerlerden çizer, dolayısıyla ikisi ortak ham seriden beslenir.
   final List<double> sparkline;
+
+  /// [changeTRY]'den düşülen gün içi net nakit akışı (TRY) — [gunIciKatki].
+  ///
+  /// Performans › Özet GÜNLÜK köprüsü ("başlangıç + katkı + piyasa = son")
+  /// bu sayıyı kullanır; ayrı bir akış hesabı yapsaydı köprü, düşülen
+  /// akışla tutmazdı (2026-09-24).
+  final double inflowTRY;
 
   /// Değişim gerçekten ölçülebildi mi?
   bool get hasChange => changeTRY != null && changePct != null;
@@ -288,8 +297,36 @@ class DailySummary {
   /// bölünür (`lotlarSahibeGore`): tek sahipli defterde tek grup, hesap
   /// aynı; birleşik defterde sahiplik sınırı korunur.
   static double liveTotalTRY(PortfolioState state) =>
-      ownerScopedTotalValue(lotlarSahibeGore(state.assets),
+      kapsamToplami(state, state.assets);
+
+  /// [kapsam] lot'larının CANLI toplamı — [liveTotalTRY] ile aynı yol.
+  ///
+  /// Dönem özetinin ("Şimdi") sağ ucu da bunu kullanır (2026-09-24): seri
+  /// son slotunu `normalizeTs(now)` damgasına kurar (günlük katmanda bugün
+  /// 00:00, haftalıkta pazartesi) ve o damgadan sonra alınan lot o slotta
+  /// YOKTUR; katkı ise onu sayar. Uç canlı toplama bağlanmazsa piyasa
+  /// etkisi bu lot'ların değeri kadar eksik çıkıyordu (ölçüldü: 1H'de
+  /// Grafik +₺306, Özet −₺5.069; fark bugünkü alımların değeri).
+  static double kapsamToplami(PortfolioState state, List<Asset> kapsam) =>
+      ownerScopedTotalValue(lotlarSahibeGore(kapsam),
           toTRY: state.toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
+
+  /// [kapsamToplami]'nın türe göre dağılımı — aynı yol, tür başına bir
+  /// kez. Dönem özetinin "dönem sonu" dağılımı rakamla aynı uca baksın
+  /// diye (2026-09-24). Değeri olmayan tür haritaya girmez.
+  static Map<AssetType, double> kapsamDagilimi(
+      PortfolioState state, List<Asset> kapsam) {
+    final turLotlari = <AssetType, List<Asset>>{};
+    for (final a in kapsam) {
+      turLotlari.putIfAbsent(a.type, () => []).add(a);
+    }
+    final out = <AssetType, double>{};
+    turLotlari.forEach((tur, lotlar) {
+      final v = kapsamToplami(state, lotlar);
+      if (v > 0) out[tur] = v;
+    });
+    return out;
+  }
 
   /// Gün içi seriyi uygulamanın GÜNLÜK grafiğiyle birebir aynı kurallarla
   /// ham (TRY) değer listesine indirger.
@@ -318,18 +355,25 @@ class DailySummary {
     DateTime now,
     double currentTotal, {
     DateTime? seansGunu,
+    bool acikPozisyonYok = false,
   }) {
     if (series.isEmpty) return const [];
     final nowMs = now.millisecondsSinceEpoch;
     final keys = series.keys.toList()..sort();
 
+    // BAŞTAKİ sıfırlar atlanır, SONRAKİLER ölçümdür — grafiğin gün içi
+    // dalıyla aynı kural (`seriler.dart`, 2026-09-16: "varlığımın 0'a
+    // indiğini görmüyorum"). Bu liste o düzeltmeyi almamıştı: gün içinde
+    // HER ŞEYİ satan kullanıcıda satış sonrası sıfırlar düşüyor, son değer
+    // satış öncesi kalıyor ve satış geliri akıştan düşülünce değişim
+    // satış tutarı kadar ŞİŞİYORDU (2026-09-24 kod incelemesi).
     final values = <double>[];
     var lastTs = 0;
     for (final k in keys) {
       if (k > nowMs) break;
       final v = series[k]!;
-      if (v <= 0) continue;
-      values.add(v);
+      if (v <= 0 && values.isEmpty) continue;
+      values.add(v < 0 ? 0 : v);
       lastTs = k;
     }
     if (values.isEmpty) return const [];
@@ -365,7 +409,9 @@ class DailySummary {
         cizilenGun.month == now.month &&
         cizilenGun.day == now.day;
 
-    if (bugunMu && currentTotal > 0) {
+    // Canlı toplam 0 iki şey olabilir: fiyat bilinmiyor (uç EZİLMEZ) ya da
+    // elde hiç pozisyon kalmadı (0 bir ölçümdür, uç sıfıra iner).
+    if (bugunMu && (currentTotal > 0 || acikPozisyonYok)) {
       if (nowMs - lastTs <= _liveTailMaxLag.inMilliseconds) {
         values[values.length - 1] = currentTotal;
       } else {
@@ -412,9 +458,9 @@ class DailySummary {
   /// hareketi ₺9.800 iken Pazar günü girilen ₺1.000'lik alım yüzünden
   /// yüzeyler ₺8.800 gösteriyordu. O alım Cuma seansında henüz yoktu.
   ///
-  /// `portfolio_performance_screen._buildPeriodChangeCard` akışı aynı
-  /// şekilde ÇİZİLEN aralığa (`start`…`end`) göre kapar, bugüne göre
-  /// değil — iki taraf aynı kuralı kullanmak zorunda.
+  /// `portfolio_performance_screen._buildPeriodChangeCard` ve bu sınıf
+  /// GÜNLÜK akışı artık aynı fonksiyondan alır: [gunIciKatki] (2026-09-24).
+  /// Bu fonksiyon yalnızca pencereyi açıkça veren ham yardımcıdır.
   ///
   /// `portfolio_performance_screen._flowOf` ile BİREBİR aynı işaret
   /// kuralı:
@@ -451,6 +497,65 @@ class DailySummary {
       }
     }
     return total;
+  }
+
+  /// Gün içi motorun lot kapısının slot genişliği —
+  /// `HistoryService.getPortfolioHistoryHourlyBreakdown` `slotMinutes`.
+  static const gunIciSlot = Duration(minutes: 5);
+
+  /// GÜNLÜK dönemin nakit akışı: gün içi serinin AÇILIŞ ölçümünde
+  /// ([acilisMs]) henüz OLMAYAN lot'lar.
+  ///
+  /// Grafik kartı, tür dökümü ve bu sınıf (ana sayfa, widget, kilit
+  /// ekranı, Özet GÜNLÜK) aynı fonksiyonu çağırır — "piyasa etkisi" diğer
+  /// dönemlerdeki `PeriodSummaryService.piyasaEtkisi` ile aynı ilkeye
+  /// oturur: bir lot ya tabandadır ya katkıdadır, ikisinde birden olamaz.
+  ///
+  /// ## Neden gün başından saymak yanlıştı (2026-09-24 kod incelemesi)
+  ///   * Motor lot'u 5 dk'lık kovaya AŞAĞI yuvarlayarak slota koyar
+  ///     (14:32'lik alım 14:30 slotunda var). Açılış ölçümü ilk DOLU
+  ///     slottur (BIST'te 10:00); açılıştan önce girilen alım (ör. tarih
+  ///     seçiciyle 00:00, ya da 09:30) açılış değerinin İÇİNDE ve akışta da
+  ///     sayılıyordu: günlük değişim alım tutarı kadar eksiye düşüyordu.
+  ///   * GEÇMİŞ seans çizilirken (hafta sonu → Cuma) motor tarih kapısı
+  ///     UYGULAMAZ: eldeki pozisyon seansın her slotundadır. O seansın
+  ///     günü yapılan alım yine de akıştan düşülüyordu. Geçmiş seansta
+  ///     akış yoktur.
+  static double gunIciKatki(
+    List<Asset> lotlar, {
+    required int acilisMs,
+    required DateTime seansGunu,
+    required DateTime now,
+  }) {
+    if (dayKey(seansGunu).isBefore(dayKey(now))) return 0;
+    // `normalizeSlot(ms) > acilisMs` ⇔ `ms >= acilisMs + slot`
+    // (açılış damgası slot hizalı).
+    final esik = DateTime.fromMillisecondsSinceEpoch(
+        acilisMs + gunIciSlot.inMilliseconds);
+    return inflowOnDay(lotlar, esik,
+        DateTime(seansGunu.year, seansGunu.month, seansGunu.day, 23, 59, 59));
+  }
+
+  /// Gün içi serinin açılış ölçümünün damgası — [dayValues]'un ilk
+  /// noktası (şimdiye kadarki ilk DOLU slot).
+  static int? acilisDamgasi(Map<int, double> series, DateTime now) {
+    final nowMs = now.millisecondsSinceEpoch;
+    int? ilk;
+    for (final e in series.entries) {
+      if (e.key > nowMs || e.value <= 0) continue;
+      if (ilk == null || e.key < ilk) ilk = e.key;
+    }
+    return ilk;
+  }
+
+  /// Kapsamda açık pozisyon kalmadı mı? Canlı toplam 0 iken "fiyat yok"
+  /// ile "her şey satıldı"yı ayırır. Sahipler ayrı toplanır
+  /// (`lotlarSahibeGore`) — [kapsamToplami] ile aynı sınır.
+  static bool acikPozisyonYok(List<Asset> kapsam) {
+    for (final l in lotlarSahibeGore(kapsam)) {
+      if (aktifLotlar(l).isNotEmpty) return false;
+    }
+    return true;
   }
 
   /// Gün içi seriden ve portföy durumundan tam özeti kurar.
@@ -492,9 +597,9 @@ class DailySummary {
     // sayıyor, kâr/zarar saymıyordu. Kullanıcı bildirimi: "anasayfa
     // toplamlar veriyor ancak günlük kartında kâr zarar toplamları
     // tutmuyor."
-    final total = ownerScopedTotalValue(lotlarSahibeGore(kapsam),
-        toTRY: state.toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
-    final values = dayValues(series, now, total, seansGunu: seansGunu);
+    final total = kapsamToplami(state, kapsam);
+    final values = dayValues(series, now, total,
+        seansGunu: seansGunu, acikPozisyonYok: acikPozisyonYok(kapsam));
 
     if (values.length < 2) {
       return DailySummary(
@@ -520,15 +625,16 @@ class DailySummary {
     //
     // Pencere ÇİZİLEN seans günüdür, bugün değil: hafta sonu Cuma'nın
     // eğrisi çizilirken Cumartesi/Pazar girilen bir alım o seansın
-    // hareketinden düşülemez (bkz. [todayInflow]).
+    // hareketinden düşülemez (bkz. [todayInflow]). Sınır açılış ölçümüdür,
+    // gün başı değil — bkz. [gunIciKatki] (2026-09-24).
     final cizilenGun = seansGunu ??
         cizilenGunFromSeries(series) ??
         dayKey(now);
-    final inflow = inflowOnDay(
-      kapsam,
-      dayKey(cizilenGun),
-      DateTime(cizilenGun.year, cizilenGun.month, cizilenGun.day, 23, 59, 59),
-    );
+    final acilis = acilisDamgasi(series, now);
+    final inflow = acilis == null
+        ? 0.0
+        : gunIciKatki(kapsam,
+            acilisMs: acilis, seansGunu: cizilenGun, now: now);
     final amount = (last - open) - inflow;
 
     // Yüzde tabanı: gün başı değer + bugün yatırılan para. Yalnızca `open`
@@ -549,6 +655,7 @@ class DailySummary {
       changeTRY: amount,
       changePct: amount / base * 100,
       sparkline: values,
+      inflowTRY: inflow,
     );
   }
 }

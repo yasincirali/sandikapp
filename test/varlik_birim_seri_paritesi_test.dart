@@ -309,7 +309,8 @@ void main() {
         end: DateTime.fromMillisecondsSinceEpoch(10),
         canliSon: 0,
       )!;
-      expect(olcumYok.son, 1100, reason: 'sıfır canlı değer ölçüm değildir');
+      expect(olcumYok.son, 1100,
+          reason: 'lot bilgisi yokken sıfır canlı değer ölçüm değildir');
     });
 
     test('BOŞ ilk slot tabana alınmaz (ölçülen: gram fiyatının 100 katı)', () {
@@ -594,8 +595,10 @@ void main() {
 
     test('Performans dönem kartı katkıyı taban anından sonra sayar', () {
       final s = tek('lib/screens/portfolio_performance/kartlar.dart');
-      expect(s.contains('startExclusiveMs: start.millisecondsSinceEpoch +'),
-          isTrue);
+      // 2026-09-24: kural `grafikKatkisi`'nde (tür dökümüyle ortak); taban
+      // anı `_periodEndpoints`'ten ms olarak gelir.
+      expect(s.contains('PeriodSummaryService.grafikKatkisi('), isTrue);
+      expect(s.contains('tabanMs: ep.firstTs!'), isTrue);
     });
   });
 }

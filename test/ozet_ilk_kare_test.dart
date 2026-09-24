@@ -32,14 +32,24 @@ void main() {
         .replaceAll('\r\n', '\n')
         .replaceAll(RegExp(r'\s+'), ' ');
 
-    // İki çağrı da `sonFiyat` taşımalı — ayrışırsa iki yüzey farklı
-    // kümeleri ölçer.
-    final sayim =
-        RegExp(r'sonFiyat: PriceService\.instance\.sonBilinenFiyat')
-            .allMatches(src)
-            .length;
-    expect(sayim, greaterThanOrEqualTo(2),
-        reason: 'liveTotalTRY ve from() içindeki total aynı yoldan gitmeli');
+    // İki yol da `sonFiyat` taşımalı — ayrışırsa iki yüzey farklı
+    // kümeleri ölçer. 2026-09-24'ten beri ikisi de TEK fonksiyondan
+    // (`kapsamToplami`) geçiyor; Özet'in canlı ucu da onu kullanıyor.
+    expect(
+        src.contains('static double liveTotalTRY(PortfolioState state) => '
+            'kapsamToplami(state, state.assets);'),
+        isTrue,
+        reason: 'liveTotalTRY ortak yoldan gitmeli');
+    expect(src.contains('final total = kapsamToplami(state, kapsam);'), isTrue,
+        reason: 'from() içindeki total ortak yoldan gitmeli');
+    expect(
+        RegExp(r'kapsamToplami\(PortfolioState state, List<Asset> kapsam\) '
+                r'=> ownerScopedTotalValue\(lotlarSahibeGore\(kapsam\), '
+                r'toTRY: state\.toTRY, '
+                r'sonFiyat: PriceService\.instance\.sonBilinenFiyat\)')
+            .hasMatch(src),
+        isTrue,
+        reason: 'ortak yol sonFiyat taşımalı');
   });
 
   group('Özet ilk karede sayı uydurmaz', () {

@@ -40,6 +40,14 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // grafiğin ucu ile özetin toplamı farklı kümeleri ölçer.
     final currentTotal = ownerScopedTotalValue(ownerLots,
         toTRY: pState.toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
+    // Canlı toplam 0: elde pozisyon kalmadıysa ölçümdür (uç 0'a iner),
+    // kaldıysa fiyat bilinmiyordur (uç ezilmez). Özet'teki
+    // `piyasaEtkisi` ile aynı ayrım (2026-09-24).
+    final canliUc = (currentTotal > 0 ||
+            DailySummary.acikPozisyonYok(
+                [for (final l in ownerLots) ...l]))
+        ? currentTotal
+        : null;
 
     // TradingView "auto range" davranışı: kullanıcı seçilen periyot içinde
     // hiç varlığı yoksa (örn. 1Y seçtiği ama 3 gün önce başladı), chart
@@ -99,7 +107,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
 
     final segments = _convertHistoryToSegments(
         historyMap, chartAssets, cizimBaslangici, endDate,
-        currentTotalOverride: currentTotal,
+        currentTotalOverride: canliUc,
         simulate: _simulate,
         intraday: isIntraday,
         // Hafta sonu kuyruğu: kapanıştan sonrası gri + kesikli çizilir.
@@ -298,7 +306,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           // tutar. Endpoint yoksa üst kart da çizilmiyordur — döküm de çıkmaz.
           // Pencere GEÇİLİR: üst kartla aynı tabanı kullanmalı, yoksa
           // dökümün toplamı üst rakamı tutmaz (2026-09-23).
-          if (_periodEndpoints(segments, start: cizimBaslangici)
+          if (_periodEndpoints(segments,
+                  start: cizimBaslangici, intraday: isIntraday)
               case final ep?)
             _TypeBreakdownCard(
               baz: ref.watch(bazParaProvider),
@@ -309,6 +318,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               start: cizimBaslangici,
               end: endDate,
               simulate: _simulate,
+              // Üst kartla AYNI taban anı ve canlı uç (2026-09-24).
+              tabanMs: ep.firstTs!,
+              intraday: isIntraday,
+              canliDeger: (lotlar) =>
+                  DailySummary.kapsamToplami(pState, lotlar),
             ),
           // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
           // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
@@ -338,7 +352,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // dönem penceresinden geniş olabildiği için taban geriye kayıyordu:
     // ölçüldü ₺2.258.332 yerine ₺2.354.650 olmalıydı (₺96.318 fark,
     // kullanıcı bildirimi 2026-09-23).
-    final ep = _periodEndpoints(segments, start: start);
+    final ep =
+        _periodEndpoints(segments, start: start, intraday: intraday);
     if (ep == null) return const SizedBox.shrink();
 
     final firstY = ep.first;
@@ -364,19 +379,13 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // Kural `PeriodSummaryService.piyasaEtkisi` ile aynı; varlık ekranı da
     // onu kullanıyor — "piyasa etkisi" üç yüzeyde tek tanım.
     //
-    // GÜNLÜK dokunulmadı: ana sayfa (`DailySummary`) ile hizası ayrı bir
-    // sözleşme (bkz. aşağıdaki GÜNLÜK notu).
+    // GÜNLÜK'te sınır gün başı değil açılış ölçümü, geçmiş seansta akış
+    // yok — ana sayfayla aynı kural (`DailySummary.gunIciKatki`,
+    // 2026-09-24). Tür dökümü de aynı fonksiyonu çağırır.
     double netInflow = 0;
     if (!_simulate) {
-      netInflow = intraday
-          ? PeriodSummaryService.netInflow(targetAssets, start, end)
-          : PeriodSummaryService.netInflow(
-              targetAssets,
-              start,
-              end,
-              startExclusiveMs: start.millisecondsSinceEpoch +
-                  (ep.firstX * Duration.millisecondsPerDay).round(),
-            );
+      netInflow = PeriodSummaryService.grafikKatkisi(targetAssets,
+          start: start, end: end, tabanMs: ep.firstTs!, intraday: intraday);
     }
 
     // ── Ana rakam: BİRİKİM değişimi — (son − ilk) / ilk ──────────────────
@@ -716,6 +725,14 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       breakdown: breakdown,
       now: now,
       gunlukOzet: gunluk,
+      // Sağ uç CANLI kapsam toplamı — Grafik kartının ucuyla aynı sayı
+      // (`currentTotal`); bkz. `compute` [canliSon].
+      canliSon: pState == null
+          ? null
+          : DailySummary.kapsamToplami(pState, targetAssets),
+      canliDagilim: pState == null
+          ? null
+          : DailySummary.kapsamDagilimi(pState, targetAssets),
       // `_positionLabel` ham `positionKey`'i insan-okunur hale getirir;
       // yoksa ekranda "altin|sub:çeyrek|TRY" görünürdü.
       etiket: (k) =>

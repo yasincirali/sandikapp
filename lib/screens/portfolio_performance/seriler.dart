@@ -8,6 +8,8 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
     List<Asset> allAssets,
     DateTime startDate,
     DateTime endDate, {
+    // `null`: canlı uç yok. 0 geçerli bir uçtur (elde pozisyon kalmadı);
+    // "fiyat bilinmiyor"u çağıran `null` ile söyler (2026-09-24).
     double? currentTotalOverride,
     bool simulate = false,
     bool intraday = false,
@@ -68,7 +70,7 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       // "güncel değer ne ise o şekilde göstersin."
       if (simdiEksendeVar &&
           currentTotalOverride != null &&
-          currentTotalOverride > 0) {
+          currentTotalOverride >= 0) {
         if (spots.isNotEmpty && (nowMinutesX - spots.last.x).abs() < 5) {
           spots[spots.length - 1] = FlSpot(nowMinutesX, currentTotalOverride);
         } else {
@@ -160,7 +162,7 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       // Son spot ŞU ANA taşınır (gerçek seride olduğu gibi — bkz. aşağıdaki
       // aktif segment dalı). Yalnızca Y güncellenirse "ŞİMDİ" çizgisi son
       // kovanın gün başına düşer ve bir önceki güne bitişik görünür.
-      if (currentTotalOverride != null && currentTotalOverride > 0) {
+      if (currentTotalOverride != null && currentTotalOverride >= 0) {
         final nowX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
         if (spots.isNotEmpty) {
           final last = spots.last;
@@ -213,7 +215,7 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
     // 1 saat = 1/24 gün). Basit strateji: son spot'un Y değerini canlı
     // toplama override et — X'i değiştirme, böylece grafik zigzag/kırık
     // olmaz. Nokta yoksa endDate'in tam anına yeni bir spot ekle.
-    if (currentTotalOverride != null && currentTotalOverride > 0) {
+    if (currentTotalOverride != null && currentTotalOverride >= 0) {
       final nowX = endDate.difference(startDate).inMinutes / (60.0 * 24.0);
       if (activeSpots.isNotEmpty) {
         final last = activeSpots.last;

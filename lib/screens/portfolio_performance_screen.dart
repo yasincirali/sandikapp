@@ -802,9 +802,14 @@ class _PortfolioPerformanceScreenState
   /// `firstX` tabanın ÖLÇÜLDÜĞÜ noktadır (eksen birimi: gün içinde dakika,
   /// diğer dönemlerde gün). Dönem kartı katkıyı o andan SONRASI için sayar
   /// — `PeriodSummaryService.piyasaEtkisi` ile aynı kural (2026-09-23).
-  ({double first, double last, double firstX})? _periodEndpoints(
+  ///
+  /// `firstTs` aynı noktanın zaman damgası (ms) — [start] verildiyse.
+  /// Eksen birimini ([intraday]) bilen tek yer burası; iki kart birimi
+  /// ayrı ayrı çözüyordu (2026-09-24 kod incelemesi).
+  ({double first, double last, double firstX, int? firstTs})? _periodEndpoints(
     List<TransactionSegment> segments, {
     DateTime? start,
+    bool intraday = false,
   }) {
     if (segments.isEmpty) return null;
     // Y değerleri en kalın (aktif) segmentten okunur — passive segment
@@ -838,20 +843,36 @@ class _PortfolioPerformanceScreenState
         ? 0.0 // `start` X ekseninin sıfırıdır
         : null;
 
+    // BAŞTAKİ sıfırlar veri yokluğudur ve atlanır (`uclar` ile aynı);
+    // ilk dolu noktadan SONRAKİ sıfır bir ölçümdür — her şey satıldıysa
+    // son değer 0'dır. Eskiden her sıfır atlanıyordu: tamamen satış
+    // yapılan dönemde uç satış öncesinde kalıyor, satış geliri katkıdan
+    // düşülünce piyasa etkisi satış tutarı kadar şişiyordu (2026-09-24).
+    // Çizgi bu sıfırları zaten çiziyor (bkz. `_convertHistoryToSegments`).
     double? first;
     double? last;
     double firstX = 0;
     for (final s in primary.spots) {
       if (altX != null && s.x < altX) continue;
-      if (s.y <= 0) continue; // `uclar` ile AYNI kural
       if (first == null) {
+        if (s.y <= 0) continue;
         first = s.y;
         firstX = s.x;
       }
-      last = s.y;
+      last = s.y < 0 ? 0 : s.y;
     }
     if (first == null || last == null) return null;
-    return (first: first, last: last, firstX: firstX);
+    final birimMs = intraday
+        ? Duration.millisecondsPerMinute
+        : Duration.millisecondsPerDay;
+    return (
+      first: first,
+      last: last,
+      firstX: firstX,
+      firstTs: start == null
+          ? null
+          : start.millisecondsSinceEpoch + (firstX * birimMs).round(),
+    );
   }
 
   // ── Alım günü dot'ları: viewport'tan bağımsız, cache'lenir ──────────────

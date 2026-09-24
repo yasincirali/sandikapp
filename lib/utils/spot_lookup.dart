@@ -69,3 +69,22 @@ int coveringSpotIndex(List<FlSpot> spots, double x) {
   }
   return lo;
 }
+
+/// X'e göre SIRALI listede, düz (eğrisiz) çizginin [x]'teki YÜKSEKLİĞİ:
+/// komşu iki nokta arasında doğrusal ara değer. Liste dışındaki [x] uçtaki
+/// noktanın değerine yaslanır; liste boşsa null.
+///
+/// Varlık grafiğinin işlem işaretleri için (2026-09-24): işaret işlemin
+/// gerçek ANINDA ama ÇİZGİNİN ÜZERİNDE durur. Çizgi `isCurved: false`
+/// çizildiği için doğrusal ara değer noktayı tam çizginin üstüne koyar.
+double? cizgiDegeri(List<FlSpot> spots, double x) {
+  if (spots.isEmpty) return null;
+  if (x <= spots.first.x) return spots.first.y;
+  if (x >= spots.last.x) return spots.last.y;
+  final i = coveringSpotIndex(spots, x);
+  final a = spots[i];
+  final b = spots[i + 1];
+  final aralik = b.x - a.x;
+  if (aralik <= 0) return a.y;
+  return a.y + (b.y - a.y) * (x - a.x) / aralik;
+}
