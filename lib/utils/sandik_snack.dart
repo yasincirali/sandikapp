@@ -94,6 +94,13 @@ void sandikSnack(
               ? const Duration(seconds: 4)
               : const Duration(seconds: 3)),
       action: resolvedAction,
+      // 2026-09-23 denetimi U11: Flutter 3.47'de `persist` verilmezse
+      // eylemli snackbar `persist = action != null` ile KALICI olur — süre
+      // dolsa da eyleme dokunulana kadar ekranda kalır. "X eklendi · Alarm
+      // kur" dakikalarca durup Ekle düğmesini örttü. Yukarıdaki süre kuralı
+      // (4 sn eylemli / 3 sn eylemsiz) ancak burada `false` ile geçerli olur;
+      // eylem "Geri al" gibi isteğe bağlıdır, kullanıcıyı bekletmemeli.
+      persist: false,
     ),
   );
 }

@@ -58,13 +58,15 @@ Deno.test('recordAppNotification: kullanıcı başına TEK kayıt (çok cihaz)',
   assertEquals(yazilan.length, 1, 'ikinci cihaz ikinci satır yazmamalı');
 });
 
-Deno.test('recordAppNotification: DB hatası gönderimi düşürmez, mesaj döner', async () => {
+// 2026-09-23 denetimi L2: DB mesajı yanıta (failures) sızmasın — sabit kod döner,
+// ayrıntı yalnızca günlüğe.
+Deno.test('recordAppNotification: DB hatası gönderimi düşürmez, sabit kod döner', async () => {
   const yazilan: AppNotificationRow[] = [];
   const row = appNotificationRow({
     userId: 'u2', type: 'partner_invite', title: 'Davet', body: 'x',
   });
   const sonuc = await recordAppNotification(sahteYazici(yazilan, 'permission denied'), row);
-  assertEquals(sonuc, 'bildirim kaydı: permission denied');
+  assertEquals(sonuc, 'bildirim kaydı: yazilamadi');
 });
 
 Deno.test('recordAppNotification: null satır sessizce atlanır', async () => {

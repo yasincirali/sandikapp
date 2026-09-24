@@ -172,6 +172,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final kopyalandi = context.l10n.codeCopied;
     try {
       final code = await AuthService.instance.generatePartnerCode(user.id);
+      // Kod üretimi sürerken ekrandan çıkılabilir; dispose sonrası
+      // `setState` fırlatır (2026-09-23 denetimi F18). `finally` yine koşar
+      // ve kendi `mounted` denetimini yapar.
+      if (!mounted) return;
       setState(() => _generatedCode = code);
       await Clipboard.setData(ClipboardData(text: code));
       await _showMsg(kopyalandi);
@@ -199,6 +203,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
     try {
       final result = await ref.read(partnersProvider.notifier).submitCode(code);
+      // Ekran kapandıysa denetleyici de dispose edildi: `clear()` ve
+      // `setState` ikisi de fırlatırdı (2026-09-23 denetimi F18). Yoklama da
+      // başlatılmaz — sonucu gösterecek ekran yok; kabul bildirimi
+      // `PartnerInviteListenerService` üzerinden yine gelir.
+      if (!mounted) return;
       _codeCtrl.clear();
       setState(() {
         _pendingInviteId = result.inviteId;
@@ -388,7 +397,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         padding: EdgeInsets.zero,
                         onPressed: _busy
                             ? null
-                            : () => Navigator.of(context).push(
+                            : () => pushGuarded(
+                                  context,
                                   adaptiveRoute<void>(
                                     builder: (_) => const SettingsScreen(),
                                   ),
@@ -856,10 +866,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ? null
                 : () async {
                     setState(() => _busy = true);
-                    await ref
-                        .read(partnersProvider.notifier)
-                        .toggleHidden(p.user.id, p.isActive);
-                    if (mounted) setState(() => _busy = false);
+                    // Ağ hatası `_busy`'yi sonsuza dek açık bırakıyor (tüm
+                    // ortak eylemleri kilitliyor) ve yakalanmayan hata
+                    // Crashlytics'e çökme olarak düşüyordu (2026-09-23
+                    // denetimi F18 ile aynı tur).
+                    try {
+                      await ref
+                          .read(partnersProvider.notifier)
+                          .toggleHidden(p.user.id, p.isActive);
+                    } catch (e, st) {
+                      CrashReporter.report(e, st,
+                          reason: 'ProfileScreen.toggleHidden');
+                      if (mounted) {
+                        await _showMsg(friendlyError(e), isError: true);
+                      }
+                    } finally {
+                      if (mounted) setState(() => _busy = false);
+                    }
                   },
             child: _ActionIcon(
               icon: p.isActive
@@ -899,8 +922,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
     if (confirm && mounted) {
       setState(() => _busy = true);
-      await ref.read(partnersProvider.notifier).removePartner(partnerId);
-      if (mounted) setState(() => _busy = false);
+      // Gizle/göster ile aynı gerekçe: hata `_busy`'yi kilitli bırakmasın.
+      try {
+        await ref.read(partnersProvider.notifier).removePartner(partnerId);
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'ProfileScreen.removePartner');
+        if (mounted) await _showMsg(friendlyError(e), isError: true);
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
     }
   }
 }

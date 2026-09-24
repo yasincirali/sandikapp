@@ -110,6 +110,26 @@ void main() {
       expect(prefs.getInt('portfolio_goal_try_B'), 100000);
     });
 
+    // Denetim F6 (2026-09-23): yarış onayı cihaz genelindeydi; A'nın onayı
+    // aynı telefondaki B için de "açık" okunuyor, B'nin getirisi onaysız
+    // sunucuya gidiyordu.
+    test('yarış onayı kişiye özel: A katılınca B katılmış sayılmaz',
+        () async {
+      await initPreferencesCache();
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+
+      kullaniciDegisti(c, 'A');
+      await c.read(leaderboardOptInProvider.notifier).set(true);
+
+      kullaniciDegisti(c, 'B');
+      expect(c.read(leaderboardOptInProvider), isFalse,
+          reason: 'B açık rıza vermedi.');
+
+      kullaniciDegisti(c, 'A');
+      expect(c.read(leaderboardOptInProvider), isTrue);
+    });
+
     test('invalidate edilmezse eski state kalır — listenin varlık sebebi',
         () async {
       await initPreferencesCache();

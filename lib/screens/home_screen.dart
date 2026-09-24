@@ -1343,7 +1343,8 @@ class _SignalsBottomSheet extends ConsumerWidget {
                     // saklıydı. Ayarlar'daki satır da duruyor (kapı olarak).
                     SandikTappable(
                       semanticLabel: context.l10n.myAlarms,
-                      onTap: () => Navigator.of(context).push(
+                      onTap: () => pushGuarded(
+                        context,
                         adaptiveRoute<void>(
                             builder: (_) => const PriceAlertsScreen()),
                       ),

@@ -176,6 +176,14 @@ Deno.serve(async (request) => {
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
     const cronSecret = Deno.env.get('DAILY_BRIEF_CRON_SECRET');
 
+    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
+    const eksik = cronSecretZorunlu(cronSecret, 'DAILY_BRIEF_CRON_SECRET');
+    if (eksik) return eksik;
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
+
+    // Env denetimi kapıdan SONRA (2026-09-23 denetimi L2): yetkisiz çağıran
+    // eksik yapılandırmayı ya da secret adlarını öğrenemesin.
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error(
         'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY runtime tarafından '
@@ -187,12 +195,6 @@ Deno.serve(async (request) => {
         'FCM secret\'ları eksik: FCM_PROJECT_ID, FCM_SERVICE_ACCOUNT_JSON.',
       );
     }
-
-    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
-    const eksik = cronSecretZorunlu(cronSecret, 'DAILY_BRIEF_CRON_SECRET');
-    if (eksik) return eksik;
-    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
-    if (yetkisiz) return yetkisiz;
 
     let dryRun = false;
     let minMovePct = DEFAULT_MIN_MOVE_PCT;
@@ -503,7 +505,9 @@ Deno.serve(async (request) => {
             { onConflict: 'user_id,sent_on' },
           );
       } else {
-        failures.push(r.rawText.slice(0, 200));
+        // Ham FCM gövdesi yalnızca günlüğe; yanıta kısa kod (2026-09-23 denetimi L2).
+        console.error('[daily-brief] FCM gonderimi basarisiz:', r.rawText.slice(0, 500));
+        failures.push(`fcm: ${r.hataKodu}`);
         if (r.shouldDeleteToken) {
           await admin.from('user_push_tokens').delete().eq('token', tokenRow.token);
         }
@@ -521,9 +525,9 @@ Deno.serve(async (request) => {
       failures: failures.slice(0, 5),
     });
   } catch (error) {
-    return jsonResponse(
-      { error: error instanceof Error ? error.message : String(error) },
-      500,
-    );
+    // Ayrıntı yalnızca günlüğe: yanıtta `error.message` dönmek tablo/sütun
+    // ve secret adlarını sızdırır (CLAUDE.md sunucu kuralı, 2026-09-23 denetimi L2).
+    console.error('[daily-brief] hata:', error);
+    return jsonResponse({ error: 'Brifing gonderimi basarisiz.' }, 500);
   }
 });

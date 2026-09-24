@@ -678,7 +678,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// Dönüşte seri YENİDEN ÇEKİLİR: kullanıcı varlığı eklediyse artık
   /// "Portföyümde" rozetini hak eder ve portföy serileri de değişmiştir.
   Future<void> _openAdd(SymbolHit hit) async {
-    await Navigator.push(
+    await pushGuarded(
       context,
       adaptiveRoute<void>(
         builder: (_) => AddAssetScreen(

@@ -32,6 +32,19 @@ String fmtNumFlex(double value, {int maxDigits = 4}) {
   return f.format(value);
 }
 
+/// Metin ALANINA yazılacak sayı: binlik ayraçsız, ondalık `,`, gereksiz
+/// sıfırsız (`41,235`, `1000`, `0,125`).
+///
+/// **Neden:** alanlar `parseTrNumber` ile okunur. Önceden doldurma
+/// `double.toString()` ile yapılıyordu (`41.235`); tam 3 ondalıklı bir
+/// kotasyon binlik sanılıp 1000 kat büyük kaydediliyordu — kullanıcı
+/// önceden doldurulmuş fiyata dokunmadan "Ekle"ye basınca (2026-09-23
+/// denetimi F1). Bu biçim `parseTrNumber` ile gidiş-dönüş kayıpsızdır.
+String fmtInputTr(double value, {int maxDigits = 8}) {
+  final f = NumberFormat('0.${'#' * maxDigits}', 'tr_TR');
+  return f.format(value);
+}
+
 /// TRY para birimi: `₺1.234` (tam sayı) / `₺1.234,56` (ondalıklı).
 String fmtTRY(double value, {int digits = 0}) {
   return NumberFormat.currency(
@@ -41,9 +54,20 @@ String fmtTRY(double value, {int digits = 0}) {
 
 /// Kısa TRY: `₺1.5K` yerine `₺1,5K`, `₺2.3M` yerine `₺2,3M`. Sadece grafik
 /// eksen etiketleri gibi dar alanlarda kullanılmalı; genel değerler `fmtTRY`.
+///
+/// Milyar (`Mr`) ve trilyon (`Tn`) basamakları 2026-09-23 denetimi U14'te
+/// eklendi: yalnızca `M` vardı ve 80 trilyonluk bir tutar
+/// `₺80.000.000,32M` yazılıyordu — kısaltmanın amacı olan "dar alanda
+/// okunur" tamamen kayboluyordu. `Mr` [fmtTRYAxis] ile aynı kısaltma.
 String fmtTRYCompact(double value) {
   final abs = value.abs();
   final sign = value < 0 ? '-' : '';
+  if (abs >= 1e12) {
+    return '$sign₺${fmtNum(abs / 1e12, digits: 2)}Tn';
+  }
+  if (abs >= 1e9) {
+    return '$sign₺${fmtNum(abs / 1e9, digits: 2)}Mr';
+  }
   if (abs >= 1000000) {
     return '$sign₺${fmtNum(abs / 1000000, digits: 2)}M';
   }
@@ -66,6 +90,12 @@ String fmtTRYAxis(double value, double span) {
   final abs = value.abs();
   final sign = value < 0 ? '-' : '';
 
+  // Trilyon — `Tn` (U14, 2026-09-23 denetimi; bkz. [fmtTRYCompact]).
+  if (abs >= 1e12) {
+    final spanTn = span / 1e12;
+    final digits = spanTn >= 0.02 ? 2 : (spanTn >= 0.002 ? 3 : 4);
+    return '$sign₺${fmtNum(abs / 1e12, digits: digits)}Tn';
+  }
   // Milyar — `Mr` kısaltmasıyla. Bu basamak eksikti ve 1,25 milyarlık bir
   // portföy `₺1.250,00M` olarak yazılıyordu: hem uzun hem okunmuyor.
   if (abs >= 1000000000) {
@@ -113,6 +143,10 @@ String fmtTRYAxis(double value, double span) {
 ///   fazla grup varsa binlik sayılır (`1.000`, `1.000.000`); aksi halde
 ///   ondalık kabul edilir (`1.5` → 1.5). Bu, hem klavyeden `.` ile ondalık
 ///   yazan kullanıcıyı hem binlik ayracını korur.
+/// - Binlik okuması için ilk grup da geçerli bir binlik grubu olmalı: 1–3
+///   hane ve `0` ile başlamayan. `0.125` gram ya da `1234.567` hiçbir
+///   yazımda binlik olamaz; eskiden 125 ve 1234567 okunuyordu
+///   (2026-09-23 denetimi F1/F15).
 double? parseTrNumber(String text) {
   var s = text.trim();
   if (s.isEmpty) return null;
@@ -134,8 +168,12 @@ double? parseTrNumber(String text) {
   } else if (lastDot >= 0) {
     // Yalnızca nokta: binlik mi ondalık mı?
     final parts = s.split('.');
-    final allGroupsAreThree =
-        parts.length > 1 && parts.skip(1).every((p) => p.length == 3);
+    final bas = parts.first.startsWith('-') ? parts.first.substring(1) : parts.first;
+    final ilkGrupGecerli =
+        bas.isNotEmpty && bas.length <= 3 && !bas.startsWith('0');
+    final allGroupsAreThree = parts.length > 1 &&
+        ilkGrupGecerli &&
+        parts.skip(1).every((p) => p.length == 3);
     if (allGroupsAreThree) s = s.replaceAll('.', '');
   }
 

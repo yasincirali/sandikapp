@@ -55,11 +55,39 @@ void main() {
     test('3.770 → 3770 (binlik)', () {
       expect(parseTrNumber('3.770'), 3770);
     });
-    test('0.123 → 123 (3 hane kuralı gereği binlik)', () {
-      // Bilinçli ödünleşim: "0.123" pratikte binlik yazımı değildir ama
-      // kural tutarlı olmalı. Bu girdiyi ondalık isteyen kullanıcı
-      // "0,123" yazar — Türkçe klavyede doğal olan da budur.
-      expect(parseTrNumber('0.123'), 123);
+    test('0.123 → 0.123 (0 ile başlayan grup binlik olamaz)', () {
+      // 2026-09-23'e kadar bilinçli ödünleşimdi: "3 hane → binlik" kuralı
+      // tutarlılık için 0.123'ü 123 okuyordu. Denetim (F1/F15) bunun gerçek
+      // bir veri bozulması olduğunu gösterdi: "0.125 gram" hızlı girişte
+      // 125 gram kaydediliyordu. Hiçbir yazımda "0" bir binlik grubu
+      // değildir, ödünleşim kaldırıldı.
+      expect(parseTrNumber('0.123'), 0.123);
+      expect(parseTrNumber('-0.5'), -0.5);
+    });
+    test('1234.567 → ondalık (ilk grup 3 haneden uzun)', () {
+      expect(parseTrNumber('1234.567'), 1234.567);
+    });
+    test('-1.000 → -1000 (işaretli binlik)', () {
+      expect(parseTrNumber('-1.000'), -1000);
+    });
+  });
+
+  group('fmtInputTr — alan doldurma gidiş-dönüşü (denetim F1)', () {
+    // Önceden doldurulan fiyat `toString()` ile yazılıyordu: `41.235`
+    // `parseTrNumber`da binlik sayılıp 41235 kaydediliyordu.
+    for (final v in [41.235, 0.123, 2.125, 100.001, 1125.0, 1000.0,
+        0.00012345, 3.456, 1234567.891, 12.5]) {
+      test('$v alan metninden aynen geri okunur', () {
+        final metin = fmtInputTr(v);
+        expect(metin.contains('.'), isFalse,
+            reason: 'alan metni binlik noktası taşımaz: $metin');
+        expect(parseTrNumber(metin), closeTo(v, 1e-9));
+      });
+    }
+    test('biçim', () {
+      expect(fmtInputTr(41.235), '41,235');
+      expect(fmtInputTr(1000), '1000');
+      expect(fmtInputTr(0.5), '0,5');
     });
   });
 
@@ -115,13 +143,6 @@ void main() {
           // doğru çözer; kural yalnızca noktayı KORUYAN kullanımlar için.
           if (prefix.contains("replaceAll('.', '')")) continue;
           final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;
-          // Hızlı giriş ayrıştırıcısı (`parseQuickEntry`) normalize edilmiş
-          // metin üzerinde çalışır: binlik noktası lookahead ile önceden
-          // atılır. 2026-09-14'te add_asset_screen'den provider'a taşındı.
-          if (e.path.endsWith('add_asset_form_provider.dart') &&
-              _icinde(src, m.start, 'ParsedEntry? parseQuickEntry(')) {
-            continue;
-          }
           offenders.add('${e.path}:$line');
         }
       }
@@ -132,13 +153,4 @@ void main() {
               '${offenders.join('\n')}');
     });
   });
-}
-
-/// [offset] konumu, [imza] ile başlayan fonksiyonun gövdesinde mi?
-/// Gövde sonu: imzadan sonraki ilk `\n}` (üst düzey fonksiyon kapanışı).
-bool _icinde(String src, int offset, String imza) {
-  final bas = src.indexOf(imza);
-  if (bas < 0 || offset < bas) return false;
-  final son = src.indexOf('\n}', bas);
-  return son < 0 || offset < son;
 }

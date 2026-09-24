@@ -135,17 +135,20 @@ Deno.serve(async (request) => {
     const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
     const cronSecret = Deno.env.get('CALENDAR_NUDGE_CRON_SECRET');
 
+    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
+    const eksik = cronSecretZorunlu(cronSecret, 'CALENDAR_NUDGE_CRON_SECRET');
+    if (eksik) return eksik;
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
+
+    // Env denetimi kapıdan SONRA (2026-09-23 denetimi L2): yetkisiz çağıran
+    // eksik yapılandırmayı ya da secret adlarını öğrenemesin.
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY yok.');
     }
     if (!fcmProjectId || !fcmServiceAccountJson) {
       throw new Error('FCM secret\'ları eksik.');
     }
-    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
-    const eksik = cronSecretZorunlu(cronSecret, 'CALENDAR_NUDGE_CRON_SECRET');
-    if (eksik) return eksik;
-    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
-    if (yetkisiz) return yetkisiz;
 
     let dryRun = false;
     try {
@@ -297,7 +300,9 @@ Deno.serve(async (request) => {
       if (r.ok) {
         sent += 1;
       } else {
-        failures.push(r.rawText.slice(0, 200));
+        // Ham FCM gövdesi yalnızca günlüğe; yanıta kısa kod (2026-09-23 denetimi L2).
+        console.error('[calendar-nudge] FCM gonderimi basarisiz:', r.rawText.slice(0, 500));
+        failures.push(`fcm: ${r.hataKodu}`);
         if (r.shouldDeleteToken) {
           await admin.from('user_push_tokens').delete().eq('token', t.token);
         }
@@ -330,9 +335,9 @@ Deno.serve(async (request) => {
       failures: failures.slice(0, 5),
     });
   } catch (error) {
-    return jsonResponse(
-      { error: error instanceof Error ? error.message : String(error) },
-      500,
-    );
+    // Ayrıntı yalnızca günlüğe: yanıtta `error.message` dönmek tablo/sütun
+    // ve secret adlarını sızdırır (CLAUDE.md sunucu kuralı, 2026-09-23 denetimi L2).
+    console.error('[calendar-nudge] hata:', error);
+    return jsonResponse({ error: 'Takvim hatirlatmasi basarisiz.' }, 500);
   }
 });

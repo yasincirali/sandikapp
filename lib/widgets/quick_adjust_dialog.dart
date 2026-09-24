@@ -75,8 +75,9 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     super.dispose();
   }
 
-  String _fmt(double v) =>
-      v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
+  /// Alan metni `parseTrNumber` ile okunur; `toString()` (`41.235`) binlik
+  /// sanılıp 1000 kat büyüyordu (2026-09-23 denetimi F1).
+  String _fmt(double v) => fmtInputTr(v);
 
   /// Türkçe biçimi doğru çözer. Eski hâli `replaceAll(',', '.')` idi ve
   /// "1.000" girdisini 1.0 olarak okuyordu — kullanıcı 1000 lot yazıp
@@ -171,7 +172,13 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     final accent = _isAdd ? context.c.gain : context.c.loss;
     final qty = _parse(_qtyCtrl.text) ?? 0;
     final price = _parse(_priceCtrl.text) ?? 0;
-    final total = qty * (_isAdd ? price : asset.purchasePrice);
+    // Satışta önizleme, KAYDEDİLECEK satış fiyatını kullanır (bkz.
+    // `addSellTransaction` çağrısı). Eskiden "Satış değeri" etiketiyle alış
+    // maliyeti gösteriliyordu; kaydedilen tutar başkaydı (2026-09-23
+    // denetimi F10).
+    final satisFiyati =
+        asset.currentPrice > 0 ? asset.currentPrice : asset.purchasePrice;
+    final total = qty * (_isAdd ? price : satisFiyati);
 
     return Dialog(
       backgroundColor: context.c.surface1,

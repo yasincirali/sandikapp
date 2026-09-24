@@ -103,6 +103,25 @@ void main() {
       await tester.tap(onayDugmesi.first);
     }
 
+    // ── 2b) Kilit teklifi (ilk girişte, kilit kapalıysa) ────────────────────
+    // `LockOfferScreen` kilit kapısından sonra, ana ekrandan önce BİR kez
+    // çıkar. CI'da bu adım beklenmiyordu ve test "ana ekran" beklerken
+    // 45 sn'de düşüyordu (run 35925378072, 2026-09-24: ekranda teklif
+    // metinleri vardı). Gerçek kullanıcı da bu adımı görür — test onu
+    // "Şimdi değil" ile geçer; gelmezse (kilit açık ya da daha önce
+    // sorulmuş) doğrudan ana ekrana düşer.
+    final simdiDegil = find.text('Şimdi değil');
+    await _bekleKosul(
+      tester,
+      () => simdiDegil.evaluate().isNotEmpty || anaEkranFab.evaluate().isNotEmpty,
+      neden: 'kilit teklifi ya da ana ekran',
+      sure: const Duration(seconds: 45),
+    );
+    if (simdiDegil.evaluate().isNotEmpty) {
+      await tester.tap(simdiDegil.first);
+      await tester.pump();
+    }
+
     // ── 3) Ana ekran: FAB → Varlık Ekle ─────────────────────────────────────
     // Auth kapısı portföy verisi gelene kadar splash'te bekler (en çok 6 sn),
     // sonra ana gezinme açılır.

@@ -260,17 +260,20 @@ Deno.serve(async (request) => {
       ? { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson }
       : null;
 
+    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
+    const eksik = cronSecretZorunlu(cronSecret, 'INFLATION_FETCH_CRON_SECRET');
+    if (eksik) return eksik;
+    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
+    if (yetkisiz) return yetkisiz;
+
+    // Env denetimi kapıdan SONRA (2026-09-23 denetimi L2): yetkisiz çağıran
+    // eksik yapılandırmayı ya da secret adlarını öğrenemesin.
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error(
         'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY runtime tarafından '
         + 'sağlanmadı. Bunlar otomatik enjekte edilir.',
       );
     }
-    // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
-    const eksik = cronSecretZorunlu(cronSecret, 'INFLATION_FETCH_CRON_SECRET');
-    if (eksik) return eksik;
-    const yetkisiz = cronYetkisiVarMi(request, cronSecret);
-    if (yetkisiz) return yetkisiz;
 
     // Anahtar yoksa HİÇBİR ŞEY yazılmaz.
     //
@@ -386,10 +389,12 @@ Deno.serve(async (request) => {
           written: 0,
         });
       } catch (e) {
+        // Ham hata metni yalnızca günlüğe; yanıtta sabit kod (2026-09-23 denetimi L2).
+        console.error('[fetch-inflation] katalog istegi basarisiz:', e);
         return jsonResponse({
           ok: false,
           mode: 'catalog',
-          detail: e instanceof Error ? e.message : String(e),
+          reason: 'evds_unreachable',
           written: 0,
         }, 502);
       }
@@ -466,10 +471,12 @@ Deno.serve(async (request) => {
       }
       evdsJson = JSON.parse(ham);
     } catch (e) {
+      // Ham hata metni yalnızca günlüğe; `reason` teşhis için yeterli
+      // (2026-09-23 denetimi L2).
+      console.error('[fetch-inflation] EVDS istegi basarisiz:', e);
       return jsonResponse({
         ok: false,
         reason: 'evds_unreachable',
-        detail: e instanceof Error ? e.message : String(e),
         written: 0,
       }, 502);
     }

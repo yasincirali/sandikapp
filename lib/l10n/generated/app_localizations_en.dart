@@ -2435,6 +2435,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get someAssetsNotAdded => 'Some Assets Could Not Be Added';
 
   @override
+  String bulkAddSavingProgress(int saved, int total) {
+    return 'Saving $saved / $total';
+  }
+
+  @override
+  String bulkAddPartialResult(int saved, int failed) {
+    return '$saved added, $failed could not be added. The failed ones are still in the cart; trying again adds only those.';
+  }
+
+  @override
   String get clearCartConfirm =>
       'All assets in the cart will be removed. Are you sure?';
 

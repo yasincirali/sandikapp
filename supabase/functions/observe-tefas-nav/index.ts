@@ -89,14 +89,17 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const cronSecret = Deno.env.get('TEFAS_NAV_CRON_SECRET');
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY runtime tarafından sağlanmadı.');
-    }
     // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
     const eksik = cronSecretZorunlu(cronSecret, 'TEFAS_NAV_CRON_SECRET');
     if (eksik) return eksik;
     const yetkisiz = cronYetkisiVarMi(request, cronSecret);
     if (yetkisiz) return yetkisiz;
+
+    // Env denetimi kapıdan SONRA (2026-09-23 denetimi L2): yetkisiz çağıran
+    // eksik yapılandırmayı ya da secret adlarını öğrenemesin.
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY runtime tarafından sağlanmadı.');
+    }
 
     let dryRun = false;
     try {

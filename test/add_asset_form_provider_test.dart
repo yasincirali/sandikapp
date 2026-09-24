@@ -148,7 +148,7 @@ void main() {
       final n = c.read(addAssetFormProvider(args).notifier);
       const fon = TefasFund(
           code: 'AAK', name: 'Ak Fon', price: 12.5, fundType: '', managerName: '');
-      expect(n.selectFund(fon, priceEmpty: true).price, '12.5');
+      expect(n.selectFund(fon, priceEmpty: true).price, '12,5');
       expect(n.selectFund(fon, priceEmpty: false).price, isNull);
       expect(c.read(addAssetFormProvider(args)).resolveTicker(''), 'TEFAS:AAK');
     });
@@ -175,7 +175,7 @@ void main() {
       expect(s.currency, 'TRY');
       expect(yaz.ticker, 'USDTRY=X');
       expect(yaz.quantity, '100');
-      expect(yaz.price, '32.5');
+      expect(yaz.price, '32,5');
     });
   });
 
@@ -294,6 +294,11 @@ void main() {
     expect(h.type, AssetType.hisse);
     expect(h.qty, 500);
     expect(h.price, 105);
+    // Denetim F15: nokta sonrası 3+ hane eskiden binlik sayılıp atılıyordu.
+    expect(parseQuickEntry('100 dolar 41.2345 liradan')!.price, 41.2345);
+    expect(parseQuickEntry('0.125 gram altın')!.qty, 0.125);
+    expect(parseQuickEntry('1.234,5 dolar')!.qty, 1234.5);
+    expect(parseQuickEntry('10 gram altın 4.500,75 liradan')!.price, 4500.75);
   });
 
   test('ekran durum alanı taşımaz — Faz 3.10 ratchet', () {

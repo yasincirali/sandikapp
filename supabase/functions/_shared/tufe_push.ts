@@ -133,7 +133,9 @@ export async function tufeGunuPushu(
     if (r.ok) {
       sent += 1;
     } else {
-      failures.push(r.rawText.slice(0, 200));
+      // Ham FCM gövdesi yalnızca günlüğe; yanıta kısa kod (2026-09-23 denetimi L2).
+      console.error('[tufe-push] FCM gonderimi basarisiz:', r.rawText.slice(0, 500));
+      failures.push(`fcm: ${r.hataKodu}`);
       if (r.shouldDeleteToken) {
         await admin.from('user_push_tokens').delete().eq('token', t.token);
       }

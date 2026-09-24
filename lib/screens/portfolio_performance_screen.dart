@@ -432,7 +432,7 @@ class _PortfolioPerformanceScreenState
                           child: CupertinoButton(
                             minimumSize: SandikTouch.minSize,
                             padding: EdgeInsets.zero,
-                            onPressed: () => Navigator.push(
+                            onPressed: () => pushGuarded(
                               context,
                               adaptiveRoute<void>(
                                   builder: (_) => const LeaderboardScreen()),

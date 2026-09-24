@@ -934,8 +934,15 @@ final chartLogScaleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 
 const _kLeaderboardOptInKey = PrefKeys.leaderboardOptIn;
 
+//
+// KİŞİYE ÖZEL (2026-09-23 denetimi F6): açık rıza kişiye aittir, cihaza
+// değil. Cihaz genelindeyken A'nın verdiği onay aynı telefonda giriş yapan
+// B için de "açık" okunuyor, B'nin getirisi onayı olmadan sunucuya
+// yazılıp karşılaştırılıyordu (KVKK). Eski cihaz geneli değer taşınmaz:
+// daha önce katılmış kullanıcı `_hydrateLeaderboardOptIn` ile sunucudaki
+// kaydından yeniden açılır, katılmamış olan kapalı başlar.
 final leaderboardOptInProvider = NotifierProvider<_BoolPrefNotifier, bool>(
-    () => _BoolPrefNotifier(_kLeaderboardOptInKey, false));
+    () => _BoolPrefNotifier(_kLeaderboardOptInKey, false, perUser: true));
 
 // ─── Kullanıcıya özel tercihlerin TAM listesi ─────────────────────────────────
 //
@@ -968,4 +975,5 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   liveActivityStartProvider,
   liveActivityEndProvider,
   liveActivityWeekendProvider,
+  leaderboardOptInProvider,
 ];

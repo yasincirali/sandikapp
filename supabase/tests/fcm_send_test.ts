@@ -8,7 +8,7 @@
 //   deno test supabase/tests/fcm_send_test.ts
 
 import { assertEquals } from 'jsr:@std/assert@1';
-import { sendFcmNotification } from '../functions/_shared/fcm.ts';
+import { fcmHataKodu, sendFcmNotification } from '../functions/_shared/fcm.ts';
 
 type Yakalanan = { url: string; body: Record<string, unknown> };
 
@@ -83,4 +83,38 @@ Deno.test('token silme kuralı iki kopyanın birleşimi', async () => {
     assertEquals(sonuc.ok, false);
     if (!sonuc.ok) assertEquals(sonuc.shouldDeleteToken, beklenen, `${status} ${text}`);
   }
+});
+
+// 2026-09-23 denetimi L2: cron yanıtındaki `failures`'a ham FCM gövdesi
+// değil, yalnızca makine okunur kod girer. Serbest metin hiçbir yoldan
+// (mesaj alanı, JSON olmayan gövde, küçük harfli kod) sızmamalı.
+Deno.test('fcmHataKodu: yalnızca kısa kod, ham metin asla', () => {
+  const v1 = JSON.stringify({
+    error: {
+      code: 404,
+      message: 'Requested entity was not found. token=abc proje=sandik-prod',
+      status: 'NOT_FOUND',
+      details: [{
+        '@type': 'type.googleapis.com/google.firebase.fcm.v1.FcmError',
+        errorCode: 'UNREGISTERED',
+      }],
+    },
+  });
+  assertEquals(fcmHataKodu(v1, 404), 'UNREGISTERED');
+  assertEquals(
+    fcmHataKodu('{"error":{"status":"INVALID_ARGUMENT","message":"gizli"}}', 400),
+    'INVALID_ARGUMENT',
+  );
+  assertEquals(fcmHataKodu('<html>Bad Gateway</html>', 502), 'http_502');
+  assertEquals(fcmHataKodu('{"error":{"status":"serbest metin: sızıntı"}}', 400), 'http_400');
+  assertEquals(fcmHataKodu('', 429), 'http_429');
+});
+
+Deno.test('başarısız gönderim hataKodu taşır', async () => {
+  const { sonuc } = await gonder({
+    status: 400,
+    text: '{"error":{"status":"INVALID_ARGUMENT","message":"The registration token is not valid"}}',
+  });
+  assertEquals(sonuc.ok, false);
+  if (!sonuc.ok) assertEquals(sonuc.hataKodu, 'INVALID_ARGUMENT');
 });

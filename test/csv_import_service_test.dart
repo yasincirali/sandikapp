@@ -67,6 +67,51 @@ void main() {
     expect(r.errors.single, contains('gelecekte'));
   });
 
+  // ── Türkçe büyük harf başlık + satır doğrulama (2026-09-23 denetimi U08)
+  //
+  // `toLowerCase()` "İ"yi "i̇" yapıyordu: "FİYAT"/"TARİH" eşleşmiyor, fiyat
+  // 0 ve tarih bugün kalıyordu — negatif fiyat ve 2099 tarihi de bu yüzden
+  // hiç okunmadan "geçiyordu".
+
+  test('BÜYÜK HARF Türkçe başlıklar eşleşir (FİYAT, TARİH, TÜR)', () {
+    const text = 'SEMBOL;ADET;FİYAT;TARİH;TÜR\n'
+        'THYAO;10;312,40;05.03.2026;HİSSE\n';
+    final r = CsvImportService.parse(text, today: today);
+    expect(r.errors, isEmpty);
+    final row = r.rows.single;
+    expect(row.price, 312.40);
+    expect(row.addedDate, DateTime(2026, 3, 5));
+    expect(row.type, AssetType.hisse);
+  });
+
+  test('ASCII ve İngilizce büyük harf başlıklar da eşleşir', () {
+    final a = CsvImportService.parse(
+        'KOD;MIKTAR;ALIS;TARIH\nTHYAO;1;5;01.02.2026', today: today);
+    expect(a.rows.single.price, 5);
+    expect(a.rows.single.addedDate, DateTime(2026, 2, 1));
+    final b = CsvImportService.parse(
+        'SYMBOL;QUANTITY;PRICE;DATE\nTHYAO;1;7;2026-02-01', today: today);
+    expect(b.rows.single.price, 7);
+    expect(b.rows.single.addedDate, DateTime(2026, 2, 1));
+  });
+
+  test('negatif fiyat, uzak gelecek, okunamayan fiyat/tarih → satır hatası',
+      () {
+    const text = 'SEMBOL;ADET;FİYAT;TARİH\n'
+        'THYAO;10;-5;01.02.2026\n'
+        'GARAN;10;5;01.01.2099\n'
+        'ASELS;10;abc;01.02.2026\n'
+        'AKBNK;10;5;32.13.2026\n'
+        'BIMAS;10;5;01.02.2026\n';
+    final r = CsvImportService.parse(text, today: today);
+    expect(r.rows.map((e) => e.ticker), ['BIMAS.IS']);
+    expect(r.errors.length, 4);
+    expect(r.errors[0], contains('negatif'));
+    expect(r.errors[1], contains('gelecekte'));
+    expect(r.errors[2], contains('fiyat okunamadı'));
+    expect(r.errors[3], contains('tarih okunamadı'));
+  });
+
   // ── Döviz maliyeti ÇİFTE ÇEVRİLMEZ (2026-09-16) ────────────────────────
   //
   // Ölçülen arıza: `USD;2200;38,50` satırı `currency: 'USD'` ile

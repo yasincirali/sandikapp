@@ -98,8 +98,10 @@ void main() {
   test('sepet modu sinyal SIZDIRMAZ', () {
     // Sepete ekleme `BulkAddAssetScreen`'e döner, MainNav'a değil.
     // `true` döndürürse yanlışlıkla sekme geçişi tetiklenebilir.
+    // 2026-09-23 (F14): gövde `_kaydet`'e taşındı ve dal
+    // `return _KayitSonu.kapandi;` ile biter — desen her `return`'ü kabul eder.
     final cartBlock = RegExp(
-      r'if \(widget\.cartMode\)[\s\S]{0,900}?return;',
+      r'if \(widget\.cartMode\)[\s\S]{0,900}?return[^;]*;',
     ).firstMatch(add);
     expect(cartBlock, isNotNull, reason: 'Sepet modu dalı bulunamadı.');
     expect(

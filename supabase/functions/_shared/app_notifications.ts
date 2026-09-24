@@ -7,7 +7,7 @@
 //
 // **Push'tan BAĞIMSIZ kaydedilir:** kullanıcının token'ı yoksa ya da FCM
 // reddederse bile satır yazılır — çan, push'un yedeğidir. Kayıt hatası
-// gönderimi DÜŞÜRMEZ: çağıran hata metnini `failures`'a ekler, akış sürer.
+// gönderimi DÜŞÜRMEZ: çağıran sabit hata kodunu `failures`'a ekler, akış sürer.
 
 export type AppNotificationType =
   | 'partner_invite'
@@ -56,7 +56,7 @@ export function appNotificationRow(p: {
   };
 }
 
-/// Kaydeder; hata varsa mesajını döner (çağıran `failures`'a ekler), yoksa
+/// Kaydeder; hata varsa sabit bir kod döner (çağıran `failures`'a ekler), yoksa
 /// `null`. Kullanıcı başına TEK satır: aynı kullanıcının birden çok cihazı
 /// (token'ı) varsa [kaydedilen] kümesi ikinci kaydı engeller.
 export async function recordAppNotification(
@@ -69,10 +69,15 @@ export async function recordAppNotification(
     if (kaydedilen.has(row.user_id)) return null;
     kaydedilen.add(row.user_id);
   }
+  // DB hata metni yalnızca günlüğe; dönen değer cron yanıtının `failures`'ına
+  // girdiği için sabit koddur (2026-09-23 denetimi L2).
   try {
     const { error } = await admin.from('app_notifications').insert(row);
-    return error ? `bildirim kaydı: ${error.message}` : null;
+    if (!error) return null;
+    console.error('[app_notifications] kayit yazilamadi:', error.message);
+    return 'bildirim kaydı: yazilamadi';
   } catch (e) {
-    return `bildirim kaydı: ${e instanceof Error ? e.message : String(e)}`;
+    console.error('[app_notifications] kayit yazilamadi:', e);
+    return 'bildirim kaydı: yazilamadi';
   }
 }

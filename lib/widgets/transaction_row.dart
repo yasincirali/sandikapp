@@ -34,9 +34,14 @@ class TransactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Portföy ekranındaki varlık kartlarıyla birebir tutar gösterimi için
-    // 3 ondalıklı format (tryFmt3 ile aynı biçim).
-    final tryFmt = baz.formatter(digits: 3);
+    // Portföy ekranındaki pozisyon detayıyla birebir tutar gösterimi —
+    // ikisi de 2 ondalık (kuruş).
+    //
+    // 2026-09-23 denetimi U14: eskiden 3 ondalıktı. "+₺10.000,000" tutarı
+    // Türkçe ayraçlarla "on milyon" diye okunuyordu (üç haneli grup binlik
+    // sanılır). Para kuruştan ince yazılmaz; 3 hane yalnızca BİRİM fiyat
+    // hassasiyeti için anlamlıdır (fon fiyatları), toplam tutar için değil.
+    final tryFmt = baz.formatter(digits: 2);
     final bool isSell = asset.isSell;
     final bool isDelete = asset.isDeleteLog;
     final bool isDividend = asset.isDividend;

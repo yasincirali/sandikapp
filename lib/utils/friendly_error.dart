@@ -24,6 +24,23 @@ const String kBaglantiHatasiMesaji =
     'Bağlantı kurulamadı. İnternetini kontrol et; '
     'VPN kullanıyorsan kapatıp tekrar dene.';
 
+/// Mesajı KULLANICIYA YAZILMIŞ istisna — `friendlyError` metni olduğu gibi
+/// gösterir.
+///
+/// 2026-09-23 denetimi U13: boş kayıt formunda "Ad soyad girin." yerine
+/// "Bir şeyler ters gitti" çıkıyordu. Uygulamanın kendi `AuthException`'ı
+/// `_humanize`'a düşüyordu ve orası yalnızca Türkçe HARF (ğüşıöç…) içeren
+/// metni geçiriyordu — "Ad soyad girin.", "Kod girin." gibi düz ASCII
+/// Türkçe cümleler ve İngilizce arayüzdeki l10n metinleri eleniyordu.
+/// Harf sezgisi "bizim cümlemiz mi" sorusunu yanıtlayamaz; bunu TÜR
+/// yanıtlar. Bu arayüzü uygulayan sınıf, mesajına ham sunucu/teknik
+/// metin koymamayı üstlenir (ör. `AuthService` ham `AuthApiException.message`
+/// yerine `friendlyError(e)` sarar). `utils` → `services` bağımlılığı
+/// kurmamak için sözleşme burada, uygulayan sınıf serviste.
+abstract interface class KullaniciMesajli implements Exception {
+  String get message;
+}
+
 /// Hata kullanıcının BAĞLANTISINDAN mı kaynaklanıyor?
 ///
 /// Sınıflandırma `CrashReporter.agHatasiMi` ile AYNI aileyi tanır — orası
@@ -86,7 +103,9 @@ String friendlyError(Object? error, {bool verbose = false}) {
   // etmiyordu; VPN açık kullanıcı "İnternet bağlantını kontrol et" okuyup
   // internetinin çalıştığını görünce uygulamanın bozuk olduğunu sanıyordu.
   // Ayrım kullanıcı için anlamlı değildi: üçünde de yapılacak şey aynı.
-  if (baglantiHatasiMi(error)) {
+  if (error is KullaniciMesajli && error.message.trim().isNotEmpty) {
+    message = error.message.trim();
+  } else if (baglantiHatasiMi(error)) {
     message = kBaglantiHatasiMesaji;
   } else if (error is FormatException) {
     message = 'Sunucudan gelen veri okunamadı.';
@@ -561,7 +580,9 @@ String _humanize(String raw) {
   if (stripped.isEmpty || stripped.length > 120) {
     return 'Bir şeyler ters gitti, tekrar dene.';
   }
-  // Türkçe mesajları (kendi AuthException'larımız) olduğu gibi göster
+  // Türkçe harf içeren mesajı geçir — kendi `Exception('…')`larımız için
+  // eski sezgi. Uygulamanın AuthException'ı artık [KullaniciMesajli] ile
+  // tür üzerinden geçer (U13); bu satır ona güvenmez.
   if (RegExp(r'[ğüşıöçĞÜŞİÖÇ]').hasMatch(stripped)) return stripped;
   return 'Bir şeyler ters gitti, tekrar dene.';
 }

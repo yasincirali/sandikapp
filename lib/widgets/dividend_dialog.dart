@@ -7,6 +7,7 @@ import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/tr_format.dart';
 import 'custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
 
@@ -55,11 +56,9 @@ class _DividendDialogState extends State<_DividendDialog> {
     super.dispose();
   }
 
-  double? _parse(String raw) {
-    final t = raw.trim().replaceAll('.', '').replaceAll(',', '.');
-    if (t.isEmpty) return null;
-    return double.tryParse(t);
-  }
+  // Uygulamanın tek girdi kuralı. Eski `replaceAll('.', '')` "12.5" TL
+  // temettüyü 125 okuyordu (2026-09-23 denetimi F5).
+  double? _parse(String raw) => parseTrNumber(raw);
 
   Future<void> _save() async {
     final amount = _parse(_amount.text);

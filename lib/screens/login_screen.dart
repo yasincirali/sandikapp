@@ -89,8 +89,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           // gönder" cooldown'ını görecek.
         }
         if (!mounted) return;
-        await Navigator.of(context).push(
-          CupertinoPageRoute<void>(
+        await pushGuarded(
+          context,
+          adaptiveRoute<void>(
             builder: (_) => OtpVerificationScreen(email: emailForOtp),
           ),
         );
@@ -319,9 +320,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         const Spacer(),
                         GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () => Navigator.push(
+                          onTap: () => pushGuarded(
                             context,
-                            CupertinoPageRoute<void>(
+                            adaptiveRoute<void>(
                               builder: (_) => ForgotPasswordScreen(
                                 initialEmail: _emailCtrl.text.trim().isEmpty
                                     ? null
@@ -388,9 +389,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // Kayıt ol
                     CupertinoButton(
-                      onPressed: () => Navigator.push(
+                      onPressed: () => pushGuarded(
                         context,
-                        CupertinoPageRoute<void>(builder: (_) => const RegisterScreen()),
+                        adaptiveRoute<void>(builder: (_) => const RegisterScreen()),
                       ),
                       child: Text(
                         context.l10n.noAccountRegister,

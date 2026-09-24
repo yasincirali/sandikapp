@@ -20,8 +20,11 @@ import 'fiyat_kaynagi.dart';
 /// - Başlık: Türkçe/İngilizce takma adlar (bkz. [_aliases]); başlık yoksa
 ///   sütun sırası `sembol, adet, fiyat, tarih` varsayılır.
 /// - Sayılar: `parseTrNumber` (1.234,56 ve 1234.56 ikisi de).
-/// - Tarih: `gg.aa.yyyy`, `gg/aa/yyyy`, `yyyy-aa-gg`; yoksa bugün.
+/// - Tarih: `gg.aa.yyyy`, `gg/aa/yyyy`, `yyyy-aa-gg`; boşsa bugün.
+///   Dolu ama okunamayan ya da gelecekteki tarih → satır hatası.
 /// - Fiyat boş → 0 bırakılır; toplu kayıt tarihin kapanışını çeker.
+///   Okunamayan ya da negatif fiyat → satır hatası.
+/// - Başlık eşleştirmesi Türkçe-güvenli (bkz. [_katla]): "FİYAT", "TARİH".
 /// - Tür: sütun varsa o; yoksa semboldan çıkarım (bkz. [inferType]).
 class CsvImportService {
   CsvImportService._();
@@ -82,12 +85,29 @@ class CsvImportService {
         errors.add('Satır $lineNo ($rawTicker): adet okunamadı.');
         continue;
       }
-      final price = parseTrNumber(cell('price') ?? '') ?? 0;
+      // Dolu ama okunamayan fiyat/tarih sessizce 0 / bugün OLMAZ
+      // (2026-09-23 denetimi U08): başlık eşleşmediğinde "FİYAT" sütunu hiç
+      // okunmuyor, fiyat 0 ve tarih bugün kalıyordu — kullanıcı hatalı
+      // maliyeti fark etmeden kaydediyordu. Boş hücre ise belgelenmiş
+      // davranıştır (kapanış çekilir / bugün).
+      final rawPrice = cell('price');
+      final parsedPrice = rawPrice == null ? 0.0 : parseTrNumber(rawPrice);
+      if (parsedPrice == null) {
+        errors.add('Satır $lineNo ($rawTicker): fiyat okunamadı.');
+        continue;
+      }
+      final price = parsedPrice;
       if (price < 0) {
         errors.add('Satır $lineNo ($rawTicker): fiyat negatif.');
         continue;
       }
-      final date = _parseDate(cell('date')) ?? now;
+      final rawDate = cell('date');
+      final parsedDate = _parseDate(rawDate);
+      if (rawDate != null && parsedDate == null) {
+        errors.add('Satır $lineNo ($rawTicker): tarih okunamadı.');
+        continue;
+      }
+      final date = parsedDate ?? now;
       if (date.isAfter(now)) {
         errors.add('Satır $lineNo ($rawTicker): tarih gelecekte.');
         continue;
@@ -159,16 +179,38 @@ class CsvImportService {
   static Map<String, int> _mapHeader(List<String> cells) {
     final out = <String, int>{};
     for (var i = 0; i < cells.length; i++) {
-      final h = cells[i].trim().toLowerCase();
+      final h = _katla(cells[i].trim());
       for (final e in _aliases.entries) {
         if (out.containsKey(e.key)) continue;
-        if (e.value.any((a) => h == a || h.startsWith('$a '))) {
+        if (e.value.map(_katla).any((a) => h == a || h.startsWith('$a '))) {
           out[e.key] = i;
           break;
         }
       }
     }
     return out;
+  }
+
+  /// Başlık/tür eşleştirmesi için Türkçe-güvenli katlama: küçük harf +
+  /// ASCII'ye indirgeme.
+  ///
+  /// 2026-09-23 denetimi U08: Dart'ın `toLowerCase()`'i dilden bağımsızdır;
+  /// "İ"yi "i̇" (i + U+0307 birleşik nokta) yapar. "FİYAT" → "fi̇yat" hiçbir
+  /// takma adla eşleşmiyor, fiyat 0 ve tarih bugün kalıyordu. Tek başına
+  /// İ→i / I→ı eşlemesi de yetmez: İngilizce "PRICE" "prıce" olurdu. Bu
+  /// yüzden iki taraf da (başlık ve takma ad) ASCII'ye katlanır; "alış" /
+  /// "alis" / "ALIŞ" / "ALIS" aynı anahtara düşer.
+  static String _katla(String s) {
+    const harita = {
+      'İ': 'i', 'I': 'i', 'ı': 'i', '\u0307': '',
+      'Ğ': 'g', 'ğ': 'g', 'Ü': 'u', 'ü': 'u', 'Ş': 's', 'ş': 's',
+      'Ö': 'o', 'ö': 'o', 'Ç': 'c', 'ç': 'c',
+    };
+    final b = StringBuffer();
+    for (final ch in s.split('')) {
+      b.write(harita[ch] ?? ch);
+    }
+    return b.toString().toLowerCase();
   }
 
   static DateTime? _parseDate(String? s) {
@@ -193,16 +235,17 @@ class CsvImportService {
 
   static AssetType? _typeFromCell(String? s) {
     if (s == null) return null;
-    final t = s.trim().toLowerCase();
+    // U08: "HİSSE" / "DÖVİZ" de tanınsın — başlıkla aynı katlama.
+    final t = _katla(s.trim());
     for (final v in AssetType.values) {
-      if (t == v.name || t == v.label.toLowerCase()) return v;
+      if (t == _katla(v.name) || t == _katla(v.label)) return v;
     }
     if (t.startsWith('hisse') || t == 'stock') return AssetType.hisse;
     if (t.startsWith('fon') || t == 'fund') return AssetType.fon;
-    if (t.startsWith('döviz') || t.startsWith('doviz') || t == 'fx') {
+    if (t.startsWith('doviz') || t == 'fx') {
       return AssetType.doviz;
     }
-    if (t.startsWith('altın') || t.startsWith('altin') || t == 'gold') {
+    if (t.startsWith('altin') || t == 'gold') {
       return AssetType.altin;
     }
     return null;

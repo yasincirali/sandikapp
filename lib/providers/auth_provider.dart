@@ -83,11 +83,19 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
 
   Future<void> logout() async {
     unawaited(AnalyticsService.instance.logLogout());
-    await RemotePushService.instance.stop();
-    await AuthService.instance.logout();
-    DisclaimerService.instance.clearCache();
-    ref.read(bulkCartProvider.notifier).clear();
-    state = const AsyncData(null);
+    // `finally`: push durdurma ya da çıkış adımlarından biri hata verse de
+    // uygulama giriş ekranına dönmeli ve sepet boşalmalı. Eskiden hata
+    // yukarı çıkınca durum oturumlu kalıyordu, zaman aşımı çıkışı da
+    // (`main.dart`, sonucu beklenmeyen çağrı) bunu çökme olarak
+    // raporluyordu (2026-09-23 denetimi F8).
+    try {
+      await RemotePushService.instance.stop();
+      await AuthService.instance.logout();
+    } finally {
+      DisclaimerService.instance.clearCache();
+      ref.read(bulkCartProvider.notifier).clear();
+      state = const AsyncData(null);
+    }
   }
 
   /// Hesabı Edge Function üzerinden kalıcı olarak siler.
