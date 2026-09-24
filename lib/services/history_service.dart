@@ -1401,6 +1401,8 @@ class HistoryService {
         goldSiraliTs.isEmpty ? null : goldSlots[goldSiraliTs.first];
     final double? goldSonSlot =
         goldSiraliTs.isEmpty ? null : goldSlots[goldSiraliTs.last];
+    final int goldIlkTs = goldSiraliTs.isEmpty ? 0 : goldSiraliTs.first;
+    final int goldSonTs = goldSiraliTs.isEmpty ? 0 : goldSiraliTs.last;
 
     // **YA HEP YA HİÇ** — tüm altın ayarları AYNI yoldan geçer.
     //
@@ -1574,8 +1576,11 @@ class HistoryService {
           if (uc != null && goldIlkSlot != null && goldSonSlot != null) {
             unitTRY = altinUrunNoktasi(
               seriDeger: goldSlots[firstTs]! * goldFactor(a.ticker),
+              ts: firstTs,
               seriIlk: goldIlkSlot * goldFactor(a.ticker),
+              seriIlkTs: goldIlkTs,
               seriSon: goldSonSlot * goldFactor(a.ticker),
+              seriSonTs: goldSonTs,
               urunIlk: uc.ilk,
               urunSon: uc.son,
             );
@@ -1726,8 +1731,11 @@ class HistoryService {
               if (uclar != null && goldIlkSlot != null && goldSonSlot != null) {
                 final birim = altinUrunNoktasi(
                   seriDeger: gram * goldFactor(a.ticker),
+                  ts: hourTs,
                   seriIlk: goldIlkSlot * goldFactor(a.ticker),
+                  seriIlkTs: goldIlkTs,
                   seriSon: goldSonSlot * goldFactor(a.ticker),
+                  seriSonTs: goldSonTs,
                   urunIlk: uclar.ilk,
                   urunSon: uclar.son,
                 );

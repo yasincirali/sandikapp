@@ -62,14 +62,20 @@ void main() {
         final u = altinUrunUclari(canliBirimTRY: canli, gunlukPct: pct)!;
         final ilk = altinUrunNoktasi(
             seriDeger: seriIlk * ag,
+            ts: 0,
             seriIlk: seriIlk * ag,
+            seriIlkTs: 0,
             seriSon: seriSon * ag,
+            seriSonTs: 100,
             urunIlk: u.ilk,
             urunSon: u.son);
         final son = altinUrunNoktasi(
             seriDeger: seriSon * ag,
+            ts: 100,
             seriIlk: seriIlk * ag,
+            seriIlkTs: 0,
             seriSon: seriSon * ag,
+            seriSonTs: 100,
             urunIlk: u.ilk,
             urunSon: u.son);
         expect((son / ilk - 1) * 100, closeTo(pct, 0.01),
@@ -95,11 +101,14 @@ void main() {
       final u = altinUrunUclari(canliBirimTRY: 10670.62, gunlukPct: -1.25)!;
       final ham = [ilk, 6200.0, 6150.0, son];
       final cizilen = [
-        for (final n in ham)
+        for (var i = 0; i < ham.length; i++)
           altinUrunNoktasi(
-              seriDeger: n,
+              seriDeger: ham[i],
+              ts: i,
               seriIlk: ilk,
+              seriIlkTs: 0,
               seriSon: son,
+              seriSonTs: ham.length - 1,
               urunIlk: u.ilk,
               urunSon: u.son)
       ];
@@ -109,15 +118,80 @@ void main() {
       expect(cizilen.last, closeTo(u.son, 0.01));
     });
 
-    test('DÜZ seri düz çizilir', () {
+    test('DÜZ ham seri iki uç arasında DOĞRU çizilir — dalga yok', () {
+      // 2026-09-24'e kadar tüm gün ürünün SON değeri çiziliyordu: çizginin
+      // başı, gösterilen yüzdeyle çelişiyordu.
       final u = altinUrunUclari(canliBirimTRY: 1000, gunlukPct: -1.0)!;
-      final v = altinUrunNoktasi(
+      double nokta(int ts) => altinUrunNoktasi(
           seriDeger: 500,
+          ts: ts,
           seriIlk: 500,
+          seriIlkTs: 0,
           seriSon: 500,
+          seriSonTs: 10,
           urunIlk: u.ilk,
           urunSon: u.son);
-      expect(v, u.son, reason: 'ilerleme tanımsızken dalga uydurulmaz');
+      expect(nokta(0), closeTo(u.ilk, 1e-9));
+      expect(nokta(5), closeTo((u.ilk + u.son) / 2, 1e-9));
+      expect(nokta(10), closeTo(u.son, 1e-9));
+    });
+  });
+
+  group('kullanıcı bildirimi 2026-09-24: "Altın neden bugün hep sabit geldi"',
+      () {
+    // Spot gün içinde +%0,9'a çıkıp +%0,5'te bitiyor; yurt içi günlük yüzde
+    // ise (dünkü kapanıştan) yalnızca +%0,05.
+    const ham = [6000.0, 6030.0, 6054.0, 6030.0];
+    final u = altinUrunUclari(canliBirimTRY: 6100, gunlukPct: 0.05)!;
+    List<double> ciz() => [
+          for (var i = 0; i < ham.length; i++)
+            altinUrunNoktasi(
+                seriDeger: ham[i],
+                ts: i,
+                seriIlk: ham.first,
+                seriIlkTs: 0,
+                seriSon: ham.last,
+                seriSonTs: ham.length - 1,
+                urunIlk: u.ilk,
+                urunSon: u.son)
+        ];
+
+    test('eski formül dalgayı yüzdeler oranında EZİYORDU (kanıt)', () {
+      // ilk + (son − ilk) × ilerleme: genlik 0,05 / 0,5 = 1/10'a iner.
+      final eski = [
+        for (final v in ham)
+          u.ilk + (u.son - u.ilk) * (v - ham.first) / (ham.last - ham.first)
+      ];
+      final tepe = (eski.reduce((a, b) => a > b ? a : b) / eski.first - 1);
+      expect(tepe, lessThan(0.001),
+          reason: 'gün içi +%0,9 tepe, %0,1 altına eziliyordu — %0,5 '
+              'asgari eksen bandında çizgi düz görünür');
+    });
+
+    test('yeni formül dalgayı korur, uçlar ürünün kendi rakamı', () {
+      final c = ciz();
+      expect(c.first, closeTo(u.ilk, 1e-9));
+      expect(c.last, closeTo(u.son, 1e-9));
+      final tepe = c.reduce((a, b) => a > b ? a : b) / c.first - 1;
+      // Spot tepesi +%0,9; iki yüzde arasındaki −%0,45'lik fark zamana
+      // yayılır (tepe anında −%0,3) → ~+%0,6. Eski formülde +%0,09.
+      expect(tepe, closeTo(0.006, 0.0005),
+          reason: 'dalga görünür kalmalı');
+      expect(c[2], greaterThan(c[1]));
+      expect(c[3], lessThan(c[2]));
+    });
+
+    test('yüzdeler zıt işaretliyse eğri TERS dönmez', () {
+      // Spot +%0,5, yurt içi −%0,2: eski formülde spot'un yükselişi
+      // çizimde düşüş olurdu.
+      final ters = altinUrunUclari(canliBirimTRY: 6100, gunlukPct: -0.2)!;
+      final a = altinUrunNoktasi(
+          seriDeger: 6000, ts: 0, seriIlk: 6000, seriIlkTs: 0,
+          seriSon: 6030, seriSonTs: 3, urunIlk: ters.ilk, urunSon: ters.son);
+      final b = altinUrunNoktasi(
+          seriDeger: 6054, ts: 2, seriIlk: 6000, seriIlkTs: 0,
+          seriSon: 6030, seriSonTs: 3, urunIlk: ters.ilk, urunSon: ters.son);
+      expect(b, greaterThan(a), reason: 'spot tepesi çizimde de tepe');
     });
   });
 

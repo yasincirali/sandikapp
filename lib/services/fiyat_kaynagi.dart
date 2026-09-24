@@ -366,7 +366,7 @@ double altinKalibrasyonu({
 /// ```
 ///   son  = canlı kotasyon                      (zaten `liveTotal` ile eziliyor)
 ///   ilk  = canlı ÷ (1 + günlükPct/100)         (ürünün gün başı fiyatı)
-///   ara  = ilk + (son − ilk) × serininIlerlemesi
+///   ara  = seriDeğeri × zamanla ilk→son geçen çarpan  (bkz. altinUrunNoktasi)
 /// ```
 ///
 /// Böylece grafiğin dalgaları gerçek kalır ama başı ve sonu — yani
@@ -375,7 +375,8 @@ double altinKalibrasyonu({
 /// ## Sınır: ara noktalar TAHMİNDİR
 /// İşçilik priminin gün içinde ne zaman değiştiğini bilmiyoruz — truncgil
 /// yalnızca ANLIK fiyat ve günlük yüzde veriyor, geçmiş seri vermiyor.
-/// Ara noktalar serinin ilerlemesine ORANTILI dağıtılır. Bu bir
+/// Aradaki fark zamana ORANTILI dağıtılır (2026-09-24'e kadar serinin
+/// ilerlemesine orantılıydı — gerekçe [altinUrunNoktasi]). Bu bir
 /// interpolasyondur, ölçüm değil; ama iki ucu doğru olan bir eğri,
 /// iki ucu da yanlış olandan iyidir ve ŞEKİL gerçek veriden gelir.
 ///
@@ -395,22 +396,54 @@ double altinKalibrasyonu({
   return (ilk: ilk, son: canliBirimTRY);
 }
 
-/// Ham seri noktasını [altinUrunUclari] aralığına taşır.
+/// Ham seri noktasını [altinUrunUclari] uçlarına taşır.
 ///
-/// [seriIlk]/[seriSon] ham serinin uçları, [seriDeger] taşınacak nokta.
-/// Ham seri DÜZ ise (iki uç eşit) ilerleme tanımsızdır; o durumda ürünün
-/// kendi uçları arasında DÜZ çizilir — uydurma dalga üretilmez.
+/// [seriIlk]/[seriSon] ham serinin uçları ([seriIlkTs]/[seriSonTs]
+/// damgalarında), [seriDeger] [ts] anındaki taşınacak nokta.
+///
+/// ## Yöntem: ZAMANA yayılan ÇARPAN (2026-09-24)
+/// Başta çarpan `urunIlk / seriIlk`, sonda `urunSon / seriSon`; arada
+/// zamanla doğrusal geçer. Her nokta kendi anındaki çarpanla ölçeklenir:
+///
+/// ```
+///   k(t) = kIlk + (kSon − kIlk) × (t − ilkTs) / (sonTs − ilkTs)
+///   çizilen = seriDeger × k(t)
+/// ```
+///
+/// İki uç yine ürünün kendi rakamı (yüzde varlık ekranıyla birebir) ve
+/// gün içi dalgalar ORANSAL olarak korunur.
+///
+/// ## Neden eski formül bırakıldı (kullanıcı bildirimi 2026-09-24:
+/// *"Altın neden bugün hep sabit geldi"*)
+/// Eskiden nokta, ham serinin başından sonuna İLERLEMESİYLE ürünün iki ucu
+/// arasına yerleştiriliyordu: `urunIlk + (urunSon − urunIlk) × ilerleme`.
+/// Bu, gün içi dalganın genliğini `yurtİçiYüzde / spotYüzde` oranıyla
+/// çarpar. İki yüzde FARKLI pencereleri ölçer (truncgil dünkü kapanıştan,
+/// spot serisi bu sabahın ilk slotundan) ve sık sık ayrışır:
+///   * yurt içi yüzde spot'tan çok küçükse eğri DÜMDÜZ olur (ör. spot
+///     gün içinde +%0,9, truncgil +%0,05 → dalgalar 18'de birine iner ve
+///     %0,5'lik asgari eksen bandında çizgi görünmez);
+///   * işaretleri zıtsa eğri TERS döner (spot yükselirken çizgi iner);
+///   * ham seri düzse ilerleme tanımsızdı ve tüm gün ürünün SON değeriyle
+///     çiziliyordu — başlangıç noktası gösterilen yüzdeyle çelişiyordu.
+/// Çarpan yöntemi üç durumda da şekli korur; ham seri düzse iki uç
+/// arasında düz bir DOĞRU çizer (dalga uydurmaz).
 double altinUrunNoktasi({
   required double seriDeger,
+  required int ts,
   required double seriIlk,
+  required int seriIlkTs,
   required double seriSon,
+  required int seriSonTs,
   required double urunIlk,
   required double urunSon,
 }) {
-  final aralik = seriSon - seriIlk;
-  if (aralik.abs() < 1e-9) return urunSon;
-  final ilerleme = (seriDeger - seriIlk) / aralik;
-  return urunIlk + (urunSon - urunIlk) * ilerleme;
+  if (seriIlk <= 0 || seriSon <= 0) return urunSon;
+  final kIlk = urunIlk / seriIlk;
+  final kSon = urunSon / seriSon;
+  final aralik = seriSonTs - seriIlkTs;
+  final f = aralik <= 0 ? 1.0 : ((ts - seriIlkTs) / aralik).clamp(0.0, 1.0);
+  return seriDeger * (kIlk + (kSon - kIlk) * f);
 }
 
 /// Portföydeki her altın sembolü için [altinKalibrasyonu] çarpanı.
