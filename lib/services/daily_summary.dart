@@ -288,7 +288,18 @@ class DailySummary {
   /// bölünür (`lotlarSahibeGore`): tek sahipli defterde tek grup, hesap
   /// aynı; birleşik defterde sahiplik sınırı korunur.
   static double liveTotalTRY(PortfolioState state) =>
-      ownerScopedTotalValue(lotlarSahibeGore(state.assets),
+      kapsamToplami(state, state.assets);
+
+  /// [kapsam] lot'larının CANLI toplamı — [liveTotalTRY] ile aynı yol.
+  ///
+  /// Dönem özetinin ("Şimdi") sağ ucu da bunu kullanır (2026-09-24): seri
+  /// son slotunu `normalizeTs(now)` damgasına kurar (günlük katmanda bugün
+  /// 00:00, haftalıkta pazartesi) ve o damgadan sonra alınan lot o slotta
+  /// YOKTUR; katkı ise onu sayar. Uç canlı toplama bağlanmazsa piyasa
+  /// etkisi bu lot'ların değeri kadar eksik çıkıyordu (ölçüldü: 1H'de
+  /// Grafik +₺306, Özet −₺5.069; fark bugünkü alımların değeri).
+  static double kapsamToplami(PortfolioState state, List<Asset> kapsam) =>
+      ownerScopedTotalValue(lotlarSahibeGore(kapsam),
           toTRY: state.toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
 
   /// Gün içi seriyi uygulamanın GÜNLÜK grafiğiyle birebir aynı kurallarla
@@ -492,8 +503,7 @@ class DailySummary {
     // sayıyor, kâr/zarar saymıyordu. Kullanıcı bildirimi: "anasayfa
     // toplamlar veriyor ancak günlük kartında kâr zarar toplamları
     // tutmuyor."
-    final total = ownerScopedTotalValue(lotlarSahibeGore(kapsam),
-        toTRY: state.toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
+    final total = kapsamToplami(state, kapsam);
     final values = dayValues(series, now, total, seansGunu: seansGunu);
 
     if (values.length < 2) {

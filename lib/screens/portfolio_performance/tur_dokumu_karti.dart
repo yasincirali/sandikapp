@@ -16,6 +16,18 @@ class _TypeBreakdownCard extends StatefulWidget {
   final bool simulate;
   final BazPara baz;
 
+  /// Üst kartın tabanını ölçtüğü an (ms) — satırların dönem başı değeri bu
+  /// damgadaki seri değeridir, katkı da (gün içi dışında) bu andan SONRASI
+  /// için sayılır. Üst kartla aynı kural (2026-09-24).
+  final int tabanMs;
+
+  /// Gün içi: üst kart ARINDIRILMIŞ rakam gösterir, satırlar da öyle.
+  final bool intraday;
+
+  /// Süzgece uyan lot'ların CANLI değeri (TRY) — üst kartın sağ ucuyla
+  /// (`currentTotal`) aynı yol. Verilmezse serinin son noktası kullanılır.
+  final double Function(bool Function(Asset) suzgec)? canliDeger;
+
   const _TypeBreakdownCard({
     required this.baz,
     required this.breakdown,
@@ -25,6 +37,9 @@ class _TypeBreakdownCard extends StatefulWidget {
     required this.start,
     required this.end,
     required this.simulate,
+    required this.tabanMs,
+    this.intraday = false,
+    this.canliDeger,
   });
 
   @override
@@ -55,43 +70,51 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   /// Açık tür başlıkları. Varsayılan kapalı — kart uzun olmasın.
   final Set<AssetType> _expanded = {};
 
-  /// Bir serinin dönem başı ve sonu değeri.
+  /// Bir serinin dönem başı ve sonu değeri — ÜST KARTLA AYNI iki an.
   ///
-  /// `null` dönerse o seri çizilemez (tek nokta ya da hiç nokta). Üst kartla
-  /// aynı kural: iki nokta yoksa değişim tanımsızdır.
-  ({double first, double last})? _endpoints(Map<int, double>? series) {
-    if (series == null || series.length < 2) return null;
+  /// Baş: [_TypeBreakdownCard.tabanMs] damgasındaki (ya da ondan önceki son)
+  /// ölçüm; o anda elde yoksa 0 — dönem içinde açılan pozisyonun tamamı
+  /// katkıdadır. Son: [_TypeBreakdownCard.canliDeger] (canlı), yoksa serinin
+  /// son noktası.
+  ///
+  /// ## Neden (2026-09-24 dört ekran çapraz kontrolü)
+  /// Eskiden serinin kırpılmamış İLK ve SON noktası alınıyordu. 88b04da üst
+  /// kartı pencereye kırpıp ucunu canlıya bağlayınca satırlar ayrıştı
+  /// (ölçüldü, 1A: satırlar +₺5.113, üst kart +₺18.198). Serinin son slotu
+  /// bugünkü alımları içermiyor (`normalizeTs(now)`); o yüzden uç canlı.
+  ({double first, double last})? _endpoints(
+      Map<int, double>? series, bool Function(Asset) suzgec) {
+    if (series == null || series.isEmpty) return null;
     final ts = series.keys.toList()..sort();
-    return (first: series[ts.first]!, last: series[ts.last]!);
+    double first = 0;
+    for (final k in ts) {
+      if (k > widget.tabanMs) break;
+      final v = series[k];
+      if (v != null && v > 0) first = v;
+    }
+    final last = widget.canliDeger?.call(suzgec) ?? series[ts.last]!;
+    if (first <= 0 && last <= 0) return null;
+    return (first: first, last: last);
   }
 
-  /// Dönem içi net para akışı — tür bazında.
+  /// Dönem içi net para akışı — süzgece uyan lot'lar için.
   ///
   /// Not satırı için: kullanıcı "+%100" görünce ne kadarının kendi parası
   /// olduğunu bilmeli. Simülasyonda miktar sabit sayıldığı için akış yoktur.
-  Map<AssetType, double> _flowByType() {
-    final out = <AssetType, double>{};
-    if (widget.simulate) return out;
-    final startMs =
-        dayKey(widget.start)
-            .millisecondsSinceEpoch;
-    final endMs =
-        DateTime(widget.end.year, widget.end.month, widget.end.day, 23, 59, 59)
-            .millisecondsSinceEpoch;
-    for (final lots in widget.ownerLots) {
-      for (final a in lots) {
-        if (!a.isActive) continue;
-        final ms = a.addedDate.millisecondsSinceEpoch;
-        if (ms < startMs || ms > endMs) continue;
-        final f = a.isBuy
-            ? a.totalCostTRY
-            : a.isSell
-                ? -a.sellProceedsTRY
-                : 0.0;
-        if (f != 0) out[a.type] = (out[a.type] ?? 0) + f;
-      }
-    }
-    return out;
+  ///
+  /// Sınır üst kartla AYNI (`_buildPeriodChangeCard`): gün içinde gün
+  /// başından, diğer dönemlerde taban anından ([_TypeBreakdownCard.tabanMs])
+  /// SONRASI. Eskiden her dönemde gün başından sayılıyordu; tabanın içinde
+  /// olan alım katkıya da giriyordu (çifte sayım).
+  double _flowOf(bool Function(Asset) suzgec) {
+    if (widget.simulate) return 0;
+    final lots = [for (final l in widget.ownerLots) ...l];
+    return widget.intraday
+        ? PeriodSummaryService.netInflow(
+            lots.where(suzgec).toList(), widget.start, widget.end)
+        : PeriodSummaryService.netInflow(
+            lots.where(suzgec).toList(), widget.start, widget.end,
+            startExclusiveMs: widget.tabanMs);
   }
 
   /// Tür satırları + her türün altındaki ürün satırları.
@@ -107,7 +130,6 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     List<({AssetType type, _BreakdownRow row})>,
     Map<AssetType, List<_BreakdownRow>>
   ) _rows() {
-    final flowOf = _flowByType();
     final typeRows = <({AssetType type, _BreakdownRow row})>[];
     final childrenOf = <AssetType, List<_BreakdownRow>>{};
 
@@ -115,7 +137,8 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     double sumLast = 0;
 
     for (final e in widget.breakdown.byType.entries) {
-      final ep = _endpoints(e.value);
+      bool turSuzgeci(Asset a) => a.type == e.key;
+      final ep = _endpoints(e.value, turSuzgeci);
       if (ep == null) continue;
       sumFirst += ep.first;
       sumLast += ep.last;
@@ -125,7 +148,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
           label: e.key.labelOf(context.l10n),
           first: ep.first,
           last: ep.last,
-          flow: flowOf[e.key] ?? 0,
+          flow: _flowOf(turSuzgeci),
         ),
       ));
 
@@ -133,12 +156,14 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       final kids = <_BreakdownRow>[];
       for (final p in widget.breakdown.byPosition.entries) {
         if (widget.breakdown.positionType[p.key] != e.key) continue;
-        final pep = _endpoints(p.value);
+        bool pozisyonSuzgeci(Asset a) => positionKey(a) == p.key;
+        final pep = _endpoints(p.value, pozisyonSuzgeci);
         if (pep == null) continue;
         kids.add(_BreakdownRow(
           label: _positionLabel(p.key, e.key, context.l10n),
           first: pep.first,
           last: pep.last,
+          flow: _flowOf(pozisyonSuzgeci),
         ));
       }
       kids.sort((a, b) => b.change.compareTo(a.change));
@@ -365,7 +390,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
                         dotColor: type.color.withValues(alpha: 0.45),
                         value: k.last,
                         cost: k.first,
-                        flow: 0,
+                        flow: k.flow,
                         dense: true,
                       ),
                       if (k != kids.last) const SizedBox(height: 8),
@@ -391,8 +416,13 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     Widget? trailing,
     bool dense = false,
   }) {
-    final pnl = value - cost;
-    final pct = cost > 0 ? (pnl / cost) * 100 : null;
+    // Gün içinde üst kart ARINDIRILMIŞ rakam gösteriyor (2026-09-23
+    // kullanıcı kararı, ana sayfa Bugün kartıyla aynı); satırlar da öyle,
+    // yoksa Σ satır üst rakamı tutmaz. Taban da aynı: baş + pozitif akış.
+    final net = widget.intraday && !widget.simulate;
+    final pnl = value - cost - (net ? flow : 0);
+    final taban = cost + (net && flow > 0 ? flow : 0);
+    final pct = taban > 0 ? (pnl / taban) * 100 : null;
 
     // Yuvarlanmış tutar sıfırsa nötr renk — yeşil "kazanç var" yanılgısı
     // yaratır. Ekranın geri kalanıyla aynı kural.

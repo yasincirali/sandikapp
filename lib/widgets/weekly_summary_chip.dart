@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset.dart';
 import '../screens/portfolio_performance_screen.dart';
+import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/daily_summary.dart';
 import '../services/history_service.dart';
 import '../services/period_summary_service.dart';
 import '../services/remote_config_service.dart';
@@ -73,11 +75,16 @@ class _WeeklySummaryChipState extends ConsumerState<WeeklySummaryChip> {
       );
       if (!mounted) return;
 
+      final pState = ref.read(portfolioProvider).valueOrNull;
       final s = PeriodSummaryService.compute(
         period: SummaryPeriod.birHafta,
         assets: widget.myAssets,
         breakdown: bd,
         now: now,
+        // Performans › Özet ile aynı sağ uç (bkz. `compute` [canliSon]).
+        canliSon: pState == null
+            ? null
+            : DailySummary.kapsamToplami(pState, widget.myAssets),
       );
       if (s.getiriPct == null) return;
       setState(() => _ozet = s);

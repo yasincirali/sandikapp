@@ -309,6 +309,19 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               start: cizimBaslangici,
               end: endDate,
               simulate: _simulate,
+              // Üst kartla AYNI taban anı ve canlı uç (2026-09-24). X
+              // ekseni gün içinde DAKİKA, diğer dönemlerde GÜN birimi.
+              tabanMs: cizimBaslangici.millisecondsSinceEpoch +
+                  (ep.firstX *
+                          (isIntraday
+                              ? Duration.millisecondsPerMinute
+                              : Duration.millisecondsPerDay))
+                      .round(),
+              intraday: isIntraday,
+              canliDeger: (suzgec) => ownerScopedTotalValue(
+                  [for (final l in ownerLots) l.where(suzgec).toList()],
+                  toTRY: pState.toTRY,
+                  sonFiyat: PriceService.instance.sonBilinenFiyat),
             ),
           // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
           // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
@@ -716,6 +729,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       breakdown: breakdown,
       now: now,
       gunlukOzet: gunluk,
+      // Sağ uç CANLI kapsam toplamı — Grafik kartının ucuyla aynı sayı
+      // (`currentTotal`); bkz. `compute` [canliSon].
+      canliSon: pState == null
+          ? null
+          : DailySummary.kapsamToplami(pState, targetAssets),
       // `_positionLabel` ham `positionKey`'i insan-okunur hale getirir;
       // yoksa ekranda "altin|sub:çeyrek|TRY" görünürdü.
       etiket: (k) =>

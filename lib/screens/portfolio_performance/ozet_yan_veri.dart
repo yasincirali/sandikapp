@@ -332,11 +332,16 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       );
       if (!mounted) return;
 
+      final pState = ref.read(portfolioProvider).valueOrNull;
       final yil = PeriodSummaryService.compute(
         period: SummaryPeriod.birYil,
         assets: widget.assets,
         breakdown: bd,
         now: now,
+        // Özet'in 1Y rakamıyla aynı sağ uç (bkz. `compute` [canliSon]).
+        canliSon: pState == null
+            ? null
+            : DailySummary.kapsamToplami(pState, widget.assets),
       );
 
       // Oynaklık BAR SÜRESİNE bağlı yıllıklandırılır: 1Y penceresi günlük

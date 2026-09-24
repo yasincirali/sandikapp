@@ -634,7 +634,14 @@ class PeriodSummaryService {
     double? inflationPct,
     String Function(String positionKey)? etiket,
     DateTime? pencereBaslangici,
+    double? canliSon,
   }) {
+    // [canliSon]: dönemin sağ ucu olarak CANLI kapsam toplamı
+    // (`DailySummary.kapsamToplami`). Pencere bugünde bitiyorsa verilmeli —
+    // serinin son slotu bugünkü alımları içermez ama katkı onları sayar,
+    // uç canlıya bağlanmazsa piyasa etkisi o alımların değeri kadar eksik
+    // çıkar (2026-09-24; Grafik kartı ucunu zaten canlıya bağlıyor).
+    // Geçmişte biten pencerede (TÜFE hizalaması) verilmez.
     // [pencereBaslangici] verildiğinde takvimden TÜRETİLEN başlangıç
     // yerine o kullanılır. Tek çağıranı `RealReturnService`: TÜFE
     // karşılaştırmasında pencere endeksin son açıklanmış ayından gelir,
@@ -680,6 +687,7 @@ class PeriodSummaryService {
       lotlar: assets,
       start: p.start,
       end: p.end,
+      canliSon: canliSon,
     );
     if (pe == null) {
       // Seri yok: HİÇBİR sayı uydurulmaz. Ekran "henüz veri yok" der.

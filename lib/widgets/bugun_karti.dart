@@ -320,6 +320,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         assets: widget.state.assets,
         breakdown: bd,
         now: now,
+        // Performans › Özet ile aynı sağ uç (bkz. `compute` [canliSon]).
+        canliSon: DailySummary.kapsamToplami(widget.state, widget.state.assets),
       );
       return s.getiriPct;
     } catch (e, st) {
