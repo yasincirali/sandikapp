@@ -37,7 +37,7 @@ void main() {
 
   group('azamiYas veriyi silmez', () {
     test('yalnızca tazele bayrağı kurar', () {
-      expect(src.contains('final tazeleZorla = azamiYas != null'), isTrue,
+      expect(src.contains('final tazeleZorla = _fetchedAt != null && (zorla || (azamiYas != null'), isTrue,
           reason: 'bayrak kurulmalı');
     });
 

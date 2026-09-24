@@ -151,7 +151,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// kartı yeniden çizmek gereksiz kare üretirdi.
   Future<void> _seriyiTazele() async {
     if (!_yuklendi) return; // ilk yükleme sürüyor, üstüne binme
-    final yeni = await _seriYukle();
+    // `nabiz: true` — önbellek yaşa bakmadan tazelenir; Performans da bu
+    // nabızda koşulsuz çekiyor (bkz. `IntradaySeriesCache.get` [zorla]).
+    final yeni = await _seriYukle(nabiz: true);
     if (!mounted || yeni == null) return;
     final eski = _seri;
     if (eski != null &&
@@ -245,7 +247,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// önbellek KULLANILMAZ: tek yuvalı ve oturumdaki kullanıcıya damgalı;
   /// başka bir defterle doldurmak kilit ekranını yanlış seriyle beslerdi.
   /// Kapsam serisi doğrudan çekilir — aynı servis, aynı hesap, ayrı yuva.
-  Future<Map<int, double>?> _seriYukle() async {
+  Future<Map<int, double>?> _seriYukle({bool nabiz = false}) async {
     try {
       if (!widget.kisisel) {
         // Seriye YALNIZCA fiyatlanabilir lot'lar girer — Performans
@@ -273,7 +275,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       // Önbelleğin varsayılanı DEĞİŞMEZ: widget ve Live Activity 5 dk'lık
       // döngüyle hizalı kalır (bkz. `IntradaySeriesCache.minInterval`).
       return await IntradaySeriesCache.instance
-          .get(widget.state, azamiYas: _seriTazelikPenceresi)
+          .get(widget.state, azamiYas: _seriTazelikPenceresi, zorla: nabiz)
           .timeout(_yuklemeSuresi);
     } catch (e, st) {
       // Seri gelmezse kart yine çizilir (hareket satırı düşer); ağ hatası
