@@ -58,6 +58,11 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           if (i == 0 || birlesik[i].x != birlesik[i - 1].x) birlesik[i],
       ];
     }
+    // İşlem noktaları — işaret, crosshair satırı ve hacim çubuğu için TEK
+    // harita (gerekçe `islemNoktalari`). Segment/varlık kümesi başına bir
+    // kez hesaplanır, zoom/pan yeniden hesaplatmaz.
+    final noktalar = _islemNoktalari(crosshairSpots, txAssets, start,
+        intraday: intraday);
 
     // Görünür X aralığındaki spot'lara göre Y sınırlarını hesapla. Zoom
     // sırasında X daraldıkça Y ekseni otomatik yeniden fit olur — kullanıcı
@@ -278,8 +283,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 // Kaynak liste crosshair ile AYNI olmalı (`txAssets`), aksi
                 // halde nokta bir kümeden, tooltip başka kümeden beslenir ve
                 // "noktası var ama işlemi yok" tutarsızlığı doğar.
-                candidates:
-                    _buyDayKeys(segments, txAssets, start, intraday: intraday),
+                candidates: noktalar.keys.toList(),
                 viewMinX: viewMinX,
                 viewMaxX: viewMaxX,
                 plotWidthPx: plotWidthPx,
@@ -850,7 +854,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     // olmayan periyotlarda çizilir.
     final volumeBars = intraday
         ? const <_VolumeBar>[]
-        : _computeVolumeBars(allTargetAssets ?? const [], start);
+        : _computeVolumeBars(noktalar);
     final showVolume = volumeBars.isNotEmpty;
 
     return Container(
@@ -942,20 +946,6 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
               final tryFmt0 = ref.read(bazParaProvider).formatter(digits: 0);
               final firstY = spots.first.y;
               final gain = snapped.y - firstY;
-              final date =
-                  start.add(Duration(minutes: (snapped.x * 1440).round()));
-              final spotDayMs = dayKey(date)
-                  .millisecondsSinceEpoch;
-              double dayBuy = 0, daySell = 0;
-              for (final a in txAssets) {
-                if (!a.isActive) continue;
-                final addMid = DateTime(
-                        a.addedDate.year, a.addedDate.month, a.addedDate.day)
-                    .millisecondsSinceEpoch;
-                if (addMid != spotDayMs) continue;
-                if (a.isBuy) dayBuy += a.totalCostTRY;
-                if (a.isSell) daySell += a.totalCostTRY;
-              }
               final out = <(String, Color)>[];
               if (gain.abs() > 0.5) {
                 final positive = gain >= 0;
@@ -964,17 +954,44 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   positive ? context.c.gain : context.c.loss,
                 ));
               }
-              if (dayBuy > 0) {
-                out.add((
-                  'Alım +${tryFmt0.format(dayBuy)}',
-                  context.c.gain,
-                ));
-              }
-              if (daySell > 0) {
-                out.add((
-                  'Satış −${tryFmt0.format(daySell)}',
-                  context.c.loss,
-                ));
+              // İşlem satırı NOKTANIN işlemleridir, takvim gününün değil:
+              // eskiden 09:00 çubuğunda o günün 17:08'lik satışı yazıyor ve
+              // çizgi düşmediği için "− var ama düşüş yok" okunuyordu.
+              // Hem alım hem satış varsa NET yazılır, ayrıntı altta
+              // (kullanıcı isteği 2026-09-24: "karışık bilgi yazmamalı").
+              final n = noktalar[snapped.x];
+              if (n != null) {
+                final l10n = context.l10n;
+                if (n.karisik) {
+                  final net = n.net;
+                  if (net.abs() > 0.5) {
+                    out.add((
+                      net >= 0
+                          ? l10n.crosshairNetBuy(tryFmt0.format(net))
+                          : l10n.crosshairNetSell(tryFmt0.format(-net)),
+                      net >= 0 ? context.c.gain : context.c.loss,
+                    ));
+                  } else {
+                    out.add((l10n.crosshairNetFlat, context.c.text36));
+                  }
+                  out.add((
+                    l10n.crosshairBuySellDetail(
+                        tryFmt0.format(n.alim), tryFmt0.format(n.satis)),
+                    context.c.text36,
+                  ));
+                } else if (n.alim > 0) {
+                  out.add((
+                    'Alım +${tryFmt0.format(n.alim)}'
+                    '${n.alimSayisi > 1 ? ' · ${l10n.crosshairTxCount(n.alimSayisi)}' : ''}',
+                    context.c.gain,
+                  ));
+                } else if (n.satis > 0) {
+                  out.add((
+                    'Satış −${tryFmt0.format(n.satis)}'
+                    '${n.satisSayisi > 1 ? ' · ${l10n.crosshairTxCount(n.satisSayisi)}' : ''}',
+                    context.c.loss,
+                  ));
+                }
               }
               return out;
             },
@@ -1371,77 +1388,28 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     );
   }
 
-  /// Gün-bazlı buy/sell TRY hacim. X price chart ile aynı gün-fraction
-  /// birimde.
-  List<_VolumeBar> _computeVolumeBars(List<Asset> assets, DateTime start) {
-    // Ana chart'ın X birimi ile birebir aynı: kesirli gün (1 saat = 1/24).
-    //
-    // ⚠️ `start` bir DUVAR SAATİ damgasıdır (`endDate.subtract(days)`), yani
-    // içinde bugünün saati vardır — gece yarısı değildir. İşlem tarihleri ise
-    // gece yarısına normalize. İkisinin farkı bu yüzden negatif-kesirli çıkar
-    // ve `~/` sıfıra doğru kırptığı için çubuklar bir gün kayıyor, aynı güne
-    // düşenler tamamen eleniyordu ("kesik" görünen hacim paneli).
-    //
-    // Ana grafik bu hatayı yapmıyor: o `date.difference(startDate).inMinutes /
-    // (60*24)` ile KESİRLİ gün üretiyor. Hacim paneli de aynı tabana oturmalı,
-    // aksi halde iki panel farklı X uzayında çizilir.
-    final startMidnight = dayKey(start);
-    // Grafiğin X'i `start`'a göre; gece yarısı ile arasındaki kayma sabit.
-    final startOffsetDays =
-        startMidnight.difference(start).inMinutes / (60.0 * 24.0);
-
-    final Map<int, ({double buy, double sell})> perDay = {};
-    for (final a in assets) {
-      if (!a.isActive) continue;
-      final dayMidnight =
-          dayKey(a.addedDate);
-      // Gece yarısı ↔ gece yarısı farkı — tam gün, kırpma sorunu yok.
-      final dayIdx = dayMidnight.difference(startMidnight).inDays;
-      if (dayIdx < 0) continue;
-      final prev = perDay[dayIdx] ?? (buy: 0.0, sell: 0.0);
-      if (a.isBuy) {
-        perDay[dayIdx] = (buy: prev.buy + a.totalCostTRY, sell: prev.sell);
-      } else if (a.isSell) {
-        perDay[dayIdx] = (buy: prev.buy, sell: prev.sell + a.totalCostTRY);
-      }
-    }
-    final out = <_VolumeBar>[];
-    perDay.forEach((day, tot) {
-      if (tot.buy + tot.sell <= 0) return;
-      // ⚠️ Çubuk GÜN ORTASINA (+0.5) DEĞİL, günün BAŞINA konur.
-      //
-      // Fiyat serisinin noktaları `ResolutionTier.normalizeTs` ile GECE
-      // YARISINA snap edilir (daily tier'da `DateTime(y, m, d)`), X ekseni
-      // tarih etiketleri de aynı anlara düşer. Çubuğu gün ortasına koymak
-      // onu fiyat noktasından yarım gün sağa kaydırıyordu — ekranda
-      // "çubuklar timeline ile örtüşmüyor" görüntüsünün sebebi buydu.
-      //
-      // `startOffsetDays` gece yarısı tabanını grafiğin `start` tabanına
-      // taşır; ikisi birlikte, çubuğu o günün fiyat noktasıyla BİREBİR
-      // aynı X'e oturtur.
-      out.add(_VolumeBar(
-        x: startOffsetDays + day.toDouble(),
-        buy: tot.buy,
-        sell: tot.sell,
-      ));
-    });
-    return out;
+  /// Hacim çubukları — işaretlerle AYNI noktalarda (2026-09-24).
+  ///
+  /// Eskiden çubuk takvim gününün başına konuyordu; saatlik seride işaret
+  /// 18:00 noktasındayken çubuk 00:00'daydı ve iki panel "timeline'da
+  /// eşleşmiyor" görünüyordu. Şimdi çubuğun X'i işlemin bağlandığı
+  /// noktanın X'idir, bkz. `islemNoktalari`.
+  List<_VolumeBar> _computeVolumeBars(Map<double, IslemNoktasi> noktalar) {
+    return [
+      for (final n in noktalar.values)
+        if (n.alim + n.satis > 0) _VolumeBar(x: n.x, buy: n.alim, sell: n.satis),
+    ];
   }
 
-  Set<double> _buyDayKeys(
-      List<TransactionSegment> segments, List<Asset> assets, DateTime start,
+  /// [islemNoktalari]'nın önbellekli hâli — segment/varlık kümesi başına bir
+  /// kez; zoom/pan her karede yeniden hesaplatmaz.
+  ///
+  /// Anahtar: `id` tek başına yetmez — yumuşak silme `isActive`'i çevirir ama
+  /// id'yi değiştirmez; alım/satım türü de girer. `intraday` girer: aynı
+  /// küme gün içinde dakika, diğer dönemlerde gün biriminde ölçülür.
+  Map<double, IslemNoktasi> _islemNoktalari(
+      List<FlSpot> spots, List<Asset> assets, DateTime start,
       {required bool intraday}) {
-    // Cache anahtarı: başlangıç + varlık kimlikleri + segment imzası.
-    // Segment imzası nokta SAYISI ile yetinmemeli — periyot/veri değişince
-    // sayı aynı kalıp X aralığı kayabilir (örn. 30 günlük iki farklı
-    // pencere). İlk/son X de anahtara giriyor ki bayat cache dönmesin.
-    //
-    // `id` tek başına yetmez: yumuşak silme `isActive`'i çevirir ama id'yi
-    // değiştirmez — anahtar sabit kalır ve silinen lot'un noktası cache'ten
-    // dönmeye devam ederdi. Aşağıdaki filtre alanları anahtara giriyor.
-    // `intraday` anahtara GİRER: aynı segment kümesi için gün içi mod saati
-    // korur, diğer modlar gece yarısına kırpar. Anahtarda olmasaydı sekme
-    // değişince bayat X'ler dönerdi.
     final sig = StringBuffer()
       ..write(intraday ? 'i|' : 'd|')
       ..write(start.millisecondsSinceEpoch)
@@ -1449,80 +1417,24 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
       ..write(assets
           .map((a) =>
               '${a.id}:${a.isActive ? 1 : 0}${a.isBuy ? 'b' : a.isSell ? 's' : 'x'}')
-          .join(','));
-    for (final s in segments) {
+          .join(','))
+      ..write('|')
+      ..write(spots.length);
+    if (spots.isNotEmpty) {
       sig
-        ..write('|')
-        ..write(s.spots.length);
-      if (s.spots.isNotEmpty) {
-        sig
-          ..write(':')
-          ..write(s.spots.first.x)
-          ..write('-')
-          ..write(s.spots.last.x);
-      }
+        ..write(':')
+        ..write(spots.first.x)
+        ..write('-')
+        ..write(spots.last.x);
     }
     final key = sig.toString();
-    if (_buyDayKeysCacheKey == key && _buyDayKeysCache != null) {
-      return _buyDayKeysCache!;
+    if (_islemNoktalariCacheKey == key && _islemNoktalariCache != null) {
+      return _islemNoktalariCache!;
     }
-
-    // Varlıkların alım günlerini bir kez "gün damgası" set'ine indir; sonra
-    // her spot için O(1) lookup. İç içe `assets.any(...)` taraması gitti.
-    //
-    // FİLTRE ŞART: bu set noktanın çizilip çizilmeyeceğine karar veriyor,
-    // dolayısıyla tooltip/crosshair'in "o gün işlem var mı" testiyle AYNI
-    // kümeden beslenmeli (bkz. `crosshairDetailsBuilder`). Filtresiz haliyle
-    // temettü kayıtları (ne buy ne sell), deleteLog mezar taşları ve yumuşak
-    // silinmiş lot'lar da nokta üretiyordu: grafikte nokta görünüyor, ama
-    // basınca "Alım/Satış" satırı çıkmıyordu.
-    // İşlem günlerini grafiğin X birimine (kesirli gün) çevir.
-    final startMidnight = dayKey(start);
-    final txXs = <double>[];
-    for (final a in assets) {
-      if (!a.isActive) continue;
-      if (!a.isBuy && !a.isSell) continue;
-      final d = a.addedDate;
-      // Gün içi ("GÜNLÜK") seride SAAT KORUNUR.
-      //
-      // Burada eskiden koşulsuz `dayKey(d)` vardı —
-      // işlemin saati kırpılıp gece yarısına çekiliyordu. Günlük/haftalık
-      // seride bu doğrudur (bar zaten güne snap edilir), ama gün içi seride
-      // 5 dakikalık slotlarla çalışılır: 14:00'te yapılan alım 00:00'a
-      // düşünce grafiğin görünür aralığının DIŞINA çıkıyor ve nokta hiç
-      // doğmuyordu. Sıçramanın ölçek yüzünden görünmediği durumda
-      // (tüm portföy görünümü) geriye hiçbir işaret kalmıyordu.
-      final anchor = intraday ? d : dayKey(d);
-      txXs.add(anchor.difference(startMidnight).inMinutes / (60.0 * 24.0));
-    }
-
-    // ── İşlemi KAPSAYAN spot'a bağla, tam gün eşleşmesi ARAMA ──────────────
-    //
-    // Eski hâli `spot.günü == işlem.günü` eşitliği arıyordu ve 6A/1Y'de
-    // noktaların kaybolmasının sebebi buydu: o periyotlarda veri
-    // `ResolutionTier.weekly` gelir ve her nokta haftanın PAZARTESİSİNE snap
-    // edilir (bkz. `ResolutionTierMeta.normalizeTs`). Çarşamba yapılan alımın
-    // günü hiçbir spot'a eşit olmadığı için aday bile üretilmiyordu — yani
-    // seyreltme değil, noktanın kendisi hiç doğmuyordu. Aynı sorun 1H'de
-    // saatlik snap yüzünden hafta sonu/kapanış sonrası işlemlerde çıkıyordu.
-    //
-    // Artık her işlem, X'i kendisine eşit veya kendisinden küçük olan son
-    // spot'a (içine düştüğü bar'a) bağlanır.
-    final keys = <double>{};
-    for (final seg in segments) {
-      if (seg.thickness <= 2.0) continue;
-      final spots = seg.spots;
-      if (spots.isEmpty) continue;
-      for (final txX in txXs) {
-        final i = coveringSpotIndex(spots, txX);
-        // -1: işlem serinin başlangıcından önce — o nokta grafikte yok.
-        if (i < 0) continue;
-        keys.add(spots[i].x);
-      }
-    }
-
-    _buyDayKeysCacheKey = key;
-    _buyDayKeysCache = keys;
-    return keys;
+    final out = islemNoktalari(
+        spots: spots, lotlar: assets, startDate: start, intraday: intraday);
+    _islemNoktalariCacheKey = key;
+    _islemNoktalariCache = out;
+    return out;
   }
 }

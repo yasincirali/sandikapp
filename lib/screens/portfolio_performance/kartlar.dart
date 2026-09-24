@@ -404,34 +404,44 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // yatırıldığında kart +%100 yazar. Bu yüzden başlık "birikim" der ve
     // aşağıdaki not satırı, ne kadarının alımdan geldiğini AÇIKÇA söyler.
     // Etiket olmadan bu rakam "kazandım" diye okunurdu.
-    // **GÜNLÜK'te ARINDIRILMIŞ (kullanıcı kararı, 2026-09-23).**
+    // **Her dönemde HAM birikim; piyasa etkisi AYRI SATIRDA (kullanıcı
+    // kararı, 2026-09-24).**
     //
-    // Kullanıcı kuralı açık koydu: *"aynı zamanda ana sayfa günlük
-    // kısmıyla da aynı olmalı."* Ana sayfa (`DailySummary`) nakit
-    // akışından ARINDIRILMIŞ rakam gösteriyor; bu kart HAM birikim
-    // gösteriyordu ve alım yapılan günde ikisi ayrışıyordu.
+    // Karar geçmişi: 2026-08-31 "birikim büyümesini görmek istiyorum,
+    // alım dahil" → 2026-09-23 GÜNLÜK'te arındırılmışa çevrildi ("ana
+    // sayfa günlük kısmıyla aynı olmalı") → 2026-09-24 kullanıcı kartı
+    // görüp geri aldı: *"Birikim değişimi... total birikim değişimine
+    // alımlar bu ekranda eklenmeli; altına da bugün sadece piyasanın
+    // toplam portföye etkisi yazılmalı."*
     //
-    // Bu, `TECHNICAL_DEBT.md`'de AÇIK duran maddenin (Şu ana kadar iki
-    // kullanıcı kararı çelişiyordu: 2026-08-31 "birikim göster" ve
-    // kilit ekranının arındırılmış rakamı) çözümüdür: seçenek (a)
-    // uygulandı — GÜNLÜK'te ana rakam arındırılmış, birikim alt
-    // satırda kalır. DİĞER dönemler 2026-08-31 kararında kalır
-    // ("birikimim ne kadar büyüdü" sorusu orada anlamlı).
+    // Yani başlık ne diyorsa ana rakam odur: "birikim değişimi" alımları
+    // İÇERİR (grafiğin ucundan ucuna ham fark). Ana sayfayla parite
+    // kopmaz, aşağıdaki "Sadece piyasa etkisi" satırına taşınır — o satır
+    // `DailySummary`/Özet ile AYNI formül ve AYNI yüzde tabanıdır
+    // (`piyasa`, `piyasaPct`). `TECHNICAL_DEBT.md`'deki madde bu kararla
+    // kapandı: seçenek (c) — iki rakam da kartta, ağırlıkları farklı.
     //
-    // Neden yalnızca GÜNLÜK: ana sayfa Bugün kartı yalnızca o dönemi
-    // anlatıyor. 1H/1A/6A/1Y'nin ana sayfada bir karşılığı yok, yani
-    // orada ayrışma da yok.
-    final change = intraday ? grossChange - netInflow : grossChange;
-
-    // Yüzde tabanı:
-    //   • GÜNLÜK   → dönem başı + POZİTİF akış (ana sayfayla AYNI taban,
-    //     bkz. `DailySummary.from`: "gün içinde portföyünü büyüten
-    //     kullanıcıda yüzdeyi şişirmemek için").
-    //   • diğer     → yalnızca dönem başı (birikim sorusu).
-    final pctBase =
-        intraday ? firstY + (netInflow > 0 ? netInflow : 0) : firstY;
+    // Tek kural, dönem ayrımı yok: 1H/1A/6A/1Y'de de ana rakam birikim,
+    // akış varsa piyasa satırı gelir. Eskiden o dönemlerde piyasa etkisi
+    // not metninin içine gömülüydü; satır olarak okunur olsun.
+    final change = grossChange;
+    final pctBase = firstY;
     final pct = pctBase > 0 ? (change / pctBase) * 100 : null;
     final positive = change >= 0;
+
+    // Sadece piyasa etkisi — `PeriodSummaryService.piyasaEtkisi` ve
+    // `DailySummary.from` ile aynı: (son − ilk) − katkı; yüzde tabanı
+    // dönem başı + POZİTİF akış ("gün içinde portföyünü büyüten
+    // kullanıcıda yüzdeyi şişirmemek için", bkz. `DailySummary.from`).
+    final piyasa = grossChange - netInflow;
+    final piyasaPctBase = firstY + (netInflow > 0 ? netInflow : 0);
+    final piyasaPct =
+        piyasaPctBase > 0 ? (piyasa / piyasaPctBase) * 100 : null;
+    final piyasaFlat =
+        piyasa.abs().round() == 0 && (piyasaPct?.abs() ?? 0) < 0.005;
+    final piyasaColor = piyasaFlat
+        ? context.c.text36
+        : (piyasa >= 0 ? context.c.gain : context.c.loss);
 
     // Yuvarlanmış tutar ve yüzde ikisi de sıfırsa nötr renk — yeşil göstermek
     // "kazanç var" yanılgısı yaratır. _PeriodChangeRow ile aynı kural.
@@ -485,18 +495,37 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
             ? context.l10n.periodChangeSim(periodLabel)
             : context.l10n.periodBalanceChange(periodLabel);
 
+    // Düzen (2026-09-24, kullanıcı: "gözüme çok estetik gelmedi"):
+    //
+    //   başlık ····························· dönem aralığı
+    //   +₺566.413  [↑ %102,09]
+    //   ─────────────────────────────────────────────────
+    //   KATKIN                  SADECE PİYASA ETKİSİ
+    //   +₺561.927               +₺4.486 · %0,40
+    //
+    // Eski düzen beş satırı alt alta yığıyordu (başlık, tutar, tarih,
+    // piyasa satırı, üç satırlık not) ve hepsi aynı ağırlıktaydı. Şimdi
+    // üç kat var: sessiz üst bilgi, tek kahraman rakam, ince çizgi
+    // altında iki eşit kalem. "Birikim = katkın + piyasa" denklemi
+    // yazıyla değil yerleşimle anlatılıyor; not satırı bu yüzden kalktı.
+    // Akış yoksa alt kat çizilmez — kahraman zaten piyasa etkisidir.
+    final aralik = intraday
+        ? (gunIciBugun ? null : '${dateFmt.format(start)} · son seans')
+        : '${dateFmt.format(start)} → ${dateFmt.format(end)}';
+
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: SandikSpace.md, vertical: 14),
+      padding: const EdgeInsets.fromLTRB(
+          SandikSpace.md, SandikSpace.md2, SandikSpace.md, SandikSpace.md2),
       decoration: context.surfaceCard(radius: SandikRadius.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Üst bilgi: başlık solda, dönem aralığı sağda — ikisi de sessiz.
           // Başlık "1A birikim değişimi · simülasyon" gibi uzayabiliyor;
           // 320pt'de tek satıra sığmalı (taşma testi bunu kovalıyor).
           Row(
             children: [
-              Flexible(
+              Expanded(
                 child: Text(
                   title,
                   maxLines: 1,
@@ -532,13 +561,22 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   ),
                 ),
               ],
+              if (aralik != null) ...[
+                const SizedBox(width: SandikSpace.sm),
+                Text(
+                  aralik,
+                  maxLines: 1,
+                  style:
+                      context.t.bodySmall?.copyWith(color: context.c.text36),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: SandikSpace.sm),
+          const SizedBox(height: SandikSpace.sm2),
+          // Kahraman: tutar en büyük tipografi, yüzde yanında küçük rozet.
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Tutar — bloğun ana bilgisi, en büyük tipografi.
               // FittedBox: milyonluk portföyde dar ekranda taşmasın,
               // punto düşsün ama satır kırılmasın.
               Expanded(
@@ -547,7 +585,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     isFlat
-                        ? 'Değişim yok'
+                        ? context.l10n.noChange
                         : '${positive ? '+' : '−'}${tryFmt.format(change.abs())}',
                     maxLines: 1,
                     style: context.t.numMedium.copyWith(color: color),
@@ -560,9 +598,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                 // renk körlüğünde de okunur.
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.14),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: SandikRadius.smAll,
                   ),
                   child: Row(
@@ -572,7 +610,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         positive
                             ? Icons.arrow_upward_rounded
                             : Icons.arrow_downward_rounded,
-                        size: 13,
+                        size: 12,
                         color: color,
                       ),
                       const SizedBox(width: 3),
@@ -586,51 +624,39 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               ],
             ],
           ),
-          const SizedBox(height: SandikSpace.sm),
-          Text(
-            intraday
-                ? (gunIciBugun
-                    ? 'Bugün'
-                    : '${dateFmt.format(start)} · son seans')
-                : '${dateFmt.format(start)} → ${dateFmt.format(end)}',
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
-          ),
-          // Not satırı ana rakamın NE OLDUĞUNU söyler ve iki dönem
-          // türünde TERS çalışır (2026-09-23):
-          //
-          //   • GÜNLÜK  → ana rakam ARINDIRILMIŞ, akışı İÇERMEZ.
-          //     Not "şu kadar alım yaptın ama bu rakama girmedi" der,
-          //     yoksa kullanıcı eksik bir şey olduğunu sanar.
-          //   • diğer   → ana rakam HAM birikim, akışı İÇERİR.
-          //     Not "+%100 kazandım" yanılgısını önler: ne kadarı
-          //     yatırılan para, ne kadarı piyasa.
-          //
-          // Etiket tek başına yetmez — sayının kaynağı yazılmalı.
+          // Alt kat: akış varsa ana rakam alımı/satışı İÇERİR ve "+%100
+          // kazandım" yanılgısı doğar. İki eşit kalem bunu kapatır:
+          //   • Katkın — yatırdığın para, getiri sayılmaz (nötr renk,
+          //     Özet'teki mavi çubukla aynı anlam);
+          //   • Sadece piyasa etkisi — ana sayfa Bugün kartı ve Özet ile
+          //     AYNI rakam ve yüzde; iki ekran yan yana bununla eşleşir.
           if (netInflow.abs() > 0.5) ...[
-            const SizedBox(height: SandikSpace.sm),
+            const SizedBox(height: SandikSpace.smd),
+            Container(height: 1, color: context.c.hairline),
+            const SizedBox(height: SandikSpace.sm2),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded,
-                    size: 13, color: context.c.text36),
-                const SizedBox(width: 6),
                 Expanded(
-                  child: Text(
-                    intraday
-                        ? (netInflow > 0
-                            ? context.l10n.inflowExcludedNote(
-                                tryFmt.format(netInflow))
-                            : context.l10n.outflowExcludedNote(
-                                tryFmt.format(netInflow.abs())))
-                        : (netInflow > 0
-                            ? context.l10n.inflowIncludedNote(
-                                tryFmt.format(netInflow),
-                                tryFmt.format(grossChange - netInflow))
-                            : context.l10n.outflowIncludedNote(
-                                tryFmt.format(netInflow.abs()),
-                                tryFmt.format(grossChange - netInflow))),
-                    style:
-                        context.t.bodySmall?.copyWith(color: context.c.text36),
+                  child: _DegisimKalemi(
+                    etiket: context.l10n.yourContribution,
+                    deger: '${netInflow > 0 ? '+' : '−'}'
+                        '${tryFmt.format(netInflow.abs())}',
+                    renk: context.c.text58,
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.md),
+                Expanded(
+                  child: _DegisimKalemi(
+                    etiket: context.l10n.marketOnlyRow,
+                    deger: piyasaFlat
+                        ? context.l10n.noChange
+                        : '${piyasa >= 0 ? '+' : '−'}'
+                            '${tryFmt.format(piyasa.abs())}',
+                    ek: piyasaPct != null && !piyasaFlat
+                        ? fmtPct(piyasaPct.abs(), digits: 2)
+                        : null,
+                    renk: piyasaColor,
                   ),
                 ),
               ],
@@ -795,6 +821,54 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           // kullanıyoruz ki ileride kopmasın.
           ? now.difference(enEskiTarih!).inDays
           : null,
+    );
+  }
+}
+
+/// Dönem kartının alt katındaki tek kalem: küçük büyük harfli etiket,
+/// altında tutar (ve varsa "· %x" eki). İki kalem yan yana eşit genişlikte
+/// durur; tutar dar ekranda satır kırmak yerine punto düşürür.
+class _DegisimKalemi extends StatelessWidget {
+  const _DegisimKalemi({
+    required this.etiket,
+    required this.deger,
+    required this.renk,
+    this.ek,
+  });
+
+  final String etiket;
+  final String deger;
+  final String? ek;
+  final Color renk;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          // Düz `toUpperCase` Türkçe'de "PIYASA ETKISI" verir; "i" → "İ"
+          // için yerel yardımcı (ultrareview bulgusu, 2026-09-24).
+          trBuyukHarf(etiket),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: context.t.labelSmall?.copyWith(
+            letterSpacing: 0.6,
+            fontWeight: FontWeight.w700,
+            color: context.c.text36,
+          ),
+        ),
+        const SizedBox(height: SandikSpace.xs),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            ek == null ? deger : '$deger · $ek',
+            maxLines: 1,
+            style: context.t.numSmall.copyWith(color: renk),
+          ),
+        ),
+      ],
     );
   }
 }

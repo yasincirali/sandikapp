@@ -269,10 +269,30 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
 
   Future<PortfolioHistoryBreakdown> _intradayHistory(List<Asset> chartAssets) {
     final key = chartAssets.map((a) => a.id).join(',');
+    _intradayAssets = chartAssets;
     if (_intradayKey == key && _intradayFuture != null) return _intradayFuture!;
     _intradayKey = key;
-    _intradayFuture = HistoryService.instance
-        .getPortfolioHistoryHourlyBreakdown(chartAssets, 24)
+    // Süren fiyat turu bitmeden ve turun defteri build'e inmeden seri
+    // KURULMAZ (2026-09-24). Kullanıcı uygulamayı doğrudan bu ekranda
+    // açarsa (derin bağlantı, son sekme) açılış turu henüz ağdadır; Bugün
+    // kartıyla aynı kural, gerekçe `TazelikRitmi.turuVeKareyiBekle`.
+    //
+    // Liste `_intradayAssets`'ten okunur, bu çağrının parametresinden
+    // DEĞİL: turdan sonraki kare build'i yeniden koşturur ve aynı anahtarla
+    // buraya gelir; o build'in listesi taze fiyatı taşır, memoize edilen
+    // future'ın yakaladığı kopya ise turdan öncekini. Anahtar bu arada
+    // değiştiyse (filtre) eski liste kullanılır — yeni anahtarın verisi
+    // eski anahtarın tohumuna yazılmasın.
+    //
+    // Üst sınır seri önbelleği ömrü (5 dk), nabız aralığı DEĞİL: bu
+    // ekranda beklerken iskelet zaten beklenen görüntüdür; açılış turu
+    // emülatörde 27 sn sürdü ve 30 sn'lik sınır eski defterle seri
+    // kurmanın eşiğindeydi (2026-09-24).
+    _intradayFuture = ref
+        .read(portfolioProvider.notifier)
+        .fiyatTurunuVeKareyiBekle(enFazla: TazelikRitmi.gunIciSeriOmru)
+        .then((_) => HistoryService.instance.getPortfolioHistoryHourlyBreakdown(
+            _intradayKey == key ? _intradayAssets : chartAssets, 24))
       ..then((v) {
         if (mounted && v.total.isNotEmpty) {
           _lastIntradayData = v;

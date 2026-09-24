@@ -208,7 +208,19 @@ gündüz temiz. **Ne zaman:** bir sonraki test-sağlığı turunda (saat enjeksi
 Yukarıdaki iki test `IntradaySeriesCache` üzerinden geçtiği için kancayı
 oraya da taşımak gerekiyor.
 
-## 🟡 AÇIK — GÜNLÜK değişim kartı HAM, kilit ekranı ARINDIRILMIŞ: alım yapılan günde iki rakam ayrışıyor
+## ✅ KAPANDI — GÜNLÜK değişim kartı HAM, kilit ekranı ARINDIRILMIŞ: alım yapılan günde iki rakam ayrışıyor
+
+**Kapanış (2026-09-24, `main`, commit hash'i bu turun commit'inde).**
+Kullanıcı seçenek **(c)**'yi seçti — iki rakam da kartta, ağırlıkları
+farklı: ana rakam her dönemde HAM birikim (başlık ne diyorsa o), altında
+"Sadece piyasa etkisi" satırı (`DailySummary`/Özet ile aynı formül ve
+yüzde tabanı), not "yukarıdaki rakam alımı içerir" der. 2026-09-23'te
+denenen (a) seçeneği bir gün yaşadı: kullanıcı kartı görünce *"total
+birikim değişimine alımlar bu ekranda eklenmeli; altına da sadece
+piyasanın etkisi yazılmalı"* dedi. Parite kopmadı, satıra taşındı.
+Kaynak taraması `test/ozet_grafik_donem_basi_test.dart`.
+
+**Kapanış öncesi kayıt:**
 
 **Nerede.** `lib/screens/portfolio_performance/kartlar.dart` →
 `_buildPeriodChangeCard` (ana rakam `grossChange`) ile

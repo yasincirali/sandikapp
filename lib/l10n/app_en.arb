@@ -662,6 +662,15 @@
   "chartTxSell": "Sell {when} · {price}",
   "@chartTxSell": {"placeholders": {"when": {"type": "String"}, "price": {"type": "String"}}},
   "tradeVolumeUpper": "TRADE VOLUME",
+  "crosshairNetBuy": "Net buy +{amount}",
+  "@crosshairNetBuy": {"placeholders": {"amount": {"type": "String"}}},
+  "crosshairNetSell": "Net sell −{amount}",
+  "@crosshairNetSell": {"placeholders": {"amount": {"type": "String"}}},
+  "crosshairNetFlat": "No net change",
+  "crosshairTxCount": "{count} trades",
+  "@crosshairTxCount": {"placeholders": {"count": {"type": "int"}}},
+  "crosshairBuySellDetail": "Buy {buy} · Sell {sell}",
+  "@crosshairBuySellDetail": {"placeholders": {"buy": {"type": "String"}, "sell": {"type": "String"}}},
   "performanceTitle": "Performance",
   "intervalWeekly": "Weekly",
   "intervalMonthly": "Monthly",
@@ -1910,32 +1919,7 @@
       }
     }
   },
-  "inflowIncludedNote": "You bought {amount} in this period and the figure above INCLUDES it. Market move only: {market}.",
-  "@inflowIncludedNote": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "market": {
-        "type": "String"
-      }
-    }
-  },
-  "inflowExcludedNote": "You bought {amount} today; the figure above EXCLUDES it — it shows market movement only.",
-  "@inflowExcludedNote": {"placeholders": {"amount": {"type": "String"}}},
-  "outflowExcludedNote": "You sold {amount} today; the figure above EXCLUDES it — it shows market movement only.",
-  "@outflowExcludedNote": {"placeholders": {"amount": {"type": "String"}}},
-  "outflowIncludedNote": "You sold {amount} in this period and the figure above INCLUDES it. Market move only: {market}.",
-  "@outflowIncludedNote": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "market": {
-        "type": "String"
-      }
-    }
-  },
+  "marketOnlyRow": "Market effect only",
   "rowExpandedSemantics": "{label}, expanded. Double tap to collapse.",
   "@rowExpandedSemantics": {
     "placeholders": {

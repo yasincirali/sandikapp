@@ -1547,7 +1547,9 @@ bir doğal cümlede tutuldu — bu bölümü şişirme, politika ihlali riski va
 
 ### 1.4 Logo & Görsel Asset'ler
 
-Şu anda mevcut: `assets/images/sandik_icon.png` (launcher), `sandik_logo.svg`, `loading.gif`.
+Şu anda mevcut: `assets/images/sandik_icon.png` (launcher), `sandik_logo.svg`.
+Yükleme işareti 2026-09-24'ten beri vektör (`lib/theme/yukleme_isareti.dart`);
+`loading.gif` kaldırıldı.
 
 **Eksik / iyileştirilmeli:**
 - **Adaptive icon foreground** (Android 8+): `assets/images/sandik_icon_fg.png` — saydam arkaplanlı, kenarlardan %33 boşluk bırakılmış (Android masking için). 1024x1024 PNG.

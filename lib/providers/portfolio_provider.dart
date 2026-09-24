@@ -810,6 +810,27 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
   }
 
+  /// Süren fiyat turu varsa bitmesini bekler; yoksa anında döner.
+  ///
+  /// Gün içi seriyi çeken yüzeyler (Bugün kartı, Performans GÜNLÜK, varlık
+  /// ekranı GÜNLÜK) seriyi kurmadan ÖNCE bunu bekler: soğuk açılışta
+  /// açılış turu ağdayken kurulan seri altın/döviz gün başı referansını
+  /// bulamıyor ve iki yüzey farklı gün başı gösteriyordu. Gerekçe ve ölçüm
+  /// `TazelikRitmi.turuBekle`'de. Hiç fırlatmaz.
+  Future<void> fiyatTurunuBekle({Duration enFazla = TazelikRitmi.yuzey}) =>
+      TazelikRitmi.turuBekle(_surenTur, enFazla: enFazla);
+
+  /// [fiyatTurunuBekle] + bir kare: defteri `widget.state`'ten okuyan
+  /// yüzeyler (Bugün kartı, Performans) turun yayınını ancak sonraki karede
+  /// görür — gerekçe `TazelikRitmi.turuVeKareyiBekle`.
+  Future<void> fiyatTurunuVeKareyiBekle(
+          {Duration enFazla = TazelikRitmi.yuzey}) =>
+      TazelikRitmi.turuVeKareyiBekle(_surenTur, enFazla: enFazla);
+
+  /// Şu an bir fiyat turu ağda mı? Bekleme bütçesi dolduğunda çağıran
+  /// "eski defterle kur" ile "tur bitince kur" arasında buna göre seçer.
+  bool get fiyatTuruSuruyor => _surenTur != null;
+
   Future<void> _fiyatTuru({required bool force, required bool nabiz}) async {
     // Build henüz bitmediyse (ya da user null → boş state) — bekle. Aksi
     // halde eski/boş `s.assets`'i alıp await'ten sonra güncel state'in

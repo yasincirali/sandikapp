@@ -662,6 +662,15 @@
   "chartTxSell": "Satış {when} · {price}",
   "@chartTxSell": {"placeholders": {"when": {"type": "String"}, "price": {"type": "String"}}},
   "tradeVolumeUpper": "İŞLEM HACMİ",
+  "crosshairNetBuy": "Net alım +{amount}",
+  "@crosshairNetBuy": {"placeholders": {"amount": {"type": "String"}}},
+  "crosshairNetSell": "Net satış −{amount}",
+  "@crosshairNetSell": {"placeholders": {"amount": {"type": "String"}}},
+  "crosshairNetFlat": "Net değişim yok",
+  "crosshairTxCount": "{count} işlem",
+  "@crosshairTxCount": {"placeholders": {"count": {"type": "int"}}},
+  "crosshairBuySellDetail": "Alım {buy} · Satış {sell}",
+  "@crosshairBuySellDetail": {"placeholders": {"buy": {"type": "String"}, "sell": {"type": "String"}}},
   "performanceTitle": "Performans",
   "intervalWeekly": "Haftalık",
   "intervalMonthly": "Aylık",
@@ -1910,32 +1919,7 @@
       }
     }
   },
-  "inflowIncludedNote": "Bu dönemde {amount} tutarında alım yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.",
-  "@inflowIncludedNote": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "market": {
-        "type": "String"
-      }
-    }
-  },
-  "inflowExcludedNote": "Bu gün {amount} tutarında alım yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.",
-  "@inflowExcludedNote": {"placeholders": {"amount": {"type": "String"}}},
-  "outflowExcludedNote": "Bu gün {amount} tutarında satış yapıldı; yukarıdaki rakam bunu İÇERMEZ — yalnızca piyasa hareketini gösterir.",
-  "@outflowExcludedNote": {"placeholders": {"amount": {"type": "String"}}},
-  "outflowIncludedNote": "Bu dönemde {amount} tutarında satış yapıldı ve yukarıdaki rakam bunu İÇERİR. Yalnızca piyasa hareketi: {market}.",
-  "@outflowIncludedNote": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      },
-      "market": {
-        "type": "String"
-      }
-    }
-  },
+  "marketOnlyRow": "Sadece piyasa etkisi",
   "rowExpandedSemantics": "{label}, açık. Kapatmak için çift dokun.",
   "@rowExpandedSemantics": {
     "placeholders": {

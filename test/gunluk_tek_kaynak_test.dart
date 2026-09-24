@@ -288,4 +288,114 @@ void main() {
       expect('dovizUrunBirimi(a, '.allMatches(src).length, 2);
     });
   });
+
+  // Kullanıcı bildirimi (2026-09-24): "kill edildikten sonraki ilk açılışta
+  // ana sayfa günlük ile Performans grafik/özet farklı". Nabız yolu turdan
+  // sonra çekiyordu, açılış yolu değil — gerekçe `TazelikRitmi.turuBekle`.
+  group('5 · soğuk açılış: seri, süren fiyat turu bitmeden kurulmaz', () {
+    test('tur yoksa bekleme anında biter', () {
+      fakeAsync((fa) {
+        var bitti = false;
+        unawaited(TazelikRitmi.turuBekle(null).then((_) => bitti = true));
+        fa.flushMicrotasks();
+        expect(bitti, isTrue);
+      });
+    });
+
+    test('süren tur bitene kadar seri kurulmaz, bitince kurulur', () {
+      fakeAsync((fa) {
+        final tur = Completer<void>();
+        var seriKuruldu = false;
+        unawaited(TazelikRitmi.turuBekle(tur.future)
+            .then((_) => seriKuruldu = true));
+        fa.elapse(const Duration(seconds: 5));
+        expect(seriKuruldu, isFalse,
+            reason: 'gün başı referansı tur dolmadan yok — seri beklemeli');
+        tur.complete();
+        fa.flushMicrotasks();
+        expect(seriKuruldu, isTrue);
+      });
+    });
+
+    test('asılı ve hatalı tur seriyi en fazla bir aralık bekletir', () {
+      fakeAsync((fa) {
+        var asili = false;
+        unawaited(TazelikRitmi.turuBekle(Completer<void>().future)
+            .then((_) => asili = true));
+        fa.elapse(TazelikRitmi.yuzey - const Duration(seconds: 1));
+        expect(asili, isFalse);
+        fa.elapse(const Duration(seconds: 2));
+        expect(asili, isTrue, reason: 'nabızla aynı üst sınır');
+
+        var hatali = false;
+        unawaited(TazelikRitmi.turuBekle(Future<void>.error(StateError('ağ')))
+            .then((_) => hatali = true));
+        fa.flushMicrotasks();
+        expect(hatali, isTrue, reason: 'turun hatası sahibinde raporlanır');
+      });
+    });
+
+    testWidgets('tur + kare: defter widget\'a inene kadar beklenir',
+        (tester) async {
+      // Kare gelmeden bitmemeli — `widget.state` o karede güncellenir.
+      var bitti = false;
+      final f = TazelikRitmi.turuVeKareyiBekle(null).then((_) => bitti = true);
+      // Mikro görevler akar, kare AKMAZ (`idle` kare üretmez).
+      await tester.idle();
+      expect(bitti, isFalse, reason: 'kare gelmeden defter eski');
+      await tester.pump();
+      await f;
+      expect(bitti, isTrue);
+    });
+
+    test('kaynak: üç gün içi yüzey de seriden ÖNCE turu bekler', () {
+      final p = kod('lib/providers/portfolio_provider.dart');
+      expect(p.contains('TazelikRitmi.turuBekle(_surenTur, enFazla: enFazla)'),
+          isTrue,
+          reason: 'bekleme süren turun kendisine bağlı olmalı');
+      expect(
+          p.contains(
+              'TazelikRitmi.turuVeKareyiBekle(_surenTur, enFazla: enFazla)'),
+          isTrue);
+
+      // Bugün kartı `widget.state` okur → tur + KARE; bekleme kişisel/ortak
+      // dallanmasından ÖNCE — iki dal da seriyi kurar, ikisi de beklemeli.
+      final kart = kod('lib/widgets/bugun_karti.dart');
+      final govde = kart.substring(
+          kart.indexOf('_seriYukle({bool nabiz = false}) async {'));
+      final bekle = govde.indexOf('.fiyatTurunuVeKareyiBekle(');
+      final dal = govde.indexOf('if (!widget.kisisel) {');
+      expect(bekle, greaterThan(0));
+      expect(bekle, lessThan(dal), reason: 'ortak dalı da beklemeli');
+      // Bütçe dolduğunda tur hâlâ ağdaysa eski defterle seri KURULMAZ:
+      // satır boş kalır, tur bitince yüklenir (emülatörde 27 sn'lik tur).
+      final kapi = govde.indexOf('if (notifier.fiyatTuruSuruyor) { '
+          '_turBitinceYukle(notifier); return null; }');
+      expect(kapi, greaterThan(bekle));
+      expect(kapi, lessThan(dal));
+
+      // Performans: tur + KARE, ve liste son build'in kopyasından.
+      final seriler = kod('lib/screens/portfolio_performance/seriler.dart');
+      expect(
+          seriler.contains(
+              '.fiyatTurunuVeKareyiBekle(enFazla: TazelikRitmi.gunIciSeriOmru) '
+              '.then((_) => HistoryService.instance'
+              '.getPortfolioHistoryHourlyBreakdown( '
+              '_intradayKey == key ? _intradayAssets : chartAssets, 24))'),
+          isTrue,
+          reason: 'memoize edilen future taze listeyi okumalı');
+      expect(seriler.contains('_intradayAssets = chartAssets;'), isTrue);
+
+      // Varlık ekranı provider\'ı doğrudan okur (`_canli`) → yalnızca tur,
+      // ama `_canli` OKUNMADAN önce.
+      final varlik = kod('lib/screens/asset_detail_screen.dart');
+      final yukle = varlik.substring(
+          varlik.indexOf('Future<Map<int, double>> _loadHistory(int days) async {'));
+      final vBekle = yukle.indexOf(
+          '.fiyatTurunuBekle(enFazla: TazelikRitmi.gunIciSeriOmru);');
+      final vCanli = yukle.indexOf('_canli.asset');
+      expect(vBekle, greaterThan(0));
+      expect(vBekle, lessThan(vCanli), reason: 'defter turdan sonra okunmalı');
+    });
+  });
 }

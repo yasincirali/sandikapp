@@ -120,6 +120,9 @@ Future<void> _pump(WidgetTester tester) async {
     ),
   );
   await tester.pump();
+  // Gün içi seri, fiyat turu + BİR KARE bekledikten sonra kurulur
+  // (`TazelikRitmi.turuVeKareyiBekle`, 2026-09-24); o kare burada.
+  await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
 }
 

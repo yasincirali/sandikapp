@@ -52,6 +52,11 @@ FlSpot? nearestSpot(List<FlSpot> spots, double x) {
 /// ama perşembe/cuma alımları yanlış tarafa yuvarlanırdı).
 ///
 /// [x]'ten önce hiç nokta yoksa (işlem serinin başlangıcından önce) -1 döner.
+///
+/// 2026-09-24: İŞLEM işaretleri artık bunu kullanmıyor — motor lot'u işlem
+/// anından büyük-eşit İLK slota kattığı için işaret de o noktaya bağlanır
+/// (`islemNoktalari`). Bu fonksiyon crosshair'ın "o ana kadar bilinen son
+/// değer" okuması ve `cizgiDegeri` için kalır.
 int coveringSpotIndex(List<FlSpot> spots, double x) {
   if (spots.isEmpty) return -1;
   if (spots.first.x > x) return -1;
