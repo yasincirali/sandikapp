@@ -802,9 +802,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     final endpointColor =
                         gainPositive ? context.c.gain : context.c.loss;
 
-                    // İşlem işaretleri — GERÇEK işlem anında, GERÇEK işlem
-                    // birim fiyatında; çizgiye yapıştırılmaz (kullanıcı
-                    // bildirimi 2026-09-24, gerekçe `islemIsaretleri`).
+                    // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
+                    // ÜZERİNDE; gerçek işlem fiyatı crosshair'da yazılır
+                    // (gerekçe ve karar geçmişi `islemIsaretleri`).
                     final activeLots = widget.lots ?? [widget.asset];
                     final primarySpots = segments
                         .firstWhere((s) => !s.piyasaKapali && s.spots.isNotEmpty,
@@ -824,8 +824,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             ilkX: primarySpots.first.x,
                             sonX: primarySpots.last.x,
                           );
+                    // Çizgi tüm segmentlerden (kapalı piyasa kesikli
+                    // parçaları dahil) oluşur; işaret hangisine düşerse
+                    // onun üstünde durur. Spot'lar zaten `toY` uzayında.
+                    final cizgiSpots = [
+                      for (final seg in segments) ...seg.spots,
+                    ]..sort((a, b) => a.x.compareTo(b.x));
                     final islemSpots = [
-                      for (final t in islemler) FlSpot(t.x, toY(t.birim)),
+                      for (final t in islemler)
+                        FlSpot(t.x,
+                            cizgiDegeri(cizgiSpots, t.x) ?? toY(t.birim)),
                     ];
 
                     // Y sınırlarını görünür X aralığındaki spot'lara göre
@@ -1128,9 +1136,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               final yBounds = computeY(
                                 viewMinX,
                                 viewMaxX,
-                                // İşaretler de Y aralığına girer: alış
-                                // fiyatı çizginin dışında kalabilir ve
-                                // grafiğin dışına taşmamalı.
+                                // İşaretler de Y aralığına girer. Artık
+                                // çizginin üstündeler (2026-09-24), yani
+                                // aralığı genişletmezler; güvence olarak
+                                // kalır.
                                 extraSpots: [
                                   ...?compareBar?.spots,
                                   ...islemSpots,
@@ -1512,7 +1521,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     ),
                                   );
                               }),
-                            // İşlem işaretleri — gerçek an × gerçek fiyat
+                            // İşlem işaretleri — gerçek an × çizgi üstü
                             // (bkz. `islemler`). Çizgisi yok: kalınlık 0 +
                             // tam saydam renk (0 kalınlık tek başına kıl
                             // çizgi çizer).
