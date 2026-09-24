@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback, SystemUiOverlayStyle;
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'yukleme_isareti.dart';
+
 /// Platforma uygun sayfa geçişi.
 ///
 /// iOS'ta [CupertinoPageRoute] döner: sağdan-sola kayma animasyonu ve
@@ -1343,40 +1345,22 @@ class SandikSectionHeader extends StatelessWidget {
   }
 }
 
-/// Tam ekran loading — gif + "sandık" yazısı. Ekran ilk açılışında kullan.
+/// Tam ekran loading — yükleme işareti + "sandık" yazısı. Ekran ilk
+/// açılışında kullan.
 ///
-/// Zemin moda duyarlıdır ([SandikPalette.background]); GIF'in kendi arka planı
-/// şeffaf olduğu için çerçeve/renk uyuşmazlığı oluşmaz. GIF ölçekleme mantığı
-/// (200×200 tuvalde 150×150 içerik → overdraw telafisi) [CustomLoadingIndicator]
-/// içinde tek yerde durur; burada tekrarlanmaz ki iki gösterge birbirinden
-/// ayrı düşmesin.
-class SandikLoadingScreen extends StatefulWidget {
+/// Zemin moda duyarlıdır ([SandikPalette.background]). İşaret vektördür
+/// ([YuklemeIsareti], 2026-09-24): eski GIF 2,8 kat büyütülünce kenarı
+/// bulanık bant + köşeleri basamak oluyor, koyu zeminde "çerçeve" gibi
+/// görünüyordu (gerekçe ve ölçüm `yukleme_isareti.dart`). Eski `_showGif`
+/// kare gecikmesi ve 220 ms fade GIF'in ilk karesinin hazır olmasını
+/// bekliyordu; vektör ilk karede çizildiği için ikisi de kalktı.
+/// [CustomLoadingIndicator] aynı widget'ı kullanır — açılıştaki görsel ile
+/// uygulama içi gösterge birebir aynı.
+class SandikLoadingScreen extends StatelessWidget {
   const SandikLoadingScreen({super.key});
 
-  @override
-  State<SandikLoadingScreen> createState() => _SandikLoadingScreenState();
-}
-
-/// GIF'in şeffaf kenar dolgusunu telafi eden çarpan (200/150).
-/// [CustomLoadingIndicator] ile bilinçli olarak aynıdır — açılıştaki görsel
-/// ile uygulama içi göstergenin oranı birebir tutsun diye.
-const double _gifOverdraw = 200 / 150;
-
-/// Geniş ekranda logonun tasarım ölçüsü; dar ekranda yukarıdan sınırlanır.
-const double _logoSize = 140;
-
-class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
-  bool _showGif = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Bir sonraki frame'de GIF'e geç — native splash ikon → Flutter ikon arası
-    // senkron, GIF frame'i hazır olunca yerini alır
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _showGif = true);
-    });
-  }
+  /// Geniş ekranda logonun tasarım ölçüsü; dar ekranda yukarıdan sınırlanır.
+  static const double _logoSize = 140;
 
   @override
   Widget build(BuildContext context) {
@@ -1386,7 +1370,6 @@ class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
     // dar ekranda orantılı küçülür.
     final shortestSide = MediaQuery.sizeOf(context).shortestSide;
     final size = math.min(_logoSize, shortestSide * 0.36);
-    final drawSize = size * _gifOverdraw;
 
     final scaffold = Scaffold(
       backgroundColor: context.c.background,
@@ -1394,36 +1377,7 @@ class _SandikLoadingScreenState extends State<SandikLoadingScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Kutu her iki durumda da aynı ölçüde — GIF belirince "sandık"
-            // yazısı yerinden zıplamaz.
-            SizedBox(
-              width: size,
-              height: size,
-              // GIF hazır olana kadar boş kalır, sonra yumuşakça belirir:
-              // ani "pat" diye görünme yerine 220ms fade.
-              child: AnimatedOpacity(
-                opacity: _showGif ? 1 : 0,
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
-                child: _showGif
-                    ? Center(
-                        child: SizedBox(
-                          width: drawSize,
-                          height: drawSize,
-                          child: Image.asset(
-                            'assets/images/loading.gif',
-                            width: drawSize,
-                            height: drawSize,
-                            fit: BoxFit.contain,
-                            // GIF alfası 1-bit; yüksek kalite ölçekleme
-                            // kenardaki testere dişini yumuşatır.
-                            filterQuality: FilterQuality.high,
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ),
+            YuklemeIsareti(size: size, golgeli: true),
             const SizedBox(height: SandikSpace.lg),
             Text(
               'sandık',

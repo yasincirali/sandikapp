@@ -17,14 +17,10 @@ void main() {
         ),
       );
 
-      // Dıştaki SizedBox tam 40×40 olmalı — GIF içeride büyütülse bile
-      // layout'ta yer kaplaması değişmez.
-      final box = tester.getSize(
-        find.ancestor(
-          of: find.byType(Image),
-          matching: find.byType(SizedBox),
-        ).last,
-      );
+      // İşaretin kutusu tam 40×40 olmalı — layout'ta yer kaplaması
+      // istenen ölçüdür (2026-09-24: GIF'in overdraw çarpanı kalktı,
+      // vektör işaret kutuyu tam doldurur).
+      final box = tester.getSize(find.byType(CustomPaint).last);
       expect(box.width, 40);
       expect(box.height, 40);
     });

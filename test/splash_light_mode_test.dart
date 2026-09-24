@@ -206,13 +206,10 @@ void main() {
     final start = src.indexOf('class SandikLoadingScreen');
     expect(start, greaterThan(-1));
     final body = src.substring(start);
-    // Splash iki sınıfa yayılır (widget + State); tarama State'in SONUNA
-    // kadar sürmeli, yoksa asıl build gövdesi kapsam dışında kalır.
-    // Anchor, State'in bildirimidir — `createState()` içindeki dönüş tipi
-    // aynı adı daha erken geçirdiği için ham ad araması yanlış yer bulur.
-    final stateDecl = body.indexOf('class _SandikLoadingScreenState');
-    expect(stateDecl, greaterThan(-1));
-    final end = body.indexOf('\nclass ', stateDecl);
+    // Splash 2026-09-24'ten beri TEK sınıf (StatelessWidget; GIF'in kare
+    // gecikmesi ve fade'i vektör işaretle birlikte kalktı). Tarama bir
+    // sonraki `class` bildirimine kadar sürer.
+    final end = body.indexOf('\nclass ', 1);
     final widgetSrc = end == -1 ? body : body.substring(0, end);
 
     // Kapsamın gerçekten build gövdesini içerdiğini doğrula — bu satır

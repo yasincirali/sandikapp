@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import '../theme/sandik.dart';
+import '../theme/yukleme_isareti.dart';
 
-/// Uygulama genelinde tek yükleme göstergesi — açılış GIF'ini temel alır.
+/// Uygulama genelinde tek yükleme göstergesi — açılış işaretini temel alır.
 ///
 /// Neden merkezi: 36 ayrı `CircularProgressIndicator` çağrısı farklı boyut ve
 /// renklerle dağılmıştı. Tek kaynak, her yükleme anında aynı marka hissini verir.
 ///
-/// GIF notları (assets/images/loading.gif):
-/// - 200×200 tuval, içerik yalnızca ortadaki 150×150'de. Kalan %25 boş dolgu,
-///   bu yüzden ham `size` görsel olarak %25 küçük görünür; [_gifOverdraw] ile
-///   telafi edilir.
-/// - Alfa kanalı 1-bit (yalnız 0 ve 255). GIF formatı yarı saydamlığı
-///   desteklemez, dolayısıyla kenarlar testere dişi olur. `FilterQuality.high`
-///   ölçekleme sırasında bunu yumuşatır.
-/// - Arka planı şeffaf; zemin rengi neyse ona oturur. Ayrı bir maskeye gerek yok
-///   — GIF'i opak bir kutuya koymak tam tersine çerçeve oluştururdu.
+/// 2026-09-24: GIF yerine vektör ([YuklemeIsareti]). GIF'in 200×200 tuvalinde
+/// içerik 150×150'deydi ve `_gifOverdraw` çarpanıyla telafi ediliyordu; şimdi
+/// işaret [size] kutusunu tam doldurur, çarpan yok. Gerekçe ve ölçümler
+/// `yukleme_isareti.dart` başında.
 class CustomLoadingIndicator extends StatelessWidget {
   const CustomLoadingIndicator({
     super.key,
@@ -34,46 +30,16 @@ class CustomLoadingIndicator extends StatelessWidget {
   /// Açılış ekranı.
   static const double splash = 140;
 
-  /// GIF'in şeffaf kenar dolgusunu telafi eden çarpan (200/150).
-  static const double _gifOverdraw = 200 / 150;
-
   final double size;
   final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    final drawSize = size * _gifOverdraw;
-
     return Semantics(
       label: semanticLabel,
       liveRegion: true,
-      child: SizedBox(
-        // Dış ölçü istenen boyutta kilitli — layout kayması olmaz.
-        width: size,
-        height: size,
-        child: Center(
-          child: SizedBox(
-            width: drawSize,
-            height: drawSize,
-            child: Image.asset(
-              'assets/images/loading.gif',
-              width: drawSize,
-              height: drawSize,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              // GIF yüklenemezse yükleme durumu görünmez kalmasın.
-              errorBuilder: (_, __, ___) => SizedBox(
-                width: size,
-                height: size,
-                child: CircularProgressIndicator(
-                  strokeWidth: size <= small ? 2 : 3,
-                  valueColor: AlwaysStoppedAnimation(context.c.amberText),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      // Dış ölçü istenen boyutta kilitli — layout kayması olmaz.
+      child: YuklemeIsareti(size: size),
     );
   }
 }
