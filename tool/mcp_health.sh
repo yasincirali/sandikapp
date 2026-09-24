@@ -91,14 +91,29 @@ else:
                 # soneki döndürür; Python 3.10 fromisoformat bunu tanımaz.
                 commit = datetime.fromisoformat(
                     son.replace('Z', '+00:00')).astimezone(timezone.utc)
+                # Zaman damgası tek başına yanıltıyor: indeks çalışma
+                # ağacından commit'ten hemen ÖNCE alınmış olabilir (2026-09-24:
+                # commit'ten 50 sn önce alınan indeks, sembolleri eksiksiz
+                # içerdiği hâlde "geride" uyarısı üretti). Ölçüt içerik olsun:
+                # commit'in dokunduğu dosyalardan biri indeksten SONRA
+                # değişmişse indeks o hâli görmemiştir; hepsi önceyse günceldir.
                 if idx < commit:
-                    fark = commit - idx
-                    saat = int(fark.total_seconds() // 3600)
-                    notlar.append(
-                        'kod grafiği indeksi son commit\'ten %d saat geride '
-                        '— tazele: codebase-memory-mcp cli index_repository '
-                        '--repo-path "c:\\projects\\PortfoyTakip"' % saat
-                    )
+                    dokunulan = kabuk('git', 'show', '--name-only',
+                                      '--format=', 'HEAD').splitlines()
+                    idx_ts = idx.timestamp()
+                    gormedi = [d for d in dokunulan
+                               if os.path.isfile(d)
+                               and os.path.getmtime(d) > idx_ts]
+                    if gormedi:
+                        fark = commit - idx
+                        saat = int(fark.total_seconds() // 3600)
+                        notlar.append(
+                            'kod grafiği indeksi son commit\'ten %d saat geride, '
+                            '%d dosyanın son hâlini görmedi (ör. %s) '
+                            '— tazele: codebase-memory-mcp cli index_repository '
+                            '--repo-path "c:\\projects\\PortfoyTakip"'
+                            % (saat, len(gormedi), gormedi[0])
+                        )
     except sqlite3.OperationalError:
         # Kilit normal: sunucu o an yazıyor olabilir. Sorun sayma.
         pass

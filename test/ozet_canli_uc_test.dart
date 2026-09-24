@@ -124,7 +124,10 @@ void main() {
     final dosyalar = Directory('lib')
         .listSync(recursive: true)
         .whereType<File>()
-        .map((f) => f.path.replaceAll(r'\\', '/'))
+        // Windows'ta `f.path` ters bölülü gelir; istisna listesi `/` ile
+        // yazıldı. Ham dizge `r'\\'` İKİ ters bölü arar ve hiçbir şeyi
+        // değiştirmez — test yalnızca Linux CI'da geçiyordu (2026-09-24).
+        .map((f) => f.path.replaceAll('\\', '/'))
         .where((y) => y.endsWith('.dart') && !istisna.contains(y));
     var bulunan = 0;
     for (final yol in dosyalar) {
