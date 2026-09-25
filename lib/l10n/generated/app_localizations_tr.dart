@@ -1606,8 +1606,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get notEnoughPriceHistory => 'Grafik için yeterli fiyat geçmişi yok.';
 
   @override
-  String portfolioLineNote(String name) {
-    return '$name çizgisi, bugünkü varlıklarını dönem başından beri tutsaydın senaryosudur — gerçekleşmiş getirin değildir.';
+  String portfolioLineInfoDaily(String name) {
+    return 'Günlük görünümde $name çizgisi gerçek değerini gösterir — Performans ekranındaki günlük grafiğin aynısı.';
+  }
+
+  @override
+  String portfolioLineInfoSim(String name) {
+    return 'Haftalık ve daha uzun dönemlerde $name çizgisi bir simülasyondur: bugünkü varlıklarını dönem başından beri tutsaydın ne olurdu. Alım-satım tarihlerin hesaba katılmaz; gerçekleşmiş getirin değildir. Böylece izlediğin varlıklarla aynı pencerede kıyaslanır.';
   }
 
   @override

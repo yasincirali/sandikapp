@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
         Icons,
+        Tooltip,
+        TooltipTriggerMode,
         Colors,
         Dismissible,
         DismissDirection,
@@ -184,6 +186,59 @@ class _List extends ConsumerWidget {
   }
 }
 
+/// Portföy çizgisinin NE olduğunu söyleyen minik bilgi ipucu.
+///
+/// Çizgi dönemden dönem farklı bir şey gösteriyor (`watchlistChartProvider`):
+/// GÜNLÜK'te Performans ekranının günlük grafiğiyle aynı gün içi motor —
+/// gerçek değer; 1H ve üstünde `simulate: true` — bugünkü varlıklar dönem
+/// başından beri tutulmuş gibi. Kullanıcı bildirimi 2026-09-25: "günlükte
+/// gerçek grafiğin aynısı, haftalık/aylıkta simülasyona geçiyor; akıllarda
+/// soru işareti kalabilir."
+///
+/// Eskiden grafiğin altında HER dönemde sabit bir not vardı ("senaryodur,
+/// gerçekleşmiş getirin değildir"). İki sorunu vardı: günlükte YANLIŞTI
+/// (orada çizgi gerçek) ve her bakışta yer kaplıyordu. Not dönemi bilen bir
+/// ipucuna taşındı; simülasyon uyarısı kaybolmadı, dokununca okunuyor.
+///
+/// Dokunarak açılır (`TooltipTriggerMode.tap`): mobilde uzun basış
+/// keşfedilmiyor. Görsel ikon 15pt, dokunma hedefi 44pt (HIG #37).
+class _PortfoyCizgisiBilgisi extends StatelessWidget {
+  final String portfolioLabel;
+  final bool gunIci;
+  const _PortfoyCizgisiBilgisi(
+      {required this.portfolioLabel, required this.gunIci});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: gunIci
+          ? context.l10n.portfolioLineInfoDaily(portfolioLabel)
+          : context.l10n.portfolioLineInfoSim(portfolioLabel),
+      triggerMode: TooltipTriggerMode.tap,
+      // Okuma süresi: iki cümlelik metin varsayılan 1.5 sn'de okunmuyor.
+      showDuration: const Duration(seconds: 8),
+      preferBelow: true,
+      margin: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
+      padding: const EdgeInsets.all(SandikSpace.md),
+      decoration: BoxDecoration(
+        color: context.c.surface2,
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+        border: Border.all(color: context.c.hairline),
+      ),
+      textStyle:
+          context.t.bodySmall?.copyWith(color: context.c.text90, height: 1.45),
+      child: SizedBox.square(
+        dimension: SandikTouch.min,
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Icon(Icons.info_outline_rounded,
+              size: 15, color: context.c.text36),
+        ),
+      ),
+    );
+  }
+}
+
 /// Karşılaştırma grafiği kartı.
 ///
 /// Serilerin tamamı dönem başı `%0` olacak şekilde normalize edilir
@@ -227,16 +282,28 @@ class _ChartCard extends ConsumerWidget {
           ],
           Padding(
             padding: const EdgeInsets.only(left: 12),
-            child: Text(
-              // Hangi portföyle kıyaslandığı BAŞLIKTA yazar — kullanıcı
-              // grafiğe bakarken seçiciye geri dönmek zorunda kalmasın.
-              'DÖNEM BAŞINA GÖRE · $periodLabel · ${portfolioLabel.toUpperCase()}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: context.t.labelSmall?.copyWith(
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text36),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    // Hangi portföyle kıyaslandığı BAŞLIKTA yazar — kullanıcı
+                    // grafiğe bakarken seçiciye geri dönmek zorunda kalmasın.
+                    'DÖNEM BAŞINA GÖRE · $periodLabel · ${portfolioLabel.toUpperCase()}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelSmall?.copyWith(
+                        letterSpacing: 0.8,
+                        fontWeight: FontWeight.w700,
+                        color: context.c.text36),
+                  ),
+                ),
+                _PortfoyCizgisiBilgisi(
+                  portfolioLabel: portfolioLabel,
+                  gunIci:
+                      watchlistPeriods[ref.watch(watchlistPeriodProvider)].days <=
+                          1,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: SandikSpace.sm),
@@ -301,29 +368,6 @@ class _ChartCard extends ConsumerWidget {
                           ref.read(watchlistFocusProvider.notifier).state = k,
                     ),
                   ),
-                  // Portföy çizgisi bir SENARYO; bunu söylememek yanıltıcı
-                  // olurdu. Kullanıcı "%12 kazanmışım" diye okumamalı.
-                  if (series.containsKey(WatchlistChart.portfolioSeriesKey))
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 0, 0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.info_outline_rounded,
-                              size: 12, color: context.c.text36),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              context.l10n.portfolioLineNote(portfolioLabel),
-                              style: context.t.bodySmall?.copyWith(
-                                  color: context.c.text36,
-                                  fontSize: 10,
-                                  height: 1.4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                 ],
               );
             },

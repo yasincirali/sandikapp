@@ -2960,11 +2960,17 @@ abstract class AppLocalizations {
   /// **'Grafik için yeterli fiyat geçmişi yok.'**
   String get notEnoughPriceHistory;
 
-  /// No description provided for @portfolioLineNote.
+  /// No description provided for @portfolioLineInfoDaily.
   ///
   /// In tr, this message translates to:
-  /// **'{name} çizgisi, bugünkü varlıklarını dönem başından beri tutsaydın senaryosudur — gerçekleşmiş getirin değildir.'**
-  String portfolioLineNote(String name);
+  /// **'Günlük görünümde {name} çizgisi gerçek değerini gösterir — Performans ekranındaki günlük grafiğin aynısı.'**
+  String portfolioLineInfoDaily(String name);
+
+  /// No description provided for @portfolioLineInfoSim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık ve daha uzun dönemlerde {name} çizgisi bir simülasyondur: bugünkü varlıklarını dönem başından beri tutsaydın ne olurdu. Alım-satım tarihlerin hesaba katılmaz; gerçekleşmiş getirin değildir. Böylece izlediğin varlıklarla aynı pencerede kıyaslanır.'**
+  String portfolioLineInfoSim(String name);
 
   /// No description provided for @openDetailSemantics.
   ///

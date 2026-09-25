@@ -834,8 +834,16 @@
   },
   "chartLoadFailed": "The chart could not be loaded.",
   "notEnoughPriceHistory": "Not enough price history for a chart.",
-  "portfolioLineNote": "The {name} line is the scenario where you held today's assets from the start of the period — it is not your realised return.",
-  "@portfolioLineNote": {
+  "portfolioLineInfoDaily": "In the daily view the {name} line shows your real value — the same as the daily chart on the Performance screen.",
+  "@portfolioLineInfoDaily": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "portfolioLineInfoSim": "For weekly and longer periods the {name} line is a simulation: what would have happened had you held today's assets since the start of the period. Your buy and sell dates are ignored; it is not your realised return. This keeps it comparable with your watched assets over the same window.",
+  "@portfolioLineInfoSim": {
     "placeholders": {
       "name": {
         "type": "String"
