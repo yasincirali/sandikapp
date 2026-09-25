@@ -693,54 +693,66 @@ class _AddHeader extends ConsumerWidget {
     final limit = ref.watch(watchlistLimitProvider);
     final sinirli = limit < (1 << 30);
     final dolu = sinirli && n >= limit;
+    // İki EŞİT hap (kullanıcı, 2026-09-25: "daha simetrik"): solda çerçeveli
+    // sayaç, sağda dolu Ekle; aynı yükseklik, aynı genişlik, aynı köşe.
+    // Küçük etiket + büyük düğme dengesizdi. Premium'da sayaç yok, düğme
+    // tek başına tam genişlik.
+    final ekle = SandikTappable(
+      semanticLabel: context.l10n.addToWatchlist,
+      onTap: () => pushGuarded(
+        context,
+        adaptiveRoute<void>(
+          builder: (_) => const AddWatchlistScreen(),
+          fullscreenDialog: true,
+        ),
+      ),
+      child: Container(
+        // 44pt HIG dokunma hedefi.
+        constraints: const BoxConstraints(minHeight: 44),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: context.c.amberFill,
+          borderRadius: BorderRadius.circular(SandikRadius.md),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add_rounded, size: 18, color: context.c.onStatus),
+            const SizedBox(width: SandikSpace.xs),
+            Text(
+              context.l10n.watchlistAddShort,
+              style: context.t.titleSmall?.copyWith(
+                  color: context.c.onStatus, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ),
+    );
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
       child: Row(
         children: [
-          Expanded(
-            child: sinirli
-                ? Text(
-                    context.l10n.watchlistCountOfLimit(n, limit),
-                    style: context.t.labelSmall?.copyWith(
-                        letterSpacing: 0.8,
-                        fontWeight: FontWeight.w700,
-                        color: dolu ? context.c.amberText : context.c.text36),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          SandikTappable(
-            semanticLabel: context.l10n.addToWatchlist,
-            onTap: () => pushGuarded(
-              context,
-              adaptiveRoute<void>(
-                builder: (_) => const AddWatchlistScreen(),
-                fullscreenDialog: true,
+          if (sinirli) ...[
+            Expanded(
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 44),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
+                  border: Border.all(
+                      color: dolu ? context.c.amberText : context.c.hairline),
+                ),
+                child: Text(
+                  context.l10n.watchlistCountOfLimit(n, limit),
+                  style: context.t.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: dolu ? context.c.amberText : context.c.text58),
+                ),
               ),
             ),
-            child: Container(
-              // 44pt HIG dokunma hedefi.
-              constraints: const BoxConstraints(minHeight: 44),
-              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: context.c.amberFill,
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_rounded, size: 18, color: context.c.onStatus),
-                  const SizedBox(width: SandikSpace.xs),
-                  Text(
-                    context.l10n.watchlistAddShort,
-                    style: context.t.titleSmall?.copyWith(
-                        color: context.c.onStatus,
-                        fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-            ),
-          ),
+            const SizedBox(width: SandikSpace.sm),
+          ],
+          Expanded(child: ekle),
         ],
       ),
     );

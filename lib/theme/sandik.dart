@@ -957,17 +957,17 @@ extension SandikSurfaces on BuildContext {
 
   /// Giriş alanı dolgusu — TEK kaynak (2026-09-25).
   ///
-  /// Yükseklik kuralıyla AYNI yön ([card], [chip]): dark'ta zeminin üstüne
-  /// beyaz [SandikPalette.overlay] eklenerek alan hafifçe AÇILIR; light'ta
-  /// yüzey zaten açık olduğundan düz beyaz (`surface2`) + hairline. Eskiden
-  /// `inputDecoration` dark'ta siyah %18 ile alanı ÇUKURLAŞTIRIYORDU —
-  /// kartlar ve çipler açılırken tek başına koyulaşan kutu "farklı"
-  /// görünüyordu (kullanıcı ekran görüntüsü, altın türü seçicisi). Ayrıca
-  /// seçici alt sayfası `background`, takip araması `surface1`,
-  /// karşılaştırma `overlay` alıyordu — aynı alan üç ekranda üç renkti.
-  /// Rengi seçen her yer buradan okur; tema `inputDecorationTheme` zaten
-  /// `overlay` idi, artık ikisi aynı şeyi söylüyor.
-  Color get inputFill => isLight ? c.surface2 : c.overlay;
+  /// **Dark'ta dolgu YOK, yalnız hairline çerçeve.** Üç deneme yapıldı:
+  /// `background` (alt sayfada koyu çukur), siyah %18 (aynı), `overlay`
+  /// (alt sayfa zaten `surface2` iken üstüne bir kat daha beyaz → gri kutu).
+  /// Üçünde de kullanıcı aynı şeyi söyledi: "alanın içi neden farklı renk?"
+  /// Sorun tonun yönü değil, alanın ZEMİNİNİN sayfadan sayfaya değişmesi
+  /// (sayfa `background`, alt sayfa `surface2`, diyalog `surface1`); zemine
+  /// göre seçilmemiş her sabit dolgu birinde yabancı kalır. Şeffaf dolgu her
+  /// zeminde o zeminin rengidir; alanı çerçeve ve ikon tanımlar.
+  /// Light'ta `surface2` (beyaz): sayfa kremdir, beyaz alan öne çıkar; beyaz
+  /// alt sayfada ise görünmez, yine çerçeve kalır — aynı sonuç.
+  Color get inputFill => isLight ? c.surface2 : Colors.transparent;
 
   /// Form alanı dekorasyonu — moda duyarlı.
   InputDecoration inputDecoration(
