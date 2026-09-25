@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:intl/intl.dart';
 
 /// Uygulama geneli Türkçe sayı biçimlendirme.
@@ -50,6 +51,18 @@ String fmtTRY(double value, {int digits = 0}) {
   return NumberFormat.currency(
           locale: 'tr_TR', symbol: '₺', decimalDigits: digits)
       .format(value);
+}
+
+/// Birim FİYAT (tutar değil): 1 ₺ ve üstünde 2 ondalık, altında en az 4
+/// anlamlı hane (en çok 8 ondalık). SHIB ~0,0004 ₺ `fmtTRY(digits: 2)` ile
+/// "₺0,00" okunurdu — sıfır fiyatlı gibi. Toplam/değer için `fmtTRY` kalır.
+String fmtTRYFiyat(double value) {
+  final a = value.abs();
+  var digits = 2;
+  if (a > 0 && a < 1) {
+    digits = ((-math.log(a) / math.ln10).floor() + 4).clamp(2, 8);
+  }
+  return fmtTRY(value, digits: digits);
 }
 
 /// Kısa TRY: `₺1.5K` yerine `₺1,5K`, `₺2.3M` yerine `₺2,3M`. Sadece grafik

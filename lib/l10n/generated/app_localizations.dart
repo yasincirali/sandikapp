@@ -5989,6 +5989,72 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Görünüm'**
   String get viewChipLabel;
+
+  /// No description provided for @identityCrypto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto Para'**
+  String get identityCrypto;
+
+  /// No description provided for @pickCryptoTap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto seçmek için dokun'**
+  String get pickCryptoTap;
+
+  /// No description provided for @pickCryptoPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir kripto para seç'**
+  String get pickCryptoPrompt;
+
+  /// No description provided for @cryptoSelectedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili kripto: {name}. Değiştirmek için çift dokun.'**
+  String cryptoSelectedSemantics(String name);
+
+  /// No description provided for @cryptoPickerTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto Paralar'**
+  String get cryptoPickerTitle;
+
+  /// No description provided for @cryptoSearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ad ya da kod ara (BTC, Ethereum…)'**
+  String get cryptoSearchHint;
+
+  /// No description provided for @cryptoLoading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto listesi yükleniyor'**
+  String get cryptoLoading;
+
+  /// No description provided for @cryptoLoadFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto listesi yüklenemedi'**
+  String get cryptoLoadFailed;
+
+  /// No description provided for @cryptoSourceNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar Binance\'ten, dakikada bir güncellenir. Yatırım tavsiyesi değildir.'**
+  String get cryptoSourceNote;
+
+  /// No description provided for @priceDelayed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gecikmeli'**
+  String get priceDelayed;
+
+  /// No description provided for @priceDelayedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat gecikmeli, son güncelleme {time}'**
+  String priceDelayedSemantics(String time);
 }
 
 class _AppLocalizationsDelegate

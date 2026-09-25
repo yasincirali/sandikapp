@@ -193,7 +193,11 @@ class _SahteVarlikEkle extends StatelessWidget {
         title: const Text('Varlık Ekle'),
         actions: [tus(TourTarget.topluEkle, 'toplu'), tus(TourTarget.hizliGiris, 'mik')],
       ),
-      body: const SizedBox.expand(),
+      // Gerçek ekranda tür çipleri gövdenin başında (2026-09-25, kripto adımı).
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: tus(TourTarget.turSecici, 'türler'),
+      ),
     );
   }
 }
@@ -438,6 +442,12 @@ void main() {
       await _bekle(tester);
       expect(find.text('Varlık Ekle'), findsOneWidget,
           reason: 'Sahte AddAssetScreen rotası açılmalı.');
+      // Kripto adımı (YENİ) tür çiplerini gösterir; dokunuşa kapalı.
+      expect(find.text('Kripto da burada'), findsOneWidget);
+      await tester.tap(find.text('türler'), warnIfMissed: false);
+      await _bekle(tester);
+      expect(_dokunus[TourTarget.turSecici], isNull);
+      await _devam(tester);
       expect(find.text('Cümleyle ekle'), findsOneWidget);
 
       // Mikrofon dokunuşa kapalı: sheet açılıp karartmanın altında kalmasın.

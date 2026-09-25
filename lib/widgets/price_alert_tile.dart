@@ -105,8 +105,8 @@ class PriceAlertTile extends StatelessWidget {
                   Text(
                     faded
                         ? _tarih(bildirim.sentAt)
-                        : '${fmtTRY(bildirim.triggeredPrice)} · hedef '
-                            '${fmtTRY(bildirim.targetPrice)}',
+                        : '${fmtTRYFiyat(bildirim.triggeredPrice)} · hedef '
+                            '${fmtTRYFiyat(bildirim.targetPrice)}',
                     style: context.t.bodySmall?.copyWith(
                         color: context.c.text58.withValues(alpha: alphaFactor),
                         decoration: TextDecoration.none),

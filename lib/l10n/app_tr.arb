@@ -2508,5 +2508,18 @@
   "sectionDepth": "DERİNLİK",
   "sectionDepthHint": "XIRR, sağlık, ileri metrikler, karakter",
   "myAlarms": "Alarmlarım",
-  "viewChipLabel": "Görünüm"
+  "viewChipLabel": "Görünüm",
+  "identityCrypto": "Kripto Para",
+  "pickCryptoTap": "Kripto seçmek için dokun",
+  "pickCryptoPrompt": "Bir kripto para seç",
+  "cryptoSelectedSemantics": "Seçili kripto: {name}. Değiştirmek için çift dokun.",
+  "@cryptoSelectedSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "cryptoPickerTitle": "Kripto Paralar",
+  "cryptoSearchHint": "Ad ya da kod ara (BTC, Ethereum…)",
+  "cryptoLoading": "Kripto listesi yükleniyor",
+  "cryptoLoadFailed": "Kripto listesi yüklenemedi",
+  "cryptoSourceNote": "Fiyatlar Binance'ten, dakikada bir güncellenir. Yatırım tavsiyesi değildir.",
+  "priceDelayed": "Gecikmeli",
+  "priceDelayedSemantics": "Fiyat gecikmeli, son güncelleme {time}",
+  "@priceDelayedSemantics": {"placeholders": {"time": {"type": "String"}}}
 }

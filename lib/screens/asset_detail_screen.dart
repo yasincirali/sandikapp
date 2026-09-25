@@ -13,6 +13,7 @@ import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../widgets/kripto_gecikme_etiketi.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/chart_line_width.dart';
@@ -1784,6 +1785,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
+                if (widget.asset.type == AssetType.kripto)
+                  KriptoGecikmeEtiketi(sembol: widget.asset.ticker),
                 // Miktar Bilgisi
                 Container(
                   padding: const EdgeInsets.all(16),

@@ -1430,7 +1430,7 @@ class _AssetDetailsPanel extends StatelessWidget {
     // Birim fiyat (ortalama maliyet) `numFmt` ile değişken hassasiyette
     // kalır; fon fiyatında 4-6 hane anlamlıdır.
     final tryFmt2 = baz.formatter(digits: 2);
-    final numFmt = qtyFormatter();
+    final numFmt = qtyFormatter(maxDigits: rep.azamiOndalik);
     final costFmt2 = fixedFormatter(2);
 
     // İlk alış tarihi = en eski buy lot

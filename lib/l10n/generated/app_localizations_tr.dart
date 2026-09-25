@@ -3513,4 +3513,42 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get viewChipLabel => 'Görünüm';
+
+  @override
+  String get identityCrypto => 'Kripto Para';
+
+  @override
+  String get pickCryptoTap => 'Kripto seçmek için dokun';
+
+  @override
+  String get pickCryptoPrompt => 'Bir kripto para seç';
+
+  @override
+  String cryptoSelectedSemantics(String name) {
+    return 'Seçili kripto: $name. Değiştirmek için çift dokun.';
+  }
+
+  @override
+  String get cryptoPickerTitle => 'Kripto Paralar';
+
+  @override
+  String get cryptoSearchHint => 'Ad ya da kod ara (BTC, Ethereum…)';
+
+  @override
+  String get cryptoLoading => 'Kripto listesi yükleniyor';
+
+  @override
+  String get cryptoLoadFailed => 'Kripto listesi yüklenemedi';
+
+  @override
+  String get cryptoSourceNote =>
+      'Fiyatlar Binance\'ten, dakikada bir güncellenir. Yatırım tavsiyesi değildir.';
+
+  @override
+  String get priceDelayed => 'Gecikmeli';
+
+  @override
+  String priceDelayedSemantics(String time) {
+    return 'Fiyat gecikmeli, son güncelleme $time';
+  }
 }

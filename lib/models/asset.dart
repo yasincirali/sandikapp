@@ -340,6 +340,11 @@ class Asset {
     return 2;
   }
 
+  /// `qtyFormatter`'ın (sondaki sıfırları atan) üst sınırı: kriptoda 8,
+  /// diğerlerinde 4. Miktar ve birim maliyet satırları bunu kullanır; 4
+  /// haneye kesilen 0,00012345 BTC "0,0001" okunuyordu.
+  int get azamiOndalik => type == AssetType.kripto ? kriptoAzamiOndalik : 4;
+
   /// Değer tam sayı mı? Kayan nokta gürültüsüne karşı toleranslı.
   ///
   /// `q == q.truncateToDouble()` doğrudan karşılaştırma yapıyor ve

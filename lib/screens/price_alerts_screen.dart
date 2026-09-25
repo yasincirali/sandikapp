@@ -198,9 +198,9 @@ class _AlarmSatiri extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   tetiklendi
-                      ? 'Çalıştı · ${fmtTRY(alarm.targetPrice, digits: 2)}'
+                      ? 'Çalıştı · ${fmtTRYFiyat(alarm.targetPrice)}'
                       : '${alarm.isAbove ? "Üstüne çıkınca" : "Altına inince"}'
-                          ' · ${fmtTRY(alarm.targetPrice, digits: 2)}',
+                          ' · ${fmtTRYFiyat(alarm.targetPrice)}',
                   style: context.t.bodyMedium?.copyWith(color: c.text58),
                 ),
               ],

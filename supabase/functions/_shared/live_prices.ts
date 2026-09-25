@@ -7,12 +7,16 @@
 //
 // **Kaynaklar istemciyle AYNI seçildi** (`lib/services/price_service.dart`):
 //   · altın + döviz → finans.truncgil.com
+//   · `KRIPTO:`     → `kripto_fiyat` tablosu (kripto-fiyat yazar, Binance)
 //   · geri kalan    → Yahoo chart
 // Bu bir tercih değil zorunluluk: alarm uygulamada GÖRÜNEN sayı üzerinden
 // tetiklenmeli. Farklı kaynak kullansaydık kullanıcı ekranda 5.401 görürken
 // 5.400 alarmının çalışmadığını fark eder ve haklı olarak "bozuk" der.
 
+import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+
 import { sonNavSatiri } from './tefas_nav.ts';
+import { KRIPTO_ONEKI, kriptoKodu, kriptoMu } from './kripto.ts';
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
@@ -287,20 +291,75 @@ export function isTefasSymbol(symbol: string): boolean {
 /// bulunamıyordu: canlıda `checked:9, priced:3` — fon alarmları HİÇ
 /// tetiklenmiyor, kullanıcı da "hedefe gelmedi" sanıyordu. Kanarya buna
 /// takılmaz (map tamamen boş değil); bu yüzden ayrım burada açık yazıldı.
+///
+/// 2026-09-25: `KRIPTO:` ayrı kova. Yahoo'da `KRIPTO:BTC` diye bir sembol
+/// yok; ayrılmasaydı fon hatasının aynısı (sessizce hiç tetiklenmeyen
+/// alarm) kriptoda tekrar ederdi.
 export function kaynakAyir(symbols: Iterable<string>): {
   truncgil: string[];
   tefas: string[];
+  kripto: string[];
   yahoo: string[];
 } {
   const truncgil: string[] = [];
   const tefas: string[] = [];
+  const kripto: string[] = [];
   const yahoo: string[] = [];
   for (const s of symbols) {
     if (isGoldSymbol(s) || isFxSymbol(s)) truncgil.push(s);
     else if (isTefasSymbol(s)) tefas.push(s);
+    else if (kriptoMu(s)) kripto.push(s);
     else yahoo.push(s);
   }
-  return { truncgil, tefas, yahoo };
+  return { truncgil, tefas, kripto, yahoo };
+}
+
+/// `kripto_fiyat` satırının alarmda kullanılabilir hâli — saf.
+///
+/// Bayat satır (sunucu 10 dk'dır yazamamış) ATLANIR: alarm "şimdi hedefte"
+/// der; saatler önceki fiyatla tetiklemek yanlış tetiklemedir. İstemci aynı
+/// eşikte "gecikmeli" etiketi gösterir (`KriptoFiyat.bayatlikEsigi`).
+export const KRIPTO_BAYATLIK_MS = 10 * 60_000;
+
+export function kriptoSatiriKotasyon(
+  satir: { fiyat_try: unknown; gun_acilis_try: unknown; guncellendi: unknown },
+  simdiMs: number,
+): CanliKotasyon | null {
+  const fiyat = Number(satir.fiyat_try);
+  if (!Number.isFinite(fiyat) || fiyat <= 0) return null;
+  const zaman = Date.parse(String(satir.guncellendi));
+  if (!Number.isFinite(zaman) || simdiMs - zaman > KRIPTO_BAYATLIK_MS) return null;
+  const acilis = Number(satir.gun_acilis_try);
+  const changePct = satir.gun_acilis_try != null && Number.isFinite(acilis) && acilis > 0
+    ? (fiyat / acilis - 1) * 100
+    : null;
+  return { price: fiyat, changePct };
+}
+
+/// Kripto kotasyonları tek sorguda. `db` yoksa (test, eski çağıran) boş:
+/// kripto alarmı değerlendirilmez, uydurulmaz.
+async function fetchKriptoQuotes(
+  db: SupabaseClient | undefined,
+  semboller: string[],
+): Promise<Map<string, CanliKotasyon>> {
+  const out = new Map<string, CanliKotasyon>();
+  if (!db || semboller.length === 0) return out;
+  const kodlar = semboller.map(kriptoKodu).filter((k): k is string => k !== null);
+  if (kodlar.length === 0) return out;
+  const { data, error } = await db
+    .from('kripto_fiyat')
+    .select('kod, fiyat_try, gun_acilis_try, guncellendi')
+    .in('kod', kodlar);
+  if (error || !data) return out;
+  const simdi = Date.now();
+  for (const r of data as Array<Record<string, unknown>>) {
+    const k = kriptoSatiriKotasyon(
+      r as { fiyat_try: unknown; gun_acilis_try: unknown; guncellendi: unknown },
+      simdi,
+    );
+    if (k) out.set(`${KRIPTO_ONEKI}${r.kod}`, k);
+  }
+  return out;
 }
 
 /// Fonun son NAV'ı — `observe-tefas-nav` ile aynı uç nokta ve aynı süzgeç
@@ -335,9 +394,10 @@ async function fetchTefasLast(symbol: string): Promise<number | null> {
 /// alarm değerlendirilmez (yanlış tetiklemektense hiç tetiklememek).
 export async function fetchLivePrices(
   symbols: Set<string>,
+  db?: SupabaseClient,
 ): Promise<Map<string, number>> {
   const out = new Map<string, number>();
-  for (const [k, v] of await fetchLiveQuotes(symbols)) out.set(k, v.price);
+  for (const [k, v] of await fetchLiveQuotes(symbols, db)) out.set(k, v.price);
   return out;
 }
 
@@ -345,13 +405,27 @@ export async function fetchLivePrices(
 ///
 /// `fetchLivePrices` bunun fiyat izdüşümü; kaynak seçimi ve sıralama aynı.
 /// TEFAS'ta değişim yok (günlük NAV, tek nokta) → `changePct: null`.
+///
+/// [db]: service_role istemcisi — kripto fiyatı `kripto_fiyat`'tan okunur.
 export async function fetchLiveQuotes(
   symbols: Set<string>,
+  db?: SupabaseClient,
 ): Promise<Map<string, CanliKotasyon>> {
   const out = new Map<string, CanliKotasyon>();
   if (symbols.size === 0) return out;
 
-  const { truncgil: truncgilList, tefas: tefasList, yahoo: yahooList } = kaynakAyir(symbols);
+  const {
+    truncgil: truncgilList,
+    tefas: tefasList,
+    kripto: kriptoList,
+    yahoo: yahooList,
+  } = kaynakAyir(symbols);
+
+  try {
+    for (const [k, v] of await fetchKriptoQuotes(db, kriptoList)) out.set(k, v);
+  } catch (_) {
+    // Tablo okunamadı — bu turda kripto alarmları atlanır.
+  }
 
   // Fonlar: kod başına tek istek, sınırlı paralellik (TEFAS'ı boğma).
   for (let i = 0; i < tefasList.length; i += 4) {

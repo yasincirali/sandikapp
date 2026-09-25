@@ -20,6 +20,7 @@ import 'package:portfoy_takip/providers/add_asset_form_provider.dart';
 import 'package:portfoy_takip/services/csv_import_service.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/price_service.dart';
+import 'package:portfoy_takip/utils/tr_format.dart';
 
 Asset _kripto(double q, {String ticker = 'KRIPTO:BTC'}) => Asset(
       id: 'k',
@@ -204,6 +205,94 @@ void main() {
       expect(son.weekday, DateTime.sunday);
       expect(son.hour, 15);
       expect(slots.length, 25);
+    });
+  });
+
+  group('katalog (3. adım)', () {
+    KriptoKatalogOgesi o(String kod, {String? ad, int? sira}) =>
+        KriptoKatalogOgesi(kod: kod, ad: ad, hacimSirasi: sira);
+    final katalog = [
+      o('USDT', ad: 'TetherUS', sira: 0),
+      o('BTC', ad: 'Bitcoin', sira: 1),
+      o('ETHFI', ad: 'ether.fi', sira: 2),
+      o('ETH', ad: 'Ethereum', sira: 3),
+      o('WBETH', ad: 'Wrapped Beacon ETH', sira: 4),
+      o('PEPE', sira: 5),
+    ];
+
+    test('kod tam eşleşme önce; sonra kod öneki, ad öneki, içinde geçen', () {
+      // "TetherUS" adında da ETH geçer: içinde-geçen grubunda, hacim sırasıyla.
+      expect(kriptoAra(katalog, 'eth').map((e) => e.kod).toList(),
+          ['ETH', 'ETHFI', 'USDT', 'WBETH']);
+      expect(kriptoAra(katalog, 'ether').map((e) => e.kod).toList(),
+          ['ETHFI', 'ETH', 'USDT']);
+      expect(kriptoAra(katalog, 'bit').map((e) => e.kod).toList(), ['BTC']);
+      // Boş sorgu katalog sırasını (hacim) korur.
+      expect(kriptoAra(katalog, '  ').length, katalog.length);
+    });
+
+    test('adı olmayan coin kodla görünür, yine de aranır', () {
+      expect(o('PEPE').gorunenAd, 'PEPE');
+      expect(kriptoAra(katalog, 'pep').single.kod, 'PEPE');
+    });
+
+    test('satır: gömülü fiyat nesne ya da liste; https dışı logo atılır', () {
+      final zaman = DateTime.utc(2026, 9, 25, 12).toIso8601String();
+      final nesne = KriptoKatalogOgesi.fromMap({
+        'kod': 'btc',
+        'ad': 'Bitcoin',
+        'logo_url': 'https://bin.bnbstatic.com/btc.png',
+        'hacim_sirasi': 1,
+        'kripto_fiyat': {'fiyat_try': 3950000, 'gun_acilis_try': 3900000, 'guncellendi': zaman},
+      })!;
+      expect(nesne.kod, 'BTC');
+      expect(nesne.logoUrl, startsWith('https://'));
+      expect(nesne.fiyat!.fiyatTry, 3950000);
+
+      final liste = KriptoKatalogOgesi.fromMap({
+        'kod': 'ETH',
+        'logo_url': 'http://x/eth.png',
+        'kripto_fiyat': [
+          {'fiyat_try': 150000, 'gun_acilis_try': null, 'guncellendi': zaman},
+        ],
+      })!;
+      expect(liste.logoUrl, isNull);
+      expect(liste.fiyat!.fiyatTry, 150000);
+      expect(liste.fiyat!.gunlukYuzde, isNull);
+
+      // Henüz fiyatlanmamış coin seçilebilir ama fiyatı uydurulmaz.
+      final fiyatsiz = KriptoKatalogOgesi.fromMap({'kod': 'NEW', 'kripto_fiyat': null})!;
+      expect(fiyatsiz.fiyat, isNull);
+      expect(KriptoKatalogOgesi.fromMap({'kod': ''}), isNull);
+    });
+
+    test('birim fiyat 1 ₺ altında en az 4 anlamlı hane gösterir', () {
+      expect(fmtTRYFiyat(3950000.5), fmtTRY(3950000.5, digits: 2));
+      expect(fmtTRYFiyat(12.3), fmtTRY(12.3, digits: 2));
+      // SHIB ~0,00041234 ₺ → 0,0004123; eskiden "₺0,00".
+      expect(fmtTRYFiyat(0.00041234), fmtTRY(0.00041234, digits: 7));
+      expect(fmtTRYFiyat(0.5), fmtTRY(0.5, digits: 4));
+      expect(fmtTRYFiyat(0.0000000123), fmtTRY(0.0000000123, digits: 8));
+    });
+
+    test('satır biçimleyicisinin üst sınırı kriptoda 8, diğerlerinde 4', () {
+      expect(_kripto(0.00012345).azamiOndalik, 8);
+      expect(
+        qtyFormatter(maxDigits: _kripto(1).azamiOndalik).format(0.00012345),
+        '0,00012345',
+      );
+      final fon = Asset(
+        id: 'f', userId: 'u', name: 'AFT', ticker: 'TEFAS:AFT',
+        type: AssetType.fon, quantity: 1, purchasePrice: 1,
+        currency: 'TRY', notes: '',
+      );
+      expect(fon.azamiOndalik, 4);
+    });
+
+    test('ekleme formu: kripto miktar kısayolları küsuratlı ve TR biçiminde', () {
+      final s = AddAssetFormState.initial(prefillType: AssetType.kripto);
+      expect(s.quantityPresets.first, '0,001');
+      expect(parseTrNumber(s.quantityPresets.first), 0.001);
     });
   });
 }

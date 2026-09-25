@@ -100,9 +100,9 @@ Future<PriceAlert?> alarmKurAkisi(
         context,
         sonuc.yon == 'above'
             ? context.l10n.alertSetAbove(
-                sonuc.aday.ad, fmtTRY(sonuc.hedef, digits: 2))
+                sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef))
             : context.l10n.alertSetBelow(
-                sonuc.aday.ad, fmtTRY(sonuc.hedef, digits: 2)),
+                sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef)),
         kind: SandikSnackKind.success,
       );
     }
@@ -150,7 +150,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
 
   void _hizli(int yuzde) {
     final f = _secili.guncelFiyat * (1 + yuzde / 100);
-    _controller.text = fmtNum(f, digits: 2);
+    // 1 ₺ altı (SHIB) 2 haneye yuvarlanınca hedef 0 olurdu.
+    _controller.text = f >= 1 ? fmtNum(f, digits: 2) : fmtInputTr(f);
     setState(() => _hata = null);
   }
 
@@ -227,7 +228,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
             ],
             Text(
               fiyatVar
-                  ? context.l10n.currentlyPrice(fmtTRY(_secili.guncelFiyat, digits: 2))
+                  ? context.l10n.currentlyPrice(fmtTRYFiyat(_secili.guncelFiyat))
                   : context.l10n.currentPriceUnknown,
               style: context.t.bodyMedium?.copyWith(color: c.text58),
             ),

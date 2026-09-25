@@ -2507,5 +2507,18 @@
   "sectionDepth": "DEPTH",
   "sectionDepthHint": "XIRR, health, advanced metrics, character",
   "myAlarms": "My alerts",
-  "viewChipLabel": "View"
+  "viewChipLabel": "View",
+  "identityCrypto": "Cryptocurrency",
+  "pickCryptoTap": "Tap to pick a crypto",
+  "pickCryptoPrompt": "Pick a cryptocurrency",
+  "cryptoSelectedSemantics": "Selected crypto: {name}. Double tap to change.",
+  "@cryptoSelectedSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "cryptoPickerTitle": "Cryptocurrencies",
+  "cryptoSearchHint": "Search name or code (BTC, Ethereum…)",
+  "cryptoLoading": "Loading crypto list",
+  "cryptoLoadFailed": "Couldn't load the crypto list",
+  "cryptoSourceNote": "Prices from Binance, updated every minute. Not investment advice.",
+  "priceDelayed": "Delayed",
+  "priceDelayedSemantics": "Price delayed, last updated {time}",
+  "@priceDelayedSemantics": {"placeholders": {"time": {"type": "String"}}}
 }

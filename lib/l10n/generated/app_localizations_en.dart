@@ -3522,4 +3522,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewChipLabel => 'View';
+
+  @override
+  String get identityCrypto => 'Cryptocurrency';
+
+  @override
+  String get pickCryptoTap => 'Tap to pick a crypto';
+
+  @override
+  String get pickCryptoPrompt => 'Pick a cryptocurrency';
+
+  @override
+  String cryptoSelectedSemantics(String name) {
+    return 'Selected crypto: $name. Double tap to change.';
+  }
+
+  @override
+  String get cryptoPickerTitle => 'Cryptocurrencies';
+
+  @override
+  String get cryptoSearchHint => 'Search name or code (BTC, Ethereum…)';
+
+  @override
+  String get cryptoLoading => 'Loading crypto list';
+
+  @override
+  String get cryptoLoadFailed => 'Couldn\'t load the crypto list';
+
+  @override
+  String get cryptoSourceNote =>
+      'Prices from Binance, updated every minute. Not investment advice.';
+
+  @override
+  String get priceDelayed => 'Delayed';
+
+  @override
+  String priceDelayedSemantics(String time) {
+    return 'Price delayed, last updated $time';
+  }
 }

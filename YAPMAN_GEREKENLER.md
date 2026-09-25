@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-09-25 (kripto veri altyapısı — 0074 + üç edge function)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-09-25 (kripto — 0074, 0075 + dört edge function)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -12,7 +12,7 @@
 
 ---
 
-## 🪙 2026-09-25 Kripto veri altyapısı — 0074 + üç edge function
+## 🪙 2026-09-25 Kripto — 0074, 0075 + dört edge function
 
 Kripto fiyatını sunucu çeker (tek kaynak Binance: fiyat, grafik, katalog,
 ad/logo), uygulama yalnızca Supabase'i okur. Uygulama tarafı sonraki
@@ -24,8 +24,10 @@ adımlarda gelecek; bu altyapı önce canlıya çıkabilir, kimseyi etkilemez.
    - Vault: `select vault.create_secret('<aynı değer>', 'kripto_cron_secret');`
    Sır yoksa fonksiyonlar 503 döner (fail-closed); cron her dakika
    `Vault secret kripto_cron_secret bulunamadi` hatası yazar.
-2. **Deploy:** Actions → Supabase deploy → migrations=true (0074) ve
-   functions=`kripto-katalog kripto-fiyat kripto-seri`.
+2. **Deploy:** Actions → Supabase deploy → migrations=true (0074, 0075) ve
+   functions=`kripto-katalog kripto-fiyat kripto-seri check-price-alerts`.
+   `check-price-alerts` kripto alarmlarını `kripto_fiyat`'tan okuyor;
+   yeniden dağıtılmazsa kripto alarmı hiç tetiklenmez.
 3. **İlk katalog:** cron saatte bir (xx:10) kurar. Beklemek istemezsen SQL:
    `select public.trigger_kripto_katalog();` → bir dakika sonra
    `select count(*), count(*) filter (where parite='TRY') from kripto_varlik;`

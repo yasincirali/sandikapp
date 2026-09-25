@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
+import '../models/kripto_fiyat.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../utils/tr_format.dart';
@@ -343,6 +344,8 @@ class AddAssetFormState {
       return const ['1', '5', '10', '50', '100'];
     }
     if (unitType == 'ounce') return const ['0.1', '0.5', '1', '5', '10'];
+    // Kripto: tam sayı adet nadirdir; BTC'de 0,001 bile anlamlı tutar.
+    if (type == AssetType.kripto) return const ['0,001', '0,01', '0,1', '1', '10'];
     if (type == AssetType.fon) return const ['1', '10', '100', '1000'];
     if (type == AssetType.hisse) return const ['1', '5', '10', '100', '1000'];
     return const ['1', '5', '10', '100'];
@@ -551,6 +554,19 @@ class AddAssetFormNotifier
       ticker: 'TEFAS:${fund.code}',
       name: fund.name,
       price: fund.price > 0 && priceEmpty ? fmtInput(fund.price) : null,
+    );
+  }
+
+  /// Kripto katalogdan seçildi. Sembol her zaman katalogdaki koddan kurulur
+  /// (serbest metin sunucunun tanımadığı sembol üretirdi → fiyatsız lot).
+  /// Fiyat, fondaki gibi yalnızca alış fiyatı boşsa önerilir.
+  AlanYazimi selectKripto(KriptoKatalogOgesi o, {required bool priceEmpty}) {
+    _set(state.copyWith(isManualPrice: false));
+    final fiyat = o.fiyat?.fiyatTry;
+    return AlanYazimi(
+      ticker: kriptoSembolu(o.kod),
+      name: o.gorunenAd,
+      price: fiyat != null && priceEmpty ? fmtInput(fiyat) : null,
     );
   }
 

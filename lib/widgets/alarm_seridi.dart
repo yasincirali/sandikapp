@@ -73,9 +73,9 @@ class AlarmSeridi extends ConsumerWidget {
                       title: context.l10n.deleteAlertTitle,
                       message: a.isAbove
                           ? context.l10n.deleteAlertAbove(
-                              fmtTRY(a.targetPrice, digits: 2))
+                              fmtTRYFiyat(a.targetPrice))
                           : context.l10n.deleteAlertBelow(
-                              fmtTRY(a.targetPrice, digits: 2)),
+                              fmtTRYFiyat(a.targetPrice)),
                       confirmLabel: 'Sil',
                       destructive: true,
                     );
@@ -113,7 +113,7 @@ class _AlarmCipi extends StatelessWidget {
     final c = context.c;
     final tetiklendi = alarm.triggeredAt != null;
     final renk = tetiklendi ? c.text58 : (alarm.isAbove ? c.gain : c.loss);
-    final fiyat = fmtTRY(alarm.targetPrice, digits: 2);
+    final fiyat = fmtTRYFiyat(alarm.targetPrice);
     return _Cip(
       onTap: onTap,
       renk: renk,

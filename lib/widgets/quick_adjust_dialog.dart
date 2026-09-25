@@ -168,7 +168,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   @override
   Widget build(BuildContext context) {
     final asset = widget.asset;
-    final numFmt = qtyFormatter();
+    final numFmt = qtyFormatter(maxDigits: asset.azamiOndalik);
     final accent = _isAdd ? context.c.gain : context.c.loss;
     final qty = _parse(_qtyCtrl.text) ?? 0;
     final price = _parse(_priceCtrl.text) ?? 0;

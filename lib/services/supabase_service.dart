@@ -829,6 +829,28 @@ class SupabaseService {
     return out;
   }
 
+  /// Etkin kripto kataloğu, hacim sırasıyla; son fiyat gömülü gelir
+  /// (tek istek). Pasif (listeden düşmüş) coin aramada çıkmaz; onu tutan
+  /// kullanıcının kaydı `kripto_fiyat`'tan okunmaya devam eder.
+  Future<List<KriptoKatalogOgesi>> kriptoKatalogu() async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoKatalogu',
+      table: 'kripto_varlik',
+      op: 'SELECT',
+      request: const {'aktif': true},
+      call: () => _db
+          .from('kripto_varlik')
+          .select('kod, ad, logo_url, hacim_sirasi, '
+              'kripto_fiyat(fiyat_try, gun_acilis_try, guncellendi)')
+          .eq('aktif', true)
+          .order('hacim_sirasi', ascending: true, nullsFirst: false),
+    );
+    return [
+      for (final r in rows)
+        if (KriptoKatalogOgesi.fromMap(r) case final o?) o,
+    ];
+  }
+
   /// Grafik mumları — `kripto-seri` fonksiyonu, paylaşılan önbellekli.
   ///
   /// [aralik] ve [donem] Yahoo adlarıdır (`1h`, `1mo`): `ResolutionTier`
