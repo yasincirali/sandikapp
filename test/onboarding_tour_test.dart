@@ -42,9 +42,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 final _dokunus = <TourTarget, int>{};
 
 class _EvSahibi extends StatefulWidget {
-  const _EvSahibi({this.davetKoduVar = true});
+  const _EvSahibi({this.davetKoduVar = true, this.bugunVar = true});
 
   final bool davetKoduVar;
+
+  /// Gerçek ekranda "Bugün" kartı yalnız portföyde aktif lot varken
+  /// çizilir (`home_screen.dart`); ilk açılışta (boş portföy) yoktur.
+  final bool bugunVar;
 
   @override
   State<_EvSahibi> createState() => _EvSahibiState();
@@ -109,7 +113,7 @@ class _EvSahibiState extends State<_EvSahibi> {
             child: SizedBox(height: 120, child: Text('HERO')),
           ),
           // "Bugün" kartı — gerçek ekranda hero'nun altında (2026-09-20).
-          _tus(TourTarget.bugunKarti, 'bugün'),
+          if (widget.bugunVar) _tus(TourTarget.bugunKarti, 'bugün'),
           _tus(TourTarget.piyasaSeridi, 'piyasa'),
           Row(
             children: [
@@ -215,6 +219,7 @@ Future<void> _pump(
   bool hareketiAzalt = false,
   bool kisa = false,
   bool davetKoduVar = true,
+  bool bugunVar = true,
 }) async {
   tester.view.physicalSize = Size(width * 3, height * 3);
   tester.view.devicePixelRatio = 3.0;
@@ -235,7 +240,7 @@ Future<void> _pump(
           ),
           child: OnboardingTourHost(child: child!),
         ),
-        home: _EvSahibi(davetKoduVar: davetKoduVar),
+        home: _EvSahibi(davetKoduVar: davetKoduVar, bugunVar: bugunVar),
       ),
     ),
   );
@@ -252,6 +257,11 @@ Future<void> _bekle(WidgetTester tester) async {
   for (var i = 0; i < 3; i++) {
     await tester.pump(const Duration(milliseconds: 450));
   }
+  // Katman hedefi karenin BAŞINDA (ticker) ölçer, yerleşimden önce: kaydırma
+  // animasyonunun bittiği karede oyuk bir kare geride kalır. Cihazda bu 16 ms;
+  // testte 450 ms'lik adımlarla dokunuş tam o kareye denk gelip karartmaya
+  // gidebiliyordu. Bir kare daha: oyuk son yerleşimle eşleşir.
+  await tester.pump();
 }
 
 Future<void> _uzunBekle(WidgetTester tester) async {
@@ -267,7 +277,18 @@ Finder get _ileri => find.text('Devam').evaluate().isNotEmpty
 Future<void> _devam(WidgetTester tester) async {
   await tester.tap(_ileri);
   await _bekle(tester);
+  // Hedefi gelmeyen adım (sahte ev sahibinde bildirim zili yok) KART
+  // GÖSTERMEDEN hedef bekleme süresi (1,9s) sonunda atlanır; o arada tuş
+  // yoktur. Sonraki adımın kartı gelene kadar bekle.
+  for (var i = 0; i < 6 && _kartYok; i++) {
+    await tester.pump(const Duration(milliseconds: 450));
+  }
 }
+
+bool get _kartYok =>
+    find.text('Devam').evaluate().isEmpty &&
+    find.text('Başlayalım').evaluate().isEmpty &&
+    find.text('Sandığımı Aç').evaluate().isEmpty;
 
 /// Turu sonuna kadar gez — SON tuşa BASMADAN.
 Future<int> _turuGez(WidgetTester tester) async {
@@ -489,6 +510,41 @@ void main() {
   });
 
   group('hedef bulunamazsa', () {
+    // Oturum statik; turu açık bırakan önceki test sonrakini bozar.
+    setUp(OnboardingScreen.turuKapatTestIcin);
+
+    // Mağaza 1.0.5 hatası (kullanıcı bildirimi 2026-09-25: "adımlar
+    // tıklama beklemeden otomatik atlıyor"): hedefi olmayan adımın KARTI
+    // hedef beklenirken (1,9s) ekranın ortasında görünüyor, sonra adım
+    // kendiliğinden geçiyordu. İlk açılışta her yeni kullanıcıda oluyordu:
+    // boş portföyde "Bugün" kartı çizilmez, kısa turun "Bugün ne oldu?"
+    // adımı okunurken kayboluyordu. Kural: kullanıcının GÖRDÜĞÜ adım
+    // dokunuşsuz değişmez; hedefi gelmeyen adım hiç görünmeden atlanır.
+    testWidgets('ilk açılış, boş portföy: "Bugün" kartı hiç görünmeden geçilir',
+        (tester) async {
+      await _pump(tester, kisa: true, bugunVar: false);
+      await _adimaGit(tester, 'Toplam net varlığın');
+      await tester.tap(_ileri);
+      // Hedef bekleme süresinin (1,9s) tamamı boyunca kart görünmemeli.
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(find.text('Bugün ne oldu?'), findsNothing,
+            reason: '${(i + 1) * 200} ms: hedefi olmayan adımın kartı '
+                'görünüp kendiliğinden kayboluyor');
+      }
+      await _uzunBekle(tester);
+      expect(find.text('Varlık ekle'), findsOneWidget);
+    });
+
+    testWidgets('görünen adım dokunuş beklemeden ilerlemez', (tester) async {
+      await _pump(tester, kisa: true);
+      await _adimaGit(tester, 'Bugün ne oldu?');
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+      expect(find.text('Bugün ne oldu?'), findsOneWidget);
+    });
+
     testWidgets('adım atlanır, boş karartmada kalınmaz', (tester) async {
       await _pump(tester, davetKoduVar: false);
       await _adimaGit(tester, 'Profil sekmesi');

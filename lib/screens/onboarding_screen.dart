@@ -896,7 +896,15 @@ class _TurKatmaniState extends State<_TurKatmani>
             ),
           ),
         if (oyuk != null) _halka(context, oyuk),
-        _kart(context, mq, oyuk),
+        // Hedefli adımın kartı hedef BULUNUNCA çizilir. Önceden hedef
+        // beklenirken (`hedefBekle`, 1,9s) kart ekranın ortasında duruyor,
+        // hedef gelmeyince adım kendiliğinden geçiyordu: kullanıcı okurken
+        // kart kayboluyordu (mağaza 1.0.5, kullanıcı bildirimi 2026-09-25 —
+        // ilk açılışta boş portföyde "Bugün" kartı yok, kısa tur her yeni
+        // kullanıcıda böyle atlıyordu). Kural: GÖRÜNEN adım dokunuşsuz
+        // değişmez; hedefi gelmeyen adım hiç görünmeden atlanır. Ek kazanç:
+        // sekme geçişinde kart önce ortada belirip hedefe zıplamıyor.
+        if (adim.hedef == null || oyuk != null) _kart(context, mq, oyuk),
       ],
     );
   }
