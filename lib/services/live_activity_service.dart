@@ -434,8 +434,15 @@ class LiveActivityService {
   /// **Neden normalize:** kilit ekranı telefonu açmadan görülebilir. Ham TL
   /// değerleri göndermek, tutar gizliyken bile portföy büyüklüğünü grafik
   /// ekseninden okunabilir kılardı. Normalize seri yalnızca ŞEKLİ taşır.
-  Future<List<double>> _buildSparkline(PortfolioState state) async {
-    final now = DateTime.now();
+  ///
+  /// [now] `sync`'in kullandığı anın AYNISI: pencere, tarih metni ve günlük
+  /// değişim tek saatten okunur. Önceden burada ayrıca `DateTime.now()`
+  /// çağrılıyordu; `sync(now:)` verilince seri başka günün seansına
+  /// kuruluyordu (hafta sonu test fikstürü Cuma 14:30 verirken seri
+  /// Cumartesi'ye kurulup "—" dönüyordu — 2026-09-26). Üretimde `now`
+  /// verilmez, iki saat zaten aynıydı.
+  Future<List<double>> _buildSparkline(PortfolioState state,
+      {required DateTime now}) async {
     final series = await IntradaySeriesCache.instance.get(state, now: now);
     _summary = DailySummary.from(
       state: state,
@@ -599,7 +606,7 @@ class LiveActivityService {
       // Sparkline seansta 5 dakikada bir tazelenir (push periyoduyla
       // hizalı); aradaki çağrılar önbellekten okur.
       final spark =
-          hideBalance ? const <double>[] : await _buildSparkline(state);
+          hideBalance ? const <double>[] : await _buildSparkline(state, now: ts);
 
       final payload = _payload(
         state,

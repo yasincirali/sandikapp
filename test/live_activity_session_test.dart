@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
+import 'package:portfoy_takip/services/daily_summary.dart'
+    show IntradaySeriesCache;
 import 'package:portfoy_takip/services/live_activity_service.dart';
 
 /// iOS Live Activity — seans yaşam döngüsü ve gizlilik değişmezleri.
@@ -776,10 +778,25 @@ void main() {
       // kâr 10.000 TL (%50). Bu rakam ESKİDEN kilit ekranına "Bugünkü Net
       // Kazanç" olarak basılıyordu.
       //
-      // Testte ağ yok; gün içi seri her slotta seed fiyata (currentPrice)
-      // düşer, yani gün DÜMDÜZ geçmiş sayılır → günlük değişim 0.
+      // Gün DÜMDÜZ geçmiş: seans boyunca değer 30.000 → günlük değişim 0.
       // Uygulamanın "Bugünkü değişim" kartı da bu durumda "Değişim yok"
       // diyor; kilit ekranı da aynı şeyi söylemeli.
+      //
+      // Seri AÇIKÇA tohumlanır (2026-09-26). Önceden ağsız
+      // `HistoryService`'in seed fiyatlı serisine güveniliyordu; o seri
+      // GERÇEK saate göre kurulduğu için hafta sonu (fikstür Cuma 14:30'a
+      // kayarken) seri Cumartesi'ye kuruluyor, yüzde "—" dönüyor ve test
+      // yalnız hafta sonları kırılıyordu.
+      final gun = DateTime(
+          _duringSession.year, _duringSession.month, _duringSession.day);
+      IntradaySeriesCache.instance.seedForTest(
+        series: {
+          for (var saat = 10; saat <= 14; saat++)
+            gun.add(Duration(hours: saat)).millisecondsSinceEpoch: 30000.0,
+        },
+        fetchedAt: _duringSession,
+        seansGunu: gun,
+      );
       await LiveActivityService.instance
           .sync(_state(), hideBalance: false, now: _duringSession);
 
