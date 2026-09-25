@@ -90,7 +90,8 @@ void main() {
 
       for (final beklenen in const [
         'side: BorderSide(color: p.hairline', // kart kenarlığı
-        'fillColor: p.overlay', // input dolgusu
+        'p.surface2 : Colors.transparent', // input dolgusu (= inputFill)
+        'borderSide: BorderSide(color: p.hairline)', // input çerçevesi
         'backgroundColor: p.overlay', // chip zemini
         'color: p.hairline', // ayraç
       ]) {

@@ -501,27 +501,38 @@ class SandikApp extends ConsumerWidget {
       ),
 
       // Input
+      //
+      // Tema varsayılanı `context.inputFill` / `context.inputDecoration` ile
+      // AYNI kuralı izler (2026-09-25): dark'ta dolgu yok + hairline çerçeve,
+      // light'ta `surface2` + hairline. Eskiden burada `p.overlay` (beyaz
+      // %4.5) vardı; dekorasyon vermeyen her TextField o dolguyu alıyordu —
+      // alt sayfada/kutu içinde "alanın içi neden farklı renk?" şikâyeti
+      // buradan geliyordu (arama kutusunda Container'ın içinde ikinci bir
+      // dolgu dikdörtgeni). Dolgu kaldırılınca alanı çerçeve tanımlar, bu
+      // yüzden `enabledBorder` artık `none` değil hairline.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        // Dolgu da yön değiştirir: dark'ta zeminin üstüne beyaz overlay,
-        // light'ta düz beyaz. Sabit beyaz %5 açık zeminde görünmediği için
-        // metin alanları çerçevesiz ve dolgusuz kalıyordu.
-        fillColor: p.overlay,
+        fillColor:
+            brightness == Brightness.light ? p.surface2 : Colors.transparent,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+          borderRadius: SandikRadius.mdAll,
+          borderSide: BorderSide(color: p.hairline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+          borderRadius: SandikRadius.mdAll,
+          borderSide: BorderSide(color: p.hairline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: p.amberFill, width: 2),
+          borderRadius: SandikRadius.mdAll,
+          borderSide: BorderSide(color: p.amberFill, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: p.loss, width: 1),
+          borderRadius: SandikRadius.mdAll,
+          borderSide: BorderSide(color: p.loss, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: SandikRadius.mdAll,
+          borderSide: BorderSide(color: p.loss, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),

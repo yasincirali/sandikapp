@@ -1059,12 +1059,8 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                     hintText: context.l10n.searchAssetsHint,
                     hintStyle: TextStyle(color: p.text36, fontSize: 14),
                     prefixIcon: Icon(Icons.search_rounded, color: p.text58),
-                    filled: true,
-                    fillColor: context.inputFill,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SandikRadius.md),
-                      borderSide: BorderSide(color: p.hairline),
-                    ),
+                    // Dolgu ve çerçeve tema varsayılanından
+                    // (`inputDecorationTheme` = `inputFill` kuralı).
                   ),
                 ),
               ),

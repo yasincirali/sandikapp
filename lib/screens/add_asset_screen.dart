@@ -2762,6 +2762,11 @@ class _PickerShellState extends State<_PickerShell> {
                             widget.searchHint ?? context.l10n.searchEllipsis,
                         hintStyle: context.t.bodyLarge
                             ?.copyWith(color: context.c.text36),
+                        // Dolgu ve çerçeve dıştaki Container'da. Tema
+                        // `filled: true` verir; kapatılmazsa metin alanı
+                        // kutunun içinde ikinci bir dolgu dikdörtgeni çizer
+                        // (ikonun sağında farklı renk şerit).
+                        filled: false,
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
