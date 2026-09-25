@@ -4655,19 +4655,19 @@ abstract class AppLocalizations {
   /// No description provided for @sessionTimedOut.
   ///
   /// In tr, this message translates to:
-  /// **'Güvenlik için oturumun kapatıldı. Face ID açarsan bir daha kapanmaz.'**
+  /// **'Güvenlik için oturumun kapatıldı. Ayarlar › Gizlilik\'ten kilidi açarsan bir daha kapanmaz.'**
   String get sessionTimedOut;
 
   /// No description provided for @lockOfferTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Face ID ile koru'**
-  String get lockOfferTitle;
+  /// **'{yontem, select, faceId{Face ID ile koru} touchId{Touch ID ile koru} biyometrik{Biyometrik kilitle koru} other{Ekran kilidiyle koru}}'**
+  String lockOfferTitle(String yontem);
 
   /// No description provided for @lockOfferBody.
   ///
   /// In tr, this message translates to:
-  /// **'Portföyün cebinde. Face ID açarsan uygulama araya girmeden seni tanır.'**
+  /// **'Portföyün cebinde. Kilit açıkken uygulama araya girmeden seni tanır.'**
   String get lockOfferBody;
 
   /// No description provided for @lockOfferBenefitStay.
@@ -4679,7 +4679,7 @@ abstract class AppLocalizations {
   /// No description provided for @lockOfferBenefitStayBody.
   ///
   /// In tr, this message translates to:
-  /// **'Kilit kapalıyken uygulamayı 10 dakika bırakınca güvenlik için çıkış yapılıyor ve şifreni yeniden girmen gerekiyor. Face ID açıkken oturumun yerinde kalır.'**
+  /// **'Kilit kapalıyken uygulamayı 10 dakika bırakınca güvenlik için çıkış yapılıyor ve şifreni yeniden girmen gerekiyor. Kilit açıkken oturumun yerinde kalır.'**
   String get lockOfferBenefitStayBody;
 
   /// No description provided for @lockOfferBenefitPush.
@@ -4703,14 +4703,14 @@ abstract class AppLocalizations {
   /// No description provided for @lockOfferBenefitPrivacyBody.
   ///
   /// In tr, this message translates to:
-  /// **'Telefonun başkasının eline geçerse tutarların Face ID olmadan açılmaz.'**
+  /// **'Telefonun başkasının eline geçerse tutarların senin doğrulaman olmadan açılmaz.'**
   String get lockOfferBenefitPrivacyBody;
 
   /// No description provided for @lockOfferAccept.
   ///
   /// In tr, this message translates to:
-  /// **'Face ID\'yi aç'**
-  String get lockOfferAccept;
+  /// **'{yontem, select, faceId{Face ID\'yi aç} touchId{Touch ID\'yi aç} biyometrik{Biyometrik kilidi aç} other{Uygulama kilidini aç}}'**
+  String lockOfferAccept(String yontem);
 
   /// No description provided for @lockOfferDecline.
   ///

@@ -25,6 +25,7 @@ import 'providers/signal_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/lock_offer_screen.dart';
+import 'services/biometric_lock_service.dart' show KilitYontemi;
 import 'screens/lock_screen.dart';
 import 'utils/sandik_snack.dart';
 import 'screens/login_screen.dart';
@@ -1724,37 +1725,53 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // Neden ana ekrandan önce: teklifin anlattığı kayıp (çıkış + push
     // kesintisi) kullanıcı uygulamayı ilk kez arkaya aldığında gerçekleşir.
     // Ana ekranın içine gömülen bir kart o ana kadar görülmeyebilir.
+    //
+    // Cihazda ekran kilidi YOKSA teklif hiç gösterilmez ve damgalanmaz
+    // (`kilitYontemiProvider`): "aç" düğmesi yalnızca "desteklemiyor"
+    // uyarısına çıkardı. Yanıt beklenirken splash sürer — anahtar aynı
+    // olduğundan geçiş görünmez; sorgu milisaniyeler sürer.
     if (!ref.watch(biometricLockProvider) &&
         !ref.watch(biometricLockOfferedProvider)) {
-      return LockOfferScreen(
-        key: const ValueKey('lock-offer'),
-        onKabul: () async {
-          // Sıra: önce tercihi aç, sonra "soruldu" damgası. Ters sırada
-          // ve arada çökme olursa kullanıcı hem kilitsiz kalır hem de
-          // teklifi bir daha görmez.
-          await ref.read(biometricLockProvider.notifier).set(true);
-          await ref.read(biometricLockOfferedProvider.notifier).set(true);
-          if (!mounted) return;
-          // Teklifi az önce Face ID ile geçti; hemen kilit ekranı
-          // göstermek aynı doğrulamayı iki kez sormak olurdu.
-          _lockAtLaunchFor = user.id;
-          setState(() {});
-        },
-        onRet: () async {
-          await ref.read(biometricLockOfferedProvider.notifier).set(true);
-          if (mounted) setState(() {});
-        },
-      );
+      final yontem = ref.watch(kilitYontemiProvider);
+      if (yontem.isLoading) {
+        return const SandikLoadingScreen(key: ValueKey('splash'));
+      }
+      final y = yontem.valueOrNull;
+      if (y != null) return _kilitTeklifi(user.id, y);
     }
 
     return const MainNavigationScreen(key: ValueKey('main'));
+  }
+
+  /// Kilit teklifi ekranı ve iki sonucu — bkz. `LockOfferScreen`.
+  Widget _kilitTeklifi(String userId, KilitYontemi yontem) {
+    return LockOfferScreen(
+      key: const ValueKey('lock-offer'),
+      yontem: yontem,
+      onKabul: () async {
+        // Sıra: önce tercihi aç, sonra "soruldu" damgası. Ters sırada
+        // ve arada çökme olursa kullanıcı hem kilitsiz kalır hem de
+        // teklifi bir daha görmez.
+        await ref.read(biometricLockProvider.notifier).set(true);
+        await ref.read(biometricLockOfferedProvider.notifier).set(true);
+        if (!mounted) return;
+        // Teklifi az önce doğrulayarak geçti; hemen kilit ekranı
+        // göstermek aynı doğrulamayı iki kez sormak olurdu.
+        _lockAtLaunchFor = userId;
+        setState(() {});
+      },
+      onRet: () async {
+        await ref.read(biometricLockOfferedProvider.notifier).set(true);
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   /// Zaman aşımı çıkışını kullanıcıya AÇIKLA.
   ///
   /// Sessiz çıkış kullanıcıya arıza gibi görünüyordu: uygulama açılıyor,
   /// şifre isteniyor, neden belli değil. Mesaj hem nedeni söyler hem de
-  /// çözümü gösterir (Face ID).
+  /// çözümü gösterir (Ayarlar'dan kilit).
   ///
   /// `logout()` ÖNCESİ çağrılır: sonrasında bu ağaç LoginScreen'e
   /// döneceği için `context` artık bu Scaffold'a ait olmaz.

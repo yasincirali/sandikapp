@@ -16,7 +16,7 @@ import '../utils/sandik_snack.dart';
 ///
 /// Yani kilit burada bir kısıt değil, üç şeyi birden koruyan ayar. Ama
 /// varsayılan olarak açık gelemez: biyometrik doğrulama kullanıcının
-/// rızasını ister ve cihazda Face ID tanımlı olmayabilir. Çözüm, kararı
+/// rızasını ister ve cihazda biyometri tanımlı olmayabilir. Çözüm, kararı
 /// görünür kılmak — teklifi gerekçesiyle göstermek.
 ///
 /// **Neden zaman aşımı ANINDA sorulmuyor.** O an kullanıcı zaten
@@ -34,9 +34,15 @@ import '../utils/sandik_snack.dart';
 class LockOfferScreen extends StatefulWidget {
   const LockOfferScreen({
     super.key,
+    required this.yontem,
     required this.onKabul,
     required this.onRet,
   });
+
+  /// Cihazın kilit yöntemi — yalnızca başlık, düğme ve ikon buna göre
+  /// yazılır (Android'de "Face ID" demek yanlıştı). Çağıran, cihazda
+  /// kilit YOKSA bu ekranı hiç göstermez (`kilitYontemiProvider`).
+  final KilitYontemi yontem;
 
   /// Doğrulama BAŞARILI olduktan sonra çağrılır — tercihi açan taraf
   /// çağırandır. Ekran yalnızca doğrulamayı yürütür.
@@ -91,10 +97,19 @@ class _LockOfferScreenState extends State<LockOfferScreen> {
     }
   }
 
+  IconData get _ikon => switch (widget.yontem) {
+        KilitYontemi.faceId => Icons.face_rounded,
+        KilitYontemi.touchId ||
+        KilitYontemi.biyometrik =>
+          Icons.fingerprint_rounded,
+        KilitYontemi.ekranKilidi => Icons.lock_outline_rounded,
+      };
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final l = context.l10n;
+    final yontem = widget.yontem.name;
     return Scaffold(
       backgroundColor: c.background,
       body: SafeArea(
@@ -116,12 +131,11 @@ class _LockOfferScreenState extends State<LockOfferScreen> {
                         border: Border.all(
                             color: c.amberFill.withValues(alpha: 0.35)),
                       ),
-                      child: Icon(Icons.face_rounded,
-                          size: 32, color: c.amberText),
+                      child: Icon(_ikon, size: 32, color: c.amberText),
                     ),
                     const SizedBox(height: SandikSpace.lg),
                     Text(
-                      l.lockOfferTitle,
+                      l.lockOfferTitle(yontem),
                       style: context.t.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: c.text90,
@@ -159,16 +173,16 @@ class _LockOfferScreenState extends State<LockOfferScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(SandikSpace.xl, 0,
-                  SandikSpace.xl, SandikSpace.lg),
+              padding: const EdgeInsets.fromLTRB(
+                  SandikSpace.xl, 0, SandikSpace.xl, SandikSpace.lg),
               child: Column(
                 children: [
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
                       onPressed: _busy ? null : _kabulEt,
-                      icon: const Icon(Icons.fingerprint_rounded),
-                      label: Text(l.lockOfferAccept),
+                      icon: Icon(_ikon),
+                      label: Text(l.lockOfferAccept(yontem)),
                     ),
                   ),
                   const SizedBox(height: SandikSpace.xs),
