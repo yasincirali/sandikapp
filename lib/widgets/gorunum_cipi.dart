@@ -446,12 +446,7 @@ class _GorunumSayfasiState extends State<_GorunumSayfasi> {
                       isDense: true,
                       hintText: l.scopeSearch,
                       prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                      filled: true,
-                      fillColor: c.surface1,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(SandikRadius.md),
-                        borderSide: BorderSide.none,
-                      ),
+                      // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
                     ),
                   ),
                 ),

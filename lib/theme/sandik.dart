@@ -1094,47 +1094,6 @@ class Sandik {
           : null,
     );
   }
-
-  static InputDecoration inputDecoration(
-    String hint, {
-    Widget? prefixIcon,
-    Widget? suffixIcon,
-    String? labelText,
-    String? errorText,
-  }) {
-    return InputDecoration(
-      hintText: hint,
-      labelText: labelText,
-      errorText: errorText,
-      hintStyle: const TextStyle(color: text36, fontSize: 14),
-      labelStyle: const TextStyle(color: text36, fontSize: 14),
-      prefixIcon: prefixIcon,
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: Colors.black.withValues(alpha: 0.1),
-      border: OutlineInputBorder(
-        borderRadius: SandikRadius.mdAll,
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: SandikRadius.mdAll,
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: SandikRadius.mdAll,
-        borderSide: const BorderSide(color: amber, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: SandikRadius.mdAll,
-        borderSide: const BorderSide(color: loss, width: 1.2),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: SandikRadius.mdAll,
-        borderSide: const BorderSide(color: loss, width: 1.5),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
 }
 
 /// Sandık logo widget'ı — SVG tabanlı, kare aspect ratio (launcher icon uyumlu)

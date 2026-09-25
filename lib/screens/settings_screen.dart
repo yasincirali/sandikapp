@@ -384,12 +384,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   decoration: InputDecoration(
                     hintText: context.l10n.feedbackHint,
                     hintStyle: TextStyle(color: context.c.text36),
-                    filled: true,
-                    fillColor: context.c.surface1,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SandikRadius.md),
-                      borderSide: BorderSide.none,
-                    ),
+                    // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
                   ),
                 ),
                 const SizedBox(height: 16),

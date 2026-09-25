@@ -297,12 +297,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 suffixText: _unitLabel,
                 suffixStyle:
                     context.t.titleMedium?.copyWith(color: context.c.text58),
-                filled: true,
-                fillColor: context.c.overlay,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  borderSide: BorderSide.none,
-                ),
+                // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
               ),
             ),
             const SizedBox(height: 8),
@@ -368,12 +363,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   suffixText: _currencySymbol,
                   suffixStyle:
                       context.t.titleMedium?.copyWith(color: context.c.text58),
-                  filled: true,
-                  fillColor: context.c.overlay,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                    borderSide: BorderSide.none,
-                  ),
+                  // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
                 ),
               ),
             ],

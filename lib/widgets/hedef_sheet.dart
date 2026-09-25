@@ -113,12 +113,7 @@ class _HedefSheetState extends State<_HedefSheet> {
               prefixText: '₺ ',
               hintText: '1.000.000',
               errorText: _hata,
-              filled: true,
-              fillColor: context.c.surface1,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                borderSide: BorderSide.none,
-              ),
+              // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
             ),
           ),
           const SizedBox(height: SandikSpace.md),

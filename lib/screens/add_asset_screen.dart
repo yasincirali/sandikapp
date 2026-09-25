@@ -2074,21 +2074,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                   context.l10n.quickEntryPlaceholder,
               hintStyle:
                   context.t.bodyMedium?.copyWith(color: context.c.text36),
-              filled: true,
-              fillColor: context.c.overlay,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                borderSide: BorderSide(color: context.c.hairline),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                borderSide: BorderSide(color: context.c.hairline),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                borderSide: BorderSide(
-                    color: context.c.amberFill.withValues(alpha: 0.6)),
-              ),
+              // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
             ),
             onChanged: _updatePreviews,
           ),

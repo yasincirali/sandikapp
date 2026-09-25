@@ -316,11 +316,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           counterText: '',
           contentPadding: EdgeInsets.zero,
           filled: true,
-          fillColor: context.c.surface1,
+          // `inputFill` — uygulamadaki diğer alanlarla aynı dolgu kuralı.
+          // Kenarlık hücreye özgü kalır (dolu hücre amber).
+          fillColor: context.inputFill,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: BorderSide(
-              color: filled ? context.c.amberText : context.c.overlay,
+              color: filled ? context.c.amberText : context.c.hairline,
               width: filled ? 1.5 : 1,
             ),
           ),
@@ -331,7 +333,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           disabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: BorderSide(
-              color: context.c.overlay,
+              color: context.c.hairline,
             ),
           ),
         ),

@@ -292,12 +292,7 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                     hintText: context.l10n.searchTickerOrName,
                     hintStyle:
                         TextStyle(color: context.c.text36, fontSize: 13),
-                    filled: true,
-                    fillColor: context.c.overlay,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SandikRadius.md),
-                      borderSide: BorderSide.none,
-                    ),
+                    // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
                     isDense: true,
                     contentPadding:
                         const EdgeInsets.symmetric(vertical: 12),

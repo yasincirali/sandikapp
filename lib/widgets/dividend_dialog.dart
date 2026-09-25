@@ -141,12 +141,7 @@ class _DividendDialogState extends State<_DividendDialog> {
               suffixText: a.currency,
               suffixStyle: context.t.titleSmall?.copyWith(
                   color: context.c.text58, fontWeight: FontWeight.w700),
-              filled: true,
-              fillColor: context.c.surface1,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(SandikRadius.sm),
-                borderSide: BorderSide.none,
-              ),
+              // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
             ),
             onSubmitted: (_) => _saving ? null : _save(),
           ),
