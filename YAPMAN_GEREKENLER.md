@@ -12,7 +12,12 @@
 
 ---
 
-## 🪙 2026-09-25 Kripto — 0074, 0075 + dört edge function
+## ✅ 2026-09-25 Kripto — 0074, 0075 + dört edge function (TAMAMLANDI)
+
+> **Kapandı 2026-09-25 19:38:** deploy koştu (0073 de bu turda ilk kez uygulandı),
+> secret iki yere girildi, `trigger_kripto_katalog()` çağrıldı. Doğrulama: katalog
+> 369 coin (303 TRY paritesi), `kripto_fiyat` dakikada yazılıyor, Binance 200.
+> 5. madde (hukuki not) bilgi olarak duruyor. Adımlar kayıt için bırakıldı.
 
 Kripto fiyatını sunucu çeker (tek kaynak Binance: fiyat, grafik, katalog,
 ad/logo), uygulama yalnızca Supabase'i okur. Uygulama tarafı sonraki
