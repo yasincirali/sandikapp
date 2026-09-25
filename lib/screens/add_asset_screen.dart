@@ -443,7 +443,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  // ── Altın: 7 türü tek büyük chip grid (dropdown yok) ───────────────────────
+  // ── Altın: tüm türler tek büyük chip grid (dropdown yok) ───────────────────────
   Widget _goldChipGrid(ColorScheme cs) {
     return Wrap(
       spacing: 8,

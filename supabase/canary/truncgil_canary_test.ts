@@ -18,6 +18,15 @@ const ALTIN = [
   'ALTIN_CUMHURIYET',
   'ALTIN_ATA',
   'ALTIN_RESAT',
+  'ALTIN_GRAM24',
+  'ALTIN_HAS',
+  'ALTIN_18AYAR',
+  'ALTIN_14AYAR',
+  'ALTIN_TAM',
+  'ALTIN_HAMIT',
+  'ALTIN_IKIBUCUK',
+  'ALTIN_GREMSE',
+  'ALTIN_BESLI',
 ];
 const DOVIZ = ['USDTRY=X', 'EURTRY=X', 'GBPTRY=X'];
 
@@ -29,6 +38,15 @@ const GRAM: Record<string, number> = {
   ALTIN_CUMHURIYET: 7.216,
   ALTIN_ATA: 7.216,
   ALTIN_RESAT: 7.216,
+  ALTIN_GRAM24: 1.0909,
+  ALTIN_HAS: 1.0909,
+  ALTIN_18AYAR: 0.8182,
+  ALTIN_14AYAR: 0.6364,
+  ALTIN_TAM: 7.016,
+  ALTIN_HAMIT: 7.216,
+  ALTIN_IKIBUCUK: 18.04,
+  ALTIN_GREMSE: 17.54,
+  ALTIN_BESLI: 36.08,
 };
 
 async function canli(): Promise<Record<string, unknown>> {

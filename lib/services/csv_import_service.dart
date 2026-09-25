@@ -317,12 +317,14 @@ class CsvImportService {
           currency: 'TRY',
         );
       case AssetType.altin:
-        // Varsayılan 22 ayar gram; çeyrek/yarım gibi alt türler metinden.
-        final sub = t.contains('CEYREK') || t.contains('ÇEYREK')
-            ? GoldSubCategory.ceyrek
-            : GoldSubCategory.gr22;
+        // Varsayılan 22 ayar gram; alt tür sembolden ya da metinden.
+        final sub = altinAltTuru(t);
         return (
-          ticker: 'ALTIN_${sub.name.toUpperCase()}',
+          // Sembol `goldTickerMap`'ten — ekleme ekranıyla AYNI kaynak.
+          // Eskiden `ALTIN_${sub.name}` kuruluyordu ve gram satırı
+          // `ALTIN_GR22` oluyordu: fiyat servisinin tanımadığı bir sembol,
+          // yani CSV'den gelen gram altın hiç fiyatlanmıyordu.
+          ticker: goldTickerMap[sub.label] ?? 'ALTIN_GRAM',
           name: sub.label,
           subCategory: sub.name,
           unitType: sub.unitType,
@@ -354,4 +356,36 @@ class CsvImportResult {
   final List<BulkCartItem> rows;
   final List<String> errors;
   bool get isEmpty => rows.isEmpty;
+}
+
+/// CSV'deki altın satırının alt türü. Önce birebir iç sembol
+/// (`ALTIN_CEYREK`, `ALTIN_GRAM24`…), sonra metindeki anahtar kelime;
+/// hiçbiri yoksa 22 ayar gram (eski varsayılan). Ons burada yok: iç
+/// sembolü `XAUUSD=X`'tir ve CSV'de altın değil emtia satırı olarak gelir.
+///
+/// Anahtar kelime sırası önemlidir — uzun/özgül olan önce: "ATA BEŞLİ"
+/// beşli, "ATA" değil; "YARIM" ile "TAM" çakışmasın diye yarım önce.
+GoldSubCategory altinAltTuru(String raw) {
+  final t = raw.trim().toUpperCase();
+  for (final g in GoldSubCategory.values) {
+    if (goldTickerMap[g.label] == t && t.startsWith('ALTIN_')) return g;
+  }
+  bool icerir(List<String> k) => k.any(t.contains);
+  if (icerir(['GREMSE'])) return GoldSubCategory.gremse;
+  if (icerir(['IKIBUCUK', 'İKİBUÇUK', 'IKIBUÇUK'])) {
+    return GoldSubCategory.ikibucuk;
+  }
+  if (icerir(['BESLI', 'BEŞLİ', 'BEŞLI'])) return GoldSubCategory.besli;
+  if (icerir(['HAMIT', 'HAMİT'])) return GoldSubCategory.hamit;
+  if (icerir(['RESAT', 'REŞAT'])) return GoldSubCategory.resat;
+  if (icerir(['CUMHURIYET', 'CUMHURİYET'])) return GoldSubCategory.cumhuriyet;
+  if (icerir(['CEYREK', 'ÇEYREK'])) return GoldSubCategory.ceyrek;
+  if (icerir(['YARIM'])) return GoldSubCategory.yarim;
+  if (icerir(['ATA'])) return GoldSubCategory.ata;
+  if (icerir(['TAM'])) return GoldSubCategory.tam;
+  if (icerir(['HAS'])) return GoldSubCategory.has;
+  if (icerir(['24'])) return GoldSubCategory.gr24;
+  if (icerir(['18'])) return GoldSubCategory.gr18;
+  if (icerir(['14'])) return GoldSubCategory.gr14;
+  return GoldSubCategory.gr22;
 }

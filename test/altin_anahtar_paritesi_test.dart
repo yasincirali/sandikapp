@@ -39,7 +39,7 @@ Map<String, String> _dartHaritasi(String kaynak) {
     r"_truncgilGoldKeys\s*=\s*<String,\s*String>\{([\s\S]*?)\};",
   ).firstMatch(kaynak);
   if (blok == null) return {};
-  return _ciftler(blok.group(1)!, RegExp(r"'([A-Z_]+)'\s*:\s*'([A-Z]+)'"));
+  return _ciftler(blok.group(1)!, RegExp(r"'([A-Z0-9_]+)'\s*:\s*'([A-Z0-9]+)'"));
 }
 
 /// `const GOLD_KEYS: Record<string, string> = { A: 'B', ... };`
@@ -48,7 +48,7 @@ Map<String, String> _tsHaritasi(String kaynak) {
     r"const GOLD_KEYS[^{]*\{([\s\S]*?)\};",
   ).firstMatch(kaynak);
   if (blok == null) return {};
-  return _ciftler(blok.group(1)!, RegExp(r"^\s*([A-Z_]+)\s*:\s*'([A-Z]+)'", multiLine: true));
+  return _ciftler(blok.group(1)!, RegExp(r"^\s*([A-Z0-9_]+)\s*:\s*'([A-Z0-9]+)'", multiLine: true));
 }
 
 Map<String, String> _ciftler(String govde, RegExp rx) {

@@ -37,6 +37,15 @@ const GOLD_WEIGHTS: Record<string, number> = {
   ALTIN_CUMHURIYET: 7.216,
   ALTIN_ATA: 7.216,
   ALTIN_RESAT: 7.216,
+  ALTIN_GRAM24: 1.0909,
+  ALTIN_HAS: 1.0909,
+  ALTIN_18AYAR: 0.8182,
+  ALTIN_14AYAR: 0.6364,
+  ALTIN_TAM: 7.016,
+  ALTIN_HAMIT: 7.216,
+  ALTIN_IKIBUCUK: 18.04,
+  ALTIN_GREMSE: 17.54,
+  ALTIN_BESLI: 36.08,
 };
 
 export function isGoldSymbol(symbol: string): boolean {

@@ -18,13 +18,34 @@ enum UnitType {
 }
 
 /// Altın alt kategorileri
+///
+/// **Sıra ekrandaki çip sırasıdır** (`add_asset_screen` `_goldChipGrid`):
+/// önce gram cinsinden ayarlar (en çok alınan 24 ayar "gram altın" başta),
+/// sonra ziynet/sikke adetleri, en sonda ons. Kayıtlı veriye enum SIRASI
+/// değil `label` (subCategory) ve ticker yazılır; sıra değişmesi veriyi
+/// bozmaz.
+///
+/// **2026-09-25 genişlemesi:** "normal gram altın yok" (kullanıcı). Eskiden
+/// yalnızca 22 ayar gram vardı; Türkiye'de "gram altın" denince kastedilen
+/// 24 ayar (995) külçe gramdır. Eklenenlerin hepsi truncgil v4'te ayrı
+/// kotasyonla gelir (`PriceService._truncgilGoldKeys`). Var olan
+/// `gr22` → `ALTIN_GRAM` eşlemesi KORUNDU: eski kayıtlar o sembolle durur.
 enum GoldSubCategory {
+  gr24('Gram Altın (24 Ayar)', 'gr', '24 ayar (995) gram altın — bankada ve kuyumcuda "gram altın"'),
   gr22('22 Ayar Gram Altın', 'gr', '22 ayar altın, gram olarak alınır'),
+  gr18('18 Ayar Altın', 'gr', '18 ayar altın, gram olarak'),
+  gr14('14 Ayar Altın', 'gr', '14 ayar altın, gram olarak'),
+  has('Has Altın', 'gr', 'Has (saf) altın, gram olarak'),
   ceyrek('Çeyrek Altın', 'piece', 'Ülkeye özel eski çeyrek altın'),
   yarim('Yarım Altın', 'piece', 'Ülkeye özel eski yarım altın'),
+  tam('Tam Altın', 'piece', 'Ziynet tam altın'),
+  cumhuriyet('Cumhuriyet Altını', 'piece', 'Türk Cumhuriyet altını'),
   ata('Ata Altını', 'piece', 'Ülkeye özel eski ata altını'),
   resat('Reşat Altını', 'piece', 'Ülkeye özel eski reşat altını'),
-  cumhuriyet('Cumhuriyet Altını', 'piece', 'Türk Cumhuriyet altını'),
+  hamit('Hamit Altını', 'piece', 'Osmanlı hamit altını'),
+  ikibucuk('İkibuçuk Altın', 'piece', 'İkibuçukluk altın'),
+  gremse('Gremse Altın', 'piece', 'Gremse (ziynet ikibuçuk) altın'),
+  besli('Beşli Altın', 'piece', 'Beşli altın'),
   ons('Altın (Ons)', 'ounce', 'Uluslararası piyasa - ons, USD');
 
   const GoldSubCategory(this.label, this.unitType, this.description);
@@ -472,12 +493,21 @@ List<String> get bist100Stocks => bist100StocksMap.keys.toList();
 /// Altın alt kategorisi → PriceService'in kullandığı dahili ticker
 /// ALTIN_* semboller XAUTRY=X üzerinden hesaplanır
 const goldTickerMap = <String, String>{
+  'Gram Altın (24 Ayar)': 'ALTIN_GRAM24',
   '22 Ayar Gram Altın': 'ALTIN_GRAM',
+  '18 Ayar Altın':      'ALTIN_18AYAR',
+  '14 Ayar Altın':      'ALTIN_14AYAR',
+  'Has Altın':          'ALTIN_HAS',
   'Çeyrek Altın':       'ALTIN_CEYREK',
   'Yarım Altın':        'ALTIN_YARIM',
+  'Tam Altın':          'ALTIN_TAM',
+  'Cumhuriyet Altını':  'ALTIN_CUMHURIYET',
   'Ata Altını':         'ALTIN_ATA',
   'Reşat Altını':       'ALTIN_RESAT',
-  'Cumhuriyet Altını':  'ALTIN_CUMHURIYET',
+  'Hamit Altını':       'ALTIN_HAMIT',
+  'İkibuçuk Altın':     'ALTIN_IKIBUCUK',
+  'Gremse Altın':       'ALTIN_GREMSE',
+  'Beşli Altın':        'ALTIN_BESLI',
   'Altın (Ons)':        'XAUUSD=X', // USD - Yahoo Finance sembolü
 };
 

@@ -78,6 +78,15 @@ class MilestoneService {
     'ALTIN_CUMHURIYET': 'Cumhuriyet altını',
     'ALTIN_ATA': 'Ata altını',
     'ALTIN_RESAT': 'Reşat altını',
+    'ALTIN_GRAM24': 'gram altın (24 ayar)',
+    'ALTIN_HAS': 'has altın',
+    'ALTIN_18AYAR': '18 ayar altın',
+    'ALTIN_14AYAR': '14 ayar altın',
+    'ALTIN_TAM': 'tam altın',
+    'ALTIN_HAMIT': 'Hamit altını',
+    'ALTIN_IKIBUCUK': 'ikibuçuk altın',
+    'ALTIN_GREMSE': 'gremse altın',
+    'ALTIN_BESLI': 'beşli altın',
   };
 
   /// Portföy yaşı eşikleri (yıl).

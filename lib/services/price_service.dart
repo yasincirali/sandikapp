@@ -81,6 +81,18 @@ class PriceService {
     'ALTIN_CUMHURIYET': 'CUMHURIYETALTINI',
     'ALTIN_ATA': 'ATAALTIN',
     'ALTIN_RESAT': 'RESATALTIN',
+    // 2026-09-25 genişlemesi. Burada `GRA` DOĞRU anahtardır: ürün
+    // bilerek 24 ayar ('Gram Altın (24 Ayar)'). Yukarıdaki tuzak
+    // `ALTIN_GRAM` (22 ayar) içindi; ikisi ayrı ürün, ayrı sembol.
+    'ALTIN_GRAM24': 'GRA',
+    'ALTIN_HAS': 'HAS',
+    'ALTIN_18AYAR': '18AYARALTIN',
+    'ALTIN_14AYAR': '14AYARALTIN',
+    'ALTIN_TAM': 'TAMALTIN',
+    'ALTIN_HAMIT': 'HAMITALTIN',
+    'ALTIN_IKIBUCUK': 'IKIBUCUKALTIN',
+    'ALTIN_GREMSE': 'GREMSEALTIN',
+    'ALTIN_BESLI': 'BESLIALTIN',
   };
 
   // Fallback gold weights in 22K grams (used with Yahoo GC=F if truncgil fails)
@@ -91,6 +103,24 @@ class PriceService {
     'ALTIN_CUMHURIYET': 7.216,
     'ALTIN_ATA': 7.216,
     'ALTIN_RESAT': 7.216,
+    // Gram ürünlerinde çarpan AYAR oranıdır (ayar ÷ 22): 1 gram 24 ayar,
+    // 24/22 gram 22 ayar altın kadar metal taşır. Has altın 24 ayarla aynı
+    // kefeye konur — truncgil'de ikisi arasında ~%0,5 fark var ve o fark
+    // yedek yolda da kalibrasyonla (`altinKalibrasyonHaritasi`) kapanır.
+    'ALTIN_GRAM24': 1.0909,
+    'ALTIN_HAS': 1.0909,
+    'ALTIN_18AYAR': 0.8182,
+    'ALTIN_14AYAR': 0.6364,
+    // Sikkelerde çarpan 22 ayar gram cinsinden ağırlıktır. Tam altın ziynet
+    // kalıbıdır (7,016 g), Hamit ata/Cumhuriyet kalıbı (7,216 g).
+    // İkibuçuk ata kalıbı (2,5 × 7,216), gremse ziynet kalıbı (2,5 × 7,016),
+    // beşli ata kalıbı (5 × 7,216). Kanarya testi gram eşdeğerini canlı
+    // kotasyonla %3 içinde doğrular (`truncgil_canary_test.ts`).
+    'ALTIN_TAM': 7.016,
+    'ALTIN_HAMIT': 7.216,
+    'ALTIN_IKIBUCUK': 18.04,
+    'ALTIN_GREMSE': 17.54,
+    'ALTIN_BESLI': 36.08,
   };
 
   /// Bir troy ons kaç gram — altın çevriminin sabiti.
@@ -842,6 +872,15 @@ class PriceService {
         'ALTIN_CUMHURIYET' => 'Cumhuriyet Altını',
         'ALTIN_ATA' => 'Ata Altını',
         'ALTIN_RESAT' => 'Reşat Altını',
+        'ALTIN_GRAM24' => 'Gram Altın (24K)',
+        'ALTIN_HAS' => 'Has Altın',
+        'ALTIN_18AYAR' => '18 Ayar Altın',
+        'ALTIN_14AYAR' => '14 Ayar Altın',
+        'ALTIN_TAM' => 'Tam Altın',
+        'ALTIN_HAMIT' => 'Hamit Altını',
+        'ALTIN_IKIBUCUK' => 'İkibuçuk Altın',
+        'ALTIN_GREMSE' => 'Gremse Altın',
+        'ALTIN_BESLI' => 'Beşli Altın',
         _ => sym,
       };
 
