@@ -2593,6 +2593,12 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get watchlistInListLabel => 'Takipte';
+
+  @override
+  String get watchlistFullShort => 'Dolu';
+
+  @override
   String watchlistCountOfLimit(int n, int limit) {
     return '$n/$limit takipte';
   }

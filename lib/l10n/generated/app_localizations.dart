@@ -4514,6 +4514,18 @@ abstract class AppLocalizations {
   /// **'{name} takibe alındı'**
   String addedToWatchlist(String name);
 
+  /// No description provided for @watchlistInListLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takipte'**
+  String get watchlistInListLabel;
+
+  /// No description provided for @watchlistFullShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dolu'**
+  String get watchlistFullShort;
+
   /// No description provided for @watchlistCountOfLimit.
   ///
   /// In tr, this message translates to:

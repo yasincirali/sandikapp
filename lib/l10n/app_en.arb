@@ -1675,6 +1675,8 @@
       }
     }
   },
+  "watchlistInListLabel": "Watching",
+  "watchlistFullShort": "Full",
   "watchlistCountOfLimit": "{n}/{limit} watched",
   "@watchlistCountOfLimit": {"placeholders": {"n": {"type": "int"}, "limit": {"type": "int"}}},
   "watchlistAddShort": "Add",

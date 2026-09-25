@@ -673,86 +673,179 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Gövdenin ÜSTÜNDEKİ ekleme düğmesi + "n/limit" sayacı.
+/// Gövdenin ÜSTÜNDEKİ kapasite kartı: "Takipte 5/7", 7 bölmeli şerit ve Ekle.
 ///
 /// Ekleme satırı önce listenin dibindeydi ("sekmede üst bar yok, yol
 /// listenin kendisinde olmalı"). Kullanıcı bulgusu (2026-09-25): liste
-/// uzadıkça satır kaydırmanın sonunda kalıyor, "daha kolay erişilebilir
-/// yere". Gövde bir `Column`; en üst satır kaydırmadan bağımsız, her zaman
-/// görünür. Yerleşim geçmişi `watchlist_placement_test`'te.
+/// uzadıkça satır kaydırmanın sonunda kalıyor. Gövde bir `Column`; en üst
+/// satır kaydırmadan bağımsız, her zaman görünür. Yerleşim geçmişi
+/// `watchlist_placement_test`'te.
 ///
-/// Sayaç limiti ÖNCEDEN gösterir: kullanıcı 7/7'yi görür, "neden
-/// eklenmedi?" sürprizi yaşamaz. Premium'da limit pratik sonsuz — sayaç
-/// çizilmez, yalnız düğme kalır.
+/// Neden şerit (kullanıcı kararı, 2026-09-25 — üç seçenek arasından "C"):
+/// iki eşit hap denemesinde sayaç hapı sekme gibi okunuyor ama
+/// dokunulmuyordu; Ekle ile seçili sekme aynı amber dolguyu paylaşıyordu.
+/// Kart içinde sayaç + bölmeli şerit BİLGİ, dolu Ekle EYLEM: farklı biçim
+/// dili, dokunulabilirlik yalan söylemez; şerit limiti okumadan anlatır.
+/// Dolunca son bölme `loss` rengine döner ve düğme "Dolu" olur — ama
+/// dokunuş sessiz kalmaz, çıkış yolunu söyler ("birini çıkar"). İleride
+/// paywall açılınca "limiti artır" düğmesinin doğal yeri burasıdır.
+/// Premium'da limit pratik sonsuz: şerit çizilmez, yalnız sayı + Ekle.
 class _AddHeader extends ConsumerWidget {
   const _AddHeader();
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final n = ref.watch(watchlistProvider).valueOrNull?.length ?? 0;
-    final limit = ref.watch(watchlistLimitProvider);
-    final sinirli = limit < (1 << 30);
-    final dolu = sinirli && n >= limit;
-    // İki EŞİT hap (kullanıcı, 2026-09-25: "daha simetrik"): solda çerçeveli
-    // sayaç, sağda dolu Ekle; aynı yükseklik, aynı genişlik, aynı köşe.
-    // Küçük etiket + büyük düğme dengesizdi. Premium'da sayaç yok, düğme
-    // tek başına tam genişlik.
-    final ekle = SandikTappable(
-      semanticLabel: context.l10n.addToWatchlist,
-      onTap: () => pushGuarded(
+  void _ekle(BuildContext context) => pushGuarded(
         context,
         adaptiveRoute<void>(
           builder: (_) => const AddWatchlistScreen(),
           fullscreenDialog: true,
         ),
-      ),
+      );
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.c;
+    final n = ref.watch(watchlistProvider).valueOrNull?.length ?? 0;
+    final limit = ref.watch(watchlistLimitProvider);
+    final sinirli = limit < (1 << 30);
+    final dolu = sinirli && n >= limit;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
       child: Container(
-        // 44pt HIG dokunma hedefi.
-        constraints: const BoxConstraints(minHeight: 44),
-        alignment: Alignment.center,
+        constraints: const BoxConstraints(minHeight: SandikTouch.min),
+        padding: const EdgeInsets.fromLTRB(
+            SandikSpace.md, SandikSpace.xs2, SandikSpace.xs2, SandikSpace.xs2),
         decoration: BoxDecoration(
-          color: context.c.amberFill,
+          color: c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.add_rounded, size: 18, color: context.c.onStatus),
-            const SizedBox(width: SandikSpace.xs),
-            Text(
-              context.l10n.watchlistAddShort,
-              style: context.t.titleSmall?.copyWith(
-                  color: context.c.onStatus, fontWeight: FontWeight.w700),
+            Expanded(
+              child: Semantics(
+                label: sinirli
+                    ? context.l10n.watchlistCountOfLimit(n, limit)
+                    : '${context.l10n.watchlistInListLabel} $n',
+                excludeSemantics: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(context.l10n.watchlistInListLabel,
+                            style: context.t.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: c.text58)),
+                        const Spacer(),
+                        Text.rich(
+                          TextSpan(
+                            text: '$n',
+                            style: context.t.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: dolu ? c.loss : c.text90),
+                            children: [
+                              if (sinirli)
+                                TextSpan(
+                                    text: '/$limit',
+                                    style: TextStyle(color: c.text36)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (sinirli) ...[
+                      const SizedBox(height: SandikSpace.xs2),
+                      _KapasiteSeridi(dolu: n, toplam: limit),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: SandikSpace.smd),
+            SandikTappable(
+              semanticLabel: dolu
+                  ? context.l10n.watchlistLimitReached(limit)
+                  : context.l10n.addToWatchlist,
+              onTap: dolu
+                  ? () => sandikSnack(
+                        context,
+                        context.l10n.watchlistLimitReached(limit),
+                        kind: SandikSnackKind.warning,
+                      )
+                  : () => _ekle(context),
+              child: Container(
+                // 44pt HIG dokunma hedefi.
+                constraints: const BoxConstraints(minHeight: SandikTouch.min),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: SandikSpace.md2),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: dolu ? Colors.transparent : c.amberFill,
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  border: dolu ? Border.all(color: c.hairline) : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!dolu) ...[
+                      Icon(Icons.add_rounded, size: 18, color: c.onStatus),
+                      const SizedBox(width: SandikSpace.xs),
+                    ],
+                    Text(
+                      dolu
+                          ? context.l10n.watchlistFullShort
+                          : context.l10n.watchlistAddShort,
+                      style: context.t.titleSmall?.copyWith(
+                          color: dolu ? c.text58 : c.onStatus,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
+  }
+}
+
+/// Bölmeli kapasite şeridi: [toplam] bölme, ilk [dolu] tanesi amber.
+///
+/// Her varlık bir bölme — yüzde çubuğu değil: "7'de 5" sayılabilir olmalı.
+/// Liste dolunca son bölme `loss` rengine döner; sınır aşımı yok ama
+/// "yer kalmadı" rengiyle söylenir. Yalnızca çizim; anlamı üstteki
+/// `Semantics` etiketi taşır (`excludeSemantics`), ekran okuyucu 7 kutu
+/// saymaz.
+class _KapasiteSeridi extends StatelessWidget {
+  const _KapasiteSeridi({required this.dolu, required this.toplam});
+
+  final int dolu;
+  final int toplam;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final tamamen = dolu >= toplam;
+    return SizedBox(
+      height: SandikSpace.xs,
       child: Row(
         children: [
-          if (sinirli) ...[
+          for (var i = 0; i < toplam; i++) ...[
+            if (i > 0) const SizedBox(width: SandikSpace.xxs),
             Expanded(
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 44),
-                alignment: Alignment.center,
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(
-                      color: dolu ? context.c.amberText : context.c.hairline),
-                ),
-                child: Text(
-                  context.l10n.watchlistCountOfLimit(n, limit),
-                  style: context.t.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: dolu ? context.c.amberText : context.c.text58),
+                  color: i < dolu
+                      ? (tamamen && i == toplam - 1 ? c.loss : c.amberFill)
+                      : c.surface2,
+                  borderRadius: BorderRadius.circular(SandikSpace.xxs),
                 ),
               ),
             ),
-            const SizedBox(width: SandikSpace.sm),
           ],
-          Expanded(child: ekle),
         ],
       ),
     );

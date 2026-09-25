@@ -1675,6 +1675,8 @@
       }
     }
   },
+  "watchlistInListLabel": "Takipte",
+  "watchlistFullShort": "Dolu",
   "watchlistCountOfLimit": "{n}/{limit} takipte",
   "@watchlistCountOfLimit": {"placeholders": {"n": {"type": "int"}, "limit": {"type": "int"}}},
   "watchlistAddShort": "Ekle",

@@ -2598,6 +2598,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get watchlistInListLabel => 'Watching';
+
+  @override
+  String get watchlistFullShort => 'Full';
+
+  @override
   String watchlistCountOfLimit(int n, int limit) {
     return '$n/$limit watched';
   }
