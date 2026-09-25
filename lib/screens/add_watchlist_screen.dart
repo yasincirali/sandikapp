@@ -14,6 +14,7 @@ import '../models/position.dart';
 import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
@@ -325,7 +326,8 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                 Icon(Icons.search_rounded, size: 18, color: context.c.text58),
           ),
           decoration: BoxDecoration(
-            color: context.c.surface1,
+            // Seçici alt sayfasıyla aynı dolgu (tema `inputFill`).
+            color: context.inputFill,
             borderRadius: BorderRadius.circular(SandikRadius.md),
             border: Border.all(color: context.c.hairline),
           ),
@@ -421,16 +423,24 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
       // Limit hatası ağ hatasından AYRI ele alınır: kullanıcıya neden
       // eklenemediğini ve ÇIKIŞ YOLUNU söylemek gerekir. "Eklenemedi" deyip
       // bırakmak kullanıcıyı çıkışsız bırakırdı.
+      // Paywall kapalıyken limit bir ÜRÜN sınırıdır (2026-09-25, 7 varlık):
+      // "Premium" düğmesi olmayan bir şeyi satar, "ücretsiz plan" sözü de
+      // olmayan bir planı ima ederdi. Çıkış yolu açıkça söylenir: birini çıkar.
+      final paywallOn = ref.read(paywallVisibleProvider);
       sandikSnack(
         context,
-        context.l10n.watchlistLimitFree(e.limit),
+        paywallOn
+            ? context.l10n.watchlistLimitFree(e.limit)
+            : context.l10n.watchlistLimitReached(e.limit),
         kind: SandikSnackKind.warning,
-        action: SnackBarAction(
-          label: 'Premium',
-          textColor: context.c.onAmber,
-          onPressed: () =>
-              PaywallScreen.show(context, source: 'watchlist_limit'),
-        ),
+        action: paywallOn
+            ? SnackBarAction(
+                label: 'Premium',
+                textColor: context.c.onAmber,
+                onPressed: () =>
+                    PaywallScreen.show(context, source: 'watchlist_limit'),
+              )
+            : null,
       );
     } catch (_) {
       if (!mounted) return;

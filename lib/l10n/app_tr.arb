@@ -1675,6 +1675,11 @@
       }
     }
   },
+  "watchlistCountOfLimit": "{n}/{limit} takipte",
+  "@watchlistCountOfLimit": {"placeholders": {"n": {"type": "int"}, "limit": {"type": "int"}}},
+  "watchlistAddShort": "Ekle",
+  "watchlistLimitReached": "En fazla {n} varlık takip edebilirsin. Yeni eklemek için birini çıkar.",
+  "@watchlistLimitReached": {"placeholders": {"n": {"type": "int"}}},
   "watchlistLimitFree": "Ücretsiz planda en fazla {n} varlık takip edebilirsin.",
   "@watchlistLimitFree": {
     "placeholders": {

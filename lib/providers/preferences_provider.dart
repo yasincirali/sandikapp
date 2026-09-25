@@ -460,15 +460,18 @@ final priceAlertLimitProvider = Provider<int>((ref) {
   return RemoteConfigService.instance.freePriceAlertLimit;
 });
 
-/// Free tier takip listesi limiti — `assetLimitProvider` ile AYNI kalıp.
+/// Takip listesi limiti — `assetLimitProvider`'dan FARKLI kalıp.
 ///
-/// **Paywall kapalıyken sınırsız.** `paywall_enabled` şu an `false`; limiti
-/// koşulsuz uygulamak, satın alınabilir bir premium yokken kullanıcıyı 5
-/// varlıkta durdurup çıkışsız bırakırdı. Paywall açıldığında limit kendiliğinden
-/// devreye girer — burada değişiklik gerekmez.
+/// **Paywall kapalıyken de uygulanır (kullanıcı kararı, 2026-09-25):**
+/// *"şimdilik 7 adet takip limiti koyalım, ilerde paywall'la artırabiliriz."*
+/// Eskiden `paywall_enabled=false` iken sınırsızdı ("satın alınacak bir şey
+/// yokken kullanıcıyı çıkışsız bırakma" gerekçesiyle). Yeni gerekçe: takip
+/// listesi her dönem için N seri çizer ve her varlık için fiyat çeker; liste
+/// büyüdükçe grafik okunmaz, istek sayısı artar. Limit ürün sınırıdır,
+/// satış kapısı değil — bu yüzden çıkış yolu paywall değil "birini çıkar"
+/// (`add_watchlist_screen`). Premium yine sınırsız; değer Remote Config'ten
+/// (`free_watchlist_limit`, varsayılan 7) yayın sonrası değiştirilebilir.
 final watchlistLimitProvider = Provider<int>((ref) {
-  final paywallOn = ref.watch(paywallVisibleProvider);
-  if (!paywallOn) return 1 << 30;
   final premium = ref.watch(effectivePremiumProvider);
   if (premium) return 1 << 30;
   return RemoteConfigService.instance.freeWatchlistLimit;

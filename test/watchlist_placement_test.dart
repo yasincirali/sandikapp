@@ -162,17 +162,26 @@ void main() {
       expect(watchlist.contains('class WatchlistScreen'), isFalse);
     });
 
-    test('sekmeden de varlık EKLENEBİLİR', () async {
+    test('sekmeden de varlık EKLENEBİLİR — ve düğme ÜSTTE', () async {
       // Sekmede tam sayfanın üst barı (dolayısıyla oradaki "+") yok. Ekleme
-      // yolu gövdenin kendisinde olmalı, yoksa dolu bir takip listesine
-      // ikinci bir varlık eklemenin hiçbir yolu kalmıyor.
+      // yolu gövdenin kendisinde olmalı. Önce listenin dibindeydi; kullanıcı
+      // bulgusu (2026-09-25) "liste uzadıkça aşağıda kalıyor" — artık
+      // gövdenin üstünde, kaydırmadan bağımsız (`_AddHeader`).
       final watchlist = _yorumsuz(
           await File('lib/screens/watchlist_screen.dart').readAsString());
-      expect(watchlist.contains('class _AddRow'), isTrue,
-          reason: 'liste içinde bir ekleme yolu olmalı');
-      final i = watchlist.indexOf('class _AddRow');
+      expect(watchlist.contains('class _AddHeader'), isTrue,
+          reason: 'gövdenin üstünde bir ekleme yolu olmalı');
+      final i = watchlist.indexOf('class _AddHeader');
       expect(watchlist.substring(i).contains('AddWatchlistScreen'), isTrue,
-          reason: 'ekleme satırı ekleme ekranını açmalı');
+          reason: 'ekleme düğmesi ekleme ekranını açmalı');
+      expect(watchlist.contains('class _AddRow'), isFalse,
+          reason: 'dipteki satır kaldırıldı — iki giriş noktası olmasın');
+      // Column'da _AddHeader, _PeriodToggle'dan ÖNCE gelir.
+      final body = watchlist.indexOf('class WatchlistBody');
+      final header = watchlist.indexOf('const _AddHeader()', body);
+      final toggle = watchlist.indexOf('const _PeriodToggle()', body);
+      expect(header, greaterThan(0));
+      expect(header < toggle, isTrue, reason: 'ekleme en üstte olmalı');
     });
   });
 

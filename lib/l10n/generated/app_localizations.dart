@@ -4514,6 +4514,24 @@ abstract class AppLocalizations {
   /// **'{name} takibe alındı'**
   String addedToWatchlist(String name);
 
+  /// No description provided for @watchlistCountOfLimit.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n}/{limit} takipte'**
+  String watchlistCountOfLimit(int n, int limit);
+
+  /// No description provided for @watchlistAddShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekle'**
+  String get watchlistAddShort;
+
+  /// No description provided for @watchlistLimitReached.
+  ///
+  /// In tr, this message translates to:
+  /// **'En fazla {n} varlık takip edebilirsin. Yeni eklemek için birini çıkar.'**
+  String watchlistLimitReached(int n);
+
   /// No description provided for @watchlistLimitFree.
   ///
   /// In tr, this message translates to:

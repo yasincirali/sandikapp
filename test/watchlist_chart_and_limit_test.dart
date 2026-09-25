@@ -21,7 +21,8 @@ import 'helpers/kaynak.dart';
 /// ## Limit: neden paywall kapalıyken uygulanmaz
 /// `paywall_enabled` şu an `false`. Limiti koşulsuz uygulamak, satın
 /// alınabilir bir premium yokken kullanıcıyı 5 varlıkta durdurup ÇIKIŞSIZ
-/// bırakırdı. `assetLimitProvider` de aynı kalıbı izliyor.
+/// bırakırdı. **2026-09-25'te değişti:** limit 7 ve paywall'dan bağımsız
+/// bir ürün sınırı; çıkış yolu "birini çıkar" mesajı (aşağıdaki grup).
 
 /// Kıyas seçici testleri için basit bir lot. Yalnızca `ticker` ayırt edici;
 /// `kiyasVarliklari` varlığın içeriğine değil SAHİBİNE göre seçim yapar.
@@ -664,16 +665,17 @@ void main() {
           await File('lib/providers/watchlist_provider.dart').readAsString());
     });
 
-    test('paywall KAPALIYKEN limit uygulanmaz', () {
-      // En kritik kural: `paywall_enabled=false` iken kullanıcı 5 varlıkta
-      // durdurulup çıkışsız bırakılmamalı — satın alınacak bir şey yok.
+    test('paywall KAPALIYKEN DE limit uygulanır (kullanıcı kararı 2026-09-25)',
+        () {
+      // Eski kural "paywall kapalıyken sınırsız"dı; kullanıcı 7'lik bir ÜRÜN
+      // sınırı istedi ("ilerde paywall'la artırırız"). Provider artık
+      // paywall bayrağına bakmaz; çıkış yolu "birini çıkar" mesajıdır.
       final i = prefs.indexOf('watchlistLimitProvider');
-      expect(i, greaterThan(0), reason: 'limit provider\'ı tanımlı olmalı');
-      final govde = prefs.substring(i, i + 500);
-      expect(govde.contains('paywallVisibleProvider'), isTrue);
-      expect(govde.contains('if (!paywallOn) return 1 << 30'), isTrue,
-          reason: 'paywall kapalıyken sınırsız — assetLimitProvider ile '
-              'aynı kalıp');
+      expect(i, greaterThan(0), reason: "limit provider'ı tanımlı olmalı");
+      final govde = prefs.substring(i, i + 400);
+      expect(govde.contains('paywallVisibleProvider'), isFalse,
+          reason: 'limit paywall açık/kapalı fark etmeden uygulanır');
+      expect(govde.contains('if (!paywallOn) return 1 << 30'), isFalse);
     });
 
     test('premium kullanıcıda limit yok', () {
@@ -688,11 +690,11 @@ void main() {
       final govde = prefs.substring(i, i + 500);
       expect(govde.contains('freeWatchlistLimit'), isTrue,
           reason: 'limit yayın sonrası ayarlanabilmeli');
-      // Varsayılan 5 — kullanıcının istediği değer.
+      // Varsayılan 7 — kullanıcının istediği değer (2026-09-25).
       expect(
           _yorumsuz(File('lib/services/remote_config_service.dart')
                   .readAsStringSync())
-              .contains("'free_watchlist_limit': 5"),
+              .contains("'free_watchlist_limit': 7"),
           isTrue);
     });
 

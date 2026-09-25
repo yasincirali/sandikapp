@@ -124,6 +124,13 @@ const List<SurumNotu> surumNotlari = [
             'fiyat alarmı kurabilirsin.',
       ),
       Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Takip listesi: Ekle üstte, 7 varlık',
+        aciklama: 'Ekle düğmesi listenin dibinden üstüne taşındı; yanındaki '
+            'sayaç kaç yerin kaldığını gösterir. Takip listesi şimdilik 7 '
+            'varlıkla sınırlı: grafik okunur kalsın diye.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.genel,
         baslik: 'Fiyatlar nereden geliyor',
         aciklama: 'Kripto fiyatları Binance\'ten, dakikada bir güncellenir. '

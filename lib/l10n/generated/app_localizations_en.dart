@@ -2598,6 +2598,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String watchlistCountOfLimit(int n, int limit) {
+    return '$n/$limit watched';
+  }
+
+  @override
+  String get watchlistAddShort => 'Add';
+
+  @override
+  String watchlistLimitReached(int n) {
+    return 'You can watch up to $n assets. Remove one to add another.';
+  }
+
+  @override
   String watchlistLimitFree(int n) {
     return 'On the free plan you can watch up to $n assets.';
   }

@@ -386,9 +386,9 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.govdeSekmeleri,
       rozet: 'BİZE ÖZEL',
       baslik: 'Takip listesi',
-      govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin. Almayı '
-          'düşündüğün hisseyi listeye at, fiyat alarmı kur; portföyünün '
-          'toplamına karışmaz.',
+      govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin. Üstteki Ekle '
+          'ile almayı düşündüğün hisseyi listeye at, fiyat alarmı kur; '
+          'portföyünün toplamına karışmaz. Sayaç kaç yerin kaldığını gösterir.',
       giris: (_) => _sekmeyeGec(1),
     ),
     _Adim(

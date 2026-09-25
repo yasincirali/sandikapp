@@ -1675,6 +1675,11 @@
       }
     }
   },
+  "watchlistCountOfLimit": "{n}/{limit} watched",
+  "@watchlistCountOfLimit": {"placeholders": {"n": {"type": "int"}, "limit": {"type": "int"}}},
+  "watchlistAddShort": "Add",
+  "watchlistLimitReached": "You can watch up to {n} assets. Remove one to add another.",
+  "@watchlistLimitReached": {"placeholders": {"n": {"type": "int"}}},
   "watchlistLimitFree": "On the free plan you can watch up to {n} assets.",
   "@watchlistLimitFree": {
     "placeholders": {

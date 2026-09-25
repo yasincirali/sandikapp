@@ -2593,6 +2593,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String watchlistCountOfLimit(int n, int limit) {
+    return '$n/$limit takipte';
+  }
+
+  @override
+  String get watchlistAddShort => 'Ekle';
+
+  @override
+  String watchlistLimitReached(int n) {
+    return 'En fazla $n varlık takip edebilirsin. Yeni eklemek için birini çıkar.';
+  }
+
+  @override
   String watchlistLimitFree(int n) {
     return 'Ücretsiz planda en fazla $n varlık takip edebilirsin.';
   }

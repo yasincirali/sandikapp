@@ -14,6 +14,7 @@ import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart' show activePartnersProvider;
+import '../providers/preferences_provider.dart' show watchlistLimitProvider;
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../theme/sandik.dart';
@@ -58,6 +59,8 @@ class WatchlistBody extends ConsumerWidget {
 
     return Column(
       children: [
+        const _AddHeader(),
+        const SizedBox(height: SandikSpace.sm),
         const _PeriodToggle(),
         const SizedBox(height: SandikSpace.sm),
         Expanded(
@@ -153,8 +156,9 @@ class _List extends ConsumerWidget {
       child: ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 12),
-      // +3: grafik kartı, sayı başlığı ve sondaki ekleme satırı.
-      itemCount: items.length + 3,
+      // +2: grafik kartı ve sayı başlığı. Ekleme satırı artık listede
+      // DEĞİL, gövdenin üstünde (`_AddHeader`).
+      itemCount: items.length + 2,
       separatorBuilder: (_, __) => const SizedBox(height: SandikSpace.sm),
       itemBuilder: (context, i) {
         // Grafik listeyle BİRLİKTE kayar (üstte sabit değil): dar ekranda
@@ -172,13 +176,6 @@ class _List extends ConsumerWidget {
             ),
           );
         }
-        // Ekleme satırı listenin SONUNDA.
-        //
-        // Gövde artık Portföy ekranının bir sekmesi olarak da gösteriliyor ve
-        // orada tam sayfanın üst barı (dolayısıyla oradaki "+" düğmesi) yok.
-        // Ekleme yolu listenin kendisinde olmalı, yoksa dolu bir takip
-        // listesine ikinci bir varlık eklemenin hiçbir yolu kalmıyor.
-        if (i == items.length + 2) return const _AddRow();
         return _Row(item: items[i - 2]);
       },
     ),
@@ -676,44 +673,75 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// En kritik ayrımı sürekli görünür tutar.
-/// Listenin sonundaki "Takibe varlık ekle" satırı.
-class _AddRow extends StatelessWidget {
-  const _AddRow();
+/// Gövdenin ÜSTÜNDEKİ ekleme düğmesi + "n/limit" sayacı.
+///
+/// Ekleme satırı önce listenin dibindeydi ("sekmede üst bar yok, yol
+/// listenin kendisinde olmalı"). Kullanıcı bulgusu (2026-09-25): liste
+/// uzadıkça satır kaydırmanın sonunda kalıyor, "daha kolay erişilebilir
+/// yere". Gövde bir `Column`; en üst satır kaydırmadan bağımsız, her zaman
+/// görünür. Yerleşim geçmişi `watchlist_placement_test`'te.
+///
+/// Sayaç limiti ÖNCEDEN gösterir: kullanıcı 7/7'yi görür, "neden
+/// eklenmedi?" sürprizi yaşamaz. Premium'da limit pratik sonsuz — sayaç
+/// çizilmez, yalnız düğme kalır.
+class _AddHeader extends ConsumerWidget {
+  const _AddHeader();
 
   @override
-  Widget build(BuildContext context) {
-    return SandikTappable(
-      semanticLabel: context.l10n.addToWatchlist,
-      onTap: () => pushGuarded(
-        context,
-        adaptiveRoute<void>(
-          builder: (_) => const AddWatchlistScreen(),
-          fullscreenDialog: true,
-        ),
-      ),
-      child: Container(
-        // 44pt HIG dokunma hedefi.
-        constraints: const BoxConstraints(minHeight: 44),
-        margin: const EdgeInsets.only(top: 4),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border:
-              Border.all(color: context.c.amberFill.withValues(alpha: 0.30)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.add_rounded, size: 18, color: context.c.amberText),
-            const SizedBox(width: 8),
-            Text(
-              context.l10n.addToWatchlist,
-              style: context.t.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600, color: context.c.amberText),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final n = ref.watch(watchlistProvider).valueOrNull?.length ?? 0;
+    final limit = ref.watch(watchlistLimitProvider);
+    final sinirli = limit < (1 << 30);
+    final dolu = sinirli && n >= limit;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
+      child: Row(
+        children: [
+          Expanded(
+            child: sinirli
+                ? Text(
+                    context.l10n.watchlistCountOfLimit(n, limit),
+                    style: context.t.labelSmall?.copyWith(
+                        letterSpacing: 0.8,
+                        fontWeight: FontWeight.w700,
+                        color: dolu ? context.c.amberText : context.c.text36),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          SandikTappable(
+            semanticLabel: context.l10n.addToWatchlist,
+            onTap: () => pushGuarded(
+              context,
+              adaptiveRoute<void>(
+                builder: (_) => const AddWatchlistScreen(),
+                fullscreenDialog: true,
+              ),
             ),
-          ],
-        ),
+            child: Container(
+              // 44pt HIG dokunma hedefi.
+              constraints: const BoxConstraints(minHeight: 44),
+              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: context.c.amberFill,
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_rounded, size: 18, color: context.c.onStatus),
+                  const SizedBox(width: SandikSpace.xs),
+                  Text(
+                    context.l10n.watchlistAddShort,
+                    style: context.t.titleSmall?.copyWith(
+                        color: context.c.onStatus,
+                        fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

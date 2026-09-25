@@ -42,10 +42,10 @@ class RemoteConfigService {
     // gerçek ürün konumlanmasına göre azalt.
     'free_asset_limit': 20,
 
-    // Free tier takip listesi limiti. Portföy limitinden AYRI: takip etmek
-    // sahip olmaktan daha ucuz bir eylem, kullanıcı daha çok deneme yapar.
-    // Sunucuya yazılmadan önce istemcide kontrol edilir.
-    'free_watchlist_limit': 5,
+    // Takip listesi limiti. Portföy limitinden AYRI ve paywall kapalıyken
+    // de geçerli (kullanıcı kararı 2026-09-25: "şimdilik 7, ilerde paywall'la
+    // artırılır"). Sunucuya yazılmadan önce istemcide kontrol edilir.
+    'free_watchlist_limit': 7,
 
     // Paywall UI variant'ı ('A' | 'B'). A/B test için.
     'paywall_variant': 'A',
