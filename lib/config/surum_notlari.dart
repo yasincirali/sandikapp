@@ -97,15 +97,16 @@ class SurumNotu {
 /// Sıra önemli: `SurumNotuService` "kullanıcının en son gördüğü sürümden
 /// bu yana çıkanlar"ı bu listeden baştan itibaren toplar.
 const List<SurumNotu> surumNotlari = [
-  // 1.1.7: 1.1.6 TestFlight'ta açıkken bu sürüm fastlane bump'ına bağlı.
-  // Derleme yine 1.1.6 çıkarsa bu not '1.1.6' yapılmalı, yoksa hiç
-  // gösterilmez (bkz. dosya başı ve 5222c9e).
   SurumNotu(
-    surum: '1.1.7',
+    surum: '1.1.6',
     tarih: 'Eylül 2026',
     onemli: true,
-    baslik: 'Kripto paralar portföyünde',
+    baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
     yenilikler: [
+      // Kripto (2026-09-25) ayrı bir 1.1.7 notu olarak yazılmıştı; ASC'de
+      // 1.1.6 train'i hâlâ açık ve fastlane yalnızca kapalı train'de bump
+      // yapıyor, yani derleme 1.1.6 çıkacak. '1.1.7' notu hiç gösterilmezdi
+      // (sessiz arıza, dosya başı). Bu yüzden 1.1.6 notuna katıldı.
       Yenilik(
         ikon: YenilikIkonu.para,
         baslik: 'Kripto ekle',
@@ -129,14 +130,6 @@ const List<SurumNotu> surumNotlari = [
             'Fiyat 10 dakikadan eskiyse varlık ekranında "Gecikmeli" yazar. '
             'Yatırım tavsiyesi değildir.',
       ),
-    ],
-  ),
-  SurumNotu(
-    surum: '1.1.6',
-    tarih: 'Eylül 2026',
-    onemli: true,
-    baslik: 'Fiyat alarmları ve bildirim merkezi',
-    yenilikler: [
       Yenilik(
         ikon: YenilikIkonu.ayar,
         baslik: 'Giriş: artık şifre sormuyor',
