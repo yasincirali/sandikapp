@@ -710,10 +710,15 @@ class _AddHeader extends ConsumerWidget {
     final dolu = sinirli && n >= limit;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
+      // Ölçüler kanvastaki C taslağıyla birebir (kullanıcı, 2026-09-25:
+      // "C seçeneği buradaki"): kart 56 pt, sol 14 / sağ 6 pt iç boşluk,
+      // düğme 44 pt, etiketler `bodySmall`, şerit 4 pt. Bir ara segment
+      // seçicinin 48/40 ölçüsüne indirilmişti; kullanıcı taslağı istedi —
+      // kart bir seçici değil, bilgi + eylem kartı; kendi ölçüsü olabilir.
       child: Container(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        padding: const EdgeInsets.fromLTRB(
-            SandikSpace.md, SandikSpace.xs2, SandikSpace.xs2, SandikSpace.xs2),
+        height: 56,
+        padding: const EdgeInsets.only(
+            left: SandikSpace.md2, right: SandikSpace.xs2),
         decoration: BoxDecoration(
           color: c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -756,7 +761,7 @@ class _AddHeader extends ConsumerWidget {
                       ],
                     ),
                     if (sinirli) ...[
-                      const SizedBox(height: SandikSpace.xs2),
+                      const SizedBox(height: SandikSpace.xs2 + 1),
                       _KapasiteSeridi(dolu: n, toplam: limit),
                     ],
                   ],
@@ -775,33 +780,41 @@ class _AddHeader extends ConsumerWidget {
                         kind: SandikSnackKind.warning,
                       )
                   : () => _ekle(context),
-              child: Container(
-                // 44pt HIG dokunma hedefi.
-                constraints: const BoxConstraints(minHeight: SandikTouch.min),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: SandikSpace.md2),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: dolu ? Colors.transparent : c.amberFill,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  border: dolu ? Border.all(color: c.hairline) : null,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (!dolu) ...[
-                      Icon(Icons.add_rounded, size: 18, color: c.onStatus),
-                      const SizedBox(width: SandikSpace.xs),
-                    ],
-                    Text(
-                      dolu
-                          ? context.l10n.watchlistFullShort
-                          : context.l10n.watchlistAddShort,
-                      style: context.t.titleSmall?.copyWith(
-                          color: dolu ? c.text58 : c.onStatus,
-                          fontWeight: FontWeight.w700),
+              // Dokunma hedefi 56 pt (kartın tamamı); görsel kutu 44 pt
+              // (taslak), 6 pt dikey pay.
+              child: SizedBox(
+                height: 56,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SandikSpace.md2),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: dolu ? Colors.transparent : c.amberFill,
+                      borderRadius: BorderRadius.circular(SandikSpace.sm2),
+                      border: dolu ? Border.all(color: c.hairline) : null,
                     ),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!dolu) ...[
+                          Icon(Icons.add_rounded,
+                              size: 18, color: c.onStatus),
+                          const SizedBox(width: SandikSpace.xs),
+                        ],
+                        Text(
+                          dolu
+                              ? context.l10n.watchlistFullShort
+                              : context.l10n.watchlistAddShort,
+                          style: context.t.titleSmall?.copyWith(
+                              color: dolu ? c.text58 : c.onStatus,
+                              fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -832,15 +845,22 @@ class _KapasiteSeridi extends StatelessWidget {
     return SizedBox(
       height: SandikSpace.xs,
       child: Row(
+        // `stretch` ŞART: `DecoratedBox` çocuksuzdur ve Row'un dikey kısıtı
+        // gevşek olduğundan yüksekliği 0'a düşer — şerit yerleşimde var
+        // (227×4) ama çizilmezdi (golden ile ölçüldü, 2026-09-25).
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < toplam; i++) ...[
-            if (i > 0) const SizedBox(width: SandikSpace.xxs),
+            if (i > 0) const SizedBox(width: SandikSpace.xxs + 1),
             Expanded(
               child: DecoratedBox(
                 decoration: BoxDecoration(
+                  // Boş bölme `surface2` idi: `surface1` kart üstünde
+                  // kayboluyordu (ekran görüntüsü). Zeminden ayrışan ama
+                  // amberle yarışmayan ton.
                   color: i < dolu
                       ? (tamamen && i == toplam - 1 ? c.loss : c.amberFill)
-                      : c.surface2,
+                      : c.text36.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(SandikSpace.xxs),
                 ),
               ),
