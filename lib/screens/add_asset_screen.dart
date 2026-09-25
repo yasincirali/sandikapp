@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../models/altin_kisayollari.dart';
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -443,65 +444,136 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  // ── Altın: tüm türler tek büyük chip grid (dropdown yok) ───────────────────────
+  // ── Altın: seçim alanı + kısayol çipleri ─────────────────────────────────────
+  //
+  // 2026-09-25: 16 tür tek çip ızgarasında ekranı dolduruyordu. Kullanıcının
+  // üç alternatif arasından seçtiği düzen (C): hisse/fon seçicisiyle aynı
+  // alan (tümü aramalı, gruplu alt sayfada) + altında 5 kısayol. Kısayolların
+  // kuralı `altinKisayollari`'nda (portföydeki türler, 5'e popülerle tamamla).
   Widget _goldChipGrid(ColorScheme cs) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: GoldSubCategory.values.map((g) {
-        final selected = _subCategory == g.label;
-        // Diğer çipler gibi (tür, döviz, miktar): ekran okuyucu 'düğme' ve
-        // 'seçili' bilgisini Semantics olmadan alamaz (Faz 2.13).
-        return Semantics(
+    final secili = _seciliAltin;
+    final kisayollar = altinKisayollari(
+        ref.watch(portfolioProvider).valueOrNull?.assets ?? const []);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
           button: true,
-          selected: selected,
-          label: context.l10n.goldSemantics(g.label),
+          label: secili == null
+              ? context.l10n.pickGoldTap
+              : context.l10n.goldSelectedSemantics(secili.label),
           child: GestureDetector(
-          onTap: () {
-            _yaz(_n.selectGold(g));
-            _schedulePricePreview();
-          },
-          child: AnimatedContainer(
-            duration:
-                SandikMotion.of(context, const Duration(milliseconds: 160)),
-            curve: SandikMotion.enter,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AssetType.altin.color.withValues(alpha: 0.18)
-                  : context.c.surface1,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(
-                color: selected ? AssetType.altin.color : context.c.overlay,
-                width: selected ? 1.4 : 1,
-              ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: AssetType.altin.color.withValues(alpha: 0.25),
-                        blurRadius: 14,
-                        spreadRadius: -6,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.star_rounded,
-                    size: 14,
-                    color: selected ? AssetType.altin.color : context.c.text58),
-                const SizedBox(width: 6),
-                Text(g.label,
-                    style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: selected ? context.c.text90 : context.c.text58)),
-              ],
+            onTap: _showGoldPicker,
+            child: _selectorContainer(
+              cs: cs,
+              hasValue: secili != null,
+              hasError: false,
+              badgeText: secili == null ? null : _altinBirimi(secili),
+              mainText: secili?.label ?? context.l10n.pickGoldTap,
+              color: AssetType.altin.color,
             ),
           ),
+        ),
+        const SizedBox(height: SandikSpace.smd),
+        Text(context.l10n.goldQuickPick,
+            style: context.t.bodySmall?.copyWith(color: context.c.text36)),
+        const SizedBox(height: SandikSpace.sm),
+        Wrap(
+          spacing: SandikSpace.sm,
+          runSpacing: SandikSpace.sm,
+          children: [for (final g in kisayollar) _goldChip(g, g == secili)],
+        ),
+      ],
+    );
+  }
+
+  GoldSubCategory? get _seciliAltin {
+    for (final g in GoldSubCategory.values) {
+      if (g.label == _subCategory) return g;
+    }
+    return null;
+  }
+
+  /// Rozet ve liste satırında birim: türün nasıl alındığı (gram / adet / ons)
+  /// seçimden önce görünsün — miktar alanına ne yazılacağını belirler.
+  String _altinBirimi(GoldSubCategory g) => switch (g.unitType) {
+        'gr' => context.l10n.goldUnitGram,
+        'ounce' => context.l10n.goldUnitOunce,
+        _ => context.l10n.unitPiece,
+      };
+
+  void _selectGold(GoldSubCategory g) {
+    _yaz(_n.selectGold(g));
+    _schedulePricePreview();
+  }
+
+  void _showGoldPicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => _GoldPicker(
+        selected: _seciliAltin,
+        birim: _altinBirimi,
+        onSelect: (g) {
+          _selectGold(g);
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
+  Widget _goldChip(GoldSubCategory g, bool selected) {
+    // Diğer çipler gibi (tür, döviz, miktar): ekran okuyucu 'düğme' ve
+    // 'seçili' bilgisini Semantics olmadan alamaz (Faz 2.13).
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: context.l10n.goldSemantics(g.label),
+      child: GestureDetector(
+        onTap: () => _selectGold(g),
+        child: AnimatedContainer(
+          duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+          curve: SandikMotion.enter,
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.md2, vertical: SandikSpace.sm2),
+          decoration: BoxDecoration(
+            color: selected
+                ? AssetType.altin.color.withValues(alpha: 0.18)
+                : context.c.surface1,
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            border: Border.all(
+              color: selected ? AssetType.altin.color : context.c.overlay,
+              width: selected ? 1.4 : 1,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AssetType.altin.color.withValues(alpha: 0.25),
+                      blurRadius: 14,
+                      spreadRadius: -6,
+                    ),
+                  ]
+                : null,
           ),
-        );
-      }).toList(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.star_rounded,
+                  size: 14,
+                  color: selected ? AssetType.altin.color : context.c.text58),
+              const SizedBox(width: SandikSpace.xs2),
+              Text(g.label,
+                  style: context.t.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: selected ? context.c.text90 : context.c.text58)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -2079,6 +2151,98 @@ class _Bist100PickerState extends State<_Bist100Picker> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Altın türü seçici — tüm türler, gruplu ve aramalı
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GoldPicker extends StatefulWidget {
+  final GoldSubCategory? selected;
+  final String Function(GoldSubCategory) birim;
+  final void Function(GoldSubCategory) onSelect;
+  const _GoldPicker(
+      {required this.selected, required this.birim, required this.onSelect});
+
+  @override
+  State<_GoldPicker> createState() => _GoldPickerState();
+}
+
+class _GoldPickerState extends State<_GoldPicker> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  String _grupAdi(AltinGrubu g) => switch (g) {
+        AltinGrubu.gram => context.l10n.goldGroupGram,
+        AltinGrubu.ziynet => context.l10n.goldGroupZiynet,
+        AltinGrubu.sikke => context.l10n.goldGroupSikke,
+        AltinGrubu.ons => context.l10n.goldGroupOns,
+      };
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final eslesen = altinTurleriniAra(_q);
+    // Grup başlığı + satırlar düz listeye açılır; boş grup başlığı çizilmez.
+    final ogeler = <Object>[
+      for (final grup in AltinGrubu.values)
+        if (eslesen.any((g) => g.grup == grup)) ...[
+          grup,
+          ...eslesen.where((g) => g.grup == grup),
+        ],
+    ];
+    return _PickerShell(
+      title: context.l10n.goldTypes,
+      searchHint: context.l10n.goldSearchHint,
+      count: eslesen.length,
+      color: AssetType.altin.color,
+      searchCtrl: _ctrl,
+      onSearch: (v) => setState(() => _q = v),
+      query: _q,
+      cs: cs,
+      child: eslesen.isEmpty
+          ? _emptySearch(context, _q, cs)
+          : ListView.builder(
+              itemCount: ogeler.length,
+              itemBuilder: (_, i) {
+                final o = ogeler[i];
+                if (o is AltinGrubu) {
+                  // HIG gruplu liste başlığı: satır metniyle aynı sol
+                  // hizada, ikincil renkte, üstünde grup ayıracı boşluk.
+                  final yatay = SandikSpace.screenH(context);
+                  return Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        yatay, i == 0 ? SandikSpace.md : SandikSpace.lg,
+                        yatay, SandikSpace.xs),
+                    child: Semantics(
+                      header: true,
+                      child: Text(_grupAdi(o),
+                          style: context.t.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: context.c.text58)),
+                    ),
+                  );
+                }
+                final g = o as GoldSubCategory;
+                return _PickerRow(
+                  badgeText: widget.birim(g),
+                  title: g.label,
+                  subtitle: g.description,
+                  isSelected: g == widget.selected,
+                  color: AssetType.altin.color,
+                  cs: cs,
+                  onTap: () => widget.onSelect(g),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TEFAS Picker
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2291,6 +2455,8 @@ class _PickerShell extends StatefulWidget {
   final String query;
   final ColorScheme cs;
   final Widget child;
+  /// Arama kutusunun ipucu; verilmezse genel "Ara…".
+  final String? searchHint;
 
   const _PickerShell({
     required this.title,
@@ -2301,16 +2467,25 @@ class _PickerShell extends StatefulWidget {
     required this.query,
     required this.cs,
     required this.child,
+    this.searchHint,
   });
 
   @override
   State<_PickerShell> createState() => _PickerShellState();
 }
 
+// Hisse, fon ve altın seçicilerinin ortak kabuğu.
+//
+// 2026-09-25 ("liste uygulama ve HIG standartlarına uygun olmalı",
+// kullanıcı): kabuk ham `TextStyle(fontSize:)` ve Material `cs.*` tonlarıyla
+// yazılmıştı; uygulamanın geri kalanından farklı font boyutu/rengi
+// taşıyordu. Artık tipografi `context.t`, renk `context.c`, boşluk
+// `SandikSpace` — aynı liste her yerde aynı görünür. HIG: arama alanı 44pt,
+// temizle düğmesi 44pt dokunma hedefi, başlık büyük ve kalın.
 class _PickerShellState extends State<_PickerShell> {
   @override
   Widget build(BuildContext context) {
-    final cs = widget.cs;
+    final yatay = SandikSpace.screenH(context);
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.88,
@@ -2319,66 +2494,67 @@ class _PickerShellState extends State<_PickerShell> {
       builder: (ctx, sc) => Column(
         children: [
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 10),
+            margin: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-                color: cs.outlineVariant,
+                color: context.c.text20,
                 borderRadius: BorderRadius.circular(SandikRadius.sm)),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 12),
+            padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.smd),
             child: Row(
               children: [
-                Text(widget.title,
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                        color: cs.onSurface)),
-                const SizedBox(width: 8),
+                Flexible(
+                  child: Semantics(
+                    header: true,
+                    child: Text(widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.sm),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SandikSpace.sm, vertical: SandikSpace.xxs),
                   decoration: BoxDecoration(
-                    color: widget.color.withValues(alpha: 0.12),
+                    color: widget.color.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text('${widget.count}',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: widget.color)),
+                      style: context.t.labelLarge
+                          ?.copyWith(color: widget.color)),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 12),
+            padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.smd),
             child: Container(
-              height: 44,
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
               decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: context.c.background,
                 borderRadius: BorderRadius.circular(SandikRadius.md),
-                border:
-                    Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+                border: Border.all(color: context.c.hairline),
               ),
               child: Row(
                 children: [
-                  const SizedBox(width: 12),
+                  const SizedBox(width: SandikSpace.smd),
                   Icon(Icons.search_rounded,
-                      size: 16, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 8),
+                      size: 18, color: context.c.text58),
+                  const SizedBox(width: SandikSpace.sm),
                   Expanded(
                     child: TextField(
                       controller: widget.searchCtrl,
                       autofocus: true,
-                      style: TextStyle(fontSize: 14, color: cs.onSurface),
+                      style: context.t.bodyLarge,
                       decoration: InputDecoration(
-                        hintText: context.l10n.searchEllipsis,
-                        hintStyle: TextStyle(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                            fontSize: 14),
+                        hintText:
+                            widget.searchHint ?? context.l10n.searchEllipsis,
+                        hintStyle: context.t.bodyLarge
+                            ?.copyWith(color: context.c.text36),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
@@ -2393,22 +2569,23 @@ class _PickerShellState extends State<_PickerShell> {
                       button: true,
                       label: context.l10n.clearSearch,
                       child: GestureDetector(
-                      onTap: () {
-                        widget.searchCtrl.clear();
-                        widget.onSearch('');
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Icon(Icons.close_rounded,
-                            size: 14, color: cs.onSurfaceVariant),
-                      ),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          widget.searchCtrl.clear();
+                          widget.onSearch('');
+                        },
+                        child: SizedBox.fromSize(
+                          size: SandikTouch.minSize,
+                          child: Icon(Icons.cancel_rounded,
+                              size: 18, color: context.c.text36),
+                        ),
                       ),
                     ),
                 ],
               ),
             ),
           ),
-          Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.3)),
+          Divider(height: 1, color: context.c.hairline),
           Expanded(child: widget.child),
         ],
       ),
@@ -2435,65 +2612,71 @@ class _PickerRow extends StatelessWidget {
     required this.onTap,
   });
 
+  // HIG seçim listesi: seçili satırda onay işareti, diğerlerinde HİÇBİR
+  // işaret yok. Eski `chevron_right` "yeni sayfaya gider" demekti (HIG'de
+  // ok = disclosure); burada dokunuş seçer ve sayfayı kapatır.
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? color.withValues(alpha: 0.15)
-                    : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: isSelected
-                    ? Border.all(
-                        color: color.withValues(alpha: 0.5), width: 1.5)
-                    : null,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                badgeText.length > 5 ? badgeText.substring(0, 4) : badgeText,
-                style: TextStyle(
-                  fontSize: badgeText.length > 4 ? 8 : 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
-                  color: isSelected ? color : cs.onSurface,
+    final yatay = SandikSpace.screenH(context);
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+              horizontal: yatay, vertical: SandikSpace.sm2),
+          child: Row(
+            children: [
+              Container(
+                width: SandikTouch.min,
+                height: SandikTouch.min,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? color.withValues(alpha: 0.16)
+                      : context.c.surface2,
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
+                  border: isSelected
+                      ? Border.all(color: color.withValues(alpha: 0.5))
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  badgeText.length > 5 ? badgeText.substring(0, 4) : badgeText,
+                  maxLines: 1,
+                  style: context.t.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isSelected ? color : context.c.text90,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: TextStyle(
-                            fontSize: 11, color: cs.onSurfaceVariant)),
+              const SizedBox(width: SandikSpace.smd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: context.t.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: SandikSpace.xxs),
+                      Text(subtitle,
+                          style: context.t.bodyMedium
+                              ?.copyWith(color: context.c.text58),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            if (isSelected)
-              Icon(Icons.check_circle_rounded, size: 20, color: color)
-            else
-              Icon(Icons.chevron_right_rounded,
-                  size: 18, color: cs.outlineVariant),
-          ],
+              if (isSelected) ...[
+                const SizedBox(width: SandikSpace.sm),
+                Icon(Icons.check_rounded, size: 22, color: color),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -2501,7 +2684,11 @@ class _PickerRow extends StatelessWidget {
 }
 
 Widget _emptySearch(BuildContext context, String q, ColorScheme cs) => Center(
-      child: Text(
-          q.isEmpty ? context.l10n.noResults : context.l10n.noResultsFor(q),
-          style: TextStyle(color: cs.onSurfaceVariant)),
+      child: Padding(
+        padding: const EdgeInsets.all(SandikSpace.lg),
+        child: Text(
+            q.isEmpty ? context.l10n.noResults : context.l10n.noResultsFor(q),
+            textAlign: TextAlign.center,
+            style: context.t.bodyLarge?.copyWith(color: context.c.text58)),
+      ),
     );

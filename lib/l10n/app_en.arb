@@ -373,6 +373,24 @@
   "identityStock": "Stock",
   "identityFund": "Fund",
   "identityGoldKind": "Gold Type",
+  "pickGoldTap": "Tap to pick a gold type...",
+  "goldSearchHint": "Search: quarter, 22 carat, reşat…",
+  "goldTypes": "Gold Types",
+  "goldQuickPick": "Quick pick",
+  "goldGroupGram": "Gram",
+  "goldGroupZiynet": "Jewellery coins",
+  "goldGroupSikke": "Historic coins",
+  "goldGroupOns": "Ounce",
+  "goldUnitGram": "g",
+  "goldUnitOunce": "oz",
+  "goldSelectedSemantics": "Selected gold type: {kind}. Double tap to change.",
+  "@goldSelectedSemantics": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "identityCurrency": "Currency",
   "identityCommodity": "Commodity",
   "noResultsFor": "No match for \"{q}\"",

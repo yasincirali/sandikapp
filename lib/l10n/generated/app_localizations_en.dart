@@ -778,6 +778,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get identityGoldKind => 'Gold Type';
 
   @override
+  String get pickGoldTap => 'Tap to pick a gold type...';
+
+  @override
+  String get goldSearchHint => 'Search: quarter, 22 carat, reşat…';
+
+  @override
+  String get goldTypes => 'Gold Types';
+
+  @override
+  String get goldQuickPick => 'Quick pick';
+
+  @override
+  String get goldGroupGram => 'Gram';
+
+  @override
+  String get goldGroupZiynet => 'Jewellery coins';
+
+  @override
+  String get goldGroupSikke => 'Historic coins';
+
+  @override
+  String get goldGroupOns => 'Ounce';
+
+  @override
+  String get goldUnitGram => 'g';
+
+  @override
+  String get goldUnitOunce => 'oz';
+
+  @override
+  String goldSelectedSemantics(String kind) {
+    return 'Selected gold type: $kind. Double tap to change.';
+  }
+
+  @override
   String get identityCurrency => 'Currency';
 
   @override

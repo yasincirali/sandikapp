@@ -779,6 +779,41 @@ class AppLocalizationsTr extends AppLocalizations {
   String get identityGoldKind => 'Altın Türü';
 
   @override
+  String get pickGoldTap => 'Altın türü seçmek için dokun...';
+
+  @override
+  String get goldSearchHint => 'Ara: çeyrek, 22 ayar, reşat…';
+
+  @override
+  String get goldTypes => 'Altın Türleri';
+
+  @override
+  String get goldQuickPick => 'Hızlı seçim';
+
+  @override
+  String get goldGroupGram => 'Gram';
+
+  @override
+  String get goldGroupZiynet => 'Ziynet';
+
+  @override
+  String get goldGroupSikke => 'Sikke';
+
+  @override
+  String get goldGroupOns => 'Ons';
+
+  @override
+  String get goldUnitGram => 'gr';
+
+  @override
+  String get goldUnitOunce => 'ons';
+
+  @override
+  String goldSelectedSemantics(String kind) {
+    return 'Seçili altın türü: $kind. Değiştirmek için çift dokun.';
+  }
+
+  @override
   String get identityCurrency => 'Para Birimi';
 
   @override
