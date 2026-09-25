@@ -33,12 +33,13 @@
 -- ── Katalog ─────────────────────────────────────────────────────────────────
 create table if not exists public.kripto_varlik (
   kod             text        primary key check (kod ~ '^[A-Z0-9]{2,15}$'),
-  -- CoinGecko adı. CoinGecko o gün yanıt vermediyse ilk kayıtta NULL
-  -- kalabilir; istemci kodu gösterir.
+  -- Binance varlık adı ('Bitcoin'). Varlık listesi o tur gelmediyse ilk
+  -- kayıtta NULL kalabilir; istemci kodu gösterir.
   ad              text,
   logo_url        text        check (logo_url is null or logo_url like 'https://%'),
-  coingecko_id    text,
-  piyasa_sirasi   integer,
+  -- USDT paritesinin 24 saatlik hacmine göre sıra (1 = en yüksek; USDT'nin
+  -- kendisi 0). Arama sonuçlarının sırası; piyasa değeri Binance'te yok.
+  hacim_sirasi    integer,
   -- Fiyatın hangi pariteden geleceğine YALNIZCA burası karar verir
   -- (fiyat kaynağı sözleşmesi madde 1).
   parite          text        not null check (parite in ('TRY', 'USDT')),
@@ -52,7 +53,7 @@ comment on table public.kripto_varlik is
   'Izlenebilir kripto paralar ve fiyat paritesi (kripto-katalog, saatlik). Uygulamadaki kripto aramasi burada calisir.';
 
 create index if not exists kripto_varlik_aktif_sira_idx
-  on public.kripto_varlik (aktif, piyasa_sirasi);
+  on public.kripto_varlik (aktif, hacim_sirasi);
 
 -- ── Anlık fiyat ─────────────────────────────────────────────────────────────
 create table if not exists public.kripto_fiyat (
@@ -68,7 +69,7 @@ create table if not exists public.kripto_fiyat (
   -- gösterilmez, uydurulmaz (sözleşme madde 3).
   gun_acilis_try  double precision check (gun_acilis_try is null or gun_acilis_try > 0),
   gun             date        not null,
-  kaynak          text        not null check (kaynak in ('binance_try', 'binance_usdt', 'btcturk_try')),
+  kaynak          text        not null check (kaynak in ('binance_try', 'binance_usdt')),
   guncellendi     timestamptz not null default now()
 );
 
@@ -207,9 +208,8 @@ select cron.schedule('kripto-fiyat', '* * * * *',
   $$select public.trigger_kripto_fiyat()$$);
 
 -- Saatte bir (xx:10). Günde bir yeterdi; saatlik seçildi ki dağıtımdan
--- sonraki ilk katalog elle tetiklenmeden bir saat içinde kurulsun ve
--- CoinGecko'nun tek turluk kesintisi günü kaçırtmasın. Maliyet ayda ~720
--- CoinGecko çağrısı (Demo sınırı 10.000).
+-- sonraki ilk katalog elle tetiklenmeden bir saat içinde kurulsun ve tek
+-- turluk bir kesinti günü kaçırtmasın. Tur başına ~100 Binance ağırlığı.
 select cron.schedule('kripto-katalog', '10 * * * *',
   $$select public.trigger_kripto_katalog()$$);
 

@@ -1,24 +1,26 @@
 // Kripto Katalog Edge Function — hangi coin'ler izlenebilir, hangi pariteden
 //
 // pg_cron ile saatte bir koşar (0074_kripto.sql). Binance'in işlemdeki
-// sembollerini ve CoinGecko'nun piyasa değeri sıralamasını birleştirip
-// `kripto_varlik` tablosunu yeniler. Uygulamadaki kripto araması bu tabloda
+// sembollerini, 24 saatlik hacmini ve varlık adlarını/logolarını birleştirip
+// `kripto_varlik` tablosunu yeniler. Tek kaynak Binance (kullanıcı kararı,
+// 2026-09-25). Uygulamadaki kripto araması bu tabloda
 // çalışır: kullanıcı yazarken dışarıya istek GİTMEZ.
 //
 // ── Evren (kullanıcıya önerilen varsayılan, 2026-09-25) ─────────────────────
-// Binance'te TRY paritesi olan her coin + piyasa değerinde ilk 250 içinde
-// olup USDT paritesi olanlar. Karar `_shared/kripto.ts` `katalogKur`'da.
+// Binance'te TRY paritesi olan her coin + USDT paritesinin 24 saatlik
+// hacmine göre ilk 250. Karar `_shared/kripto.ts` `katalogKur`'da.
 //
 // ── Maliyet ─────────────────────────────────────────────────────────────────
-// Tur başına 1 Binance (exchangeInfo, ağırlık 20) + 1 CoinGecko çağrısı.
-// Ayda ~720 CoinGecko çağrısı; Demo planın 10.000 sınırının çok altında.
+// Tur başına üç Binance çağrısı: exchangeInfo (ağırlık 20), tüm
+// sembollerin ticker/24hr'si (80) ve varlık listesi. Saatte bir; dakikalık
+// 6.000 ağırlık sınırının yanında önemsiz.
 //
 // ── Silme yok ───────────────────────────────────────────────────────────────
 // Listeden düşen coin `aktif = false` olur, satırı silinmez: onu tutan
 // kullanıcının varlığı hâlâ bu satırın adına/logosuna bakıyor. Fiyatı artık
 // güncellenmez; istemci `guncellendi` üzerinden bayat gösterir.
 //
-// Yanıt `{ ok, toplam, try_paritesi, usdt_paritesi, gecko }` — hata ayrıntısı,
+// Yanıt `{ ok, toplam, try_paritesi, usdt_paritesi, adli }` — hata ayrıntısı,
 // ham sağlayıcı yanıtı DÖNMEZ (CLAUDE.md sunucu kuralı).
 // Gövde `{ "dry_run": true }` → hesaplar, yazmaz.
 
@@ -27,7 +29,8 @@ import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import {
   binanceGet,
   type BinanceSembol,
-  type GeckoCoin,
+  binanceVarliklari,
+  type HacimSatiri,
   katalogKur,
 } from '../_shared/kripto.ts';
 
@@ -42,34 +45,6 @@ function jsonResponse(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
-}
-
-/// Piyasa değerine göre ilk 250. Demo anahtarı varsa header'da; yoksa
-/// anahtarsız denenir (daha sıkı kısıtlı ama günde bir çağrıya yeter).
-/// Başarısızlıkta boş liste: katalog Binance verisiyle yine kurulur.
-async function geckoIlk250(): Promise<GeckoCoin[]> {
-  const key = Deno.env.get('COINGECKO_DEMO_KEY');
-  const url = 'https://api.coingecko.com/api/v3/coins/markets' +
-    '?vs_currency=try&order=market_cap_desc&per_page=250&page=1&sparkline=false';
-  try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: 'application/json',
-        ...(key ? { 'x-cg-demo-api-key': key } : {}),
-      },
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) {
-      console.error(`coingecko markets: ${res.status}`);
-      await res.body?.cancel();
-      return [];
-    }
-    const data = await res.json();
-    return Array.isArray(data) ? data as GeckoCoin[] : [];
-  } catch (e) {
-    console.error('coingecko markets: ag hatasi', e instanceof Error ? e.name : '');
-    return [];
-  }
 }
 
 Deno.serve(async (request) => {
@@ -97,9 +72,10 @@ Deno.serve(async (request) => {
       if (body?.dry_run === true) dryRun = true;
     } catch (_) { /* gövde opsiyonel */ }
 
-    const [info, gecko] = await Promise.all([
+    const [info, hacim, varliklar] = await Promise.all([
       binanceGet('/api/v3/exchangeInfo', { symbolStatus: 'TRADING', permissions: 'SPOT' }),
-      geckoIlk250(),
+      binanceGet('/api/v3/ticker/24hr', { type: 'MINI' }),
+      binanceVarliklari(),
     ]);
     const semboller = (info as { symbols?: BinanceSembol[] } | null)?.symbols;
     if (!Array.isArray(semboller) || semboller.length === 0) {
@@ -107,12 +83,16 @@ Deno.serve(async (request) => {
       return jsonResponse({ ok: false, reason: 'binance_yanitsiz' }, 502);
     }
 
-    const katalog = katalogKur(semboller, gecko);
+    const katalog = katalogKur(
+      semboller,
+      Array.isArray(hacim) ? hacim as HacimSatiri[] : [],
+      varliklar,
+    );
     const ozet = {
       toplam: katalog.length,
       try_paritesi: katalog.filter((k) => k.parite === 'TRY').length,
       usdt_paritesi: katalog.filter((k) => k.parite === 'USDT').length,
-      gecko: gecko.length,
+      adli: katalog.filter((k) => k.ad !== null).length,
     };
     if (dryRun || katalog.length === 0) {
       return jsonResponse({ ok: katalog.length > 0, dry_run: dryRun, ...ozet });
@@ -121,12 +101,19 @@ Deno.serve(async (request) => {
     const client = createClient(supabaseUrl, serviceRoleKey);
     const simdi = new Date().toISOString();
 
-    // CoinGecko yanıt vermediyse ad/logo/sıra alanlarını EZME: dünkü değerler
-    // bugünkü "ad = kod" yedeğinden daha doğru.
+    // Varlık listesi (ad/logo) bu turda gelmediyse o alanları EZME: bir
+    // önceki turun adları boş değerden daha doğru.
     const satirlar = katalog.map((k) =>
-      gecko.length > 0
+      varliklar.length > 0
         ? { ...k, aktif: true, guncellendi: simdi }
-        : { kod: k.kod, parite: k.parite, binance_sembol: k.binance_sembol, aktif: true, guncellendi: simdi }
+        : {
+          kod: k.kod,
+          parite: k.parite,
+          binance_sembol: k.binance_sembol,
+          hacim_sirasi: k.hacim_sirasi,
+          aktif: true,
+          guncellendi: simdi,
+        }
     );
     const { error: upErr } = await client
       .from('kripto_varlik')

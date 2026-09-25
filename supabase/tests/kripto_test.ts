@@ -4,7 +4,6 @@
 import { assert, assertAlmostEquals, assertEquals } from 'jsr:@std/assert@1';
 import {
   binanceGet,
-  btcturkFiyatlari,
   fiyatlariHesapla,
   gunSembolParcalari,
   istanbulGunu,
@@ -37,7 +36,7 @@ Deno.test('istanbulGunu: UTC 21:00 İstanbul\'da ertesi gündür', () => {
   assertEquals(istanbulGunu(new Date('2026-09-25T21:00:00Z')), '2026-09-26');
 });
 
-Deno.test('katalog: TRY paritesi öncelikli, USDT yalnızca ilk N içindekiler', () => {
+Deno.test('katalog: TRY paritesi öncelikli, USDT yalnızca hacimde ilk N', () => {
   const binance = [
     { symbol: 'BTCTRY', baseAsset: 'BTC', quoteAsset: 'TRY', status: 'TRADING' },
     { symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', status: 'TRADING' },
@@ -46,38 +45,45 @@ Deno.test('katalog: TRY paritesi öncelikli, USDT yalnızca ilk N içindekiler',
     { symbol: 'OLDTRY', baseAsset: 'OLD', quoteAsset: 'TRY', status: 'BREAK' },
     { symbol: 'USDTTRY', baseAsset: 'USDT', quoteAsset: 'TRY', status: 'TRADING' },
   ];
-  const gecko = [
-    { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', image: 'https://x/btc.png', market_cap_rank: 1 },
-    { id: 'tether', symbol: 'usdt', name: 'Tether', image: 'http://insecure', market_cap_rank: 3 },
-    { id: 'solana', symbol: 'sol', name: 'Solana', market_cap_rank: 5 },
-    // Aynı sembollü klon: daha düşük sıra kazanmamalı.
-    { id: 'sol-klon', symbol: 'sol', name: 'Sahte Solana', market_cap_rank: 900 },
+  const hacim = [
+    { symbol: 'BTCUSDT', quoteVolume: '9000000' },
+    { symbol: 'SOLUSDT', quoteVolume: '500000' },
+    { symbol: 'XYZUSDT', quoteVolume: '10' },
+    { symbol: 'BTCTRY', quoteVolume: '99999999999' }, // TRY hacmi sırayı etkilemez
   ];
-  const k = katalogKur(binance, gecko);
+  const varliklar = [
+    { assetCode: 'BTC', assetName: 'Bitcoin', logoUrl: 'https://bin.bnbstatic.com/btc.png' },
+    { assetCode: 'USDT', assetName: 'TetherUS', logoUrl: 'http://insecure' },
+    { assetCode: 'SOL', assetName: 'Solana', logoUrl: null },
+  ];
+  const k = katalogKur(binance, hacim, varliklar, 2);
   const byKod = new Map(k.map((r) => [r.kod, r]));
 
   assertEquals(byKod.get('BTC')?.parite, 'TRY');
   assertEquals(byKod.get('BTC')?.binance_sembol, 'BTCTRY');
+  assertEquals(byKod.get('BTC')?.ad, 'Bitcoin');
   assertEquals(byKod.get('SOL')?.parite, 'USDT');
-  assertEquals(byKod.get('SOL')?.ad, 'Solana');
   assertEquals(byKod.get('USDT')?.binance_sembol, 'USDTTRY');
   // http logosu kabul edilmez.
   assertEquals(byKod.get('USDT')?.logo_url, null);
-  // İlk N'de olmayan USDT paritesi ve işlem dışı TRY paritesi girmez.
+  // Hacimde ilk 2'de olmayan USDT paritesi ve işlem dışı TRY paritesi girmez.
   assert(!byKod.has('XYZ'));
   assert(!byKod.has('OLD'));
-  // Piyasa sırasına göre dizili.
-  assertEquals(k.map((r) => r.kod), ['BTC', 'USDT', 'SOL']);
+  // USDT başta, sonra hacim sırası.
+  assertEquals(k.map((r) => r.kod), ['USDT', 'BTC', 'SOL']);
+  assertEquals(byKod.get('BTC')?.hacim_sirasi, 1);
 });
 
-Deno.test('katalog: CoinGecko yoksa ad = kod, TRY pariteleri yine gelir', () => {
+Deno.test('katalog: varlık listesi gelmezse ad/logo null, fiyat paritesi yine kurulur', () => {
   const k = katalogKur(
     [{ symbol: 'ETHTRY', baseAsset: 'ETH', quoteAsset: 'TRY', status: 'TRADING' }],
     [],
+    [],
   );
   assertEquals(k.length, 1);
-  assertEquals(k[0].ad, 'ETH');
+  assertEquals(k[0].ad, null);
   assertEquals(k[0].logo_url, null);
+  assertEquals(k[0].parite, 'TRY');
 });
 
 const SIMDI = new Date('2026-09-25T12:00:00Z');
@@ -132,30 +138,6 @@ Deno.test('tradingDay parçaları: USDTTRY dahil, tekrarsız, 100\'lük', () => 
   assertEquals(p[0].length, 100);
   assertEquals(p[0][0], 'USDTTRY');
   assertEquals(p.flat().length, 151);
-});
-
-Deno.test('BtcTurk yedeği: yalnız TRY, açılış yalnız aynı günden taşınır', () => {
-  const onceki = new Map([
-    ['BTC', { gun: '2026-09-25', acilis: 3_800_000 }],
-    ['ETH', { gun: '2026-09-24', acilis: 150_000 }],
-  ]);
-  const rows = btcturkFiyatlari(
-    [{ kod: 'BTC' }, { kod: 'ETH' }, { kod: 'SOL' }],
-    [
-      { numeratorSymbol: 'BTC', denominatorSymbol: 'TRY', last: 3_950_000 },
-      { numeratorSymbol: 'ETH', denominatorSymbol: 'TRY', last: '160000' },
-      { numeratorSymbol: 'SOL', denominatorSymbol: 'USDT', last: 210 },
-      { numeratorSymbol: 'USDT', denominatorSymbol: 'TRY', last: 41.5 },
-    ],
-    onceki,
-    SIMDI,
-  );
-  const byKod = new Map(rows.map((r) => [r.kod, r]));
-  assertEquals(byKod.get('BTC')?.gun_acilis_try, 3_800_000);
-  assertEquals(byKod.get('ETH')?.gun_acilis_try, null);
-  assertEquals(byKod.get('ETH')?.fiyat_try, 160000);
-  assert(!byKod.has('SOL'));
-  assertEquals(byKod.get('BTC')?.kaynak, 'btcturk_try');
 });
 
 Deno.test('seri isteği: yalnızca bilinen aralık/dönem', () => {

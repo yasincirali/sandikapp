@@ -14,8 +14,8 @@
 
 ## 🪙 2026-09-25 Kripto veri altyapısı — 0074 + üç edge function
 
-Kripto fiyatını sunucu çeker (Binance, yedek BtcTurk, katalog için
-CoinGecko), uygulama yalnızca Supabase'i okur. Uygulama tarafı sonraki
+Kripto fiyatını sunucu çeker (tek kaynak Binance: fiyat, grafik, katalog,
+ad/logo), uygulama yalnızca Supabase'i okur. Uygulama tarafı sonraki
 adımlarda gelecek; bu altyapı önce canlıya çıkabilir, kimseyi etkilemez.
 
 1. **Sır üret ve iki yere yaz** (aynı değer):
@@ -24,22 +24,17 @@ adımlarda gelecek; bu altyapı önce canlıya çıkabilir, kimseyi etkilemez.
    - Vault: `select vault.create_secret('<aynı değer>', 'kripto_cron_secret');`
    Sır yoksa fonksiyonlar 503 döner (fail-closed); cron her dakika
    `Vault secret kripto_cron_secret bulunamadi` hatası yazar.
-2. **(Önerilir) CoinGecko Demo anahtarı:** coingecko.com/en/api → ücretsiz
-   Demo → `COINGECKO_DEMO_KEY` secret'ı. Yoksa katalog anahtarsız denenir;
-   o da olmazsa coin adları kod olarak kalır (fiyat etkilenmez).
-   Sayfada "Powered by CoinGecko" atfı gösterilecek (uygulama adımında).
-3. **Deploy:** Actions → Supabase deploy → migrations=true (0074) ve
+2. **Deploy:** Actions → Supabase deploy → migrations=true (0074) ve
    functions=`kripto-katalog kripto-fiyat kripto-seri`.
-4. **İlk katalog:** cron saatte bir (xx:10) kurar. Beklemek istemezsen SQL:
+3. **İlk katalog:** cron saatte bir (xx:10) kurar. Beklemek istemezsen SQL:
    `select public.trigger_kripto_katalog();` → bir dakika sonra
    `select count(*), count(*) filter (where parite='TRY') from kripto_varlik;`
-5. **Doğrula:** `select kod, fiyat_try, gun_acilis_try, kaynak, guncellendi
+4. **Doğrula:** `select kod, fiyat_try, gun_acilis_try, kaynak, guncellendi
    from kripto_fiyat order by guncellendi desc limit 5;` — `guncellendi`
-   son bir dakika içinde, `kaynak` çoğunlukla `binance_try`.
-   `kaynak = btcturk_try` görüyorsan Binance o bölgeden yanıt vermiyor
-   (451): Edge Functions → kripto-fiyat → Logs'ta `x-sb-edge-region`
-   ve `binance ... 451` satırlarına bak.
-6. **Hukuki not (hukuki görüş değil):** 7518 sayılı kanun kripto alım-satım/
+   son bir dakika içinde. `guncellendi` ilerlemiyorsa Binance o bölgeden
+   yanıt vermiyor olabilir (451): Edge Functions → kripto-fiyat → Logs'ta
+   `binance ... 451` satırlarına bak.
+5. **Hukuki not (hukuki görüş değil):** 7518 sayılı kanun kripto alım-satım/
    saklama yapan kuruluşları kapsıyor; fiyat gösteren takip uygulaması bu
    tanıma girmiyor. Uygulamaya "Binance'te al" düğmesi, referans linki
    KONMAYACAK. Play Console'da kripto beyanı sorulursa "borsa/cüzdan

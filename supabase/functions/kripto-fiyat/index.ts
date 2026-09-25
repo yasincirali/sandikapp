@@ -16,20 +16,18 @@
 // ağırlık en çok 200. ~300 coin'lik katalog ≈ 4 parça ≈ 800 / 6.000 ağırlık
 // dakikada. Kullanıcı sayısı bu sayıyı DEĞİŞTİRMEZ.
 //
-// ── Yedek ───────────────────────────────────────────────────────────────────
-// Binance'in HİÇBİR parçası yanıt vermezse (bölge engeli 451, kesinti)
-// BtcTurk'ün tek çağrılık ticker'ı ile yalnızca TRY paritesi olan coin'ler
-// güncellenir. USDT paritesindekiler o turda yazılmaz; istemci bayat görür.
+// ── Yedek yok (kullanıcı kararı, 2026-09-25: "tamamen binanceten") ────────
+// Binance'in hiçbir parçası yanıt vermezse (bölge engeli 451, kesinti) o
+// tur hiçbir şey YAZMAZ; satırlar bir önceki ölçümle kalır ve istemci
+// `guncellendi` 10 dakikayı geçince "gecikmeli" gösterir. Başka borsanın
+// fiyatıyla sessizce karıştırmak, grafikte sahte basamak üretirdi.
 //
-// Yanıt `{ ok, katalog, yazilan, kaynak }`. Gövde `{ "dry_run": true }` →
+// Yanıt `{ ok, katalog, yazilan }`. Gövde `{ "dry_run": true }` →
 // hesaplar, yazmaz.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import {
-  btcturkFiyatlari,
-  type BtcTurkTicker,
-  type FiyatSatiri,
   fiyatlariHesapla,
   gunSatirlariniCek,
   gunSembolParcalari,
@@ -46,25 +44,6 @@ function jsonResponse(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
-}
-
-async function btcturkTicker(): Promise<BtcTurkTicker[] | null> {
-  try {
-    const res = await fetch('https://api.btcturk.com/api/v2/ticker', {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) {
-      console.error(`btcturk ticker: ${res.status}`);
-      await res.body?.cancel();
-      return null;
-    }
-    const body = await res.json();
-    return Array.isArray(body?.data) ? body.data as BtcTurkTicker[] : null;
-  } catch (e) {
-    console.error('btcturk ticker: ag hatasi', e instanceof Error ? e.name : '');
-    return null;
-  }
 }
 
 Deno.serve(async (request) => {
@@ -105,34 +84,16 @@ Deno.serve(async (request) => {
     }));
     if (katalog.length === 0) {
       // Katalog henüz kurulmadı (kripto-katalog ilk turunu bekliyor).
-      return jsonResponse({ ok: true, katalog: 0, yazilan: 0, kaynak: null });
+      return jsonResponse({ ok: true, katalog: 0, yazilan: 0 });
     }
 
     const simdi = new Date();
     const { satirlar, basarili } = await gunSatirlariniCek(gunSembolParcalari(katalog));
 
-    let fiyatlar: FiyatSatiri[];
-    let kaynak: 'binance' | 'btcturk' | null;
-    if (basarili > 0) {
-      fiyatlar = fiyatlariHesapla(katalog, satirlar, simdi);
-      kaynak = 'binance';
-    } else {
-      const ticker = await btcturkTicker();
-      if (ticker === null) {
-        return jsonResponse({ ok: false, reason: 'saglayici_yanitsiz' }, 502);
-      }
-      const { data: oncekiRows } = await client
-        .from('kripto_fiyat')
-        .select('kod, gun, gun_acilis_try');
-      const onceki = new Map(
-        (oncekiRows ?? []).map((r) => [
-          String(r.kod),
-          { gun: String(r.gun), acilis: r.gun_acilis_try as number | null },
-        ]),
-      );
-      fiyatlar = btcturkFiyatlari(katalog, ticker, onceki, simdi);
-      kaynak = 'btcturk';
+    if (basarili === 0) {
+      return jsonResponse({ ok: false, reason: 'binance_yanitsiz' }, 502);
     }
+    const fiyatlar = fiyatlariHesapla(katalog, satirlar, simdi);
 
     if (!dryRun && fiyatlar.length > 0) {
       const { error: upErr } = await client
@@ -146,7 +107,6 @@ Deno.serve(async (request) => {
       dry_run: dryRun,
       katalog: katalog.length,
       yazilan: fiyatlar.length,
-      kaynak,
     });
   } catch (e) {
     console.error('kripto-fiyat hatasi', e);

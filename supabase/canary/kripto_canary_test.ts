@@ -1,16 +1,16 @@
 // CANLI kripto kanaryası — gerçek ağa çıkar; `supabase/tests/` DIŞINDA.
 // `.github/workflows/price-canary.yml` haftalık koşar.
 //
-// Neyi korur: `_shared/kripto.ts` Binance/BtcTurk yanıt BİÇİMİNE güveniyor
-// (tradingDay alanları, kline dizisi, BtcTurk `data[]`). Biçim değişirse
-// kripto-fiyat HTTP 200 dönerken sıfır satır yazar — sessiz arıza.
+// Neyi korur: `_shared/kripto.ts` Binance yanıt BİÇİMİNE güveniyor
+// (tradingDay alanları, kline dizisi, belgesiz varlık listesi `data[]`).
+// Biçim değişirse kripto-fiyat HTTP 200 dönerken sıfır satır yazar —
+// sessiz arıza.
 //
 // ⚠️ GitHub runner'ları ABD'de. Binance ABD IP'lerine 451 döner; bu durumda
-// Binance testi atlanır (uyarı basılır). Üretimdeki fonksiyon Frankfurt'ta
-// koşar. BtcTurk kontrolü her durumda koşar.
+// testler atlanır (uyarı basılır). Üretimdeki fonksiyon Frankfurt'ta koşar.
 import { assert } from 'jsr:@std/assert@1';
 import {
-  btcturkFiyatlari,
+  binanceVarliklari,
   fiyatlariHesapla,
   gunSatirlariniCek,
   mumlariCek,
@@ -52,17 +52,10 @@ Deno.test('Binance tradingDay + klines: BTCTRY ve USDTTRY fiyatlanır', async ()
   assert(mum !== null && mum.length >= 20, 'kline serisi kısa/boş');
 });
 
-Deno.test('BtcTurk ticker: BTC ve USDT TRY paritesi var', async () => {
-  const res = await fetch('https://api.btcturk.com/api/v2/ticker', {
-    signal: AbortSignal.timeout(10_000),
-  });
-  assert(res.ok, `BtcTurk ${res.status}`);
-  const body = await res.json();
-  const rows = btcturkFiyatlari(
-    [{ kod: 'BTC' }, { kod: 'USDT' }],
-    body.data,
-    new Map(),
-    new Date(),
-  );
-  assert(rows.length === 2, `beklenen 2 satır, gelen ${rows.length}`);
+Deno.test('Binance varlık listesi: BTC adı ve https logosu', async () => {
+  if (!(await binanceErisilebilirMi())) return;
+  const v = await binanceVarliklari();
+  const btc = v.find((x) => x.assetCode === 'BTC');
+  assert(btc?.assetName, 'varlık listesinde BTC adı yok (biçim değişmiş olabilir)');
+  assert(String(btc?.logoUrl ?? '').startsWith('https://'), 'BTC logosu https değil');
 });

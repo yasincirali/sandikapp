@@ -7,10 +7,11 @@ sayısından bağımsızdır.
 
 - Kaynak: Binance `ticker/tradingDay` (`timeZone=3`), 100'lük parçalar.
   TRY paritesi doğrudan; yoksa `USDT paritesi × USDTTRY` (aynı borsa).
-  Binance tümüyle yanıtsızsa BtcTurk ticker (yalnızca TRY pariteleri).
+  Tek kaynak Binance: yanıt vermezse tur yazmaz (502), istemci satırın
+  yaşından "gecikmeli" gösterir.
 - Auth: `x-cron-secret` = `KRIPTO_CRON_SECRET` (Vault: `kripto_cron_secret`),
   fail-closed (bkz. `_shared/CRON_AUTH.md`).
 - Bölge: cron `x-region: eu-central-1` ile çağırır (Binance ABD'ye 451).
 - Gövde `{"dry_run": true}` → hesaplar, yazmaz.
-- Yanıt `{ok, katalog, yazilan, kaynak}`; hata ayrıntısı yalnız sunucu günlüğünde.
+- Yanıt `{ok, katalog, yazilan}`; hata ayrıntısı yalnız sunucu günlüğünde.
 - Saf yardımcılar `_shared/kripto.ts`, testleri `tests/kripto_test.ts`.

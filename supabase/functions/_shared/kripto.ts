@@ -3,15 +3,18 @@
 // ── Neden sunucuda (kullanıcı kararı, 2026-09-25) ───────────────────────────
 // "Public bir performans sorunu yaratmayacak bir API üzerinden güvenli ve
 // hızlı şekilde datayı çekmeliyiz." Diğer varlıklarda her telefon Yahoo/
-// truncgil'e kendisi gidiyor; kriptoda bunu tekrarlamıyoruz:
-//   · CoinGecko ücretsiz planı ayda 10.000 çağrı. 1.000 kullanıcının 30 sn
-//     ritmi ayda ~86 milyon istek eder; anahtarı uygulamaya gömmek de onu
-//     herkese açmak demek.
-//   · Binance IP başına dakikada 6.000 ağırlık tanır ve ABD IP'lerine 451
-//     döner. Telefondan çağrı ülkeye göre kırılır; sunucudan çağrı bölgeye
-//     sabitlenebilir (bkz. 0074, `x-region`).
-// Sonuç: sağlayıcıya giden istek sayısı kullanıcı sayısından BAĞIMSIZ.
+// truncgil'e kendisi gidiyor; kriptoda bunu tekrarlamıyoruz. Binance IP
+// başına dakikada 6.000 ağırlık tanır ve ABD IP'lerine 451 döner: telefondan
+// çağrı kullanıcı sayısıyla büyür ve ülkeye göre kırılır; sunucudan çağrı
+// sabittir ve bölgeye sabitlenebilir (bkz. 0074, `x-region`).
 // Telefon yalnızca kendi Supabase'ini okur.
+//
+// ── Tek sağlayıcı: Binance (kullanıcı kararı, 2026-09-25) ──────────────────
+// "Evet ordan al tamamen binanceten ilerleyelim." Fiyat, grafik, katalog,
+// ad/logo ve sıralama Binance'ten. İlk taslaktaki CoinGecko (ad/logo/
+// piyasa değeri) ve BtcTurk (fiyat yedeği) çıkarıldı. Binance yanıt
+// vermezse fiyat yazılmaz; istemci `guncellendi` üzerinden "gecikmeli"
+// gösterir — başka borsanın fiyatıyla karıştırmak yok.
 //
 // ── Fiyat kaynağı sözleşmesi (lib/services/fiyat_kaynagi.dart) ─────────────
 // Buradaki TL fiyatı üç kurala uyar:
@@ -64,10 +67,12 @@ export type Parite = 'TRY' | 'USDT';
 
 export interface KatalogSatiri {
   kod: string;
-  ad: string;
+  ad: string | null;
   logo_url: string | null;
-  coingecko_id: string | null;
-  piyasa_sirasi: number | null;
+  /// Binance USDT paritesinin 24 saatlik işlem hacmine göre sıra (1 = en
+  /// yüksek). Piyasa değeri Binance'te yok; hacim, arama sırası için
+  /// yeterli ve aynı kaynaktan.
+  hacim_sirasi: number | null;
   parite: Parite;
   binance_sembol: string;
 }
@@ -79,26 +84,29 @@ export interface BinanceSembol {
   quoteAsset: string;
 }
 
-export interface GeckoCoin {
-  id: string;
+/// `/api/v3/ticker/24hr` satırı — yalnız hacim.
+export interface HacimSatiri {
   symbol: string;
-  name: string;
-  image?: string | null;
-  market_cap_rank?: number | null;
+  quoteVolume: string;
 }
 
-/// Katalog evreni: Binance'te TRY paritesi olan HER coin + piyasa değerinde
-/// ilk N içinde olup USDT paritesi olanlar (kullanıcıya önerilen varsayılan,
-/// 2026-09-25: "TL paritesi olanlar + ilk 250").
-///
-/// Ad/logo CoinGecko'dan gelir; CoinGecko'da aynı sembolü taşıyan birden
-/// çok coin var (ör. onlarca "ETH" klonu). Listeyi sıraya göre gezip İLK
-/// eşleşmeyi almak en yüksek piyasa değerlisini seçer. CoinGecko hiç yanıt
-/// vermediyse katalog yine kurulur: ad = kod, logo yok. Fiyat Binance'ten
-/// geldiği için eksik ad fiyatı bozmaz.
+/// Binance varlık adı/logosu. Kaynak Binance'in herkese açık varlık
+/// listesi (`bapi`, belgesiz); gelmezse katalog ad = null, logo = null ile
+/// kurulur ve istemci kodu gösterir. Fiyat bundan ETKİLENMEZ.
+export interface BinanceVarlik {
+  assetCode?: string;
+  assetName?: string;
+  logoUrl?: string | null;
+}
+
+/// Katalog evreni: Binance'te TRY paritesi olan HER coin + USDT
+/// paritesinin 24 saatlik hacmine göre ilk [ilkN] (kullanıcıya önerilen
+/// varsayılan, 2026-09-25: "TL paritesi olanlar + ilk 250").
 export function katalogKur(
   binance: BinanceSembol[],
-  gecko: GeckoCoin[],
+  hacim: HacimSatiri[],
+  varliklar: BinanceVarlik[],
+  ilkN = 250,
 ): KatalogSatiri[] {
   const tryBaz = new Map<string, string>();
   const usdtBaz = new Map<string, string>();
@@ -110,38 +118,48 @@ export function katalogKur(
     else if (s.quoteAsset === 'USDT') usdtBaz.set(baz, s.symbol);
   }
 
-  const geckoKod = new Map<string, GeckoCoin>();
-  const sirali = [...gecko].sort(
-    (a, b) => (a.market_cap_rank ?? 1e9) - (b.market_cap_rank ?? 1e9),
-  );
-  for (const c of sirali) {
-    const k = String(c.symbol ?? '').toUpperCase();
-    if (!geckoKod.has(k)) geckoKod.set(k, c);
+  // USDT paritesi hacmi → sıra.
+  const usdtSembolBaz = new Map([...usdtBaz].map(([baz, sym]) => [sym, baz]));
+  const hacimler: [string, number][] = [];
+  for (const h of hacim) {
+    const baz = usdtSembolBaz.get(h.symbol);
+    const v = Number(h.quoteVolume);
+    if (baz && Number.isFinite(v) && v > 0) hacimler.push([baz, v]);
+  }
+  hacimler.sort((a, b) => b[1] - a[1]);
+  const sira = new Map(hacimler.map(([baz], i) => [baz, i + 1]));
+  // USDT'nin kendisinin USDT paritesi yok; TRY'de en çok tutulan coin
+  // olduğu için başa alınır.
+  if (tryBaz.has('USDT') && !sira.has('USDT')) sira.set('USDT', 0);
+
+  const adlar = new Map<string, BinanceVarlik>();
+  for (const v of varliklar) {
+    const k = String(v.assetCode ?? '').toUpperCase();
+    if (k && !adlar.has(k)) adlar.set(k, v);
   }
 
   const satirlar: KatalogSatiri[] = [];
   const ekle = (kod: string, parite: Parite, binanceSembol: string) => {
-    const g = geckoKod.get(kod);
+    const v = adlar.get(kod);
+    const logo = v?.logoUrl ?? null;
     satirlar.push({
       kod,
-      ad: g?.name?.trim() || kod,
-      logo_url: g?.image && g.image.startsWith('https://') ? g.image : null,
-      coingecko_id: g?.id ?? null,
-      piyasa_sirasi: g?.market_cap_rank ?? null,
+      ad: v?.assetName?.trim() || null,
+      logo_url: logo && logo.startsWith('https://') ? logo : null,
+      hacim_sirasi: sira.get(kod) ?? null,
       parite,
       binance_sembol: binanceSembol,
     });
   };
 
   for (const [kod, sembol] of tryBaz) ekle(kod, 'TRY', sembol);
-  for (const kod of geckoKod.keys()) {
+  for (const [kod] of hacimler.slice(0, ilkN)) {
     if (tryBaz.has(kod)) continue;
     const sembol = usdtBaz.get(kod);
     if (sembol) ekle(kod, 'USDT', sembol);
   }
-  // USDT'nin kendisi: TRY paritesi (USDTTRY) yukarıda zaten eklenir.
   return satirlar.sort(
-    (a, b) => (a.piyasa_sirasi ?? 1e9) - (b.piyasa_sirasi ?? 1e9) || a.kod.localeCompare(b.kod),
+    (a, b) => (a.hacim_sirasi ?? 1e9) - (b.hacim_sirasi ?? 1e9) || a.kod.localeCompare(b.kod),
   );
 }
 
@@ -163,7 +181,7 @@ export interface FiyatSatiri {
   fiyat_usd: number | null;
   gun_acilis_try: number | null;
   gun: string;
-  kaynak: 'binance_try' | 'binance_usdt' | 'btcturk_try';
+  kaynak: 'binance_try' | 'binance_usdt';
   guncellendi: string;
 }
 
@@ -234,51 +252,6 @@ export function gunSembolParcalari(
   const hepsi = [...set];
   const out: string[][] = [];
   for (let i = 0; i < hepsi.length; i += parca) out.push(hepsi.slice(i, i + parca));
-  return out;
-}
-
-/// BtcTurk yedeği: yalnızca TRY paritesi. Binance tümüyle yanıtsızken
-/// devreye girer.
-///
-/// BtcTurk `open` alanının hangi pencereye ait olduğu belgelerde net değil;
-/// bu yüzden açılış OKUNMAZ. Aynı İstanbul gününe ait önceki açılış varsa o
-/// korunur, yoksa `null` (günlük yüzde gösterilmez) — uydurma açılış yok.
-export interface BtcTurkTicker {
-  pair?: string;
-  numeratorSymbol?: string;
-  denominatorSymbol?: string;
-  last?: number | string;
-}
-
-export function btcturkFiyatlari(
-  katalog: Pick<KatalogSatiri, 'kod'>[],
-  ticker: BtcTurkTicker[],
-  oncekiAcilis: Map<string, { gun: string; acilis: number | null }>,
-  simdi: Date,
-): FiyatSatiri[] {
-  const gun = istanbulGunu(simdi);
-  const tryFiyat = new Map<string, number>();
-  for (const t of ticker) {
-    if (String(t.denominatorSymbol ?? '').toUpperCase() !== 'TRY') continue;
-    const p = pozitif(t.last);
-    if (p !== null) tryFiyat.set(String(t.numeratorSymbol ?? '').toUpperCase(), p);
-  }
-  const kur = tryFiyat.get('USDT') ?? null;
-  const out: FiyatSatiri[] = [];
-  for (const c of katalog) {
-    const p = tryFiyat.get(c.kod);
-    if (p === undefined) continue;
-    const onceki = oncekiAcilis.get(c.kod);
-    out.push({
-      kod: c.kod,
-      fiyat_try: p,
-      fiyat_usd: kur !== null ? p / kur : null,
-      gun_acilis_try: onceki && onceki.gun === gun ? onceki.acilis : null,
-      gun,
-      kaynak: 'btcturk_try',
-      guncellendi: simdi.toISOString(),
-    });
-  }
   return out;
 }
 
@@ -427,6 +400,31 @@ export async function binanceGet(
     }
   }
   return null;
+}
+
+/// Binance'in herkese açık varlık listesi (ad + logo). Belgesiz `bapi`
+/// ucudur: biçim değişirse ya da yanıt gelmezse boş liste döner ve katalog
+/// adsız/logosuz kurulur — fiyat ve grafik bundan etkilenmez. Haftalık
+/// kanarya biçimi denetler.
+export async function binanceVarliklari(
+  f: typeof fetch = fetch,
+): Promise<BinanceVarlik[]> {
+  try {
+    const res = await f(
+      'https://www.binance.com/bapi/asset/v2/public/asset/asset/get-all-asset',
+      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(ZAMAN_ASIMI) },
+    );
+    if (!res.ok) {
+      console.error(`binance varlik listesi: ${res.status}`);
+      await res.body?.cancel();
+      return [];
+    }
+    const body = await res.json();
+    return Array.isArray(body?.data) ? body.data as BinanceVarlik[] : [];
+  } catch (e) {
+    console.error('binance varlik listesi: ag hatasi', e instanceof Error ? e.name : '');
+    return [];
+  }
 }
 
 /// Parçaları paralel sorar; başarısız parça diğerlerini düşürmez.
