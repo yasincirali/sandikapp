@@ -30,6 +30,16 @@ import '../l10n/l10n.dart';
 
 const _addAssetUuid = Uuid();
 
+// Klavye kuralı (kullanıcı, 2026-09-25): "klavye otomatik açılmamalı,
+// textbox'a tıklayınca açmalı, dışarı tıklandığında kapatılabilmeli."
+// Bu yüzden ekranda ve seçici/hızlı giriş sayfalarında `autofocus` yok;
+// her alan `onTapOutside` ile odağı bırakır (Flutter'ın varsayılanı
+// dokunmatikte dışarı dokunuşu yok sayar, yalnızca fareyle kapatır).
+// Alt sayfa açılmadan önce de odak bırakılır: kapanan sayfa odağı önceki
+// alana geri verdiğinde klavye kendiliğinden yeniden açılmasın.
+void _klavyeyiKapat([PointerDownEvent? _]) =>
+    FocusManager.instance.primaryFocus?.unfocus();
+
 // Döviz sabitleri, hızlı giriş modeli ve durum makinesi
 // `providers/add_asset_form_provider.dart`'ta (Faz 3.10).
 
@@ -292,7 +302,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         listenable: _metinler,
         builder: (context, _) => GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
+        onTap: _klavyeyiKapat,
         child: Form(
           key: _formKey,
           child: Column(
@@ -515,6 +525,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   void _showGoldPicker() {
+    _klavyeyiKapat();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -1112,6 +1123,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 controller: _notes,
                 style: context.t.titleMedium?.copyWith(color: context.c.text90),
                 maxLines: 3,
+                onTapOutside: _klavyeyiKapat,
                 decoration: context.inputDecoration(context.l10n.notesHint),
               ),
             ),
@@ -1191,6 +1203,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       autocorrect: autocorrect,
       validator: validator,
       onChanged: onChanged,
+      onTapOutside: _klavyeyiKapat,
     );
   }
 
@@ -1445,6 +1458,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   void _showBist100Picker() {
+    _klavyeyiKapat();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -1489,6 +1503,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   void _showTefasPicker() {
+    _klavyeyiKapat();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -1639,6 +1654,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showQuickEntrySheet() {
     final ctrl = TextEditingController();
+    _klavyeyiKapat();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -2048,7 +2064,7 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
           const SizedBox(height: 14),
           TextField(
             controller: widget.ctrl,
-            autofocus: true,
+            onTapOutside: _klavyeyiKapat,
             maxLines: 5,
             minLines: 2,
             textCapitalization: TextCapitalization.sentences,
@@ -2737,7 +2753,7 @@ class _PickerShellState extends State<_PickerShell> {
                   Expanded(
                     child: TextField(
                       controller: widget.searchCtrl,
-                      autofocus: true,
+                      onTapOutside: _klavyeyiKapat,
                       style: context.t.bodyLarge,
                       decoration: InputDecoration(
                         hintText:

@@ -34,6 +34,23 @@ enum BiyometrikSonuc {
   bool get basariliMi => this == BiyometrikSonuc.basarili;
 }
 
+/// Cihazın kilit yöntemi — yalnızca METİN ve ikon seçer, davranışı
+/// değiştirmez (doğrulama her durumda `biometricOnly: false`).
+/// l10n'da `select` anahtarı olarak adıyla (`name`) geçer.
+enum KilitYontemi {
+  /// iPhone, yüz tanıma.
+  faceId,
+
+  /// iPhone/iPad, parmak izi.
+  touchId,
+
+  /// Android, kayıtlı biyometri (parmak izi ya da yüz — ayrım yok).
+  biyometrik,
+
+  /// Biyometri yok ya da kayıtsız; cihaz şifresi/deseni.
+  ekranKilidi,
+}
+
 /// Biyometrik / cihaz kilidi.
 ///
 /// Değerlendirme (2026-09) §5.6: finans uygulamasında algılanan güvenin en
@@ -74,15 +91,54 @@ class BiometricLockService {
   final LocalAuthentication _auth = LocalAuthentication();
 
   /// Cihazda kullanılabilir bir kilit var mı (biyometrik ya da PIN).
+  ///
+  /// **Yalnızca `isDeviceSupported()`** (2026-09-24). Eskiden
+  /// `|| canCheckBiometrics` da vardı; ama o çağrı "biyometri
+  /// DONANIMI var mı" sorusudur — parmak izi okuyuculu, hiç parmak izi
+  /// kaydedilmemiş ve ekran kilidi olmayan telefonda `true` döner
+  /// (local_auth_android `hasBiometricHardware`). Sonuç: kilit teklifi
+  /// ve Ayarlar anahtarı açılabilir görünüp doğrulamada
+  /// "cihaz desteklemiyor" diye düşüyordu. `isDeviceSupported()` ise
+  /// Android'de "ekran kilidi var YA DA biyometri kayıtlı", iOS'ta
+  /// "cihaz şifresi var" demektir — `biometricOnly: false` ile
+  /// doğrulamanın gerçekten yapılabildiği küme tam olarak bu.
   Future<bool> get available async {
     try {
-      return await _auth.isDeviceSupported() || await _auth.canCheckBiometrics;
+      return await _auth.isDeviceSupported();
     } on MissingPluginException {
       return false;
     } catch (e, st) {
       if (kDebugMode) debugPrint('[BiometricLock] available: $e');
       CrashReporter.report(e, st, reason: 'BiometricLockService.available');
       return false;
+    }
+  }
+
+  /// Cihazın kullanıcıyı NASIL doğrulayacağı; kilit yoksa `null`.
+  ///
+  /// Teklif metni buna göre yazılır: Android'de "Face ID" demek yanlıştı,
+  /// iPhone SE'de de Face ID yok (Touch ID). Android BiometricManager
+  /// yüz/parmak ayrımı vermez (yalnızca zayıf/güçlü sınıf döner), bu
+  /// yüzden orada genel "biyometrik kilit" denir. Biyometri kayıtlı
+  /// değilse doğrulama cihaz şifresiyle yapılır ([ekranKilidi]).
+  ///
+  /// Asla fırlatmaz: sınıflandırma başarısızsa kilit VAR ama türü
+  /// bilinmiyor demektir — en genel ad ([ekranKilidi]) kullanılır.
+  Future<KilitYontemi?> get yontem async {
+    if (!await available) return null;
+    try {
+      final b = await _auth.getAvailableBiometrics();
+      final ios = defaultTargetPlatform == TargetPlatform.iOS;
+      if (ios && b.contains(BiometricType.face)) return KilitYontemi.faceId;
+      if (ios && b.contains(BiometricType.fingerprint)) {
+        return KilitYontemi.touchId;
+      }
+      return b.isEmpty ? KilitYontemi.ekranKilidi : KilitYontemi.biyometrik;
+    } on MissingPluginException {
+      return KilitYontemi.ekranKilidi;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'BiometricLockService.yontem');
+      return KilitYontemi.ekranKilidi;
     }
   }
 

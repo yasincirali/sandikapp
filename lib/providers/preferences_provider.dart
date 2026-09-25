@@ -12,6 +12,7 @@ import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
 import '../config/pref_keys.dart';
 import '../models/yatirimci_seviyesi.dart';
+import '../services/biometric_lock_service.dart';
 import '../services/crash_reporter.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
@@ -340,6 +341,19 @@ final biometricLockProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final biometricLockOfferedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.biometricLockOffered, false,
         perUser: true));
+
+/// Cihazın kilit yöntemi; cihazda hiç kilit yoksa `null`.
+///
+/// Kilit teklifinin KAPISI ve metni (2026-09-24): ekran kilidi olmayan
+/// cihazda teklif gösterilmez — "aç" düğmesi yalnızca "cihaz
+/// desteklemiyor" uyarısına çıkıyordu. Teklif o durumda damgalanmaz;
+/// kullanıcı sonradan ekran kilidi kurarsa sonraki açılışta görür.
+///
+/// Uygulama ömrü boyunca bir kez sorulur (FutureProvider önbelleği):
+/// cihaz kilidi ayarlardan açılıp kapanınca yeni değer bir sonraki
+/// soğuk açılışta okunur — teklif için bu yeterli.
+final kilitYontemiProvider = FutureProvider<KilitYontemi?>(
+    (ref) => BiometricLockService.instance.yontem);
 
 /// Portföy hedefi (TRY). 0 = hedef belirlenmedi. Yalnızca gösterim:
 /// hedef hiçbir hesabı değiştirmez, "Bugün" kartında ilerleme çubuğu olur.
