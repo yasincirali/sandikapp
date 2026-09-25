@@ -6,6 +6,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/position.dart' show aktifLotlar;
+import '../models/yatirimci_seviyesi.dart';
+import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/supabase_service.dart';
@@ -206,7 +209,7 @@ class _Adim {
     this.gorevBitti,
     this.bitti,
     this.dokunulabilir = true,
-    this.otoIlerle = false,
+    this.kosul,
     this.giris,
     this.devam,
     this.cikis,
@@ -234,10 +237,18 @@ class _Adim {
   /// açılan yüzey karartmanın ALTINDA kalır ve kullanıcı kilitlenmiş sanır.
   final bool dokunulabilir;
 
-  /// Görev bitince kısa bir onaydan sonra kendiliğinden ilerle. Sekme
-  /// geçişleri için: kullanıcı sekmeye dokundu, yeni ekran açıldı — bir de
-  /// "Devam"a basmasını istemek gereksiz.
-  final bool otoIlerle;
+  /// Adımın anlattığı yüzey şu an çiziliyor mu? `false` → adım GÖSTERİLMEDEN
+  /// geçilir, o anki dokunuşun yönünde ("Devam" ileri, "Geri" geri).
+  ///
+  /// Koşul, hedefi çizen ekranın KENDİ koşuluyla aynı olmalı (ör. "Bugün"
+  /// kartı yalnız aktif lot varken). Karar dokunuş anında verilir, zamana
+  /// bakılmaz. Eskiden hedefi gelmeyen adım 1,9 sn beklenip atlanıyordu —
+  /// kullanıcı bunu "tıklamadan ilerliyor" diye gördü (2026-09-25/26).
+  final bool Function(WidgetRef ref)? kosul;
+
+  // `otoIlerle` (görev bitince 0,72 sn sonra kendiliğinden ilerle) 2026-09-26'da
+  // kaldırıldı. Kullanıcı kararı: "sadece tıklayarak ilerleyebilmeli". Görev
+  // tamamlanınca onay satırı görünür, tur "Devam"ı bekler.
 
   /// Adıma girerken gereken ön koşulu kur (doğru sekmede ol, ekran açık
   /// olsun). Kullanıcı tur sırasında başka yere gittiyse ya da "Geri"
@@ -346,6 +357,11 @@ List<_Adim> _adimlariKur() {
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
+      // Ana ekran kartı yalnız aktif lot varken çizer (`home_screen.dart`).
+      // İlk açılışta portföy boş: adım anlatacak kart yokken gösterilmez.
+      kosul: (ref) => aktifLotlar(
+              ref.read(portfolioProvider).valueOrNull?.assets ?? const [])
+          .isNotEmpty,
     ),
     _Adim(
       id: 'piyasa',
@@ -369,6 +385,10 @@ List<_Adim> _adimlariKur() {
           'uygulama kapalıyken de çalışır.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
+      // Zil Başlangıç seviyesinde gizli (`home_screen.dart`, aynı koşul).
+      kosul: (ref) =>
+          seviyeGorunurlugu(ref.read(yatirimciSeviyesiProvider))
+              .teknikSinyaller,
     ),
     _Adim(
       id: 'sekme_portfoy',
@@ -379,7 +399,6 @@ List<_Adim> _adimlariKur() {
       gorev: 'Portföy sekmesine dokun',
       gorevBitti: 'Portföy açıldı',
       bitti: (_) => _sekmede(1),
-      otoIlerle: true,
       devam: (_) => _sekmeyeGec(1),
     ),
     _Adim(
@@ -401,7 +420,6 @@ List<_Adim> _adimlariKur() {
       gorev: '+ tuşuna dokun',
       gorevBitti: 'Varlık Ekle açıldı',
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
-      otoIlerle: true,
       devam: (_) => _varlikEkleAc(),
     ),
     _Adim(
@@ -450,7 +468,6 @@ List<_Adim> _adimlariKur() {
       gorev: 'Performans sekmesine dokun',
       gorevBitti: 'Performans açıldı',
       bitti: (_) => _sekmede(3),
-      otoIlerle: true,
       giris: (_) => _varlikEkleKapat(),
       devam: (_) => _sekmeyeGec(3),
     ),
@@ -490,7 +507,6 @@ List<_Adim> _adimlariKur() {
       gorev: 'Profil sekmesine dokun',
       gorevBitti: 'Profil açıldı',
       bitti: (_) => _sekmede(4),
-      otoIlerle: true,
       devam: (_) => _sekmeyeGec(4),
     ),
     _Adim(
@@ -528,7 +544,6 @@ List<_Adim> _adimlariKur() {
       gorev: 'İlk varlığını eklemek için + tuşuna dokun',
       gorevBitti: 'Varlık Ekle açıldı',
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
-      otoIlerle: true,
       giris: (_) => _sekmeyeGec(0),
     ),
   ];
@@ -662,13 +677,12 @@ abstract final class _Sahne {
   /// Nabız halkası bir turu: 1.440ms.
   static Duration get nabiz => SandikMotion.surface * 6;
 
-  /// Görev bittikten sonra kendiliğinden ilerlemeden önceki onay süresi.
-  static Duration get onay => SandikMotion.surface * 3;
-
-  /// Hedefi bulunamayan adımın atlanmasından önce beklenen süre (1,9s):
-  /// sekme geçişi + ekran kurulumu + liste kaydırması birkaç kare sürer,
-  /// hemen atlamak yanlış olur; çok beklemek de kullanıcıyı boş karartmada
-  /// bırakır.
+  /// Hedef beklenirken kart gizli; bu süre (1,9s) dolup hedef hâlâ yoksa
+  /// kart HEDEFSİZ (ortada) gösterilir ve "Devam" beklenir. Adım ATLANMAZ:
+  /// tur yalnız dokunuşla ilerler (kullanıcı kararı 2026-09-26). Eskiden bu
+  /// süre dolunca adım kendiliğinden geçiyordu. Bilinen koşullu yüzeyler
+  /// zaten [_Adim.kosul] ile dokunuş anında elenir; buraya düşen, beklenmedik
+  /// bir durumdur (yavaş yükleme, değişmiş yerleşim).
   static Duration get hedefBekle => SandikMotion.surface * 8;
 }
 
@@ -706,22 +720,37 @@ class _TurKatmaniState extends State<_TurKatmani>
   /// Tamamlanan görevlerin adım kimlikleri.
   final Set<String> _tamamlanan = {};
 
-  /// Adıma giriş anı ve (varsa) planlı otomatik ilerleme anı — ikisi de
-  /// ticker zamanıyla; `Timer` kullanılmaz (katman kapanınca askıda kalır).
+  /// Adıma giriş anı — ticker zamanıyla; `Timer` kullanılmaz (katman
+  /// kapanınca askıda kalır). Yalnız kartın hedefsiz gösterilme kararı için.
   Duration _girisAni = Duration.zero;
-  Duration? _otoIlerleAni;
   Duration _simdi = Duration.zero;
+
+  /// Hedef bekleme süresi doldu, hedef yok: kart ortada, "Devam" bekleniyor.
+  bool _hedefsiz = false;
   bool _bitti = false;
 
   _Adim get _adim => widget.adimlar[_i];
-  bool get _son => _i == widget.adimlar.length - 1;
+
+  /// [bas]tan [yon] yönünde, koşulu tutan ilk adım; yoksa null.
+  int? _gorunurAdim(int bas, int yon) {
+    for (var j = bas; j >= 0 && j < widget.adimlar.length; j += yon) {
+      if (widget.adimlar[j].kosul?.call(widget.ref) ?? true) return j;
+    }
+    return null;
+  }
+
+  /// İlerleme göstergesi için görünen adımların sırası.
+  List<int> get _gorunurler => [
+        for (var j = 0; j < widget.adimlar.length; j++)
+          if (widget.adimlar[j].kosul?.call(widget.ref) ?? true) j,
+      ];
   bool get _gorevBitti => _tamamlanan.contains(_adim.id);
 
   @override
   void initState() {
     super.initState();
     _ticker.start();
-    _adimaGir(0, ilk: true);
+    _adimaGir(_gorunurAdim(0, 1) ?? 0, ilk: true);
   }
 
   @override
@@ -751,7 +780,7 @@ class _TurKatmaniState extends State<_TurKatmani>
   void _adimaGir(int i, {bool ilk = false}) {
     _i = i;
     _girisAni = _simdi;
-    _otoIlerleAni = null;
+    _hedefsiz = false;
     _rect = null;
     if (!ilk) {
       AnalyticsService.instance.logOnboardingStep(i);
@@ -788,29 +817,33 @@ class _TurKatmaniState extends State<_TurKatmani>
     _simdi = gecen;
     final adim = _adim;
 
-    // 1) Görev tamamlandı mı? Uygulamanın gerçek durumundan.
+    // 1) Görev tamamlandı mı? Uygulamanın gerçek durumundan. Tamamlanınca
+    // onay satırı görünür; tur İLERLEMEZ, "Devam"ı bekler.
     if (adim.bitti != null && !_gorevBitti && adim.bitti!(widget.ref)) {
       SandikHaptic.medium.perform();
       setState(() => _tamamlanan.add(adim.id));
-      if (adim.otoIlerle) _otoIlerleAni = gecen + _Sahne.onay;
-    }
-    if (_otoIlerleAni case final t? when gecen >= t) {
-      _otoIlerleAni = null;
-      _ileri();
-      return;
     }
 
     // 2) Hedefin dikdörtgeni.
     final yeni = adim.hedef == null ? null : TourTargets.rect(adim.hedef!);
     if (adim.hedef != null && yeni == null) {
-      // Hedef bekleme süresi dolunca bulunamadıysa adım atlanır: kapalı
-      // bayrak, değişmiş yerleşim ya da kullanıcı ekranı kapatmış olabilir.
-      // Kullanıcıyı boş bir karartmada bırakmak en kötü sonuç.
-      if (gecen - _girisAni > _Sahne.hedefBekle) _ileri();
-      if (_rect != null) setState(() => _rect = null);
+      // Hedef yok: kart gizli kalır; bekleme süresi dolunca hedefsiz
+      // gösterilir. Adım ATLANMAZ (bkz. `_Sahne.hedefBekle`).
+      final hedefsiz = gecen - _girisAni > _Sahne.hedefBekle;
+      if (_rect != null || hedefsiz != _hedefsiz) {
+        setState(() {
+          _rect = null;
+          _hedefsiz = hedefsiz;
+        });
+      }
       return;
     }
-    if (!_ayni(yeni, _rect)) setState(() => _rect = yeni);
+    if (!_ayni(yeni, _rect) || _hedefsiz) {
+      setState(() {
+        _rect = yeni;
+        _hedefsiz = false;
+      });
+    }
   }
 
   static bool _ayni(Rect? a, Rect? b) {
@@ -826,17 +859,21 @@ class _TurKatmaniState extends State<_TurKatmani>
     final adim = _adim;
     if (adim.bitti != null && !_gorevBitti) adim.devam?.call(widget.ref);
     adim.cikis?.call(widget.ref);
-    if (_son) {
+    // Koşulu tutmayan adımlar bu dokunuşla birlikte geçilir (görünmeden).
+    final j = _gorunurAdim(_i + 1, 1);
+    if (j == null) {
       _kapat(tamamlandi: true);
       return;
     }
-    setState(() => _adimaGir(_i + 1));
+    setState(() => _adimaGir(j));
   }
 
   void _geri() {
-    if (_bitti || _i == 0) return;
+    if (_bitti) return;
+    final j = _gorunurAdim(_i - 1, -1);
+    if (j == null) return;
     _adim.cikis?.call(widget.ref);
-    setState(() => _adimaGir(_i - 1));
+    setState(() => _adimaGir(j));
   }
 
   void _atla() {
@@ -902,9 +939,12 @@ class _TurKatmaniState extends State<_TurKatmani>
         // kart kayboluyordu (mağaza 1.0.5, kullanıcı bildirimi 2026-09-25 —
         // ilk açılışta boş portföyde "Bugün" kartı yok, kısa tur her yeni
         // kullanıcıda böyle atlıyordu). Kural: GÖRÜNEN adım dokunuşsuz
-        // değişmez; hedefi gelmeyen adım hiç görünmeden atlanır. Ek kazanç:
+        // değişmez. Koşulu bilinen yüzeyler (`_Adim.kosul`) dokunuş anında
+        // elenir; beklenmedik biçimde gelmeyen hedefte kart süre dolunca
+        // ortada gösterilir ve dokunuş bekler (`_hedefsiz`). Ek kazanç:
         // sekme geçişinde kart önce ortada belirip hedefe zıplamıyor.
-        if (adim.hedef == null || oyuk != null) _kart(context, mq, oyuk),
+        if (adim.hedef == null || oyuk != null || _hedefsiz)
+          _kart(context, mq, oyuk),
       ],
     );
   }
@@ -997,8 +1037,8 @@ class _TurKatmaniState extends State<_TurKatmani>
               child: _AdimKarti(
                 adim: _adim,
                 bitti: _gorevBitti,
-                sira: _i,
-                toplam: widget.adimlar.length,
+                sira: _gorunurler.indexOf(_i).clamp(0, 1 << 20),
+                toplam: _gorunurler.length,
                 onGeri: _geri,
                 onIleri: _ileri,
                 onAtla: _atla,

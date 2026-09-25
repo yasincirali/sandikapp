@@ -3,6 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/models/yatirimci_seviyesi.dart';
+import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/main_navigation_screen.dart';
 import 'package:portfoy_takip/screens/onboarding_screen.dart';
@@ -29,10 +33,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///   1. **Oyuk dokunuşu geçiriyor, karartma yutuyor.** Hedefe dokunuş alta
 ///      ulaşır, hedef dışına dokunuş ulaşmaz.
 ///   2. **Görevler gerçek durumdan okunuyor.** Göz → tercih, sekme → aktif
-///      sekme, + → açılan rota; sekme görevleri kendiliğinden ilerler.
+///      sekme, + → açılan rota. Görev bitince tur İLERLEMEZ, "Devam" bekler
+///      (kullanıcı kararı 2026-09-26: "sadece tıklayarak ilerleyebilmeli").
 ///   3. **"Devam" görevi turun kendisine yaptırıyor.** Sekme değişir, ekran
 ///      açılır/kapanır.
-///   4. **Bulunamayan hedef atlanıyor**, boş karartmada kalınmıyor.
+///   4. **Zaman turu ilerletmez.** Koşulu tutmayan adım dokunuş anında
+///      görünmeden geçilir; beklenmedik biçimde hedefi gelmeyen adımın kartı
+///      ortada gösterilir ve dokunuş bekler.
 ///   5. **Taşma yok** — dar ekran, büyük yazı tipi, hareket azalt.
 ///   6. **Akış bozulmadı** (kaynak denetimi).
 
@@ -42,9 +49,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 final _dokunus = <TourTarget, int>{};
 
 class _EvSahibi extends StatefulWidget {
-  const _EvSahibi({this.davetKoduVar = true, this.bugunVar = true});
+  const _EvSahibi({
+    this.davetKoduVar = true,
+    this.bugunVar = true,
+    this.zilVar = true,
+  });
 
   final bool davetKoduVar;
+  final bool zilVar;
 
   /// Gerçek ekranda "Bugün" kartı yalnız portföyde aktif lot varken
   /// çizilir (`home_screen.dart`); ilk açılışta (boş portföy) yoktur.
@@ -115,6 +127,9 @@ class _EvSahibiState extends State<_EvSahibi> {
           // "Bugün" kartı — gerçek ekranda hero'nun altında (2026-09-20).
           if (widget.bugunVar) _tus(TourTarget.bugunKarti, 'bugün'),
           _tus(TourTarget.piyasaSeridi, 'piyasa'),
+          // Gerçek ekranda zil Başlangıç seviyesinde gizli; adımın `kosul`u
+          // aynı seviyeye bakar.
+          if (widget.zilVar) _tus(TourTarget.bildirimCani, 'zil'),
           Row(
             children: [
               Expanded(child: _tus(TourTarget.yenileTusu, 'yenile')),
@@ -208,6 +223,35 @@ class _SahteVarlikEkle extends StatelessWidget {
 
 // ── Yardımcılar ─────────────────────────────────────────────────────────────
 
+class _Portfoy extends PortfolioNotifier {
+  _Portfoy({required this.bos});
+  final bool bos;
+
+  @override
+  Future<PortfolioState> build() async => PortfolioState(
+        assets: bos
+            ? const <Asset>[]
+            : [
+                Asset(
+                  id: 'a1',
+                  userId: 'u1',
+                  name: 'Garanti',
+                  ticker: 'GARAN',
+                  type: AssetType.hisse,
+                  quantity: 10,
+                  purchasePrice: 100,
+                  currency: 'TRY',
+                  notes: '',
+                  isManualPrice: false,
+                  addedDate: DateTime(2026, 9, 1),
+                ),
+              ],
+        usdTry: 42.0,
+        eurTry: 46.0,
+        gbpTry: 54.0,
+      );
+}
+
 bool? _sonuc;
 
 Future<void> _pump(
@@ -220,6 +264,7 @@ Future<void> _pump(
   bool kisa = false,
   bool davetKoduVar = true,
   bool bugunVar = true,
+  YatirimciSeviyesi seviye = YatirimciSeviyesi.orta,
 }) async {
   tester.view.physicalSize = Size(width * 3, height * 3);
   tester.view.devicePixelRatio = 3.0;
@@ -230,6 +275,13 @@ Future<void> _pump(
 
   await tester.pumpWidget(
     ProviderScope(
+      // Adım koşulları (`_Adim.kosul`) gerçek sağlayıcıları okur: "Bugün"
+      // aktif lota, bildirim zili yatırımcı seviyesine bakar. Sahte ekran
+      // aynı koşulla çizilir, yani ikisi birbirini tutar.
+      overrides: [
+        portfolioProvider.overrideWith(() => _Portfoy(bos: !bugunVar)),
+        yatirimciSeviyesiProvider.overrideWithValue(seviye),
+      ],
       child: MaterialApp(
         theme: ThemeData(brightness: parlaklik, extensions: [palet]),
         // Gerçek uygulamadaki gibi: katman Navigator'ı sarar.
@@ -240,7 +292,11 @@ Future<void> _pump(
           ),
           child: OnboardingTourHost(child: child!),
         ),
-        home: _EvSahibi(davetKoduVar: davetKoduVar, bugunVar: bugunVar),
+        home: _EvSahibi(
+          davetKoduVar: davetKoduVar,
+          bugunVar: bugunVar,
+          zilVar: seviyeGorunurlugu(seviye).teknikSinyaller,
+        ),
       ),
     ),
   );
@@ -250,8 +306,8 @@ Future<void> _pump(
 }
 
 /// `pumpAndSettle` KULLANILMAZ: nabız halkası sonsuz döngüdür. Sabit süre
-/// ilerletilir (1,35s); görev onayı (720ms) bu sürede biter, hedef bekleme
-/// süresi (1,9s) bitmez — atlanma ayrıca [_uzunBekle] ile ölçülür.
+/// ilerletilir (1,35s); hedef bekleme süresi (1,9s) bitmez — hedefsiz kart
+/// ayrıca [_uzunBekle] ile ölçülür.
 Future<void> _bekle(WidgetTester tester) async {
   await tester.pump();
   for (var i = 0; i < 3; i++) {
@@ -277,9 +333,9 @@ Finder get _ileri => find.text('Devam').evaluate().isNotEmpty
 Future<void> _devam(WidgetTester tester) async {
   await tester.tap(_ileri);
   await _bekle(tester);
-  // Hedefi gelmeyen adım (sahte ev sahibinde bildirim zili yok) KART
-  // GÖSTERMEDEN hedef bekleme süresi (1,9s) sonunda atlanır; o arada tuş
-  // yoktur. Sonraki adımın kartı gelene kadar bekle.
+  // Hedefi gelmeyen adımın kartı hedef bekleme süresi (1,9s) dolunca
+  // ortada gösterilir (sahte ev sahibinde kapsam çipi dönem seçilmeden
+  // yok); o arada tuş yoktur. Kart gelene kadar bekle.
   for (var i = 0; i < 6 && _kartYok; i++) {
     await tester.pump(const Duration(milliseconds: 450));
   }
@@ -439,16 +495,22 @@ void main() {
   });
 
   group('görevler — gerçek durumdan', () {
-    testWidgets('sekme görevi: dokununca kendiliğinden ilerler',
+    testWidgets('sekme görevi: dokununca tamamlanır, tur "Devam" bekler',
         (tester) async {
       await _pump(tester);
       await _adimaGit(tester, 'Portföy sekmesi');
       expect(find.textContaining('Dene:'), findsOneWidget);
 
       await tester.tap(find.text('Portföy'));
-      await _bekle(tester);
+      await _uzunBekle(tester);
       expect(MainNavigationScreen.aktifSekme.value, 1);
-      // Onay süresi geçti → sonraki adım (takip listesi) açıldı.
+      // Görev onayı görünür ama adım yerinde kalır (2026-09-26: "sadece
+      // tıklayarak ilerleyebilmeli"; eskiden 0,72 sn sonra geçiyordu).
+      expect(find.text('Portföy açıldı'), findsOneWidget);
+      expect(find.text('Portföy sekmesi'), findsOneWidget);
+      expect(find.text('Takip listesi'), findsNothing);
+
+      await _devam(tester);
       expect(find.text('Takip listesi'), findsOneWidget);
     });
 
@@ -469,6 +531,9 @@ void main() {
       await tester.tap(find.text('+'));
       await _bekle(tester);
       await _bekle(tester);
+      // Görev tamamlandı ama tur ilerlemez; kripto adımına "Devam" götürür.
+      expect(find.text('Varlık Ekle açıldı'), findsOneWidget);
+      await _devam(tester);
       expect(find.text('Varlık Ekle'), findsOneWidget,
           reason: 'Sahte AddAssetScreen rotası açılmalı.');
       // Kripto adımı (YENİ) tür çiplerini gösterir; dokunuşa kapalı.
@@ -519,7 +584,8 @@ void main() {
     // kendiliğinden geçiyordu. İlk açılışta her yeni kullanıcıda oluyordu:
     // boş portföyde "Bugün" kartı çizilmez, kısa turun "Bugün ne oldu?"
     // adımı okunurken kayboluyordu. Kural: kullanıcının GÖRDÜĞÜ adım
-    // dokunuşsuz değişmez; hedefi gelmeyen adım hiç görünmeden atlanır.
+    // dokunuşsuz değişmez. Koşulu bilinen yüzey (`_Adim.kosul`) dokunuş
+    // anında elenir; zaman hiçbir adımı ilerletmez.
     testWidgets('ilk açılış, boş portföy: "Bugün" kartı hiç görünmeden geçilir',
         (tester) async {
       await _pump(tester, kisa: true, bugunVar: false);
@@ -532,8 +598,20 @@ void main() {
             reason: '${(i + 1) * 200} ms: hedefi olmayan adımın kartı '
                 'görünüp kendiliğinden kayboluyor');
       }
-      await _uzunBekle(tester);
+      // Aynı dokunuşla bir sonraki GÖRÜNEN adıma geçildi.
       expect(find.text('Varlık ekle'), findsOneWidget);
+    });
+
+    testWidgets('Başlangıç seviyesi: bildirim adımı gösterilmez',
+        (tester) async {
+      await _pump(tester, seviye: YatirimciSeviyesi.baslangic);
+      await _adimaGit(tester, 'Piyasa bir bakışta');
+      await tester.tap(_ileri);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Bildirim merkezi'), findsNothing);
+      await _bekle(tester);
+      expect(find.text('Portföy sekmesi'), findsOneWidget);
     });
 
     testWidgets('görünen adım dokunuş beklemeden ilerlemez', (tester) async {
@@ -545,12 +623,18 @@ void main() {
       expect(find.text('Bugün ne oldu?'), findsOneWidget);
     });
 
-    testWidgets('adım atlanır, boş karartmada kalınmaz', (tester) async {
+    testWidgets('beklenmedik biçimde hedefi yok: kart ortada, dokunuş bekler',
+        (tester) async {
       await _pump(tester, davetKoduVar: false);
       await _adimaGit(tester, 'Profil sekmesi');
       await _devam(tester); // ortaklık adımı — hedefi yok
-      await _uzunBekle(tester);
-      expect(find.text('Eşinle tek portföy'), findsNothing);
+      for (var i = 0; i < 4; i++) {
+        await _uzunBekle(tester);
+      }
+      // Eskiden 1,9 sn sonra kendiliğinden atlanıyordu; artık yerinde durur.
+      expect(find.text('Eşinle tek portföy'), findsOneWidget);
+      expect(find.text('Ayarlar'), findsNothing);
+      await _devam(tester);
       expect(find.text('Ayarlar'), findsOneWidget);
     });
   });
