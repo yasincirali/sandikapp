@@ -299,7 +299,11 @@ class AddAssetFormState {
   }
 
   List<String> get quantityPresets {
-    if (unitType == 'gram') return const ['1', '5', '10', '50', '100'];
+    // Altın alt türleri birimi 'gr' kısaltmasıyla taşır (`GoldSubCategory`),
+    // birim seçici ise 'gram' — ikisi de gram demektir.
+    if (unitType == 'gram' || unitType == 'gr') {
+      return const ['1', '5', '10', '50', '100'];
+    }
     if (unitType == 'ounce') return const ['0.1', '0.5', '1', '5', '10'];
     if (type == AssetType.fon) return const ['1', '10', '100', '1000'];
     if (type == AssetType.hisse) return const ['1', '5', '10', '100', '1000'];
