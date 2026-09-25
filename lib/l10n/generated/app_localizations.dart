@@ -1508,6 +1508,66 @@ abstract class AppLocalizations {
   /// **'Altın Türü'**
   String get identityGoldKind;
 
+  /// No description provided for @pickGoldTap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın türü seçmek için dokun...'**
+  String get pickGoldTap;
+
+  /// No description provided for @goldTypes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın Türleri'**
+  String get goldTypes;
+
+  /// No description provided for @goldQuickPick.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hızlı seçim'**
+  String get goldQuickPick;
+
+  /// No description provided for @goldGroupGram.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gram'**
+  String get goldGroupGram;
+
+  /// No description provided for @goldGroupZiynet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ziynet'**
+  String get goldGroupZiynet;
+
+  /// No description provided for @goldGroupSikke.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sikke'**
+  String get goldGroupSikke;
+
+  /// No description provided for @goldGroupOns.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ons'**
+  String get goldGroupOns;
+
+  /// No description provided for @goldUnitGram.
+  ///
+  /// In tr, this message translates to:
+  /// **'gr'**
+  String get goldUnitGram;
+
+  /// No description provided for @goldUnitOunce.
+  ///
+  /// In tr, this message translates to:
+  /// **'ons'**
+  String get goldUnitOunce;
+
+  /// No description provided for @goldSelectedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili altın türü: {kind}. Değiştirmek için çift dokun.'**
+  String goldSelectedSemantics(String kind);
+
   /// No description provided for @identityCurrency.
   ///
   /// In tr, this message translates to:

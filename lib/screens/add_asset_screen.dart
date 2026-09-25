@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../models/altin_kisayollari.dart';
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -443,65 +444,136 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  // ── Altın: tüm türler tek büyük chip grid (dropdown yok) ───────────────────────
+  // ── Altın: seçim alanı + kısayol çipleri ─────────────────────────────────────
+  //
+  // 2026-09-25: 16 tür tek çip ızgarasında ekranı dolduruyordu. Kullanıcının
+  // üç alternatif arasından seçtiği düzen (C): hisse/fon seçicisiyle aynı
+  // alan (tümü aramalı, gruplu alt sayfada) + altında 5 kısayol. Kısayolların
+  // kuralı `altinKisayollari`'nda (portföydeki türler, 5'e popülerle tamamla).
   Widget _goldChipGrid(ColorScheme cs) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: GoldSubCategory.values.map((g) {
-        final selected = _subCategory == g.label;
-        // Diğer çipler gibi (tür, döviz, miktar): ekran okuyucu 'düğme' ve
-        // 'seçili' bilgisini Semantics olmadan alamaz (Faz 2.13).
-        return Semantics(
+    final secili = _seciliAltin;
+    final kisayollar = altinKisayollari(
+        ref.watch(portfolioProvider).valueOrNull?.assets ?? const []);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(
           button: true,
-          selected: selected,
-          label: context.l10n.goldSemantics(g.label),
+          label: secili == null
+              ? context.l10n.pickGoldTap
+              : context.l10n.goldSelectedSemantics(secili.label),
           child: GestureDetector(
-          onTap: () {
-            _yaz(_n.selectGold(g));
-            _schedulePricePreview();
-          },
-          child: AnimatedContainer(
-            duration:
-                SandikMotion.of(context, const Duration(milliseconds: 160)),
-            curve: SandikMotion.enter,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AssetType.altin.color.withValues(alpha: 0.18)
-                  : context.c.surface1,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(
-                color: selected ? AssetType.altin.color : context.c.overlay,
-                width: selected ? 1.4 : 1,
-              ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: AssetType.altin.color.withValues(alpha: 0.25),
-                        blurRadius: 14,
-                        spreadRadius: -6,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.star_rounded,
-                    size: 14,
-                    color: selected ? AssetType.altin.color : context.c.text58),
-                const SizedBox(width: 6),
-                Text(g.label,
-                    style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: selected ? context.c.text90 : context.c.text58)),
-              ],
+            onTap: _showGoldPicker,
+            child: _selectorContainer(
+              cs: cs,
+              hasValue: secili != null,
+              hasError: false,
+              badgeText: secili == null ? null : _altinBirimi(secili),
+              mainText: secili?.label ?? context.l10n.pickGoldTap,
+              color: AssetType.altin.color,
             ),
           ),
+        ),
+        const SizedBox(height: SandikSpace.smd),
+        Text(context.l10n.goldQuickPick,
+            style: context.t.bodySmall?.copyWith(color: context.c.text36)),
+        const SizedBox(height: SandikSpace.sm),
+        Wrap(
+          spacing: SandikSpace.sm,
+          runSpacing: SandikSpace.sm,
+          children: [for (final g in kisayollar) _goldChip(g, g == secili)],
+        ),
+      ],
+    );
+  }
+
+  GoldSubCategory? get _seciliAltin {
+    for (final g in GoldSubCategory.values) {
+      if (g.label == _subCategory) return g;
+    }
+    return null;
+  }
+
+  /// Rozet ve liste satırında birim: türün nasıl alındığı (gram / adet / ons)
+  /// seçimden önce görünsün — miktar alanına ne yazılacağını belirler.
+  String _altinBirimi(GoldSubCategory g) => switch (g.unitType) {
+        'gr' => context.l10n.goldUnitGram,
+        'ounce' => context.l10n.goldUnitOunce,
+        _ => context.l10n.unitPiece,
+      };
+
+  void _selectGold(GoldSubCategory g) {
+    _yaz(_n.selectGold(g));
+    _schedulePricePreview();
+  }
+
+  void _showGoldPicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => _GoldPicker(
+        selected: _seciliAltin,
+        birim: _altinBirimi,
+        onSelect: (g) {
+          _selectGold(g);
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
+  Widget _goldChip(GoldSubCategory g, bool selected) {
+    // Diğer çipler gibi (tür, döviz, miktar): ekran okuyucu 'düğme' ve
+    // 'seçili' bilgisini Semantics olmadan alamaz (Faz 2.13).
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: context.l10n.goldSemantics(g.label),
+      child: GestureDetector(
+        onTap: () => _selectGold(g),
+        child: AnimatedContainer(
+          duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+          curve: SandikMotion.enter,
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.md2, vertical: SandikSpace.sm2),
+          decoration: BoxDecoration(
+            color: selected
+                ? AssetType.altin.color.withValues(alpha: 0.18)
+                : context.c.surface1,
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            border: Border.all(
+              color: selected ? AssetType.altin.color : context.c.overlay,
+              width: selected ? 1.4 : 1,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AssetType.altin.color.withValues(alpha: 0.25),
+                      blurRadius: 14,
+                      spreadRadius: -6,
+                    ),
+                  ]
+                : null,
           ),
-        );
-      }).toList(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.star_rounded,
+                  size: 14,
+                  color: selected ? AssetType.altin.color : context.c.text58),
+              const SizedBox(width: SandikSpace.xs2),
+              Text(g.label,
+                  style: context.t.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: selected ? context.c.text90 : context.c.text58)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -2071,6 +2143,94 @@ class _Bist100PickerState extends State<_Bist100Picker> {
                   color: AssetType.hisse.color,
                   cs: cs,
                   onTap: () => widget.onSelect(e.key),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Altın türü seçici — tüm türler, gruplu ve aramalı
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GoldPicker extends StatefulWidget {
+  final GoldSubCategory? selected;
+  final String Function(GoldSubCategory) birim;
+  final void Function(GoldSubCategory) onSelect;
+  const _GoldPicker(
+      {required this.selected, required this.birim, required this.onSelect});
+
+  @override
+  State<_GoldPicker> createState() => _GoldPickerState();
+}
+
+class _GoldPickerState extends State<_GoldPicker> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  String _grupAdi(AltinGrubu g) => switch (g) {
+        AltinGrubu.gram => context.l10n.goldGroupGram,
+        AltinGrubu.ziynet => context.l10n.goldGroupZiynet,
+        AltinGrubu.sikke => context.l10n.goldGroupSikke,
+        AltinGrubu.ons => context.l10n.goldGroupOns,
+      };
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final eslesen = altinTurleriniAra(_q);
+    // Grup başlığı + satırlar düz listeye açılır; boş grup başlığı çizilmez.
+    final ogeler = <Object>[
+      for (final grup in AltinGrubu.values)
+        if (eslesen.any((g) => g.grup == grup)) ...[
+          grup,
+          ...eslesen.where((g) => g.grup == grup),
+        ],
+    ];
+    return _PickerShell(
+      title: context.l10n.goldTypes,
+      count: eslesen.length,
+      color: AssetType.altin.color,
+      searchCtrl: _ctrl,
+      onSearch: (v) => setState(() => _q = v),
+      query: _q,
+      cs: cs,
+      child: eslesen.isEmpty
+          ? _emptySearch(context, _q, cs)
+          : ListView.builder(
+              itemCount: ogeler.length,
+              itemBuilder: (_, i) {
+                final o = ogeler[i];
+                if (o is AltinGrubu) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(SandikSpace.lgs,
+                        SandikSpace.md, SandikSpace.lgs, SandikSpace.xs),
+                    child: Semantics(
+                      header: true,
+                      child: Text(_grupAdi(o),
+                          style: context.t.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                              color: context.c.text58)),
+                    ),
+                  );
+                }
+                final g = o as GoldSubCategory;
+                return _PickerRow(
+                  badgeText: widget.birim(g),
+                  title: g.label,
+                  subtitle: g.description,
+                  isSelected: g == widget.selected,
+                  color: AssetType.altin.color,
+                  cs: cs,
+                  onTap: () => widget.onSelect(g),
                 );
               },
             ),

@@ -373,6 +373,23 @@
   "identityStock": "Hisse",
   "identityFund": "Fon",
   "identityGoldKind": "Altın Türü",
+  "pickGoldTap": "Altın türü seçmek için dokun...",
+  "goldTypes": "Altın Türleri",
+  "goldQuickPick": "Hızlı seçim",
+  "goldGroupGram": "Gram",
+  "goldGroupZiynet": "Ziynet",
+  "goldGroupSikke": "Sikke",
+  "goldGroupOns": "Ons",
+  "goldUnitGram": "gr",
+  "goldUnitOunce": "ons",
+  "goldSelectedSemantics": "Seçili altın türü: {kind}. Değiştirmek için çift dokun.",
+  "@goldSelectedSemantics": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "identityCurrency": "Para Birimi",
   "identityCommodity": "Emtia",
   "noResultsFor": "\"{q}\" bulunamadı",
