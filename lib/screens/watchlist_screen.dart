@@ -710,10 +710,16 @@ class _AddHeader extends ConsumerWidget {
     final dolu = sinirli && n >= limit;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
+      // Ölçüler `ModernTabSelector` ile birebir (kullanıcı, 2026-09-25:
+      // "font ve büyüklük uygulama genelindeki kurallara uygun olmalı"):
+      // kart 48 pt, iç boşluk 4 pt, düğme 40 pt, metin `bodyMedium`.
+      // Üstteki sekme seçici ve alttaki dönem seçiciyle aynı ritim.
       child: Container(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        padding: const EdgeInsets.fromLTRB(
-            SandikSpace.md, SandikSpace.xs2, SandikSpace.xs2, SandikSpace.xs2),
+        height: 48,
+        // Dikey iç boşluk YOK: düğmenin dokunma alanı kartın tam
+        // yüksekliği (48 pt ≥ HIG 44), görsel 40 pt kutu kendi içinde
+        // 4 pt pay bırakır. Sol 16 pt = segment seçicinin metin girintisi.
+        padding: const EdgeInsets.only(left: SandikSpace.md, right: SandikSpace.xs),
         decoration: BoxDecoration(
           color: c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -735,14 +741,14 @@ class _AddHeader extends ConsumerWidget {
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(context.l10n.watchlistInListLabel,
-                            style: context.t.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
+                            style: context.t.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
                                 color: c.text58)),
                         const Spacer(),
                         Text.rich(
                           TextSpan(
                             text: '$n',
-                            style: context.t.bodySmall?.copyWith(
+                            style: context.t.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: dolu ? c.loss : c.text90),
                             children: [
@@ -756,7 +762,7 @@ class _AddHeader extends ConsumerWidget {
                       ],
                     ),
                     if (sinirli) ...[
-                      const SizedBox(height: SandikSpace.xs2),
+                      const SizedBox(height: SandikSpace.xs),
                       _KapasiteSeridi(dolu: n, toplam: limit),
                     ],
                   ],
@@ -775,33 +781,41 @@ class _AddHeader extends ConsumerWidget {
                         kind: SandikSnackKind.warning,
                       )
                   : () => _ekle(context),
-              child: Container(
-                // 44pt HIG dokunma hedefi.
-                constraints: const BoxConstraints(minHeight: SandikTouch.min),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: SandikSpace.md2),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: dolu ? Colors.transparent : c.amberFill,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  border: dolu ? Border.all(color: c.hairline) : null,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (!dolu) ...[
-                      Icon(Icons.add_rounded, size: 18, color: c.onStatus),
-                      const SizedBox(width: SandikSpace.xs),
-                    ],
-                    Text(
-                      dolu
-                          ? context.l10n.watchlistFullShort
-                          : context.l10n.watchlistAddShort,
-                      style: context.t.titleSmall?.copyWith(
-                          color: dolu ? c.text58 : c.onStatus,
-                          fontWeight: FontWeight.w700),
+              // Dokunma hedefi 48 pt (kartın tamamı); görsel kutu 40 pt,
+              // segment düğmesiyle aynı ölçü ve köşe.
+              child: SizedBox(
+                height: 48,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SandikSpace.md),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: dolu ? Colors.transparent : c.amberFill,
+                      borderRadius: BorderRadius.circular(SandikRadius.md),
+                      border: dolu ? Border.all(color: c.hairline) : null,
                     ),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!dolu) ...[
+                          Icon(Icons.add_rounded,
+                              size: 18, color: c.onStatus),
+                          const SizedBox(width: SandikSpace.xs),
+                        ],
+                        Text(
+                          dolu
+                              ? context.l10n.watchlistFullShort
+                              : context.l10n.watchlistAddShort,
+                          style: context.t.bodyMedium?.copyWith(
+                              color: dolu ? c.text58 : c.onStatus,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -830,7 +844,7 @@ class _KapasiteSeridi extends StatelessWidget {
     final c = context.c;
     final tamamen = dolu >= toplam;
     return SizedBox(
-      height: SandikSpace.xs,
+      height: SandikSpace.xs2,
       child: Row(
         children: [
           for (var i = 0; i < toplam; i++) ...[
@@ -838,9 +852,12 @@ class _KapasiteSeridi extends StatelessWidget {
             Expanded(
               child: DecoratedBox(
                 decoration: BoxDecoration(
+                  // Boş bölme `surface2` idi: `surface1` kart üstünde
+                  // kayboluyordu (ekran görüntüsü). Zeminden ayrışan ama
+                  // amberle yarışmayan ton.
                   color: i < dolu
                       ? (tamamen && i == toplam - 1 ? c.loss : c.amberFill)
-                      : c.surface2,
+                      : c.text36.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(SandikSpace.xxs),
                 ),
               ),
