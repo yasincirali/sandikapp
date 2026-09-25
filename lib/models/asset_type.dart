@@ -81,6 +81,23 @@ enum AssetType {
         AssetType.diger => l.tickerHintOther,
       };
 
+  /// Varlık Ekle tür çiplerinin sırası (kullanıcı kararı 2026-09-25):
+  /// Hisse, Döviz, Altın, Fon, Kripto, Emtia, Diğer.
+  ///
+  /// Enum sırasından AYRI tutuldu: `values` filtre çiplerini, tür
+  /// dökümlerini ve sinyal ayarlarını sıralıyor; istek yalnız ekleme
+  /// sayfasıydı. Yeni tür eklenirse buraya da yazılmalı — unutulursa
+  /// seçicide hiç görünmez (`asset_type_ekleme_sirasi_test` yakalar).
+  static const List<AssetType> eklemeSirasi = [
+    hisse,
+    doviz,
+    altin,
+    fon,
+    kripto,
+    emtia,
+    diger,
+  ];
+
   /// Bilinmeyen tür → `diger`. Kaldırılan 'mevduat' (2026-09-14) da buraya
   /// düşer; 0058 migrasyonu eski satırları sunucuda zaten 'diger' yapar.
   static AssetType fromString(String value) => AssetType.values.firstWhere(

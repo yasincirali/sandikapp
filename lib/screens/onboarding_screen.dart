@@ -283,7 +283,8 @@ List<_Adim> _adimlariKur() {
     const _Adim(
       id: 'karsilama',
       baslik: 'Sandığına hoş geldin',
-      govde: 'Hisse, fon, döviz, altın, emtia ve kripto — hepsi tek '
+      // Sıra Varlık Ekle çipleriyle aynı (`AssetType.eklemeSirasi`).
+      govde: 'Hisse, döviz, altın, fon, kripto ve emtia — hepsi tek '
           'toplamda, tek para biriminde. Fiyatlar arka planda kendiliğinden güncellenir.\n\n'
           'Uygulamayı birlikte gezelim: her adımda gerçek ekranın üstünde '
           'tek bir tuş açık kalır. Dokun, dene.',
@@ -408,8 +409,10 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.turSecici,
       rozet: 'YENİ',
       baslik: 'Kripto da burada',
-      govde: 'Tür çiplerinin sonunda Kripto var: listeden coin\'i seç, fiyatı '
-          'TL karşılığıyla kendiliğinden gelir. Miktar gerektiği kadar '
+      // "Çiplerin sonunda" yazıyordu; 2026-09-25 sırasında Kripto Fon'dan
+      // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`).
+      govde: 'Tür çiplerinde Fon\'un yanında Kripto var: listeden coin\'i '
+          'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Miktar gerektiği kadar '
           'ondalıkla tutulur (0,00045 BTC gibi); kripto 7/24 işlediği için '
           'grafikte hafta sonu da görünür.',
       giris: (_) => _varlikEkleAc(),
@@ -549,12 +552,17 @@ List<_Adim> _kisaAdimlar() {
     const _Adim(
       id: 'karsilama',
       baslik: 'Sandığına hoş geldin',
-      govde: 'Hisse, fon, döviz, altın, kripto — hepsi tek toplamda. Bir dakikada '
+      govde: 'Hisse, döviz, altın, fon, kripto — hepsi tek toplamda. Bir dakikada '
           'ilk varlığını girelim; gerisini uygulama kendi anlatır.',
     ),
     tam['hero']!,
     tam['bugun']!,
     tam['ekle']!,
+    // Kripto ilk açılışta da anlatılır (kullanıcı kararı 2026-09-25):
+    // yalnız tam turda (Ayarlar) olduğu için yeni kullanıcı kripto
+    // eklenebildiğini karşılamadaki tek kelimeden öğreniyordu. Kısa tur
+    // 5 → 6 kart; "Varlık Ekle" zaten açık olduğundan ek gezinme yok.
+    tam['kripto']!,
     _Adim(
       id: 'toplu_son',
       hedef: TourTarget.topluEkle,

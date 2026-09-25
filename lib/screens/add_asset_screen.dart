@@ -1213,11 +1213,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   Widget _typeSelector(ColorScheme cs) {
     // Vadeli mevduat türü 2026-09-14'te kaldırıldı (hiç yayına çıkmamıştı,
-    // ayrı form + lokal faiz motoru bakım yükü getiriyordu); seçici artık
-    // enum'un tamamını gösterir.
+    // ayrı form + lokal faiz motoru bakım yükü getiriyordu).
     // Kripto 2026-09-25'ten beri katalog seçicisiyle eklenir (serbest sembol
     // alanı yok: sunucunun tanımadığı sembol fiyatsız lot üretirdi).
-    const types = AssetType.values;
+    // Sıra enum'dan değil sayfaya özel listeden (kullanıcı kararı
+    // 2026-09-25; gerekçe `AssetType.eklemeSirasi`).
+    const types = AssetType.eklemeSirasi;
     return TourAnchor(
       target: TourTarget.turSecici,
       child: HScrollWithFade(
