@@ -957,14 +957,17 @@ extension SandikSurfaces on BuildContext {
 
   /// Giriş alanı dolgusu — TEK kaynak (2026-09-25).
   ///
-  /// Dark'ta alan zeminden KOYULAŞARAK çukurlaşır; light'ta tam tersi,
-  /// beyazlaşarak öne çıkar. Kural buradaydı ama yalnızca [inputDecoration]
-  /// uyguluyordu: seçici alt sayfasının arama alanı `background`, takip
-  /// listesi araması `surface1`, karşılaştırma araması `overlay` alıyordu —
-  /// aynı alan üç ekranda üç ayrı renkti (kullanıcı ekran görüntüsü:
-  /// beyaz sayfa üstünde krem kutu). Rengi seçen her yer buradan okur.
-  Color get inputFill =>
-      isLight ? c.surface2 : Colors.black.withValues(alpha: 0.18);
+  /// Yükseklik kuralıyla AYNI yön ([card], [chip]): dark'ta zeminin üstüne
+  /// beyaz [SandikPalette.overlay] eklenerek alan hafifçe AÇILIR; light'ta
+  /// yüzey zaten açık olduğundan düz beyaz (`surface2`) + hairline. Eskiden
+  /// `inputDecoration` dark'ta siyah %18 ile alanı ÇUKURLAŞTIRIYORDU —
+  /// kartlar ve çipler açılırken tek başına koyulaşan kutu "farklı"
+  /// görünüyordu (kullanıcı ekran görüntüsü, altın türü seçicisi). Ayrıca
+  /// seçici alt sayfası `background`, takip araması `surface1`,
+  /// karşılaştırma `overlay` alıyordu — aynı alan üç ekranda üç renkti.
+  /// Rengi seçen her yer buradan okur; tema `inputDecorationTheme` zaten
+  /// `overlay` idi, artık ikisi aynı şeyi söylüyor.
+  Color get inputFill => isLight ? c.surface2 : c.overlay;
 
   /// Form alanı dekorasyonu — moda duyarlı.
   InputDecoration inputDecoration(
