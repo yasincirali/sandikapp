@@ -315,10 +315,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         decoration: InputDecoration(
           counterText: '',
           contentPadding: EdgeInsets.zero,
-          filled: true,
-          // `inputFill` — uygulamadaki diğer alanlarla aynı dolgu kuralı.
-          // Kenarlık hücreye özgü kalır (dolu hücre amber).
-          fillColor: context.inputFill,
+          // Dolgu temadan (`sandikGirisTemasi`) — uygulamadaki diğer
+          // alanlarla aynı kural. Kenarlık hücreye özgü kalır (dolu hücre amber).
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: BorderSide(
@@ -330,12 +328,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             borderRadius: BorderRadius.circular(SandikRadius.md),
             borderSide: BorderSide(color: context.c.amberFill, width: 1.8),
           ),
-          disabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            borderSide: BorderSide(
-              color: context.c.hairline,
-            ),
-          ),
+          // `disabledBorder` temadan (hairline) — doğrulama sürerken kilitli
+          // hücreler diğer kilitli alanlarla aynı görünür; kilidi `text36`
+          // metin anlatır.
         ),
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         onChanged: (v) {

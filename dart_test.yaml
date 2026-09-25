@@ -16,3 +16,10 @@ tags:
   gorsel:
     # Yalnızca açıkça istendiğinde koşar.
     skip: "görsel önizleme üreteci — elle koş: flutter test --tags gorsel"
+  # `golden`: `matchesGoldenFile` ile assert EDEN görsel testler
+  # (`test/goldens/`). PNG'ler rasterizer'a ve font hinting'ine duyarlı —
+  # Windows'ta üretilen görüntü CI'ın Linux'unda tutmaz, testi sahte kırar.
+  # Bu yüzden `gorsel` gibi varsayılanda kapalı; görsel değişiklikte elle:
+  #   flutter test --run-skipped --update-goldens test/goldens/
+  golden:
+    skip: "golden — platforma duyarlı, elle koş: flutter test --run-skipped test/goldens/"

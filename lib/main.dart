@@ -311,8 +311,8 @@ class SandikApp extends ConsumerWidget {
       title: 'sandık',
       debugShowCheckedModeBanner: false,
       navigatorKey: appNavigatorKey,
-      theme: _buildTheme(SandikPalette.light, Brightness.light),
-      darkTheme: _buildTheme(SandikPalette.dark, Brightness.dark),
+      theme: buildTheme(SandikPalette.light, Brightness.light),
+      darkTheme: buildTheme(SandikPalette.dark, Brightness.dark),
       themeMode: themeMode,
       // Türkçe locale — showDatePicker, showTimePicker vb. tüm Material
       // widget'ları için dd/MM/yyyy formatı, Türkçe ay/gün adları, virgüllü
@@ -338,7 +338,10 @@ class SandikApp extends ConsumerWidget {
     );
   }
 
-  ThemeData _buildTheme(SandikPalette p, Brightness brightness) {
+  /// Uygulamanın gerçek teması. Statik ve açık: davranış testleri
+  /// (`input_fill_consistency_test`, golden) sahte bir `ThemeData` yerine
+  /// bunu pump eder — tema varsayılanı değişirse test onu görür.
+  static ThemeData buildTheme(SandikPalette p, Brightness brightness) {
     // ── ColorScheme (Sandık / Toka Spec) ────────────────────────────────────
     final cs = ColorScheme(
       brightness: brightness,
@@ -502,43 +505,14 @@ class SandikApp extends ConsumerWidget {
 
       // Input
       //
-      // Tema varsayılanı `context.inputFill` / `context.inputDecoration` ile
-      // AYNI kuralı izler (2026-09-25): dark'ta dolgu yok + hairline çerçeve,
-      // light'ta `surface2` + hairline. Eskiden burada `p.overlay` (beyaz
-      // %4.5) vardı; dekorasyon vermeyen her TextField o dolguyu alıyordu —
-      // alt sayfada/kutu içinde "alanın içi neden farklı renk?" şikâyeti
-      // buradan geliyordu (arama kutusunda Container'ın içinde ikinci bir
-      // dolgu dikdörtgeni). Dolgu kaldırılınca alanı çerçeve tanımlar, bu
-      // yüzden `enabledBorder` artık `none` değil hairline.
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor:
-            brightness == Brightness.light ? p.surface2 : Colors.transparent,
-        border: OutlineInputBorder(
-          borderRadius: SandikRadius.mdAll,
-          borderSide: BorderSide(color: p.hairline),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: SandikRadius.mdAll,
-          borderSide: BorderSide(color: p.hairline),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: SandikRadius.mdAll,
-          borderSide: BorderSide(color: p.amberFill, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: SandikRadius.mdAll,
-          borderSide: BorderSide(color: p.loss, width: 1.2),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: SandikRadius.mdAll,
-          borderSide: BorderSide(color: p.loss, width: 1.5),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        labelStyle: sandikFont(color: p.text58, fontSize: 14),
-        hintStyle: sandikFont(color: p.text36, fontSize: 14),
-      ),
+      // Tanım `sandik.dart` → `sandikGirisTemasi`; `context.inputDecoration`
+      // da onu kullanır, iki kopya yok. Kural (2026-09-25): dark'ta dolgu yok
+      // + hairline çerçeve, light'ta `surface2` + hairline. Eskiden burada
+      // `p.overlay` (beyaz %4.5) vardı; dekorasyon vermeyen her TextField o
+      // dolguyu alıyordu — alt sayfada/kutu içinde "alanın içi neden farklı
+      // renk?" şikâyeti buradan geliyordu (arama kutusunda Container'ın
+      // içinde ikinci bir dolgu dikdörtgeni).
+      inputDecorationTheme: sandikGirisTemasi(p, brightness),
 
       // Filled button — Amber CTA
       filledButtonTheme: FilledButtonThemeData(

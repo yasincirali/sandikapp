@@ -116,6 +116,7 @@ o adlarla geçer.
 `Color(0x…)`, `fontSize:`, `Duration(milliseconds:)` ekleme — `design_token_leak_test` ve
 `spacing_scale_test` sayıları **yalnızca azalabilir**. Kart için `SandikCard`, bölüm başlığı
 için `SandikSectionHeader`; yeni `_SectionTitle` klonu yazma.
+Giriş alanı dolgusu/çerçevesi temadan gelir; ekranda `fillColor` yazma, kendi kutusundaki alana `filled: false` ver (`input_fill_consistency_test`).
 
 **Para ve tarih.** Tutar `fmtTRY`, yüzde `fmtPct`, kullanıcı girdisi `parseTrNumber`
 (`lib/utils/tr_format.dart`). `NumberFormat.currency(locale:'tr_TR')` ve `toStringAsFixed`
@@ -263,5 +264,5 @@ koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Beti
 gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
 
 ---
-**Son güncelleme:** 2026-09-21 (tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+**Son güncelleme:** 2026-09-25 (giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
 kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).

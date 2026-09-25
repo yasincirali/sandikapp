@@ -294,8 +294,12 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
                         TextStyle(color: context.c.text36, fontSize: 13),
                     // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
                     isDense: true,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 12),
+                    // Sağ boşluk: çerçeve artık görünür (tema hairline);
+                    // `BorderSide.none` iken metin kenara dayanabiliyordu.
+                    contentPadding: const EdgeInsets.only(
+                        top: SandikSpace.smd,
+                        bottom: SandikSpace.smd,
+                        right: SandikSpace.smd),
                   ),
                   onChanged: (v) {
                     setState(() => _query = v);

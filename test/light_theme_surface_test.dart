@@ -7,7 +7,7 @@ import 'package:portfoy_takip/theme/sandik.dart';
 /// **Stok Material yüzeyleri iki temada da GÖRÜNÜR olmalı.**
 ///
 /// ## Ölçülen hata
-/// `_buildTheme` paleti (`p`) parametre olarak alıyor ama dört yerde sabit
+/// `buildTheme` paleti (`p`) parametre olarak alıyor ama dört yerde sabit
 /// `Colors.white` yazıyordu:
 ///
 ///   kart kenarlığı   beyaz %5
@@ -22,14 +22,17 @@ import 'package:portfoy_takip/theme/sandik.dart';
 /// bulgusu: "tema dark mode light mode konusu da çalışmıyor".
 ///
 /// ## Neden kaynak metni denetleniyor
-/// `_buildTheme` özel bir metot ve `ThemeData` üretmek için tüm uygulamayı
-/// ayağa kaldırmak gerekir. Asıl değişmez zaten sözdizimseldir: **tema
-/// renkleri paletten (`p`) gelmeli**, moddan bağımsız bir sabitten değil.
+/// Tema eskiden özel bir metottu (`_buildTheme`) ve `ThemeData` üretmek
+/// için tüm uygulamayı ayağa kaldırmak gerekirdi. 2026-09-25'te
+/// `SandikApp.buildTheme` olarak açıldı (render edilen değeri
+/// `input_fill_consistency_test` ölçüyor), ama bu test kaynakta kalır:
+/// asıl değişmez sözdizimseldir: **tema renkleri paletten (`p`) gelmeli**,
+/// moddan bağımsız bir sabitten değil.
 /// Bunu doğrudan kaynakta ifade etmek, üretilen `ThemeData`'yı dolaylı
 /// yoldan yoklamaktan hem daha kesin hem daha okunur.
 void main() {
-  group('_buildTheme moddan bağımsız sabit renk kullanmaz', () {
-    /// `_buildTheme` gövdesi — brace eşlemesiyle çıkarılır.
+  group('buildTheme moddan bağımsız sabit renk kullanmaz', () {
+    /// `buildTheme` gövdesi — brace eşlemesiyle çıkarılır.
     ///
     /// Kapsam daraltmak ZORUNLU: aynı dosyadaki yapılandırma hatası ekranı
     /// sabit koyu kırmızı bir zemin üstünde meşru olarak beyaz metin
@@ -37,9 +40,9 @@ void main() {
     /// gürültüye boğardı.
     String buildThemeBody() {
       final src = File('lib/main.dart').readAsStringSync();
-      final start = src.indexOf('ThemeData _buildTheme(');
+      final start = src.indexOf('ThemeData buildTheme(');
       expect(start, isNot(-1),
-          reason: '_buildTheme bulunamadı — yeniden adlandırıldıysa bu test '
+          reason: 'buildTheme bulunamadı — yeniden adlandırıldıysa bu test '
               'de güncellenmeli, silinmemeli');
 
       final open = src.indexOf('{', start);
@@ -51,7 +54,7 @@ void main() {
           if (depth == 0) return src.substring(open, i + 1);
         }
       }
-      fail('_buildTheme gövdesi kapanmadı');
+      fail('buildTheme gövdesi kapanmadı');
     }
 
     test('gövdede Colors.white / Colors.black geçmez', () {
@@ -90,8 +93,10 @@ void main() {
 
       for (final beklenen in const [
         'side: BorderSide(color: p.hairline', // kart kenarlığı
-        'p.surface2 : Colors.transparent', // input dolgusu (= inputFill)
-        'borderSide: BorderSide(color: p.hairline)', // input çerçevesi
+        // Input dolgusu + çerçevesi paletle kurulan tek kaynaktan
+        // (`sandikGirisTemasi(p, …)`); render edilen renkleri
+        // `input_fill_consistency_test` iki temada ölçer.
+        'inputDecorationTheme: sandikGirisTemasi(p, brightness)',
         'backgroundColor: p.overlay', // chip zemini
         'color: p.hairline', // ayraç
       ]) {

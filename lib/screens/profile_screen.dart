@@ -701,7 +701,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onSubmitted: (_) {
                     if (!_submitting) _submitCode();
                   },
-                  style: TextStyle(color: context.c.text90),
+                  // Kilitliyken metin söner: çerçeve kilitli alanda da aynı
+                  // hairline (`sandikGirisTemasi`), kilidi metin anlatır.
+                  style: TextStyle(
+                      color: _rateLimitRemaining == 0
+                          ? context.c.text90
+                          : context.c.text36),
                   decoration: context.inputDecoration('XXXXX-XXXXX'),
                 ),
                 // Kilitliyken kalan süre canlı gösterilir; diyalog

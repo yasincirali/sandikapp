@@ -474,7 +474,7 @@ class _SandikTappableState extends State<SandikTappable> {
 /// Neden: hardcoded `fontSize` iOS Dynamic Type ölçeklemesini yok sayar ve
 /// her çağrıda font çözümlemesi yapar. Merkezi tema her ikisini de çözer.
 extension SandikTypography on BuildContext {
-  /// Merkezi metin ölçeği. Tanım: `main.dart` → `_buildTheme()`.
+  /// Merkezi metin ölçeği. Tanım: `main.dart` → `buildTheme()`.
   ///
   /// Marka eşlemesi (mevcut kullanıma göre kalibre edildi):
   /// - `headlineLarge` 24 / `headlineMedium` 20 / `headlineSmall` 18 — başlık
@@ -955,21 +955,15 @@ extension SandikSurfaces on BuildContext {
     );
   }
 
-  /// Giriş alanı dolgusu — TEK kaynak (2026-09-25).
-  ///
-  /// **Dark'ta dolgu YOK, yalnız hairline çerçeve.** Üç deneme yapıldı:
-  /// `background` (alt sayfada koyu çukur), siyah %18 (aynı), `overlay`
-  /// (alt sayfa zaten `surface2` iken üstüne bir kat daha beyaz → gri kutu).
-  /// Üçünde de kullanıcı aynı şeyi söyledi: "alanın içi neden farklı renk?"
-  /// Sorun tonun yönü değil, alanın ZEMİNİNİN sayfadan sayfaya değişmesi
-  /// (sayfa `background`, alt sayfa `surface2`, diyalog `surface1`); zemine
-  /// göre seçilmemiş her sabit dolgu birinde yabancı kalır. Şeffaf dolgu her
-  /// zeminde o zeminin rengidir; alanı çerçeve ve ikon tanımlar.
-  /// Light'ta `surface2` (beyaz): sayfa kremdir, beyaz alan öne çıkar; beyaz
-  /// alt sayfada ise görünmez, yine çerçeve kalır — aynı sonuç.
-  Color get inputFill => isLight ? c.surface2 : Colors.transparent;
+  /// Giriş alanı dolgusu — kural ve gerekçesi [girisDolgusu]'nda.
+  Color get inputFill => girisDolgusu(c, Theme.of(this).brightness);
 
   /// Form alanı dekorasyonu — moda duyarlı.
+  ///
+  /// Yalnız metin/ikon/stil verir; dolgu ve çerçeveler [sandikGirisTemasi]'ndan
+  /// `applyDefaults` ile gelir. Önceden her çerçeve burada ve temada ayrı ayrı
+  /// yazılıydı; `disabledBorder` eklenirken iki yere yazmak gerekti — kopyalar
+  /// sessizce ayrışırdı.
   InputDecoration inputDecoration(
     String hint, {
     Widget? prefixIcon,
@@ -978,11 +972,6 @@ extension SandikSurfaces on BuildContext {
     String? errorText,
   }) {
     final p = c;
-    OutlineInputBorder border(Color color, [double width = 1.0]) =>
-        OutlineInputBorder(
-          borderRadius: SandikRadius.mdAll,
-          borderSide: BorderSide(color: color, width: width),
-        );
     return InputDecoration(
       hintText: hint,
       labelText: labelText,
@@ -991,16 +980,59 @@ extension SandikSurfaces on BuildContext {
       labelStyle: TextStyle(color: p.text36, fontSize: 14),
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
-      filled: true,
-      // Renk kuralı ve gerekçesi [inputFill]'de — burada tekrar yazılmaz.
-      fillColor: inputFill,
-      border: border(p.hairline),
-      enabledBorder: border(p.hairline),
-      focusedBorder: border(p.amberFill, 1.5),
-      errorBorder: border(p.loss, 1.2),
-      focusedErrorBorder: border(p.loss, 1.5),
-    );
+    ).applyDefaults(sandikGirisTemasi(p, Theme.of(this).brightness));
   }
+}
+
+/// Giriş alanı dolgusu — TEK kaynak (2026-09-25).
+///
+/// **Dark'ta dolgu YOK, yalnız hairline çerçeve.** Üç deneme yapıldı:
+/// `background` (alt sayfada koyu çukur), siyah %18 (aynı), `overlay`
+/// (alt sayfa zaten `surface2` iken üstüne bir kat daha beyaz → gri kutu).
+/// Üçünde de kullanıcı aynı şeyi söyledi: "alanın içi neden farklı renk?"
+/// Sorun tonun yönü değil, alanın ZEMİNİNİN sayfadan sayfaya değişmesi
+/// (sayfa `background`, alt sayfa `surface2`, diyalog `surface1`); zemine
+/// göre seçilmemiş her sabit dolgu birinde yabancı kalır. Şeffaf dolgu her
+/// zeminde o zeminin rengidir; alanı çerçeve ve ikon tanımlar.
+/// Light'ta `surface2` (beyaz): sayfa kremdir, beyaz alan öne çıkar; beyaz
+/// alt sayfada ise görünmez, yine çerçeve kalır — aynı sonuç.
+///
+/// `BuildContext` almaz: tema (`main.dart` → `buildTheme`) context'siz
+/// kurulur ve aynı kuralı buradan okur.
+Color girisDolgusu(SandikPalette p, Brightness b) =>
+    b == Brightness.light ? p.surface2 : Colors.transparent;
+
+/// Giriş alanı teması — dolgu ve çerçevelerin TEK kaynağı (2026-09-25).
+///
+/// `ThemeData.inputDecorationTheme` (`main.dart` → `buildTheme`) ve
+/// `context.inputDecoration` ikisi de bunu kullanır. Ekranlar `fillColor`
+/// yazmaz; kendi kutusundaki alan `filled: false` der
+/// (`input_fill_consistency_test`).
+InputDecorationTheme sandikGirisTemasi(SandikPalette p, Brightness b) {
+  OutlineInputBorder cerceve(Color renk, [double kalinlik = 1.0]) =>
+      OutlineInputBorder(
+        borderRadius: SandikRadius.mdAll,
+        borderSide: BorderSide(color: renk, width: kalinlik),
+      );
+  return InputDecorationTheme(
+    filled: true,
+    fillColor: girisDolgusu(p, b),
+    // Dolgu kaldırıldığı için (dark) alanı çerçeve tanımlar — `none` değil.
+    border: cerceve(p.hairline),
+    enabledBorder: cerceve(p.hairline),
+    // Verilmezse Material kendi varsayılanını çizer (onSurface %12) —
+    // hairline'dan farklı bir gri. Yarım hairline denendi (2026-09-25):
+    // dark'ta beyaz %3.5, dolgusuz alanda kilitli OTP hücreleri ve ortaklık
+    // kodu alanı tamamen kayboluyordu (golden'da görüldü). Kilitli olduğu
+    // metnin sönükleşmesinden okunur; çerçeve alanın yerini korur.
+    disabledBorder: cerceve(p.hairline),
+    focusedBorder: cerceve(p.amberFill, 1.5),
+    errorBorder: cerceve(p.loss, 1.2),
+    focusedErrorBorder: cerceve(p.loss, 1.5),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    labelStyle: sandikFont(color: p.text58, fontSize: 14),
+    hintStyle: sandikFont(color: p.text36, fontSize: 14),
+  );
 }
 
 /// Sandık (ex-Toka) marka renk paleti ve logo painter

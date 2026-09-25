@@ -1587,20 +1587,30 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: context.c.surface1,
+        // Seçici bir giriş alanı gibi okunur ve aynı formda TextFormField'ların
+        // yanında durur: dolgu ve boş kenar onlarla aynı kuraldan
+        // (`inputFill` + hairline). `surface1` + `overlay` kenar idi — dark'ta
+        // komşu alanlar şeffafken bu tek kutu dolu görünüyordu.
+        color: context.inputFill,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         border: Border.all(
           color: hasError
               ? context.c.loss
-              : (hasValue ? color : context.c.overlay),
+              : (hasValue ? color : context.c.hairline),
           width: hasValue ? 1.4 : 1,
         ),
+        // Parlama YALNIZ dışarıda (`BlurStyle.outer`). Flutter gölgeyi
+        // kutunun tamamı olarak çizer; eski opak `surface1` dolgu içini
+        // örtüyordu. Dolgu dark'ta şeffaf olunca (`inputFill`) gölge kutunun
+        // içini varlık rengine boyadı — düzeltilen "içi farklı renk" hatasının
+        // aynısı. `outer` negatif yayılmayla kullanılamaz (içeride bir şerit
+        // boyar), bu yüzden yayılma 0 ve bulanıklık kısaltıldı.
         boxShadow: hasValue
             ? [
                 BoxShadow(
                   color: color.withValues(alpha: 0.20),
-                  blurRadius: 14,
-                  spreadRadius: -6,
+                  blurRadius: 10,
+                  blurStyle: BlurStyle.outer,
                 ),
               ]
             : null,

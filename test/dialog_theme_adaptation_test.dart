@@ -72,7 +72,7 @@ void main() {
     });
 
     test('tema tanımları palet üzerinden beslenir (sabit renk değil)', () {
-      // `_buildTheme(SandikPalette p, ...)` içinde `p.` ile okunmalı.
+      // `buildTheme(SandikPalette p, ...)` içinde `p.` ile okunmalı.
       for (final key in [
         'bottomSheetTheme',
         'popupMenuTheme',

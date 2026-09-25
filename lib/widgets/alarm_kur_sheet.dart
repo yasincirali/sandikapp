@@ -202,7 +202,9 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
                 decoration: BoxDecoration(
-                  color: c.surface2,
+                  // Altındaki hedef fiyat alanıyla aynı dolgu kuralı;
+                  // sabit `surface2` alt sayfa zemini değişirse ayrışırdı.
+                  color: context.inputFill,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                   border: Border.all(color: c.hairline),
                 ),
