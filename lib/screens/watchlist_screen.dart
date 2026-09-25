@@ -710,16 +710,15 @@ class _AddHeader extends ConsumerWidget {
     final dolu = sinirli && n >= limit;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
-      // Ölçüler `ModernTabSelector` ile birebir (kullanıcı, 2026-09-25:
-      // "font ve büyüklük uygulama genelindeki kurallara uygun olmalı"):
-      // kart 48 pt, iç boşluk 4 pt, düğme 40 pt, metin `bodyMedium`.
-      // Üstteki sekme seçici ve alttaki dönem seçiciyle aynı ritim.
+      // Ölçüler kanvastaki C taslağıyla birebir (kullanıcı, 2026-09-25:
+      // "C seçeneği buradaki"): kart 56 pt, sol 14 / sağ 6 pt iç boşluk,
+      // düğme 44 pt, etiketler `bodySmall`, şerit 4 pt. Bir ara segment
+      // seçicinin 48/40 ölçüsüne indirilmişti; kullanıcı taslağı istedi —
+      // kart bir seçici değil, bilgi + eylem kartı; kendi ölçüsü olabilir.
       child: Container(
-        height: 48,
-        // Dikey iç boşluk YOK: düğmenin dokunma alanı kartın tam
-        // yüksekliği (48 pt ≥ HIG 44), görsel 40 pt kutu kendi içinde
-        // 4 pt pay bırakır. Sol 16 pt = segment seçicinin metin girintisi.
-        padding: const EdgeInsets.only(left: SandikSpace.md, right: SandikSpace.xs),
+        height: 56,
+        padding: const EdgeInsets.only(
+            left: SandikSpace.md2, right: SandikSpace.xs2),
         decoration: BoxDecoration(
           color: c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -741,14 +740,14 @@ class _AddHeader extends ConsumerWidget {
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(context.l10n.watchlistInListLabel,
-                            style: context.t.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
+                            style: context.t.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
                                 color: c.text58)),
                         const Spacer(),
                         Text.rich(
                           TextSpan(
                             text: '$n',
-                            style: context.t.bodyMedium?.copyWith(
+                            style: context.t.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: dolu ? c.loss : c.text90),
                             children: [
@@ -762,7 +761,7 @@ class _AddHeader extends ConsumerWidget {
                       ],
                     ),
                     if (sinirli) ...[
-                      const SizedBox(height: SandikSpace.xs),
+                      const SizedBox(height: SandikSpace.xs2 + 1),
                       _KapasiteSeridi(dolu: n, toplam: limit),
                     ],
                   ],
@@ -781,20 +780,20 @@ class _AddHeader extends ConsumerWidget {
                         kind: SandikSnackKind.warning,
                       )
                   : () => _ekle(context),
-              // Dokunma hedefi 48 pt (kartın tamamı); görsel kutu 40 pt,
-              // segment düğmesiyle aynı ölçü ve köşe.
+              // Dokunma hedefi 56 pt (kartın tamamı); görsel kutu 44 pt
+              // (taslak), 6 pt dikey pay.
               child: SizedBox(
-                height: 48,
+                height: 56,
                 child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+                      const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: SandikSpace.md),
+                        horizontal: SandikSpace.md2),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: dolu ? Colors.transparent : c.amberFill,
-                      borderRadius: BorderRadius.circular(SandikRadius.md),
+                      borderRadius: BorderRadius.circular(SandikSpace.sm2),
                       border: dolu ? Border.all(color: c.hairline) : null,
                     ),
                     child: Row(
@@ -809,9 +808,9 @@ class _AddHeader extends ConsumerWidget {
                           dolu
                               ? context.l10n.watchlistFullShort
                               : context.l10n.watchlistAddShort,
-                          style: context.t.bodyMedium?.copyWith(
+                          style: context.t.titleSmall?.copyWith(
                               color: dolu ? c.text58 : c.onStatus,
-                              fontWeight: FontWeight.w600),
+                              fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
@@ -844,11 +843,15 @@ class _KapasiteSeridi extends StatelessWidget {
     final c = context.c;
     final tamamen = dolu >= toplam;
     return SizedBox(
-      height: SandikSpace.xs2,
+      height: SandikSpace.xs,
       child: Row(
+        // `stretch` ŞART: `DecoratedBox` çocuksuzdur ve Row'un dikey kısıtı
+        // gevşek olduğundan yüksekliği 0'a düşer — şerit yerleşimde var
+        // (227×4) ama çizilmezdi (golden ile ölçüldü, 2026-09-25).
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < toplam; i++) ...[
-            if (i > 0) const SizedBox(width: SandikSpace.xxs),
+            if (i > 0) const SizedBox(width: SandikSpace.xxs + 1),
             Expanded(
               child: DecoratedBox(
                 decoration: BoxDecoration(
