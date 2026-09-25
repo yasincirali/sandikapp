@@ -782,6 +782,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pickGoldTap => 'Altın türü seçmek için dokun...';
 
   @override
+  String get goldSearchHint => 'Ara: çeyrek, 22 ayar, reşat…';
+
+  @override
   String get goldTypes => 'Altın Türleri';
 
   @override

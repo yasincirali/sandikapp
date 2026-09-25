@@ -1514,6 +1514,12 @@ abstract class AppLocalizations {
   /// **'Altın türü seçmek için dokun...'**
   String get pickGoldTap;
 
+  /// No description provided for @goldSearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara: çeyrek, 22 ayar, reşat…'**
+  String get goldSearchHint;
+
   /// No description provided for @goldTypes.
   ///
   /// In tr, this message translates to:

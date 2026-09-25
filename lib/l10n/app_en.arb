@@ -374,6 +374,7 @@
   "identityFund": "Fund",
   "identityGoldKind": "Gold Type",
   "pickGoldTap": "Tap to pick a gold type...",
+  "goldSearchHint": "Search: quarter, 22 carat, reşat…",
   "goldTypes": "Gold Types",
   "goldQuickPick": "Quick pick",
   "goldGroupGram": "Gram",

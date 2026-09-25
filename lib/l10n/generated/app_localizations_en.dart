@@ -781,6 +781,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickGoldTap => 'Tap to pick a gold type...';
 
   @override
+  String get goldSearchHint => 'Search: quarter, 22 carat, reşat…';
+
+  @override
   String get goldTypes => 'Gold Types';
 
   @override

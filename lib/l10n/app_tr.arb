@@ -374,6 +374,7 @@
   "identityFund": "Fon",
   "identityGoldKind": "Altın Türü",
   "pickGoldTap": "Altın türü seçmek için dokun...",
+  "goldSearchHint": "Ara: çeyrek, 22 ayar, reşat…",
   "goldTypes": "Altın Türleri",
   "goldQuickPick": "Hızlı seçim",
   "goldGroupGram": "Gram",

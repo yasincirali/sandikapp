@@ -2196,6 +2196,7 @@ class _GoldPickerState extends State<_GoldPicker> {
     ];
     return _PickerShell(
       title: context.l10n.goldTypes,
+      searchHint: context.l10n.goldSearchHint,
       count: eslesen.length,
       color: AssetType.altin.color,
       searchCtrl: _ctrl,
@@ -2209,15 +2210,18 @@ class _GoldPickerState extends State<_GoldPicker> {
               itemBuilder: (_, i) {
                 final o = ogeler[i];
                 if (o is AltinGrubu) {
+                  // HIG gruplu liste başlığı: satır metniyle aynı sol
+                  // hizada, ikincil renkte, üstünde grup ayıracı boşluk.
+                  final yatay = SandikSpace.screenH(context);
                   return Padding(
-                    padding: const EdgeInsets.fromLTRB(SandikSpace.lgs,
-                        SandikSpace.md, SandikSpace.lgs, SandikSpace.xs),
+                    padding: EdgeInsets.fromLTRB(
+                        yatay, i == 0 ? SandikSpace.md : SandikSpace.lg,
+                        yatay, SandikSpace.xs),
                     child: Semantics(
                       header: true,
                       child: Text(_grupAdi(o),
-                          style: context.t.labelLarge?.copyWith(
+                          style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.8,
                               color: context.c.text58)),
                     ),
                   );
@@ -2451,6 +2455,8 @@ class _PickerShell extends StatefulWidget {
   final String query;
   final ColorScheme cs;
   final Widget child;
+  /// Arama kutusunun ipucu; verilmezse genel "Ara…".
+  final String? searchHint;
 
   const _PickerShell({
     required this.title,
@@ -2461,16 +2467,25 @@ class _PickerShell extends StatefulWidget {
     required this.query,
     required this.cs,
     required this.child,
+    this.searchHint,
   });
 
   @override
   State<_PickerShell> createState() => _PickerShellState();
 }
 
+// Hisse, fon ve altın seçicilerinin ortak kabuğu.
+//
+// 2026-09-25 ("liste uygulama ve HIG standartlarına uygun olmalı",
+// kullanıcı): kabuk ham `TextStyle(fontSize:)` ve Material `cs.*` tonlarıyla
+// yazılmıştı; uygulamanın geri kalanından farklı font boyutu/rengi
+// taşıyordu. Artık tipografi `context.t`, renk `context.c`, boşluk
+// `SandikSpace` — aynı liste her yerde aynı görünür. HIG: arama alanı 44pt,
+// temizle düğmesi 44pt dokunma hedefi, başlık büyük ve kalın.
 class _PickerShellState extends State<_PickerShell> {
   @override
   Widget build(BuildContext context) {
-    final cs = widget.cs;
+    final yatay = SandikSpace.screenH(context);
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.88,
@@ -2479,66 +2494,67 @@ class _PickerShellState extends State<_PickerShell> {
       builder: (ctx, sc) => Column(
         children: [
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 10),
+            margin: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-                color: cs.outlineVariant,
+                color: context.c.text20,
                 borderRadius: BorderRadius.circular(SandikRadius.sm)),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 12),
+            padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.smd),
             child: Row(
               children: [
-                Text(widget.title,
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                        color: cs.onSurface)),
-                const SizedBox(width: 8),
+                Flexible(
+                  child: Semantics(
+                    header: true,
+                    child: Text(widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.sm),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SandikSpace.sm, vertical: SandikSpace.xxs),
                   decoration: BoxDecoration(
-                    color: widget.color.withValues(alpha: 0.12),
+                    color: widget.color.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text('${widget.count}',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: widget.color)),
+                      style: context.t.labelLarge
+                          ?.copyWith(color: widget.color)),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0, SandikSpace.screenH(context), 12),
+            padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.smd),
             child: Container(
-              height: 44,
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
               decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: context.c.background,
                 borderRadius: BorderRadius.circular(SandikRadius.md),
-                border:
-                    Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+                border: Border.all(color: context.c.hairline),
               ),
               child: Row(
                 children: [
-                  const SizedBox(width: 12),
+                  const SizedBox(width: SandikSpace.smd),
                   Icon(Icons.search_rounded,
-                      size: 16, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 8),
+                      size: 18, color: context.c.text58),
+                  const SizedBox(width: SandikSpace.sm),
                   Expanded(
                     child: TextField(
                       controller: widget.searchCtrl,
                       autofocus: true,
-                      style: TextStyle(fontSize: 14, color: cs.onSurface),
+                      style: context.t.bodyLarge,
                       decoration: InputDecoration(
-                        hintText: context.l10n.searchEllipsis,
-                        hintStyle: TextStyle(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                            fontSize: 14),
+                        hintText:
+                            widget.searchHint ?? context.l10n.searchEllipsis,
+                        hintStyle: context.t.bodyLarge
+                            ?.copyWith(color: context.c.text36),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
@@ -2553,22 +2569,23 @@ class _PickerShellState extends State<_PickerShell> {
                       button: true,
                       label: context.l10n.clearSearch,
                       child: GestureDetector(
-                      onTap: () {
-                        widget.searchCtrl.clear();
-                        widget.onSearch('');
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Icon(Icons.close_rounded,
-                            size: 14, color: cs.onSurfaceVariant),
-                      ),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          widget.searchCtrl.clear();
+                          widget.onSearch('');
+                        },
+                        child: SizedBox.fromSize(
+                          size: SandikTouch.minSize,
+                          child: Icon(Icons.cancel_rounded,
+                              size: 18, color: context.c.text36),
+                        ),
                       ),
                     ),
                 ],
               ),
             ),
           ),
-          Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.3)),
+          Divider(height: 1, color: context.c.hairline),
           Expanded(child: widget.child),
         ],
       ),
@@ -2595,65 +2612,71 @@ class _PickerRow extends StatelessWidget {
     required this.onTap,
   });
 
+  // HIG seçim listesi: seçili satırda onay işareti, diğerlerinde HİÇBİR
+  // işaret yok. Eski `chevron_right` "yeni sayfaya gider" demekti (HIG'de
+  // ok = disclosure); burada dokunuş seçer ve sayfayı kapatır.
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? color.withValues(alpha: 0.15)
-                    : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: isSelected
-                    ? Border.all(
-                        color: color.withValues(alpha: 0.5), width: 1.5)
-                    : null,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                badgeText.length > 5 ? badgeText.substring(0, 4) : badgeText,
-                style: TextStyle(
-                  fontSize: badgeText.length > 4 ? 8 : 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
-                  color: isSelected ? color : cs.onSurface,
+    final yatay = SandikSpace.screenH(context);
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+              horizontal: yatay, vertical: SandikSpace.sm2),
+          child: Row(
+            children: [
+              Container(
+                width: SandikTouch.min,
+                height: SandikTouch.min,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? color.withValues(alpha: 0.16)
+                      : context.c.surface2,
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
+                  border: isSelected
+                      ? Border.all(color: color.withValues(alpha: 0.5))
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  badgeText.length > 5 ? badgeText.substring(0, 4) : badgeText,
+                  maxLines: 1,
+                  style: context.t.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: isSelected ? color : context.c.text90,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: TextStyle(
-                            fontSize: 11, color: cs.onSurfaceVariant)),
+              const SizedBox(width: SandikSpace.smd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: context.t.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: SandikSpace.xxs),
+                      Text(subtitle,
+                          style: context.t.bodyMedium
+                              ?.copyWith(color: context.c.text58),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            if (isSelected)
-              Icon(Icons.check_circle_rounded, size: 20, color: color)
-            else
-              Icon(Icons.chevron_right_rounded,
-                  size: 18, color: cs.outlineVariant),
-          ],
+              if (isSelected) ...[
+                const SizedBox(width: SandikSpace.sm),
+                Icon(Icons.check_rounded, size: 22, color: color),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -2661,7 +2684,11 @@ class _PickerRow extends StatelessWidget {
 }
 
 Widget _emptySearch(BuildContext context, String q, ColorScheme cs) => Center(
-      child: Text(
-          q.isEmpty ? context.l10n.noResults : context.l10n.noResultsFor(q),
-          style: TextStyle(color: cs.onSurfaceVariant)),
+      child: Padding(
+        padding: const EdgeInsets.all(SandikSpace.lg),
+        child: Text(
+            q.isEmpty ? context.l10n.noResults : context.l10n.noResultsFor(q),
+            textAlign: TextAlign.center,
+            style: context.t.bodyLarge?.copyWith(color: context.c.text58)),
+      ),
     );
