@@ -2740,7 +2740,9 @@ class _PickerShellState extends State<_PickerShell> {
             child: Container(
               constraints: const BoxConstraints(minHeight: SandikTouch.min),
               decoration: BoxDecoration(
-                color: context.c.background,
+                // `background` idi: beyaz alt sayfa üstünde krem kutu
+                // (kullanıcı, 2026-09-25). Dolgu artık tema kuralından.
+                color: context.inputFill,
                 borderRadius: BorderRadius.circular(SandikRadius.md),
                 border: Border.all(color: context.c.hairline),
               ),

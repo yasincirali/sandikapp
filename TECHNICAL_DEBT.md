@@ -5,7 +5,27 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-25 (kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+
+---
+
+## 🟡 AÇIK — Giriş alanı dolgusu on yerde hâlâ elle seçiliyor
+
+**Ne:** 2026-09-25'te tema `inputFill` tek kaynak oldu (light: `surface2`,
+dark: siyah %18) ve üç arama alanı ona bağlandı (seçici alt sayfası, takibe
+ekle, karşılaştırma). Ama `inputDecorationTheme.fillColor` (`main.dart`)
+hâlâ `overlay`, ayrıca `otp_verification`, `settings`, `dividend_dialog`,
+`hedef_sheet`, `quick_adjust_dialog`, `karsilastirma_secici`,
+`gorunum_cipi`, `add_asset` (hızlı giriş) kendi `fillColor`'ını yazıyor
+(`surface1` ya da `overlay`). Aynı alan ekrandan ekrana renk değiştiriyor.
+
+**Neden ertelendi:** tema düzeyinde değişiklik on ekranı birden etkiler;
+her birinin zemini farklı (sayfa/alt sayfa/diyalog) ve görsel doğrulama
+gerçek cihaz ister. Bu turda kullanıcının gösterdiği üç yüzey düzeltildi.
+
+**Maliyet:** tutarsız görünüm, işlevsel kayıp yok. **Ne zaman:** bir
+sonraki tasarım cilası turunda `context.inputFill`'e geçir, `fillColor`
+grep'i sıfıra insin; `design_token_leak_test` benzeri bir ratchet ekle.
 
 ---
 

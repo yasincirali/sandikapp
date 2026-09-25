@@ -1060,10 +1060,10 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
                     hintStyle: TextStyle(color: p.text36, fontSize: 14),
                     prefixIcon: Icon(Icons.search_rounded, color: p.text58),
                     filled: true,
-                    fillColor: p.overlay,
+                    fillColor: context.inputFill,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(SandikRadius.md),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(color: p.hairline),
                     ),
                   ),
                 ),

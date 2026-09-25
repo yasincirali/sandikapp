@@ -30,6 +30,7 @@ import 'screens/lock_screen.dart';
 import 'utils/sandik_snack.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'widgets/klavye_kapatici.dart';
 import 'widgets/yenilikler_sheet.dart';
 import 'services/surum_notu_service.dart';
 import 'services/deep_link_service.dart';
@@ -329,7 +330,10 @@ class SandikApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       // Tanıtım turu Navigator'ın ÜSTÜNDE yaşar: her rota açılıp kapansa da
       // karartma ve kart en üstte kalır (bkz. OnboardingTourHost).
-      builder: (context, child) => OnboardingTourHost(child: child!),
+      // `KlavyeKapatici` Navigator'ı sarar: hangi ekranda, hangi alt sayfada
+      // olursa olsun boşluğa dokununca klavye kapanır (bkz. widget notu).
+      builder: (context, child) =>
+          KlavyeKapatici(child: OnboardingTourHost(child: child!)),
       home: const _AuthGate(),
     );
   }

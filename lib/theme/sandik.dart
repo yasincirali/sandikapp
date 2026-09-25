@@ -955,6 +955,17 @@ extension SandikSurfaces on BuildContext {
     );
   }
 
+  /// Giriş alanı dolgusu — TEK kaynak (2026-09-25).
+  ///
+  /// Dark'ta alan zeminden KOYULAŞARAK çukurlaşır; light'ta tam tersi,
+  /// beyazlaşarak öne çıkar. Kural buradaydı ama yalnızca [inputDecoration]
+  /// uyguluyordu: seçici alt sayfasının arama alanı `background`, takip
+  /// listesi araması `surface1`, karşılaştırma araması `overlay` alıyordu —
+  /// aynı alan üç ekranda üç ayrı renkti (kullanıcı ekran görüntüsü:
+  /// beyaz sayfa üstünde krem kutu). Rengi seçen her yer buradan okur.
+  Color get inputFill =>
+      isLight ? c.surface2 : Colors.black.withValues(alpha: 0.18);
+
   /// Form alanı dekorasyonu — moda duyarlı.
   InputDecoration inputDecoration(
     String hint, {
@@ -978,9 +989,8 @@ extension SandikSurfaces on BuildContext {
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
       filled: true,
-      // Dark'ta alan zeminden KOYULAŞARAK çukurlaşır; light'ta tam tersi,
-      // beyazlaşarak öne çıkar.
-      fillColor: isLight ? p.surface2 : Colors.black.withValues(alpha: 0.18),
+      // Renk kuralı ve gerekçesi [inputFill]'de — burada tekrar yazılmaz.
+      fillColor: inputFill,
       border: border(p.hairline),
       enabledBorder: border(p.hairline),
       focusedBorder: border(p.amberFill, 1.5),
