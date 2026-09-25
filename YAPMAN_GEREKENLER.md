@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-09-21 (push token devralma — 0069 db push)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-09-25 (kripto — 0074, 0075 + dört edge function)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -9,6 +9,38 @@
 > yeni rehber geçerlidir.
 
 **Kapsam:** Yayın öncesi senin elden yapman gereken işler. Kod tarafı (Faz 1) tamam; bu liste deploy + hukuki + ticari adımları içerir.
+
+---
+
+## 🪙 2026-09-25 Kripto — 0074, 0075 + dört edge function
+
+Kripto fiyatını sunucu çeker (tek kaynak Binance: fiyat, grafik, katalog,
+ad/logo), uygulama yalnızca Supabase'i okur. Uygulama tarafı sonraki
+adımlarda gelecek; bu altyapı önce canlıya çıkabilir, kimseyi etkilemez.
+
+1. **Sır üret ve iki yere yaz** (aynı değer):
+   - Edge function secret: `KRIPTO_CRON_SECRET` (Dashboard → Edge Functions →
+     Secrets, ya da `supabase secrets set KRIPTO_CRON_SECRET=...`).
+   - Vault: `select vault.create_secret('<aynı değer>', 'kripto_cron_secret');`
+   Sır yoksa fonksiyonlar 503 döner (fail-closed); cron her dakika
+   `Vault secret kripto_cron_secret bulunamadi` hatası yazar.
+2. **Deploy:** Actions → Supabase deploy → migrations=true (0074, 0075) ve
+   functions=`kripto-katalog kripto-fiyat kripto-seri check-price-alerts`.
+   `check-price-alerts` kripto alarmlarını `kripto_fiyat`'tan okuyor;
+   yeniden dağıtılmazsa kripto alarmı hiç tetiklenmez.
+3. **İlk katalog:** cron saatte bir (xx:10) kurar. Beklemek istemezsen SQL:
+   `select public.trigger_kripto_katalog();` → bir dakika sonra
+   `select count(*), count(*) filter (where parite='TRY') from kripto_varlik;`
+4. **Doğrula:** `select kod, fiyat_try, gun_acilis_try, kaynak, guncellendi
+   from kripto_fiyat order by guncellendi desc limit 5;` — `guncellendi`
+   son bir dakika içinde. `guncellendi` ilerlemiyorsa Binance o bölgeden
+   yanıt vermiyor olabilir (451): Edge Functions → kripto-fiyat → Logs'ta
+   `binance ... 451` satırlarına bak.
+5. **Hukuki not (hukuki görüş değil):** 7518 sayılı kanun kripto alım-satım/
+   saklama yapan kuruluşları kapsıyor; fiyat gösteren takip uygulaması bu
+   tanıma girmiyor. Uygulamaya "Binance'te al" düğmesi, referans linki
+   KONMAYACAK. Play Console'da kripto beyanı sorulursa "borsa/cüzdan
+   özelliği yok, yalnızca takip" diye işaretle.
 
 ---
 

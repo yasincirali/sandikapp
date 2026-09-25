@@ -163,7 +163,7 @@ Deno.serve(async (request) => {
     // Sembol başına TEK çekim: 500 kullanıcı aynı gram altın alarmını
     // kurmuşsa da tek istek gider.
     const semboller = new Set(alerts.map((a) => a.symbol));
-    const fiyatlar = await fetchLivePrices(semboller);
+    const fiyatlar = await fetchLivePrices(semboller, admin);
     if (fiyatlar.size === 0) {
       // KANARYA: alarm var ama TEK sembol bile fiyatlanamadı. 2026-09-15'te
       // truncgil'in anahtar değişimi böyle görünmüştü ve HTTP 200 ile iki gün

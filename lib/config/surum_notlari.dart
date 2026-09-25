@@ -101,8 +101,35 @@ const List<SurumNotu> surumNotlari = [
     surum: '1.1.6',
     tarih: 'Eylül 2026',
     onemli: true,
-    baslik: 'Fiyat alarmları ve bildirim merkezi',
+    baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
     yenilikler: [
+      // Kripto (2026-09-25) ayrı bir 1.1.7 notu olarak yazılmıştı; ASC'de
+      // 1.1.6 train'i hâlâ açık ve fastlane yalnızca kapalı train'de bump
+      // yapıyor, yani derleme 1.1.6 çıkacak. '1.1.7' notu hiç gösterilmezdi
+      // (sessiz arıza, dosya başı). Bu yüzden 1.1.6 notuna katıldı.
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Kripto ekle',
+        aciklama: 'Varlık Ekle\'de yeni Kripto türü var: listeden coin\'i '
+            'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Türk lirası '
+            'paritesi olan tüm coin\'ler ve en çok işlem gören 250 coin '
+            'listede. Hızlı Giriş\'e "0,05 btc" yazman da yeter.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Toplamda, grafikte, alarmda',
+        aciklama: 'Kripto, portföy toplamına TL olarak girer; miktar '
+            'gerektiği kadar ondalıkla tutulur. Kripto 7/24 işlediği için '
+            'grafikte hafta sonu da görünür. Takip listesine ekleyebilir, '
+            'fiyat alarmı kurabilirsin.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
+        baslik: 'Fiyatlar nereden geliyor',
+        aciklama: 'Kripto fiyatları Binance\'ten, dakikada bir güncellenir. '
+            'Fiyat 10 dakikadan eskiyse varlık ekranında "Gecikmeli" yazar. '
+            'Yatırım tavsiyesi değildir.',
+      ),
       Yenilik(
         ikon: YenilikIkonu.ayar,
         baslik: 'Giriş: artık şifre sormuyor',

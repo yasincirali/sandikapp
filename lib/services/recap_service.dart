@@ -14,6 +14,7 @@ enum PortfolioCharacter {
   hisseci('Hisseci', 'Borsada oyuncusun'),
   foncu('Fon Yatırımcısı', 'İşi profesyonellere bırakıyorsun'),
   emtiaci('Emtiacı', 'Alışılmadık bir yol seçtin'),
+  kriptocu('Kriptocu', '7/24 açık bir piyasayı seçtin'),
   dengeli('Dengeli', 'Yumurtaları tek sepete koymuyorsun');
 
   final String label;
@@ -177,6 +178,7 @@ class RecapService {
       AssetType.hisse => PortfolioCharacter.hisseci,
       AssetType.fon => PortfolioCharacter.foncu,
       AssetType.emtia => PortfolioCharacter.emtiaci,
+      AssetType.kripto => PortfolioCharacter.kriptocu,
       AssetType.diger => PortfolioCharacter.dengeli,
     };
   }

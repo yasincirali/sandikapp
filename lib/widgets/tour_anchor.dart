@@ -38,6 +38,10 @@ enum TourTarget {
   /// Varlık ekle: Toplu ekle.
   topluEkle,
 
+  /// Varlık ekle: tür çipleri (Hisse · Fon · … · Kripto). 2026-09-25'te
+  /// kripto türüyle eklendi.
+  turSecici,
+
   /// Performans: dönem seçici (GÜNLÜK · 1H · 1A …).
   donemSecici,
 

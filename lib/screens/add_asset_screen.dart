@@ -8,8 +8,10 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
 import '../models/altin_kisayollari.dart';
+import '../models/kripto_fiyat.dart';
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
+import '../providers/kripto_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
@@ -205,7 +207,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     return val;
   }
 
-  String get _quantitySuffix => _s.quantitySuffix;
+  // Kripto biriminin adı coin kodudur ("0,05 BTC"), `unitType` değil.
+  String get _quantitySuffix => _type == AssetType.kripto
+      ? (kriptoKodu(_ticker.text) ?? '')
+      : _s.quantitySuffix;
   List<String> get _quantityPresets => _s.quantityPresets;
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -368,6 +373,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_type == AssetType.altin) return context.l10n.identityGoldKind;
     if (_isDoviz) return context.l10n.identityCurrency;
     if (_type == AssetType.emtia) return context.l10n.identityCommodity;
+    if (_type == AssetType.kripto) return context.l10n.identityCrypto;
     return context.l10n.assetFallbackName;
   }
 
@@ -377,6 +383,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_isFon) return _tefasSelectorField(cs);
     if (_type == AssetType.altin) return _goldChipGrid(cs);
     if (_isDoviz) return _dovizSelector(cs);
+    if (_type == AssetType.kripto) return _kriptoSelectorField(cs);
     // Emtia / Diğer — manuel ad + opsiyonel sembol
     return Column(
       children: [
@@ -1208,8 +1215,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // Vadeli mevduat türü 2026-09-14'te kaldırıldı (hiç yayına çıkmamıştı,
     // ayrı form + lokal faiz motoru bakım yükü getiriyordu); seçici artık
     // enum'un tamamını gösterir.
+    // Kripto 2026-09-25'ten beri katalog seçicisiyle eklenir (serbest sembol
+    // alanı yok: sunucunun tanımadığı sembol fiyatsız lot üretirdi).
     const types = AssetType.values;
-    return HScrollWithFade(
+    return TourAnchor(
+      target: TourTarget.turSecici,
+      child: HScrollWithFade(
       fadeColor: context.c.background,
       child: Row(
         children: types.map((t) {
@@ -1269,6 +1280,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           );
         }).toList(),
       ),
+    ),
     );
   }
 
@@ -1394,7 +1406,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      AddAssetFormState.unitLabel(_unitType),
+                      _type == AssetType.kripto
+                          ? _quantitySuffix
+                          : AddAssetFormState.unitLabel(_unitType),
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
                         color: selected
@@ -1502,6 +1516,57 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         onSelect: (fund) {
           // Fon fiyatı alış fiyatına dolar (opsiyonel, kullanıcı silebilir).
           _yaz(_n.selectFund(fund, priceEmpty: _price.text.isEmpty));
+          _schedulePricePreview();
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
+  // ── Kripto seçici ──────────────────────────────────────────────────────────
+  //
+  // Fon seçicisiyle aynı alan + alt sayfa. Sembol serbest yazılmaz; yalnız
+  // `kripto_varlik` kataloğundan seçilir, böylece her kayıt sunucunun
+  // fiyatladığı bir koda bağlanır (fiyat kaynağı sözleşmesi madde 1).
+  Widget _kriptoSelectorField(ColorScheme cs) {
+    final kod = kriptoKodu(_ticker.text);
+    final ad = _name.text.trim().isEmpty ? kod : _name.text.trim();
+    return FormField<String>(
+      validator: (_) => _type == AssetType.kripto && kod == null
+          ? context.l10n.pickCryptoPrompt
+          : null,
+      builder: (state) => Semantics(
+        button: true,
+        label: kod == null
+            ? context.l10n.pickCryptoTap
+            : context.l10n.cryptoSelectedSemantics(ad ?? kod),
+        child: GestureDetector(
+          onTap: _showKriptoPicker,
+          child: _selectorContainer(
+            cs: cs,
+            hasValue: kod != null,
+            hasError: state.hasError,
+            badgeText: kod,
+            mainText: kod == null ? context.l10n.pickCryptoTap : (ad ?? kod),
+            color: AssetType.kripto.color,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showKriptoPicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => _KriptoPicker(
+        selected: kriptoKodu(_ticker.text),
+        onSelect: (o) {
+          _yaz(_n.selectKripto(o, priceEmpty: _price.text.isEmpty));
           _schedulePricePreview();
           Navigator.pop(ctx);
         },
@@ -1639,6 +1704,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           currency = 'TRY';
         } else if (entry.type == AssetType.altin) {
           assetName = entry.subCategory ?? 'Altın';
+        } else if (entry.type == AssetType.kripto && entry.subCategory != null) {
+          // Fiyat sunucuda TL (kripto_fiyat); ikinci çevrim yok.
+          ticker = kriptoSembolu(entry.subCategory!);
+          assetName = entry.subCategory!;
+          currency = 'TRY';
         }
 
         double price = entry.price;
@@ -1664,7 +1734,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               currency: currency,
               notes: '',
               isManualPrice: price > 0 && ticker.isEmpty,
-              subCategory: entry.subCategory,
+              subCategory:
+                  entry.type == AssetType.kripto ? null : entry.subCategory,
               unitType: entry.type == AssetType.altin ? 'gram' : 'piece',
             );
       }
@@ -2458,6 +2529,124 @@ class _TefasPickerState extends State<_TefasPicker> {
   }
 }
 
+class _KriptoPicker extends ConsumerStatefulWidget {
+  final String? selected;
+  final void Function(KriptoKatalogOgesi o) onSelect;
+  const _KriptoPicker({required this.selected, required this.onSelect});
+
+  @override
+  ConsumerState<_KriptoPicker> createState() => _KriptoPickerState();
+}
+
+class _KriptoPickerState extends ConsumerState<_KriptoPicker> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final katalog = ref.watch(kriptoKatalogProvider);
+    final liste = kriptoAra(katalog.valueOrNull ?? const [], _q);
+    final renk = AssetType.kripto.color;
+    final simdi = DateTime.now();
+
+    return _PickerShell(
+      title: context.l10n.cryptoPickerTitle,
+      count: liste.length,
+      color: renk,
+      searchCtrl: _ctrl,
+      searchHint: context.l10n.cryptoSearchHint,
+      onSearch: (v) => setState(() => _q = v),
+      query: _q,
+      cs: cs,
+      child: katalog.when(
+        loading: () => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CustomLoadingIndicator(),
+              const SizedBox(height: SandikSpace.smd),
+              Text(context.l10n.cryptoLoading,
+                  style: context.t.bodyMedium
+                      ?.copyWith(color: context.c.text58)),
+            ],
+          ),
+        ),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SandikSpace.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.cloud_off_rounded, color: context.c.loss, size: 40),
+                const SizedBox(height: SandikSpace.smd),
+                Text(context.l10n.cryptoLoadFailed,
+                    style: context.t.titleSmall),
+                const SizedBox(height: SandikSpace.xs),
+                Text(friendlyError(e),
+                    textAlign: TextAlign.center,
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58)),
+                const SizedBox(height: SandikSpace.md),
+                FilledButton.icon(
+                  onPressed: () => ref.invalidate(kriptoKatalogProvider),
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: Text(context.l10n.retry),
+                ),
+              ],
+            ),
+          ),
+        ),
+        data: (_) => Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                  SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.xs),
+              child: Text(context.l10n.cryptoSourceNote,
+                  style:
+                      context.t.bodySmall?.copyWith(color: context.c.text36)),
+            ),
+            Expanded(
+              child: liste.isEmpty
+                  ? _emptySearch(context, _q, cs)
+                  : ListView.builder(
+                      itemCount: liste.length,
+                      itemBuilder: (_, i) {
+                        final o = liste[i];
+                        final f = o.fiyat;
+                        return _PickerRow(
+                          badgeText: o.kod,
+                          logoUrl: o.logoUrl,
+                          title: o.gorunenAd,
+                          subtitle: f == null
+                              ? context.l10n.priceNotAvailable
+                              : [
+                                  o.kod,
+                                  fmtTRYFiyat(f.fiyatTry),
+                                  if (f.bayatMi(simdi))
+                                    context.l10n.priceDelayed,
+                                ].join(' · '),
+                          isSelected: o.kod == widget.selected,
+                          color: renk,
+                          cs: cs,
+                          onTap: () => widget.onSelect(o),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared picker shell & row widgets
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2611,6 +2800,8 @@ class _PickerShellState extends State<_PickerShell> {
 
 class _PickerRow extends StatelessWidget {
   final String badgeText;
+  /// Verilirse rozetin yerine logo; yüklenemezse rozet metnine düşer.
+  final String? logoUrl;
   final String title;
   final String subtitle;
   final bool isSelected;
@@ -2620,6 +2811,7 @@ class _PickerRow extends StatelessWidget {
 
   const _PickerRow({
     required this.badgeText,
+    this.logoUrl,
     required this.title,
     required this.subtitle,
     required this.isSelected,
@@ -2634,6 +2826,14 @@ class _PickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final yatay = SandikSpace.screenH(context);
+    final rozet = Text(
+      badgeText.length > 5 ? badgeText.substring(0, 4) : badgeText,
+      maxLines: 1,
+      style: context.t.labelLarge?.copyWith(
+        fontWeight: FontWeight.w800,
+        color: isSelected ? color : context.c.text90,
+      ),
+    );
     return Semantics(
       button: true,
       selected: isSelected,
@@ -2657,14 +2857,18 @@ class _PickerRow extends StatelessWidget {
                       : null,
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  badgeText.length > 5 ? badgeText.substring(0, 4) : badgeText,
-                  maxLines: 1,
-                  style: context.t.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: isSelected ? color : context.c.text90,
-                  ),
-                ),
+                child: logoUrl == null
+                    ? rozet
+                    : Padding(
+                        padding: const EdgeInsets.all(SandikSpace.sm),
+                        child: Image.network(
+                          logoUrl!,
+                          // Logo süs; ekran okuyucu satır başlığını okur.
+                          excludeFromSemantics: true,
+                          cacheWidth: 96,
+                          errorBuilder: (_, __, ___) => rozet,
+                        ),
+                      ),
               ),
               const SizedBox(width: SandikSpace.smd),
               Expanded(

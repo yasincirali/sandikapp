@@ -127,6 +127,12 @@ String positionKey(Asset a) {
     case AssetType.altin:
       core = 'sub:${(a.subCategory ?? '').toLowerCase()}';
       break;
+    case AssetType.kripto:
+      // `KRIPTO:BTC` — hisse gibi ticker; ad yedeği tickersız eski/elle
+      // girilmiş satır için.
+      core = a.ticker.trim().toUpperCase();
+      if (core.isEmpty) core = 'name:${a.name.trim().toLowerCase()}';
+      break;
     case AssetType.emtia:
     case AssetType.diger:
       final t = a.ticker.trim().toUpperCase();

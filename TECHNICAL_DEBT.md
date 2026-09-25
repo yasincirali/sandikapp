@@ -5,9 +5,30 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-23 (GÜNLÜK piyasa etkisinde çifte sayım — ortak kurala bağlanmadı)
+**Son güncelleme:** 2026-09-25 (kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
 
 ---
+
+## 🟡 AÇIK — Kripto 7/24 işliyor; alarm turu, widget ve kilit ekranı BIST saatine bağlı
+
+**Ne:** Kripto eklendi (2026-09-25, PR #23) ama üç yüzey "piyasa" kavramını
+hâlâ BIST'ten okuyor:
+
+1. **Fiyat alarmı** turu yalnız TR 08:00–21:30 (0046 cron'u). Gece 03:00'te
+   hedefi geçip 08:00'den önce dönen bir kripto alarmı hiç tetiklenmez.
+   Pencere bilinçli: TR 22:00–08:00 bildirim yasağı (RETENTION_STRATEJISI §7)
+   ve kullanıcı sessiz saatleri (0057). Gece turu eklemek bu politikayı
+   değiştirmek demek; ürün kararı, kod kararı değil.
+2. **Ana ekran widget'ı / Live Activity** `DailySummary.isMarketOpen`'ı
+   kullanıyor (`home_widget_service.dart`). Yalnız kripto tutan kullanıcı
+   hafta sonu "piyasa kapalı" görür, oysa değer oynuyor.
+3. **Toz miktar:** pozisyon epsilon'u `1e-7`; 10 satoshi altı BTC kalıntısı
+   kapanmış pozisyon sayılır. Borsalardaki dust'tan küçük, bilinçli kabul.
+
+**Maliyet:** (1) nadir ama sessiz kaçan alarm; (2) yanlış rozet metni, tutar
+doğru. **Ne zaman:** (1) kullanıcı gece alarmı isterse "kripto için sessiz
+saat istisnası" kararıyla; (2) widget'a portföy türleri geçirildiğinde
+(`piyasaKapaliEtiketi` zaten türe bakıyor, aynı kural oraya taşınır).
 
 ## 🟡 AÇIK — GÜNLÜK piyasa etkisi, gün başında elde OLMAYAN alımı iki kez düşüyor
 

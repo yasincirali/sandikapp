@@ -680,6 +680,7 @@ class HistoryService {
       now: now,
       periodDays: periodDays,
       hourly: hourly,
+      yediGun: assets.any(FiyatKaynagi.yediGun),
     )) {
       double dayTotalValue = 0.0;
 
@@ -899,11 +900,14 @@ class HistoryService {
   ///   24 slotun tamamı elenir ve seri boş döner (ölçüldü: Pazar → 0 slot).
   /// · Günlük ızgara (dönem > 7 gün) hafta sonunu ELEMEZ; haftada 5 nokta ile
   ///   7 nokta arasındaki fark uzun dönemde önemsiz.
+  /// · [yediGun] (çizilen kümede kripto var): hafta sonu hiç elenmez, çapa
+  ///   da çekilmez — kriptonun seansı takvimin kendisi.
   @visibleForTesting
   static List<int> gridSlotlari({
     required DateTime now,
     required int periodDays,
     required bool hourly,
+    bool yediGun = false,
   }) {
     int normalizeTs(int ms) {
       final d = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -928,7 +932,14 @@ class HistoryService {
     // iki günü kaplar, geriye beş seans günü kalır). Kapalı günler
     // ızgarada DURUR ve `_getClosestPrice` son kapanışı taşır — yani düz
     // çizgi olarak görünürler, kullanıcının istediği davranış.
-    final tekGunlukPencere = periodDays <= 1;
+    // ## Kripto: hafta sonu ELENMEZ (2026-09-25)
+    // Eleme "son 24 SEANS SAATİ" demekti; kripto hiç kapanmadığı için
+    // onun seansı takvimin kendisidir. Çizilen kümede kripto varsa
+    // Cumartesi/Pazar slotları ızgarada kalır: kriptonun hafta sonu
+    // hareketi görünür, borsa varlıkları o slotlarda son kapanışlarını
+    // taşır (çok günlü pencerelerdeki düz çizgiyle aynı davranış).
+    // Kriptosuz portföyde hiçbir şey değişmez.
+    final tekGunlukPencere = periodDays <= 1 && !yediGun;
     final gridNow = (hourly && tekGunlukPencere) ? _sonIsGunu(now) : now;
     final stepMinutes = hourly ? 60 : 24 * 60;
     final totalSteps = hourly ? periodDays * 24 : periodDays;
@@ -2697,11 +2708,15 @@ class HistoryService {
   /// Sembol TRY cinsinden mi kote?
   ///
   /// BIST sembolleri `.IS` ile biter, TEFAS fonları `TEFAS:` önekli, TRY
-  /// pariteleri `TRY=X` ile biter. Kalan her şey (ABD hisseleri, emtia,
-  /// kripto) USD kabul edilir — Yahoo'nun varsayılanı budur.
+  /// pariteleri `TRY=X` ile biter, kripto `KRIPTO:` önekli (sunucu TL
+  /// verir). Kalan her şey (ABD hisseleri, emtia) USD kabul edilir —
+  /// Yahoo'nun varsayılanı budur.
   static bool _isTryQuoted(String sym) =>
       sym.endsWith('.IS') ||
       sym.startsWith('TEFAS:') ||
+      // Kripto serisi sunucuda TL'ye çevrilmiş gelir (kripto-seri); burada
+      // USD sayılsaydı bir kez daha kurla çarpılırdı.
+      FiyatKaynagi.kriptoMu(sym) ||
       sym.endsWith('TRY=X') ||
       sym.startsWith('ALTIN_');
 

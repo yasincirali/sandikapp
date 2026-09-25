@@ -13,6 +13,12 @@ enum AssetType {
   doviz('Döviz', Icons.attach_money_rounded, Color(0xFF7EC8A9), 'USD'),     // Soft mint — gain'den ayrık
   altin('Altın', Icons.star_rounded, Sandik.gold, 'TRY'),            // Gold — altın karakteri
   emtia('Emtia', Icons.inventory_2_rounded, Color(0xFFC97B4F), 'USD'),      // Copper — emtia sıcaklığı
+  // Orkide — mevcut altı renge ve gain/loss'a uzak (2026-09-25 kripto planı).
+  // Varsayılan para birimi TRY: fiyat sunucuda TL paritesinden (ya da
+  // USDT × USDTTRY) hesaplanır, maliyet de TL girilir (Türkiye'de alımların
+  // çoğu TL paritesinden). Sıra `diger`'in ÖNÜNDE: `values` döngüleri
+  // (filtre çipi, tür dökümü) "Diğer"i hep sonda gösteriyor.
+  kripto('Kripto', Icons.currency_bitcoin_rounded, Color(0xFFD47FC4), 'TRY'),
   diger('Diğer', Icons.more_horiz_rounded, Color(0xFF8D7BE0), 'TRY');      // Soft violet — nötr, ayrık
 
   const AssetType(
@@ -60,6 +66,7 @@ enum AssetType {
         AssetType.doviz => l.assetTypeFx,
         AssetType.altin => l.assetTypeGold,
         AssetType.emtia => l.assetTypeCommodity,
+        AssetType.kripto => l.assetTypeCrypto,
         AssetType.diger => l.assetTypeOther,
       };
 
@@ -70,25 +77,9 @@ enum AssetType {
         AssetType.doviz => l.tickerHintFx,
         AssetType.altin => l.tickerHintGold,
         AssetType.emtia => l.tickerHintCommodity,
+        AssetType.kripto => l.tickerHintCrypto,
         AssetType.diger => l.tickerHintOther,
       };
-
-  String get tickerHint {
-    switch (this) {
-      case AssetType.hisse:
-        return 'Örn: THYAO.IS, GARAN.IS  (Borsa İstanbul için .IS ekleyin)';
-      case AssetType.fon:
-        return 'Yahoo Finance kodu yoksa boş bırakın, fiyatı manuel girin';
-      case AssetType.doviz:
-        return 'Örn: USDTRY=X, EURTRY=X, GBPTRY=X';
-      case AssetType.altin:
-        return 'Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)';
-      case AssetType.emtia:
-        return 'Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)';
-      case AssetType.diger:
-        return 'Yahoo Finance sembolü veya boş bırakın';
-    }
-  }
 
   /// Bilinmeyen tür → `diger`. Kaldırılan 'mevduat' (2026-09-14) da buraya
   /// düşer; 0058 migrasyonu eski satırları sunucuda zaten 'diger' yapar.
@@ -97,6 +88,26 @@ enum AssetType {
         orElse: () => AssetType.diger,
       );
 }
+
+/// Kripto sembol öneki — `assets.ticker` = `KRIPTO:BTC`.
+///
+/// `TEFAS:` gibi: kaynak sembolden okunur ve Yahoo'ya DÜŞMEZ. Fiyatı sunucu
+/// çeker (`kripto_fiyat`, 0074); sunucudaki karşılığı
+/// `supabase/functions/_shared/kripto.ts` `KRIPTO_ONEKI`.
+const String kriptoOneki = 'KRIPTO:';
+
+final RegExp _kriptoKodDeseni = RegExp(r'^[A-Z0-9]{2,15}$');
+
+/// `KRIPTO:btc` → `BTC`; kripto sembolü değilse `null`.
+String? kriptoKodu(String ticker) {
+  final s = ticker.trim().toUpperCase();
+  if (!s.startsWith(kriptoOneki)) return null;
+  final kod = s.substring(kriptoOneki.length);
+  return _kriptoKodDeseni.hasMatch(kod) ? kod : null;
+}
+
+/// `BTC` → `KRIPTO:BTC`.
+String kriptoSembolu(String kod) => '$kriptoOneki${kod.trim().toUpperCase()}';
 
 // Döviz kodu → para sembolü
 const _currencySymbols = <String, String>{

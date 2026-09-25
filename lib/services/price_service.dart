@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
+import 'supabase_service.dart';
+import '../models/asset_type.dart';
 import 'tefas_service.dart';
 
 class YahooQuote {
@@ -422,11 +424,14 @@ class PriceService {
         cleaned.where((s) => _truncgilGoldKeys.containsKey(s)).toList();
     final tefasList =
         cleaned.where((s) => s.startsWith(_tefasPrefix)).toList();
+    // Kripto Yahoo'ya DÜŞMEZ: fiyatı sunucu tablosundan (0074).
+    final kriptoList = cleaned.where(FiyatKaynagi.kriptoMu).toList();
     final yahooList = cleaned
         .where((s) =>
             !_fxSymbols.contains(s) &&
             !_truncgilGoldKeys.containsKey(s) &&
-            !s.startsWith(_tefasPrefix))
+            !s.startsWith(_tefasPrefix) &&
+            !FiyatKaynagi.kriptoMu(s))
         .toList();
 
     final results = <String, YahooQuote>{};
@@ -462,11 +467,20 @@ class PriceService {
         ? _fetchYahoo(yahooList).catchError((_) => <String, YahooQuote>{})
         : Future<Map<String, YahooQuote>>.value({});
 
-    final parallel = await Future.wait([truncgilFuture, tefasFuture, yahooFuture]);
+    final kriptoFuture = kriptoList.isNotEmpty
+        ? _fetchKripto(kriptoList).catchError((Object e, StackTrace st) {
+            CrashReporter.report(e, st, reason: 'kripto_fiyat_okunamadi');
+            return <String, YahooQuote>{};
+          })
+        : Future<Map<String, YahooQuote>>.value({});
+
+    final parallel = await Future.wait(
+        [truncgilFuture, tefasFuture, yahooFuture, kriptoFuture]);
 
     final truncgilData = parallel[0];
     final tefasResult  = parallel[1] as Map<String, YahooQuote>;
     final yahooResult  = parallel[2] as Map<String, YahooQuote>;
+    final kriptoResult = parallel[3] as Map<String, YahooQuote>;
 
     // ── FX from truncgil ──────────────────────────────────────────────────
     if (fxList.isNotEmpty && truncgilData.isNotEmpty) {
@@ -514,6 +528,7 @@ class PriceService {
     // ── TEFAS + Yahoo (zaten tamamlandı) ──────────────────────────────────
     results.addAll(tefasResult);
     results.addAll(yahooResult);
+    results.addAll(kriptoResult);
 
     // Yalnızca gerçekten fiyat dönen sembolleri önbelleğe al: 0/eksik değer
     // önbelleklenirse TTL boyunca hatalı fiyat gösterilir.
@@ -538,6 +553,111 @@ class PriceService {
 
     results.addAll(cachedHits);
     return results;
+  }
+
+  // ── Kripto — sunucu tablosu (kripto_fiyat, 0074) ───────────────────────
+
+  /// Sunucudaki TL fiyatını kotasyona çevirir. Yüzde İstanbul gününün
+  /// açılışına göredir (sunucu `timeZone=3` ile ölçer); açılış yoksa yüzde
+  /// `null` kalır — `_gunlukYaz` o durumda gün başı yazmaz, uydurma yok.
+  ///
+  /// Bayat satır (sunucu >10 dk yazmadı) yine döner: ölçülmüş son fiyattır.
+  /// Gecikmeyi göstermek ekranın işi ([kriptoGuncellenme]).
+  Future<Map<String, YahooQuote>> _fetchKripto(List<String> semboller) async {
+    final kodSembol = <String, String>{};
+    for (final s in semboller) {
+      final kod = kriptoKodu(s);
+      if (kod != null) kodSembol[kod] = s;
+    }
+    if (kodSembol.isEmpty) return {};
+    final satirlar =
+        await SupabaseService.instance.kriptoFiyatlari(kodSembol.keys.toList());
+    final out = <String, YahooQuote>{};
+    for (final f in satirlar.values) {
+      final sym = kodSembol[f.kod];
+      if (sym == null) continue;
+      _kriptoGuncellenme[sym] = f.guncellendi;
+      out[sym] = YahooQuote(
+        symbol: sym,
+        regularMarketPrice: f.fiyatTry,
+        currency: 'TRY',
+        regularMarketChangePercent: f.gunlukYuzde,
+        shortName: f.kod,
+      );
+    }
+    return out;
+  }
+
+  final Map<String, DateTime> _kriptoGuncellenme = {};
+
+  /// Kripto fiyatının sunucuda en son yazıldığı an — "gecikmeli" etiketi
+  /// için. Bilinmiyorsa `null`.
+  DateTime? kriptoGuncellenme(String symbol) =>
+      _kriptoGuncellenme[symbol.trim().toUpperCase()];
+
+  /// Yahoo `range` → kripto-seri dönemi. Sunucu dokuz dönem tanır; listede
+  /// olmayan (ör. `3y`, `ytd`) bir üst döneme yuvarlanır — geniş dönem
+  /// `clipToPeriod` ile kırpılır, dar dönem veri kaybıdır.
+  @visibleForTesting
+  static String kriptoDonemi(String range) => switch (range) {
+        '1d' || '5d' || '1mo' || '3mo' || '6mo' || '1y' || '2y' || '5y' ||
+        'max' =>
+          range,
+        'ytd' => '1y',
+        '3y' => '5y',
+        _ => 'max',
+      };
+
+  /// Yahoo interval → kripto-seri aralığı. Tanınmayan → günlük.
+  @visibleForTesting
+  static String kriptoAraligi(String interval) => switch (interval) {
+        '1m' || '5m' || '15m' || '1h' || '1d' || '1wk' => interval,
+        '60m' => '1h',
+        _ => '1d',
+      };
+
+  Future<List<(int, double)>> _kriptoSerisi(
+      String symbol, String range, String interval) async {
+    final kod = kriptoKodu(symbol);
+    if (kod == null) return [];
+    try {
+      return await SupabaseService.instance.kriptoSerisi(
+        kod: kod,
+        aralik: kriptoAraligi(interval),
+        donem: kriptoDonemi(range),
+      );
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'kripto_seri_okunamadi');
+      return [];
+    }
+  }
+
+  /// Seçili günün kapanışı (İstanbul günü, günlük mum) — "son geçerli
+  /// kapanış" kuralı: hedef günün sonuna eşit ya da öncesindeki en yeni
+  /// nokta. Kripto hafta sonu da işlem gördüğü için tolerans penceresi
+  /// gerekmez; dönem, tarihi kapsayan en dar dönemdir.
+  Future<double?> _kriptoGecmisKapanis(String symbol, DateTime date) async {
+    final gun = DateTime.now().difference(date).inDays + 2;
+    final range = gun <= 31
+        ? '1mo'
+        : gun <= 92
+            ? '3mo'
+            : gun <= 366
+                ? '1y'
+                : gun <= 1827
+                    ? '5y'
+                    : 'max';
+    final seri = await _kriptoSerisi(symbol, range, '1d');
+    final hedef = DateTime(date.year, date.month, date.day, 23, 59, 59)
+        .millisecondsSinceEpoch;
+    double? best;
+    var bestTs = -1;
+    for (final p in seri) {
+      if (p.$1 > hedef || p.$1 <= bestTs) continue;
+      bestTs = p.$1;
+      best = p.$2;
+    }
+    return best;
   }
 
   // ── finans.truncgil.com — primary source for Turkish gold + FX ───────────
@@ -1020,6 +1140,10 @@ class PriceService {
       return result;
     }
 
+    if (FiyatKaynagi.kriptoMu(symbol)) {
+      return _kriptoGecmisKapanis(symbol, date);
+    }
+
     if (symbol.startsWith('TEFAS:')) {
       final code = symbol.replaceFirst('TEFAS:', '');
       final points = await TefasService.instance
@@ -1185,6 +1309,11 @@ class PriceService {
       final code = symbol.replaceFirst(_tefasPrefix, '');
       final periyod = _tefasPeriyodFor(range);
       return TefasService.instance.fetchHistory(code, periyod: periyod);
+    }
+
+    // Kripto: sunucunun paylaşılan önbelleği (kripto-seri). TL, TRY kote.
+    if (FiyatKaynagi.kriptoMu(symbol)) {
+      return _kriptoSerisi(symbol, range, interval);
     }
 
     final yahooRange = range;

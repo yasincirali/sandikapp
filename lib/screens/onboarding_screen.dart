@@ -283,8 +283,8 @@ List<_Adim> _adimlariKur() {
     const _Adim(
       id: 'karsilama',
       baslik: 'Sandığına hoş geldin',
-      govde: 'Hisse, fon, döviz, altın ve emtia — hepsi tek toplamda, tek '
-          'para biriminde. Fiyatlar arka planda kendiliğinden güncellenir.\n\n'
+      govde: 'Hisse, fon, döviz, altın, emtia ve kripto — hepsi tek '
+          'toplamda, tek para biriminde. Fiyatlar arka planda kendiliğinden güncellenir.\n\n'
           'Uygulamayı birlikte gezelim: her adımda gerçek ekranın üstünde '
           'tek bir tuş açık kalır. Dokun, dene.',
     ),
@@ -395,13 +395,25 @@ List<_Adim> _adimlariKur() {
       id: 'ekle',
       hedef: TourTarget.sekmeEkle,
       baslik: 'Varlık ekle',
-      govde: 'Hisse mi, fon mu, altın mı? Tür seçtiğinde form ona göre '
-          'değişir — altında gram, hissede adet sorulur.',
+      govde: 'Hisse mi, fon mu, altın mı, kripto mu? Tür seçtiğinde form '
+          'ona göre değişir — altında gram, hissede adet sorulur.',
       gorev: '+ tuşuna dokun',
       gorevBitti: 'Varlık Ekle açıldı',
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),
       otoIlerle: true,
       devam: (_) => _varlikEkleAc(),
+    ),
+    _Adim(
+      id: 'kripto',
+      hedef: TourTarget.turSecici,
+      rozet: 'YENİ',
+      baslik: 'Kripto da burada',
+      govde: 'Tür çiplerinin sonunda Kripto var: listeden coin\'i seç, fiyatı '
+          'TL karşılığıyla kendiliğinden gelir. Miktar gerektiği kadar '
+          'ondalıkla tutulur (0,00045 BTC gibi); kripto 7/24 işlediği için '
+          'grafikte hafta sonu da görünür.',
+      giris: (_) => _varlikEkleAc(),
+      dokunulabilir: false,
     ),
     _Adim(
       id: 'hizli_giris',
@@ -537,7 +549,7 @@ List<_Adim> _kisaAdimlar() {
     const _Adim(
       id: 'karsilama',
       baslik: 'Sandığına hoş geldin',
-      govde: 'Hisse, fon, döviz, altın — hepsi tek toplamda. Bir dakikada '
+      govde: 'Hisse, fon, döviz, altın, kripto — hepsi tek toplamda. Bir dakikada '
           'ilk varlığını girelim; gerisini uygulama kendi anlatır.',
     ),
     tam['hero']!,

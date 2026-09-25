@@ -195,8 +195,8 @@ class TransactionRow extends StatelessWidget {
                             ),
                             child: Text(
                               asset.unitIsPrefix
-                                  ? '${asset.unitLabel}${qtyFormatter().format(asset.quantity)}'
-                                  : '${qtyFormatter().format(asset.quantity)} ${asset.unitLabel}',
+                                  ? '${asset.unitLabel}${qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity)}'
+                                  : '${qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity)} ${asset.unitLabel}',
                               style: context.t.labelMedium?.copyWith(
                                   letterSpacing: 0,
                                   color: context.c.text58,

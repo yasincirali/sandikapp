@@ -50,6 +50,7 @@ class SparklineService {
     if (a.type == AssetType.altin) return true;
     if (a.ticker.trim().isEmpty) return false;
     return a.type == AssetType.hisse ||
+        a.type == AssetType.kripto ||
         a.type == AssetType.emtia ||
         a.type == AssetType.doviz ||
         a.type == AssetType.fon;

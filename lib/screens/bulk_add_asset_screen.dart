@@ -465,6 +465,7 @@ class _BulkItemTile extends StatelessWidget {
         type: item.type,
         unitType: item.unitType,
         currency: item.currency,
+        ticker: item.ticker,
       );
 
   @override

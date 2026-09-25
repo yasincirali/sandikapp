@@ -108,7 +108,7 @@ export async function takipListesiHareketleri(
   }
   if (semboller.size === 0) return { ok: true, reason: 'Fiyatlanabilir sembol yok.', sent: 0 };
 
-  const kotasyon = await fetchLiveQuotes(semboller);
+  const kotasyon = await fetchLiveQuotes(semboller, admin);
 
   // Kullanıcı → seçilen hareketler.
   const secimler = new Map<string, Hareket[]>();

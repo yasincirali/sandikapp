@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/asset_categories.dart';
+import '../models/asset_type.dart';
+import '../models/kripto_fiyat.dart';
+import 'supabase_service.dart';
 import 'tefas_service.dart';
 import 'fiyat_kaynagi.dart';
 
@@ -76,10 +79,13 @@ class SymbolHit {
 /// ## Kapsam: yalnızca Türkiye
 /// Arama bilinçli olarak **TR'de işlem gören** varlıklarla sınırlıdır —
 /// BIST hisseleri, TEFAS fonları, altın ürünleri, döviz ve BIST endeksleri.
-/// Yabancı hisse/kripto (AAPL, BTC-USD) LİSTELENMEZ: uygulamanın geri
-/// kalanı da TR odaklıdır ve o varlıkların portföye eklenmesi zaten
-/// desteklenmiyor; aramada çıkmaları kullanıcıyı ekleyemeyeceği bir
-/// şeye yönlendirirdi.
+/// Yabancı hisse (AAPL) LİSTELENMEZ: uygulamanın geri kalanı da TR
+/// odaklıdır ve o varlıkların portföye eklenmesi desteklenmiyor; aramada
+/// çıkmaları kullanıcıyı ekleyemeyeceği bir şeye yönlendirirdi.
+///
+/// **Kripto 2026-09-25'ten beri listelenir** — ama `BTC-USD` Yahoo sembolü
+/// olarak değil, sunucu kataloğundan `KRIPTO:BTC` olarak (portföye
+/// eklenebilen ve fiyatı `kripto_fiyat`'tan gelen tek biçim).
 ///
 /// **İstisna — küresel emtia referansları.** Ons altın, Brent petrol gibi
 /// semboller TR'de kote değildir ama yerel varlığın dayandığı fiyattır
@@ -91,7 +97,9 @@ class SymbolHit {
 ///      döviz, endeks, emtia. Ticker formatları doğru, fiyat desteği
 ///      kanıtlı.
 ///   2. **TEFAS fon listesi** — `TefasService` üzerinden, önbellekli.
-///   3. **TEFAS tek-fon sorgusu** — liste API'sinde görünmeyen
+///   3. **Kripto kataloğu** — `kripto_varlik` (Binance), oturum başına
+///      önbellekli; hata olursa kriptosuz devam edilir.
+///   4. **TEFAS tek-fon sorgusu** — liste API'sinde görünmeyen
 ///      kurucu-only fonlar (ALE, YLB gibi) için son çare.
 class SymbolSearchService {
   SymbolSearchService._();
@@ -180,9 +188,10 @@ class SymbolSearchService {
     // aramada fon gösterip grafikte "veri yok" demeye yol açardı.
     final results = await Future.wait([
       Future.value(_searchBuiltIn(q)),
+      _searchKripto(q),
       _searchFunds(q),
     ]);
-    final local = <SymbolHit>[...results[0], ...results[1]];
+    final local = <SymbolHit>[...results[0], ...results[1], ...results[2]];
 
     // Sonuç yoksa ve sorgu bir fon koduna benziyorsa TEK-FON sorgusu.
     //
@@ -217,6 +226,32 @@ class SymbolSearchService {
     } catch (e) {
       if (kDebugMode) debugPrint('TEFAS tek-fon sorgusu başarısız: $e');
       return null;
+    }
+  }
+
+  static List<KriptoKatalogOgesi>? _kriptoKatalog;
+  static DateTime? _kriptoKatalogZamani;
+
+  /// Kripto kataloğunda arar (`kriptoAra`: kod tam → kod öneki → ad).
+  ///
+  /// Katalog saatte bir değişir; 30 dk önbellek her tuşta sunucuya gitmeyi
+  /// önler. Hata (oturum yok, ağ yok) boş döner — hisse/fon araması
+  /// kripto yüzünden düşmemeli.
+  Future<List<SymbolHit>> _searchKripto(String q) async {
+    try {
+      final simdi = DateTime.now();
+      if (_kriptoKatalog == null ||
+          simdi.difference(_kriptoKatalogZamani!) > const Duration(minutes: 30)) {
+        _kriptoKatalog = await SupabaseService.instance.kriptoKatalogu();
+        _kriptoKatalogZamani = simdi;
+      }
+      return [
+        for (final o in kriptoAra(_kriptoKatalog!, q).take(10))
+          SymbolHit(ticker: kriptoSembolu(o.kod), name: o.gorunenAd, source: 'Kripto'),
+      ];
+    } catch (e) {
+      if (kDebugMode) debugPrint('Kripto araması başarısız: $e');
+      return const [];
     }
   }
 
@@ -294,5 +329,9 @@ class SymbolSearchService {
   }
 
   @visibleForTesting
-  static void clearCacheForTest() => _cache.clear();
+  static void clearCacheForTest() {
+    _cache.clear();
+    _kriptoKatalog = null;
+    _kriptoKatalogZamani = null;
+  }
 }

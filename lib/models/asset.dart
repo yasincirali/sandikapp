@@ -61,6 +61,7 @@ String birimEtiketi({
   required String unitType,
   required String currency,
   String? currencySymbol,
+  String ticker = '',
 }) {
   switch (type) {
     case AssetType.doviz:
@@ -91,9 +92,45 @@ String birimEtiketi({
           // Çeyrek/yarım/ata altın: `unitType == 'piece'`.
           return 'adet';
       }
+    case AssetType.kripto:
+      // Coin'in kendi kodu: "0,0045 BTC". Kod çözülemezse "adet" — boş
+      // birim ekranda sayıyı çıplak bırakırdı.
+      return kriptoKodu(ticker) ?? 'adet';
     case AssetType.diger:
       return 'adet';
   }
+}
+
+/// Kripto miktarında gösterilecek en çok ondalık hane.
+///
+/// 8 = 1 satoshi (0,00000001 BTC). Binance/BtcTurk miktarı da bu hassasiyette
+/// gösterir. Daha fazlası kayan nokta gürültüsüdür.
+const int kriptoAzamiOndalik = 8;
+
+/// [miktar]'ı kaybetmeden göstermek için gereken ondalık hane (en çok
+/// [azami]). 0,004521 → 6; 1,5 → 1; 2 → 0.
+///
+/// Sabit 2 hane kriptoda miktarı SİLER: 0,0045 BTC "0,00" görünür. Sabit 8
+/// hane ise "1,50000000 ETH" gibi okunmaz bir satır üretir. Gereken kadar
+/// hane yazmak ikisini de önler.
+int gerekenOndalik(double miktar, {int azami = kriptoAzamiOndalik}) {
+  for (var d = 0; d < azami; d++) {
+    final olcek = _onUssu(d);
+    final yuvarlak = (miktar * olcek).roundToDouble() / olcek;
+    // Göreli tolerans: büyük miktarlarda mutlak 1e-12 anlamsız.
+    if ((miktar - yuvarlak).abs() <= 1e-12 * (miktar.abs() > 1 ? miktar.abs() : 1)) {
+      return d;
+    }
+  }
+  return azami;
+}
+
+double _onUssu(int d) {
+  var v = 1.0;
+  for (var i = 0; i < d; i++) {
+    v *= 10;
+  }
+  return v;
 }
 
 class Asset {
@@ -253,6 +290,9 @@ class Asset {
   bool get showTicker =>
       displayTicker != null && (type == AssetType.fon || type == AssetType.hisse);
 
+  /// Kripto ise coin kodu (`BTC`), değilse `null`.
+  String? get kriptoKod => type == AssetType.kripto ? kriptoKodu(ticker) : null;
+
   /// Nakit temettü kaydedilebilir mi?
   ///
   /// Yalnızca **hisse** senedi temettü dağıtır. Altın/döviz/emtia fiziksel ya
@@ -272,6 +312,7 @@ class Asset {
         unitType: unitType,
         currency: currency,
         currencySymbol: currencySymbol,
+        ticker: ticker,
       );
 
   /// Birim para birimden önce mi gelmeli? (Döviz sembolleri prefix, diğerleri suffix.)
@@ -288,7 +329,21 @@ class Asset {
   ///
   /// Projede bu kural elle tekrar ediliyordu (bkz. `portfolio_screen`:
   /// `digits: q == q.truncateToDouble() ? 0 : 2`); tek yere alındı.
-  int get miktarOndalik => _tamSayiMi(quantity) ? 0 : 2;
+  int get miktarOndalik => _ondalikFor(quantity);
+
+  /// Kriptoda küsurat 2 haneye SIĞMAZ (0,0045 BTC) — gereken kadar hane,
+  /// en çok 8 (kullanıcı isteği 2026-09-25: "kripto varlıkları da gerekli
+  /// ondalık basamaklarla tut"). Diğer türlerde kural değişmedi.
+  int _ondalikFor(double miktar) {
+    if (_tamSayiMi(miktar)) return 0;
+    if (type == AssetType.kripto) return gerekenOndalik(miktar);
+    return 2;
+  }
+
+  /// `qtyFormatter`'ın (sondaki sıfırları atan) üst sınırı: kriptoda 8,
+  /// diğerlerinde 4. Miktar ve birim maliyet satırları bunu kullanır; 4
+  /// haneye kesilen 0,00012345 BTC "0,0001" okunuyordu.
+  int get azamiOndalik => type == AssetType.kripto ? kriptoAzamiOndalik : 4;
 
   /// Değer tam sayı mı? Kayan nokta gürültüsüne karşı toleranslı.
   ///
@@ -316,7 +371,7 @@ class Asset {
     double miktar,
     String Function(double deger, int ondalik) bicimlendir,
   ) {
-    final sayi = bicimlendir(miktar, _tamSayiMi(miktar) ? 0 : 2);
+    final sayi = bicimlendir(miktar, _ondalikFor(miktar));
     final birim = unitLabel;
     return unitIsPrefix ? '$birim$sayi' : '$sayi $birim';
   }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
+import '../models/kripto_fiyat.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../utils/tr_format.dart';
@@ -49,11 +50,42 @@ typedef ParsedEntry = ({
   String raw,
 });
 
+/// Hızlı girişte tanınan kripto adları → kod. Bilerek KISA: serbest
+/// metinde her üç harfli kelimeyi coin sanmak ("100 eur" gibi) yanlış tür
+/// üretir. Listede olmayan coin tür seçiciyle eklenir.
+const _hizliGirisKripto = <String, String>{
+  'bitcoin': 'BTC',
+  'btc': 'BTC',
+  'ethereum': 'ETH',
+  'ether': 'ETH',
+  'eth': 'ETH',
+  'tether': 'USDT',
+  'usdt': 'USDT',
+  'solana': 'SOL',
+  'xrp': 'XRP',
+  'ripple': 'XRP',
+  'bnb': 'BNB',
+  'avax': 'AVAX',
+  'dogecoin': 'DOGE',
+  'doge': 'DOGE',
+  'cardano': 'ADA',
+};
+
+/// Hızlı giriş metninde tanınan kripto kodu — tam kelime eşleşmesi.
+String? hizliGirisKriptoKodu(String metin) {
+  for (final kelime in RegExp(r'[a-zçğıöşü]+').allMatches(metin.toLowerCase())) {
+    final kod = _hizliGirisKripto[kelime.group(0)];
+    if (kod != null) return kod;
+  }
+  return null;
+}
+
 /// Bir hızlı giriş satırını çözer. Desteklenen biçimler:
 ///   "100 dolar"                  → 100 USD (fiyatsız)
 ///   "100 dolar 32 liradan"       → qty=100, price=32, USD
 ///   "10 gram altın 4500 liradan" → qty=10, price=4500
 ///   "GARAN 500 adet 105 lira"    → qty=500, price=105
+///   "0,05 btc"                   → 0,05 BTC (kripto, fiyatsız)
 /// Miktar bulunamazsa `null`.
 ParsedEntry? parseQuickEntry(String raw) {
   final text = raw.toLowerCase().trim();
@@ -62,7 +94,14 @@ ParsedEntry? parseQuickEntry(String raw) {
   var detectedType = AssetType.hisse;
   String? detectedSub;
 
-  if (RegExp(r'dolar|usd').hasMatch(text)) {
+  // Kripto ÖNCE bakılır: "usdt" içinde "usd" geçer ve aşağıdaki döviz
+  // kalıbı onu dolar sanıyordu (2026-09-25 kripto envanteri). Kod
+  // `subCategory`'de taşınır; kayıt yolu `KRIPTO:<kod>` sembolünü kurar.
+  final kripto = hizliGirisKriptoKodu(text);
+  if (kripto != null) {
+    detectedType = AssetType.kripto;
+    detectedSub = kripto;
+  } else if (RegExp(r'dolar|usd').hasMatch(text)) {
     detectedType = AssetType.doviz;
     detectedSub = 'USD';
   } else if (RegExp(r'euro|eur').hasMatch(text)) {
@@ -305,6 +344,8 @@ class AddAssetFormState {
       return const ['1', '5', '10', '50', '100'];
     }
     if (unitType == 'ounce') return const ['0.1', '0.5', '1', '5', '10'];
+    // Kripto: tam sayı adet nadirdir; BTC'de 0,001 bile anlamlı tutar.
+    if (type == AssetType.kripto) return const ['0,001', '0,01', '0,1', '1', '10'];
     if (type == AssetType.fon) return const ['1', '10', '100', '1000'];
     if (type == AssetType.hisse) return const ['1', '5', '10', '100', '1000'];
     return const ['1', '5', '10', '100'];
@@ -516,6 +557,19 @@ class AddAssetFormNotifier
     );
   }
 
+  /// Kripto katalogdan seçildi. Sembol her zaman katalogdaki koddan kurulur
+  /// (serbest metin sunucunun tanımadığı sembol üretirdi → fiyatsız lot).
+  /// Fiyat, fondaki gibi yalnızca alış fiyatı boşsa önerilir.
+  AlanYazimi selectKripto(KriptoKatalogOgesi o, {required bool priceEmpty}) {
+    _set(state.copyWith(isManualPrice: false));
+    final fiyat = o.fiyat?.fiyatTry;
+    return AlanYazimi(
+      ticker: kriptoSembolu(o.kod),
+      name: o.gorunenAd,
+      price: fiyat != null && priceEmpty ? fmtInput(fiyat) : null,
+    );
+  }
+
   /// Hızlı girişten tek satır: tür ve (varsa) döviz alt kategorisi kurulur,
   /// miktar/fiyat alanları doldurulur.
   AlanYazimi applyParsedEntry(ParsedEntry entry) {
@@ -525,7 +579,11 @@ class AddAssetFormNotifier
     );
     String? ticker;
     String? name;
-    if (entry.subCategory != null) {
+    if (entry.type == AssetType.kripto && entry.subCategory != null) {
+      // Kod alt kategori DEĞİL, sembolün kendisi (`KRIPTO:BTC`).
+      ticker = kriptoSembolu(entry.subCategory!);
+      name = entry.subCategory;
+    } else if (entry.subCategory != null) {
       next = next.copyWith(subCategory: entry.subCategory);
       if (entry.type == AssetType.doviz) {
         final opt = dovizOptFor(entry.subCategory);
