@@ -158,9 +158,8 @@ void main() {
       for (final gun in [1, 7, 30, 180, 365]) {
         expect(
           kiyasCizgiKalinligi(periodDays: gun, vurgulu: true, odakta: false),
-          greaterThan(
-              kiyasCizgiKalinligi(
-                  periodDays: gun, vurgulu: false, odakta: false)),
+          greaterThan(kiyasCizgiKalinligi(
+              periodDays: gun, vurgulu: false, odakta: false)),
           reason: '$gun günlük dönemde kıyas çizgisi ayrışmıyor',
         );
       }
@@ -189,7 +188,7 @@ void main() {
     // çiziliyor. Portföyü yalnızca sahip olunan günlerde çizmek iki tarafı
     // farklı pencerelerde ölçmek olurdu.
     //
-    // Bunun bir yorumu var ve kullanıcıya AÇIKÇA söyleniyor (grafik altı not).
+    // Bunun bir yorumu var ve kullanıcıya AÇIKÇA söyleniyor (başlıktaki bilgi ipucu).
 
     test('sağlayıcı SİMÜLASYON modunu kullanır', () async {
       final provider = _yorumsuz(
@@ -201,13 +200,17 @@ void main() {
 
     test('senaryo olduğu kullanıcıya YAZIYLA söylenir', () async {
       // Kullanıcı bu çizgiyi "gerçekleşmiş getirim" sanmamalı.
+      // 2026-09-25: sabit not → dönemi bilen ipucu. GÜNLÜK'te çizgi gerçek
+      // (gün içi motor), 1H+ simülasyon; iki metin de ekranda bağlı olmalı.
       final ekran = _yorumsuz(
           await File('lib/screens/watchlist_screen.dart').readAsString());
-      // 3.20: metin sözlükte (`portfolioLineNote`).
-      expect(ekran.contains('l10n.portfolioLineNote'), isTrue,
+      expect(ekran.contains('l10n.portfolioLineInfoSim'), isTrue,
           reason: 'simülasyon olduğu belirtilmezse yanıltıcı olur');
-      expect(trMetni('portfolioLineNote'),
+      expect(ekran.contains('l10n.portfolioLineInfoDaily'), isTrue,
+          reason: 'günlükte çizgi gerçek; simülasyon demek yanlış olur');
+      expect(trMetni('portfolioLineInfoSim'),
           contains('gerçekleşmiş getirin değildir'));
+      expect(trMetni('portfolioLineInfoDaily'), contains('gerçek'));
     });
 
     test('baştaki sıfırlar ATILIR', () {

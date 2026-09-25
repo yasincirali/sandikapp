@@ -1607,8 +1607,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notEnoughPriceHistory => 'Not enough price history for a chart.';
 
   @override
-  String portfolioLineNote(String name) {
-    return 'The $name line is the scenario where you held today\'s assets from the start of the period — it is not your realised return.';
+  String portfolioLineInfoDaily(String name) {
+    return 'In the daily view the $name line shows your real value — the same as the daily chart on the Performance screen.';
+  }
+
+  @override
+  String portfolioLineInfoSim(String name) {
+    return 'For weekly and longer periods the $name line is a simulation: what would have happened had you held today\'s assets since the start of the period. Your buy and sell dates are ignored; it is not your realised return. This keeps it comparable with your watched assets over the same window.';
   }
 
   @override

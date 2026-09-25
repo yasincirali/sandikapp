@@ -834,8 +834,16 @@
   },
   "chartLoadFailed": "Grafik yüklenemedi.",
   "notEnoughPriceHistory": "Grafik için yeterli fiyat geçmişi yok.",
-  "portfolioLineNote": "{name} çizgisi, bugünkü varlıklarını dönem başından beri tutsaydın senaryosudur — gerçekleşmiş getirin değildir.",
-  "@portfolioLineNote": {
+  "portfolioLineInfoDaily": "Günlük görünümde {name} çizgisi gerçek değerini gösterir — Performans ekranındaki günlük grafiğin aynısı.",
+  "@portfolioLineInfoDaily": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "portfolioLineInfoSim": "Haftalık ve daha uzun dönemlerde {name} çizgisi bir simülasyondur: bugünkü varlıklarını dönem başından beri tutsaydın ne olurdu. Alım-satım tarihlerin hesaba katılmaz; gerçekleşmiş getirin değildir. Böylece izlediğin varlıklarla aynı pencerede kıyaslanır.",
+  "@portfolioLineInfoSim": {
     "placeholders": {
       "name": {
         "type": "String"
