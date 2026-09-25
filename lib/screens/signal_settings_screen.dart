@@ -109,8 +109,10 @@ class SignalSettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
+          // Kripto sunucu sinyal analizinde yok (analyze-signals
+          // ANALYZABLE); ayarı gösterip hiç bildirim göndermemek yanıltır.
           for (final type
-              in AssetType.values) ...[
+              in AssetType.values.where((t) => t != AssetType.kripto)) ...[
             _CategorySection(
               type: type,
               selected: prefs[type] ??

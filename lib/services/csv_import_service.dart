@@ -248,6 +248,9 @@ class CsvImportService {
     if (t.startsWith('altin') || t == 'gold') {
       return AssetType.altin;
     }
+    if (t.startsWith('kripto') || t == 'crypto' || t == 'coin') {
+      return AssetType.kripto;
+    }
     return null;
   }
 
@@ -257,6 +260,12 @@ class CsvImportService {
   /// BIST 4-6 harf (`.IS` olsun olmasın) → diğer.
   static AssetType inferType(String raw) {
     final t = raw.trim().toUpperCase();
+    // Kripto YALNIZCA açık işaretle tanınır: `KRIPTO:BTC`, `BTC-USD`,
+    // `BTCUSDT`. Çıplak "BTC" üç harfli olduğu için TEFAS fon koduyla
+    // (AAK, TTE…) ayırt edilemez; tür sütunu verilmediyse fon kalır —
+    // yanlış türde kripto, yanlış türde fondan daha kötü değil ama
+    // tahminle birini bozmak ikisini de bozmaktır.
+    if (kriptoKodunuCoz(t) != null) return AssetType.kripto;
     if (const {'USD', 'EUR', 'GBP', FiyatKaynagi.usdTry, 'EURTRY=X', 'GBPTRY=X'}
         .contains(t)) {
       return AssetType.doviz;
@@ -272,6 +281,16 @@ class CsvImportService {
     if (RegExp(r'^[A-Z]{3}$').hasMatch(core)) return AssetType.fon;
     if (RegExp(r'^[A-Z]{4,6}$').hasMatch(core)) return AssetType.hisse;
     return AssetType.diger;
+  }
+
+  /// Kripto sembolünün açık biçimlerinden coin kodu: `KRIPTO:BTC`,
+  /// `BTC-USD`, `BTC-TRY`, `BTCUSDT`, `BTC/TRY`. Biçim dışıysa `null`.
+  static String? kriptoKodunuCoz(String raw) {
+    final t = raw.trim().toUpperCase();
+    final onekli = kriptoKodu(t);
+    if (onekli != null) return onekli;
+    final m = RegExp(r'^([A-Z0-9]{2,10})(?:[-/](?:USD|USDT|TRY)|USDT)$').firstMatch(t);
+    return m?.group(1);
   }
 
   /// Sembolü uygulamanın saklama biçimine çevirir.
@@ -336,6 +355,17 @@ class CsvImportService {
           name: t,
           subCategory: null,
           unitType: 'piece',
+          currency: 'TRY',
+        );
+      case AssetType.kripto:
+        // Tür sütunu "kripto" dediyse çıplak kod (BTC) de kabul edilir.
+        final kod = kriptoKodunuCoz(t) ?? t;
+        return (
+          ticker: kriptoSembolu(kod),
+          name: kod,
+          subCategory: null,
+          unitType: 'piece',
+          // Fiyat sunucuda TL'dir (kripto_fiyat); maliyet de TL girilir.
           currency: 'TRY',
         );
       case AssetType.emtia:

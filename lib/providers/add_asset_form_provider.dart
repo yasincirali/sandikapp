@@ -49,11 +49,42 @@ typedef ParsedEntry = ({
   String raw,
 });
 
+/// Hızlı girişte tanınan kripto adları → kod. Bilerek KISA: serbest
+/// metinde her üç harfli kelimeyi coin sanmak ("100 eur" gibi) yanlış tür
+/// üretir. Listede olmayan coin tür seçiciyle eklenir.
+const _hizliGirisKripto = <String, String>{
+  'bitcoin': 'BTC',
+  'btc': 'BTC',
+  'ethereum': 'ETH',
+  'ether': 'ETH',
+  'eth': 'ETH',
+  'tether': 'USDT',
+  'usdt': 'USDT',
+  'solana': 'SOL',
+  'xrp': 'XRP',
+  'ripple': 'XRP',
+  'bnb': 'BNB',
+  'avax': 'AVAX',
+  'dogecoin': 'DOGE',
+  'doge': 'DOGE',
+  'cardano': 'ADA',
+};
+
+/// Hızlı giriş metninde tanınan kripto kodu — tam kelime eşleşmesi.
+String? hizliGirisKriptoKodu(String metin) {
+  for (final kelime in RegExp(r'[a-zçğıöşü]+').allMatches(metin.toLowerCase())) {
+    final kod = _hizliGirisKripto[kelime.group(0)];
+    if (kod != null) return kod;
+  }
+  return null;
+}
+
 /// Bir hızlı giriş satırını çözer. Desteklenen biçimler:
 ///   "100 dolar"                  → 100 USD (fiyatsız)
 ///   "100 dolar 32 liradan"       → qty=100, price=32, USD
 ///   "10 gram altın 4500 liradan" → qty=10, price=4500
 ///   "GARAN 500 adet 105 lira"    → qty=500, price=105
+///   "0,05 btc"                   → 0,05 BTC (kripto, fiyatsız)
 /// Miktar bulunamazsa `null`.
 ParsedEntry? parseQuickEntry(String raw) {
   final text = raw.toLowerCase().trim();
@@ -62,7 +93,14 @@ ParsedEntry? parseQuickEntry(String raw) {
   var detectedType = AssetType.hisse;
   String? detectedSub;
 
-  if (RegExp(r'dolar|usd').hasMatch(text)) {
+  // Kripto ÖNCE bakılır: "usdt" içinde "usd" geçer ve aşağıdaki döviz
+  // kalıbı onu dolar sanıyordu (2026-09-25 kripto envanteri). Kod
+  // `subCategory`'de taşınır; kayıt yolu `KRIPTO:<kod>` sembolünü kurar.
+  final kripto = hizliGirisKriptoKodu(text);
+  if (kripto != null) {
+    detectedType = AssetType.kripto;
+    detectedSub = kripto;
+  } else if (RegExp(r'dolar|usd').hasMatch(text)) {
     detectedType = AssetType.doviz;
     detectedSub = 'USD';
   } else if (RegExp(r'euro|eur').hasMatch(text)) {
@@ -525,7 +563,11 @@ class AddAssetFormNotifier
     );
     String? ticker;
     String? name;
-    if (entry.subCategory != null) {
+    if (entry.type == AssetType.kripto && entry.subCategory != null) {
+      // Kod alt kategori DEĞİL, sembolün kendisi (`KRIPTO:BTC`).
+      ticker = kriptoSembolu(entry.subCategory!);
+      name = entry.subCategory;
+    } else if (entry.subCategory != null) {
       next = next.copyWith(subCategory: entry.subCategory);
       if (entry.type == AssetType.doviz) {
         final opt = dovizOptFor(entry.subCategory);

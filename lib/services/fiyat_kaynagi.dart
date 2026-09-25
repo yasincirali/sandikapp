@@ -56,6 +56,20 @@ class FiyatKaynagi {
   static bool altinMi(String ticker) =>
       ticker.trim().toUpperCase().startsWith('ALTIN_');
 
+  /// Kripto sembolü mü (`KRIPTO:BTC`)?
+  ///
+  /// Kripto fiyatı ve serisi SUNUCUDAN gelir (`kripto_fiyat`,
+  /// `kripto-seri`; 0074), Yahoo'dan DEĞİL. TL fiyatı sunucu hesaplar:
+  /// TRY paritesi varsa o, yoksa USDT × USDTTRY — AYNI borsanın kuruyla,
+  /// böylece gösterilen fiyat ile grafik aynı ölçektedir (madde 2). Varlık
+  /// `currency: 'TRY'` taşır; istemci ikinci bir çevrim YAPMAZ.
+  static bool kriptoMu(String ticker) =>
+      ticker.trim().toUpperCase().startsWith(kriptoOneki);
+
+  /// Varlık 7/24 işlem görüyor mu? Hafta sonu gün içi ızgarası buna bakar
+  /// (`HistoryService.gridSlotlari`).
+  static bool yediGun(Asset a) => a.type == AssetType.kripto;
+
   /// Varlık gün içi seriye GİREBİLİR mi?
   ///
   /// ## Neden burada (kullanıcı bildirimi, 2026-09-22)
@@ -91,6 +105,7 @@ class FiyatKaynagi {
       case AssetType.hisse:
       case AssetType.emtia:
       case AssetType.doviz:
+      case AssetType.kripto:
         return a.ticker.trim().isNotEmpty;
       case AssetType.fon:
         // Elle fiyatlanan fonun yayımlanmış NAV serisi yoktur.

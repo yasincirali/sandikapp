@@ -115,7 +115,7 @@ void main() {
     'lib/screens/paywall_screen.dart': 7,
     'lib/screens/asset_detail_screen.dart': 7,
     'lib/screens/watchlist_screen.dart': 8,
-    'lib/models/asset_type.dart': 9,
+    'lib/models/asset_type.dart': 3,
     'lib/screens/settings_screen.dart': 12,
     'lib/screens/profile_screen.dart': 11,
     'lib/screens/signal_settings_screen.dart': 19,

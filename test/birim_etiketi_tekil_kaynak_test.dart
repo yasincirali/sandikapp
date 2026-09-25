@@ -59,6 +59,7 @@ String _sepetEtiketi(BulkCartItem i) => birimEtiketi(
       type: i.type,
       unitType: i.unitType,
       currency: i.currency,
+      ticker: i.ticker,
     );
 
 void main() {

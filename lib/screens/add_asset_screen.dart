@@ -1195,7 +1195,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // Vadeli mevduat türü 2026-09-14'te kaldırıldı (hiç yayına çıkmamıştı,
     // ayrı form + lokal faiz motoru bakım yükü getiriyordu); seçici artık
     // enum'un tamamını gösterir.
-    const types = AssetType.values;
+    // Kripto seçicisi (katalog araması) 3. adımda gelir; o zamana kadar
+    // kripto yalnızca hızlı girişten ("0,05 btc") ve düzenlemeden açılır.
+    // Serbest sembol alanıyla kripto eklemek sunucunun tanımadığı sembol
+    // üretirdi (fiyatsız lot).
+    final types = [
+      for (final t in AssetType.values)
+        if (t != AssetType.kripto || _type == AssetType.kripto) t,
+    ];
     return HScrollWithFade(
       fadeColor: context.c.background,
       child: Row(
@@ -1623,6 +1630,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           currency = 'TRY';
         } else if (entry.type == AssetType.altin) {
           assetName = entry.subCategory ?? 'Altın';
+        } else if (entry.type == AssetType.kripto && entry.subCategory != null) {
+          // Fiyat sunucuda TL (kripto_fiyat); ikinci çevrim yok.
+          ticker = kriptoSembolu(entry.subCategory!);
+          assetName = entry.subCategory!;
+          currency = 'TRY';
         }
 
         double price = entry.price;
@@ -1648,7 +1660,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               currency: currency,
               notes: '',
               isManualPrice: price > 0 && ticker.isEmpty,
-              subCategory: entry.subCategory,
+              subCategory:
+                  entry.type == AssetType.kripto ? null : entry.subCategory,
               unitType: entry.type == AssetType.altin ? 'gram' : 'piece',
             );
       }

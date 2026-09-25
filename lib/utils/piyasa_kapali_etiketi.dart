@@ -32,6 +32,9 @@ const _kapalidaIsleyebilen = {
   AssetType.doviz,
   AssetType.emtia,
   AssetType.altin,
+  // Kripto hiç kapanmaz (7/24). Borsayla karışıksa "diğerleri sürüyor"
+  // tam olarak doğru; tek başınaysa kuyruk yalnızca veri gecikmesidir.
+  AssetType.kripto,
 };
 
 /// Rozet metni. Portföyde hangi türler varsa ona göre daralır.

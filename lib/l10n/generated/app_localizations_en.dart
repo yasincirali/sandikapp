@@ -617,6 +617,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetTypeGold => 'Gold';
 
   @override
+  String get assetTypeCrypto => 'Crypto';
+
+  @override
   String get assetTypeCommodity => 'Commodities';
 
   @override
@@ -636,6 +639,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tickerHintGold =>
       'e.g. XAUTRY=X (gram gold in TRY) or GC=F (ounce, USD)';
+
+  @override
+  String get tickerHintCrypto => 'e.g. BTC, ETH — pick from the list';
 
   @override
   String get tickerHintCommodity =>

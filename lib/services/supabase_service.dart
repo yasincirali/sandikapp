@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
 import '../models/asset.dart';
+import '../models/kripto_fiyat.dart';
 import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
 import '../models/signal_preference.dart';
@@ -799,6 +800,66 @@ class SupabaseService {
         onConflict: 'user_id,asset_type',
       ),
     );
+  }
+
+  // ── Kripto (0074) ─────────────────────────────────────────────────────────
+  //
+  // Kripto fiyatını telefon DEĞİL sunucu çeker (kripto-fiyat, dakikada bir);
+  // burası yalnızca tabloyu okur. Gerekçe `supabase/functions/_shared/kripto.ts`.
+
+  /// Kod → sunucudaki son TL fiyat satırı. Katalogda olmayan ya da henüz
+  /// fiyatlanmamış kod haritada YOKTUR (uydurma sıfır dönmez).
+  Future<Map<String, KriptoFiyat>> kriptoFiyatlari(List<String> kodlar) async {
+    if (kodlar.isEmpty) return const {};
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoFiyatlari',
+      table: 'kripto_fiyat',
+      op: 'SELECT',
+      request: {'kod': kodlar},
+      call: () => _db
+          .from('kripto_fiyat')
+          .select('kod, fiyat_try, gun_acilis_try, guncellendi')
+          .inFilter('kod', kodlar),
+    );
+    final out = <String, KriptoFiyat>{};
+    for (final r in rows) {
+      final f = KriptoFiyat.fromMap(r);
+      if (f != null) out[f.kod] = f;
+    }
+    return out;
+  }
+
+  /// Grafik mumları — `kripto-seri` fonksiyonu, paylaşılan önbellekli.
+  ///
+  /// [aralik] ve [donem] Yahoo adlarıdır (`1h`, `1mo`): `ResolutionTier`
+  /// kriptoda da değişmeden kullanılır. `x-region`: Binance ABD IP'lerine
+  /// 451 döner; fonksiyon Frankfurt'ta koşmalı (0074 cron'u da öyle).
+  Future<List<(int, double)>> kriptoSerisi({
+    required String kod,
+    required String aralik,
+    required String donem,
+  }) async {
+    final res = await _log.log(
+      source: 'SupabaseService.kriptoSerisi',
+      table: 'functions/kripto-seri',
+      op: 'FUNCTION',
+      request: {'kod': kod, 'aralik': aralik, 'donem': donem},
+      call: () => _db.functions.invoke(
+        'kripto-seri',
+        body: {'kod': kod, 'aralik': aralik, 'donem': donem},
+        headers: const {'x-region': 'eu-central-1'},
+      ),
+    );
+    final noktalar = (res.data is Map) ? (res.data as Map)['noktalar'] : null;
+    if (noktalar is! List) return const [];
+    final out = <(int, double)>[];
+    for (final n in noktalar) {
+      if (n is! List || n.length < 2) continue;
+      final t = (n[0] as num?)?.toInt();
+      final v = (n[1] as num?)?.toDouble();
+      if (t != null && v != null && v > 0) out.add((t, v));
+    }
+    return out;
   }
 
   // ── Edge Functions ────────────────────────────────────────────────────────

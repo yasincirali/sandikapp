@@ -647,6 +647,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// emtia sayılır.
   static AssetType _typeOf(String ticker) {
     if (ticker.startsWith('TEFAS:')) return AssetType.fon;
+    if (ticker.startsWith(kriptoOneki)) return AssetType.kripto;
     if (ticker.startsWith('ALTIN_')) return AssetType.altin;
     if (ticker.endsWith('TRY=X')) return AssetType.doviz;
     if (ticker.endsWith('.IS')) return AssetType.hisse;

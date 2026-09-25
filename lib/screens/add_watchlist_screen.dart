@@ -148,6 +148,11 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
       return _Candidate(
           ticker: t, name: h.name, type: AssetType.fon, currency: 'TRY');
     }
+    if (t.startsWith(kriptoOneki)) {
+      // Fiyat sunucuda TL (kripto_fiyat) — TRY kote.
+      return _Candidate(
+          ticker: t, name: h.name, type: AssetType.kripto, currency: 'TRY');
+    }
     if (t.startsWith('ALTIN_')) {
       return _Candidate(
         ticker: t,

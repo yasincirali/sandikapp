@@ -618,6 +618,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get assetTypeGold => 'Altın';
 
   @override
+  String get assetTypeCrypto => 'Kripto';
+
+  @override
   String get assetTypeCommodity => 'Emtia';
 
   @override
@@ -637,6 +640,9 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get tickerHintGold =>
       'Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)';
+
+  @override
+  String get tickerHintCrypto => 'Örn: BTC, ETH — listeden seç';
 
   @override
   String get tickerHintCommodity =>

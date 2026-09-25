@@ -1220,6 +1220,12 @@ abstract class AppLocalizations {
   /// **'Altın'**
   String get assetTypeGold;
 
+  /// No description provided for @assetTypeCrypto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto'**
+  String get assetTypeCrypto;
+
   /// No description provided for @assetTypeCommodity.
   ///
   /// In tr, this message translates to:
@@ -1255,6 +1261,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)'**
   String get tickerHintGold;
+
+  /// No description provided for @tickerHintCrypto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn: BTC, ETH — listeden seç'**
+  String get tickerHintCrypto;
 
   /// No description provided for @tickerHintCommodity.
   ///
