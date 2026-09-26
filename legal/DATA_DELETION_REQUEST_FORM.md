@@ -1,6 +1,8 @@
 # Veri Silme Talep Formu / Data Deletion Request Form
 
-> **NOT:** Bu sayfayı `https://yasincirali.github.io/sandikapp/data-deletion` URL'inde halka açık bir HTML formu olarak yayınlayın. Google Play hesap silme zorunluluğu için **Web URL** istemektedir; uygulama içi akışa ek olarak halka açık bir web sayfası gerekir.
+<!-- Bu dosya docs/_build_legal.py ile data-deletion/ ve data-request/
+     sayfalarına basılır; buraya yazılan her satır Play incelemecisinin
+     tıkladığı halka açık sayfada görünür. Yayın notu legal/README.md'de. -->
 
 ---
 

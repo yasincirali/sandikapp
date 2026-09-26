@@ -5,7 +5,28 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+
+---
+
+## 🟡 AÇIK — `docs/_build_legal.py` ana sayfayı eski şablonla eziyor
+
+**Ne:** Betik hukuki sayfalarla birlikte `docs/index.html`'i de kendi
+içindeki şablondan yeniden basıyor. O şablon eskimiş: 2026-09-20'de elle
+eklenen Safari akıllı bandı (`apple-itunes-app`), mağaza düğmeleri ve
+enflasyon cümlesi betikte yok. Betiği koşan herkes ana sayfayı sessizce
+geriletir.
+
+**Neden ertelendi:** 2026-09-26'da yalnızca veri silme sayfasındaki
+geliştirici notunu kaldırmak için koşuldu (Play incelemecisi o sayfaya
+tıklıyor); `docs/index.html` `git checkout` ile geri alındı, şablon
+düzeltilmedi.
+
+**Maliyet:** her hukuki metin güncellemesinde elle geri alma; unutulursa
+yayındaki ana sayfa App Store bağlantısını kaybeder. **Ne zaman:** bir
+sonraki hukuki metin değişikliğinde — ya `index.html`'i betiğin çıktı
+listesinden çıkar (elle bakılan tek sayfa), ya da şablonu güncel sayfayla
+eşitle.
 
 ---
 
