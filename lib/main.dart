@@ -35,6 +35,7 @@ import 'widgets/yenilikler_sheet.dart';
 import 'services/surum_notu_service.dart';
 import 'services/deep_link_service.dart';
 import 'services/sunucu_secimi.dart';
+import 'services/tefas_service.dart';
 import 'widgets/sunucu_kapisi.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
@@ -105,6 +106,11 @@ Future<void> _initDeferredServices() async {
       }
     }),
     ('RemoteConfigService', () => RemoteConfigService.instance.init()),
+    // 497 KB'lık eski fon kataloğunu tercih dosyasından sil (2026-09-28):
+    // katalog artık dosyada; bu anahtar yerinde durdukça her açılış onu
+    // okuyordu (~400 ms). Fon aranmasa da bir kez temizlensin.
+    ('TefasService.eskiOnbellegiTemizle',
+        () => TefasService.instance.eskiOnbellegiTemizle()),
     // AnalyticsService'ten SONRA: kurulum günü yazılırken ve ilk açılış
     // event'i giderken gönderici hazır olmalı, yoksa uygulamanın ömrü
     // boyunca bir kez üretilen bu event sessizce düşerdi.

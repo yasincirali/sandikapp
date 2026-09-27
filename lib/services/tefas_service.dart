@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'crash_reporter.dart';
@@ -85,10 +87,18 @@ class TefasService {
   static const _listEndpoint  = '/api/funds/fonGetiriBazliBilgiGetir';
   static const _priceEndpoint = '/api/funds/fonFiyatBilgiGetir';
 
-  // SharedPreferences keys — v1 şema. Şema değişirse (yeni alanlar vb.)
-  // key'i v2'ye çıkar → eski cache otomatik ignore edilir.
-  static const _prefsCacheKey = 'tefas_funds_cache_v1';
-  static const _prefsCacheTsKey = 'tefas_funds_cache_ts_v1';
+  // Fon kataloğu DOSYADA, SharedPreferences'ta DEĞİL (2026-09-28).
+  //
+  // Eskiden `tefas_funds_cache_v1` anahtarıydı ve tek başına 497 KB'tı
+  // (tercih dosyası 610 KB). Android SharedPreferences dosyanın TAMAMINI ilk
+  // erişimde okuyup ayrıştırıyor: `initPreferencesCache` açılışta ~450 ms
+  // bekliyordu (profile build, ölçüldü) — yalnız fon aramasında gereken bir
+  // liste için HER açılışta. Dosya yalnız katalog istendiğinde okunur.
+  // Şema değişirse dosya adını v2'ye çıkar → eski dosya yok sayılır.
+  static const _dosyaAdi = 'tefas_funds_cache_v1.json';
+  // Eski yerdeki anahtarlar — yalnız SİLMEK için (tercih dosyası küçülsün).
+  static const _eskiPrefsCacheKey = 'tefas_funds_cache_v1';
+  static const _eskiPrefsCacheTsKey = 'tefas_funds_cache_ts_v1';
   // Fon fiyatları ayrı cache — liste cache'i (fon meta) 24 saat yaşar ama
   // fiyatlar çok daha çabuk eskir. Kod→{price, ts} formatında saklanır.
   static const _prefsPricesKey = 'tefas_prices_cache_v1';
@@ -113,18 +123,41 @@ class TefasService {
       _cacheTime != null &&
       DateTime.now().difference(_cacheTime!) < _ramCacheTtl;
 
+  Future<File?> _katalogDosyasi() async {
+    try {
+      final klasor = await getApplicationSupportDirectory();
+      return File('${klasor.path}/$_dosyaAdi');
+    } catch (_) {
+      return null; // test ortamı / eklenti yok → yalnız RAM önbelleği
+    }
+  }
+
+  /// Eski tercih anahtarlarını bir kez sil — içerik taşınmaz (24 saatlik
+  /// önbellek, ağdan yeniden gelir); amaç tercih dosyasını küçültmek.
+  Future<void> eskiOnbellegiTemizle() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey(_eskiPrefsCacheKey)) {
+        await prefs.remove(_eskiPrefsCacheKey);
+        await prefs.remove(_eskiPrefsCacheTsKey);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _loadFromDisk() async {
     if (_diskLoaded) return;
     _diskLoaded = true;
+    CrashReporter.arkaPlan(eskiOnbellegiTemizle(), reason: 'tefas_service.eskiOnbellegiTemizle');
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonStr = prefs.getString(_prefsCacheKey);
-      final ts = prefs.getInt(_prefsCacheTsKey);
-      if (jsonStr == null || ts == null) return;
+      final dosya = await _katalogDosyasi();
+      if (dosya == null || !await dosya.exists()) return;
+      final kayit = jsonDecode(await dosya.readAsString()) as Map<String, dynamic>;
+      final ts = kayit['ts'] as int?;
+      if (ts == null) return;
       final age = DateTime.now()
           .difference(DateTime.fromMillisecondsSinceEpoch(ts));
       if (age > _diskCacheTtl) return; // eski, ağdan çekilsin
-      final list = jsonDecode(jsonStr) as List;
+      final list = kayit['funds'] as List;
       final funds = <TefasFund>[];
       for (final e in list) {
         final f = TefasFund.fromJson(e as Map<String, dynamic>);
@@ -142,12 +175,12 @@ class TefasService {
   Future<void> _saveToDisk() async {
     if (_cachedFunds == null || _cachedFunds!.isEmpty) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonStr =
-          jsonEncode(_cachedFunds!.map((f) => f.toJson()).toList());
-      await prefs.setString(_prefsCacheKey, jsonStr);
-      await prefs.setInt(
-          _prefsCacheTsKey, DateTime.now().millisecondsSinceEpoch);
+      final dosya = await _katalogDosyasi();
+      if (dosya == null) return;
+      await dosya.writeAsString(jsonEncode({
+        'ts': DateTime.now().millisecondsSinceEpoch,
+        'funds': _cachedFunds!.map((f) => f.toJson()).toList(),
+      }));
     } catch (_) {
       // Disk yazımı başarısız olsa da RAM cache çalışır.
     }
@@ -525,9 +558,11 @@ class TefasService {
   Future<void> _clearDiskCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_prefsCacheKey);
-      await prefs.remove(_prefsCacheTsKey);
+      await prefs.remove(_eskiPrefsCacheKey);
+      await prefs.remove(_eskiPrefsCacheTsKey);
       await prefs.remove(_prefsPricesKey);
+      final dosya = await _katalogDosyasi();
+      if (dosya != null && await dosya.exists()) await dosya.delete();
     } catch (_) {}
   }
 
