@@ -7,8 +7,12 @@ name: Android — Release AAB
 # kendi ABI'sini indirir — arm64'te ~11,9 MB. Debug sembolleri de teslim
 # edilmez.
 #
-# Elle tetiklenir (workflow_dispatch) veya `v*` tag'i push edilince çalışır:
-# her main push'unda imzalı sürüm üretmenin anlamı yok.
+# Tetik: main'e push (belge değişikliği hariç), `v*` tag'i ya da elle.
+# Eskiden yalnız elle/tag idi ("her main push'unda imzalı sürüm üretmenin
+# anlamı yok") — o karar Play'de uygulama yokken verilmişti. 2026-09-28:
+# kapalı test başladı, iOS her main push'unda TestFlight'a gidiyor; Android
+# testçileri aynı kodu aynı anda almalı. versionCode artık her koşuda arttığı
+# için (100 + koşu no) sık derleme Play'de çakışma üretmez.
 #
 # ⚠️ Artefakt 30 gün sonra siliniyor. Yayınlanan HER sürümün `symbols/`
 # klasörünü indirip arşivle — Dart karartması açık olduğu için o sürümün
@@ -21,7 +25,21 @@ on:
         description: 'Yan yükleme için ABI-bölünmüş APK de üret'
         type: boolean
         default: false
+      play_durumu:
+        description: "Play'e yükleme durumu: completed = incelemeye gider, draft = Console'da elle gönderilir"
+        type: choice
+        options: [completed, draft]
+        default: completed
+  # iOS (ios-testflight.yml) ile AYNI tetik (2026-09-28, kullanıcı isteği:
+  # "android için de otomatik build olsun"). Belge değişikliği build istemez.
   push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'legal/**'
+      - 'store_listing/**'
+      - 'tool/tasima/**'
+      - '**/*.md'
     tags:
       - 'v*'
 
@@ -33,6 +51,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      # Play'e otomatik yükleme YALNIZ servis hesabı tanımlıysa. Secret yokken
+      # adım atlanır, iş yeşil biter — AAB yine artefakt olarak iner.
+      # Kurulum: PLAY_STORE_YAYIN_REHBERI.md §8.4.
+      PLAY_YUKLE: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -165,6 +188,22 @@ jobs:
             build/app/outputs/flutter-apk/*.apk
             build/app/outputs/mapping/release/mapping.txt
             build/symbols/**
+
+      # Kapalı test (Alpha) kanalına yükleme — TestFlight'ın Android karşılığı.
+      # `completed`: yönetilen yayınlama kapalıyken doğrudan incelemeye gider,
+      # onaylanınca testçiler güncellemeyi alır. versionCode her koşuda artar
+      # (100 + koşu no), Play aynı kodu reddetmez. İlk AAB elle yüklendi
+      # (2026-09-27) — Play API ilk yüklemeyi kabul etmiyordu, artık gerek yok.
+      - name: Play Console — Kapalı test (Alpha)
+        if: env.PLAY_YUKLE == '1'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.sandik.app
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: alpha
+          status: ${{ github.event.inputs.play_durumu || 'completed' }}
+          mappingFile: build/app/outputs/mapping/release/mapping.txt
 
       - name: Boyut özeti
         run: |

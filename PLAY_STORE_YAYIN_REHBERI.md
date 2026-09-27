@@ -503,6 +503,38 @@ tester'lardan bloklayıcı geri bildirim yok.
 
 ---
 
+### 8.4 Otomatik derleme + Play'e yükleme (2026-09-28)
+
+`android-release.yml` artık `main`'e her push'ta (belge değişikliği hariç)
+imzalı AAB üretir — iOS/TestFlight ile aynı tetik. `PLAY_SERVICE_ACCOUNT_JSON`
+secret'ı tanımlıysa AAB **Kapalı test (Alpha)** kanalına `completed` olarak
+yüklenir: yönetilen yayınlama kapalı olduğu için incelemeye gider, onaylanınca
+testçilere güncelleme olarak düşer. Secret yokken yükleme adımı **atlanır**, iş
+yeşil biter, AAB artefakt olarak iner (elle yükleme yolu açık kalır).
+Elle koşuda `play_durumu: draft` seçilirse sürüm Console'da taslak kalır.
+
+**Servis hesabı kurulumu [SEN] — bir kez, ~15 dk:**
+1. [Google Cloud Console](https://console.cloud.google.com/) → Firebase'in
+   projesi (`sandik-4e2f2`) → **APIs & Services → Library** → **Google Play
+   Android Developer API** → **Enable**.
+2. **IAM & Admin → Service Accounts → Create service account** →
+   ad: `play-yukleme` → rol verme (boş geç) → **Done**.
+3. Hesaba tıkla → **Keys → Add key → Create new key → JSON** → dosya iner.
+   Bu dosya bir PAROLADIR: repoya/sohbete koyma.
+4. **Play Console → Kullanıcılar ve izinler → Yeni kullanıcı davet et** →
+   e-posta: servis hesabının adresi (`play-yukleme@…iam.gserviceaccount.com`)
+   → **Uygulama izinleri → sandık** →
+   ✅ *Uygulama bilgilerini görüntüle*, ✅ *Test kanallarına sürüm yayınla*
+   (üretim yetkisi VERME) → **Davet et**.
+5. GitHub secret:
+   ```bash
+   gh secret set PLAY_SERVICE_ACCOUNT_JSON < ~/Downloads/<indirilen>.json
+   ```
+   ve JSON dosyasını sil.
+
+İzin yayılması Play tarafında birkaç saat sürebilir; ilk koşu "The caller
+does not have permission" derse beklemek yeter.
+
 ## 9. Yayından sonra
 
 - [ ] Crashlytics ve Play Vitals'ı ilk hafta günlük kontrol et
