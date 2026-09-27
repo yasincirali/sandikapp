@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/screens/legal_doc_screen.dart';
@@ -145,6 +146,40 @@ void main() {
       await t.pump();
       expect(find.text('Güncelleme gerekli'), findsOneWidget);
       expect(find.text('Sandık yenilendi'), findsNothing);
+    });
+
+    testWidgets('Android: "Uygulamayı kapat" İŞLEMİ bitirir (pop değil)', (t) async {
+      // SystemNavigator.pop() aktiviteyi kapatıp Dart tarafını canlı
+      // bırakabiliyordu → yeniden açılışta aynı kapı, aynı eski sunucu.
+      // Platform değişkeni GÖVDEDE sıfırlanmalı: çerçeve değişmezleri
+      // tearDown'dan önce denetliyor.
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      var kapandi = false;
+      final onceki = SunucuKapisi.kapat;
+      SunucuKapisi.kapat = () => kapandi = true;
+      try {
+        await pump(t);
+        SunucuSecimi.instance.yenidenBaslatGerekli.value = true;
+        await t.pump();
+        await t.tap(find.text('Uygulamayı kapat'));
+        expect(kapandi, isTrue);
+      } finally {
+        SunucuKapisi.kapat = onceki;
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    testWidgets('iOS: kapatma düğmesi YOK (App Store yönergesi), yalnız anlatım', (t) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        await pump(t);
+        SunucuSecimi.instance.yenidenBaslatGerekli.value = true;
+        await t.pump();
+        expect(find.text('Uygulamayı kapat'), findsNothing);
+        expect(find.textContaining('yukarı kaydırarak'), findsOneWidget);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
     });
 
     testWidgets('rcGuncellendi: yalnız FARKLI sunucu kapıyı kaldırır', (t) async {

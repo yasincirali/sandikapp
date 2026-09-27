@@ -1,6 +1,7 @@
+import 'dart:io' show exit;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/magaza.dart';
@@ -23,6 +24,17 @@ class SunucuKapisi extends StatelessWidget {
   const SunucuKapisi({super.key, required this.child});
 
   final Widget child;
+
+  /// Android "Uygulamayı kapat": İŞLEMİ bitirir. `SystemNavigator.pop()`
+  /// yalnız aktiviteyi kapatıyor, Dart tarafını öldürmeyebiliyordu —
+  /// 2026-09-27 emülatör denemesinde yeniden açılışta AYNI kapı ve AYNI
+  /// eski sunucu geri geldi (bir önceki denemede gelmemişti: tutarsız).
+  /// Kapının tek işi temiz yeniden başlatmayı garanti etmek; `exit(0)`
+  /// sonraki açılışı soğuk başlangıç yapar. Yalnız Android: iOS'ta uygulama
+  /// kendini kapatmaz (App Store yönergesi), kullanıcı kaydırıp kapatır.
+  /// Testte değiştirilir.
+  @visibleForTesting
+  static void Function() kapat = () => exit(0);
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +86,7 @@ class _YenidenBaslat extends StatelessWidget {
       baslik: l.serverMovedTitle,
       mesaj: android ? l.serverMovedBodyAndroid : l.serverMovedBodyIos,
       dugme: android ? l.serverMovedCloseButton : null,
-      onDugme: android ? () => SystemNavigator.pop() : null,
+      onDugme: android ? () => SunucuKapisi.kapat() : null,
     );
   }
 }
