@@ -46,7 +46,7 @@
 | Data type | Collected | Shared | Optional | Purpose |
 |---|---|---|---|---|
 | Device or other IDs | ✅ | ❌ | Required | FCM push notification token (for partnership invites and signal notifications) |
-| **Advertising ID** | ❌ | — | — | **Not collected.** `firebase_analytics` normally merges `com.google.android.gms.permission.AD_ID` into the manifest; it is explicitly removed (`tools:node="remove"` in `android/app/src/main/AndroidManifest.xml`). This matches the iOS declaration (`PrivacyInfo.xcprivacy` → `NSPrivacyTracking=false`). Verify after each build: the merged manifest must contain no `AD_ID` entry. |
+| **Advertising ID** | ❌ | — | — | **Not collected.** `firebase_analytics` normally merges `com.google.android.gms.permission.AD_ID` into the manifest; it is explicitly removed (`tools:node="remove"` in `android/app/src/main/AndroidManifest.xml`). This matches the iOS declaration (`PrivacyInfo.xcprivacy` → `NSPrivacyTracking=false`). The Privacy Sandbox pair `android.permission.ACCESS_ADSERVICES_AD_ID` / `ACCESS_ADSERVICES_ATTRIBUTION` (added by `play-services-measurement-api`) is removed the same way since 2026-09-27 — the 1.1.6+7 AAB still carried them. Verify after each build: the merged manifest must contain no `AD_ID` and no `ADSERVICES` entry. |
 
 ## Special note: Anonymous aggregated data (leaderboard/competition)
 

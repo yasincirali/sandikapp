@@ -12,6 +12,14 @@
          uyumsuzluk sayılır ve sürüm reddedilir. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID"
         tools:node="remove" />
+    <!-- Aynı gerekçe, Privacy Sandbox tarafı: play-services-measurement-api
+         AdServices reklam kimliği ve atıf izinlerini de ekliyor. 1.1.6+7
+         AAB'sinde (2026-09-26) AD_ID düşmüş ama bu ikisi duruyordu — Play
+         "Reklam Kimliği: Hayır" beyanıyla çelişki sayabilir. -->
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+        tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
+        tools:node="remove" />
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
