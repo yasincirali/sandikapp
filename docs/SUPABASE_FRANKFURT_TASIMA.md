@@ -225,7 +225,7 @@ yazılan veri kaybolur — pencere kısa ve gece olduğu için.
    ```bash
    python -m pip install "psycopg[binary]>=3.2"
    # Panel → Connect → Session pooler (IPv4). Şifreler ekrana basılmaz.
-   export ESKI_DB_URL='postgresql://postgres.ybdbzouzhzwthjgwlbmk:<şifre>@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres'
+   export ESKI_DB_URL='postgresql://postgres.ybdbzouzhzwthjgwlbmk:<şifre>@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres'
    export YENI_DB_URL='postgresql://postgres.ynwymnpdiwudrlxfrmuo:<şifre>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres'
    python tool/tasima/veri_tasima.py kontrol       # salt okuma — ENGEL 0 olmalı
    python tool/tasima/veri_tasima.py bosalt --onay ynwymnpdiwudrlxfrmuo

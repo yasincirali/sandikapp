@@ -23,7 +23,7 @@ Değişmezler (her biri bir kazayı önler):
 Bağlantı: Panel → Connect → **Session pooler** (IPv4; doğrudan `db.<ref>`
 Free planda yalnız IPv6). Şifre ortam değişkeninde kalır, ekrana basılmaz.
 
-    export ESKI_DB_URL='postgresql://postgres.ybdbzouzhzwthjgwlbmk:<şifre>@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres'
+    export ESKI_DB_URL='postgresql://postgres.ybdbzouzhzwthjgwlbmk:<şifre>@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres'
     export YENI_DB_URL='postgresql://postgres.ynwymnpdiwudrlxfrmuo:<şifre>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres'
 
 Komutlar (sırası runbook'ta):
@@ -91,12 +91,64 @@ def baglan(taraf: str, anlik: bool = False) -> psycopg.Connection:
             f"YÖN KİLİDİ: {taraf.upper()} adresi {beklenen} projesine ait değil. "
             "ESKI_DB_URL = Tokyo, YENI_DB_URL = Frankfurt olmalı. Hiçbir şey yapılmadı."
         )
-    conn = psycopg.connect(url, autocommit=False, connect_timeout=15,
-                           application_name=f"sandik-tasima-{taraf}")
+    # Şifre ayrı değişkenden de verilebilir (ESKI_DB_SIFRE / YENI_DB_SIFRE):
+    # adrese gömülen şifredeki `@ / : # ?` adresi böler ve psycopg anlamsız bir
+    # "label empty" hatası verir (2026-09-27'de yaşandı).
+    sifre = os.environ.get("ESKI_DB_SIFRE" if taraf == "eski" else "YENI_DB_SIFRE", "")
+    ek = {"password": sifre} if sifre else {}
+    _adresi_tani(url, taraf)
+    try:
+        conn = psycopg.connect(url, autocommit=False, connect_timeout=15,
+                               application_name=f"sandik-tasima-{taraf}", **ek)
+    except psycopg.OperationalError as e:
+        # Ham mesaj adresi (şifre dahil) yankılayabilir — yalnız sunucu + ipucu.
+        from urllib.parse import urlsplit
+        host = urlsplit(url).hostname or "?"
+        m = str(e).lower()
+        ipucu = ("şifre yanlış" if "password" in m else
+                 "sunucu adı çözülemedi (adresi panelden tam kopyala)" if "resolve" in m or "getaddrinfo" in m else
+                 "zaman aşımı (Session pooler adresi mi? doğrudan db.<ref> Free planda IPv6)" if "timeout" in m else
+                 "Tenant or user not found → kullanıcı adı 'postgres.<ref>' biçiminde olmalı" if "tenant" in m else
+                 "bağlantı reddedildi")
+        sys.exit(f"{taraf.upper()} veritabanına bağlanılamadı (sunucu '{host}'): {ipucu}.")
     if anlik:
         conn.isolation_level = psycopg.IsolationLevel.REPEATABLE_READ
         conn.read_only = True
     return conn
+
+
+def _adresi_tani(url: str, taraf: str) -> None:
+    """Bağlanmadan önce adresi çöz; bozuksa ŞİFREYİ GÖSTERMEDEN neresi bozuk söyle."""
+    from urllib.parse import urlsplit
+    # Kimlik bölümü `scheme://` ile SON `@` arası. Şifrede @ / # ? varsa adres
+    # bölünür — urlsplit bile yanlış sunucu çıkarır, psycopg hatası şifrenin
+    # PARÇASINI basar. Önce ham metinde yakala.
+    govde = url.split("://", 1)[-1]
+    kimlik = govde.rsplit("@", 1)[0] if "@" in govde else ""
+    if any(ch in kimlik for ch in "@/#?"):
+        sys.exit(f"{taraf.upper()} adresindeki şifrede özel karakter (@ / # ?) var — adres bölünüyor.\n"
+                 f"Şifreyi adresten çıkar, ayrı ver:\n"
+                 f"  export {taraf.upper()}_DB_URL='postgresql://postgres.<ref>@<paneldeki-sunucu>:5432/postgres'\n"
+                 f"  export {taraf.upper()}_DB_SIFRE='şifre'")
+    try:
+        p = urlsplit(url)
+        host, port, kullanici = p.hostname or "", p.port, p.username or ""
+    except ValueError as e:
+        sys.exit(f"{taraf.upper()} adresi çözülemedi ({e}). Şifrede özel karakter olabilir → "
+                 f"şifreyi adresten çıkar, {taraf.upper()}_DB_SIFRE değişkenine yaz.")
+    sorun = []
+    if not host or ".." in host or host.startswith(".") or "..." in url:
+        sorun.append(f"sunucu adı geçersiz: '{host}' (örnekteki '...' kaldı mı? paneldeki TAM adresi kopyala)")
+    if p.scheme not in ("postgresql", "postgres"):
+        sorun.append(f"şema '{p.scheme}' — 'postgresql://' ile başlamalı")
+    if "[YOUR-PASSWORD]" in url:
+        sorun.append("'[YOUR-PASSWORD]' yer tutucusu adreste duruyor")
+    if sorun:
+        sys.exit(f"{taraf.upper()} adresi bozuk — kullanıcı='{kullanici}', sunucu='{host}', port={port}:\n  - "
+                 + "\n  - ".join(sorun)
+                 + f"\nÖneri: şifresiz adres + ayrı değişken:\n"
+                   f"  export {taraf.upper()}_DB_URL='postgresql://{kullanici or 'postgres.<ref>'}@<paneldeki-sunucu>:5432/postgres'\n"
+                   f"  export {taraf.upper()}_DB_SIFRE='şifre'")
 
 
 def onay_iste(args, ref: str) -> None:
