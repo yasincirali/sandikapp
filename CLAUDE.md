@@ -152,6 +152,16 @@ RPC'de ikisini de yaz, eksikse `raise exception` ile doğrula (0036/0042/0043 ö
 edge function'ları `requireCronSecret()` ile **fail-closed**; secret'sız `if (secret)` bloğu
 yazma. Edge function yanıtlarında `error.message`/token/ham FCM yanıtı **dönme**.
 
+**İki sunucu birebir (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt Supabase
+projeleri **aynı şemayı** taşır: her migration iki projeye birlikte gider
+(`supabase-deploy.yml` varsayılan hedef `ikisi`, sıra Frankfurt → Tokyo, sonda
+parmak izi kapısı). Panelden/SQL Editor'dan tek projede değişiklik yapma —
+gerekiyorsa migration'a yaz. Eşitlik: `python tool/sema_esitlik.py [--ayrinti]`
+(salt okunur) + günlük `sema-esitlik.yml`. Tek bilinçli fark cron `active`
+bayrağı (geçişe kadar Frankfurt'ta kapalı). `0000_base_schema.sql` Tokyo'nun
+tahminiydi; bir şeyi "Frankfurt'ta var" diye silmeden önce Tokyo'da da var mı bak
+(0077'nin ilk yazımı Tokyo'yu `user_push_tokens` indeksiz bırakacaktı).
+
 **Gizli anahtar.** Repoya asla: `google-services.json`, `GoogleService-Info.plist`,
 `key.properties`, keystore, Vault değerleri, `.env`. `tmp/` gitignore'dadır ve öyle kalır.
 
@@ -264,5 +274,5 @@ koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Beti
 gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
 
 ---
-**Son güncelleme:** 2026-09-25 (giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+**Son güncelleme:** 2026-09-28 (iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
 kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).

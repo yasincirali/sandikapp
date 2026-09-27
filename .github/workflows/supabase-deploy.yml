@@ -8,15 +8,30 @@
 # Otomatik tetik BİLİNÇLİ olarak yok: `main`'e her push'ta canlı şemaya
 # dokunmak istemiyoruz; migration'ı ne zaman koşacağına sen karar verirsin.
 #
+# **İKİ SUNUCU BİREBİR (kullanıcı kuralı, 2026-09-28).** Tokyo ve Frankfurt
+# hep aynı şemayı taşır: varsayılan hedef `ikisi`. Sıra Frankfurt → Tokyo:
+# geçişe kadar Frankfurt canlı değil, kanarya odur — orada kırılan migration
+# Tokyo'ya hiç gitmez (fail-fast + max-parallel 1). Son iş `esitlik`
+# iki şemanın parmak izini karşılaştırır (tool/sema_esitlik.py); fark varsa
+# kırmızı. Tek hedef yalnız onarım (repair) gibi projeye özgü işler için.
+#
 # Gerekli secret'lar (Settings → Secrets and variables → Actions):
-#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens
-#   SUPABASE_PROJECT_REF   — proje URL'sindeki <ref> (https://<ref>.supabase.co)
-#   SUPABASE_DB_PASSWORD   — Project Settings → Database → Database password
+#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens (iki proje
+#                            aynı hesapta; tek token ikisine de yeter)
+#   SUPABASE_DB_PASSWORD   — yalnız Tokyo, isteğe bağlı: güncel CLI şifre
+#                            yerine token'la geçici giriş rolü kurar
+# Proje ref'leri secret DEĞİL (uygulamada zaten açık, supabase_config.dart);
+# aşağıdaki matriste yazılı. `SUPABASE_PROJECT_REF` artık okunmuyor.
 name: Supabase deploy
 
 on:
   workflow_dispatch:
     inputs:
+      hedef:
+        description: "Hangi sunucu(lar): ikisi (varsayılan — iki sunucu birebir), frankfurt, tokyo"
+        type: choice
+        options: [ikisi, frankfurt, tokyo]
+        default: ikisi
       migrations:
         description: "supabase db push (migration'ları koş)"
         type: boolean
@@ -56,22 +71,48 @@ concurrency:
 
 jobs:
   deploy:
+    name: deploy (${{ matrix.hedef }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      # Sıra anlamlı: Frankfurt (kanarya) önce. Biri kırılırsa öbürü koşmaz —
+      # yarım uygulanmış bir migration iki sunucuyu AYRIŞTIRIR.
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        hedef: ${{ fromJSON(inputs.hedef == 'ikisi' && '["frankfurt","tokyo"]' || format('["{0}"]', inputs.hedef)) }}
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ matrix.hedef == 'tokyo' && secrets.SUPABASE_DB_PASSWORD || '' }}
+      PROJECT_REF: ${{ matrix.hedef == 'tokyo' && 'ybdbzouzhzwthjgwlbmk' || 'ynwymnpdiwudrlxfrmuo' }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Secret kontrolü (fail-fast, sessiz atlama yok)
         run: |
-          missing=0
-          for v in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD PROJECT_REF; do
-            if [ -z "${!v}" ]; then echo "::error::$v secret'ı eksik"; missing=1; fi
-          done
-          [ "$missing" = 0 ]
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "::error::SUPABASE_ACCESS_TOKEN secret'ı eksik"; exit 1; fi
+
+      # Defter onarımı projeye ÖZGÜDÜR: bir projede yanlış işaretlenen sürüm
+      # öbüründe doğru olabilir. İki hedefe birden onarım yazmak, doğru olan
+      # defteri bozar.
+      - name: Onarım tek hedefle yapılır
+        if: ${{ inputs.hedef == 'ikisi' && (inputs.repair != '' || inputs.unrepair != '') }}
+        run: |
+          echo "::error::repair/unrepair için hedef olarak tek sunucu seç (frankfurt ya da tokyo)."
+          exit 1
+
+      # 0076'dan beri cron tetikleyicileri edge function adresini Vault'taki
+      # `project_url`'den okur. Yoksa migration yalnız UYARI verir ve o
+      # projedeki bütün cron'lar sessizce durur — push öncesi kapı.
+      - name: Vault project_url var mı (ad kontrolü, değer okunmaz)
+        if: ${{ inputs.migrations }}
+        run: |
+          body=$(jq -n '{query: "select count(*)::int as n from vault.secrets where name = '"'"'project_url'"'"'"}')
+          n=$(curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query"                 -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json"                 -d "$body" | jq -r '.[0].n')
+          if [ "$n" != "1" ]; then
+            echo "::error::${{ matrix.hedef }}: Vault'ta project_url yok. SQL Editor: select vault.create_secret('https://$PROJECT_REF.supabase.co', 'project_url');"
+            exit 1
+          fi
 
       - uses: supabase/setup-cli@v1
         with:
@@ -154,3 +195,18 @@ jobs:
             supabase functions deploy "$f" --project-ref "$PROJECT_REF"
             echo "::endgroup::"
           done
+
+  # İki sunucu birebir mi? Deploy iki hedefe koştuysa şart; tek hedefte
+  # bilerek ayrıştırılmış olabilir (onarım), o yüzden yalnız uyarı değil
+  # hiç koşmaz — günlük `sema-esitlik.yml` onu da yakalar.
+  esitlik:
+    needs: deploy
+    if: ${{ inputs.hedef == 'ikisi' && !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Şema parmak izi — Tokyo = Frankfurt
+        run: python3 tool/sema_esitlik.py --ayrinti

@@ -39,12 +39,14 @@ Deno.test('silinen indeksler başka indeksle kapsanıyor (yorumda gerekçe)', ()
     'assets_user_id_idx',
     'partnerships_user1_idx',
     'signal_preferences_user_idx',
-    'user_push_tokens_user_idx',
+    'user_push_tokens_user_id_idx',
     'ix_user_roi_snapshots_user',
   ]) {
     const satir = calisan.split('\n').find((l) => l.includes(`drop index if exists public.${ad};`));
     assertEquals(satir !== undefined, true, `${ad} silinmiyor`);
   }
+  // İki projede de bulunan 0016 indeksi SİLİNMEZ — Tokyo'da eşi yok.
+  assertEquals(calisan.includes('drop index if exists public.user_push_tokens_user_idx;'), false);
   // Gerekçe yorumları: her drop satırında "⊂" ya da "=" ile kapsayan indeks.
   const yorumlu = sql.split('\n').filter((l) => l.includes('drop index if exists')).every((l) => /--\s*[⊂=]/.test(l));
   assertEquals(yorumlu, true);

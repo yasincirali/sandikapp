@@ -354,6 +354,32 @@ senaryosunda RC `sunucu = tokyo` + Tokyo'yu çöz ile dönülebilir.
 
 ---
 
+### İki sunucu birebir (kullanıcı kuralı 2026-09-28)
+
+*"Bu sessionda db tarafında yapılan değişiklikler birebir Frankfurt sunucusunda
+da çalışmalı, o iki sunucu hep senkron birebir aynı gitmeli."*
+
+- **Uygulama:** `supabase-deploy.yml` → hedef `ikisi` (varsayılan). Frankfurt
+  önce (kanarya), kırılırsa Tokyo'ya gitmez; sonda `esitlik` işi.
+- **Kanıt:** `tool/sema_esitlik.py` — `supabase/audit/sema_parmak_izi.sql`'i iki
+  projede salt okunur koşar (tablo/kısıt/indeks/politika/fonksiyon/tetikleyici/
+  GRANT/sütun GRANT/eklenti/event trigger/cron/Vault ADI/migration defteri).
+  Satır sonu ve sütun sırası anlam taşımadığı için normalize edilir.
+- **Günlük:** `sema-esitlik.yml` 07:30 TR — deploy dışı kaymayı (SQL Editor,
+  panel ayarı) yakalar.
+- **İlk ölçüm (2026-09-28): 52 fark.** 30'u beklenen (Tokyo'da 0076 yok) ve
+  satır sonu. Gerçek kayma 4 madde → `0078_sunucu_esitleme.sql`:
+  1. `profiles_select_partner` Frankfurt'ta **hatalı** (`p.id` — ortak profili
+     görünmüyordu); 0000'daki nitelenmemiş `id`.
+  2. `user_push_tokens` Frankfurt'ta 0000 biçimi (id PK); Tokyo'da PK=token.
+  3. `disclaimer_acceptances` tekil kısıt adı.
+  4. Tokyo'da panelden açılmış `rls_auto_enable` + `ensure_rls` event trigger.
+- **Doğrulama (uygulamadan önce):** iki projenin gerçek şema dökümü yerel
+  Supabase Postgres'e kuruldu, bekleyen migration'lar üstüne uygulandı →
+  parmak izi **0 fark**.
+
+---
+
 ## Açık riskler
 
 | Risk | Önlem |

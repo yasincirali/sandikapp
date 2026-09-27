@@ -8,6 +8,24 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## 🔁 2026-09-28 İki sunucu eşitleme — 0076 (Tokyo) + 0077 + 0078 (ikisi)
+
+Sıra önemli; 1 yapılmadan 2 kırmızı döner (kapı bilerek var).
+
+1. **Tokyo Vault'a `project_url`** (Tokyo SQL Editor, tek satır — değer gizli değil):
+   ```sql
+   select vault.create_secret('https://ybdbzouzhzwthjgwlbmk.supabase.co', 'project_url');
+   ```
+   Yapılmazsa 0076 sonrası Tokyo'daki bütün cron'lar (push, alarm, TEFAS) durur.
+2. **Dağıt:** Actions → *Supabase deploy* → hedef `ikisi`, functions `none`
+   (ya da `gh workflow run supabase-deploy.yml --ref <dal> -f hedef=ikisi -f functions=none`).
+   Frankfurt önce, sonra Tokyo, sonda *esitlik* işi yeşil olmalı.
+3. Bilgi: 0077 Tokyo'da `snapshots`'ı saatliğe seyreltir — **14.878 → 860 satır**
+   (kullanıcı-saat başına son değer; okuyanlar dönem özeti + haftalık özet,
+   saatlik yeter). Geri alınamaz.
+
+---
+
 **Kapsam:** Yayın öncesi senin elden yapman gereken işler. Kod tarafı (Faz 1) tamam; bu liste deploy + hukuki + ticari adımları içerir.
 
 ---

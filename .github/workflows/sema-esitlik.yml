@@ -1,0 +1,34 @@
+# Tokyo = Frankfurt mı? Günlük şema kayması denetimi (2026-09-28).
+#
+# Kullanıcı kuralı: iki sunucu hep senkron, birebir aynı. `supabase-deploy`
+# iki hedefe birlikte uygular ve sonunda karşılaştırır; ama kayma deploy
+# DIŞINDAN da gelir: SQL Editor'da tek projede elle yapılan değişiklik,
+# panelden açılan bir ayar (Tokyo'daki `rls_auto_enable` böyle doğmuştu),
+# tek hedefle yapılmış bir onarım. Bu iş her sabah iki şemanın parmak izini
+# (supabase/audit/sema_parmak_izi.sql) salt okunur karşılaştırır; fark varsa
+# kırmızı ve farkın satır satır dökümü log'da.
+#
+# Salt okunur: yalnız SELECT, Management API. Vault DEĞERİ okunmaz, cron
+# komut metni basılmaz. Cron açık/kapalı farkı hata sayılmaz (geçişe kadar
+# Frankfurt'ta kapalı olmak zorunda) — bilgi olarak listelenir.
+name: Şema eşitliği (Tokyo = Frankfurt)
+
+on:
+  schedule:
+    - cron: '30 4 * * *'   # 07:30 TR
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-deploy   # deploy yarıdayken karşılaştırma yanlış alarm verir
+  cancel-in-progress: false
+
+jobs:
+  esitlik:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Şema parmak izi — Tokyo = Frankfurt
+        run: python3 tool/sema_esitlik.py --ayrinti

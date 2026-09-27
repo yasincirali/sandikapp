@@ -71,7 +71,11 @@ drop policy if exists "push_tokens_own_delete" on public.user_push_tokens;
 drop index if exists public.assets_user_id_idx;            -- ⊂ assets_user_kind_idx (user_id, kind)
 drop index if exists public.partnerships_user1_idx;        -- ⊂ tekil (user_id_1, user_id_2)
 drop index if exists public.signal_preferences_user_idx;   -- ⊂ PK (user_id, asset_type)
-drop index if exists public.user_push_tokens_user_idx;     -- = user_push_tokens_user_id_idx
+drop index if exists public.user_push_tokens_user_id_idx;  -- = user_push_tokens_user_idx (0016)
+-- ↑ YÖN ÖNEMLİ (2026-09-28 düzeltmesi): ilk yazımda 0016'nın indeksi
+-- siliniyordu; oysa 0000'ın `_user_id_idx`'i yalnız 0000'dan KURULAN
+-- projede (Frankfurt) var, Tokyo'da hiç yok — Tokyo user_id indeksiz
+-- kalırdı. İki projede de bulunan 0016 indeksi kalır.
 drop index if exists public.ix_user_roi_snapshots_user;    -- = tekil (user_id, period_days, created_at)
 
 -- ── 4) İndekssiz yabancı anahtarlar ─────────────────────────────────────────
