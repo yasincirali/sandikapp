@@ -203,6 +203,31 @@ with psycopg.connect(HEDEF) as c:
                         f"('{ALI}','hisse','PILOT') returning id").fetchone()[0]
 kontrol_et(f"dizi kopyalanan id'lerin ötesinde ({yeni_id} > 6)", yeni_id > 6)
 
+print("13b) hedefe BAŞKA oturum yazarken — sayım karışmamalı")
+# 2026-09-27 canlı: Frankfurt'a bağlı uygulama açıkken araç "218.577 beklenen,
+# 218.580 yazıldı" deyip haksız yere geri aldı (önce/sonra farkı sayıyordu).
+import threading
+dur = threading.Event()
+
+
+def yazici():
+    with psycopg.connect(HEDEF, autocommit=True) as c:
+        while not dur.is_set():
+            c.execute("insert into public.assets (user_id, tip, ticker) values "
+                      "('99999999-9999-9999-9999-999999999999','hisse','ESZAMANLI')")
+
+
+t = threading.Thread(target=yazici); t.start()
+time.sleep(0.3)
+kod, out = arac("tek-kullanici", "--email", "ali@example.com", "--onay", "hedef_db")
+dur.set(); t.join()
+eszamanli = sorgu(HEDEF, "select count(*) from public.assets where ticker='ESZAMANLI'")[0][0]
+kontrol_et(f"eşzamanlı {eszamanli} yazıma rağmen kopya geçti", kod == 0 and eszamanli > 0)
+kontrol_et("ali yine tam 2 varlık",
+           sorgu(HEDEF, f"select count(*) from public.assets where user_id='{ALI}'")[0][0] == 2)
+with psycopg.connect(HEDEF) as c:
+    c.execute("delete from public.assets where ticker='ESZAMANLI'")
+
 print("14) tek-kullanici --ortaklarla")
 kod, out = arac("tek-kullanici", "--email", "ali@example.com", "--onay", "hedef_db", "--ortaklarla")
 kontrol_et("çıkış 0, 2 hesap", kod == 0 and "2 hesap" in out)

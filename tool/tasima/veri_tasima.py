@@ -318,6 +318,7 @@ def tasi(args) -> int:
             sys.exit(f"Frankfurt boş değil ({', '.join(dolu[:5])}…) — önce `bosalt`. Hiçbir şey yazılmadı.")
 
         yc.execute("set local session_replication_role = replica")
+        fark = []
         for sema, tablo in liste:
             k, h = kolonlar(ec, sema, tablo), kolonlar(yc, sema, tablo)
             ortak = [c for c in k if c in h]
@@ -329,7 +330,12 @@ def tasi(args) -> int:
                  yc.copy(sql.SQL("copy {} ({}) from stdin").format(ad, kol)) as giris:
                 for parca in cikis:
                     giris.write(parca)
-            print(f"  {sema}.{tablo:40} {satir_sayisi(yc, sema, tablo):>9}")
+            # COPY'nin kendi raporu (bkz. tek_kullanici): hedefe başka bir oturum
+            # yazsa bile yalnız BİZİM akıttığımız satırlar sayılır.
+            okunan, yazilan = ec.rowcount, yc.rowcount
+            if okunan != yazilan:
+                fark.append((f"{sema}.{tablo}", okunan, yazilan))
+            print(f"  {sema}.{tablo:40} {yazilan:>9}")
 
         # Diziler: public'teki her sequence kaynağın değerine.
         ec.execute("""select schemaname, sequencename, last_value
@@ -339,8 +345,6 @@ def tasi(args) -> int:
                 yc.execute("select setval(%s, %s, true)", (f"{sema}.{dizi}", deger))
 
         # Son denetim — tutmazsa COMMIT etme.
-        fark = [(f"{s}.{t}", satir_sayisi(ec, s, t), satir_sayisi(yc, s, t)) for s, t in liste]
-        fark = [f for f in fark if f[1] != f[2]]
         if fark:
             yeni.rollback()
             sys.exit(f"Sayım tutmadı, GERİ ALINDI: {fark[:5]}")
@@ -353,7 +357,12 @@ def tasi(args) -> int:
 # Tek kullanıcı kopyasında: bu tablolar başka kullanıcıların izini taşır ya da
 # yalnız o projenin işleyişine aittir — pilota kopyalanmaz.
 TEK_KULLANICI_ATLA = {"account_deletion_log", "rate_limit_attempts",
-                      "calendar_nudge_log", "inflation_push_log"}
+                      "calendar_nudge_log", "inflation_push_log",
+                      # Destek logu: bir hesap için 218 bin satır (2026-09-27).
+                      # Pilotun sorusu "uygulama Frankfurt'ta doğru mu" — log
+                      # bunu cevaplamaz, kopyayı dakikalarca uzatır. Tam
+                      # taşımada (`tasi`) loglar YİNE gelir.
+                      "db_logs"}
 
 
 def kullanici_fk_kolonlari(cur, sema: str, tablo: str) -> list[str]:
@@ -458,14 +467,15 @@ def tek_kullanici(args) -> int:
                 else:
                     continue                      # ortak tablo, hedef dolu → dokunma
             secim = sql.SQL(", ").join(map(sql.Identifier, ortak))
-            once = satir_sayisi(yc, sema, tablo)
             with ec.copy(sql.SQL("copy (select {} from {} where {}) to stdout").format(secim, ad, kosul)) as cikis, \
                  yc.copy(sql.SQL("copy {} ({}) from stdin").format(ad, secim)) as giris:
                 for parca in cikis:
                     giris.write(parca)
-            eklenen = satir_sayisi(yc, sema, tablo) - once
-            ec.execute(sql.SQL("select count(*) from {} where {}").format(ad, kosul))
-            beklenen = ec.fetchone()[0]
+            # Sayım COPY'nin KENDİ raporundan: "tablo ne kadar büyüdü" değil.
+            # Hedef canlı (Frankfurt'a bağlı uygulama açıkken db_logs'a yazıyor):
+            # önce/sonra farkı başka oturumların satırlarını da sayıp işlemi
+            # haksız yere geri aldırdı (2026-09-27: 218.577 beklenen, 218.580).
+            beklenen, eklenen = ec.rowcount, yc.rowcount
             if eklenen != beklenen:
                 yeni.rollback()
                 sys.exit(f"{sema}.{tablo}: {beklenen} beklenen, {eklenen} yazıldı — GERİ ALINDI.")
