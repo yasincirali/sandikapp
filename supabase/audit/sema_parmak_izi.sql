@@ -89,9 +89,14 @@ olay_tetikleyicileri as (
   select 'olay_tetikleyici', evtname,
          evtevent || ':' || array_to_string(evttags, ',') || ':' || evtfoid::regproc::text || ':' || evtenabled::text
   from pg_event_trigger
-  -- Supabase'in kendi platform tetikleyicileri (pgrst_*, issue_*) her
-  -- projede aynı; yalnız bizim kurduklarımız (public fonksiyona bağlı).
-  where evtfoid::regproc::text like 'public.%' or evtfoid::regproc::text not like '%.%'
+  -- Yalnız bizim kurduklarımız (public şemadaki fonksiyona bağlı).
+  -- Supabase'in platform tetikleyicileri (pgrst_*, issue_*) dışarıda:
+  -- proje yaşına göre farklı sürümle kurulmuşlar (Tokyo'da
+  -- issue_pg_graphql_access CREATE FUNCTION'a, Frankfurt'ta CREATE
+  -- EXTENSION'a bağlı) ve bizim yönetimimizde değiller. Şema, `regproc`
+  -- metninden değil pg_proc'tan: search_path'teki şemada ad nitelenmeden
+  -- basılıyor ve metin filtresi onları içeri alıyordu (2026-09-28).
+  where evtfoid in (select oid from pg_proc where pronamespace = 'public'::regnamespace)
 ),
 cron_isleri as (
   select 'cron', jobname, schedule || ':' || command from cron.job
@@ -124,9 +129,14 @@ union all select * from defter
 -- Tanım metni yalnız karşılaştırıcının "neden farklı" çıktısı için döner.
 -- Cron komutu dönmez: komut satırı projeye özgü başlık/anahtar taşıyabilir
 -- ve CI log'una düşer — yalnız md5'i.
--- Satır sonu (CRLF/LF) anlam taşımaz: Windows'tan push edilen gövdelerde
--- CR karakteri kalıyor ve aynı fonksiyon iki projede "farklı" görünüyordu.
-select tur, ad, md5(replace(tanim, E'', '')) ozet,
-       case when tur = 'cron' then null else replace(tanim, E'', '') end tanim
+-- Satır sonu (CRLF / tek CR / LF) anlam taşımaz: Windows'tan push edilen
+-- gövdelerde CR kalıyor ve aynı fonksiyon iki projede "farklı" görünüyordu.
+-- CR SİLİNMEZ, LF'ye ÇEVRİLİR: bazı gövdelerde satır ayırıcı yalnız CR;
+-- silmek satırları birleştirip sahte fark üretiyordu (2026-09-28).
+-- chr(13) yazılır, kaçış dizisi değil: dosya kabuk/yama araçlarından
+-- geçerken ters bölü bozulabiliyor.
+select tur, ad, md5(regexp_replace(tanim, chr(13) || chr(10) || '?', chr(10), 'g')) ozet,
+       case when tur = 'cron' then null
+            else regexp_replace(tanim, chr(13) || chr(10) || '?', chr(10), 'g') end tanim
 from hepsi
 order by 1, 2

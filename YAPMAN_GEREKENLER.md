@@ -8,7 +8,9 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## 🔁 2026-09-28 İki sunucu eşitleme — 0076 (Tokyo) + 0077 + 0078 (ikisi)
+## ✅ 2026-09-28 İki sunucu eşitleme — 0076 (Tokyo) + 0077 + 0078 (ikisi) (TAMAMLANDI 2026-09-28 22:15 UTC)
+
+> Uygulandı: Frankfurt 0077+0078, Tokyo 0076+0077+0078. `sema_esitlik.py`: **ŞEMA EŞİT** (947 satır; 34 tablo, 75 indeks, 103 kısıt, 57 politika, 69 fonksiyon). Tokyo cron → edge HTTP 200. **Açık kalan:** GitHub `SUPABASE_ACCESS_TOKEN` kısıtlı (Frankfurt 403) → tam yetkili token ile `gh secret set SUPABASE_ACCESS_TOKEN`; yoksa günlük `sema-esitlik.yml` kırmızı döner. `tasima-2026-09` token'larını iptal et.
 
 Sıra önemli; 1 yapılmadan 2 kırmızı döner (kapı bilerek var).
 
