@@ -10,7 +10,10 @@ Yerelde:  python tool/sema_esitlik.py [--ayrinti]
   (supabase CLI oturumu açık olmalı; betik sırayla iki projeye `link` olur,
   sonda eski bağlantıyı geri kurar. Yazma YOK.)
 
-CI'da:    SUPABASE_ACCESS_TOKEN tanımlıysa Management API'ye doğrudan gider.
+CI'da:    (GITHUB_ACTIONS) SUPABASE_ACCESS_TOKEN ile Management API'ye gider.
+  Yerelde ortamda token olsa bile CLI oturumu kullanılır: 2026-09-28'de
+  terminalde kalmış kısıtlı bir taşıma token'ı (salt okunur kapsam) betiği
+  403'e düşürdü. API yolunu yerelde zorlamak için --api.
 
 `cron_aktif` farkı hata DEĞİLDİR: geçişe kadar Frankfurt'ta cron kapalı
 olmak zorunda (iki sunucu aynı kişiye iki push atmasın). Ayrı raporlanır.
@@ -22,6 +25,7 @@ import os
 import re
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -53,12 +57,19 @@ def api_ile(ref: str, token: str) -> list[dict]:
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(istek, timeout=120) as y:
-        return satirlari_coz(y.read().decode())
+    try:
+        with urllib.request.urlopen(istek, timeout=120) as y:
+            return satirlari_coz(y.read().decode())
+    except urllib.error.HTTPError as h:
+        # Gövde API'nin yetki mesajıdır (eksik izin adı); token içermez.
+        raise SystemExit(f"{ref}: Management API HTTP {h.code} — {h.read().decode(errors='replace')[:300]}")
 
 
 def cli_ile(ref: str) -> list[dict]:
-    kos = lambda *a: subprocess.run(["supabase", *a], capture_output=True, cwd=KOK)
+    # CLI de SUPABASE_ACCESS_TOKEN'ı okur ve oturumdaki token'ın ÖNÜNE koyar;
+    # kısıtlı bir token ortamda kaldıysa link bile 403 alır. Alt sürece geçme.
+    ortam = {k: v for k, v in os.environ.items() if k != "SUPABASE_ACCESS_TOKEN"}
+    kos = lambda *a: subprocess.run(["supabase", *a], capture_output=True, cwd=KOK, env=ortam)
     b = kos("link", "--project-ref", ref)
     if b.returncode != 0:
         raise RuntimeError(f"link {ref}: {b.stderr.decode(errors='replace')[-300:]}")
@@ -70,7 +81,10 @@ def cli_ile(ref: str) -> list[dict]:
 
 
 def main() -> int:
-    token = os.environ.get("SUPABASE_ACCESS_TOKEN")
+    api = bool(os.environ.get("GITHUB_ACTIONS")) or "--api" in sys.argv
+    token = os.environ.get("SUPABASE_ACCESS_TOKEN") if api else None
+    if api and not token:
+        raise SystemExit("API modu için SUPABASE_ACCESS_TOKEN gerekli.")
     ref_dosyasi = KOK / "supabase/.temp/project-ref"
     onceki = ref_dosyasi.read_text().strip() if ref_dosyasi.exists() else None
     ayrinti = "--ayrinti" in sys.argv
@@ -84,8 +98,8 @@ def main() -> int:
             print(f"{ad:10} {len(satirlar)} satır")
     finally:
         if not token and onceki:
-            subprocess.run(["supabase", "link", "--project-ref", onceki],
-                           capture_output=True, cwd=KOK)
+            subprocess.run(["supabase", "link", "--project-ref", onceki], capture_output=True, cwd=KOK,
+                           env={k: v for k, v in os.environ.items() if k != "SUPABASE_ACCESS_TOKEN"})
 
     t, f = izler["tokyo"], izler["frankfurt"]
     farklar, bilgi = [], []
