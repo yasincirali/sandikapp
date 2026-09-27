@@ -31,6 +31,7 @@ Komutlar (sırası runbook'ta):
     python tool/tasima/veri_tasima.py sayim                   # salt okuma: tablo tablo satır
     python tool/tasima/veri_tasima.py bosalt --onay ynwymnpdiwudrlxfrmuo
     python tool/tasima/veri_tasima.py tasi   --onay ynwymnpdiwudrlxfrmuo
+    python tool/tasima/veri_tasima.py tek-kullanici --email x@y.com --onay ynwymnpdiwudrlxfrmuo [--ortaklarla]
     python tool/tasima/veri_tasima.py tokyo-kapat --onay ybdbzouzhzwthjgwlbmk   # K4.2
     python tool/tasima/veri_tasima.py tokyo-ac    --onay ybdbzouzhzwthjgwlbmk   # geri dönüş
 """
@@ -297,6 +298,151 @@ def tasi(args) -> int:
     return 0
 
 
+# Tek kullanıcı kopyasında: bu tablolar başka kullanıcıların izini taşır ya da
+# yalnız o projenin işleyişine aittir — pilota kopyalanmaz.
+TEK_KULLANICI_ATLA = {"account_deletion_log", "rate_limit_attempts",
+                      "calendar_nudge_log", "inflation_push_log"}
+
+
+def kullanici_fk_kolonlari(cur, sema: str, tablo: str) -> list[str]:
+    """Tablonun auth.users(id)'ye bakan FK kolonları (tek seviye yeter:
+    2026-09-27 şemasında her kullanıcı tablosu doğrudan auth.users'a bağlı)."""
+    cur.execute("""
+        select a.attname
+          from pg_constraint k
+          join pg_attribute a on a.attrelid = k.conrelid and a.attnum = any(k.conkey)
+         where k.contype = 'f' and k.conrelid = (quote_ident(%s) || '.' || quote_ident(%s))::regclass
+           and k.confrelid = 'auth.users'::regclass
+         order by a.attnum
+    """, (sema, tablo))
+    return [r[0] for r in cur.fetchall()]
+
+
+def _kume_kosulu(kolonlar_: list[str], kume: list[str]) -> sql.Composable:
+    """Satır, dolu her kullanıcı kolonu kümedeyse ve en az biri doluysa seçilir.
+    Ortaklık gibi iki taraflı satır, karşı taraf kümede değilse GELMEZ — hedefte
+    yarım (öksüz) ilişki kalmaz."""
+    lit = sql.SQL("{}::uuid[]").format(sql.Literal(kume))
+    her_biri = sql.SQL(" and ").join(
+        sql.SQL("({c} is null or {c} = any({k}))").format(c=sql.Identifier(c), k=lit) for c in kolonlar_)
+    en_az_biri = sql.SQL(" or ").join(
+        sql.SQL("{c} = any({k})").format(c=sql.Identifier(c), k=lit) for c in kolonlar_)
+    return sql.SQL("({}) and ({})").format(her_biri, en_az_biri)
+
+
+def tek_kullanici(args) -> int:
+    """Tek kullanıcıyı (ve istenirse ortaklarını) Tokyo'dan Frankfurt'a kopyalar.
+
+    Pilot/prova içindir: tam taşımada `bosalt` bunu da siler. Tokyo'ya yazmaz.
+    Tekrar koşulabilir: kullanıcı Frankfurt'ta varsa önce onun satırları silinir;
+    diğer deneme hesaplarına dokunulmaz.
+    """
+    onay_iste(args, YENI_REF)
+    if not args.email:
+        sys.exit("--email gerekli.")
+    bas = time.monotonic()
+    with baglan("eski", anlik=True) as eski, baglan("yeni") as yeni:
+        ec, yc = eski.cursor(), yeni.cursor()
+        ec.execute("select id::text from auth.users where lower(email) = lower(%s)", (args.email,))
+        r = ec.fetchone()
+        if not r:
+            sys.exit(f"Tokyo'da {args.email} yok. Hiçbir şey yazılmadı.")
+        kume = [r[0]]
+        if args.ortaklarla and tablo_var_mi(ec, "public", "partnerships"):
+            ec.execute("""select distinct case when user_id_1 = %(u)s::uuid then user_id_2 else user_id_1 end::text
+                            from public.partnerships
+                           where %(u)s::uuid in (user_id_1, user_id_2)""", {"u": kume[0]})
+            kume += [x for (x,) in ec.fetchall() if x and x not in kume]
+        print(f"Kullanıcı kümesi: {len(kume)} hesap"
+              + (" (ortaklar dahil)" if len(kume) > 1 else ""))
+
+        yc.execute("set local session_replication_role = replica")
+        liste = [(s, t) for s, t in tablolar(ec) if not (s == "public" and t in TEK_KULLANICI_ATLA)]
+        lit = sql.SQL("{}::uuid[]").format(sql.Literal(kume))
+
+        # 1) Hedefte bu kümenin eski izini sil (yeniden koşulabilirlik). Aynı
+        #    e-postayla FARKLI id'li hesap varsa o da gider (e-posta tekildir).
+        yc.execute(sql.SQL("select id::text from auth.users where id = any({}) or lower(email) = any({})")
+                   .format(lit, sql.Literal([args.email.lower()])))
+        hedef_kume = sorted({x for (x,) in yc.fetchall()} | set(kume))
+        hlit = sql.SQL("{}::uuid[]").format(sql.Literal(hedef_kume))
+        for sema, tablo in liste:
+            if sema != "public" or not tablo_var_mi(yc, sema, tablo):
+                continue
+            fk = kullanici_fk_kolonlari(yc, sema, tablo)
+            if fk:
+                kosul = sql.SQL(" or ").join(sql.SQL("{} = any({})").format(sql.Identifier(c), hlit) for c in fk)
+                yc.execute(sql.SQL("delete from {}.{} where {}").format(
+                    sql.Identifier(sema), sql.Identifier(tablo), kosul))
+        for tablo in AUTH_ARTIKLARI:
+            if tablo_var_mi(yc, "auth", tablo):
+                kol = "id" if tablo == "users" else "user_id"
+                yc.execute(sql.SQL("select 1 from information_schema.columns where table_schema='auth' "
+                                   "and table_name={} and column_name={}").format(sql.Literal(tablo), sql.Literal(kol)))
+                if yc.fetchone():
+                    yc.execute(sql.SQL("delete from auth.{} where {} = any({})").format(
+                        sql.Identifier(tablo), sql.Identifier(kol), hlit))
+
+        # 2) Kopyala.
+        ozet = []
+        for sema, tablo in liste:
+            k, h = kolonlar(ec, sema, tablo), kolonlar(yc, sema, tablo)
+            ortak = [c for c in k if c in h]
+            if len(ortak) != len(k):
+                sys.exit(f"{sema}.{tablo}: kolon uyuşmazlığı — önce `kontrol`. Hiçbir şey yazılmadı.")
+            ad = sql.SQL("{}.{}").format(sql.Identifier(sema), sql.Identifier(tablo))
+            if sema == "auth":
+                kol = "id" if tablo == "users" else "user_id"
+                kosul = sql.SQL("{} = any({})").format(sql.Identifier(kol), lit)
+            else:
+                fk = kullanici_fk_kolonlari(ec, sema, tablo)
+                if fk:
+                    kosul = _kume_kosulu(fk, kume)
+                elif satir_sayisi(yc, sema, tablo) == 0:
+                    kosul = sql.SQL("true")       # ortak referans tablosu, hedef boş
+                else:
+                    continue                      # ortak tablo, hedef dolu → dokunma
+            secim = sql.SQL(", ").join(map(sql.Identifier, ortak))
+            once = satir_sayisi(yc, sema, tablo)
+            with ec.copy(sql.SQL("copy (select {} from {} where {}) to stdout").format(secim, ad, kosul)) as cikis, \
+                 yc.copy(sql.SQL("copy {} ({}) from stdin").format(ad, secim)) as giris:
+                for parca in cikis:
+                    giris.write(parca)
+            eklenen = satir_sayisi(yc, sema, tablo) - once
+            ec.execute(sql.SQL("select count(*) from {} where {}").format(ad, kosul))
+            beklenen = ec.fetchone()[0]
+            if eklenen != beklenen:
+                yeni.rollback()
+                sys.exit(f"{sema}.{tablo}: {beklenen} beklenen, {eklenen} yazıldı — GERİ ALINDI.")
+            if eklenen:
+                ozet.append((f"{sema}.{tablo}", eklenen))
+
+        # 3) Kimlik/serial dizileri kopyalanan en büyük değerin ÖTESİNE: pilot
+        #    kullanıcı Frankfurt'ta satır ekleyince Tokyo'dan gelen id'lerle çakışmasın.
+        yc.execute("""
+            select quote_ident(n.nspname) || '.' || quote_ident(c.relname), a.attname,
+                   pg_get_serial_sequence(quote_ident(n.nspname) || '.' || quote_ident(c.relname), a.attname)
+              from pg_attribute a join pg_class c on c.oid = a.attrelid join pg_namespace n on n.oid = c.relnamespace
+             where n.nspname = 'public' and c.relkind = 'r' and a.attnum > 0 and not a.attisdropped
+               and pg_get_serial_sequence(quote_ident(n.nspname) || '.' || quote_ident(c.relname), a.attname) is not null
+        """)
+        for tablo, kol, dizi in yc.fetchall():
+            yc.execute(sql.SQL("select max({}) from {}").format(sql.Identifier(kol), sql.SQL(tablo)))
+            en_buyuk = yc.fetchone()[0]
+            if en_buyuk is not None:
+                yc.execute("select setval(%s, greatest(%s, (select last_value from " + dizi + ")), true)",
+                           (dizi, en_buyuk))
+        yeni.commit()
+
+    for ad, n in ozet:
+        print(f"  {ad:40} {n:>8}")
+    print(f"\nTEK KULLANICI TAŞINDI: {args.email} ({len(kume)} hesap), "
+          f"{sum(n for _, n in ozet)} satır, {time.monotonic() - bas:.1f} sn.")
+    print("Frankfurt build'inde AYNI şifreyle giriş yap. Frankfurt'ta yapılan değişiklikler "
+          "Tokyo'ya GİTMEZ ve tam taşımada `bosalt` ile silinir.")
+    return 0
+
+
 def tokyo_kapat(args) -> int:
     """K4.2 — Tokyo'da istemci rollerinin public erişimini keser.
 
@@ -342,9 +488,13 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     alt = p.add_subparsers(dest="komut", required=True)
     for ad, f in [("kontrol", kontrol), ("sayim", sayim), ("bosalt", bosalt),
-                  ("tasi", tasi), ("tokyo-kapat", tokyo_kapat), ("tokyo-ac", tokyo_ac)]:
+                  ("tasi", tasi), ("tek-kullanici", tek_kullanici),
+                  ("tokyo-kapat", tokyo_kapat), ("tokyo-ac", tokyo_ac)]:
         s = alt.add_parser(ad)
         s.add_argument("--onay", default="")
+        s.add_argument("--email", default="")
+        s.add_argument("--ortaklarla", action="store_true",
+                       help="tek-kullanici: ortaklık kurduğu hesapları da taşı")
         s.set_defaults(f=f)
     args = p.parse_args()
     if TEST:

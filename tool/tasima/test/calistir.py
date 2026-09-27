@@ -148,6 +148,64 @@ kontrol_et("tokyo-ac: anon USAGE geri geldi", usage(KAYNAK) is True)
 kod, out = arac("tokyo-kapat", "--onay", "hedef_db")
 kontrol_et("tokyo-kapat yanlış onayla reddedilir", kod != 0)
 
+print("12) tek-kullanici — hedef sıfırlanıp yalnız deneme hesabı varken")
+kod, _ = arac("bosalt", "--onay", "hedef_db")
+with psycopg.connect(HEDEF) as c:
+    c.execute("insert into auth.users (id, email, raw_user_meta_data) values "
+              "('99999999-9999-9999-9999-999999999999', 'sandikapp.destek+tasimatest@gmail.com', '{}')")
+    c.execute("insert into public.db_logs (mesaj) values ('frankfurt deneme')")
+ALI, AYSE = "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"
+
+kod, out = arac("tek-kullanici", "--email", "yok@example.com", "--onay", "hedef_db")
+kontrol_et("olmayan e-posta: reddetti, hiçbir şey yazmadı",
+           kod != 0 and sorgu(HEDEF, "select count(*) from public.assets")[0][0] == 0)
+
+kod, out = arac("tek-kullanici", "--email", "ALI@example.com")
+kontrol_et("onaysız reddedilir", kod != 0 and "--onay" in out)
+
+kod, out = arac("tek-kullanici", "--email", "ALI@example.com", "--onay", "hedef_db")
+print("     " + [l for l in out.splitlines() if "TAŞINDI" in l][0] if "TAŞINDI" in out else out[-400:])
+kontrol_et("çıkış 0 (e-posta büyük/küçük harf duyarsız)", kod == 0)
+kontrol_et("ali geldi", sorgu(HEDEF, f"select count(*) from auth.users where id='{ALI}'")[0][0] == 1)
+kontrol_et("ayşe GELMEDİ", sorgu(HEDEF, f"select count(*) from auth.users where id='{AYSE}'")[0][0] == 0)
+kontrol_et("ali'nin 2 varlığı geldi, ayşe'ninki gelmedi",
+           sorgu(HEDEF, "select string_agg(ticker, ',' order by ticker) from public.assets")[0][0] == "ALTIN_GRAM,THYAO.IS")
+kontrol_et("ali'nin kimliği ve profili geldi",
+           sorgu(HEDEF, f"select (select count(*) from auth.identities where user_id='{ALI}'), "
+                        f"(select count(*) from public.profiles where id='{ALI}')")[0] == (1, 1))
+kontrol_et("ortaklık (karşı taraf yok) GELMEDİ — öksüz ilişki yok",
+           sorgu(HEDEF, "select count(*) from public.partnerships")[0][0] == 0)
+kontrol_et("başkasının silme logu GELMEDİ",
+           sorgu(HEDEF, "select count(*) from public.account_deletion_log")[0][0] == 0)
+kontrol_et("oturum GELMEDİ", sorgu(HEDEF, "select count(*) from auth.sessions")[0][0] == 0)
+kontrol_et("hedefteki deneme hesabına DOKUNULMADI",
+           sorgu(HEDEF, "select count(*) from auth.users where email like 'sandikapp.destek%'")[0][0] == 1)
+kontrol_et("ortak tablo (db_logs) hedefte doluydu → dokunulmadı",
+           sorgu(HEDEF, "select count(*) from public.db_logs")[0][0] == 1)
+q = f"select md5(string_agg(t::text,'|' order by t::text)) from (select * from public.assets where user_id='{ALI}') t"
+kontrol_et("ali'nin varlıkları birebir", sorgu(KAYNAK, q) == sorgu(HEDEF, q))
+
+print("13) tek-kullanici tekrar — yeniden koşulabilir, çift satır yok")
+kod, out = arac("tek-kullanici", "--email", "ali@example.com", "--onay", "hedef_db")
+kontrol_et("çıkış 0", kod == 0)
+kontrol_et("ali hâlâ 1 hesap, 2 varlık",
+           sorgu(HEDEF, f"select (select count(*) from auth.users where id='{ALI}'), "
+                        "(select count(*) from public.assets)")[0] == (1, 2))
+with psycopg.connect(HEDEF) as c:
+    yeni_id = c.execute(f"insert into public.assets (user_id, tip, ticker) values "
+                        f"('{ALI}','hisse','PILOT') returning id").fetchone()[0]
+kontrol_et(f"dizi kopyalanan id'lerin ötesinde ({yeni_id} > 6)", yeni_id > 6)
+
+print("14) tek-kullanici --ortaklarla")
+kod, out = arac("tek-kullanici", "--email", "ali@example.com", "--onay", "hedef_db", "--ortaklarla")
+kontrol_et("çıkış 0, 2 hesap", kod == 0 and "2 hesap" in out)
+kontrol_et("ayşe ve ortaklık geldi",
+           sorgu(HEDEF, f"select (select count(*) from auth.users where id='{AYSE}'), "
+                        "(select count(*) from public.partnerships)")[0] == (1, 1))
+kontrol_et("pilotta Frankfurt'a eklenen satır yeniden koşuda silindi (kaynak esas)",
+           sorgu(HEDEF, "select count(*) from public.assets where ticker='PILOT'")[0][0] == 0)
+kontrol_et("kaynak hiç değişmedi", sorgu(KAYNAK, "select count(*) from public.assets")[0][0] == 4)
+
 subprocess.run(["docker", "rm", "-f", "tasima-pg"], capture_output=True)
 print(f"\nSONUÇ: {'HEPSİ GEÇTİ' if basarisiz == 0 else f'{basarisiz} KIRIK'}")
 sys.exit(1 if basarisiz else 0)

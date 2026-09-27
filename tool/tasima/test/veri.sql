@@ -21,3 +21,7 @@ delete from public.assets where ticker like 'SIL%';
 insert into public.assets (user_id, tip, ticker, quantity) values ('33333333-3333-3333-3333-333333333333', 'hisse', 'KCHOL.IS', 5);
 
 insert into public.db_logs (mesaj) select 'log ' || g from generate_series(1, 2500) g;
+
+insert into public.partnerships (user_id_1, user_id_2, status)
+  values ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'accepted');
+insert into public.account_deletion_log (user_id_hash) values ('silinen-baskasi');

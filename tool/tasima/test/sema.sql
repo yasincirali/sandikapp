@@ -56,4 +56,14 @@ create table public.assets (
 
 create table public.db_logs (id serial primary key, mesaj text);
 
+-- İki taraflı ilişki: tek-kullanıcı kopyasında karşı taraf yoksa GELMEMELİ.
+create table public.partnerships (
+  id bigint generated always as identity primary key,
+  user_id_1 uuid references auth.users(id),
+  user_id_2 uuid references auth.users(id),
+  status text
+);
+-- Başka kullanıcıların izini taşıyan log: tek-kullanıcıda kopyalanmaz.
+create table public.account_deletion_log (id serial primary key, user_id_hash text);
+
 grant usage on schema public to anon, authenticated;
