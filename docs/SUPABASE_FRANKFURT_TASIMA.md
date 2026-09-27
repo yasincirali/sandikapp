@@ -17,6 +17,94 @@ fazın sonunda "geri dönüş" satırı var.
 
 ---
 
+## AÇILIŞ YOL HARİTASI (2026-09-27) — Frankfurt nasıl devreye girer
+
+**Bugünkü durum:** Frankfurt hazır ama **kapalı**: şema, secret, 15 fonksiyon,
+Auth + Türkçe şablon + Gmail SMTP uçtan uca denendi; 26 cron `active=false`;
+kullanıcı verisi YOK. Uygulama sunucu adresini **derlemede** alıyor
+(`--dart-define SUPABASE_URL/ANON_KEY` ← GitHub secret) — telefonlardaki her
+sürüm Tokyo'ya bağlı ve güncellenene kadar öyle kalır.
+
+### Karar: iki sürüm değil, tek "köprü sürümü" + Remote Config anahtarı
+
+İlk plan (aşağıda Faz 4'ün eski hâli) geçişi Frankfurt adresli İKİNCİ bir
+mağaza sürümüne bağlıyordu: mağaza onayı geçiş gecesinin kritik yolundaydı,
+kullanıcı iki kez güncelliyordu, geri dönüş yine mağaza istiyordu. Yerine:
+
+**1.1.7 "köprü sürümü" İKİ yapılandırmayı da taşır** (Tokyo + Frankfurt URL ve
+anon anahtarı; anon anahtarı zaten istemcide açık duran değerdir). Hangisine
+bağlanacağını Remote Config `sunucu` anahtarı (`tokyo` | `frankfurt`) söyler.
+
+| | İki sürüm (eski plan) | Köprü sürümü (seçilen) |
+|---|---|---|
+| Geçiş anı | Mağaza onayı + elle yayın | Remote Config'te tek anahtar |
+| Kullanıcı güncellemesi | 2 | 1 |
+| Geri dönüş | Yeni mağaza sürümü | Anahtarı geri çevir |
+| Prova | Ayrı test build'i | RC koşuluyla YALNIZ senin cihazın |
+
+**Köprü sürümünün kuralları (tasarım şartları — K1'de kodlanır):**
+1. **Karar açılışta, Supabase başlamadan verilir.** Remote Config kısa zaman
+   aşımlı (≈3 sn) çekilir; ağ yoksa son etkin değer kullanılır. Çalışırken
+   değişiklik bir sonraki soğuk açılışta uygulanır (Supabase çalışırken
+   yeniden başlatılmaz).
+2. **Sunucu değişince yerel durum sıfırlanır:** oturum (JWT eski projenin —
+   yeni projede geçersiz), kullanıcıya özel önbellekler
+   (`kullaniciyaOzelTercihler`, `IntradaySeriesCache`, haftalık özet
+   önbelleği) silinir → giriş ekranı. Kullanıcı bir kez yeniden giriş yapar
+   (şifresi aynı; `auth.users` özetleriyle taşınır).
+3. **Zorunlu güncelleme kapısı** (`min_build_android` / `min_build_ios`):
+   köprü öncesi sürümler Tokyo'ya kilitli; geçişte onları "Güncelle"
+   ekranında tutar.
+4. **Rıza metni sunucuyu izler:** `frankfurt` iken "Almanya (AB)", `tokyo`
+   iken gerçeği (Japonya) — bugünkü "ABD" iki durumda da yanlış
+   (`register_screen.dart:402`, `legal_doc_screen.dart:152`).
+5. **Varsayılan `tokyo`.** RC hiç okunamazsa (ilk kurulum, çevrimdışı) geçiş
+   sonrasında yanlış sunucuya düşmemek için K4'te varsayılan da değişir:
+   RC'nin *uygulama içi varsayılanı* köprü sürümünde `tokyo`, geçişten sonraki
+   ilk normal sürümde `frankfurt` derlenir.
+
+### Kilometre taşları
+
+| # | Ne | Kim | Süre | Geçiş şartı (go / no-go) |
+|---|---|---|---|---|
+| **K0** | Frankfurt hazır, cron kapalı | — | ✅ 2026-09-27 | — |
+| **K1** | Köprü sürümü kodu: çift sunucu seçimi + zorunlu güncelleme kapısı + Android build numarası + rıza metni (+ haftalık şerit hatası, TECHNICAL_DEBT) | CLAUDE | 2–3 gün | Tam test paketi yeşil; emülatörde RC override ile **Tokyo → Frankfurt → Tokyo** gidiş-dönüş: her yönde temiz giriş ekranı, eski kullanıcının önbelleği sızmıyor |
+| **K2** | 1.1.7 yayını: App Store + Play (kapalı test güncellemesi, sonra üretim). RC `sunucu=tokyo` | SEN (+CLAUDE CI) | onay 1–3 gün + yayılma ~7 gün | Analytics'te 1.1.7 payı ≥ %90 **veya** 7 gün; çökmesiz oturum ≥ %99 |
+| **K3** | Prova: veri kopyası → Frankfurt; RC koşulu (kullanıcı özelliği / uygulama örneği) ile **yalnız senin cihazın** `frankfurt`; kendi hesabınla gerçek uygulamada gez | SEN + CLAUDE | 1 gün | Rakamlar Tokyo ile birebir (toplam, 1A köprüsü, dağılım); giriş, varlık ekle/sil, alarm, push (`push_test_trigger`) çalışıyor. Sonra Frankfurt boşaltılır |
+| **K4** | Geçiş gecesi (runbook aşağıda) | SEN + CLAUDE | ~1 saat, hafta sonu 02:00–04:00 | Duman testi yeşil; 24 saat içinde geri dönüş penceresi |
+| **K5** | Temizlik: GitHub secret'ları → Frankfurt, varsayılan `frankfurt` derlenir, hukuki metinler, Tokyo duraklat → 14 gün → sil | SEN + CLAUDE | 2 hafta | — |
+
+Toplam ≈ 2 hafta; **geçiş gecesinin kritik yolunda mağaza yok.** Android
+kapalı testin 14 günüyle örtüşür — testçiler köprü sürümünü güncelleme olarak alır.
+
+### K4 — geçiş gecesi runbook'u
+
+1. **[SEN] Tokyo cron'larını durdur** (Tokyo SQL Editor):
+   `select cron.alter_job(job_id := jobid, active := false) from cron.job;`
+2. **[SEN] Tokyo'yu yazmaya kapat** — köprü öncesi sürümler ve RC'yi henüz
+   çekmemiş istemciler Tokyo'ya veri yazmasın (yazılan kaybolur):
+   `revoke insert, update, delete on all tables in schema public from anon, authenticated;`
+   (+ yazan `security definer` RPC'lerin `execute` yetkisi — liste K3'te çıkarılır).
+   Uygulama yazma hatasını `friendlyError` ile gösterir; okuma çalışır.
+3. **[SEN/CLAUDE] Son veri kopyası** (Faz 3.1 komutları) + tablo tablo sayım
+   karşılaştırması. Önce Frankfurt boşaltılır (Faz 3 notu).
+4. **[SEN] Frankfurt cron'larını aç:**
+   `select cron.alter_job(job_id := jobid, active := true) from cron.job;`
+5. **[SEN] Remote Config:** `sunucu = frankfurt` **ve** `min_build_* = 1.1.7 build`
+   → yayınla. Köprü sürümü bir sonraki açılışta Frankfurt'a geçer; eskiler
+   "Güncelle" ekranında kalır.
+6. **[CLAUDE] Duman testi:** Frankfurt `net._http_response` 200'ler,
+   `cron.job_run_details` succeeded, Crashlytics'te yeni hata dalgası yok,
+   Analytics'te oturumlar Frankfurt'tan akıyor.
+7. **[SEN] Sabah:** Tokyo'yu **duraklat** (Pause) — hâlâ Tokyo'ya takılı
+   istemci kalmadığının kesin güvencesi.
+
+**Geri dönüş (ilk 24 saat):** RC `sunucu = tokyo`, Tokyo'da yetkileri geri ver
+(`grant …`) ve cron'ları aç, Frankfurt cron'larını kapat. Arada Frankfurt'a
+yazılan veri kaybolur — pencere kısa ve gece olduğu için.
+
+---
+
 ## Faz 1 — Kod hazırlığı (eski proje etkilenmez)
 
 - [x] **[CLAUDE] `0076_edge_function_url_vault.sql`** — 14 fonksiyondaki sabit
@@ -147,6 +235,9 @@ fazın sonunda "geri dönüş" satırı var.
 **Geri dönüş:** yeni projeyi boşalt; eski proje hâlâ tek canlı.
 
 ## Faz 4 — Geçiş (bakım penceresi, ~1 saat, hafta sonu gecesi)
+
+> ⚠️ **Yerini "AÇILIŞ YOL HARİTASI → K4" aldı** (köprü sürümü kararı,
+> 2026-09-27). Aşağısı iki-sürüm planının kaydı olarak duruyor.
 
 Ön koşul: Faz 1'in zorunlu güncelleme kapısını taşıyan sürüm mağazalarda ve
 kullanıcıların çoğu onda. Yeni URL'li sürümler **inceleme onayı almış ama
