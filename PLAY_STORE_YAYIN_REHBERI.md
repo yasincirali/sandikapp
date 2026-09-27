@@ -21,14 +21,18 @@ tarayıcıda ve elden yapacakların.
 | Mağaza metinleri (TR + EN) | ✅ TR metni App Store ile birebir hizalandı (§6.4, §12) · EN için ASC'de karşılığı var mı? |
 | Hukuki belgeler + web sayfaları | ✅ Bu tur onarıldı: bozuk kodlama düzeltildi, placeholder'lar dolduruldu (§7.2) |
 | Data Safety envanteri | ✅ Yazılı · Advertising ID sorusu kapandı — izin manifest'ten düşürüldü (§5.3) |
-| Release keystore | ❌ **SENDE** — yoksa hiçbir şey yüklenemez |
-| Play Console hesabı + doğrulama | 🔄 **Kişisel hesap açıldı**, kimlik doğrulaması Google'da bekliyor (§1) |
-| Ekran görüntüleri | ✅ **Üretildi (2026-09-15)** — `store_listing/android/screenshots/set_a` (7) veya `set_b` (8), 1080×1920 = 1,78:1, alfa yok (§6.2) |
+| Release keystore | ✅ `upload-keystore.jks` repo kökünde (gitignore'da) + `android/key.properties`; **yedeği sende olmalı** (§2) |
+| CI imzası | ✅ **2026-09-26** — `ANDROID_*` + `GOOGLE_SERVICES_JSON_BASE64` secret'ları girildi; `android-release.yml` imzalı AAB üretti (1.1.6+7, run 36266818024) |
+| Play Console hesabı + doğrulama | ✅ Kişisel hesap; uygulama oluşturuldu (`com.sandik.app`, varsayılan dil, ücretsiz) |
+| Uygulama içeriği beyanları | 🔄 **2026-09-26** — gizlilik, oturum açma (demo hesap), reklam, içerik derecelendirmesi (3+), hedef kitle (18+), veri güvenliği yapıldı; finans beyanı ve kalanlar Console'da |
+| Ekran görüntüleri | ✅ **Üretildi (2026-09-15)** — Console'a **`set_b`** yüklenir, **05 ve 07 hariç** (6 kare): 05 Al/Sat düğmeli (işlem yapılıyor izlenimi, §5.4) ve başlığı ekranla uyuşmuyor; 07 Canlı Etkinlik **yalnızca iOS** — Android'de olmayan özelliği göstermek yanıltıcı meta veri (§6.2) |
 | Feature graphic (1024×500) + ikon (512×512) | ✅ **Üretildi (2026-09-15)** — `store_listing/android/graphics/`, betikle tekrar üretilebilir (§6.1, §6.3) |
-| Supabase `0027_soft_delete_lots.sql` migration | ❌ Uygulanmadı — **Play "hesap silme" şartını kırar** (§7.1) |
+| Supabase `0027_soft_delete_lots.sql` migration | ✅ **Canlıda uygulanmış** (`YAPMAN_GEREKENLER.md` KAPANDI 2026-08-11; §7.1 tarihçe) |
+| Kapalı test (12 testçi × 14 gün) | ❌ **Kritik yol bu** — başlamadı (§8.2) |
 
-**Kritik yol (bunlar bitmeden yayın yok):** hesap tipi kararı → hesap
-doğrulama → keystore → görseller → Console beyanları → kapalı test.
+**Kritik yol (2026-09-26 itibarıyla kalan):** görselleri yükle → kalan
+Console beyanları → AAB'yi kapalı teste yükle → 12 testçi × 14 gün →
+production başvurusu. Keystore, CI imzası ve 0027 kapandı.
 
 ---
 
@@ -393,8 +397,9 @@ Detaylı eşleme tablosu: §12.
 
 ## 7. Yayından önce kapatılması gereken açıklar
 
-### 7.1 🔴 Supabase migration `0027_soft_delete_lots.sql` — **bloker**
-Uygulanmadı. Uygulanmazsa varlık silme UPDATE'i patlıyor. Play'e "kullanıcı
+### 7.1 ✅ (KAPANDI) Supabase migration `0027_soft_delete_lots.sql`
+Canlıda uygulanmış (`YAPMAN_GEREKENLER.md`, 2026-08-11). Aşağısı tarihçe.
+Uygulanmamış olsaydı: Uygulanmazsa varlık silme UPDATE'i patlıyor. Play'e "kullanıcı
 verisini silebiliyor" beyanı verdiğin bir uygulamada silme akışının kırık
 olması hem işlevsel hata hem beyan uyumsuzluğu.
 ```bash
