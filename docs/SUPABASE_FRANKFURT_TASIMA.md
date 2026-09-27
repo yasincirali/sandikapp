@@ -45,7 +45,22 @@ fazın sonunda "geri dönüş" satırı var.
 > Uçtan uca: `analyze-signals` 200 (verify_jwt=true), `kripto-katalog` 200
 > (348), `fetch-inflation` 200 (24 ay, son 2026-08). Yardımcı betikler
 > `tmp/tasima/` (gitignore): `cron_secrets.py`, `diger_secrets.py`,
-> `auth_kopyala.py`. Sıradaki: 2.7 Auth.
+> `auth_kopyala.py`.
+>
+> **2.7 ✅ (aynı gün):** 11 Auth ayarı + 28 Türkçe şablon Management API ile
+> kopyalandı (`auth_kopyala.py`; kapsamlı token: Auth R/W + project admin R/W,
+> "Auth Signing Keys" KAPALI). **Free planda varsayılan e-posta sağlayıcısıyla
+> şablon değiştirilemiyor (HTTP 400)** → özel SMTP zorunlu oldu: **Gmail SMTP**
+> (`sandikapp.destek@gmail.com`, uygulama şifresi, smtp.gmail.com:465).
+> Şablon ŞART, süs değil: kayıt akışı `{{ .Token }}` (6 hane) bekliyor,
+> varsayılan şablon bağlantı yollar → kimse kayıt olamazdı. İlk uygulama
+> şifresi başka hesapta üretildiği için 535 verdi (`smtp_dene.py` ayırdı).
+> Bilinçli kopyalanmayan: `rate_limit_email_sent` (eski = varsayılan
+> sağlayıcının düşük sınırı), `audit_log_disable_postgres`.
+> Uçtan uca: `sandikapp.destek+tasimatest@gmail.com` kaydı → HTTP 200,
+> 6 haneli kodlu e-posta Birincil kutuya düştü.
+> ⚠️ **Bu deneme kullanıcısı `auth.users`'ta duruyor — Faz 3 kopyasından
+> önce silinecek** (boşaltma adımına dahil).
 
 1. **[SEN] API anahtarları.** Panel → Project Settings → API Keys. 2026'da açılan
    projeler varsayılan olarak `sb_publishable_…` / `sb_secret_…` anahtarlarıyla
