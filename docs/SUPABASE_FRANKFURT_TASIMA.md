@@ -69,8 +69,10 @@ fazın sonunda "geri dönüş" satırı var.
    notice'leri görülmeli. Auto mode canlı DB'yi engellerse komutu [SEN] koşar.
 4. **[CLAUDE→SEN] Cron'ları HEMEN durdur** (yeni proje, SQL Editor):
    ```sql
-   update cron.job set active = false;
+   select cron.alter_job(job_id := jobid, active := false) from cron.job;
    ```
+   (`update cron.job` Supabase'de 42501 verir — tablo doğrudan yazılamaz,
+   `cron.alter_job` şart; 2026-09-27'de görüldü.)
    **Neden:** Faz 3'te gerçek kullanıcı verisi kopyalanınca yeni projenin
    cron'ları da push göndermeye başlar — kullanıcılar her bildirimi İKİ KEZ alır.
    Geçiş anına kadar yalnızca eski projenin cron'ları çalışır.
@@ -121,11 +123,11 @@ fazın sonunda "geri dönüş" satırı var.
 kullanıcıların çoğu onda. Yeni URL'li sürümler **inceleme onayı almış ama
 elle yayın bekliyor** (App Store "Manually release", Play "yönetilen yayınlama").
 
-1. **[SEN]** Eski projede cron'ları durdur: `update cron.job set active = false;`
+1. **[SEN]** Eski projede cron'ları durdur: `select cron.alter_job(job_id := jobid, active := false) from cron.job;`
 2. **[SEN]** Eski projeyi yazmaya kapat (eski istemciler yazmasın):
    Remote Config `min_build_*` = yeni sürüm → eski sürümler "Güncelle" ekranında kalır.
 3. **[SEN/CLAUDE]** Taze veri kopyası (Faz 3.1) + sayım karşılaştırması.
-4. **[SEN]** Yeni projede cron'ları aç: `update cron.job set active = true;`
+4. **[SEN]** Yeni projede cron'ları aç: `select cron.alter_job(job_id := jobid, active := true) from cron.job;`
 5. **[SEN]** Yeni sürümleri yayınla (App Store + Play).
 6. **[CLAUDE]** Duman testi: `net._http_response`'ta 200'ler, `cron.job_run_details`
    "succeeded", Crashlytics'te yeni hata dalgası yok.

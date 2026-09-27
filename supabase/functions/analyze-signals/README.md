@@ -91,11 +91,16 @@ done
 ### 2. Function deploy
 
 ```bash
-supabase functions deploy analyze-signals --no-verify-jwt
+supabase functions deploy analyze-signals
 ```
 
-`--no-verify-jwt` gerekli: function pg_cron'dan çağrılıyor, kullanıcı JWT'si
-yok. Yetkilendirme `ANALYZE_SIGNALS_CRON_SECRET` header'ı ile.
+~~`--no-verify-jwt` gerekli~~ — **artık değil (0054).** Eskiden pg_cron
+kullanıcı JWT'si taşımadığı için gateway kapatılıyordu. 0054'ten beri
+tetikleyiciler `Authorization`'a service_role JWT'si (`cron_gateway_jwt`)
+koyuyor, secret'ı `x-cron-secret`'ta taşıyor; diğer cron fonksiyonları gibi
+bu da `verify_jwt = true` ile çalışır ve gateway katmanı korunur. Tokyo
+projesinde hâlâ `false` idi (eski dağıtım); Frankfurt'a 2026-09-27'de `true`
+dağıtıldı — iki katman: gateway JWT + `ANALYZE_SIGNALS_CRON_SECRET`.
 
 ### 3. Secret'lar
 
