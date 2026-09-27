@@ -1324,6 +1324,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       CrashReporter.arkaPlan(_persistBackgroundedAt(_backgroundedAt), reason: 'main._persistBackgroundedAt');
     } else if (state == AppLifecycleState.resumed) {
       CrashReporter.arkaPlan(_persistBackgroundedAt(null), reason: 'main._persistBackgroundedAt');
+      // Remote Config yedek yolu (köprü sürümü, K1): `refresh()` hiçbir yerden
+      // çağrılmıyordu; gerçek zamanlı bildirim kaçarsa açık uygulama sunucu
+      // değişimini ancak soğuk açılışta görürdü. Prod'da RC'nin saatlik alt
+      // sınırı ağ trafiğini zaten kısıtlar.
+      CrashReporter.arkaPlan(RemoteConfigService.instance.refresh(),
+          reason: 'main.RemoteConfigService.refresh');
       // Arkadayken olan bir sistem görünümü değişimi burada yakalanır:
       // önplanda olmadığı için `didChangePlatformBrightness` onu bilinçli
       // olarak yutmuştu.

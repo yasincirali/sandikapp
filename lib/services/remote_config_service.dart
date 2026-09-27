@@ -158,9 +158,14 @@ class RemoteConfigService {
       _rc = FirebaseRemoteConfig.instance;
       await _rc!.setConfigSettings(RemoteConfigSettings(
         fetchTimeout: const Duration(seconds: 10),
-        // Debug'da hemen; prod'da 1 saat — network trafiğini azalt.
+        // Debug'da hemen; prod'da 15 dk. Eskiden 1 saatti. Köprü sürümünde
+        // (K1) bu aralık, geçiş gecesi gerçek zamanlı bildirimi KAÇIRAN açık
+        // bir uygulamanın dondurulmuş Tokyo'da en fazla ne kadar kalacağıdır
+        // (ön plana dönüşte `refresh()`). 2026-09-27 emülatör denemesinde
+        // gerçek zamanlı yol ulaşmadı; soğuk açılış yolu ~5 sn'de çalıştı.
+        // 15 dk RC kotasının çok altında (istemci başına saatte 4 fetch).
         minimumFetchInterval:
-            kDebugMode ? Duration.zero : const Duration(hours: 1),
+            kDebugMode ? Duration.zero : const Duration(minutes: 15),
       ));
       await _rc!.setDefaults(_defaults);
       // Fetch başlat ama beklet — offline'da default'lar geçerli olur.
