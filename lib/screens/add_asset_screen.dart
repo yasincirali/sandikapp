@@ -215,8 +215,11 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
+  // `ustHarf`, düz `toUpperCase` değil: Dart Türkçe bilmez, "Hisse" →
+  // "HISSE", "Kripto para" → "KRIPTO PARA" (noktasız) basıyordu
+  // (2026-09-27 emülatör turu). Bkz. l10n.dart.
   Widget _sectionLabel(String text) => Text(
-        text.toUpperCase(),
+        ustHarf(text, context.l10n),
         style: context.t.labelLarge?.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,

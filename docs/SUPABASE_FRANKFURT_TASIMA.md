@@ -171,6 +171,11 @@ Arada yeni projeye yazılan veri kaybolur — bu yüzden pencere kısa ve gece.
       (`supabase-deploy.yml` bu ref'e dağıtır; değiştirilmezse eski projeye gider.)
 - [ ] **[CLAUDE]** Hukuki metinler: gizlilik politikası (TR/EN), KVKK aydınlatma,
       **açık rıza metni**, `DATA_SAFETY_FORM.md` — "ABD" → **"Almanya (AB)"**.
+      **Uygulama içi metinler de** (2026-09-27 emülatör turunda görüldü —
+      kullanıcı RIZAYI bunlara veriyor): `register_screen.dart:402` açık rıza
+      kutusu "Supabase (ABD)", `legal_doc_screen.dart:152` "ABD'de barındırıldığından".
+      Rıza metni değişince `legal/` sürüm numarası artmalı ve mevcut kullanıcıdan
+      yeniden onay istenip istenmeyeceği hukukçuya sorulmalı.
       Bugünkü metin zaten yanlış (gerçek: Japonya). Hukukçuya gösterilmeli:
       KVKK yurt dışı aktarım kuralları 1 Haziran 2024'te değişti (7499 s. Kanun).
 - [ ] **[CLAUDE]** CLAUDE.md + hafıza: proje ref'i, bölge.

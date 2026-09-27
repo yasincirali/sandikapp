@@ -121,6 +121,14 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('bölüm başlıkları Türkçe büyük harf (noktalı İ)', (tester) async {
+      // Düz `toUpperCase` "HISSE" / "KRIPTO PARA" basıyordu; `ustHarf` şart.
+      await _pump(tester, const AddAssetScreen());
+      expect(find.text('HİSSE'), findsOneWidget);
+      expect(find.text('HISSE'), findsNothing);
+      expect(find.text('VARLIK TÜRÜ'), findsOneWidget);
+    });
+
     testWidgets('sepet modu, 320pt', (tester) async {
       await _pump(tester, const AddAssetScreen(cartMode: true), width: 320);
       expect(tester.takeException(), isNull);
