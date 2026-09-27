@@ -242,6 +242,12 @@ yazılan veri kaybolur — pencere kısa ve gece olduğu için.
      sınanamadı, Supabase'e özgü): `session_replication_role` postgres
      rolüne açık mı; `auth.users`'a INSERT/DELETE yetkisi var mı; Tokyo'da
      `public` PUBLIC'e açık mı. **K3'ten önce `kontrol`'ü bir kez koş.**
+   - ✅ **Cevaplandı (2026-09-27, canlı `kontrol`):** 36 tablo şema-uyumlu
+     (kolon farkı yok); `session_replication_role = replica` postgres rolüne
+     AÇIK; `auth.users` INSERT/DELETE var; **Tokyo `public` PUBLIC'e AÇIK →
+     `tokyo-kapat` işe yaramaz, K4.2'de panelden Data API kapatılır.**
+     Bağlantı: Tokyo pooler `aws-1-ap-northeast-1`, Frankfurt `aws-0-eu-central-1`;
+     şifre `ESKI_DB_SIFRE`/`YENI_DB_SIFRE` ile ayrı verilir.
 2. **[CLAUDE] Sayım** — `sayim` çıktısı + birkaç kullanıcı için ekrandaki
    toplamların Tokyo ile karşılaştırması.
 3. **[SEN] Debug build ile deneme** — yeni URL/anahtarla (`--dart-define`) gerçek
