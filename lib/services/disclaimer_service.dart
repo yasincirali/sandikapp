@@ -154,8 +154,22 @@ class DisclaimerService {
   /// Eskiden ağ hatasında koşulsuz `false` dönüyordu; oturumu olan
   /// kullanıcı uçak modunda disclaimer ekranında kilitleniyordu — çünkü
   /// oradan onay da yazılamıyor.
+  ///
+  /// **Cihaz izi varsa ağa gidilmez (2026-09-28).** İz yalnızca sunucu
+  /// onayı doğruladıktan / yazdıktan SONRA konur ve anahtarında metin
+  /// sürümü var (`_deviceKey`): sürüm artınca iz kendiliğinden geçersiz.
+  /// Onay geri alınamadığı için her soğuk açılışta sunucuya sormak splash
+  /// kapısına yalnızca bir gidiş-dönüş ekliyordu (onboarding kapısı
+  /// `OnboardingScreen.isCompleted` zaten böyle).
   Future<bool> hasAccepted(String userId) async {
     if (_cache.containsKey(userId)) return _cache[userId]!;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_deviceKey(userId)) == true) {
+        _cache[userId] = true;
+        return true;
+      }
+    } catch (_) {}
     try {
       final rows = await _client
           .from('disclaimer_acceptances')

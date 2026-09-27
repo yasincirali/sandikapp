@@ -14,8 +14,48 @@ import '../utils/friendly_error.dart';
 // ── Mevcut oturum kullanıcısı ─────────────────────────────────────────────────
 
 class AuthNotifier extends AsyncNotifier<AppUser?> {
+  /// Son bilinen profil diskteyse açılış ONU bekler, ağı değil
+  /// (bkz. `AuthService` "Profil önbelleği"). İlk açılışta / hesap
+  /// değişiminde önbellek yoktur ve eski yol (`getSessionUser`) yürür.
   @override
-  Future<AppUser?> build() => AuthService.instance.getSessionUser();
+  Future<AppUser?> build() async {
+    final onbellek = await AuthService.instance.onbellekliOturumKullanicisi();
+    if (onbellek == null) return AuthService.instance.getSessionUser();
+    unawaited(_profiliArkadaTazele(onbellek.id));
+    return onbellek;
+  }
+
+  /// Gerçek profili arkada çeker; state'e YALNIZ değiştiyse yazar.
+  ///
+  /// Koşulsuz yazmak portföy, sinyal, alarm… `authProvider`'ı izleyen her
+  /// provider'ı yeniden kurar ve açılışın yeni kazandığı gidiş-dönüşü geri
+  /// verirdi. Ağ yoksa sessiz: önbellekteki profil zaten gerçek bir
+  /// profildir (offline minimal profil değil).
+  Future<void> _profiliArkadaTazele(String id) async {
+    try {
+      final taze = await AuthService.instance.refreshProfile();
+      final simdiki = state.valueOrNull;
+      // Bu arada çıkış / hesap değişimi olduysa bu yanıt bayattır.
+      if (simdiki == null || simdiki.id != id) return;
+      if (taze == null) {
+        // Profil satırı yok (hesap başka cihazdan silinmiş): önbelleksiz
+        // yolun davranışı neyse o — kullanıcı yok.
+        state = const AsyncData(null);
+        return;
+      }
+      if (!ayniProfil(simdiki, taze)) state = AsyncData(taze);
+    } catch (_) {
+      // Ağ yok — önbellekteki profille devam.
+    }
+  }
+
+  @visibleForTesting
+  static bool ayniProfil(AppUser a, AppUser b) =>
+      a.id == b.id &&
+      a.email == b.email &&
+      a.displayName == b.displayName &&
+      a.onboardingCompleted == b.onboardingCompleted &&
+      a.createdAt.millisecondsSinceEpoch == b.createdAt.millisecondsSinceEpoch;
 
   Future<void> login({
     required String email,
@@ -130,6 +170,16 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   /// 30 saniyede saatlik istek sayısı 900'den 240'a iner.
   static const _pollInterval = Duration(seconds: 30);
 
+  /// Son `_loadPartners` BAŞLANGICI — öne dönüş tazelemesini ayıklamak için.
+  ///
+  /// Soğuk açılışta gözlemci `build` sırasında eklenir ve uygulama hemen
+  /// ardından `resumed` olur: `_tick` build'in isteği daha dönmeden AYNI
+  /// listeyi ikinci kez çekiyordu (profile build'de iki
+  /// `getPartnershipsWithStatus` + iki `getProfilesByIds`, ölçüldü
+  /// 2026-09-28). Başlangıç zamanı tutulur ki eşzamanlı istek de sayılsın.
+  DateTime? _sonYukleme;
+  static const _taptaze = Duration(seconds: 10);
+
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(_pollInterval, (_) => _tick());
@@ -146,7 +196,8 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _tick();
+      final son = _sonYukleme;
+      if (son == null || DateTime.now().difference(son) > _taptaze) _tick();
       _startPolling();
     } else {
       _stopPolling();
@@ -191,6 +242,7 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   }
 
   Future<List<PartnerAccount>> _loadPartners(String userId) async {
+    _sonYukleme = DateTime.now();
     final statusList =
         await SupabaseService.instance.getPartnershipsWithStatus(userId);
     if (statusList.isEmpty) return [];

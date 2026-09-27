@@ -95,7 +95,9 @@ class AuthService {
     final supaUser = _client.auth.currentUser;
     if (supaUser == null) return null;
     try {
-      return await SupabaseService.instance.getProfile(supaUser.id);
+      final profil = await SupabaseService.instance.getProfile(supaUser.id);
+      await _profiliOnbellegeYaz(profil);
+      return profil;
     } catch (_) {
       return AppUser.fromSession(
         id: supaUser.id,
@@ -111,7 +113,59 @@ class AuthService {
   Future<AppUser?> refreshProfile() async {
     final supaUser = _client.auth.currentUser;
     if (supaUser == null) return null;
-    return SupabaseService.instance.getProfile(supaUser.id);
+    final profil = await SupabaseService.instance.getProfile(supaUser.id);
+    await _profiliOnbellegeYaz(profil);
+    return profil;
+  }
+
+  // ── Profil önbelleği (açılışı ağdan ayırır, 2026-09-28) ────────────────────
+  //
+  // Soğuk açılışta `authProvider` `getProfile` ağ isteğini bekliyordu ve
+  // portföy, ortaklar, disclaimer — hepsi kullanıcı kimliğine bağlı olduğu
+  // için ARKASINDAN başlıyordu: veri zincirinin başına bir tam gidiş-dönüş
+  // ekleniyordu (Tokyo'dan ~300–600 ms). Profilde açılışı ilgilendiren tek
+  // şey kimlik; ad/e-posta birkaç yüz ms bayat kalabilir. Bu yüzden son
+  // bilinen profil diskte tutulur, açılış ondan yürür, gerçek profil arkada
+  // gelir (`AuthNotifier._profiliArkadaTazele`).
+  //
+  // Anahtar kişiye özel DEĞİL, içinde `id` var: oturumdaki kullanıcıyla
+  // eşleşmezse (hesap değişimi) önbellek yok sayılır ve eski yola düşülür.
+  static const _profilOnbellekKey = 'oturum_profil_v1';
+
+  /// Diskteki son profil, YALNIZCA oturumdaki kullanıcıya aitse.
+  Future<AppUser?> onbellekliOturumKullanicisi() async {
+    final supaUser = _client.auth.currentUser;
+    if (supaUser == null) return null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return profilOnbellektenCoz(prefs.getString(_profilOnbellekKey), supaUser.id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Saf çözücü — test edilebilir: kimlik tutmuyorsa ya da kayıt bozuksa null.
+  static AppUser? profilOnbellektenCoz(String? kayit, String oturumId) {
+    if (kayit == null) return null;
+    try {
+      final u = AppUser.fromMap(jsonDecode(kayit) as Map<String, dynamic>);
+      return u.id == oturumId ? u : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _profiliOnbellegeYaz(AppUser? profil) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (profil == null) {
+        await prefs.remove(_profilOnbellekKey);
+      } else {
+        await prefs.setString(_profilOnbellekKey, jsonEncode(profil.toMap()));
+      }
+    } catch (_) {
+      // Önbellek yazılamazsa bir sonraki açılış eski yoldan (ağdan) yürür.
+    }
   }
 
   // ── Kaydedilen email ───────────────────────────────────────────────────────
@@ -681,6 +735,7 @@ class AuthService {
         await prefs.remove(k);
       }
       await prefs.remove(PrefKeys.pushDeviceId);
+      await prefs.remove(_profilOnbellekKey);
     } catch (_) {
       // Tercih deposu okunamazsa çıkış yine tamamlanır.
     }
