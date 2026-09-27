@@ -379,35 +379,43 @@ class SupabaseService {
 
   // ── Snapshots ─────────────────────────────────────────────────────────────
 
+  /// Kullanıcı başına son anlık görüntü yazımı — [snapshotAraligi]'ndan sık
+  /// yazılmaz.
+  static final Map<String, DateTime> _sonSnapshot = {};
+
+  /// Anlık görüntü seyreltmesi (2026-09-28, 0077). Her fiyat yenilemesi bir
+  /// satır yazıyordu: pilot hesapta günde 136, bir günde 1.259 satır; okuyanlar
+  /// (Yıllık Özet, weekly-summary) yalnız pencerenin ilk/son değerini
+  /// kullanıyor. Sunucu tetikleyicisi zaten saatte bir satıra birleştiriyor;
+  /// bu aralık gereksiz İSTEĞİ de keser.
+  static const snapshotAraligi = Duration(minutes: 15);
+
   Future<void> insertSnapshot(Map<String, double> categoryValues,
-      {String userId = ''}) async {
+      {String userId = '', DateTime? simdi}) async {
     final uid = userId.isNotEmpty ? userId : (_uid ?? '');
     if (uid.isEmpty) return;
+    final an = simdi ?? DateTime.now();
+    final son = _sonSnapshot[uid];
+    if (son != null && an.difference(son) < snapshotAraligi) return;
 
     await _log.log<void>(
       source: 'SupabaseService.insertSnapshot',
       table: 'snapshots',
       op: 'INSERT',
       request: {'user_id': uid, 'categories': categoryValues.keys.toList()},
+      // `ts` gönderilmez: sunucu saati (default now()) — istemci saati kaymış
+      // olabilir ve saatlik birleştirme `ts`'ten türüyor.
       call: () => _db.from('snapshots').insert({
         'user_id': uid,
         'data': categoryValues,
       }),
     );
+    // Yalnız BAŞARILI yazımdan sonra: hata olursa bir sonraki tur yeniden dener.
+    _sonSnapshot[uid] = an;
 
-    // 2 yıl retention
-    final cutoff = DateTime.now()
-        .subtract(const Duration(days: 730))
-        .toUtc()
-        .toIso8601String();
-    await _log.log<void>(
-      source: 'SupabaseService.insertSnapshot[retention]',
-      table: 'snapshots',
-      op: 'DELETE',
-      request: {'user_id': uid, 'lt_ts': cutoff},
-      call: () =>
-          _db.from('snapshots').delete().eq('user_id', uid).lt('ts', cutoff),
-    );
+    // 2 yıl saklama artık sunucuda (0077, `snapshots-retention` cron'u).
+    // Eskiden her yazımdan sonra buradan DELETE gidiyordu — fiyat yenilemesi
+    // başına ikinci bir gidiş-dönüş.
   }
 
   Future<List<({int ts, Map<String, double> values})>> fetchSnapshots(
