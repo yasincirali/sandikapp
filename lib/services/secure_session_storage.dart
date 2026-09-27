@@ -50,8 +50,8 @@ class SecureSessionStorage extends LocalStorage {
 
   /// supabase_flutter'ın varsayılan anahtarı — geçişte aynı adı okumak için
   /// birebir aynı formül (`sb-<host ilk parçası>-auth-token`).
-  static String defaultKeyFor(String supabaseUrl) =>
-      'sb-${Uri.parse(supabaseUrl).host.split('.').first}-auth-token';
+  static String defaultKeyFor(String projeUrl) =>
+      'sb-${Uri.parse(projeUrl).host.split('.').first}-auth-token';
 
   @override
   Future<void> initialize() async {

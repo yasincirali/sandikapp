@@ -647,6 +647,13 @@
   "noHistoryAllBody": "Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri toplamda görünür ama zaman grafiği çizilemiyor.",
   "youngPortfolioTitle": "Bu dönem için henüz geçmiş yok",
   "youngPortfolioBody": "Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak — bugünkü hareketi GÜNLÜK görünümünde görebilirsin.",
+  "forceUpdateTitle": "Güncelleme gerekli",
+  "forceUpdateBody": "Sandık'ın bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — verilerin yerinde.",
+  "forceUpdateButton": "Güncelle",
+  "serverMovedTitle": "Sandık yenilendi",
+  "serverMovedBodyAndroid": "Daha hızlı sunucumuza geçtik. Devam etmek için uygulamayı kapatıp yeniden aç. Bir kez giriş yapman istenecek; şifren ve verilerin aynı.",
+  "serverMovedBodyIos": "Daha hızlı sunucumuza geçtik. Devam etmek için uygulamayı kapatıp (yukarı kaydırarak) yeniden aç. Bir kez giriş yapman istenecek; şifren ve verilerin aynı.",
+  "serverMovedCloseButton": "Uygulamayı kapat",
   "noHistoryTypeBody": "{type} için fiyat geçmişi izlenmiyor. Değeri portföy toplamına dahil, ama zaman grafiği çizilemiyor.",
   "@noHistoryTypeBody": {
     "placeholders": {

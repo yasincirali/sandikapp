@@ -34,6 +34,8 @@ import 'widgets/klavye_kapatici.dart';
 import 'widgets/yenilikler_sheet.dart';
 import 'services/surum_notu_service.dart';
 import 'services/deep_link_service.dart';
+import 'services/sunucu_secimi.dart';
+import 'widgets/sunucu_kapisi.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
@@ -93,7 +95,15 @@ bool splashVeriHazir({
 Future<void> _initDeferredServices() async {
   for (final step in <(String, Future<void> Function())>[
     ('RemotePushService', () => RemotePushService.instance.init()),
-    ('AnalyticsService', () => AnalyticsService.instance.init()),
+    ('AnalyticsService', () async {
+      await AnalyticsService.instance.init();
+      // Geçişin yayılımı Analytics'ten izlenir: kaç oturum hangi sunucuda.
+      final sunucu = await SunucuSecimi.instance.hazir;
+      if (sunucu != null) {
+        await AnalyticsService.instance
+            .setUserProperty(name: 'sunucu', value: sunucu.ad);
+      }
+    }),
     ('RemoteConfigService', () => RemoteConfigService.instance.init()),
     // AnalyticsService'ten SONRA: kurulum günü yazılırken ve ilk açılış
     // event'i giderken gönderici hazır olmalı, yoksa uygulamanın ömrü
@@ -195,7 +205,12 @@ void main() async {
       }
     }
 
-    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    // Hangi Supabase projesi — köprü sürümü (K1). Remote Config'in DİSKTEKİ
+    // son değeriyle, ağ beklemeden; Firebase'den SONRA (RC onu ister),
+    // Supabase'den ÖNCE. Adres ve oturum anahtarı buradan gelir; sabitleri
+    // doğrudan kullanan başka yer YOK (`sunucu_secimi_test` kilitler).
+    final sunucu = await SunucuSecimi.instance.baslat();
+    if (sunucu == null) {
       runApp(_ConfigErrorApp(
         urlEmpty: supabaseUrl.isEmpty,
         keyEmpty: supabaseAnonKey.isEmpty,
@@ -203,12 +218,14 @@ void main() async {
       return;
     }
     await Supabase.initialize(
-      url: supabaseUrl,
-      anonKey: supabaseAnonKey,
+      url: sunucu.url,
+      anonKey: sunucu.anonKey,
       // Oturum token'ı Keychain/Keystore'da (bkz. SecureSessionStorage).
+      // Anahtar proje ref'inden türer → sunucu değişince eski projenin
+      // oturumu okunmaz, kullanıcı yeni projede bir kez giriş yapar.
       authOptions: FlutterAuthClientOptions(
         localStorage: SecureSessionStorage(
-          persistSessionKey: SecureSessionStorage.defaultKeyFor(supabaseUrl),
+          persistSessionKey: SecureSessionStorage.defaultKeyFor(sunucu.url),
         ),
       ),
     );
@@ -332,8 +349,10 @@ class SandikApp extends ConsumerWidget {
       // karartma ve kart en üstte kalır (bkz. OnboardingTourHost).
       // `KlavyeKapatici` Navigator'ı sarar: hangi ekranda, hangi alt sayfada
       // olursa olsun boşluğa dokununca klavye kapanır (bkz. widget notu).
-      builder: (context, child) =>
-          KlavyeKapatici(child: OnboardingTourHost(child: child!)),
+      // `SunucuKapisi` en dışta: zorunlu güncelleme / sunucu değişimi
+      // ekranı her rotanın ve turun ÖNÜNE geçer (köprü sürümü, K1).
+      builder: (context, child) => SunucuKapisi(
+          child: KlavyeKapatici(child: OnboardingTourHost(child: child!))),
       home: const _AuthGate(),
     );
   }

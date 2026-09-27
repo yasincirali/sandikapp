@@ -2438,6 +2438,48 @@ abstract class AppLocalizations {
   /// **'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak — bugünkü hareketi GÜNLÜK görünümünde görebilirsin.'**
   String get youngPortfolioBody;
 
+  /// No description provided for @forceUpdateTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncelleme gerekli'**
+  String get forceUpdateTitle;
+
+  /// No description provided for @forceUpdateBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sandık\'ın bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — verilerin yerinde.'**
+  String get forceUpdateBody;
+
+  /// No description provided for @forceUpdateButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncelle'**
+  String get forceUpdateButton;
+
+  /// No description provided for @serverMovedTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sandık yenilendi'**
+  String get serverMovedTitle;
+
+  /// No description provided for @serverMovedBodyAndroid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daha hızlı sunucumuza geçtik. Devam etmek için uygulamayı kapatıp yeniden aç. Bir kez giriş yapman istenecek; şifren ve verilerin aynı.'**
+  String get serverMovedBodyAndroid;
+
+  /// No description provided for @serverMovedBodyIos.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daha hızlı sunucumuza geçtik. Devam etmek için uygulamayı kapatıp (yukarı kaydırarak) yeniden aç. Bir kez giriş yapman istenecek; şifren ve verilerin aynı.'**
+  String get serverMovedBodyIos;
+
+  /// No description provided for @serverMovedCloseButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamayı kapat'**
+  String get serverMovedCloseButton;
+
   /// No description provided for @noHistoryTypeBody.
   ///
   /// In tr, this message translates to:

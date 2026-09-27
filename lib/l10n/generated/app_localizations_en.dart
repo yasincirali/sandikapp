@@ -1300,6 +1300,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your portfolio is newer than the selected period. The chart fills in as trading days pass — see today\'s move in the DAILY view.';
 
   @override
+  String get forceUpdateTitle => 'Update required';
+
+  @override
+  String get forceUpdateBody =>
+      'This version of Sandık is no longer supported. Update the app to continue — your data is safe.';
+
+  @override
+  String get forceUpdateButton => 'Update';
+
+  @override
+  String get serverMovedTitle => 'Sandık has moved';
+
+  @override
+  String get serverMovedBodyAndroid =>
+      'We moved to a faster server. Close and reopen the app to continue. You\'ll be asked to sign in once; your password and data are unchanged.';
+
+  @override
+  String get serverMovedBodyIos =>
+      'We moved to a faster server. Close the app (swipe it up) and reopen it to continue. You\'ll be asked to sign in once; your password and data are unchanged.';
+
+  @override
+  String get serverMovedCloseButton => 'Close the app';
+
+  @override
   String noHistoryTypeBody(String type) {
     return 'Price history is not tracked for $type. Its value counts in the portfolio total, but no time chart can be drawn.';
   }

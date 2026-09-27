@@ -647,6 +647,13 @@
   "noHistoryAllBody": "Price history is not tracked for your assets; their value counts in the total but no time chart can be drawn.",
   "youngPortfolioTitle": "No history for this period yet",
   "youngPortfolioBody": "Your portfolio is newer than the selected period. The chart fills in as trading days pass — see today's move in the DAILY view.",
+  "forceUpdateTitle": "Update required",
+  "forceUpdateBody": "This version of Sandık is no longer supported. Update the app to continue — your data is safe.",
+  "forceUpdateButton": "Update",
+  "serverMovedTitle": "Sandık has moved",
+  "serverMovedBodyAndroid": "We moved to a faster server. Close and reopen the app to continue. You'll be asked to sign in once; your password and data are unchanged.",
+  "serverMovedBodyIos": "We moved to a faster server. Close the app (swipe it up) and reopen it to continue. You'll be asked to sign in once; your password and data are unchanged.",
+  "serverMovedCloseButton": "Close the app",
   "noHistoryTypeBody": "Price history is not tracked for {type}. Its value counts in the portfolio total, but no time chart can be drawn.",
   "@noHistoryTypeBody": {
     "placeholders": {

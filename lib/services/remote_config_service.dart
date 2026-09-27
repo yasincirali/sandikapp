@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'crash_reporter.dart';
+import 'sunucu_secimi.dart';
 
 
 /// Firebase Remote Config wrapper.
@@ -139,6 +140,16 @@ class RemoteConfigService {
     // incelemesinde takılırsa bayrak kapatılır ve doğrudan sistem kartı
     // istenir — yayın beklemeden, aynı gün.
     'review_prompt_soft_gate': true,
+
+    // ── Köprü sürümü (K1, 2026-09-27) ────────────────────────────────────
+    // Hangi Supabase projesi: 'tokyo' | 'frankfurt'. Geçiş gecesi Console'da
+    // çevrilir; açık uygulamalar gerçek zamanlı dinleyiciyle saniyeler içinde
+    // "kapatıp aç" ekranına düşer. Karar `SunucuSecimi`'nde.
+    SunucuSecimi.anahtar: 'tokyo',
+    // Zorunlu güncelleme kapısı: bu build'in altındakiler "Güncelle"
+    // ekranında kalır. 0 = kapı kapalı. Android versionCode / iOS build.
+    SunucuSecimi.minBuildAndroid: 0,
+    SunucuSecimi.minBuildIos: 0,
   };
 
   Future<void> init() async {
@@ -153,7 +164,22 @@ class RemoteConfigService {
       ));
       await _rc!.setDefaults(_defaults);
       // Fetch başlat ama beklet — offline'da default'lar geçerli olur.
-      CrashReporter.arkaPlan(_rc!.fetchAndActivate(), reason: 'remote_config_service.fetchAndActivate');
+      // Bitince sunucu/güncelleme kararı yeniden değerlendirilir.
+      CrashReporter.arkaPlan(
+        _rc!.fetchAndActivate().then((_) => _sunucuyaBildir()),
+        reason: 'remote_config_service.fetchAndActivate',
+      );
+      // Gerçek zamanlı güncelleme: geçiş gecesi bayrak çevrildiğinde AÇIK
+      // uygulamalar saatlik fetch'i beklemez. Dinleyici değişen anahtarları
+      // bildirir ama ETKİNLEŞTİRMEZ — activate şart.
+      _rc!.onConfigUpdated.listen(
+        (_) async {
+          await _rc!.activate();
+          _sunucuyaBildir();
+        },
+        onError: (Object e, StackTrace st) =>
+            CrashReporter.report(e, st, reason: 'remote_config_service.onConfigUpdated'),
+      );
       _initialized = true;
     } catch (e) {
       if (kDebugMode) debugPrint('RemoteConfigService init failed: $e');
@@ -166,7 +192,17 @@ class RemoteConfigService {
     if (_rc == null) return;
     try {
       await _rc!.fetchAndActivate();
+      _sunucuyaBildir();
     } catch (_) {}
+  }
+
+  void _sunucuyaBildir() {
+    final rc = _rc;
+    if (rc == null) return;
+    SunucuSecimi.instance.rcGuncellendi(
+      istenen: rc.getString(SunucuSecimi.anahtar),
+      minBuild: rc.getInt(SunucuSecimi.minBuildAnahtari),
+    );
   }
 
   // ── Feature flag getter'ları ─────────────────────────────────────────────

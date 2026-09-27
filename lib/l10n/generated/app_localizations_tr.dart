@@ -1301,6 +1301,30 @@ class AppLocalizationsTr extends AppLocalizations {
       'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak — bugünkü hareketi GÜNLÜK görünümünde görebilirsin.';
 
   @override
+  String get forceUpdateTitle => 'Güncelleme gerekli';
+
+  @override
+  String get forceUpdateBody =>
+      'Sandık\'ın bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — verilerin yerinde.';
+
+  @override
+  String get forceUpdateButton => 'Güncelle';
+
+  @override
+  String get serverMovedTitle => 'Sandık yenilendi';
+
+  @override
+  String get serverMovedBodyAndroid =>
+      'Daha hızlı sunucumuza geçtik. Devam etmek için uygulamayı kapatıp yeniden aç. Bir kez giriş yapman istenecek; şifren ve verilerin aynı.';
+
+  @override
+  String get serverMovedBodyIos =>
+      'Daha hızlı sunucumuza geçtik. Devam etmek için uygulamayı kapatıp (yukarı kaydırarak) yeniden aç. Bir kez giriş yapman istenecek; şifren ve verilerin aynı.';
+
+  @override
+  String get serverMovedCloseButton => 'Uygulamayı kapat';
+
+  @override
   String noHistoryTypeBody(String type) {
     return '$type için fiyat geçmişi izlenmiyor. Değeri portföy toplamına dahil, ama zaman grafiği çizilemiyor.';
   }

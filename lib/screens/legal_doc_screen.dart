@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/sunucu_secimi.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 
@@ -46,6 +47,11 @@ class LegalBlock {
   const LegalBlock.tableRow(this.cells)
       : type = LegalBlockType.tableRow,
         text = '';
+  const LegalBlock._(this.type, this.text, this.cells);
+
+  /// Yer tutucuları doldurulmuş kopya — `LegalDocs._yerlestir`.
+  LegalBlock _doldur(String Function(String) f) =>
+      LegalBlock._(type, f(text), [for (final c in cells) f(c)]);
 }
 
 // ─── Belgeler ─────────────────────────────────────────────────────────────────
@@ -56,9 +62,32 @@ class LegalDocs {
   static const _web = 'yasincirali.github.io/sandikapp';
   static const _address = 'Türkiye';
 
+  // ── Verinin durduğu ülke (köprü sürümü, K1 — 2026-09-27) ────────────────
+  //
+  // Metin eskiden "ABD" yazıyordu; proje aslında Japonya'daydı (Tokyo),
+  // Frankfurt'a taşınıyor. Rıza (KVKK 9) verinin GERÇEK yerine verilir, bu
+  // yüzden ülke bağlanılan projeden gelir. Belgeler `const` ŞABLON kalır;
+  // yer tutucular gösterimde doldurulur. Bilinmeyen proje (test, yerel
+  // yığın) için ülke uydurulmaz — genel ifade.
+  // ⚠️ Hukuki metin: web'deki eşleri (legal/*.md) taşıma Faz 5'te; metnin
+  // tamamı bir hukukçuya gösterilmeli (7499 s. Kanun, 1 Haziran 2024).
+  static const _ulke = '{SUPABASE_ULKE}';
+  static const _ulkede = '{SUPABASE_ULKEDE}';
+
+  static List<LegalBlock> _yerlestir(List<LegalBlock> sablon) {
+    final aktif = SunucuSecimi.instance.aktifOrNull;
+    final ulke = aktif?.ulke ?? 'Yurt dışı';
+    final ulkede = aktif?.ulkede ?? 'yurt dışında';
+    String f(String s) => s.replaceAll(_ulke, ulke).replaceAll(_ulkede, ulkede);
+    return [for (final b in sablon) b._doldur(f)];
+  }
+
+  static List<LegalBlock> get privacy => _yerlestir(_privacy);
+  static List<LegalBlock> get kvkk => _yerlestir(_kvkk);
+
   // ── Gizlilik Politikası ──────────────────────────────────────────────────
 
-  static const List<LegalBlock> privacy = [
+  static const List<LegalBlock> _privacy = [
     LegalBlock.h1('Gizlilik Politikası'),
     LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
     LegalBlock.divider(),
@@ -128,7 +157,7 @@ class LegalDocs {
       'Backend & veritabanı',
       'Supabase Inc.',
       'Saklama, kimlik doğrulama',
-      'ABD (AWS)'
+      '$_ulke (AWS)'
     ]),
     LegalBlock.tableRow([
       'Push bildirimi',
@@ -149,8 +178,8 @@ class LegalDocs {
     ),
     LegalBlock.h2('6. Yurt Dışına Veri Aktarımı'),
     LegalBlock.p(
-      'Supabase ve Firebase ABD\'de barındırıldığından verileriniz Türkiye dışına aktarılır. '
-      'ABD, KVK Kurulu\'nun "yeterli korumaya sahip ülkeler" listesinde olmadığından aktarım '
+      'Supabase verileri $_ulkede, Firebase verileri ABD\'de barındırıldığından verileriniz Türkiye dışına aktarılır. '
+      'Bu ülkeler KVK Kurulu\'nun "yeterli korumaya sahip ülkeler" listesinde olmadığından aktarım '
       'KVKK Madde 9(1) kapsamında açık rızanıza dayanmaktadır.',
     ),
     LegalBlock.h2('7. Veri Saklama Süreleri'),
@@ -316,7 +345,7 @@ class LegalDocs {
 
   // ── KVKK Aydınlatma Metni ───────────────────────────────────────────────
 
-  static const List<LegalBlock> kvkk = [
+  static const List<LegalBlock> _kvkk = [
     LegalBlock.h1('KVKK Aydınlatma Metni'),
     LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
     LegalBlock.divider(),
@@ -371,7 +400,7 @@ class LegalDocs {
     LegalBlock.tableHeader(['Alıcı', 'Ülke', 'Amaç', 'Hukuki Sebep']),
     LegalBlock.tableRow([
       'Supabase Inc.',
-      'ABD',
+      _ulke,
       'Veritabanı ve kimlik doğrulama',
       'KVKK 9(1) — açık rıza'
     ]),
@@ -388,7 +417,7 @@ class LegalDocs {
       'KVKK 9(1) — açık rıza'
     ]),
     LegalBlock.p(
-      'ABD, KVK Kurulu\'nun "yeterli korumaya sahip ülkeler" listesinde bulunmamaktadır. '
+      'Bu ülkeler KVK Kurulu\'nun "yeterli korumaya sahip ülkeler" listesinde bulunmamaktadır. '
       'Yurt dışı aktarımı KVKK Madde 9(1) kapsamında açık rızanıza dayanmaktadır.',
     ),
     LegalBlock.h2('6. Veri Saklama Süreleri'),

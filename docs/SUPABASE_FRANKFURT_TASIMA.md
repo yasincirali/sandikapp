@@ -63,12 +63,34 @@ bağlanacağını Remote Config `sunucu` anahtarı (`tokyo` | `frankfurt`) söyl
    RC'nin *uygulama içi varsayılanı* köprü sürümünde `tokyo`, geçişten sonraki
    ilk normal sürümde `frankfurt` derlenir.
 
+### K1 — yapılanlar (2026-09-27)
+
+- `lib/services/sunucu_secimi.dart`: saf `sunucuSec` / `guncellemeGerekliMi` +
+  servis. Karar açılışta RC'nin DİSKTEKİ değeriyle (ağ beklenmez); fetch ve
+  **gerçek zamanlı dinleyici** (`onConfigUpdated`) farklı sunucu görürse
+  `yenidenBaslatGerekli`. Yazım hatası / EU'suz derleme → birincil.
+- `lib/widgets/sunucu_kapisi.dart`: "Güncelleme gerekli" (öncelikli) ve "Sandık
+  yenilendi — kapatıp aç" tam ekranları; uygulamanın ÖNÜNE geçer.
+- RC varsayılanları: `sunucu=tokyo`, `min_build_android=0`, `min_build_ios=0`.
+- Oturum anahtarı zaten proje ref'inden türüyordu → Frankfurt'ta Tokyo oturumu
+  okunmaz. Tercih/önbellekler UUID'ye bağlı → taşımada geçerli kalır.
+- Rıza metni (kayıt kutusu + uygulama içi gizlilik/KVKK) verinin gerçek ülkesini
+  söyler: Tokyo → Japonya, Frankfurt → Almanya (AB). Web'deki eşleri Faz 5.
+- CI: `SUPABASE_URL_EU`/`SUPABASE_ANON_KEY_EU` define'ları (3 iş akışı);
+  Android `--build-number=100+run` (versionCode artık artıyor).
+- Doğrulama: 3080 test; 5554'te (Tokyo, gerçek hesap) bayraksız → Tokyo'da
+  kaldı, oturum korundu, kapı yok.
+
+**K1'in kalanı [SEN]:** GitHub secret'ları `SUPABASE_URL_EU` +
+`SUPABASE_ANON_KEY_EU`; Firebase Console'da `sunucu=tokyo`, `min_build_*=0`
+ile anahtarları AÇIKÇA tanımla; uçtan uca bayrak denemesi (aşağıda K1 testi).
+
 ### Kilometre taşları
 
 | # | Ne | Kim | Süre | Geçiş şartı (go / no-go) |
 |---|---|---|---|---|
 | **K0** | Frankfurt hazır, cron kapalı | — | ✅ 2026-09-27 | — |
-| **K1** | Köprü sürümü kodu: çift sunucu seçimi + zorunlu güncelleme kapısı + Android build numarası + rıza metni (+ haftalık şerit hatası, TECHNICAL_DEBT) | CLAUDE | 2–3 gün | Tam test paketi yeşil; emülatörde RC override ile **Tokyo → Frankfurt → Tokyo** gidiş-dönüş: her yönde temiz giriş ekranı, eski kullanıcının önbelleği sızmıyor |
+| **K1** ✅ kod (2026-09-27) | Köprü sürümü kodu: çift sunucu seçimi + zorunlu güncelleme kapısı + Android build numarası + rıza metni (+ haftalık şerit hatası, TECHNICAL_DEBT) | CLAUDE | 2–3 gün | Tam test paketi yeşil; emülatörde RC override ile **Tokyo → Frankfurt → Tokyo** gidiş-dönüş: her yönde temiz giriş ekranı, eski kullanıcının önbelleği sızmıyor |
 | **K2** | 1.1.7 yayını: App Store + Play (kapalı test güncellemesi, sonra üretim). RC `sunucu=tokyo` | SEN (+CLAUDE CI) | onay 1–3 gün + yayılma ~7 gün | Analytics'te 1.1.7 payı ≥ %90 **veya** 7 gün; çökmesiz oturum ≥ %99 |
 | **K3** | Prova: veri kopyası → Frankfurt; RC koşulu (kullanıcı özelliği / uygulama örneği) ile **yalnız senin cihazın** `frankfurt`; kendi hesabınla gerçek uygulamada gez | SEN + CLAUDE | 1 gün | Rakamlar Tokyo ile birebir (toplam, 1A köprüsü, dağılım); giriş, varlık ekle/sil, alarm, push (`push_test_trigger`) çalışıyor. Sonra Frankfurt boşaltılır |
 | **K4** | Geçiş gecesi (runbook aşağıda) | SEN + CLAUDE | ~1 saat, hafta sonu 02:00–04:00 | Duman testi yeşil; 24 saat içinde geri dönüş penceresi |

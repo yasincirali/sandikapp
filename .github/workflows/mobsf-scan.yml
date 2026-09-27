@@ -76,6 +76,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Köprü sürümü (K1): Frankfurt. Secret yoksa boş kalır → tek sunuculu
+          # derleme, Remote Config `sunucu` bayrağı etkisiz (build kırılmaz).
+          SUPABASE_URL_EU: ${{ secrets.SUPABASE_URL_EU }}
+          SUPABASE_ANON_KEY_EU: ${{ secrets.SUPABASE_ANON_KEY_EU }}
           # Yayın APK'sıyla aynı define kümesi — MobSF gömülü kimlikleri de
           # tarasın (YAPMAN_GEREKENLER #16).
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
@@ -84,6 +88,8 @@ jobs:
           flutter build apk --release \
             --dart-define=SUPABASE_URL=$SUPABASE_URL \
             --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
+            --dart-define=SUPABASE_URL_EU=$SUPABASE_URL_EU \
+            --dart-define=SUPABASE_ANON_KEY_EU=$SUPABASE_ANON_KEY_EU \
             --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
             --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
           echo "APK_PATH=$(ls build/app/outputs/flutter-apk/app-release.apk)" >> "$GITHUB_ENV"

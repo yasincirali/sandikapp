@@ -10,6 +10,7 @@ import 'package:flutter/material.dart'
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../services/sunucu_secimi.dart';
 import '../services/auth_service.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
@@ -131,7 +132,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final confirmed = await pushGuarded<bool>(
       context,
       adaptiveRoute(
-        builder: (_) => const LegalDocScreen(
+        // const değil: `LegalDocs.privacy` verinin ülkesini çalışma anında
+        // doldurur (köprü sürümü).
+        builder: (_) => LegalDocScreen(
           title: 'Açık Rıza — Yurt Dışı Veri Aktarımı',
           icon: Icons.public_rounded,
           blocks: LegalDocs.privacy,
@@ -399,7 +402,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 icon: Icons.public_rounded,
                 title: 'Açık Rıza — Yurt Dışı Veri Aktarımı',
                 bodyText:
-                    'Verilerin Supabase (ABD) ve Firebase (ABD/Küresel) '
+                    // Ülke bağlanılan projeden (köprü sürümü) — bkz. LegalDocs._ulke.
+                    'Verilerin Supabase (${SunucuSecimi.instance.aktifOrNull?.ulke ?? 'yurt dışı'}) ve Firebase (ABD/Küresel) '
                     'üzerinde saklanacak. KVKK Madde 9(1) gereği açık rıza '
                     'gerekir. İstediğin zaman geri çekebilirsin (hesap silme).',
                 checkboxLabel:
