@@ -602,6 +602,10 @@ class _Oturum {
 }
 
 /// Tek tur oturumu; [OnboardingTourHost] bunu dinler.
+/// Tanıtım turu şu an ekranda mı — başka yüzeyler (kilometre taşı kutlaması)
+/// turun ÜSTÜNE açılmasın diye okur.
+bool get tanitimTuruAktif => _Tur.aktif;
+
 abstract final class _Tur {
   static final oturum = ValueNotifier<_Oturum?>(null);
 

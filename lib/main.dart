@@ -801,6 +801,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// [_lockAfter]'dan uzun kalınca ana ekran kilit arkasında kalır.
   bool _locked = false;
 
+  /// Girişten sonra kilometre taşı ölçümü henüz yapılmadıysa o kullanıcı.
+  /// İlk YERLEŞİK ölçüm sessiz kayıttır, kutlama değil (2026-09-27).
+  String? _kilometreTasiSessizKullanici;
+
   /// Son build'de kilit ekranı mı gösterildi, oturum var mıydı — geçişleri
   /// (kilitlendi / çıkış yapıldı) yakalamak için. Bkz. [_kokeDon].
   bool _kilitGosteriliyor = false;
@@ -960,12 +964,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
       force: true,
     );
-    _authSubscription = ref.listenManual(authProvider, (_, next) {
+    _authSubscription = ref.listenManual(authProvider, (prev, next) {
       final user = next.valueOrNull;
 
       if (user == null && !next.isLoading) {
         _checkedUserId = null;
         _onboardingDone = null;
+        _kilometreTasiSessizKullanici = null;
         // Tercih anahtarlarını kullanıcıdan ayır ve provider'ları tazele.
         // Yapılmazsa bir sonraki kullanıcı öncekinin sinyal ayarlarını
         // görür — ayarlar SharedPreferences'ta cihaz genelinde duruyor.
@@ -999,6 +1004,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // "biyometrik açık mı" sorusu YANLIŞ yanıtlanır.
         setPreferencesUser(user.id);
         _invalidateUserPrefs();
+
+        // GİRİŞ OLAYI mı (çıkış yapılmış hâlden kullanıcıya), yoksa kayıtlı
+        // oturumla soğuk açılış mı? Soğuk açılışta önceki değer yükleniyordur
+        // (`hasValue` yok); girişte "kullanıcı yok" diye YERLEŞMİŞ bir değer.
+        // Girişten sonraki ilk kilometre taşı ölçümü sessizdir (bkz.
+        // `MilestoneService.ayir`).
+        if (prev != null && prev.hasValue && prev.valueOrNull == null) {
+          _kilometreTasiSessizKullanici = user.id;
+        }
 
         if (!_staleSessionHandled) {
           _staleSessionHandled = true;
@@ -1180,42 +1194,89 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     await YeniliklerSheet.goster(ctx, notlar);
   }
 
+  /// Kutlama sheet'inin açılabileceği TEK yer: ana ekran, üstünde hiçbir
+  /// şey yokken ve uygulama önplandayken. Kilit/onboarding/uyarı metni
+  /// henüz aşılmadıysa, tanıtım turu oynuyorsa ya da kök rotanın üstünde bir
+  /// sayfa/sheet/diyalog varsa (Yenilikler, izin istemi, varlık ekleme…)
+  /// kutlama araya girmez.
+  bool _kutlamaYeriUygun() {
+    if (!mounted || _locked) return false;
+    if (_onboardingDone != true || _disclaimerAccepted != true) return false;
+    if (tanitimTuruAktif) return false;
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return false;
+    }
+    // Kök rotanın üstünde bir şey varsa (sayfa, bottom sheet, diyalog —
+    // hepsi rota) `canPop` true döner.
+    return appNavigatorKey.currentState?.canPop() == false;
+  }
+
   /// Ayda en fazla BİR kutlama yapılır: kutlamanın değeri seyrekliğinden
   /// gelir. Eşikler yine de KAYDEDİLİR — kutlanmasa da geçilmiş sayılır,
   /// yoksa aylar sonra aynı eşik yeniden "yeni" görünürdü.
+  ///
+  /// **Doğru zaman ve yer** (2026-09-27 hatası: çıkış → giriş yapınca "2
+  /// yıldır takiptesin" kutlaması + hemen ardından puan istemi geldi):
+  /// * Fiyatlar bu oturumda YERLEŞMEDEN ölçülmez — yarım fiyatla düşük
+  ///   toplam, fiyatlar gelince sahte bir "eşik geçildi" üretirdi.
+  /// * Girişten sonraki ilk ölçüm ve yıl dönümü uzak yaş eşikleri SESSİZ
+  ///   kaydedilir (`MilestoneService.ayir`).
+  /// * Kutlama yalnız ana ekrandayken: kilit, onboarding, uyarı metni,
+  ///   tanıtım turu, açık bir sayfa/sheet üstüne binmez. Yer uygun değilse
+  ///   kutlanacaklar KAYDEDİLMEZ — bir sonraki uygun yayında yeniden denenir.
+  /// * Her `await`'ten sonra kullanıcı yeniden doğrulanır: çıkış yapılmışsa
+  ///   sheet giriş ekranının üstüne açılmaz.
   Future<void> _kilometreTasiKontrol(PortfolioState state) async {
     if (!RemoteConfigService.instance.milestonesEnabled) return;
+    if (state.isLoading || state.lastUpdated == null) return;
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
+    bool ayniKullanici() =>
+        mounted && ref.read(authProvider).valueOrNull?.id == user.id;
 
+    final now = DateTime.now();
     final gecilenler = MilestoneService.evaluate(
       assets: state.assets,
       totalTRY: DailySummary.liveTotalTRY(state),
-      now: DateTime.now(),
+      now: now,
     );
     if (gecilenler.isEmpty) return;
 
     final repo = MilestoneRepository.instance;
     final onceden = await repo.fetchReached(user.id);
     // Okuma hatasında hiçbir şey kutlanmaz (bkz. fetchReached).
-    if (onceden.contains('__hata__')) return;
+    if (onceden.contains('__hata__') || !ayniKullanici()) return;
 
     final yeniler = gecilenler
         .where((m) => !onceden.contains('${m.kind}:${m.value}'))
         .toList();
+    final girisSonrasi = _kilometreTasiSessizKullanici == user.id;
+    if (girisSonrasi) _kilometreTasiSessizKullanici = null;
     if (yeniler.isEmpty) return;
 
-    await repo.recordReached(user.id, yeniler);
+    final ayrim = MilestoneService.ayir(
+      yeniler: yeniler,
+      assets: state.assets,
+      now: now,
+      girisSonrasi: girisSonrasi,
+      // Sunucuda hiç kaydı yok → mevcut portföyünü giriyor, bir şey geçmedi.
+      ilkKez: onceden.isEmpty,
+    );
+    if (ayrim.sessiz.isNotEmpty) await repo.recordReached(user.id, ayrim.sessiz);
+    if (ayrim.kutla.isEmpty || !ayniKullanici()) return;
 
-    if (!await MilestoneRepository.canCelebrate()) return;
-    final secilen = MilestoneService.pickOne(yeniler);
-    if (secilen == null || !mounted) return;
-
+    // Yer: yalnız ana ekran, üstünde hiçbir şey yokken. Değilse KAYDETME.
     final ctx = appNavigatorKey.currentContext;
-    if (ctx == null) return;
+    if (ctx == null || !_kutlamaYeriUygun()) return;
+
+    await repo.recordReached(user.id, ayrim.kutla);
+    if (!await MilestoneRepository.canCelebrate()) return;
+    final secilen = MilestoneService.pickOne(ayrim.kutla);
+    if (secilen == null || !ayniKullanici() || !_kutlamaYeriUygun()) return;
+
     await MilestoneRepository.markCelebrated();
     await repo.markShown(user.id, secilen);
-    if (ctx.mounted) await MilestoneSheet.show(ctx, secilen);
+    if (ctx.mounted && ayniKullanici()) await MilestoneSheet.show(ctx, secilen);
 
     // Kutlama KAPANDIKTAN sonra değerlendirme istemi. Kutlamanın üstüne
     // binmez: iki sheet art arda, ikisi de kapatılabilir. Kullanıcı az önce

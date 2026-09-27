@@ -107,11 +107,7 @@ class MilestoneService {
     // "elimde" sayardı — kullanıcı sattığı altından "altın biriktirici",
     // sattığı hisselerden "çeşitlilik" rozeti kazanıyordu (denetim
     // 2026-09-22). Rozet gerçek mülkiyeti ödüllendirmeli.
-    final aktif = [
-      for (final p in aggregatePositionsByOwner(
-          [for (final l in lotlarSahibeGore(assets)) aktifLotlar(l)]))
-        p.asDisplayAsset()
-    ];
+    final aktif = _aktifGorunum(assets);
     if (aktif.isEmpty) return const [];
 
     return [
@@ -169,10 +165,7 @@ class MilestoneService {
   static List<Milestone> _ageMilestones(List<Asset> aktif, DateTime now) {
     // En ESKİ alım portföyün yaşıdır. Kullanıcı arada varlık silip ekleyebilir
     // ama "ne zamandır yatırım yapıyorum" sorusunun cevabı ilk adımdır.
-    DateTime? enEski;
-    for (final a in aktif) {
-      if (enEski == null || a.addedDate.isBefore(enEski)) enEski = a.addedDate;
-    }
+    final enEski = _enEskiAlim(aktif);
     if (enEski == null) return const [];
 
     final gun = now.difference(enEski).inDays;
@@ -184,7 +177,11 @@ class MilestoneService {
         value: '${yil}y',
         rank: yil.toDouble(),
         title: yil == 1 ? 'Portföyün 1 yaşında' : 'Portföyün $yil yaşında',
-        body: 'Sabır bu işin yarısı — $yil yıldır takiptesin.',
+        // "yıldır takiptesin" DEĞİL: tarih kullanıcının girdiği İŞLEM
+        // tarihidir, uygulamayı ne zamandır kullandığı değil. Geçmiş tarihli
+        // alım girip birkaç haftadır kullanan kullanıcıya "2 yıldır
+        // takiptesin" denmişti (2026-09-27). Söylenen, bilinen tek gerçek.
+        body: 'İlk alımın $yil yıl önceydi — sabır bu işin yarısı.',
       ));
     }
     return out;
@@ -222,6 +219,71 @@ class MilestoneService {
   ///
   /// Ayda en fazla bir kutlama yapılır (bkz. RETENTION_STRATEJISI.md §5.E);
   /// birden çok yeni eşik varsa **en değerlisi** seçilir. Sıra: portföy
+  /// Yaş kutlaması yalnız yıl dönümü bu kadar YAKINSA: zamanın geçmesiyle
+  /// gelen bir an. Geçmiş tarihli alım girilince eşik anında aşılır —
+  /// o bir an değil, veri girişi.
+  static const yildonumuPenceresi = Duration(days: 14);
+
+  /// Yeni geçilen eşikleri ikiye ayırır: KUTLANACAK olanlar ve yalnız
+  /// kaydedilecek (sessiz) olanlar. Kayıt ikisi için de yapılır — yoksa
+  /// aynı eşik sonra yeniden "yeni" görünürdü.
+  ///
+  /// Doğru zaman kuralları (2026-09-27, kullanıcı: "logout sonrası 2 yıldır
+  /// birikimin var, 2 milyonu geçtin geldi — doğru yer ve zamanda gelmeli"):
+  /// * [ilkKez]: kullanıcı HİÇ ölçülmemiş (sunucuda kaydı yok) — mevcut
+  ///   portföyünü giriyordur. Canlı veride (26–27 Eylül) iki yeni kullanıcı
+  ///   varlıklarını girer girmez "250 bin ₺ geçildi" / "25 bin ₺ geçildi"
+  ///   gördü: geçilen bir eşik yok, veri girişi var ("birikimi kutla,
+  ///   işlemi değil"). Hepsi sessiz; sonraki GERÇEK büyüme kutlanır.
+  /// * [girisSonrasi]: girişten sonraki ilk YERLEŞİK ölçüm hepsini sessiz
+  ///   kaydeder. Giriş bir başarı anı değil; hesaptaki birikmiş eşikleri
+  ///   o an "yeni" diye art arda kutlamak bildirim yağmuruydu. Başka
+  ///   cihaz, yeniden giriş ve sunucu geçişi (Frankfurt) bu dala düşer.
+  /// * Yaş: yıl dönümü [yildonumuPenceresi] içinde değilse sessiz.
+  /// * Geri kalanı (değer, altın, çeşitlilik) kutlanır — oturum içinde
+  ///   gözlenmiş bir geçiştir.
+  ///
+  /// SAF — yer (ana ekran mı) ve kullanıcı kontrolleri çağıranda.
+  static ({List<Milestone> kutla, List<Milestone> sessiz}) ayir({
+    required List<Milestone> yeniler,
+    required List<Asset> assets,
+    required DateTime now,
+    required bool girisSonrasi,
+    required bool ilkKez,
+  }) {
+    if (girisSonrasi || ilkKez) return (kutla: const [], sessiz: yeniler);
+    final enEski = _enEskiAlim(_aktifGorunum(assets));
+    final kutla = <Milestone>[];
+    final sessiz = <Milestone>[];
+    for (final m in yeniler) {
+      if (m.kind == 'portfolio_age') {
+        final yil = int.tryParse(m.value.replaceAll('y', '')) ?? 0;
+        final yildonumu = enEski?.add(Duration(days: yil * 365));
+        final yakin = yildonumu != null &&
+            !now.isBefore(yildonumu) &&
+            now.difference(yildonumu) <= yildonumuPenceresi;
+        (yakin ? kutla : sessiz).add(m);
+      } else {
+        kutla.add(m);
+      }
+    }
+    return (kutla: kutla, sessiz: sessiz);
+  }
+
+  static List<Asset> _aktifGorunum(List<Asset> assets) => [
+        for (final p in aggregatePositionsByOwner(
+            [for (final l in lotlarSahibeGore(assets)) aktifLotlar(l)]))
+          p.asDisplayAsset()
+      ];
+
+  static DateTime? _enEskiAlim(List<Asset> aktif) {
+    DateTime? enEski;
+    for (final a in aktif) {
+      if (enEski == null || a.addedDate.isBefore(enEski)) enEski = a.addedDate;
+    }
+    return enEski;
+  }
+
   /// yaşı (en nadir ve en duygusal) → portföy değeri → altın → çeşitlendirme.
   ///
   /// Hepsini arka arkaya göstermek kutlamayı bildirim yağmuruna çevirirdi.

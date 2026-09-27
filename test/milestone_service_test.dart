@@ -136,6 +136,87 @@ void main() {
     });
   });
 
+  // REGRESYON (2026-09-27): çıkış → giriş yapınca "2 yıldır takiptesin"
+  // kutlaması ve ardından puan istemi geldi. Kutlama bir ANDIR; giriş ve
+  // geçmiş tarihli veri girişi an değildir.
+  group('ayir — doğru zaman', () {
+    Milestone yas(String v) =>
+        Milestone(kind: 'portfolio_age', value: v, title: '', body: '', rank: 1);
+    const deger = Milestone(
+        kind: 'portfolio_value', value: '2500000', title: '', body: '', rank: 2500000);
+
+    test('girişten sonraki ilk ölçüm HİÇBİRİNİ kutlamaz, hepsi sessiz kaydedilir', () {
+      final a = MilestoneService.ayir(
+        yeniler: [yas('2y'), deger],
+        assets: [_lot(id: 'a', addedDate: DateTime(2024, 9, 20))],
+        now: DateTime(2026, 9, 27),
+        girisSonrasi: true,
+        ilkKez: false,
+      );
+      expect(a.kutla, isEmpty);
+      expect(a.sessiz, hasLength(2));
+    });
+
+    test('yaş: yıl dönümü son 14 gündeyse kutlanır', () {
+      final a = MilestoneService.ayir(
+        yeniler: [yas('2y')],
+        // 2 × 365 gün sonrası 26 Eylül 2026 → dünkü yıl dönümü.
+        assets: [_lot(id: 'a', addedDate: DateTime(2024, 9, 27))],
+        now: DateTime(2026, 9, 27),
+        girisSonrasi: false,
+        ilkKez: false,
+      );
+      expect(a.kutla.map((m) => m.value), ['2y']);
+    });
+
+    test('yaş: geçmiş tarihli alım GİRİLİNCE (yıl dönümü uzak) sessiz', () {
+      final a = MilestoneService.ayir(
+        yeniler: [yas('2y')],
+        assets: [_lot(id: 'a', addedDate: DateTime(2023, 1, 1))],
+        now: DateTime(2026, 9, 27),
+        girisSonrasi: false,
+        ilkKez: false,
+      );
+      expect(a.kutla, isEmpty);
+      expect(a.sessiz.map((m) => m.value), ['2y']);
+    });
+
+    test('oturum içinde geçilen değer eşiği kutlanır', () {
+      final a = MilestoneService.ayir(
+        yeniler: [deger],
+        assets: [_lot(id: 'a')],
+        now: DateTime(2026, 9, 27),
+        girisSonrasi: false,
+        ilkKez: false,
+      );
+      expect(a.kutla, [deger]);
+    });
+
+    test('İLK ölçüm (mevcut portföy giriliyor) kutlamaz — canlı veri 26-27 Eylül', () {
+      final a = MilestoneService.ayir(
+        yeniler: [deger],
+        assets: [_lot(id: 'a')],
+        now: DateTime(2026, 9, 27),
+        girisSonrasi: false,
+        ilkKez: true,
+      );
+      expect(a.kutla, isEmpty);
+      expect(a.sessiz, [deger]);
+    });
+
+    test('yaş metni kullanıcıya uydurma süre söylemez', () {
+      final m = MilestoneService.evaluate(
+        assets: [_lot(id: 'a', addedDate: DateTime(2024, 1, 1))],
+        totalTRY: 1000,
+        now: DateTime(2026, 9, 27),
+      ).firstWhere((e) => e.kind == 'portfolio_age' && e.value == '2y');
+      // Tarih kullanıcının girdiği İŞLEM tarihi — uygulamayı ne zamandır
+      // kullandığı değil.
+      expect(m.body, isNot(contains('takiptesin')));
+      expect(m.body, contains('İlk alımın 2 yıl önceydi'));
+    });
+  });
+
   group('çeşitlendirme', () {
     test('farklı TÜR sayılır, farklı varlık değil', () {
       final ucTur = MilestoneService.evaluate(
