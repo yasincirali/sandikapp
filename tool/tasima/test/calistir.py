@@ -186,8 +186,15 @@ q = f"select md5(string_agg(t::text,'|' order by t::text)) from (select * from p
 kontrol_et("ali'nin varlıkları birebir", sorgu(KAYNAK, q) == sorgu(HEDEF, q))
 
 print("13) tek-kullanici tekrar — yeniden koşulabilir, çift satır yok")
+# Pilotta Frankfurt'ta giriş yapılmış gibi: ali'nin hedefte oturumu + METİN
+# tipli refresh token'ı var. Yeniden koşu ikisini de silmeli (varchar = uuid tuzağı).
+with psycopg.connect(HEDEF) as c:
+    c.execute(f"insert into auth.sessions values ('cccccccc-0000-0000-0000-000000000001', '{ALI}')")
+    c.execute(f"insert into auth.refresh_tokens (user_id, token) values ('{ALI}', 'rt')")
 kod, out = arac("tek-kullanici", "--email", "ali@example.com", "--onay", "hedef_db")
-kontrol_et("çıkış 0", kod == 0)
+kontrol_et("çıkış 0 (varchar user_id'li tabloda patlamadı)", kod == 0)
+kontrol_et("ali'nin hedefteki oturumu ve refresh token'ı silindi",
+           sorgu(HEDEF, "select (select count(*) from auth.sessions), (select count(*) from auth.refresh_tokens)")[0] == (0, 0))
 kontrol_et("ali hâlâ 1 hesap, 2 varlık",
            sorgu(HEDEF, f"select (select count(*) from auth.users where id='{ALI}'), "
                         "(select count(*) from public.assets)")[0] == (1, 2))

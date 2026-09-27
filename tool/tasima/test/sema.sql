@@ -23,6 +23,8 @@ create table auth.identities (
   identity_data jsonb
 );
 create table auth.sessions (id uuid primary key, user_id uuid references auth.users(id) on delete cascade);
+-- Supabase'deki gibi: user_id METİN (varchar). `varchar = uuid` operatörü yok (2026-09-27 canlı hatası).
+create table auth.refresh_tokens (id bigserial primary key, user_id varchar(255), token varchar(255));
 
 create type public.varlik_tipi as enum ('hisse', 'altin', 'kripto');
 

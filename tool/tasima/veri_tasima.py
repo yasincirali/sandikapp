@@ -432,8 +432,11 @@ def tek_kullanici(args) -> int:
                 yc.execute(sql.SQL("select 1 from information_schema.columns where table_schema='auth' "
                                    "and table_name={} and column_name={}").format(sql.Literal(tablo), sql.Literal(kol)))
                 if yc.fetchone():
-                    yc.execute(sql.SQL("delete from auth.{} where {} = any({})").format(
-                        sql.Identifier(tablo), sql.Identifier(kol), hlit))
+                    # METİN karşılaştırması: Supabase'de auth.refresh_tokens.user_id
+                    # `varchar`, diğerleri `uuid` — `varchar = uuid` operatörü yok
+                    # (2026-09-27 canlıda patladı; işlem geri alındı).
+                    yc.execute(sql.SQL("delete from auth.{} where {}::text = any({}::text[])").format(
+                        sql.Identifier(tablo), sql.Identifier(kol), sql.Literal(hedef_kume)))
 
         # 2) Kopyala.
         ozet = []
