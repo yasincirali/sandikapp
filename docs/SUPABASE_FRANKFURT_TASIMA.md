@@ -81,13 +81,17 @@ kapalı testin 14 günüyle örtüşür — testçiler köprü sürümünü gün
 
 1. **[SEN] Tokyo cron'larını durdur** (Tokyo SQL Editor):
    `select cron.alter_job(job_id := jobid, active := false) from cron.job;`
-2. **[SEN] Tokyo'yu yazmaya kapat** — köprü öncesi sürümler ve RC'yi henüz
+2. **[SEN] Tokyo'yu istemcilere kapat** — köprü öncesi sürümler ve RC'yi henüz
    çekmemiş istemciler Tokyo'ya veri yazmasın (yazılan kaybolur):
-   `revoke insert, update, delete on all tables in schema public from anon, authenticated;`
-   (+ yazan `security definer` RPC'lerin `execute` yetkisi — liste K3'te çıkarılır).
-   Uygulama yazma hatasını `friendlyError` ile gösterir; okuma çalışır.
-3. **[SEN/CLAUDE] Son veri kopyası** (Faz 3.1 komutları) + tablo tablo sayım
-   karşılaştırması. Önce Frankfurt boşaltılır (Faz 3 notu).
+   `python tool/tasima/veri_tasima.py tokyo-kapat --onay ybdbzouzhzwthjgwlbmk`
+   Araç yetkiyi geri alır ve **gerçekten kapandığını doğrular**; `public` şeması
+   PUBLIC rolüne açıksa (PostgreSQL varsayılanı — `kontrol` önceden söyler)
+   işlemi geri alıp durur → o durumda **panel: Tokyo → Project Settings →
+   Data API → Enable Data API KAPAT** (yetkilere dokunmaz, tüm REST/RPC'yi
+   keser, Auth çalışır). İsteğe bağlı: Tokyo Auth → yeni kayıtları kapat
+   (pencerede açılan hesap kaybolurdu).
+3. **[SEN] Son veri kopyası** — `bosalt` → `tasi` → `sayim` (Faz 3.1).
+   `tasi` kendi sonunda sayımı tutturamazsa COMMIT etmez.
 4. **[SEN] Frankfurt cron'larını aç:**
    `select cron.alter_job(job_id := jobid, active := true) from cron.job;`
 5. **[SEN] Remote Config:** `sunucu = frankfurt` **ve** `min_build_* = 1.1.7 build`
@@ -99,8 +103,8 @@ kapalı testin 14 günüyle örtüşür — testçiler köprü sürümünü gün
 7. **[SEN] Sabah:** Tokyo'yu **duraklat** (Pause) — hâlâ Tokyo'ya takılı
    istemci kalmadığının kesin güvencesi.
 
-**Geri dönüş (ilk 24 saat):** RC `sunucu = tokyo`, Tokyo'da yetkileri geri ver
-(`grant …`) ve cron'ları aç, Frankfurt cron'larını kapat. Arada Frankfurt'a
+**Geri dönüş (ilk 24 saat):** RC `sunucu = tokyo`, Tokyo'yu istemcilere aç
+(`veri_tasima.py tokyo-ac --onay ybdb…` ya da Data API'yi aç) ve cron'ları aç, Frankfurt cron'larını kapat. Arada Frankfurt'a
 yazılan veri kaybolur — pencere kısa ve gece olduğu için.
 
 ---
@@ -210,23 +214,36 @@ yazılan veri kaybolur — pencere kısa ve gece olduğu için.
 
 ## Faz 3 — Prova (gerçek veriyle, kullanıcıya görünmez)
 
-1. **[SEN/CLAUDE] Veri kopyası** — Supabase'in "migrating within Supabase" yolu,
-   **yalnızca veri** (şema Faz 2'de migration'larla kuruldu):
+1. **[SEN] Veri kopyası — `tool/tasima/veri_tasima.py`** (2026-09-27).
+   `pg_dump`/`supabase db dump` değil: makinede PostgreSQL istemcisi yok,
+   `db dump` Docker ister, pg_dump sunucu sürümüne eşlenmek zorunda. Araç
+   tablo tablo `COPY` akıtır; yön kilidi (kaynak yalnız Tokyo, hedef yalnız
+   Frankfurt — ref doğrulanır), tek anlık görüntü (REPEATABLE READ), tek
+   işlem, `session_replication_role = replica` (profil tetikleyicisi çift
+   satır üretmez), dizi değerleri, son sayım tutmazsa geri alma. Yerel
+   Docker testi: `python tool/tasima/test/calistir.py` (36/36).
    ```bash
-   supabase db dump --db-url "$ESKI_DB_URL" --data-only --use-copy -f tmp/tasima/data.sql
-   psql "$YENI_DB_URL" -v ON_ERROR_STOP=1 \
-     -c "set session_replication_role = replica" -f tmp/tasima/data.sql
+   python -m pip install "psycopg[binary]>=3.2"
+   # Panel → Connect → Session pooler (IPv4). Şifreler ekrana basılmaz.
+   export ESKI_DB_URL='postgresql://postgres.ybdbzouzhzwthjgwlbmk:<şifre>@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres'
+   export YENI_DB_URL='postgresql://postgres.ynwymnpdiwudrlxfrmuo:<şifre>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres'
+   python tool/tasima/veri_tasima.py kontrol       # salt okuma — ENGEL 0 olmalı
+   python tool/tasima/veri_tasima.py bosalt --onay ynwymnpdiwudrlxfrmuo
+   python tool/tasima/veri_tasima.py tasi   --onay ynwymnpdiwudrlxfrmuo
+   python tool/tasima/veri_tasima.py sayim         # EŞİT olmalı
    ```
    - `auth.users` + `auth.identities` şifre özetleriyle gelir → **yeniden kayıt yok**.
    - Oturumlar gelmez (JWT secret projeye özgü) → **herkes bir kez yeniden giriş yapar**.
-   - Dump'tan çıkarılacaklar: `cron.*`, `vault.*`, `supabase_migrations.*`,
-     `net.*` (yeni projede zaten var/projeye özgü). Provada dump içeriğini kontrol et.
-   - `tmp/` gitignore'da; dump kişisel veri içerir → prova bitince **sil**.
-   - ⚠️ **Önce yeni projenin `public` tablolarını boşalt.** Faz 2 denemeleri
-     veri yazdı (`tufe` 24 satır, kripto kataloğu 348); `--data-only` yükleme
-     aynı birincil anahtarlarda çakışır ve `ON_ERROR_STOP` ile yarıda kalır.
-     `truncate … restart identity cascade` — liste provada dump'tan çıkarılır.
-2. **[CLAUDE] Sayım karşılaştırması** — her tablo için eski/yeni `count(*)`.
+   - Taşınmayanlar: `cron.*`, `vault.*`, `supabase_migrations.*`, `net.*`,
+     auth oturum tabloları (Faz 2'de kuruldu / projeye özgü).
+   - `bosalt` Faz 2 deneme verisini de siler (`tufe` 24, kripto 348,
+     `sandikapp.destek+tasimatest@gmail.com` deneme kullanıcısı).
+   - ⚠️ `kontrol`'ün canlıda cevaplayacağı üç açık soru (yerel testte
+     sınanamadı, Supabase'e özgü): `session_replication_role` postgres
+     rolüne açık mı; `auth.users`'a INSERT/DELETE yetkisi var mı; Tokyo'da
+     `public` PUBLIC'e açık mı. **K3'ten önce `kontrol`'ü bir kez koş.**
+2. **[CLAUDE] Sayım** — `sayim` çıktısı + birkaç kullanıcı için ekrandaki
+   toplamların Tokyo ile karşılaştırması.
 3. **[SEN] Debug build ile deneme** — yeni URL/anahtarla (`--dart-define`) gerçek
    cihazda: giriş, portföy, grafik, varlık ekle/sil, alarm oluştur, hesap sil
    (test hesabıyla). Push'u elle tetikle (`push_test_trigger`) — cron'lar kapalı.
