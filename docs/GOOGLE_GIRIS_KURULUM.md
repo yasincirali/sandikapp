@@ -5,6 +5,11 @@ platformda da **görünmüyor**. **Hedef:** Android + iOS'ta çalışan Google i
 giriş, kapalı testin 14 günü içinde (sayaç sıfırlanmaz, testçiler güncelleme
 alır).
 
+> ⚠️ **2026-09-27: Supabase Frankfurt'a taşınıyor** (`docs/SUPABASE_FRANKFURT_TASIMA.md`).
+> Adım 4'teki redirect URI ve adım 5'teki sağlayıcı ayarı **YENİ projede**
+> (`ynwymnpdiwudrlxfrmuo`) yapılır; Tokyo projesine (`ybdbzouzhzwthjgwlbmk`)
+> Google sağlayıcısı kurma — taşımada boşa gider.
+
 Bu belge bir sonraki oturumun sıfırdan keşif yapmaması için yazıldı. Her adım
 **[SEN]** (kullanıcının hesabını/tarayıcısını ister) veya **[CLAUDE]** (repo +
 CLI) diye işaretli. Sırayla git; bir adım bitmeden sonrakine geçme.
