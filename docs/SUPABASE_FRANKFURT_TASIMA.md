@@ -81,7 +81,21 @@ bağlanacağını Remote Config `sunucu` anahtarı (`tokyo` | `frankfurt`) söyl
 - Doğrulama: 3080 test; 5554'te (Tokyo, gerçek hesap) bayraksız → Tokyo'da
   kaldı, oturum korundu, kapı yok.
 
-**K1'in kalanı [SEN]:** GitHub secret'ları `SUPABASE_URL_EU` +
+**K1 uçtan uca bayrak denemesi (2026-09-27, emülatör 5554, gerçek hesap):**
+Tokyo → `frankfurt`: gerçek zamanlı yol 2,5 dk'da ULAŞMADI; soğuk açılış
+yolu kapıyı ~5 sn'de getirdi → yeniden açılış Frankfurt'ta giriş ekranı →
+aynı şifreyle giriş, ortak seçici yok (Frankfurt). Frankfurt → `tokyo`:
+gerçek zamanlı yol BU SEFER çalıştı (ön planda, yeniden başlatmasız);
+dönüşte Tokyo oturumu korunmuştu, giriş istenmedi. Bulunan iki açık
+düzeltildi: `refresh()` hiç çağrılmıyordu (ön plana dönüş + prod aralığı
+1 sa → 15 dk, 2108c2c); Android "Uygulamayı kapat" `SystemNavigator.pop()`
+Dart'ı canlı bırakıp aynı kapıyı geri getirdi → `exit(0)` (bd0330c).
+Gerçek zamanlı yolun ilk denemede neden gelmediği bilinmiyor → K3'te
+GERÇEK cihazda ölçülecek; geçiş ona dayanmıyor (soğuk açılış + 15 dk).
+Firebase Console: `sunucu=tokyo`, `min_build_*=0` tanımlı ✅; GitHub
+secret'ları `SUPABASE_URL_EU`/`SUPABASE_ANON_KEY_EU` ✅.
+
+**K1'in kalanı [SEN] (eski not):** GitHub secret'ları `SUPABASE_URL_EU` +
 `SUPABASE_ANON_KEY_EU`; Firebase Console'da `sunucu=tokyo`, `min_build_*=0`
 ile anahtarları AÇIKÇA tanımla; uçtan uca bayrak denemesi (aşağıda K1 testi).
 
