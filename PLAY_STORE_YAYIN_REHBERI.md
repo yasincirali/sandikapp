@@ -291,6 +291,17 @@ aynı beyanı verebilmek için Android'de de reklam kimliği kullanılmıyor.
 iznin gerçekten düştüğünü doğrula.
 
 ### 5.4 Financial features declaration — **bu uygulama için zorunlu**
+
+> **✅ Karar (2026-09-27): yalnızca "Diğer" işaretli.** Cowork ilk turda
+> "Alım satım ve fonlar → **Borsada alım satım ve portföy yönetimi**"ni
+> seçmişti; kaldırıldı. O seçenek aracı kurum / müşteri adına portföy
+> yöneten (lisanslı) uygulamalar içindir ve belge (SPK lisansı) talebini
+> tetikleyebilir. sandık emir iletmez, para tutmaz, kimse adına yönetmez —
+> bilgi amaçlı takip. "Finans özelliği yok" da yanlış olurdu. "Diğer"
+> açıklaması: kişisel portföy takibi; alım-satım, emir, aracı kurum, para
+> transferi yok; tavsiye verilmez, göstergeler mekanik + uyarılı.
+> Sonuç: **Dokümanlar adımı "ek belge gerekmiyor"** dedi. Aşağıdaki
+> "Yatırım/portföy yönetimi: Evet" maddesi bu kararla geçersiz.
 Artık Play'deki *her* uygulama bu formu dolduruyor; finansal özelliği olanlar
 ayrıca detay veriyor. sandık için işaretlemen gerekenler ve gerekçeleri:
 
