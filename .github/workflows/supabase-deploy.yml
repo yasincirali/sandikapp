@@ -108,7 +108,17 @@ jobs:
         if: ${{ inputs.migrations }}
         run: |
           body=$(jq -n '{query: "select count(*)::int as n from vault.secrets where name = '"'"'project_url'"'"'"}')
-          n=$(curl -sS -f -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query"                 -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json"                 -d "$body" | jq -r '.[0].n')
+          kod=$(curl -sS -o yanit.json -w '%{http_code}' -X POST \
+                "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+                -d "$body")
+          # Erişim hatası "project_url yok" diye raporlanmamalı (2026-09-28:
+          # token Frankfurt'a 403 alınca kapı yanlış teşhis yazdı).
+          if [ "$kod" != "200" ]; then
+            echo "::error::${{ matrix.hedef }}: Management API HTTP $kod — token bu projeye erişemiyor olabilir. Yanıt: $(head -c 300 yanit.json)"
+            exit 1
+          fi
+          n=$(jq -r '.[0].n' yanit.json)
           if [ "$n" != "1" ]; then
             echo "::error::${{ matrix.hedef }}: Vault'ta project_url yok. SQL Editor: select vault.create_secret('https://$PROJECT_REF.supabase.co', 'project_url');"
             exit 1
