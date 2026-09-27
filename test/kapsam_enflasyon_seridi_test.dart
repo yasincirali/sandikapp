@@ -25,6 +25,11 @@ void main() {
   final profil = File('lib/screens/profile_screen.dart')
       .readAsStringSync()
       .replaceAll('\r\n', '\n');
+  // Kartın üç yükleyicisi 2026-09-28'den beri burada (splash da ısıtır);
+  // kart yalnızca delege eder. Hesap yolu değişmezleri bu dosyada aranır.
+  final yukleyici = File('lib/services/bugun_yukleyici.dart')
+      .readAsStringSync()
+      .replaceAll('\r\n', '\n');
 
   test('Bugün kartı her görünümde ve kapsamın defteriyle', () {
     final i = src.indexOf('child: BugunKarti(');
@@ -66,22 +71,32 @@ void main() {
   });
 
   test('reel getiri ve haftalık Bugün kartının satırı, aynı hesap yolu', () {
-    expect(kart.contains('RealReturnService.yillik(widget.state.assets)'), isTrue,
+    expect(yukleyici.contains('RealReturnService.yillik(state.assets)'), isTrue,
         reason: 'aynı hesap yolu — ikinci bir reel getiri hesabı yok');
-    expect(kart.contains('PeriodSummaryService.compute('), isTrue);
-    expect(kart.contains('SummaryPeriod.birHafta'), isTrue);
-    expect(kart.contains('RemoteConfigService.instance.realReturnEnabled'), isTrue,
+    expect(yukleyici.contains('PeriodSummaryService.compute('), isTrue);
+    expect(yukleyici.contains('SummaryPeriod.birHafta'), isTrue);
+    expect(yukleyici.contains('RemoteConfigService.instance.realReturnEnabled'),
+        isTrue,
         reason: 'bayrak kapısı şeritle aynı');
-    expect(kart.contains('RemoteConfigService.instance.periodSummaryEnabled'),
+    expect(yukleyici.contains('RemoteConfigService.instance.periodSummaryEnabled'),
         isTrue);
+    // Kart kendi kopyasını tutmaz — tek kaynak.
+    expect(kart.contains('BugunYukleyici.reel(widget.state'), isTrue);
+    expect(kart.contains('BugunYukleyici.haftalik(widget.state'), isTrue);
+    expect(kart.contains('RealReturnService.yillik('), isFalse,
+        reason: 'yükleyici mantığı karta geri kopyalanmamalı');
   });
 
   test('kapsam görünümünde paylaşımlı gün içi önbellek kullanılmaz', () {
     // Önbellek kilit ekranıyla ortak ve oturumdaki kullanıcıya damgalı;
     // ortağın defteriyle doldurulursa kilit ekranı yanlış seriyi gösterir.
-    final i = kart.indexOf('Future<Map<int, double>?> _seriYukle(');
-    final govde = kart.substring(i, kart.indexOf('catch', i));
-    expect(govde.contains('if (!widget.kisisel)'), isTrue);
+    final k = kart.indexOf('Future<Map<int, double>?> _seriYukle(');
+    final kartGovde = kart.substring(k, kart.indexOf('catch', k));
+    expect(kartGovde.contains('kisisel: widget.kisisel'), isTrue,
+        reason: 'kapsam bilgisi yükleyiciye taşınmalı');
+    final i = yukleyici.indexOf('static Future<Map<int, double>?> seri(');
+    final govde = yukleyici.substring(i, yukleyici.indexOf('catch', i));
+    expect(govde.contains('if (!kisisel)'), isTrue);
     expect(govde.contains('getPortfolioHistoryHourlyBreakdown('), isTrue);
     expect(govde.indexOf('getPortfolioHistoryHourlyBreakdown('),
         lessThan(govde.indexOf('IntradaySeriesCache.instance')),

@@ -41,6 +41,7 @@ import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
 import 'services/daily_summary.dart';
+import 'services/bugun_yukleyici.dart';
 import 'services/crash_reporter.dart';
 import 'config/pref_keys.dart';
 import 'services/disclaimer_service.dart';
@@ -77,14 +78,23 @@ final appNavigatorKey = GlobalKey<NavigatorState>();
 /// "ortaklar henüz bilinmiyor" ayırt edilemez. Beklenmezse kapı erken açılır,
 /// liste sonradan dolunca HomeScreen ortak varlıkları için kendi loading'ini
 /// açar — ikinci loading budur.
+///
+/// [acilisHazir] açılış fiyat turu + Bugün kartı verisi (2026-09-28,
+/// kullanıcı isteği: *"GIF bitince ana sayfa dolu ve taze olsun, shimmer
+/// ile ayrı bir loading beklemesin"*). Splash bunları
+/// `_AuthGateState._acilisiIsit` ile ısıtır; hazır olmadan kapı açılırsa
+/// ana ekran DB'deki bayat fiyatla gelir ve Bugün kartı iskelet çizer.
+/// Servis uzarsa GIF uzar; emniyet supabı `_dataWaitTimer`.
 bool splashVeriHazir({
   required bool portfolioSettled,
   required bool partnerListSettled,
   required bool ortakVar,
   required bool partnerAssetsSettled,
+  bool acilisHazir = true,
 }) {
   if (!partnerListSettled) return false;
   if (!portfolioSettled) return false;
+  if (!acilisHazir) return false;
   if (!ortakVar) return true; // Ortak yoksa ortak varlığı da beklenmez.
   return partnerAssetsSettled;
 }
@@ -866,7 +876,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// 600 ms, "flash" hissi vermeyen ama beklemeye dönüşmeyen alt sınırdır
   /// (bir logo karesinin algılanması ~400 ms, geçiş animasyonu 200 ms).
   /// Ağ yavaşsa geçişi zaten `_veriHazir()` geciktirir; onun da emniyet supabı
-  /// `_dataWaitTimer` (6 sn).
+  /// `_dataWaitTimer` (10 sn).
   static const _splashMinimum = Duration(milliseconds: 600);
   // Veri bekleme emniyet supabı — bu süre dolunca splash veriyi beklemeyi
   // bırakır ve ana ekrana geçer (HomeScreen kendi loading/hata durumunu
@@ -882,7 +892,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
   void _startDataWaitTimeout() {
     if (_dataWaitTimer != null || _dataWaitExpired) return;
-    _dataWaitTimer = Timer(const Duration(seconds: 6), () {
+    // 6 sn → 10 sn (2026-09-28): kapı artık fiyat turunu ve Bugün kartının
+    // serilerini de bekliyor (`_acilisiIsit`). Kullanıcı kararı: *"servis
+    // yanıtları uzarsa GIF'in süresi uzasın, müşteri ana sayfayı hep dolu
+    // görsün."* Bugün kartının kendi bütçesi de 10 sn
+    // (`BugunYukleyici.varsayilanButce`); ikisi hizalı — kapı kartın
+    // beklemeyeceği bir şeyi beklemez. Ağ koptuğunda hâlâ sonlu.
+    _dataWaitTimer = Timer(const Duration(seconds: 10), () {
       if (mounted && !_dataWaitExpired) {
         setState(() => _dataWaitExpired = true);
       }
@@ -901,6 +917,33 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   // kapısı ortak varlıklarını beklemeden geçer, sonra liste dolunca HomeScreen
   // kendi loading'ini açardı. Çift loading'in kalan ayağı buydu.
   ProviderSubscription<AsyncValue<List<PartnerAccount>>>? _partnersWarmUp;
+
+  /// Açılış turu + Bugün kartı ısıtması bitti mi (başarı/hata fark etmez).
+  /// `false` iken splash sürer (bkz. `splashVeriHazir.acilisHazir`).
+  bool _acilisHazir = false;
+  Future<void>? _acilisIsitma;
+
+  /// Fiyat turunu ve Bugün kartının üç serisini SPLASH SIRASINDA çeker.
+  ///
+  /// Eskiden tur `MainNavigationScreen.initState`'te, seriler kart mount
+  /// olunca başlıyordu: splash biter, ana ekran DB'deki fiyatla gelir, kart
+  /// 2–10 sn iskelet çizer, sonra rakamlar değişir. Kullanıcı bunu
+  /// "açarken 0 açıp sonradan güncelliyor" ve "shimmer" diye bildirdi
+  /// (2026-09-28). Şimdi GIF süresi bu işe harcanır. Hiç fırlatmaz;
+  /// portföy hata verdiyse de kapı kilitlenmez (`finally`).
+  Future<void> _acilisiIsit() async {
+    try {
+      final notifier = ref.read(portfolioProvider.notifier);
+      // `_fiyatTuru` portföyün `future`'ını kendisi bekler.
+      await notifier.acilisTazele();
+      final s = ref.read(portfolioProvider).valueOrNull;
+      if (s != null) await BugunYukleyici.isit(s);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AuthGate._acilisiIsit');
+    } finally {
+      if (mounted) setState(() => _acilisHazir = true);
+    }
+  }
 
   /// Kullanıcıya özel tercih provider'larını tazeler.
   ///
@@ -936,6 +979,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       (_, __) {},
       fireImmediately: true,
     );
+    _acilisIsitma ??= _acilisiIsit();
   }
 
   @override
@@ -990,6 +1034,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _partnersWarmUp = null;
         _partnerAssetsWarmUp?.close();
         _partnerAssetsWarmUp = null;
+        // Açılış ısıtması da sıfırlanır: sıradaki kullanıcı kendi turunu
+        // ve Bugün serilerini bekler.
+        _acilisIsitma = null;
+        _acilisHazir = false;
         // Supabı sıfırla: bir sonraki login'de yeniden 6 sn'lik pencere olsun.
         // Aksi halde ilk oturumda patlamış supap ikinci login'de de kapalı
         // kalır ve veri bekleme kapısı hiç çalışmaz.
@@ -1675,6 +1723,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       portfolioSettled: portfolio.hasValue || portfolio.hasError,
       partnerListSettled: partnerListSettled,
       ortakVar: partners.isNotEmpty,
+      acilisHazir: _acilisHazir,
       partnerAssetsSettled:
           partnerAssets != null &&
               (partnerAssets.hasValue || partnerAssets.hasError),

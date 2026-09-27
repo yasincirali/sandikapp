@@ -360,13 +360,22 @@ void main() {
 
       // Bugün kartı `widget.state` okur → tur + KARE; bekleme kişisel/ortak
       // dallanmasından ÖNCE — iki dal da seriyi kurar, ikisi de beklemeli.
+      // Seri kurulumu (kişisel/ortak dalı) 2026-09-28'den beri
+      // `BugunYukleyici.seri` içinde — splash aynı fonksiyonu ısıtır. Kart
+      // turu bekler, SONRA yükleyiciyi çağırır; dallanma yükleyicide.
       final kart = kod('lib/widgets/bugun_karti.dart');
       final govde = kart.substring(
           kart.indexOf('_seriYukle({bool nabiz = false}) async {'));
       final bekle = govde.indexOf('.fiyatTurunuVeKareyiBekle(');
-      final dal = govde.indexOf('if (!widget.kisisel) {');
+      final dal = govde.indexOf('BugunYukleyici.seri(');
       expect(bekle, greaterThan(0));
+      expect(dal, greaterThan(0));
       expect(bekle, lessThan(dal), reason: 'ortak dalı da beklemeli');
+      final yukleyici = kod('lib/services/bugun_yukleyici.dart');
+      final seri = yukleyici.substring(
+          yukleyici.indexOf('static Future<Map<int, double>?> seri('));
+      expect(seri.indexOf('if (!kisisel) {'), greaterThan(0),
+          reason: 'iki dal da yükleyicide, ikisi de turdan sonra koşar');
       // Bütçe dolduğunda tur hâlâ ağdaysa eski defterle seri KURULMAZ:
       // satır boş kalır, tur bitince yüklenir (emülatörde 27 sn'lik tur).
       final kapi = govde.indexOf('if (notifier.fiyatTuruSuruyor) { '

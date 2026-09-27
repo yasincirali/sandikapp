@@ -121,7 +121,11 @@ void main() {
     });
 
     test('Bugün kartı elemeyi uygular', () {
-      final src = oku('lib/widgets/bugun_karti.dart');
+      // Kartın seri yükleyicisi `BugunYukleyici.seri` (2026-09-28); kart
+      // delege eder, eleme yükleyicide.
+      final kart = oku('lib/widgets/bugun_karti.dart');
+      expect(kart.contains('BugunYukleyici.seri('), isTrue);
+      final src = oku('lib/services/bugun_yukleyici.dart');
       expect(src.contains('.where(FiyatKaynagi.seriyeGirer)'), isTrue,
           reason: 'ham activeAssets gönderilirse Performans\'tan '
               'farklı seri çıkar');

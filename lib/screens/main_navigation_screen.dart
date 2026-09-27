@@ -97,8 +97,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     });
 
     // İlk açılışta fiyatları yükle
+    // Açılış turu artık SPLASH'ta koşar (`_AuthGateState._acilisiIsit`);
+    // burası yalnızca o tur olmadıysa (login sonrası, supap patladı) koşturur
+    // — gerekçe `PortfolioNotifier.acilisTazele`.
     Future.microtask(() {
-      if (mounted) ref.read(portfolioProvider.notifier).refreshPrices();
+      if (mounted) {
+        CrashReporter.arkaPlan(
+          ref.read(portfolioProvider.notifier).acilisTazele(),
+          reason: 'MainNavigation.acilisTazele',
+        );
+      }
       _acilisTazelemesiIstendi = true;
     });
     // UE1: Bildirim iznini onboarding sonrasına ertele — uygulama açılır açılmaz değil

@@ -82,6 +82,42 @@ void main() {
       );
     });
 
+    test('açılış turu + Bugün verisi hazır olmadan kapı açılmaz (2026-09-28)', () {
+      // Kullanıcı: "GIF bitince ana sayfa dolu ve taze olsun, shimmer
+      // beklemesin." Portföy ve ortaklar çözülse bile tur/seri bitmeden
+      // splash sürer; ortaksız kullanıcıda da aynı.
+      expect(
+        splashVeriHazir(
+          portfolioSettled: true,
+          partnerListSettled: true,
+          ortakVar: false,
+          partnerAssetsSettled: false,
+          acilisHazir: false,
+        ),
+        isFalse,
+      );
+      expect(
+        splashVeriHazir(
+          portfolioSettled: true,
+          partnerListSettled: true,
+          ortakVar: true,
+          partnerAssetsSettled: true,
+          acilisHazir: false,
+        ),
+        isFalse,
+      );
+      expect(
+        splashVeriHazir(
+          portfolioSettled: true,
+          partnerListSettled: true,
+          ortakVar: true,
+          partnerAssetsSettled: true,
+          acilisHazir: true,
+        ),
+        isTrue,
+      );
+    });
+
     test('hata da "çözülmüş" sayılır — splash kilitlenmemeli', () {
       // Çağıran taraf hasError'ı settled olarak geçirir; HomeScreen kendi
       // hata görünümünü gösterir. Burada doğrulanan: settled=true geldiğinde

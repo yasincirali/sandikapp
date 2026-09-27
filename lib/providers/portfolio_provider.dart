@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -805,10 +806,40 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     _surenTurZorla = zorla;
     try {
       await tur;
+      _sonTurBitisi = DateTime.now();
     } finally {
       if (identical(_surenTur, tur)) _surenTur = null;
     }
   }
+
+  /// Son BAŞARILI fiyat turunun bitişi — [acilisTazele]'nin "az önce tur
+  /// oldu, yenisi gereksiz" kararı için.
+  DateTime? _sonTurBitisi;
+
+  /// Açılış turu: splash ve `MainNavigationScreen` ikisi de çağırır, tur
+  /// BİR kez koşar.
+  ///
+  /// **Neden (kullanıcı isteği, 2026-09-28):** *"GIF dönerken arkada ana
+  /// sayfa istekleri çoktan atılmış olsun; GIF bitince taze sayfayı
+  /// göreyim."* Tur artık splash'ta (`_AuthGateState._acilisiIsit`) başlar.
+  /// `MainNavigationScreen.initState` eski alışkanlıkla bir tur daha
+  /// başlatırsa `isLoading: true` yayını ana ekranı yeniden "yenileniyor"a
+  /// sokar ve aynı kotasyonlar ikinci kez çekilir. Süren tur varsa o
+  /// beklenir; [TazelikRitmi.yuzey] içinde biten tur varsa hiç koşulmaz —
+  /// nabız zaten 30 sn'de bir tazeler.
+  Future<void> acilisTazele() {
+    final suren = _surenTur;
+    if (suren != null) return suren;
+    if (!acilisTuruGerekli(_sonTurBitisi, DateTime.now())) {
+      return Future<void>.value();
+    }
+    return refreshPrices();
+  }
+
+  /// [acilisTazele]'nin saf kararı — test edilebilir olsun diye ayrı.
+  @visibleForTesting
+  static bool acilisTuruGerekli(DateTime? sonBitis, DateTime simdi) =>
+      sonBitis == null || simdi.difference(sonBitis) >= TazelikRitmi.yuzey;
 
   /// Süren fiyat turu varsa bitmesini bekler; yoksa anında döner.
   ///
@@ -1169,6 +1200,26 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
         if (son != null && son > 0) a.currentPrice = son;
       }
       map[p.id] = lots;
+    }
+    // 3) Hâlâ fiyatsız lot kaldıysa fiyat turunu ŞİMDİ iste; nabzı bekleme.
+    //
+    // **Neden (kullanıcı bildirimi, 2026-09-28):** ortak Profil'den yeniden
+    // "Görünür" yapılınca bu build koşar, DB'den gelen lot'ların
+    // `current_price`'ı bayat/0'dır (RLS: ortağın fiyatını yalnızca kendi
+    // cihazı yazar) ve bu oturumda o sembol hiç ölçülmemişse yukarıdaki
+    // iki basamak da boş döner. Ekranda ortağın toplamı **₺0** açılıyor,
+    // 30 sn'lik nabız turu gelince "sonradan güncelleniyor"du. Tur zaten
+    // ortak lot'larını bellekte fiyatlıyor (`setAssets`); burada yalnızca
+    // beklemeden istiyoruz. Süren tur varsa `refreshPrices` onu döndürür,
+    // ikinci tur açılmaz. `microtask`: build içinden başka bir notifier'ı
+    // senkron dürtmemek için.
+    final fiyatsizVar = map.values.any((lots) => lots.any(
+        (a) => a.currentPrice <= 0 && !a.isManualPrice && a.ticker.trim().isNotEmpty));
+    if (fiyatsizVar) {
+      scheduleMicrotask(() => CrashReporter.arkaPlan(
+            ref.read(portfolioProvider.notifier).refreshPrices(),
+            reason: 'PartnerAssetsNotifier.fiyatsizLot.refreshPrices',
+          ));
     }
     return map;
   }

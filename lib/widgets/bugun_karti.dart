@@ -28,12 +28,9 @@ import '../screens/portfolio_performance_screen.dart';
 import '../services/analytics_service.dart';
 import '../services/bist_calendar.dart';
 import '../services/bugun_service.dart';
+import '../services/bugun_yukleyici.dart';
 import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
-import '../services/history_service.dart';
-import '../services/period_summary_service.dart';
-import '../services/real_return_service.dart';
-import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
@@ -85,7 +82,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
 
   /// Tek bir yüklemenin üst sınırı. Biri asılı kalırsa kart bu süreden
   /// sonra elindekiyle çizilir; iskelet sonsuza kadar kalmaz.
-  static const _yuklemeSuresi = Duration(seconds: 10);
+  static const _yuklemeSuresi = BugunYukleyici.varsayilanButce;
 
   /// Gün içi seri bundan eskiyse tazelenir — Performans ekranının tick
   /// periyoduyla AYNI (30 sn). İkisi ayrışırsa aynı kapsamda iki farklı
@@ -301,37 +298,23 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         _turBitinceYukle(notifier);
         return null;
       }
-      if (!widget.kisisel) {
-        // Seriye YALNIZCA fiyatlanabilir lot'lar girer — Performans
-        // ekranıyla AYNI kural (`FiyatKaynagi.seriyeGirer`).
-        //
-        // Eleme eskiden yalnızca Performans'ta vardı ve orada yerel bir
-        // kopyaydı; bu kart ham `activeAssets` gönderiyordu. Aynı defterden
-        // iki farklı seri çıkıyor, "Ben" kapsamında bile iki yüzey farklı
-        // kâr/zarar gösteriyordu (kullanıcı bildirimi 2026-09-22; ölçüldü:
-        // beş lotluk defterde 5'e karşı 2 lot).
-        final bd = await HistoryService.instance
-            .getPortfolioHistoryHourlyBreakdown(
-                widget.state.activeAssets
-                    .where(FiyatKaynagi.seriyeGirer)
-                    .toList(),
-                24)
-            .timeout(_yuklemeSuresi);
-        return bd.total;
-      }
-      // Performans ekranı gün içi seriyi 30 sn'de bir tazeliyor
-      // (`_startIntradayTickIfNeeded`). Bu kart 5 dk'lık önbellekten
-      // okusaydı iki yüzey farklı yaşta serilere bakar ve aynı kapsamda
-      // farklı kâr/zarar gösterirdi (kullanıcı bildirimi 2026-09-22).
-      //
-      // Önbelleğin varsayılanı DEĞİŞMEZ: widget ve Live Activity 5 dk'lık
-      // döngüyle hizalı kalır (bkz. `IntradaySeriesCache.minInterval`).
-      return await IntradaySeriesCache.instance
-          .get(widget.state, azamiYas: _seriTazelikPenceresi, zorla: nabiz)
-          .timeout(_yuklemeSuresi);
+      // Yükleme `BugunYukleyici`'de: splash aynı fonksiyonu ısıtır, kart
+      // önbellekten alır ve iskelet çizmez (2026-09-28). Ortak/Birlikte
+      // kapsamında seriye YALNIZCA fiyatlanabilir lot'lar girer —
+      // Performans ekranıyla AYNI kural (`FiyatKaynagi.seriyeGirer`);
+      // eleme eskiden yalnızca Performans'ta vardı ve bu kart ham
+      // `activeAssets` gönderiyordu, aynı defterden iki farklı seri
+      // çıkıyordu (kullanıcı bildirimi 2026-09-22). Kişisel kapsamda seri
+      // kilit ekranı ve widget'la ORTAK önbellekten gelir; ortak kapsamda
+      // o önbellek kullanılmaz (tek yuvalı, oturumdaki kullanıcıya damgalı).
+      return await BugunYukleyici.seri(
+        widget.state,
+        kisisel: widget.kisisel,
+        azamiYas: _seriTazelikPenceresi,
+        zorla: nabiz,
+        enFazla: _yuklemeSuresi,
+      );
     } catch (e, st) {
-      // Seri gelmezse kart yine çizilir (hareket satırı düşer); ağ hatası
-      // kullanıcıya gösterilmez, sessiz kalmasın diye raporlanır.
       CrashReporter.report(e, st, reason: 'BugunKarti.intraday');
       return null;
     }
@@ -340,49 +323,13 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// Yıllık reel getiri — eski `RealReturnStrip` ile AYNI kaynak
   /// (`RealReturnService.yillik`), aynı bayrak. Kapı: bayrak kapalıysa ya da
   /// pencere/seri kurulamıyorsa satır hiç çizilmez (uydurma yok).
-  Future<ReelGetiriSatiri?> _reelYukle() async {
-    if (!RemoteConfigService.instance.realReturnEnabled) return null;
-    try {
-      final r = await RealReturnService.yillik(widget.state.assets)
-          .timeout(_yuklemeSuresi);
-      if (r == null) return null;
-      return ReelGetiriSatiri(nominal: r.nominal, inflation: r.inflation);
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'BugunKarti.reelGetiri');
-      return null;
-    }
-  }
+  Future<ReelGetiriSatiri?> _reelYukle() =>
+      BugunYukleyici.reel(widget.state, enFazla: _yuklemeSuresi);
 
   /// Geçen haftanın piyasa getirisi — eski `WeeklySummaryChip` ile aynı
   /// hesap (`PeriodSummaryService.compute`, 1H penceresi), aynı bayrak.
-  Future<double?> _haftalikYukle() async {
-    if (!RemoteConfigService.instance.periodSummaryEnabled) return null;
-    try {
-      final now = DateTime.now();
-      final p = PeriodSummaryService.pencere(SummaryPeriod.birHafta, now);
-      final bd = await HistoryService.instance
-          .getPortfolioHistoryBreakdownAtResolution(
-            assets: widget.state.assets,
-            from: p.start,
-            to: p.end,
-            tier: ResolutionTierMeta.pickForSpan(
-                SummaryPeriod.birHafta.days.toDouble()),
-          )
-          .timeout(_yuklemeSuresi);
-      final s = PeriodSummaryService.compute(
-        period: SummaryPeriod.birHafta,
-        assets: widget.state.assets,
-        breakdown: bd,
-        now: now,
-        // Performans › Özet ile aynı sağ uç (bkz. `compute` [canliSon]).
-        canliSon: DailySummary.kapsamToplami(widget.state, widget.state.assets),
-      );
-      return s.getiriPct;
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'BugunKarti.haftalik');
-      return null;
-    }
-  }
+  Future<double?> _haftalikYukle() =>
+      BugunYukleyici.haftalik(widget.state, enFazla: _yuklemeSuresi);
 
   /// Yükleme bitene kadar kartın yerini tutan iskelet — başlık, üç defter
   /// satırı. Kart tek seferde, tüm veriyle gelir; parça parça büyümez.
