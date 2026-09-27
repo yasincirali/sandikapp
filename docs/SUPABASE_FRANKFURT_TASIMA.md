@@ -37,6 +37,16 @@ fazın sonunda "geri dönüş" satırı var.
 
 ## Faz 2 — Yeni projeyi kur (kullanıcı yok, risk yok)
 
+> **Durum 2026-09-27:** 2.1–2.6 ✅ — legacy JWT anahtarları etkin; Vault'ta 11
+> secret (`tefas_nav` ve `weekly_summary` cron secret'ları sohbete sızdığı için
+> YENİ projede yeniden üretildi — Tokyo'da eski değerler duruyor); 70 migration;
+> 26 cron kapalı; 18 fonksiyon secret'ı (APNs/FCM eskiyle aynı özet, EVDS aynı
+> anahtar, `DELETION_HASH_SALT` yeni); 15 fonksiyon dağıtıldı.
+> Uçtan uca: `analyze-signals` 200 (verify_jwt=true), `kripto-katalog` 200
+> (348), `fetch-inflation` 200 (24 ay, son 2026-08). Yardımcı betikler
+> `tmp/tasima/` (gitignore): `cron_secrets.py`, `diger_secrets.py`,
+> `auth_kopyala.py`. Sıradaki: 2.7 Auth.
+
 1. **[SEN] API anahtarları.** Panel → Project Settings → API Keys. 2026'da açılan
    projeler varsayılan olarak `sb_publishable_…` / `sb_secret_…` anahtarlarıyla
    geliyor. Bizim iki bağımlılığımız **JWT biçimi** istiyor:
@@ -109,6 +119,10 @@ fazın sonunda "geri dönüş" satırı var.
    - Dump'tan çıkarılacaklar: `cron.*`, `vault.*`, `supabase_migrations.*`,
      `net.*` (yeni projede zaten var/projeye özgü). Provada dump içeriğini kontrol et.
    - `tmp/` gitignore'da; dump kişisel veri içerir → prova bitince **sil**.
+   - ⚠️ **Önce yeni projenin `public` tablolarını boşalt.** Faz 2 denemeleri
+     veri yazdı (`tufe` 24 satır, kripto kataloğu 348); `--data-only` yükleme
+     aynı birincil anahtarlarda çakışır ve `ON_ERROR_STOP` ile yarıda kalır.
+     `truncate … restart identity cascade` — liste provada dump'tan çıkarılır.
 2. **[CLAUDE] Sayım karşılaştırması** — her tablo için eski/yeni `count(*)`.
 3. **[SEN] Debug build ile deneme** — yeni URL/anahtarla (`--dart-define`) gerçek
    cihazda: giriş, portföy, grafik, varlık ekle/sil, alarm oluştur, hesap sil
