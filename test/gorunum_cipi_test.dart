@@ -24,6 +24,20 @@ void main() {
     expect(GorunumCipi.sonraki(ortaklar, 'yok', ileri: true), 'p1');
   });
 
+  test('gecerli: gizlenen ortak ya da ortaksız Birlikte → Ben', () {
+    // Geçerli seçimler olduğu gibi kalır.
+    expect(GorunumCipi.gecerli(ortaklar, ''), '');
+    expect(GorunumCipi.gecerli(ortaklar, 'p2'), 'p2');
+    expect(GorunumCipi.gecerli(ortaklar, null), isNull);
+    // Ortak gizlendi/çıkarıldı: kimliği listede yok → Ben (₺0 yerine).
+    expect(GorunumCipi.gecerli([ortaklar[0]], 'p2'), '');
+    // Tek ortak gizlenince Birlikte de ortaksız kaldı → Ben; çip
+    // çizilmediği için kullanıcı başka türlü dönemezdi.
+    expect(GorunumCipi.gecerli(const [], null), '');
+    expect(GorunumCipi.gecerli(const [], 'p1'), '');
+    expect(GorunumCipi.gecerli(const [], ''), '');
+  });
+
   test('alt sayfa: Birlikte, Ben, sonra ortaklar alfabetik', () {
     expect(GorunumCipi.listeSirasi(ortaklar, ''), [null, '', 'p2', 'p1', 'p3']);
   });

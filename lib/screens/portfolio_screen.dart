@@ -38,6 +38,7 @@ import 'watchlist_screen.dart';
 import '../providers/watchlist_provider.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
+import '../widgets/gorunum_cipi.dart';
 
 enum _SortOrder {
   valueDesc,
@@ -159,6 +160,17 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     final pStateAsync = ref.watch(portfolioProvider);
     final partnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
     final activePartners = ref.watch(activePartnersProvider);
+    // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
+    // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
+    ref.listen(activePartnersProvider, (_, next) {
+      final v = GorunumCipi.gecerli(next, _view);
+      if (v != _view) {
+        setState(() {
+          _view = v;
+          _filteredType = null;
+        });
+      }
+    });
 
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
 

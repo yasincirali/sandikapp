@@ -15,6 +15,7 @@ import '../widgets/modern_tab_selector.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
 import '../l10n/l10n.dart';
+import '../widgets/gorunum_cipi.dart';
 
 /// Portföy hareketleri — tam liste.
 ///
@@ -93,7 +94,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   @override
   void initState() {
     super.initState();
-    _view = widget.initialView ?? '';
+    // Ana ekrandan gelen görünüm gizlenmiş bir ortağı işaret edebilir.
+    _view = GorunumCipi.gecerli(
+        ref.read(activePartnersProvider), widget.initialView ?? '');
     _typeFilter = widget.initialTypeFilter;
     // Kullanıcı listenin sonuna yaklaşınca sessizce büyüt — "daha fazla
     // yükle" düğmesi log okumada akışı bölerdi.
@@ -195,6 +198,17 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     final activePartners = ref.watch(activePartnersProvider);
     final pState = ref.watch(portfolioProvider).valueOrNull;
     final hideBalance = ref.watch(balanceHiddenProvider);
+    // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
+    // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
+    ref.listen(activePartnersProvider, (_, next) {
+      final v = GorunumCipi.gecerli(next, _view);
+      if (v != _view) {
+        setState(() {
+          _view = v;
+          _resetPaging();
+        });
+      }
+    });
 
     final rows = _filtered;
     final shown = _visible.clamp(0, rows.length);

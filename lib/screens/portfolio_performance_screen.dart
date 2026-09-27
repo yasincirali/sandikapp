@@ -60,6 +60,7 @@ import '../widgets/kapsam_kisi_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
+import '../widgets/gorunum_cipi.dart';
 
 part 'portfolio_performance/grafik_kabi.dart';
 part 'portfolio_performance/seriler.dart';
@@ -195,7 +196,9 @@ class _PortfolioPerformanceScreenState
   @override
   void initState() {
     super.initState();
-    _view = widget.initialView;
+    // Derin bağlantı / önceki ekran gizlenmiş bir ortağı işaret edebilir.
+    _view = GorunumCipi.gecerli(
+        ref.read(activePartnersProvider), widget.initialView);
     _typeFilter = widget.initialTypeFilter;
     _ozetSekmesi = widget.initialOzet;
     // Sınır dışı indeks KIRPILIR, atılmaz: bozuk bir derin bağlantı
@@ -345,6 +348,18 @@ class _PortfolioPerformanceScreenState
     final pStateAsync = ref.watch(portfolioProvider);
     final partnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
     final activePartners = ref.watch(activePartnersProvider);
+    // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
+    // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
+    // Kapsam seçicinin `onChanged`'ı ile aynı yol: gün içi tohumu da atılır.
+    ref.listen(activePartnersProvider, (_, next) {
+      final v = GorunumCipi.gecerli(next, _view);
+      if (v != _view) {
+        _guncelle(() {
+          _view = v;
+          _gunIciTohumuAt();
+        });
+      }
+    });
 
     final endDate = DateTime.now();
     final isIntraday = _periods[_selectedPeriodIdx].intraday;

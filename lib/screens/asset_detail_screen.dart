@@ -42,6 +42,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../providers/price_alert_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
+import '../widgets/gorunum_cipi.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -527,6 +528,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     final activePartners = ref.watch(activePartnersProvider);
     final allPartnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
     final pState = ref.watch(portfolioProvider).valueOrNull;
+    // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
+    // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
+    ref.listen(activePartnersProvider, (_, next) {
+      final v = GorunumCipi.gecerli(next, _view);
+      if (v != _view) setState(() => _view = v);
+    });
 
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
     final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;

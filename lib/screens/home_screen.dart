@@ -241,6 +241,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final asyncState = ref.watch(portfolioProvider);
     final partners = ref.watch(activePartnersProvider);
     final hasPartners = partners.isNotEmpty;
+    // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
+    // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
+    ref.listen(activePartnersProvider, (_, next) {
+      final v = GorunumCipi.gecerli(next, _view);
+      if (v != _view) setState(() => _view = v);
+    });
 
     // İki provider birbirinden BAĞIMSIZ (`allPartnerAssetsProvider` yalnızca
     // `activePartnersProvider`'a bakar). Eskiden `.when()`'ler iç içeydi:

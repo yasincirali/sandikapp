@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/social_auth_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_push_service.dart';
@@ -21,7 +22,11 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   Future<AppUser?> build() async {
     final onbellek = await AuthService.instance.onbellekliOturumKullanicisi();
     if (onbellek == null) return AuthService.instance.getSessionUser();
-    unawaited(_profiliArkadaTazele(onbellek.id));
+    // Çıplak `unawaited` değil: tazeleme kendi içinde ağ hatasını yutar,
+    // ama beklenmedik bir hata (ör. sökülmüş notifier'a yazma) çökme
+    // yerine non-fatal kayıt olsun (`arka_plan_hata_yutma_test`).
+    CrashReporter.arkaPlan(_profiliArkadaTazele(onbellek.id),
+        reason: 'AuthNotifier.profiliArkadaTazele');
     return onbellek;
   }
 

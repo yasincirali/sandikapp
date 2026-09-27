@@ -71,6 +71,26 @@ class GorunumCipi extends StatelessWidget {
   static List<String?> sira(List<AppUser> partners) =>
       ['', for (final p in partners) p.id, null];
 
+  /// Seçili görünüm hâlâ geçerli mi? Değilse Ben (`''`).
+  ///
+  /// **Neden (kullanıcı bildirimi, 2026-09-28):** ortaklı kullanıcı Profil'den
+  /// ortağı "Gizle" yapınca `activePartnersProvider` o ortağı düşürüyor, ama
+  /// ekranların `_view` durumu gizlenen ortağın id'sini tutmaya devam
+  /// ediyordu. Ana ekran `allPartnerAssets[_view] ?? []` ile BOŞ liste
+  /// alıyor ve toplam kartı **₺0** yazıyordu; alttaki "Ben" kartı doğru
+  /// kaldığı için ekran kendisiyle çelişiyordu. Aynı tuzak Birlikte için de
+  /// geçerli: tek ortak gizlenince `null` görünüm ortaksız kalır, çip
+  /// çizilmediği için kullanıcı Ben'e dönemez.
+  ///
+  /// Kural TEK yerde: görünüm durumu tutan her ekran (`home`, `portfolio`,
+  /// `portfolio_performance`, `asset_detail`, `all_transactions`)
+  /// `activePartnersProvider`'ı dinleyip buradan geçirir — kendi "hâlâ var
+  /// mı" kontrolünü yazmaz.
+  static String? gecerli(List<AppUser> partners, String? selectedId) {
+    if (partners.isEmpty) return '';
+    return sira(partners).contains(selectedId) ? selectedId : '';
+  }
+
   /// Kaydırma ile hızlı geçiş: [ileri] sıradaki, değilse önceki görünüm;
   /// uçlarda sarar. Tek ortaksız kullanıcıda (`partners` boş) çip zaten
   /// çizilmez, yine de güvenli: '' → null → ''.
