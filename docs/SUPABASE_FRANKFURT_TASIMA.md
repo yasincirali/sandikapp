@@ -72,7 +72,7 @@ bağlanacağını Remote Config `sunucu` anahtarı (`tokyo` | `frankfurt`) söyl
 | **K2** | 1.1.7 yayını: App Store + Play (kapalı test güncellemesi, sonra üretim). RC `sunucu=tokyo` | SEN (+CLAUDE CI) | onay 1–3 gün + yayılma ~7 gün | Analytics'te 1.1.7 payı ≥ %90 **veya** 7 gün; çökmesiz oturum ≥ %99 |
 | **K3** | Prova: veri kopyası → Frankfurt; RC koşulu (kullanıcı özelliği / uygulama örneği) ile **yalnız senin cihazın** `frankfurt`; kendi hesabınla gerçek uygulamada gez | SEN + CLAUDE | 1 gün | Rakamlar Tokyo ile birebir (toplam, 1A köprüsü, dağılım); giriş, varlık ekle/sil, alarm, push (`push_test_trigger`) çalışıyor. Sonra Frankfurt boşaltılır |
 | **K4** | Geçiş gecesi (runbook aşağıda) | SEN + CLAUDE | ~1 saat, hafta sonu 02:00–04:00 | Duman testi yeşil; 24 saat içinde geri dönüş penceresi |
-| **K5** | Temizlik: GitHub secret'ları → Frankfurt, varsayılan `frankfurt` derlenir, hukuki metinler, Tokyo duraklat → 14 gün → sil | SEN + CLAUDE | 2 hafta | — |
+| **K5** | Temizlik: GitHub secret'ları → Frankfurt, varsayılan `frankfurt` derlenir, hukuki metinler (iki bölge), **Tokyo SİLİNMEZ → yedek** (aşağıda) | SEN + CLAUDE | 2 hafta | — |
 
 Toplam ≈ 2 hafta; **geçiş gecesinin kritik yolunda mağaza yok.** Android
 kapalı testin 14 günüyle örtüşür — testçiler köprü sürümünü güncelleme olarak alır.
@@ -100,8 +100,9 @@ kapalı testin 14 günüyle örtüşür — testçiler köprü sürümünü gün
 6. **[CLAUDE] Duman testi:** Frankfurt `net._http_response` 200'ler,
    `cron.job_run_details` succeeded, Crashlytics'te yeni hata dalgası yok,
    Analytics'te oturumlar Frankfurt'tan akıyor.
-7. **[SEN] Sabah:** Tokyo'yu **duraklat** (Pause) — hâlâ Tokyo'ya takılı
-   istemci kalmadığının kesin güvencesi.
+7. **[SEN] Sabah:** Tokyo **silinmez, duraklatılmaz** — donmuş kalır (Data API
+   kapalı, cron'lar kapalı) ve yedek rolüne geçer (bkz. "Tokyo yedek olarak").
+   Eski sürümlere karşı güvence Data API'nin kapalı olması.
 
 **Geri dönüş (ilk 24 saat):** RC `sunucu = tokyo`, Tokyo'yu istemcilere aç
 (`veri_tasima.py tokyo-ac --onay ybdb…` ya da Data API'yi aç) ve cron'ları aç, Frankfurt cron'larını kapat. Arada Frankfurt'a
@@ -293,7 +294,27 @@ Arada yeni projeye yazılan veri kaybolur — bu yüzden pencere kısa ve gece.
       Bugünkü metin zaten yanlış (gerçek: Japonya). Hukukçuya gösterilmeli:
       KVKK yurt dışı aktarım kuralları 1 Haziran 2024'te değişti (7499 s. Kanun).
 - [ ] **[CLAUDE]** CLAUDE.md + hafıza: proje ref'i, bölge.
-- [ ] **[SEN]** Eski projeyi 14 gün **duraklat** (Pause), sonra son yedeği alıp **sil**.
+- [ ] **Tokyo SİLİNMEZ — yedek olarak kalır** (kullanıcı kararı 2026-09-27).
+      Ayrıntı ve açık kararlar aşağıda.
+
+### Tokyo yedek olarak (kullanıcı kararı 2026-09-27: "silme, yedek olarak kullanırız")
+
+**Neden değerli:** Frankfurt Free planda — **otomatik günlük yedek yok**. Başka
+kıtadaki ikinci proje bölgesel arızaya karşı da korur.
+
+**Tek başına bırakılırsa yedek DEĞİL, anlık görüntü:** geçiş gecesinin hâli
+donar; sonra Frankfurt'a yazılan hiçbir şey oraya gitmez.
+
+| Açık karar | Seçenek | Not |
+|---|---|---|
+| Güncellik | `veri_tasima.py yedekle` — **Frankfurt → Tokyo**, ayrı yön kilidi ve `--onay`; haftalık/günlük | Geçişten ÖNCE Tokyo asla yazılmaz değişmezi korunur: komut yalnız geçiş sonrası (Tokyo donmuşken) çalışır |
+| Zamanlama | Elle / GitHub Action (şifreler secret'ta) | Action için `SUPABASE_DB_PASSWORD` benzeri iki secret |
+| Free plan duraklatması | 7 gün hareketsizlikte otomatik Pause; 90 gün geri açılmazsa panelden geri yüklenemez | Düzenli `yedekle` hareket sayılır → çözer |
+| Güvenlik yüzeyi | Tokyo'daki APNs/FCM/EVDS fonksiyon secret'larını sil ya da boşalt | Cron kapalıyken kullanılmıyorlar |
+| Hukuk | Veri İKİ bölgede (Almanya + Japonya) | Gizlilik politikası, KVKK aydınlatma, açık rıza iki ülkeyi de yazar |
+
+Geri dönüş anlamı değişir: Tokyo güncel tutuldukça "Frankfurt'u kaybettik"
+senaryosunda RC `sunucu = tokyo` + Tokyo'yu çöz ile dönülebilir.
 
 ---
 
