@@ -1294,6 +1294,13 @@ class AppLocalizationsTr extends AppLocalizations {
       'Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri toplamda görünür ama zaman grafiği çizilemiyor.';
 
   @override
+  String get youngPortfolioTitle => 'Bu dönem için henüz geçmiş yok';
+
+  @override
+  String get youngPortfolioBody =>
+      'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak — bugünkü hareketi GÜNLÜK görünümünde görebilirsin.';
+
+  @override
   String noHistoryTypeBody(String type) {
     return '$type için fiyat geçmişi izlenmiyor. Değeri portföy toplamına dahil, ama zaman grafiği çizilemiyor.';
   }

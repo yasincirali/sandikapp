@@ -880,6 +880,25 @@ class _PortfolioPerformanceScreenState
     );
   }
 
+  /// Portföy seçili dönemden GENÇ mi: dönem serisinin ilk (değerli) noktası
+  /// BUGÜN mü (ya da hiç yok mu)?
+  ///
+  /// "2'den az nokta" yetmedi (2026-09-27, Frankfurt provası): ilk varlık
+  /// bugün eklenince seri açılışta tek nokta, canlı uç gelince İKİ nokta —
+  /// ikisi de bugün. İkinci hâlde dönem kartı "27 Eyl → 27 Eyl" diye
+  /// çiziliyor, grafik tarih eksensiz düz çizgi kalıyordu. Belirleyici olan
+  /// nokta SAYISI değil, serinin bugün BAŞLAMASI. Dün (ya da Cuma) alınmış
+  /// portföy genç sayılmaz: iki farklı günün noktası anlamlı bir çizgidir.
+  bool _portfoyDonemdenGenc(List<TransactionSegment> segments, DateTime start) {
+    final ep = _periodEndpoints(segments, start: start);
+    if (ep == null) return true;
+    final ilk = DateTime.fromMillisecondsSinceEpoch(ep.firstTs!);
+    final simdi = DateTime.now();
+    return ilk.year == simdi.year &&
+        ilk.month == simdi.month &&
+        ilk.day == simdi.day;
+  }
+
   // ── Alım günü dot'ları: viewport'tan bağımsız, cache'lenir ──────────────
   // Hangi spot X'lerinin bir alım gününe denk geldiği yalnızca segment'lere,
   // varlık listesine ve grafik başlangıcına bağlıdır — zoom/pan ile

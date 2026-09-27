@@ -1293,6 +1293,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Price history is not tracked for your assets; their value counts in the total but no time chart can be drawn.';
 
   @override
+  String get youngPortfolioTitle => 'No history for this period yet';
+
+  @override
+  String get youngPortfolioBody =>
+      'Your portfolio is newer than the selected period. The chart fills in as trading days pass — see today\'s move in the DAILY view.';
+
+  @override
   String noHistoryTypeBody(String type) {
     return 'Price history is not tracked for $type. Its value counts in the portfolio total, but no time chart can be drawn.';
   }

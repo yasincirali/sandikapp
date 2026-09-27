@@ -270,6 +270,24 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
             )
           else if (!hasData)
             const SizedBox(height: 300, child: CustomLoadingView())
+          // Portföy seçili dönemden GENÇ: ilk varlık bugün eklendiyse 1H/1A/
+          // 6A/1Y serisi bugünün bir-iki noktasına iner. Eskiden grafik yine
+          // çiziliyordu — yalnız fiyat ekseni, tarih ekseni yok, düz çizgi;
+          // dönem kartı ya hiç yok ya "27 Eyl → 27 Eyl". Kullanıcı
+          // "Performans çalışmıyor" diye okudu (2026-09-27, yeni hesap,
+          // Pazar). Kapalı testteki HER yeni kullanıcı ilk gün bunu görür.
+          // GÜNLÜK hariç: gün içi serisi bugünü kapsar, orada grafik doludur.
+          // Karar `_portfoyDonemdenGenc`'te (neden nokta sayısı yetmedi).
+          else if (!isIntraday &&
+              _portfoyDonemdenGenc(segments, cizimBaslangici))
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 300),
+              child: _ChartPlaceholder(
+                icon: Icons.hourglass_top_rounded,
+                title: context.l10n.youngPortfolioTitle,
+                message: context.l10n.youngPortfolioBody,
+              ),
+            )
           else
             AnimatedOpacity(
               opacity: stale ? 0.45 : 1.0,

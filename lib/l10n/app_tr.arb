@@ -645,6 +645,8 @@
   "noAssetsChartBody": "Varlık ekledikçe portföyünün performansı burada grafiğe dönüşecek.",
   "noAssetsOfTypeChartBody": "Bu türden bir varlık eklediğinde performansı burada görünecek. Başka bir tür seçebilirsin.",
   "noHistoryAllBody": "Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri toplamda görünür ama zaman grafiği çizilemiyor.",
+  "youngPortfolioTitle": "Bu dönem için henüz geçmiş yok",
+  "youngPortfolioBody": "Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak — bugünkü hareketi GÜNLÜK görünümünde görebilirsin.",
   "noHistoryTypeBody": "{type} için fiyat geçmişi izlenmiyor. Değeri portföy toplamına dahil, ama zaman grafiği çizilemiyor.",
   "@noHistoryTypeBody": {
     "placeholders": {

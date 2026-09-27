@@ -2426,6 +2426,18 @@ abstract class AppLocalizations {
   /// **'Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri toplamda görünür ama zaman grafiği çizilemiyor.'**
   String get noHistoryAllBody;
 
+  /// No description provided for @youngPortfolioTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönem için henüz geçmiş yok'**
+  String get youngPortfolioTitle;
+
+  /// No description provided for @youngPortfolioBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak — bugünkü hareketi GÜNLÜK görünümünde görebilirsin.'**
+  String get youngPortfolioBody;
+
   /// No description provided for @noHistoryTypeBody.
   ///
   /// In tr, this message translates to:

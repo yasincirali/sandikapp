@@ -645,6 +645,8 @@
   "noAssetsChartBody": "As you add assets, your portfolio performance turns into a chart here.",
   "noAssetsOfTypeChartBody": "Add an asset of this type and its performance appears here. You can pick another type.",
   "noHistoryAllBody": "Price history is not tracked for your assets; their value counts in the total but no time chart can be drawn.",
+  "youngPortfolioTitle": "No history for this period yet",
+  "youngPortfolioBody": "Your portfolio is newer than the selected period. The chart fills in as trading days pass — see today's move in the DAILY view.",
   "noHistoryTypeBody": "Price history is not tracked for {type}. Its value counts in the portfolio total, but no time chart can be drawn.",
   "@noHistoryTypeBody": {
     "placeholders": {
