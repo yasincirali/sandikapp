@@ -9,6 +9,32 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — "Geçen hafta" şeridi önbellekten BAŞKA bir hafta gösteriyor
+
+**Ne (2026-09-27 emülatör regresyon turu, Pazar, gerçek hesap):** Ana ekran
+"Geçen hafta, piyasanın portföyüne etkisi" şeridi soğuk açılışta önbellekten
+**−%0,39**, fiyat turu bittikten sonra (+12 sn) **−%0,74** gösterdi ve öyle
+kaldı. Çevrimdışı açılışta −%0,39; ağ gelip "Tekrar Dene"ye basıldığında da
+−%0,39'da KALDI — şerit yalnızca soğuk açılışta tazelendi. Aynı gün, aynı
+portföy, iki rakam. Şüphe: önbellek başka bir günde (başka "geçen hafta"
+penceresiyle) yazılmış ve bugünün etiketiyle gösteriliyor; "Tekrar Dene"
+fiyatları yeniliyor ama haftalık özeti yeniden hesaplatmıyor.
+
+**Neden ertelendi:** regresyon turunda bulundu; kök neden incelemesi ayrı iş.
+**Maliyet:** kullanıcı aynı gün iki farklı haftalık rakam görebilir — güven.
+**Ne zaman:** bir sonraki sürümden önce (`debugging-wizard`): önbellek
+anahtarına pencere başlangıcını koy / pencere değiştiyse önbelleği gösterme;
+"Tekrar Dene" haftalık özeti de tetiklesin.
+
+Aynı turdan iki küçük not: (1) Pazar günü GÜNLÜK grafikte "Altın için gün içi
+fiyat verisi alınamadı… düz olması durgun olduğu anlamına gelmez" uyarısı —
+piyasa kapalıyken yanıltıcı ton; (2) dönem özetindeki yüzde çipi işareti
+yalnız ok ikonu + renkle veriyor (`period_summary_view.dart:387`
+`fmtPct(pct.abs())`), ikonun semantik etiketi yok → ekran okuyucu kaybı
+işaretsiz okur.
+
+---
+
 ## 🟡 AÇIK — `docs/_build_legal.py` ana sayfayı eski şablonla eziyor
 
 **Ne:** Betik hukuki sayfalarla birlikte `docs/index.html`'i de kendi

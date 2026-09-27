@@ -154,4 +154,6 @@ artı o sürümde dokunulan alanın blokları.
 | 2026-09-14 | 1.1.4+7 | R-40, R-41, R-42b | R-40 ✅ / R-41 ✅ (kullanıcı gerçekten silindi) / **R-42b 🐞 KIRIK bulundu → düzeltildi** — silme uçarken ekran etkileşime açıktı |
 | 2026-09-15 | 1.1.4+7 | R-42b (düzeltme sonrası) + cihaz turu | ✅ Kilit doğrulandı: örtü görünüyor, dokunuş yutuluyor, geri çıkış engelli. Elle regresyonun ilk turu bir gerçek bug yakaladı — senaryonun karşılığını verdi |
 
-**Henüz hiç koşulmayanlar:** B bloğunun tamamı (cihaz), C bloğu, E bloğu.
+| 2026-09-27 | 1.1.6+7 (Tokyo) | R-84, R-80, R-64, R-65, R-70, R-47(kısmi), R-45 + emülatör gezme turu (Ana/Portföy/Performans/Özet/detay/Ekle/Profil) | R-84 ✅ analyze temiz, **3054 test** + 334 Deno. **R-80 ✅ ilk kez:** Play'e giden AAB ile aynı bayraklı (obfuscate) release APK x86_64 emülatörde açıldı, R8/FATAL yok. R-64 ✅ %100,0; 1A köprüsü ₺913.160+278.614−34.603=₺1.157.171. R-65/R-70 ✅ çevrimdışı önbellek + şerit, ham hata yok. R-45 ✅ Google düğmesi yok (kimlik yok, beklenen). **🐞 Varlık Ekle başlığı "HISSE"/"KRIPTO PARA" → düzeltildi (511a17e).** 🐞 "Geçen hafta" şeridi önbellekten −%0,39, taze −%0,74 (TECHNICAL_DEBT). Rıza metni uygulamada "Supabase (ABD)" (taşıma Faz 5) |
+
+**Henüz hiç koşulmayanlar:** B bloğunun cihaz gerektirenleri (biyometri, push, Live Activity, derin bağlantı), C bloğunun çoğu (sosyal giriş, ortaklık uçtan uca), E'den R-81/R-82/R-83.
