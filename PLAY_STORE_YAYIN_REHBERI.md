@@ -24,11 +24,11 @@ tarayıcıda ve elden yapacakların.
 | Release keystore | ✅ `upload-keystore.jks` repo kökünde (gitignore'da) + `android/key.properties`; **yedeği sende olmalı** (§2) |
 | CI imzası | ✅ **2026-09-26** — `ANDROID_*` + `GOOGLE_SERVICES_JSON_BASE64` secret'ları girildi; `android-release.yml` imzalı AAB üretti (1.1.6+7, run 36266818024) |
 | Play Console hesabı + doğrulama | ✅ Kişisel hesap; uygulama oluşturuldu (`com.sandik.app`, varsayılan dil, ücretsiz) |
-| Uygulama içeriği beyanları | 🔄 **2026-09-26** — gizlilik, oturum açma (demo hesap), reklam, içerik derecelendirmesi (3+), hedef kitle (18+), veri güvenliği yapıldı; finans beyanı ve kalanlar Console'da |
+| Uygulama içeriği beyanları | ✅ **2026-09-27 tamam** — gizlilik, oturum açma (demo hesap), reklam, derecelendirme (3+), hedef kitle (18+), veri güvenliği, reklam kimliği (Hayır), sağlık (yok), finans (**Diğer**, §5.4) |
 | Ekran görüntüleri | ✅ **Üretildi (2026-09-15)** — Console'a **`set_b`** yüklenir, **05 ve 07 hariç** (6 kare): 05 Al/Sat düğmeli (işlem yapılıyor izlenimi, §5.4) ve başlığı ekranla uyuşmuyor; 07 Canlı Etkinlik **yalnızca iOS** — Android'de olmayan özelliği göstermek yanıltıcı meta veri (§6.2) |
 | Feature graphic (1024×500) + ikon (512×512) | ✅ **Üretildi (2026-09-15)** — `store_listing/android/graphics/`, betikle tekrar üretilebilir (§6.1, §6.3) |
 | Supabase `0027_soft_delete_lots.sql` migration | ✅ **Canlıda uygulanmış** (`YAPMAN_GEREKENLER.md` KAPANDI 2026-08-11; §7.1 tarihçe) |
-| Kapalı test (12 testçi × 14 gün) | ❌ **Kritik yol bu** — başlamadı (§8.2) |
+| Kapalı test (12 testçi × 14 gün) | 🔄 **2026-09-27 incelemeye gönderildi** — Kapalı test - Alpha, 7 (1.1.6), yalnız TR, testçi grubu `sandik-testers@googlegroups.com` (katılım `https://groups.google.com/g/sandik-testers`, opt-in `https://play.google.com/apps/testing/com.sandik.app`). Sayaç 12 testçi kayıtlı olunca başlar (§8.2) |
 
 **Kritik yol (2026-09-26 itibarıyla kalan):** görselleri yükle → kalan
 Console beyanları → AAB'yi kapalı teste yükle → 12 testçi × 14 gün →
