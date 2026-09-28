@@ -2567,5 +2567,12 @@
   "@vsUnwatchSemantics": {"placeholders": {"name": {"type": "String"}}},
   "vsLoadFailed": "Fiyat geçmişi alınamadı. Bağlantını kontrol edip dönemi yeniden seç.",
   "vsSheetSemantics": "{name} varlık sayfası",
-  "@vsSheetSemantics": {"placeholders": {"name": {"type": "String"}}}
+  "@vsSheetSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "searchRecentUpper": "SON BAKTIKLARIN",
+  "searchMarketsUpper": "PİYASALAR",
+  "searchShowAll": "Tümü ({count})",
+  "@searchShowAll": {"placeholders": {"count": {"type": "int"}}},
+  "searchInPortfolioTag": "Portföyünde",
+  "searchAssetsSemantics": "Varlık ara",
+  "searchShortHint": "Hisse, fon, altın, döviz, kripto"
 }

@@ -43,6 +43,7 @@ import 'asset_detail_screen.dart';
 import 'portfolio_performance_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/piyasa_seridi.dart';
+import 'add_watchlist_screen.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
 
@@ -58,6 +59,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   AssetType? _typeFilter;
   final _scrollCtrl = ScrollController();
   bool _reloading = false;
+
+  /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
+  void _aramayiAc() => pushGuarded(
+        context,
+        adaptiveRoute<void>(
+          builder: (_) => const AddWatchlistScreen(),
+          fullscreenDialog: true,
+        ),
+      );
 
   Future<void> _reload() async {
     if (_reloading) return;
@@ -623,12 +633,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           // Piyasa şeridi — dolar/euro/gram altın/BIST 100 (2026-09-20).
           // Portföyden ÖNCE: günlük girişin ilk sorusu "dolar ne oldu".
+          //
+          // Bandın sağ ucundaki büyüteç varlık aramasını açar (2026-09-28).
+          // Ortağın görünümünde bant yok; arama yine erişilebilir kalsın
+          // diye büyüteç aynı yerde tek başına durur.
           if (ownView)
             SliverToBoxAdapter(
               child: TourAnchor(
                 target: TourTarget.piyasaSeridi,
                 child: PiyasaSeridi(
                   padding: EdgeInsets.symmetric(horizontal: hp),
+                  onAra: _aramayiAc,
+                ),
+              ),
+            )
+          else
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: hp),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: PiyasaAramaDugmesi(
+                      onTap: _aramayiAc, cerceveli: false),
                 ),
               ),
             ),

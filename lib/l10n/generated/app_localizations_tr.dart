@@ -3703,4 +3703,24 @@ class AppLocalizationsTr extends AppLocalizations {
   String vsSheetSemantics(String name) {
     return '$name varlık sayfası';
   }
+
+  @override
+  String get searchRecentUpper => 'SON BAKTIKLARIN';
+
+  @override
+  String get searchMarketsUpper => 'PİYASALAR';
+
+  @override
+  String searchShowAll(int count) {
+    return 'Tümü ($count)';
+  }
+
+  @override
+  String get searchInPortfolioTag => 'Portföyünde';
+
+  @override
+  String get searchAssetsSemantics => 'Varlık ara';
+
+  @override
+  String get searchShortHint => 'Hisse, fon, altın, döviz, kripto';
 }

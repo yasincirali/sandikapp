@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
+import '../services/son_bakilanlar.dart';
 import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
@@ -161,6 +162,14 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   void initState() {
     super.initState();
     CrashReporter.arkaPlan(_ilkYukleme(), reason: 'VarlikSayfasi.ilkYukleme');
+    // Arama ekranının "Son baktıkların" şeridi — hangi girişten açıldıysa
+    // (arama, takip, karşılaştır, ekleme seçicisi) bakılan varlık odur.
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid != null) {
+      CrashReporter.arkaPlan(
+          SonBakilanlar.instance.kaydet(uid, widget.kimlik),
+          reason: 'VarlikSayfasi.sonBakilan');
+    }
   }
 
   @override

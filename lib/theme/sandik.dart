@@ -1313,7 +1313,11 @@ class SandikSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        // Sağda eylem varsa başlık kalan yeri DOLDURUR: eskiden `Flexible`
+        // + `Spacer` alanı ikiye bölüyor, eylem satırın ortasında kalıyordu
+        // (arama ekranı "Tümü (n)", 2026-09-28).
         Flexible(
+          fit: trailing != null ? FlexFit.tight : FlexFit.loose,
           child: Text(
             title,
             style: context.t.labelLarge?.copyWith(
@@ -1343,7 +1347,7 @@ class SandikSectionHeader extends StatelessWidget {
             ),
           ),
         ],
-        if (trailing != null) ...[const Spacer(), trailing!],
+        if (trailing != null) trailing!,
       ],
     );
   }

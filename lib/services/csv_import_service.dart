@@ -4,6 +4,7 @@ import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_katla.dart';
 import 'fiyat_kaynagi.dart';
 
 /// Yapıştırılan CSV/TSV metnini sepet kalemlerine çevirir — SAF, ağ yok.
@@ -199,19 +200,9 @@ class CsvImportService {
   /// takma adla eşleşmiyor, fiyat 0 ve tarih bugün kalıyordu. Tek başına
   /// İ→i / I→ı eşlemesi de yetmez: İngilizce "PRICE" "prıce" olurdu. Bu
   /// yüzden iki taraf da (başlık ve takma ad) ASCII'ye katlanır; "alış" /
-  /// "alis" / "ALIŞ" / "ALIS" aynı anahtara düşer.
-  static String _katla(String s) {
-    const harita = {
-      'İ': 'i', 'I': 'i', 'ı': 'i', '\u0307': '',
-      'Ğ': 'g', 'ğ': 'g', 'Ü': 'u', 'ü': 'u', 'Ş': 's', 'ş': 's',
-      'Ö': 'o', 'ö': 'o', 'Ç': 'c', 'ç': 'c',
-    };
-    final b = StringBuffer();
-    for (final ch in s.split('')) {
-      b.write(harita[ch] ?? ch);
-    }
-    return b.toString().toLowerCase();
-  }
+  /// "alis" / "ALIŞ" / "ALIS" aynı anahtara düşer. Katlama artık ortak
+  /// (`utils/tr_katla.dart`) — arama da aynısını kullanır.
+  static String _katla(String s) => trKatla(s);
 
   static DateTime? _parseDate(String? s) {
     if (s == null) return null;

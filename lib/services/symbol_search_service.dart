@@ -6,6 +6,7 @@ import '../models/kripto_fiyat.dart';
 import 'supabase_service.dart';
 import 'tefas_service.dart';
 import 'fiyat_kaynagi.dart';
+import '../utils/tr_katla.dart';
 
 /// Portföy serilerinin sanal ticker önekleri.
 ///
@@ -114,6 +115,36 @@ class SymbolSearchService {
   /// tuş vuruşunda yeniden düzleştirmek gereksiz iş olurdu.
   static final List<SymbolHit> _builtIn = _buildBuiltInIndex();
 
+  /// Yerleşik sembolün aranabilir anahtarı: katlanmış ticker + ad + takma
+  /// adlar. Bir kez kurulur (her tuşta ~500 adı yeniden katlamak gereksiz).
+  static final Map<String, String> _builtInAnahtar = {
+    for (final h in _builtIn)
+      h.ticker: trKatla(
+          '${h.ticker} ${h.name} ${_takmaAdlar[h.ticker] ?? ''}'),
+  };
+
+  /// Gündelik adlar — kullanıcının yazdığı, resmî adda geçmeyen kelimeler.
+  ///
+  /// "dolar" zaten "Amerikan Doları"nda geçer; burada yalnızca adda HİÇ
+  /// olmayanlar var ("usd", "brent", "bist100"). Liste kısa tutulur: her
+  /// takma ad bir başka sorguda gürültüdür.
+  static const _takmaAdlar = <String, String>{
+    FiyatKaynagi.usdTry: 'usd dolar',
+    'EURTRY=X': 'eur avro',
+    'GBPTRY=X': 'gbp sterlin pound',
+    'XU100.IS': 'bist100 xu100 borsa',
+    'XU030.IS': 'bist30 xu030',
+    FiyatKaynagi.xauUsd: 'ons xau',
+    'SI=F': 'ons silver',
+    'BZ=F': 'brent',
+    'CL=F': 'wti',
+    'NG=F': 'gaz',
+  };
+
+  /// TEFAS fon adlarının katlanmış hâli — kod → ad. Fon sayısı binlerce;
+  /// her tuşta hepsini yeniden katlamamak için oturum boyunca tutulur.
+  static final _fonAdKatli = <String, String>{};
+
   static List<SymbolHit> _buildBuiltInIndex() {
     final out = <SymbolHit>[];
 
@@ -172,11 +203,17 @@ class SymbolSearchService {
   }
 
   /// [query] için sembol arar. Boş sorguda popüler kıyas noktalarını döner.
+  ///
+  /// Eşleştirme Türkçe-güvenlidir (`trKatla`): "turk hava" Türk Hava
+  /// Yolları'nı, "altin" Gram Altın'ı bulur. Önbellek anahtarı da katlanmış
+  /// sorgudur — "ALTIN" ve "altın" aynı sonucu paylaşır.
   Future<List<SymbolHit>> search(String query) async {
-    final q = query.trim().toUpperCase();
-    if (q.isEmpty) return defaults;
+    final k = trKatla(query.trim());
+    if (k.isEmpty) return defaults;
+    // Kod karşılaştırmaları (fon kodu, kripto kodu) ASCII büyük harfle.
+    final q = k.toUpperCase();
 
-    final cached = _cache[q];
+    final cached = _cache[k];
     if (cached != null) return cached;
 
     // Yerleşik listeler + TEFAS fonları PARALEL aranır.
@@ -187,9 +224,9 @@ class SymbolSearchService {
     // `TefasService`'in canlı listesinde bulunur. Sabit listeyi kullanmak
     // aramada fon gösterip grafikte "veri yok" demeye yol açardı.
     final results = await Future.wait([
-      Future.value(_searchBuiltIn(q)),
+      Future.value(_searchBuiltIn(k)),
       _searchKripto(q),
-      _searchFunds(q),
+      _searchFunds(k),
     ]);
     final local = <SymbolHit>[...results[0], ...results[1], ...results[2]];
 
@@ -204,13 +241,25 @@ class SymbolSearchService {
       final fund = await _lookupFund(q);
       if (fund != null) {
         final hit = [fund];
-        _cache[q] = hit;
+        _cache[k] = hit;
         return hit;
       }
     }
 
-    _cache[q] = local;
+    _cache[k] = local;
     return local;
+  }
+
+  /// Yalnızca yerleşik listeler — ağ yok, ANINDA.
+  ///
+  /// [search] fon ve kripto katmanlarını da bekler; ilk fon listesi ağdan
+  /// gelirken (soğuk önbellek) bu saniyeler sürebilir. Arama ekranı o arada
+  /// boş durmasın diye hisse/altın/döviz sonuçlarını hemen bundan gösterir,
+  /// tam sonuç gelince yerine koyar. Önbellekte tam sonuç varsa o döner.
+  List<SymbolHit> yerelAra(String query) {
+    final k = trKatla(query.trim());
+    if (k.isEmpty) return defaults;
+    return _cache[k] ?? _searchBuiltIn(k);
   }
 
   /// TEFAS liste API'sinde görünmeyen bir fon kodunu tek tek sorar.
@@ -255,19 +304,20 @@ class SymbolSearchService {
     }
   }
 
-  /// TEFAS fonlarında kod veya ada göre arar.
+  /// TEFAS fonlarında kod veya ada göre arar. [k] katlanmış sorgudur.
   ///
   /// `TefasService.fetchAllFunds` önbellekli: RAM'de taze liste varsa ya da
   /// disk önbelleği 24 saatten yeniyse ağa HİÇ çıkmaz. İlk çağrıda liste
   /// yoksa ağ turu olur; hata durumunda boş liste döner ve arama yalnızca
   /// fonsuz devam eder — kullanıcı hisse/altın aramaya devam edebilmeli.
-  Future<List<SymbolHit>> _searchFunds(String q) async {
+  Future<List<SymbolHit>> _searchFunds(String k) async {
     try {
       final funds = await TefasService.instance.fetchAllFunds();
       final hits = <SymbolHit>[];
       for (final f in funds) {
-        final code = f.code.toUpperCase();
-        if (!code.contains(q) && !f.name.toUpperCase().contains(q)) continue;
+        final code = f.code.toLowerCase();
+        final ad = _fonAdKatli[f.code] ??= trKatla(f.name);
+        if (!code.contains(k) && !ad.contains(k)) continue;
         hits.add(SymbolHit(
           // Fiyat/geçmiş servisleri bu öneki bekler (bkz. PriceService).
           ticker: 'TEFAS:${f.code}',
@@ -281,8 +331,8 @@ class SymbolSearchService {
       hits.sort((a, b) {
         final ac = a.ticker.replaceFirst('TEFAS:', '');
         final bc = b.ticker.replaceFirst('TEFAS:', '');
-        final aStarts = ac.startsWith(q) ? 0 : 1;
-        final bStarts = bc.startsWith(q) ? 0 : 1;
+        final aStarts = ac.toLowerCase().startsWith(k) ? 0 : 1;
+        final bStarts = bc.toLowerCase().startsWith(k) ? 0 : 1;
         if (aStarts != bStarts) return aStarts - bStarts;
         return ac.compareTo(bc);
       });
@@ -311,18 +361,25 @@ class SymbolSearchService {
         SymbolHit(ticker: 'GARAN.IS', name: 'Garanti BBVA', source: 'BIST'),
       ];
 
-  /// Yerleşik listelerde ada VEYA ticker'a göre arar.
-  static List<SymbolHit> _searchBuiltIn(String q) {
-    final hits = _builtIn.where((h) {
-      return h.ticker.contains(q) || h.name.toUpperCase().contains(q);
-    }).toList();
+  /// Yerleşik listelerde ada, ticker'a VEYA takma ada göre arar. [k]
+  /// katlanmış sorgudur.
+  static List<SymbolHit> _searchBuiltIn(String k) {
+    final hits =
+        _builtIn.where((h) => _builtInAnahtar[h.ticker]!.contains(k)).toList();
 
     // Ticker'ı sorguyla BAŞLAYANLAR öne alınır: "AK" araması
     // `AKBNK`'ı, adında "ak" geçen rastgele bir şirketten önce göstermeli.
+    // Ardından ADI sorguyla başlayanlar: "turk" araması "Türk Hava
+    // Yolları"nı, adının ortasında "türk" geçenden önce göstermeli.
+    int sira(SymbolHit h) {
+      if (h.ticker.toLowerCase().startsWith(k)) return 0;
+      if (trKatla(h.name).startsWith(k)) return 1;
+      return 2;
+    }
+
     hits.sort((a, b) {
-      final aStarts = a.ticker.startsWith(q) ? 0 : 1;
-      final bStarts = b.ticker.startsWith(q) ? 0 : 1;
-      if (aStarts != bStarts) return aStarts - bStarts;
+      final d = sira(a) - sira(b);
+      if (d != 0) return d;
       return a.ticker.compareTo(b.ticker);
     });
     return hits;
@@ -331,6 +388,7 @@ class SymbolSearchService {
   @visibleForTesting
   static void clearCacheForTest() {
     _cache.clear();
+    _fonAdKatli.clear();
     _kriptoKatalog = null;
     _kriptoKatalogZamani = null;
   }
