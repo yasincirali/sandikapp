@@ -372,20 +372,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: SafeArea(
             child: Column(
               children: [
-                // Header
+                // Header — ölçüler Performans ekranıyla BİREBİR
+                // (2026-09-28): dikey xs, `headlineMedium`.
                 Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context), vertical: 12),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: SandikSpace.screenH(context),
+                      vertical: SandikSpace.xs),
                   child: Row(
                     children: [
                       Expanded(
                         child: Text(
                           'Profil',
-                          style: context.t.headlineLarge?.copyWith(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: context.c.text90,
-                          ),
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.fade,
+                          style: context.t.headlineMedium
+                              ?.copyWith(color: context.c.text90),
                         ),
                       ),
                       const _ThemeToggleButton(),

@@ -50,7 +50,10 @@ Asset _lot({
       sellPrice: sellPrice,
     );
 
-/// `home_screen._buildDistributionList` ile AYNI hesap.
+/// Ana sayfadaki dağılım listesi 2026-09-28'de kaldırıldı; hesap kuralı
+/// (`aggregatePositionsByOwner` + `aktifLotlar`, `totalValue` ile aynı
+/// küme) Portföy sekmesindeki dağılım halkası için geçerliliğini korur —
+/// test o yüzden duruyor.
 double _dagilimToplami(PortfolioState state) {
   double t = 0;
   for (final p in aggregatePositionsByOwner(

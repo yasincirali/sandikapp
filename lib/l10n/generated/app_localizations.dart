@@ -668,23 +668,11 @@ abstract class AppLocalizations {
   /// **'Henüz varlık eklenmemiş'**
   String get noAssetsYet;
 
-  /// No description provided for @noAssetsOfType.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu türde varlık yok'**
-  String get noAssetsOfType;
-
   /// No description provided for @noAssetsYetHint.
   ///
   /// In tr, this message translates to:
   /// **'İlk varlığını ekleyerek sandığını oluşturmaya başla.'**
   String get noAssetsYetHint;
-
-  /// No description provided for @noAssetsOfTypeHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Filtreyi değiştir ya da bu türden bir varlık ekle.'**
-  String get noAssetsOfTypeHint;
 
   /// No description provided for @addFirstAsset.
   ///
@@ -907,12 +895,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Fiyatları yenile'**
   String get refreshPrices;
-
-  /// No description provided for @assetAllocation.
-  ///
-  /// In tr, this message translates to:
-  /// **'VARLIK DAĞILIMI'**
-  String get assetAllocation;
 
   /// No description provided for @portfolioActivity.
   ///
