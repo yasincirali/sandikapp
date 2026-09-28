@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
+import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
@@ -21,6 +22,7 @@ import '../utils/tr_format.dart';
 import '../widgets/percent_comparison_chart.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'add_asset_screen.dart';
+import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
 /// Varlık karşılaştırma — "almadığım şey ne yapardı?"
@@ -491,6 +493,17 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                     style: TextStyle(color: p.text36, fontSize: 11))
               else if (norm != null)
                 _returnBadge(p, norm.totalReturnPct),
+              // Varlık sayfası: bu varlığın kendi fiyat grafiği ve dönem
+              // istatistikleri (kullanıcı isteği, 2026-09-28: "karşılaştır
+              // menüsünde de varlığın detayını izlemek isteyecekler").
+              // Portföy serileri ve TÜFE birer varlık değil; ikon çıkmaz.
+              if (VarlikKimligi.fromSymbolHit(hit) case final kimlik?)
+                IconButton(
+                  tooltip: context.l10n.vsOpenDetailSemantics(_displayTicker(hit)),
+                  icon: Icon(Icons.insights_rounded, size: 18, color: p.text58),
+                  onPressed: () => showVarlikSayfasi(context, kimlik),
+                  visualDensity: VisualDensity.compact,
+                ),
               IconButton(
                 icon: Icon(Icons.close_rounded, size: 18, color: p.text36),
                 onPressed: () => _remove(hit.ticker),

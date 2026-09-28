@@ -39,7 +39,8 @@ void main() {
     // çelişirdi (0065).
     'lib/widgets/price_alert_tile.dart',
     'lib/screens/watchlist_screen.dart',
-    'lib/screens/watchlist_detail_screen.dart',
+    'lib/screens/varlik_sayfasi.dart',
+    'lib/widgets/fiyat_grafigi.dart',
     'lib/screens/add_asset_screen.dart',
   ];
 

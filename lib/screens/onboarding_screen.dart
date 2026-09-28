@@ -406,9 +406,10 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.govdeSekmeleri,
       rozet: 'BİZE ÖZEL',
       baslik: 'Takip listesi',
-      govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin. Üstteki Ekle '
-          'ile almayı düşündüğün hisseyi listeye at, fiyat alarmı kur; '
-          'portföyünün toplamına karışmaz. Sayaç kaç yerin kaldığını gösterir.',
+      govde: 'Sahip OLMADIĞIN varlıkları da izleyebilirsin; portföyünün '
+          'toplamına karışmaz. Bir satıra dokununca grafiği, dönem '
+          'getirileri ve istatistikleri açılır, oradan portföyüne de '
+          'eklersin. Sayaç kaç yerin kaldığını gösterir.',
       giris: (_) => _sekmeyeGec(1),
     ),
     _Adim(
@@ -416,7 +417,8 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.sekmeEkle,
       baslik: 'Varlık ekle',
       govde: 'Hisse mi, fon mu, altın mı, kripto mu? Tür seçtiğinde form '
-          'ona göre değişir — altında gram, hissede adet sorulur.',
+          'ona göre değişir — altında gram, hissede adet sorulur. Seçim '
+          'listesindeki grafik simgesi, seçmeden önce varlığa bakmanı sağlar.',
       gorev: '+ tuşuna dokun',
       gorevBitti: 'Varlık Ekle açıldı',
       bitti: (_) => TourTargets.mounted(TourTarget.hizliGiris),

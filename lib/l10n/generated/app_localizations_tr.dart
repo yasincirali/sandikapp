@@ -3623,4 +3623,84 @@ class AppLocalizationsTr extends AppLocalizations {
   String priceDelayedSemantics(String time) {
     return 'Fiyat gecikmeli, son güncelleme $time';
   }
+
+  @override
+  String get period5Y => '5Y';
+
+  @override
+  String get vsPeriodReturnUpper => 'DÖNEM GETİRİSİ';
+
+  @override
+  String get vsTodayUpper => 'BUGÜN';
+
+  @override
+  String get vsMaxDrawdownUpper => 'EN BÜYÜK DÜŞÜŞ';
+
+  @override
+  String get vsVolatilityUpper => 'OYNAKLIK (YILLIK)';
+
+  @override
+  String get vsPeriodLow => 'Dönem düşüğü';
+
+  @override
+  String get vsPeriodHigh => 'Dönem yükseği';
+
+  @override
+  String vsRangePosition(String pct) {
+    return 'Fiyat dönem aralığının %$pct noktasında';
+  }
+
+  @override
+  String get vsVolatilityShortNote =>
+      'Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.';
+
+  @override
+  String get vsWatch => 'Takip et';
+
+  @override
+  String get vsSelect => 'Bunu seç';
+
+  @override
+  String get vsGoToPosition => 'Pozisyonuma git';
+
+  @override
+  String get vsOwnedNote =>
+      'Bu varlık portföyünde. Al ve sat pozisyon ekranından yapılır.';
+
+  @override
+  String vsRemovedFromWatchlist(String name) {
+    return '$name takipten çıkarıldı';
+  }
+
+  @override
+  String get vsUndo => 'Geri al';
+
+  @override
+  String vsChartSemantics(String name, String period) {
+    return '$name fiyat grafiği, $period';
+  }
+
+  @override
+  String vsOpenDetailSemantics(String name) {
+    return '$name grafiğini ve istatistiklerini gör';
+  }
+
+  @override
+  String vsWatchSemantics(String name) {
+    return '$name takibe al';
+  }
+
+  @override
+  String vsUnwatchSemantics(String name) {
+    return '$name takipten çıkar';
+  }
+
+  @override
+  String get vsLoadFailed =>
+      'Fiyat geçmişi alınamadı. Bağlantını kontrol edip dönemi yeniden seç.';
+
+  @override
+  String vsSheetSemantics(String name) {
+    return '$name varlık sayfası';
+  }
 }

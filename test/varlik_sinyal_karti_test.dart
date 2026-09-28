@@ -147,7 +147,7 @@ void main() {
 // Doğrusu: kayıt yoksa CANLI göstergelere düşmek. Bu davranış widget testiyle
 // doğrulanamıyor — canlı yol ağ istiyor ve test ortamında `HistoryService`
 // boş seri döndürüp yine gizlenmeye düşüyor. Bu yüzden kaynak metni
-// denetleniyor; projede aynı örüntü var (bkz. watchlist_detail_test.dart,
+// denetleniyor; projede aynı örüntü var (bkz. varlik_sayfasi_test.dart,
 // remote_config_defaults_test.dart).
 
 void _kaynakTestleri() {

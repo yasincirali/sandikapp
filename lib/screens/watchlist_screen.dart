@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset_type.dart';
 import '../models/user_model.dart';
+import '../models/varlik_kimligi.dart';
 import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart' show activePartnersProvider;
 import '../providers/preferences_provider.dart' show watchlistLimitProvider;
@@ -26,7 +27,7 @@ import '../widgets/sandik_error_view.dart';
 import '../widgets/watchlist_chart.dart';
 import 'add_asset_screen.dart';
 import 'add_watchlist_screen.dart';
-import 'watchlist_detail_screen.dart';
+import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
 /// Takip listesinin GÖVDESİ — dönem seçici · grafik · liste · dipnot.
@@ -454,9 +455,15 @@ class _Row extends ConsumerWidget {
           onDismissed: (_) => _remove(context, ref),
           child: SandikTappable(
             semanticLabel: context.l10n.openDetailSemantics(item.name),
-            onTap: () => pushGuarded(
+            // Varlık sayfası TAM hâlde açılır (kullanıcı bu varlığa bakmaya
+            // geldi) ve listedeki dönemle başlar. Eski ayrı detay ekranının
+            // yerini aldı — iki detay yüzeyi zamanla ayrışırdı.
+            onTap: () => showVarlikSayfasi(
               context,
-              adaptiveRoute<void>(builder: (_) => WatchlistDetailScreen(item: item)),
+              VarlikKimligi.fromWatchlistItem(item),
+              tamAcilis: true,
+              baslangicDonemGun:
+                  watchlistPeriods[ref.read(watchlistPeriodProvider)].days,
             ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),

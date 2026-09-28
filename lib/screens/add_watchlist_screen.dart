@@ -9,9 +9,8 @@ import 'package:flutter/material.dart'
         SnackBarAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/asset_type.dart';
 import '../models/position.dart';
-import '../models/watchlist_item.dart';
+import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
@@ -20,6 +19,7 @@ import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import 'paywall_screen.dart';
+import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
 /// Takibe alınacak varlığı seçme ekranı.
@@ -43,40 +43,10 @@ class AddWatchlistScreen extends ConsumerStatefulWidget {
   ConsumerState<AddWatchlistScreen> createState() => _AddWatchlistScreenState();
 }
 
-/// Arama sonucundaki tek bir aday.
-class _Candidate {
-  final String ticker;
-  final String name;
-  final AssetType type;
-  final String? subCategory;
-
-  /// Fiyatın hangi para biriminde olduğu. Döviz ve ons altın gibi kalemler
-  /// TRY'ye çevrilerek gösterilse de kaydın kendisi kaynak birimi taşır —
-  /// `assets` tarafındaki `currency` ile aynı anlam.
-  final String currency;
-
-  const _Candidate({
-    required this.ticker,
-    required this.name,
-    required this.type,
-    this.subCategory,
-    required this.currency,
-  });
-
-  /// `WatchlistItem.key` ile AYNI kural — iki taraf ayrışırsa "zaten takipte"
-  /// tespiti yanlış çalışır.
-  String get key {
-    final core = (subCategory?.trim().isNotEmpty ?? false)
-        ? 'sub:${subCategory!.trim().toUpperCase()}'
-        : ticker.trim().toUpperCase();
-    return '${type.name}|$core';
-  }
-}
-
 class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
   final _ctrl = TextEditingController();
   String _q = '';
-  List<_Candidate> _results = const [];
+  List<VarlikKimligi> _results = const [];
   bool _loading = true;
 
   /// Yalnızca EN SON aramanın sonucu uygulanır.
@@ -117,7 +87,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
       setState(() {
         _results = [
           for (final h in hits)
-            if (_toCandidate(h) case final c?) c,
+            if (VarlikKimligi.fromSymbolHit(h) case final c?) c,
         ];
         _loading = false;
       });
@@ -128,70 +98,9 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     }
   }
 
-  /// Arama sonucunu `SymbolHit` → `_Candidate` olarak çevirir.
-  ///
-  /// Kaynak `SymbolSearchService` — karşılaştırma ekranıyla AYNI servis.
-  /// Kendi listesini tutmak, iki ekranın farklı varlık kümesi göstermesine
-  /// yol açıyordu: takip listesinde endeksler (XU100/XU030) ve emtia
-  /// (ons altın, gümüş, Brent/WTI petrol, doğalgaz) HİÇ çıkmıyordu, ayrıca
-  /// TEFAS'ın liste API'sinde görünmeyen kurucu-only fonlar (ALE, YLB)
-  /// aranamıyordu.
-  ///
-  /// Tür ve para birimi ticker biçiminden çıkarılır — `SymbolHit` bunları
-  /// taşımaz çünkü karşılaştırma ekranının ihtiyacı yok.
-  static _Candidate? _toCandidate(SymbolHit h) {
-    // Portföy serileri (PORTFOLIO:*) sanal tickerlardır; takip edilemezler.
-    if (PortfolioSeries.isPortfolio(h.ticker)) return null;
-
-    final t = h.ticker;
-
-    if (t.startsWith('TEFAS:')) {
-      return _Candidate(
-          ticker: t, name: h.name, type: AssetType.fon, currency: 'TRY');
-    }
-    if (t.startsWith(kriptoOneki)) {
-      // Fiyat sunucuda TL (kripto_fiyat) — TRY kote.
-      return _Candidate(
-          ticker: t, name: h.name, type: AssetType.kripto, currency: 'TRY');
-    }
-    if (t.startsWith('ALTIN_')) {
-      return _Candidate(
-        ticker: t,
-        name: h.name,
-        type: AssetType.altin,
-        subCategory: h.name,
-        currency: 'TRY',
-      );
-    }
-    if (t == 'XAUUSD=X') {
-      // Ons altın Yahoo'dan USD gelir.
-      return _Candidate(
-        ticker: t,
-        name: h.name,
-        type: AssetType.altin,
-        subCategory: h.name,
-        currency: 'USD',
-      );
-    }
-    if (t.endsWith('TRY=X')) {
-      // Kur çiftinin fiyatı TRY cinsindendir (USDTRY=X → ₺).
-      return _Candidate(
-        ticker: t,
-        name: h.name,
-        type: AssetType.doviz,
-        subCategory: t.replaceAll('TRY=X', ''), // USD / EUR / GBP
-        currency: 'TRY',
-      );
-    }
-    if (t.endsWith('=F')) {
-      // Emtia vadelileri USD kote; `getSymbolHistory` günün kuruyla çevirir.
-      return _Candidate(
-          ticker: t, name: h.name, type: AssetType.emtia, currency: 'USD');
-    }
-    // Kalanlar BIST: hisseler ve endeksler (`XU100.IS`).
-    return _Candidate(
-        ticker: t, name: h.name, type: AssetType.hisse, currency: 'TRY');
-  }
+  // Sembol → tür/alt kategori/para birimi kuralı `VarlikKimligi.fromSymbolHit`
+  // içinde: varlık sayfası dört giriş noktasından aynı kimlikle açılır ve
+  // "zaten takipte" tespiti ekranlar arasında ayrışmamalı.
 
   @override
   Widget build(BuildContext context) {
@@ -334,22 +243,23 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
         ),
       );
 
-  Widget _tile(BuildContext context, _Candidate c,
+  /// Arama sonucu satırı.
+  ///
+  /// **Satıra dokunmak ÖNİZLER, "+" hemen takibe alır** (kullanıcı kararı,
+  /// 2026-09-28). Eskiden satırın tamamı "takibe al" idi; kullanıcı bir
+  /// varlığa bakmak için önce listeye eklemek, sonra çıkarmak zorundaydı.
+  /// Hızlı ekleme alışkanlığı bozulmasın diye "+" satırın sağında kaldı.
+  /// Portföydeki varlık da önizlenebilir; sayfa onu pozisyona yönlendirir.
+  Widget _tile(BuildContext context, VarlikKimligi c,
       {bool watched = false, bool owned = false}) {
-    // Portföydeki varlık pasif: dokunulamaz, soluk, "✓" ile işaretli.
-    final disabled = owned || watched;
-
     return Opacity(
       opacity: owned ? 0.5 : 1.0,
       child: SandikTappable(
-        onTap: disabled ? null : () => _add(c),
-        semanticLabel: owned
-            ? context.l10n.alreadyInPortfolio(c.name)
-            : watched
-                ? '${c.name}, zaten takipte'
-                : '${c.name} takibe al',
+        onTap: () => showVarlikSayfasi(context, c),
+        semanticLabel: context.l10n.vsOpenDetailSemantics(c.name),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          padding: const EdgeInsets.only(left: 12),
           decoration: BoxDecoration(
             color: context.c.surface1,
             borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -365,34 +275,39 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(c.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.t.bodyMedium
-                            ?.copyWith(color: context.c.text90)),
-                    Text('${c.ticker} · ${c.type.labelOf(context.l10n)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.t.bodySmall
-                            ?.copyWith(color: context.c.text36, fontSize: 11)),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(c.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.bodyMedium
+                              ?.copyWith(color: context.c.text90)),
+                      Text('${c.ticker} · ${c.type.labelOf(context.l10n)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.bodySmall?.copyWith(
+                              color: context.c.text36, fontSize: 11)),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               if (owned)
-                Icon(Icons.check_rounded, size: 18, color: context.c.text36)
+                const _SatirSonu(child: _SahipIsareti())
               else if (watched)
-                Text('Takipte',
-                    style: context.t.bodySmall
-                        ?.copyWith(color: context.c.text36, fontSize: 11))
+                _SatirSonu(
+                  child: Text(context.l10n.watchlistInListLabel,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text36, fontSize: 11)),
+                )
               else
-                Text('+ Takip',
-                    style: context.t.titleSmall?.copyWith(
-                        color: context.c.amberText,
-                        fontWeight: FontWeight.w700)),
+                _HizliTakipDugmesi(
+                  semanticLabel: context.l10n.vsWatchSemantics(c.name),
+                  onTap: () => _add(c),
+                ),
             ],
           ),
         ),
@@ -400,21 +315,14 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     );
   }
 
-  Future<void> _add(_Candidate c) async {
+  Future<void> _add(VarlikKimligi c) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
     try {
-      await ref.read(watchlistProvider.notifier).add(WatchlistItem(
-            id: '', // sunucuda üretilir
-            userId: user.id,
-            ticker: c.ticker,
-            name: c.name,
-            type: c.type,
-            subCategory: c.subCategory,
-            currency: c.currency,
-            addedAt: DateTime.now(),
-          ));
+      await ref
+          .read(watchlistProvider.notifier)
+          .add(c.toWatchlistItem(userId: user.id));
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): satırdaki "+"
       // ikonu eklendi durumuna geçiyor, onay orada. Hata yolları (limit,
       // çakışma) toast'ını KORUR — orada geri bildirim tek kanal.
@@ -450,4 +358,47 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
           kind: SandikSnackKind.error);
     }
   }
+}
+
+/// Satırın sağ ucu — 44pt yükseklikte, sağ dolgulu.
+class _SatirSonu extends StatelessWidget {
+  const _SatirSonu({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: child,
+      );
+}
+
+class _SahipIsareti extends StatelessWidget {
+  const _SahipIsareti();
+
+  @override
+  Widget build(BuildContext context) =>
+      Icon(Icons.check_rounded, size: 18, color: context.c.text36);
+}
+
+/// "+ Takip" — satırın içinde AYRI bir dokunma hedefi. Satırın geri kalanı
+/// önizler; bu düğme önizlemeden geçmeden hemen takibe alır.
+class _HizliTakipDugmesi extends StatelessWidget {
+  const _HizliTakipDugmesi({required this.semanticLabel, required this.onTap});
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SandikTappable(
+        onTap: onTap,
+        semanticLabel: semanticLabel,
+        child: Container(
+          constraints: const BoxConstraints(
+              minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          alignment: Alignment.center,
+          child: Text('+ ${context.l10n.vsWatch}',
+              style: context.t.titleSmall?.copyWith(
+                  color: context.c.amberText, fontWeight: FontWeight.w700)),
+        ),
+      );
 }

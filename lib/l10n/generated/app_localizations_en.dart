@@ -3632,4 +3632,84 @@ class AppLocalizationsEn extends AppLocalizations {
   String priceDelayedSemantics(String time) {
     return 'Price delayed, last updated $time';
   }
+
+  @override
+  String get period5Y => '5Y';
+
+  @override
+  String get vsPeriodReturnUpper => 'PERIOD RETURN';
+
+  @override
+  String get vsTodayUpper => 'TODAY';
+
+  @override
+  String get vsMaxDrawdownUpper => 'MAX DRAWDOWN';
+
+  @override
+  String get vsVolatilityUpper => 'VOLATILITY (ANNUAL)';
+
+  @override
+  String get vsPeriodLow => 'Period low';
+
+  @override
+  String get vsPeriodHigh => 'Period high';
+
+  @override
+  String vsRangePosition(String pct) {
+    return 'Price is at $pct% of the period range';
+  }
+
+  @override
+  String get vsVolatilityShortNote =>
+      'Volatility is computed for periods of 1 month or longer.';
+
+  @override
+  String get vsWatch => 'Watch';
+
+  @override
+  String get vsSelect => 'Select this';
+
+  @override
+  String get vsGoToPosition => 'Go to my position';
+
+  @override
+  String get vsOwnedNote =>
+      'This asset is in your portfolio. Buy and sell from the position screen.';
+
+  @override
+  String vsRemovedFromWatchlist(String name) {
+    return '$name removed from watchlist';
+  }
+
+  @override
+  String get vsUndo => 'Undo';
+
+  @override
+  String vsChartSemantics(String name, String period) {
+    return '$name price chart, $period';
+  }
+
+  @override
+  String vsOpenDetailSemantics(String name) {
+    return 'See $name chart and statistics';
+  }
+
+  @override
+  String vsWatchSemantics(String name) {
+    return 'Watch $name';
+  }
+
+  @override
+  String vsUnwatchSemantics(String name) {
+    return 'Stop watching $name';
+  }
+
+  @override
+  String get vsLoadFailed =>
+      'Couldn\'t load price history. Check your connection and pick the period again.';
+
+  @override
+  String vsSheetSemantics(String name) {
+    return '$name asset page';
+  }
 }

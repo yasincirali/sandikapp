@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// istiyor, widget testinde ayağa kalkmıyor; getter'lar da `_rc` null iken
 /// varsayılana düşüyor ama sınıfı kurmadan bunu tetiklemek mümkün değil.
 /// Dosyanın kendisini denetlemek, projedeki mevcut örüntüyle aynı
-/// (bkz. `watchlist_detail_test.dart`).
+/// (bkz. `varlik_sayfasi_test.dart`).
 void main() {
   late String kaynak;
 

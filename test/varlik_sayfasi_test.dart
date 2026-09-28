@@ -4,7 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/services/technical_analysis_service.dart';
 
-/// **Takip detay ekranı sahte `Asset` ÜRETMEZ.**
+/// **Varlık sayfası sahte `Asset` ÜRETMEZ.**
+///
+/// 2026-09-28: takip detay ekranı (`watchlist_detail_screen.dart`) varlık
+/// sayfasına (`varlik_sayfasi.dart`) dönüştü — artık takip listesi, takibe al
+/// araması, Karşılaştır ve varlık ekleme seçicilerinden de açılıyor. Kurallar
+/// aynen taşındı; sahiplik geçişi (portföydeki varlığı pozisyonuna götürmek,
+/// "Portföyüme ekle") ayrı dosyada: `pozisyona_git.dart`.
 ///
 /// ## Neden bu test var
 /// Faz 2'nin ilk tasarımı `AssetDetailScreen`'e bir `watchOnly` bayrağı
@@ -35,10 +41,13 @@ String _yorumsuz(String src) => src
 
 void main() {
   late String detay;
+  late String istatistik;
 
   setUpAll(() async {
     detay = _yorumsuz(
-        await File('lib/screens/watchlist_detail_screen.dart').readAsString());
+        await File('lib/screens/varlik_sayfasi.dart').readAsString());
+    istatistik = _yorumsuz(
+        await File('lib/services/varlik_istatistik.dart').readAsString());
   });
 
   group('sahte Asset üretilmez', () {
@@ -85,11 +94,15 @@ void main() {
     test('yüzde formülü (son − ilk) / ilk', () {
       // Kullanıcının açıkça istediği formül; zaman aralığı seçilen HER yerde
       // aynı olmalı.
-      expect(detay.contains('(diff / first) * 100'), isTrue,
+      // Hesap `build()` dışında, istatistik servisinde (CLAUDE.md
+      // "Hesaplama build() içinde değil").
+      expect(istatistik.contains('(fark / ilk) * 100'), isTrue,
           reason: 'dönem değişimi ekranın geri kalanıyla aynı formülü '
               'kullanmalı');
-      expect(detay.contains('last - first'), isTrue,
+      expect(istatistik.contains('son - ilk'), isTrue,
           reason: 'tutar farkı = son − ilk');
+      expect(detay.contains('DonemIstatistigi.hesapla'), isTrue,
+          reason: 'sayfa sayıları servisten okur, kendisi hesaplamaz');
     });
 
     test('sıfır değişim NÖTR renkle gösterilir', () {
@@ -161,13 +174,47 @@ void main() {
     });
   });
 
-  group('liste satırı detayı açar', () {
-    test('satır dokunulabilir ve detay ekranını açar', () async {
+  group('dört giriş noktası sayfayı açar', () {
+    // Kullanıcı isteği (2026-09-28): "karşılaştır menüsü, takibe alınanlar ve
+    // varlık ekle kısımlarında da varlıklar var; o adımlarda da varlığın
+    // detayını izlemek isteyecekler."
+    for (final yol in const [
+      'lib/screens/watchlist_screen.dart',
+      'lib/screens/add_watchlist_screen.dart',
+      'lib/screens/comparison_screen.dart',
+      'lib/screens/add_asset_screen.dart',
+    ]) {
+      test(yol, () async {
+        final src = _yorumsuz(await File(yol).readAsString());
+        expect(src.contains('showVarlikSayfasi('), isTrue,
+            reason: 'bu ekrandaki varlıklar varlık sayfasını açabilmeli');
+      });
+    }
+
+    test('takip listesi satırı tam hâlde açar', () async {
       final liste = _yorumsuz(
           await File('lib/screens/watchlist_screen.dart').readAsString());
-      expect(liste.contains('WatchlistDetailScreen'), isTrue,
-          reason: 'kullanıcı satıra dokununca detay açılmalı');
+      expect(liste.contains('tamAcilis: true'), isTrue,
+          reason: 'kullanıcı o varlığa bakmaya geldi; yarım sayfa bir '
+              'adım fazladan sürükleme ister');
       expect(liste.contains('SandikTappable'), isTrue);
+    });
+
+    test('varlık ekleme seçicisinde birincil eylem SEÇMEK', () async {
+      final ekle = _yorumsuz(
+          await File('lib/screens/add_asset_screen.dart').readAsString());
+      expect(ekle.contains('onSec: onTap'), isTrue,
+          reason: 'seçiciden açılan sayfa formu terk ettirmemeli; "Bunu seç" '
+              'satıra dokunmakla aynı işi yapar');
+    });
+
+    test('takibe al araması: satır önizler, "+" hemen ekler', () async {
+      final ara = _yorumsuz(
+          await File('lib/screens/add_watchlist_screen.dart').readAsString());
+      expect(ara.contains('onTap: () => showVarlikSayfasi(context, c)'),
+          isTrue);
+      expect(ara.contains('onTap: () => _add(c)'), isTrue,
+          reason: 'hızlı ekleme alışkanlığı korunur');
     });
   });
 }

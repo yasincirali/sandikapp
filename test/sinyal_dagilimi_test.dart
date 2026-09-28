@@ -257,7 +257,7 @@ void main() {
 
     test('takip listesi detayı bayrağı GEÇMEZ', () {
       final kaynak =
-          ekranKaynagiSync('lib/screens/watchlist_detail_screen.dart');
+          ekranKaynagiSync('lib/screens/varlik_sayfasi.dart');
       expect(kaynak.contains('detayli'), isFalse,
           reason: 'Dağılım takip listesine sızmış — istek "sadece varlık '
               'performans ekranı" diyordu.');
