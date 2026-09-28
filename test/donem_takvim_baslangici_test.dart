@@ -140,8 +140,20 @@ void main() {
 
     expect(kaynak.contains('x: primarySeg.spots.first.x'), isFalse,
         reason: 'Başlangıç dikey işareti geri gelmiş.');
-    // "ŞİMDİ" çizgisi KALIR — son noktanın yerini gösterir.
-    expect(kaynak.contains("labelResolver: (_) => 'ŞİMDİ'"), isTrue,
+    // "ŞİMDİ" çizgisi KALIR — son noktanın yerini gösterir. 2026-09-28'den
+    // beri ortak grafik stilinden gelir (`GrafikStili.simdiCizgisi`).
+    expect(kaynak.contains('GrafikStili.simdiCizgisi('), isTrue,
         reason: 'Son nokta işareti de silinmiş; istenen bu değildi.');
+    // Aynı kural artık üç grafikte: hiçbiri dönem başına DİKEY işaret
+    // koymaz; dönem başı yatay çizginin etiketinde (tarih + değer).
+    for (final yol in [
+      'lib/screens/asset_detail_screen.dart',
+      'lib/widgets/fiyat_grafigi.dart',
+    ]) {
+      final k = ekranKaynagiSync(yol);
+      expect(k.contains('x: anchorSpot.x') || k.contains('x: tam.first.x'),
+          isFalse,
+          reason: '$yol: dönem başı dikey işareti geri gelmiş.');
+    }
   });
 }

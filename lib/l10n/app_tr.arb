@@ -2550,6 +2550,17 @@
   "adPositionUpper": "POZİSYONUN",
   "adPositionLine": "Pozisyonun: {amount} ({pct})",
   "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
+  "chartOpenLabel": "AÇILIŞ · {time} · {value}",
+  "@chartOpenLabel": {
+    "description": "Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.",
+    "placeholders": {"time": {"type": "String"}, "value": {"type": "String"}}
+  },
+  "chartStartLabel": "BAŞLANGIÇ · {date} · {value}",
+  "@chartStartLabel": {
+    "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",
+    "placeholders": {"date": {"type": "String"}, "value": {"type": "String"}}
+  },
+  "chartNowLabel": "ŞİMDİ",
   "vsWatch": "Takip et",
   "vsSelect": "Bunu seç",
   "vsGoToPosition": "Pozisyonuma git",

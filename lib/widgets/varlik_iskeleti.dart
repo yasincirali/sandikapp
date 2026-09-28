@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
+import 'grafik_stili.dart';
 import 'sandik_skeleton.dart';
 
 /// Varlık ekranlarının açılış iskeleti — güncel fiyat, grafik, dönem
@@ -12,7 +13,8 @@ import 'sandik_skeleton.dart';
 /// veri gelince yerleşim zıplamaz, yalnızca dolar
 /// (bkz. `utils/acilis_kapisi.dart`).
 class VarlikIskeleti extends StatelessWidget {
-  const VarlikIskeleti({super.key, this.grafikYuksekligi = 400});
+  const VarlikIskeleti(
+      {super.key, this.grafikYuksekligi = GrafikStili.kartYuksekligi});
 
   final double grafikYuksekligi;
 

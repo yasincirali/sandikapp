@@ -50,6 +50,7 @@ import '../widgets/period_summary_view.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/zoomable_chart.dart';
+import '../widgets/grafik_stili.dart';
 import '../models/grafik_tipi.dart';
 import '../widgets/transaction_segment.dart';
 import '../widgets/grafik_tipi_secici.dart';

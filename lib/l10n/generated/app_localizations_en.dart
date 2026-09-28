@@ -3662,6 +3662,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String chartOpenLabel(String time, String value) {
+    return 'OPEN · $time · $value';
+  }
+
+  @override
+  String chartStartLabel(String date, String value) {
+    return 'START · $date · $value';
+  }
+
+  @override
+  String get chartNowLabel => 'NOW';
+
+  @override
   String get vsWatch => 'Watch';
 
   @override

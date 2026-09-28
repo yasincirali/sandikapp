@@ -17,6 +17,7 @@ import '../utils/tr_format.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/fiyat_grafigi.dart';
+import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
@@ -143,7 +144,9 @@ class VarlikSayfasi extends ConsumerStatefulWidget {
 class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   static const _yarim = 0.7;
   static const _tam = 0.94;
-  static const _grafikYuksekligi = 220.0;
+  /// Grafik kartının dış yüksekliği — ortak grafik stilinden (Performans
+  /// stili, 2026-09-28); yükleme/hata kutuları da aynı yükseklikte.
+  static const _grafikYuksekligi = GrafikStili.kartYuksekligi;
 
   final _sayfa = DraggableScrollableController();
 
@@ -543,9 +546,6 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       }
       return const SandikSkeletonChart(height: _grafikYuksekligi);
     }
-    final renk = ist.isFlat
-        ? context.c.text36
-        : context.signColor(ist.degisimPct);
     return AnimatedOpacity(
       opacity: bayat ? 0.35 : 1.0,
       duration: SandikMotion.of(context, SandikMotion.state),
@@ -554,8 +554,6 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         seri: seri,
         periodDays: cizilen!,
         bicim: bicim,
-        renk: renk,
-        height: _grafikYuksekligi,
         semanticLabel: context.l10n
             .vsChartSemantics(widget.kimlik.name, _donemEtiketi(cizilen)),
       ),

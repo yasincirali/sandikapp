@@ -204,8 +204,8 @@ extension _DetayEylemler on _AssetDetailScreenState {
     if (activeSpots.isNotEmpty) {
       segments.add(TransactionSegment(
         spots: activeSpots,
-        lineColor: Sandik
-            .amber, // Use Amber for active tracking to match design system focus
+        // Ortak grafik stili (Performans ile aynı amber).
+        lineColor: GrafikStili.cizgi(context),
         areaGradientStart: context.c.amberFill.withValues(alpha: 0.12),
         areaGradientEnd: Colors.transparent,
         thickness: 3.5, // Thicker active line

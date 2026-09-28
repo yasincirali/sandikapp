@@ -3653,6 +3653,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String chartOpenLabel(String time, String value) {
+    return 'AÇILIŞ · $time · $value';
+  }
+
+  @override
+  String chartStartLabel(String date, String value) {
+    return 'BAŞLANGIÇ · $date · $value';
+  }
+
+  @override
+  String get chartNowLabel => 'ŞİMDİ';
+
+  @override
   String get vsWatch => 'Takip et';
 
   @override

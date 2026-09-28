@@ -6188,6 +6188,24 @@ abstract class AppLocalizations {
   /// **'Pozisyonun: {amount} ({pct})'**
   String adPositionLine(String amount, String pct);
 
+  /// Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.
+  ///
+  /// In tr, this message translates to:
+  /// **'AÇILIŞ · {time} · {value}'**
+  String chartOpenLabel(String time, String value);
+
+  /// Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.
+  ///
+  /// In tr, this message translates to:
+  /// **'BAŞLANGIÇ · {date} · {value}'**
+  String chartStartLabel(String date, String value);
+
+  /// No description provided for @chartNowLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'ŞİMDİ'**
+  String get chartNowLabel;
+
   /// No description provided for @vsWatch.
   ///
   /// In tr, this message translates to:
