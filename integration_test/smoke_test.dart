@@ -103,6 +103,28 @@ void main() {
       await tester.tap(onayDugmesi.first);
     }
 
+    // ── 2a) Kullanıcı adı (0079, zorunlu) ───────────────────────────────────
+    // Tohum kullanıcının adı yok (`profiles.username` NULL) — güncelleme
+    // sonrası mevcut kullanıcı gibi. Alan görünen addan önerilir
+    // ("Duman.Testi"); test sunucunun "kullanılabilir" yanıtını bekleyip
+    // gerçek kullanıcı gibi "Devam et"e basar. Böylece RPC, tetikleyici
+    // ve kapı taze yığında uçtan uca sınanır.
+    final adUygun = find.text('Bu ad kullanılabilir.');
+    final simdiDegil = find.text('Şimdi değil');
+    await _bekleKosul(
+      tester,
+      () =>
+          adUygun.evaluate().isNotEmpty ||
+          simdiDegil.evaluate().isNotEmpty ||
+          anaEkranFab.evaluate().isNotEmpty,
+      neden: 'kullanıcı adı, kilit teklifi ya da ana ekran',
+      sure: const Duration(seconds: 45),
+    );
+    if (adUygun.evaluate().isNotEmpty) {
+      await tester.tap(find.widgetWithText(FilledButton, 'Devam et'));
+      await tester.pump();
+    }
+
     // ── 2b) Kilit teklifi (ilk girişte, kilit kapalıysa) ────────────────────
     // `LockOfferScreen` kilit kapısından sonra, ana ekrandan önce BİR kez
     // çıkar. CI'da bu adım beklenmiyordu ve test "ana ekran" beklerken
@@ -110,7 +132,6 @@ void main() {
     // metinleri vardı). Gerçek kullanıcı da bu adımı görür — test onu
     // "Şimdi değil" ile geçer; gelmezse (kilit açık ya da daha önce
     // sorulmuş) doğrudan ana ekrana düşer.
-    final simdiDegil = find.text('Şimdi değil');
     await _bekleKosul(
       tester,
       () => simdiDegil.evaluate().isNotEmpty || anaEkranFab.evaluate().isNotEmpty,
