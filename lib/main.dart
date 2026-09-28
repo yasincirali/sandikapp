@@ -23,6 +23,7 @@ import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
+import 'screens/kullanici_adi_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/lock_offer_screen.dart';
 import 'services/biometric_lock_service.dart' show KilitYontemi;
@@ -1803,6 +1804,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       );
     }
 
+    // Kullanıcı adı kapısı (0079, 2026-09-28) — yasal onaydan SONRA,
+    // tanıtım turundan ÖNCE: tur gerçek ekranların üstünde çalışır ve adı
+    // (ana ekran selamı, ortak kartı) gösterir. Açılış kilidi bekleyen
+    // kullanıcıda burada açılmaz: kilidi açmadan hesabında değişiklik
+    // yapılamasın; kilit sonrası ikinci kontrol aşağıda.
+    final kilitBekliyor =
+        _locked || (_lockAtLaunchFor != user.id && _lockAtLaunchNeeded());
+    if (user.kullaniciAdiGerekli && !kilitBekliyor) {
+      return const KullaniciAdiScreen(
+          key: ValueKey('kullanici-adi'), zorunlu: true);
+    }
+
     if (_onboardingDone == false) {
       return OnboardingScreen(
         key: const ValueKey('onboarding'),
@@ -1844,6 +1857,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     }
 
     _kilitDurumu(false);
+
+    // Kilit açıldıktan sonra: yukarıda kilit yüzünden atlanan ad kapısı.
+    if (user.kullaniciAdiGerekli) {
+      return const KullaniciAdiScreen(
+          key: ValueKey('kullanici-adi'), zorunlu: true);
+    }
 
     // Kilit TEKLİFİ — kilit kapısından SONRA, ana ekrandan ÖNCE.
     //

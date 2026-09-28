@@ -3,6 +3,7 @@ import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
 import '../models/asset.dart';
 import '../models/kripto_fiyat.dart';
+import '../models/kullanici_adi.dart';
 import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
 import '../models/signal_preference.dart';
@@ -110,6 +111,32 @@ class SupabaseService {
       request: body,
       call: () => _db.from('profiles').upsert(body),
     );
+  }
+
+  /// Yazarken anlık kontrol (0079 `kullanici_adi_uygun_mu`). Karar
+  /// sunucuda: biçim, uygunsuz söz, ayrılmış ad, benzersizlik.
+  Future<KullaniciAdiSonuc> kullaniciAdiUygunMu(String ad) async {
+    final kod = await _log.log<dynamic>(
+      source: 'SupabaseService.kullaniciAdiUygunMu',
+      table: 'rpc/kullanici_adi_uygun_mu',
+      op: 'RPC',
+      request: {'p_ad': ad},
+      call: () => _db.rpc('kullanici_adi_uygun_mu', params: {'p_ad': ad}),
+    );
+    return KullaniciAdi.sonucCoz(kod);
+  }
+
+  /// Kullanıcı adını kaydeder (0079 `kullanici_adi_ayarla`). Sunucu
+  /// `display_name`'i de eşitler; ret nedeni istisna değil sonuçtur.
+  Future<KullaniciAdiSonuc> kullaniciAdiAyarla(String ad) async {
+    final kod = await _log.log<dynamic>(
+      source: 'SupabaseService.kullaniciAdiAyarla',
+      table: 'rpc/kullanici_adi_ayarla',
+      op: 'RPC',
+      request: {'p_ad': ad},
+      call: () => _db.rpc('kullanici_adi_ayarla', params: {'p_ad': ad}),
+    );
+    return KullaniciAdi.sonucCoz(kod);
   }
 
   Future<void> markOnboardingCompleted(String userId) async {

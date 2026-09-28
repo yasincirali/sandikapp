@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../config/pref_keys.dart';
 import '../models/user_model.dart';
+import '../models/kullanici_adi.dart';
 import 'db_logger.dart';
 import 'home_widget_service.dart';
 import 'live_activity_service.dart';
@@ -116,6 +117,24 @@ class AuthService {
     final profil = await SupabaseService.instance.getProfile(supaUser.id);
     await _profiliOnbellegeYaz(profil);
     return profil;
+  }
+
+  /// Kullanıcı adını kaydeder; başarılıysa güncel profili (önbelleğe de
+  /// yazarak) döndürür. Ret nedeni [KullaniciAdiSonuc] olarak döner, ağ
+  /// hatası fırlatılır — ekran `friendlyError` ile gösterir.
+  Future<({KullaniciAdiSonuc sonuc, AppUser? profil})> kullaniciAdiAyarla(
+      String ad, AppUser mevcut) async {
+    final temiz = ad.trim();
+    final sonuc = await SupabaseService.instance.kullaniciAdiAyarla(temiz);
+    if (sonuc != KullaniciAdiSonuc.uygun) return (sonuc: sonuc, profil: null);
+    AppUser profil = mevcut.copyWith(username: temiz);
+    try {
+      profil = await refreshProfile() ?? profil;
+    } catch (_) {
+      // Kayıt oldu; tazeleme ağda kaldıysa yerel kopya doğru adı taşır.
+      await _profiliOnbellegeYaz(profil);
+    }
+    return (sonuc: sonuc, profil: profil);
   }
 
   // ── Profil önbelleği (açılışı ağdan ayırır, 2026-09-28) ────────────────────
@@ -357,6 +376,20 @@ class AuthService {
       try {
         await _clearPendingDisplayName();
       } catch (_) {}
+      // Kayıt formundaki ad KULLANICI ADIdır (0079). Burada kaydetmeyi
+      // dener; alınmış/uygunsuz ya da ağ hatasıysa `username` boş kalır
+      // ve giriş kapısı zorunlu ekranı önerilen adla açar — kayıt bu
+      // yüzden yarıda kalmaz.
+      try {
+        final sonuc =
+            await SupabaseService.instance.kullaniciAdiAyarla(displayName);
+        if (sonuc == KullaniciAdiSonuc.uygun) {
+          return user.copyWith(username: displayName);
+        }
+      } catch (e, st) {
+        CrashReporter.report(e, st,
+            reason: 'AuthService.verifyRegistrationOtp.kullaniciAdi');
+      }
       return user;
     } on AuthApiException catch (e) {
       final msg = e.message.toLowerCase();

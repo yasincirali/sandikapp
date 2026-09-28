@@ -3722,4 +3722,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
+
+  @override
+  String get kullaniciAdiBaslik => 'Choose your username';
+
+  @override
+  String get kullaniciAdiAciklama =>
+      'Your partner sees you by this name, and it\'s the name shown in the app. You can change it later in Settings > Account.';
+
+  @override
+  String get kullaniciAdiEtiket => 'Username';
+
+  @override
+  String get kullaniciAdiKurallar =>
+      '3–20 characters: letters, digits, dot and underscore. Starts with a letter, no spaces.';
+
+  @override
+  String get kullaniciAdiHataBicim =>
+      'Must be 3–20 characters, start with a letter and contain only letters, digits, . and _.';
+
+  @override
+  String get kullaniciAdiHataUygunsuz =>
+      'This name isn\'t allowed. Try another one.';
+
+  @override
+  String get kullaniciAdiHataAyrilmis =>
+      'This name is reserved. Try another one.';
+
+  @override
+  String get kullaniciAdiHataAlinmis => 'This name is taken. Try another one.';
+
+  @override
+  String get kullaniciAdiHataBilinmiyor =>
+      'Couldn\'t save. Try again in a moment.';
+
+  @override
+  String get kullaniciAdiUygun => 'This name is available.';
+
+  @override
+  String get kullaniciAdiDevam => 'Continue';
+
+  @override
+  String get kullaniciAdiKaydet => 'Save';
+
+  @override
+  String get kullaniciAdiKaydedildi => 'Your username was updated.';
+
+  @override
+  String get kullaniciAdiSecilmedi => 'Not chosen yet';
+
+  @override
+  String get kullaniciAdiCikis => 'Sign out';
+
+  @override
+  String get registerUsernameMissing => 'Enter a username.';
 }

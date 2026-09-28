@@ -2571,5 +2571,21 @@
   "@searchShowAll": {"placeholders": {"count": {"type": "int"}}},
   "searchInPortfolioTag": "Portföyünde",
   "searchAssetsSemantics": "Varlık ara",
-  "searchShortHint": "Hisse, fon, altın, döviz, kripto"
+  "searchShortHint": "Hisse, fon, altın, döviz, kripto",
+  "kullaniciAdiBaslik": "Kullanıcı adını seç",
+  "kullaniciAdiAciklama": "Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap'tan değiştirebilirsin.",
+  "kullaniciAdiEtiket": "Kullanıcı adı",
+  "kullaniciAdiKurallar": "3–20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.",
+  "kullaniciAdiHataBicim": "3–20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.",
+  "kullaniciAdiHataUygunsuz": "Bu ad uygun değil. Başka bir ad dene.",
+  "kullaniciAdiHataAyrilmis": "Bu ad ayrılmış. Başka bir ad dene.",
+  "kullaniciAdiHataAlinmis": "Bu ad alınmış. Başka bir ad dene.",
+  "kullaniciAdiHataBilinmiyor": "Kaydedilemedi. Biraz sonra tekrar dene.",
+  "kullaniciAdiUygun": "Bu ad kullanılabilir.",
+  "kullaniciAdiDevam": "Devam et",
+  "kullaniciAdiKaydet": "Kaydet",
+  "kullaniciAdiKaydedildi": "Kullanıcı adın güncellendi.",
+  "kullaniciAdiSecilmedi": "Henüz seçilmedi",
+  "kullaniciAdiCikis": "Çıkış yap",
+  "registerUsernameMissing": "Kullanıcı adı girin."
 }

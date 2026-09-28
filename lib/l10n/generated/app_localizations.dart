@@ -6283,6 +6283,102 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hisse, fon, altın, döviz, kripto'**
   String get searchShortHint;
+
+  /// No description provided for @kullaniciAdiBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı adını seç'**
+  String get kullaniciAdiBaslik;
+
+  /// No description provided for @kullaniciAdiAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap\'tan değiştirebilirsin.'**
+  String get kullaniciAdiAciklama;
+
+  /// No description provided for @kullaniciAdiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı adı'**
+  String get kullaniciAdiEtiket;
+
+  /// No description provided for @kullaniciAdiKurallar.
+  ///
+  /// In tr, this message translates to:
+  /// **'3–20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.'**
+  String get kullaniciAdiKurallar;
+
+  /// No description provided for @kullaniciAdiHataBicim.
+  ///
+  /// In tr, this message translates to:
+  /// **'3–20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.'**
+  String get kullaniciAdiHataBicim;
+
+  /// No description provided for @kullaniciAdiHataUygunsuz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ad uygun değil. Başka bir ad dene.'**
+  String get kullaniciAdiHataUygunsuz;
+
+  /// No description provided for @kullaniciAdiHataAyrilmis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ad ayrılmış. Başka bir ad dene.'**
+  String get kullaniciAdiHataAyrilmis;
+
+  /// No description provided for @kullaniciAdiHataAlinmis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ad alınmış. Başka bir ad dene.'**
+  String get kullaniciAdiHataAlinmis;
+
+  /// No description provided for @kullaniciAdiHataBilinmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydedilemedi. Biraz sonra tekrar dene.'**
+  String get kullaniciAdiHataBilinmiyor;
+
+  /// No description provided for @kullaniciAdiUygun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ad kullanılabilir.'**
+  String get kullaniciAdiUygun;
+
+  /// No description provided for @kullaniciAdiDevam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam et'**
+  String get kullaniciAdiDevam;
+
+  /// No description provided for @kullaniciAdiKaydet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet'**
+  String get kullaniciAdiKaydet;
+
+  /// No description provided for @kullaniciAdiKaydedildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı adın güncellendi.'**
+  String get kullaniciAdiKaydedildi;
+
+  /// No description provided for @kullaniciAdiSecilmedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz seçilmedi'**
+  String get kullaniciAdiSecilmedi;
+
+  /// No description provided for @kullaniciAdiCikis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkış yap'**
+  String get kullaniciAdiCikis;
+
+  /// No description provided for @registerUsernameMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı adı girin.'**
+  String get registerUsernameMissing;
 }
 
 class _AppLocalizationsDelegate
