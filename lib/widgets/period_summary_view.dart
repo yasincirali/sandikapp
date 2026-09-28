@@ -230,6 +230,23 @@ class PeriodSummaryView extends StatelessWidget {
           ));
         }
 
+      // 3A ve 5Y (tek dönem kümesi, 2026-09-28): yeni kart yazılmadı —
+      // ikisi de yalnızca her dönemde anlamlı olan parçaları taşır (reel
+      // getiri, uçlar, eğri). Kıyas şeridi (180 kovası), XIRR ve karakter
+      // kartları 6A/1Y'ye özgü sunucu/hesap sözleşmelerine bağlı; oraya
+      // sessizce başka pencere vermek yanlış sayı üretirdi.
+      case SummaryPeriod.ucAy:
+        reelYaDaTufe(context.l10n.last3MonthsPeriod);
+        varlikKarti(context.l10n.threeMonthExtremes);
+
+      case SummaryPeriod.besYil:
+        reelYaDaTufe(context.l10n.last5YearsPeriod);
+        if (summary.sparkline.length >= 2) {
+          buDonem.add(_GunIciEgriKarti(
+              summary: summary, baslik: context.l10n.fiveYearCurve));
+        }
+        varlikKarti(context.l10n.fiveYearExtremes);
+
       case SummaryPeriod.altiAy:
         reelYaDaTufe(context.l10n.last6MonthsPeriod);
         varlikKarti(context.l10n.sixMonthExtremes);

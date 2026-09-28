@@ -170,11 +170,11 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  test('çip, ızgara ve aralık iki ekranda da ORTAK widget\'tan gelir', () {
+  test('dönem seçici, ızgara ve aralık iki ekranda da ORTAK widget\'tan gelir', () {
     final sayfa = ekranKaynagiSync('lib/screens/varlik_sayfasi.dart');
     final detay = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
     for (final w in [
-      'DonemCipi(',
+      'DonemSecici(',
       'DonemIstatistikIzgarasi(',
       'DonemAralikCubugu(',
     ]) {

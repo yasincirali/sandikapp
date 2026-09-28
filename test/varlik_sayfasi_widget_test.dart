@@ -12,6 +12,7 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
 import 'package:portfoy_takip/screens/varlik_sayfasi.dart';
 import 'package:portfoy_takip/widgets/donem_istatistik.dart';
+import 'package:portfoy_takip/widgets/donem_secici.dart';
 import 'package:portfoy_takip/widgets/varlik_iskeleti.dart';
 
 /// Varlık sayfası — alt çubuğun duruma göre doğru eylemi göstermesi ve
@@ -128,14 +129,14 @@ void main() {
     final gec = Completer<Map<int, double>>();
     await _kur(t, yukleyici: (tk, gun) => gun == 1825 ? gec.future : _seri(tk, gun));
     expect(find.byType(VarlikIskeleti), findsOneWidget);
-    expect(find.byType(DonemCipi), findsNothing,
+    expect(find.byType(DonemSecici), findsNothing,
         reason: 'hızlı dönemler gelse de çipler tek tek dolmamalı');
 
     gec.complete(await _seri('THYAO.IS', 1825));
     await t.pump();
     await t.pump();
     expect(find.byType(VarlikIskeleti), findsNothing);
-    expect(find.byType(DonemCipi), findsNWidgets(6));
+    expect(find.byType(DonemSecici), findsOneWidget);
     expect(find.byType(DonemIstatistikIzgarasi), findsOneWidget);
   });
 
@@ -148,7 +149,7 @@ void main() {
     await t.pump(const Duration(seconds: 3));
     await t.pump();
     expect(find.byType(VarlikIskeleti), findsNothing);
-    expect(find.byType(DonemCipi), findsNWidgets(6));
+    expect(find.byType(DonemSecici), findsOneWidget);
   });
 
   testWidgets('portföyde değil: Takip et + Portföyüme ekle', (t) async {

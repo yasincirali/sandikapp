@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/watchlist_item.dart';
 import '../services/history_service.dart';
+import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/supabase_service.dart';
 import '../widgets/watchlist_chart.dart' show WatchlistChart;
 import 'auth_provider.dart';
@@ -250,20 +251,18 @@ bool watchlistLimitiAsiliyorMu({
 
 /// Takip listesi dönem seçenekleri.
 ///
-/// `portfolio_performance_screen.dart`'taki `_periods` ile AYNI küme —
-/// kullanıcı iki ekranda farklı periyotlar öğrenmesin. Oradaki `intraday`
-/// bayrağı burada `days: 1`'e karşılık gelir: takip listesi gün içi 5 dakikalık
-/// grid çizmez, yalnızca "bugün ne oldu" yüzdesini gösterir.
-const watchlistPeriods = <({String label, int days})>[
-  (label: 'GÜNLÜK', days: 1),
-  (label: '1H', days: 7),
-  (label: '1A', days: 30),
-  (label: '6A', days: 180),
-  (label: '1Y', days: 365),
+/// Uygulamanın tek dönem kümesinden ([SummaryPeriod]) türetilir — kullanıcı
+/// ekranlarda farklı periyotlar öğrenmesin (2026-09-28'de 3A ve 5Y bu yolla
+/// geldi). Oradaki `intraday` bayrağı burada `days: 1`'e karşılık gelir
+/// ([SummaryPeriod.sembolGunu]): takip listesi gün içi 5 dakikalık grid
+/// çizmez, yalnızca "bugün ne oldu" yüzdesini gösterir.
+final watchlistPeriods = <({String label, int days})>[
+  for (final p in SummaryPeriod.values) (label: p.label, days: p.sembolGunu),
 ];
 
 /// Seçili dönem indeksi. Varsayılan 1A — ne çok gürültülü ne çok durgun.
-final watchlistPeriodProvider = StateProvider<int>((ref) => 2);
+final watchlistPeriodProvider =
+    StateProvider<int>((ref) => SummaryPeriod.birAy.index);
 
 /// Grafikteki portföy çizgisinin KİMİ gösterdiği.
 ///

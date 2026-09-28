@@ -403,6 +403,7 @@
   "periodDaily": "DAILY",
   "period1W": "1W",
   "period1M": "1M",
+  "period3M": "3M",
   "period6M": "6M",
   "period1Y": "1Y",
   "assetPerformanceSemantics": "Performance: {name}",
@@ -750,6 +751,11 @@
   "sixMonthExtremes": "Six-month extremes",
   "lastYearPeriod": "the last year",
   "yearCurve": "Year curve",
+  "last3MonthsPeriod": "the last 3 months",
+  "threeMonthExtremes": "Three-month extremes",
+  "last5YearsPeriod": "the last 5 years",
+  "fiveYearExtremes": "Five-year extremes",
+  "fiveYearCurve": "Five-year curve",
   "periodMarketReturn": "{period} market return",
   "@periodMarketReturn": {
     "placeholders": {

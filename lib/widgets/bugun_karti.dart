@@ -36,6 +36,7 @@ import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 import 'hedef_sheet.dart';
 import 'sandik_skeleton.dart';
+import '../services/period_summary_service.dart' show SummaryPeriod;
 
 class BugunKarti extends ConsumerStatefulWidget {
   const BugunKarti({
@@ -493,7 +494,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           ipucu: l10n.todayRealHint,
           deger: l10n.todayPoints('${s.onde ? '+' : '−'}$puan'),
           renk: s.onde ? c.gain : c.loss,
-          onTap: _olcerek(s, () => _ozeteGit(periodIdx: 4)),
+          onTap: _olcerek(s, () => _ozeteGit(periodIdx: SummaryPeriod.birYil.index)),
         );
       case HaftalikOzetSatiri():
         // Eski çiple aynı hedef: Özet › 1H.
@@ -503,7 +504,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           ipucu: l10n.todayWeekHint,
           deger: '${s.getiriPct >= 0 ? '+' : '−'}$pct',
           renk: s.getiriPct >= 0 ? c.gain : c.loss,
-          onTap: _olcerek(s, () => _ozeteGit(periodIdx: 1)),
+          onTap: _olcerek(s, () => _ozeteGit(periodIdx: SummaryPeriod.birHafta.index)),
         );
       case HedefSatiri():
         if (s.belirlenmedi) {
@@ -573,7 +574,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   String get _dil =>
       Localizations.localeOf(context).languageCode == 'en' ? 'en_US' : 'tr_TR';
 
-  /// Performans › Özet, verilen dönemde (0 GÜNLÜK · 1 1H · 2 1A · 3 6A · 4 1Y).
+  /// Performans › Özet, verilen dönemde ([SummaryPeriod] indeksi — sayı
+  /// değil adla verilir; 2026-09-28'de 3A eklenince 6A/1Y kaydı).
   void _ozeteGit({required int periodIdx}) => pushGuarded<void>(
         context,
         adaptiveRoute<void>(

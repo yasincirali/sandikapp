@@ -8,19 +8,29 @@ import 'xirr_service.dart' show XirrService;
 import 'recap_service.dart' show PortfolioCharacter, RecapAsset, RecapService;
 import '../utils/tr_format.dart';
 
-/// Özet sekmesinin dönemleri.
+/// Uygulamanın TEK dönem kümesi — Özet sekmesinin de dönemleri.
 ///
-/// **3A YOK — bilinçli.** Grafik sekmesinin `_periods` dizisi beş dönem
-/// taşıyor ve iki sekme aynı `_selectedPeriodIdx`'i paylaşıyor. Buraya
-/// altıncı bir dönem eklemek o eşlemeyi kırardı: kullanıcı Grafik'te 6A
-/// seçip Özet'e geçtiğinde bambaşka bir pencere görürdü. Dizinin sırası
-/// [SummaryPeriod.values] ile BİREBİR aynı olmak zorunda.
+/// ## Neden tek küme (kullanıcı kararı, 2026-09-28)
+/// "Time interval seçimleri de aynı olmalı, data kaybı olmasın." Önceden
+/// beş ekran beş ayrı liste taşıyordu: Performans ve Takip 5 dönem
+/// (3A ve 5Y yok), Karşılaştır GÜNLÜK ve 6A'sız, varlık sayfası ve detay
+/// 3A'sız. Hiçbir ekranın dönemi düşmesin diye BİRLEŞİM alındı; her
+/// seçici listeyi buradan türetir (`DonemSecici`), kendi dizisini yazmaz.
+///
+/// Eskiden burada "3A YOK — bilinçli" notu vardı: Grafik sekmesiyle Özet
+/// aynı `_selectedPeriodIdx`'i paylaştığı için yalnızca birine dönem
+/// eklemek eşlemeyi kırardı. Kural aynen geçerli, yalnızca artık iki sekme
+/// de bu diziden türediği için eşleme kendiliğinden korunuyor. Sıra
+/// değişirse indeksle açılan rotalar (`SummaryPeriod.birYil.index` gibi)
+/// adla yazıldığı için etkilenmez; sabit sayı YAZMA.
 enum SummaryPeriod {
   gunluk('GÜNLÜK', 0, intraday: true),
   birHafta('1H', 7),
-  birAy('1A', 30),
-  altiAy('6A', 180),
-  birYil('1Y', 365);
+  birAy('1A', 30, ayGeri: 1),
+  ucAy('3A', 90, ayGeri: 3),
+  altiAy('6A', 180, ayGeri: 6),
+  birYil('1Y', 365, ayGeri: 12),
+  besYil('5Y', 1825, ayGeri: 60);
 
   final String label;
 
@@ -28,10 +38,19 @@ enum SummaryPeriod {
   /// önbellek anahtarı) gün cinsinden çalışıyor.
   final int days;
 
+  /// Dönem başı TAKVİMDEN mi hesaplanır: "1A" 30 gün değil, bir önceki
+  /// ayın aynı günüdür (`donemBaslangici`). `null` → sabit gün (1H, GÜNLÜK).
+  final int? ayGeri;
+
   /// Gün içi (5 dk çözünürlük) dönem mi?
   final bool intraday;
 
-  const SummaryPeriod(this.label, this.days, {this.intraday = false});
+  const SummaryPeriod(this.label, this.days,
+      {this.ayGeri, this.intraday = false});
+
+  /// Sembol serisi isteyen yüzeylerin (Takip, Karşılaştır, varlık sayfası)
+  /// gün değeri: GÜNLÜK orada `1` (Yahoo `1d`), Performans'ta `0` + gün içi.
+  int get sembolGunu => intraday ? 1 : days;
 
   /// Grafik sekmesinin `_periods` dizisindeki karşılığı.
   ///
@@ -348,7 +367,7 @@ class PeriodSummaryService {
 
   /// Dönemin pencere uçları.
   ///
-  /// 1A / 6A / 1Y takvimden hesaplanır; 1H sabit yedi gündür (hafta kavramı
+  /// 1A / 3A / 6A / 1Y / 5Y takvimden hesaplanır; 1H sabit yedi gündür (hafta kavramı
   /// takvim ayına bağlı değil). GÜNLÜK'te pencere ÇİZİLEN SEANS günüdür —
   /// bugün olmak zorunda değil: piyasa kapalıyken `HistoryService` son
   /// seansı döndürür ve hafta sonu çizilen eğri Cuma'nındır.
@@ -364,12 +383,7 @@ class PeriodSummaryService {
         end: DateTime(gun.year, gun.month, gun.day, 23, 59, 59),
       );
     }
-    final ayGeri = switch (period) {
-      SummaryPeriod.birAy => 1,
-      SummaryPeriod.altiAy => 6,
-      SummaryPeriod.birYil => 12,
-      _ => null,
-    };
+    final ayGeri = period.ayGeri;
     final start = ayGeri == null
         ? now.subtract(Duration(days: period.days))
         : donemBaslangici(now, ayGeri);
@@ -907,8 +921,10 @@ class PeriodSummaryService {
         SummaryPeriod.gunluk => 'Bugün',
         SummaryPeriod.birHafta => 'Bu hafta',
         SummaryPeriod.birAy => 'Bu ay',
+        SummaryPeriod.ucAy => 'Bu üç ay',
         SummaryPeriod.altiAy => 'Bu altı ay',
         SummaryPeriod.birYil => 'Bu yıl',
+        SummaryPeriod.besYil => 'Bu beş yıl',
       };
 
   static String tonCumlesi(PeriodSummary s, {double? uzunDonemPct}) {

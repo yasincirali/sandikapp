@@ -403,6 +403,7 @@
   "periodDaily": "GÜNLÜK",
   "period1W": "1H",
   "period1M": "1A",
+  "period3M": "3A",
   "period6M": "6A",
   "period1Y": "1Y",
   "assetPerformanceSemantics": "Performans: {name}",
@@ -750,6 +751,11 @@
   "sixMonthExtremes": "Altı ayın uçları",
   "lastYearPeriod": "son 1 yıl",
   "yearCurve": "Yıl eğrisi",
+  "last3MonthsPeriod": "son 3 ay",
+  "threeMonthExtremes": "Üç ayın uçları",
+  "last5YearsPeriod": "son 5 yıl",
+  "fiveYearExtremes": "Beş yılın uçları",
+  "fiveYearCurve": "Beş yıl eğrisi",
   "periodMarketReturn": "{period} piyasa getirisi",
   "@periodMarketReturn": {
     "placeholders": {

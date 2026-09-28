@@ -829,6 +829,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get period1M => '1M';
 
   @override
+  String get period3M => '3M';
+
+  @override
   String get period6M => '6M';
 
   @override
@@ -1512,6 +1515,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yearCurve => 'Year curve';
+
+  @override
+  String get last3MonthsPeriod => 'the last 3 months';
+
+  @override
+  String get threeMonthExtremes => 'Three-month extremes';
+
+  @override
+  String get last5YearsPeriod => 'the last 5 years';
+
+  @override
+  String get fiveYearExtremes => 'Five-year extremes';
+
+  @override
+  String get fiveYearCurve => 'Five-year curve';
 
   @override
   String periodMarketReturn(String period) {

@@ -6,8 +6,10 @@ import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 
-/// Dönem çipi, istatistik ızgarası ve dönem aralığı çubuğu — varlık
-/// sayfasıyla portföy varlık detayının ORTAK parçaları.
+/// İstatistik ızgarası ve dönem aralığı çubuğu — varlık sayfasıyla portföy
+/// varlık detayının ORTAK parçaları. Dönem çipi (`DonemCipi`) 2026-09-28'de
+/// kalktı: tüm ekranlar tek seçiciyi çiziyor (`donem_secici.dart`), getiri
+/// satırı oraya taşındı.
 ///
 /// ## Neden ayrı dosya (kullanıcı kararı, 2026-09-28)
 /// Portföy › varlık detayı için dört tasarım dilinden **A (varlık sayfası
@@ -20,71 +22,6 @@ import '../utils/tr_format.dart';
 /// Yuvarlanmış yüzde sıfırsa değişim nötr gösterilir
 /// ([DonemIstatistigi.isFlat] ile aynı eşik).
 bool donemDuzMu(double pct) => pct.abs() < 0.005;
-
-/// Dönem çipi — etiketin altında o dönemin getirisi. Çipler böylece bir
-/// getiri şeridi olur: "son bir yılda ne yaptı" sorusu dokunmadan
-/// cevaplanır. Getiri henüz yoksa boş satır yer tutar (yerleşim zıplamaz).
-class DonemCipi extends StatelessWidget {
-  const DonemCipi({
-    super.key,
-    required this.etiket,
-    required this.secili,
-    required this.getiriPct,
-    required this.onTap,
-  });
-
-  final String etiket;
-  final bool secili;
-  final double? getiriPct;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final g = getiriPct;
-    return SandikTappable(
-      onTap: secili ? null : onTap,
-      semanticLabel:
-          g == null ? etiket : '$etiket, ${fmtPct(g, showSign: true)}',
-      child: Container(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        margin: const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-        padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
-        decoration: context.chip(selected: secili),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Büyük sistem yazı tipinde "GÜNLÜK" altı çipli satıra sığmaz;
-            // kırpmak dönemi okunmaz kılar, küçültmek kılmaz.
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                etiket,
-                maxLines: 1,
-                style: context.t.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: secili ? context.c.amberText : context.c.text58,
-                ),
-              ),
-            ),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                g == null ? ' ' : fmtPct(g, digits: 1, showSign: true),
-                maxLines: 1,
-                style: context.t.labelSmall?.copyWith(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                  color: g == null || donemDuzMu(g)
-                      ? context.c.text36
-                      : context.signColor(g),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// 2×2 istatistik ızgarası: dönem getirisi, bugün, en büyük düşüş, oynaklık.
 ///

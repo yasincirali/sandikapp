@@ -27,6 +27,7 @@ import 'analytics_service.dart';
 import 'crash_reporter.dart';
 import 'kilit_kapisi.dart';
 import 'retention_tracker.dart';
+import 'period_summary_service.dart' show SummaryPeriod;
 
 // Anahtarlar preferences_provider ile AYNI kaynaktan (PrefKeys) — ikisi
 // ayrışırsa Ayarlar'daki toggle bildirim yolunu etkilemez olurdu.
@@ -488,7 +489,9 @@ class NotificationService {
     // (`home_screen._genelBildirimeGit`). 2026-09-20'ye kadar haftalık
     // push ana ekranda kalıyordu — kullanıcı özeti aramak zorundaydı.
     if (type == weeklySummaryType || type == monthlySummaryType) {
-      _openOzet(periodIdx: type == monthlySummaryType ? 2 : null);
+      _openOzet(
+          periodIdx:
+              type == monthlySummaryType ? SummaryPeriod.birAy.index : null);
       return;
     }
     // TÜFE günü → Özet (reel getiri kartı). Takip listesi hareketi →
@@ -572,7 +575,7 @@ class NotificationService {
   /// Dönem özeti push'undan Performans › Özet'e.
   ///
   /// [periodIdx] null → ekranın varsayılan dönemi (haftalık için 1H'yi
-  /// zorlamıyoruz; Özet sekmesi en son bakılan dönemi hatırlar), 2 → 1A.
+  /// zorlamıyoruz; Özet sekmesi en son bakılan dönemi hatırlar).
   /// Navigator hazır değilse [_openPartnerInvite] ile aynı yeniden deneme.
   void _openOzet({int? periodIdx, int deneme = 0}) {
     if (kilitKapisi.ertele(() => _openOzet(periodIdx: periodIdx))) return;

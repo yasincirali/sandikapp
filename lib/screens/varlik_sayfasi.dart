@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
+import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/son_bakilanlar.dart';
 import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
@@ -16,6 +17,7 @@ import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
+import '../widgets/donem_secici.dart';
 import '../widgets/fiyat_grafigi.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -97,11 +99,13 @@ bool _acik = false;
 
 /// Sayfanın dönemleri (gün). `1` = GÜNLÜK (takvim günü, 5 dakikalık seri).
 ///
-/// Performans ekranı ve takip listesiyle AYNI etiketler; 5Y yalnızca burada
-/// — "bu varlık uzun vadede ne yaptı" sorusu almadan önce sorulur, sahip
-/// olunan varlıkta sorulmaz. Servis `5y` aralığını zaten destekliyor
-/// (`HistoryService.rangeForPeriod`).
-const varlikSayfasiDonemleri = <int>[1, 7, 30, 180, 365, 1825];
+/// Uygulamanın tek dönem kümesinden ([SummaryPeriod]) türetilir
+/// (2026-09-28): önceden burada 3A yoktu, Performans'ta 5Y yoktu; seçiciler
+/// artık her ekranda birebir aynı. Servis `3mo`/`5y` aralıklarını zaten
+/// destekliyor (`HistoryService.rangeForPeriod`).
+final varlikSayfasiDonemleri = <int>[
+  for (final p in SummaryPeriod.values) p.sembolGunu,
+];
 
 /// Seri yükleyici — testte ağ yerine sahte seri verilir.
 typedef SeriYukleyici = Future<Map<int, double>> Function(
@@ -307,17 +311,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     }
   }
 
-  String _donemEtiketi(int gun) {
-    final l = context.l10n;
-    return switch (gun) {
-      1 => l.periodDaily,
-      7 => l.period1W,
-      30 => l.period1M,
-      180 => l.period6M,
-      365 => l.period1Y,
-      _ => l.period5Y,
-    };
-  }
+  String _donemEtiketi(int gun) => donemEtiketi(
+      context.l10n,
+      SummaryPeriod.values[varlikSayfasiDonemleri.indexOf(gun).clamp(
+              0, SummaryPeriod.values.length - 1)]
+          .label);
 
   @override
   Widget build(BuildContext context) {
@@ -560,24 +558,20 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     );
   }
 
-  /// Dönem çipleri — her çipin altında o dönemin getirisi. Çipler böylece
-  /// aynı zamanda bir getiri şeridi olur: "son bir yılda ne yaptı" sorusu
-  /// dokunmadan cevaplanır.
+  /// Dönem seçici — ortak [DonemSecici]; her segmentin altında o dönemin
+  /// getirisi. Seçici böylece aynı zamanda bir getiri şeridi olur: "son bir
+  /// yılda ne yaptı" sorusu dokunmadan cevaplanır (eski çiplerin işi,
+  /// tek görünüş kararıyla kabuğa taşındı, 2026-09-28).
   Widget _donemCipleri() {
-    return Row(
-      children: [
-        for (final g in varlikSayfasiDonemleri)
-          Expanded(child: _cip(g)),
+    return DonemSecici(
+      donemler: SummaryPeriod.values,
+      secili: varlikSayfasiDonemleri.indexOf(_gun),
+      getiriler: [
+        for (final g in varlikSayfasiDonemleri) _istatistik[g]?.degisimPct,
       ],
+      onSec: (i) => _donemSec(varlikSayfasiDonemleri[i]),
     );
   }
-
-  Widget _cip(int gun) => DonemCipi(
-        etiket: _donemEtiketi(gun),
-        secili: gun == _gun,
-        getiriPct: _istatistik[gun]?.degisimPct,
-        onTap: () => _donemSec(gun),
-      );
 
   Widget _istatistikIzgarasi(DonemIstatistigi ist, int gun) =>
       DonemIstatistikIzgarasi(

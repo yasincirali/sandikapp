@@ -47,6 +47,7 @@ import '../models/varlik_kimligi.dart';
 import '../services/crash_reporter.dart';
 import '../services/varlik_istatistik.dart';
 import '../widgets/donem_istatistik.dart';
+import '../widgets/donem_secici.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/grafik_stili.dart';
 import '../utils/acilis_kapisi.dart';
@@ -136,15 +137,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// 5Y (A tasarımı, 2026-09-28): varlık sayfasıyla aynı dönem kümesi —
   /// "bu varlık uzun vadede ne yaptı" portföydeki varlık için de sorulur.
   /// Haftalık katman zaten 5 yıllık seri çeker (`yahooRange: 5y`), ek istek
-  /// yok. Performans ekranı 5Y taşımaz; oranın dönem penceresi takvim
-  /// kuralına düşer (`_donemBaslangici`).
-  static const List<({String label, int days})> _allPeriods = [
-    (label: 'GÜNLÜK', days: 0),
-    (label: '1H', days: 7),
-    (label: '1A', days: 30),
-    (label: '6A', days: 180),
-    (label: '1Y', days: 365),
-    (label: '5Y', days: 1825),
+  /// yok. Dönem penceresi takvimden (`_donemBaslangici`).
+  ///
+  /// 3A ve tek kaynak (2026-09-28): liste uygulamanın tek dönem kümesinden
+  /// ([SummaryPeriod]) türetilir; 3A Karşılaştır'da vardı, burada yoktu.
+  /// 3A'nın dönem başı da takvimden (`_donemBaslangici` → `ucAy`).
+  static final List<({String label, int days})> _allPeriods = [
+    for (final p in SummaryPeriod.values) (label: p.label, days: p.days),
   ];
 
   /// Bu varlık için gün içi fiyat verisi ANLAMLI mı?

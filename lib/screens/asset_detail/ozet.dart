@@ -313,23 +313,22 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   // ── Dönem çipleri ────────────────────────────────────────────────────────
 
-  /// Dönem çipleri — her çipin altında o dönemin getirisi (varlık sayfasıyla
-  /// aynı parça). Eski bölümlü sekmenin yerini aldı; GÜNLÜK elle fiyatlanan
-  /// varlıkta yine YOK (`_gunIciDestekli`).
+  /// Dönem seçici — ortak [DonemSecici], her segmentin altında o dönemin
+  /// getirisi (eski çiplerin getiri şeridi korunur; tek görünüş kararı
+  /// 2026-09-28). GÜNLÜK elle fiyatlanan varlıkta yine YOK
+  /// (`_gunIciDestekli`) — orada gösterilecek bir gün içi seri yok.
   Widget _donemCipleri(double canliBirim) {
-    final l = context.l10n;
-    return Row(
-      children: [
-        for (var i = 0; i < _periods.length; i++)
-          Expanded(
-            child: DonemCipi(
-              etiket: donemEtiketi(l, _periods[i].label),
-              secili: i == _selectedPeriodIdx,
-              getiriPct: _donemYuzdesi(_periods[i].days, canliBirim),
-              onTap: () => _selectPeriod(i),
-            ),
-          ),
+    final donemler = [
+      for (final p in SummaryPeriod.values)
+        if (!p.intraday || _gunIciDestekli) p,
+    ];
+    return DonemSecici(
+      donemler: donemler,
+      secili: _selectedPeriodIdx,
+      getiriler: [
+        for (final p in _periods) _donemYuzdesi(p.days, canliBirim),
       ],
+      onSec: _selectPeriod,
     );
   }
 

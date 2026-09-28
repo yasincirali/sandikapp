@@ -1604,6 +1604,12 @@ abstract class AppLocalizations {
   /// **'1A'**
   String get period1M;
 
+  /// No description provided for @period3M.
+  ///
+  /// In tr, this message translates to:
+  /// **'3A'**
+  String get period3M;
+
   /// No description provided for @period6M.
   ///
   /// In tr, this message translates to:
@@ -2809,6 +2815,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yıl eğrisi'**
   String get yearCurve;
+
+  /// No description provided for @last3MonthsPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'son 3 ay'**
+  String get last3MonthsPeriod;
+
+  /// No description provided for @threeMonthExtremes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üç ayın uçları'**
+  String get threeMonthExtremes;
+
+  /// No description provided for @last5YearsPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'son 5 yıl'**
+  String get last5YearsPeriod;
+
+  /// No description provided for @fiveYearExtremes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Beş yılın uçları'**
+  String get fiveYearExtremes;
+
+  /// No description provided for @fiveYearCurve.
+  ///
+  /// In tr, this message translates to:
+  /// **'Beş yıl eğrisi'**
+  String get fiveYearCurve;
 
   /// No description provided for @periodMarketReturn.
   ///
